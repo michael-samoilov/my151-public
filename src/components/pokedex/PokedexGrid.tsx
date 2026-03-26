@@ -13,9 +13,9 @@ const GEN_GRADIENTS: Record<number, string> = {
   3: 'linear-gradient(135deg, #A00000 33%, #0055BF 33%, #0055BF 66%, #00A86B 66%)', // Ruby / Sapphire / Emerald
   4: 'linear-gradient(135deg, #AACCEE 50%, #FFAACC 50%)',             // Diamond / Pearl
   5: 'linear-gradient(135deg, #1a1a1a 50%, #f0f0f0 50%)',             // Black / White
-  6: 'linear-gradient(135deg, #F68B28 50%, #8B5CF6 50%)',             // Orange / Purple (X/Y)
-  7: 'linear-gradient(135deg, #F5A623 50%, #5C4D9A 50%)',             // Sun / Moon
-  8: 'linear-gradient(135deg, #00BFFF 50%, #DC143C 50%)',             // Sword / Shield
+  6: 'linear-gradient(135deg, #025DA6 50%, #EA1A3E 50%)',             // X (blue) / Y (red)
+  7: 'linear-gradient(135deg, #F5A623 50%, #5C4D9A 50%)',             // Sun (orange) / Moon (purple)
+  8: 'linear-gradient(135deg, #00A1E9 50%, #E3003A 50%)',             // Sword (cyan) / Shield (red)
   9: 'linear-gradient(135deg, #E3350D 50%, #7B2D8E 50%)',             // Scarlet / Violet
 };
 
