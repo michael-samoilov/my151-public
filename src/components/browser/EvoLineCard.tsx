@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils';
 import type { Pokemon } from '@/types/pokemon';
-import { SpriteImage } from '@/components/shared/SpriteImage';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { Check, ChevronRight } from 'lucide-react';
@@ -19,7 +18,6 @@ export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardPro
   const handleClick = () => {
     if (allInDex) return;
     const targetSection = activeSection ?? 'mid-game';
-    // Always add the full line, even if some members didn't match the filter
     addToSection(targetSection, members.map((p) => p.id));
   };
 
@@ -30,7 +28,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardPro
     <button
       onClick={handleClick}
       className={cn(
-        'inline-flex items-center gap-0 rounded-md p-1 transition-all cursor-pointer border',
+        'inline-flex items-center rounded-md p-[1vw] md:p-1 transition-all cursor-pointer border',
         allInDex
           ? 'opacity-40 border-primary/30'
           : 'border-border hover:border-primary/50 hover:shadow-md'
@@ -45,7 +43,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardPro
         return (
           <div key={pokemon.id} className="flex items-center">
             {i > 0 && (
-              <ChevronRight className="w-2.5 h-2.5 text-muted-foreground/30 flex-shrink-0 -mx-0.5" />
+              <ChevronRight className="w-[2.5vw] h-[2.5vw] md:w-2.5 md:h-2.5 text-muted-foreground/30 flex-shrink-0 -mx-[0.5vw] md:-mx-0.5" />
             )}
             <div className={cn(
               'relative flex flex-col items-center',
@@ -56,8 +54,19 @@ export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardPro
                   <Check className="w-1.5 h-1.5 text-primary-foreground" />
                 </div>
               )}
-              <SpriteImage src={pokemon.sprite} alt={pokemon.name} size={32} />
-              <span className="text-[8px] font-medium capitalize truncate text-center leading-tight w-[42px]">
+              {/*
+                Mobile: ~11vw sprite fits 2 groups of 3 per row
+                  (3 sprites × 13vw + 2 chevrons × 2vw + padding ≈ 43vw per card)
+                Desktop: fixed 32px for the 420px side panel
+              */}
+              <img
+                src={pokemon.sprite}
+                alt={pokemon.name}
+                className="w-[11vw] h-[11vw] md:w-8 md:h-8"
+                style={{ imageRendering: 'pixelated' }}
+                loading="lazy"
+              />
+              <span className="text-[min(2vw,8px)] md:text-[8px] font-medium capitalize truncate text-center leading-tight w-[13vw] md:w-[42px]">
                 {pokemon.name}
               </span>
             </div>
