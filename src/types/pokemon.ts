@@ -57,4 +57,5 @@ export interface Archetype {
   pokemonIds: number[];
   suggestedSlotRange: [number, number];
   color: string;
+  subgroups?: { label: string; pokemonIds: number[] }[];
 }

@@ -46,9 +46,10 @@ export function PokemonBrowser() {
     ? SECTION_DEFS.find((s) => s.id === activeSection)?.name ?? 'Section'
     : null;
 
-  const archetypeName = activeArchetype
-    ? ARCHETYPES.find((a) => a.id === activeArchetype)?.name ?? activeArchetype
+  const activeArchetypeDef = activeArchetype
+    ? ARCHETYPES.find((a) => a.id === activeArchetype)
     : null;
+  const archetypeName = activeArchetypeDef?.name ?? null;
 
   const clearAllFilters = () => {
     setArchetypeFilter(null);
@@ -222,14 +223,41 @@ export function PokemonBrowser() {
         className="flex-1 min-h-0 overflow-y-auto"
       >
         <div className="p-2 flex flex-wrap gap-1.5 content-start">
-          {groups.map((group) => (
-            <EvoLineCard
-              key={group.chainId}
-              members={group.members}
-              matchedIds={group.matchedIds}
-              assignedIds={assignedIds}
-            />
-          ))}
+          {activeArchetypeDef?.subgroups ? (
+            // Render with region/subgroup dividers
+            activeArchetypeDef.subgroups.map((sub) => {
+              const subIdSet = new Set(sub.pokemonIds);
+              const subGroups = groups.filter(g => g.members.some(m => subIdSet.has(m.id)));
+              if (subGroups.length === 0) return null;
+              return (
+                <div key={sub.label} className="w-full">
+                  <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-2 mb-1 px-1">
+                    {sub.label}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {subGroups.map((group) => (
+                      <EvoLineCard
+                        key={group.chainId}
+                        members={group.members}
+                        matchedIds={group.matchedIds}
+                        assignedIds={assignedIds}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            // Standard flat rendering
+            groups.map((group) => (
+              <EvoLineCard
+                key={group.chainId}
+                members={group.members}
+                matchedIds={group.matchedIds}
+                assignedIds={assignedIds}
+              />
+            ))
+          )}
           {groups.length === 0 && (
             <div className="py-12 text-center text-muted-foreground">
               <p>No Pokemon found.</p>
