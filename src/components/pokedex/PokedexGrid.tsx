@@ -6,13 +6,45 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Trash2, Plus, X } from 'lucide-react';
 
-const GEN_COLORS: Record<number, string> = {
-  1: '#e74c3c', 2: '#f1c40f', 3: '#2ecc71', 4: '#3498db',
-  5: '#9b59b6', 6: '#1abc9c', 7: '#e67e22', 8: '#34495e', 9: '#c0392b',
+// Duo/tri-tone game colors per generation
+const GEN_GRADIENTS: Record<number, string> = {
+  1: 'linear-gradient(135deg, #DC0A2D 50%, #3B4CCA 50%)',             // Red / Blue
+  2: 'linear-gradient(135deg, #DAA520 33%, #C0C0C0 33%, #C0C0C0 66%, #7FC8E8 66%)', // Gold / Silver / Crystal
+  3: 'linear-gradient(135deg, #A00000 33%, #0055BF 33%, #0055BF 66%, #00A86B 66%)', // Ruby / Sapphire / Emerald
+  4: 'linear-gradient(135deg, #AACCEE 50%, #FFAACC 50%)',             // Diamond / Pearl
+  5: 'linear-gradient(135deg, #1a1a1a 50%, #f0f0f0 50%)',             // Black / White
+  6: 'linear-gradient(135deg, #F68B28 50%, #8B5CF6 50%)',             // Orange / Purple (X/Y)
+  7: 'linear-gradient(135deg, #F5A623 50%, #5C4D9A 50%)',             // Sun / Moon
+  8: 'linear-gradient(135deg, #00BFFF 50%, #DC143C 50%)',             // Sword / Shield
+  9: 'linear-gradient(135deg, #E3350D 50%, #7B2D8E 50%)',             // Scarlet / Violet
 };
-const GEN_ROMAN: Record<number, string> = {
-  1: 'I', 2: 'II', 3: 'III', 4: 'IV', 5: 'V', 6: 'VI', 7: 'VII', 8: 'VIII', 9: 'IX',
-};
+
+// Small SVG-based gen icons — just the number, clean and centered
+function GenBadge({ gen, className }: { gen: number; className?: string }) {
+  const size = 14; // viewBox size, actual size set by CSS
+  return (
+    <div
+      className={className}
+      style={{ background: GEN_GRADIENTS[gen] ?? '#888' }}
+    >
+      <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full">
+        <text
+          x="50%"
+          y="52%"
+          dominantBaseline="central"
+          textAnchor="middle"
+          fill="white"
+          fontSize="8"
+          fontWeight="800"
+          fontFamily="system-ui, sans-serif"
+          style={{ paintOrder: 'stroke', stroke: 'rgba(0,0,0,0.4)', strokeWidth: 1.5 }}
+        >
+          {gen}
+        </text>
+      </svg>
+    </div>
+  );
+}
 
 export function PokedexGrid() {
   const sections = usePokedexStore((s) => s.sections);
@@ -74,7 +106,6 @@ export function PokedexGrid() {
                     <span className="text-xs text-muted-foreground italic">{def.description}</span>
                   </div>
 
-                  {/* 6-column grid, tile size = (100% - 5 gaps) / 6 */}
                   <div className="grid grid-cols-6 gap-[1vw] md:gap-1">
                     {/* Filled tiles */}
                     {pokemonIds.map((id) => {
@@ -85,20 +116,17 @@ export function PokedexGrid() {
                           key={id}
                           className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 group aspect-square"
                         >
-                          {/* Gen badge — top right punch hole */}
-                          <div
-                            className="absolute top-[0.5vw] right-[0.5vw] md:top-0.5 md:right-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: GEN_COLORS[pokemon.generation] ?? '#888' }}
-                          >
-                            <span className="text-white font-bold text-[min(1.5vw,6px)] md:text-[6px] leading-none">
-                              {GEN_ROMAN[pokemon.generation] ?? '?'}
-                            </span>
-                          </div>
+                          {/* Gen badge — top left */}
+                          <GenBadge
+                            gen={pokemon.generation}
+                            className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full overflow-hidden"
+                          />
 
-                          {/* Remove button — top left, hover only */}
+                          {/* Remove button — top right */}
+                          {/* Mobile: always visible but subtle. Desktop: hover only */}
                           <button
                             onClick={() => removeEvoLine(def.id, id)}
-                            className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full bg-destructive/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                            className="absolute top-[0.5vw] right-[0.5vw] md:top-0.5 md:right-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full bg-destructive/60 md:bg-destructive/80 text-white flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
                           >
                             <X className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2" />
                           </button>
@@ -133,7 +161,7 @@ export function PokedexGrid() {
                       );
                     })}
 
-                    {/* Add button — same tile size */}
+                    {/* Add button */}
                     {totalPlaced < 151 && (
                       <button
                         onClick={() => handleAddClick(def.id)}
@@ -147,7 +175,7 @@ export function PokedexGrid() {
                       </button>
                     )}
 
-                    {/* Empty slots — same tile size */}
+                    {/* Empty slots */}
                     {Array.from({ length: Math.max(0, emptyCount - (totalPlaced < 151 ? 1 : 0)) }).map((_, i) => (
                       <div
                         key={`empty-${i}`}
