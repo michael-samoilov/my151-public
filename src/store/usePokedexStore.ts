@@ -68,6 +68,10 @@ export const usePokedexStore = create<PokedexState>()(
           return {
             sections: newSections,
             activeSection: null,
+            activeArchetypeFilter: null,
+            searchQuery: '',
+            typeFilter: null,
+            generationFilter: null,
             mobileBrowserOpen: false,
           };
         }),

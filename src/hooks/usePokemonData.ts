@@ -104,6 +104,10 @@ export function useFilteredPokemon({
       );
     }
 
+    if (excludeIds && excludeIds.size > 0) {
+      filtered = filtered.filter(p => !excludeIds.has(p.id));
+    }
+
     return filtered;
   }, [search, archetype, type, generation, excludeIds]);
 }
