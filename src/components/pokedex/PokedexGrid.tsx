@@ -52,6 +52,9 @@ export function PokedexGrid() {
   const setActiveSection = usePokedexStore((s) => s.setActiveSection);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const setArchetypeFilter = usePokedexStore((s) => s.setArchetypeFilter);
+  const setSearchQuery = usePokedexStore((s) => s.setSearchQuery);
+  const setTypeFilter = usePokedexStore((s) => s.setTypeFilter);
+  const setGenerationFilter = usePokedexStore((s) => s.setGenerationFilter);
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const clearAll = usePokedexStore((s) => s.clearAll);
 
@@ -60,6 +63,10 @@ export function PokedexGrid() {
   const starterCount = (sections['starters'] ?? []).length;
 
   const handleAddClick = (sectionId: string) => {
+    // Clear all filters before opening browser
+    setSearchQuery('');
+    setTypeFilter(null);
+    setGenerationFilter(null);
     setActiveSection(sectionId);
     if (sectionId === 'starters') {
       if (starterCount < 3) setArchetypeFilter('grass-starter');

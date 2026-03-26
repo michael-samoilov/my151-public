@@ -7,6 +7,7 @@ import { EvoLineCard } from './EvoLineCard';
 import { useFilteredPokemonGrouped } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { SECTION_DEFS } from '@/data/slot-template';
+import { ARCHETYPES } from '@/data/archetypes';
 import { TYPE_NAMES } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { Search, X, ChevronDown, ChevronUp } from 'lucide-react';
@@ -42,6 +43,17 @@ export function PokemonBrowser() {
   const sectionName = activeSection
     ? SECTION_DEFS.find((s) => s.id === activeSection)?.name ?? 'Section'
     : null;
+
+  const archetypeName = activeArchetype
+    ? ARCHETYPES.find((a) => a.id === activeArchetype)?.name ?? activeArchetype
+    : null;
+
+  const clearAllFilters = () => {
+    setArchetypeFilter(null);
+    setTypeFilter(null);
+    setGenerationFilter(null);
+    setSearchQuery('');
+  };
 
   return (
     <div className="flex flex-col h-full border-l">
@@ -79,6 +91,45 @@ export function PokemonBrowser() {
           )}
         </div>
 
+        {/* Active filter tags — always visible when filters are active */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-1">
+            {archetypeName && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-medium">
+                {archetypeName}
+                <button onClick={() => setArchetypeFilter(null)} className="hover:text-primary/70 cursor-pointer">
+                  <X size={10} />
+                </button>
+              </span>
+            )}
+            {typeFilter && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold capitalize text-white"
+                style={{ backgroundColor: TYPE_COLORS[typeFilter as keyof typeof TYPE_COLORS] }}
+              >
+                {typeFilter}
+                <button onClick={() => setTypeFilter(null)} className="hover:opacity-70 cursor-pointer">
+                  <X size={10} />
+                </button>
+              </span>
+            )}
+            {generationFilter && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-foreground text-background rounded text-[10px] font-medium">
+                Gen {generationFilter}
+                <button onClick={() => setGenerationFilter(null)} className="hover:opacity-70 cursor-pointer">
+                  <X size={10} />
+                </button>
+              </span>
+            )}
+            <button
+              onClick={clearAllFilters}
+              className="text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer ml-1"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+
         {/* Collapsible filters */}
         <button
           onClick={() => setFiltersExpanded(!filtersExpanded)}
@@ -86,11 +137,6 @@ export function PokemonBrowser() {
         >
           {filtersExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           <span>Filters</span>
-          {hasActiveFilters && (
-            <span className="ml-1 px-1.5 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-medium">
-              Active
-            </span>
-          )}
         </button>
 
         {filtersExpanded && (

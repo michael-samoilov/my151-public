@@ -78,6 +78,12 @@ export function useFilteredPokemon({
   generation = null,
   excludeIds,
 }: UseFilteredPokemonOptions): Pokemon[] {
+  // Serialize excludeIds to a stable string for memo deps
+  const excludeKey = useMemo(
+    () => (excludeIds ? [...excludeIds].sort((a, b) => a - b).join(',') : ''),
+    [excludeIds]
+  );
+
   return useMemo(() => {
     let filtered = pokemonList;
 
@@ -109,7 +115,7 @@ export function useFilteredPokemon({
     }
 
     return filtered;
-  }, [search, archetype, type, generation, excludeIds]);
+  }, [search, archetype, type, generation, excludeIds, excludeKey]);
 }
 
 export interface EvolutionGroup {
