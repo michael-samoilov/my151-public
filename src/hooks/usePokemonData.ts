@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import type { Pokemon } from '@/types/pokemon';
 import pokemonData from '@/data/pokemon.json';
 import { ARCHETYPES } from '@/data/archetypes';
+import { getCategoryById } from '@/data/categories';
 
 const pokemonList = pokemonData as Pokemon[];
 
@@ -65,6 +66,7 @@ export function getEvolutionLine(pokemonId: number): Pokemon[] {
 
 interface UseFilteredPokemonOptions {
   search?: string;
+  category?: string | null;
   archetype?: string | null;
   types?: string[] | null;
   typeMode?: 'any' | 'all';
@@ -75,6 +77,7 @@ interface UseFilteredPokemonOptions {
 
 export function useFilteredPokemon({
   search = '',
+  category = null,
   archetype = null,
   types = null,
   typeMode = 'any',
@@ -92,6 +95,13 @@ export function useFilteredPokemon({
 
   return useMemo(() => {
     let filtered = pokemonList;
+
+    if (category) {
+      const categoryDef = getCategoryById(category);
+      if (categoryDef) {
+        filtered = filtered.filter(categoryDef.filter);
+      }
+    }
 
     if (archetype) {
       const archetypeDef = ARCHETYPES.find(a => a.id === archetype);
@@ -132,7 +142,7 @@ export function useFilteredPokemon({
     }
 
     return filtered;
-  }, [search, archetype, typesKey, typeMode, gensKey, excludeIds, excludeKey]);
+  }, [search, category, archetype, typesKey, typeMode, gensKey, excludeIds, excludeKey]);
 }
 
 export interface EvolutionGroup {

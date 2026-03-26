@@ -8,6 +8,7 @@ type TypeFilterMode = 'any' | 'all';
 interface PokedexState {
   sections: Record<string, number[]>; // sectionId -> ordered pokemon IDs
   activeSection: string | null; // which section the user is adding to
+  activeCategoryFilter: string | null;
   activeArchetypeFilter: string | null;
   searchQuery: string;
   typeFilter: string[] | null; // multi-select types
@@ -22,6 +23,7 @@ interface PokedexState {
   setActiveSection: (sectionId: string | null) => void;
   clearAll: () => void;
   setMobileBrowserOpen: (open: boolean) => void;
+  setCategoryFilter: (category: string | null) => void;
   setArchetypeFilter: (archetype: string | null) => void;
   setSearchQuery: (query: string) => void;
   setTypeFilter: (types: string[] | null) => void;
@@ -37,6 +39,7 @@ export const usePokedexStore = create<PokedexState>()(
     (set) => ({
       sections: createEmptySections(),
       activeSection: null,
+      activeCategoryFilter: null,
       activeArchetypeFilter: null,
       searchQuery: '',
       typeFilter: null,
@@ -74,6 +77,7 @@ export const usePokedexStore = create<PokedexState>()(
           return {
             sections: newSections,
             activeSection: null,
+            activeCategoryFilter: null,
             activeArchetypeFilter: null,
             searchQuery: '',
             typeFilter: null,
@@ -98,6 +102,8 @@ export const usePokedexStore = create<PokedexState>()(
       clearAll: () => set({ sections: createEmptySections() }),
 
       setMobileBrowserOpen: (open) => set({ mobileBrowserOpen: open }),
+
+      setCategoryFilter: (category) => set({ activeCategoryFilter: category }),
 
       setArchetypeFilter: (archetype) => set({ activeArchetypeFilter: archetype }),
 

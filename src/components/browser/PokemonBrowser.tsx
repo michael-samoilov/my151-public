@@ -6,16 +6,19 @@ import { useFilteredPokemonGrouped } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { SECTION_DEFS } from '@/data/slot-template';
 import { ARCHETYPES } from '@/data/archetypes';
+import { CATEGORIES } from '@/data/categories';
 import { TYPE_NAMES } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { Search, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type FilterSheet = 'type' | 'generation' | 'evoStage' | 'category' | null;
+type FilterSheet = 'type' | 'generation' | 'evoStage' | 'category' | 'archetype' | null;
 
 export function PokemonBrowser() {
   const searchQuery = usePokedexStore((s) => s.searchQuery);
   const setSearchQuery = usePokedexStore((s) => s.setSearchQuery);
+  const activeCategory = usePokedexStore((s) => s.activeCategoryFilter);
+  const setCategoryFilter = usePokedexStore((s) => s.setCategoryFilter);
   const activeArchetype = usePokedexStore((s) => s.activeArchetypeFilter);
   const setArchetypeFilter = usePokedexStore((s) => s.setArchetypeFilter);
   const typeFilter = usePokedexStore((s) => s.typeFilter);
@@ -39,6 +42,7 @@ export function PokemonBrowser() {
 
   const groups = useFilteredPokemonGrouped({
     search: searchQuery,
+    category: activeCategory,
     archetype: activeArchetype,
     types: typeFilter,
     typeMode: typeFilterMode,
@@ -51,6 +55,10 @@ export function PokemonBrowser() {
     ? SECTION_DEFS.find((s) => s.id === activeSection)?.name ?? 'Section'
     : null;
 
+  const activeCategoryDef = activeCategory
+    ? CATEGORIES.find((c) => c.id === activeCategory)
+    : null;
+  const categoryName = activeCategoryDef?.name ?? null;
   const activeArchetypeDef = activeArchetype
     ? ARCHETYPES.find((a) => a.id === activeArchetype)
     : null;
@@ -61,6 +69,7 @@ export function PokemonBrowser() {
   );
 
   const clearAllFilters = () => {
+    setCategoryFilter(null);
     setArchetypeFilter(null);
     setTypeFilter(null);
     setTypeFilterMode('any');
@@ -80,7 +89,7 @@ export function PokemonBrowser() {
     }
   };
 
-  const hasActiveFilters = !!(activeArchetype || (typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || evoLineSizeFilter);
+  const hasActiveFilters = !!(activeCategory || activeArchetype || (typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || evoLineSizeFilter);
   const typeKey = typeFilter ? `${typeFilterMode}-${typeFilter.join(',')}` : 'none';
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
   const evoSizeKey = evoLineSizeFilter ? evoLineSizeFilter.join(',') : 'none';
@@ -184,16 +193,29 @@ export function PokemonBrowser() {
             <EntryChip label="Stages" onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
           )}
 
+          {/* Category chip */}
+          {categoryName ? (
+            <FilterChip
+              label={categoryName}
+              onDismiss={() => setCategoryFilter(null)}
+              onClick={() => setOpenSheet(openSheet === 'category' ? null : 'category')}
+              className="text-white"
+              style={{ backgroundColor: activeCategoryDef!.color }}
+            />
+          ) : (
+            <EntryChip label="Category" onClick={() => setOpenSheet(openSheet === 'category' ? null : 'category')} active={openSheet === 'category'} />
+          )}
+
           {/* Archetype chip */}
           {archetypeName ? (
             <FilterChip
               label={archetypeName}
               onDismiss={() => setArchetypeFilter(null)}
-              onClick={() => setOpenSheet(openSheet === 'category' ? null : 'category')}
+              onClick={() => setOpenSheet(openSheet === 'archetype' ? null : 'archetype')}
               className="bg-primary/10 text-primary"
             />
           ) : (
-            <EntryChip label="Archetype" onClick={() => setOpenSheet(openSheet === 'category' ? null : 'category')} active={openSheet === 'category'} />
+            <EntryChip label="Archetype" onClick={() => setOpenSheet(openSheet === 'archetype' ? null : 'archetype')} active={openSheet === 'archetype'} />
           )}
 
           {/* Clear all */}
@@ -210,7 +232,7 @@ export function PokemonBrowser() {
 
       {/* Results area */}
       <div
-        key={`${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
+        key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
         className="flex-1 min-h-0 overflow-y-auto"
       >
         <div className="p-2 flex flex-wrap gap-1.5 content-start">
@@ -282,7 +304,8 @@ export function PokemonBrowser() {
                 {openSheet === 'type' && 'Type'}
                 {openSheet === 'generation' && 'Generation'}
                 {openSheet === 'evoStage' && 'Evo Stages'}
-                {openSheet === 'category' && 'Archetype'}
+                {openSheet === 'category' && 'Category'}
+                {openSheet === 'archetype' && 'Archetype'}
               </span>
               <button onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
                 <X size={16} />
@@ -374,6 +397,41 @@ export function PokemonBrowser() {
               )}
 
               {openSheet === 'category' && (
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    onClick={() => { setCategoryFilter(null); setOpenSheet(null); }}
+                    className={cn(
+                      'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer',
+                      activeCategory === null
+                        ? 'bg-foreground text-background'
+                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    )}
+                  >
+                    All
+                  </button>
+                  {CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => { setCategoryFilter(activeCategory === cat.id ? null : cat.id); setOpenSheet(null); }}
+                      className={cn(
+                        'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
+                        activeCategory === cat.id
+                          ? 'text-white border-transparent'
+                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
+                      )}
+                      style={
+                        activeCategory === cat.id
+                          ? { backgroundColor: cat.color }
+                          : undefined
+                      }
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {openSheet === 'archetype' && (
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     onClick={() => { setArchetypeFilter(null); setOpenSheet(null); }}
