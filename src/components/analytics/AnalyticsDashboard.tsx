@@ -55,11 +55,12 @@ export function AnalyticsDashboard() {
                   height={50}
                 />
                 <YAxis tick={{ fontSize: 11 }} unit="%" />
+                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                 <Tooltip
-                  formatter={(value: number, name: string) => [
-                    `${value.toFixed(1)}%`,
+                  formatter={((value: any, name: any) => [
+                    `${Number(value).toFixed(1)}%`,
                     name === 'deviation' ? 'Deviation from avg' : name,
-                  ]}
+                  ]) as any}
                 />
                 <ReferenceLine y={0} stroke="#666" />
                 <Bar dataKey="deviation" name="Deviation from avg">
@@ -93,16 +94,16 @@ export function AnalyticsDashboard() {
                     cx="50%"
                     cy="50%"
                     outerRadius={100}
-                    label={({ generation, percentage }) =>
-                      `Gen ${generation}: ${percentage.toFixed(0)}%`
-                    }
+                    label={((props: any) =>
+                      `Gen ${props.generation}: ${props.percentage.toFixed(0)}%`
+                    ) as any}
                     labelLine={false}
                   >
                     {analytics.generationDistribution.map((entry, i) => (
                       <Cell key={entry.generation} fill={GEN_COLORS[i % GEN_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => [value, 'Pokemon']} />
+                  <Tooltip formatter={((value: any) => [value, 'Pokemon']) as any} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -119,7 +120,7 @@ export function AnalyticsDashboard() {
                     width={50}
                   />
                   <Tooltip
-                    formatter={(value: number) => [`${value.toFixed(1)}%`, 'Deviation']}
+                    formatter={((value: any) => [`${Number(value).toFixed(1)}%`, 'Deviation']) as any}
                   />
                   <ReferenceLine x={0} stroke="#666" />
                   <Bar dataKey="deviation" name="vs Average">
@@ -146,9 +147,9 @@ export function AnalyticsDashboard() {
               <p className="text-3xl font-bold">{analytics.evolutionStats.avgLevel || 'N/A'}</p>
               <p className="text-xs text-muted-foreground mt-1">
                 Regional average: ~{analytics.evolutionStats.averageRegionLevel}
-                {analytics.evolutionStats.avgLevel > 0 && (
-                  <span className={analytics.evolutionStats.avgLevel > analytics.evolutionStats.averageRegionLevel ? ' text-orange-500' : ' text-green-500'}>
-                    {' '}({analytics.evolutionStats.avgLevel > analytics.evolutionStats.averageRegionLevel ? 'Higher' : 'Lower'} than typical)
+                {analytics.evolutionStats.avgLevel > 0 && analytics.evolutionStats.averageRegionLevel != null && (
+                  <span className={analytics.evolutionStats.avgLevel > analytics.evolutionStats.averageRegionLevel! ? ' text-orange-500' : ' text-green-500'}>
+                    {' '}({analytics.evolutionStats.avgLevel > analytics.evolutionStats.averageRegionLevel! ? 'Higher' : 'Lower'} than typical)
                   </span>
                 )}
               </p>
