@@ -134,46 +134,43 @@ export interface EvolutionGroup {
 export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): EvolutionGroup[] {
   const filtered = useFilteredPokemon(options);
 
-  return useMemo(() => {
-    const filteredIds = new Set(filtered.map((p) => p.id));
+  // No useMemo — recompute every render to avoid stale cache issues.
+  // Filtering ~1025 Pokemon is cheap enough.
+  const filteredIds = new Set(filtered.map((p) => p.id));
 
-    // For each filtered pokemon, get its full evo line
-    const seenChains = new Set<string>(); // "chainId-branchKey" to dedup
-    const result: EvolutionGroup[] = [];
+  const seenChains = new Set<string>();
+  const result: EvolutionGroup[] = [];
 
-    for (const p of filtered) {
-      const line = getEvolutionLine(p.id);
+  for (const p of filtered) {
+    const line = getEvolutionLine(p.id);
 
-      // Skip chains with 6+ members — show individually
-      const fullChain = pokemonByChain.get(p.evolutionChainId) ?? [];
-      if (fullChain.length >= 6) {
-        const key = `single-${p.id}`;
-        if (seenChains.has(key)) continue;
-        seenChains.add(key);
-        result.push({
-          chainId: p.evolutionChainId * 10000 + p.id, // unique key
-          members: [p],
-          matchedIds: new Set([p.id]),
-        });
-        continue;
-      }
-
-      // Build a branch key from the line IDs to dedup
-      const branchKey = line.map((m) => m.id).join('-');
-      if (seenChains.has(branchKey)) continue;
-      seenChains.add(branchKey);
-
-      const matchedIds = new Set(line.filter((m) => filteredIds.has(m.id)).map((m) => m.id));
-
+    // Skip chains with 6+ members — show individually
+    const fullChain = pokemonByChain.get(p.evolutionChainId) ?? [];
+    if (fullChain.length >= 6) {
+      const key = `single-${p.id}`;
+      if (seenChains.has(key)) continue;
+      seenChains.add(key);
       result.push({
-        chainId: p.evolutionChainId,
-        members: line,
-        matchedIds,
+        chainId: p.evolutionChainId * 10000 + p.id,
+        members: [p],
+        matchedIds: new Set([p.id]),
       });
+      continue;
     }
 
-    // Sort groups by first member's ID
-    result.sort((a, b) => a.members[0].id - b.members[0].id);
-    return result;
-  }, [filtered]);
+    const branchKey = line.map((m) => m.id).join('-');
+    if (seenChains.has(branchKey)) continue;
+    seenChains.add(branchKey);
+
+    const matchedIds = new Set(line.filter((m) => filteredIds.has(m.id)).map((m) => m.id));
+
+    result.push({
+      chainId: p.evolutionChainId,
+      members: line,
+      matchedIds,
+    });
+  }
+
+  result.sort((a, b) => a.members[0].id - b.members[0].id);
+  return result;
 }

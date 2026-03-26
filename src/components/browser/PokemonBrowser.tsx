@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArchetypeFilter } from './ArchetypeFilter';
 import { EvoLineCard } from './EvoLineCard';
 import { useFilteredPokemonGrouped } from '@/hooks/usePokemonData';
@@ -69,7 +68,7 @@ export function PokemonBrowser() {
             )}
           </div>
           <span className="text-xs text-muted-foreground">
-            {totalCount} found
+            {totalCount} in {groups.length} groups
           </span>
         </div>
 
@@ -178,25 +177,23 @@ export function PokemonBrowser() {
       </div>
 
       {/* Evo line cards */}
-      <div className="flex-1 min-h-0">
-        <ScrollArea className="h-full">
-          <div className="p-2 flex flex-wrap gap-1.5 content-start">
-            {groups.map((group) => (
-              <EvoLineCard
-                key={group.chainId}
-                members={group.members}
-                matchedIds={group.matchedIds}
-                assignedIds={assignedIds}
-              />
-            ))}
-            {groups.length === 0 && (
-              <div className="py-12 text-center text-muted-foreground">
-                <p>No Pokemon found.</p>
-                <p className="text-sm mt-1">Try adjusting your filters.</p>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="p-2 flex flex-wrap gap-1.5 content-start">
+          {groups.map((group) => (
+            <EvoLineCard
+              key={group.chainId}
+              members={group.members}
+              matchedIds={group.matchedIds}
+              assignedIds={assignedIds}
+            />
+          ))}
+          {groups.length === 0 && (
+            <div className="py-12 text-center text-muted-foreground">
+              <p>No Pokemon found.</p>
+              <p className="text-sm mt-1">Try adjusting your filters.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
