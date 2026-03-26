@@ -43,7 +43,6 @@ export function PokemonBrowser() {
     types: typeFilter,
     typeMode: typeFilterMode,
     generations: generationFilter,
-    excludeIds: assignedIds,
     evoLineSize: evoLineSizeFilter,
   });
 

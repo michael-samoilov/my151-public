@@ -222,7 +222,7 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Cross-Gen Evolution',
     description: 'Pokemon that gained new evolutions or pre-evolutions in later generations',
     pokemonIds: [
-      // Gen 2 evos of Gen 1 (new forward evos)
+      // Gen 2 evos of Gen 1
       169,182,186,196,197,199,208,212,230,233,242,
       // Gen 2 babies of Gen 1
       172,173,174,236,238,239,240,
@@ -243,13 +243,22 @@ export const ARCHETYPES: Archetype[] = [
     ],
     suggestedSlotRange: [50, 80],
     color: '#9966cc',
+    subgroups: [
+      { label: 'Gen 2', pokemonIds: [169,172,173,174,182,186,196,197,199,208,212,230,233,236,238,239,240,242] },
+      { label: 'Gen 3', pokemonIds: [298,360] },
+      { label: 'Gen 4', pokemonIds: [406,407,424,429,430,433,438,439,440,446,458,461,462,463,464,465,466,467,468,469,470,471,472,473,474,475,476,477,478] },
+      { label: 'Gen 6', pokemonIds: [700] },
+      { label: 'Gen 8', pokemonIds: [862,863,864,865,866,867] },
+      { label: 'Legends Arceus', pokemonIds: [899,900,901,902,903,904] },
+      { label: 'Gen 9', pokemonIds: [979,980,981,982,983,1011,1018] },
+    ],
   },
   {
     id: 'gym-champion-ace',
     name: 'Gym/Champion Ace',
     description: 'Signature Pokemon of Gym Leaders & Champions, ordered by gym progression',
     // Ordered by gym number within each region, champion last
-    pokemonIds: [95,121,26,45,89,65,59,34,149,6, 18,241,94,62,208,221,230, 282,350,376, 407,448,466,445, 612, 681, 745,750, 830,834,851,884, 939,981,959,983],
+    pokemonIds: [95,121,26,45,89,65,59,34,149,6, 18,241,94,62,208,221,230, 282,350,376, 407,448,466,445, 612, 681, 745,750, 830,834,851,884, 939,980,959,983],
     suggestedSlotRange: [40, 60],
     color: '#f5a623',
     subgroups: [
@@ -270,7 +279,7 @@ export const ARCHETYPES: Archetype[] = [
       // Milo→Nessa→Kabu→Raihan
       { label: 'Galar', pokemonIds: [830,834,851,884] },
       // Iono, E4 Rika→Poppy→Larry
-      { label: 'Paldea', pokemonIds: [939,981,959,983] },
+      { label: 'Paldea', pokemonIds: [939,980,959,983] },
     ],
   },
 ];

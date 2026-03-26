@@ -143,46 +143,31 @@ export interface EvolutionGroup {
 
 /**
  * Groups filtered Pokemon into evolution lines.
- * Always surfaces the full evo line for any matched Pokemon.
+ * Each unique path from root to leaf is its own group.
+ * Branching evolutions (Eevee, Wurmple) produce one group per branch.
  * matchedIds tracks which members directly matched the filter.
- * Chains with 6+ members (e.g. Eevee) are shown as individual entries.
  * Groups are ordered by the lowest ID in the group.
  */
 export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): EvolutionGroup[] {
   const filtered = useFilteredPokemon(options);
 
   // No useMemo — recompute every render to avoid stale cache issues.
-  // Filtering ~1025 Pokemon is cheap enough.
   const filteredIds = new Set(filtered.map((p) => p.id));
 
-  const seenChains = new Set<string>();
+  const seenBranches = new Set<string>();
   const result: EvolutionGroup[] = [];
 
   for (const p of filtered) {
     const line = getEvolutionLine(p.id);
 
-    // Skip chains with 6+ members — show individually
-    const fullChain = pokemonByChain.get(p.evolutionChainId) ?? [];
-    if (fullChain.length >= 6) {
-      const key = `single-${p.id}`;
-      if (seenChains.has(key)) continue;
-      seenChains.add(key);
-      result.push({
-        chainId: p.evolutionChainId * 10000 + p.id,
-        members: [p],
-        matchedIds: new Set([p.id]),
-      });
-      continue;
-    }
-
     const branchKey = line.map((m) => m.id).join('-');
-    if (seenChains.has(branchKey)) continue;
-    seenChains.add(branchKey);
+    if (seenBranches.has(branchKey)) continue;
+    seenBranches.add(branchKey);
 
     const matchedIds = new Set(line.filter((m) => filteredIds.has(m.id)).map((m) => m.id));
 
     result.push({
-      chainId: p.evolutionChainId,
+      chainId: p.evolutionChainId * 10000 + line[line.length - 1].id,
       members: line,
       matchedIds,
     });
