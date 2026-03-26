@@ -61,7 +61,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'early-normal',
     name: 'Early Route Normal',
     description: 'Normal-type Pokemon commonly found in early areas',
-    pokemonIds: [52,53, 431,432, 509,510, 572,573, 676, 819,820, 42,169],
+    pokemonIds: [52,53, 431,432, 509,510, 572,573, 676, 819,820],
     suggestedSlotRange: [21, 25],
     color: '#a8a77a',
   },
