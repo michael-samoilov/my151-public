@@ -3,8 +3,8 @@ import type { Archetype } from '@/types/pokemon';
 export const ARCHETYPES: Archetype[] = [
   {
     id: 'early-rodent',
-    name: 'Early Route Rodent',
-    description: 'Normal-type rodents/mammals found on early routes',
+    name: 'Early Route Mammal',
+    description: 'Small mammals found on early routes',
     pokemonIds: [19,20, 10091,10092, 161,162, 263,264, 10174,10175, 399,400, 504,505, 659,660, 734,735, 819,820, 915,916],
     suggestedSlotRange: [10, 12],
     color: '#a8a77a',
@@ -37,7 +37,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'early-normal',
     name: 'Early Route Normal',
     description: 'Normal-type Pokemon commonly found in early areas',
-    pokemonIds: [52,53, 10107,10108, 10161, 431,432, 509,510, 572,573, 676, 831,832],
+    pokemonIds: [52,53, 431,432, 509,510, 572,573, 676, 831,832],
     suggestedSlotRange: [21, 25],
     color: '#a8a77a',
   },
@@ -120,9 +120,8 @@ export const ARCHETYPES: Archetype[] = [
       425, 442, 479,
       // BW/BW2
       518, 555, 571, 637, 612,
-      // XY
-      // SM/USUM
-      // SwSh
+      // SM/USUM Totem Pokemon
+      735, 10092, 746, 758, 754, 738, 778, 784, 752, 10115, 777, 743,
       // Legends Arceus
       77,
       // SV Titans
@@ -138,6 +137,7 @@ export const ARCHETYPES: Archetype[] = [
       { label: 'Ruby/Sapphire/Emerald', pokemonIds: [351, 352] },
       { label: 'Diamond/Pearl/Platinum', pokemonIds: [425, 442, 479] },
       { label: 'Black/White/BW2', pokemonIds: [518, 555, 571, 637, 612] },
+      { label: 'SM/USUM Totems', pokemonIds: [735, 10092, 746, 758, 754, 738, 778, 784, 752, 10115, 777, 743] },
       { label: 'Legends: Arceus', pokemonIds: [77] },
       { label: 'Scarlet/Violet Titans', pokemonIds: [950, 962, 968, 977, 978] },
     ],
