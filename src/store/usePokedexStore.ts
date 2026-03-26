@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { DexSlot } from '@/types/pokemon';
 import { createDefaultSlots } from '@/data/slot-template';
+import { getEvolutionLine } from '@/hooks/usePokemonData';
 
 interface PokedexState {
   slots: DexSlot[];
@@ -24,7 +25,7 @@ interface PokedexState {
   setSearchQuery: (query: string) => void;
   setTypeFilter: (type: string | null) => void;
   setGenerationFilter: (gen: number | null) => void;
-  assignToNextEmpty: (pokemonId: number, preferredArchetype?: string) => void;
+  assignToNextEmpty: (pokemonId: number) => void;
 }
 
 export const usePokedexStore = create<PokedexState>()(
@@ -40,13 +41,33 @@ export const usePokedexStore = create<PokedexState>()(
 
       assignPokemon: (slotNumber, pokemonId) =>
         set((state) => {
-          // Remove pokemon from any existing slot first
+          const evoLine = getEvolutionLine(pokemonId);
+          // Find where the selected Pokemon sits in its evo line
+          const indexInLine = evoLine.findIndex(p => p.id === pokemonId);
+
+          // Build a list of (slotNumber, pokemonId) assignments
+          const assignments: { slot: number; pid: number }[] = [];
+          for (let i = 0; i < evoLine.length; i++) {
+            const targetSlot = slotNumber + (i - indexInLine);
+            if (targetSlot >= 1 && targetSlot <= 151) {
+              assignments.push({ slot: targetSlot, pid: evoLine[i].id });
+            }
+          }
+
+          // All pokemon IDs being placed (to clear them from other slots)
+          const placingIds = new Set(assignments.map(a => a.pid));
+          // Slots being written to
+          const targetSlots = new Set(assignments.map(a => a.slot));
+
           const newSlots = state.slots.map((slot) => {
-            if (slot.pokemonId === pokemonId) {
+            // Clear this pokemon if it's already placed elsewhere
+            if (slot.pokemonId !== null && placingIds.has(slot.pokemonId) && !targetSlots.has(slot.slotNumber)) {
               return { ...slot, pokemonId: null };
             }
-            if (slot.slotNumber === slotNumber) {
-              return { ...slot, pokemonId };
+            // Assign to target slots
+            const assignment = assignments.find(a => a.slot === slot.slotNumber);
+            if (assignment) {
+              return { ...slot, pokemonId: assignment.pid };
             }
             return slot;
           });
@@ -107,23 +128,15 @@ export const usePokedexStore = create<PokedexState>()(
 
       setGenerationFilter: (gen) => set({ generationFilter: gen }),
 
-      assignToNextEmpty: (pokemonId, preferredArchetype) => {
+      assignToNextEmpty: (pokemonId) => {
         const state = get();
         // If there's a selected slot, assign there
         if (state.selectedSlot !== null) {
           state.assignPokemon(state.selectedSlot, pokemonId);
           return;
         }
-        // Find next empty slot, preferring slots with matching archetype
-        let targetSlot: DexSlot | undefined;
-        if (preferredArchetype) {
-          targetSlot = state.slots.find(
-            (s) => s.pokemonId === null && s.suggestedArchetype === preferredArchetype
-          );
-        }
-        if (!targetSlot) {
-          targetSlot = state.slots.find((s) => s.pokemonId === null);
-        }
+        // Find next empty slot
+        const targetSlot = state.slots.find((s) => s.pokemonId === null);
         if (targetSlot) {
           state.assignPokemon(targetSlot.slotNumber, pokemonId);
         }

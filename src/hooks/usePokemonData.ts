@@ -5,14 +5,20 @@ import { ARCHETYPES } from '@/data/archetypes';
 
 const pokemonList = pokemonData as Pokemon[];
 
-// Build a lookup map by ID
+// Build lookup maps
 const pokemonById = new Map<number, Pokemon>();
+const pokemonByChain = new Map<number, Pokemon[]>();
 for (const p of pokemonList) {
   // Attach archetypes
   p.archetypes = ARCHETYPES
     .filter(a => a.pokemonIds.includes(p.id))
     .map(a => a.id);
   pokemonById.set(p.id, p);
+
+  // Group by evolution chain
+  const chain = pokemonByChain.get(p.evolutionChainId) ?? [];
+  chain.push(p);
+  pokemonByChain.set(p.evolutionChainId, chain);
 }
 
 export function getPokemonById(id: number): Pokemon | undefined {
@@ -21,6 +27,40 @@ export function getPokemonById(id: number): Pokemon | undefined {
 
 export function getAllPokemon(): Pokemon[] {
   return pokemonList;
+}
+
+/**
+ * Get the full linear evolution chain for a Pokemon, sorted by evolution stage.
+ * For branching evolutions (e.g. Eevee), returns only the branch containing the given Pokemon.
+ */
+export function getEvolutionLine(pokemonId: number): Pokemon[] {
+  const pokemon = pokemonById.get(pokemonId);
+  if (!pokemon) return [];
+
+  const chainMembers = pokemonByChain.get(pokemon.evolutionChainId) ?? [];
+  if (chainMembers.length <= 1) return [pokemon];
+
+  // Walk backwards from this Pokemon to find its root
+  const ancestors: Pokemon[] = [];
+  let current: Pokemon | undefined = pokemon;
+  while (current?.evolvesFrom) {
+    const parent = pokemonById.get(current.evolvesFrom);
+    if (parent) ancestors.unshift(parent);
+    current = parent;
+  }
+
+  // Walk forwards from this Pokemon to find descendants
+  const descendants: Pokemon[] = [];
+  let searchId = pokemon.id;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const child = chainMembers.find(p => p.evolvesFrom === searchId);
+    if (!child) break;
+    descendants.push(child);
+    searchId = child.id;
+  }
+
+  return [...ancestors, pokemon, ...descendants];
 }
 
 interface UseFilteredPokemonOptions {

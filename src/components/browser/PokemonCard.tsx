@@ -30,8 +30,7 @@ export function PokemonCard({ pokemon, isInDex }: PokemonCardProps) {
     if (selectedSlot !== null) {
       assignPokemon(selectedSlot, pokemon.id);
     } else {
-      const archetype = pokemon.archetypes[0];
-      assignToNextEmpty(pokemon.id, archetype);
+      assignToNextEmpty(pokemon.id);
     }
   };
 
