@@ -69,6 +69,17 @@ export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardPro
               <span className="text-[min(2vw,8px)] md:text-[8px] font-medium capitalize truncate text-center leading-tight w-[13vw] md:w-[42px]">
                 {pokemon.name}
               </span>
+              <div className="flex gap-[0.5vw] md:gap-0.5 mt-[0.5vw] md:mt-0.5">
+                {pokemon.types.map((t) => (
+                  <span
+                    key={t}
+                    className="px-[1vw] md:px-1 py-[0.2vw] md:py-px rounded text-[min(1.6vw,6px)] md:text-[6px] font-semibold capitalize text-white leading-tight"
+                    style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         );
