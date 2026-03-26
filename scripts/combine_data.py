@@ -8,17 +8,59 @@ sys.path.insert(0, os.path.dirname(__file__))
 
 from pokemon_gen1 import GEN1
 
-try:
-    from pokemon_gen2to5 import GEN2, GEN3, GEN4, GEN5
-except ImportError:
-    print("Warning: pokemon_gen2to5.py not found, using Gen1 only")
-    GEN2 = GEN3 = GEN4 = GEN5 = []
+# Import each gen separately - they may be in individual files or combined
+GEN2 = GEN3 = GEN4 = GEN5 = GEN6 = GEN7 = GEN8 = GEN9 = []
 
 try:
-    from pokemon_gen6to9 import GEN6, GEN7, GEN8, GEN9
+    from pokemon_gen2 import GEN2
 except ImportError:
-    print("Warning: pokemon_gen6to9.py not found, using Gen1-5 only")
-    GEN6 = GEN7 = GEN8 = GEN9 = []
+    pass
+try:
+    from pokemon_gen3 import GEN3
+except ImportError:
+    pass
+try:
+    from pokemon_gen4 import GEN4
+except ImportError:
+    pass
+try:
+    from pokemon_gen5 import GEN5
+except ImportError:
+    pass
+try:
+    from pokemon_gen6 import GEN6
+except ImportError:
+    pass
+try:
+    from pokemon_gen7 import GEN7
+except ImportError:
+    pass
+try:
+    from pokemon_gen8 import GEN8
+except ImportError:
+    pass
+try:
+    from pokemon_gen9 import GEN9
+except ImportError:
+    pass
+
+# Also try the combined files from agents
+try:
+    from pokemon_gen2to5 import GEN2 as G2, GEN3 as G3, GEN4 as G4, GEN5 as G5
+    if not GEN2: GEN2 = G2
+    if not GEN3: GEN3 = G3
+    if not GEN4: GEN4 = G4
+    if not GEN5: GEN5 = G5
+except ImportError:
+    pass
+try:
+    from pokemon_gen6to9 import GEN6 as G6, GEN7 as G7, GEN8 as G8, GEN9 as G9
+    if not GEN6: GEN6 = G6
+    if not GEN7: GEN7 = G7
+    if not GEN8: GEN8 = G8
+    if not GEN9: GEN9 = G9
+except ImportError:
+    pass
 
 GROWTH_MAP = {"s": "slow", "m": "medium", "f": "fast", "ms": "medium-slow", "e": "erratic", "fl": "fluctuating"}
 
@@ -54,26 +96,28 @@ def convert(tuples):
     return results
 
 all_data = []
-for gen_data in [GEN1, GEN2, GEN3, GEN4, GEN5, GEN6, GEN7, GEN8, GEN9]:
-    all_data.extend(convert(gen_data))
+gen_lists = {"Gen 1": GEN1, "Gen 2": GEN2, "Gen 3": GEN3, "Gen 4": GEN4,
+             "Gen 5": GEN5, "Gen 6": GEN6, "Gen 7": GEN7, "Gen 8": GEN8, "Gen 9": GEN9}
+
+for name, gen_data in gen_lists.items():
+    count = len(gen_data)
+    if count > 0:
+        all_data.extend(convert(gen_data))
+        print(f"  {name}: {count} Pokemon")
+    else:
+        print(f"  {name}: MISSING")
 
 all_data.sort(key=lambda x: x["id"])
 
 # Verify no duplicates
 ids = [p["id"] for p in all_data]
 if len(ids) != len(set(ids)):
-    dupes = [id_ for id_ in ids if ids.count(id_) > 1]
-    print(f"WARNING: Duplicate IDs found: {set(dupes)}")
+    dupes = set(id_ for id_ in ids if ids.count(id_) > 1)
+    print(f"WARNING: Duplicate IDs found: {dupes}")
 
 out_path = os.path.join(os.path.dirname(__file__), "..", "src", "data", "pokemon.json")
 with open(out_path, "w") as f:
     json.dump(all_data, f, separators=(",", ":"))
 
-print(f"Wrote {len(all_data)} Pokemon to {out_path}")
+print(f"\nTotal: {len(all_data)} Pokemon")
 print(f"File size: {os.path.getsize(out_path) / 1024:.1f} KB")
-
-# Show gen breakdown
-from collections import Counter
-gen_counts = Counter(p["generation"] for p in all_data)
-for gen in sorted(gen_counts):
-    print(f"  Gen {gen}: {gen_counts[gen]} Pokemon")
