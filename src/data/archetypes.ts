@@ -287,38 +287,58 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Gym/Champion Ace',
     description: 'Signature Pokemon of Gym Leaders, Elite Four & Champions, ordered by gym progression',
     pokemonIds: [
-      // Kanto: Brock→Misty→Surge→Erika→Koga→Sabrina→Blaine→Giovanni, E4 Lance, Champion Blue
-      95,121,26,45,89,65,59,34,149,6,
-      // Johto: Falkner→Bugsy→Whitney→Morty→Chuck→Jasmine→Pryce→Clair
-      18,123,241,94,62,208,221,230,
-      // Hoenn: Roxanne→Brawly→Wattson→Flannery→Norman→Winona→Tate&Liza→Wallace, E4, Champion Steven
-      299,297,310,324,289,334,337,350, 359,356,365,373, 376,
-      // Sinnoh: Roark→Gardenia→Maylene→Wake→Fantina→Byron→Candice→Volkner, E4, Champion Cynthia
-      408,407,448,419,429,411,460,466, 452,450,392,437, 445,
-      // Unova: Watchog→Leavanny→Zebstrika→Excadrill→Swanna→Beartic→Iris, E4, Champion Alder
-      505,542,523,530,581,614,612, 609,625,579,534, 637,
-      // Kalos: Vivillon→Gogoat→Heliolisk→Sylveon→Meowstic→Avalugg, E4, Wikstrom
-      666,673,695,700,678,713, 663,681,691,689,
-      // Alola: Kahunas + E4
-      735,752,754,745, 777,770,750, 740,733,
-      // Galar: Milo→Nessa→Kabu→Opal→Piers→Raihan
-      830,834,851, 869,862,884,
-      // Paldea: Iono, E4 Rika→Poppy→Larry→Champion Geeta
-      939, 980,959,983,
+      // Kanto Gyms: Brock(Onix)→Misty(Starmie)→Surge(Raichu)→Erika(Vileplume)→Koga(Weezing)→Sabrina(Alakazam)→Blaine(Arcanine)→Giovanni(Rhydon)
+      95,121,26,45,110,65,59,112,
+      // Kanto E4: Lorelei(Lapras)→Bruno(Machamp)→Agatha(Gengar)→Lance(Dragonite), Champion Blue(Charizard/varies)
+      131,68,94,149,6,
+      // Johto Gyms: Falkner(Pidgeotto)→Bugsy(Scyther)→Whitney(Miltank)→Morty(Gengar)→Chuck(Poliwrath)→Jasmine(Steelix)→Pryce(Piloswine)→Clair(Kingdra)
+      17,123,241,94,62,208,221,230,
+      // Johto E4: Will(Xatu)→Koga(Crobat)→Bruno(Machamp)→Karen(Houndoom), Champion Lance(Dragonite)
+      178,169,68,229,149,
+      // Hoenn Gyms: Roxanne(Nosepass)→Brawly(Makuhita)→Wattson(Manectric)→Flannery(Torkoal)→Norman(Slaking)→Winona(Altaria)→Tate&Liza(Solrock)→Wallace(Milotic)
+      299,296,310,324,289,334,338,350,
+      // Hoenn E4: Sidney(Absol)→Phoebe(Dusclops)→Glacia(Walrein)→Drake(Salamence), Champion Steven(Metagross)
+      359,356,365,373,376,
+      // Sinnoh Gyms: Roark(Cranidos)→Gardenia(Roserade)→Maylene(Lucario)→Wake(Floatzel)→Fantina(Mismagius)→Byron(Bastiodon)→Candice(Abomasnow)→Volkner(Electivire)
+      408,407,448,419,429,411,460,466,
+      // Sinnoh E4: Aaron(Drapion)→Bertha(Hippowdon)→Flint(Infernape)→Lucian(Bronzong), Champion Cynthia(Garchomp)
+      452,450,392,437,445,
+      // Unova Gyms (BW): Cilan/Chili/Cress(Simisage/Simisear/Simipour)→Lenora(Watchog)→Burgh(Leavanny)→Elesa(Zebstrika)→Clay(Excadrill)→Skyla(Swanna)→Brycen(Beartic)→Iris/Drayden(Haxorus)
+      505,542,523,530,581,614,612,
+      // Unova E4: Shauntal(Chandelure)→Grimsley(Bisharp)→Caitlin(Gothitelle)→Marshal(Mienshao), Champion Alder(Volcarona)
+      609,625,576,620,637,
+      // Kalos Gyms: Viola(Vivillon)→Grant(Tyrunt)→Korrina(Hawlucha)→Ramos(Gogoat)→Clemont(Heliolisk)→Valerie(Sylveon)→Olympia(Meowstic)→Wulfric(Avalugg)
+      666,696,701,673,695,700,678,713,
+      // Kalos E4: Malva(Talonflame)→Siebold(Barbaracle)→Wikstrom(Aegislash)→Drasna(Noivern), Champion Diantha(Gardevoir)
+      663,689,681,715,282,
+      // Alola Kahunas: Hala(Crabominable)→Olivia(Lycanroc)→Nanu(A-Persian)→Hapu(Mudsdale)
+      740,745,10108,750,
+      // Alola Trial Captains: Ilima(Gumshoos)→Lana(Araquanid)→Kiawe(A-Marowak)→Mallow(Tsareena)→Sophocles(Togedemaru)→Acerola(Palossand)→Mina(Ribombee)
+      735,752,10115,763,777,770,743,
+      // Alola E4: Molayne(Dugtrio)→Olivia(Lycanroc)→Acerola(Palossand)→Kahili(Toucannon), Champion Kukui/Hau
+      733,
+      // Galar Gyms: Milo(Eldegoss)→Nessa(Drednaw)→Kabu(Centiskorch)→Bea(Machamp)/Allister(Gengar)→Opal(Alcremie)→Gordie(Coalossal)/Melony(Lapras)→Piers(Obstagoon)→Raihan(Duraludon)
+      830,834,851,68,94,869,839,131,862,884,
+      // Galar Champion Leon(Charizard)
+      6,
+      // Paldea Gyms: Katy(Teddiursa)→Brassius(Sudowoodo)→Iono(Mismagius)→Kofu(Crabominable)→Larry(Staraptor)→Ryme(Toxtricity)→Tulip(Florges)→Grusha(Altaria)
+      216,185,429,740,398,849,671,334,
+      // Paldea E4: Rika(Clodsire)→Poppy(Tinkaton)→Larry(Flamigo)→Hassel(Baxcalibur), Champion Geeta(Glimmora)
+      980,959,973,998,970,
     ],
     suggestedSlotRange: [40, 60],
     color: '#f5a623',
     subgroups: [
-      // Gym order → E4 → Champion
-      { label: 'Kanto', pokemonIds: [95,121,26,45,89,65,59,34,149,6] },
-      { label: 'Johto', pokemonIds: [18,123,241,94,62,208,221,230] },
-      { label: 'Hoenn', pokemonIds: [299,297,310,324,289,334,337,350, 359,356,365,373, 376] },
-      { label: 'Sinnoh', pokemonIds: [408,407,448,419,429,411,460,466, 452,450,392,437, 445] },
-      { label: 'Unova', pokemonIds: [505,542,523,530,581,614,612, 609,625,579,534, 637] },
-      { label: 'Kalos', pokemonIds: [666,673,695,700,678,713, 663,681,691,689] },
-      { label: 'Alola', pokemonIds: [735,752,754,745, 777,770,750, 740,733] },
-      { label: 'Galar', pokemonIds: [830,834,851, 869,862,884] },
-      { label: 'Paldea', pokemonIds: [939, 980,959,983] },
+      // Gym order → E4 → Champion per region
+      { label: 'Kanto', pokemonIds: [95,121,26,45,110,65,59,112, 131,68,94,149,6] },
+      { label: 'Johto', pokemonIds: [17,123,241,94,62,208,221,230, 178,169,68,229,149] },
+      { label: 'Hoenn', pokemonIds: [299,296,310,324,289,334,338,350, 359,356,365,373,376] },
+      { label: 'Sinnoh', pokemonIds: [408,407,448,419,429,411,460,466, 452,450,392,437,445] },
+      { label: 'Unova', pokemonIds: [505,542,523,530,581,614,612, 609,625,576,620,637] },
+      { label: 'Kalos', pokemonIds: [666,696,701,673,695,700,678,713, 663,689,681,715,282] },
+      { label: 'Alola', pokemonIds: [740,745,10108,750, 735,752,10115,763,777,770,743, 733] },
+      { label: 'Galar', pokemonIds: [830,834,851,68,94,869,839,131,862,884, 6] },
+      { label: 'Paldea', pokemonIds: [216,185,429,740,398,849,671,334, 980,959,973,998,970] },
     ],
   },
 ];
