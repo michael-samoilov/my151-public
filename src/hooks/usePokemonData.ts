@@ -107,3 +107,37 @@ export function useFilteredPokemon({
     return filtered;
   }, [search, archetype, type, generation, excludeIds]);
 }
+
+export interface EvolutionGroup {
+  chainId: number;
+  members: Pokemon[];
+}
+
+/**
+ * Groups filtered Pokemon into evolution lines.
+ * Each group contains members from the same chain that passed the filter,
+ * sorted by evolution stage. Groups are ordered by the lowest ID in the group.
+ */
+export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): EvolutionGroup[] {
+  const filtered = useFilteredPokemon(options);
+
+  return useMemo(() => {
+    const groups = new Map<number, Pokemon[]>();
+    for (const p of filtered) {
+      const chain = groups.get(p.evolutionChainId) ?? [];
+      chain.push(p);
+      groups.set(p.evolutionChainId, chain);
+    }
+
+    // Sort members within each group by stage, then by ID
+    const result: EvolutionGroup[] = [];
+    for (const [chainId, members] of groups) {
+      members.sort((a, b) => a.evolutionStage - b.evolutionStage || a.id - b.id);
+      result.push({ chainId, members });
+    }
+
+    // Sort groups by first member's ID
+    result.sort((a, b) => a.members[0].id - b.members[0].id);
+    return result;
+  }, [filtered]);
+}

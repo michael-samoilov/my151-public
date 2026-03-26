@@ -3,8 +3,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArchetypeFilter } from './ArchetypeFilter';
-import { PokemonCard } from './PokemonCard';
-import { useFilteredPokemon } from '@/hooks/usePokemonData';
+import { PokemonTile } from './PokemonTile';
+import { useFilteredPokemonGrouped } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_NAMES } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -27,7 +27,7 @@ export function PokemonBrowser() {
     [slots]
   );
 
-  const filteredPokemon = useFilteredPokemon({
+  const groups = useFilteredPokemonGrouped({
     search: searchQuery,
     archetype: activeArchetype,
     type: typeFilter,
@@ -35,6 +35,7 @@ export function PokemonBrowser() {
     excludeIds: assignedIds,
   });
 
+  const totalCount = groups.reduce((sum, g) => sum + g.members.length, 0);
   const hasActiveFilters = !!(activeArchetype || typeFilter || generationFilter);
 
   return (
@@ -44,7 +45,7 @@ export function PokemonBrowser() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">Browse Pokemon</h2>
           <span className="text-xs text-muted-foreground">
-            {filteredPokemon.length} found
+            {totalCount} found
           </span>
         </div>
 
@@ -121,18 +122,25 @@ export function PokemonBrowser() {
         )}
       </div>
 
-      {/* Pokemon cards list */}
+      {/* Pokemon tile grid grouped by evo lines */}
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
-          <div className="p-3 space-y-1.5">
-            {filteredPokemon.map((pokemon) => (
-              <PokemonCard
-                key={pokemon.id}
-                pokemon={pokemon}
-                isInDex={assignedIds.has(pokemon.id)}
-              />
+          <div className="p-3 space-y-1">
+            {groups.map((group) => (
+              <div
+                key={group.chainId}
+                className="grid grid-cols-3 gap-1"
+              >
+                {group.members.map((pokemon) => (
+                  <PokemonTile
+                    key={pokemon.id}
+                    pokemon={pokemon}
+                    isInDex={assignedIds.has(pokemon.id)}
+                  />
+                ))}
+              </div>
             ))}
-            {filteredPokemon.length === 0 && (
+            {groups.length === 0 && (
               <div className="py-12 text-center text-muted-foreground">
                 <p>No Pokemon found.</p>
                 <p className="text-sm mt-1">Try adjusting your filters.</p>

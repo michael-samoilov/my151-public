@@ -1,11 +1,10 @@
 import type { DexSection, DexSlot } from '@/types/pokemon';
 
 export const DEX_SECTIONS: DexSection[] = [
-  { id: 'starters', name: 'Starters', startSlot: 1, endSlot: 9, description: 'Your region\'s three starter lines' },
-  { id: 'early-game', name: 'Early Game', startSlot: 10, endSlot: 30, description: 'Early route encounters' },
-  { id: 'mid-game', name: 'Mid Game', startSlot: 31, endSlot: 80, description: 'The bulk of your regional dex' },
-  { id: 'late-game', name: 'Late Game', startSlot: 81, endSlot: 130, description: 'Stronger Pokemon, complex evolutions' },
-  { id: 'endgame', name: 'Endgame & Legends', startSlot: 131, endSlot: 151, description: 'Pseudo-legendaries, legendaries, mythicals' },
+  { id: 'starters', name: 'Starters', startSlot: 1, endSlot: 9, description: 'Three starter evolution lines' },
+  { id: 'early-game', name: 'Early Game', startSlot: 10, endSlot: 40, description: 'Rodents, birds, bugs, Pikaclones, early routes' },
+  { id: 'mid-game', name: 'Mid Game', startSlot: 41, endSlot: 100, description: 'Routes, caves, gyms, diverse types' },
+  { id: 'endgame', name: 'Endgame', startSlot: 101, endSlot: 151, description: 'Pseudo-legendaries, legendaries, mythicals' },
 ];
 
 // Only suggest archetypes for the most structurally obvious slots.
