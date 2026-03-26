@@ -106,10 +106,10 @@ export const ARCHETYPES: Archetype[] = [
     color: '#d685ad',
   },
   {
-    id: 'steel-industrial',
-    name: 'Steel/Industrial',
-    description: 'Steel-type Pokemon often found near cities or industrial areas',
-    pokemonIds: [81,82, 227, 436,437, 462, 597,598, 599,600,601, 624,625, 679,680,681, 863, 878,879, 957,958,959],
+    id: 'industrial',
+    name: 'Industrial/Man-Made',
+    description: 'Mechanical, pollution, and man-made Pokemon found in urban/industrial areas',
+    pokemonIds: [81,82, 88,89, 100,101, 109,110, 137,233,474, 462, 532,533,534, 568,569, 599,600,601, 707, 957,958,959],
     suggestedSlotRange: [83, 87],
     color: '#b7b7ce',
   },
@@ -218,22 +218,59 @@ export const ARCHETYPES: Archetype[] = [
     color: '#E3350D',
   },
   {
+    id: 'cross-gen-evo',
+    name: 'Cross-Gen Evolution',
+    description: 'Pokemon that gained new evolutions or pre-evolutions in later generations',
+    pokemonIds: [
+      // Gen 2 evos of Gen 1 (new forward evos)
+      169,182,186,196,197,199,208,212,230,233,242,
+      // Gen 2 babies of Gen 1
+      172,173,174,236,238,239,240,
+      // Gen 3 babies of Gen 2
+      298,360,
+      // Gen 4 evos (forward)
+      407,424,429,430,461,462,463,464,465,466,467,468,469,470,471,472,473,474,475,476,477,478,
+      // Gen 4 babies
+      406,433,438,439,440,446,458,
+      // Gen 6
+      700,
+      // Gen 8
+      862,863,864,865,866,867,
+      // Gen 8 (Legends Arceus)
+      899,900,901,902,903,904,
+      // Gen 9
+      979,980,981,982,983,1011,1018,
+    ],
+    suggestedSlotRange: [50, 80],
+    color: '#9966cc',
+  },
+  {
     id: 'gym-champion-ace',
     name: 'Gym/Champion Ace',
-    description: 'Signature Pokemon of Gym Leaders & Champions',
-    pokemonIds: [6,18,26,34,45,59,62,65,89,94,95,121,149, 208,212,221,230,241, 282,350,376, 407,445,448,466, 612,635, 681,745,750, 830,834,849,851,879,884, 934,939,959,981,983],
+    description: 'Signature Pokemon of Gym Leaders & Champions, ordered by gym progression',
+    // Ordered by gym number within each region, champion last
+    pokemonIds: [95,121,26,45,89,65,59,34,149,6, 18,241,94,62,208,221,230, 282,350,376, 407,448,466,445, 612, 681, 745,750, 830,834,851,884, 939,981,959,983],
     suggestedSlotRange: [40, 60],
     color: '#f5a623',
     subgroups: [
-      { label: 'Kanto', pokemonIds: [6,26,34,45,59,65,89,95,121,149] },
-      { label: 'Johto', pokemonIds: [18,62,94,208,221,230,241] },
+      // Gym order: Brock→Misty→Surge→Erika→Koga→Sabrina→Blaine→Giovanni, E4 Lance, Champion Blue
+      { label: 'Kanto', pokemonIds: [95,121,26,45,89,65,59,34,149,6] },
+      // Falkner→Whitney→Morty→Chuck→Jasmine→Pryce→Clair
+      { label: 'Johto', pokemonIds: [18,241,94,62,208,221,230] },
+      // Wally, Wallace, Champion Steven
       { label: 'Hoenn', pokemonIds: [282,350,376] },
-      { label: 'Sinnoh', pokemonIds: [407,445,448,466] },
-      { label: 'Unova', pokemonIds: [612,635] },
+      // Gardenia→Maylene→Volkner, Champion Cynthia
+      { label: 'Sinnoh', pokemonIds: [407,448,466,445] },
+      // Drayden/Iris
+      { label: 'Unova', pokemonIds: [612] },
+      // E4 Wikstrom
       { label: 'Kalos', pokemonIds: [681] },
+      // Kahuna Olivia→Kahuna Hapu
       { label: 'Alola', pokemonIds: [745,750] },
-      { label: 'Galar', pokemonIds: [830,834,849,851,879,884] },
-      { label: 'Paldea', pokemonIds: [934,939,959,981,983] },
+      // Milo→Nessa→Kabu→Raihan
+      { label: 'Galar', pokemonIds: [830,834,851,884] },
+      // Iono, E4 Rika→Poppy→Larry
+      { label: 'Paldea', pokemonIds: [939,981,959,983] },
     ],
   },
 ];

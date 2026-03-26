@@ -66,8 +66,9 @@ export function getEvolutionLine(pokemonId: number): Pokemon[] {
 interface UseFilteredPokemonOptions {
   search?: string;
   archetype?: string | null;
-  type?: string | null;
-  generation?: number | null;
+  types?: string[] | null;
+  typeMode?: 'any' | 'all';
+  generations?: number[] | null;
   excludeIds?: Set<number>;
   evoLineSize?: number[] | null; // [1], [2], [3] where 3 means 3+
 }
@@ -75,8 +76,9 @@ interface UseFilteredPokemonOptions {
 export function useFilteredPokemon({
   search = '',
   archetype = null,
-  type = null,
-  generation = null,
+  types = null,
+  typeMode = 'any',
+  generations = null,
   excludeIds,
 }: UseFilteredPokemonOptions): Pokemon[] {
   // Serialize excludeIds to a stable string for memo deps
@@ -84,6 +86,9 @@ export function useFilteredPokemon({
     () => (excludeIds ? [...excludeIds].sort((a, b) => a - b).join(',') : ''),
     [excludeIds]
   );
+
+  const typesKey = types ? types.join(',') : '';
+  const gensKey = generations ? generations.join(',') : '';
 
   return useMemo(() => {
     let filtered = pokemonList;
@@ -96,12 +101,23 @@ export function useFilteredPokemon({
       }
     }
 
-    if (type) {
-      filtered = filtered.filter(p => p.types.includes(type as never));
+    if (types && types.length > 0) {
+      if (typeMode === 'all') {
+        // AND mode: Pokemon must have ALL selected types (dual-type search)
+        filtered = filtered.filter(p =>
+          types.every(t => p.types.includes(t as never))
+        );
+      } else {
+        // OR mode: Pokemon must have ANY of the selected types
+        filtered = filtered.filter(p =>
+          types.some(t => p.types.includes(t as never))
+        );
+      }
     }
 
-    if (generation) {
-      filtered = filtered.filter(p => p.generation === generation);
+    if (generations && generations.length > 0) {
+      const genSet = new Set(generations);
+      filtered = filtered.filter(p => genSet.has(p.generation));
     }
 
     if (search) {
@@ -116,7 +132,7 @@ export function useFilteredPokemon({
     }
 
     return filtered;
-  }, [search, archetype, type, generation, excludeIds, excludeKey]);
+  }, [search, archetype, typesKey, typeMode, gensKey, excludeIds, excludeKey]);
 }
 
 export interface EvolutionGroup {

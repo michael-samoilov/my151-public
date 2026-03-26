@@ -3,13 +3,16 @@ import { persist } from 'zustand/middleware';
 import { createEmptySections, SECTION_IDS } from '@/data/slot-template';
 import { getEvolutionLine } from '@/hooks/usePokemonData';
 
+type TypeFilterMode = 'any' | 'all';
+
 interface PokedexState {
   sections: Record<string, number[]>; // sectionId -> ordered pokemon IDs
   activeSection: string | null; // which section the user is adding to
   activeArchetypeFilter: string | null;
   searchQuery: string;
-  typeFilter: string | null;
-  generationFilter: number | null;
+  typeFilter: string[] | null; // multi-select types
+  typeFilterMode: TypeFilterMode; // 'any' = OR, 'all' = AND (dual-type)
+  generationFilter: number[] | null; // multi-select generations
   evoLineSizeFilter: number[] | null; // [1], [2], [3] where 3 means 3+
   mobileBrowserOpen: boolean;
 
@@ -21,8 +24,11 @@ interface PokedexState {
   setMobileBrowserOpen: (open: boolean) => void;
   setArchetypeFilter: (archetype: string | null) => void;
   setSearchQuery: (query: string) => void;
-  setTypeFilter: (type: string | null) => void;
-  setGenerationFilter: (gen: number | null) => void;
+  setTypeFilter: (types: string[] | null) => void;
+  setTypeFilterMode: (mode: TypeFilterMode) => void;
+  toggleType: (type: string) => void;
+  setGenerationFilter: (gens: number[] | null) => void;
+  toggleGeneration: (gen: number) => void;
   setEvoLineSizeFilter: (sizes: number[] | null) => void;
 }
 
@@ -34,6 +40,7 @@ export const usePokedexStore = create<PokedexState>()(
       activeArchetypeFilter: null,
       searchQuery: '',
       typeFilter: null,
+      typeFilterMode: 'any' as TypeFilterMode,
       generationFilter: null,
       evoLineSizeFilter: null,
       mobileBrowserOpen: false,
@@ -70,6 +77,7 @@ export const usePokedexStore = create<PokedexState>()(
             activeArchetypeFilter: null,
             searchQuery: '',
             typeFilter: null,
+            typeFilterMode: 'any' as TypeFilterMode,
             generationFilter: null,
             evoLineSizeFilter: null,
             mobileBrowserOpen: false,
@@ -95,9 +103,27 @@ export const usePokedexStore = create<PokedexState>()(
 
       setSearchQuery: (query) => set({ searchQuery: query }),
 
-      setTypeFilter: (type) => set({ typeFilter: type }),
+      setTypeFilter: (types) => set({ typeFilter: types }),
 
-      setGenerationFilter: (gen) => set({ generationFilter: gen }),
+      setTypeFilterMode: (mode) => set({ typeFilterMode: mode }),
+
+      toggleType: (type) => set((state) => {
+        const current = state.typeFilter ?? [];
+        const next = current.includes(type)
+          ? current.filter(t => t !== type)
+          : [...current, type];
+        return { typeFilter: next.length > 0 ? next : null };
+      }),
+
+      setGenerationFilter: (gens) => set({ generationFilter: gens }),
+
+      toggleGeneration: (gen) => set((state) => {
+        const current = state.generationFilter ?? [];
+        const next = current.includes(gen)
+          ? current.filter(g => g !== gen)
+          : [...current, gen];
+        return { generationFilter: next.length > 0 ? next : null };
+      }),
 
       setEvoLineSizeFilter: (sizes) => set({ evoLineSizeFilter: sizes }),
     }),
