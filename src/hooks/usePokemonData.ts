@@ -69,6 +69,7 @@ interface UseFilteredPokemonOptions {
   type?: string | null;
   generation?: number | null;
   excludeIds?: Set<number>;
+  evoLineSize?: number[] | null; // [1], [2], [3] where 3 means 3+
 }
 
 export function useFilteredPokemon({
@@ -172,5 +173,18 @@ export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): E
   }
 
   result.sort((a, b) => a.members[0].id - b.members[0].id);
+
+  // Post-filter by evo line size
+  if (options.evoLineSize && options.evoLineSize.length > 0) {
+    const sizes = new Set(options.evoLineSize);
+    return result.filter(group => {
+      const len = group.members.length;
+      if (sizes.has(3) && len >= 3) return true;
+      if (sizes.has(2) && len === 2) return true;
+      if (sizes.has(1) && len === 1) return true;
+      return false;
+    });
+  }
+
   return result;
 }

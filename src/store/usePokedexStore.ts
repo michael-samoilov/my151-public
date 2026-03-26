@@ -10,6 +10,7 @@ interface PokedexState {
   searchQuery: string;
   typeFilter: string | null;
   generationFilter: number | null;
+  evoLineSizeFilter: number[] | null; // [1], [2], [3] where 3 means 3+
   mobileBrowserOpen: boolean;
 
   // Actions
@@ -22,6 +23,7 @@ interface PokedexState {
   setSearchQuery: (query: string) => void;
   setTypeFilter: (type: string | null) => void;
   setGenerationFilter: (gen: number | null) => void;
+  setEvoLineSizeFilter: (sizes: number[] | null) => void;
 }
 
 export const usePokedexStore = create<PokedexState>()(
@@ -33,11 +35,11 @@ export const usePokedexStore = create<PokedexState>()(
       searchQuery: '',
       typeFilter: null,
       generationFilter: null,
+      evoLineSizeFilter: null,
       mobileBrowserOpen: false,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
-          // Expand each ID to its full evo line, dedup, preserve order
           const allIds: number[] = [];
           const seen = new Set<number>();
           for (const id of pokemonIds) {
@@ -50,19 +52,16 @@ export const usePokedexStore = create<PokedexState>()(
             }
           }
 
-          // Check total won't exceed 151
           const totalPlaced = Object.values(state.sections).reduce((s, a) => s + a.length, 0);
           const slotsAvailable = 151 - totalPlaced;
-          if (allIds.length > slotsAvailable) return state; // don't add if no room
+          if (allIds.length > slotsAvailable) return state;
 
-          // Remove these pokemon from any other section they might be in
           const newSections = { ...state.sections };
           const addingSet = new Set(allIds);
           for (const sid of SECTION_IDS) {
             newSections[sid] = newSections[sid].filter((id) => !addingSet.has(id));
           }
 
-          // Append to target section
           newSections[sectionId] = [...newSections[sectionId], ...allIds];
 
           return {
@@ -72,6 +71,7 @@ export const usePokedexStore = create<PokedexState>()(
             searchQuery: '',
             typeFilter: null,
             generationFilter: null,
+            evoLineSizeFilter: null,
             mobileBrowserOpen: false,
           };
         }),
@@ -98,6 +98,8 @@ export const usePokedexStore = create<PokedexState>()(
       setTypeFilter: (type) => set({ typeFilter: type }),
 
       setGenerationFilter: (gen) => set({ generationFilter: gen }),
+
+      setEvoLineSizeFilter: (sizes) => set({ evoLineSizeFilter: sizes }),
     }),
     {
       name: 'personal-151-pokedex-v2',

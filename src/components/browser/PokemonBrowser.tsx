@@ -20,6 +20,8 @@ export function PokemonBrowser() {
   const setTypeFilter = usePokedexStore((s) => s.setTypeFilter);
   const generationFilter = usePokedexStore((s) => s.generationFilter);
   const setGenerationFilter = usePokedexStore((s) => s.setGenerationFilter);
+  const evoLineSizeFilter = usePokedexStore((s) => s.evoLineSizeFilter);
+  const setEvoLineSizeFilter = usePokedexStore((s) => s.setEvoLineSizeFilter);
   const sections = usePokedexStore((s) => s.sections);
   const activeSection = usePokedexStore((s) => s.activeSection);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
@@ -35,10 +37,11 @@ export function PokemonBrowser() {
     type: typeFilter,
     generation: generationFilter,
     excludeIds: assignedIds,
+    evoLineSize: evoLineSizeFilter,
   });
 
   const totalCount = groups.reduce((sum, g) => sum + g.members.length, 0);
-  const hasActiveFilters = !!(activeArchetype || typeFilter || generationFilter);
+  const hasActiveFilters = !!(activeArchetype || typeFilter || generationFilter || evoLineSizeFilter);
   const sectionName = activeSection
     ? SECTION_DEFS.find((s) => s.id === activeSection)?.name ?? 'Section'
     : null;
@@ -51,8 +54,22 @@ export function PokemonBrowser() {
     setArchetypeFilter(null);
     setTypeFilter(null);
     setGenerationFilter(null);
+    setEvoLineSizeFilter(null);
     setSearchQuery('');
   };
+
+  const toggleEvoSize = (size: number) => {
+    if (!evoLineSizeFilter) {
+      setEvoLineSizeFilter([size]);
+    } else if (evoLineSizeFilter.includes(size)) {
+      const next = evoLineSizeFilter.filter(s => s !== size);
+      setEvoLineSizeFilter(next.length > 0 ? next : null);
+    } else {
+      setEvoLineSizeFilter([...evoLineSizeFilter, size]);
+    }
+  };
+
+  const evoSizeKey = evoLineSizeFilter ? evoLineSizeFilter.join(',') : 'none';
 
   return (
     <div className="flex flex-col h-full border-l">
@@ -120,6 +137,14 @@ export function PokemonBrowser() {
                 </button>
               </span>
             )}
+            {evoLineSizeFilter && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-foreground text-background rounded text-[10px] font-medium">
+                {evoLineSizeFilter.map(s => s === 3 ? '3+' : String(s)).join(', ')} stage
+                <button onClick={() => setEvoLineSizeFilter(null)} className="hover:opacity-70 cursor-pointer">
+                  <X size={10} />
+                </button>
+              </span>
+            )}
             <button
               onClick={clearAllFilters}
               className="text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer ml-1"
@@ -171,6 +196,21 @@ export function PokemonBrowser() {
               ))}
             </div>
 
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-muted-foreground mr-1">Evo stages:</span>
+              {[1, 2, 3].map((size) => (
+                <Button
+                  key={size}
+                  variant={evoLineSizeFilter?.includes(size) ? 'default' : 'secondary'}
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => toggleEvoSize(size)}
+                >
+                  {size === 3 ? '3+' : size}
+                </Button>
+              ))}
+            </div>
+
             <ArchetypeFilter active={activeArchetype} onSelect={setArchetypeFilter} />
           </div>
         )}
@@ -178,7 +218,7 @@ export function PokemonBrowser() {
 
       {/* Key forces full remount when filters change */}
       <div
-        key={`${activeArchetype ?? 'none'}-${typeFilter ?? 'none'}-${generationFilter ?? 'none'}-${searchQuery}`}
+        key={`${activeArchetype ?? 'none'}-${typeFilter ?? 'none'}-${generationFilter ?? 'none'}-${searchQuery}-${evoSizeKey}`}
         className="flex-1 min-h-0 overflow-y-auto"
       >
         <div className="p-2 flex flex-wrap gap-1.5 content-start">

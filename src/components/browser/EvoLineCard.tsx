@@ -46,7 +46,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardPro
               <ChevronRight className="w-[2.5vw] h-[2.5vw] md:w-2.5 md:h-2.5 text-muted-foreground/30 flex-shrink-0 -mx-[0.5vw] md:-mx-0.5" />
             )}
             <div className={cn(
-              'relative flex flex-col items-center',
+              'relative flex flex-col items-center w-[13vw] md:w-[42px]',
               !matched && 'opacity-35',
             )}>
               {inDex && (
@@ -54,11 +54,6 @@ export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardPro
                   <Check className="w-1.5 h-1.5 text-primary-foreground" />
                 </div>
               )}
-              {/*
-                Mobile: ~11vw sprite fits 2 groups of 3 per row
-                  (3 sprites × 13vw + 2 chevrons × 2vw + padding ≈ 43vw per card)
-                Desktop: fixed 32px for the 420px side panel
-              */}
               <img
                 src={pokemon.sprite}
                 alt={pokemon.name}
@@ -69,11 +64,11 @@ export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardPro
               <span className="text-[min(2vw,8px)] md:text-[8px] font-medium capitalize truncate text-center leading-tight w-[13vw] md:w-[42px]">
                 {pokemon.name}
               </span>
-              <div className="flex gap-[0.5vw] md:gap-0.5 mt-[0.5vw] md:mt-0.5">
+              <div className="flex gap-[0.5vw] md:gap-0.5 mt-[0.5vw] md:mt-0.5 w-[13vw] md:w-[42px] justify-center">
                 {pokemon.types.map((t) => (
                   <span
                     key={t}
-                    className="px-[1vw] md:px-1 py-[0.2vw] md:py-px rounded text-[min(1.6vw,6px)] md:text-[6px] font-semibold capitalize text-white leading-tight"
+                    className="w-[6vw] md:w-5 py-[0.2vw] md:py-px rounded text-[min(1.5vw,5px)] md:text-[5px] font-semibold capitalize text-white leading-tight text-center truncate"
                     style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
                   >
                     {t}
