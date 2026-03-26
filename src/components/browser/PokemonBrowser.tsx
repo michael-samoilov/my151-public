@@ -176,8 +176,15 @@ export function PokemonBrowser() {
         )}
       </div>
 
-      {/* Evo line cards */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      {/* Evo line cards — key forces full remount when filters change */}
+      <div
+        key={`${activeArchetype ?? 'none'}-${typeFilter ?? 'none'}-${generationFilter ?? 'none'}-${searchQuery}`}
+        className="flex-1 min-h-0 overflow-y-auto"
+      >
+        {/* Debug: show actual group chain IDs */}
+        <div className="px-2 pt-1 text-[9px] text-muted-foreground/50 break-all">
+          groups=[{groups.map(g => g.members.map(m => m.name).join('/')).join(', ')}]
+        </div>
         <div className="p-2 flex flex-wrap gap-1.5 content-start">
           {groups.map((group) => (
             <EvoLineCard
