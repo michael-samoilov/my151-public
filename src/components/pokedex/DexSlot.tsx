@@ -16,6 +16,7 @@ interface DexSlotProps {
 
 export function DexSlotComponent({ slot, isSelected, onSelect }: DexSlotProps) {
   const removePokemon = usePokedexStore((s) => s.removePokemon);
+  const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const pokemon = slot.pokemonId ? getPokemonById(slot.pokemonId) : null;
   const archetype = slot.suggestedArchetype ? getArchetypeById(slot.suggestedArchetype) : null;
 
@@ -27,7 +28,10 @@ export function DexSlotComponent({ slot, isSelected, onSelect }: DexSlotProps) {
   return (
     <div
       ref={setNodeRef}
-      onClick={onSelect}
+      onClick={() => {
+        onSelect();
+        if (!slot.pokemonId) setMobileBrowserOpen(true);
+      }}
       className={cn(
         'relative flex flex-col items-center justify-center rounded-lg border-2 transition-all cursor-pointer min-h-[100px] p-1',
         isOver && 'border-primary bg-primary/10 scale-105',

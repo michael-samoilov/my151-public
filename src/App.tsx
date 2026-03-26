@@ -10,12 +10,16 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { SpriteImage } from '@/components/shared/SpriteImage';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { X } from 'lucide-react';
 
 function App() {
   const [currentView, setCurrentView] = useState<'builder' | 'analytics'>('builder');
   const [draggedPokemonId, setDraggedPokemonId] = useState<number | null>(null);
   const assignPokemon = usePokedexStore((s) => s.assignPokemon);
   const movePokemon = usePokedexStore((s) => s.movePokemon);
+  const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
+  const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
+  const selectedSlot = usePokedexStore((s) => s.selectedSlot);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -87,6 +91,32 @@ function App() {
             </div>
           )}
         </DragOverlay>
+
+        {/* Mobile browser sheet */}
+        {mobileBrowserOpen && (
+          <div className="fixed inset-0 z-50 md:hidden">
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setMobileBrowserOpen(false)}
+            />
+            <div className="absolute bottom-0 left-0 right-0 h-[85vh] bg-background rounded-t-2xl shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-200">
+              <div className="flex items-center justify-between p-3 border-b">
+                <span className="text-sm font-semibold">
+                  {selectedSlot ? `Pick for Slot #${String(selectedSlot).padStart(3, '0')}` : 'Browse Pokemon'}
+                </span>
+                <button
+                  onClick={() => setMobileBrowserOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-muted"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="flex-1 min-h-0">
+                <PokemonBrowser />
+              </div>
+            </div>
+          </div>
+        )}
       </DndContext>
     </TooltipProvider>
   );

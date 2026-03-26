@@ -10,6 +10,7 @@ interface PokedexState {
   searchQuery: string;
   typeFilter: string | null;
   generationFilter: number | null;
+  mobileBrowserOpen: boolean;
 
   // Actions
   assignPokemon: (slotNumber: number, pokemonId: number) => void;
@@ -18,6 +19,7 @@ interface PokedexState {
   movePokemon: (fromSlot: number, toSlot: number) => void;
   clearAll: () => void;
   setSelectedSlot: (slot: number | null) => void;
+  setMobileBrowserOpen: (open: boolean) => void;
   setArchetypeFilter: (archetype: string | null) => void;
   setSearchQuery: (query: string) => void;
   setTypeFilter: (type: string | null) => void;
@@ -34,6 +36,7 @@ export const usePokedexStore = create<PokedexState>()(
       searchQuery: '',
       typeFilter: null,
       generationFilter: null,
+      mobileBrowserOpen: false,
 
       assignPokemon: (slotNumber, pokemonId) =>
         set((state) => {
@@ -47,7 +50,7 @@ export const usePokedexStore = create<PokedexState>()(
             }
             return slot;
           });
-          return { slots: newSlots, selectedSlot: null };
+          return { slots: newSlots, selectedSlot: null, mobileBrowserOpen: false };
         }),
 
       removePokemon: (slotNumber) =>
@@ -93,6 +96,8 @@ export const usePokedexStore = create<PokedexState>()(
       clearAll: () => set({ slots: createDefaultSlots() }),
 
       setSelectedSlot: (slot) => set({ selectedSlot: slot }),
+
+      setMobileBrowserOpen: (open) => set({ mobileBrowserOpen: open }),
 
       setArchetypeFilter: (archetype) => set({ activeArchetypeFilter: archetype }),
 
