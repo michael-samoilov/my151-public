@@ -181,9 +181,38 @@ export const ARCHETYPES: Archetype[] = [
     id: 'static-encounter',
     name: 'Static Encounter',
     description: 'Pokemon found as overworld/scripted encounters',
-    pokemonIds: [101, 130,131, 143, 185, 352, 425, 442, 479, 518, 571, 637],
+    pokemonIds: [
+      // RBY/FRLG
+      100,101, 131, 143,
+      // GSC/HGSS
+      130, 185,
+      // RSE/ORAS
+      351, 352,
+      // DPPt
+      425, 442, 479,
+      // BW/BW2
+      518, 555, 571, 637, 612,
+      // XY
+      // SM/USUM
+      // SwSh
+      // Legends Arceus
+      77,
+      // SV Titans
+      950, 962, 968, 977, 978,
+    ],
     suggestedSlotRange: [40, 50],
     color: '#f95587',
+    // Red Gyarados (Lake of Rage), Shiny Ponyta (PLA), Shiny Haxorus (BW2 Nature Preserve)
+    shinyIds: [130, 77, 612],
+    subgroups: [
+      { label: 'Red/Blue/Yellow', pokemonIds: [100,101, 131, 143] },
+      { label: 'Gold/Silver/Crystal', pokemonIds: [130, 185] },
+      { label: 'Ruby/Sapphire/Emerald', pokemonIds: [351, 352] },
+      { label: 'Diamond/Pearl/Platinum', pokemonIds: [425, 442, 479] },
+      { label: 'Black/White/BW2', pokemonIds: [518, 555, 571, 637, 612] },
+      { label: 'Legends: Arceus', pokemonIds: [77] },
+      { label: 'Scarlet/Violet Titans', pokemonIds: [950, 962, 968, 977, 978] },
+    ],
   },
   {
     id: 'evil-team',

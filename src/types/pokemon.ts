@@ -58,4 +58,5 @@ export interface Archetype {
   suggestedSlotRange: [number, number];
   color: string;
   subgroups?: { label: string; pokemonIds: number[] }[];
+  shinyIds?: number[]; // Pokemon IDs that should display shiny sprites in this archetype
 }

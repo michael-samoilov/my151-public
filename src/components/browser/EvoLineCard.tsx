@@ -8,9 +8,10 @@ interface EvoLineCardProps {
   members: Pokemon[];
   matchedIds: Set<number>;
   assignedIds: Set<number>;
+  shinyIds?: Set<number>;
 }
 
-export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardProps) {
+export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds }: EvoLineCardProps) {
   const addToSection = usePokedexStore((s) => s.addToSection);
   const activeSection = usePokedexStore((s) => s.activeSection);
   const allInDex = members.every((p) => assignedIds.has(p.id));
@@ -55,7 +56,9 @@ export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardPro
                 </div>
               )}
               <img
-                src={pokemon.sprite}
+                src={shinyIds?.has(pokemon.id)
+                  ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
+                  : pokemon.sprite}
                 alt={pokemon.name}
                 className="w-[11vw] h-[11vw] md:w-8 md:h-8"
                 style={{ imageRendering: 'pixelated' }}

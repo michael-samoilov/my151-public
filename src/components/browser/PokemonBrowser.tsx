@@ -55,6 +55,10 @@ export function PokemonBrowser() {
     ? ARCHETYPES.find((a) => a.id === activeArchetype)
     : null;
   const archetypeName = activeArchetypeDef?.name ?? null;
+  const shinyIds = useMemo(
+    () => activeArchetypeDef?.shinyIds ? new Set(activeArchetypeDef.shinyIds) : undefined,
+    [activeArchetypeDef]
+  );
 
   const clearAllFilters = () => {
     setArchetypeFilter(null);
@@ -228,14 +232,21 @@ export function PokemonBrowser() {
                     {sub.label}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {subGroups.map((group) => (
-                      <EvoLineCard
-                        key={group.chainId}
-                        members={group.members}
-                        matchedIds={group.matchedIds}
-                        assignedIds={assignedIds}
-                      />
-                    ))}
+                    {subGroups.map((group) => {
+                      // Override matchedIds to only highlight the ace Pokemon in this subgroup
+                      const subMatchedIds = new Set(
+                        group.members.filter(m => subIdSet.has(m.id)).map(m => m.id)
+                      );
+                      return (
+                        <EvoLineCard
+                          key={group.chainId}
+                          members={group.members}
+                          matchedIds={subMatchedIds}
+                          assignedIds={assignedIds}
+                          shinyIds={shinyIds}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -247,6 +258,7 @@ export function PokemonBrowser() {
                 members={group.members}
                 matchedIds={group.matchedIds}
                 assignedIds={assignedIds}
+                shinyIds={shinyIds}
               />
             ))
           )}
