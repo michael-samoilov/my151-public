@@ -6,6 +6,7 @@ import { ArchetypeFilter } from './ArchetypeFilter';
 import { EvoLineCard } from './EvoLineCard';
 import { useFilteredPokemonGrouped } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
+import { SECTION_DEFS } from '@/data/slot-template';
 import { TYPE_NAMES } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { Search, X, ChevronDown, ChevronUp } from 'lucide-react';
@@ -19,12 +20,13 @@ export function PokemonBrowser() {
   const setTypeFilter = usePokedexStore((s) => s.setTypeFilter);
   const generationFilter = usePokedexStore((s) => s.generationFilter);
   const setGenerationFilter = usePokedexStore((s) => s.setGenerationFilter);
-  const slots = usePokedexStore((s) => s.slots);
+  const sections = usePokedexStore((s) => s.sections);
+  const activeSection = usePokedexStore((s) => s.activeSection);
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
   const assignedIds = useMemo(
-    () => new Set(slots.filter((s) => s.pokemonId !== null).map((s) => s.pokemonId!)),
-    [slots]
+    () => new Set(Object.values(sections).flat()),
+    [sections]
   );
 
   const groups = useFilteredPokemonGrouped({
@@ -37,13 +39,23 @@ export function PokemonBrowser() {
 
   const totalCount = groups.reduce((sum, g) => sum + g.members.length, 0);
   const hasActiveFilters = !!(activeArchetype || typeFilter || generationFilter);
+  const sectionName = activeSection
+    ? SECTION_DEFS.find((s) => s.id === activeSection)?.name ?? 'Section'
+    : null;
 
   return (
     <div className="flex flex-col h-full border-l">
-      {/* Search - always visible */}
+      {/* Header */}
       <div className="p-3 pb-2 border-b space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Browse Pokemon</h2>
+          <div>
+            <h2 className="text-lg font-bold">Browse Pokemon</h2>
+            {sectionName && (
+              <p className="text-xs text-primary font-medium">
+                Adding to: {sectionName}
+              </p>
+            )}
+          </div>
           <span className="text-xs text-muted-foreground">
             {totalCount} found
           </span>
@@ -67,7 +79,7 @@ export function PokemonBrowser() {
           )}
         </div>
 
-        {/* Collapsible filters toggle */}
+        {/* Collapsible filters */}
         <button
           onClick={() => setFiltersExpanded(!filtersExpanded)}
           className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground w-full cursor-pointer"
@@ -83,7 +95,6 @@ export function PokemonBrowser() {
 
         {filtersExpanded && (
           <div className="space-y-2 pb-1">
-            {/* Type filter */}
             <div className="flex flex-wrap gap-1">
               {TYPE_NAMES.map((type) => (
                 <button
@@ -101,7 +112,6 @@ export function PokemonBrowser() {
               ))}
             </div>
 
-            {/* Generation filter */}
             <div className="flex flex-wrap gap-1">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((gen) => (
                 <Button
@@ -116,13 +126,12 @@ export function PokemonBrowser() {
               ))}
             </div>
 
-            {/* Archetype filter */}
             <ArchetypeFilter active={activeArchetype} onSelect={setArchetypeFilter} />
           </div>
         )}
       </div>
 
-      {/* Pokemon tile grid grouped by evo lines */}
+      {/* Evo line cards */}
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
           <div className="p-2 space-y-1.5">

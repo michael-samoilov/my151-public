@@ -2,44 +2,36 @@ import { useMemo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { ARCHETYPES } from '@/data/archetypes';
-import { DEX_SECTIONS } from '@/data/slot-template';
+import { SECTION_DEFS } from '@/data/slot-template';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 export function WhatsAdvisor() {
-  const slots = usePokedexStore((s) => s.slots);
+  const sections = usePokedexStore((s) => s.sections);
 
   const advice = useMemo(() => {
     const items: { type: 'missing' | 'suggestion' | 'complete'; text: string }[] = [];
 
-    // Check each section for completion
-    for (const section of DEX_SECTIONS) {
-      const sectionSlots = slots.filter(
-        (s) => s.slotNumber >= section.startSlot && s.slotNumber <= section.endSlot
-      );
-      const filled = sectionSlots.filter((s) => s.pokemonId !== null).length;
-      const total = sectionSlots.length;
-
-      if (filled === 0) {
-        items.push({ type: 'missing', text: `${section.name} section is empty (${total} slots)` });
-      } else if (filled < total) {
-        items.push({ type: 'suggestion', text: `${section.name}: ${filled}/${total} filled` });
+    // Check each section
+    for (const def of SECTION_DEFS) {
+      const count = (sections[def.id] ?? []).length;
+      if (count === 0) {
+        items.push({ type: 'missing', text: `${def.name} section is empty` });
+      } else if (count < def.defaultSize) {
+        items.push({ type: 'suggestion', text: `${def.name}: ${count}/${def.defaultSize} filled` });
       } else {
-        items.push({ type: 'complete', text: `${section.name} complete!` });
+        items.push({ type: 'complete', text: `${def.name} filled!` });
       }
     }
 
     // Check archetype coverage
-    const filledPokemonIds = new Set(
-      slots.filter((s) => s.pokemonId !== null).map((s) => s.pokemonId!)
-    );
+    const allIds = new Set(Object.values(sections).flat());
 
     const criticalArchetypes = ['grass-starter', 'fire-starter', 'water-starter', 'pseudo-legendary', 'legendary-trio', 'box-legendary', 'mythical'];
     for (const archetypeId of criticalArchetypes) {
       const archetype = ARCHETYPES.find((a) => a.id === archetypeId);
       if (!archetype) continue;
-
-      const hasAny = archetype.pokemonIds.some((id) => filledPokemonIds.has(id));
+      const hasAny = archetype.pokemonIds.some((id) => allIds.has(id));
       if (!hasAny) {
         items.push({ type: 'missing', text: `No ${archetype.name} assigned yet` });
       }
@@ -47,9 +39,8 @@ export function WhatsAdvisor() {
 
     // Check type coverage
     const typeCoverage = new Set<string>();
-    for (const slot of slots) {
-      if (!slot.pokemonId) continue;
-      const pokemon = getPokemonById(slot.pokemonId);
+    for (const id of allIds) {
+      const pokemon = getPokemonById(id);
       if (pokemon) {
         for (const t of pokemon.types) typeCoverage.add(t);
       }
@@ -61,7 +52,7 @@ export function WhatsAdvisor() {
     }
 
     return items;
-  }, [slots]);
+  }, [sections]);
 
   const missingCount = advice.filter((a) => a.type === 'missing').length;
   const completeCount = advice.filter((a) => a.type === 'complete').length;
@@ -80,10 +71,7 @@ export function WhatsAdvisor() {
 
       <div className="space-y-1.5">
         {advice.map((item, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-2 text-sm"
-          >
+          <div key={i} className="flex items-center gap-2 text-sm">
             {item.type === 'missing' && (
               <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
             )}

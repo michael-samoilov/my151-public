@@ -11,12 +11,14 @@ interface EvoLineCardProps {
 }
 
 export function EvoLineCard({ members, assignedIds }: EvoLineCardProps) {
-  const assignEvoLine = usePokedexStore((s) => s.assignEvoLine);
+  const addToSection = usePokedexStore((s) => s.addToSection);
+  const activeSection = usePokedexStore((s) => s.activeSection);
   const allInDex = members.every((p) => assignedIds.has(p.id));
 
   const handleClick = () => {
     if (allInDex) return;
-    assignEvoLine(members.map((p) => p.id));
+    const targetSection = activeSection ?? 'mid-game';
+    addToSection(targetSection, members.map((p) => p.id));
   };
 
   const primaryType = members[0].types[0];

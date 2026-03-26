@@ -1,34 +1,53 @@
-import type { DexSection, DexSlot } from '@/types/pokemon';
-
-export const DEX_SECTIONS: DexSection[] = [
-  { id: 'starters', name: 'Starters', startSlot: 1, endSlot: 9, description: 'Three starter evolution lines' },
-  { id: 'early-game', name: 'Early Game', startSlot: 10, endSlot: 40, description: 'Rodents, birds, bugs, Pikaclones, early routes' },
-  { id: 'mid-game', name: 'Mid Game', startSlot: 41, endSlot: 100, description: 'Routes, caves, gyms, diverse types' },
-  { id: 'endgame', name: 'Endgame', startSlot: 101, endSlot: 151, description: 'Pseudo-legendaries, legendaries, mythicals' },
-];
-
-// Only suggest archetypes for the most structurally obvious slots.
-// Everything else is free-form — fill them however you like.
-const SLOT_ARCHETYPE_SUGGESTIONS: Record<number, string> = {
-  // Starter lines — the one truly universal convention
-  1: 'grass-starter', 2: 'grass-starter', 3: 'grass-starter',
-  4: 'fire-starter', 5: 'fire-starter', 6: 'fire-starter',
-  7: 'water-starter', 8: 'water-starter', 9: 'water-starter',
-};
-
-export function getSectionForSlot(slotNumber: number): DexSection | undefined {
-  return DEX_SECTIONS.find(s => slotNumber >= s.startSlot && slotNumber <= s.endSlot);
+export interface SectionDef {
+  id: string;
+  name: string;
+  defaultSize: number;
+  priority: number; // higher = keeps its default size more aggressively
+  description: string;
 }
 
-export function createDefaultSlots(): DexSlot[] {
-  return Array.from({ length: 151 }, (_, i) => {
-    const slotNumber = i + 1;
-    const section = getSectionForSlot(slotNumber);
-    return {
-      slotNumber,
-      sectionId: section?.id ?? 'mid-game',
-      suggestedArchetype: SLOT_ARCHETYPE_SUGGESTIONS[slotNumber] ?? null,
-      pokemonId: null,
-    };
-  });
+export const SECTION_DEFS: SectionDef[] = [
+  { id: 'starters', name: 'Starters', defaultSize: 9, priority: 3, description: 'Three starter evolution lines' },
+  { id: 'early-game', name: 'Early Game', defaultSize: 31, priority: 1, description: 'Rodents, birds, bugs, Pikaclones, early routes' },
+  { id: 'mid-game', name: 'Mid Game', defaultSize: 60, priority: 0, description: 'Routes, caves, gyms, diverse types' },
+  { id: 'endgame', name: 'Endgame', defaultSize: 51, priority: 2, description: 'Pseudo-legendaries, legendaries, mythicals' },
+];
+
+export const SECTION_IDS = SECTION_DEFS.map((s) => s.id);
+
+export function createEmptySections(): Record<string, number[]> {
+  const sections: Record<string, number[]> = {};
+  for (const def of SECTION_DEFS) {
+    sections[def.id] = [];
+  }
+  return sections;
+}
+
+/**
+ * Compute how many empty slots each section should display.
+ * Higher-priority sections keep their default empty count first;
+ * lower-priority sections (mid-game) absorb overflow from others.
+ */
+export function computeEmptySlots(sections: Record<string, number[]>): Record<string, number> {
+  const totalPlaced = Object.values(sections).reduce((sum, arr) => sum + arr.length, 0);
+  let remaining = Math.max(0, 151 - totalPlaced);
+
+  // Sort by priority descending — high priority sections get empty slots first
+  const sorted = [...SECTION_DEFS].sort((a, b) => b.priority - a.priority);
+  const empties: Record<string, number> = {};
+
+  for (const def of sorted) {
+    const placed = (sections[def.id] ?? []).length;
+    const wanted = Math.max(0, def.defaultSize - placed);
+    const given = Math.min(wanted, remaining);
+    empties[def.id] = given;
+    remaining -= given;
+  }
+
+  // Distribute any leftover remaining to mid-game (lowest priority flex section)
+  if (remaining > 0) {
+    empties['mid-game'] = (empties['mid-game'] ?? 0) + remaining;
+  }
+
+  return empties;
 }

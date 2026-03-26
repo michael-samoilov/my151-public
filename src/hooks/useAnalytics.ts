@@ -20,12 +20,12 @@ const AVERAGE_BST = 420;
 const AVERAGE_EVOLUTION_LEVEL = 30;
 
 export function useAnalytics() {
-  const slots = usePokedexStore((s) => s.slots);
+  const sections = usePokedexStore((s) => s.sections);
 
   return useMemo(() => {
-    const pokemon = slots
-      .filter((s) => s.pokemonId !== null)
-      .map((s) => getPokemonById(s.pokemonId!))
+    const allIds = Object.values(sections).flat();
+    const pokemon = allIds
+      .map((id) => getPokemonById(id))
       .filter(Boolean)
       .map((p) => p!);
 
@@ -123,5 +123,5 @@ export function useAnalytics() {
       monoTypeCount: pokemon.filter((p) => p.types.length === 1).length,
       dualTypeCount: pokemon.filter((p) => p.types.length === 2).length,
     };
-  }, [slots]);
+  }, [sections]);
 }

@@ -1,45 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { DexSlot } from '@/types/pokemon';
-import { createDefaultSlots } from '@/data/slot-template';
+import { createEmptySections, SECTION_IDS } from '@/data/slot-template';
 import { getEvolutionLine } from '@/hooks/usePokemonData';
 
-/**
- * Place a list of pokemon IDs starting at startSlot, going forward.
- * Overwrites whatever is in those slots. Clears these pokemon from other slots.
- * Clamps to 1-151.
- */
-function placeLineInSlots(
-  slots: DexSlot[],
-  pokemonIds: number[],
-  startSlot: number
-): DexSlot[] {
-  // Clamp: if startSlot + line length would exceed 151, shift back
-  const effectiveStart = Math.max(1, Math.min(startSlot, 152 - pokemonIds.length));
-
-  const assignments = new Map<number, number>(); // slotNumber -> pokemonId
-  for (let i = 0; i < pokemonIds.length; i++) {
-    assignments.set(effectiveStart + i, pokemonIds[i]);
-  }
-  const placingIds = new Set(pokemonIds);
-
-  return slots.map((slot) => {
-    // If this slot is getting a new assignment
-    const assignment = assignments.get(slot.slotNumber);
-    if (assignment !== undefined) {
-      return { ...slot, pokemonId: assignment };
-    }
-    // Clear this pokemon from other slots if it's being relocated
-    if (slot.pokemonId !== null && placingIds.has(slot.pokemonId)) {
-      return { ...slot, pokemonId: null };
-    }
-    return slot;
-  });
-}
-
 interface PokedexState {
-  slots: DexSlot[];
-  selectedSlot: number | null;
+  sections: Record<string, number[]>; // sectionId -> ordered pokemon IDs
+  activeSection: string | null; // which section the user is adding to
   activeArchetypeFilter: string | null;
   searchQuery: string;
   typeFilter: string | null;
@@ -47,13 +13,10 @@ interface PokedexState {
   mobileBrowserOpen: boolean;
 
   // Actions
-  assignPokemon: (slotNumber: number, pokemonId: number) => void;
-  assignEvoLine: (pokemonIds: number[]) => void;
-  removePokemon: (slotNumber: number) => void;
-  swapSlots: (slotA: number, slotB: number) => void;
-  movePokemon: (fromSlot: number, toSlot: number) => void;
+  addToSection: (sectionId: string, pokemonIds: number[]) => void;
+  removeEvoLine: (sectionId: string, pokemonId: number) => void;
+  setActiveSection: (sectionId: string | null) => void;
   clearAll: () => void;
-  setSelectedSlot: (slot: number | null) => void;
   setMobileBrowserOpen: (open: boolean) => void;
   setArchetypeFilter: (archetype: string | null) => void;
   setSearchQuery: (query: string) => void;
@@ -63,81 +26,64 @@ interface PokedexState {
 
 export const usePokedexStore = create<PokedexState>()(
   persist(
-    (set, get) => ({
-      slots: createDefaultSlots(),
-      selectedSlot: null,
+    (set) => ({
+      sections: createEmptySections(),
+      activeSection: null,
       activeArchetypeFilter: null,
       searchQuery: '',
       typeFilter: null,
       generationFilter: null,
       mobileBrowserOpen: false,
 
-      assignPokemon: (slotNumber, pokemonId) =>
+      addToSection: (sectionId, pokemonIds) =>
         set((state) => {
-          // Get the full evo line and place starting from slotNumber
-          const evoLine = getEvolutionLine(pokemonId);
-          const ids = evoLine.map((p) => p.id);
-          // Start the line so the selected pokemon's position makes sense
-          const indexInLine = ids.indexOf(pokemonId);
-          const lineStart = slotNumber - indexInLine;
-          const newSlots = placeLineInSlots(state.slots, ids, lineStart);
-          return { slots: newSlots, selectedSlot: null, mobileBrowserOpen: false };
-        }),
-
-      assignEvoLine: (pokemonIds) =>
-        set((state) => {
-          // Place at selected slot, or find next empty slot
-          let startSlot = state.selectedSlot;
-          if (startSlot === null) {
-            const nextEmpty = state.slots.find((s) => s.pokemonId === null);
-            startSlot = nextEmpty?.slotNumber ?? 1;
+          // Expand each ID to its full evo line, dedup, preserve order
+          const allIds: number[] = [];
+          const seen = new Set<number>();
+          for (const id of pokemonIds) {
+            const line = getEvolutionLine(id);
+            for (const p of line) {
+              if (!seen.has(p.id)) {
+                seen.add(p.id);
+                allIds.push(p.id);
+              }
+            }
           }
-          const newSlots = placeLineInSlots(state.slots, pokemonIds, startSlot);
-          return { slots: newSlots, selectedSlot: null, mobileBrowserOpen: false };
-        }),
 
-      removePokemon: (slotNumber) =>
-        set((state) => ({
-          slots: state.slots.map((slot) =>
-            slot.slotNumber === slotNumber ? { ...slot, pokemonId: null } : slot
-          ),
-        })),
+          // Check total won't exceed 151
+          const totalPlaced = Object.values(state.sections).reduce((s, a) => s + a.length, 0);
+          const slotsAvailable = 151 - totalPlaced;
+          if (allIds.length > slotsAvailable) return state; // don't add if no room
 
-      swapSlots: (slotA, slotB) =>
-        set((state) => {
-          const a = state.slots.find((s) => s.slotNumber === slotA);
-          const b = state.slots.find((s) => s.slotNumber === slotB);
-          if (!a || !b) return state;
+          // Remove these pokemon from any other section they might be in
+          const newSections = { ...state.sections };
+          const addingSet = new Set(allIds);
+          for (const sid of SECTION_IDS) {
+            newSections[sid] = newSections[sid].filter((id) => !addingSet.has(id));
+          }
+
+          // Append to target section
+          newSections[sectionId] = [...newSections[sectionId], ...allIds];
+
           return {
-            slots: state.slots.map((slot) => {
-              if (slot.slotNumber === slotA) return { ...slot, pokemonId: b.pokemonId };
-              if (slot.slotNumber === slotB) return { ...slot, pokemonId: a.pokemonId };
-              return slot;
-            }),
+            sections: newSections,
+            activeSection: null,
+            mobileBrowserOpen: false,
           };
         }),
 
-      movePokemon: (fromSlot, toSlot) => {
-        const state = get();
-        const from = state.slots.find((s) => s.slotNumber === fromSlot);
-        const to = state.slots.find((s) => s.slotNumber === toSlot);
-        if (!from || !to) return;
-        if (to.pokemonId) {
-          state.swapSlots(fromSlot, toSlot);
-        } else {
-          set({
-            slots: state.slots.map((slot) => {
-              if (slot.slotNumber === fromSlot) return { ...slot, pokemonId: null };
-              if (slot.slotNumber === toSlot) return { ...slot, pokemonId: from.pokemonId };
-              return slot;
-            }),
-          });
-        }
-      },
+      removeEvoLine: (sectionId, pokemonId) =>
+        set((state) => {
+          const line = getEvolutionLine(pokemonId);
+          const removeSet = new Set(line.map((p) => p.id));
+          const newSections = { ...state.sections };
+          newSections[sectionId] = newSections[sectionId].filter((id) => !removeSet.has(id));
+          return { sections: newSections };
+        }),
 
-      clearAll: () => set({ slots: createDefaultSlots() }),
+      setActiveSection: (sectionId) => set({ activeSection: sectionId }),
 
-      setSelectedSlot: (slot) => set({ selectedSlot: slot }),
+      clearAll: () => set({ sections: createEmptySections() }),
 
       setMobileBrowserOpen: (open) => set({ mobileBrowserOpen: open }),
 
@@ -150,8 +96,8 @@ export const usePokedexStore = create<PokedexState>()(
       setGenerationFilter: (gen) => set({ generationFilter: gen }),
     }),
     {
-      name: 'personal-151-pokedex',
-      partialize: (state) => ({ slots: state.slots }),
+      name: 'personal-151-pokedex-v2',
+      partialize: (state) => ({ sections: state.sections }),
     }
   )
 );
