@@ -7,10 +7,11 @@ import { Check, ChevronRight } from 'lucide-react';
 
 interface EvoLineCardProps {
   members: Pokemon[];
+  matchedIds: Set<number>;
   assignedIds: Set<number>;
 }
 
-export function EvoLineCard({ members, assignedIds }: EvoLineCardProps) {
+export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardProps) {
   const addToSection = usePokedexStore((s) => s.addToSection);
   const activeSection = usePokedexStore((s) => s.activeSection);
   const allInDex = members.every((p) => assignedIds.has(p.id));
@@ -18,6 +19,7 @@ export function EvoLineCard({ members, assignedIds }: EvoLineCardProps) {
   const handleClick = () => {
     if (allInDex) return;
     const targetSection = activeSection ?? 'mid-game';
+    // Always add the full line, even if some members didn't match the filter
     addToSection(targetSection, members.map((p) => p.id));
   };
 
@@ -28,7 +30,7 @@ export function EvoLineCard({ members, assignedIds }: EvoLineCardProps) {
     <button
       onClick={handleClick}
       className={cn(
-        'w-full flex items-center gap-1 rounded-lg p-2 transition-all cursor-pointer border',
+        'inline-flex items-center gap-0.5 rounded-lg p-1.5 transition-all cursor-pointer border',
         allInDex
           ? 'opacity-40 border-primary/30'
           : 'border-border hover:border-primary/50 hover:shadow-md'
@@ -39,19 +41,23 @@ export function EvoLineCard({ members, assignedIds }: EvoLineCardProps) {
     >
       {members.map((pokemon, i) => {
         const inDex = assignedIds.has(pokemon.id);
+        const matched = matchedIds.has(pokemon.id);
         return (
           <div key={pokemon.id} className="flex items-center">
             {i > 0 && (
-              <ChevronRight className="w-3 h-3 text-muted-foreground/40 flex-shrink-0 -mx-0.5" />
+              <ChevronRight className="w-3 h-3 text-muted-foreground/30 flex-shrink-0" />
             )}
-            <div className="relative flex flex-col items-center min-w-0">
+            <div className={cn(
+              'relative flex flex-col items-center',
+              !matched && 'opacity-35',
+            )}>
               {inDex && (
                 <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-primary rounded-full flex items-center justify-center z-10">
                   <Check className="w-2 h-2 text-primary-foreground" />
                 </div>
               )}
-              <SpriteImage src={pokemon.sprite} alt={pokemon.name} size={44} />
-              <span className="text-[9px] font-medium capitalize truncate w-full text-center leading-tight max-w-[56px]">
+              <SpriteImage src={pokemon.sprite} alt={pokemon.name} size={40} />
+              <span className="text-[9px] font-medium capitalize truncate text-center leading-tight w-[50px]">
                 {pokemon.name}
               </span>
               <div className="flex gap-0.5 mt-0.5">

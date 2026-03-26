@@ -111,29 +111,55 @@ export function useFilteredPokemon({
 export interface EvolutionGroup {
   chainId: number;
   members: Pokemon[];
+  matchedIds: Set<number>; // which members actually matched the filter
 }
 
 /**
  * Groups filtered Pokemon into evolution lines.
- * Each group contains members from the same chain that passed the filter,
- * sorted by evolution stage. Groups are ordered by the lowest ID in the group.
+ * Always surfaces the full evo line for any matched Pokemon.
+ * matchedIds tracks which members directly matched the filter.
+ * Chains with 6+ members (e.g. Eevee) are shown as individual entries.
+ * Groups are ordered by the lowest ID in the group.
  */
 export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): EvolutionGroup[] {
   const filtered = useFilteredPokemon(options);
 
   return useMemo(() => {
-    const groups = new Map<number, Pokemon[]>();
-    for (const p of filtered) {
-      const chain = groups.get(p.evolutionChainId) ?? [];
-      chain.push(p);
-      groups.set(p.evolutionChainId, chain);
-    }
+    const filteredIds = new Set(filtered.map((p) => p.id));
 
-    // Sort members within each group by stage, then by ID
+    // For each filtered pokemon, get its full evo line
+    const seenChains = new Set<string>(); // "chainId-branchKey" to dedup
     const result: EvolutionGroup[] = [];
-    for (const [chainId, members] of groups) {
-      members.sort((a, b) => a.evolutionStage - b.evolutionStage || a.id - b.id);
-      result.push({ chainId, members });
+
+    for (const p of filtered) {
+      const line = getEvolutionLine(p.id);
+
+      // Skip chains with 6+ members — show individually
+      const fullChain = pokemonByChain.get(p.evolutionChainId) ?? [];
+      if (fullChain.length >= 6) {
+        const key = `single-${p.id}`;
+        if (seenChains.has(key)) continue;
+        seenChains.add(key);
+        result.push({
+          chainId: p.evolutionChainId * 10000 + p.id, // unique key
+          members: [p],
+          matchedIds: new Set([p.id]),
+        });
+        continue;
+      }
+
+      // Build a branch key from the line IDs to dedup
+      const branchKey = line.map((m) => m.id).join('-');
+      if (seenChains.has(branchKey)) continue;
+      seenChains.add(branchKey);
+
+      const matchedIds = new Set(line.filter((m) => filteredIds.has(m.id)).map((m) => m.id));
+
+      result.push({
+        chainId: p.evolutionChainId,
+        members: line,
+        matchedIds,
+      });
     }
 
     // Sort groups by first member's ID

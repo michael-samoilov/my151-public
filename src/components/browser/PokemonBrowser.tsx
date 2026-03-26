@@ -134,11 +134,12 @@ export function PokemonBrowser() {
       {/* Evo line cards */}
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
-          <div className="p-2 space-y-1.5">
+          <div className="p-2 flex flex-wrap gap-1.5 content-start">
             {groups.map((group) => (
               <EvoLineCard
                 key={group.chainId}
                 members={group.members}
+                matchedIds={group.matchedIds}
                 assignedIds={assignedIds}
               />
             ))}

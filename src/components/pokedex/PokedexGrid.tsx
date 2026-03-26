@@ -12,14 +12,27 @@ export function PokedexGrid() {
   const activeSection = usePokedexStore((s) => s.activeSection);
   const setActiveSection = usePokedexStore((s) => s.setActiveSection);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
+  const setArchetypeFilter = usePokedexStore((s) => s.setArchetypeFilter);
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const clearAll = usePokedexStore((s) => s.clearAll);
 
   const totalPlaced = Object.values(sections).reduce((s, a) => s + a.length, 0);
   const emptySlots = computeEmptySlots(sections);
 
+  // Figure out which starter lines are already filled
+  const starterCount = (sections['starters'] ?? []).length;
+
   const handleAddClick = (sectionId: string) => {
     setActiveSection(sectionId);
+    // Auto-filter for starters: cycle through grass → fire → water
+    if (sectionId === 'starters') {
+      if (starterCount < 3) setArchetypeFilter('grass-starter');
+      else if (starterCount < 6) setArchetypeFilter('fire-starter');
+      else if (starterCount < 9) setArchetypeFilter('water-starter');
+      else setArchetypeFilter(null);
+    } else {
+      setArchetypeFilter(null);
+    }
     setMobileBrowserOpen(true);
   };
 
