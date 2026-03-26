@@ -30,7 +30,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardPro
     <button
       onClick={handleClick}
       className={cn(
-        'inline-flex items-center gap-0.5 rounded-lg p-1.5 transition-all cursor-pointer border',
+        'inline-flex items-center gap-0 rounded-md p-1 transition-all cursor-pointer border',
         allInDex
           ? 'opacity-40 border-primary/30'
           : 'border-border hover:border-primary/50 hover:shadow-md'
@@ -45,30 +45,21 @@ export function EvoLineCard({ members, matchedIds, assignedIds }: EvoLineCardPro
         return (
           <div key={pokemon.id} className="flex items-center">
             {i > 0 && (
-              <ChevronRight className="w-3 h-3 text-muted-foreground/30 flex-shrink-0" />
+              <ChevronRight className="w-2.5 h-2.5 text-muted-foreground/30 flex-shrink-0 -mx-0.5" />
             )}
             <div className={cn(
               'relative flex flex-col items-center',
               !matched && 'opacity-35',
             )}>
               {inDex && (
-                <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-primary rounded-full flex items-center justify-center z-10">
-                  <Check className="w-2 h-2 text-primary-foreground" />
+                <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full flex items-center justify-center z-10">
+                  <Check className="w-1.5 h-1.5 text-primary-foreground" />
                 </div>
               )}
-              <SpriteImage src={pokemon.sprite} alt={pokemon.name} size={40} />
-              <span className="text-[9px] font-medium capitalize truncate text-center leading-tight w-[50px]">
+              <SpriteImage src={pokemon.sprite} alt={pokemon.name} size={32} />
+              <span className="text-[8px] font-medium capitalize truncate text-center leading-tight w-[42px]">
                 {pokemon.name}
               </span>
-              <div className="flex gap-0.5 mt-0.5">
-                {pokemon.types.map((t) => (
-                  <span
-                    key={t}
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
-                  />
-                ))}
-              </div>
             </div>
           </div>
         );
