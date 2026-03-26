@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArchetypeFilter } from './ArchetypeFilter';
-import { PokemonTile } from './PokemonTile';
+import { EvoLineCard } from './EvoLineCard';
 import { useFilteredPokemonGrouped } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_NAMES } from '@/types/pokemon';
@@ -125,20 +125,13 @@ export function PokemonBrowser() {
       {/* Pokemon tile grid grouped by evo lines */}
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
-          <div className="p-3 space-y-1">
+          <div className="p-2 space-y-1.5">
             {groups.map((group) => (
-              <div
+              <EvoLineCard
                 key={group.chainId}
-                className="grid grid-cols-3 gap-1"
-              >
-                {group.members.map((pokemon) => (
-                  <PokemonTile
-                    key={pokemon.id}
-                    pokemon={pokemon}
-                    isInDex={assignedIds.has(pokemon.id)}
-                  />
-                ))}
-              </div>
+                members={group.members}
+                assignedIds={assignedIds}
+              />
             ))}
             {groups.length === 0 && (
               <div className="py-12 text-center text-muted-foreground">

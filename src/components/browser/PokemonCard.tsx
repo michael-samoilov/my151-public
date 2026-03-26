@@ -12,9 +12,8 @@ interface PokemonCardProps {
 }
 
 export function PokemonCard({ pokemon, isInDex }: PokemonCardProps) {
-  const assignToNextEmpty = usePokedexStore((s) => s.assignToNextEmpty);
-  const selectedSlot = usePokedexStore((s) => s.selectedSlot);
   const assignPokemon = usePokedexStore((s) => s.assignPokemon);
+  const selectedSlot = usePokedexStore((s) => s.selectedSlot);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `pokemon-${pokemon.id}`,
@@ -29,8 +28,6 @@ export function PokemonCard({ pokemon, isInDex }: PokemonCardProps) {
     if (isInDex) return;
     if (selectedSlot !== null) {
       assignPokemon(selectedSlot, pokemon.id);
-    } else {
-      assignToNextEmpty(pokemon.id);
     }
   };
 
