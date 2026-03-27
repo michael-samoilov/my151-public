@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 type FilterSheet = 'type' | 'generation' | 'evoStage' | 'browse' | null;
 
-const GEOGRAPHY_ORDER = ['forest', 'cave-pokemon', 'beach', 'ocean', 'fishing-pokemon', 'desert', 'volcanic', 'tundra'];
+const GEOGRAPHY_ORDER = ['forest', 'cave-pokemon', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra'];
 const GEOGRAPHY_IDS = new Set(GEOGRAPHY_ORDER);
 const GAME_MECHANICS_ORDER = ['evolution-item', 'trade-evo', 'branched-evo', 'static-encounter', 'gift-pokemon', 'version-exclusive'];
 const GAME_MECHANICS_IDS = new Set(GAME_MECHANICS_ORDER);

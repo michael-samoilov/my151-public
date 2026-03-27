@@ -261,13 +261,10 @@ export const ARCHETYPES: Archetype[] = [
       772,773, 789,790, 803,804,
       // SwSh: Toxel, Charmander (Leon), Type: Null
       848, 4,5,6,
-      // PLA: Shiny Ponyta
-      77,
-      // SV: various gifts
     ],
     suggestedSlotRange: [77, 82],
     color: '#d685ad',
-    shinyIds: [147, 443, 77],
+    shinyIds: [147, 443],
     subgroups: [
       { label: 'Red/Blue/Yellow', pokemonIds: [133,134,135,136, 131, 106,107, 129,130, 137] },
       { label: 'Gold/Silver/Crystal', pokemonIds: [175,176,468, 236,106,107, 147,148,149, 213] },
@@ -278,7 +275,6 @@ export const ARCHETYPES: Archetype[] = [
       { label: 'X/Y', pokemonIds: [448, 131] },
       { label: 'Sun/Moon', pokemonIds: [772,773, 789,790, 803,804] },
       { label: 'Sword/Shield', pokemonIds: [848, 4,5,6, 772,773] },
-      { label: 'Legends Arceus', pokemonIds: [77] },
     ],
   },
   {
