@@ -118,7 +118,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
                 !matched && 'opacity-35',
               )}>
                 {inDex && (
-                  <div className="absolute top-0 right-0 w-3 h-3 bg-primary rounded-full flex items-center justify-center z-10">
+                  <div className="absolute top-0.5 right-1 w-3 h-3 bg-primary rounded-full flex items-center justify-center z-10">
                     <Check className="w-1.5 h-1.5 text-primary-foreground" />
                   </div>
                 )}
