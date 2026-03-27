@@ -1,8 +1,70 @@
+import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import type { Pokemon } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { Check } from 'lucide-react';
+
+const COLS = 6;
+
+// ---------- Grid wrapper that prevents evo line splitting ----------
+
+interface EvoLineGroup {
+  key: string | number;
+  members: Pokemon[];
+  matchedIds: Set<number>;
+}
+
+interface EvoLineGridProps {
+  groups: EvoLineGroup[];
+  assignedIds: Set<number>;
+  shinyIds?: Set<number>;
+  spriteOverrides?: Record<number, string>;
+}
+
+/** Renders evo line cards in a 6-column grid, inserting spacers so no line wraps mid-row */
+export function EvoLineGrid({ groups, assignedIds, shinyIds, spriteOverrides }: EvoLineGridProps) {
+  const elements = useMemo(() => {
+    const result: React.ReactNode[] = [];
+    let col = 0; // 0-based current column position
+
+    for (const group of groups) {
+      const size = Math.min(group.members.length, COLS);
+      // If this line won't fit in the remaining columns, pad and wrap
+      if (col > 0 && col + size > COLS) {
+        const spacers = COLS - col;
+        for (let s = 0; s < spacers; s++) {
+          result.push(<div key={`spacer-${result.length}`} />);
+        }
+        col = 0;
+      }
+      result.push(
+        <EvoLineCard
+          key={group.key}
+          members={group.members}
+          matchedIds={group.matchedIds}
+          assignedIds={assignedIds}
+          shinyIds={shinyIds}
+          spriteOverrides={spriteOverrides}
+        />
+      );
+      col = (col + size) % COLS;
+    }
+
+    return result;
+  }, [groups, assignedIds, shinyIds, spriteOverrides]);
+
+  return (
+    <div
+      className="grid grid-cols-6 gap-x-0 gap-y-1"
+      style={{ background: 'repeating-linear-gradient(to right, rgba(255,0,0,0.08) 0, rgba(255,0,0,0.08) calc(100%/6), rgba(0,0,255,0.08) calc(100%/6), rgba(0,0,255,0.08) calc(200%/6))' }}
+    >
+      {elements}
+    </div>
+  );
+}
+
+// ---------- Single evo line card (renders N cells) ----------
 
 interface EvoLineCardProps {
   members: Pokemon[];
@@ -49,7 +111,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
                 ? 'opacity-40 border-primary/30'
                 : 'border-border hover:border-primary/50',
             )}
-            style={{ background: bg, outline: '1px solid rgba(0,255,0,0.5)' }}
+            style={{ background: bg, outline: '1px dashed rgba(255,0,0,0.4)' }}
           >
             <div className={cn(
               'relative flex flex-col items-center w-full',

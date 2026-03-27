@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { EvoLineCard } from './EvoLineCard';
+import { EvoLineGrid } from './EvoLineCard';
 import { useFilteredPokemonGrouped } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { SECTION_DEFS } from '@/data/slot-template';
@@ -236,13 +236,12 @@ export function PokemonBrowser() {
         key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
         className="flex-1 min-h-0 overflow-y-auto"
       >
-        <div className="p-2 grid grid-cols-6 gap-x-0 gap-y-1 content-start" style={{ background: 'repeating-linear-gradient(to right, rgba(255,0,0,0.08) 0, rgba(255,0,0,0.08) calc(100%/6), rgba(0,0,255,0.08) calc(100%/6), rgba(0,0,255,0.08) calc(200%/6))' }}>
+        <div className="p-2 space-y-1 content-start">
           {activeArchetypeDef?.subgroups ? (
             activeArchetypeDef.subgroups.map((sub) => {
               const subIdSet = new Set(sub.pokemonIds);
               const subGroups = groups
                 .filter(g => g.members.some(m => subIdSet.has(m.id)))
-                // Sort by position in subgroup's pokemonIds (gym order, not dex order)
                 .sort((a, b) => {
                   const aIdx = sub.pokemonIds.findIndex(id => a.members.some(m => m.id === id));
                   const bIdx = sub.pokemonIds.findIndex(id => b.members.some(m => m.id === id));
@@ -250,43 +249,42 @@ export function PokemonBrowser() {
                 });
               if (subGroups.length === 0) return null;
               return (
-                <div key={sub.label} className="col-span-6">
+                <div key={sub.label}>
                   <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-2 mb-1 px-1">
                     {sub.label}
                   </div>
-                  <div className="grid grid-cols-6 gap-1">
-                    {subGroups.map((group) => {
-                      // Override matchedIds to only highlight the ace Pokemon in this subgroup
+                  <EvoLineGrid
+                    groups={subGroups.map((group) => {
                       const subMatchedIds = new Set(
                         group.members.filter(m => subIdSet.has(m.id)).map(m => m.id)
                       );
-                      return (
-                        <EvoLineCard
-                          key={group.chainId}
-                          members={group.members}
-                          matchedIds={subMatchedIds}
-                          assignedIds={assignedIds}
-                          shinyIds={shinyIds} spriteOverrides={spriteOverrides}
-                        />
-                      );
+                      return {
+                        key: group.chainId,
+                        members: group.members,
+                        matchedIds: subMatchedIds,
+                      };
                     })}
-                  </div>
+                    assignedIds={assignedIds}
+                    shinyIds={shinyIds}
+                    spriteOverrides={spriteOverrides}
+                  />
                 </div>
               );
             })
           ) : (
-            groups.map((group) => (
-              <EvoLineCard
-                key={group.chainId}
-                members={group.members}
-                matchedIds={group.matchedIds}
-                assignedIds={assignedIds}
-                shinyIds={shinyIds} spriteOverrides={spriteOverrides}
-              />
-            ))
+            <EvoLineGrid
+              groups={groups.map((group) => ({
+                key: group.chainId,
+                members: group.members,
+                matchedIds: group.matchedIds,
+              }))}
+              assignedIds={assignedIds}
+              shinyIds={shinyIds}
+              spriteOverrides={spriteOverrides}
+            />
           )}
           {groups.length === 0 && (
-            <div className="py-12 text-center text-muted-foreground col-span-6">
+            <div className="py-12 text-center text-muted-foreground">
               <p>No Pokemon found.</p>
               <p className="text-sm mt-1">Try adjusting your filters.</p>
             </div>
