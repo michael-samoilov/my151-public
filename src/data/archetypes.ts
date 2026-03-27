@@ -371,6 +371,14 @@ export const ARCHETYPES: Archetype[] = [
     ],
     suggestedSlotRange: [40, 60],
     color: '#e07c4f',
+    subgroups: [
+      { label: 'Gen 1', pokemonIds: [43,44,45,182, 60,61,62,186, 79,80,199, 133,134,135,136,196,197,470,471,700, 123,212,900] },
+      { label: 'Gen 2', pokemonIds: [236,106,107,237] },
+      { label: 'Gen 3', pokemonIds: [265,266,267,268,269, 280,281,282,475, 290,291,292, 361,362,478, 366,367,368] },
+      { label: 'Gen 4', pokemonIds: [412,413,414] },
+      { label: 'Gen 8', pokemonIds: [10164,10165,10172, 840,841,842,1011,1019] },
+      { label: 'Gen 9', pokemonIds: [935,936,937] },
+    ],
   },
   {
     id: 'rivalry-pair',
