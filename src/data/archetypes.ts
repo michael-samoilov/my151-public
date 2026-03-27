@@ -274,7 +274,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'mimic',
     name: 'Mimic/Disguise',
     description: 'Pokemon that mimic objects or other Pokemon',
-    pokemonIds: [100,101, 10231,10232, 132, 185, 438, 570,571, 10238,10239, 590,591, 618,10179, 778, 854,855],
+    pokemonIds: [100,101, 10231,10232, 132, 185, 438, 570,571, 10238,10239, 590,591, 10179, 778, 854,855],
     suggestedSlotRange: [40, 45],
     color: '#735797',
   },
