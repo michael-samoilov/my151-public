@@ -74,10 +74,12 @@ export function PokemonBrowser() {
     if (activeArchetypeDef?.subgroups) return activeArchetypeDef.subgroups;
 
     // For archetypes: group archetype pokemonIds by generation
-    // For default/category views: group all visible Pokemon by generation
+    // For default/category views: group matched member IDs by generation
+    // (using matchedIds ensures e.g. Baby Pokemon category groups by the baby's gen,
+    //  not by the gen of evolved forms like Hitmonlee)
     const sourceIds = activeArchetypeDef
       ? activeArchetypeDef.pokemonIds
-      : groups.flatMap(g => g.members.map(m => m.id));
+      : groups.flatMap(g => [...g.matchedIds]);
 
     const genMap = new Map<number, number[]>();
     for (const id of sourceIds) {
