@@ -480,6 +480,133 @@ export const ARCHETYPES: Archetype[] = [
       { label: 'Paldea Pokemon League', pokemonIds: [980,959,973,998,970] },
     ],
   },
+  {
+    id: 'evolution-item',
+    name: 'Evolution Item',
+    description: 'Pokemon that evolve using an evolution item',
+    pokemonIds: [
+      // Gen 1 stones
+      37,38, 58,59, 133,136, // Fire Stone: Vulpix, Growlithe, Eevee→Flareon
+      60,61,62, 90,91, 120,121, 133,134, // Water Stone: Poliwag line, Shellder, Staryu, Eevee→Vaporeon
+      25,26, 133,135, // Thunder Stone: Pikachu, Eevee→Jolteon
+      43,44,45, 69,70,71, 102,103, // Leaf Stone: Gloom→Vileplume, Weepinbell→Victreebel, Exeggcute→Exeggutor
+      30,31, 33,34, 35,36, 39,40, // Moon Stone: Nidorina, Nidorino, Clefairy, Jigglypuff
+      // Gen 2 trade-with-item
+      95,208, 123,212, // Metal Coat: Onix→Steelix, Scyther→Scizor
+      61,186, 79,199, // King's Rock: Poliwhirl→Politoed, Slowpoke→Slowking
+      137,233, // Upgrade: Porygon→Porygon2
+      116,117,230, // Dragon Scale: Seadra→Kingdra
+      // Gen 2 stones
+      191,192, // Sun Stone: Sunkern→Sunflora
+      // Gen 3
+      366,367,368, // Deep Sea Tooth / Scale: Clamperl→Huntail/Gorebyss
+      270,271,272, 273,274,275, // Water/Leaf Stone: Lotad line, Nuzleaf line
+      300,301, // Moon Stone: Skitty→Delcatty
+      // Gen 4 new items
+      315,407, 176,468, // Shiny Stone: Roselia→Roserade, Togetic→Togekiss
+      198,430, 200,429, // Dusk Stone: Murkrow→Honchkrow, Misdreavus→Mismagius
+      280,281,475, 361,478, // Dawn Stone: Kirlia→Gallade, Snorunt→Froslass
+      440,113, // Oval Stone: Happiny→Chansey
+      215,461, // Razor Claw: Sneasel→Weavile
+      207,472, // Razor Fang: Gligar→Gliscor
+      125,466, 126,467, // Electirizer / Magmarizer: Electabuzz→Electivire, Magmar→Magmortar
+      112,464, // Protector: Rhydon→Rhyperior
+      356,477, // Reaper Cloth: Dusclops→Dusknoir
+      233,474, // Dubious Disc: Porygon2→Porygon-Z
+      81,82,462, 299,476, // Thunder Stone: Magneton→Magnezone (in some games), Nosepass→Probopass
+      // Gen 5
+      513,514, 515,516, 511,512, // Fire/Water/Leaf Stone: Pansear, Panpour, Pansage
+      191,192, 546,547, 548,549, // Sun Stone: Sunkern, Cottonee→Whimsicott, Petilil→Lilligant
+      517,518, // Moon Stone: Munna→Musharna
+      572,573, // Shiny Stone: Minccino→Cinccino
+      607,608,609, // Dusk Stone: Lampent→Chandelure
+      602,603,604, // Thunder Stone: Eelektrik→Eelektross
+      349,350, // Prism Scale: Feebas→Milotic
+      // Gen 6
+      670,671, // Shiny Stone: Floette→Florges
+      679,680,681, // Dusk Stone: Doublade→Aegislash
+      694,695, // Sun Stone: Helioptile→Heliolisk
+      682,683, 684,685, // Sachet / Whipped Dream: Spritzee→Aromatisse, Swirlix→Slurpuff
+      // Gen 7
+      10103,10104, // Ice Stone: A-Vulpix→A-Ninetales
+      10229,10230, // Fire Stone: H-Growlithe→H-Arcanine
+      10101,10102, // Ice Stone: A-Sandshrew→A-Sandslash
+      133,471, // Ice Stone: Eevee→Glaceon
+      736,737,738, // Thunder Stone: Charjabug→Vikavolt
+      740, // Ice Stone: Crabrawler→Crabominable
+      // Gen 8
+      10176,10177, // Ice Stone: G-Darumaka→G-Darmanitan
+      840,841, 840,842, // Tart Apple / Sweet Apple: Applin→Flapple, Applin→Appletun
+      854,855, // Cracked Pot / Chipped Pot: Sinistea→Polteageist
+      868,869, // Milcery Sweets: Milcery→Alcremie
+      951,952, // Fire Stone: Capsakid→Scovillain
+      10164,10165,10172, // Galarica Cuff / Wreath: G-Slowpoke→G-Slowbro/G-Slowking
+      891,892, // Scroll of Darkness / Waters: Kubfu→Urshifu
+      // Gen 8 (Legends Arceus)
+      123,900, // Black Augurite: Scyther→Kleavor
+      217,901, // Peat Block: Ursaring→Ursaluna
+      10235,903, // Razor Claw: Sneasel-H→Sneasler
+      548,10237, // Sun Stone: Petilil→Lilligant-H (in PLA)
+      // Gen 9
+      935,936,937, // Auspicious / Malicious Armor: Charcadet→Armarouge/Ceruledge
+      938,939, // Thunder Stone: Tadbulb→Bellibolt
+      975, // Ice Stone: Cetoddle→Cetitan
+      884,1018, // Metal Alloy: Duraludon→Archaludon
+      840,1011,1019, // Syrupy Apple: Applin→Dipplin→Hydrapple
+      1012,1013, // Unremarkable / Masterpiece Teacup: Poltchageist→Sinistcha
+    ],
+    suggestedSlotRange: [1, 151],
+    color: '#c77dff',
+    subgroups: [
+      // Gen 1 — Evolution Stones
+      { label: 'Fire Stone', pokemonIds: [37,38, 58,59, 133,136, 10229,10230, 513,514, 951,952] },
+      { label: 'Water Stone', pokemonIds: [60,61,62, 90,91, 120,121, 133,134, 270,271,272, 515,516] },
+      { label: 'Thunder Stone', pokemonIds: [25,26, 133,135, 81,82,462, 299,476, 602,603,604, 736,737,738, 938,939] },
+      { label: 'Leaf Stone', pokemonIds: [43,44,45, 69,70,71, 102,103, 10114, 273,274,275, 511,512, 548,549, 10237] },
+      { label: 'Moon Stone', pokemonIds: [30,31, 33,34, 35,36, 39,40, 300,301, 517,518] },
+      // Gen 2 — Trade-with-Item & Sun Stone
+      { label: 'Sun Stone', pokemonIds: [191,192, 546,547, 548,549, 694,695] },
+      { label: 'King\'s Rock', pokemonIds: [61,186, 79,199] },
+      { label: 'Metal Coat', pokemonIds: [95,208, 123,212] },
+      { label: 'Dragon Scale', pokemonIds: [116,117,230] },
+      { label: 'Upgrade', pokemonIds: [137,233] },
+      // Gen 3
+      { label: 'Deep Sea Tooth / Deep Sea Scale', pokemonIds: [366,367,368] },
+      // Gen 4 — New Stones & Held Items
+      { label: 'Shiny Stone', pokemonIds: [176,468, 315,407, 572,573, 670,671] },
+      { label: 'Dusk Stone', pokemonIds: [198,430, 200,429, 607,608,609, 679,680,681] },
+      { label: 'Dawn Stone', pokemonIds: [280,281,475, 361,478] },
+      { label: 'Oval Stone', pokemonIds: [440,113] },
+      { label: 'Razor Claw', pokemonIds: [215,461, 10235,903] },
+      { label: 'Razor Fang', pokemonIds: [207,472] },
+      { label: 'Electirizer', pokemonIds: [125,466] },
+      { label: 'Magmarizer', pokemonIds: [126,467] },
+      { label: 'Protector', pokemonIds: [112,464] },
+      { label: 'Reaper Cloth', pokemonIds: [356,477] },
+      { label: 'Dubious Disc', pokemonIds: [233,474] },
+      // Gen 5
+      { label: 'Prism Scale', pokemonIds: [349,350] },
+      // Gen 6
+      { label: 'Sachet', pokemonIds: [682,683] },
+      { label: 'Whipped Dream', pokemonIds: [684,685] },
+      // Gen 7
+      { label: 'Ice Stone', pokemonIds: [10101,10102, 10103,10104, 133,471, 740, 10176,10177, 975] },
+      // Gen 8
+      { label: 'Tart Apple / Sweet Apple', pokemonIds: [840,841,842] },
+      { label: 'Cracked Pot / Chipped Pot', pokemonIds: [854,855] },
+      { label: 'Sweet (Milcery)', pokemonIds: [868,869] },
+      { label: 'Galarica Cuff / Galarica Wreath', pokemonIds: [10164,10165,10172] },
+      { label: 'Scroll of Darkness / Scroll of Waters', pokemonIds: [891,892] },
+      // Gen 8 (Legends Arceus)
+      { label: 'Black Augurite', pokemonIds: [123,900] },
+      { label: 'Peat Block', pokemonIds: [217,901] },
+      // Gen 9
+      { label: 'Auspicious Armor / Malicious Armor', pokemonIds: [935,936,937] },
+      { label: 'Metal Alloy', pokemonIds: [884,1018] },
+      { label: 'Syrupy Apple', pokemonIds: [840,1011,1019] },
+      { label: 'Unremarkable / Masterpiece Teacup', pokemonIds: [1012,1013] },
+    ],
+  },
 ];
 
 export function getArchetypeById(id: string): Archetype | undefined {
