@@ -290,16 +290,34 @@ export function PokemonBrowser() {
               );
             })
           ) : (
-            <EvoLineGrid
-              groups={groups.map((group) => ({
-                key: group.chainId,
-                members: group.members,
-                matchedIds: group.matchedIds,
-              }))}
-              assignedIds={assignedIds}
-              shinyIds={shinyIds}
-              spriteOverrides={spriteOverrides}
-            />
+            // Default view: bucket evo lines by generation of first member
+            (() => {
+              const genMap = new Map<number, typeof groups>();
+              for (const group of groups) {
+                const gen = group.members[0].generation;
+                if (!genMap.has(gen)) genMap.set(gen, []);
+                genMap.get(gen)!.push(group);
+              }
+              return [...genMap.entries()]
+                .sort((a, b) => a[0] - b[0])
+                .map(([gen, genGroups]) => (
+                  <div key={gen}>
+                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-2 mb-1 px-1">
+                      Gen {gen}
+                    </div>
+                    <EvoLineGrid
+                      groups={genGroups.map((group) => ({
+                        key: group.chainId,
+                        members: group.members,
+                        matchedIds: group.matchedIds,
+                      }))}
+                      assignedIds={assignedIds}
+                      shinyIds={shinyIds}
+                      spriteOverrides={spriteOverrides}
+                    />
+                  </div>
+                ));
+            })()
           )}
           {groups.length === 0 && (
             <div className="py-12 text-center text-muted-foreground">
