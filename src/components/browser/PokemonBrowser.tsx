@@ -236,7 +236,7 @@ export function PokemonBrowser() {
         key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
         className="flex-1 min-h-0 overflow-y-auto"
       >
-        <div className="p-2 flex flex-wrap gap-1.5 content-start">
+        <div className="p-2 grid grid-cols-6 gap-1 content-start">
           {activeArchetypeDef?.subgroups ? (
             activeArchetypeDef.subgroups.map((sub) => {
               const subIdSet = new Set(sub.pokemonIds);
@@ -250,11 +250,11 @@ export function PokemonBrowser() {
                 });
               if (subGroups.length === 0) return null;
               return (
-                <div key={sub.label} className="w-full">
+                <div key={sub.label} className="col-span-6">
                   <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-2 mb-1 px-1">
                     {sub.label}
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="grid grid-cols-6 gap-1">
                     {subGroups.map((group) => {
                       // Override matchedIds to only highlight the ace Pokemon in this subgroup
                       const subMatchedIds = new Set(
@@ -286,7 +286,7 @@ export function PokemonBrowser() {
             ))
           )}
           {groups.length === 0 && (
-            <div className="py-12 text-center text-muted-foreground w-full">
+            <div className="py-12 text-center text-muted-foreground col-span-6">
               <p>No Pokemon found.</p>
               <p className="text-sm mt-1">Try adjusting your filters.</p>
             </div>
