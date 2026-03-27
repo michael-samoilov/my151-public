@@ -246,7 +246,7 @@ export const ARCHETYPES: Archetype[] = [
     pokemonIds: [
       // RBY: Eevee, Lapras
       131, 133,134,135,136,196,197,470,471,700,
-      // GSC: Togepi egg, Shuckle, Dratini (Dragon's Den)
+      // GS: Togepi egg, Shuckle, Dratini (Dragon's Den gift)
       175,176,468, 213, 147,148,149,
       // RSE: Beldum (Steven), Castform, Wynaut egg
       374,375,376, 351, 360,
@@ -265,7 +265,7 @@ export const ARCHETYPES: Archetype[] = [
     color: '#d685ad',
     subgroups: [
       { label: 'Red/Blue/Yellow', pokemonIds: [133, 131] },
-      { label: 'Gold/Silver/Crystal', pokemonIds: [175, 213, 147] },
+      { label: 'Gold/Silver', pokemonIds: [175, 213, 147] },
       { label: 'Ruby/Sapphire/Emerald', pokemonIds: [374, 351, 360] },
       { label: 'Diamond/Pearl/Platinum', pokemonIds: [133, 447, 175] },
       { label: 'Black/White', pokemonIds: [570, 636] },
@@ -307,7 +307,7 @@ export const ARCHETYPES: Archetype[] = [
     pokemonIds: [
       // RBY: Hitmonlee/Hitmonchan (Fighting Dojo), Porygon (Game Corner), Magikarp (salesman)
       106,107,236,237, 137,233,474, 129,130,
-      // GSC: Tyrogue (Karate King), Extremespeed Dratini (Dragon's Den quiz)
+      // Crystal/HGSS: Tyrogue (Karate King), Extremespeed Dratini (Dragon's Den quiz)
       147,148,149,
       // B2W2: Shiny Dratini, Shiny Gible (Benga rewards)
       443,444,445,
@@ -316,7 +316,7 @@ export const ARCHETYPES: Archetype[] = [
     color: '#f59e0b',
     subgroups: [
       { label: 'Red/Blue/Yellow', pokemonIds: [106, 107, 137, 129] },
-      { label: 'Gold/Silver/Crystal', pokemonIds: [236, 147] },
+      { label: 'Crystal/HGSS', pokemonIds: [236, 147] },
       { label: 'Black 2/White 2', pokemonIds: [147, 443], shinyIds: [147, 443] },
     ],
   },
