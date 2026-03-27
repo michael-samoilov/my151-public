@@ -16,66 +16,14 @@ const PARADOX_IDS = new Set([984,985,986,987,988,989, 990,991,992,993,994,995, 1
 // Convergent Evolution IDs
 const CONVERGENT_IDS = new Set([948,949, 960,961]);
 
+// Ordered by introduction to the series
 export const CATEGORIES: PokemonCategory[] = [
+  // Gen 1 concepts
   {
-    id: 'alolan-form',
-    name: 'Alolan Form',
-    color: '#f6ad55',
-    filter: (p) => p.name.includes('-alola'),
-  },
-  {
-    id: 'galarian-form',
-    name: 'Galarian Form',
-    color: '#e53e3e',
-    filter: (p) => p.name.includes('-galar'),
-  },
-  {
-    id: 'hisuian-form',
-    name: 'Hisuian Form',
-    color: '#805ad5',
-    filter: (p) => p.name.includes('-hisui'),
-  },
-  {
-    id: 'paldean-form',
-    name: 'Paldean Form',
-    color: '#dd6b20',
-    filter: (p) => p.name.includes('-paldea'),
-  },
-  {
-    id: 'legendary',
-    name: 'Legendary',
-    color: '#d69e2e',
-    filter: (p) => p.isLegendary,
-  },
-  {
-    id: 'mythical',
-    name: 'Mythical',
-    color: '#ed64a6',
-    filter: (p) => p.isMythical,
-  },
-  {
-    id: 'ultra-beast',
-    name: 'Ultra Beast',
-    color: '#1a202c',
-    filter: (p) => ULTRA_BEAST_IDS.has(p.id),
-  },
-  {
-    id: 'paradox',
-    name: 'Paradox',
-    color: '#e53e3e',
-    filter: (p) => PARADOX_IDS.has(p.id),
-  },
-  {
-    id: 'convergent',
-    name: 'Convergent',
-    color: '#38a169',
-    filter: (p) => CONVERGENT_IDS.has(p.id),
-  },
-  {
-    id: 'baby',
-    name: 'Baby Pokemon',
-    color: '#ed8936',
-    filter: (p) => p.isBaby,
+    id: 'starter',
+    name: 'Starter',
+    color: '#48bb78',
+    filter: (p) => STARTER_IDS.has(p.id),
   },
   {
     id: 'fossil',
@@ -90,10 +38,69 @@ export const CATEGORIES: PokemonCategory[] = [
     filter: (p) => PSEUDO_LEGENDARY_IDS.has(p.id),
   },
   {
-    id: 'starter',
-    name: 'Starter',
-    color: '#48bb78',
-    filter: (p) => STARTER_IDS.has(p.id),
+    id: 'legendary',
+    name: 'Legendary',
+    color: '#d69e2e',
+    filter: (p) => p.isLegendary,
+  },
+  {
+    id: 'mythical',
+    name: 'Mythical',
+    color: '#ed64a6',
+    filter: (p) => p.isMythical,
+  },
+  // Gen 2
+  {
+    id: 'baby',
+    name: 'Baby Pokemon',
+    color: '#ed8936',
+    filter: (p) => p.isBaby,
+  },
+  // Gen 7 (Alola)
+  {
+    id: 'alolan-form',
+    name: 'Alolan Form',
+    color: '#f6ad55',
+    filter: (p) => p.name.includes('-alola'),
+  },
+  {
+    id: 'ultra-beast',
+    name: 'Ultra Beast',
+    color: '#1a202c',
+    filter: (p) => ULTRA_BEAST_IDS.has(p.id),
+  },
+  // Gen 8 (Galar)
+  {
+    id: 'galarian-form',
+    name: 'Galarian Form',
+    color: '#e53e3e',
+    filter: (p) => p.name.includes('-galar'),
+  },
+  // Gen 8 (Legends Arceus)
+  {
+    id: 'hisuian-form',
+    name: 'Hisuian Form',
+    color: '#805ad5',
+    filter: (p) => p.name.includes('-hisui'),
+  },
+  // Gen 9 (Paldea)
+  {
+    id: 'paldean-form',
+    name: 'Paldean Form',
+    color: '#dd6b20',
+    filter: (p) => p.name.includes('-paldea'),
+  },
+  {
+    id: 'convergent',
+    name: 'Convergent',
+    color: '#38a169',
+    filter: (p) => CONVERGENT_IDS.has(p.id),
+  },
+  {
+    id: 'paradox',
+    name: 'Paradox',
+    color: '#e53e3e',
+    filter: (p) => PARADOX_IDS.has(p.id),
   },
 ];
 

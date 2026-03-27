@@ -349,7 +349,7 @@ export function PokemonBrowser() {
                         <button
                           key={type}
                           onClick={() => toggleType(type)}
-                          className="py-1.5 rounded-md text-[11px] font-semibold capitalize text-white cursor-pointer transition-all"
+                          className="py-1 rounded-md text-[11px] font-semibold capitalize text-white cursor-pointer transition-all"
                           style={{
                             backgroundColor: TYPE_COLORS[type],
                             opacity: typeFilter && typeFilter.length > 0 && !isSelected ? 0.3 : 1,
