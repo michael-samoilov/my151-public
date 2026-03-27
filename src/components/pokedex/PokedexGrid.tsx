@@ -13,6 +13,7 @@ import {
   useSensor,
   useSensors,
   DragOverlay,
+  useDroppable,
   closestCenter,
   type DragStartEvent,
   type DragEndEvent,
@@ -206,6 +207,30 @@ function SortableTile({
   );
 }
 
+// ---------- end-of-section drop zone ----------
+
+/** Sentinel ID prefix for "drop at end of section" */
+const END_SENTINEL = 'end::';
+function endSentinelId(sectionId: string) { return `${END_SENTINEL}${sectionId}`; }
+function isEndSentinel(id: string) { return id.startsWith(END_SENTINEL); }
+function parseEndSentinel(id: string) { return id.slice(END_SENTINEL.length); }
+
+function EndDropZone({ sectionId, showIndicator }: { sectionId: string; showIndicator: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({ id: endSentinelId(sectionId) });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`relative aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-colors ${
+        isOver ? 'border-primary/50 bg-primary/5' : 'border-transparent'
+      }`}
+    >
+      {showIndicator && (
+        <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 -translate-x-[calc(50%+0.5vw)] md:-translate-x-[calc(50%+2px)]" />
+      )}
+    </div>
+  );
+}
+
 // ---------- main grid ----------
 
 export function PokedexGrid() {
@@ -268,35 +293,43 @@ export function PokedexGrid() {
       const { over } = event;
 
       if (over && dragLineIds && dragFromSection) {
-        const target = parseTileId(over.id as string);
-
-        // Compute insert position: before the target tile's evo line
-        const targetSectionIds = sections[target.sectionId] ?? [];
-        const targetLineIds = findEvoLineGroup(target.pokemonId, targetSectionIds);
+        const overId = over.id as string;
         const dragSet = new Set(dragLineIds);
 
-        // If dropping on self, no-op
-        if (dragSet.has(target.pokemonId)) {
-          setDragLineIds(null);
-          setDragFromSection(null);
-          setOverTileId(null);
-          return;
-        }
-
-        // Find the index of the first member of the target evo line
-        // (excluding the dragged line if same section)
-        let insertIdx: number;
-        if (dragFromSection === target.sectionId) {
-          // Same section: compute index in the array after removing dragged IDs
-          const withoutDragged = targetSectionIds.filter((id) => !dragSet.has(id));
-          const targetFirstIdx = withoutDragged.indexOf(targetLineIds[0]);
-          insertIdx = targetFirstIdx >= 0 ? targetFirstIdx : withoutDragged.length;
+        // End-of-section sentinel: append to end
+        if (isEndSentinel(overId)) {
+          const targetSection = parseEndSentinel(overId);
+          const targetSectionIds = sections[targetSection] ?? [];
+          const insertIdx = dragFromSection === targetSection
+            ? targetSectionIds.filter((id) => !dragSet.has(id)).length
+            : targetSectionIds.length;
+          moveEvoLine(dragFromSection, dragLineIds, targetSection, insertIdx);
         } else {
-          const targetFirstIdx = targetSectionIds.indexOf(targetLineIds[0]);
-          insertIdx = targetFirstIdx >= 0 ? targetFirstIdx : targetSectionIds.length;
-        }
+          const target = parseTileId(overId);
+          const targetSectionIds = sections[target.sectionId] ?? [];
+          const targetLineIds = findEvoLineGroup(target.pokemonId, targetSectionIds);
 
-        moveEvoLine(dragFromSection, dragLineIds, target.sectionId, insertIdx);
+          // If dropping on self, no-op
+          if (dragSet.has(target.pokemonId)) {
+            setDragLineIds(null);
+            setDragFromSection(null);
+            setOverTileId(null);
+            return;
+          }
+
+          // Find the index of the first member of the target evo line
+          let insertIdx: number;
+          if (dragFromSection === target.sectionId) {
+            const withoutDragged = targetSectionIds.filter((id) => !dragSet.has(id));
+            const targetFirstIdx = withoutDragged.indexOf(targetLineIds[0]);
+            insertIdx = targetFirstIdx >= 0 ? targetFirstIdx : withoutDragged.length;
+          } else {
+            const targetFirstIdx = targetSectionIds.indexOf(targetLineIds[0]);
+            insertIdx = targetFirstIdx >= 0 ? targetFirstIdx : targetSectionIds.length;
+          }
+
+          moveEvoLine(dragFromSection, dragLineIds, target.sectionId, insertIdx);
+        }
       }
 
       setDragLineIds(null);
@@ -312,18 +345,24 @@ export function PokedexGrid() {
     setOverTileId(null);
   }, []);
 
-  // Compute which tile should show the insert indicator
-  const insertBeforeTileId = useMemo(() => {
-    if (!overTileId || !dragLineIds) return null;
+  // Compute which tile should show the insert indicator (always snaps to evo line boundary)
+  const insertIndicator = useMemo<{ tileId: string | null; endSection: string | null }>(() => {
+    if (!overTileId || !dragLineIds) return { tileId: null, endSection: null };
+
+    // End sentinel: show indicator at end of section
+    if (isEndSentinel(overTileId)) {
+      return { tileId: null, endSection: parseEndSentinel(overTileId) };
+    }
+
     const target = parseTileId(overTileId);
     const dragSet = new Set(dragLineIds);
-    if (dragSet.has(target.pokemonId)) return null;
+    if (dragSet.has(target.pokemonId)) return { tileId: null, endSection: null };
 
     // Find the first tile of the target's evo line
     const targetSectionIds = sections[target.sectionId] ?? [];
     const targetLineIds = findEvoLineGroup(target.pokemonId, targetSectionIds);
-    if (targetLineIds.length === 0) return null;
-    return tileId(target.sectionId, targetLineIds[0]);
+    if (targetLineIds.length === 0) return { tileId: null, endSection: null };
+    return { tileId: tileId(target.sectionId, targetLineIds[0]), endSection: null };
   }, [overTileId, dragLineIds, sections]);
 
   const handleAddClick = (sectionId: string) => {
@@ -396,12 +435,21 @@ export function PokedexGrid() {
                               pokemonId={pid}
                               sectionId={def.id}
                               isDraggedLine={dragSet.has(pid)}
-                              showInsertBefore={insertBeforeTileId === tid}
+                              showInsertBefore={insertIndicator.tileId === tid}
                             />
                           );
                         })}
 
-                        {totalPlaced < 151 && (
+                        {/* Drop zone for appending to end of section (visible during drag) */}
+                        {dragLineIds && pokemonIds.length > 0 && (
+                          <EndDropZone
+                            sectionId={def.id}
+                            showIndicator={insertIndicator.endSection === def.id}
+                          />
+                        )}
+
+                        {/* Add button (hidden during drag) */}
+                        {!dragLineIds && totalPlaced < 151 && (
                           <button
                             onClick={() => handleAddClick(def.id)}
                             className={`aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer ${
@@ -414,7 +462,7 @@ export function PokedexGrid() {
                           </button>
                         )}
 
-                        {Array.from({ length: Math.max(0, emptyCount - (totalPlaced < 151 ? 1 : 0)) }).map((_, i) => (
+                        {Array.from({ length: Math.max(0, emptyCount - 1) }).map((_, i) => (
                           <div
                             key={`empty-${i}`}
                             className="aspect-square rounded-lg border border-dashed border-muted-foreground/15 bg-muted/20"
