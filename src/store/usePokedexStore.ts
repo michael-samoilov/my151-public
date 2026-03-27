@@ -20,6 +20,7 @@ interface PokedexState {
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
   removeEvoLine: (sectionId: string, pokemonId: number) => void;
+  moveEvoLine: (fromSection: string, evoLineIds: number[], toSection: string, insertBeforeIndex: number) => void;
   setActiveSection: (sectionId: string | null) => void;
   clearAll: () => void;
   setMobileBrowserOpen: (open: boolean) => void;
@@ -94,6 +95,19 @@ export const usePokedexStore = create<PokedexState>()(
           const removeSet = new Set(line.map((p) => p.id));
           const newSections = { ...state.sections };
           newSections[sectionId] = newSections[sectionId].filter((id) => !removeSet.has(id));
+          return { sections: newSections };
+        }),
+
+      moveEvoLine: (fromSection, evoLineIds, toSection, insertBeforeIndex) =>
+        set((state) => {
+          const removeSet = new Set(evoLineIds);
+          const newSections = { ...state.sections };
+          // Remove from source
+          newSections[fromSection] = newSections[fromSection].filter((id) => !removeSet.has(id));
+          // Insert into destination at the specified index
+          const dest = [...newSections[toSection]];
+          dest.splice(insertBeforeIndex, 0, ...evoLineIds);
+          newSections[toSection] = dest;
           return { sections: newSections };
         }),
 

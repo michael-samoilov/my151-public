@@ -2,7 +2,12 @@ import { useMemo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { ARCHETYPES } from '@/data/archetypes';
+import { CATEGORIES } from '@/data/categories';
 import { SECTION_DEFS } from '@/data/slot-template';
+import pokemonData from '@/data/pokemon.json';
+import type { Pokemon } from '@/types/pokemon';
+
+const pokemonList = pokemonData as Pokemon[];
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 
@@ -27,13 +32,13 @@ export function WhatsAdvisor() {
     // Check archetype coverage
     const allIds = new Set(Object.values(sections).flat());
 
-    const criticalArchetypes = ['grass-starter', 'fire-starter', 'water-starter', 'pseudo-legendary', 'legendary-trio', 'box-legendary', 'mythical'];
-    for (const archetypeId of criticalArchetypes) {
-      const archetype = ARCHETYPES.find((a) => a.id === archetypeId);
-      if (!archetype) continue;
-      const hasAny = archetype.pokemonIds.some((id) => allIds.has(id));
+    const criticalCategories = ['starter', 'pseudo-legendary', 'legendary', 'mythical'];
+    for (const catId of criticalCategories) {
+      const cat = CATEGORIES.find((c) => c.id === catId);
+      if (!cat) continue;
+      const hasAny = pokemonList.some((p) => cat.filter(p) && allIds.has(p.id));
       if (!hasAny) {
-        items.push({ type: 'missing', text: `No ${archetype.name} assigned yet` });
+        items.push({ type: 'missing', text: `No ${cat.name} assigned yet` });
       }
     }
 
