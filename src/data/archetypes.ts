@@ -122,6 +122,7 @@ export const ARCHETYPES: Archetype[] = [
       771,         // Pyukumuku
       845,         // Cramorant
       871,         // Pincurchin
+      960,961,     // Wiglett→Wugtrio
     ],
     suggestedSlotRange: [33, 42],
     color: '#e9c46a',
