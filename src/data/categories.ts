@@ -88,6 +88,12 @@ export const CATEGORIES: PokemonCategory[] = [
     name: 'Galarian Form',
     color: '#e53e3e',
     filter: (p) => p.name.includes('-galar'),
+    subgroups: [
+      { label: 'Gen 1 originals', pokemonIds: [10161,10162,10163,10164,10165,10166,10167,10168,10169,10170,10171] },
+      { label: 'Gen 2 originals', pokemonIds: [10172,10173] },
+      { label: 'Gen 3 originals', pokemonIds: [10174,10175] },
+      { label: 'Gen 5 originals', pokemonIds: [10176,10177,10178,10179] },
+    ],
   },
   // Gen 8 (Legends Arceus)
   {
@@ -95,6 +101,13 @@ export const CATEGORIES: PokemonCategory[] = [
     name: 'Hisuian Form',
     color: '#805ad5',
     filter: (p) => p.name.includes('-hisui'),
+    subgroups: [
+      { label: 'Gen 1 originals', pokemonIds: [10229,10230,10231,10232] },
+      { label: 'Gen 2 originals', pokemonIds: [10233,10234,10235] },
+      { label: 'Gen 5 originals', pokemonIds: [10236,10237,10238,10239,10240] },
+      { label: 'Gen 6 originals', pokemonIds: [10241,10242,10243] },
+      { label: 'Gen 7 originals', pokemonIds: [10244] },
+    ],
   },
   // Gen 9 (Paldea)
   {
@@ -102,6 +115,10 @@ export const CATEGORIES: PokemonCategory[] = [
     name: 'Paldean Form',
     color: '#dd6b20',
     filter: (p) => p.name.includes('-paldea'),
+    subgroups: [
+      { label: 'Gen 1 originals', pokemonIds: [10250,10251,10252] },
+      { label: 'Gen 2 originals', pokemonIds: [10253] },
+    ],
   },
   {
     id: 'convergent',
@@ -114,6 +131,12 @@ export const CATEGORIES: PokemonCategory[] = [
     name: 'Paradox',
     color: '#e53e3e',
     filter: (p) => PARADOX_IDS.has(p.id),
+    subgroups: [
+      { label: 'Gen 1 originals', pokemonIds: [985,989] }, // Scream Tail (Jigglypuff), Sandy Shocks (Magneton)
+      { label: 'Gen 2 originals', pokemonIds: [984,990, 987, 991,995, 1009,1020,1021] }, // Great Tusk/Iron Treads (Donphan), Flutter Mane (Misdreavus), Iron Bundle (Delibird), Iron Thorns (Tyranitar), Walking Wake (Suicune), Gouging Fire (Entei), Raging Bolt (Raikou)
+      { label: 'Gen 3 originals', pokemonIds: [992,1005, 1006] }, // Iron Hands (Hariyama), Roaring Moon (Salamence), Iron Valiant (Gardevoir/Gallade)
+      { label: 'Gen 5 originals', pokemonIds: [986,988, 993,994, 1010,1022,1023] }, // Brute Bonnet (Amoonguss), Slither Wing (Volcarona), Iron Jugulis (Hydreigon), Iron Moth (Volcarona), Iron Leaves (Virizion), Iron Boulder (Terrakion), Iron Crown (Cobalion)
+    ],
   },
 ];
 

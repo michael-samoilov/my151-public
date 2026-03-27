@@ -14,7 +14,8 @@ import { cn } from '@/lib/utils';
 
 type FilterSheet = 'type' | 'generation' | 'evoStage' | 'browse' | null;
 
-const GEOGRAPHY_IDS = new Set(['cave-pokemon', 'fishing-pokemon', 'ocean', 'beach', 'forest', 'tundra', 'volcanic', 'desert']);
+const GEOGRAPHY_ORDER = ['forest', 'cave-pokemon', 'beach', 'ocean', 'fishing-pokemon', 'desert', 'volcanic', 'tundra'];
+const GEOGRAPHY_IDS = new Set(GEOGRAPHY_ORDER);
 
 export function PokemonBrowser() {
   const searchQuery = usePokedexStore((s) => s.searchQuery);
@@ -167,9 +168,12 @@ export function PokemonBrowser() {
           {typeFilter && typeFilter.length > 0 ? (
             <>
               {typeFilter.length > 1 && (
-                <span className="shrink-0 inline-flex items-center px-1.5 py-1 rounded-full text-[10px] font-bold bg-muted text-muted-foreground">
+                <button
+                  onClick={() => setTypeFilterMode(typeFilterMode === 'any' ? 'all' : 'any')}
+                  className="shrink-0 inline-flex items-center px-1.5 py-1 rounded-full text-[10px] font-bold bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer transition-colors"
+                >
                   {typeFilterMode === 'any' ? 'OR' : 'AND'}
-                </span>
+                </button>
               )}
               {typeFilter.map(t => (
                 <FilterChip
@@ -448,7 +452,7 @@ export function PokemonBrowser() {
                   <div>
                     <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Geography</div>
                     <div className="flex flex-wrap gap-1.5">
-                      {ARCHETYPES.filter(a => GEOGRAPHY_IDS.has(a.id)).map((archetype) => (
+                      {GEOGRAPHY_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!).map((archetype) => (
                         <button
                           key={archetype.id}
                           onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
