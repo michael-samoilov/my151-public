@@ -108,7 +108,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
               style={{ backgroundColor: `${bgColor}10` }}
             />
             {inDex && (
-              <div className="absolute top-1 right-[5px] md:right-1 w-3 h-3 bg-primary rounded-full flex items-center justify-center z-10">
+              <div className="absolute top-0.5 right-[7px] md:right-1.5 w-3 h-3 bg-primary rounded-full flex items-center justify-center z-10">
                 <Check className="w-1.5 h-1.5 text-primary-foreground" />
               </div>
             )}
