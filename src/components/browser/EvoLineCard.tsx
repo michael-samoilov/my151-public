@@ -29,9 +29,9 @@ export function EvoLineGrid({ groups, assignedIds, shinyIds, spriteOverrides }: 
     let col = 0; // 0-based current column position
 
     for (const group of groups) {
-      const size = Math.min(group.members.length, COLS);
+      const size = group.members.length;
       // If this line won't fit in the remaining columns, pad and wrap
-      if (col > 0 && col + size > COLS) {
+      if (col > 0 && (col + size > COLS)) {
         const spacers = COLS - col;
         for (let s = 0; s < spacers; s++) {
           result.push(<div key={`spacer-${result.length}`} />);
