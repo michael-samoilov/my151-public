@@ -296,7 +296,7 @@ export const ARCHETYPES: Archetype[] = [
       // Johto Pokemon League
       178,169,68,229,149,
       // Hoenn Gym Challenge
-      299,296,310,324,289,334,338,350,
+      299,296,310,324,289,334,337,338,350,
       // Hoenn Pokemon League
       359,356,365,373,376,
       // Sinnoh Gym Challenge
@@ -331,7 +331,7 @@ export const ARCHETYPES: Archetype[] = [
       { label: 'Kanto Pokemon League', pokemonIds: [131,68,94,149,6] },
       { label: 'Johto Gym Challenge', pokemonIds: [17,123,241,94,62,208,221,230] },
       { label: 'Johto Pokemon League', pokemonIds: [178,169,68,229,149] },
-      { label: 'Hoenn Gym Challenge', pokemonIds: [299,296,310,324,289,334,338,350] },
+      { label: 'Hoenn Gym Challenge', pokemonIds: [299,296,310,324,289,334,337,338,350] },
       { label: 'Hoenn Pokemon League', pokemonIds: [359,356,365,373,376] },
       { label: 'Sinnoh Gym Challenge', pokemonIds: [408,407,448,419,429,411,460,466] },
       { label: 'Sinnoh Pokemon League', pokemonIds: [452,450,392,437,445] },
