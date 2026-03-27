@@ -246,7 +246,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'industrial',
     name: 'Industrial/Artificial',
     description: 'Mechanical, pollution, and artificially-created Pokemon found in urban/industrial areas',
-    pokemonIds: [81,82, 88,89, 10112,10113, 100,101, 10231,10232, 109,110, 10167, 137,233,474, 462, 532,533,534, 568,569, 599,600,601, 679,680,681, 707, 884,1018, 957,958,959],
+    pokemonIds: [81,82, 88,89, 10112,10113, 100,101, 10231,10232, 109,110, 10167, 137,233,474, 462, 532,533,534, 568,569, 599,600,601, 679,680,681, 707, 884,1018, 957,958,959, 965,966, 999,1000],
     suggestedSlotRange: [83, 87],
     color: '#b7b7ce',
   },
