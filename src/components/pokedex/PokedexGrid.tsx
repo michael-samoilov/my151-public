@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { SECTION_DEFS, computeEmptySlots } from '@/data/slot-template';
 import { getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
@@ -257,6 +257,7 @@ export function PokedexGrid() {
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
   const [dragFromSection, setDragFromSection] = useState<string | null>(null);
   const [overTileId, setOverTileId] = useState<string | null>(null);
+  const isTouchDrag = useRef(false);
 
   // Sensors
   const mouseSensor = useSensor(MouseSensor, {
@@ -274,6 +275,7 @@ export function PokedexGrid() {
       const lineIds = findEvoLineGroup(pokemonId, sectionIds);
       setDragLineIds(lineIds);
       setDragFromSection(sectionId);
+      isTouchDrag.current = event.activatorEvent instanceof TouchEvent;
     },
     [sections]
   );
@@ -467,7 +469,10 @@ export function PokedexGrid() {
 
               <DragOverlay dropAnimation={null}>
                 {dragLineIds && (
-                  <div className="flex gap-[1vw] md:gap-1">
+                  <div
+                    className="flex gap-[1vw] md:gap-1"
+                    style={isTouchDrag.current ? { transform: 'translateY(-80px)' } : undefined}
+                  >
                     {dragLineIds.map((id) => (
                       <div key={id} className="w-[calc((100vw-24px-5vw)/6)] md:w-[calc((100%-20px)/6)] max-w-[90px]">
                         <PokemonTileStatic id={id} />
