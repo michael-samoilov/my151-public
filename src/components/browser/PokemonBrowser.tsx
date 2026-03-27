@@ -69,13 +69,18 @@ export function PokemonBrowser() {
   );
   const spriteOverrides = activeArchetypeDef?.spriteOverrides;
 
-  // Auto-generate generation-based subgroups for archetypes without custom subgroups
+  // Subgroups: custom if archetype defines them, otherwise auto-generate by generation
   const effectiveSubgroups = useMemo(() => {
-    if (!activeArchetypeDef) return null;
-    if (activeArchetypeDef.subgroups) return activeArchetypeDef.subgroups;
+    if (activeArchetypeDef?.subgroups) return activeArchetypeDef.subgroups;
+
+    // For archetypes: group archetype pokemonIds by generation
+    // For default/category views: group all visible Pokemon by generation
+    const sourceIds = activeArchetypeDef
+      ? activeArchetypeDef.pokemonIds
+      : groups.flatMap(g => g.members.map(m => m.id));
 
     const genMap = new Map<number, number[]>();
-    for (const id of activeArchetypeDef.pokemonIds) {
+    for (const id of sourceIds) {
       const p = getPokemonById(id);
       if (!p) continue;
       if (!genMap.has(p.generation)) genMap.set(p.generation, []);
@@ -85,7 +90,7 @@ export function PokemonBrowser() {
     return [...genMap.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([gen, ids]) => ({ label: `Gen ${gen}`, pokemonIds: ids }));
-  }, [activeArchetypeDef]);
+  }, [activeArchetypeDef, groups]);
 
   const clearAllFilters = () => {
     setCategoryFilter(null);
@@ -255,70 +260,39 @@ export function PokemonBrowser() {
         className="flex-1 min-h-0 overflow-y-auto"
       >
         <div className="p-2 space-y-1 content-start">
-          {effectiveSubgroups ? (
-            effectiveSubgroups.map((sub) => {
-              const subIdSet = new Set(sub.pokemonIds);
-              const subGroups = groups
-                .filter(g => g.members.some(m => subIdSet.has(m.id)))
-                .sort((a, b) => {
-                  const aIdx = sub.pokemonIds.findIndex(id => a.members.some(m => m.id === id));
-                  const bIdx = sub.pokemonIds.findIndex(id => b.members.some(m => m.id === id));
-                  return aIdx - bIdx;
-                });
-              if (subGroups.length === 0) return null;
-              return (
-                <div key={sub.label}>
-                  <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-2 mb-1 px-1">
-                    {sub.label}
-                  </div>
-                  <EvoLineGrid
-                    groups={subGroups.map((group) => {
-                      const subMatchedIds = new Set(
-                        group.members.filter(m => subIdSet.has(m.id)).map(m => m.id)
-                      );
-                      return {
-                        key: `${sub.label}-${group.chainId}`,
-                        members: group.members,
-                        matchedIds: subMatchedIds,
-                      };
-                    })}
-                    assignedIds={assignedIds}
-                    shinyIds={shinyIds}
-                    spriteOverrides={spriteOverrides}
-                  />
+          {effectiveSubgroups.map((sub) => {
+            const subIdSet = new Set(sub.pokemonIds);
+            const subGroups = groups
+              .filter(g => g.members.some(m => subIdSet.has(m.id)))
+              .sort((a, b) => {
+                const aIdx = sub.pokemonIds.findIndex(id => a.members.some(m => m.id === id));
+                const bIdx = sub.pokemonIds.findIndex(id => b.members.some(m => m.id === id));
+                return aIdx - bIdx;
+              });
+            if (subGroups.length === 0) return null;
+            return (
+              <div key={sub.label}>
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-2 mb-1 px-1">
+                  {sub.label}
                 </div>
-              );
-            })
-          ) : (
-            // Default view: bucket evo lines by generation of first member
-            (() => {
-              const genMap = new Map<number, typeof groups>();
-              for (const group of groups) {
-                const gen = group.members[0].generation;
-                if (!genMap.has(gen)) genMap.set(gen, []);
-                genMap.get(gen)!.push(group);
-              }
-              return [...genMap.entries()]
-                .sort((a, b) => a[0] - b[0])
-                .map(([gen, genGroups]) => (
-                  <div key={gen}>
-                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-2 mb-1 px-1">
-                      Gen {gen}
-                    </div>
-                    <EvoLineGrid
-                      groups={genGroups.map((group) => ({
-                        key: group.chainId,
-                        members: group.members,
-                        matchedIds: group.matchedIds,
-                      }))}
-                      assignedIds={assignedIds}
-                      shinyIds={shinyIds}
-                      spriteOverrides={spriteOverrides}
-                    />
-                  </div>
-                ));
-            })()
-          )}
+                <EvoLineGrid
+                  groups={subGroups.map((group) => {
+                    const subMatchedIds = new Set(
+                      group.members.filter(m => subIdSet.has(m.id)).map(m => m.id)
+                    );
+                    return {
+                      key: `${sub.label}-${group.chainId}`,
+                      members: group.members,
+                      matchedIds: subMatchedIds,
+                    };
+                  })}
+                  assignedIds={assignedIds}
+                  shinyIds={shinyIds}
+                  spriteOverrides={spriteOverrides}
+                />
+              </div>
+            );
+          })}
           {groups.length === 0 && (
             <div className="py-12 text-center text-muted-foreground">
               <p>No Pokemon found.</p>
