@@ -191,6 +191,7 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Volcanic',
     description: 'Pokemon found near volcanoes, lava fields, and geothermal areas',
     pokemonIds: [
+      228,229,     // Houndour→Houndoom
       126,240,467, // Magmar→Magby→Magmortar
       218,219,     // Slugma→Magcargo
       322,323,     // Numel→Camerupt
