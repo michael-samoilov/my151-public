@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
-import { ARCHETYPES } from '@/data/archetypes';
 import { CATEGORIES } from '@/data/categories';
 import { SECTION_DEFS } from '@/data/slot-template';
 import pokemonData from '@/data/pokemon.json';

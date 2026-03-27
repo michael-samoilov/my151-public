@@ -23,20 +23,6 @@ import { CSS } from '@dnd-kit/utilities';
 
 // ---------- helpers ----------
 
-/** Group a flat pokemonIds array into evo-line groups (preserving order) */
-function groupIntoEvoLines(pokemonIds: number[]): number[][] {
-  const groups: number[][] = [];
-  const used = new Set<number>();
-  for (const id of pokemonIds) {
-    if (used.has(id)) continue;
-    const line = getEvolutionLine(id);
-    const lineIds = line.map((p) => p.id).filter((pid) => pokemonIds.includes(pid));
-    for (const pid of lineIds) used.add(pid);
-    if (lineIds.length > 0) groups.push(lineIds);
-  }
-  return groups;
-}
-
 /** Find which evo line group a pokemonId belongs to */
 function findEvoLineGroup(pokemonId: number, sectionIds: number[]): number[] {
   const line = getEvolutionLine(pokemonId);
@@ -228,7 +214,6 @@ export function PokedexGrid() {
 
   const totalPlaced = Object.values(sections).reduce((s, a) => s + a.length, 0);
   const emptySlots = computeEmptySlots(sections);
-  const starterCount = (sections['starters'] ?? []).length;
 
   // Track which evo line is being dragged
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
