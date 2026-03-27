@@ -75,7 +75,7 @@ export function PokemonBrowser() {
   const spriteOverrides = activeArchetypeDef?.spriteOverrides;
 
   // Subgroups: custom if archetype/category defines them, otherwise auto-generate by generation
-  const effectiveSubgroups = useMemo(() => {
+  const effectiveSubgroups = useMemo((): { label: string; pokemonIds: number[]; shinyIds?: number[] }[] => {
     if (activeArchetypeDef?.subgroups) return activeArchetypeDef.subgroups;
     if (activeCategoryDef?.subgroups) return activeCategoryDef.subgroups;
 
@@ -296,7 +296,7 @@ export function PokemonBrowser() {
                     };
                   })}
                   assignedIds={assignedIds}
-                  shinyIds={shinyIds}
+                  shinyIds={sub.shinyIds ? new Set(sub.shinyIds) : shinyIds}
                   spriteOverrides={spriteOverrides}
                 />
               </div>

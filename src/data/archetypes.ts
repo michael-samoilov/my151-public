@@ -302,23 +302,22 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'reward-pokemon',
-    name: 'Reward',
+    name: 'Prize',
     description: 'Pokemon earned as prizes, rewards, or purchases',
     pokemonIds: [
       // RBY: Hitmonlee/Hitmonchan (Fighting Dojo), Porygon (Game Corner), Magikarp (salesman)
       106,107,236,237, 137,233,474, 129,130,
-      // GSC: Tyrogue (Karate King)
-      236,237,
+      // GSC: Tyrogue (Karate King), Extremespeed Dratini (Dragon's Den quiz)
+      147,148,149,
       // B2W2: Shiny Dratini, Shiny Gible (Benga rewards)
-      147,148,149, 443,444,445,
+      443,444,445,
     ],
     suggestedSlotRange: [80, 82],
     color: '#f59e0b',
-    shinyIds: [147, 443],
     subgroups: [
       { label: 'Red/Blue/Yellow', pokemonIds: [106, 107, 137, 129] },
-      { label: 'Gold/Silver/Crystal', pokemonIds: [236] },
-      { label: 'Black 2/White 2', pokemonIds: [147, 443] },
+      { label: 'Gold/Silver/Crystal', pokemonIds: [236, 147] },
+      { label: 'Black 2/White 2', pokemonIds: [147, 443], shinyIds: [147, 443] },
     ],
   },
   {
