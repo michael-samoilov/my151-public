@@ -100,10 +100,12 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
           <div
             key={pokemon.id}
             className={cn(
-              'relative px-[3px] md:px-[2px]',
-              isFirst && 'rounded-l-md',
-              isLast && 'rounded-r-md',
-              allInDex && 'opacity-40',
+              'relative border-t border-b',
+              isFirst && 'ml-[3px] md:ml-[2px] rounded-l-md border-l',
+              isLast && 'mr-[3px] md:mr-[2px] rounded-r-md border-r',
+              allInDex
+                ? 'opacity-40 border-primary/30'
+                : 'border-border',
             )}
             style={{ background: bg }}
           >
@@ -111,10 +113,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
               onClick={handleClick}
               className={cn(
                 'flex flex-col items-center py-[1vw] md:py-1 transition-all cursor-pointer w-full',
-                'border rounded-md',
-                allInDex
-                  ? 'border-primary/30'
-                  : 'border-border hover:border-primary/50',
+                !allInDex && 'hover:brightness-95',
               )}
             >
               <div className={cn(
