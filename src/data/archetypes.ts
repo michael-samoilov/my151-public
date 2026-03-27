@@ -355,6 +355,7 @@ export const ARCHETYPES: Archetype[] = [
       43,44,45,182,       // Oddish→Gloom→Vileplume/Bellossom
       60,61,62,186,       // Poliwag→Poliwhirl→Poliwrath/Politoed
       79,80,199,          // Slowpoke→Slowbro/Slowking
+      10164,10165,10172,  // Slowpoke-Galar→Slowbro-Galar/Slowking-Galar
       133,134,135,136,196,197,470,471,700, // Eevee→8 eeveelutions
       236,106,107,237,    // Tyrogue→Hitmonlee/Hitmonchan/Hitmontop
       265,266,267,268,269, // Wurmple→Silcoon→Beautifly / Cascoon→Dustox
@@ -396,7 +397,7 @@ export const ARCHETYPES: Archetype[] = [
       // Gen 6
       700,
       // Gen 8
-      862,863,864,865,866,867,
+      862,863,864,865,866,867, 10164,10165,10172,
       // Gen 8 (Legends Arceus)
       899,900,901,902,903,904,
       // Gen 9
@@ -409,7 +410,7 @@ export const ARCHETYPES: Archetype[] = [
       { label: 'Gen 3', pokemonIds: [298,360] },
       { label: 'Gen 4', pokemonIds: [406,407,424,429,430,433,438,439,440,446,458,461,462,463,464,465,466,467,468,469,470,471,472,473,474,475,476,477,478] },
       { label: 'Gen 6', pokemonIds: [700] },
-      { label: 'Gen 8', pokemonIds: [862,863,864,865,866,867] },
+      { label: 'Gen 8', pokemonIds: [862,863,864,865,866,867, 10164,10165,10172] },
       { label: 'Legends Arceus', pokemonIds: [899,900,901,902,903,904] },
       { label: 'Gen 9', pokemonIds: [979,980,981,982,983,1011,1018,1019] },
     ],
