@@ -76,10 +76,3 @@ body {
 * {
   border-color: var(--color-border);
 }
-
-/* Prevent iOS Safari long-press callout on draggable grid tiles */
-.touch-none img {
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  user-select: none;
-}

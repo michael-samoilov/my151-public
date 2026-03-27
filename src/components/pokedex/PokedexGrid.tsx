@@ -83,10 +83,17 @@ function PokemonTileStatic({ id }: { id: number }) {
         gen={pokemon.generation}
         className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full overflow-hidden"
       />
-      <img
-        src={pokemon.sprite} alt={pokemon.name}
+      <div
         className="w-[8vw] h-[8vw] md:w-10 md:h-10"
-        style={{ imageRendering: 'pixelated' }}
+        style={{
+          backgroundImage: `url(${pokemon.sprite})`,
+          backgroundSize: 'contain',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'center',
+          imageRendering: 'pixelated',
+        }}
+        role="img"
+        aria-label={pokemon.name}
       />
       <span className="text-[min(1.8vw,7px)] md:text-[7px] font-medium capitalize truncate w-full text-center leading-tight">
         {pokemon.name}
@@ -147,7 +154,6 @@ function SortableTile({
       ref={setNodeRef}
       style={style}
       className="relative"
-      onContextMenu={(e) => e.preventDefault()}
     >
       {/* Vertical insert indicator */}
       {showInsertBefore && (
@@ -157,7 +163,6 @@ function SortableTile({
         {...attributes}
         {...listeners}
         className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 group aspect-square touch-none cursor-grab active:cursor-grabbing select-none"
-        style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' } as React.CSSProperties}
       >
         <GenBadge
           gen={pokemon.generation}
@@ -170,12 +175,17 @@ function SortableTile({
         >
           <X className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2" />
         </button>
-        <img
-          src={pokemon.sprite} alt={pokemon.name}
-          draggable={false}
-          className="w-[8vw] h-[8vw] md:w-10 md:h-10 pointer-events-none select-none"
-          style={{ imageRendering: 'pixelated', WebkitTouchCallout: 'none' } as React.CSSProperties}
-          loading="lazy"
+        <div
+          className="w-[8vw] h-[8vw] md:w-10 md:h-10"
+          style={{
+            backgroundImage: `url(${pokemon.sprite})`,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            imageRendering: 'pixelated',
+          }}
+          role="img"
+          aria-label={pokemon.name}
         />
         <span className="text-[min(1.8vw,7px)] md:text-[7px] font-medium capitalize truncate w-full text-center leading-tight">
           {pokemon.name}
