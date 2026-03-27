@@ -59,4 +59,5 @@ export interface Archetype {
   color: string;
   subgroups?: { label: string; pokemonIds: number[] }[];
   shinyIds?: number[]; // Pokemon IDs that should display shiny sprites in this archetype
+  spriteOverrides?: Record<number, string>; // Pokemon ID -> alternate sprite URL
 }

@@ -35,8 +35,8 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'early-normal',
-    name: 'Early Route Normal',
-    description: 'Normal-type Pokemon commonly found in early areas',
+    name: 'Early Route Domestic',
+    description: 'Domestic/pet-like Pokemon found on early routes',
     pokemonIds: [52,53, 431,432, 509,510, 572,573, 676, 831,832],
     suggestedSlotRange: [21, 25],
     color: '#a8a77a',
@@ -45,17 +45,77 @@ export const ARCHETYPES: Archetype[] = [
     id: 'cave-pokemon',
     name: 'Cave Pokemon',
     description: 'Pokemon commonly found in caves',
-    pokemonIds: [41,42, 74,75,76, 10109,10110,10111, 10105,10106, 95, 169,208, 524,525,526, 527,528, 529,530, 557,558, 703, 744,745],
+    pokemonIds: [41,42, 50,51, 10105,10106, 74,75,76, 10109,10110,10111, 95, 169,208, 524,525,526, 527,528, 529,530, 557,558, 703, 744,745],
     suggestedSlotRange: [26, 32],
     color: '#b6a136',
   },
   {
     id: 'fishing-pokemon',
-    name: 'Fishing/Water Route',
-    description: 'Common water Pokemon found by fishing or surfing',
-    pokemonIds: [118,119, 129,130, 170,171, 223,224, 320,321, 349,350, 369, 550, 594, 746, 771],
+    name: 'Fishing Pokemon',
+    description: 'Fish and aquatic creatures you could catch with a fishing rod',
+    pokemonIds: [
+      116,117,230, // Horsea→Seadra→Kingdra
+      118,119,     // Goldeen→Seaking
+      129,130,     // Magikarp→Gyarados
+      170,171,     // Chinchou→Lanturn
+      211,         // Qwilfish
+      10234, 904,  // Qwilfish-Hisui→Overqwil
+      223,224,     // Remoraid→Octillery
+      318,319,     // Carvanha→Sharpedo
+      339,340,     // Barboach→Whiscash
+      349,350,     // Feebas→Milotic
+      369,         // Relicanth
+      370,         // Luvdisc
+      456,457,     // Finneon→Lumineon
+      550, 902,    // Basculin, Basculegion
+      690,691,     // Skrelp→Dragalge
+      692,693,     // Clauncher→Clawitzer
+      746,         // Wishiwashi
+      779,         // Bruxish
+      846,847,     // Arrokuda→Barraskewda
+      976,         // Veluza
+      977,         // Dondozo
+      978,         // Tatsugiri
+    ],
     suggestedSlotRange: [33, 38],
     color: '#6390f0',
+  },
+  {
+    id: 'ocean-beach',
+    name: 'Oceans & Beaches',
+    description: 'Marine and coastal Pokemon found in oceans, beaches, and tidal areas',
+    pokemonIds: [
+      72,73,       // Tentacool→Tentacruel
+      86,87,       // Seel→Dewgong
+      90,91,       // Shellder→Cloyster
+      98,99,       // Krabby→Kingler
+      120,121,     // Staryu→Starmie
+      131,         // Lapras
+      222,         // Corsola
+      10173,       // Corsola-Galar
+      864,         // Cursola
+      226,         // Mantine
+      458,         // Mantyke
+      278,279,     // Wingull→Pelipper
+      320,321,     // Wailmer→Wailord
+      341,342,     // Corphish→Crawdaunt
+      363,364,365, // Spheal→Sealeo→Walrein
+      366,367,368, // Clamperl→Huntail/Gorebyss
+      422,423,     // Shellos→Gastrodon
+      592,593,     // Frillish→Jellicent
+      688,689,     // Binacle→Barbaracle
+      739,740,     // Crabrawler→Crabominable
+      747,748,     // Mareanie→Toxapex
+      767,768,     // Wimpod→Golisopod
+      769,770,     // Sandygast→Palossand
+      771,         // Pyukumuku
+      781,         // Dhelmise
+      845,         // Cramorant
+      871,         // Pincurchin
+      963,964,     // Finizen→Palafin
+    ],
+    suggestedSlotRange: [33, 42],
+    color: '#2d8fc4',
   },
   {
     id: 'elemental-trio',
@@ -119,7 +179,7 @@ export const ARCHETYPES: Archetype[] = [
       // DPPt
       425, 442, 479,
       // BW/BW2
-      518, 555, 571, 637, 612,
+      518, 555, 571, 590,591, 637, 612,
       // SM/USUM Totem Pokemon
       735, 10092, 746, 758, 754, 738, 778, 784, 752, 10115, 777, 743,
       // Legends Arceus
@@ -131,12 +191,14 @@ export const ARCHETYPES: Archetype[] = [
     color: '#f95587',
     // Red Gyarados (Lake of Rage), Shiny Ponyta (PLA), Shiny Haxorus (BW2 Nature Preserve)
     shinyIds: [130, 77, 612],
+    // Zen Mode Darmanitan in BW overworld
+    spriteOverrides: { 555: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/10017.png' },
     subgroups: [
       { label: 'Red/Blue/Yellow', pokemonIds: [100,101, 131, 143] },
       { label: 'Gold/Silver/Crystal', pokemonIds: [130, 185] },
       { label: 'Ruby/Sapphire/Emerald', pokemonIds: [351, 352] },
       { label: 'Diamond/Pearl/Platinum', pokemonIds: [425, 442, 479] },
-      { label: 'Black/White/BW2', pokemonIds: [518, 555, 571, 637, 612] },
+      { label: 'Black/White/BW2', pokemonIds: [518, 555, 571, 590,591, 637, 612] },
       { label: 'SM/USUM Totems', pokemonIds: [735, 10092, 746, 758, 754, 738, 778, 784, 752, 10115, 777, 743] },
       { label: 'Legends: Arceus', pokemonIds: [77] },
       { label: 'Scarlet/Violet Titans', pokemonIds: [950, 962, 968, 977, 978] },
@@ -146,9 +208,35 @@ export const ARCHETYPES: Archetype[] = [
     id: 'evil-team',
     name: 'Evil Team Pokemon',
     description: 'Pokemon commonly used by villain teams',
-    pokemonIds: [41,42, 109,110, 10167, 169, 198, 228,229, 261,262, 430, 434,435, 551,552,553, 559,560, 747,748, 757,758],
+    pokemonIds: [
+      // Grunts (common across teams)
+      19,20, 41,42, 88,89, 109,110, 169, 198, 228,229, 261,262, 430, 434,435, 551,552,553, 559,560, 757,758,
+      // Bosses & Lieutenants
+      31,34,53,112,  // Giovanni: Nidoqueen, Nidoking, Persian, Rhydon
+      319,323,       // Archie(Sharpedo), Maxie(Camerupt)
+      432,435,454,   // Mars(Purugly), Jupiter(Skuntank), Saturn(Toxicroak)
+      461,430,       // Cyrus: Weavile, Honchkrow
+      635,571,601,   // Ghetsis(Hydreigon), N(Zoroark), Colress(Klinklang)
+      668,           // Lysandre(Pyroar)
+      768,758,       // Guzma(Golisopod), Plumeria(Salazzle)
+      760,           // Lusamine(Bewear)
+      879,           // Rose(Copperajah)
+      936,966,927,979,983,700, // Team Star: Mela(Armarouge), Atticus(Revavroom), Ortega(Dachsbun), Eri(Annihilape), Giacomo(Kingambit), Penny(Sylveon)
+    ],
     suggestedSlotRange: [50, 60],
     color: '#705746',
+    subgroups: [
+      { label: 'Grunts', pokemonIds: [19,20, 41,42, 88,89, 109,110, 169, 198, 228,229, 261,262, 430, 434,435, 551,552,553, 559,560, 757,758] },
+      { label: 'Team Rocket (Giovanni)', pokemonIds: [31,34,53,112] },
+      { label: 'Team Aqua/Magma (Archie/Maxie)', pokemonIds: [319,323] },
+      { label: 'Team Galactic (Cyrus, Mars, Jupiter, Saturn)', pokemonIds: [461,430, 432,435,454] },
+      { label: 'Team Plasma (Ghetsis, N, Colress)', pokemonIds: [635,571,601] },
+      { label: 'Team Flare (Lysandre)', pokemonIds: [668] },
+      { label: 'Team Skull (Guzma, Plumeria)', pokemonIds: [768,758] },
+      { label: 'Aether Foundation (Lusamine)', pokemonIds: [760] },
+      { label: 'Macro Cosmos (Rose)', pokemonIds: [879] },
+      { label: 'Team Star (Mela, Atticus, Ortega, Eri, Giacomo, Penny)', pokemonIds: [936,966,927,979,983,700] },
+    ],
   },
   {
     id: 'rivalry-pair',
@@ -197,60 +285,66 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'gym-champion-ace',
     name: 'Gym/Champion Ace',
-    description: 'Signature Pokemon of Gym Leaders, Elite Four & Champions, ordered by gym progression',
+    description: 'Signature Pokemon of Gym Leaders, Elite Four & Champions',
     pokemonIds: [
-      // Kanto Gyms: Brock(Onix)→Misty(Starmie)→Surge(Raichu)→Erika(Vileplume)→Koga(Weezing)→Sabrina(Alakazam)→Blaine(Arcanine)→Giovanni(Rhydon)
+      // Kanto Gym Challenge
       95,121,26,45,110,65,59,112,
-      // Kanto E4: Lorelei(Lapras)→Bruno(Machamp)→Agatha(Gengar)→Lance(Dragonite), Champion Blue(Charizard/varies)
+      // Kanto Pokemon League
       131,68,94,149,6,
-      // Johto Gyms: Falkner(Pidgeotto)→Bugsy(Scyther)→Whitney(Miltank)→Morty(Gengar)→Chuck(Poliwrath)→Jasmine(Steelix)→Pryce(Piloswine)→Clair(Kingdra)
+      // Johto Gym Challenge
       17,123,241,94,62,208,221,230,
-      // Johto E4: Will(Xatu)→Koga(Crobat)→Bruno(Machamp)→Karen(Houndoom), Champion Lance(Dragonite)
+      // Johto Pokemon League
       178,169,68,229,149,
-      // Hoenn Gyms: Roxanne(Nosepass)→Brawly(Makuhita)→Wattson(Manectric)→Flannery(Torkoal)→Norman(Slaking)→Winona(Altaria)→Tate&Liza(Solrock)→Wallace(Milotic)
+      // Hoenn Gym Challenge
       299,296,310,324,289,334,338,350,
-      // Hoenn E4: Sidney(Absol)→Phoebe(Dusclops)→Glacia(Walrein)→Drake(Salamence), Champion Steven(Metagross)
+      // Hoenn Pokemon League
       359,356,365,373,376,
-      // Sinnoh Gyms: Roark(Cranidos)→Gardenia(Roserade)→Maylene(Lucario)→Wake(Floatzel)→Fantina(Mismagius)→Byron(Bastiodon)→Candice(Abomasnow)→Volkner(Electivire)
+      // Sinnoh Gym Challenge
       408,407,448,419,429,411,460,466,
-      // Sinnoh E4: Aaron(Drapion)→Bertha(Hippowdon)→Flint(Infernape)→Lucian(Bronzong), Champion Cynthia(Garchomp)
+      // Sinnoh Pokemon League
       452,450,392,437,445,
-      // Unova Gyms (BW): Cilan/Chili/Cress(Simisage/Simisear/Simipour)→Lenora(Watchog)→Burgh(Leavanny)→Elesa(Zebstrika)→Clay(Excadrill)→Skyla(Swanna)→Brycen(Beartic)→Iris/Drayden(Haxorus)
+      // Unova Gym Challenge
       505,542,523,530,581,614,612,
-      // Unova E4: Shauntal(Chandelure)→Grimsley(Bisharp)→Caitlin(Gothitelle)→Marshal(Mienshao), Champion Alder(Volcarona)
+      // Unova Pokemon League
       609,625,576,620,637,
-      // Kalos Gyms: Viola(Vivillon)→Grant(Tyrunt)→Korrina(Hawlucha)→Ramos(Gogoat)→Clemont(Heliolisk)→Valerie(Sylveon)→Olympia(Meowstic)→Wulfric(Avalugg)
+      // Kalos Gym Challenge
       666,696,701,673,695,700,678,713,
-      // Kalos E4: Malva(Talonflame)→Siebold(Barbaracle)→Wikstrom(Aegislash)→Drasna(Noivern), Champion Diantha(Gardevoir)
+      // Kalos Pokemon League
       663,689,681,715,282,
-      // Alola Kahunas: Hala(Crabominable)→Olivia(Lycanroc)→Nanu(A-Persian)→Hapu(Mudsdale)
-      740,745,10108,750,
-      // Alola Trial Captains: Ilima(Gumshoos)→Lana(Araquanid)→Kiawe(A-Marowak)→Mallow(Tsareena)→Sophocles(Togedemaru)→Acerola(Palossand)→Mina(Ribombee)
-      735,752,10115,763,777,770,743,
-      // Alola E4: Molayne(Dugtrio)→Olivia(Lycanroc)→Acerola(Palossand)→Kahili(Toucannon), Champion Kukui/Hau
+      // Alola Island Challenge (Kahunas + Trial Captains)
+      740,745,10108,750, 735,752,10115,763,777,770,743,
+      // Alola Pokemon League
       733,
-      // Galar Gyms: Milo(Eldegoss)→Nessa(Drednaw)→Kabu(Centiskorch)→Bea(Machamp)/Allister(Gengar)→Opal(Alcremie)→Gordie(Coalossal)/Melony(Lapras)→Piers(Obstagoon)→Raihan(Duraludon)
+      // Galar Gym Challenge
       830,834,851,68,94,869,839,131,862,884,
-      // Galar Champion Leon(Charizard)
+      // Galar Champion
       6,
-      // Paldea Gyms: Katy(Teddiursa)→Brassius(Sudowoodo)→Iono(Mismagius)→Kofu(Crabominable)→Larry(Staraptor)→Ryme(Toxtricity)→Tulip(Florges)→Grusha(Altaria)
+      // Paldea Gym Challenge
       216,185,429,740,398,849,671,334,
-      // Paldea E4: Rika(Clodsire)→Poppy(Tinkaton)→Larry(Flamigo)→Hassel(Baxcalibur), Champion Geeta(Glimmora)
+      // Paldea Pokemon League
       980,959,973,998,970,
     ],
     suggestedSlotRange: [40, 60],
     color: '#f5a623',
     subgroups: [
-      // Gym order → E4 → Champion per region
-      { label: 'Kanto', pokemonIds: [95,121,26,45,110,65,59,112, 131,68,94,149,6] },
-      { label: 'Johto', pokemonIds: [17,123,241,94,62,208,221,230, 178,169,68,229,149] },
-      { label: 'Hoenn', pokemonIds: [299,296,310,324,289,334,338,350, 359,356,365,373,376] },
-      { label: 'Sinnoh', pokemonIds: [408,407,448,419,429,411,460,466, 452,450,392,437,445] },
-      { label: 'Unova', pokemonIds: [505,542,523,530,581,614,612, 609,625,576,620,637] },
-      { label: 'Kalos', pokemonIds: [666,696,701,673,695,700,678,713, 663,689,681,715,282] },
-      { label: 'Alola', pokemonIds: [740,745,10108,750, 735,752,10115,763,777,770,743, 733] },
-      { label: 'Galar', pokemonIds: [830,834,851,68,94,869,839,131,862,884, 6] },
-      { label: 'Paldea', pokemonIds: [216,185,429,740,398,849,671,334, 980,959,973,998,970] },
+      { label: 'Kanto Gym Challenge', pokemonIds: [95,121,26,45,110,65,59,112] },
+      { label: 'Kanto Pokemon League', pokemonIds: [131,68,94,149,6] },
+      { label: 'Johto Gym Challenge', pokemonIds: [17,123,241,94,62,208,221,230] },
+      { label: 'Johto Pokemon League', pokemonIds: [178,169,68,229,149] },
+      { label: 'Hoenn Gym Challenge', pokemonIds: [299,296,310,324,289,334,338,350] },
+      { label: 'Hoenn Pokemon League', pokemonIds: [359,356,365,373,376] },
+      { label: 'Sinnoh Gym Challenge', pokemonIds: [408,407,448,419,429,411,460,466] },
+      { label: 'Sinnoh Pokemon League', pokemonIds: [452,450,392,437,445] },
+      { label: 'Unova Gym Challenge', pokemonIds: [505,542,523,530,581,614,612] },
+      { label: 'Unova Pokemon League', pokemonIds: [609,625,576,620,637] },
+      { label: 'Kalos Gym Challenge', pokemonIds: [666,696,701,673,695,700,678,713] },
+      { label: 'Kalos Pokemon League', pokemonIds: [663,689,681,715,282] },
+      { label: 'Alola Island Challenge', pokemonIds: [740,745,10108,750, 735,752,10115,763,777,770,743] },
+      { label: 'Alola Pokemon League', pokemonIds: [733] },
+      { label: 'Galar Gym Challenge', pokemonIds: [830,834,851,68,94,869,839,131,862,884] },
+      { label: 'Galar Champion', pokemonIds: [6] },
+      { label: 'Paldea Gym Challenge', pokemonIds: [216,185,429,740,398,849,671,334] },
+      { label: 'Paldea Pokemon League', pokemonIds: [980,959,973,998,970] },
     ],
   },
 ];

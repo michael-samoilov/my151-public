@@ -67,6 +67,7 @@ export function PokemonBrowser() {
     () => activeArchetypeDef?.shinyIds ? new Set(activeArchetypeDef.shinyIds) : undefined,
     [activeArchetypeDef]
   );
+  const spriteOverrides = activeArchetypeDef?.spriteOverrides;
 
   const clearAllFilters = () => {
     setCategoryFilter(null);
@@ -265,7 +266,7 @@ export function PokemonBrowser() {
                           members={group.members}
                           matchedIds={subMatchedIds}
                           assignedIds={assignedIds}
-                          shinyIds={shinyIds}
+                          shinyIds={shinyIds} spriteOverrides={spriteOverrides}
                         />
                       );
                     })}
@@ -280,7 +281,7 @@ export function PokemonBrowser() {
                 members={group.members}
                 matchedIds={group.matchedIds}
                 assignedIds={assignedIds}
-                shinyIds={shinyIds}
+                shinyIds={shinyIds} spriteOverrides={spriteOverrides}
               />
             ))
           )}

@@ -9,9 +9,10 @@ interface EvoLineCardProps {
   matchedIds: Set<number>;
   assignedIds: Set<number>;
   shinyIds?: Set<number>;
+  spriteOverrides?: Record<number, string>;
 }
 
-export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds }: EvoLineCardProps) {
+export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, spriteOverrides }: EvoLineCardProps) {
   const addToSection = usePokedexStore((s) => s.addToSection);
   const activeSection = usePokedexStore((s) => s.activeSection);
   const allInDex = members.every((p) => assignedIds.has(p.id));
@@ -56,9 +57,10 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds }: EvoL
                 </div>
               )}
               <img
-                src={shinyIds?.has(pokemon.id)
-                  ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
-                  : pokemon.sprite}
+                src={spriteOverrides?.[pokemon.id]
+                  ?? (shinyIds?.has(pokemon.id)
+                    ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
+                    : pokemon.sprite)}
                 alt={pokemon.name}
                 className="w-[11vw] h-[11vw] md:w-8 md:h-8"
                 style={{ imageRendering: 'pixelated' }}
