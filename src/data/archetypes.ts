@@ -363,7 +363,7 @@ export const ARCHETYPES: Archetype[] = [
       // Gen 2 evos of Gen 1
       169,182,186,196,197,199,208,212,230,233,242,
       // Gen 2 babies of Gen 1
-      172,173,174,236,238,239,240,
+      106,107,172,173,174,236,237,238,239,240,
       // Gen 3 babies of Gen 2
       298,360,
       // Gen 4 evos (forward)
@@ -382,7 +382,7 @@ export const ARCHETYPES: Archetype[] = [
     suggestedSlotRange: [50, 80],
     color: '#9966cc',
     subgroups: [
-      { label: 'Gen 2', pokemonIds: [169,172,173,174,182,186,196,197,199,208,212,230,233,236,238,239,240,242] },
+      { label: 'Gen 2', pokemonIds: [106,107,169,172,173,174,182,186,196,197,199,208,212,230,233,236,237,238,239,240,242] },
       { label: 'Gen 3', pokemonIds: [298,360] },
       { label: 'Gen 4', pokemonIds: [406,407,424,429,430,433,438,439,440,446,458,461,462,463,464,465,466,467,468,469,470,471,472,473,474,475,476,477,478] },
       { label: 'Gen 6', pokemonIds: [700] },
