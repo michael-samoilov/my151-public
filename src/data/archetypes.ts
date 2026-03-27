@@ -348,6 +348,29 @@ export const ARCHETYPES: Archetype[] = [
     ],
   },
   {
+    id: 'branched-evo',
+    name: 'Branched Evolution',
+    description: 'Pokemon with split evolution paths where you choose which form to evolve into',
+    pokemonIds: [
+      43,44,45,182,       // Oddish→Gloom→Vileplume/Bellossom
+      60,61,62,186,       // Poliwag→Poliwhirl→Poliwrath/Politoed
+      79,80,199,          // Slowpoke→Slowbro/Slowking
+      133,134,135,136,196,197,470,471,700, // Eevee→8 eeveelutions
+      236,106,107,237,    // Tyrogue→Hitmonlee/Hitmonchan/Hitmontop
+      265,266,267,268,269, // Wurmple→Silcoon→Beautifly / Cascoon→Dustox
+      280,281,282,475,    // Ralts→Kirlia→Gardevoir/Gallade
+      290,291,292,        // Nincada→Ninjask/Shedinja
+      361,362,478,        // Snorunt→Glalie/Froslass
+      366,367,368,        // Clamperl→Huntail/Gorebyss
+      412,413,414,        // Burmy→Wormadam/Mothim
+      123,212,900,        // Scyther→Scizor/Kleavor
+      840,841,842,1011,1019, // Applin→Flapple/Appletun/Dipplin→Hydrapple
+      935,936,937,        // Charcadet→Armarouge/Ceruledge
+    ],
+    suggestedSlotRange: [40, 60],
+    color: '#e07c4f',
+  },
+  {
     id: 'rivalry-pair',
     name: 'Rivalry Pair',
     description: 'Thematic opposites that appear together',
