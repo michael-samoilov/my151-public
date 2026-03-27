@@ -49,7 +49,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
                 ? 'opacity-40 border-primary/30'
                 : 'border-border hover:border-primary/50',
             )}
-            style={{ background: bg }}
+            style={{ background: bg, outline: '1px solid rgba(0,255,0,0.5)' }}
           >
             <div className={cn(
               'relative flex flex-col items-center w-full',

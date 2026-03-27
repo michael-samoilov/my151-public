@@ -236,7 +236,7 @@ export function PokemonBrowser() {
         key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
         className="flex-1 min-h-0 overflow-y-auto"
       >
-        <div className="p-2 grid grid-cols-6 gap-x-0 gap-y-1 content-start">
+        <div className="p-2 grid grid-cols-6 gap-x-0 gap-y-1 content-start" style={{ background: 'repeating-linear-gradient(to right, rgba(255,0,0,0.08) 0, rgba(255,0,0,0.08) calc(100%/6), rgba(0,0,255,0.08) calc(100%/6), rgba(0,0,255,0.08) calc(200%/6))' }}>
           {activeArchetypeDef?.subgroups ? (
             activeArchetypeDef.subgroups.map((sub) => {
               const subIdSet = new Set(sub.pokemonIds);
