@@ -19,8 +19,7 @@ import {
   type DragEndEvent,
   type DragOverEvent,
 } from '@dnd-kit/core';
-import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useDraggable } from '@dnd-kit/core';
 
 // ---------- helpers ----------
 
@@ -114,9 +113,9 @@ function PokemonTileStatic({ id }: { id: number }) {
   );
 }
 
-// ---------- sortable tile ----------
+// ---------- draggable + droppable tile ----------
 
-function SortableTile({
+function DraggableTile({
   id,
   pokemonId,
   sectionId,
@@ -135,26 +134,28 @@ function SortableTile({
   const {
     attributes,
     listeners,
-    setNodeRef,
-    transform,
-    transition,
+    setNodeRef: setDragRef,
     isDragging,
-  } = useSortable({ id });
+  } = useDraggable({ id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging || isDraggedLine ? 0.25 : 1,
-  };
+  const { setNodeRef: setDropRef } = useDroppable({ id });
+
+  // Merge both refs onto the outer div
+  const setNodeRef = useCallback(
+    (node: HTMLElement | null) => {
+      setDragRef(node);
+      setDropRef(node);
+    },
+    [setDragRef, setDropRef]
+  );
 
   if (!pokemon) return null;
 
   return (
-    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
     <div
       ref={setNodeRef}
-      style={style}
       className="relative"
+      style={{ opacity: isDragging || isDraggedLine ? 0.25 : 1 }}
     >
       {/* Vertical insert indicator */}
       {showInsertBefore && (
@@ -256,15 +257,6 @@ export function PokedexGrid() {
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
   const [dragFromSection, setDragFromSection] = useState<string | null>(null);
   const [overTileId, setOverTileId] = useState<string | null>(null);
-
-  // Build sortable IDs for each section
-  const sectionTileIds = useMemo(() => {
-    const result: Record<string, string[]> = {};
-    for (const def of SECTION_DEFS) {
-      result[def.id] = (sections[def.id] ?? []).map((id) => tileId(def.id, id));
-    }
-    return result;
-  }, [sections]);
 
   // Sensors
   const mouseSensor = useSensor(MouseSensor, {
@@ -416,7 +408,6 @@ export function PokedexGrid() {
                 const pokemonIds = sections[def.id] ?? [];
                 const emptyCount = emptySlots[def.id] ?? 0;
                 const isActive = activeSection === def.id;
-                const ids = sectionTileIds[def.id] ?? [];
 
                 return (
                   <section key={def.id}>
@@ -426,52 +417,50 @@ export function PokedexGrid() {
                       <span className="text-xs text-muted-foreground italic">{def.description}</span>
                     </div>
 
-                    <SortableContext items={ids} strategy={rectSortingStrategy}>
-                      <div className="grid grid-cols-6 gap-[1vw] md:gap-1">
-                        {pokemonIds.map((pid) => {
-                          const tid = tileId(def.id, pid);
-                          return (
-                            <SortableTile
-                              key={tid}
-                              id={tid}
-                              pokemonId={pid}
-                              sectionId={def.id}
-                              isDraggedLine={dragSet.has(pid)}
-                              showInsertBefore={insertIndicator.tileId === tid}
-                            />
-                          );
-                        })}
-
-                        {/* Drop zone for appending to end of section (visible during drag) */}
-                        {dragLineIds && pokemonIds.length > 0 && (
-                          <EndDropZone
+                    <div className="grid grid-cols-6 gap-[1vw] md:gap-1">
+                      {pokemonIds.map((pid) => {
+                        const tid = tileId(def.id, pid);
+                        return (
+                          <DraggableTile
+                            key={tid}
+                            id={tid}
+                            pokemonId={pid}
                             sectionId={def.id}
-                            showIndicator={insertIndicator.endSection === def.id}
+                            isDraggedLine={dragSet.has(pid)}
+                            showInsertBefore={insertIndicator.tileId === tid}
                           />
-                        )}
+                        );
+                      })}
 
-                        {/* Add button (hidden during drag) */}
-                        {!dragLineIds && totalPlaced < 151 && (
-                          <button
-                            onClick={() => handleAddClick(def.id)}
-                            className={`aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer ${
-                              isActive
-                                ? 'border-primary bg-primary/10 text-primary'
-                                : 'border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary'
-                            }`}
-                          >
-                            <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
-                          </button>
-                        )}
+                      {/* Drop zone for appending to end of section (visible during drag) */}
+                      {dragLineIds && pokemonIds.length > 0 && (
+                        <EndDropZone
+                          sectionId={def.id}
+                          showIndicator={insertIndicator.endSection === def.id}
+                        />
+                      )}
 
-                        {Array.from({ length: Math.max(0, emptyCount - 1) }).map((_, i) => (
-                          <div
-                            key={`empty-${i}`}
-                            className="aspect-square rounded-lg border border-dashed border-muted-foreground/15 bg-muted/20"
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
+                      {/* Add button (hidden during drag) */}
+                      {!dragLineIds && totalPlaced < 151 && (
+                        <button
+                          onClick={() => handleAddClick(def.id)}
+                          className={`aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer ${
+                            isActive
+                              ? 'border-primary bg-primary/10 text-primary'
+                              : 'border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary'
+                          }`}
+                        >
+                          <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+                        </button>
+                      )}
+
+                      {Array.from({ length: Math.max(0, emptyCount - 1) }).map((_, i) => (
+                        <div
+                          key={`empty-${i}`}
+                          className="aspect-square rounded-lg border border-dashed border-muted-foreground/15 bg-muted/20"
+                        />
+                      ))}
+                    </div>
                   </section>
                 );
               })}
