@@ -86,7 +86,6 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
 
   const primaryType = members[0].types[0];
   const bgColor = TYPE_COLORS[primaryType as keyof typeof TYPE_COLORS] ?? '#888';
-  const bg = `linear-gradient(135deg, ${bgColor}12, ${bgColor}05)`;
 
   return (
     <>
@@ -97,23 +96,24 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
         const isLast = i === members.length - 1;
 
         return (
-          <div
-            key={pokemon.id}
-            className={cn(
-              'relative border-t border-b',
-              isFirst && 'ml-[3px] md:ml-[2px] rounded-l-md border-l',
-              isLast && 'mr-[3px] md:mr-[2px] rounded-r-md border-r',
-              allInDex
-                ? 'opacity-40 border-primary/30'
-                : 'border-border',
-            )}
-            style={{ background: bg }}
-          >
+          <div key={pokemon.id} className="relative px-[3px] md:px-[2px]">
+            {/* Background + border spanning the evo line */}
+            <div
+              className={cn(
+                'absolute inset-y-0 border-t border-b',
+                isFirst ? 'left-[3px] md:left-[2px] rounded-l-md border-l' : 'left-0',
+                isLast ? 'right-[3px] md:right-[2px] rounded-r-md border-r' : 'right-0',
+                allInDex
+                  ? 'opacity-40 border-primary/30'
+                  : 'border-border',
+              )}
+              style={{ backgroundColor: `${bgColor}10` }}
+            />
             <button
               onClick={handleClick}
               className={cn(
-                'flex flex-col items-center py-[1vw] md:py-1 transition-all cursor-pointer w-full',
-                !allInDex && 'hover:brightness-95',
+                'relative flex flex-col items-center py-[1vw] md:py-1 transition-all cursor-pointer w-full',
+                allInDex && 'opacity-40',
               )}
             >
               <div className={cn(
