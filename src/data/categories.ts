@@ -34,7 +34,7 @@ export const CATEGORIES: PokemonCategory[] = [
       { label: 'Gen 6', pokemonIds: [650,651,652, 653,654,655, 656,657,658] },
       { label: 'Gen 7', pokemonIds: [722,723,724, 725,726,727, 728,729,730] },
       { label: 'Gen 8', pokemonIds: [810,811,812, 813,814,815, 816,817,818] },
-      { label: 'Legends Arceus', pokemonIds: [722,723,10244, 155,156,10233, 501,502,10236] },
+      { label: 'Legends Arceus', pokemonIds: [10244, 10233, 10236] },
       { label: 'Gen 9', pokemonIds: [906,907,908, 909,910,911, 912,913,914] },
     ],
   },
