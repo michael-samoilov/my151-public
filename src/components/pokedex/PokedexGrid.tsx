@@ -156,18 +156,22 @@ function SortableTile({
   if (!pokemon) return null;
 
   return (
-    <div ref={setNodeRef} style={style} className="relative">
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="relative"
+      onContextMenu={(e) => e.preventDefault()}
+    >
       {/* Vertical insert indicator */}
       {showInsertBefore && (
         <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 -translate-x-[calc(50%+0.5vw)] md:-translate-x-[calc(50%+2px)]" />
       )}
-      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div
         {...attributes}
         {...listeners}
-        onContextMenu={(e) => e.preventDefault()}
         className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 group aspect-square touch-none cursor-grab active:cursor-grabbing select-none"
-        style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
+        style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' } as React.CSSProperties}
       >
         <GenBadge
           gen={pokemon.generation}
@@ -183,8 +187,8 @@ function SortableTile({
         <img
           src={pokemon.sprite} alt={pokemon.name}
           draggable={false}
-          className="w-[8vw] h-[8vw] md:w-10 md:h-10 pointer-events-none"
-          style={{ imageRendering: 'pixelated' }}
+          className="w-[8vw] h-[8vw] md:w-10 md:h-10 pointer-events-none select-none"
+          style={{ imageRendering: 'pixelated', WebkitTouchCallout: 'none' } as React.CSSProperties}
           loading="lazy"
         />
         <span className="text-[min(1.8vw,7px)] md:text-[7px] font-medium capitalize truncate w-full text-center leading-tight">
