@@ -37,7 +37,7 @@ interface PokedexState {
 
 export const usePokedexStore = create<PokedexState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       sections: createEmptySections(),
       activeSection: null,
       activeCategoryFilter: null,
@@ -108,9 +108,9 @@ export const usePokedexStore = create<PokedexState>()(
 
       setMobileBrowserOpen: (open) => set({ mobileBrowserOpen: open }),
 
-      setCategoryFilter: (category) => set({ activeCategoryFilter: category }),
+      setCategoryFilter: (category) => set({ activeCategoryFilter: category, activeArchetypeFilter: category ? null : get().activeArchetypeFilter }),
 
-      setArchetypeFilter: (archetype) => set({ activeArchetypeFilter: archetype }),
+      setArchetypeFilter: (archetype) => set({ activeArchetypeFilter: archetype, activeCategoryFilter: archetype ? null : get().activeCategoryFilter }),
 
       setSearchQuery: (query) => set({ searchQuery: query }),
 

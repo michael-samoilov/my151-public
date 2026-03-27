@@ -27,7 +27,7 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'pikachu-clone',
-    name: 'Pikachu Clone',
+    name: 'Pikaclone',
     description: 'Electric rodent mascot Pokemon',
     pokemonIds: [25,26, 10100, 172, 311,312, 417, 587, 702, 777, 877, 921,922,923],
     suggestedSlotRange: [19, 20],
@@ -86,14 +86,16 @@ export const ARCHETYPES: Archetype[] = [
     description: 'Marine Pokemon encountered while surfing or diving in open water',
     pokemonIds: [
       72,73,       // Tentacool→Tentacruel
+      86,87,       // Seel→Dewgong
       90,91,       // Shellder→Cloyster
       131,         // Lapras
       222,         // Corsola
       10173,       // Corsola-Galar
       864,         // Cursola
+      223,224,     // Remoraid→Octillery
       226,         // Mantine
       458,         // Mantyke
-      278,279,     // Wingull→Pelipper
+      318,319,     // Carvanha→Sharpedo
       320,321,     // Wailmer→Wailord
       363,364,365, // Spheal→Sealeo→Walrein
       366,367,368, // Clamperl→Huntail/Gorebyss
@@ -109,9 +111,9 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Beach',
     description: 'Coastal Pokemon found on shorelines, tide pools, and sandy shores',
     pokemonIds: [
-      86,87,       // Seel→Dewgong
       98,99,       // Krabby→Kingler
       120,121,     // Staryu→Starmie
+      278,279,     // Wingull→Pelipper
       341,342,     // Corphish→Crawdaunt
       422,423,     // Shellos→Gastrodon
       688,689,     // Binacle→Barbaracle
