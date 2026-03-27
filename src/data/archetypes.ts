@@ -169,6 +169,7 @@ export const ARCHETYPES: Archetype[] = [
       124,         // Jynx
       238,         // Smoochum
       215,461,     // Sneasel→Weavile
+      10235,903,   // Sneasel-Hisui→Sneasler
       220,221,473, // Swinub→Piloswine→Mamoswine
       225,         // Delibird
       361,362,478, // Snorunt→Glalie/Froslass
