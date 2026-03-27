@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Trash2, Plus, X } from 'lucide-react';
 import {
   DndContext,
-  PointerSensor,
+  MouseSensor,
   TouchSensor,
   useSensor,
   useSensors,
@@ -163,7 +163,9 @@ function SortableTile({
       <div
         {...attributes}
         {...listeners}
+        onContextMenu={(e) => e.preventDefault()}
         className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 group aspect-square touch-none cursor-grab active:cursor-grabbing select-none"
+        style={{ WebkitTouchCallout: 'none' } as React.CSSProperties}
       >
         <GenBadge
           gen={pokemon.generation}
@@ -265,13 +267,13 @@ export function PokedexGrid() {
   }, [sections]);
 
   // Sensors
-  const pointerSensor = useSensor(PointerSensor, {
+  const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: { distance: 8 },
   });
   const touchSensor = useSensor(TouchSensor, {
     activationConstraint: { delay: 250, tolerance: 5 },
   });
-  const sensors = useSensors(pointerSensor, touchSensor);
+  const sensors = useSensors(mouseSensor, touchSensor);
 
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
