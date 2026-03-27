@@ -77,15 +77,6 @@ export const usePokedexStore = create<PokedexState>()(
 
           return {
             sections: newSections,
-            activeSection: null,
-            activeCategoryFilter: null,
-            activeArchetypeFilter: null,
-            searchQuery: '',
-            typeFilter: null,
-            typeFilterMode: 'any' as TypeFilterMode,
-            generationFilter: null,
-            evoLineSizeFilter: null,
-            mobileBrowserOpen: false,
           };
         }),
 
