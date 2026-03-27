@@ -230,7 +230,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'elemental-trio',
     name: 'Elemental Trio/Duo',
     description: 'Mid-game groups linked by element or theme',
-    pokemonIds: [37,38, 10103,10104, 58,59, 10229,10230, 77,78, 10162,10163, 511,512,513,514,515,516, 133,134,135,136,196,197,470,471,700],
+    pokemonIds: [37,38, 58,59, 77,78, 10103,10104, 10229,10230, 10162,10163, 511,512,513,514,515,516, 133,134,135,136,196,197,470,471,700],
     suggestedSlotRange: [39, 44],
     color: '#ee8130',
   },
