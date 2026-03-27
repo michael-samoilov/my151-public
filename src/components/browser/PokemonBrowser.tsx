@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
-import { useFilteredPokemonGrouped } from '@/hooks/usePokemonData';
+import { useFilteredPokemonGrouped, getPokemonById } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { SECTION_DEFS } from '@/data/slot-template';
 import { ARCHETYPES } from '@/data/archetypes';
@@ -68,6 +68,24 @@ export function PokemonBrowser() {
     [activeArchetypeDef]
   );
   const spriteOverrides = activeArchetypeDef?.spriteOverrides;
+
+  // Auto-generate generation-based subgroups for archetypes without custom subgroups
+  const effectiveSubgroups = useMemo(() => {
+    if (!activeArchetypeDef) return null;
+    if (activeArchetypeDef.subgroups) return activeArchetypeDef.subgroups;
+
+    const genMap = new Map<number, number[]>();
+    for (const id of activeArchetypeDef.pokemonIds) {
+      const p = getPokemonById(id);
+      if (!p) continue;
+      if (!genMap.has(p.generation)) genMap.set(p.generation, []);
+      genMap.get(p.generation)!.push(id);
+    }
+
+    return [...genMap.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([gen, ids]) => ({ label: `Gen ${gen}`, pokemonIds: ids }));
+  }, [activeArchetypeDef]);
 
   const clearAllFilters = () => {
     setCategoryFilter(null);
@@ -237,8 +255,8 @@ export function PokemonBrowser() {
         className="flex-1 min-h-0 overflow-y-auto"
       >
         <div className="p-2 space-y-1 content-start">
-          {activeArchetypeDef?.subgroups ? (
-            activeArchetypeDef.subgroups.map((sub) => {
+          {effectiveSubgroups ? (
+            effectiveSubgroups.map((sub) => {
               const subIdSet = new Set(sub.pokemonIds);
               const subGroups = groups
                 .filter(g => g.members.some(m => subIdSet.has(m.id)))
@@ -259,7 +277,7 @@ export function PokemonBrowser() {
                         group.members.filter(m => subIdSet.has(m.id)).map(m => m.id)
                       );
                       return {
-                        key: group.chainId,
+                        key: `${sub.label}-${group.chainId}`,
                         members: group.members,
                         matchedIds: subMatchedIds,
                       };
@@ -273,20 +291,11 @@ export function PokemonBrowser() {
             })
           ) : (
             <EvoLineGrid
-              groups={
-                (activeArchetypeDef
-                  ? [...groups].sort((a, b) => {
-                      const aIdx = activeArchetypeDef.pokemonIds.findIndex(id => a.members.some(m => m.id === id));
-                      const bIdx = activeArchetypeDef.pokemonIds.findIndex(id => b.members.some(m => m.id === id));
-                      return aIdx - bIdx;
-                    })
-                  : groups
-                ).map((group) => ({
-                  key: group.chainId,
-                  members: group.members,
-                  matchedIds: group.matchedIds,
-                }))
-              }
+              groups={groups.map((group) => ({
+                key: group.chainId,
+                members: group.members,
+                matchedIds: group.matchedIds,
+              }))}
               assignedIds={assignedIds}
               shinyIds={shinyIds}
               spriteOverrides={spriteOverrides}
