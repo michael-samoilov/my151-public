@@ -351,7 +351,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'rivalry-pair',
     name: 'Rivalry Pair',
     description: 'Thematic opposites that appear together',
-    pokemonIds: [106,107, 128,10250,10251,10252,241, 236,237, 311,312, 313,314, 335,336, 337,338, 538,539, 631,632, 734,735,10091,10092, 765,766, 874,875],
+    pokemonIds: [106,107, 128,241, 236,237, 311,312, 313,314, 335,336, 337,338, 538,539, 631,632, 734,735,10091,10092, 765,766, 874,875, 10250,10251,10252],
     suggestedSlotRange: [50, 55],
     color: '#c22e28',
   },
