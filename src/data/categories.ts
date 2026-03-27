@@ -5,6 +5,7 @@ export interface PokemonCategory {
   name: string;
   color: string;
   filter: (p: Pokemon) => boolean;
+  subgroups?: { label: string; pokemonIds: number[] }[];
 }
 
 // Ultra Beast IDs
@@ -24,6 +25,18 @@ export const CATEGORIES: PokemonCategory[] = [
     name: 'Starter',
     color: '#48bb78',
     filter: (p) => STARTER_IDS.has(p.id),
+    subgroups: [
+      { label: 'Gen 1', pokemonIds: [1,2,3, 4,5,6, 7,8,9] },
+      { label: 'Gen 2', pokemonIds: [152,153,154, 158,159,160] },
+      { label: 'Gen 3', pokemonIds: [252,253,254, 255,256,257, 258,259,260] },
+      { label: 'Gen 4', pokemonIds: [387,388,389, 390,391,392, 393,394,395] },
+      { label: 'Gen 5', pokemonIds: [495,496,497, 498,499,500] },
+      { label: 'Gen 6', pokemonIds: [650,651,652, 653,654,655, 656,657,658] },
+      { label: 'Gen 7', pokemonIds: [725,726,727, 728,729,730] },
+      { label: 'Gen 8', pokemonIds: [810,811,812, 813,814,815, 816,817,818] },
+      { label: 'Legends Arceus', pokemonIds: [722,723,10244, 155,156,10233, 501,502,10236] },
+      { label: 'Gen 9', pokemonIds: [906,907,908, 909,910,911, 912,913,914] },
+    ],
   },
   {
     id: 'fossil',

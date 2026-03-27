@@ -69,9 +69,10 @@ export function PokemonBrowser() {
   );
   const spriteOverrides = activeArchetypeDef?.spriteOverrides;
 
-  // Subgroups: custom if archetype defines them, otherwise auto-generate by generation
+  // Subgroups: custom if archetype/category defines them, otherwise auto-generate by generation
   const effectiveSubgroups = useMemo(() => {
     if (activeArchetypeDef?.subgroups) return activeArchetypeDef.subgroups;
+    if (activeCategoryDef?.subgroups) return activeCategoryDef.subgroups;
 
     // For archetypes: group archetype pokemonIds by generation
     // For default/category views: group matched member IDs by generation
