@@ -43,7 +43,7 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'cave-pokemon',
-    name: 'Cave Pokemon',
+    name: 'Cave',
     description: 'Pokemon commonly found in caves',
     pokemonIds: [41,42, 50,51, 10105,10106, 74,75,76, 10109,10110,10111, 95, 169,208, 524,525,526, 527,528, 529,530, 557,558, 703, 744,745],
     suggestedSlotRange: [26, 32],
@@ -51,7 +51,7 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'fishing-pokemon',
-    name: 'Fishing Pokemon',
+    name: 'Fishing',
     description: 'Fish and aquatic creatures you could catch with a fishing rod',
     pokemonIds: [
       116,117,230, // Horsea→Seadra→Kingdra
@@ -81,15 +81,12 @@ export const ARCHETYPES: Archetype[] = [
     color: '#6390f0',
   },
   {
-    id: 'ocean-beach',
-    name: 'Oceans & Beaches',
-    description: 'Marine and coastal Pokemon found in oceans, beaches, and tidal areas',
+    id: 'ocean',
+    name: 'Ocean',
+    description: 'Marine Pokemon encountered while surfing or diving in open water',
     pokemonIds: [
       72,73,       // Tentacool→Tentacruel
-      86,87,       // Seel→Dewgong
       90,91,       // Shellder→Cloyster
-      98,99,       // Krabby→Kingler
-      120,121,     // Staryu→Starmie
       131,         // Lapras
       222,         // Corsola
       10173,       // Corsola-Galar
@@ -98,24 +95,136 @@ export const ARCHETYPES: Archetype[] = [
       458,         // Mantyke
       278,279,     // Wingull→Pelipper
       320,321,     // Wailmer→Wailord
-      341,342,     // Corphish→Crawdaunt
       363,364,365, // Spheal→Sealeo→Walrein
       366,367,368, // Clamperl→Huntail/Gorebyss
-      422,423,     // Shellos→Gastrodon
       592,593,     // Frillish→Jellicent
+      781,         // Dhelmise
+      963,964,     // Finizen→Palafin
+    ],
+    suggestedSlotRange: [33, 42],
+    color: '#006494',
+  },
+  {
+    id: 'beach',
+    name: 'Beach',
+    description: 'Coastal Pokemon found on shorelines, tide pools, and sandy shores',
+    pokemonIds: [
+      86,87,       // Seel→Dewgong
+      98,99,       // Krabby→Kingler
+      120,121,     // Staryu→Starmie
+      341,342,     // Corphish→Crawdaunt
+      422,423,     // Shellos→Gastrodon
       688,689,     // Binacle→Barbaracle
       739,740,     // Crabrawler→Crabominable
       747,748,     // Mareanie→Toxapex
       767,768,     // Wimpod→Golisopod
       769,770,     // Sandygast→Palossand
       771,         // Pyukumuku
-      781,         // Dhelmise
       845,         // Cramorant
       871,         // Pincurchin
-      963,964,     // Finizen→Palafin
     ],
     suggestedSlotRange: [33, 42],
-    color: '#2d8fc4',
+    color: '#e9c46a',
+  },
+  {
+    id: 'forest',
+    name: 'Forest',
+    description: 'Pokemon found in forests, woodlands, and jungles',
+    pokemonIds: [
+      46,47,       // Paras→Parasect
+      102,103,     // Exeggcute→Exeggutor
+      10101,       // Exeggutor-Alola
+      114,465,     // Tangela→Tangrowth
+      127,         // Pinsir
+      190,424,     // Aipom→Ambipom
+      204,205,     // Pineco→Forretress
+      214,         // Heracross
+      216,217,     // Teddiursa→Ursaring
+      901,         // Ursaluna
+      234,         // Stantler
+      899,         // Wyrdeer
+      273,274,275, // Seedot→Nuzleaf→Shiftry
+      285,286,     // Shroomish→Breloom
+      287,288,289, // Slakoth→Vigoroth→Slaking
+      357,         // Tropius
+      420,421,     // Cherubi→Cherrim
+      455,         // Carnivine
+      585,586,     // Deerling→Sawsbuck
+      708,709,     // Phantump→Trevenant
+      755,756,     // Morelull→Shiinotic
+      765,         // Oranguru
+      766,         // Passimian
+      775,         // Komala
+      840,841,842, // Applin→Flapple/Appletun
+      1011,1018,   // Dipplin→Hydrapple
+    ],
+    suggestedSlotRange: [33, 42],
+    color: '#2d6a4f',
+  },
+  {
+    id: 'tundra',
+    name: 'Tundra',
+    description: 'Ice-dwelling Pokemon found in snowy routes, frozen caves, and arctic areas',
+    pokemonIds: [
+      124,         // Jynx
+      238,         // Smoochum
+      215,461,     // Sneasel→Weavile
+      10233,903,   // Sneasel-Hisui→Sneasler
+      220,221,473, // Swinub→Piloswine→Mamoswine
+      225,         // Delibird
+      361,362,478, // Snorunt→Glalie/Froslass
+      459,460,     // Snover→Abomasnow
+      582,583,584, // Vanillite→Vanillish→Vanilluxe
+      613,614,     // Cubchoo→Beartic
+      615,         // Cryogonal
+      712,713,     // Bergmite→Avalugg
+      10235,       // Avalugg-Hisui
+      872,873,     // Snom→Frosmoth
+      875,         // Eiscue
+      974,975,     // Cetoddle→Cetitan
+    ],
+    suggestedSlotRange: [33, 42],
+    color: '#7ec8e3',
+  },
+  {
+    id: 'volcanic',
+    name: 'Volcanic',
+    description: 'Pokemon found near volcanoes, lava fields, and geothermal areas',
+    pokemonIds: [
+      126,240,467, // Magmar→Magby→Magmortar
+      218,219,     // Slugma→Magcargo
+      322,323,     // Numel→Camerupt
+      324,         // Torkoal
+      631,         // Heatmor
+      636,637,     // Larvesta→Volcarona
+      757,758,     // Salandit→Salazzle
+      776,         // Turtonator
+      837,838,839, // Rolycoly→Carkol→Coalossal
+      850,851,     // Sizzlipede→Centiskorch
+    ],
+    suggestedSlotRange: [33, 42],
+    color: '#d62828',
+  },
+  {
+    id: 'desert',
+    name: 'Desert',
+    description: 'Pokemon found in deserts, arid ruins, and sandy wastelands',
+    pokemonIds: [
+      27,28,       // Sandshrew→Sandslash
+      328,329,330, // Trapinch→Vibrava→Flygon
+      331,332,     // Cacnea→Cacturne
+      343,344,     // Baltoy→Claydol
+      449,450,     // Hippopotas→Hippowdon
+      551,552,553, // Sandile→Krokorok→Krookodile
+      554,555,     // Darumaka→Darmanitan
+      556,         // Maractus
+      561,         // Sigilyph
+      562,563,     // Yamask→Cofagrigus
+      843,844,     // Silicobra→Sandaconda
+      951,952,     // Capsakid→Scovillain
+    ],
+    suggestedSlotRange: [33, 42],
+    color: '#dda15e',
   },
   {
     id: 'elemental-trio',
@@ -127,7 +236,7 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'gift-pokemon',
-    name: 'Gift Pokemon',
+    name: 'Gift',
     description: 'Pokemon commonly received as gifts in-game',
     pokemonIds: [131, 133,134,135,136, 143, 175,176, 196,197, 447,448, 468, 470,471, 574,575,576, 700],
     suggestedSlotRange: [77, 82],
@@ -135,9 +244,9 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'industrial',
-    name: 'Industrial/Man-Made',
-    description: 'Mechanical, pollution, and man-made Pokemon found in urban/industrial areas',
-    pokemonIds: [81,82, 88,89, 10112,10113, 100,101, 10231,10232, 109,110, 10167, 137,233,474, 462, 532,533,534, 568,569, 599,600,601, 707, 957,958,959],
+    name: 'Industrial/Artificial',
+    description: 'Mechanical, pollution, and artificially-created Pokemon found in urban/industrial areas',
+    pokemonIds: [81,82, 88,89, 10112,10113, 100,101, 10231,10232, 109,110, 10167, 137,233,474, 462, 532,533,534, 568,569, 599,600,601, 679,680,681, 707, 957,958,959],
     suggestedSlotRange: [83, 87],
     color: '#b7b7ce',
   },
@@ -206,7 +315,7 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'evil-team',
-    name: 'Evil Team Pokemon',
+    name: 'Evil Team',
     description: 'Pokemon commonly used by villain teams',
     pokemonIds: [
       // Grunts (common across teams)
