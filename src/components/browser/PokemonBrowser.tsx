@@ -273,11 +273,20 @@ export function PokemonBrowser() {
             })
           ) : (
             <EvoLineGrid
-              groups={groups.map((group) => ({
-                key: group.chainId,
-                members: group.members,
-                matchedIds: group.matchedIds,
-              }))}
+              groups={
+                (activeArchetypeDef
+                  ? [...groups].sort((a, b) => {
+                      const aIdx = activeArchetypeDef.pokemonIds.findIndex(id => a.members.some(m => m.id === id));
+                      const bIdx = activeArchetypeDef.pokemonIds.findIndex(id => b.members.some(m => m.id === id));
+                      return aIdx - bIdx;
+                    })
+                  : groups
+                ).map((group) => ({
+                  key: group.chainId,
+                  members: group.members,
+                  matchedIds: group.matchedIds,
+                }))
+              }
               assignedIds={assignedIds}
               shinyIds={shinyIds}
               spriteOverrides={spriteOverrides}
