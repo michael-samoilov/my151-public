@@ -265,9 +265,16 @@ export function PokemonBrowser() {
             const subGroups = groups
               .filter(g => g.members.some(m => subIdSet.has(m.id)))
               .sort((a, b) => {
-                const aIdx = sub.pokemonIds.findIndex(id => a.members.some(m => m.id === id));
-                const bIdx = sub.pokemonIds.findIndex(id => b.members.some(m => m.id === id));
-                return aIdx - bIdx;
+                if (activeArchetypeDef) {
+                  // Archetype view: preserve curated pokemonIds order
+                  const aIdx = sub.pokemonIds.findIndex(id => a.members.some(m => m.id === id));
+                  const bIdx = sub.pokemonIds.findIndex(id => b.members.some(m => m.id === id));
+                  return aIdx - bIdx;
+                }
+                // Default view: sort by lowest matching member's dex number
+                const aMin = Math.min(...a.members.filter(m => subIdSet.has(m.id)).map(m => m.id));
+                const bMin = Math.min(...b.members.filter(m => subIdSet.has(m.id)).map(m => m.id));
+                return aMin - bMin;
               });
             if (subGroups.length === 0) return null;
             return (
