@@ -57,7 +57,6 @@ export function EvoLineGrid({ groups, assignedIds, shinyIds, spriteOverrides }: 
   return (
     <div
       className="grid grid-cols-6 gap-x-0 gap-y-1"
-      style={{ background: 'repeating-linear-gradient(to right, rgba(255,0,0,0.08) 0, rgba(255,0,0,0.08) calc(100%/6), rgba(0,0,255,0.08) calc(100%/6), rgba(0,0,255,0.08) calc(200%/6))' }}
     >
       {elements}
     </div>
@@ -94,20 +93,29 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
       {members.map((pokemon, i) => {
         const inDex = assignedIds.has(pokemon.id);
         const matched = matchedIds.has(pokemon.id);
+        const isFirst = i === 0;
         const isLast = i === members.length - 1;
 
         return (
-          <div key={pokemon.id} className="relative px-[3px] md:px-[2px]">
+          <div
+            key={pokemon.id}
+            className={cn(
+              'relative px-[3px] md:px-[2px]',
+              isFirst && 'rounded-l-md',
+              isLast && 'rounded-r-md',
+              allInDex && 'opacity-40',
+            )}
+            style={{ background: bg }}
+          >
             <button
               onClick={handleClick}
               className={cn(
                 'flex flex-col items-center py-[1vw] md:py-1 transition-all cursor-pointer w-full',
                 'border rounded-md',
                 allInDex
-                  ? 'opacity-40 border-primary/30'
+                  ? 'border-primary/30'
                   : 'border-border hover:border-primary/50',
               )}
-              style={{ background: bg }}
             >
               <div className={cn(
                 'relative flex flex-col items-center w-full',
