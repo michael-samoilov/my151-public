@@ -161,10 +161,13 @@ function SortableTile({
       {showInsertBefore && (
         <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 -translate-x-[calc(50%+0.5vw)] md:-translate-x-[calc(50%+2px)]" />
       )}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
       <div
         {...attributes}
         {...listeners}
-        className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 group aspect-square touch-none cursor-grab active:cursor-grabbing"
+        onContextMenu={(e) => e.preventDefault()}
+        className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 group aspect-square touch-none cursor-grab active:cursor-grabbing select-none"
+        style={{ WebkitTouchCallout: 'none', WebkitUserSelect: 'none' }}
       >
         <GenBadge
           gen={pokemon.generation}
@@ -179,6 +182,7 @@ function SortableTile({
         </button>
         <img
           src={pokemon.sprite} alt={pokemon.name}
+          draggable={false}
           className="w-[8vw] h-[8vw] md:w-10 md:h-10 pointer-events-none"
           style={{ imageRendering: 'pixelated' }}
           loading="lazy"
