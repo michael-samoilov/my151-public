@@ -240,11 +240,46 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'gift-pokemon',
-    name: 'Gift',
-    description: 'Pokemon commonly received as gifts in-game',
-    pokemonIds: [131, 133,134,135,136, 143, 175,176, 196,197, 447,448, 468, 470,471, 700],
+    name: 'Gift/Reward',
+    description: 'Pokemon received as gifts, rewards, or prizes in-game',
+    pokemonIds: [
+      // RBY: Eevee, Lapras, Hitmonchan/lee, Magikarp, Porygon (Game Corner)
+      131, 133,134,135,136, 106,107, 129,130, 137,
+      // GSC/HGSS: Togepi egg, Tyrogue, Eevee, Dratini (Dragon's Den), Shuckle, Odd Egg
+      175,176, 236, 147,148,149, 213,
+      // RSE: Beldum (Steven), Castform, Wynaut egg
+      374,375,376, 351, 360,
+      // DPPt: Eevee, Riolu egg, Togepi egg, Porygon
+      447,448, 468,
+      // BW: Zorua, Larvesta egg
+      570,571, 636,637,
+      // B2W2: Shiny Dratini, Shiny Gible
+      443,444,445,
+      // XY: Lucario (Tower of Mastery), Lapras
+      196,197, 470,471, 700,
+      // SM/USUM: Type: Null, Cosmog, Poipole
+      772,773, 789,790, 803,804,
+      // SwSh: Toxel, Charmander (Leon), Type: Null
+      848, 4,5,6,
+      // PLA: Shiny Ponyta
+      77,
+      // SV: various gifts
+    ],
     suggestedSlotRange: [77, 82],
     color: '#d685ad',
+    shinyIds: [147, 443, 77],
+    subgroups: [
+      { label: 'Red/Blue/Yellow', pokemonIds: [133,134,135,136, 131, 106,107, 129,130, 137] },
+      { label: 'Gold/Silver/Crystal', pokemonIds: [175,176,468, 236,106,107, 147,148,149, 213] },
+      { label: 'Ruby/Sapphire/Emerald', pokemonIds: [374,375,376, 351, 360] },
+      { label: 'Diamond/Pearl/Platinum', pokemonIds: [133,196,197,470,471,700, 175,176,468, 447,448] },
+      { label: 'Black/White', pokemonIds: [570,571, 636,637] },
+      { label: 'Black 2/White 2', pokemonIds: [147,148,149, 443,444,445] },
+      { label: 'X/Y', pokemonIds: [448, 131] },
+      { label: 'Sun/Moon', pokemonIds: [772,773, 789,790, 803,804] },
+      { label: 'Sword/Shield', pokemonIds: [848, 4,5,6, 772,773] },
+      { label: 'Legends Arceus', pokemonIds: [77] },
+    ],
   },
   {
     id: 'industrial',

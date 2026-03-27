@@ -16,6 +16,8 @@ type FilterSheet = 'type' | 'generation' | 'evoStage' | 'browse' | null;
 
 const GEOGRAPHY_ORDER = ['forest', 'cave-pokemon', 'beach', 'ocean', 'fishing-pokemon', 'desert', 'volcanic', 'tundra'];
 const GEOGRAPHY_IDS = new Set(GEOGRAPHY_ORDER);
+const GAME_MECHANICS_ORDER = ['evolution-item', 'trade-evo', 'branched-evo', 'static-encounter', 'gift-pokemon', 'version-exclusive'];
+const GAME_MECHANICS_IDS = new Set(GAME_MECHANICS_ORDER);
 
 export function PokemonBrowser() {
   const searchQuery = usePokedexStore((s) => s.searchQuery);
@@ -426,9 +428,9 @@ export function PokemonBrowser() {
                     All
                   </button>
 
-                  {/* Category section */}
+                  {/* Classification section */}
                   <div>
-                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Category</div>
+                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Classification</div>
                     <div className="flex flex-wrap gap-1.5">
                       {CATEGORIES.map((cat) => (
                         <button
@@ -470,11 +472,33 @@ export function PokemonBrowser() {
                     </div>
                   </div>
 
+                  {/* Game Mechanics section */}
+                  <div>
+                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Game Mechanics</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {GAME_MECHANICS_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!).map((archetype) => (
+                        <button
+                          key={archetype.id}
+                          onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
+                          className={cn(
+                            'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
+                            activeArchetype === archetype.id
+                              ? 'text-white border-transparent'
+                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
+                          )}
+                          style={activeArchetype === archetype.id ? { backgroundColor: archetype.color } : undefined}
+                        >
+                          {archetype.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Archetype section */}
                   <div>
                     <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Archetype</div>
                     <div className="flex flex-wrap gap-1.5">
-                      {ARCHETYPES.filter(a => !GEOGRAPHY_IDS.has(a.id)).map((archetype) => (
+                      {ARCHETYPES.filter(a => !GEOGRAPHY_IDS.has(a.id) && !GAME_MECHANICS_IDS.has(a.id)).map((archetype) => (
                         <button
                           key={archetype.id}
                           onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
