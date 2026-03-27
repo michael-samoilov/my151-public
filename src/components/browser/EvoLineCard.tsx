@@ -103,9 +103,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
                 'absolute inset-y-0 border-t border-b',
                 isFirst ? 'left-[3px] md:left-[2px] rounded-l-md border-l' : 'left-0',
                 isLast ? 'right-[3px] md:right-[2px] rounded-r-md border-r' : 'right-0',
-                allInDex
-                  ? 'opacity-40 border-primary/30'
-                  : 'border-border',
+                'border-border',
               )}
               style={{ backgroundColor: `${bgColor}10` }}
             />
@@ -113,7 +111,6 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
               onClick={handleClick}
               className={cn(
                 'relative flex flex-col items-center py-[1vw] md:py-1 transition-all cursor-pointer w-full',
-                allInDex && 'opacity-40',
               )}
             >
               <div className={cn(
