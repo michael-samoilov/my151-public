@@ -12,7 +12,9 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { Search, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type FilterSheet = 'type' | 'generation' | 'evoStage' | 'category' | 'archetype' | null;
+type FilterSheet = 'type' | 'generation' | 'evoStage' | 'browse' | null;
+
+const GEOGRAPHY_IDS = new Set(['cave-pokemon', 'fishing-pokemon', 'ocean', 'beach', 'forest', 'tundra', 'volcanic', 'desert']);
 
 export function PokemonBrowser() {
   const searchQuery = usePokedexStore((s) => s.searchQuery);
@@ -220,29 +222,20 @@ export function PokemonBrowser() {
             <EntryChip label="Stages" onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
           )}
 
-          {/* Category chip */}
-          {categoryName ? (
-            <FilterChip
-              label={categoryName}
-              onDismiss={() => setCategoryFilter(null)}
-              onClick={() => setOpenSheet(openSheet === 'category' ? null : 'category')}
-              className="text-white"
-              style={{ backgroundColor: activeCategoryDef!.color }}
-            />
-          ) : (
-            <EntryChip label="Category" onClick={() => setOpenSheet(openSheet === 'category' ? null : 'category')} active={openSheet === 'category'} />
-          )}
+          {/* Separator */}
+          <div className="shrink-0 w-px bg-border self-stretch my-1" />
 
-          {/* Archetype chip */}
-          {archetypeName ? (
+          {/* Browse chip (Category / Geography / Archetype) */}
+          {categoryName || archetypeName ? (
             <FilterChip
-              label={archetypeName}
-              onDismiss={() => setArchetypeFilter(null)}
-              onClick={() => setOpenSheet(openSheet === 'archetype' ? null : 'archetype')}
-              className="bg-primary/10 text-primary"
+              label={categoryName ?? archetypeName!}
+              onDismiss={() => { setCategoryFilter(null); setArchetypeFilter(null); }}
+              onClick={() => setOpenSheet(openSheet === 'browse' ? null : 'browse')}
+              className="text-white"
+              style={{ backgroundColor: activeCategoryDef?.color ?? activeArchetypeDef?.color ?? undefined }}
             />
           ) : (
-            <EntryChip label="Archetype" onClick={() => setOpenSheet(openSheet === 'archetype' ? null : 'archetype')} active={openSheet === 'archetype'} />
+            <EntryChip label="Browse" onClick={() => setOpenSheet(openSheet === 'browse' ? null : 'browse')} active={openSheet === 'browse'} />
           )}
 
           {/* Clear all */}
@@ -323,8 +316,7 @@ export function PokemonBrowser() {
                 {openSheet === 'type' && 'Type'}
                 {openSheet === 'generation' && 'Generation'}
                 {openSheet === 'evoStage' && 'Evo Stages'}
-                {openSheet === 'category' && 'Category'}
-                {openSheet === 'archetype' && 'Archetype'}
+                {openSheet === 'browse' && 'Browse'}
               </span>
               <button onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
                 <X size={16} />
@@ -415,73 +407,86 @@ export function PokemonBrowser() {
                 </div>
               )}
 
-              {openSheet === 'category' && (
-                <div className="flex flex-wrap gap-1.5">
+              {openSheet === 'browse' && (
+                <div className="space-y-3">
+                  {/* Clear selection */}
                   <button
-                    onClick={() => { setCategoryFilter(null); setOpenSheet(null); }}
+                    onClick={() => { setCategoryFilter(null); setArchetypeFilter(null); setOpenSheet(null); }}
                     className={cn(
                       'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer',
-                      activeCategory === null
+                      !activeCategory && !activeArchetype
                         ? 'bg-foreground text-background'
                         : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                     )}
                   >
                     All
                   </button>
-                  {CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => { setCategoryFilter(activeCategory === cat.id ? null : cat.id); setOpenSheet(null); }}
-                      className={cn(
-                        'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
-                        activeCategory === cat.id
-                          ? 'text-white border-transparent'
-                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
-                      )}
-                      style={
-                        activeCategory === cat.id
-                          ? { backgroundColor: cat.color }
-                          : undefined
-                      }
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
-              )}
 
-              {openSheet === 'archetype' && (
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => { setArchetypeFilter(null); setOpenSheet(null); }}
-                    className={cn(
-                      'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer',
-                      activeArchetype === null
-                        ? 'bg-foreground text-background'
-                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                    )}
-                  >
-                    All
-                  </button>
-                  {ARCHETYPES.map((archetype) => (
-                    <button
-                      key={archetype.id}
-                      onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
-                      className={cn(
-                        'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
-                        activeArchetype === archetype.id
-                          ? 'text-white border-transparent'
-                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
-                      )}
-                      style={
-                        activeArchetype === archetype.id
-                          ? { backgroundColor: archetype.color }
-                          : undefined
-                      }
-                    >
-                      {archetype.name}
-                    </button>
-                  ))}
+                  {/* Category section */}
+                  <div>
+                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Category</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {CATEGORIES.map((cat) => (
+                        <button
+                          key={cat.id}
+                          onClick={() => { setCategoryFilter(activeCategory === cat.id ? null : cat.id); setOpenSheet(null); }}
+                          className={cn(
+                            'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
+                            activeCategory === cat.id
+                              ? 'text-white border-transparent'
+                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
+                          )}
+                          style={activeCategory === cat.id ? { backgroundColor: cat.color } : undefined}
+                        >
+                          {cat.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Geography section */}
+                  <div>
+                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Geography</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ARCHETYPES.filter(a => GEOGRAPHY_IDS.has(a.id)).map((archetype) => (
+                        <button
+                          key={archetype.id}
+                          onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
+                          className={cn(
+                            'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
+                            activeArchetype === archetype.id
+                              ? 'text-white border-transparent'
+                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
+                          )}
+                          style={activeArchetype === archetype.id ? { backgroundColor: archetype.color } : undefined}
+                        >
+                          {archetype.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Archetype section */}
+                  <div>
+                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Archetype</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ARCHETYPES.filter(a => !GEOGRAPHY_IDS.has(a.id)).map((archetype) => (
+                        <button
+                          key={archetype.id}
+                          onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
+                          className={cn(
+                            'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
+                            activeArchetype === archetype.id
+                              ? 'text-white border-transparent'
+                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
+                          )}
+                          style={activeArchetype === archetype.id ? { backgroundColor: archetype.color } : undefined}
+                        >
+                          {archetype.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
