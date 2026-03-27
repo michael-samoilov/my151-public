@@ -113,10 +113,17 @@ export function useFilteredPokemon({
 
     if (types && types.length > 0) {
       if (typeMode === 'all') {
-        // AND mode: Pokemon must have ALL selected types (dual-type search)
-        filtered = filtered.filter(p =>
-          types.every(t => p.types.includes(t as never))
-        );
+        if (types.length <= 2) {
+          // AND mode with 1-2 types: Pokemon must have ALL selected types
+          filtered = filtered.filter(p =>
+            types.every(t => p.types.includes(t as never))
+          );
+        } else {
+          // AND mode with 3+ types: Pokemon must have any pair of selected types
+          filtered = filtered.filter(p =>
+            types.filter(t => p.types.includes(t as never)).length >= 2
+          );
+        }
       } else {
         // OR mode: Pokemon must have ANY of the selected types
         filtered = filtered.filter(p =>
