@@ -133,7 +133,7 @@ export const ARCHETYPES: Archetype[] = [
     pokemonIds: [
       46,47,       // Paras→Parasect
       102,103,     // Exeggcute→Exeggutor
-      10101,       // Exeggutor-Alola
+      10114,       // Exeggutor-Alola
       114,465,     // Tangela→Tangrowth
       127,         // Pinsir
       190,424,     // Aipom→Ambipom
@@ -156,7 +156,7 @@ export const ARCHETYPES: Archetype[] = [
       766,         // Passimian
       775,         // Komala
       840,841,842, // Applin→Flapple/Appletun
-      1011,1018,   // Dipplin→Hydrapple
+      1011,1019,   // Dipplin→Hydrapple
     ],
     suggestedSlotRange: [33, 42],
     color: '#2d6a4f',
@@ -169,7 +169,6 @@ export const ARCHETYPES: Archetype[] = [
       124,         // Jynx
       238,         // Smoochum
       215,461,     // Sneasel→Weavile
-      10233,903,   // Sneasel-Hisui→Sneasler
       220,221,473, // Swinub→Piloswine→Mamoswine
       225,         // Delibird
       361,362,478, // Snorunt→Glalie/Froslass
@@ -178,7 +177,7 @@ export const ARCHETYPES: Archetype[] = [
       613,614,     // Cubchoo→Beartic
       615,         // Cryogonal
       712,713,     // Bergmite→Avalugg
-      10235,       // Avalugg-Hisui
+      10243,       // Avalugg-Hisui
       872,873,     // Snom→Frosmoth
       875,         // Eiscue
       974,975,     // Cetoddle→Cetitan
@@ -230,7 +229,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'elemental-trio',
     name: 'Elemental Trio/Duo',
     description: 'Mid-game groups linked by element or theme',
-    pokemonIds: [37,38, 10103,10104, 58,59, 10229,10230, 77,78, 10162,10163, 133,134,135,136,196,197,470,471, 511,512,513,514,515,516, 700],
+    pokemonIds: [37,38, 10103,10104, 58,59, 10229,10230, 77,78, 10162,10163, 511,512,513,514,515,516, 133,134,135,136,196,197,470,471,700],
     suggestedSlotRange: [39, 44],
     color: '#ee8130',
   },
@@ -238,7 +237,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'gift-pokemon',
     name: 'Gift',
     description: 'Pokemon commonly received as gifts in-game',
-    pokemonIds: [131, 133,134,135,136, 143, 175,176, 196,197, 447,448, 468, 470,471, 574,575,576, 700],
+    pokemonIds: [131, 133,134,135,136, 143, 175,176, 196,197, 447,448, 468, 470,471, 700],
     suggestedSlotRange: [77, 82],
     color: '#d685ad',
   },
@@ -246,7 +245,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'industrial',
     name: 'Industrial/Artificial',
     description: 'Mechanical, pollution, and artificially-created Pokemon found in urban/industrial areas',
-    pokemonIds: [81,82, 88,89, 10112,10113, 100,101, 10231,10232, 109,110, 10167, 137,233,474, 462, 532,533,534, 568,569, 599,600,601, 679,680,681, 707, 957,958,959],
+    pokemonIds: [81,82, 88,89, 10112,10113, 100,101, 10231,10232, 109,110, 10167, 137,233,474, 462, 532,533,534, 568,569, 599,600,601, 679,680,681, 707, 884,1018, 957,958,959],
     suggestedSlotRange: [83, 87],
     color: '#b7b7ce',
   },
@@ -351,7 +350,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'rivalry-pair',
     name: 'Rivalry Pair',
     description: 'Thematic opposites that appear together',
-    pokemonIds: [106,107, 128,10250,10251,10252, 236,237, 241, 311,312, 313,314, 335,336, 337,338, 538,539, 631,632, 10091,10092,734,735, 765,766, 874,875],
+    pokemonIds: [106,107, 128,10250,10251,10252,241, 236,237, 311,312, 313,314, 335,336, 337,338, 538,539, 631,632, 734,735,10091,10092, 765,766, 874,875],
     suggestedSlotRange: [50, 55],
     color: '#c22e28',
   },
@@ -377,7 +376,7 @@ export const ARCHETYPES: Archetype[] = [
       // Gen 8 (Legends Arceus)
       899,900,901,902,903,904,
       // Gen 9
-      979,980,981,982,983,1011,1018,
+      979,980,981,982,983,1011,1018,1019,
     ],
     suggestedSlotRange: [50, 80],
     color: '#9966cc',
@@ -388,7 +387,7 @@ export const ARCHETYPES: Archetype[] = [
       { label: 'Gen 6', pokemonIds: [700] },
       { label: 'Gen 8', pokemonIds: [862,863,864,865,866,867] },
       { label: 'Legends Arceus', pokemonIds: [899,900,901,902,903,904] },
-      { label: 'Gen 9', pokemonIds: [979,980,981,982,983,1011,1018] },
+      { label: 'Gen 9', pokemonIds: [979,980,981,982,983,1011,1018,1019] },
     ],
   },
   {
