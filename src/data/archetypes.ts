@@ -153,6 +153,7 @@ export const ARCHETYPES: Archetype[] = [
       420,421,     // Cherubi→Cherrim
       455,         // Carnivine
       585,586,     // Deerling→Sawsbuck
+      674,675,     // Pancham→Pangoro
       708,709,     // Phantump→Trevenant
       755,756,     // Morelull→Shiinotic
       765,         // Oranguru
@@ -240,41 +241,84 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'gift-pokemon',
-    name: 'Gift/Reward',
-    description: 'Pokemon received as gifts, rewards, or prizes in-game',
+    name: 'Gift',
+    description: 'Pokemon freely given to the player by NPCs',
     pokemonIds: [
-      // RBY: Eevee, Lapras, Hitmonchan/lee, Magikarp, Porygon (Game Corner)
-      131, 133,134,135,136, 106,107, 129,130, 137,
-      // GSC/HGSS: Togepi egg, Tyrogue, Eevee, Dratini (Dragon's Den), Shuckle, Odd Egg
-      175,176, 236, 147,148,149, 213,
+      // RBY: Eevee, Lapras
+      131, 133,134,135,136,196,197,470,471,700,
+      // GSC: Togepi egg, Shuckle
+      175,176,468, 213,
       // RSE: Beldum (Steven), Castform, Wynaut egg
       374,375,376, 351, 360,
-      // DPPt: Eevee, Riolu egg, Togepi egg, Porygon
-      447,448, 468,
+      // DPPt: Riolu egg
+      447,448,
       // BW: Zorua, Larvesta egg
       570,571, 636,637,
-      // B2W2: Shiny Dratini, Shiny Gible
-      443,444,445,
-      // XY: Lucario (Tower of Mastery), Lapras
-      196,197, 470,471, 700,
+      // XY: Lucario (Korrina)
+      448,
       // SM/USUM: Type: Null, Cosmog, Poipole
       772,773, 789,790, 803,804,
       // SwSh: Toxel, Charmander (Leon), Type: Null
-      848, 4,5,6,
+      848,849, 4,5,6,
     ],
-    suggestedSlotRange: [77, 82],
+    suggestedSlotRange: [77, 80],
     color: '#d685ad',
+    subgroups: [
+      { label: 'Red/Blue/Yellow', pokemonIds: [133, 131] },
+      { label: 'Gold/Silver/Crystal', pokemonIds: [175, 213] },
+      { label: 'Ruby/Sapphire/Emerald', pokemonIds: [374, 351, 360] },
+      { label: 'Diamond/Pearl/Platinum', pokemonIds: [133, 447, 175] },
+      { label: 'Black/White', pokemonIds: [570, 636] },
+      { label: 'X/Y', pokemonIds: [448, 131] },
+      { label: 'Sun/Moon', pokemonIds: [772, 789, 803] },
+      { label: 'Sword/Shield', pokemonIds: [848, 4, 772] },
+    ],
+  },
+  {
+    id: 'in-game-trade',
+    name: 'In-Game Trade',
+    description: 'Pokemon obtained through NPC trades',
+    pokemonIds: [
+      // RBY: Farfetch'd (for Spearow), Mr. Mime (for Abra), Jynx (for Poliwhirl)
+      83,865, 122,866, 124,
+      // GSC: Machop (for Drowzee), Voltorb (for Krabby)
+      66,67,68, 100,101,
+      // DPPt: Haunter w/ Everstone (Mindy), Chatot (for Buizel)
+      93,94, 441,
+      // BW: Basculin, Petilil/Cottonee, Emolga
+      550, 546,547,548,549, 587,
+      // SM: Happiny, Bounsweet
+      440,113,242, 761,762,763,
+    ],
+    suggestedSlotRange: [80, 82],
+    color: '#a78bfa',
+    subgroups: [
+      { label: 'Red/Blue/Yellow', pokemonIds: [83, 122, 124] },
+      { label: 'Gold/Silver/Crystal', pokemonIds: [66, 100] },
+      { label: 'Diamond/Pearl/Platinum', pokemonIds: [93, 441] },
+      { label: 'Black/White', pokemonIds: [550, 548, 546, 587] },
+      { label: 'Sun/Moon', pokemonIds: [440, 761] },
+    ],
+  },
+  {
+    id: 'reward-pokemon',
+    name: 'Reward',
+    description: 'Pokemon earned as prizes, rewards, or purchases',
+    pokemonIds: [
+      // RBY: Hitmonlee/Hitmonchan (Fighting Dojo), Porygon (Game Corner), Magikarp (salesman)
+      106,107,236,237, 137,233,474, 129,130,
+      // GSC: Tyrogue (Karate King), Dratini (Dragon's Den quiz)
+      147,148,149,
+      // B2W2: Shiny Dratini, Shiny Gible (Benga rewards)
+      443,444,445,
+    ],
+    suggestedSlotRange: [80, 82],
+    color: '#f59e0b',
     shinyIds: [147, 443],
     subgroups: [
-      { label: 'Red/Blue/Yellow', pokemonIds: [133,134,135,136, 131, 106,107, 129,130, 137] },
-      { label: 'Gold/Silver/Crystal', pokemonIds: [175,176,468, 236,106,107, 147,148,149, 213] },
-      { label: 'Ruby/Sapphire/Emerald', pokemonIds: [374,375,376, 351, 360] },
-      { label: 'Diamond/Pearl/Platinum', pokemonIds: [133,196,197,470,471,700, 175,176,468, 447,448] },
-      { label: 'Black/White', pokemonIds: [570,571, 636,637] },
-      { label: 'Black 2/White 2', pokemonIds: [147,148,149, 443,444,445] },
-      { label: 'X/Y', pokemonIds: [448, 131] },
-      { label: 'Sun/Moon', pokemonIds: [772,773, 789,790, 803,804] },
-      { label: 'Sword/Shield', pokemonIds: [848, 4,5,6, 772,773] },
+      { label: 'Red/Blue/Yellow', pokemonIds: [106, 107, 137, 129] },
+      { label: 'Gold/Silver/Crystal', pokemonIds: [236, 147] },
+      { label: 'Black 2/White 2', pokemonIds: [147, 443] },
     ],
   },
   {
