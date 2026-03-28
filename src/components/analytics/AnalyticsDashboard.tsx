@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, CartesianGrid, ReferenceLine,
+  PieChart, Pie, Cell, CartesianGrid,
 } from 'recharts';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
@@ -129,7 +129,7 @@ export function AnalyticsDashboard() {
           <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={analytics.typeDeviation}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} horizontalPoints={[]} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="type"
                   tick={{ fontSize: 10 }}
@@ -151,19 +151,6 @@ export function AnalyticsDashboard() {
                     'vs national dex',
                   ]) as any}
                 />
-                {/* Major grid lines at integer values (1x highlighted) */}
-                {typeYTicks.filter(t => Number.isInteger(t) && t > 0).map(t => (
-                  <ReferenceLine
-                    key={`major-${t}`}
-                    y={t}
-                    stroke={t === 1 ? '#666' : '#d1d5db'}
-                    strokeWidth={t === 1 ? 1.5 : 1}
-                  />
-                ))}
-                {/* Minor grid lines at 0.5x values */}
-                {typeYTicks.filter(t => !Number.isInteger(t)).map(t => (
-                  <ReferenceLine key={`minor-${t}`} y={t} stroke="#e5e7eb" strokeWidth={0.5} strokeDasharray="3 3" />
-                ))}
                 <Bar dataKey="ratio" name="vs national dex">
                   {analytics.typeDeviation.map((entry) => (
                     <Cell
@@ -211,7 +198,7 @@ export function AnalyticsDashboard() {
             <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={analytics.generationDeviation} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} verticalPoints={[]} />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                   <XAxis
                     type="number"
                     ticks={genXTicks}
@@ -229,19 +216,6 @@ export function AnalyticsDashboard() {
                   <Tooltip
                     formatter={((value: any) => [`${Number(value).toFixed(2)}x`, 'vs national dex']) as any}
                   />
-                  {/* Major grid lines at integer values (1x highlighted) */}
-                  {genXTicks.filter(t => Number.isInteger(t) && t > 0).map(t => (
-                    <ReferenceLine
-                      key={`gen-major-${t}`}
-                      x={t}
-                      stroke={t === 1 ? '#666' : '#d1d5db'}
-                      strokeWidth={t === 1 ? 1.5 : 1}
-                    />
-                  ))}
-                  {/* Minor grid lines at 0.5x values */}
-                  {genXTicks.filter(t => !Number.isInteger(t)).map(t => (
-                    <ReferenceLine key={`gen-minor-${t}`} x={t} stroke="#e5e7eb" strokeWidth={0.5} strokeDasharray="3 3" />
-                  ))}
                   <Bar dataKey="ratio" name="vs national dex">
                     {analytics.generationDeviation.map((entry, i) => (
                       <Cell

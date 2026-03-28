@@ -21,8 +21,10 @@ export function WhatsAdvisor() {
       items.push({ type: 'missing', text: 'Pokedex is empty' });
     } else if (totalPlaced < 151) {
       items.push({ type: 'suggestion', text: `${totalPlaced}/151 filled` });
-    } else {
+    } else if (totalPlaced === 151) {
       items.push({ type: 'complete', text: '151/151 filled!' });
+    } else {
+      items.push({ type: 'missing', text: `${totalPlaced}/151 — over by ${totalPlaced - 151}. Remove some Pokemon to reach 151.` });
     }
 
     // Check archetype coverage
