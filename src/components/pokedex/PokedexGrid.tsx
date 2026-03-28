@@ -364,14 +364,14 @@ function GroupBox({
       style={{
         backgroundColor: `${group.color}${showEmptyState ? '08' : '10'}`,
         border: `1px solid ${group.color}${showEmptyState ? '18' : '25'}`,
-        padding: showEmptyState ? '4px 8px' : undefined,
       }}
     >
-      {/* Tiny label */}
+      {/* Label */}
       <div
-        className="text-[9px] font-medium uppercase tracking-wide px-1.5"
+        className="text-[9px] font-semibold uppercase tracking-wide px-1.5"
         style={{
-          color: `${group.color}${showEmptyState ? '80' : 'bb'}`,
+          color: `${group.color}`,
+          opacity: showEmptyState ? 0.6 : 0.85,
           paddingTop: showEmptyState ? '0px' : '4px',
           paddingBottom: showEmptyState ? '0px' : '2px',
         }}
@@ -380,17 +380,17 @@ function GroupBox({
       </div>
 
       {showEmptyState ? (
-        /* Empty: single "+" inline */
-        <div className="flex items-center py-0.5">
+        /* Empty: single "+" at tile size */
+        <div className="grid grid-cols-6 gap-[1vw] md:gap-1 p-1 pt-0">
           <button
             onClick={() => onAddClick(group.id)}
-            className="w-7 h-7 md:w-8 md:h-8 rounded-md border border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
+            className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
             style={{
               borderColor: `${group.color}40`,
               color: `${group.color}90`,
             }}
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
           </button>
         </div>
       ) : (
