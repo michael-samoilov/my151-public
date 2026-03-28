@@ -65,10 +65,6 @@ export const usePokedexStore = create<PokedexState>()(
             }
           }
 
-          const totalPlaced = Object.values(state.sections).reduce((s, a) => s + a.length, 0);
-          const slotsAvailable = 151 - totalPlaced;
-          if (allIds.length > slotsAvailable) return state;
-
           const newSections = { ...state.sections };
           const addingSet = new Set(allIds);
           for (const sid of BUILD_GROUP_IDS) {

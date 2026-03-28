@@ -232,7 +232,6 @@ const STARTER_TYPES = [['grass', '#78C850'], ['fire', '#F08030'], ['water', '#68
 
 function StarterContent({
   pokemonIds,
-  totalPlaced,
   dragLineIds,
   dragSet,
   insertIndicator,
@@ -240,7 +239,6 @@ function StarterContent({
   onAddClick,
 }: {
   pokemonIds: number[];
-  totalPlaced: number;
   dragLineIds: number[] | null;
   dragSet: Set<number>;
   insertIndicator: { tileId: string | null; endSection: string | null };
@@ -272,7 +270,7 @@ function StarterContent({
         {dragLineIds && pokemonIds.length > 0 && (
           <EndDropZone sectionId="starter" showIndicator={insertIndicator.endSection === 'starter'} />
         )}
-        {!dragLineIds && totalPlaced < 151 && chains.size >= 3 && (
+        {!dragLineIds && chains.size >= 3 && (
           <button
             onClick={onAddClick}
             className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
@@ -313,7 +311,7 @@ function StarterContent({
           />
         );
       }
-    } else if (totalPlaced < 151) {
+    } else {
       for (let i = 0; i < 3; i++) {
         elements.push(
           <button
@@ -336,7 +334,6 @@ function StarterContent({
 function GroupBox({
   group,
   pokemonIds,
-  totalPlaced,
   dragLineIds,
   dragSet,
   insertIndicator,
@@ -344,7 +341,6 @@ function GroupBox({
 }: {
   group: BuildGroup;
   pokemonIds: number[];
-  totalPlaced: number;
   dragLineIds: number[] | null;
   dragSet: Set<number>;
   insertIndicator: { tileId: string | null; endSection: string | null };
@@ -396,7 +392,6 @@ function GroupBox({
           {isStarter ? (
             <StarterContent
               pokemonIds={pokemonIds}
-              totalPlaced={totalPlaced}
               dragLineIds={dragLineIds}
               dragSet={dragSet}
               insertIndicator={insertIndicator}
@@ -434,7 +429,7 @@ function GroupBox({
                   showIndicator={insertIndicator.endSection === group.id}
                 />
               )}
-              {!dragLineIds && totalPlaced < 151 && (
+              {!dragLineIds && (
                 <button
                   onClick={() => onAddClick(group.id)}
                   className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
@@ -678,7 +673,6 @@ export function PokedexGrid() {
                   key={group.id}
                   group={group}
                   pokemonIds={sections[group.id] ?? []}
-                  totalPlaced={totalPlaced}
                   dragLineIds={dragLineIds}
                   dragSet={dragSet}
                   insertIndicator={insertIndicator}

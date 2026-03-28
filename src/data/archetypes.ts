@@ -177,6 +177,7 @@ export const ARCHETYPES: Archetype[] = [
       220,221,473, // Swinub→Piloswine→Mamoswine
       225,         // Delibird
       361,362,478, // Snorunt→Glalie/Froslass
+      363,364,365, // Spheal→Sealeo→Walrein
       459,460,     // Snover→Abomasnow
       582,583,584, // Vanillite→Vanillish→Vanilluxe
       613,614,     // Cubchoo→Beartic
