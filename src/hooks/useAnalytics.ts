@@ -114,7 +114,7 @@ export function useAnalytics() {
         ratio,
         deviation: globalProportion > 0 ? (ratio - 1) * 100 : 0,
       };
-    }).sort((a, b) => Math.abs(b.deviation) - Math.abs(a.deviation));
+    }).sort((a, b) => b.deviation - a.deviation);
 
     // Generation distribution
     const genCounts: Record<number, number> = {};
@@ -140,7 +140,7 @@ export function useAnalytics() {
         ratio,
         deviation: globalProportion > 0 ? (ratio - 1) * 100 : 0,
       };
-    });
+    }).sort((a, b) => b.deviation - a.deviation);
 
     // BST stats + histogram
     const bsts = pokemon.map((p) => p.bst).sort((a, b) => a - b);
