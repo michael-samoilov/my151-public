@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
@@ -38,7 +38,44 @@ export function PokemonBrowser() {
   const setEvoLineSizeFilter = usePokedexStore((s) => s.setEvoLineSizeFilter);
   const sections = usePokedexStore((s) => s.sections);
   const activeSection = usePokedexStore((s) => s.activeSection);
+  const addToSection = usePokedexStore((s) => s.addToSection);
   const [openSheet, setOpenSheet] = useState<FilterSheet>(null);
+
+  // Staged selection: pokemon selected but not yet committed
+  const [stagedIds, setStagedIds] = useState<number[]>([]);
+  const stagedSet = useMemo(() => new Set(stagedIds), [stagedIds]);
+  const prevSectionRef = useRef(activeSection);
+
+  // Reset staged when activeSection changes
+  useEffect(() => {
+    if (activeSection !== prevSectionRef.current) {
+      setStagedIds([]);
+      prevSectionRef.current = activeSection;
+    }
+  }, [activeSection]);
+
+  const handleToggleStage = useCallback((memberIds: number[]) => {
+    setStagedIds(prev => {
+      const prevSet = new Set(prev);
+      const allStaged = memberIds.every(id => prevSet.has(id));
+      if (allStaged) {
+        // Unstage
+        const removeSet = new Set(memberIds);
+        return prev.filter(id => !removeSet.has(id));
+      } else {
+        // Stage (add any not already staged)
+        const toAdd = memberIds.filter(id => !prevSet.has(id));
+        return [...prev, ...toAdd];
+      }
+    });
+  }, []);
+
+  const handleSubmitStaged = useCallback(() => {
+    if (stagedIds.length === 0) return;
+    const targetSection = activeSection ?? 'other';
+    addToSection(targetSection, stagedIds);
+    setStagedIds([]);
+  }, [stagedIds, activeSection, addToSection]);
 
   const assignedIds = useMemo(
     () => new Set(Object.values(sections).flat()),
@@ -296,6 +333,8 @@ export function PokemonBrowser() {
                     };
                   })}
                   assignedIds={assignedIds}
+                  stagedIds={stagedSet}
+                  onToggleStage={handleToggleStage}
                   shinyIds={sub.shinyIds ? new Set(sub.shinyIds) : shinyIds}
                   spriteOverrides={spriteOverrides}
                 />
@@ -313,12 +352,15 @@ export function PokemonBrowser() {
         </div>
       </div>
 
-      {/* Floating selection count */}
-      {activeSection && (sections[activeSection] ?? []).length > 0 && (
+      {/* Floating "Add X Pokemon" button */}
+      {stagedIds.length > 0 && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
-          <div className="bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg text-sm font-semibold">
-            {(sections[activeSection] ?? []).length} Pokemon added
-          </div>
+          <button
+            onClick={handleSubmitStaged}
+            className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors"
+          >
+            Add {stagedIds.length} Pokemon
+          </button>
         </div>
       )}
 

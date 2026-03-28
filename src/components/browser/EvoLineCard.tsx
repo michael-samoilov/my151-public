@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import type { Pokemon } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { Check, ChevronRight } from 'lucide-react';
+import { Check, Plus, ChevronRight } from 'lucide-react';
 
 const COLS = 6;
 
@@ -18,12 +18,14 @@ interface EvoLineGroup {
 interface EvoLineGridProps {
   groups: EvoLineGroup[];
   assignedIds: Set<number>;
+  stagedIds: Set<number>;
+  onToggleStage: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
 }
 
 /** Renders evo line cards in a 6-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, shinyIds, spriteOverrides }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides }: EvoLineGridProps) {
   const elements = useMemo(() => {
     const result: React.ReactNode[] = [];
     let col = 0; // 0-based current column position
@@ -44,6 +46,8 @@ export function EvoLineGrid({ groups, assignedIds, shinyIds, spriteOverrides }: 
           members={group.members}
           matchedIds={group.matchedIds}
           assignedIds={assignedIds}
+          stagedIds={stagedIds}
+          onToggleStage={onToggleStage}
           shinyIds={shinyIds}
           spriteOverrides={spriteOverrides}
         />
@@ -52,7 +56,7 @@ export function EvoLineGrid({ groups, assignedIds, shinyIds, spriteOverrides }: 
     }
 
     return result;
-  }, [groups, assignedIds, shinyIds, spriteOverrides]);
+  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides]);
 
   return (
     <div
@@ -69,20 +73,20 @@ interface EvoLineCardProps {
   members: Pokemon[];
   matchedIds: Set<number>;
   assignedIds: Set<number>;
+  stagedIds: Set<number>;
+  onToggleStage: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
 }
 
-export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, spriteOverrides }: EvoLineCardProps) {
-  const addToSection = usePokedexStore((s) => s.addToSection);
+export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides }: EvoLineCardProps) {
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
-  const activeSection = usePokedexStore((s) => s.activeSection);
   const sections = usePokedexStore((s) => s.sections);
   const allInDex = members.every((p) => assignedIds.has(p.id));
 
   const handleClick = () => {
     if (allInDex) {
-      // Find which section this evo line is in and remove it
+      // Already in dex: remove immediately
       const firstId = members[0].id;
       for (const [sectionId, ids] of Object.entries(sections)) {
         if (ids.includes(firstId)) {
@@ -91,8 +95,8 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
         }
       }
     } else {
-      const targetSection = activeSection ?? 'other';
-      addToSection(targetSection, members.map((p) => p.id));
+      // Toggle staging
+      onToggleStage(members.map((p) => p.id));
     }
   };
 
@@ -122,6 +126,11 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
             {inDex && (
               <div className="absolute top-[3px] right-[6px] md:right-1.5 -translate-y-[0.5px] w-3 h-3 bg-primary rounded-full flex items-center justify-center z-10">
                 <Check className="w-1.5 h-1.5 text-primary-foreground" />
+              </div>
+            )}
+            {!inDex && stagedIds.has(pokemon.id) && (
+              <div className="absolute top-[3px] right-[6px] md:right-1.5 -translate-y-[0.5px] w-3 h-3 bg-primary rounded-full flex items-center justify-center z-10">
+                <Plus className="w-1.5 h-1.5 text-primary-foreground" />
               </div>
             )}
             <button
