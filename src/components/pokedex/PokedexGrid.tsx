@@ -589,11 +589,11 @@ export function PokedexGrid() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b">
-        <div>
-          <h2 className="text-lg font-bold">Your Pokedex</h2>
-          <p className="text-sm text-muted-foreground">{totalPlaced}/151 filled</p>
-        </div>
+      <div className="flex items-center justify-between px-4 py-2 border-b">
+        <h2 className="text-2xl font-extrabold tracking-tight leading-none">
+          <span className="text-primary">{totalPlaced}</span>
+          <span className="text-foreground">/151</span>
+        </h2>
         <Button
           variant="ghost" size="sm"
           onClick={clearAll}
