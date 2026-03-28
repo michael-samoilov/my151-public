@@ -70,12 +70,17 @@ export function PokemonBrowser() {
     });
   }, []);
 
+  const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
+  const setActiveSection = usePokedexStore((s) => s.setActiveSection);
+
   const handleSubmitStaged = useCallback(() => {
     if (stagedIds.length === 0) return;
     const targetSection = activeSection ?? 'other';
     addToSection(targetSection, stagedIds);
     setStagedIds([]);
-  }, [stagedIds, activeSection, addToSection]);
+    setMobileBrowserOpen(false);
+    setActiveSection(null);
+  }, [stagedIds, activeSection, addToSection, setMobileBrowserOpen, setActiveSection]);
 
   const assignedIds = useMemo(
     () => new Set(Object.values(sections).flat()),
