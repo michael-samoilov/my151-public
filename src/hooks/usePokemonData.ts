@@ -26,6 +26,28 @@ export function getPokemonById(id: number): Pokemon | undefined {
   return pokemonById.get(id);
 }
 
+/**
+ * Get a Pokemon and all its evolutionary descendants (children, grandchildren, etc.)
+ * Used for branch removal: removing Gloom removes Vileplume and Bellossom too,
+ * but not Oddish (the ancestor).
+ */
+export function getDescendantIds(pokemonId: number): number[] {
+  const pokemon = pokemonById.get(pokemonId);
+  if (!pokemon) return [pokemonId];
+  const chainMembers = pokemonByChain.get(pokemon.evolutionChainId) ?? [];
+  const result: number[] = [pokemonId];
+  function collect(fromId: number) {
+    for (const p of chainMembers) {
+      if (p.evolvesFrom === fromId) {
+        result.push(p.id);
+        collect(p.id);
+      }
+    }
+  }
+  collect(pokemonId);
+  return result;
+}
+
 export function getAllPokemon(): Pokemon[] {
   return pokemonList;
 }

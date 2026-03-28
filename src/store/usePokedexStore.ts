@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createEmptySections, BUILD_GROUP_IDS } from '@/data/slot-template';
-import { getEvolutionLine } from '@/hooks/usePokemonData';
+import { getEvolutionLine, getDescendantIds } from '@/hooks/usePokemonData';
 
 type TypeFilterMode = 'any' | 'all';
 
@@ -19,6 +19,7 @@ interface PokedexState {
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
+  removeBranch: (sectionId: string, pokemonId: number) => void;
   removeEvoLine: (sectionId: string, pokemonId: number) => void;
   moveEvoLine: (fromSection: string, evoLineIds: number[], toSection: string, insertBeforeIndex: number) => void;
   setActiveSection: (sectionId: string | null) => void;
@@ -79,6 +80,16 @@ export const usePokedexStore = create<PokedexState>()(
           return {
             sections: newSections,
           };
+        }),
+
+      removeBranch: (sectionId, pokemonId) =>
+        set((state) => {
+          const removeSet = new Set(getDescendantIds(pokemonId));
+          const newSections = { ...state.sections };
+          if (newSections[sectionId]) {
+            newSections[sectionId] = newSections[sectionId].filter((id) => !removeSet.has(id));
+          }
+          return { sections: newSections };
         }),
 
       removeEvoLine: (sectionId, pokemonId) =>

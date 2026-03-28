@@ -125,7 +125,7 @@ function DraggableTile({
   isDraggedLine: boolean;
   showInsertBefore: boolean;
 }) {
-  const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
+  const removeBranch = usePokedexStore((s) => s.removeBranch);
   const pokemon = getPokemonById(pokemonId);
 
   const {
@@ -166,7 +166,7 @@ function DraggableTile({
           className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full overflow-hidden"
         />
         <button
-          onClick={() => removeEvoLine(sectionId, pokemonId)}
+          onClick={() => removeBranch(sectionId, pokemonId)}
           onPointerDown={(e) => e.stopPropagation()}
           className="absolute top-[0.5vw] right-[0.5vw] md:top-0.5 md:right-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full bg-destructive/60 md:bg-destructive/80 text-white flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
         >
