@@ -130,77 +130,67 @@ export function AnalyticsDashboard() {
         <section>
           <h3 className="text-lg font-semibold mb-1">Type Distribution</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Count of Pokemon per type and deviation from national dex proportions. Sorted by most disproportionate.
+            Count and deviation from national dex proportions. Sorted by most disproportionate.
           </p>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Count</p>
-              <ResponsiveContainer width="100%" height="95%">
-                <BarChart data={analytics.typeDeviation}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="type"
-                    tick={{ fontSize: 9 }}
-                    tickFormatter={(v: string) => v.charAt(0).toUpperCase() + v.slice(1)}
-                    interval={0}
-                    angle={-45}
-                    textAnchor="end"
-                    height={50}
-                  />
-                  <YAxis tick={{ fontSize: 10 }} domain={[0, typeCountMax]} allowDecimals={false} />
-                  <Tooltip
-                    formatter={((value: any) => [value, 'Pokemon']) as any}
-                  />
-                  <Bar dataKey="count" name="Pokemon">
-                    {analytics.typeDeviation.map((entry) => (
-                      <Cell
-                        key={entry.type}
-                        fill={TYPE_COLORS[entry.type as keyof typeof TYPE_COLORS]}
-                        opacity={0.85}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex gap-0">
+              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide text-center" style={{ flex: '0 0 35%' }}>Count</div>
+              <div style={{ flex: '0 0 10%' }} />
+              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide text-center" style={{ flex: '0 0 55%' }}>Over / Under Represented</div>
             </div>
-            <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Over / Under Represented</p>
-              <ResponsiveContainer width="100%" height="95%">
-                <BarChart data={analytics.typeDeviation}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="type"
-                    tick={{ fontSize: 9 }}
-                    tickFormatter={(v: string) => v.charAt(0).toUpperCase() + v.slice(1)}
-                    interval={0}
-                    angle={-45}
-                    textAnchor="end"
-                    height={50}
-                  />
-                  <YAxis
-                    ticks={typeDevTicks}
-                    tick={{ fontSize: 10 }}
-                    tickFormatter={(v: number) => `${v > 0 ? '+' : ''}${v}%`}
-                    domain={[-typeDevMax, typeDevMax]}
-                  />
-                  <ReferenceLine y={0} stroke="var(--color-muted-foreground)" strokeWidth={1} />
-                  <Tooltip
-                    formatter={((value: any) => [
-                      `${Number(value) > 0 ? '+' : ''}${Number(value).toFixed(0)}%`,
-                      'vs national dex',
-                    ]) as any}
-                  />
-                  <Bar dataKey="deviation" name="vs national dex">
-                    {analytics.typeDeviation.map((entry) => (
-                      <Cell
-                        key={entry.type}
-                        fill={TYPE_COLORS[entry.type as keyof typeof TYPE_COLORS]}
-                        opacity={0.85}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="flex gap-0" style={{ height: 460 }}>
+              {/* Count chart (left) — X-axis reversed so bars grow leftward */}
+              <div style={{ flex: '0 0 35%', height: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analytics.typeDeviation} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" domain={[0, typeCountMax]} allowDecimals={false} tick={{ fontSize: 10 }} reversed />
+                    <YAxis type="category" dataKey="type" hide />
+                    <Tooltip formatter={((value: any) => [value, 'Pokemon']) as any} />
+                    <Bar dataKey="count" name="Pokemon">
+                      {analytics.typeDeviation.map((entry) => (
+                        <Cell key={entry.type} fill={TYPE_COLORS[entry.type as keyof typeof TYPE_COLORS]} opacity={0.85} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Shared type labels (center) */}
+              <div style={{ flex: '0 0 10%', height: '100%', display: 'flex', flexDirection: 'column', paddingTop: 5, paddingBottom: 25 }}>
+                {analytics.typeDeviation.map((entry) => (
+                  <div key={entry.type} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="text-[10px] font-medium capitalize leading-none">{entry.type}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Deviation chart (right) */}
+              <div style={{ flex: '0 0 55%', height: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analytics.typeDeviation} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis
+                      type="number"
+                      ticks={typeDevTicks}
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(v: number) => `${v > 0 ? '+' : ''}${v}%`}
+                      domain={[-typeDevMax, typeDevMax]}
+                    />
+                    <YAxis type="category" dataKey="type" hide />
+                    <ReferenceLine x={0} stroke="var(--color-muted-foreground)" strokeWidth={1} />
+                    <Tooltip
+                      formatter={((value: any) => [
+                        `${Number(value) > 0 ? '+' : ''}${Number(value).toFixed(0)}%`,
+                        'vs national dex',
+                      ]) as any}
+                    />
+                    <Bar dataKey="deviation" name="vs national dex">
+                      {analytics.typeDeviation.map((entry) => (
+                        <Cell key={entry.type} fill={TYPE_COLORS[entry.type as keyof typeof TYPE_COLORS]} opacity={0.85} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </section>
@@ -211,69 +201,66 @@ export function AnalyticsDashboard() {
           <p className="text-sm text-muted-foreground mb-4">
             Where your Pokemon come from and deviation from national dex proportions.
           </p>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Count</p>
-              <ResponsiveContainer width="100%" height="95%">
-                <BarChart data={analytics.generationDeviation}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="generation"
-                    tick={{ fontSize: 11 }}
-                    tickFormatter={(v) => `Gen ${v}`}
-                  />
-                  <YAxis tick={{ fontSize: 10 }} domain={[0, genCountMax]} allowDecimals={false} />
-                  <Tooltip
-                    formatter={((value: any) => [value, 'Pokemon']) as any}
-                    labelFormatter={(v) => `Gen ${v}`}
-                  />
-                  <Bar dataKey="count" name="Pokemon">
-                    {analytics.generationDeviation.map((entry, i) => (
-                      <Cell
-                        key={entry.generation}
-                        fill={GEN_COLORS[i % GEN_COLORS.length]}
-                        opacity={0.85}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+          <div className="bg-card rounded-lg border p-4">
+            <div className="flex gap-0">
+              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide text-center" style={{ flex: '0 0 35%' }}>Count</div>
+              <div style={{ flex: '0 0 10%' }} />
+              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide text-center" style={{ flex: '0 0 55%' }}>Over / Under Represented</div>
             </div>
-            <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
-              <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Over / Under Represented</p>
-              <ResponsiveContainer width="100%" height="95%">
-                <BarChart data={analytics.generationDeviation}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="generation"
-                    tick={{ fontSize: 11 }}
-                    tickFormatter={(v) => `Gen ${v}`}
-                  />
-                  <YAxis
-                    ticks={genDevTicks}
-                    tick={{ fontSize: 10 }}
-                    tickFormatter={(v: number) => `${v > 0 ? '+' : ''}${v}%`}
-                    domain={[-genDevMax, genDevMax]}
-                  />
-                  <ReferenceLine y={0} stroke="var(--color-muted-foreground)" strokeWidth={1} />
-                  <Tooltip
-                    formatter={((value: any) => [
-                      `${Number(value) > 0 ? '+' : ''}${Number(value).toFixed(0)}%`,
-                      'vs national dex',
-                    ]) as any}
-                    labelFormatter={(v) => `Gen ${v}`}
-                  />
-                  <Bar dataKey="deviation" name="vs national dex">
-                    {analytics.generationDeviation.map((entry, i) => (
-                      <Cell
-                        key={entry.generation}
-                        fill={GEN_COLORS[i % GEN_COLORS.length]}
-                        opacity={0.85}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="flex gap-0" style={{ height: 280 }}>
+              {/* Count chart (left) — reversed */}
+              <div style={{ flex: '0 0 35%', height: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analytics.generationDeviation} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" domain={[0, genCountMax]} allowDecimals={false} tick={{ fontSize: 10 }} reversed />
+                    <YAxis type="category" dataKey="generation" hide />
+                    <Tooltip formatter={((value: any) => [value, 'Pokemon']) as any} labelFormatter={(v) => `Gen ${v}`} />
+                    <Bar dataKey="count" name="Pokemon">
+                      {analytics.generationDeviation.map((entry, i) => (
+                        <Cell key={entry.generation} fill={GEN_COLORS[i % GEN_COLORS.length]} opacity={0.85} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Shared gen labels (center) */}
+              <div style={{ flex: '0 0 10%', height: '100%', display: 'flex', flexDirection: 'column', paddingTop: 5, paddingBottom: 25 }}>
+                {analytics.generationDeviation.map((entry) => (
+                  <div key={entry.generation} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span className="text-[10px] font-medium leading-none">Gen {entry.generation}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Deviation chart (right) */}
+              <div style={{ flex: '0 0 55%', height: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={analytics.generationDeviation} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis
+                      type="number"
+                      ticks={genDevTicks}
+                      tick={{ fontSize: 10 }}
+                      tickFormatter={(v: number) => `${v > 0 ? '+' : ''}${v}%`}
+                      domain={[-genDevMax, genDevMax]}
+                    />
+                    <YAxis type="category" dataKey="generation" hide />
+                    <ReferenceLine x={0} stroke="var(--color-muted-foreground)" strokeWidth={1} />
+                    <Tooltip
+                      formatter={((value: any) => [
+                        `${Number(value) > 0 ? '+' : ''}${Number(value).toFixed(0)}%`,
+                        'vs national dex',
+                      ]) as any}
+                      labelFormatter={(v) => `Gen ${v}`}
+                    />
+                    <Bar dataKey="deviation" name="vs national dex">
+                      {analytics.generationDeviation.map((entry, i) => (
+                        <Cell key={entry.generation} fill={GEN_COLORS[i % GEN_COLORS.length]} opacity={0.85} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </section>
