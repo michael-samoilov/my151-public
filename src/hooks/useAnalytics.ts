@@ -1,24 +1,14 @@
 import { useMemo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById, getAllPokemon } from '@/hooks/usePokemonData';
-import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
-
-// Average type distribution across official regions (approximate percentages)
-const AVERAGE_TYPE_DISTRIBUTION: Record<TypeName, number> = {
-  normal: 11, fire: 6.5, water: 9, electric: 5, grass: 7, ice: 3.5,
-  fighting: 4.5, poison: 5.5, ground: 5, flying: 7.5, psychic: 5.5, bug: 7,
-  rock: 4.5, ghost: 3.5, dragon: 3, dark: 4, steel: 4, fairy: 4,
-};
+import { TYPE_NAMES } from '@/types/pokemon';
 
 // Average generation source distribution (what % of a typical regional dex comes from each gen)
 const AVERAGE_GEN_DISTRIBUTION: Record<number, number> = {
   1: 18, 2: 12, 3: 12, 4: 11, 5: 12, 6: 9, 7: 9, 8: 9, 9: 8,
 };
 
-// Average BST by section of dex
-const AVERAGE_BST = 420;
-
-// Precompute national dex histograms (static, computed once)
+// Precompute national dex stats (static, computed once)
 function buildHistogram(values: number[], binSize: number): { bin: string; count: number; pct: number }[] {
   if (values.length === 0) return [];
   const min = Math.floor(Math.min(...values) / binSize) * binSize;
@@ -36,6 +26,22 @@ function buildHistogram(values: number[], binSize: number): { bin: string; count
 }
 
 const allNational = getAllPokemon();
+const nationalTotal = allNational.length;
+
+// National type proportions: what fraction of all Pokemon have each type
+// (dual-types count for both, so proportions sum > 100%, which is correct)
+const nationalTypeProportion: Record<string, number> = {};
+for (const t of TYPE_NAMES) nationalTypeProportion[t] = 0;
+for (const p of allNational) {
+  for (const t of p.types) {
+    nationalTypeProportion[t] = (nationalTypeProportion[t] || 0) + 1;
+  }
+}
+// Convert counts to proportions (fraction of Pokemon that have this type)
+for (const t of TYPE_NAMES) {
+  nationalTypeProportion[t] = nationalTypeProportion[t] / nationalTotal;
+}
+
 const nationalEvoLevels = allNational.map(p => p.evolutionLevel).filter((l): l is number => l !== null);
 const nationalAvgEvoLevel = nationalEvoLevels.length > 0
   ? Math.round(nationalEvoLevels.reduce((a, b) => a + b, 0) / nationalEvoLevels.length)
@@ -63,7 +69,7 @@ export function useAnalytics() {
         typeDeviation: [],
         generationDistribution: [],
         generationDeviation: [],
-        bstStats: { min: 0, max: 0, avg: 0, median: 0, averageRegion: AVERAGE_BST },
+        bstStats: { min: 0, max: 0, avg: 0, median: 0, averageRegion: nationalAvgBst },
         yourBstHistogram: [],
         nationalBstHistogram,
         nationalAvgBst,
@@ -90,14 +96,16 @@ export function useAnalytics() {
       count: typeCounts[t],
       percentage: (typeCounts[t] / total) * 100,
     }));
+    // Ratio: (your proportion of type T) / (national proportion of type T)
+    // Both use the same method: count of Pokemon with type T / total Pokemon
     const typeDeviation = TYPE_NAMES.map((t) => {
-      const yourPct = (typeCounts[t] / total) * 100;
-      const avgPct = AVERAGE_TYPE_DISTRIBUTION[t];
+      const yourProportion = typeCounts[t] / total;
+      const globalProportion = nationalTypeProportion[t];
       return {
         type: t,
-        yours: yourPct,
-        average: avgPct,
-        ratio: avgPct > 0 ? yourPct / avgPct : 0,
+        yourProportion,
+        globalProportion,
+        ratio: globalProportion > 0 ? yourProportion / globalProportion : 0,
       };
     }).sort((a, b) => b.ratio - a.ratio);
 
@@ -130,7 +138,7 @@ export function useAnalytics() {
       max: bsts[bsts.length - 1],
       avg: Math.round(bsts.reduce((a, b) => a + b, 0) / total),
       median: bsts[Math.floor(total / 2)],
-      averageRegion: AVERAGE_BST,
+      averageRegion: nationalAvgBst,
     };
     const yourBstHistogram = buildHistogram(bsts, 50);
 

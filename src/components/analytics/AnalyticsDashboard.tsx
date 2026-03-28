@@ -28,6 +28,18 @@ function mergeHistograms(
 export function AnalyticsDashboard() {
   const analytics = useAnalytics();
 
+  // Compute Y-axis ticks: major at integers, include 0.5x minor
+  const typeYTicks = useMemo(() => {
+    const maxRatio = Math.max(...analytics.typeDeviation.map(e => e.ratio), 1);
+    const maxTick = Math.ceil(maxRatio);
+    const ticks: number[] = [];
+    for (let i = 0; i <= maxTick; i++) {
+      ticks.push(i);
+      if (i < maxTick) ticks.push(i + 0.5);
+    }
+    return ticks;
+  }, [analytics.typeDeviation]);
+
   const evoHistData = useMemo(
     () => mergeHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram),
     [analytics.yourEvoHistogram, analytics.nationalEvoHistogram],
@@ -70,7 +82,7 @@ export function AnalyticsDashboard() {
           <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={analytics.typeDeviation}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} horizontalPoints={[]} />
                 <XAxis
                   dataKey="type"
                   tick={{ fontSize: 10 }}
@@ -80,14 +92,28 @@ export function AnalyticsDashboard() {
                   textAnchor="end"
                   height={50}
                 />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v}x`} />
+                <YAxis
+                  ticks={typeYTicks}
+                  tick={{ fontSize: 11 }}
+                  tickFormatter={(v: number) => Number.isInteger(v) ? `${v}x` : `${v}x`}
+                  domain={[0, 'auto']}
+                />
                 <Tooltip
                   formatter={((value: any) => [
                     `${Number(value).toFixed(2)}x`,
                     'vs national dex',
                   ]) as any}
                 />
-                <ReferenceLine y={1} stroke="#666" strokeDasharray="3 3" label={{ value: '1x', position: 'left', fontSize: 10, fill: '#666' }} />
+                {/* Major grid lines at integer values */}
+                {typeYTicks.filter(t => Number.isInteger(t)).map(t => (
+                  <ReferenceLine key={`major-${t}`} y={t} stroke="#d1d5db" strokeWidth={1} />
+                ))}
+                {/* Minor grid lines at 0.5x values */}
+                {typeYTicks.filter(t => !Number.isInteger(t)).map(t => (
+                  <ReferenceLine key={`minor-${t}`} y={t} stroke="#e5e7eb" strokeWidth={0.5} strokeDasharray="3 3" />
+                ))}
+                {/* Highlight the 1x baseline */}
+                <ReferenceLine y={1} stroke="#666" strokeWidth={1.5} label={{ value: '1x', position: 'left', fontSize: 10, fill: '#666' }} />
                 <Bar dataKey="ratio" name="vs national dex">
                   {analytics.typeDeviation.map((entry) => (
                     <Cell
