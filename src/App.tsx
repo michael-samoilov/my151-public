@@ -101,7 +101,7 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="h-screen flex flex-col">
+      <div className="h-dvh flex flex-col">
         <Header currentView={currentView} onViewChange={setCurrentView} />
 
         {currentView === 'builder' ? (
