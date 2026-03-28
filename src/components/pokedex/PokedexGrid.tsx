@@ -1,11 +1,10 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { Trash2, Plus, X } from 'lucide-react';
+import { Trash2, Plus, X, Settings } from 'lucide-react';
 import {
   DndContext,
   MouseSensor,
@@ -451,6 +450,72 @@ function GroupBox({
   );
 }
 
+// ---------- settings menu ----------
+
+function SettingsMenu({ onClear }: { onClear: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setConfirming(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  // Reset confirm state after timeout
+  useEffect(() => {
+    if (confirming) {
+      timeoutRef.current = setTimeout(() => setConfirming(false), 3000);
+      return () => clearTimeout(timeoutRef.current);
+    }
+  }, [confirming]);
+
+  const handleClearClick = () => {
+    if (confirming) {
+      onClear();
+      setOpen(false);
+      setConfirming(false);
+    } else {
+      setConfirming(true);
+    }
+  };
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        onClick={() => { setOpen(!open); setConfirming(false); }}
+        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+      >
+        <Settings className="w-4 h-4" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
+          <button
+            onClick={handleClearClick}
+            className={`w-full flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors ${
+              confirming
+                ? 'text-destructive bg-destructive/10 font-medium'
+                : 'text-destructive/80 hover:bg-muted'
+            }`}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            {confirming ? 'Are you sure?' : 'Clear All'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---------- main grid ----------
 
 export function PokedexGrid() {
@@ -594,14 +659,7 @@ export function PokedexGrid() {
           <span className="text-primary">{totalPlaced}</span>
           <span className="text-foreground">/151</span>
         </h2>
-        <Button
-          variant="ghost" size="sm"
-          onClick={clearAll}
-          className="text-destructive hover:text-destructive"
-        >
-          <Trash2 className="w-4 h-4 mr-1" />
-          Clear
-        </Button>
+        <SettingsMenu onClear={clearAll} />
       </div>
 
       <div className="flex-1 min-h-0">
