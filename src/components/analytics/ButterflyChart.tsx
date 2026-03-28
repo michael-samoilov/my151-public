@@ -86,25 +86,27 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
           {/* Deviation guide labels anchored to zero line */}
           <text
             x={devSectionStart + zeroX - 5}
-            y={12}
+            y={6}
             textAnchor="end"
-            fontSize={10}
+            fontSize={9}
             fontWeight={600}
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
           >
-            ← UNDERREPRESENTED
+            <tspan x={devSectionStart + zeroX - 5} dy="0">← UNDER-</tspan>
+            <tspan x={devSectionStart + zeroX - 5} dy="10">REPRESENTED</tspan>
           </text>
           <text
             x={devSectionStart + zeroX + 5}
-            y={12}
+            y={6}
             textAnchor="start"
-            fontSize={10}
+            fontSize={9}
             fontWeight={600}
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
           >
-            OVERREPRESENTED →
+            <tspan x={devSectionStart + zeroX + 5} dy="0">OVER-</tspan>
+            <tspan x={devSectionStart + zeroX + 5} dy="10">REPRESENTED →</tspan>
           </text>
 
           {/* Deviation grid lines (behind bars) */}
