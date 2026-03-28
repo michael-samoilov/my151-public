@@ -75,13 +75,25 @@ interface EvoLineCardProps {
 
 export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, spriteOverrides }: EvoLineCardProps) {
   const addToSection = usePokedexStore((s) => s.addToSection);
+  const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const activeSection = usePokedexStore((s) => s.activeSection);
+  const sections = usePokedexStore((s) => s.sections);
   const allInDex = members.every((p) => assignedIds.has(p.id));
 
   const handleClick = () => {
-    if (allInDex) return;
-    const targetSection = activeSection ?? 'other';
-    addToSection(targetSection, members.map((p) => p.id));
+    if (allInDex) {
+      // Find which section this evo line is in and remove it
+      const firstId = members[0].id;
+      for (const [sectionId, ids] of Object.entries(sections)) {
+        if (ids.includes(firstId)) {
+          removeEvoLine(sectionId, firstId);
+          break;
+        }
+      }
+    } else {
+      const targetSection = activeSection ?? 'other';
+      addToSection(targetSection, members.map((p) => p.id));
+    }
   };
 
   const primaryType = members[0].types[0];

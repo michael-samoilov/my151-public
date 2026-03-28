@@ -308,8 +308,19 @@ export function PokemonBrowser() {
               <p className="text-sm mt-1">Try adjusting your filters.</p>
             </div>
           )}
+          {/* Bottom padding for floating button clearance */}
+          <div className="h-16" />
         </div>
       </div>
+
+      {/* Floating selection count */}
+      {activeSection && (sections[activeSection] ?? []).length > 0 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
+          <div className="bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-lg text-sm font-semibold">
+            {(sections[activeSection] ?? []).length} Pokemon added
+          </div>
+        </div>
+      )}
 
       {/* Filter bottom sheet overlay */}
       {openSheet && (

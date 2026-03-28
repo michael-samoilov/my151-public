@@ -645,6 +645,8 @@ export function PokedexGrid() {
                 )}
               </DragOverlay>
             </DndContext>
+            {/* Bottom breathing room */}
+            <div className="h-12" />
           </div>
         </ScrollArea>
       </div>
