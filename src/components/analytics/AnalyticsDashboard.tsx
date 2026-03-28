@@ -49,6 +49,7 @@ export function AnalyticsDashboard() {
                 <XAxis
                   dataKey="type"
                   tick={{ fontSize: 10 }}
+                  tickFormatter={(v: string) => v.charAt(0).toUpperCase() + v.slice(1)}
                   interval={0}
                   angle={-45}
                   textAnchor="end"

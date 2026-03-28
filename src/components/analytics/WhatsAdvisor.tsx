@@ -52,7 +52,7 @@ export function WhatsAdvisor() {
     const allTypes = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
     const missingTypes = allTypes.filter((t) => !typeCoverage.has(t));
     if (missingTypes.length > 0) {
-      items.push({ type: 'missing', text: `Missing types: ${missingTypes.join(', ')}` });
+      items.push({ type: 'missing', text: `Missing types: ${missingTypes.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ')}` });
     }
 
     return items;
