@@ -93,8 +93,8 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
           >
-            <tspan x={devSectionStart + zeroX - 5} dy="0">← UNDER-</tspan>
-            <tspan x={devSectionStart + zeroX - 5} dy="10">REPRESENTED</tspan>
+            <tspan x={devSectionStart + zeroX - 5} dy="0">UNDER-</tspan>
+            <tspan x={devSectionStart + zeroX - 5} dy="10">← REPRESENTED</tspan>
           </text>
           <text
             x={devSectionStart + zeroX + 5}
