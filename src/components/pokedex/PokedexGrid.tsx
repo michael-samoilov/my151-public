@@ -420,7 +420,74 @@ export function PokedexGrid() {
                     </div>
 
                     <div className="grid grid-cols-6 gap-[1vw] md:gap-1">
-                      {pokemonIds.map((pid) => {
+                      {/* Starters: interleave tiles & type buttons in grass→fire→water order */}
+                      {def.id === 'starters' && !dragLineIds && (() => {
+                        const chains = new Set(pokemonIds.map(id => {
+                          const line = getEvolutionLine(id);
+                          return line?.[0] ?? id;
+                        }));
+                        if (chains.size >= 3) return null; // fall through to standard rendering
+                        const typeOrder = [['grass', '#78C850'], ['fire', '#F08030'], ['water', '#6890F0']] as const;
+                        const pidsByType = new Map<string, number[]>();
+                        for (const pid of pokemonIds) {
+                          const p = getPokemonById(pid);
+                          if (!p) continue;
+                          const matchedType = typeOrder.find(([t]) => p.types.includes(t as never));
+                          if (matchedType) {
+                            if (!pidsByType.has(matchedType[0])) pidsByType.set(matchedType[0], []);
+                            pidsByType.get(matchedType[0])!.push(pid);
+                          }
+                        }
+                        const elements: React.ReactNode[] = [];
+                        for (const [type, color] of typeOrder) {
+                          const typePids = pidsByType.get(type);
+                          if (typePids) {
+                            for (const pid of typePids) {
+                              const tid = tileId(def.id, pid);
+                              elements.push(
+                                <DraggableTile
+                                  key={tid}
+                                  id={tid}
+                                  pokemonId={pid}
+                                  sectionId={def.id}
+                                  isDraggedLine={dragSet.has(pid)}
+                                  showInsertBefore={insertIndicator.tileId === tid}
+                                />
+                              );
+                            }
+                          } else if (totalPlaced < 151) {
+                            elements.push(
+                              <button
+                                key={type}
+                                onClick={() => {
+                                  setSearchQuery('');
+                                  setGenerationFilter(null);
+                                  setEvoLineSizeFilter(null);
+                                  setArchetypeFilter(null);
+                                  setActiveSection('starters');
+                                  setCategoryFilter('starter');
+                                  setTypeFilter([type]);
+                                  setMobileBrowserOpen(true);
+                                }}
+                                className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
+                                style={{ borderColor: color, color, backgroundColor: `${color}18` }}
+                              >
+                                <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+                              </button>
+                            );
+                          }
+                        }
+                        return elements;
+                      })()}
+
+                      {/* Standard tile rendering (for non-starters, or starters with 3+ lines) */}
+                      {(def.id !== 'starters' || dragLineIds || (() => {
+                        const chains = new Set(pokemonIds.map(id => {
+                          const line = getEvolutionLine(id);
+                          return line?.[0] ?? id;
+                        }));
+                        return chains.size >= 3;
+                      })()) && pokemonIds.map((pid) => {
                         const tid = tileId(def.id, pid);
                         return (
                           <DraggableTile
@@ -441,40 +508,6 @@ export function PokedexGrid() {
                           showIndicator={insertIndicator.endSection === def.id}
                         />
                       )}
-
-                      {/* Starter type shortcuts (shown until 3 evo lines are picked) */}
-                      {!dragLineIds && def.id === 'starters' && totalPlaced < 151 && (() => {
-                        // Count distinct evo lines in starters
-                        const chains = new Set(pokemonIds.map(id => {
-                          const line = getEvolutionLine(id);
-                          return line?.[0] ?? id;
-                        }));
-                        if (chains.size >= 3) return null;
-                        // Check which starter types are already covered
-                        const coveredTypes = new Set(pokemonIds.flatMap(id => getPokemonById(id)?.types ?? []));
-                        const buttons = ([['grass', '#78C850'], ['fire', '#F08030'], ['water', '#6890F0']] as const)
-                          .filter(([type]) => !coveredTypes.has(type));
-                        if (buttons.length === 0) return null;
-                        return buttons.map(([type, color]) => (
-                          <button
-                            key={type}
-                            onClick={() => {
-                              setSearchQuery('');
-                              setGenerationFilter(null);
-                              setEvoLineSizeFilter(null);
-                              setArchetypeFilter(null);
-                              setActiveSection('starters');
-                              setCategoryFilter('starter');
-                              setTypeFilter([type]);
-                              setMobileBrowserOpen(true);
-                            }}
-                            className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
-                            style={{ borderColor: color, color, backgroundColor: `${color}18` }}
-                          >
-                            <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
-                          </button>
-                        ));
-                      })()}
 
                       {/* Add button (hidden during drag) */}
                       {!dragLineIds && totalPlaced < 151 && (
