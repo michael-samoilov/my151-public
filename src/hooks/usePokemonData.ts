@@ -64,6 +64,45 @@ export function getEvolutionLine(pokemonId: number): Pokemon[] {
   return [...ancestors, pokemon, ...descendants];
 }
 
+/**
+ * Get ALL evolution line branches that pass through a given Pokemon.
+ * For Scyther, returns both [Scyther, Scizor] and [Scyther, Kleavor].
+ * For non-branching Pokemon, returns a single-element array with one line.
+ */
+export function getAllEvolutionLines(pokemonId: number): Pokemon[][] {
+  const pokemon = pokemonById.get(pokemonId);
+  if (!pokemon) return [];
+
+  const chainMembers = pokemonByChain.get(pokemon.evolutionChainId) ?? [];
+  if (chainMembers.length <= 1) return [[pokemon]];
+
+  // Walk backwards to find the root ancestor
+  const ancestors: Pokemon[] = [];
+  let current: Pokemon | undefined = pokemon;
+  while (current?.evolvesFrom) {
+    const parent = pokemonById.get(current.evolvesFrom);
+    if (parent) ancestors.unshift(parent);
+    current = parent;
+  }
+  const prefix = [...ancestors, pokemon];
+
+  // Recursively collect all forward paths from a given ID
+  function collectPaths(fromId: number): Pokemon[][] {
+    const children = chainMembers.filter(p => p.evolvesFrom === fromId);
+    if (children.length === 0) return [[]];
+    const paths: Pokemon[][] = [];
+    for (const child of children) {
+      for (const subPath of collectPaths(child.id)) {
+        paths.push([child, ...subPath]);
+      }
+    }
+    return paths;
+  }
+
+  const suffixes = collectPaths(pokemon.id);
+  return suffixes.map(suffix => [...prefix, ...suffix]);
+}
+
 interface UseFilteredPokemonOptions {
   search?: string;
   category?: string | null;
@@ -175,19 +214,21 @@ export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): E
   const result: EvolutionGroup[] = [];
 
   for (const p of filtered) {
-    const line = getEvolutionLine(p.id);
+    const lines = getAllEvolutionLines(p.id);
 
-    const branchKey = line.map((m) => m.id).join('-');
-    if (seenBranches.has(branchKey)) continue;
-    seenBranches.add(branchKey);
+    for (const line of lines) {
+      const branchKey = line.map((m) => m.id).join('-');
+      if (seenBranches.has(branchKey)) continue;
+      seenBranches.add(branchKey);
 
-    const matchedIds = new Set(line.filter((m) => filteredIds.has(m.id)).map((m) => m.id));
+      const matchedIds = new Set(line.filter((m) => filteredIds.has(m.id)).map((m) => m.id));
 
-    result.push({
-      chainId: p.evolutionChainId * 10000 + line[line.length - 1].id,
-      members: line,
-      matchedIds,
-    });
+      result.push({
+        chainId: p.evolutionChainId * 10000 + line[line.length - 1].id,
+        members: line,
+        matchedIds,
+      });
+    }
   }
 
   result.sort((a, b) => a.members[0].id - b.members[0].id);
