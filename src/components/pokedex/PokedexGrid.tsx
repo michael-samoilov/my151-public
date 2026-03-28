@@ -442,33 +442,42 @@ export function PokedexGrid() {
                         />
                       )}
 
-                      {/* Starter type shortcuts (shown when starters section is empty) */}
-                      {!dragLineIds && def.id === 'starters' && pokemonIds.length === 0 && totalPlaced < 151 && (
-                        <>
-                          {([['grass', '#78C850'], ['fire', '#F08030'], ['water', '#6890F0']] as const).map(([type, color]) => (
-                            <button
-                              key={type}
-                              onClick={() => {
-                                setSearchQuery('');
-                                setGenerationFilter(null);
-                                setEvoLineSizeFilter(null);
-                                setArchetypeFilter(null);
-                                setActiveSection('starters');
-                                setCategoryFilter('starter');
-                                setTypeFilter([type]);
-                                setMobileBrowserOpen(true);
-                              }}
-                              className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
-                              style={{ borderColor: color, color, backgroundColor: `${color}18` }}
-                            >
-                              <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
-                            </button>
-                          ))}
-                        </>
-                      )}
+                      {/* Starter type shortcuts (shown until 3 evo lines are picked) */}
+                      {!dragLineIds && def.id === 'starters' && totalPlaced < 151 && (() => {
+                        // Count distinct evo lines in starters
+                        const chains = new Set(pokemonIds.map(id => {
+                          const line = getEvolutionLine(id);
+                          return line?.[0] ?? id;
+                        }));
+                        if (chains.size >= 3) return null;
+                        // Check which starter types are already covered
+                        const coveredTypes = new Set(pokemonIds.flatMap(id => getPokemonById(id)?.types ?? []));
+                        const buttons = ([['grass', '#78C850'], ['fire', '#F08030'], ['water', '#6890F0']] as const)
+                          .filter(([type]) => !coveredTypes.has(type));
+                        if (buttons.length === 0) return null;
+                        return buttons.map(([type, color]) => (
+                          <button
+                            key={type}
+                            onClick={() => {
+                              setSearchQuery('');
+                              setGenerationFilter(null);
+                              setEvoLineSizeFilter(null);
+                              setArchetypeFilter(null);
+                              setActiveSection('starters');
+                              setCategoryFilter('starter');
+                              setTypeFilter([type]);
+                              setMobileBrowserOpen(true);
+                            }}
+                            className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
+                            style={{ borderColor: color, color, backgroundColor: `${color}18` }}
+                          >
+                            <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+                          </button>
+                        ));
+                      })()}
 
-                      {/* Add button (hidden during drag; hidden for empty starters which has type shortcuts) */}
-                      {!dragLineIds && totalPlaced < 151 && !(def.id === 'starters' && pokemonIds.length === 0) && (
+                      {/* Add button (hidden during drag) */}
+                      {!dragLineIds && totalPlaced < 151 && (
                         <button
                           onClick={() => handleAddClick(def.id)}
                           className={`aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer ${
