@@ -122,7 +122,7 @@ function App() {
 
       {/* Mobile browser sheet */}
       {mobileBrowserOpen && (
-        <MobileSheet sectionName={sectionName} onClose={() => setMobileBrowserOpen(false)} />
+        <MobileSheet sectionName={sectionName} onClose={() => { setMobileBrowserOpen(false); usePokedexStore.getState().setActiveSection(null); }} />
       )}
     </TooltipProvider>
   );
