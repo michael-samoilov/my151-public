@@ -33,6 +33,10 @@ export const BUILD_GROUPS: BuildGroup[] = [
   { id: 'desert', name: 'Desert', filterType: 'archetype', filterId: 'desert', color: '#dda15e' },
   { id: 'volcanic', name: 'Volcanic', filterType: 'archetype', filterId: 'volcanic', color: '#d62828' },
   { id: 'tundra', name: 'Tundra', filterType: 'archetype', filterId: 'tundra', color: '#7ec8e3' },
+  { id: 'meadow', name: 'Meadow', filterType: 'archetype', filterId: 'meadow', color: '#f9a8d4' },
+  { id: 'ruins', name: 'Ruins / Temple', filterType: 'archetype', filterId: 'ruins', color: '#c4b5fd' },
+  { id: 'dojo', name: 'Dojo', filterType: 'archetype', filterId: 'dojo', color: '#c22e28' },
+  { id: 'swamp', name: 'Swamp', filterType: 'archetype', filterId: 'swamp', color: '#5c6d3f' },
 
   // Thematic
   { id: 'industrial', name: 'Industrial/Artificial', filterType: 'archetype', filterId: 'industrial', color: '#b7b7ce' },

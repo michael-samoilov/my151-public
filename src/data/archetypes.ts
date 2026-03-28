@@ -219,6 +219,129 @@ export const ARCHETYPES: Archetype[] = [
     color: '#735797',
   },
   {
+    id: 'meadow',
+    name: 'Meadow',
+    description: 'Fairy-type and flower Pokemon found in meadows, flower fields, and gardens',
+    pokemonIds: [
+      35,36,173,       // Clefairy→Clefable (+Cleffa)
+      39,40,174,       // Jigglypuff→Wigglytuff (+Igglybuff)
+      43,44,45,182,    // Oddish→Gloom→Vileplume/Bellossom
+      69,70,71,        // Bellsprout→Weepinbell→Victreebel
+      114,465,         // Tangela→Tangrowth
+      175,176,468,     // Togepi→Togetic→Togekiss
+      183,184,298,     // Marill→Azumarill (+Azurill)
+      187,188,189,     // Hoppip→Skiploom→Jumpluff
+      191,192,         // Sunkern→Sunflora
+      209,210,         // Snubbull→Granbull
+      280,281,282,475, // Ralts→Kirlia→Gardevoir/Gallade
+      315,406,407,     // Roselia→Roserade (+Budew)
+      420,421,         // Cherubi→Cherrim
+      546,547,         // Cottonee→Whimsicott
+      548,549,         // Petilil→Lilligant
+      10237,           // Lilligant-Hisui
+      585,586,         // Deerling→Sawsbuck
+      669,670,671,     // Flabébé→Floette→Florges
+      682,683,         // Spritzee→Aromatisse
+      684,685,         // Swirlix→Slurpuff
+      702,             // Dedenne
+      742,743,         // Cutiefly→Ribombee
+      753,754,         // Fomantis→Lurantis
+      755,756,         // Morelull→Shiinotic
+      761,762,763,     // Bounsweet→Steenee→Tsareena
+      764,             // Comfey
+      829,830,         // Gossifleur→Eldegoss
+      928,929,930,     // Smoliv→Dolliv→Arboliva
+    ],
+    suggestedSlotRange: [33, 42],
+    color: '#f9a8d4',
+  },
+  {
+    id: 'ruins',
+    name: 'Ruins / Temple',
+    description: 'Psychic and mystical Pokemon found in ancient ruins, temples, and sacred sites',
+    pokemonIds: [
+      63,64,65,        // Abra→Kadabra→Alakazam
+      79,80,199,       // Slowpoke→Slowbro/Slowking
+      10164,10165,10172, // Slowpoke-Galar→Slowbro-Galar/Slowking-Galar
+      96,97,           // Drowzee→Hypno
+      177,178,         // Natu→Xatu
+      201,             // Unown
+      203,981,         // Girafarig→Farigiraf
+      307,308,         // Meditite→Medicham
+      325,326,         // Spoink→Grumpig
+      343,344,         // Baltoy→Claydol
+      433,358,         // Chingling→Chimecho
+      436,437,         // Bronzor→Bronzong
+      439,122,866,     // Mime Jr→Mr. Mime→Mr. Rime
+      561,             // Sigilyph
+      574,575,576,     // Gothita→Gothorita→Gothitelle
+      577,578,579,     // Solosis→Duosion→Reuniclus
+      605,606,         // Elgyem→Beheeyem
+      622,623,         // Golett→Golurk
+      677,678,         // Espurr→Meowstic
+      856,857,858,     // Hatenna→Hattrem→Hatterene
+      953,954,         // Rellor→Rabsca
+      935,936,937,     // Charcadet→Armarouge/Ceruledge
+    ],
+    suggestedSlotRange: [33, 42],
+    color: '#c4b5fd',
+  },
+  {
+    id: 'dojo',
+    name: 'Dojo',
+    description: 'Fighting-type Pokemon found in dojos, training grounds, and martial arts locations',
+    pokemonIds: [
+      56,57,979,       // Mankey→Primeape→Annihilape
+      66,67,68,        // Machop→Machoke→Machamp
+      106,107,236,237, // Hitmonlee/Hitmonchan/Tyrogue/Hitmontop
+      296,297,         // Makuhita→Hariyama
+      307,308,         // Meditite→Medicham
+      447,448,         // Riolu→Lucario
+      532,533,534,     // Timburr→Gurdurr→Conkeldurr
+      538,             // Throh
+      539,             // Sawk
+      559,560,         // Scraggy→Scrafty
+      619,620,         // Mienfoo→Mienshao
+      674,675,         // Pancham→Pangoro
+      701,             // Hawlucha
+      739,740,         // Crabrawler→Crabominable
+      766,             // Passimian
+      852,853,         // Clobbopus→Grapploct
+      870,             // Falinks
+      891,892,         // Kubfu→Urshifu
+      10166,865,       // Farfetch'd-Galar→Sirfetch'd
+      10235,903,       // Sneasel-Hisui→Sneasler
+    ],
+    suggestedSlotRange: [33, 42],
+    color: '#c22e28',
+  },
+  {
+    id: 'swamp',
+    name: 'Swamp',
+    description: 'Pokemon found in swamps, marshes, bogs, and wetlands',
+    pokemonIds: [
+      60,61,62,186,    // Poliwag→Poliwhirl→Poliwrath/Politoed
+      88,89,           // Grimer→Muk
+      10112,10113,     // Grimer-Alola→Muk-Alola
+      193,469,         // Yanma→Yanmega
+      194,195,         // Wooper→Quagsire
+      10253,           // Clodsire (Paldean Wooper evo)
+      258,259,260,     // Mudkip→Marshtomp→Swampert
+      270,271,272,     // Lotad→Lombre→Ludicolo
+      283,284,         // Surskit→Masquerain
+      313,314,         // Volbeat/Illumise
+      339,340,         // Barboach→Whiscash
+      422,423,         // Shellos→Gastrodon
+      453,454,         // Croagunk→Toxicroak
+      535,536,537,     // Tympole→Palpitoad→Seismitoad
+      618,             // Stunfisk
+      10179,           // Stunfisk-Galar
+      690,691,         // Skrelp→Dragalge
+    ],
+    suggestedSlotRange: [33, 42],
+    color: '#5c6d3f',
+  },
+  {
     id: 'volcanic',
     name: 'Volcanic',
     description: 'Pokemon found near volcanoes, lava fields, and geothermal areas',
