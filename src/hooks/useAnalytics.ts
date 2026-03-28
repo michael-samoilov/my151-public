@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById, getAllPokemon } from '@/hooks/usePokemonData';
 import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
 
 // Average type distribution across official regions (approximate percentages)
@@ -17,7 +17,33 @@ const AVERAGE_GEN_DISTRIBUTION: Record<number, number> = {
 
 // Average BST by section of dex
 const AVERAGE_BST = 420;
-const AVERAGE_EVOLUTION_LEVEL = 30;
+
+// Precompute national dex histograms (static, computed once)
+function buildHistogram(values: number[], binSize: number): { bin: string; count: number; pct: number }[] {
+  if (values.length === 0) return [];
+  const min = Math.floor(Math.min(...values) / binSize) * binSize;
+  const max = Math.floor(Math.max(...values) / binSize) * binSize;
+  const bins: { bin: string; count: number }[] = [];
+  for (let b = min; b <= max; b += binSize) {
+    bins.push({ bin: `${b}`, count: 0 });
+  }
+  for (const v of values) {
+    const idx = Math.floor((v - min) / binSize);
+    if (idx >= 0 && idx < bins.length) bins[idx].count++;
+  }
+  const total = values.length;
+  return bins.map(b => ({ ...b, pct: (b.count / total) * 100 }));
+}
+
+const allNational = getAllPokemon();
+const nationalEvoLevels = allNational.map(p => p.evolutionLevel).filter((l): l is number => l !== null);
+const nationalAvgEvoLevel = nationalEvoLevels.length > 0
+  ? Math.round(nationalEvoLevels.reduce((a, b) => a + b, 0) / nationalEvoLevels.length)
+  : 0;
+const nationalEvoHistogram = buildHistogram(nationalEvoLevels, 5);
+const nationalBsts = allNational.map(p => p.bst);
+const nationalAvgBst = Math.round(nationalBsts.reduce((a, b) => a + b, 0) / nationalBsts.length);
+const nationalBstHistogram = buildHistogram(nationalBsts, 50);
 
 export function useAnalytics() {
   const sections = usePokedexStore((s) => s.sections);
@@ -38,7 +64,12 @@ export function useAnalytics() {
         generationDistribution: [],
         generationDeviation: [],
         bstStats: { min: 0, max: 0, avg: 0, median: 0, averageRegion: AVERAGE_BST },
-        evolutionStats: { avgLevel: 0, averageRegionLevel: AVERAGE_EVOLUTION_LEVEL, stageDistribution: { 1: 0, 2: 0, 3: 0 } },
+        yourBstHistogram: [],
+        nationalBstHistogram,
+        nationalAvgBst,
+        evolutionStats: { avgLevel: 0, nationalAvgLevel: nationalAvgEvoLevel, stageDistribution: { 1: 0, 2: 0, 3: 0 } },
+        yourEvoHistogram: [],
+        nationalEvoHistogram,
         legendaryCount: 0,
         mythicalCount: 0,
         monoTypeCount: 0,
@@ -59,12 +90,16 @@ export function useAnalytics() {
       count: typeCounts[t],
       percentage: (typeCounts[t] / total) * 100,
     }));
-    const typeDeviation = TYPE_NAMES.map((t) => ({
-      type: t,
-      yours: (typeCounts[t] / total) * 100,
-      average: AVERAGE_TYPE_DISTRIBUTION[t],
-      deviation: (typeCounts[t] / total) * 100 - AVERAGE_TYPE_DISTRIBUTION[t],
-    }));
+    const typeDeviation = TYPE_NAMES.map((t) => {
+      const yourPct = (typeCounts[t] / total) * 100;
+      const avgPct = AVERAGE_TYPE_DISTRIBUTION[t];
+      return {
+        type: t,
+        yours: yourPct,
+        average: avgPct,
+        ratio: avgPct > 0 ? yourPct / avgPct : 0,
+      };
+    }).sort((a, b) => b.ratio - a.ratio);
 
     // Generation distribution
     const genCounts: Record<number, number> = {};
@@ -77,14 +112,18 @@ export function useAnalytics() {
       count,
       percentage: (count / total) * 100,
     }));
-    const generationDeviation = Object.entries(genCounts).map(([gen, count]) => ({
-      generation: parseInt(gen),
-      yours: (count / total) * 100,
-      average: AVERAGE_GEN_DISTRIBUTION[parseInt(gen)] || 0,
-      deviation: (count / total) * 100 - (AVERAGE_GEN_DISTRIBUTION[parseInt(gen)] || 0),
-    }));
+    const generationDeviation = Object.entries(genCounts).map(([gen, count]) => {
+      const yourPct = (count / total) * 100;
+      const avgPct = AVERAGE_GEN_DISTRIBUTION[parseInt(gen)] || 0;
+      return {
+        generation: parseInt(gen),
+        yours: yourPct,
+        average: avgPct,
+        ratio: avgPct > 0 ? yourPct / avgPct : 0,
+      };
+    });
 
-    // BST stats
+    // BST stats + histogram
     const bsts = pokemon.map((p) => p.bst).sort((a, b) => a - b);
     const bstStats = {
       min: bsts[0],
@@ -93,14 +132,16 @@ export function useAnalytics() {
       median: bsts[Math.floor(total / 2)],
       averageRegion: AVERAGE_BST,
     };
+    const yourBstHistogram = buildHistogram(bsts, 50);
 
-    // Evolution stats
+    // Evolution stats + histogram
     const evoLevels = pokemon
       .map((p) => p.evolutionLevel)
       .filter((l): l is number => l !== null);
     const avgEvoLevel = evoLevels.length
       ? Math.round(evoLevels.reduce((a, b) => a + b, 0) / evoLevels.length)
       : 0;
+    const yourEvoHistogram = buildHistogram(evoLevels, 5);
     const stageCounts = { 1: 0, 2: 0, 3: 0 };
     for (const p of pokemon) {
       stageCounts[p.evolutionStage]++;
@@ -113,11 +154,16 @@ export function useAnalytics() {
       generationDistribution,
       generationDeviation,
       bstStats,
+      yourBstHistogram,
+      nationalBstHistogram,
+      nationalAvgBst,
       evolutionStats: {
         avgLevel: avgEvoLevel,
-        averageRegionLevel: AVERAGE_EVOLUTION_LEVEL,
+        nationalAvgLevel: nationalAvgEvoLevel,
         stageDistribution: stageCounts,
       },
+      yourEvoHistogram,
+      nationalEvoHistogram,
       legendaryCount: pokemon.filter((p) => p.isLegendary).length,
       mythicalCount: pokemon.filter((p) => p.isMythical).length,
       monoTypeCount: pokemon.filter((p) => p.types.length === 1).length,

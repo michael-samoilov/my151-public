@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,8 +10,32 @@ import {
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
+/** Merge yours + national histograms into a single array keyed by bin */
+function mergeHistograms(
+  yours: { bin: string; pct: number }[],
+  national: { bin: string; pct: number }[],
+) {
+  const map = new Map<string, { bin: string; yours: number; national: number }>();
+  for (const n of national) map.set(n.bin, { bin: n.bin, yours: 0, national: n.pct });
+  for (const y of yours) {
+    const entry = map.get(y.bin);
+    if (entry) entry.yours = y.pct;
+    else map.set(y.bin, { bin: y.bin, yours: y.pct, national: 0 });
+  }
+  return [...map.values()].sort((a, b) => Number(a.bin) - Number(b.bin));
+}
+
 export function AnalyticsDashboard() {
   const analytics = useAnalytics();
+
+  const evoHistData = useMemo(
+    () => mergeHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram),
+    [analytics.yourEvoHistogram, analytics.nationalEvoHistogram],
+  );
+  const bstHistData = useMemo(
+    () => mergeHistograms(analytics.yourBstHistogram, analytics.nationalBstHistogram),
+    [analytics.yourBstHistogram, analytics.nationalBstHistogram],
+  );
 
   if (analytics.total === 0) {
     return (
@@ -31,16 +56,16 @@ export function AnalyticsDashboard() {
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard label="Pokemon" value={`${analytics.total}/151`} />
-          <StatCard label="Avg BST" value={analytics.bstStats.avg.toString()} subtitle={`Region avg: ${analytics.bstStats.averageRegion}`} />
+          <StatCard label="Avg BST" value={analytics.bstStats.avg.toString()} subtitle={`National avg: ${analytics.nationalAvgBst}`} />
           <StatCard label="Legendaries" value={analytics.legendaryCount.toString()} />
           <StatCard label="Mythicals" value={analytics.mythicalCount.toString()} />
         </div>
 
-        {/* Type Distribution with Deviation */}
+        {/* Type Distribution Ratio */}
         <section>
           <h3 className="text-lg font-semibold mb-1">Type Distribution</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Your type spread vs typical regional dex. Bars above zero = over-indexing.
+            Your type proportion relative to the national dex. 1x = matching, 2x = double, 0.5x = half. Sorted most to least represented.
           </p>
           <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -55,16 +80,15 @@ export function AnalyticsDashboard() {
                   textAnchor="end"
                   height={50}
                 />
-                <YAxis tick={{ fontSize: 11 }} unit="%" />
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v}x`} />
                 <Tooltip
-                  formatter={((value: any, name: any) => [
-                    `${Number(value).toFixed(1)}%`,
-                    name === 'deviation' ? 'Deviation from avg' : name,
+                  formatter={((value: any) => [
+                    `${Number(value).toFixed(2)}x`,
+                    'vs national dex',
                   ]) as any}
                 />
-                <ReferenceLine y={0} stroke="#666" />
-                <Bar dataKey="deviation" name="Deviation from avg">
+                <ReferenceLine y={1} stroke="#666" strokeDasharray="3 3" label={{ value: '1x', position: 'left', fontSize: 10, fill: '#666' }} />
+                <Bar dataKey="ratio" name="vs national dex">
                   {analytics.typeDeviation.map((entry) => (
                     <Cell
                       key={entry.type}
@@ -82,7 +106,7 @@ export function AnalyticsDashboard() {
         <section>
           <h3 className="text-lg font-semibold mb-1">Generation Origin</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Where your Pokemon come from vs typical regional dex composition.
+            Where your Pokemon come from. Ratio chart shows representation vs typical regional dex.
           </p>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
@@ -112,7 +136,7 @@ export function AnalyticsDashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={analytics.generationDeviation} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" unit="%" tick={{ fontSize: 11 }} />
+                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v}x`} />
                   <YAxis
                     type="category"
                     dataKey="generation"
@@ -121,14 +145,14 @@ export function AnalyticsDashboard() {
                     width={50}
                   />
                   <Tooltip
-                    formatter={((value: any) => [`${Number(value).toFixed(1)}%`, 'Deviation']) as any}
+                    formatter={((value: any) => [`${Number(value).toFixed(2)}x`, 'vs regional avg']) as any}
                   />
-                  <ReferenceLine x={0} stroke="#666" />
-                  <Bar dataKey="deviation" name="vs Average">
+                  <ReferenceLine x={1} stroke="#666" strokeDasharray="3 3" />
+                  <Bar dataKey="ratio" name="vs regional avg">
                     {analytics.generationDeviation.map((entry, i) => (
                       <Cell
                         key={entry.generation}
-                        fill={entry.deviation >= 0 ? GEN_COLORS[i % GEN_COLORS.length] : '#999'}
+                        fill={GEN_COLORS[i % GEN_COLORS.length]}
                         opacity={0.85}
                       />
                     ))}
@@ -139,22 +163,50 @@ export function AnalyticsDashboard() {
           </div>
         </section>
 
-        {/* Evolution Stats */}
+        {/* Evolution Level Histogram */}
+        <section>
+          <h3 className="text-lg font-semibold mb-1">Evolution Level Distribution</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Your evolution levels vs the national dex (as % of each). Yours avg: {analytics.evolutionStats.avgLevel || 'N/A'}, National avg: {analytics.evolutionStats.nationalAvgLevel}.
+          </p>
+          <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={evoHistData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="bin" tick={{ fontSize: 10 }} label={{ value: 'Level', position: 'insideBottom', offset: -2, fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} unit="%" />
+                <Tooltip formatter={((value: any, name: any) => [`${Number(value).toFixed(1)}%`, name === 'yours' ? 'Yours' : 'National']) as any} />
+                <Bar dataKey="national" name="National" fill="#94a3b8" opacity={0.5} />
+                <Bar dataKey="yours" name="Yours" fill="#ef4444" opacity={0.85} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        {/* BST Histogram */}
+        <section>
+          <h3 className="text-lg font-semibold mb-1">Base Stat Total Distribution</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Your BST spread vs the national dex. Yours avg: {analytics.bstStats.avg}, National avg: {analytics.nationalAvgBst}.
+          </p>
+          <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={bstHistData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="bin" tick={{ fontSize: 10 }} label={{ value: 'BST', position: 'insideBottom', offset: -2, fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} unit="%" />
+                <Tooltip formatter={((value: any, name: any) => [`${Number(value).toFixed(1)}%`, name === 'yours' ? 'Yours' : 'National']) as any} />
+                <Bar dataKey="national" name="National" fill="#94a3b8" opacity={0.5} />
+                <Bar dataKey="yours" name="Yours" fill="#ef4444" opacity={0.85} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        {/* Evolution & Stage Stats */}
         <section>
           <h3 className="text-lg font-semibold mb-1">Evolution & Stage Stats</h3>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="bg-card rounded-lg border p-4">
-              <p className="text-sm text-muted-foreground">Avg Evolution Level</p>
-              <p className="text-3xl font-bold">{analytics.evolutionStats.avgLevel || 'N/A'}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Regional average: ~{analytics.evolutionStats.averageRegionLevel}
-                {analytics.evolutionStats.avgLevel > 0 && analytics.evolutionStats.averageRegionLevel != null && (
-                  <span className={analytics.evolutionStats.avgLevel > analytics.evolutionStats.averageRegionLevel! ? ' text-orange-500' : ' text-green-500'}>
-                    {' '}({analytics.evolutionStats.avgLevel > analytics.evolutionStats.averageRegionLevel! ? 'Higher' : 'Lower'} than typical)
-                  </span>
-                )}
-              </p>
-            </div>
+          <div className="grid md:grid-cols-2 gap-4">
             <div className="bg-card rounded-lg border p-4">
               <p className="text-sm text-muted-foreground">Stage Distribution</p>
               <div className="mt-2 space-y-1">
@@ -198,13 +250,13 @@ export function AnalyticsDashboard() {
           </div>
         </section>
 
-        {/* BST Distribution */}
+        {/* BST Summary */}
         <section>
-          <h3 className="text-lg font-semibold mb-1">BST Distribution</h3>
-          <div className="grid md:grid-cols-4 gap-4">
+          <h3 className="text-lg font-semibold mb-1">BST Summary</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <StatCard label="Min BST" value={analytics.bstStats.min.toString()} />
             <StatCard label="Max BST" value={analytics.bstStats.max.toString()} />
-            <StatCard label="Average BST" value={analytics.bstStats.avg.toString()} subtitle={`Typical: ~${analytics.bstStats.averageRegion}`} />
+            <StatCard label="Average BST" value={analytics.bstStats.avg.toString()} subtitle={`National: ${analytics.nationalAvgBst}`} />
             <StatCard label="Median BST" value={analytics.bstStats.median.toString()} />
           </div>
         </section>
