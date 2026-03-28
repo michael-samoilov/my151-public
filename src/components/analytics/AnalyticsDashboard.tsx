@@ -28,17 +28,20 @@ function mergeHistograms(
 export function AnalyticsDashboard() {
   const analytics = useAnalytics();
 
-  // Compute Y-axis ticks: major at integers, include 0.5x minor
-  const typeYTicks = useMemo(() => {
+  // Compute Y-axis domain and ticks: major at integers, minor at 0.5x
+  const typeYMax = useMemo(() => {
     const maxRatio = Math.max(...analytics.typeDeviation.map(e => e.ratio), 1);
-    const maxTick = Math.ceil(maxRatio);
+    return Math.ceil(maxRatio);
+  }, [analytics.typeDeviation]);
+
+  const typeYTicks = useMemo(() => {
     const ticks: number[] = [];
-    for (let i = 0; i <= maxTick; i++) {
+    for (let i = 0; i <= typeYMax; i++) {
       ticks.push(i);
-      if (i < maxTick) ticks.push(i + 0.5);
+      if (i < typeYMax) ticks.push(i + 0.5);
     }
     return ticks;
-  }, [analytics.typeDeviation]);
+  }, [typeYMax]);
 
   const evoHistData = useMemo(
     () => mergeHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram),
@@ -95,8 +98,8 @@ export function AnalyticsDashboard() {
                 <YAxis
                   ticks={typeYTicks}
                   tick={{ fontSize: 11 }}
-                  tickFormatter={(v: number) => Number.isInteger(v) ? `${v}x` : `${v}x`}
-                  domain={[0, 'auto']}
+                  tickFormatter={(v: number) => `${v}x`}
+                  domain={[0, typeYMax]}
                 />
                 <Tooltip
                   formatter={((value: any) => [
@@ -104,16 +107,19 @@ export function AnalyticsDashboard() {
                     'vs national dex',
                   ]) as any}
                 />
-                {/* Major grid lines at integer values */}
-                {typeYTicks.filter(t => Number.isInteger(t)).map(t => (
-                  <ReferenceLine key={`major-${t}`} y={t} stroke="#d1d5db" strokeWidth={1} />
+                {/* Major grid lines at integer values (1x highlighted) */}
+                {typeYTicks.filter(t => Number.isInteger(t) && t > 0).map(t => (
+                  <ReferenceLine
+                    key={`major-${t}`}
+                    y={t}
+                    stroke={t === 1 ? '#666' : '#d1d5db'}
+                    strokeWidth={t === 1 ? 1.5 : 1}
+                  />
                 ))}
                 {/* Minor grid lines at 0.5x values */}
                 {typeYTicks.filter(t => !Number.isInteger(t)).map(t => (
                   <ReferenceLine key={`minor-${t}`} y={t} stroke="#e5e7eb" strokeWidth={0.5} strokeDasharray="3 3" />
                 ))}
-                {/* Highlight the 1x baseline */}
-                <ReferenceLine y={1} stroke="#666" strokeWidth={1.5} label={{ value: '1x', position: 'left', fontSize: 10, fill: '#666' }} />
                 <Bar dataKey="ratio" name="vs national dex">
                   {analytics.typeDeviation.map((entry) => (
                     <Cell
