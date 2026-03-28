@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 type FilterSheet = 'type' | 'generation' | 'evoStage' | 'browse' | null;
 
-const PLACES_ORDER = ['forest', 'cave-pokemon', 'haunted', 'meadow', 'beach', 'fishing-pokemon', 'ocean', 'swamp', 'desert', 'volcanic', 'tundra', 'ruins', 'dojo'];
+const PLACES_ORDER = ['forest', 'meadow', 'cave-pokemon', 'swamp', 'beach', 'fishing-pokemon', 'dojo', 'haunted', 'ruins', 'ocean', 'desert', 'volcanic', 'tundra'];
 const PLACES_IDS = new Set(PLACES_ORDER);
 const GAME_MECHANICS_ORDER = ['evolution-item', 'trade-evo', 'branched-evo', 'cross-gen-evo', 'static-encounter', 'gift-pokemon', 'in-game-trade', 'reward-pokemon'];
 const GAME_MECHANICS_IDS = new Set(GAME_MECHANICS_ORDER);

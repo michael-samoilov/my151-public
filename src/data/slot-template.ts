@@ -23,20 +23,20 @@ export const BUILD_GROUPS: BuildGroup[] = [
   { id: 'pikachu-clone', name: 'Pikaclone', filterType: 'archetype', filterId: 'pikachu-clone', color: '#f7d02c' },
   { id: 'early-normal', name: 'Domestic', filterType: 'archetype', filterId: 'early-normal', color: '#a8a77a' },
 
-  // Places
+  // Places (ordered by typical game progression)
   { id: 'forest', name: 'Forest', filterType: 'archetype', filterId: 'forest', color: '#2d6a4f' },
+  { id: 'meadow', name: 'Meadow', filterType: 'archetype', filterId: 'meadow', color: '#f9a8d4' },
   { id: 'cave-pokemon', name: 'Cave', filterType: 'archetype', filterId: 'cave-pokemon', color: '#b6a136' },
-  { id: 'haunted', name: 'Haunted', filterType: 'archetype', filterId: 'haunted', color: '#735797' },
+  { id: 'swamp', name: 'Swamp', filterType: 'archetype', filterId: 'swamp', color: '#5c6d3f' },
   { id: 'beach', name: 'Beach', filterType: 'archetype', filterId: 'beach', color: '#e9c46a' },
   { id: 'fishing-pokemon', name: 'Fishing', filterType: 'archetype', filterId: 'fishing-pokemon', color: '#6390f0' },
+  { id: 'dojo', name: 'Dojo', filterType: 'archetype', filterId: 'dojo', color: '#c22e28' },
+  { id: 'haunted', name: 'Haunted', filterType: 'archetype', filterId: 'haunted', color: '#735797' },
+  { id: 'ruins', name: 'Ruins / Temple', filterType: 'archetype', filterId: 'ruins', color: '#c4b5fd' },
   { id: 'ocean', name: 'Ocean', filterType: 'archetype', filterId: 'ocean', color: '#006494' },
   { id: 'desert', name: 'Desert', filterType: 'archetype', filterId: 'desert', color: '#dda15e' },
   { id: 'volcanic', name: 'Volcanic', filterType: 'archetype', filterId: 'volcanic', color: '#d62828' },
   { id: 'tundra', name: 'Tundra', filterType: 'archetype', filterId: 'tundra', color: '#7ec8e3' },
-  { id: 'meadow', name: 'Meadow', filterType: 'archetype', filterId: 'meadow', color: '#f9a8d4' },
-  { id: 'ruins', name: 'Ruins / Temple', filterType: 'archetype', filterId: 'ruins', color: '#c4b5fd' },
-  { id: 'dojo', name: 'Dojo', filterType: 'archetype', filterId: 'dojo', color: '#c22e28' },
-  { id: 'swamp', name: 'Swamp', filterType: 'archetype', filterId: 'swamp', color: '#5c6d3f' },
 
   // Thematic
   { id: 'industrial', name: 'Industrial/Artificial', filterType: 'archetype', filterId: 'industrial', color: '#b7b7ce' },
