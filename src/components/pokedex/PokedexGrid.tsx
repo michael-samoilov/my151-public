@@ -355,29 +355,31 @@ function GroupBox({
 }) {
   const isEmpty = pokemonIds.length === 0;
   const isStarter = group.id === 'starter';
+  // Starters always use the expanded grid path (for green/red/blue placeholders)
+  const showEmptyState = isEmpty && !isStarter;
 
   return (
     <div
       className="rounded-lg"
       style={{
-        backgroundColor: `${group.color}${isEmpty ? '08' : '10'}`,
-        border: `1px solid ${group.color}${isEmpty ? '18' : '25'}`,
-        padding: isEmpty ? '4px 8px' : undefined,
+        backgroundColor: `${group.color}${showEmptyState ? '08' : '10'}`,
+        border: `1px solid ${group.color}${showEmptyState ? '18' : '25'}`,
+        padding: showEmptyState ? '4px 8px' : undefined,
       }}
     >
       {/* Tiny label */}
       <div
         className="text-[9px] font-medium uppercase tracking-wide px-1.5"
         style={{
-          color: `${group.color}${isEmpty ? '80' : 'bb'}`,
-          paddingTop: isEmpty ? '0px' : '4px',
-          paddingBottom: isEmpty ? '0px' : '2px',
+          color: `${group.color}${showEmptyState ? '80' : 'bb'}`,
+          paddingTop: showEmptyState ? '0px' : '4px',
+          paddingBottom: showEmptyState ? '0px' : '2px',
         }}
       >
         {group.name}{pokemonIds.length > 0 && ` (${pokemonIds.length})`}
       </div>
 
-      {isEmpty ? (
+      {showEmptyState ? (
         /* Empty: single "+" inline */
         <div className="flex items-center py-0.5">
           <button
