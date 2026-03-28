@@ -10,13 +10,11 @@ export interface ButterflyRow {
 
 interface ButterflyChartProps {
   data: ButterflyRow[];
-  /** Fraction of width for the count (left) section. Default 0.25 */
-  countWidth?: number;
   /** Row height in px. Default 22 */
   rowHeight?: number;
 }
 
-export function ButterflyChart({ data, countWidth = 0.25, rowHeight = 22 }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -32,11 +30,17 @@ export function ButterflyChart({ data, countWidth = 0.25, rowHeight = 22 }: Butt
 
   if (data.length === 0) return null;
 
-  // Layout constants
-  const labelWidth = 60;
-  const gap = 6;
-  const marginBottom = 22; // space for x-axis ticks on deviation side
+  // Layout: fixed pixel widths for label + count, rest for deviation
+  const labelWidth = 55;
+  const countBarMax = 60;
+  const numberWidth = 22;
+  const gap = 8;
+  const marginBottom = 22;
   const chartHeight = data.length * rowHeight + marginBottom;
+
+  const countSectionStart = labelWidth + gap;
+  const devSectionStart = countSectionStart + countBarMax + numberWidth + gap;
+  const devSectionWidth = Math.max(0, width - devSectionStart);
 
   // Scales
   const yScale = scaleBand<string>()
@@ -46,16 +50,8 @@ export function ButterflyChart({ data, countWidth = 0.25, rowHeight = 22 }: Butt
 
   const barHeight = yScale.bandwidth();
 
-  // Count section: from labelWidth to countSectionEnd
-  const countSectionStart = labelWidth + gap;
-  const countSectionEnd = width * countWidth;
-  const countBarMaxWidth = Math.max(0, countSectionEnd - countSectionStart - 20); // leave room for number
   const maxCount = Math.max(...data.map((d) => d.count), 1);
-  const countScale = scaleLinear().domain([0, maxCount]).range([0, countBarMaxWidth]);
-
-  // Deviation section: from devSectionStart to width
-  const devSectionStart = countSectionEnd + gap;
-  const devSectionWidth = Math.max(0, width - devSectionStart);
+  const countScale = scaleLinear().domain([0, maxCount]).range([0, countBarMax]);
 
   const maxAbsDev = Math.max(...data.map((d) => Math.abs(d.deviation)), 50);
   const devMax = Math.ceil(maxAbsDev / 50) * 50;
@@ -125,7 +121,7 @@ export function ButterflyChart({ data, countWidth = 0.25, rowHeight = 22 }: Butt
                 />
                 {/* Count number */}
                 <text
-                  x={countSectionStart + countBarW + 3}
+                  x={countSectionStart + countBarMax + 3}
                   y={y + barHeight / 2}
                   textAnchor="start"
                   dominantBaseline="middle"
