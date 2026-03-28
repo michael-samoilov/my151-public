@@ -15,6 +15,7 @@ function alignHistograms(
   yours: { bin: string; pct: number }[],
   national: { bin: string; pct: number }[],
   binSize: number,
+  xTickInterval?: number,
 ) {
   // Collect all bins from both
   const allBins = new Set<string>();
@@ -29,11 +30,16 @@ function alignHistograms(
   const yoursAligned = bins.map(bin => ({ x: parseInt(bin) + binSize / 2, pct: yoursMap.get(bin) ?? 0 }));
   const nationalAligned = bins.map(bin => ({ x: parseInt(bin) + binSize / 2, pct: nationalMap.get(bin) ?? 0 }));
 
-  // X-axis boundary ticks (bin edges)
+  // X-axis boundary ticks
+  const tickStep = xTickInterval ?? binSize;
   const minBin = parseInt(bins[0]);
   const maxBin = parseInt(bins[bins.length - 1]);
+  // Snap start to a multiple of tickStep
+  const tickStart = Math.floor(minBin / tickStep) * tickStep;
+  const tickEnd = maxBin + binSize;
   const xTicks: number[] = [];
-  for (let t = minBin; t <= maxBin + binSize; t += binSize) xTicks.push(t);
+  for (let t = tickStart; t <= tickEnd; t += tickStep) xTicks.push(t);
+  const xDomain: [number, number] = [tickStart, tickEnd];
 
   const yMax = Math.max(
     ...yoursAligned.map(d => d.pct),
@@ -45,7 +51,7 @@ function alignHistograms(
   const yTicks: number[] = [];
   for (let t = 0; t <= yDomain; t += 10) yTicks.push(t);
 
-  return { yoursAligned, nationalAligned, xTicks, xDomain: [minBin, maxBin + binSize] as [number, number], binSize, yDomain, yTicks };
+  return { yoursAligned, nationalAligned, xTicks, xDomain, binSize, yDomain, yTicks };
 }
 
 export function AnalyticsDashboard() {
@@ -86,7 +92,7 @@ export function AnalyticsDashboard() {
     [analytics.yourEvoHistogram, analytics.nationalEvoHistogram],
   );
   const bstHist = useMemo(
-    () => alignHistograms(analytics.yourBstHistogram, analytics.nationalBstHistogram, 50),
+    () => alignHistograms(analytics.yourBstHistogram, analytics.nationalBstHistogram, 50, 100),
     [analytics.yourBstHistogram, analytics.nationalBstHistogram],
   );
 
@@ -259,11 +265,11 @@ export function AnalyticsDashboard() {
           </p>
           <div className="bg-card rounded-lg border p-4 space-y-0">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Yours</p>
-            <div style={{ height: 160 }}>
+            <div style={{ height: 190 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={evoHist.yoursAligned} barCategoryGap={0}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="x" type="number" domain={evoHist.xDomain} ticks={evoHist.xTicks} tick={false} height={0} />
+                  <XAxis dataKey="x" type="number" domain={evoHist.xDomain} ticks={evoHist.xTicks} tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 10 }} unit="%" domain={[0, evoHist.yDomain]} ticks={evoHist.yTicks} />
                   <Tooltip formatter={((value: any) => [`${Number(value).toFixed(1)}%`, 'Yours']) as any} />
                   <Bar dataKey="pct" name="Yours" fill="#ef4444" opacity={0.85} barSize={undefined} />
@@ -293,11 +299,11 @@ export function AnalyticsDashboard() {
           </p>
           <div className="bg-card rounded-lg border p-4 space-y-0">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Yours</p>
-            <div style={{ height: 160 }}>
+            <div style={{ height: 190 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={bstHist.yoursAligned} barCategoryGap={0}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="x" type="number" domain={bstHist.xDomain} ticks={bstHist.xTicks} tick={false} height={0} />
+                  <XAxis dataKey="x" type="number" domain={bstHist.xDomain} ticks={bstHist.xTicks} tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 10 }} unit="%" domain={[0, bstHist.yDomain]} ticks={bstHist.yTicks} />
                   <Tooltip formatter={((value: any) => [`${Number(value).toFixed(1)}%`, 'Yours']) as any} />
                   <Bar dataKey="pct" name="Yours" fill="#ef4444" opacity={0.85} barSize={undefined} />
