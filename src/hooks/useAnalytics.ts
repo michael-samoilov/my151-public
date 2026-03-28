@@ -3,11 +3,6 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById, getAllPokemon } from '@/hooks/usePokemonData';
 import { TYPE_NAMES } from '@/types/pokemon';
 
-// Average generation source distribution (what % of a typical regional dex comes from each gen)
-const AVERAGE_GEN_DISTRIBUTION: Record<number, number> = {
-  1: 18, 2: 12, 3: 12, 4: 11, 5: 12, 6: 9, 7: 9, 8: 9, 9: 8,
-};
-
 // Precompute national dex stats (static, computed once)
 function buildHistogram(values: number[], binSize: number): { bin: string; count: number; pct: number }[] {
   if (values.length === 0) return [];
@@ -40,6 +35,15 @@ for (const p of allNational) {
 // Convert counts to proportions (fraction of Pokemon that have this type)
 for (const t of TYPE_NAMES) {
   nationalTypeProportion[t] = nationalTypeProportion[t] / nationalTotal;
+}
+
+// National generation proportions: fraction of all Pokemon from each gen
+const nationalGenProportion: Record<number, number> = {};
+for (const p of allNational) {
+  nationalGenProportion[p.generation] = (nationalGenProportion[p.generation] || 0) + 1;
+}
+for (const g of Object.keys(nationalGenProportion)) {
+  nationalGenProportion[Number(g)] = nationalGenProportion[Number(g)] / nationalTotal;
 }
 
 const nationalEvoLevels = allNational.map(p => p.evolutionLevel).filter((l): l is number => l !== null);
@@ -121,13 +125,14 @@ export function useAnalytics() {
       percentage: (count / total) * 100,
     }));
     const generationDeviation = Object.entries(genCounts).map(([gen, count]) => {
-      const yourPct = (count / total) * 100;
-      const avgPct = AVERAGE_GEN_DISTRIBUTION[parseInt(gen)] || 0;
+      const g = parseInt(gen);
+      const yourProportion = count / total;
+      const globalProportion = nationalGenProportion[g] || 0;
       return {
-        generation: parseInt(gen),
-        yours: yourPct,
-        average: avgPct,
-        ratio: avgPct > 0 ? yourPct / avgPct : 0,
+        generation: g,
+        yourProportion,
+        globalProportion,
+        ratio: globalProportion > 0 ? yourProportion / globalProportion : 0,
       };
     });
 

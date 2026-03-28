@@ -43,6 +43,21 @@ export function AnalyticsDashboard() {
     return ticks;
   }, [typeYMax]);
 
+  // Generation ratio chart ticks
+  const genXMax = useMemo(() => {
+    const maxRatio = Math.max(...analytics.generationDeviation.map(e => e.ratio), 1);
+    return Math.ceil(maxRatio);
+  }, [analytics.generationDeviation]);
+
+  const genXTicks = useMemo(() => {
+    const ticks: number[] = [];
+    for (let i = 0; i <= genXMax; i++) {
+      ticks.push(i);
+      if (i < genXMax) ticks.push(i + 0.5);
+    }
+    return ticks;
+  }, [genXMax]);
+
   const evoHistData = useMemo(
     () => mergeHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram),
     [analytics.yourEvoHistogram, analytics.nationalEvoHistogram],
@@ -138,7 +153,7 @@ export function AnalyticsDashboard() {
         <section>
           <h3 className="text-lg font-semibold mb-1">Generation Origin</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Where your Pokemon come from. Ratio chart shows representation vs typical regional dex.
+            Where your Pokemon come from. Ratio chart shows your proportion vs the national dex.
           </p>
           <div className="grid md:grid-cols-2 gap-4">
             <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
@@ -167,8 +182,14 @@ export function AnalyticsDashboard() {
             <div className="bg-card rounded-lg border p-4" style={{ height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={analytics.generationDeviation} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v: number) => `${v}x`} />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} verticalPoints={[]} />
+                  <XAxis
+                    type="number"
+                    ticks={genXTicks}
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={(v: number) => `${v}x`}
+                    domain={[0, genXMax]}
+                  />
                   <YAxis
                     type="category"
                     dataKey="generation"
@@ -177,10 +198,22 @@ export function AnalyticsDashboard() {
                     width={50}
                   />
                   <Tooltip
-                    formatter={((value: any) => [`${Number(value).toFixed(2)}x`, 'vs regional avg']) as any}
+                    formatter={((value: any) => [`${Number(value).toFixed(2)}x`, 'vs national dex']) as any}
                   />
-                  <ReferenceLine x={1} stroke="#666" strokeDasharray="3 3" />
-                  <Bar dataKey="ratio" name="vs regional avg">
+                  {/* Major grid lines at integer values (1x highlighted) */}
+                  {genXTicks.filter(t => Number.isInteger(t) && t > 0).map(t => (
+                    <ReferenceLine
+                      key={`gen-major-${t}`}
+                      x={t}
+                      stroke={t === 1 ? '#666' : '#d1d5db'}
+                      strokeWidth={t === 1 ? 1.5 : 1}
+                    />
+                  ))}
+                  {/* Minor grid lines at 0.5x values */}
+                  {genXTicks.filter(t => !Number.isInteger(t)).map(t => (
+                    <ReferenceLine key={`gen-minor-${t}`} x={t} stroke="#e5e7eb" strokeWidth={0.5} strokeDasharray="3 3" />
+                  ))}
+                  <Bar dataKey="ratio" name="vs national dex">
                     {analytics.generationDeviation.map((entry, i) => (
                       <Cell
                         key={entry.generation}
