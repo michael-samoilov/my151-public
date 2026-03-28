@@ -100,18 +100,21 @@ export function useAnalytics() {
       count: typeCounts[t],
       percentage: (typeCounts[t] / total) * 100,
     }));
-    // Ratio: (your proportion of type T) / (national proportion of type T)
-    // Both use the same method: count of Pokemon with type T / total Pokemon
+    // Deviation: (your proportion / national proportion) - 1, as percentage
+    // 0% = same, +100% = double, -50% = half
     const typeDeviation = TYPE_NAMES.map((t) => {
       const yourProportion = typeCounts[t] / total;
       const globalProportion = nationalTypeProportion[t];
+      const ratio = globalProportion > 0 ? yourProportion / globalProportion : 0;
       return {
         type: t,
+        count: typeCounts[t],
         yourProportion,
         globalProportion,
-        ratio: globalProportion > 0 ? yourProportion / globalProportion : 0,
+        ratio,
+        deviation: globalProportion > 0 ? (ratio - 1) * 100 : 0,
       };
-    }).sort((a, b) => b.ratio - a.ratio);
+    }).sort((a, b) => Math.abs(b.deviation) - Math.abs(a.deviation));
 
     // Generation distribution
     const genCounts: Record<number, number> = {};
@@ -128,11 +131,14 @@ export function useAnalytics() {
       const g = parseInt(gen);
       const yourProportion = count / total;
       const globalProportion = nationalGenProportion[g] || 0;
+      const ratio = globalProportion > 0 ? yourProportion / globalProportion : 0;
       return {
         generation: g,
+        count,
         yourProportion,
         globalProportion,
-        ratio: globalProportion > 0 ? yourProportion / globalProportion : 0,
+        ratio,
+        deviation: globalProportion > 0 ? (ratio - 1) * 100 : 0,
       };
     });
 
