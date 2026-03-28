@@ -35,8 +35,9 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
   const countBarMax = 60;
   const numberWidth = 22;
   const gap = 8;
+  const titleHeight = 18;
   const marginBottom = 22;
-  const chartHeight = data.length * rowHeight + marginBottom;
+  const chartHeight = titleHeight + data.length * rowHeight + marginBottom;
 
   const countSectionStart = labelWidth + gap;
   const devSectionStart = countSectionStart + countBarMax + numberWidth + gap;
@@ -45,7 +46,7 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
   // Scales
   const yScale = scaleBand<string>()
     .domain(data.map((d) => d.label))
-    .range([0, data.length * rowHeight])
+    .range([titleHeight, titleHeight + data.length * rowHeight])
     .padding(0.25);
 
   const barHeight = yScale.bandwidth();
@@ -69,14 +70,39 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
     <div ref={containerRef} className="w-full">
       {width > 0 && (
         <svg width={width} height={chartHeight} className="overflow-visible">
+          {/* Titles */}
+          <text
+            x={countSectionStart}
+            y={12}
+            textAnchor="start"
+            fontSize={10}
+            fontWeight={600}
+            fill="var(--color-muted-foreground)"
+            textTransform="uppercase"
+            letterSpacing="0.05em"
+          >
+            COUNT
+          </text>
+          <text
+            x={devSectionStart + devSectionWidth / 2}
+            y={12}
+            textAnchor="middle"
+            fontSize={10}
+            fontWeight={600}
+            fill="var(--color-muted-foreground)"
+            letterSpacing="0.05em"
+          >
+            OVER / UNDER REPRESENTED
+          </text>
+
           {/* Deviation grid lines (behind bars) */}
           {devTicks.map((t) => (
             <line
               key={`grid-${t}`}
               x1={devSectionStart + devScale(t)}
               x2={devSectionStart + devScale(t)}
-              y1={0}
-              y2={data.length * rowHeight}
+              y1={titleHeight}
+              y2={titleHeight + data.length * rowHeight}
               stroke="var(--color-border)"
               strokeDasharray={t === 0 ? undefined : '3 3'}
               strokeWidth={t === 0 ? 1 : 0.5}
@@ -149,8 +175,8 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
           <line
             x1={devSectionStart + zeroX}
             x2={devSectionStart + zeroX}
-            y1={0}
-            y2={data.length * rowHeight}
+            y1={titleHeight}
+            y2={titleHeight + data.length * rowHeight}
             stroke="var(--color-muted-foreground)"
             strokeWidth={1}
           />
@@ -163,14 +189,14 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
                 <line
                   x1={x}
                   x2={x}
-                  y1={data.length * rowHeight}
-                  y2={data.length * rowHeight + 4}
+                  y1={titleHeight + data.length * rowHeight}
+                  y2={titleHeight + data.length * rowHeight + 4}
                   stroke="var(--color-muted-foreground)"
                   strokeWidth={0.5}
                 />
                 <text
                   x={x}
-                  y={data.length * rowHeight + 14}
+                  y={titleHeight + data.length * rowHeight + 14}
                   textAnchor="middle"
                   fontSize={9}
                   fill="var(--color-muted-foreground)"
