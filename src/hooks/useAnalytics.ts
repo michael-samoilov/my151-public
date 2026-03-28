@@ -10,7 +10,7 @@ function buildHistogram(values: number[], binSize: number): { bin: string; count
   const max = Math.floor(Math.max(...values) / binSize) * binSize;
   const bins: { bin: string; count: number }[] = [];
   for (let b = min; b <= max; b += binSize) {
-    bins.push({ bin: `${b}`, count: 0 });
+    bins.push({ bin: `${b}–${b + binSize}`, count: 0 });
   }
   for (const v of values) {
     const idx = Math.floor((v - min) / binSize);
