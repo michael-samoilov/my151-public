@@ -160,9 +160,7 @@ function DraggableTile({
       <div
         {...attributes}
         {...listeners}
-        onContextMenu={(e) => e.preventDefault()}
         className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 group aspect-square cursor-grab active:cursor-grabbing select-none"
-        style={{ WebkitTouchCallout: 'none' } as React.CSSProperties}
       >
         <GenBadge
           gen={pokemon.generation}
