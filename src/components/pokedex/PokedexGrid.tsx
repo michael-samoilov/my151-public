@@ -233,13 +233,14 @@ function EndDropZone({ sectionId, showIndicator }: { sectionId: string; showIndi
 
 const STARTER_TYPES = [['grass', '#78C850'], ['fire', '#F08030'], ['water', '#6890F0']] as const;
 
-function StarterPlaceholders({
+function StarterContent({
   pokemonIds,
   totalPlaced,
   dragLineIds,
   dragSet,
   insertIndicator,
   onTypeClick,
+  onAddClick,
 }: {
   pokemonIds: number[];
   totalPlaced: number;
@@ -247,14 +248,14 @@ function StarterPlaceholders({
   dragSet: Set<number>;
   insertIndicator: { tileId: string | null; endSection: string | null };
   onTypeClick: (type: string) => void;
+  onAddClick: () => void;
 }) {
-  // Count distinct evo lines
   const chains = new Set(pokemonIds.map(id => {
     const line = getEvolutionLine(id);
     return line?.[0] ?? id;
   }));
 
-  // Once 3+ lines, render standard tiles
+  // 3+ lines: standard rendering with trailing "+"
   if (chains.size >= 3 || dragLineIds) {
     return (
       <>
@@ -271,11 +272,22 @@ function StarterPlaceholders({
             />
           );
         })}
+        {dragLineIds && pokemonIds.length > 0 && (
+          <EndDropZone sectionId="starter" showIndicator={insertIndicator.endSection === 'starter'} />
+        )}
+        {!dragLineIds && totalPlaced < 151 && chains.size >= 3 && (
+          <button
+            onClick={onAddClick}
+            className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
+          >
+            <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+          </button>
+        )}
       </>
     );
   }
 
-  // Group placed Pokemon by starter type
+  // < 3 lines: green/red/blue placeholders
   const pidsByType = new Map<string, number[]>();
   for (const pid of pokemonIds) {
     const p = getPokemonById(pid);
@@ -322,9 +334,9 @@ function StarterPlaceholders({
   return <>{elements}</>;
 }
 
-// ---------- expanded group (has Pokemon) ----------
+// ---------- group box ----------
 
-function ExpandedGroup({
+function GroupBox({
   group,
   pokemonIds,
   totalPlaced,
@@ -341,99 +353,101 @@ function ExpandedGroup({
   insertIndicator: { tileId: string | null; endSection: string | null };
   onAddClick: (groupId: string) => void;
 }) {
+  const isEmpty = pokemonIds.length === 0;
   const isStarter = group.id === 'starter';
-  const starterLinesCount = useMemo(() => {
-    if (!isStarter) return 0;
-    const chains = new Set(pokemonIds.map(id => {
-      const line = getEvolutionLine(id);
-      return line?.[0] ?? id;
-    }));
-    return chains.size;
-  }, [isStarter, pokemonIds]);
 
   return (
     <div
-      className="rounded-lg px-2 py-1.5"
-      style={{ backgroundColor: `${group.color}10`, border: `1px solid ${group.color}25` }}
-    >
-      <div className="flex items-baseline gap-1.5 mb-1">
-        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{group.name}</span>
-        <span className="text-[10px] text-muted-foreground">({pokemonIds.length})</span>
-      </div>
-      <div className="grid grid-cols-6 gap-[1vw] md:gap-1">
-        {isStarter ? (
-          <StarterPlaceholders
-            pokemonIds={pokemonIds}
-            totalPlaced={totalPlaced}
-            dragLineIds={dragLineIds}
-            dragSet={dragSet}
-            insertIndicator={insertIndicator}
-            onTypeClick={(type) => {
-              const store = usePokedexStore.getState();
-              store.setSearchQuery('');
-              store.setGenerationFilter(null);
-              store.setEvoLineSizeFilter(null);
-              store.setArchetypeFilter(null);
-              store.setActiveSection('starter');
-              store.setCategoryFilter('starter');
-              store.setTypeFilter([type]);
-              store.setMobileBrowserOpen(true);
-            }}
-          />
-        ) : (
-          pokemonIds.map((pid) => {
-            const tid = tileId(group.id, pid);
-            return (
-              <DraggableTile
-                key={tid}
-                id={tid}
-                pokemonId={pid}
-                sectionId={group.id}
-                isDraggedLine={dragSet.has(pid)}
-                showInsertBefore={insertIndicator.tileId === tid}
-              />
-            );
-          })
-        )}
-
-        {/* Drop zone for appending to end of section (visible during drag) */}
-        {dragLineIds && pokemonIds.length > 0 && (
-          <EndDropZone
-            sectionId={group.id}
-            showIndicator={insertIndicator.endSection === group.id}
-          />
-        )}
-
-        {/* Add button — for starters, only show after 3 lines chosen */}
-        {!dragLineIds && totalPlaced < 151 && (!isStarter || starterLinesCount >= 3) && (
-          <button
-            onClick={() => onAddClick(group.id)}
-            className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
-          >
-            <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ---------- compact empty group chip ----------
-
-function EmptyGroupChip({ group, onClick }: { group: BuildGroup; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-all cursor-pointer hover:opacity-80"
+      className="rounded-lg"
       style={{
-        backgroundColor: `${group.color}15`,
-        border: `1px solid ${group.color}30`,
-        color: `${group.color}cc`,
+        backgroundColor: `${group.color}${isEmpty ? '08' : '10'}`,
+        border: `1px solid ${group.color}${isEmpty ? '18' : '25'}`,
+        padding: isEmpty ? '4px 8px' : undefined,
       }}
     >
-      <Plus className="w-3 h-3" />
-      {group.name}
-    </button>
+      {/* Tiny label */}
+      <div
+        className="text-[9px] font-medium uppercase tracking-wide px-1.5"
+        style={{
+          color: `${group.color}${isEmpty ? '80' : 'bb'}`,
+          paddingTop: isEmpty ? '0px' : '4px',
+          paddingBottom: isEmpty ? '0px' : '2px',
+        }}
+      >
+        {group.name}{pokemonIds.length > 0 && ` (${pokemonIds.length})`}
+      </div>
+
+      {isEmpty ? (
+        /* Empty: single "+" inline */
+        <div className="flex items-center py-0.5">
+          <button
+            onClick={() => onAddClick(group.id)}
+            className="w-7 h-7 md:w-8 md:h-8 rounded-md border border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
+            style={{
+              borderColor: `${group.color}40`,
+              color: `${group.color}90`,
+            }}
+          >
+            <Plus className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : (
+        /* Filled: grid of tiles */
+        <div className="grid grid-cols-6 gap-[1vw] md:gap-1 p-1 pt-0">
+          {isStarter ? (
+            <StarterContent
+              pokemonIds={pokemonIds}
+              totalPlaced={totalPlaced}
+              dragLineIds={dragLineIds}
+              dragSet={dragSet}
+              insertIndicator={insertIndicator}
+              onTypeClick={(type) => {
+                const store = usePokedexStore.getState();
+                store.setSearchQuery('');
+                store.setGenerationFilter(null);
+                store.setEvoLineSizeFilter(null);
+                store.setArchetypeFilter(null);
+                store.setActiveSection('starter');
+                store.setCategoryFilter('starter');
+                store.setTypeFilter([type]);
+                store.setMobileBrowserOpen(true);
+              }}
+              onAddClick={() => onAddClick('starter')}
+            />
+          ) : (
+            <>
+              {pokemonIds.map((pid) => {
+                const tid = tileId(group.id, pid);
+                return (
+                  <DraggableTile
+                    key={tid}
+                    id={tid}
+                    pokemonId={pid}
+                    sectionId={group.id}
+                    isDraggedLine={dragSet.has(pid)}
+                    showInsertBefore={insertIndicator.tileId === tid}
+                  />
+                );
+              })}
+              {dragLineIds && pokemonIds.length > 0 && (
+                <EndDropZone
+                  sectionId={group.id}
+                  showIndicator={insertIndicator.endSection === group.id}
+                />
+              )}
+              {!dragLineIds && totalPlaced < 151 && (
+                <button
+                  onClick={() => onAddClick(group.id)}
+                  className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
+                >
+                  <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -565,7 +579,6 @@ export function PokedexGrid() {
       setArchetypeFilter(group.filterId);
       setCategoryFilter(null);
     } else {
-      // catch-all: no filter
       setCategoryFilter(null);
       setArchetypeFilter(null);
     }
@@ -573,10 +586,6 @@ export function PokedexGrid() {
   }, [setSearchQuery, setTypeFilter, setGenerationFilter, setEvoLineSizeFilter, setActiveSection, setCategoryFilter, setArchetypeFilter, setMobileBrowserOpen]);
 
   const dragSet = useMemo(() => new Set(dragLineIds ?? []), [dragLineIds]);
-
-  // Split groups into filled and empty
-  const filledGroups = BUILD_GROUPS.filter(g => (sections[g.id] ?? []).length > 0);
-  const emptyGroups = BUILD_GROUPS.filter(g => (sections[g.id] ?? []).length === 0);
 
   return (
     <div className="flex flex-col h-full">
@@ -597,7 +606,7 @@ export function PokedexGrid() {
 
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
-          <div className="p-3 space-y-2">
+          <div className="p-3 space-y-1.5">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -606,9 +615,8 @@ export function PokedexGrid() {
               onDragEnd={handleDragEnd}
               onDragCancel={handleDragCancel}
             >
-              {/* Filled groups — expanded with tiles */}
-              {filledGroups.map((group) => (
-                <ExpandedGroup
+              {BUILD_GROUPS.map((group) => (
+                <GroupBox
                   key={group.id}
                   group={group}
                   pokemonIds={sections[group.id] ?? []}
@@ -619,19 +627,6 @@ export function PokedexGrid() {
                   onAddClick={handleAddClick}
                 />
               ))}
-
-              {/* Empty groups — compact chips */}
-              {emptyGroups.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {emptyGroups.map((group) => (
-                    <EmptyGroupChip
-                      key={group.id}
-                      group={group}
-                      onClick={() => handleAddClick(group.id)}
-                    />
-                  ))}
-                </div>
-              )}
 
               <DragOverlay dropAnimation={null}>
                 {dragLineIds && (
