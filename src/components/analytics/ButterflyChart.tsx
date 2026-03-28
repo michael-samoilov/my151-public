@@ -121,7 +121,7 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
                 />
                 {/* Count number */}
                 <text
-                  x={countSectionStart + countBarMax + 3}
+                  x={countSectionStart + countBarW + 3}
                   y={y + barHeight / 2}
                   textAnchor="start"
                   dominantBaseline="middle"
