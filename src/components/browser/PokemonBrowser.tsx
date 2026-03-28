@@ -14,9 +14,9 @@ import { cn } from '@/lib/utils';
 
 type FilterSheet = 'type' | 'generation' | 'evoStage' | 'browse' | null;
 
-const GEOGRAPHY_ORDER = ['forest', 'cave-pokemon', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra'];
-const GEOGRAPHY_IDS = new Set(GEOGRAPHY_ORDER);
-const GAME_MECHANICS_ORDER = ['evolution-item', 'trade-evo', 'branched-evo', 'cross-gen-evo', 'static-encounter', 'gift-pokemon', 'in-game-trade', 'reward-pokemon', 'version-exclusive'];
+const PLACES_ORDER = ['forest', 'cave-pokemon', 'haunted', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra'];
+const PLACES_IDS = new Set(PLACES_ORDER);
+const GAME_MECHANICS_ORDER = ['evolution-item', 'trade-evo', 'branched-evo', 'cross-gen-evo', 'static-encounter', 'gift-pokemon', 'in-game-trade', 'reward-pokemon'];
 const GAME_MECHANICS_IDS = new Set(GAME_MECHANICS_ORDER);
 
 export function PokemonBrowser() {
@@ -273,7 +273,7 @@ export function PokemonBrowser() {
           {/* Separator */}
           <div className="shrink-0 w-px bg-border self-stretch my-1" />
 
-          {/* Browse chip (Category / Geography / Archetype) */}
+          {/* Browse chip (Category / Places / Archetype) */}
           {categoryName || archetypeName ? (
             <FilterChip
               label={categoryName ?? archetypeName!}
@@ -508,11 +508,11 @@ export function PokemonBrowser() {
                     </div>
                   </div>
 
-                  {/* Geography section */}
+                  {/* Places section */}
                   <div>
-                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Geography</div>
+                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Places</div>
                     <div className="flex flex-wrap gap-1.5">
-                      {GEOGRAPHY_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!).map((archetype) => (
+                      {PLACES_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!).map((archetype) => (
                         <button
                           key={archetype.id}
                           onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
@@ -556,7 +556,7 @@ export function PokemonBrowser() {
                   <div>
                     <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Archetype</div>
                     <div className="flex flex-wrap gap-1.5">
-                      {ARCHETYPES.filter(a => !GEOGRAPHY_IDS.has(a.id) && !GAME_MECHANICS_IDS.has(a.id)).map((archetype) => (
+                      {ARCHETYPES.filter(a => !PLACES_IDS.has(a.id) && !GAME_MECHANICS_IDS.has(a.id)).map((archetype) => (
                         <button
                           key={archetype.id}
                           onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}

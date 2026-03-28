@@ -192,6 +192,33 @@ export const ARCHETYPES: Archetype[] = [
     color: '#7ec8e3',
   },
   {
+    id: 'haunted',
+    name: 'Haunted',
+    description: 'Ghost-type Pokemon found in haunted houses, towers, graveyards, and cursed locations',
+    pokemonIds: [
+      92,93,94,     // Gastly→Haunter→Gengar
+      200,429,      // Misdreavus→Mismagius
+      302,          // Sableye
+      353,354,      // Shuppet→Banette
+      355,356,477,  // Duskull→Dusclops→Dusknoir
+      442,          // Spiritomb
+      562,563,      // Yamask→Cofagrigus
+      10179,867,    // Yamask-Galar→Runerigus
+      592,593,      // Frillish→Jellicent
+      607,608,609,  // Litwick→Lampent→Chandelure
+      708,709,      // Phantump→Trevenant
+      710,711,      // Pumpkaboo→Gourgeist
+      769,770,      // Sandygast→Palossand
+      778,          // Mimikyu
+      854,855,      // Sinistea→Polteageist
+      864,          // Cursola
+      897,          // Spectrier
+      946,947,      // Greavard→Houndstone
+    ],
+    suggestedSlotRange: [33, 42],
+    color: '#735797',
+  },
+  {
     id: 'volcanic',
     name: 'Volcanic',
     description: 'Pokemon found near volcanoes, lava fields, and geothermal areas',

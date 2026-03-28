@@ -23,9 +23,10 @@ export const BUILD_GROUPS: BuildGroup[] = [
   { id: 'pikachu-clone', name: 'Pikaclone', filterType: 'archetype', filterId: 'pikachu-clone', color: '#f7d02c' },
   { id: 'early-normal', name: 'Domestic', filterType: 'archetype', filterId: 'early-normal', color: '#a8a77a' },
 
-  // Geography
+  // Places
   { id: 'forest', name: 'Forest', filterType: 'archetype', filterId: 'forest', color: '#2d6a4f' },
   { id: 'cave-pokemon', name: 'Cave', filterType: 'archetype', filterId: 'cave-pokemon', color: '#b6a136' },
+  { id: 'haunted', name: 'Haunted', filterType: 'archetype', filterId: 'haunted', color: '#735797' },
   { id: 'beach', name: 'Beach', filterType: 'archetype', filterId: 'beach', color: '#e9c46a' },
   { id: 'fishing-pokemon', name: 'Fishing', filterType: 'archetype', filterId: 'fishing-pokemon', color: '#6390f0' },
   { id: 'ocean', name: 'Ocean', filterType: 'archetype', filterId: 'ocean', color: '#006494' },
@@ -34,12 +35,10 @@ export const BUILD_GROUPS: BuildGroup[] = [
   { id: 'tundra', name: 'Tundra', filterType: 'archetype', filterId: 'tundra', color: '#7ec8e3' },
 
   // Thematic
-  { id: 'elemental-trio', name: 'Elemental Trio/Duo', filterType: 'archetype', filterId: 'elemental-trio', color: '#ee8130' },
   { id: 'industrial', name: 'Industrial/Artificial', filterType: 'archetype', filterId: 'industrial', color: '#b7b7ce' },
   { id: 'mimic', name: 'Mimic/Disguise', filterType: 'archetype', filterId: 'mimic', color: '#735797' },
   { id: 'evil-team', name: 'Evil Team', filterType: 'archetype', filterId: 'evil-team', color: '#705746' },
   { id: 'rivalry-pair', name: 'Rivalry Pair', filterType: 'archetype', filterId: 'rivalry-pair', color: '#c22e28' },
-  { id: 'version-exclusive', name: 'Version Exclusive', filterType: 'archetype', filterId: 'version-exclusive', color: '#737373' },
 
   // Fossil
   { id: 'fossil', name: 'Fossil', filterType: 'category', filterId: 'fossil', color: '#a0855b' },
