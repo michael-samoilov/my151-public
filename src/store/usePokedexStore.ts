@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createEmptySections, BUILD_GROUP_IDS } from '@/data/slot-template';
-import { getEvolutionLine, getDescendantIds } from '@/hooks/usePokemonData';
+import { getEvolutionLine, getDescendantIds, getPokemonById } from '@/hooks/usePokemonData';
 
 type TypeFilterMode = 'any' | 'all';
 
@@ -84,11 +84,26 @@ export const usePokedexStore = create<PokedexState>()(
 
       removeBranch: (sectionId, pokemonId) =>
         set((state) => {
+          const sectionIds = state.sections[sectionId] ?? [];
+          // Remove target + all its descendants
           const removeSet = new Set(getDescendantIds(pokemonId));
-          const newSections = { ...state.sections };
-          if (newSections[sectionId]) {
-            newSections[sectionId] = newSections[sectionId].filter((id) => !removeSet.has(id));
+          const remaining = new Set(sectionIds.filter((id) => !removeSet.has(id)));
+          // Walk up ancestors: remove any that are now stranded (no descendants left in section)
+          let current = getPokemonById(pokemonId);
+          while (current?.evolvesFrom) {
+            const parent = getPokemonById(current.evolvesFrom);
+            if (!parent || !remaining.has(parent.id)) break;
+            const parentDescendants = getDescendantIds(parent.id);
+            const hasRemaining = parentDescendants.some((id) => id !== parent.id && remaining.has(id));
+            if (!hasRemaining) {
+              remaining.delete(parent.id);
+              current = parent;
+            } else {
+              break;
+            }
           }
+          const newSections = { ...state.sections };
+          newSections[sectionId] = sectionIds.filter((id) => remaining.has(id));
           return { sections: newSections };
         }),
 
