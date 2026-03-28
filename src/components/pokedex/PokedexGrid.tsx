@@ -456,25 +456,27 @@ export function PokedexGrid() {
                               );
                             }
                           } else if (totalPlaced < 151) {
-                            elements.push(
-                              <button
-                                key={type}
-                                onClick={() => {
-                                  setSearchQuery('');
-                                  setGenerationFilter(null);
-                                  setEvoLineSizeFilter(null);
-                                  setArchetypeFilter(null);
-                                  setActiveSection('starters');
-                                  setCategoryFilter('starter');
-                                  setTypeFilter([type]);
-                                  setMobileBrowserOpen(true);
-                                }}
-                                className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
-                                style={{ borderColor: color, color, backgroundColor: `${color}18` }}
-                              >
-                                <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
-                              </button>
-                            );
+                            for (let i = 0; i < 3; i++) {
+                              elements.push(
+                                <button
+                                  key={`${type}-${i}`}
+                                  onClick={() => {
+                                    setSearchQuery('');
+                                    setGenerationFilter(null);
+                                    setEvoLineSizeFilter(null);
+                                    setArchetypeFilter(null);
+                                    setActiveSection('starters');
+                                    setCategoryFilter('starter');
+                                    setTypeFilter([type]);
+                                    setMobileBrowserOpen(true);
+                                  }}
+                                  className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
+                                  style={{ borderColor: color, color, backgroundColor: `${color}18` }}
+                                >
+                                  <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+                                </button>
+                              );
+                            }
                           }
                         }
                         return elements;
