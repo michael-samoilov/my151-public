@@ -14,6 +14,7 @@ const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1ab
 function alignHistograms(
   yours: { bin: string; pct: number }[],
   national: { bin: string; pct: number }[],
+  binSize: number,
 ) {
   // Collect all bins from both
   const allBins = new Set<string>();
@@ -24,8 +25,15 @@ function alignHistograms(
   const yoursMap = new Map(yours.map(y => [y.bin, y.pct]));
   const nationalMap = new Map(national.map(n => [n.bin, n.pct]));
 
-  const yoursAligned = bins.map(bin => ({ bin, pct: yoursMap.get(bin) ?? 0 }));
-  const nationalAligned = bins.map(bin => ({ bin, pct: nationalMap.get(bin) ?? 0 }));
+  // Use numeric center of bin for X positioning
+  const yoursAligned = bins.map(bin => ({ x: parseInt(bin) + binSize / 2, pct: yoursMap.get(bin) ?? 0 }));
+  const nationalAligned = bins.map(bin => ({ x: parseInt(bin) + binSize / 2, pct: nationalMap.get(bin) ?? 0 }));
+
+  // X-axis boundary ticks (bin edges)
+  const minBin = parseInt(bins[0]);
+  const maxBin = parseInt(bins[bins.length - 1]);
+  const xTicks: number[] = [];
+  for (let t = minBin; t <= maxBin + binSize; t += binSize) xTicks.push(t);
 
   const yMax = Math.max(
     ...yoursAligned.map(d => d.pct),
@@ -34,11 +42,10 @@ function alignHistograms(
   );
   // Round up to nearest 10 for clean axis
   const yDomain = Math.ceil(yMax / 10) * 10;
-  // Ticks at multiples of 10
   const yTicks: number[] = [];
   for (let t = 0; t <= yDomain; t += 10) yTicks.push(t);
 
-  return { yoursAligned, nationalAligned, yDomain, yTicks };
+  return { yoursAligned, nationalAligned, xTicks, xDomain: [minBin, maxBin + binSize] as [number, number], binSize, yDomain, yTicks };
 }
 
 export function AnalyticsDashboard() {
@@ -75,11 +82,11 @@ export function AnalyticsDashboard() {
   }, [genXMax]);
 
   const evoHist = useMemo(
-    () => alignHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram),
+    () => alignHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram, 5),
     [analytics.yourEvoHistogram, analytics.nationalEvoHistogram],
   );
   const bstHist = useMemo(
-    () => alignHistograms(analytics.yourBstHistogram, analytics.nationalBstHistogram),
+    () => alignHistograms(analytics.yourBstHistogram, analytics.nationalBstHistogram, 50),
     [analytics.yourBstHistogram, analytics.nationalBstHistogram],
   );
 
@@ -254,24 +261,24 @@ export function AnalyticsDashboard() {
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Yours</p>
             <div style={{ height: 160 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={evoHist.yoursAligned} margin={{ bottom: 0 }}>
+                <BarChart data={evoHist.yoursAligned} barCategoryGap={0}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="bin" tick={false} height={0} />
+                  <XAxis dataKey="x" type="number" domain={evoHist.xDomain} ticks={evoHist.xTicks} tick={false} height={0} />
                   <YAxis tick={{ fontSize: 10 }} unit="%" domain={[0, evoHist.yDomain]} ticks={evoHist.yTicks} />
                   <Tooltip formatter={((value: any) => [`${Number(value).toFixed(1)}%`, 'Yours']) as any} />
-                  <Bar dataKey="pct" name="Yours" fill="#ef4444" opacity={0.85} />
+                  <Bar dataKey="pct" name="Yours" fill="#ef4444" opacity={0.85} barSize={undefined} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">National Dex</p>
-            <div style={{ height: 160 }}>
+            <div style={{ height: 190 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={evoHist.nationalAligned} margin={{ top: 0 }}>
+                <BarChart data={evoHist.nationalAligned} barCategoryGap={0}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="bin" tick={{ fontSize: 9 }} interval={0} angle={-45} textAnchor="end" height={45} />
+                  <XAxis dataKey="x" type="number" domain={evoHist.xDomain} ticks={evoHist.xTicks} tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 10 }} unit="%" domain={[0, evoHist.yDomain]} ticks={evoHist.yTicks} />
                   <Tooltip formatter={((value: any) => [`${Number(value).toFixed(1)}%`, 'National']) as any} />
-                  <Bar dataKey="pct" name="National" fill="#94a3b8" opacity={0.7} />
+                  <Bar dataKey="pct" name="National" fill="#94a3b8" opacity={0.7} barSize={undefined} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -288,24 +295,24 @@ export function AnalyticsDashboard() {
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">Yours</p>
             <div style={{ height: 160 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={bstHist.yoursAligned} margin={{ bottom: 0 }}>
+                <BarChart data={bstHist.yoursAligned} barCategoryGap={0}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="bin" tick={false} height={0} />
+                  <XAxis dataKey="x" type="number" domain={bstHist.xDomain} ticks={bstHist.xTicks} tick={false} height={0} />
                   <YAxis tick={{ fontSize: 10 }} unit="%" domain={[0, bstHist.yDomain]} ticks={bstHist.yTicks} />
                   <Tooltip formatter={((value: any) => [`${Number(value).toFixed(1)}%`, 'Yours']) as any} />
-                  <Bar dataKey="pct" name="Yours" fill="#ef4444" opacity={0.85} />
+                  <Bar dataKey="pct" name="Yours" fill="#ef4444" opacity={0.85} barSize={undefined} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">National Dex</p>
-            <div style={{ height: 160 }}>
+            <div style={{ height: 190 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={bstHist.nationalAligned} margin={{ top: 0 }}>
+                <BarChart data={bstHist.nationalAligned} barCategoryGap={0}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="bin" tick={{ fontSize: 9 }} interval={0} angle={-45} textAnchor="end" height={45} />
+                  <XAxis dataKey="x" type="number" domain={bstHist.xDomain} ticks={bstHist.xTicks} tick={{ fontSize: 10 }} />
                   <YAxis tick={{ fontSize: 10 }} unit="%" domain={[0, bstHist.yDomain]} ticks={bstHist.yTicks} />
                   <Tooltip formatter={((value: any) => [`${Number(value).toFixed(1)}%`, 'National']) as any} />
-                  <Bar dataKey="pct" name="National" fill="#94a3b8" opacity={0.7} />
+                  <Bar dataKey="pct" name="National" fill="#94a3b8" opacity={0.7} barSize={undefined} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
