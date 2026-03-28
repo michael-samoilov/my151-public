@@ -78,7 +78,6 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
             fontSize={10}
             fontWeight={600}
             fill="var(--color-muted-foreground)"
-            textTransform="uppercase"
             letterSpacing="0.05em"
           >
             COUNT
