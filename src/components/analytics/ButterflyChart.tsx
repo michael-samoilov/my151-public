@@ -83,16 +83,28 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
           >
             COUNT
           </text>
+          {/* Deviation guide labels anchored to zero line */}
           <text
-            x={devSectionStart + devSectionWidth / 2}
+            x={devSectionStart + zeroX - 5}
             y={12}
-            textAnchor="middle"
+            textAnchor="end"
             fontSize={10}
             fontWeight={600}
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
           >
-            OVER / UNDER REPRESENTED
+            ← UNDERREPRESENTED
+          </text>
+          <text
+            x={devSectionStart + zeroX + 5}
+            y={12}
+            textAnchor="start"
+            fontSize={10}
+            fontWeight={600}
+            fill="var(--color-muted-foreground)"
+            letterSpacing="0.05em"
+          >
+            OVERREPRESENTED →
           </text>
 
           {/* Deviation grid lines (behind bars) */}
