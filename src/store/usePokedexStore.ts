@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { createEmptySections, SECTION_IDS } from '@/data/slot-template';
+import { createEmptySections, BUILD_GROUP_IDS } from '@/data/slot-template';
 import { getEvolutionLine } from '@/hooks/usePokemonData';
 
 type TypeFilterMode = 'any' | 'all';
 
 interface PokedexState {
-  sections: Record<string, number[]>; // sectionId -> ordered pokemon IDs
-  activeSection: string | null; // which section the user is adding to
+  sections: Record<string, number[]>; // groupId -> ordered pokemon IDs
+  activeSection: string | null; // which group the user is adding to
   activeCategoryFilter: string | null;
   activeArchetypeFilter: string | null;
   searchQuery: string;
@@ -34,6 +34,8 @@ interface PokedexState {
   toggleGeneration: (gen: number) => void;
   setEvoLineSizeFilter: (sizes: number[] | null) => void;
 }
+
+const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
 
 export const usePokedexStore = create<PokedexState>()(
   persist(
@@ -69,10 +71,13 @@ export const usePokedexStore = create<PokedexState>()(
 
           const newSections = { ...state.sections };
           const addingSet = new Set(allIds);
-          for (const sid of SECTION_IDS) {
-            newSections[sid] = newSections[sid].filter((id) => !addingSet.has(id));
+          for (const sid of BUILD_GROUP_IDS) {
+            if (newSections[sid]) {
+              newSections[sid] = newSections[sid].filter((id) => !addingSet.has(id));
+            }
           }
 
+          if (!newSections[sectionId]) newSections[sectionId] = [];
           newSections[sectionId] = [...newSections[sectionId], ...allIds];
 
           return {
@@ -85,7 +90,9 @@ export const usePokedexStore = create<PokedexState>()(
           const line = getEvolutionLine(pokemonId);
           const removeSet = new Set(line.map((p) => p.id));
           const newSections = { ...state.sections };
-          newSections[sectionId] = newSections[sectionId].filter((id) => !removeSet.has(id));
+          if (newSections[sectionId]) {
+            newSections[sectionId] = newSections[sectionId].filter((id) => !removeSet.has(id));
+          }
           return { sections: newSections };
         }),
 
@@ -94,8 +101,11 @@ export const usePokedexStore = create<PokedexState>()(
           const removeSet = new Set(evoLineIds);
           const newSections = { ...state.sections };
           // Remove from source
-          newSections[fromSection] = newSections[fromSection].filter((id) => !removeSet.has(id));
+          if (newSections[fromSection]) {
+            newSections[fromSection] = newSections[fromSection].filter((id) => !removeSet.has(id));
+          }
           // Insert into destination at the specified index
+          if (!newSections[toSection]) newSections[toSection] = [];
           const dest = [...newSections[toSection]];
           dest.splice(insertBeforeIndex, 0, ...evoLineIds);
           newSections[toSection] = dest;
@@ -139,8 +149,25 @@ export const usePokedexStore = create<PokedexState>()(
       setEvoLineSizeFilter: (sizes) => set({ evoLineSizeFilter: sizes }),
     }),
     {
-      name: 'personal-151-pokedex-v2',
+      name: 'personal-151-pokedex-v3',
       partialize: (state) => ({ sections: state.sections }),
+      // Migrate: if old keys found, dump all Pokemon into 'other'
+      migrate: (persisted: unknown) => {
+        const state = persisted as { sections?: Record<string, number[]> };
+        if (!state.sections) return { sections: createEmptySections() };
+        // Check if it has old section keys
+        const hasOldKeys = Object.keys(state.sections).some(k => !GROUP_ID_SET.has(k));
+        if (hasOldKeys) {
+          const newSections = createEmptySections();
+          const allIds = Object.values(state.sections).flat();
+          newSections['other'] = allIds;
+          return { sections: newSections };
+        }
+        // Ensure all group keys exist
+        const sections = { ...createEmptySections(), ...state.sections };
+        return { sections };
+      },
+      version: 3,
     }
   )
 );

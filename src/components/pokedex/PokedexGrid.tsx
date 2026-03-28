@@ -416,7 +416,7 @@ export function PokedexGrid() {
                     <div className="flex items-baseline gap-2 mb-1.5">
                       <h3 className="text-sm font-semibold">{def.name}</h3>
                       <span className="text-xs text-muted-foreground">({pokemonIds.length})</span>
-                      <span className="text-xs text-muted-foreground italic">{def.description}</span>
+                      <span className="text-xs text-muted-foreground italic">{def.filterType === 'category' ? 'Classification' : def.filterType === 'archetype' ? 'Archetype' : ''}</span>
                     </div>
 
                     <div className="grid grid-cols-6 gap-[1vw] md:gap-1">

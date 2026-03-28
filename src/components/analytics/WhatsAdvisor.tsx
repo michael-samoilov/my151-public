@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { CATEGORIES } from '@/data/categories';
-import { SECTION_DEFS } from '@/data/slot-template';
 import pokemonData from '@/data/pokemon.json';
 import type { Pokemon } from '@/types/pokemon';
 
@@ -16,16 +15,14 @@ export function WhatsAdvisor() {
   const advice = useMemo(() => {
     const items: { type: 'missing' | 'suggestion' | 'complete'; text: string }[] = [];
 
-    // Check each section
-    for (const def of SECTION_DEFS) {
-      const count = (sections[def.id] ?? []).length;
-      if (count === 0) {
-        items.push({ type: 'missing', text: `${def.name} section is empty` });
-      } else if (count < def.defaultSize) {
-        items.push({ type: 'suggestion', text: `${def.name}: ${count}/${def.defaultSize} filled` });
-      } else {
-        items.push({ type: 'complete', text: `${def.name} filled!` });
-      }
+    // Check total fill
+    const totalPlaced = Object.values(sections).reduce((s, a) => s + a.length, 0);
+    if (totalPlaced === 0) {
+      items.push({ type: 'missing', text: 'Pokedex is empty' });
+    } else if (totalPlaced < 151) {
+      items.push({ type: 'suggestion', text: `${totalPlaced}/151 filled` });
+    } else {
+      items.push({ type: 'complete', text: '151/151 filled!' });
     }
 
     // Check archetype coverage
