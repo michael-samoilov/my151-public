@@ -16,7 +16,7 @@ type FilterSheet = 'type' | 'generation' | 'evoStage' | 'browse' | null;
 
 const GEOGRAPHY_ORDER = ['forest', 'cave-pokemon', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra'];
 const GEOGRAPHY_IDS = new Set(GEOGRAPHY_ORDER);
-const GAME_MECHANICS_ORDER = ['evolution-item', 'trade-evo', 'branched-evo', 'static-encounter', 'gift-pokemon', 'in-game-trade', 'reward-pokemon', 'version-exclusive'];
+const GAME_MECHANICS_ORDER = ['evolution-item', 'trade-evo', 'branched-evo', 'cross-gen-evo', 'static-encounter', 'gift-pokemon', 'in-game-trade', 'reward-pokemon', 'version-exclusive'];
 const GAME_MECHANICS_IDS = new Set(GAME_MECHANICS_ORDER);
 
 export function PokemonBrowser() {
