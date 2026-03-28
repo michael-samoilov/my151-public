@@ -511,8 +511,14 @@ export function PokedexGrid() {
                         />
                       )}
 
-                      {/* Add button (hidden during drag) */}
-                      {!dragLineIds && totalPlaced < 151 && (
+                      {/* Add button (hidden during drag; hidden for starters until 3 lines chosen) */}
+                      {!dragLineIds && totalPlaced < 151 && !(def.id === 'starters' && (() => {
+                        const chains = new Set(pokemonIds.map(id => {
+                          const line = getEvolutionLine(id);
+                          return line?.[0] ?? id;
+                        }));
+                        return chains.size < 3;
+                      })()) && (
                         <button
                           onClick={() => handleAddClick(def.id)}
                           className={`aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer ${
@@ -525,7 +531,14 @@ export function PokedexGrid() {
                         </button>
                       )}
 
-                      {Array.from({ length: Math.max(0, emptyCount - 1) }).map((_, i) => (
+                      {/* Empty slot placeholders (hidden for starters until 3 lines chosen) */}
+                      {!(def.id === 'starters' && (() => {
+                        const chains = new Set(pokemonIds.map(id => {
+                          const line = getEvolutionLine(id);
+                          return line?.[0] ?? id;
+                        }));
+                        return chains.size < 3;
+                      })()) && Array.from({ length: Math.max(0, emptyCount - 1) }).map((_, i) => (
                         <div
                           key={`empty-${i}`}
                           className="aspect-square rounded-lg border border-dashed border-muted-foreground/15 bg-muted/20"
