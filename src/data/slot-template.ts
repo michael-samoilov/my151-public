@@ -13,10 +13,10 @@ export interface BuildGroup {
  * static-encounter, gift, in-game-trade, prize) and gym-champion-ace.
  */
 export const BUILD_GROUPS: BuildGroup[] = [
-  // Starters (category)
+  // Starters
   { id: 'starter', name: 'Starters', filterType: 'category', filterId: 'starter', color: '#48bb78' },
 
-  // Early route archetypes
+  // Early route
   { id: 'early-bird', name: 'Early Route Bird', filterType: 'archetype', filterId: 'early-bird', color: '#a98ff3' },
   { id: 'early-bug', name: 'Early Bug', filterType: 'archetype', filterId: 'early-bug', color: '#a6b91a' },
   { id: 'early-rodent', name: 'Early Route Mammal', filterType: 'archetype', filterId: 'early-rodent', color: '#a8a77a' },
@@ -33,7 +33,7 @@ export const BUILD_GROUPS: BuildGroup[] = [
   { id: 'volcanic', name: 'Volcanic', filterType: 'archetype', filterId: 'volcanic', color: '#d62828' },
   { id: 'tundra', name: 'Tundra', filterType: 'archetype', filterId: 'tundra', color: '#7ec8e3' },
 
-  // Thematic archetypes
+  // Thematic
   { id: 'elemental-trio', name: 'Elemental Trio/Duo', filterType: 'archetype', filterId: 'elemental-trio', color: '#ee8130' },
   { id: 'industrial', name: 'Industrial/Artificial', filterType: 'archetype', filterId: 'industrial', color: '#b7b7ce' },
   { id: 'mimic', name: 'Mimic/Disguise', filterType: 'archetype', filterId: 'mimic', color: '#735797' },
@@ -41,14 +41,16 @@ export const BUILD_GROUPS: BuildGroup[] = [
   { id: 'rivalry-pair', name: 'Rivalry Pair', filterType: 'archetype', filterId: 'rivalry-pair', color: '#c22e28' },
   { id: 'version-exclusive', name: 'Version Exclusive', filterType: 'archetype', filterId: 'version-exclusive', color: '#737373' },
 
-  // Classifications
+  // Fossil
   { id: 'fossil', name: 'Fossil', filterType: 'category', filterId: 'fossil', color: '#a0855b' },
+
+  // Catch-all (before endgame classifications)
+  { id: 'other', name: 'Other Routes & Areas', filterType: null, filterId: null, color: '#888888' },
+
+  // Endgame
   { id: 'pseudo-legendary', name: 'Pseudo-Legendary', filterType: 'category', filterId: 'pseudo-legendary', color: '#6b46c1' },
   { id: 'legendary', name: 'Legendary', filterType: 'category', filterId: 'legendary', color: '#d69e2e' },
   { id: 'mythical', name: 'Mythical', filterType: 'category', filterId: 'mythical', color: '#ed64a6' },
-
-  // Catch-all
-  { id: 'other', name: 'Other', filterType: null, filterId: null, color: '#888888' },
 ];
 
 export const BUILD_GROUP_IDS = BUILD_GROUPS.map((g) => g.id);
@@ -59,19 +61,4 @@ export function createEmptySections(): Record<string, number[]> {
     sections[g.id] = [];
   }
   return sections;
-}
-
-// Keep old exports for backward compatibility during migration
-export interface SectionDef {
-  id: string;
-  name: string;
-  defaultSize: number;
-  priority: number;
-  description: string;
-}
-
-export const SECTION_DEFS = BUILD_GROUPS;
-
-export function computeEmptySlots(_sections: Record<string, number[]>): Record<string, number> {
-  return {};
 }

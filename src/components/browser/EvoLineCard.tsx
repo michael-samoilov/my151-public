@@ -80,7 +80,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, shinyIds, sprite
 
   const handleClick = () => {
     if (allInDex) return;
-    const targetSection = activeSection ?? 'mid-game';
+    const targetSection = activeSection ?? 'other';
     addToSection(targetSection, members.map((p) => p.id));
   };
 

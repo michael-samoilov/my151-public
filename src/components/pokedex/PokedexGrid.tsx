@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { SECTION_DEFS, computeEmptySlots } from '@/data/slot-template';
+import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,14 +23,12 @@ import { useDraggable } from '@dnd-kit/core';
 
 // ---------- helpers ----------
 
-/** Find which evo line group a pokemonId belongs to */
 function findEvoLineGroup(pokemonId: number, sectionIds: number[]): number[] {
   const line = getEvolutionLine(pokemonId);
   const lineIdSet = new Set(line.map((p) => p.id));
   return sectionIds.filter((id) => lineIdSet.has(id));
 }
 
-/** Encode tile ID: sectionId::pokemonId */
 function tileId(sectionId: string, pokemonId: number) {
   return `${sectionId}::${pokemonId}`;
 }
@@ -140,7 +138,6 @@ function DraggableTile({
 
   const { setNodeRef: setDropRef } = useDroppable({ id });
 
-  // Merge both refs onto the outer div
   const setNodeRef = useCallback(
     (node: HTMLElement | null) => {
       setDragRef(node);
@@ -157,7 +154,6 @@ function DraggableTile({
       className="relative"
       style={{ opacity: isDragging || isDraggedLine ? 0.25 : 1 }}
     >
-      {/* Vertical insert indicator */}
       {showInsertBefore && (
         <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 -translate-x-[calc(50%+0.5vw)] md:-translate-x-[calc(50%+2px)]" />
       )}
@@ -212,7 +208,6 @@ function DraggableTile({
 
 // ---------- end-of-section drop zone ----------
 
-/** Sentinel ID prefix for "drop at end of section" */
 const END_SENTINEL = 'end::';
 function endSentinelId(sectionId: string) { return `${END_SENTINEL}${sectionId}`; }
 function isEndSentinel(id: string) { return id.startsWith(END_SENTINEL); }
@@ -234,11 +229,218 @@ function EndDropZone({ sectionId, showIndicator }: { sectionId: string; showIndi
   );
 }
 
+// ---------- starter type buttons ----------
+
+const STARTER_TYPES = [['grass', '#78C850'], ['fire', '#F08030'], ['water', '#6890F0']] as const;
+
+function StarterPlaceholders({
+  pokemonIds,
+  totalPlaced,
+  dragLineIds,
+  dragSet,
+  insertIndicator,
+  onTypeClick,
+}: {
+  pokemonIds: number[];
+  totalPlaced: number;
+  dragLineIds: number[] | null;
+  dragSet: Set<number>;
+  insertIndicator: { tileId: string | null; endSection: string | null };
+  onTypeClick: (type: string) => void;
+}) {
+  // Count distinct evo lines
+  const chains = new Set(pokemonIds.map(id => {
+    const line = getEvolutionLine(id);
+    return line?.[0] ?? id;
+  }));
+
+  // Once 3+ lines, render standard tiles
+  if (chains.size >= 3 || dragLineIds) {
+    return (
+      <>
+        {pokemonIds.map((pid) => {
+          const tid = tileId('starter', pid);
+          return (
+            <DraggableTile
+              key={tid}
+              id={tid}
+              pokemonId={pid}
+              sectionId="starter"
+              isDraggedLine={dragSet.has(pid)}
+              showInsertBefore={insertIndicator.tileId === tid}
+            />
+          );
+        })}
+      </>
+    );
+  }
+
+  // Group placed Pokemon by starter type
+  const pidsByType = new Map<string, number[]>();
+  for (const pid of pokemonIds) {
+    const p = getPokemonById(pid);
+    if (!p) continue;
+    const matched = STARTER_TYPES.find(([t]) => p.types.includes(t as never));
+    if (matched) {
+      if (!pidsByType.has(matched[0])) pidsByType.set(matched[0], []);
+      pidsByType.get(matched[0])!.push(pid);
+    }
+  }
+
+  const elements: React.ReactNode[] = [];
+  for (const [type, color] of STARTER_TYPES) {
+    const typePids = pidsByType.get(type);
+    if (typePids) {
+      for (const pid of typePids) {
+        const tid = tileId('starter', pid);
+        elements.push(
+          <DraggableTile
+            key={tid}
+            id={tid}
+            pokemonId={pid}
+            sectionId="starter"
+            isDraggedLine={dragSet.has(pid)}
+            showInsertBefore={insertIndicator.tileId === tid}
+          />
+        );
+      }
+    } else if (totalPlaced < 151) {
+      for (let i = 0; i < 3; i++) {
+        elements.push(
+          <button
+            key={`${type}-${i}`}
+            onClick={() => onTypeClick(type)}
+            className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
+            style={{ borderColor: color, color, backgroundColor: `${color}18` }}
+          >
+            <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+          </button>
+        );
+      }
+    }
+  }
+  return <>{elements}</>;
+}
+
+// ---------- expanded group (has Pokemon) ----------
+
+function ExpandedGroup({
+  group,
+  pokemonIds,
+  totalPlaced,
+  dragLineIds,
+  dragSet,
+  insertIndicator,
+  onAddClick,
+}: {
+  group: BuildGroup;
+  pokemonIds: number[];
+  totalPlaced: number;
+  dragLineIds: number[] | null;
+  dragSet: Set<number>;
+  insertIndicator: { tileId: string | null; endSection: string | null };
+  onAddClick: (groupId: string) => void;
+}) {
+  const isStarter = group.id === 'starter';
+  const starterLinesCount = useMemo(() => {
+    if (!isStarter) return 0;
+    const chains = new Set(pokemonIds.map(id => {
+      const line = getEvolutionLine(id);
+      return line?.[0] ?? id;
+    }));
+    return chains.size;
+  }, [isStarter, pokemonIds]);
+
+  return (
+    <div
+      className="rounded-lg px-2 py-1.5"
+      style={{ backgroundColor: `${group.color}10`, border: `1px solid ${group.color}25` }}
+    >
+      <div className="flex items-baseline gap-1.5 mb-1">
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{group.name}</span>
+        <span className="text-[10px] text-muted-foreground">({pokemonIds.length})</span>
+      </div>
+      <div className="grid grid-cols-6 gap-[1vw] md:gap-1">
+        {isStarter ? (
+          <StarterPlaceholders
+            pokemonIds={pokemonIds}
+            totalPlaced={totalPlaced}
+            dragLineIds={dragLineIds}
+            dragSet={dragSet}
+            insertIndicator={insertIndicator}
+            onTypeClick={(type) => {
+              const store = usePokedexStore.getState();
+              store.setSearchQuery('');
+              store.setGenerationFilter(null);
+              store.setEvoLineSizeFilter(null);
+              store.setArchetypeFilter(null);
+              store.setActiveSection('starter');
+              store.setCategoryFilter('starter');
+              store.setTypeFilter([type]);
+              store.setMobileBrowserOpen(true);
+            }}
+          />
+        ) : (
+          pokemonIds.map((pid) => {
+            const tid = tileId(group.id, pid);
+            return (
+              <DraggableTile
+                key={tid}
+                id={tid}
+                pokemonId={pid}
+                sectionId={group.id}
+                isDraggedLine={dragSet.has(pid)}
+                showInsertBefore={insertIndicator.tileId === tid}
+              />
+            );
+          })
+        )}
+
+        {/* Drop zone for appending to end of section (visible during drag) */}
+        {dragLineIds && pokemonIds.length > 0 && (
+          <EndDropZone
+            sectionId={group.id}
+            showIndicator={insertIndicator.endSection === group.id}
+          />
+        )}
+
+        {/* Add button — for starters, only show after 3 lines chosen */}
+        {!dragLineIds && totalPlaced < 151 && (!isStarter || starterLinesCount >= 3) && (
+          <button
+            onClick={() => onAddClick(group.id)}
+            className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
+          >
+            <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------- compact empty group chip ----------
+
+function EmptyGroupChip({ group, onClick }: { group: BuildGroup; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-all cursor-pointer hover:opacity-80"
+      style={{
+        backgroundColor: `${group.color}15`,
+        border: `1px solid ${group.color}30`,
+        color: `${group.color}cc`,
+      }}
+    >
+      <Plus className="w-3 h-3" />
+      {group.name}
+    </button>
+  );
+}
+
 // ---------- main grid ----------
 
 export function PokedexGrid() {
   const sections = usePokedexStore((s) => s.sections);
-  const activeSection = usePokedexStore((s) => s.activeSection);
   const setActiveSection = usePokedexStore((s) => s.setActiveSection);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const setArchetypeFilter = usePokedexStore((s) => s.setArchetypeFilter);
@@ -251,21 +453,15 @@ export function PokedexGrid() {
   const moveEvoLine = usePokedexStore((s) => s.moveEvoLine);
 
   const totalPlaced = Object.values(sections).reduce((s, a) => s + a.length, 0);
-  const emptySlots = computeEmptySlots(sections);
 
-  // Track which evo line is being dragged
+  // Drag state
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
   const [dragFromSection, setDragFromSection] = useState<string | null>(null);
   const [overTileId, setOverTileId] = useState<string | null>(null);
   const isTouchDrag = useRef(false);
 
-  // Sensors
-  const mouseSensor = useSensor(MouseSensor, {
-    activationConstraint: { distance: 8 },
-  });
-  const touchSensor = useSensor(TouchSensor, {
-    activationConstraint: { delay: 250, tolerance: 5 },
-  });
+  const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
+  const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
   const sensors = useSensors(mouseSensor, touchSensor);
 
   const handleDragStart = useCallback(
@@ -290,14 +486,13 @@ export function PokedexGrid() {
 
       if (over && dragLineIds && dragFromSection) {
         const overId = over.id as string;
-        const dragSet = new Set(dragLineIds);
+        const dragSetLocal = new Set(dragLineIds);
 
-        // End-of-section sentinel: append to end
         if (isEndSentinel(overId)) {
           const targetSection = parseEndSentinel(overId);
           const targetSectionIds = sections[targetSection] ?? [];
           const insertIdx = dragFromSection === targetSection
-            ? targetSectionIds.filter((id) => !dragSet.has(id)).length
+            ? targetSectionIds.filter((id) => !dragSetLocal.has(id)).length
             : targetSectionIds.length;
           moveEvoLine(dragFromSection, dragLineIds, targetSection, insertIdx);
         } else {
@@ -305,18 +500,16 @@ export function PokedexGrid() {
           const targetSectionIds = sections[target.sectionId] ?? [];
           const targetLineIds = findEvoLineGroup(target.pokemonId, targetSectionIds);
 
-          // If dropping on self, no-op
-          if (dragSet.has(target.pokemonId)) {
+          if (dragSetLocal.has(target.pokemonId)) {
             setDragLineIds(null);
             setDragFromSection(null);
             setOverTileId(null);
             return;
           }
 
-          // Find the index of the first member of the target evo line
           let insertIdx: number;
           if (dragFromSection === target.sectionId) {
-            const withoutDragged = targetSectionIds.filter((id) => !dragSet.has(id));
+            const withoutDragged = targetSectionIds.filter((id) => !dragSetLocal.has(id));
             const targetFirstIdx = withoutDragged.indexOf(targetLineIds[0]);
             insertIdx = targetFirstIdx >= 0 ? targetFirstIdx : withoutDragged.length;
           } else {
@@ -341,42 +534,49 @@ export function PokedexGrid() {
     setOverTileId(null);
   }, []);
 
-  // Compute which tile should show the insert indicator (always snaps to evo line boundary)
   const insertIndicator = useMemo<{ tileId: string | null; endSection: string | null }>(() => {
     if (!overTileId || !dragLineIds) return { tileId: null, endSection: null };
 
-    // End sentinel: show indicator at end of section
     if (isEndSentinel(overTileId)) {
       return { tileId: null, endSection: parseEndSentinel(overTileId) };
     }
 
     const target = parseTileId(overTileId);
-    const dragSet = new Set(dragLineIds);
-    if (dragSet.has(target.pokemonId)) return { tileId: null, endSection: null };
+    const dragSetLocal = new Set(dragLineIds);
+    if (dragSetLocal.has(target.pokemonId)) return { tileId: null, endSection: null };
 
-    // Find the first tile of the target's evo line
     const targetSectionIds = sections[target.sectionId] ?? [];
     const targetLineIds = findEvoLineGroup(target.pokemonId, targetSectionIds);
     if (targetLineIds.length === 0) return { tileId: null, endSection: null };
     return { tileId: tileId(target.sectionId, targetLineIds[0]), endSection: null };
   }, [overTileId, dragLineIds, sections]);
 
-  const handleAddClick = (sectionId: string) => {
+  const handleAddClick = useCallback((groupId: string) => {
+    const group = BUILD_GROUPS.find(g => g.id === groupId);
     setSearchQuery('');
     setTypeFilter(null);
     setGenerationFilter(null);
     setEvoLineSizeFilter(null);
-    setActiveSection(sectionId);
-    setArchetypeFilter(null);
-    if (sectionId === 'starters') {
-      setCategoryFilter('starter');
-    } else {
+    setActiveSection(groupId);
+    if (group?.filterType === 'category') {
+      setCategoryFilter(group.filterId);
+      setArchetypeFilter(null);
+    } else if (group?.filterType === 'archetype') {
+      setArchetypeFilter(group.filterId);
       setCategoryFilter(null);
+    } else {
+      // catch-all: no filter
+      setCategoryFilter(null);
+      setArchetypeFilter(null);
     }
     setMobileBrowserOpen(true);
-  };
+  }, [setSearchQuery, setTypeFilter, setGenerationFilter, setEvoLineSizeFilter, setActiveSection, setCategoryFilter, setArchetypeFilter, setMobileBrowserOpen]);
 
   const dragSet = useMemo(() => new Set(dragLineIds ?? []), [dragLineIds]);
+
+  // Split groups into filled and empty
+  const filledGroups = BUILD_GROUPS.filter(g => (sections[g.id] ?? []).length > 0);
+  const emptyGroups = BUILD_GROUPS.filter(g => (sections[g.id] ?? []).length === 0);
 
   return (
     <div className="flex flex-col h-full">
@@ -397,7 +597,7 @@ export function PokedexGrid() {
 
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
-          <div className="p-3 space-y-5">
+          <div className="p-3 space-y-2">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -406,148 +606,32 @@ export function PokedexGrid() {
               onDragEnd={handleDragEnd}
               onDragCancel={handleDragCancel}
             >
-              {SECTION_DEFS.map((def) => {
-                const pokemonIds = sections[def.id] ?? [];
-                const emptyCount = emptySlots[def.id] ?? 0;
-                const isActive = activeSection === def.id;
+              {/* Filled groups — expanded with tiles */}
+              {filledGroups.map((group) => (
+                <ExpandedGroup
+                  key={group.id}
+                  group={group}
+                  pokemonIds={sections[group.id] ?? []}
+                  totalPlaced={totalPlaced}
+                  dragLineIds={dragLineIds}
+                  dragSet={dragSet}
+                  insertIndicator={insertIndicator}
+                  onAddClick={handleAddClick}
+                />
+              ))}
 
-                return (
-                  <section key={def.id}>
-                    <div className="flex items-baseline gap-2 mb-1.5">
-                      <h3 className="text-sm font-semibold">{def.name}</h3>
-                      <span className="text-xs text-muted-foreground">({pokemonIds.length})</span>
-                      <span className="text-xs text-muted-foreground italic">{def.filterType === 'category' ? 'Classification' : def.filterType === 'archetype' ? 'Archetype' : ''}</span>
-                    </div>
-
-                    <div className="grid grid-cols-6 gap-[1vw] md:gap-1">
-                      {/* Starters: interleave tiles & type buttons in grass→fire→water order */}
-                      {def.id === 'starters' && !dragLineIds && (() => {
-                        const chains = new Set(pokemonIds.map(id => {
-                          const line = getEvolutionLine(id);
-                          return line?.[0] ?? id;
-                        }));
-                        if (chains.size >= 3) return null; // fall through to standard rendering
-                        const typeOrder = [['grass', '#78C850'], ['fire', '#F08030'], ['water', '#6890F0']] as const;
-                        const pidsByType = new Map<string, number[]>();
-                        for (const pid of pokemonIds) {
-                          const p = getPokemonById(pid);
-                          if (!p) continue;
-                          const matchedType = typeOrder.find(([t]) => p.types.includes(t as never));
-                          if (matchedType) {
-                            if (!pidsByType.has(matchedType[0])) pidsByType.set(matchedType[0], []);
-                            pidsByType.get(matchedType[0])!.push(pid);
-                          }
-                        }
-                        const elements: React.ReactNode[] = [];
-                        for (const [type, color] of typeOrder) {
-                          const typePids = pidsByType.get(type);
-                          if (typePids) {
-                            for (const pid of typePids) {
-                              const tid = tileId(def.id, pid);
-                              elements.push(
-                                <DraggableTile
-                                  key={tid}
-                                  id={tid}
-                                  pokemonId={pid}
-                                  sectionId={def.id}
-                                  isDraggedLine={dragSet.has(pid)}
-                                  showInsertBefore={insertIndicator.tileId === tid}
-                                />
-                              );
-                            }
-                          } else if (totalPlaced < 151) {
-                            for (let i = 0; i < 3; i++) {
-                              elements.push(
-                                <button
-                                  key={`${type}-${i}`}
-                                  onClick={() => {
-                                    setSearchQuery('');
-                                    setGenerationFilter(null);
-                                    setEvoLineSizeFilter(null);
-                                    setArchetypeFilter(null);
-                                    setActiveSection('starters');
-                                    setCategoryFilter('starter');
-                                    setTypeFilter([type]);
-                                    setMobileBrowserOpen(true);
-                                  }}
-                                  className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
-                                  style={{ borderColor: color, color, backgroundColor: `${color}18` }}
-                                >
-                                  <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
-                                </button>
-                              );
-                            }
-                          }
-                        }
-                        return elements;
-                      })()}
-
-                      {/* Standard tile rendering (for non-starters, or starters with 3+ lines) */}
-                      {(def.id !== 'starters' || dragLineIds || (() => {
-                        const chains = new Set(pokemonIds.map(id => {
-                          const line = getEvolutionLine(id);
-                          return line?.[0] ?? id;
-                        }));
-                        return chains.size >= 3;
-                      })()) && pokemonIds.map((pid) => {
-                        const tid = tileId(def.id, pid);
-                        return (
-                          <DraggableTile
-                            key={tid}
-                            id={tid}
-                            pokemonId={pid}
-                            sectionId={def.id}
-                            isDraggedLine={dragSet.has(pid)}
-                            showInsertBefore={insertIndicator.tileId === tid}
-                          />
-                        );
-                      })}
-
-                      {/* Drop zone for appending to end of section (visible during drag) */}
-                      {dragLineIds && pokemonIds.length > 0 && (
-                        <EndDropZone
-                          sectionId={def.id}
-                          showIndicator={insertIndicator.endSection === def.id}
-                        />
-                      )}
-
-                      {/* Add button (hidden during drag; hidden for starters until 3 lines chosen) */}
-                      {!dragLineIds && totalPlaced < 151 && !(def.id === 'starters' && (() => {
-                        const chains = new Set(pokemonIds.map(id => {
-                          const line = getEvolutionLine(id);
-                          return line?.[0] ?? id;
-                        }));
-                        return chains.size < 3;
-                      })()) && (
-                        <button
-                          onClick={() => handleAddClick(def.id)}
-                          className={`aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer ${
-                            isActive
-                              ? 'border-primary bg-primary/10 text-primary'
-                              : 'border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary'
-                          }`}
-                        >
-                          <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
-                        </button>
-                      )}
-
-                      {/* Empty slot placeholders (hidden for starters until 3 lines chosen) */}
-                      {!(def.id === 'starters' && (() => {
-                        const chains = new Set(pokemonIds.map(id => {
-                          const line = getEvolutionLine(id);
-                          return line?.[0] ?? id;
-                        }));
-                        return chains.size < 3;
-                      })()) && Array.from({ length: Math.max(0, emptyCount - 1) }).map((_, i) => (
-                        <div
-                          key={`empty-${i}`}
-                          className="aspect-square rounded-lg border border-dashed border-muted-foreground/15 bg-muted/20"
-                        />
-                      ))}
-                    </div>
-                  </section>
-                );
-              })}
+              {/* Empty groups — compact chips */}
+              {emptyGroups.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {emptyGroups.map((group) => (
+                    <EmptyGroupChip
+                      key={group.id}
+                      group={group}
+                      onClick={() => handleAddClick(group.id)}
+                    />
+                  ))}
+                </div>
+              )}
 
               <DragOverlay dropAnimation={null}>
                 {dragLineIds && (

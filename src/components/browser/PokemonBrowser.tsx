@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
 import { useFilteredPokemonGrouped, getPokemonById } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { SECTION_DEFS } from '@/data/slot-template';
+import { BUILD_GROUPS } from '@/data/slot-template';
 import { ARCHETYPES } from '@/data/archetypes';
 import { CATEGORIES } from '@/data/categories';
 import { TYPE_NAMES } from '@/types/pokemon';
@@ -57,7 +57,7 @@ export function PokemonBrowser() {
 
   const totalCount = groups.reduce((sum, g) => sum + g.members.length, 0);
   const sectionName = activeSection
-    ? SECTION_DEFS.find((s) => s.id === activeSection)?.name ?? 'Section'
+    ? BUILD_GROUPS.find((g) => g.id === activeSection)?.name ?? 'Section'
     : null;
 
   const activeCategoryDef = activeCategory

@@ -5,7 +5,7 @@ import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { SECTION_DEFS } from '@/data/slot-template';
+import { BUILD_GROUPS } from '@/data/slot-template';
 
 const SHEET_HEIGHT_VH = 85;
 const DISMISS_THRESHOLD = 120; // px drag distance to dismiss
@@ -96,7 +96,7 @@ function App() {
   const activeSection = usePokedexStore((s) => s.activeSection);
 
   const sectionName = activeSection
-    ? SECTION_DEFS.find((s) => s.id === activeSection)?.name ?? 'Section'
+    ? BUILD_GROUPS.find((g) => g.id === activeSection)?.name ?? 'Section'
     : 'Browse Pokemon';
 
   return (
