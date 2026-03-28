@@ -215,7 +215,7 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
                   fontSize={9}
                   fill="var(--color-muted-foreground)"
                 >
-                  {t > 0 ? `+${t}%` : `${t}%`}
+                  {t / 100 + 1}x
                 </text>
               </g>
             );
