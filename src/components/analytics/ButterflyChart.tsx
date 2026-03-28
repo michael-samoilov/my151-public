@@ -36,8 +36,9 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
   const numberWidth = 22;
   const gap = 8;
   const titleHeight = 18;
-  const marginBottom = 22;
-  const chartHeight = titleHeight + data.length * rowHeight + marginBottom;
+  const axisHeight = 18;
+  const topOffset = titleHeight + axisHeight;
+  const chartHeight = topOffset + data.length * rowHeight;
 
   const countSectionStart = labelWidth + gap;
   const devSectionStart = countSectionStart + countBarMax + numberWidth + gap;
@@ -46,7 +47,7 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
   // Scales
   const yScale = scaleBand<string>()
     .domain(data.map((d) => d.label))
-    .range([titleHeight, titleHeight + data.length * rowHeight])
+    .range([topOffset, topOffset + data.length * rowHeight])
     .padding(0.25);
 
   const barHeight = yScale.bandwidth();
@@ -100,8 +101,8 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
               key={`grid-${t}`}
               x1={devSectionStart + devScale(t)}
               x2={devSectionStart + devScale(t)}
-              y1={titleHeight}
-              y2={titleHeight + data.length * rowHeight}
+              y1={topOffset}
+              y2={topOffset + data.length * rowHeight}
               stroke="var(--color-border)"
               strokeDasharray={t === 0 ? undefined : '3 3'}
               strokeWidth={t === 0 ? 1 : 0.5}
@@ -174,13 +175,13 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
           <line
             x1={devSectionStart + zeroX}
             x2={devSectionStart + zeroX}
-            y1={titleHeight}
-            y2={titleHeight + data.length * rowHeight}
+            y1={topOffset}
+            y2={topOffset + data.length * rowHeight}
             stroke="var(--color-muted-foreground)"
             strokeWidth={1}
           />
 
-          {/* Deviation axis ticks */}
+          {/* Deviation axis ticks (above bars, below title) */}
           {devTicks.map((t) => {
             const x = devSectionStart + devScale(t);
             return (
@@ -188,14 +189,14 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
                 <line
                   x1={x}
                   x2={x}
-                  y1={titleHeight + data.length * rowHeight}
-                  y2={titleHeight + data.length * rowHeight + 4}
+                  y1={topOffset - 4}
+                  y2={topOffset}
                   stroke="var(--color-muted-foreground)"
                   strokeWidth={0.5}
                 />
                 <text
                   x={x}
-                  y={titleHeight + data.length * rowHeight + 14}
+                  y={topOffset - 7}
                   textAnchor="middle"
                   fontSize={9}
                   fill="var(--color-muted-foreground)"
