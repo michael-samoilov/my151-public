@@ -119,8 +119,8 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
               y2={topOffset + data.length * rowHeight}
               stroke="var(--color-border)"
               strokeDasharray={t === 0 ? undefined : '3 3'}
-              strokeWidth={t === 0 ? 1 : 0.5}
-              opacity={t === 0 ? 0.8 : 0.5}
+              strokeWidth={t === 0 ? 1.5 : 0.75}
+              opacity={t === 0 ? 1 : 0.5}
             />
           ))}
 
