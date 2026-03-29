@@ -46,7 +46,7 @@ export function SuperimposedHistogram({
   const yScale = scaleLinear().domain([0, yDomain]).range([plotH, 0]);
 
   const barFullWidth = xScale(binSize) - xScale(0);
-  const barNarrowWidth = barFullWidth * 0.6;
+  const barNarrowWidth = barFullWidth * 0.5;
 
   return (
     <div ref={containerRef} className="w-full">
