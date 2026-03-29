@@ -176,7 +176,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                 {genSorted && !matched && (
                   <GenBadge
                     gen={pokemon.generation}
-                    className="absolute top-0 left-[6px] md:left-1 w-[2.5vw] h-[2.5vw] md:w-3 md:h-3 rounded-full overflow-hidden z-10"
+                    className="absolute top-0 left-[6px] md:left-1 w-[2.5vw] h-[2.5vw] md:w-3 md:h-3 z-10"
                   />
                 )}
                 <img

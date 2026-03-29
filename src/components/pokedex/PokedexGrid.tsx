@@ -50,7 +50,7 @@ function PokemonTileStatic({ id }: { id: number }) {
     <div className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 aspect-square shadow-lg">
       <GenBadge
         gen={pokemon.generation}
-        className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full overflow-hidden"
+        className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5"
       />
       <div
         className="w-[8vw] h-[8vw] md:w-10 md:h-10"
@@ -135,7 +135,7 @@ function DraggableTile({
       >
         <GenBadge
           gen={pokemon.generation}
-          className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full overflow-hidden"
+          className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5"
         />
         <button
           onClick={() => removeBranch(sectionId, pokemonId)}
