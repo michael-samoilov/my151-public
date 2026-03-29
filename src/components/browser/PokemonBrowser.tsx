@@ -306,7 +306,6 @@ export function PokemonBrowser() {
       >
         <div className="p-2 space-y-1 content-start">
           {effectiveSubgroups.map((sub) => {
-            const isGenSubgroup = /^Gen \d+$/i.test(sub.label);
             const subIdSet = new Set(sub.pokemonIds);
             const subGroups = groups
               .filter(g => g.members.some(m => subIdSet.has(m.id)))
@@ -344,7 +343,6 @@ export function PokemonBrowser() {
                   onToggleStage={handleToggleStage}
                   shinyIds={sub.shinyIds ? new Set(sub.shinyIds) : shinyIds}
                   spriteOverrides={spriteOverrides}
-                  genSorted={isGenSubgroup}
                 />
               </div>
             );

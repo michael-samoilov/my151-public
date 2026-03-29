@@ -49,11 +49,10 @@ interface EvoLineGridProps {
   onToggleStage: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
-  genSorted?: boolean;
 }
 
 /** Renders evo line cards in a 6-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, genSorted }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides }: EvoLineGridProps) {
   const elements = useMemo(() => {
     const result: React.ReactNode[] = [];
     let col = 0; // 0-based current column position
@@ -78,14 +77,13 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shi
           onToggleStage={onToggleStage}
           shinyIds={shinyIds}
           spriteOverrides={spriteOverrides}
-          genSorted={genSorted}
         />
       );
       col = (col + size) % COLS;
     }
 
     return result;
-  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, genSorted]);
+  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides]);
 
   return (
     <div
@@ -106,10 +104,9 @@ interface EvoLineCardProps {
   onToggleStage: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
-  genSorted?: boolean;
 }
 
-export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, genSorted }: EvoLineCardProps) {
+export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides }: EvoLineCardProps) {
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const sections = usePokedexStore((s) => s.sections);
   const allInDex = members.every((p) => assignedIds.has(p.id));
@@ -173,7 +170,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                 'relative flex flex-col items-center w-full',
                 !matched && 'opacity-35',
               )}>
-                {genSorted && !matched && (
+                {!matched && (
                   <GenBadge
                     gen={pokemon.generation}
                     className="absolute top-0 left-[6px] md:left-1 w-[2.5vw] h-[2.5vw] md:w-3 md:h-3 z-10"
