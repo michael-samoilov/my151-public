@@ -76,11 +76,12 @@ export function PokemonBrowser() {
   const handleSubmitStaged = useCallback(() => {
     if (stagedIds.length === 0) return;
     const targetSection = activeSection ?? 'other';
-    addToSection(targetSection, stagedIds);
+    const newIds = stagedIds.filter(id => !assignedIds.has(id));
+    if (newIds.length > 0) addToSection(targetSection, newIds);
     setStagedIds([]);
     setMobileBrowserOpen(false);
     setActiveSection(null);
-  }, [stagedIds, activeSection, addToSection, setMobileBrowserOpen, setActiveSection]);
+  }, [stagedIds, activeSection, assignedIds, addToSection, setMobileBrowserOpen, setActiveSection]);
 
   const assignedIds = useMemo(
     () => new Set(Object.values(sections).flat()),
@@ -360,16 +361,20 @@ export function PokemonBrowser() {
       </div>
 
       {/* Floating "Add X Pokemon" button */}
-      {stagedIds.length > 0 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
-          <button
-            onClick={handleSubmitStaged}
-            className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors"
-          >
-            Add {stagedIds.length} Pokemon
-          </button>
-        </div>
-      )}
+      {stagedIds.length > 0 && (() => {
+        const newCount = stagedIds.filter(id => !assignedIds.has(id)).length;
+        if (newCount === 0) return null;
+        return (
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
+            <button
+              onClick={handleSubmitStaged}
+              className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors"
+            >
+              Add {newCount} Pokemon
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Filter bottom sheet overlay */}
       {openSheet && (
