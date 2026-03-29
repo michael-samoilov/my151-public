@@ -4,6 +4,7 @@ import type { Pokemon } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { Plus, ChevronRight } from 'lucide-react';
+import { GenBadge } from '@/components/shared/GenBadge';
 
 /** Tiny pokeball icon: red-filled top half, open bottom half, center button */
 function PokeballIcon({ className }: { className?: string }) {
@@ -48,10 +49,11 @@ interface EvoLineGridProps {
   onToggleStage: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
+  genSorted?: boolean;
 }
 
 /** Renders evo line cards in a 6-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, genSorted }: EvoLineGridProps) {
   const elements = useMemo(() => {
     const result: React.ReactNode[] = [];
     let col = 0; // 0-based current column position
@@ -76,13 +78,14 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shi
           onToggleStage={onToggleStage}
           shinyIds={shinyIds}
           spriteOverrides={spriteOverrides}
+          genSorted={genSorted}
         />
       );
       col = (col + size) % COLS;
     }
 
     return result;
-  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides]);
+  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, genSorted]);
 
   return (
     <div
@@ -103,9 +106,10 @@ interface EvoLineCardProps {
   onToggleStage: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
+  genSorted?: boolean;
 }
 
-export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides }: EvoLineCardProps) {
+export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, genSorted }: EvoLineCardProps) {
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const sections = usePokedexStore((s) => s.sections);
   const allInDex = members.every((p) => assignedIds.has(p.id));
@@ -169,6 +173,12 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                 'relative flex flex-col items-center w-full',
                 !matched && 'opacity-35',
               )}>
+                {genSorted && !matched && (
+                  <GenBadge
+                    gen={pokemon.generation}
+                    className="absolute top-0 left-[6px] md:left-1 w-[2.5vw] h-[2.5vw] md:w-3 md:h-3 rounded-full overflow-hidden z-10"
+                  />
+                )}
                 <img
                   src={spriteOverrides?.[pokemon.id]
                     ?? (shinyIds?.has(pokemon.id)
