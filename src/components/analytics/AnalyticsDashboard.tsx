@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
