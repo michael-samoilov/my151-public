@@ -6,6 +6,8 @@ export interface ButterflyRow {
   count: number;
   deviation: number; // percentage, e.g. +100 = double, -50 = half
   color: string;
+  /** Optional icon path (e.g. "/types/fire.svg") */
+  icon?: string;
 }
 
 interface ButterflyChartProps {
@@ -30,8 +32,11 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
 
   if (data.length === 0) return null;
 
-  // Layout: fixed pixel widths for label + count, rest for deviation
+  // Layout: fixed pixel widths for label + icon + count, rest for deviation
+  const hasIcons = data.some(d => d.icon);
   const labelWidth = 55;
+  const iconSize = hasIcons ? 14 : 0;
+  const iconGap = hasIcons ? 3 : 0;
   const countBarMax = 60;
   const numberWidth = 22;
   const gap = 8;
@@ -40,7 +45,8 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
   const topOffset = titleHeight + axisHeight;
   const chartHeight = topOffset + data.length * rowHeight;
 
-  const countSectionStart = labelWidth + gap;
+  const iconStart = labelWidth + iconGap;
+  const countSectionStart = iconStart + iconSize + gap;
   const devSectionStart = countSectionStart + countBarMax + numberWidth + gap;
   const devSectionWidth = Math.max(0, width - devSectionStart);
 
@@ -153,6 +159,25 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
                 >
                   {d.label}
                 </text>
+
+                {/* Type icon */}
+                {d.icon && (
+                  <g>
+                    <circle
+                      cx={iconStart + iconSize / 2}
+                      cy={y + barHeight / 2}
+                      r={iconSize / 2}
+                      fill={d.color}
+                    />
+                    <image
+                      href={d.icon}
+                      x={iconStart + 2}
+                      y={y + barHeight / 2 - (iconSize - 4) / 2}
+                      width={iconSize - 4}
+                      height={iconSize - 4}
+                    />
+                  </g>
+                )}
 
                 {/* Count bar */}
                 <rect

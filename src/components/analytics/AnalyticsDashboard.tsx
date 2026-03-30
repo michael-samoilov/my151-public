@@ -62,6 +62,7 @@ export function AnalyticsDashboard() {
       count: d.count,
       deviation: d.deviation,
       color: TYPE_COLORS[d.type as keyof typeof TYPE_COLORS],
+      icon: `/types/${d.type}.svg`,
     })),
     [analytics.typeDeviation],
   );
