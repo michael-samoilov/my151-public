@@ -55,18 +55,18 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
   const maxCount = Math.max(...data.map((d) => d.count), 1);
   const countScale = scaleLinear().domain([0, maxCount]).range([0, countBarMax]);
 
-  const maxAbsDev = Math.max(...data.map((d) => Math.abs(d.deviation)), 50);
-  const devMaxRaw = Math.ceil(maxAbsDev / 50) * 50;
-  // Cap the scale at 200 (3x) to prevent outliers from compressing everything
-  const DEV_CAP = 200;
-  const devMax = Math.min(devMaxRaw, DEV_CAP);
+  // Under-representation bottoms out at -100 (0x); over-representation is capped at 200 (3x)
+  const DEV_OVER_CAP = 200;
+  const maxOverDev = Math.max(...data.map((d) => d.deviation), 50);
+  const devRight = Math.min(Math.ceil(maxOverDev / 50) * 50, DEV_OVER_CAP);
+  const devLeft = -100; // 0x — can't go lower
   const devScale = scaleLinear()
-    .domain([-devMax, devMax])
+    .domain([devLeft, devRight])
     .range([0, devSectionWidth]);
 
   // Deviation ticks at 50% intervals
   const devTicks: number[] = [];
-  for (let t = -devMax; t <= devMax; t += 50) devTicks.push(t);
+  for (let t = devLeft; t <= devRight; t += 50) devTicks.push(t);
 
   const zeroX = devScale(0);
 
@@ -135,8 +135,8 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
             const countBarW = countScale(d.count);
 
             // Deviation bar — clamp to visible scale
-            const clampedDev = Math.max(-devMax, Math.min(devMax, d.deviation));
-            const isClipped = Math.abs(d.deviation) > devMax;
+            const clampedDev = Math.max(devLeft, Math.min(devRight, d.deviation));
+            const isClipped = d.deviation > devRight || d.deviation < devLeft;
             const clippedBarX = clampedDev >= 0 ? zeroX : devScale(clampedDev);
             const clippedBarW = Math.abs(devScale(clampedDev) - zeroX);
 
