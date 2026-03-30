@@ -23,7 +23,7 @@ export function GenBadge({ gen, className, textClass }: { gen: number; className
       style={{ background: buildGradient(stops) }}
     >
       <span
-        className={`text-white font-extrabold leading-none translate-y-[0.5px] ${textClass ?? 'text-[1.5vw] md:text-[7px]'}`}
+        className={`text-white font-extrabold leading-none translate-y-[1px] ${textClass ?? 'text-[1.5vw] md:text-[7px]'}`}
         style={{
           textShadow: '0 0 2px rgba(0,0,0,0.4), 0 0 2px rgba(0,0,0,0.4)',
         }}
