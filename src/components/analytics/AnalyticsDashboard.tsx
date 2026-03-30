@@ -193,6 +193,29 @@ export function AnalyticsDashboard() {
   const isNationalSelected = selectedTypeChart === 'national';
   const selectedDex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
 
+  // Unfiltered max count — used as fixed x-axis bound so toggling exclusion
+  // only shrinks bars, never grows them
+  const unfilteredMaxCount = useMemo(() => {
+    if (selectedTypeChart === 'yours') {
+      return Math.max(...analytics.typeDeviation.map(d => d.count), 1);
+    }
+    if (isNationalSelected) {
+      return undefined; // hideDeviation handles full width
+    }
+    const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
+    if (!dex) return undefined;
+    let pokemon = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    if (newPokemonOnly) {
+      pokemon = pokemon.filter(p => p.generation === dex.generation);
+    }
+    const typeCounts: Record<string, number> = {};
+    for (const t of TYPE_NAMES) typeCounts[t] = 0;
+    for (const p of pokemon) {
+      for (const t of p.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
+    }
+    return Math.max(...Object.values(typeCounts), 1);
+  }, [selectedTypeChart, newPokemonOnly, analytics.typeDeviation]);
+
   const evoHist = useMemo(
     () => alignHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram, 5),
     [analytics.yourEvoHistogram, analytics.nationalEvoHistogram],
@@ -310,7 +333,11 @@ export function AnalyticsDashboard() {
           </div>
 
           <div className="bg-card rounded-lg border p-4">
-            <ButterflyChart data={activeTypeChartData} />
+            <ButterflyChart
+              data={activeTypeChartData}
+              hideDeviation={isNationalSelected}
+              fixedMaxCount={unfilteredMaxCount}
+            />
           </div>
         </section>
 

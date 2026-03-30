@@ -16,9 +16,13 @@ interface ButterflyChartProps {
   rowHeight?: number;
   /** Optional reference deviations keyed by label (shown as outline markers) */
   referenceDeviations?: Record<string, number>;
+  /** Hide the deviation section — count bars use full width */
+  hideDeviation?: boolean;
+  /** Override the auto-computed max count for the count scale */
+  fixedMaxCount?: number;
 }
 
-export function ButterflyChart({ data, rowHeight = 22, referenceDeviations }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -48,7 +52,9 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations }: Bu
 
   const iconStart = labelWidth + iconGap;
   const countSectionStart = iconStart + iconSize + gap;
-  const countBarMax = 51;
+  const countBarMax = hideDeviation
+    ? Math.max(0, width - countSectionStart - numberWidth - gap)
+    : 51;
   const devSectionStart = countSectionStart + countBarMax + numberWidth + gap;
   const barLabelPad = 24; // space for "0.0x" labels at bar ends
   const devSectionWidth = Math.max(0, width - devSectionStart);
@@ -61,7 +67,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations }: Bu
 
   const barHeight = yScale.bandwidth();
 
-  const maxCount = Math.max(...data.map((d) => d.count), 1);
+  const maxCount = fixedMaxCount ?? Math.max(...data.map((d) => d.count), 1);
   const countScale = scaleLinear().domain([0, maxCount]).range([0, countBarMax]);
 
   // Under-representation bottoms out at -100 (0x); over-representation is capped at 200 (3x)
@@ -95,6 +101,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations }: Bu
           >
             COUNT
           </text>
+          {!hideDeviation && (<>
           {/* Deviation guide labels anchored to zero line */}
           <text
             x={devSectionStart + zeroX - 5}
@@ -135,6 +142,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations }: Bu
               opacity={t === 0 ? 1 : 0.5}
             />
           ))}
+          </>)}
 
           {/* Rows */}
           {data.map((d) => {
@@ -198,6 +206,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations }: Bu
                   {d.count}
                 </text>
 
+                {!hideDeviation && (<>
                 {/* Reference deviation marker (behind user's bar) */}
                 {referenceDeviations && d.label in referenceDeviations && (() => {
                   const refDev = referenceDeviations[d.label];
@@ -275,10 +284,12 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations }: Bu
                     >{val}</text>
                   );
                 })()}
+                </>)}
               </g>
             );
           })}
 
+          {!hideDeviation && (<>
           {/* Zero line (on top of bars for emphasis) */}
           <line
             x1={devSectionStart + zeroX}
@@ -314,6 +325,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations }: Bu
               </g>
             );
           })}
+          </>)}
         </svg>
       )}
     </div>
