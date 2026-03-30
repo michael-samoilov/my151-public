@@ -144,7 +144,7 @@ export function AnalyticsDashboard() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-6 space-y-8 max-w-6xl mx-auto">
+      <div className="p-6 space-y-8 max-w-6xl mx-auto overflow-hidden">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard label="Pokemon" value={`${analytics.total}/151`} />
