@@ -69,7 +69,8 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
       >
         {/* Pull tab / drag handle — tap or drag down to close (44px min touch target per Apple HIG) */}
         <div
-          className="flex flex-col items-center justify-center min-h-[44px] cursor-grab active:cursor-grabbing touch-none"
+          className="flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none"
+          style={{ minHeight: 44 }}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
