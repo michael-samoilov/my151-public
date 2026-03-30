@@ -6,6 +6,7 @@ import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
+import { RegionalDexCarousel } from './RegionalDexCarousel';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
@@ -312,6 +313,9 @@ export function AnalyticsDashboard() {
         <section className="bg-card rounded-lg border p-6">
           <WhatsAdvisor />
         </section>
+
+        {/* Regional Dex Comparison */}
+        <RegionalDexCarousel excludeSpecial={excludeSpecial} />
       </div>
     </ScrollArea>
   );
