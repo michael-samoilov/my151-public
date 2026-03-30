@@ -135,7 +135,7 @@ function DraggableTile({
       >
         <GenBadge
           gen={pokemon.generation}
-          className="absolute top-[0.2vw] left-[0.2vw] md:top-0 md:left-0 w-[3.5vw] h-[3.5vw] md:w-4 md:h-4 z-10"
+          className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 z-10"
         />
         <button
           onClick={() => removeBranch(sectionId, pokemonId)}
