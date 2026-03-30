@@ -15,7 +15,7 @@ export function GenBadge({ gen, className }: { gen: number; className?: string }
   const stops = GEN_STOPS[gen] ?? [{ offset: '100%', color: '#888' }];
   const gradId = `gen-grad-${gen}`;
   return (
-    <svg viewBox="0 0 20 20" className={className}>
+    <svg viewBox="-1 -1 22 22" className={className}>
       <defs>
         {/* 135deg = top-left to bottom-right */}
         <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
