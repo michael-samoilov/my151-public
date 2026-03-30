@@ -217,18 +217,39 @@ function StarterContent({
   onTypeClick: (type: string) => void;
   onAddClick: () => void;
 }) {
+  // Check if every pokemon matches a starter type (grass/fire/water)
+  const allMatchStarterType = pokemonIds.length === 0 || pokemonIds.every(pid => {
+    const p = getPokemonById(pid);
+    return p && STARTER_TYPES.some(([t]) => p.types.includes(t as never));
+  });
+
   const chains = new Set(pokemonIds.map(id => {
     const line = getEvolutionLine(id);
     return line?.[0] ?? id;
   }));
 
-  // 3+ lines: standard rendering with trailing "+"
-  if (chains.size >= 3 || dragLineIds) {
-    return (
-      <>
-        {pokemonIds.map((pid) => {
+  // Use colored placeholders only when < 3 chains AND all pokemon fit grass/fire/water
+  const useTypePlaceholders = !dragLineIds && chains.size < 3 && allMatchStarterType;
+
+  if (useTypePlaceholders) {
+    const pidsByType = new Map<string, number[]>();
+    for (const pid of pokemonIds) {
+      const p = getPokemonById(pid);
+      if (!p) continue;
+      const matched = STARTER_TYPES.find(([t]) => p.types.includes(t as never));
+      if (matched) {
+        if (!pidsByType.has(matched[0])) pidsByType.set(matched[0], []);
+        pidsByType.get(matched[0])!.push(pid);
+      }
+    }
+
+    const elements: React.ReactNode[] = [];
+    for (const [type, color] of STARTER_TYPES) {
+      const typePids = pidsByType.get(type);
+      if (typePids) {
+        for (const pid of typePids) {
           const tid = tileId('starter', pid);
-          return (
+          elements.push(
             <DraggableTile
               key={tid}
               id={tid}
@@ -238,41 +259,31 @@ function StarterContent({
               showInsertBefore={insertIndicator.tileId === tid}
             />
           );
-        })}
-        {dragLineIds && pokemonIds.length > 0 && (
-          <EndDropZone sectionId="starter" showIndicator={insertIndicator.endSection === 'starter'} />
-        )}
-        {!dragLineIds && chains.size >= 3 && (
-          <button
-            onClick={onAddClick}
-            className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
-          >
-            <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
-          </button>
-        )}
-      </>
-    );
-  }
-
-  // < 3 lines: green/red/blue placeholders
-  const pidsByType = new Map<string, number[]>();
-  for (const pid of pokemonIds) {
-    const p = getPokemonById(pid);
-    if (!p) continue;
-    const matched = STARTER_TYPES.find(([t]) => p.types.includes(t as never));
-    if (matched) {
-      if (!pidsByType.has(matched[0])) pidsByType.set(matched[0], []);
-      pidsByType.get(matched[0])!.push(pid);
+        }
+      } else {
+        for (let i = 0; i < 3; i++) {
+          elements.push(
+            <button
+              key={`${type}-${i}`}
+              onClick={() => onTypeClick(type)}
+              className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
+              style={{ borderColor: `${color}40`, color: `${color}90`, backgroundColor: `${color}10` }}
+            >
+              <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+            </button>
+          );
+        }
+      }
     }
+    return <>{elements}</>;
   }
 
-  const elements: React.ReactNode[] = [];
-  for (const [type, color] of STARTER_TYPES) {
-    const typePids = pidsByType.get(type);
-    if (typePids) {
-      for (const pid of typePids) {
+  // Standard rendering: show tiles + trailing "+"
+  return (
+    <>
+      {pokemonIds.map((pid) => {
         const tid = tileId('starter', pid);
-        elements.push(
+        return (
           <DraggableTile
             key={tid}
             id={tid}
@@ -282,23 +293,20 @@ function StarterContent({
             showInsertBefore={insertIndicator.tileId === tid}
           />
         );
-      }
-    } else {
-      for (let i = 0; i < 3; i++) {
-        elements.push(
-          <button
-            key={`${type}-${i}`}
-            onClick={() => onTypeClick(type)}
-            className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
-            style={{ borderColor: `${color}40`, color: `${color}90`, backgroundColor: `${color}10` }}
-          >
-            <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
-          </button>
-        );
-      }
-    }
-  }
-  return <>{elements}</>;
+      })}
+      {dragLineIds && pokemonIds.length > 0 && (
+        <EndDropZone sectionId="starter" showIndicator={insertIndicator.endSection === 'starter'} />
+      )}
+      {!dragLineIds && (
+        <button
+          onClick={onAddClick}
+          className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
+        >
+          <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+        </button>
+      )}
+    </>
+  );
 }
 
 // ---------- group box ----------
