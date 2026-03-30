@@ -14,9 +14,11 @@ interface ButterflyChartProps {
   data: ButterflyRow[];
   /** Row height in px. Default 22 */
   rowHeight?: number;
+  /** Optional reference deviations keyed by label (shown as outline markers) */
+  referenceDeviations?: Record<string, number>;
 }
 
-export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight = 22, referenceDeviations }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -46,10 +48,8 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
 
   const iconStart = labelWidth + iconGap;
   const countSectionStart = iconStart + iconSize + gap;
-  // Place the gutter between count and deviation at the horizontal center
-  const fixedLeft = countSectionStart + numberWidth + gap;
-  const countBarMax = Math.max(20, Math.floor(width / 2) - fixedLeft);
-  const devSectionStart = Math.floor(width / 2);
+  const countBarMax = 51;
+  const devSectionStart = countSectionStart + countBarMax + numberWidth + gap;
   const devSectionWidth = Math.max(0, width - devSectionStart);
 
   // Scales
@@ -196,6 +196,24 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
                 >
                   {d.count}
                 </text>
+
+                {/* Reference deviation marker (behind user's bar) */}
+                {referenceDeviations && d.label in referenceDeviations && (() => {
+                  const refDev = referenceDeviations[d.label];
+                  const refClamped = Math.max(devLeft, Math.min(devRight, refDev));
+                  const refX = refClamped >= 0
+                    ? devSectionStart + zeroX
+                    : devSectionStart + devScale(refClamped);
+                  const refW = Math.abs(devScale(refClamped) - zeroX);
+                  if (refW <= 0) return null;
+                  return (
+                    <rect
+                      x={refX} y={y} width={refW} height={barHeight}
+                      fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1}
+                      strokeDasharray="3 2" opacity={0.5} rx={1}
+                    />
+                  );
+                })()}
 
                 {/* Deviation bar — jagged edge when clipped */}
                 {(() => {

@@ -1,9 +1,14 @@
-import React, { useMemo } from 'react';
-import { useAnalytics } from '@/hooks/useAnalytics';
+import React, { useMemo, useState } from 'react';
+import { useAnalytics, fullBaseline, filteredBaseline } from '@/hooks/useAnalytics';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
+import { REGIONAL_DEXES } from '@/data/regional-dexes';
+import { getPokemonById } from '@/hooks/usePokemonData';
+import { TYPE_NAMES } from '@/types/pokemon';
+import { STARTER_IDS } from '@/data/categories';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
@@ -65,7 +70,11 @@ function alignHistograms(
 }
 
 export function AnalyticsDashboard() {
-  const analytics = useAnalytics();
+  const [excludeSpecial, setExcludeSpecial] = useState(false);
+  const [selectedTypeChart, setSelectedTypeChart] = useState<string>('yours');
+  const [newPokemonOnly, setNewPokemonOnly] = useState(false);
+
+  const analytics = useAnalytics(excludeSpecial);
 
   // Butterfly chart data
   const typeChartData: ButterflyRow[] = useMemo(() =>
@@ -117,6 +126,47 @@ export function AnalyticsDashboard() {
     [analytics.generationDeviation],
   );
 
+  // Compute type chart data for a regional dex
+  const regionalTypeChartData: ButterflyRow[] = useMemo(() => {
+    if (selectedTypeChart === 'yours') return [];
+    const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
+    if (!dex) return [];
+
+    const base = excludeSpecial ? filteredBaseline : fullBaseline;
+    let pokemon = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    if (excludeSpecial) {
+      pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+    }
+    if (newPokemonOnly) {
+      pokemon = pokemon.filter(p => p.generation === dex.generation);
+    }
+    const total = pokemon.length;
+    if (total === 0) return [];
+
+    const typeCounts: Record<string, number> = {};
+    for (const t of TYPE_NAMES) typeCounts[t] = 0;
+    for (const p of pokemon) {
+      for (const t of p.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
+    }
+
+    return TYPE_NAMES.map(t => {
+      const yourProportion = typeCounts[t] / total;
+      const globalProportion = base.typeProp[t];
+      const ratio = globalProportion > 0 ? yourProportion / globalProportion : 0;
+      const deviation = globalProportion > 0 ? (ratio - 1) * 100 : 0;
+      return {
+        label: t.charAt(0).toUpperCase() + t.slice(1),
+        count: typeCounts[t],
+        deviation,
+        color: TYPE_COLORS[t as keyof typeof TYPE_COLORS],
+        icon: TYPE_ICON_URLS[t],
+      };
+    }).sort((a, b) => b.deviation - a.deviation);
+  }, [selectedTypeChart, excludeSpecial, newPokemonOnly]);
+
+  const activeTypeChartData = selectedTypeChart === 'yours' ? typeChartData : regionalTypeChartData;
+  const selectedDex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
+
   const evoHist = useMemo(
     () => alignHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram, 5),
     [analytics.yourEvoHistogram, analytics.nationalEvoHistogram],
@@ -150,14 +200,82 @@ export function AnalyticsDashboard() {
           <StatCard label="Mythicals" value={analytics.mythicalCount.toString()} />
         </div>
 
+        {/* Exclusion Toggle */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setExcludeSpecial(!excludeSpecial)}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors min-h-[44px] ${
+              excludeSpecial
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground border border-border'
+            }`}
+          >
+            Exclude Legendaries, Mythicals & Starters
+          </button>
+        </div>
+
         {/* Type Distribution */}
         <section>
           <h3 className="text-lg font-semibold mb-1">Type Distribution</h3>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-sm text-muted-foreground mb-2">
             Count and deviation from national dex proportions. Sorted most over- to most underrepresented.
           </p>
+
+          {/* Chart selector tabs */}
+          <div className="flex items-center gap-1.5 mb-3 overflow-x-auto pb-1">
+            <button
+              onClick={() => setSelectedTypeChart('yours')}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+                selectedTypeChart === 'yours'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              Yours
+            </button>
+            {REGIONAL_DEXES.map(dex => (
+              <button
+                key={dex.id}
+                onClick={() => setSelectedTypeChart(dex.id)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+                  selectedTypeChart === dex.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                {dex.name}
+              </button>
+            ))}
+          </div>
+
+          {/* New Pokemon Only toggle (only for regional dexes) */}
+          {selectedTypeChart !== 'yours' && selectedDex && (
+            <div className="flex items-center gap-2 mb-3">
+              <button
+                onClick={() => setNewPokemonOnly(false)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                  !newPokemonOnly
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                Full Regional Dex
+              </button>
+              <button
+                onClick={() => setNewPokemonOnly(true)}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                  newPokemonOnly
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                Gen {selectedDex.generation} Pokemon Only
+              </button>
+            </div>
+          )}
+
           <div className="bg-card rounded-lg border p-4">
-            <ButterflyChart data={typeChartData} />
+            <ButterflyChart data={activeTypeChartData} />
           </div>
         </section>
 
