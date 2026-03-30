@@ -67,15 +67,15 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
           overscrollBehavior: 'none',
         }}
       >
-        {/* Pull tab / drag handle — tap or drag down to close */}
+        {/* Pull tab / drag handle — tap or drag down to close (44px min touch target per Apple HIG) */}
         <div
-          className="flex flex-col items-center pt-2 pb-1 cursor-grab active:cursor-grabbing touch-none"
+          className="flex flex-col items-center justify-center min-h-[44px] cursor-grab active:cursor-grabbing touch-none"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onClick={handleTabTap}
         >
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1.5" />
+          <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
           <span className="text-xs font-semibold text-muted-foreground">
             {sectionName}
           </span>
