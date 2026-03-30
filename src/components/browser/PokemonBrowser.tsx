@@ -223,7 +223,7 @@ export function PokemonBrowser() {
               {typeFilter.map(t => (
                 <FilterChip
                   key={t}
-                  label={t}
+                  label={t[0].toUpperCase() + t.slice(1)}
                   onDismiss={() => toggleType(t)}
                   onClick={() => setOpenSheet(openSheet === 'type' ? null : 'type')}
                   className="capitalize text-white"
