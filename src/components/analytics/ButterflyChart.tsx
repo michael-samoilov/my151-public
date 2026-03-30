@@ -176,29 +176,42 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
                   {d.count}
                 </text>
 
-                {/* Deviation bar (clipped to scale) */}
-                <rect
-                  x={devSectionStart + clippedBarX}
-                  y={y}
-                  width={clippedBarW}
-                  height={barHeight}
-                  fill={d.color}
-                  opacity={0.85}
-                  rx={1}
-                />
-                {/* Clip indicator: jagged/ripped edge when value exceeds scale */}
-                {isClipped && (() => {
-                  const edgeX = devSectionStart + (d.deviation >= 0 ? devSectionWidth : 0);
+                {/* Deviation bar — jagged edge when clipped */}
+                {(() => {
+                  const bx = devSectionStart + clippedBarX;
+                  const bw = clippedBarW;
+                  if (bw <= 0) return null;
+                  if (!isClipped) {
+                    return (
+                      <rect x={bx} y={y} width={bw} height={barHeight}
+                        fill={d.color} opacity={0.85} rx={1} />
+                    );
+                  }
+                  // Build path with jagged torn edge on the clipped side
                   const teeth = 4;
                   const toothH = barHeight / teeth;
                   const depth = 3;
-                  const dir = d.deviation >= 0 ? -1 : 1;
-                  let path = `M${edgeX},${y}`;
-                  for (let i = 0; i < teeth; i++) {
-                    path += ` L${edgeX + dir * depth},${y + toothH * i + toothH / 2}`;
-                    path += ` L${edgeX},${y + toothH * (i + 1)}`;
+                  const top = y;
+                  const bot = y + barHeight;
+                  let p: string;
+                  if (d.deviation >= 0) {
+                    // Jagged right edge
+                    p = `M${bx},${top} L${bx + bw},${top}`;
+                    for (let i = 0; i < teeth; i++) {
+                      p += ` L${bx + bw - depth},${top + toothH * i + toothH / 2}`;
+                      p += ` L${bx + bw},${top + toothH * (i + 1)}`;
+                    }
+                    p += ` L${bx},${bot} Z`;
+                  } else {
+                    // Jagged left edge
+                    p = `M${bx + bw},${top} L${bx},${top}`;
+                    for (let i = 0; i < teeth; i++) {
+                      p += ` L${bx + depth},${top + toothH * i + toothH / 2}`;
+                      p += ` L${bx},${top + toothH * (i + 1)}`;
+                    }
+                    p += ` L${bx + bw},${bot} Z`;
                   }
-                  return <path d={path} fill="none" stroke={d.color} strokeWidth={1.5} />;
+                  return <path d={p} fill={d.color} opacity={0.85} />;
                 })()}
               </g>
             );
