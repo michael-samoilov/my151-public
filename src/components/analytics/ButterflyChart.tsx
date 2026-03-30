@@ -97,7 +97,7 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
             letterSpacing="0.05em"
           >
             <tspan x={devSectionStart + zeroX - 5} dy="0">UNDER-</tspan>
-            <tspan x={devSectionStart + zeroX - 5} dy="10">← REPRESENTED</tspan>
+            <tspan x={devSectionStart + zeroX - 5} dy="10">← INDEXED</tspan>
           </text>
           <text
             x={devSectionStart + zeroX + 5}
@@ -109,7 +109,7 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
             letterSpacing="0.05em"
           >
             <tspan x={devSectionStart + zeroX + 5} dy="0">OVER-</tspan>
-            <tspan x={devSectionStart + zeroX + 5} dy="10">REPRESENTED →</tspan>
+            <tspan x={devSectionStart + zeroX + 5} dy="10">INDEXED →</tspan>
           </text>
 
           {/* Deviation grid lines (behind bars) */}
