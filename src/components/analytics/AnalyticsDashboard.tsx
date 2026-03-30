@@ -255,7 +255,7 @@ export function AnalyticsDashboard() {
           </div>
 
           {/* Row 2: Filters */}
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-1.5 mb-3">
             <button
               onClick={() => setExcludeSpecial(!excludeSpecial)}
               className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
