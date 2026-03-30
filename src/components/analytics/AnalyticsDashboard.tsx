@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -6,7 +6,6 @@ import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
-import { RegionalDexCarousel } from './RegionalDexCarousel';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
@@ -67,8 +66,7 @@ function alignHistograms(
 }
 
 export function AnalyticsDashboard() {
-  const [excludeSpecial, setExcludeSpecial] = useState(false);
-  const analytics = useAnalytics(excludeSpecial);
+  const analytics = useAnalytics();
 
   // Butterfly chart data
   const typeChartData: ButterflyRow[] = useMemo(() =>
@@ -143,7 +141,7 @@ export function AnalyticsDashboard() {
   }
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden">
+    <ScrollArea className="h-full">
       <div className="p-6 space-y-8 max-w-6xl mx-auto">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -151,25 +149,6 @@ export function AnalyticsDashboard() {
           <StatCard label="Avg BST" value={analytics.bstStats.avg.toString()} subtitle={`National avg: ${analytics.nationalAvgBst}`} />
           <StatCard label="Legendaries" value={analytics.legendaryCount.toString()} />
           <StatCard label="Mythicals" value={analytics.mythicalCount.toString()} />
-        </div>
-
-        {/* Exclusion Toggle */}
-        <div className="flex items-center">
-          <button
-            onClick={() => setExcludeSpecial(prev => !prev)}
-            className={`flex items-center gap-2 px-3 min-h-[44px] rounded-full text-sm font-medium transition-colors ${
-              excludeSpecial
-                ? 'bg-muted-foreground/15 text-foreground'
-                : 'bg-transparent text-muted-foreground border border-muted-foreground/25'
-            }`}
-          >
-            <span className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
-              excludeSpecial ? 'border-foreground bg-foreground' : 'border-muted-foreground/50'
-            }`}>
-              {excludeSpecial && <span className="block w-1.5 h-1.5 rounded-full bg-background" />}
-            </span>
-            Exclude Legendaries, Mythicals &amp; Starters
-          </button>
         </div>
 
         {/* Type Distribution */}
@@ -313,11 +292,8 @@ export function AnalyticsDashboard() {
         <section className="bg-card rounded-lg border p-6">
           <WhatsAdvisor />
         </section>
-
-        {/* Regional Dex Comparison */}
-        <RegionalDexCarousel excludeSpecial={excludeSpecial} />
       </div>
-    </div>
+    </ScrollArea>
   );
 }
 

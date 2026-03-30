@@ -158,7 +158,7 @@ const PSEUDO_LEGENDARY_IDS = new Set([
 ]);
 
 // Starter Pokemon (all stages, all gens)
-export const STARTER_IDS = new Set([
+const STARTER_IDS = new Set([
   1,2,3, 4,5,6, 7,8,9,
   152,153,154, 155,156,157, 158,159,160,
   252,253,254, 255,256,257, 258,259,260,
