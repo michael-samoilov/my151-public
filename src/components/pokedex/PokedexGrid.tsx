@@ -128,15 +128,15 @@ function DraggableTile({
       {showInsertBefore && (
         <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 -translate-x-[calc(50%+0.5vw)] md:-translate-x-[calc(50%+2px)]" />
       )}
+      <GenBadge
+        gen={pokemon.generation}
+        className="absolute top-0 left-0 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 z-10"
+      />
       <div
         {...attributes}
         {...listeners}
         className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 group aspect-square cursor-grab active:cursor-grabbing select-none"
       >
-        <GenBadge
-          gen={pokemon.generation}
-          className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5"
-        />
         <button
           onClick={() => removeBranch(sectionId, pokemonId)}
           onPointerDown={(e) => e.stopPropagation()}
