@@ -137,10 +137,9 @@ export function SuperimposedHistogram({
                 x1={xScale(t)}
                 x2={xScale(t)}
                 y1={plotH}
-                y2={plotH + 3}
+                y2={plotH + 4}
                 stroke="var(--color-muted-foreground)"
                 strokeWidth={0.5}
-                opacity={0.5}
               />
             ))}
 
