@@ -103,7 +103,7 @@ export function AnalyticsDashboard() {
               </defs>
               <circle cx={x + r} cy={y + r} r={r} fill={`url(#${gradId})`} />
               <text
-                x={x + r} y={y + r + 0.5} textAnchor="middle" dominantBaseline="central"
+                x={x + r} y={y + r} textAnchor="middle" dominantBaseline="central"
                 fill="white" fontSize={size * 0.55} fontWeight="800"
                 fontFamily="system-ui, sans-serif"
                 paintOrder="stroke" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5"

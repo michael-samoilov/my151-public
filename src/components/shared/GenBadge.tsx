@@ -26,7 +26,7 @@ export function GenBadge({ gen, className }: { gen: number; className?: string }
       </defs>
       <circle cx="10" cy="10" r="10" fill={`url(#${gradId})`} />
       <text
-        x="10" y="10.5" textAnchor="middle" dominantBaseline="central"
+        x="10" y="10" textAnchor="middle" dominantBaseline="central"
         fill="white" fontSize="11" fontWeight="800"
         fontFamily="system-ui, sans-serif"
         paintOrder="stroke"
