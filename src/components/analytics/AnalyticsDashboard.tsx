@@ -72,7 +72,7 @@ function alignHistograms(
 export function AnalyticsDashboard() {
   const [excludeSpecial, setExcludeSpecial] = useState(false);
   const [selectedTypeChart, setSelectedTypeChart] = useState<string>('yours');
-  const [newPokemonOnly, setNewPokemonOnly] = useState(false);
+  const [newPokemonOnly, setNewPokemonOnly] = useState(true);
 
   const analytics = useAnalytics();
   const sections = usePokedexStore((s) => s.sections);
@@ -270,24 +270,24 @@ export function AnalyticsDashboard() {
             {selectedDex && selectedDex.generation >= 2 && (
               <div className="inline-flex rounded-full bg-muted overflow-hidden">
                 <button
-                  onClick={() => setNewPokemonOnly(false)}
-                  className={`px-2.5 py-1 rounded-l-full text-[11px] font-medium whitespace-nowrap transition-colors ${
-                    !newPokemonOnly
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-muted/80'
-                  }`}
-                >
-                  Regional Dex
-                </button>
-                <button
                   onClick={() => setNewPokemonOnly(true)}
-                  className={`px-2.5 py-1 rounded-r-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+                  className={`px-2.5 py-1 rounded-l-full text-[11px] font-medium whitespace-nowrap transition-colors ${
                     newPokemonOnly
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
                   Gen {selectedDex.generation} Only
+                </button>
+                <button
+                  onClick={() => setNewPokemonOnly(false)}
+                  className={`px-2.5 py-1 rounded-r-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+                    !newPokemonOnly
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  Regional Dex
                 </button>
               </div>
             )}
