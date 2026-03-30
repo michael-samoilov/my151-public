@@ -46,10 +46,9 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
 
   const iconStart = labelWidth + iconGap;
   const countSectionStart = iconStart + iconSize + gap;
-  // Place the gutter between count and deviation at the horizontal center
-  const fixedLeft = countSectionStart + numberWidth + gap;
-  const countBarMax = Math.max(20, Math.floor(width / 2) - fixedLeft);
-  const devSectionStart = Math.floor(width / 2);
+  // Count bar max scales with width but is capped so deviation section has enough room
+  const countBarMax = Math.min(80, Math.max(20, Math.floor(width * 0.15)));
+  const devSectionStart = countSectionStart + countBarMax + numberWidth + gap;
   const devSectionWidth = Math.max(0, width - devSectionStart);
 
   // Scales
