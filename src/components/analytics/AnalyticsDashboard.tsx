@@ -184,7 +184,9 @@ export function AnalyticsDashboard() {
         color: TYPE_COLORS[t as keyof typeof TYPE_COLORS],
         icon: TYPE_ICON_URLS[t],
       };
-    }).sort((a, b) => b.deviation - a.deviation);
+    }).sort(isNational
+      ? (a, b) => b.count - a.count
+      : (a, b) => b.deviation - a.deviation);
   }, [selectedTypeChart, excludeSpecial, newPokemonOnly]);
 
   const activeTypeChartData = selectedTypeChart === 'yours' ? typeChartData : regionalTypeChartData;
