@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "cache-sprites": "bash scripts/cache-sprites.sh",
+    "build": "bash scripts/cache-sprites.sh && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

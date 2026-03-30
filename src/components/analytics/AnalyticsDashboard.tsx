@@ -16,7 +16,7 @@ const POKEAPI_TYPE_IDS: Record<string, number> = {
 const TYPE_ICON_URLS: Record<string, string> = Object.fromEntries(
   Object.entries(POKEAPI_TYPE_IDS).map(([type, id]) => [
     type,
-    `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-viii/sword-shield/small/${id}.png`,
+    `/sprites/types/${id}.png`,
   ]),
 );
 
