@@ -170,20 +170,22 @@ export function RegionalDexCarousel({ excludeSpecial }: { excludeSpecial: boolea
       </div>
 
       {/* Swipeable carousel */}
-      <div
-        ref={scrollRef}
-        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none gap-4"
-        style={{ scrollbarWidth: 'none' }}
-      >
-        {REGIONAL_DEXES.map((dex, i) => (
-          <div
-            key={dex.id}
-            ref={(el) => { itemRefs.current[i] = el; }}
-            className="snap-start shrink-0 w-full"
-          >
+      <div className="overflow-hidden">
+        <div
+          ref={scrollRef}
+          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none gap-4"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          {REGIONAL_DEXES.map((dex, i) => (
+            <div
+              key={dex.id}
+              ref={(el) => { itemRefs.current[i] = el; }}
+              className="snap-start shrink-0 w-full min-w-0"
+            >
             <RegionalDexChart dex={dex} excludeSpecial={excludeSpecial} newOnly={newOnly} />
           </div>
         ))}
+        </div>
       </div>
     </section>
   );
