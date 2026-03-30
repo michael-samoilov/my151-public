@@ -5,7 +5,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById, getAllPokemon } from '@/hooks/usePokemonData';
 import { TYPE_NAMES } from '@/types/pokemon';
 import { STARTER_IDS } from '@/data/categories';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
@@ -146,18 +146,21 @@ export function AnalyticsDashboard() {
     [analytics.generationDeviation],
   );
 
-  // Compute type chart data for a regional dex
+  // Compute type chart data for a regional/national dex
   const regionalTypeChartData: ButterflyRow[] = useMemo(() => {
     if (selectedTypeChart === 'yours') return [];
     const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
-    if (!dex) return [];
+    const isNational = selectedTypeChart === 'national';
+    if (!dex && !isNational) return [];
 
     const base = excludeSpecial ? filteredBaseline : fullBaseline;
-    let pokemon = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    let pokemon = isNational
+      ? getAllPokemon()
+      : dex!.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
     if (excludeSpecial) {
       pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
     }
-    if (newPokemonOnly) {
+    if (newPokemonOnly && dex) {
       pokemon = pokemon.filter(p => p.generation === dex.generation);
     }
     const total = pokemon.length;
@@ -185,6 +188,7 @@ export function AnalyticsDashboard() {
   }, [selectedTypeChart, excludeSpecial, newPokemonOnly]);
 
   const activeTypeChartData = selectedTypeChart === 'yours' ? typeChartData : regionalTypeChartData;
+  const isNationalSelected = selectedTypeChart === 'national';
   const selectedDex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
 
   const evoHist = useMemo(
@@ -252,6 +256,16 @@ export function AnalyticsDashboard() {
                 {dex.name}
               </button>
             ))}
+            <button
+              onClick={() => setSelectedTypeChart('national')}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+                selectedTypeChart === 'national'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              National
+            </button>
           </div>
 
           {/* Row 2: Filters */}
@@ -267,7 +281,7 @@ export function AnalyticsDashboard() {
               Exclude starters/legendaries
             </button>
 
-            {selectedDex && selectedDex.generation >= 2 && selectedDex.id !== 'unova' && (
+            {selectedDex && !isNationalSelected && selectedDex.generation >= 2 && selectedDex.id !== 'unova' && (
               <div className="inline-flex rounded-full bg-muted overflow-hidden">
                 <button
                   onClick={() => setNewPokemonOnly(true)}
