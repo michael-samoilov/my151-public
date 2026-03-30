@@ -6,8 +6,8 @@ export interface ButterflyRow {
   count: number;
   deviation: number; // percentage, e.g. +100 = double, -50 = half
   color: string;
-  /** Optional icon path (e.g. "/types/fire.svg") */
-  icon?: string;
+  /** Optional icon path (e.g. "/types/fire.svg") or inline SVG render function */
+  icon?: string | ((x: number, y: number, size: number) => React.ReactNode);
 }
 
 interface ButterflyChartProps {
@@ -165,15 +165,17 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
                   {d.label}
                 </text>
 
-                {/* Type icon */}
+                {/* Row icon */}
                 {d.icon && (
-                  <image
-                    href={d.icon}
-                    x={iconStart}
-                    y={y + barHeight / 2 - iconSize / 2}
-                    width={iconSize}
-                    height={iconSize}
-                  />
+                  typeof d.icon === 'string' ? (
+                    <image
+                      href={d.icon}
+                      x={iconStart}
+                      y={y + barHeight / 2 - iconSize / 2}
+                      width={iconSize}
+                      height={iconSize}
+                    />
+                  ) : d.icon(iconStart, y + barHeight / 2 - iconSize / 2, iconSize)
                 )}
 
                 {/* Count bar */}

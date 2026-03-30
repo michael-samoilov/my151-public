@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
+import { GEN_STOPS } from '@/components/shared/GenBadge';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
@@ -80,12 +81,40 @@ export function AnalyticsDashboard() {
   );
 
   const genChartData: ButterflyRow[] = useMemo(() =>
-    analytics.generationDeviation.map((d, i) => ({
-      label: `Gen ${d.generation}`,
-      count: d.count,
-      deviation: d.deviation,
-      color: GEN_COLORS[i % GEN_COLORS.length],
-    })),
+    analytics.generationDeviation.map((d, i) => {
+      const gen = d.generation;
+      const stops = GEN_STOPS[gen] ?? [{ offset: '100%', color: '#888' }];
+      return {
+        label: `Gen ${gen}`,
+        count: d.count,
+        deviation: d.deviation,
+        color: GEN_COLORS[i % GEN_COLORS.length],
+        icon: (x: number, y: number, size: number) => {
+          const gradId = `gen-icon-grad-${gen}`;
+          const r = size / 2;
+          return (
+            <React.Fragment key={`gen-icon-${gen}`}>
+              <defs>
+                <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+                  {stops.map((s, si) => (
+                    <stop key={si} offset={s.offset} stopColor={s.color} />
+                  ))}
+                </linearGradient>
+              </defs>
+              <circle cx={x + r} cy={y + r} r={r} fill={`url(#${gradId})`} />
+              <text
+                x={x + r} y={y + r + 0.5} textAnchor="middle" dominantBaseline="central"
+                fill="white" fontSize={size * 0.55} fontWeight="800"
+                fontFamily="system-ui, sans-serif"
+                paintOrder="stroke" stroke="rgba(0,0,0,0.4)" strokeWidth="1.5"
+              >
+                {gen}
+              </text>
+            </React.Fragment>
+          );
+        },
+      };
+    }),
     [analytics.generationDeviation],
   );
 

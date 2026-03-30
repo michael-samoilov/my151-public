@@ -1,5 +1,5 @@
 /** Color stops for each generation's diagonal gradient (135deg) */
-const GEN_STOPS: Record<number, { offset: string; color: string }[]> = {
+export const GEN_STOPS: Record<number, { offset: string; color: string }[]> = {
   1: [{ offset: '50%', color: '#DC0A2D' }, { offset: '50%', color: '#3B4CCA' }],
   2: [{ offset: '33%', color: '#DAA520' }, { offset: '33%', color: '#C0C0C0' }, { offset: '66%', color: '#C0C0C0' }, { offset: '66%', color: '#7FC8E8' }],
   3: [{ offset: '33%', color: '#A00000' }, { offset: '33%', color: '#0055BF' }, { offset: '66%', color: '#0055BF' }, { offset: '66%', color: '#00A86B' }],
