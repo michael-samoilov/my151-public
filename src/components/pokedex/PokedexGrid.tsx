@@ -330,13 +330,14 @@ function GroupBox({
   const isStarter = group.id === 'starter';
   // Starters always use the expanded grid path (for green/red/blue placeholders)
   const showEmptyState = isEmpty && !isStarter;
+  const hasPokemon = pokemonIds.length > 0;
 
   return (
     <div
       className="rounded-lg"
       style={{
-        backgroundColor: `${group.color}${showEmptyState ? '08' : '10'}`,
-        border: `1px solid ${group.color}${showEmptyState ? '18' : '25'}`,
+        backgroundColor: `${group.color}${hasPokemon ? '10' : '08'}`,
+        border: `1px solid ${group.color}${hasPokemon ? '25' : '18'}`,
       }}
     >
       {/* Label */}
