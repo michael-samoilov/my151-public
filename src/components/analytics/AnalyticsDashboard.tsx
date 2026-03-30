@@ -8,7 +8,6 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { TYPE_NAMES } from '@/types/pokemon';
 import { STARTER_IDS } from '@/data/categories';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
@@ -190,8 +189,8 @@ export function AnalyticsDashboard() {
   }
 
   return (
-    <ScrollArea className="h-full">
-      <div className="p-6 space-y-8 max-w-6xl mx-auto overflow-x-hidden">
+    <div className="h-full overflow-y-auto overflow-x-hidden">
+      <div className="p-6 space-y-8 max-w-6xl mx-auto">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard label="Pokemon" value={`${analytics.total}/151`} />
@@ -274,7 +273,7 @@ export function AnalyticsDashboard() {
             </div>
           )}
 
-          <div className="bg-card rounded-lg border p-4 overflow-hidden">
+          <div className="bg-card rounded-lg border p-4">
             <ButterflyChart data={activeTypeChartData} />
           </div>
         </section>
@@ -285,7 +284,7 @@ export function AnalyticsDashboard() {
           <p className="text-sm text-muted-foreground mb-4">
             Where your Pokemon come from and deviation from national dex proportions.
           </p>
-          <div className="bg-card rounded-lg border p-4 overflow-hidden">
+          <div className="bg-card rounded-lg border p-4">
             <ButterflyChart data={genChartData} rowHeight={28} />
           </div>
         </section>
@@ -410,7 +409,7 @@ export function AnalyticsDashboard() {
           <WhatsAdvisor />
         </section>
       </div>
-    </ScrollArea>
+    </div>
   );
 }
 
