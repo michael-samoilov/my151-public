@@ -46,8 +46,7 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
 
   const iconStart = labelWidth + iconGap;
   const countSectionStart = iconStart + iconSize + gap;
-  // Count bar max scales with width but is capped so deviation section has enough room
-  const countBarMax = Math.min(80, Math.max(20, Math.floor(width * 0.15)));
+  const countBarMax = 51;
   const devSectionStart = countSectionStart + countBarMax + numberWidth + gap;
   const devSectionWidth = Math.max(0, width - devSectionStart);
 
