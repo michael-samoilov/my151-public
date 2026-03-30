@@ -164,7 +164,23 @@ export function PokemonBrowser() {
     }
   };
 
+  const isSearching = searchQuery.trim().length > 0;
   const hasActiveFilters = !!(activeCategory || activeArchetype || (typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || evoLineSizeFilter);
+
+  // When searching, generate subgroups from actual results (ignoring filters)
+  const searchSubgroups = useMemo((): { label: string; pokemonIds: number[] }[] => {
+    if (!isSearching) return [];
+    const genMap = new Map<number, number[]>();
+    for (const g of groups) {
+      for (const m of g.members) {
+        if (!genMap.has(m.generation)) genMap.set(m.generation, []);
+        genMap.get(m.generation)!.push(m.id);
+      }
+    }
+    return [...genMap.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([gen, ids]) => ({ label: `Gen ${gen}`, pokemonIds: [...new Set(ids)] }));
+  }, [isSearching, groups]);
   const typeKey = typeFilter ? `${typeFilterMode}-${typeFilter.join(',')}` : 'none';
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
   const evoSizeKey = evoLineSizeFilter ? evoLineSizeFilter.join(',') : 'none';
@@ -206,9 +222,9 @@ export function PokemonBrowser() {
         </div>
       </div>
 
-      {/* Horizontal scrollable chip bar — always visible */}
+      {/* Horizontal scrollable chip bar — always visible, muted when search bypasses filters */}
       <div className="px-3 pb-2 border-b">
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
           {/* Type chip(s) */}
           {typeFilter && typeFilter.length > 0 ? (
             <>
@@ -305,12 +321,12 @@ export function PokemonBrowser() {
         className="flex-1 min-h-0 overflow-y-auto"
       >
         <div className="p-2 space-y-1 content-start">
-          {effectiveSubgroups.map((sub) => {
+          {(isSearching ? searchSubgroups : effectiveSubgroups).map((sub) => {
             const subIdSet = new Set(sub.pokemonIds);
             const subGroups = groups
               .filter(g => g.members.some(m => subIdSet.has(m.id)))
               .sort((a, b) => {
-                if (activeArchetypeDef) {
+                if (!isSearching && activeArchetypeDef) {
                   // Archetype view: preserve curated pokemonIds order
                   const aIdx = sub.pokemonIds.findIndex(id => a.members.some(m => m.id === id));
                   const bIdx = sub.pokemonIds.findIndex(id => b.members.some(m => m.id === id));
@@ -329,9 +345,9 @@ export function PokemonBrowser() {
                 </div>
                 <EvoLineGrid
                   groups={subGroups.map((group) => {
-                    const subMatchedIds = new Set(
-                      group.members.filter(m => subIdSet.has(m.id)).map(m => m.id)
-                    );
+                    const subMatchedIds = isSearching
+                      ? new Set(group.members.map(m => m.id))
+                      : new Set(group.members.filter(m => subIdSet.has(m.id)).map(m => m.id));
                     return {
                       key: `${sub.label}-${group.chainId}`,
                       members: group.members,
@@ -341,8 +357,8 @@ export function PokemonBrowser() {
                   assignedIds={assignedIds}
                   stagedIds={stagedSet}
                   onToggleStage={handleToggleStage}
-                  shinyIds={sub.shinyIds ? new Set(sub.shinyIds) : shinyIds}
-                  spriteOverrides={spriteOverrides}
+                  shinyIds={isSearching ? undefined : ('shinyIds' in sub ? new Set((sub as any).shinyIds) : shinyIds)}
+                  spriteOverrides={isSearching ? undefined : spriteOverrides}
                 />
               </div>
             );
