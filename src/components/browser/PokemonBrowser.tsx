@@ -73,6 +73,11 @@ export function PokemonBrowser() {
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const setActiveSection = usePokedexStore((s) => s.setActiveSection);
 
+  const assignedIds = useMemo(
+    () => new Set(Object.values(sections).flat()),
+    [sections]
+  );
+
   const handleSubmitStaged = useCallback(() => {
     if (stagedIds.length === 0) return;
     const targetSection = activeSection ?? 'other';
@@ -82,11 +87,6 @@ export function PokemonBrowser() {
     setMobileBrowserOpen(false);
     setActiveSection(null);
   }, [stagedIds, activeSection, assignedIds, addToSection, setMobileBrowserOpen, setActiveSection]);
-
-  const assignedIds = useMemo(
-    () => new Set(Object.values(sections).flat()),
-    [sections]
-  );
 
   const groups = useFilteredPokemonGrouped({
     search: searchQuery,
