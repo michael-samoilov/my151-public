@@ -157,52 +157,51 @@ export function useFilteredPokemon({
   return useMemo(() => {
     let filtered = pokemonList;
 
-    if (category) {
-      const categoryDef = getCategoryById(category);
-      if (categoryDef) {
-        filtered = filtered.filter(categoryDef.filter);
-      }
-    }
-
-    if (archetype) {
-      const archetypeDef = ARCHETYPES.find(a => a.id === archetype);
-      if (archetypeDef) {
-        const idSet = new Set(archetypeDef.pokemonIds);
-        filtered = filtered.filter(p => idSet.has(p.id));
-      }
-    }
-
-    if (types && types.length > 0) {
-      if (typeMode === 'all') {
-        if (types.length <= 2) {
-          // AND mode with 1-2 types: Pokemon must have ALL selected types
-          filtered = filtered.filter(p =>
-            types.every(t => p.types.includes(t as never))
-          );
-        } else {
-          // AND mode with 3+ types: Pokemon must have any pair of selected types
-          filtered = filtered.filter(p =>
-            types.filter(t => p.types.includes(t as never)).length >= 2
-          );
-        }
-      } else {
-        // OR mode: Pokemon must have ANY of the selected types
-        filtered = filtered.filter(p =>
-          types.some(t => p.types.includes(t as never))
-        );
-      }
-    }
-
-    if (generations && generations.length > 0) {
-      const genSet = new Set(generations);
-      filtered = filtered.filter(p => genSet.has(p.generation));
-    }
-
+    // When searching by name/number, ignore all other filters — the user
+    // knows what they want and filters would only get in the way.
     if (search) {
       const q = search.toLowerCase();
       filtered = filtered.filter(p =>
         p.name.includes(q) || p.id.toString() === q
       );
+    } else {
+      if (category) {
+        const categoryDef = getCategoryById(category);
+        if (categoryDef) {
+          filtered = filtered.filter(categoryDef.filter);
+        }
+      }
+
+      if (archetype) {
+        const archetypeDef = ARCHETYPES.find(a => a.id === archetype);
+        if (archetypeDef) {
+          const idSet = new Set(archetypeDef.pokemonIds);
+          filtered = filtered.filter(p => idSet.has(p.id));
+        }
+      }
+
+      if (types && types.length > 0) {
+        if (typeMode === 'all') {
+          if (types.length <= 2) {
+            filtered = filtered.filter(p =>
+              types.every(t => p.types.includes(t as never))
+            );
+          } else {
+            filtered = filtered.filter(p =>
+              types.filter(t => p.types.includes(t as never)).length >= 2
+            );
+          }
+        } else {
+          filtered = filtered.filter(p =>
+            types.some(t => p.types.includes(t as never))
+          );
+        }
+      }
+
+      if (generations && generations.length > 0) {
+        const genSet = new Set(generations);
+        filtered = filtered.filter(p => genSet.has(p.generation));
+      }
     }
 
     if (excludeIds && excludeIds.size > 0) {
