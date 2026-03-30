@@ -82,11 +82,6 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
     <div ref={containerRef} className="w-full">
       {width > 0 && (
         <svg width={width} height={chartHeight} className="overflow-visible">
-          {/* DEBUG: layout regions */}
-          <rect x={0} y={topOffset} width={labelWidth + iconGap + iconSize} height={data.length * rowHeight} fill="rgba(255,0,0,0.1)" />
-          <rect x={countSectionStart} y={topOffset} width={countBarMax + numberWidth} height={data.length * rowHeight} fill="rgba(0,255,0,0.1)" />
-          <rect x={devSectionStart} y={topOffset} width={devSectionWidth} height={data.length * rowHeight} fill="rgba(0,0,255,0.1)" />
-
           {/* Titles */}
           <text
             x={countSectionStart}
