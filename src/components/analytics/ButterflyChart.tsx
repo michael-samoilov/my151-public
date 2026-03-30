@@ -34,10 +34,10 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
 
   // Layout: fixed pixel widths for label + icon + count, rest for deviation
   const hasIcons = data.some(d => d.icon);
-  const labelWidth = 48;
+  const labelWidth = 42;
   const iconSize = hasIcons ? 14 : 0;
   const iconGap = hasIcons ? 3 : 0;
-  const countBarMax = 45;
+  const countBarMax = 51;
   const numberWidth = 22;
   const gap = 6;
   const titleHeight = 18;
