@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAnalytics, fullBaseline, filteredBaseline } from '@/hooks/useAnalytics';
+import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
@@ -73,19 +74,39 @@ export function AnalyticsDashboard() {
   const [selectedTypeChart, setSelectedTypeChart] = useState<string>('yours');
   const [newPokemonOnly, setNewPokemonOnly] = useState(false);
 
-  const analytics = useAnalytics(excludeSpecial);
+  const analytics = useAnalytics();
+  const sections = usePokedexStore((s) => s.sections);
 
-  // Butterfly chart data
-  const typeChartData: ButterflyRow[] = useMemo(() =>
-    analytics.typeDeviation.map((d) => ({
-      label: d.type.charAt(0).toUpperCase() + d.type.slice(1),
-      count: d.count,
-      deviation: d.deviation,
-      color: TYPE_COLORS[d.type as keyof typeof TYPE_COLORS],
-      icon: TYPE_ICON_URLS[d.type],
-    })),
-    [analytics.typeDeviation],
-  );
+  // "Yours" type chart — computed locally so excludeSpecial only affects this chart
+  const typeChartData: ButterflyRow[] = useMemo(() => {
+    const base = excludeSpecial ? filteredBaseline : fullBaseline;
+    const allIds = Object.values(sections).flat();
+    const starterSectionIds = new Set(sections['starter'] ?? []);
+    let pokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    if (excludeSpecial) {
+      pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
+    }
+    const total = pokemon.length;
+    if (total === 0) return [];
+
+    const typeCounts: Record<string, number> = {};
+    for (const t of TYPE_NAMES) typeCounts[t] = 0;
+    for (const p of pokemon) {
+      for (const t of p.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
+    }
+    return TYPE_NAMES.map(t => {
+      const yourProportion = typeCounts[t] / total;
+      const globalProportion = base.typeProp[t];
+      const deviation = globalProportion > 0 ? ((yourProportion / globalProportion) - 1) * 100 : 0;
+      return {
+        label: t.charAt(0).toUpperCase() + t.slice(1),
+        count: typeCounts[t],
+        deviation,
+        color: TYPE_COLORS[t as keyof typeof TYPE_COLORS],
+        icon: TYPE_ICON_URLS[t],
+      };
+    }).sort((a, b) => b.deviation - a.deviation);
+  }, [sections, excludeSpecial]);
 
   const genChartData: ButterflyRow[] = useMemo(() =>
     analytics.generationDeviation.map((d, i) => {
@@ -199,20 +220,6 @@ export function AnalyticsDashboard() {
           <StatCard label="Mythicals" value={analytics.mythicalCount.toString()} />
         </div>
 
-        {/* Exclusion Toggle */}
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setExcludeSpecial(!excludeSpecial)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors min-h-[44px] ${
-              excludeSpecial
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground border border-border'
-            }`}
-          >
-            Exclude Legendaries, Mythicals & Starters
-          </button>
-        </div>
-
         {/* Type Distribution */}
         <section>
           <h3 className="text-lg font-semibold mb-1">Type Distribution</h3>
@@ -220,8 +227,24 @@ export function AnalyticsDashboard() {
             Count and deviation from national dex proportions. Sorted most over- to most underrepresented.
           </p>
 
-          {/* Chart selector tabs */}
+          {/* Controls row */}
           <div className="flex items-center gap-1.5 mb-3 overflow-x-auto pb-1">
+            {/* Exclusion toggle — first pill */}
+            <button
+              onClick={() => setExcludeSpecial(!excludeSpecial)}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+                excludeSpecial
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              Exclude starters/legendaries
+            </button>
+
+            {/* Divider */}
+            <div className="w-px h-4 bg-border shrink-0" />
+
+            {/* Chart selector tabs */}
             <button
               onClick={() => setSelectedTypeChart('yours')}
               className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
@@ -247,29 +270,31 @@ export function AnalyticsDashboard() {
             ))}
           </div>
 
-          {/* New Pokemon Only toggle (only for regional dexes) */}
-          {selectedTypeChart !== 'yours' && selectedDex && (
-            <div className="flex items-center gap-2 mb-3">
-              <button
-                onClick={() => setNewPokemonOnly(false)}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
-                  !newPokemonOnly
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-              >
-                Full Regional Dex
-              </button>
-              <button
-                onClick={() => setNewPokemonOnly(true)}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
-                  newPokemonOnly
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-              >
-                Gen {selectedDex.generation} Pokemon Only
-              </button>
+          {/* Full Regional Dex / New Pokemon Only split pill — only for gen 2+ */}
+          {selectedDex && selectedDex.generation >= 2 && (
+            <div className="flex items-center mb-3">
+              <div className="inline-flex rounded-full border border-border overflow-hidden">
+                <button
+                  onClick={() => setNewPokemonOnly(false)}
+                  className={`px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
+                    !newPokemonOnly
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  Full Regional Dex
+                </button>
+                <button
+                  onClick={() => setNewPokemonOnly(true)}
+                  className={`px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors border-l border-border ${
+                    newPokemonOnly
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  Gen {selectedDex.generation} Only
+                </button>
+              </div>
             </div>
           )}
 
