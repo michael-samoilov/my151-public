@@ -267,7 +267,7 @@ export function AnalyticsDashboard() {
               Exclude starters/legendaries
             </button>
 
-            {selectedDex && selectedDex.generation >= 2 && (
+            {selectedDex && selectedDex.generation >= 2 && selectedDex.id !== 'unova' && (
               <div className="inline-flex rounded-full bg-muted overflow-hidden">
                 <button
                   onClick={() => setNewPokemonOnly(true)}
