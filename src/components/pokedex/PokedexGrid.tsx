@@ -131,11 +131,11 @@ function DraggableTile({
       <div
         {...attributes}
         {...listeners}
-        className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 group aspect-square cursor-grab active:cursor-grabbing select-none overflow-visible"
+        className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 group aspect-square cursor-grab active:cursor-grabbing select-none"
       >
         <GenBadge
           gen={pokemon.generation}
-          className="absolute -top-[0.8vw] -left-[0.8vw] md:-top-1 md:-left-1 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 z-10"
+          className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 z-10"
         />
         <button
           onClick={() => removeBranch(sectionId, pokemonId)}
@@ -334,7 +334,7 @@ function GroupBox({
 
   return (
     <div
-      className="rounded-lg overflow-visible"
+      className="rounded-lg"
       style={{
         backgroundColor: `${group.color}${hasPokemon ? '10' : '08'}`,
         border: `1px solid ${group.color}${hasPokemon ? '25' : '18'}`,
@@ -355,7 +355,7 @@ function GroupBox({
 
       {showEmptyState ? (
         /* Empty: single "+" at tile size */
-        <div className="grid grid-cols-6 gap-[1vw] md:gap-1 p-1 pt-0 overflow-visible">
+        <div className="grid grid-cols-6 gap-[1vw] md:gap-1 p-1 pt-0">
           <button
             onClick={() => onAddClick(group.id)}
             className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
@@ -369,7 +369,7 @@ function GroupBox({
         </div>
       ) : (
         /* Filled: grid of tiles */
-        <div className="grid grid-cols-6 gap-[1vw] md:gap-1 p-1 pt-0 overflow-visible">
+        <div className="grid grid-cols-6 gap-[1vw] md:gap-1 p-1 pt-0">
           {isStarter ? (
             <StarterContent
               pokemonIds={pokemonIds}
