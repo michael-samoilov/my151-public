@@ -162,21 +162,13 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
 
                 {/* Type icon */}
                 {d.icon && (
-                  <g>
-                    <circle
-                      cx={iconStart + iconSize / 2}
-                      cy={y + barHeight / 2}
-                      r={iconSize / 2}
-                      fill={d.color}
-                    />
-                    <image
-                      href={d.icon}
-                      x={iconStart + 2}
-                      y={y + barHeight / 2 - (iconSize - 4) / 2}
-                      width={iconSize - 4}
-                      height={iconSize - 4}
-                    />
-                  </g>
+                  <image
+                    href={d.icon}
+                    x={iconStart}
+                    y={y + barHeight / 2 - iconSize / 2}
+                    width={iconSize}
+                    height={iconSize}
+                  />
                 )}
 
                 {/* Count bar */}

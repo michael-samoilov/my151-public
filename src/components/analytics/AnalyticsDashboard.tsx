@@ -8,6 +8,18 @@ import { SuperimposedHistogram } from './SuperimposedHistogram';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
+const POKEAPI_TYPE_IDS: Record<string, number> = {
+  normal: 1, fighting: 2, flying: 3, poison: 4, ground: 5, rock: 6,
+  bug: 7, ghost: 8, steel: 9, fire: 10, water: 11, grass: 12,
+  electric: 13, psychic: 14, ice: 15, dragon: 16, dark: 17, fairy: 18,
+};
+const TYPE_ICON_URLS: Record<string, string> = Object.fromEntries(
+  Object.entries(POKEAPI_TYPE_IDS).map(([type, id]) => [
+    type,
+    `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/types/generation-viii/sword-shield/small/${id}.png`,
+  ]),
+);
+
 /** Align yours + national histograms to the same bins, merge into single dataset */
 function alignHistograms(
   yours: { bin: string; pct: number }[],
@@ -62,7 +74,7 @@ export function AnalyticsDashboard() {
       count: d.count,
       deviation: d.deviation,
       color: TYPE_COLORS[d.type as keyof typeof TYPE_COLORS],
-      icon: `/types/${d.type}.svg`,
+      icon: TYPE_ICON_URLS[d.type],
     })),
     [analytics.typeDeviation],
   );
