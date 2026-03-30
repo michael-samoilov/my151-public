@@ -181,6 +181,7 @@ export function AnalyticsDashboard() {
               binSize={bstHist.binSize}
               xDomain={bstHist.xDomain}
               xTicks={bstHist.xTicks}
+              minorXTicks={bstHist.xTicks.slice(0, -1).map((t, i) => (t + bstHist.xTicks[i + 1]) / 2)}
               yDomain={bstHist.yDomain}
               yTicks={bstHist.yTicks}
             />

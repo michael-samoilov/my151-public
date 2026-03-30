@@ -12,6 +12,7 @@ interface SuperimposedHistogramProps {
   binSize: number;
   xDomain: [number, number];
   xTicks: number[];
+  minorXTicks?: number[];
   yDomain: number;
   yTicks: number[];
 }
@@ -21,6 +22,7 @@ export function SuperimposedHistogram({
   binSize,
   xDomain,
   xTicks,
+  minorXTicks,
   yDomain,
   yTicks,
 }: SuperimposedHistogramProps) {
@@ -128,6 +130,18 @@ export function SuperimposedHistogram({
                   {t}
                 </text>
               </g>
+            ))}
+            {minorXTicks?.map((t) => (
+              <line
+                key={`minor-${t}`}
+                x1={xScale(t)}
+                x2={xScale(t)}
+                y1={plotH}
+                y2={plotH + 3}
+                stroke="var(--color-muted-foreground)"
+                strokeWidth={0.5}
+                opacity={0.5}
+              />
             ))}
 
             {/* Y axis */}
