@@ -191,7 +191,7 @@ export function AnalyticsDashboard() {
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-6 space-y-8 max-w-6xl mx-auto">
+      <div className="p-6 space-y-8 max-w-6xl mx-auto overflow-x-hidden">
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard label="Pokemon" value={`${analytics.total}/151`} />
@@ -274,7 +274,7 @@ export function AnalyticsDashboard() {
             </div>
           )}
 
-          <div className="bg-card rounded-lg border p-4">
+          <div className="bg-card rounded-lg border p-4 overflow-hidden">
             <ButterflyChart data={activeTypeChartData} />
           </div>
         </section>
@@ -285,7 +285,7 @@ export function AnalyticsDashboard() {
           <p className="text-sm text-muted-foreground mb-4">
             Where your Pokemon come from and deviation from national dex proportions.
           </p>
-          <div className="bg-card rounded-lg border p-4">
+          <div className="bg-card rounded-lg border p-4 overflow-hidden">
             <ButterflyChart data={genChartData} rowHeight={28} />
           </div>
         </section>
