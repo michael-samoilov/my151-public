@@ -290,7 +290,7 @@ function StarterContent({
             key={`${type}-${i}`}
             onClick={() => onTypeClick(type)}
             className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
-            style={{ borderColor: color, color, backgroundColor: `${color}18` }}
+            style={{ borderColor: `${color}40`, color: `${color}90`, backgroundColor: `${color}10` }}
           >
             <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
           </button>

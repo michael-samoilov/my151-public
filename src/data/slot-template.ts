@@ -14,7 +14,7 @@ export interface BuildGroup {
  */
 export const BUILD_GROUPS: BuildGroup[] = [
   // Starters
-  { id: 'starter', name: 'Starters', filterType: 'category', filterId: 'starter', color: '#48bb78' },
+  { id: 'starter', name: 'Starters', filterType: 'category', filterId: 'starter', color: '#888888' },
 
   // Early route
   { id: 'early-bird', name: 'Early Route Bird', filterType: 'archetype', filterId: 'early-bird', color: '#a98ff3' },
