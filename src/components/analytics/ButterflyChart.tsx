@@ -56,7 +56,10 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
   const countScale = scaleLinear().domain([0, maxCount]).range([0, countBarMax]);
 
   const maxAbsDev = Math.max(...data.map((d) => Math.abs(d.deviation)), 50);
-  const devMax = Math.ceil(maxAbsDev / 50) * 50;
+  const devMaxRaw = Math.ceil(maxAbsDev / 50) * 50;
+  // Cap the scale at 200 (3x) to prevent outliers from compressing everything
+  const DEV_CAP = 200;
+  const devMax = Math.min(devMaxRaw, DEV_CAP);
   const devScale = scaleLinear()
     .domain([-devMax, devMax])
     .range([0, devSectionWidth]);
@@ -131,9 +134,11 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
             // Count bar
             const countBarW = countScale(d.count);
 
-            // Deviation bar
-            const devBarX = d.deviation >= 0 ? zeroX : devScale(d.deviation);
-            const devBarW = Math.abs(devScale(d.deviation) - zeroX);
+            // Deviation bar — clamp to visible scale
+            const clampedDev = Math.max(-devMax, Math.min(devMax, d.deviation));
+            const isClipped = Math.abs(d.deviation) > devMax;
+            const clippedBarX = clampedDev >= 0 ? zeroX : devScale(clampedDev);
+            const clippedBarW = Math.abs(devScale(clampedDev) - zeroX);
 
             return (
               <g key={d.label}>
@@ -171,16 +176,30 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
                   {d.count}
                 </text>
 
-                {/* Deviation bar */}
+                {/* Deviation bar (clipped to scale) */}
                 <rect
-                  x={devSectionStart + devBarX}
+                  x={devSectionStart + clippedBarX}
                   y={y}
-                  width={devBarW}
+                  width={clippedBarW}
                   height={barHeight}
                   fill={d.color}
                   opacity={0.85}
                   rx={1}
                 />
+                {/* Clip indicator: chevron at bar end when value exceeds scale */}
+                {isClipped && (
+                  <text
+                    x={devSectionStart + (d.deviation >= 0 ? devSectionWidth - 1 : 1)}
+                    y={y + barHeight / 2}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize={8}
+                    fontWeight={700}
+                    fill={d.color}
+                  >
+                    {d.deviation >= 0 ? '»' : '«'}
+                  </text>
+                )}
               </g>
             );
           })}
