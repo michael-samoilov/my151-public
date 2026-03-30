@@ -268,23 +268,23 @@ export function AnalyticsDashboard() {
             </button>
 
             {selectedDex && selectedDex.generation >= 2 && (
-              <div className="inline-flex rounded-full border border-border overflow-hidden">
+              <div className="inline-flex rounded-full bg-muted overflow-hidden">
                 <button
                   onClick={() => setNewPokemonOnly(false)}
-                  className={`px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors ${
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
                     !newPokemonOnly
                       ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      : 'text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
-                  Full Regional Dex
+                  Regional Dex
                 </button>
                 <button
                   onClick={() => setNewPokemonOnly(true)}
-                  className={`px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors border-l border-border ${
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
                     newPokemonOnly
                       ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                      : 'text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
                   Gen {selectedDex.generation} Only
