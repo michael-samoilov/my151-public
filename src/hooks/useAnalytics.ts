@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById, getAllPokemon } from '@/hooks/usePokemonData';
 import { TYPE_NAMES } from '@/types/pokemon';
+import { STARTER_IDS } from '@/data/categories';
 
 // Precompute national dex stats (static, computed once)
 function buildHistogram(values: number[], binSize: number): { bin: string; count: number; pct: number }[] {
@@ -21,10 +22,10 @@ function buildHistogram(values: number[], binSize: number): { bin: string; count
 }
 
 const allNational = getAllPokemon();
+
+// Unfiltered baselines (used when excludeSpecial is false)
 const nationalTotal = allNational.length;
 
-// National type proportions: what fraction of all Pokemon have each type
-// (dual-types count for both, so proportions sum > 100%, which is correct)
 const nationalTypeProportion: Record<string, number> = {};
 for (const t of TYPE_NAMES) nationalTypeProportion[t] = 0;
 for (const p of allNational) {
@@ -32,12 +33,10 @@ for (const p of allNational) {
     nationalTypeProportion[t] = (nationalTypeProportion[t] || 0) + 1;
   }
 }
-// Convert counts to proportions (fraction of Pokemon that have this type)
 for (const t of TYPE_NAMES) {
   nationalTypeProportion[t] = nationalTypeProportion[t] / nationalTotal;
 }
 
-// National generation proportions: fraction of all Pokemon from each gen
 const nationalGenProportion: Record<number, number> = {};
 for (const p of allNational) {
   nationalGenProportion[p.generation] = (nationalGenProportion[p.generation] || 0) + 1;
@@ -55,15 +54,64 @@ const nationalBsts = allNational.map(p => p.bst);
 const nationalAvgBst = Math.round(nationalBsts.reduce((a, b) => a + b, 0) / nationalBsts.length);
 const nationalBstHistogram = buildHistogram(nationalBsts, 50);
 
-export function useAnalytics() {
+// Filtered baselines (used when excludeSpecial is true)
+const filteredNational = allNational.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+const filteredNationalTotal = filteredNational.length;
+
+const filteredNationalTypeProportion: Record<string, number> = {};
+for (const t of TYPE_NAMES) filteredNationalTypeProportion[t] = 0;
+for (const p of filteredNational) {
+  for (const t of p.types) {
+    filteredNationalTypeProportion[t] = (filteredNationalTypeProportion[t] || 0) + 1;
+  }
+}
+for (const t of TYPE_NAMES) {
+  filteredNationalTypeProportion[t] = filteredNationalTypeProportion[t] / filteredNationalTotal;
+}
+
+const filteredNationalGenProportion: Record<number, number> = {};
+for (const p of filteredNational) {
+  filteredNationalGenProportion[p.generation] = (filteredNationalGenProportion[p.generation] || 0) + 1;
+}
+for (const g of Object.keys(filteredNationalGenProportion)) {
+  filteredNationalGenProportion[Number(g)] = filteredNationalGenProportion[Number(g)] / filteredNationalTotal;
+}
+
+const filteredNationalBsts = filteredNational.map(p => p.bst);
+const filteredNationalAvgBst = Math.round(filteredNationalBsts.reduce((a, b) => a + b, 0) / filteredNationalBsts.length);
+const filteredNationalBstHistogram = buildHistogram(filteredNationalBsts, 50);
+const filteredNationalEvoLevels = filteredNational.map(p => p.evolutionLevel).filter((l): l is number => l !== null);
+const filteredNationalAvgEvoLevel = filteredNationalEvoLevels.length > 0
+  ? Math.round(filteredNationalEvoLevels.reduce((a, b) => a + b, 0) / filteredNationalEvoLevels.length)
+  : 0;
+const filteredNationalEvoHistogram = buildHistogram(filteredNationalEvoLevels, 5);
+
+export function useAnalytics(excludeSpecial = false) {
   const sections = usePokedexStore((s) => s.sections);
 
   return useMemo(() => {
+    // Pick the right baseline
+    const typeProp = excludeSpecial ? filteredNationalTypeProportion : nationalTypeProportion;
+    const genProp = excludeSpecial ? filteredNationalGenProportion : nationalGenProportion;
+    const baseAvgBst = excludeSpecial ? filteredNationalAvgBst : nationalAvgBst;
+    const baseBstHist = excludeSpecial ? filteredNationalBstHistogram : nationalBstHistogram;
+    const baseAvgEvo = excludeSpecial ? filteredNationalAvgEvoLevel : nationalAvgEvoLevel;
+    const baseEvoHist = excludeSpecial ? filteredNationalEvoHistogram : nationalEvoHistogram;
+
+    // Build user's pokemon list, optionally filtering
     const allIds = Object.values(sections).flat();
-    const pokemon = allIds
+    const starterSectionIds = new Set(sections['starter'] ?? []);
+
+    let pokemon = allIds
       .map((id) => getPokemonById(id))
       .filter(Boolean)
       .map((p) => p!);
+
+    if (excludeSpecial) {
+      pokemon = pokemon.filter(p =>
+        !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id)
+      );
+    }
 
     const total = pokemon.length;
     if (total === 0) {
@@ -73,13 +121,13 @@ export function useAnalytics() {
         typeDeviation: [],
         generationDistribution: [],
         generationDeviation: [],
-        bstStats: { min: 0, max: 0, avg: 0, median: 0, averageRegion: nationalAvgBst },
+        bstStats: { min: 0, max: 0, avg: 0, median: 0, averageRegion: baseAvgBst },
         yourBstHistogram: [],
-        nationalBstHistogram,
-        nationalAvgBst,
-        evolutionStats: { avgLevel: 0, nationalAvgLevel: nationalAvgEvoLevel, stageDistribution: { 1: 0, 2: 0, 3: 0 } },
+        nationalBstHistogram: baseBstHist,
+        nationalAvgBst: baseAvgBst,
+        evolutionStats: { avgLevel: 0, nationalAvgLevel: baseAvgEvo, stageDistribution: { 1: 0, 2: 0, 3: 0 } },
         yourEvoHistogram: [],
-        nationalEvoHistogram,
+        nationalEvoHistogram: baseEvoHist,
         legendaryCount: 0,
         mythicalCount: 0,
         monoTypeCount: 0,
@@ -100,11 +148,9 @@ export function useAnalytics() {
       count: typeCounts[t],
       percentage: (typeCounts[t] / total) * 100,
     }));
-    // Deviation: (your proportion / national proportion) - 1, as percentage
-    // 0% = same, +100% = double, -50% = half
     const typeDeviation = TYPE_NAMES.map((t) => {
       const yourProportion = typeCounts[t] / total;
-      const globalProportion = nationalTypeProportion[t];
+      const globalProportion = typeProp[t];
       const ratio = globalProportion > 0 ? yourProportion / globalProportion : 0;
       return {
         type: t,
@@ -130,7 +176,7 @@ export function useAnalytics() {
     const generationDeviation = Object.entries(genCounts).map(([gen, count]) => {
       const g = parseInt(gen);
       const yourProportion = count / total;
-      const globalProportion = nationalGenProportion[g] || 0;
+      const globalProportion = genProp[g] || 0;
       const ratio = globalProportion > 0 ? yourProportion / globalProportion : 0;
       return {
         generation: g,
@@ -149,7 +195,7 @@ export function useAnalytics() {
       max: bsts[bsts.length - 1],
       avg: Math.round(bsts.reduce((a, b) => a + b, 0) / total),
       median: bsts[Math.floor(total / 2)],
-      averageRegion: nationalAvgBst,
+      averageRegion: baseAvgBst,
     };
     const yourBstHistogram = buildHistogram(bsts, 50);
 
@@ -174,19 +220,19 @@ export function useAnalytics() {
       generationDeviation,
       bstStats,
       yourBstHistogram,
-      nationalBstHistogram,
-      nationalAvgBst,
+      nationalBstHistogram: baseBstHist,
+      nationalAvgBst: baseAvgBst,
       evolutionStats: {
         avgLevel: avgEvoLevel,
-        nationalAvgLevel: nationalAvgEvoLevel,
+        nationalAvgLevel: baseAvgEvo,
         stageDistribution: stageCounts,
       },
       yourEvoHistogram,
-      nationalEvoHistogram,
+      nationalEvoHistogram: baseEvoHist,
       legendaryCount: pokemon.filter((p) => p.isLegendary).length,
       mythicalCount: pokemon.filter((p) => p.isMythical).length,
       monoTypeCount: pokemon.filter((p) => p.types.length === 1).length,
       dualTypeCount: pokemon.filter((p) => p.types.length === 2).length,
     };
-  }, [sections]);
+  }, [sections, excludeSpecial]);
 }

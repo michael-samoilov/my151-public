@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -66,7 +66,8 @@ function alignHistograms(
 }
 
 export function AnalyticsDashboard() {
-  const analytics = useAnalytics();
+  const [excludeSpecial, setExcludeSpecial] = useState(false);
+  const analytics = useAnalytics(excludeSpecial);
 
   // Butterfly chart data
   const typeChartData: ButterflyRow[] = useMemo(() =>
@@ -149,6 +150,25 @@ export function AnalyticsDashboard() {
           <StatCard label="Avg BST" value={analytics.bstStats.avg.toString()} subtitle={`National avg: ${analytics.nationalAvgBst}`} />
           <StatCard label="Legendaries" value={analytics.legendaryCount.toString()} />
           <StatCard label="Mythicals" value={analytics.mythicalCount.toString()} />
+        </div>
+
+        {/* Exclusion Toggle */}
+        <div className="flex items-center">
+          <button
+            onClick={() => setExcludeSpecial(prev => !prev)}
+            className={`flex items-center gap-2 px-3 min-h-[44px] rounded-full text-sm font-medium transition-colors ${
+              excludeSpecial
+                ? 'bg-muted-foreground/15 text-foreground'
+                : 'bg-transparent text-muted-foreground border border-muted-foreground/25'
+            }`}
+          >
+            <span className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
+              excludeSpecial ? 'border-foreground bg-foreground' : 'border-muted-foreground/50'
+            }`}>
+              {excludeSpecial && <span className="block w-1.5 h-1.5 rounded-full bg-background" />}
+            </span>
+            Exclude Legendaries, Mythicals &amp; Starters
+          </button>
         </div>
 
         {/* Type Distribution */}
