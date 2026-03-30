@@ -37,7 +37,6 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
   const labelWidth = 42;
   const iconSize = hasIcons ? 14 : 0;
   const iconGap = hasIcons ? 3 : 0;
-  const countBarMax = 51;
   const numberWidth = 22;
   const gap = 6;
   const titleHeight = 18;
@@ -47,7 +46,10 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
 
   const iconStart = labelWidth + iconGap;
   const countSectionStart = iconStart + iconSize + gap;
-  const devSectionStart = countSectionStart + countBarMax + numberWidth + gap;
+  // Place the gutter between count and deviation at the horizontal center
+  const fixedLeft = countSectionStart + numberWidth + gap;
+  const countBarMax = Math.max(20, Math.floor(width / 2) - fixedLeft);
+  const devSectionStart = Math.floor(width / 2);
   const devSectionWidth = Math.max(0, width - devSectionStart);
 
   // Scales
