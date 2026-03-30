@@ -50,6 +50,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations }: Bu
   const countSectionStart = iconStart + iconSize + gap;
   const countBarMax = 51;
   const devSectionStart = countSectionStart + countBarMax + numberWidth + gap;
+  const barLabelPad = 24; // space for "0.0x" labels at bar ends
   const devSectionWidth = Math.max(0, width - devSectionStart);
 
   // Scales
@@ -70,7 +71,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations }: Bu
   const devLeft = -100; // 0x — can't go lower
   const devScale = scaleLinear()
     .domain([devLeft, devRight])
-    .range([0, devSectionWidth]);
+    .range([barLabelPad, devSectionWidth - barLabelPad]);
 
   // Deviation ticks at 50% intervals
   const devTicks: number[] = [];
@@ -251,6 +252,28 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations }: Bu
                     p += ` L${bx + bw},${bot} Z`;
                   }
                   return <path d={p} fill={d.color} opacity={0.85} />;
+                })()}
+
+                {/* Value label at bar end */}
+                {(() => {
+                  const val = ((Math.max(devLeft, Math.min(devRight, d.deviation)) / 100) + 1).toFixed(1) + 'x';
+                  const barEnd = devSectionStart + devScale(Math.max(devLeft, Math.min(devRight, d.deviation)));
+                  if (d.deviation >= 0) {
+                    return (
+                      <text
+                        x={barEnd + 3} y={y + barHeight / 2}
+                        textAnchor="start" dominantBaseline="middle"
+                        fontSize={9} fill="var(--color-muted-foreground)"
+                      >{val}</text>
+                    );
+                  }
+                  return (
+                    <text
+                      x={barEnd - 3} y={y + barHeight / 2}
+                      textAnchor="end" dominantBaseline="middle"
+                      fontSize={9} fill="var(--color-muted-foreground)"
+                    >{val}</text>
+                  );
                 })()}
               </g>
             );
