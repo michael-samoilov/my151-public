@@ -186,20 +186,20 @@ export function ButterflyChart({ data, rowHeight = 22 }: ButterflyChartProps) {
                   opacity={0.85}
                   rx={1}
                 />
-                {/* Clip indicator: chevron at bar end when value exceeds scale */}
-                {isClipped && (
-                  <text
-                    x={devSectionStart + (d.deviation >= 0 ? devSectionWidth - 1 : 1)}
-                    y={y + barHeight / 2}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize={8}
-                    fontWeight={700}
-                    fill={d.color}
-                  >
-                    {d.deviation >= 0 ? '»' : '«'}
-                  </text>
-                )}
+                {/* Clip indicator: jagged/ripped edge when value exceeds scale */}
+                {isClipped && (() => {
+                  const edgeX = devSectionStart + (d.deviation >= 0 ? devSectionWidth : 0);
+                  const teeth = 4;
+                  const toothH = barHeight / teeth;
+                  const depth = 3;
+                  const dir = d.deviation >= 0 ? -1 : 1;
+                  let path = `M${edgeX},${y}`;
+                  for (let i = 0; i < teeth; i++) {
+                    path += ` L${edgeX + dir * depth},${y + toothH * i + toothH / 2}`;
+                    path += ` L${edgeX},${y + toothH * (i + 1)}`;
+                  }
+                  return <path d={path} fill="none" stroke={d.color} strokeWidth={1.5} />;
+                })()}
               </g>
             );
           })}
