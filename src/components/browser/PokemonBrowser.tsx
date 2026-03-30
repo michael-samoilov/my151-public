@@ -345,9 +345,9 @@ export function PokemonBrowser() {
                 </div>
                 <EvoLineGrid
                   groups={subGroups.map((group) => {
-                    const subMatchedIds = isSearching
-                      ? new Set(group.members.map(m => m.id))
-                      : new Set(group.members.filter(m => subIdSet.has(m.id)).map(m => m.id));
+                    const subMatchedIds = new Set(
+                      group.members.filter(m => subIdSet.has(m.id)).map(m => m.id)
+                    );
                     return {
                       key: `${sub.label}-${group.chainId}`,
                       members: group.members,
