@@ -163,7 +163,7 @@ function DraggableTile({
           {pokemon.types.map((t) => (
             <span
               key={t}
-              className="px-[0.8vw] md:px-1 py-[0.1vw] md:py-px rounded text-[min(1.4vw,5px)] md:text-[5px] font-semibold capitalize text-white leading-none translate-y-[0.5px]"
+              className="w-[3.4vw] md:w-[15px] py-[0.1vw] md:py-px rounded text-[min(1.4vw,5px)] md:text-[5px] font-semibold capitalize text-white leading-none translate-y-[0.5px] text-center"
               style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
             >
               {t}
