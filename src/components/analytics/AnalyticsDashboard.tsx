@@ -550,7 +550,8 @@ export function AnalyticsDashboard() {
                   stageTotals[seg.stage] = (stageTotals[seg.stage] || 0) + seg.count;
                 }
               }
-              const stageNames = ['single', 'double', 'triple'];
+              const stageNames = ['One', 'Double', 'Triple'];
+              const totalPokemon = mekkoData.columns.reduce((sum, col) => sum + col.segments.reduce((s, seg) => s + seg.count, 0), 0);
               const lastCol = mekkoData.columns[mekkoData.columns.length - 1];
               const lastColDensity = lastCol.segments.reduce((s, seg) => s + seg.count, 0) / lastCol.widthPct;
               const lastColHeight = maxDensity > 0 ? (lastColDensity / maxDensity) * chartHeight : 0;
@@ -563,11 +564,10 @@ export function AnalyticsDashboard() {
               const legendStages = [3, 2, 1].filter(s => stageTotals[s]);
               const isTopmost = (s: number) => s === legendStages[0];
               return (
-                <div>
-                  {/* Chart + inline legend */}
-                  <div className="flex items-end" style={{ height: chartHeight }}>
-                    {/* Stacked columns */}
-                    <div className="flex items-end flex-1 min-w-0" style={{ height: chartHeight, gap }}>
+                <div className="flex">
+                  {/* Columns + labels */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-end" style={{ height: chartHeight, gap }}>
                       {mekkoData.columns.map(col => {
                         const colDensity = col.segments.reduce((s, seg) => s + seg.count, 0) / col.widthPct;
                         const colHeight = maxDensity > 0 ? (colDensity / maxDensity) * chartHeight : 0;
@@ -605,35 +605,41 @@ export function AnalyticsDashboard() {
                         );
                       })}
                     </div>
-                    {/* Inline legend — each row height matches its segment in the last column */}
-                    <div className="flex flex-col-reverse justify-end shrink-0 pl-2">
-                      {lastCol.segments.map(seg => (
-                        <div
-                          key={seg.stage}
-                          className="flex items-center text-[10px] whitespace-nowrap"
-                          style={{ height: lastColSegHeights[seg.stage - 1] }}
-                        >
-                          {seg.count > 0 && (
-                            <span>
-                              <span className="font-bold">{stageTotals[seg.stage]} <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span></span>
-                              {isTopmost(seg.stage) && <span className="text-muted-foreground"> Pokémon</span>}
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                    {/* X-axis labels — same flex layout as chart so labels center under columns */}
+                    <div className="flex mt-1" style={{ gap }}>
+                      {mekkoData.columns.map(col => {
+                        const colPokemon = col.segments.reduce((s, seg) => s + seg.count, 0);
+                        const pokePct = totalPokemon > 0 ? ((colPokemon / totalPokemon) * 100).toFixed(0) : '0';
+                        return (
+                          <div
+                            key={col.lineLength}
+                            className="text-center text-[10px] text-muted-foreground"
+                            style={{ width: `${col.widthPct}%` }}
+                          >
+                            {stageNames[col.lineLength - 1]}-stage
+                            <br />
+                            ({col.widthPct.toFixed(0)}% of lines)
+                            <br />
+                            ({pokePct}% of Pokémon)
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                  {/* X-axis labels */}
-                  <div className="flex mt-1" style={{ gap }}>
-                    {mekkoData.columns.map(col => (
+                  {/* Inline legend — each row height matches its segment in the last column */}
+                  <div className="flex flex-col-reverse justify-end shrink-0 pl-2" style={{ height: chartHeight }}>
+                    {lastCol.segments.map(seg => (
                       <div
-                        key={col.lineLength}
-                        className="text-center text-[10px] text-muted-foreground"
-                        style={{ width: `${col.widthPct}%` }}
+                        key={seg.stage}
+                        className="flex items-center text-[10px] whitespace-nowrap"
+                        style={{ height: lastColSegHeights[seg.stage - 1] }}
                       >
-                        {col.chainCount} {stageNames[col.lineLength - 1]}-stage
-                        <br />
-                        ({col.widthPct.toFixed(0)}% of lines)
+                        {seg.count > 0 && (
+                          <span>
+                            <span className="font-bold">{stageTotals[seg.stage]} <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span></span>
+                            {isTopmost(seg.stage) && <><br /><span className="text-muted-foreground">Pokémon</span></>}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
