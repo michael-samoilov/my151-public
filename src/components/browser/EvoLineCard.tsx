@@ -204,7 +204,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   {pokemon.types.map((t) => (
                     <span
                       key={t}
-                      className="w-[6vw] md:w-5 py-[0.2vw] md:py-px rounded text-[min(1.5vw,5px)] md:text-[5px] font-semibold capitalize text-white leading-tight text-center truncate translate-y-[1px]"
+                      className="w-[6vw] md:w-5 py-[0.2vw] md:py-px rounded text-[min(1.5vw,5px)] md:text-[5px] font-semibold capitalize text-white leading-tight text-center truncate translate-y-[1.5px]"
                       style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
                     >
                       {t}
