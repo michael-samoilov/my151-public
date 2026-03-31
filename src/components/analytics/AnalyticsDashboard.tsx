@@ -605,20 +605,25 @@ export function AnalyticsDashboard() {
                 return center;
               });
 
-              // Resolve label positions: greedy bottom-up push to prevent overlap
+              // Think-cell style label placement: labels stay at their natural Y
+              // (segment center) but fan out into horizontal tiers when crowded.
               const LABEL_H = 34;
-              const labelCentersFromBottom = [...segCentersFromBottom];
-              // Ensure each label is at least LABEL_H above the previous
-              for (let i = 1; i < labelCentersFromBottom.length; i++) {
-                const minY = labelCentersFromBottom[i - 1] + LABEL_H;
-                if (labelCentersFromBottom[i] < minY) {
-                  labelCentersFromBottom[i] = minY;
+              const TIER_X = 72; // horizontal offset per tier
+              const placed: { y: number; tier: number }[] = [];
+              const labelLayout = activeSegs.map((_, i) => {
+                const naturalY = segCentersFromBottom[i];
+                // Try each tier starting from 0 (closest to chart)
+                for (let tier = 0; ; tier++) {
+                  const overlaps = placed.some(
+                    p => p.tier === tier && Math.abs(p.y - naturalY) < LABEL_H
+                  );
+                  if (!overlaps) {
+                    placed.push({ y: naturalY, tier });
+                    return { y: naturalY, tier };
+                  }
                 }
-              }
-              // Check if any label was displaced (needs a leader line)
-              const displaced = labelCentersFromBottom.some((y, i) =>
-                Math.abs(y - segCentersFromBottom[i]) > 1
-              );
+              });
+              const maxTier = Math.max(...labelLayout.map(l => l.tier));
 
               const containerH = chartHeight + topMargin;
 
@@ -677,30 +682,33 @@ export function AnalyticsDashboard() {
                       ))}
                     </div>
                   </div>
-                  {/* Inline legend — with leader lines when labels would overlap */}
-                  <div className="relative shrink-0" style={{ height: containerH, marginLeft: 12 }}>
-                    {/* SVG leader lines (only when redistributed) */}
-                    {displaced && (
-                      <svg className="absolute inset-0 overflow-visible pointer-events-none" style={{ width: 16, height: containerH }}>
+                  {/* Inline legend — think-cell style: labels fan out right when crowded */}
+                  <div className="relative shrink-0" style={{ height: containerH, marginLeft: 12, width: (maxTier + 1) * TIER_X + 4 }}>
+                    {/* SVG leader lines for displaced labels */}
+                    {maxTier > 0 && (
+                      <svg className="absolute inset-0 overflow-visible pointer-events-none" style={{ width: '100%', height: containerH }}>
                         {activeSegs.map((seg, i) => {
+                          const { tier } = labelLayout[i];
+                          if (tier === 0) return null;
                           const segY = containerH - segCentersFromBottom[i];
-                          const labelY = containerH - labelCentersFromBottom[i];
+                          const labelX = tier * TIER_X;
                           return (
-                            <path
+                            <line
                               key={seg.stage}
-                              d={`M0,${segY} C8,${segY} 8,${labelY} 16,${labelY}`}
-                              fill="none"
+                              x1={0} y1={segY}
+                              x2={labelX - 2} y2={segY}
                               stroke={STAGE_COLORS[seg.stage - 1]}
-                              strokeWidth={1.5}
-                              opacity={0.5}
+                              strokeWidth={1}
+                              opacity={0.4}
                             />
                           );
                         })}
                       </svg>
                     )}
-                    {/* Labels — absolutely positioned */}
+                    {/* Labels — absolutely positioned at natural Y, tiered X */}
                     {activeSegs.map((seg, i) => {
-                      const bottomPos = labelCentersFromBottom[i] - LABEL_H / 2;
+                      const { y, tier } = labelLayout[i];
+                      const bottomPos = y - LABEL_H / 2;
                       return (
                         <div
                           key={seg.stage}
@@ -708,7 +716,7 @@ export function AnalyticsDashboard() {
                           style={{
                             bottom: bottomPos,
                             height: LABEL_H,
-                            left: displaced ? 18 : 0,
+                            left: tier * TIER_X,
                           }}
                         >
                           <span className="text-muted-foreground">
