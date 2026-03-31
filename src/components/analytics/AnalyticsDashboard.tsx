@@ -533,7 +533,18 @@ export function AnalyticsDashboard() {
                   stageTotals[seg.stage] = (stageTotals[seg.stage] || 0) + seg.count;
                 }
               }
-              const stageNames = ['single', 'two', 'three'];
+              const stageNames = ['single', 'double', 'triple'];
+              const lastCol = mekkoData.columns[mekkoData.columns.length - 1];
+              const lastColDensity = lastCol.segments.reduce((s, seg) => s + seg.count, 0) / lastCol.widthPct;
+              const lastColHeight = maxDensity > 0 ? (lastColDensity / maxDensity) * chartHeight : 0;
+              const lastColTotal = lastCol.segments.reduce((s, seg) => s + seg.count, 0);
+              // Pre-compute segment heights for the last column to position legend labels
+              const lastColSegHeights = lastCol.segments.map(seg =>
+                lastColTotal > 0 ? Math.max((seg.count / lastColTotal) * lastColHeight, seg.count > 0 ? 18 : 0) : 0
+              );
+              // Stages present in the legend (descending, only non-zero totals)
+              const legendStages = [3, 2, 1].filter(s => stageTotals[s]);
+              const isTopmost = (s: number) => s === legendStages[0];
               return (
                 <div>
                   {/* Chart + inline legend */}
@@ -575,16 +586,27 @@ export function AnalyticsDashboard() {
                         </div>
                       );
                     })}
-                    {/* Inline legend — right of chart */}
-                    <div className="flex flex-col justify-end gap-1.5 pl-3 shrink-0">
-                      {[3, 2, 1].map(s => stageTotals[s] ? (
-                        <div key={s} className="flex items-center gap-1.5">
-                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: STAGE_COLORS[s - 1] }} />
-                          <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
-                            {stageTotals[s]} stage {s}
-                          </span>
-                        </div>
-                      ) : null)}
+                    {/* Inline legend — aligned with rightmost column segments */}
+                    <div className="relative shrink-0" style={{ height: chartHeight, width: 0 }}>
+                      {/* Position each label at the vertical center of its segment in the last column */}
+                      {lastCol.segments.filter(seg => seg.count > 0).map(seg => {
+                        // Bottom offset: sum of heights of segments below this one
+                        const segIdx = seg.stage - 1;
+                        let bottomOffset = 0;
+                        for (let i = 0; i < segIdx; i++) bottomOffset += lastColSegHeights[i];
+                        const segH = lastColSegHeights[segIdx];
+                        const centerFromBottom = bottomOffset + segH / 2;
+                        return (
+                          <div
+                            key={seg.stage}
+                            className="absolute left-2 whitespace-nowrap text-[10px]"
+                            style={{ bottom: centerFromBottom, transform: 'translateY(50%)' }}
+                          >
+                            <span className="font-bold">{stageTotals[seg.stage]} <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span></span>
+                            {isTopmost(seg.stage) && <span className="text-muted-foreground"> Pokémon</span>}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                   {/* X-axis labels */}
