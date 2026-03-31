@@ -18,11 +18,13 @@ interface ButterflyChartProps {
   referenceDeviations?: Record<string, number>;
   /** Hide the deviation section — count bars use full width */
   hideDeviation?: boolean;
+  /** Override the deviation axis right bound (snapped to 50% intervals, capped at 200) */
+  fixedDevRight?: number;
   /** Override the auto-computed max count for the count scale */
   fixedMaxCount?: number;
 }
 
-export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -73,7 +75,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
   // Under-representation bottoms out at -100 (0x); over-representation is capped at 200 (3x)
   const DEV_OVER_CAP = 200;
   const maxOverDev = Math.max(...data.map((d) => d.deviation), 50);
-  const devRight = Math.min(Math.ceil(maxOverDev / 50) * 50, DEV_OVER_CAP);
+  const devRight = fixedDevRight ?? Math.min(Math.ceil(maxOverDev / 50) * 50, DEV_OVER_CAP);
   const devLeft = -100; // 0x — can't go lower
   const devScale = scaleLinear()
     .domain([devLeft, devRight])

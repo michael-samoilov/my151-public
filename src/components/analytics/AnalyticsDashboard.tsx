@@ -223,6 +223,50 @@ export function AnalyticsDashboard() {
     return Math.max(...Object.values(typeCounts), 1);
   }, [selectedTypeChart, newPokemonOnly, analytics.typeDeviation]);
 
+  // Fixed deviation axis extent — max of filtered and unfiltered devRight
+  // so toggling exclusion doesn't shift the axis
+  const fixedDevRight = useMemo(() => {
+    if (isNationalSelected) return undefined;
+
+    const DEV_OVER_CAP = 200;
+    const computeDevRight = (deviations: number[]) => {
+      const maxDev = Math.max(...deviations, 50);
+      return Math.min(Math.ceil(maxDev / 50) * 50, DEV_OVER_CAP);
+    };
+
+    // Current (possibly filtered) data's devRight
+    const currentDevRight = computeDevRight(activeTypeChartData.map(d => d.deviation));
+
+    // Unfiltered data's devRight
+    let unfilteredDeviations: number[];
+    if (selectedTypeChart === 'yours') {
+      unfilteredDeviations = analytics.typeDeviation.map(d => d.deviation);
+    } else {
+      const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
+      if (!dex) return currentDevRight;
+      const base = fullBaseline;
+      let pokemon = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+      if (newPokemonOnly) {
+        pokemon = pokemon.filter(p => p.generation === dex.generation);
+      }
+      const total = pokemon.length;
+      if (total === 0) return currentDevRight;
+      const typeCounts: Record<string, number> = {};
+      for (const t of TYPE_NAMES) typeCounts[t] = 0;
+      for (const p of pokemon) {
+        for (const t of p.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
+      }
+      unfilteredDeviations = TYPE_NAMES.map(t => {
+        const prop = typeCounts[t] / total;
+        const baseProp = base.typeProp[t];
+        return baseProp > 0 ? ((prop / baseProp) - 1) * 100 : 0;
+      });
+    }
+    const unfilteredDevRight = computeDevRight(unfilteredDeviations);
+
+    return Math.max(currentDevRight, unfilteredDevRight);
+  }, [selectedTypeChart, isNationalSelected, activeTypeChartData, newPokemonOnly, analytics.typeDeviation]);
+
   const evoHist = useMemo(
     () => alignHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram, 5),
     [analytics.yourEvoHistogram, analytics.nationalEvoHistogram],
@@ -344,6 +388,7 @@ export function AnalyticsDashboard() {
               data={activeTypeChartData}
               hideDeviation={isNationalSelected}
               fixedMaxCount={unfilteredMaxCount}
+              fixedDevRight={fixedDevRight}
             />
           </div>
         </section>
