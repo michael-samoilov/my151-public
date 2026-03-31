@@ -565,49 +565,49 @@ export function AnalyticsDashboard() {
               return (
                 <div>
                   {/* Chart + inline legend */}
-                  <div className="flex items-end" style={{ height: chartHeight, gap }}>
-                    {mekkoData.columns.map(col => {
-                      const colDensity = col.segments.reduce((s, seg) => s + seg.count, 0) / col.widthPct;
-                      const colHeight = maxDensity > 0 ? (colDensity / maxDensity) * chartHeight : 0;
-                      const colTotal = col.segments.reduce((s, seg) => s + seg.count, 0);
-                      return (
-                        <div
-                          key={col.lineLength}
-                          className="flex flex-col justify-end"
-                          style={{
-                            width: `${col.widthPct}%`,
-                            height: '100%',
-                          }}
-                        >
-                          {/* Stacked segments — bottom to top */}
-                          <div className="flex flex-col-reverse">
-                            {col.segments.map(seg => {
-                              const segHeight = colTotal > 0
-                                ? (seg.count / colTotal) * colHeight
-                                : 0;
-                              return (
-                                <div
-                                  key={seg.stage}
-                                  className="flex items-center justify-center text-white text-[10px] font-semibold"
-                                  style={{
-                                    height: segHeight,
-                                    backgroundColor: STAGE_COLORS[seg.stage - 1],
-                                    minHeight: seg.count > 0 ? 18 : 0,
-                                  }}
-                                >
-                                  {seg.count > 0 && seg.count}
-                                </div>
-                              );
-                            })}
+                  <div className="flex items-end" style={{ height: chartHeight }}>
+                    {/* Stacked columns */}
+                    <div className="flex items-end flex-1 min-w-0" style={{ height: chartHeight, gap }}>
+                      {mekkoData.columns.map(col => {
+                        const colDensity = col.segments.reduce((s, seg) => s + seg.count, 0) / col.widthPct;
+                        const colHeight = maxDensity > 0 ? (colDensity / maxDensity) * chartHeight : 0;
+                        const colTotal = col.segments.reduce((s, seg) => s + seg.count, 0);
+                        return (
+                          <div
+                            key={col.lineLength}
+                            className="flex flex-col justify-end"
+                            style={{
+                              width: `${col.widthPct}%`,
+                              height: '100%',
+                            }}
+                          >
+                            <div className="flex flex-col-reverse">
+                              {col.segments.map(seg => {
+                                const segHeight = colTotal > 0
+                                  ? (seg.count / colTotal) * colHeight
+                                  : 0;
+                                return (
+                                  <div
+                                    key={seg.stage}
+                                    className="flex items-center justify-center text-white text-[10px] font-semibold"
+                                    style={{
+                                      height: segHeight,
+                                      backgroundColor: STAGE_COLORS[seg.stage - 1],
+                                      minHeight: seg.count > 0 ? 18 : 0,
+                                    }}
+                                  >
+                                    {seg.count > 0 && seg.count}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                     {/* Inline legend — aligned with rightmost column segments */}
-                    <div className="relative shrink-0" style={{ height: chartHeight, width: 0 }}>
-                      {/* Position each label at the vertical center of its segment in the last column */}
+                    <div className="relative shrink-0 pl-2" style={{ height: chartHeight, width: 'auto' }}>
                       {lastCol.segments.filter(seg => seg.count > 0).map(seg => {
-                        // Bottom offset: sum of heights of segments below this one
                         const segIdx = seg.stage - 1;
                         let bottomOffset = 0;
                         for (let i = 0; i < segIdx; i++) bottomOffset += lastColSegHeights[i];
@@ -634,7 +634,7 @@ export function AnalyticsDashboard() {
                         className="text-center text-[10px] text-muted-foreground"
                         style={{ width: `${col.widthPct}%` }}
                       >
-                        {col.chainCount} {stageNames[col.lineLength - 1]}-stage lines
+                        {col.chainCount} {stageNames[col.lineLength - 1]}-stage
                         <br />
                         ({col.widthPct.toFixed(0)}% of lines)
                       </div>
