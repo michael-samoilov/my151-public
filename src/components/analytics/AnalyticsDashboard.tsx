@@ -605,25 +605,22 @@ export function AnalyticsDashboard() {
                         );
                       })}
                     </div>
-                    {/* Inline legend — aligned with rightmost column segments */}
-                    <div className="relative shrink-0 pl-2" style={{ height: chartHeight, width: 'auto' }}>
-                      {lastCol.segments.filter(seg => seg.count > 0).map(seg => {
-                        const segIdx = seg.stage - 1;
-                        let bottomOffset = 0;
-                        for (let i = 0; i < segIdx; i++) bottomOffset += lastColSegHeights[i];
-                        const segH = lastColSegHeights[segIdx];
-                        const centerFromBottom = bottomOffset + segH / 2;
-                        return (
-                          <div
-                            key={seg.stage}
-                            className="absolute left-2 whitespace-nowrap text-[10px]"
-                            style={{ bottom: centerFromBottom, transform: 'translateY(50%)' }}
-                          >
-                            <span className="font-bold">{stageTotals[seg.stage]} <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span></span>
-                            {isTopmost(seg.stage) && <span className="text-muted-foreground"> Pokémon</span>}
-                          </div>
-                        );
-                      })}
+                    {/* Inline legend — each row height matches its segment in the last column */}
+                    <div className="flex flex-col-reverse justify-end shrink-0 pl-2">
+                      {lastCol.segments.map(seg => (
+                        <div
+                          key={seg.stage}
+                          className="flex items-center text-[10px] whitespace-nowrap"
+                          style={{ height: lastColSegHeights[seg.stage - 1] }}
+                        >
+                          {seg.count > 0 && (
+                            <span>
+                              <span className="font-bold">{stageTotals[seg.stage]} <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span></span>
+                              {isTopmost(seg.stage) && <span className="text-muted-foreground"> Pokémon</span>}
+                            </span>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
                   {/* X-axis labels */}
