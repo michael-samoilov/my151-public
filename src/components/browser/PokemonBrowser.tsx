@@ -430,7 +430,15 @@ export function PokemonBrowser() {
             </div>
           )}
           {/* Bottom padding for floating button clearance */}
-          <div className="h-16" />
+          <div className="h-16 flex items-center justify-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" className="text-muted-foreground/20">
+                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
+                <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
+                <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+              </svg>
+            </div>
       </div>
 
       {/* Floating "Add X Pokemon" button */}
