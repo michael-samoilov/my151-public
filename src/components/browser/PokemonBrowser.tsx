@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
 import { useFilteredPokemonGrouped, getPokemonById } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { BUILD_GROUPS } from '@/data/slot-template';
 import { ARCHETYPES } from '@/data/archetypes';
 import { CATEGORIES } from '@/data/categories';
 import { TYPE_NAMES } from '@/types/pokemon';
