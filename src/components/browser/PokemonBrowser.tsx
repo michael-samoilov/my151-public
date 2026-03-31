@@ -223,7 +223,7 @@ export function PokemonBrowser() {
       </div>
 
       {/* Horizontal scrollable chip bar — always visible, muted when search bypasses filters */}
-      <div className="px-3 pb-2 border-b border-b-background">
+      <div className="px-3 pb-2">
         <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
           {/* Type chip(s) */}
           {typeFilter && typeFilter.length > 0 ? (
@@ -318,7 +318,7 @@ export function PokemonBrowser() {
       {/* Results area */}
       <div
         key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
-        className="flex-1 min-h-0 overflow-y-auto border-t"
+        className="flex-1 min-h-0 overflow-y-auto border-t -mt-px"
       >
         <div className="px-2 pb-2 content-start">
           {/* Dual-column headers — sticky, left-aligned with 1st and 4th tile columns */}
