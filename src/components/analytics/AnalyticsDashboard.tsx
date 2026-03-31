@@ -5,7 +5,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
-import { getPokemonById, getAllPokemon } from '@/hooks/usePokemonData';
+import { getPokemonById, getAllPokemon, getEvolutionLine } from '@/hooks/usePokemonData';
 import { TYPE_NAMES } from '@/types/pokemon';
 import { STARTER_IDS } from '@/data/categories';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
@@ -275,6 +275,47 @@ export function AnalyticsDashboard() {
     [analytics.yourBstHistogram, analytics.nationalBstHistogram],
   );
 
+  // Mekko chart data: group user's pokemon by evolution line length
+  const mekkoData = useMemo(() => {
+    const allIds = Object.values(sections).flat();
+    const pokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    // Group by evolution chain, dedupe chains
+    const seenChains = new Set<string>();
+    const lineLengths: number[] = []; // length of each unique evo line
+    const stageCountsByLineLength: Record<number, Record<number, number>> = {}; // lineLength -> stage -> count
+
+    for (const p of pokemon) {
+      const line = getEvolutionLine(p.id);
+      const key = line.map(m => m.id).join('-');
+      if (seenChains.has(key)) continue;
+      seenChains.add(key);
+      const len = Math.min(line.length, 3); // cap at 3
+      lineLengths.push(len);
+      if (!stageCountsByLineLength[len]) stageCountsByLineLength[len] = {};
+      for (const member of line) {
+        if (allIds.includes(member.id)) {
+          const stage = Math.min(member.evolutionStage, 3);
+          stageCountsByLineLength[len][stage] = (stageCountsByLineLength[len][stage] || 0) + 1;
+        }
+      }
+    }
+
+    const totalLines = lineLengths.length;
+    const columns: { lineLength: number; widthPct: number; segments: { stage: number; count: number }[] }[] = [];
+    for (const len of [1, 2, 3]) {
+      const lineCount = lineLengths.filter(l => l === len).length;
+      if (lineCount === 0) continue;
+      const widthPct = (lineCount / totalLines) * 100;
+      const segments: { stage: number; count: number }[] = [];
+      for (let s = 1; s <= len; s++) {
+        segments.push({ stage: s, count: stageCountsByLineLength[len]?.[s] || 0 });
+      }
+      columns.push({ lineLength: len, widthPct, segments });
+    }
+
+    return { columns, totalLines };
+  }, [sections]);
+
   if (analytics.total === 0) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -288,16 +329,23 @@ export function AnalyticsDashboard() {
     );
   }
 
+  const STAGE_COLORS = ['#ef4444', '#f59e0b', '#3b82f6'];
+
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden">
+      {/* Header — matches build pane style, no gear icon */}
+      <div className="px-6 py-2 border-b">
+        <h2 className="text-2xl font-extrabold tracking-tight leading-none">
+          <span className="text-primary">{analytics.total}</span>
+          <span className="text-foreground">/151</span>
+        </h2>
+      </div>
+
       <div className="p-6 space-y-8 max-w-6xl mx-auto">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <StatCard label="Pokemon" value={`${analytics.total}/151`} />
-          <StatCard label="Avg BST" value={analytics.bstStats.avg.toString()} subtitle={`National avg: ${analytics.nationalAvgBst}`} />
-          <StatCard label="Legendaries" value={analytics.legendaryCount.toString()} />
-          <StatCard label="Mythicals" value={analytics.mythicalCount.toString()} />
-        </div>
+        {/* What's Missing Advisor — moved to top */}
+        <section className="bg-card rounded-lg border p-6">
+          <WhatsAdvisor />
+        </section>
 
         {/* Type Distribution */}
         <section>
@@ -460,67 +508,81 @@ export function AnalyticsDashboard() {
           </div>
         </section>
 
-        {/* Evolution & Stage Stats */}
+        {/* Evolution & Stage Stats — Mekko Chart */}
         <section>
-          <h3 className="text-lg font-semibold mb-1">Evolution & Stage Stats</h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div className="bg-card rounded-lg border p-4">
-              <p className="text-sm text-muted-foreground">Stage Distribution</p>
-              <div className="mt-2 space-y-1">
-                {([1, 2, 3] as const).map((stage) => {
-                  const count = analytics.evolutionStats.stageDistribution[stage];
-                  const pct = ((count / analytics.total) * 100).toFixed(0);
-                  return (
-                    <div key={stage} className="flex items-center gap-2">
-                      <span className="text-xs w-16">Stage {stage}</span>
-                      <div className="flex-1 bg-muted rounded-full h-3">
-                        <div
-                          className="bg-primary rounded-full h-3 transition-all"
-                          style={{ width: `${pct}%` }}
-                        />
+          <h3 className="text-lg font-semibold mb-1">Stage Distribution</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Evolution lines by stage count. Width = % of lines, height = pokemon count.
+          </p>
+          <div className="bg-card rounded-lg border p-4">
+            {mekkoData.totalLines > 0 ? (() => {
+              const maxSegmentTotal = Math.max(...mekkoData.columns.map(c => c.segments.reduce((s, seg) => s + seg.count, 0)));
+              const chartHeight = 180;
+              const gap = 4;
+              return (
+                <div>
+                  {/* Legend */}
+                  <div className="flex items-center gap-4 mb-3">
+                    {[1, 2, 3].map(s => (
+                      <div key={s} className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: STAGE_COLORS[s - 1] }} />
+                        <span className="text-[10px] text-muted-foreground font-medium">Stage {s}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground w-16 text-right">
-                        {count} ({pct}%)
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="bg-card rounded-lg border p-4">
-              <p className="text-sm text-muted-foreground">Type Composition</p>
-              <div className="mt-2 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm">Mono-type</span>
-                  <span className="font-semibold">{analytics.monoTypeCount}</span>
+                    ))}
+                  </div>
+                  {/* Chart */}
+                  <div className="flex items-end" style={{ height: chartHeight, gap }}>
+                    {mekkoData.columns.map(col => (
+                      <div
+                        key={col.lineLength}
+                        className="flex flex-col justify-end"
+                        style={{
+                          width: `${col.widthPct}%`,
+                          height: '100%',
+                        }}
+                      >
+                        {/* Stacked segments — bottom to top */}
+                        <div className="flex flex-col-reverse">
+                          {col.segments.map(seg => {
+                            const segHeight = maxSegmentTotal > 0
+                              ? (seg.count / maxSegmentTotal) * chartHeight
+                              : 0;
+                            return (
+                              <div
+                                key={seg.stage}
+                                className="flex items-center justify-center text-white text-[10px] font-semibold"
+                                style={{
+                                  height: segHeight,
+                                  backgroundColor: STAGE_COLORS[seg.stage - 1],
+                                  minHeight: seg.count > 0 ? 18 : 0,
+                                }}
+                              >
+                                {seg.count > 0 && seg.count}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* X-axis labels */}
+                  <div className="flex mt-1" style={{ gap }}>
+                    {mekkoData.columns.map(col => (
+                      <div
+                        key={col.lineLength}
+                        className="text-center text-[10px] text-muted-foreground"
+                        style={{ width: `${col.widthPct}%` }}
+                      >
+                        {col.lineLength}-stage ({col.widthPct.toFixed(0)}%)
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm">Dual-type</span>
-                  <span className="font-semibold">{analytics.dualTypeCount}</span>
-                </div>
-                <div className="flex justify-between text-muted-foreground text-xs">
-                  <span>Dual-type ratio</span>
-                  <span>{((analytics.dualTypeCount / analytics.total) * 100).toFixed(0)}%</span>
-                </div>
-              </div>
-            </div>
+              );
+            })() : (
+              <p className="text-sm text-muted-foreground text-center py-4">No evolution data yet</p>
+            )}
           </div>
-        </section>
-
-        {/* BST Summary */}
-        <section>
-          <h3 className="text-lg font-semibold mb-1">BST Summary</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard label="Min BST" value={analytics.bstStats.min.toString()} />
-            <StatCard label="Max BST" value={analytics.bstStats.max.toString()} />
-            <StatCard label="Average BST" value={analytics.bstStats.avg.toString()} subtitle={`National: ${analytics.nationalAvgBst}`} />
-            <StatCard label="Median BST" value={analytics.bstStats.median.toString()} />
-          </div>
-        </section>
-
-        {/* What's Missing Advisor */}
-        <section className="bg-card rounded-lg border p-6">
-          <WhatsAdvisor />
         </section>
 
         {/* Bottom breathing room with pokeball */}
@@ -538,12 +600,3 @@ export function AnalyticsDashboard() {
   );
 }
 
-function StatCard({ label, value, subtitle }: { label: string; value: string; subtitle?: string }) {
-  return (
-    <div className="bg-card rounded-lg border p-4">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="text-2xl font-bold">{value}</p>
-      {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
-    </div>
-  );
-}
