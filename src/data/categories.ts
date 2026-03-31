@@ -6,6 +6,10 @@ export interface PokemonCategory {
   color: string;
   filter: (p: Pokemon) => boolean;
   subgroups?: { label: string; pokemonIds: number[] }[];
+  dualColumns?: {
+    left: { label: string; ids: number[] };
+    right: { label: string; ids: number[] };
+  };
 }
 
 // Ultra Beast IDs
@@ -55,6 +59,10 @@ export const CATEGORIES: PokemonCategory[] = [
     name: 'Legendary',
     color: '#d69e2e',
     filter: (p) => p.isLegendary,
+    dualColumns: {
+      left: { label: 'Sub-legendary', ids: [144,145,146, 243,244,245, 377,378,379,380,381, 480,481,482,485,486,488, 638,639,640,641,642,645, 772,773, 785,786,787,788, 891,892, 894,895,896,897, 905, 1001,1002,1003,1004, 1014,1015,1016,1017] },
+      right: { label: 'Restricted', ids: [150, 249,250, 382,383,384, 483,484,487, 643,644,646, 716,717,718, 789,790,791,792,800, 888,889,890, 898, 1007,1008,1024] },
+    },
   },
   {
     id: 'mythical',
@@ -137,6 +145,10 @@ export const CATEGORIES: PokemonCategory[] = [
       { label: 'Gen 3 originals', pokemonIds: [992,1005, 1006] }, // Iron Hands (Hariyama), Roaring Moon (Salamence), Iron Valiant (Gardevoir/Gallade)
       { label: 'Gen 5 originals', pokemonIds: [986,988, 993,994, 1010,1022,1023] }, // Brute Bonnet (Amoonguss), Slither Wing (Volcarona), Iron Jugulis (Hydreigon), Iron Moth (Volcarona), Iron Leaves (Virizion), Iron Boulder (Terrakion), Iron Crown (Cobalion)
     ],
+    dualColumns: {
+      left: { label: 'Past', ids: [984,985,986,987,988,989, 1005, 1009,1020,1021] },
+      right: { label: 'Future', ids: [990,991,992,993,994,995, 1006, 1010,1022,1023] },
+    },
   },
 ];
 

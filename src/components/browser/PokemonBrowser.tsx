@@ -321,6 +321,17 @@ export function PokemonBrowser() {
         className="flex-1 min-h-0 overflow-y-auto"
       >
         <div className="p-2 space-y-1 content-start">
+          {/* Dual-column headers */}
+          {!isSearching && activeCategoryDef?.dualColumns && (
+            <div className="grid grid-cols-2 gap-x-1 mt-1 px-1">
+              <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide text-center">
+                {activeCategoryDef.dualColumns.left.label}
+              </div>
+              <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide text-center">
+                {activeCategoryDef.dualColumns.right.label}
+              </div>
+            </div>
+          )}
           {(isSearching ? searchSubgroups : effectiveSubgroups).map((sub) => {
             const subIdSet = new Set(sub.pokemonIds);
             const subGroups = groups
@@ -338,6 +349,54 @@ export function PokemonBrowser() {
                 return aMin - bMin;
               });
             if (subGroups.length === 0) return null;
+
+            const dualCols = !isSearching ? activeCategoryDef?.dualColumns : undefined;
+
+            if (dualCols) {
+              const leftIdSet = new Set(dualCols.left.ids);
+              const rightIdSet = new Set(dualCols.right.ids);
+              const mapGroup = (group: typeof subGroups[0]) => {
+                const subMatchedIds = new Set(
+                  group.members.filter(m => subIdSet.has(m.id)).map(m => m.id)
+                );
+                return {
+                  key: `${sub.label}-${group.chainId}`,
+                  members: group.members,
+                  matchedIds: subMatchedIds,
+                };
+              };
+              const leftGroups = subGroups
+                .filter(g => g.members.some(m => leftIdSet.has(m.id)))
+                .map(mapGroup);
+              const rightGroups = subGroups
+                .filter(g => g.members.some(m => rightIdSet.has(m.id)))
+                .map(mapGroup);
+
+              return (
+                <div key={sub.label}>
+                  <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-2 mb-1 px-1">
+                    {sub.label}
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-1">
+                    <EvoLineGrid
+                      groups={leftGroups}
+                      assignedIds={assignedIds}
+                      stagedIds={stagedSet}
+                      onToggleStage={handleToggleStage}
+                      cols={3}
+                    />
+                    <EvoLineGrid
+                      groups={rightGroups}
+                      assignedIds={assignedIds}
+                      stagedIds={stagedSet}
+                      onToggleStage={handleToggleStage}
+                      cols={3}
+                    />
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div key={sub.label}>
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-2 mb-1 px-1">

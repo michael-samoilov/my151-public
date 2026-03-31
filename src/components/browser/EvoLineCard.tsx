@@ -32,7 +32,7 @@ function PokeballIcon({ className }: { className?: string }) {
   );
 }
 
-const COLS = 6;
+const DEFAULT_COLS = 6;
 
 // ---------- Grid wrapper that prevents evo line splitting ----------
 
@@ -49,10 +49,16 @@ interface EvoLineGridProps {
   onToggleStage: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
+  cols?: number;
 }
 
-/** Renders evo line cards in a 6-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides }: EvoLineGridProps) {
+const GRID_CLASSES: Record<number, string> = {
+  3: 'grid grid-cols-3 gap-x-0 gap-y-1',
+  6: 'grid grid-cols-6 gap-x-0 gap-y-1',
+};
+
+/** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols = DEFAULT_COLS }: EvoLineGridProps) {
   const elements = useMemo(() => {
     const result: React.ReactNode[] = [];
     let col = 0; // 0-based current column position
@@ -60,8 +66,8 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shi
     for (const group of groups) {
       const size = group.members.length;
       // If this line won't fit in the remaining columns, pad and wrap
-      if (col > 0 && (col + size > COLS)) {
-        const spacers = COLS - col;
+      if (col > 0 && (col + size > cols)) {
+        const spacers = cols - col;
         for (let s = 0; s < spacers; s++) {
           result.push(<div key={`spacer-${result.length}`} />);
         }
@@ -79,16 +85,14 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shi
           spriteOverrides={spriteOverrides}
         />
       );
-      col = (col + size) % COLS;
+      col = (col + size) % cols;
     }
 
     return result;
-  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides]);
+  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols]);
 
   return (
-    <div
-      className="grid grid-cols-6 gap-x-0 gap-y-1"
-    >
+    <div className={GRID_CLASSES[cols] ?? `grid gap-x-0 gap-y-1`} style={GRID_CLASSES[cols] ? undefined : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
       {elements}
     </div>
   );
