@@ -223,7 +223,7 @@ export function PokemonBrowser() {
       </div>
 
       {/* Horizontal scrollable chip bar — always visible, muted when search bypasses filters */}
-      <div className="px-3 pb-2 border-b">
+      <div className="px-3 pb-2">
         <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
           {/* Type chip(s) */}
           {typeFilter && typeFilter.length > 0 ? (
@@ -318,12 +318,12 @@ export function PokemonBrowser() {
       {/* Results area */}
       <div
         key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
-        className="flex-1 min-h-0 overflow-y-auto"
+        className="flex-1 min-h-0 overflow-y-auto border-t"
       >
         <div className="px-2 pb-2 content-start">
           {/* Dual-column headers — sticky, left-aligned with 1st and 4th tile columns */}
           {!isSearching && activeCategoryDef?.dualColumns && (
-            <div className="sticky -top-px z-30 bg-background grid grid-cols-2 gap-x-1 px-1 py-[3px] border-b shadow-[0_-2px_0_0_var(--color-background)]">
+            <div className="sticky top-0 z-30 bg-background grid grid-cols-2 gap-x-1 px-1 py-[3px] border-b">
               <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide pl-[3px] md:pl-[2px]">
                 {activeCategoryDef.dualColumns.left.label}
               </div>
@@ -374,7 +374,7 @@ export function PokemonBrowser() {
 
               return (
                 <div key={sub.label}>
-                  <div className="sticky top-[21px] z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b shadow-[0_-2px_0_0_var(--color-background)]">
+                  <div className="sticky top-[22px] z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
                     {sub.label}
                   </div>
                   <div className="grid grid-cols-2 gap-x-1 items-start pt-1">
@@ -399,7 +399,7 @@ export function PokemonBrowser() {
 
             return (
               <div key={sub.label}>
-                <div className="sticky -top-px z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b shadow-[0_-2px_0_0_var(--color-background)]">
+                <div className="sticky top-0 z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
                   {sub.label}
                 </div>
                 <div className="pt-1">
