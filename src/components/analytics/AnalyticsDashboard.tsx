@@ -193,79 +193,78 @@ export function AnalyticsDashboard() {
   const isNationalSelected = selectedTypeChart === 'national';
   const selectedDex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
 
-  // Unfiltered max count — used as fixed x-axis bound so toggling exclusion
-  // only shrinks bars, never grows them
-  const unfilteredMaxCount = useMemo(() => {
-    if (selectedTypeChart === 'yours') {
-      return Math.max(...analytics.typeDeviation.map(d => d.count), 1);
-    }
-    if (isNationalSelected) {
-      // Compute unfiltered national max count
-      const allPokemon = getAllPokemon();
-      const typeCounts: Record<string, number> = {};
-      for (const t of TYPE_NAMES) typeCounts[t] = 0;
-      for (const p of allPokemon) {
-        for (const t of p.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
-      }
-      return Math.max(...Object.values(typeCounts), 1);
-    }
-    const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
-    if (!dex) return undefined;
-    let pokemon = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
-    if (newPokemonOnly) {
-      pokemon = pokemon.filter(p => p.generation === dex.generation);
-    }
-    const typeCounts: Record<string, number> = {};
-    for (const t of TYPE_NAMES) typeCounts[t] = 0;
-    for (const p of pokemon) {
-      for (const t of p.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
-    }
-    return Math.max(...Object.values(typeCounts), 1);
-  }, [selectedTypeChart, newPokemonOnly, analytics.typeDeviation]);
-
-  // Fixed deviation axis extent — max of filtered and unfiltered devRight
-  // so toggling exclusion doesn't shift the axis
-  const fixedDevRight = useMemo(() => {
-    if (isNationalSelected) return undefined;
-
+  // Fixed axis extents — max across all toggle permutations (exclusion × gen-only/regional)
+  // so toggling filters only shrinks bars, never shifts axes
+  const { fixedMaxCount: unfilteredMaxCount, fixedDevRight } = useMemo(() => {
     const DEV_OVER_CAP = 200;
     const computeDevRight = (deviations: number[]) => {
       const maxDev = Math.max(...deviations, 50);
       return Math.min(Math.ceil(maxDev / 50) * 50, DEV_OVER_CAP);
     };
-
-    // Current (possibly filtered) data's devRight
-    const currentDevRight = computeDevRight(activeTypeChartData.map(d => d.deviation));
-
-    // Unfiltered data's devRight
-    let unfilteredDeviations: number[];
-    if (selectedTypeChart === 'yours') {
-      unfilteredDeviations = analytics.typeDeviation.map(d => d.deviation);
-    } else {
-      const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
-      if (!dex) return currentDevRight;
-      const base = fullBaseline;
-      let pokemon = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
-      if (newPokemonOnly) {
-        pokemon = pokemon.filter(p => p.generation === dex.generation);
-      }
+    const computeTypeStats = (pokemon: ReturnType<typeof getPokemonById>[], base: typeof fullBaseline) => {
       const total = pokemon.length;
-      if (total === 0) return currentDevRight;
+      if (total === 0) return { maxCount: 1, devRight: 50 };
       const typeCounts: Record<string, number> = {};
       for (const t of TYPE_NAMES) typeCounts[t] = 0;
       for (const p of pokemon) {
-        for (const t of p.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
+        for (const t of p!.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
       }
-      unfilteredDeviations = TYPE_NAMES.map(t => {
+      const deviations = TYPE_NAMES.map(t => {
         const prop = typeCounts[t] / total;
         const baseProp = base.typeProp[t];
         return baseProp > 0 ? ((prop / baseProp) - 1) * 100 : 0;
       });
-    }
-    const unfilteredDevRight = computeDevRight(unfilteredDeviations);
+      return {
+        maxCount: Math.max(...Object.values(typeCounts), 1),
+        devRight: computeDevRight(deviations),
+      };
+    };
 
-    return Math.max(currentDevRight, unfilteredDevRight);
-  }, [selectedTypeChart, isNationalSelected, activeTypeChartData, newPokemonOnly, analytics.typeDeviation]);
+    if (selectedTypeChart === 'yours') {
+      // For "yours": permutations are exclusion on/off (no gen-only toggle)
+      const allIds = Object.values(sections).flat();
+      const allPokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+      const starterIds = new Set(sections['starter'] ?? []);
+      const filteredPokemon = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !starterIds.has(p.id));
+      const s1 = computeTypeStats(allPokemon, fullBaseline);
+      const s2 = computeTypeStats(filteredPokemon, filteredBaseline);
+      return {
+        fixedMaxCount: Math.max(s1.maxCount, s2.maxCount),
+        fixedDevRight: Math.max(s1.devRight, s2.devRight),
+      };
+    }
+
+    if (isNationalSelected) {
+      const allPokemon = getAllPokemon();
+      const filteredPokemon = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+      const s1 = computeTypeStats(allPokemon, fullBaseline);
+      const s2 = computeTypeStats(filteredPokemon, filteredBaseline);
+      return {
+        fixedMaxCount: Math.max(s1.maxCount, s2.maxCount),
+        fixedDevRight: undefined,
+      };
+    }
+
+    const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
+    if (!dex) return { fixedMaxCount: undefined, fixedDevRight: undefined };
+
+    // Up to 4 permutations: (exclusion on/off) × (gen-only/regional-dex)
+    const allInDex = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    const genOnly = allInDex.filter(p => p.generation === dex.generation);
+    const permutations = [allInDex, genOnly];
+    let maxCount = 1;
+    let maxDevRight = 50;
+    for (const set of permutations) {
+      const unfiltered = computeTypeStats(set, fullBaseline);
+      const filtered = computeTypeStats(
+        set.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id)),
+        filteredBaseline,
+      );
+      maxCount = Math.max(maxCount, unfiltered.maxCount, filtered.maxCount);
+      maxDevRight = Math.max(maxDevRight, unfiltered.devRight, filtered.devRight);
+    }
+    return { fixedMaxCount: maxCount, fixedDevRight: maxDevRight };
+  }, [selectedTypeChart, isNationalSelected, sections, analytics.typeDeviation]);
 
   const evoHist = useMemo(
     () => alignHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram, 5),
