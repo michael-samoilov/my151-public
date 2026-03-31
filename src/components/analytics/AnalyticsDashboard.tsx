@@ -533,7 +533,7 @@ export function AnalyticsDashboard() {
                   stageTotals[seg.stage] = (stageTotals[seg.stage] || 0) + seg.count;
                 }
               }
-              const stageNames = ['one', 'two', 'three'];
+              const stageNames = ['single', 'two', 'three'];
               return (
                 <div>
                   {/* Chart + inline legend */}
@@ -595,7 +595,9 @@ export function AnalyticsDashboard() {
                         className="text-center text-[10px] text-muted-foreground"
                         style={{ width: `${col.widthPct}%` }}
                       >
-                        {col.chainCount} {stageNames[col.lineLength - 1]}-stage ({col.widthPct.toFixed(0)}%)
+                        {col.chainCount} {stageNames[col.lineLength - 1]}-stage lines
+                        <br />
+                        ({col.widthPct.toFixed(0)}% of lines)
                       </div>
                     ))}
                   </div>
