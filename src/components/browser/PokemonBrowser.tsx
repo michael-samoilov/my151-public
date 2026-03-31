@@ -318,7 +318,7 @@ export function PokemonBrowser() {
       {/* Results area */}
       <div
         key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
-        className="flex-1 min-h-0 overflow-y-auto border-t -mt-px"
+        className="flex-1 min-h-0 overflow-y-auto"
       >
         <div className="px-2 pb-2 content-start">
           {/* Dual-column headers — sticky, left-aligned with 1st and 4th tile columns */}
