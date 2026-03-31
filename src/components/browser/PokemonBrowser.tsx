@@ -320,7 +320,6 @@ export function PokemonBrowser() {
         key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
         className="flex-1 min-h-0 overflow-y-auto px-2 pb-2"
       >
-        <div>
           {/* Dual-column headers — sticky, left-aligned with 1st and 4th tile columns */}
           {!isSearching && activeCategoryDef?.dualColumns && (
             <div className="sticky top-0 z-30 bg-background grid grid-cols-2 gap-x-1 px-1 py-[3px] border-b">
@@ -432,7 +431,6 @@ export function PokemonBrowser() {
           )}
           {/* Bottom padding for floating button clearance */}
           <div className="h-16" />
-        </div>
       </div>
 
       {/* Floating "Add X Pokemon" button */}
