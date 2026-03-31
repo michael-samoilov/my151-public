@@ -223,7 +223,7 @@ export function PokemonBrowser() {
       </div>
 
       {/* Horizontal scrollable chip bar — always visible, muted when search bypasses filters */}
-      <div className="px-3 pb-2">
+      <div className="px-3 pb-2 border-b border-b-background">
         <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
           {/* Type chip(s) */}
           {typeFilter && typeFilter.length > 0 ? (
