@@ -536,13 +536,7 @@ export function AnalyticsDashboard() {
           <div className="bg-card rounded-lg border p-4">
             {mekkoData.totalLines > 0 ? (() => {
               const chartHeight = 180;
-              const gap = 4;
-              // For proportional areas: height = density (count/width), so area = width × height ∝ count
-              const maxDensity = Math.max(
-                ...mekkoData.columns.map(c =>
-                  c.segments.reduce((s, seg) => s + seg.count, 0) / c.widthPct
-                ),
-              );
+              const gap = 8;
               // Compute total stage counts across all columns for the legend
               const stageTotals: Record<number, number> = {};
               for (const col of mekkoData.columns) {
@@ -550,17 +544,15 @@ export function AnalyticsDashboard() {
                   stageTotals[seg.stage] = (stageTotals[seg.stage] || 0) + seg.count;
                 }
               }
-              const stageNames = ['One', 'Double', 'Triple'];
+              const stageNames = ['Single', 'Double', 'Triple'];
               const totalPokemon = mekkoData.columns.reduce((sum, col) => sum + col.segments.reduce((s, seg) => s + seg.count, 0), 0);
+              const maxColTotal = Math.max(...mekkoData.columns.map(c => c.segments.reduce((s, seg) => s + seg.count, 0)));
               const lastCol = mekkoData.columns[mekkoData.columns.length - 1];
-              const lastColDensity = lastCol.segments.reduce((s, seg) => s + seg.count, 0) / lastCol.widthPct;
-              const lastColHeight = maxDensity > 0 ? (lastColDensity / maxDensity) * chartHeight : 0;
               const lastColTotal = lastCol.segments.reduce((s, seg) => s + seg.count, 0);
-              // Pre-compute segment heights for the last column to position legend labels
+              const lastColHeight = maxColTotal > 0 ? (lastColTotal / maxColTotal) * chartHeight : 0;
               const lastColSegHeights = lastCol.segments.map(seg =>
                 lastColTotal > 0 ? Math.max((seg.count / lastColTotal) * lastColHeight, seg.count > 0 ? 18 : 0) : 0
               );
-              // Stages present in the legend (descending, only non-zero totals)
               const legendStages = [3, 2, 1].filter(s => stageTotals[s]);
               const isTopmost = (s: number) => s === legendStages[0];
               return (
@@ -569,18 +561,19 @@ export function AnalyticsDashboard() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-end" style={{ height: chartHeight, gap }}>
                       {mekkoData.columns.map(col => {
-                        const colDensity = col.segments.reduce((s, seg) => s + seg.count, 0) / col.widthPct;
-                        const colHeight = maxDensity > 0 ? (colDensity / maxDensity) * chartHeight : 0;
                         const colTotal = col.segments.reduce((s, seg) => s + seg.count, 0);
+                        const colHeight = maxColTotal > 0 ? (colTotal / maxColTotal) * chartHeight : 0;
+                        const pokePct = totalPokemon > 0 ? ((colTotal / totalPokemon) * 100).toFixed(0) : '0';
                         return (
                           <div
                             key={col.lineLength}
-                            className="flex flex-col justify-end"
-                            style={{
-                              width: `${col.widthPct}%`,
-                              height: '100%',
-                            }}
+                            className="flex-1 flex flex-col justify-end"
+                            style={{ height: '100%' }}
                           >
+                            {/* Total label above column */}
+                            <div className="text-center text-[10px] text-muted-foreground font-semibold mb-0.5">
+                              {colTotal} ({pokePct}%)
+                            </div>
                             <div className="flex flex-col-reverse">
                               {col.segments.map(seg => {
                                 const segHeight = colTotal > 0
@@ -605,25 +598,18 @@ export function AnalyticsDashboard() {
                         );
                       })}
                     </div>
-                    {/* X-axis labels — same flex layout as chart so labels center under columns */}
+                    {/* X-axis labels */}
                     <div className="flex mt-1" style={{ gap }}>
-                      {mekkoData.columns.map(col => {
-                        const colPokemon = col.segments.reduce((s, seg) => s + seg.count, 0);
-                        const pokePct = totalPokemon > 0 ? ((colPokemon / totalPokemon) * 100).toFixed(0) : '0';
-                        return (
-                          <div
-                            key={col.lineLength}
-                            className="text-center text-[10px] text-muted-foreground"
-                            style={{ width: `${col.widthPct}%` }}
-                          >
-                            {stageNames[col.lineLength - 1]}-stage
-                            <br />
-                            ({col.widthPct.toFixed(0)}% of lines)
-                            <br />
-                            ({pokePct}% of Pokémon)
-                          </div>
-                        );
-                      })}
+                      {mekkoData.columns.map(col => (
+                        <div
+                          key={col.lineLength}
+                          className="flex-1 text-center text-[10px] text-muted-foreground"
+                        >
+                          {stageNames[col.lineLength - 1]}-stage
+                          <br />
+                          ({col.widthPct.toFixed(0)}% of lines)
+                        </div>
+                      ))}
                     </div>
                   </div>
                   {/* Inline legend — each row height matches its segment in the last column */}
