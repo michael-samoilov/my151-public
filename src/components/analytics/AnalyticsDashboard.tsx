@@ -594,8 +594,28 @@ export function AnalyticsDashboard() {
               const isFirstLegend = (s: number) => s === legendStages[0];
 
               const containerH = chartHeight + topMargin;
-              // Minimum segment height to fit a label inside (~14px for 10px font)
-              const MIN_LABEL_FIT = 14;
+
+              // Compute legend label positions with overlap resolution + leader lines
+              const activeSegs = legendCol.segments
+                .map((seg, idx) => ({ stage: seg.stage, count: seg.count, height: legendSegHeights[idx] }))
+                .filter(s => s.count > 0);
+              let legendYAccum = 0;
+              const segCentersFromBottom = activeSegs.map(s => {
+                const center = legendYAccum + s.height / 2;
+                legendYAccum += s.height;
+                return center;
+              });
+              const LEGEND_LABEL_H = 34;
+              const labelCentersFromBottom = [...segCentersFromBottom];
+              for (let i = 1; i < labelCentersFromBottom.length; i++) {
+                const minY = labelCentersFromBottom[i - 1] + LEGEND_LABEL_H;
+                if (labelCentersFromBottom[i] < minY) {
+                  labelCentersFromBottom[i] = minY;
+                }
+              }
+              const anyDisplaced = labelCentersFromBottom.some((y, i) =>
+                Math.abs(y - segCentersFromBottom[i]) > 1
+              );
 
               return (
                 <div className="flex">
@@ -606,47 +626,10 @@ export function AnalyticsDashboard() {
                         const colTotal = col.segments.reduce((s, seg) => s + seg.count, 0);
                         const pokePct = totalPokemon > 0 ? ((colTotal / totalPokemon) * 100).toFixed(0) : '0';
                         const segHeights = columnSegHeights[colIdx];
-
-                        // Compute displaced label positions for this column
-                        // Labels that don't fit inside their segment get placed outside
-                        const LABEL_H = 16;
-                        // Compute segment center Y from bottom of the stacked bar
-                        let segYAccum = 0;
-                        const segInfos = col.segments.map((seg, segIdx) => {
-                          const h = segHeights[segIdx];
-                          const centerFromBottom = segYAccum + h / 2;
-                          segYAccum += h;
-                          return { stage: seg.stage, count: seg.count, height: h, centerFromBottom };
-                        }).filter(s => s.count > 0);
-
-                        // Determine which labels are displaced (don't fit inside)
-                        const displacedLabels = segInfos
-                          .filter(s => s.height < MIN_LABEL_FIT)
-                          .map(s => {
-                            // Place outside to the right at natural Y
-                            return { ...s, needsLine: true };
-                          });
-
-                        // Resolve vertical overlaps among displaced labels using greedy push
-                        const resolvedLabels = displacedLabels.map(s => ({
-                          ...s,
-                          labelY: s.centerFromBottom,
-                        }));
-                        // Sort bottom-to-top, then push up to avoid overlap
-                        resolvedLabels.sort((a, b) => a.labelY - b.labelY);
-                        for (let i = 1; i < resolvedLabels.length; i++) {
-                          const minY = resolvedLabels[i - 1].labelY + LABEL_H;
-                          if (resolvedLabels[i].labelY < minY) {
-                            resolvedLabels[i].labelY = minY;
-                          }
-                        }
-                        const displacedMap = new Map(resolvedLabels.map(l => [l.stage, l]));
-                        const colHeight = segInfos.reduce((s, seg) => s + seg.height, 0);
-
                         return (
                           <div
                             key={col.lineLength}
-                            className="flex-1 flex flex-col justify-end relative"
+                            className="flex-1 flex flex-col justify-end"
                             style={{ height: '100%' }}
                           >
                             {colTotal > 0 && (
@@ -654,55 +637,23 @@ export function AnalyticsDashboard() {
                                 <div className="text-center text-[10px] text-muted-foreground font-semibold mb-0.5">
                                   {colTotal} ({pokePct}%)
                                 </div>
-                                <div className="relative">
-                                  <div className="flex flex-col-reverse">
-                                    {col.segments.map((seg, segIdx) => (
-                                      <div
-                                        key={seg.stage}
-                                        className="flex items-center justify-center text-white text-[10px] font-semibold overflow-hidden"
-                                        style={{
-                                          height: segHeights[segIdx],
-                                          backgroundColor: STAGE_COLORS[seg.stage - 1],
-                                        }}
-                                      >
-                                        {seg.count > 0 && segHeights[segIdx] >= MIN_LABEL_FIT && seg.count}
-                                      </div>
-                                    ))}
-                                  </div>
-                                  {/* Displaced labels + leader lines rendered as SVG overlay */}
-                                  {displacedMap.size > 0 && (
-                                    <svg
-                                      className="absolute top-0 left-0 overflow-visible pointer-events-none"
-                                      style={{ width: '100%', height: colHeight }}
+                                <div className="flex flex-col-reverse">
+                                  {col.segments.map((seg, segIdx) => (
+                                    <div
+                                      key={seg.stage}
+                                      className="relative flex items-center justify-center text-white text-[10px] font-semibold"
+                                      style={{
+                                        height: segHeights[segIdx],
+                                        backgroundColor: STAGE_COLORS[seg.stage - 1],
+                                      }}
                                     >
-                                      {resolvedLabels.map(label => {
-                                        const segY = colHeight - label.centerFromBottom;
-                                        const labelY = colHeight - label.labelY;
-                                        // Place label to the right of the bar
-                                        return (
-                                          <g key={label.stage}>
-                                            <line
-                                              x1="100%" y1={segY}
-                                              x2="108%" y2={labelY}
-                                              stroke={STAGE_COLORS[label.stage - 1]}
-                                              strokeWidth={1}
-                                              opacity={0.6}
-                                            />
-                                            <text
-                                              x="110%"
-                                              y={labelY}
-                                              dominantBaseline="central"
-                                              fill={STAGE_COLORS[label.stage - 1]}
-                                              fontSize={10}
-                                              fontWeight={600}
-                                            >
-                                              {label.count}
-                                            </text>
-                                          </g>
-                                        );
-                                      })}
-                                    </svg>
-                                  )}
+                                      {seg.count > 0 && (
+                                        <span className="absolute inset-0 flex items-center justify-center">
+                                          {seg.count}
+                                        </span>
+                                      )}
+                                    </div>
+                                  ))}
                                 </div>
                               </>
                             )}
@@ -725,24 +676,49 @@ export function AnalyticsDashboard() {
                       ))}
                     </div>
                   </div>
-                  {/* Inline legend — aligned with rightmost populated column's segments */}
-                  <div className="flex flex-col-reverse shrink-0 pl-3" style={{ height: containerH }}>
-                    {legendCol.segments.map((seg, segIdx) => (
-                      <div
-                        key={seg.stage}
-                        className="flex items-center text-[10px] whitespace-nowrap leading-tight"
-                        style={{ height: legendSegHeights[segIdx] }}
-                      >
-                        {seg.count > 0 && (
+                  {/* Inline legend — with leader lines when labels would overlap */}
+                  <div className="relative shrink-0" style={{ height: containerH, marginLeft: 12 }}>
+                    {/* SVG leader lines (only when labels are displaced) */}
+                    {anyDisplaced && (
+                      <svg className="absolute inset-0 overflow-visible pointer-events-none" style={{ width: 16, height: containerH }}>
+                        {activeSegs.map((seg, i) => {
+                          const segY = containerH - segCentersFromBottom[i];
+                          const labelY = containerH - labelCentersFromBottom[i];
+                          return (
+                            <path
+                              key={seg.stage}
+                              d={`M0,${segY} C8,${segY} 8,${labelY} 16,${labelY}`}
+                              fill="none"
+                              stroke={STAGE_COLORS[seg.stage - 1]}
+                              strokeWidth={1.5}
+                              opacity={0.5}
+                            />
+                          );
+                        })}
+                      </svg>
+                    )}
+                    {/* Labels — absolutely positioned */}
+                    {activeSegs.map((seg, i) => {
+                      const bottomPos = labelCentersFromBottom[i] - LEGEND_LABEL_H / 2;
+                      return (
+                        <div
+                          key={seg.stage}
+                          className="absolute text-[10px] whitespace-nowrap leading-tight flex items-center"
+                          style={{
+                            bottom: bottomPos,
+                            height: LEGEND_LABEL_H,
+                            left: anyDisplaced ? 18 : 0,
+                          }}
+                        >
                           <span className="text-muted-foreground">
                             <span className="font-bold" style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span>
                             {isFirstLegend(seg.stage) && <><br /><span className="font-bold">Pokémon</span></>}
                             <br />
                             <span className="font-bold">{stageTotals[seg.stage]}</span> (<span className="font-bold">{totalPokemon > 0 ? ((stageTotals[seg.stage] / totalPokemon) * 100).toFixed(0) : 0}%</span>)
                           </span>
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
