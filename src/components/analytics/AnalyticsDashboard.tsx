@@ -71,6 +71,7 @@ function alignHistograms(
 
 export function AnalyticsDashboard() {
   const [excludeSpecial, setExcludeSpecial] = useState(false);
+  const [excludeSpecialMekko, setExcludeSpecialMekko] = useState(false);
   const [selectedTypeChart, setSelectedTypeChart] = useState<string>('yours');
   const [newPokemonOnly, setNewPokemonOnly] = useState(true);
 
@@ -278,7 +279,11 @@ export function AnalyticsDashboard() {
   // Mekko chart data: group user's pokemon by evolution chain length
   const mekkoData = useMemo(() => {
     const allIdSet = new Set(Object.values(sections).flat());
-    const pokemon = [...allIdSet].map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    const starterSectionIds = new Set(sections['starter'] ?? []);
+    let pokemon = [...allIdSet].map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    if (excludeSpecialMekko) {
+      pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
+    }
 
     // Determine the true max stage for each chain from ALL pokemon (not just user's)
     const chainMaxStage = new Map<number, number>();
@@ -316,7 +321,7 @@ export function AnalyticsDashboard() {
     }
 
     return { columns, totalLines: totalChains };
-  }, [sections]);
+  }, [sections, excludeSpecialMekko]);
 
   if (analytics.total === 0) {
     return (
@@ -513,9 +518,21 @@ export function AnalyticsDashboard() {
         {/* Evolution & Stage Stats — Mekko Chart */}
         <section>
           <h3 className="text-lg font-semibold mb-1">Stage Distribution</h3>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-sm text-muted-foreground mb-2">
             Evolution lines by stage count. Width = % of lines, height = pokemon count.
           </p>
+          <div className="flex items-center gap-1.5 mb-3">
+            <button
+              onClick={() => setExcludeSpecialMekko(!excludeSpecialMekko)}
+              className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+                excludeSpecialMekko
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              Exclude starters/legendaries
+            </button>
+          </div>
           <div className="bg-card rounded-lg border p-4">
             {mekkoData.totalLines > 0 ? (() => {
               const chartHeight = 180;
