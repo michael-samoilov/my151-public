@@ -609,7 +609,6 @@ export function AnalyticsDashboard() {
 
                         // Compute displaced label positions for this column
                         // Labels that don't fit inside their segment get placed outside
-                        const segs = col.segments.filter(s => s.count > 0);
                         const LABEL_H = 16;
                         // Compute segment center Y from bottom of the stacked bar
                         let segYAccum = 0;

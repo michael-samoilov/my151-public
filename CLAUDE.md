@@ -6,4 +6,4 @@ When resuming from a context summary (e.g. after running out of context), only a
 
 ## Build Verification
 
-Always run `npx tsc --noEmit` to verify the build compiles before committing and pushing. Never push code that has not been type-checked.
+Always run `npm run build` to verify the build compiles before committing and pushing. Never push code that has not been build-verified. The build includes sprite caching and stricter type checking than `tsc --noEmit` alone.
