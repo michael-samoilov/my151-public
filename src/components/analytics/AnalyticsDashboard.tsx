@@ -653,7 +653,7 @@ export function AnalyticsDashboard() {
                     </div>
                   </div>
                   {/* Inline legend — aligned with rightmost populated column's segments */}
-                  <div className="flex flex-col-reverse shrink-0 pl-3" style={{ height: chartHeight + topMargin, paddingBottom: legendBottomOffset }}>
+                  <div className="flex flex-col-reverse shrink-0 pl-3" style={{ height: chartHeight + topMargin }}>
                     {legendCol.segments.map(seg => (
                       <div
                         key={seg.stage}
