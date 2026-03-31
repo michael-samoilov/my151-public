@@ -324,10 +324,10 @@ export function PokemonBrowser() {
           {/* Dual-column headers — sticky, left-aligned with 1st and 4th tile columns */}
           {!isSearching && activeCategoryDef?.dualColumns && (
             <div className="sticky top-0 z-30 bg-background grid grid-cols-2 gap-x-1 px-1 py-[3px] -mt-1 border-b">
-              <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide pl-[3px] md:pl-[2px]">
+              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide pl-[3px] md:pl-[2px]">
                 {activeCategoryDef.dualColumns.left.label}
               </div>
-              <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide pl-[3px] md:pl-[2px]">
+              <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide pl-[3px] md:pl-[2px]">
                 {activeCategoryDef.dualColumns.right.label}
               </div>
             </div>
