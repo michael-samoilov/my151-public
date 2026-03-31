@@ -605,16 +605,20 @@ export function AnalyticsDashboard() {
                 return center;
               });
 
-              // Detect overlap: each label is ~34px tall
+              // Resolve label positions: greedy bottom-up push to prevent overlap
               const LABEL_H = 34;
-              const hasOverlap = segCentersFromBottom.some((y, i) =>
-                i > 0 && y - segCentersFromBottom[i - 1] < LABEL_H
+              const labelCentersFromBottom = [...segCentersFromBottom];
+              // Ensure each label is at least LABEL_H above the previous
+              for (let i = 1; i < labelCentersFromBottom.length; i++) {
+                const minY = labelCentersFromBottom[i - 1] + LABEL_H;
+                if (labelCentersFromBottom[i] < minY) {
+                  labelCentersFromBottom[i] = minY;
+                }
+              }
+              // Check if any label was displaced (needs a leader line)
+              const displaced = labelCentersFromBottom.some((y, i) =>
+                Math.abs(y - segCentersFromBottom[i]) > 1
               );
-
-              // If overlapping, stack labels evenly from bottom
-              const labelCentersFromBottom = hasOverlap
-                ? activeSegs.map((_, i) => LABEL_H / 2 + i * LABEL_H)
-                : segCentersFromBottom;
 
               const containerH = chartHeight + topMargin;
 
@@ -676,7 +680,7 @@ export function AnalyticsDashboard() {
                   {/* Inline legend — with leader lines when labels would overlap */}
                   <div className="relative shrink-0" style={{ height: containerH, marginLeft: 12 }}>
                     {/* SVG leader lines (only when redistributed) */}
-                    {hasOverlap && (
+                    {displaced && (
                       <svg className="absolute inset-0 overflow-visible pointer-events-none" style={{ width: 16, height: containerH }}>
                         {activeSegs.map((seg, i) => {
                           const segY = containerH - segCentersFromBottom[i];
@@ -704,7 +708,7 @@ export function AnalyticsDashboard() {
                           style={{
                             bottom: bottomPos,
                             height: LABEL_H,
-                            left: hasOverlap ? 18 : 0,
+                            left: displaced ? 18 : 0,
                           }}
                         >
                           <span className="text-muted-foreground">
