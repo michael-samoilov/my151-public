@@ -186,7 +186,7 @@ export function PokemonBrowser() {
   const evoSizeKey = evoLineSizeFilter ? evoLineSizeFilter.join(',') : 'none';
 
   return (
-    <div className="flex flex-col h-full border-l relative">
+    <div className="flex flex-col h-full border-l relative bg-background">
       {/* Compact header */}
       <div className="p-3 pb-2 space-y-2">
         <div className="flex items-center justify-between">
