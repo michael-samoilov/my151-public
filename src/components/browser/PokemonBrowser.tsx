@@ -433,7 +433,7 @@ export function PokemonBrowser() {
         const newCount = stagedIds.filter(id => !assignedIds.has(id)).length;
         if (newCount === 0) return null;
         return (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
             <button
               onClick={handleSubmitStaged}
               className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors"
