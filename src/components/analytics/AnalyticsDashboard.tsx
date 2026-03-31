@@ -276,6 +276,31 @@ export function AnalyticsDashboard() {
     [analytics.yourBstHistogram, analytics.nationalBstHistogram],
   );
 
+  // Compute fixed Y-axis max across both toggle states for stable chart
+  const fixedMaxColTotal = useMemo(() => {
+    const allIdSet = new Set(Object.values(sections).flat());
+    const starterSectionIds = new Set(sections['starter'] ?? []);
+    const allPokemon = [...allIdSet].map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    const filteredPokemon = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
+
+    const chainMaxStage = new Map<number, number>();
+    for (const p of getAllPokemon()) {
+      const cur = chainMaxStage.get(p.evolutionChainId) || 0;
+      chainMaxStage.set(p.evolutionChainId, Math.max(cur, p.evolutionStage));
+    }
+
+    const getMaxCol = (pokemon: typeof allPokemon) => {
+      const counts: Record<number, number> = {};
+      for (const p of pokemon) {
+        const lineLen = Math.min(chainMaxStage.get(p.evolutionChainId) || 1, 3);
+        counts[lineLen] = (counts[lineLen] || 0) + 1;
+      }
+      return Math.max(...Object.values(counts), 0);
+    };
+
+    return Math.max(getMaxCol(allPokemon), getMaxCol(filteredPokemon));
+  }, [sections]);
+
   // Mekko chart data: group user's pokemon by evolution chain length
   const mekkoData = useMemo(() => {
     const allIdSet = new Set(Object.values(sections).flat());
@@ -536,8 +561,8 @@ export function AnalyticsDashboard() {
           <div className="bg-card rounded-lg border p-4">
             {mekkoData.totalLines > 0 ? (() => {
               const chartHeight = 180;
+              const topMargin = 20; // space above tallest bar for label
               const gap = 8;
-              // Compute total stage counts across all columns for the legend
               const stageTotals: Record<number, number> = {};
               for (const col of mekkoData.columns) {
                 for (const seg of col.segments) {
@@ -545,24 +570,25 @@ export function AnalyticsDashboard() {
                 }
               }
               const stageNames = ['Single', 'Double', 'Triple'];
+              const STAGE_LINE_COLORS = ['#e88a8a', '#d95050', '#b91c1c'];
               const totalPokemon = mekkoData.columns.reduce((sum, col) => sum + col.segments.reduce((s, seg) => s + seg.count, 0), 0);
-              const maxColTotal = Math.max(...mekkoData.columns.map(c => c.segments.reduce((s, seg) => s + seg.count, 0)));
               const lastCol = mekkoData.columns[mekkoData.columns.length - 1];
               const lastColTotal = lastCol.segments.reduce((s, seg) => s + seg.count, 0);
-              const lastColHeight = maxColTotal > 0 ? (lastColTotal / maxColTotal) * chartHeight : 0;
+              const lastColHeight = fixedMaxColTotal > 0 ? (lastColTotal / fixedMaxColTotal) * chartHeight : 0;
               const lastColSegHeights = lastCol.segments.map(seg =>
                 lastColTotal > 0 ? Math.max((seg.count / lastColTotal) * lastColHeight, seg.count > 0 ? 18 : 0) : 0
               );
               const legendStages = [3, 2, 1].filter(s => stageTotals[s]);
-              const isTopmost = (s: number) => s === legendStages[0];
+              const isFirstLegend = (s: number) => s === legendStages[0];
+              const isFirstCategory = (idx: number) => idx === 0;
               return (
                 <div className="flex">
-                  {/* Columns + labels */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-end" style={{ height: chartHeight, gap }}>
+                  {/* Columns + labels — fixed width so toggling doesn't jitter */}
+                  <div style={{ width: '70%' }}>
+                    <div className="flex items-end" style={{ height: chartHeight + topMargin, gap }}>
                       {mekkoData.columns.map(col => {
                         const colTotal = col.segments.reduce((s, seg) => s + seg.count, 0);
-                        const colHeight = maxColTotal > 0 ? (colTotal / maxColTotal) * chartHeight : 0;
+                        const colHeight = fixedMaxColTotal > 0 ? (colTotal / fixedMaxColTotal) * chartHeight : 0;
                         const pokePct = totalPokemon > 0 ? ((colTotal / totalPokemon) * 100).toFixed(0) : '0';
                         return (
                           <div
@@ -600,30 +626,33 @@ export function AnalyticsDashboard() {
                     </div>
                     {/* X-axis labels */}
                     <div className="flex mt-1" style={{ gap }}>
-                      {mekkoData.columns.map(col => (
+                      {mekkoData.columns.map((col, idx) => (
                         <div
                           key={col.lineLength}
-                          className="flex-1 text-center text-[10px] text-muted-foreground"
+                          className="flex-1 text-center text-[10px] text-muted-foreground leading-tight"
                         >
-                          {stageNames[col.lineLength - 1]}-stage
+                          <span className="font-bold" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
+                          {isFirstCategory(idx) ? ' lines' : ''}
                           <br />
-                          ({col.widthPct.toFixed(0)}% of lines)
+                          <span className="font-bold">{col.chainCount}</span> (<span className="font-bold">{col.widthPct.toFixed(0)}%</span>{isFirstCategory(idx) ? ' of lines' : ''})
                         </div>
                       ))}
                     </div>
                   </div>
                   {/* Inline legend — each row height matches its segment in the last column */}
-                  <div className="flex flex-col-reverse justify-end shrink-0 pl-2" style={{ height: chartHeight }}>
+                  <div className="flex flex-col-reverse justify-end shrink-0 pl-3" style={{ height: chartHeight + topMargin }}>
                     {lastCol.segments.map(seg => (
                       <div
                         key={seg.stage}
-                        className="flex items-center text-[10px] whitespace-nowrap"
+                        className="flex items-center text-[10px] whitespace-nowrap leading-tight"
                         style={{ height: lastColSegHeights[seg.stage - 1] }}
                       >
                         {seg.count > 0 && (
                           <span>
-                            <span className="font-bold">{stageTotals[seg.stage]} <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span></span>
-                            {isTopmost(seg.stage) && <><br /><span className="text-muted-foreground">Pokémon</span></>}
+                            <span className="font-bold" style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span>
+                            {isFirstLegend(seg.stage) && <span className="text-muted-foreground font-bold"> Pokémon</span>}
+                            <br />
+                            <span className="font-bold">{stageTotals[seg.stage]}</span> (<span className="font-bold">{totalPokemon > 0 ? ((stageTotals[seg.stage] / totalPokemon) * 100).toFixed(0) : 0}%</span>{isFirstLegend(seg.stage) ? ' of Pokémon' : ''})
                           </span>
                         )}
                       </div>
