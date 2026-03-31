@@ -5,7 +5,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
-import { getPokemonById, getAllPokemon, getEvolutionLine } from '@/hooks/usePokemonData';
+import { getPokemonById, getAllPokemon } from '@/hooks/usePokemonData';
 import { TYPE_NAMES } from '@/types/pokemon';
 import { STARTER_IDS } from '@/data/categories';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
@@ -275,37 +275,39 @@ export function AnalyticsDashboard() {
     [analytics.yourBstHistogram, analytics.nationalBstHistogram],
   );
 
-  // Mekko chart data: group user's pokemon by evolution line length
+  // Mekko chart data: group user's pokemon by evolution chain length
   const mekkoData = useMemo(() => {
-    const allIds = Object.values(sections).flat();
-    const pokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
-    // Group by evolution chain, dedupe chains
-    const seenChains = new Set<string>();
-    const lineLengths: number[] = []; // length of each unique evo line
-    const stageCountsByLineLength: Record<number, Record<number, number>> = {}; // lineLength -> stage -> count
+    const allIdSet = new Set(Object.values(sections).flat());
+    const pokemon = [...allIdSet].map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
 
-    for (const p of pokemon) {
-      const line = getEvolutionLine(p.id);
-      const key = line.map(m => m.id).join('-');
-      if (seenChains.has(key)) continue;
-      seenChains.add(key);
-      const len = Math.min(line.length, 3); // cap at 3
-      lineLengths.push(len);
-      if (!stageCountsByLineLength[len]) stageCountsByLineLength[len] = {};
-      for (const member of line) {
-        if (allIds.includes(member.id)) {
-          const stage = Math.min(member.evolutionStage, 3);
-          stageCountsByLineLength[len][stage] = (stageCountsByLineLength[len][stage] || 0) + 1;
-        }
-      }
+    // Determine the true max stage for each chain from ALL pokemon (not just user's)
+    const chainMaxStage = new Map<number, number>();
+    for (const p of getAllPokemon()) {
+      const cur = chainMaxStage.get(p.evolutionChainId) || 0;
+      chainMaxStage.set(p.evolutionChainId, Math.max(cur, p.evolutionStage));
     }
 
-    const totalLines = lineLengths.length;
+    // Count each of the user's pokemon once, grouped by chain length and stage
+    const stageCountsByLineLength: Record<number, Record<number, number>> = {};
+    const chainsPerLength: Record<number, Set<number>> = {};
+
+    for (const p of pokemon) {
+      const lineLen = Math.min(chainMaxStage.get(p.evolutionChainId) || 1, 3);
+      const stage = Math.min(p.evolutionStage, 3);
+
+      if (!stageCountsByLineLength[lineLen]) stageCountsByLineLength[lineLen] = {};
+      stageCountsByLineLength[lineLen][stage] = (stageCountsByLineLength[lineLen][stage] || 0) + 1;
+
+      if (!chainsPerLength[lineLen]) chainsPerLength[lineLen] = new Set();
+      chainsPerLength[lineLen].add(p.evolutionChainId);
+    }
+
+    const totalChains = new Set(pokemon.map(p => p.evolutionChainId)).size;
     const columns: { lineLength: number; widthPct: number; segments: { stage: number; count: number }[] }[] = [];
     for (const len of [1, 2, 3]) {
-      const lineCount = lineLengths.filter(l => l === len).length;
-      if (lineCount === 0) continue;
-      const widthPct = (lineCount / totalLines) * 100;
+      const chainCount = chainsPerLength[len]?.size || 0;
+      if (chainCount === 0) continue;
+      const widthPct = (chainCount / totalChains) * 100;
       const segments: { stage: number; count: number }[] = [];
       for (let s = 1; s <= len; s++) {
         segments.push({ stage: s, count: stageCountsByLineLength[len]?.[s] || 0 });
@@ -313,7 +315,7 @@ export function AnalyticsDashboard() {
       columns.push({ lineLength: len, widthPct, segments });
     }
 
-    return { columns, totalLines };
+    return { columns, totalLines: totalChains };
   }, [sections]);
 
   if (analytics.total === 0) {
