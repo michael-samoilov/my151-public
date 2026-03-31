@@ -563,6 +563,7 @@ export function AnalyticsDashboard() {
               const chartHeight = 180;
               const topMargin = 20;
               const gap = 8;
+              const MIN_SEG = 18;
               const stageTotals: Record<number, number> = {};
               for (const col of mekkoData.columns) {
                 for (const seg of col.segments) {
@@ -577,18 +578,25 @@ export function AnalyticsDashboard() {
                 const existing = mekkoData.columns.find(c => c.lineLength === len);
                 return existing || { lineLength: len, chainCount: 0, widthPct: 0, segments: [] as { stage: number; count: number }[] };
               });
-              // Use the rightmost populated column for legend alignment
-              const legendCol = allColumns[2].segments.length > 0 ? allColumns[2]
-                : allColumns[1].segments.length > 0 ? allColumns[1]
-                : allColumns[0];
-              const legendColTotal = legendCol.segments.reduce((s, seg) => s + seg.count, 0);
-              // Scale legend column height using fixedMaxColTotal for stable positioning
-              const legendColHeight = fixedMaxColTotal > 0 ? (legendColTotal / fixedMaxColTotal) * chartHeight : 0;
-              const legendColSegHeights = legendCol.segments.map(seg =>
-                legendColTotal > 0 ? Math.max((seg.count / legendColTotal) * legendColHeight, seg.count > 0 ? 18 : 0) : 0
-              );
-              // Bottom offset for legend: space below the legend column
-              const legendBottomOffset = chartHeight - legendColHeight;
+
+              // Pre-compute actual segment heights for all columns (accounting for minHeight)
+              const computeSegHeights = (segments: { stage: number; count: number }[]) => {
+                const colTotal = segments.reduce((s, seg) => s + seg.count, 0);
+                const colHeight = fixedMaxColTotal > 0 ? (colTotal / fixedMaxColTotal) * chartHeight : 0;
+                return segments.map(seg => {
+                  if (seg.count === 0) return 0;
+                  const natural = colTotal > 0 ? (seg.count / colTotal) * colHeight : 0;
+                  return Math.max(natural, MIN_SEG);
+                });
+              };
+              const columnSegHeights = allColumns.map(col => computeSegHeights(col.segments));
+
+              // Legend references rightmost populated column
+              const legendIdx = allColumns[2].segments.length > 0 ? 2
+                : allColumns[1].segments.length > 0 ? 1 : 0;
+              const legendCol = allColumns[legendIdx];
+              const legendSegHeights = columnSegHeights[legendIdx];
+
               const legendStages = [3, 2, 1].filter(s => stageTotals[s]);
               const isFirstLegend = (s: number) => s === legendStages[0];
               return (
@@ -596,10 +604,10 @@ export function AnalyticsDashboard() {
                   {/* Columns + labels — fixed width */}
                   <div style={{ width: '70%' }}>
                     <div className="flex items-end" style={{ height: chartHeight + topMargin, gap }}>
-                      {allColumns.map(col => {
+                      {allColumns.map((col, colIdx) => {
                         const colTotal = col.segments.reduce((s, seg) => s + seg.count, 0);
-                        const colHeight = fixedMaxColTotal > 0 ? (colTotal / fixedMaxColTotal) * chartHeight : 0;
                         const pokePct = totalPokemon > 0 ? ((colTotal / totalPokemon) * 100).toFixed(0) : '0';
+                        const segHeights = columnSegHeights[colIdx];
                         return (
                           <div
                             key={col.lineLength}
@@ -612,24 +620,18 @@ export function AnalyticsDashboard() {
                                   {colTotal} ({pokePct}%)
                                 </div>
                                 <div className="flex flex-col-reverse">
-                                  {col.segments.map(seg => {
-                                    const segHeight = colTotal > 0
-                                      ? (seg.count / colTotal) * colHeight
-                                      : 0;
-                                    return (
-                                      <div
-                                        key={seg.stage}
-                                        className="flex items-center justify-center text-white text-[10px] font-semibold"
-                                        style={{
-                                          height: segHeight,
-                                          backgroundColor: STAGE_COLORS[seg.stage - 1],
-                                          minHeight: seg.count > 0 ? 18 : 0,
-                                        }}
-                                      >
-                                        {seg.count > 0 && seg.count}
-                                      </div>
-                                    );
-                                  })}
+                                  {col.segments.map((seg, segIdx) => (
+                                    <div
+                                      key={seg.stage}
+                                      className="flex items-center justify-center text-white text-[10px] font-semibold"
+                                      style={{
+                                        height: segHeights[segIdx],
+                                        backgroundColor: STAGE_COLORS[seg.stage - 1],
+                                      }}
+                                    >
+                                      {seg.count > 0 && seg.count}
+                                    </div>
+                                  ))}
                                 </div>
                               </>
                             )}
@@ -654,11 +656,11 @@ export function AnalyticsDashboard() {
                   </div>
                   {/* Inline legend — aligned with rightmost populated column's segments */}
                   <div className="flex flex-col-reverse shrink-0 pl-3" style={{ height: chartHeight + topMargin }}>
-                    {legendCol.segments.map(seg => (
+                    {legendCol.segments.map((seg, segIdx) => (
                       <div
                         key={seg.stage}
                         className="flex items-center text-[10px] whitespace-nowrap leading-tight"
-                        style={{ height: legendColSegHeights[seg.stage - 1] }}
+                        style={{ height: legendSegHeights[segIdx] }}
                       >
                         {seg.count > 0 && (
                           <span className="text-muted-foreground">
