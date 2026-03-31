@@ -556,7 +556,7 @@ export function AnalyticsDashboard() {
               const chartHeight = 180;
               const topMargin = 20;
               const gap = 8;
-              const MIN_SEG = 18;
+              const MIN_SEG = 0;
               const stageTotals: Record<number, number> = {};
               for (const col of mekkoData.columns) {
                 for (const seg of col.segments) {
@@ -642,7 +642,7 @@ export function AnalyticsDashboard() {
                                   {col.segments.map((seg, segIdx) => (
                                     <div
                                       key={seg.stage}
-                                      className="flex items-center justify-center text-white text-[10px] font-semibold"
+                                      className="flex items-center justify-center text-white text-[10px] font-semibold overflow-hidden"
                                       style={{
                                         height: segHeights[segIdx],
                                         backgroundColor: STAGE_COLORS[seg.stage - 1],
