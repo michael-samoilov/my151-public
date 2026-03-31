@@ -76,8 +76,15 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
           onClick={handleTabTap}
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
-          <span className="text-xs font-semibold text-muted-foreground">
-            {sectionName}
+          <span className="text-xs font-semibold">
+            {activeSection ? (
+              <>
+                <span className="text-foreground">Adding to: </span>
+                <span className="text-primary">{sectionName}</span>
+              </>
+            ) : (
+              <span className="text-muted-foreground">{sectionName}</span>
+            )}
           </span>
         </div>
         <div className="border-b" />

@@ -187,38 +187,29 @@ export function PokemonBrowser() {
 
   return (
     <div className="flex flex-col h-full border-l relative bg-background">
-      {/* Compact header */}
-      <div className="p-3 pb-2 space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-bold">Browse Pokemon</h2>
-            {sectionName && (
-              <p className="text-xs text-primary font-medium">
-                Adding to: {sectionName}
-              </p>
+      {/* Search bar + count */}
+      <div className="p-3 pb-2">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name or number..."
+              className="pl-9 pr-9"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             )}
           </div>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
             {totalCount} found
           </span>
-        </div>
-
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by name or number..."
-            className="pl-9 pr-9"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
         </div>
       </div>
 
