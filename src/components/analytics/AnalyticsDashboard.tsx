@@ -518,9 +518,14 @@ export function AnalyticsDashboard() {
           </p>
           <div className="bg-card rounded-lg border p-4">
             {mekkoData.totalLines > 0 ? (() => {
-              const maxSegmentTotal = Math.max(...mekkoData.columns.map(c => c.segments.reduce((s, seg) => s + seg.count, 0)));
               const chartHeight = 180;
               const gap = 4;
+              // For proportional areas: height = density (count/width), so area = width × height ∝ count
+              const maxDensity = Math.max(
+                ...mekkoData.columns.map(c =>
+                  c.segments.reduce((s, seg) => s + seg.count, 0) / c.widthPct
+                ),
+              );
               return (
                 <div>
                   {/* Legend */}
@@ -534,38 +539,43 @@ export function AnalyticsDashboard() {
                   </div>
                   {/* Chart */}
                   <div className="flex items-end" style={{ height: chartHeight, gap }}>
-                    {mekkoData.columns.map(col => (
-                      <div
-                        key={col.lineLength}
-                        className="flex flex-col justify-end"
-                        style={{
-                          width: `${col.widthPct}%`,
-                          height: '100%',
-                        }}
-                      >
-                        {/* Stacked segments — bottom to top */}
-                        <div className="flex flex-col-reverse">
-                          {col.segments.map(seg => {
-                            const segHeight = maxSegmentTotal > 0
-                              ? (seg.count / maxSegmentTotal) * chartHeight
-                              : 0;
-                            return (
-                              <div
-                                key={seg.stage}
-                                className="flex items-center justify-center text-white text-[10px] font-semibold"
-                                style={{
-                                  height: segHeight,
-                                  backgroundColor: STAGE_COLORS[seg.stage - 1],
-                                  minHeight: seg.count > 0 ? 18 : 0,
-                                }}
-                              >
-                                {seg.count > 0 && seg.count}
-                              </div>
-                            );
-                          })}
+                    {mekkoData.columns.map(col => {
+                      const colDensity = col.segments.reduce((s, seg) => s + seg.count, 0) / col.widthPct;
+                      const colHeight = maxDensity > 0 ? (colDensity / maxDensity) * chartHeight : 0;
+                      const colTotal = col.segments.reduce((s, seg) => s + seg.count, 0);
+                      return (
+                        <div
+                          key={col.lineLength}
+                          className="flex flex-col justify-end"
+                          style={{
+                            width: `${col.widthPct}%`,
+                            height: '100%',
+                          }}
+                        >
+                          {/* Stacked segments — bottom to top */}
+                          <div className="flex flex-col-reverse">
+                            {col.segments.map(seg => {
+                              const segHeight = colTotal > 0
+                                ? (seg.count / colTotal) * colHeight
+                                : 0;
+                              return (
+                                <div
+                                  key={seg.stage}
+                                  className="flex items-center justify-center text-white text-[10px] font-semibold"
+                                  style={{
+                                    height: segHeight,
+                                    backgroundColor: STAGE_COLORS[seg.stage - 1],
+                                    minHeight: seg.count > 0 ? 18 : 0,
+                                  }}
+                                >
+                                  {seg.count > 0 && seg.count}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                   {/* X-axis labels */}
                   <div className="flex mt-1" style={{ gap }}>
