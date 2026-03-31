@@ -350,7 +350,7 @@ function GroupBox({
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          el.style.transition = 'height 150ms cubic-bezier(0.4, 0, 1, 1)';
+          el.style.transition = 'height 150ms ease-in-out';
           el.style.height = `${newHeight}px`;
         });
       });
