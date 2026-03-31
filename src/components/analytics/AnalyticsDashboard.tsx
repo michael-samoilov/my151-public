@@ -303,7 +303,7 @@ export function AnalyticsDashboard() {
     }
 
     const totalChains = new Set(pokemon.map(p => p.evolutionChainId)).size;
-    const columns: { lineLength: number; widthPct: number; segments: { stage: number; count: number }[] }[] = [];
+    const columns: { lineLength: number; chainCount: number; widthPct: number; segments: { stage: number; count: number }[] }[] = [];
     for (const len of [1, 2, 3]) {
       const chainCount = chainsPerLength[len]?.size || 0;
       if (chainCount === 0) continue;
@@ -312,7 +312,7 @@ export function AnalyticsDashboard() {
       for (let s = 1; s <= len; s++) {
         segments.push({ stage: s, count: stageCountsByLineLength[len]?.[s] || 0 });
       }
-      columns.push({ lineLength: len, widthPct, segments });
+      columns.push({ lineLength: len, chainCount, widthPct, segments });
     }
 
     return { columns, totalLines: totalChains };
@@ -526,18 +526,17 @@ export function AnalyticsDashboard() {
                   c.segments.reduce((s, seg) => s + seg.count, 0) / c.widthPct
                 ),
               );
+              // Compute total stage counts across all columns for the legend
+              const stageTotals: Record<number, number> = {};
+              for (const col of mekkoData.columns) {
+                for (const seg of col.segments) {
+                  stageTotals[seg.stage] = (stageTotals[seg.stage] || 0) + seg.count;
+                }
+              }
+              const stageNames = ['one', 'two', 'three'];
               return (
                 <div>
-                  {/* Legend */}
-                  <div className="flex items-center gap-4 mb-3">
-                    {[1, 2, 3].map(s => (
-                      <div key={s} className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: STAGE_COLORS[s - 1] }} />
-                        <span className="text-[10px] text-muted-foreground font-medium">Stage {s}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Chart */}
+                  {/* Chart + inline legend */}
                   <div className="flex items-end" style={{ height: chartHeight, gap }}>
                     {mekkoData.columns.map(col => {
                       const colDensity = col.segments.reduce((s, seg) => s + seg.count, 0) / col.widthPct;
@@ -576,6 +575,17 @@ export function AnalyticsDashboard() {
                         </div>
                       );
                     })}
+                    {/* Inline legend — right of chart */}
+                    <div className="flex flex-col justify-end gap-1.5 pl-3 shrink-0">
+                      {[3, 2, 1].map(s => stageTotals[s] ? (
+                        <div key={s} className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: STAGE_COLORS[s - 1] }} />
+                          <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
+                            {stageTotals[s]} stage {s}
+                          </span>
+                        </div>
+                      ) : null)}
+                    </div>
                   </div>
                   {/* X-axis labels */}
                   <div className="flex mt-1" style={{ gap }}>
@@ -585,7 +595,7 @@ export function AnalyticsDashboard() {
                         className="text-center text-[10px] text-muted-foreground"
                         style={{ width: `${col.widthPct}%` }}
                       >
-                        {col.lineLength}-stage ({col.widthPct.toFixed(0)}%)
+                        {col.chainCount} {stageNames[col.lineLength - 1]}-stage ({col.widthPct.toFixed(0)}%)
                       </div>
                     ))}
                   </div>
