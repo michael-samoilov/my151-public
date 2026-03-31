@@ -23,7 +23,7 @@ export const TYPE_COLORS: Record<TypeName, string> = {
 
 export const TYPE_TEXT_COLORS: Record<TypeName, string> = {
   normal: '#fff',
-  fire: '#fff',
+  fire: '#333',
   water: '#fff',
   electric: '#333',
   grass: '#fff',
