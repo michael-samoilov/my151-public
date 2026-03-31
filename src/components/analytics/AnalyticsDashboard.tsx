@@ -661,9 +661,9 @@ export function AnalyticsDashboard() {
                         style={{ height: legendColSegHeights[seg.stage - 1] }}
                       >
                         {seg.count > 0 && (
-                          <span>
+                          <span className="text-muted-foreground">
                             <span className="font-bold" style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span>
-                            {isFirstLegend(seg.stage) && <><br /><span className="text-muted-foreground font-bold">Pokémon</span></>}
+                            {isFirstLegend(seg.stage) && <><br /><span className="font-bold">Pokémon</span></>}
                             <br />
                             <span className="font-bold">{stageTotals[seg.stage]}</span> (<span className="font-bold">{totalPokemon > 0 ? ((stageTotals[seg.stage] / totalPokemon) * 100).toFixed(0) : 0}%</span>)
                           </span>
