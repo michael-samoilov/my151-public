@@ -200,7 +200,14 @@ export function AnalyticsDashboard() {
       return Math.max(...analytics.typeDeviation.map(d => d.count), 1);
     }
     if (isNationalSelected) {
-      return undefined; // hideDeviation handles full width
+      // Compute unfiltered national max count
+      const allPokemon = getAllPokemon();
+      const typeCounts: Record<string, number> = {};
+      for (const t of TYPE_NAMES) typeCounts[t] = 0;
+      for (const p of allPokemon) {
+        for (const t of p.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
+      }
+      return Math.max(...Object.values(typeCounts), 1);
     }
     const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
     if (!dex) return undefined;
