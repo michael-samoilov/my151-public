@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
@@ -332,8 +332,47 @@ function GroupBox({
   const showEmptyState = isEmpty && !isStarter;
   const hasPokemon = pokemonIds.length > 0;
 
+  // Animate height changes (e.g. when removing a pokemon causes a row to collapse)
+  const boxRef = useRef<HTMLDivElement>(null);
+  const prevHeightRef = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+
+    const newHeight = el.scrollHeight;
+    const oldHeight = prevHeightRef.current;
+
+    if (oldHeight !== null && oldHeight !== newHeight) {
+      el.style.height = `${oldHeight}px`;
+      el.style.overflow = 'hidden';
+      el.style.transition = 'none';
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          el.style.transition = 'height 300ms cubic-bezier(0.4, 0, 0.2, 1)';
+          el.style.height = `${newHeight}px`;
+        });
+      });
+    }
+
+    prevHeightRef.current = newHeight;
+  });
+
+  const handleTransitionEnd = useCallback((e: React.TransitionEvent) => {
+    if (e.propertyName === 'height' && boxRef.current) {
+      boxRef.current.style.height = '';
+      boxRef.current.style.overflow = '';
+      boxRef.current.style.transition = '';
+      // Update stored height to current auto height
+      prevHeightRef.current = boxRef.current.scrollHeight;
+    }
+  }, []);
+
   return (
     <div
+      ref={boxRef}
+      onTransitionEnd={handleTransitionEnd}
       className="rounded-lg"
       style={{
         backgroundColor: `${group.color}${hasPokemon ? '10' : '08'}`,
