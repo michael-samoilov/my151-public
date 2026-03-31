@@ -99,9 +99,6 @@ export function PokemonBrowser() {
   });
 
   const totalCount = groups.reduce((sum, g) => sum + g.members.length, 0);
-  const sectionName = activeSection
-    ? BUILD_GROUPS.find((g) => g.id === activeSection)?.name ?? 'Section'
-    : null;
 
   const activeCategoryDef = activeCategory
     ? CATEGORIES.find((c) => c.id === activeCategory)

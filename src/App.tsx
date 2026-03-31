@@ -77,7 +77,7 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
           <span className="text-xs font-semibold">
-            {activeSection ? (
+            {sectionName !== 'Browse Pokemon' ? (
               <>
                 <span className="text-foreground">Adding to: </span>
                 <span className="text-primary">{sectionName}</span>
