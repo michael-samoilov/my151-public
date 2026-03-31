@@ -377,7 +377,7 @@ export function PokemonBrowser() {
                   <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mt-2 mb-1 px-1">
                     {sub.label}
                   </div>
-                  <div className="grid grid-cols-2 gap-x-1">
+                  <div className="grid grid-cols-2 gap-x-1 items-start">
                     <EvoLineGrid
                       groups={leftGroups}
                       assignedIds={assignedIds}
