@@ -336,7 +336,7 @@ export function AnalyticsDashboard() {
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden">
       {/* Header — matches build pane style, no gear icon */}
-      <div className="px-6 py-2 border-b">
+      <div className="flex items-center justify-between px-4 py-2 border-b">
         <h2 className="text-2xl font-extrabold tracking-tight leading-none">
           <span className="text-primary">{analytics.total}</span>
           <span className="text-foreground">/151</span>
