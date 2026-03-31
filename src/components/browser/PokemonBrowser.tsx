@@ -323,7 +323,7 @@ export function PokemonBrowser() {
         <div className="p-2 space-y-1 content-start">
           {/* Dual-column headers — sticky, left-aligned with 1st and 4th tile columns */}
           {!isSearching && activeCategoryDef?.dualColumns && (
-            <div className="sticky top-0 z-20 bg-background grid grid-cols-2 gap-x-1 px-1 py-[3px]">
+            <div className="sticky top-0 z-20 bg-background grid grid-cols-2 gap-x-1 px-1 py-[3px] border-b">
               <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wide pl-[3px] md:pl-[2px]">
                 {activeCategoryDef.dualColumns.left.label}
               </div>
@@ -374,7 +374,7 @@ export function PokemonBrowser() {
 
               return (
                 <div key={sub.label}>
-                  <div className="sticky top-[20px] z-10 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide pt-2 pb-1 px-1">
+                  <div className="sticky top-[21px] z-10 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
                     {sub.label}
                   </div>
                   <div className="grid grid-cols-2 gap-x-1 items-start">
@@ -399,7 +399,7 @@ export function PokemonBrowser() {
 
             return (
               <div key={sub.label}>
-                <div className="sticky top-0 z-10 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide pt-2 pb-1 px-1">
+                <div className="sticky top-0 z-10 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
                   {sub.label}
                 </div>
                 <EvoLineGrid
