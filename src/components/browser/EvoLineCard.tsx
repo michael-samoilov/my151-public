@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import type { Pokemon } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { TYPE_COLORS } from '@/data/type-colors';
+import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
 import { Plus, ChevronRight } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
 
@@ -204,8 +204,8 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   {pokemon.types.map((t) => (
                     <span
                       key={t}
-                      className="w-[6vw] md:w-5 py-[0.2vw] md:py-px rounded text-[min(1.5vw,5px)] md:text-[5px] font-semibold capitalize text-white leading-tight text-center truncate flex items-center justify-center"
-                      style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
+                      className="w-[6vw] md:w-5 py-[0.2vw] md:py-px rounded text-[min(1.5vw,5px)] md:text-[5px] font-semibold capitalize leading-tight text-center truncate flex items-center justify-center"
+                      style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS], color: TYPE_TEXT_COLORS[t as keyof typeof TYPE_TEXT_COLORS] }}
                     >
                       <span className="translate-y-[0.5px]">{t}</span>
                     </span>

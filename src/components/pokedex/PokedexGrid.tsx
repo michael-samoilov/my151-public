@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
-import { TYPE_COLORS } from '@/data/type-colors';
+import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, Plus, X, Settings } from 'lucide-react';
 import {
@@ -163,8 +163,8 @@ function DraggableTile({
           {pokemon.types.map((t) => (
             <span
               key={t}
-              className="w-[6.5vw] md:w-[27px] py-[0.1vw] md:py-px rounded text-[min(1.4vw,5px)] md:text-[5px] font-semibold capitalize text-white leading-none translate-y-[0.25px] text-center"
-              style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
+              className="w-[6.5vw] md:w-[27px] py-[0.1vw] md:py-px rounded text-[min(1.4vw,5px)] md:text-[5px] font-semibold capitalize leading-none translate-y-[0.25px] text-center"
+              style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS], color: TYPE_TEXT_COLORS[t as keyof typeof TYPE_TEXT_COLORS] }}
             >
               {t}
             </span>
