@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, displayName } from '@/lib/utils';
 import type { Pokemon } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
@@ -202,7 +202,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   loading="lazy"
                 />
                 <span className="text-[min(2vw,8px)] md:text-[8px] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
-                  {pokemon.name}
+                  {displayName(pokemon.name)}
                 </span>
                 <div className="flex gap-[0.5vw] md:gap-0.5 mt-[0.5vw] md:mt-0.5 justify-center">
                   {pokemon.types.map((t) => (

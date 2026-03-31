@@ -3,6 +3,7 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
+import { displayName } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, Plus, X, Settings } from 'lucide-react';
 import {
@@ -62,10 +63,10 @@ function PokemonTileStatic({ id }: { id: number }) {
           imageRendering: 'pixelated',
         }}
         role="img"
-        aria-label={pokemon.name}
+        aria-label={displayName(pokemon.name)}
       />
       <span className="text-[min(1.8vw,7px)] md:text-[7px] font-medium capitalize truncate w-full text-center leading-tight">
-        {pokemon.name}
+        {displayName(pokemon.name)}
       </span>
       <div className="flex gap-[0.3vw] md:gap-0.5 mt-[0.3vw] md:mt-0.5">
         {pokemon.types.map((t) => (
@@ -154,10 +155,10 @@ function DraggableTile({
             imageRendering: 'pixelated',
           }}
           role="img"
-          aria-label={pokemon.name}
+          aria-label={displayName(pokemon.name)}
         />
         <span className="text-[min(1.8vw,7px)] md:text-[7px] font-medium capitalize truncate w-full text-center leading-tight">
-          {pokemon.name}
+          {displayName(pokemon.name)}
         </span>
         <div className="flex gap-[0.3vw] md:gap-0.5 mt-[0.3vw] md:mt-0.5">
           {pokemon.types.map((t) => (

@@ -5,7 +5,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
-import { getPokemonById, getAllPokemon } from '@/hooks/usePokemonData';
+import { getPokemonById, getAllPokemon, getEvolutionLine } from '@/hooks/usePokemonData';
 import { TYPE_NAMES } from '@/types/pokemon';
 import { STARTER_IDS } from '@/data/categories';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
@@ -283,16 +283,10 @@ export function AnalyticsDashboard() {
     const allPokemon = [...allIdSet].map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
     const filteredPokemon = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
 
-    const chainMaxStage = new Map<number, number>();
-    for (const p of getAllPokemon()) {
-      const cur = chainMaxStage.get(p.evolutionChainId) || 0;
-      chainMaxStage.set(p.evolutionChainId, Math.max(cur, p.evolutionStage));
-    }
-
     const getMaxCol = (pokemon: typeof allPokemon) => {
       const counts: Record<number, number> = {};
       for (const p of pokemon) {
-        const lineLen = Math.min(chainMaxStage.get(p.evolutionChainId) || 1, 3);
+        const lineLen = Math.min(getEvolutionLine(p.id).length, 3);
         counts[lineLen] = (counts[lineLen] || 0) + 1;
       }
       return Math.max(...Object.values(counts), 0);
@@ -310,29 +304,28 @@ export function AnalyticsDashboard() {
       pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
     }
 
-    // Determine the true max stage for each chain from ALL pokemon (not just user's)
-    const chainMaxStage = new Map<number, number>();
-    for (const p of getAllPokemon()) {
-      const cur = chainMaxStage.get(p.evolutionChainId) || 0;
-      chainMaxStage.set(p.evolutionChainId, Math.max(cur, p.evolutionStage));
-    }
-
-    // Count each of the user's pokemon once, grouped by chain length and stage
+    // Count each of the user's pokemon once, grouped by branch length and stage
+    // Use getEvolutionLine to determine each pokemon's specific branch length
+    // (e.g. regular Zigzagoon→Linoone is 2-stage, only Galar branch is 3-stage)
     const stageCountsByLineLength: Record<number, Record<number, number>> = {};
-    const chainsPerLength: Record<number, Set<number>> = {};
+    const chainsPerLength: Record<number, Set<string>> = {};
 
     for (const p of pokemon) {
-      const lineLen = Math.min(chainMaxStage.get(p.evolutionChainId) || 1, 3);
+      const line = getEvolutionLine(p.id);
+      const lineLen = Math.min(line.length, 3);
       const stage = Math.min(p.evolutionStage, 3);
+      // Use root pokemon ID as branch key (unique per branch, unlike evolutionChainId)
+      const branchKey = `${line[0].id}`;
 
       if (!stageCountsByLineLength[lineLen]) stageCountsByLineLength[lineLen] = {};
       stageCountsByLineLength[lineLen][stage] = (stageCountsByLineLength[lineLen][stage] || 0) + 1;
 
       if (!chainsPerLength[lineLen]) chainsPerLength[lineLen] = new Set();
-      chainsPerLength[lineLen].add(p.evolutionChainId);
+      chainsPerLength[lineLen].add(branchKey);
     }
 
-    const totalChains = new Set(pokemon.map(p => p.evolutionChainId)).size;
+    const allBranches = new Set(pokemon.map(p => `${getEvolutionLine(p.id)[0].id}`));
+    const totalChains = allBranches.size;
     const columns: { lineLength: number; chainCount: number; widthPct: number; segments: { stage: number; count: number }[] }[] = [];
     for (const len of [1, 2, 3]) {
       const chainCount = chainsPerLength[len]?.size || 0;
@@ -599,11 +592,37 @@ export function AnalyticsDashboard() {
 
               const legendStages = [3, 2, 1].filter(s => stageTotals[s]);
               const isFirstLegend = (s: number) => s === legendStages[0];
+
+              // Compute segment center Y positions (from bottom of chart area)
+              // Segments render bottom-to-top: stage 1, 2, 3
+              const activeSegs = legendCol.segments
+                .map((seg, idx) => ({ stage: seg.stage, count: seg.count, height: legendSegHeights[idx] }))
+                .filter(s => s.count > 0);
+              let yAccum = 0;
+              const segCentersFromBottom = activeSegs.map(s => {
+                const center = yAccum + s.height / 2;
+                yAccum += s.height;
+                return center;
+              });
+
+              // Detect overlap: each label is ~34px tall
+              const LABEL_H = 34;
+              const hasOverlap = segCentersFromBottom.some((y, i) =>
+                i > 0 && y - segCentersFromBottom[i - 1] < LABEL_H
+              );
+
+              // If overlapping, stack labels evenly from bottom
+              const labelCentersFromBottom = hasOverlap
+                ? activeSegs.map((_, i) => LABEL_H / 2 + i * LABEL_H)
+                : segCentersFromBottom;
+
+              const containerH = chartHeight + topMargin;
+
               return (
                 <div className="flex">
                   {/* Columns + labels — fixed width */}
                   <div style={{ width: '70%' }}>
-                    <div className="flex items-end" style={{ height: chartHeight + topMargin, gap }}>
+                    <div className="flex items-end" style={{ height: containerH, gap }}>
                       {allColumns.map((col, colIdx) => {
                         const colTotal = col.segments.reduce((s, seg) => s + seg.count, 0);
                         const pokePct = totalPokemon > 0 ? ((colTotal / totalPokemon) * 100).toFixed(0) : '0';
@@ -654,24 +673,49 @@ export function AnalyticsDashboard() {
                       ))}
                     </div>
                   </div>
-                  {/* Inline legend — aligned with rightmost populated column's segments */}
-                  <div className="flex flex-col-reverse shrink-0 pl-3" style={{ height: chartHeight + topMargin }}>
-                    {legendCol.segments.map((seg, segIdx) => (
-                      <div
-                        key={seg.stage}
-                        className="flex items-center text-[10px] whitespace-nowrap leading-tight"
-                        style={{ height: legendSegHeights[segIdx] }}
-                      >
-                        {seg.count > 0 && (
+                  {/* Inline legend — with leader lines when labels would overlap */}
+                  <div className="relative shrink-0" style={{ height: containerH, marginLeft: 12 }}>
+                    {/* SVG leader lines (only when redistributed) */}
+                    {hasOverlap && (
+                      <svg className="absolute inset-0 overflow-visible pointer-events-none" style={{ width: 16, height: containerH }}>
+                        {activeSegs.map((seg, i) => {
+                          const segY = containerH - segCentersFromBottom[i];
+                          const labelY = containerH - labelCentersFromBottom[i];
+                          return (
+                            <path
+                              key={seg.stage}
+                              d={`M0,${segY} C8,${segY} 8,${labelY} 16,${labelY}`}
+                              fill="none"
+                              stroke={STAGE_COLORS[seg.stage - 1]}
+                              strokeWidth={1.5}
+                              opacity={0.5}
+                            />
+                          );
+                        })}
+                      </svg>
+                    )}
+                    {/* Labels — absolutely positioned */}
+                    {activeSegs.map((seg, i) => {
+                      const bottomPos = labelCentersFromBottom[i] - LABEL_H / 2;
+                      return (
+                        <div
+                          key={seg.stage}
+                          className="absolute text-[10px] whitespace-nowrap leading-tight flex items-center"
+                          style={{
+                            bottom: bottomPos,
+                            height: LABEL_H,
+                            left: hasOverlap ? 18 : 0,
+                          }}
+                        >
                           <span className="text-muted-foreground">
                             <span className="font-bold" style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span>
                             {isFirstLegend(seg.stage) && <><br /><span className="font-bold">Pokémon</span></>}
                             <br />
                             <span className="font-bold">{stageTotals[seg.stage]}</span> (<span className="font-bold">{totalPokemon > 0 ? ((stageTotals[seg.stage] / totalPokemon) * 100).toFixed(0) : 0}%</span>)
                           </span>
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
