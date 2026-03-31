@@ -577,13 +577,18 @@ export function AnalyticsDashboard() {
                 const existing = mekkoData.columns.find(c => c.lineLength === len);
                 return existing || { lineLength: len, chainCount: 0, widthPct: 0, segments: [] as { stage: number; count: number }[] };
               });
-              // Use the highest-stage column that has data for legend alignment
-              const legendCol = [...mekkoData.columns].reverse().find(c => c.segments.length > 0) || allColumns[2];
+              // Use the rightmost populated column for legend alignment
+              const legendCol = allColumns[2].segments.length > 0 ? allColumns[2]
+                : allColumns[1].segments.length > 0 ? allColumns[1]
+                : allColumns[0];
               const legendColTotal = legendCol.segments.reduce((s, seg) => s + seg.count, 0);
+              // Scale legend column height using fixedMaxColTotal for stable positioning
               const legendColHeight = fixedMaxColTotal > 0 ? (legendColTotal / fixedMaxColTotal) * chartHeight : 0;
               const legendColSegHeights = legendCol.segments.map(seg =>
                 legendColTotal > 0 ? Math.max((seg.count / legendColTotal) * legendColHeight, seg.count > 0 ? 18 : 0) : 0
               );
+              // Bottom offset for legend: space below the legend column
+              const legendBottomOffset = chartHeight - legendColHeight;
               const legendStages = [3, 2, 1].filter(s => stageTotals[s]);
               const isFirstLegend = (s: number) => s === legendStages[0];
               return (
@@ -640,7 +645,7 @@ export function AnalyticsDashboard() {
                           className="flex-1 text-center text-[10px] text-muted-foreground leading-tight"
                         >
                           <span className="font-bold" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
-                          {idx === 0 ? ' lines' : ''}
+                          {idx === 0 ? <span className="font-bold"> lines</span> : ''}
                           <br />
                           <span className="font-bold">{col.chainCount}</span> (<span className="font-bold">{col.widthPct.toFixed(0)}%</span>)
                         </div>
@@ -648,7 +653,7 @@ export function AnalyticsDashboard() {
                     </div>
                   </div>
                   {/* Inline legend — aligned with rightmost populated column's segments */}
-                  <div className="flex flex-col-reverse justify-end shrink-0 pl-3" style={{ height: chartHeight + topMargin }}>
+                  <div className="flex flex-col-reverse shrink-0 pl-3" style={{ height: chartHeight + topMargin, paddingBottom: legendBottomOffset }}>
                     {legendCol.segments.map(seg => (
                       <div
                         key={seg.stage}
@@ -658,7 +663,7 @@ export function AnalyticsDashboard() {
                         {seg.count > 0 && (
                           <span>
                             <span className="font-bold" style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span>
-                            {isFirstLegend(seg.stage) && <span className="text-muted-foreground font-bold"> Pokémon</span>}
+                            {isFirstLegend(seg.stage) && <><br /><span className="text-muted-foreground font-bold">Pokémon</span></>}
                             <br />
                             <span className="font-bold">{stageTotals[seg.stage]}</span> (<span className="font-bold">{totalPokemon > 0 ? ((stageTotals[seg.stage] / totalPokemon) * 100).toFixed(0) : 0}%</span>)
                           </span>
