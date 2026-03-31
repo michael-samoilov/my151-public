@@ -320,10 +320,10 @@ export function PokemonBrowser() {
         key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
         className="flex-1 min-h-0 overflow-y-auto"
       >
-        <div className="p-2 space-y-1 content-start">
+        <div className="px-2 pb-2 content-start">
           {/* Dual-column headers — sticky, left-aligned with 1st and 4th tile columns */}
           {!isSearching && activeCategoryDef?.dualColumns && (
-            <div className="sticky top-0 z-30 bg-background grid grid-cols-2 gap-x-1 px-1 py-[3px] -mt-1 border-b">
+            <div className="sticky top-0 z-30 bg-background grid grid-cols-2 gap-x-1 px-1 py-[3px] border-b">
               <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide pl-[3px] md:pl-[2px]">
                 {activeCategoryDef.dualColumns.left.label}
               </div>
@@ -374,10 +374,10 @@ export function PokemonBrowser() {
 
               return (
                 <div key={sub.label}>
-                  <div className="sticky top-[21px] z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 -mt-1 mb-1 border-b">
+                  <div className="sticky top-[22px] z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
                     {sub.label}
                   </div>
-                  <div className="grid grid-cols-2 gap-x-1 items-start">
+                  <div className="grid grid-cols-2 gap-x-1 items-start pt-1">
                     <EvoLineGrid
                       groups={leftGroups}
                       assignedIds={assignedIds}
@@ -399,26 +399,28 @@ export function PokemonBrowser() {
 
             return (
               <div key={sub.label}>
-                <div className="sticky top-0 z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 -mt-1 mb-1 border-b">
+                <div className="sticky top-0 z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
                   {sub.label}
                 </div>
-                <EvoLineGrid
-                  groups={subGroups.map((group) => {
-                    const subMatchedIds = new Set(
-                      group.members.filter(m => subIdSet.has(m.id)).map(m => m.id)
-                    );
-                    return {
-                      key: `${sub.label}-${group.chainId}`,
-                      members: group.members,
-                      matchedIds: subMatchedIds,
-                    };
-                  })}
-                  assignedIds={assignedIds}
-                  stagedIds={stagedSet}
-                  onToggleStage={handleToggleStage}
-                  shinyIds={isSearching ? undefined : ('shinyIds' in sub ? new Set((sub as any).shinyIds) : shinyIds)}
-                  spriteOverrides={isSearching ? undefined : spriteOverrides}
-                />
+                <div className="pt-1">
+                  <EvoLineGrid
+                    groups={subGroups.map((group) => {
+                      const subMatchedIds = new Set(
+                        group.members.filter(m => subIdSet.has(m.id)).map(m => m.id)
+                      );
+                      return {
+                        key: `${sub.label}-${group.chainId}`,
+                        members: group.members,
+                        matchedIds: subMatchedIds,
+                      };
+                    })}
+                    assignedIds={assignedIds}
+                    stagedIds={stagedSet}
+                    onToggleStage={handleToggleStage}
+                    shinyIds={isSearching ? undefined : ('shinyIds' in sub ? new Set((sub as any).shinyIds) : shinyIds)}
+                    spriteOverrides={isSearching ? undefined : spriteOverrides}
+                  />
+                </div>
               </div>
             );
           })}
