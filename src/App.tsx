@@ -76,7 +76,7 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
           onClick={handleTabTap}
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
-          <span className="text-xs font-semibold">
+          <span className="text-sm font-semibold">
             {sectionName !== 'Browse Pokemon' ? (
               <>
                 <span className="text-foreground">Adding to: </span>

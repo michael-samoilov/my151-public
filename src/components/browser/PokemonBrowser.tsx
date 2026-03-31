@@ -203,7 +203,7 @@ export function PokemonBrowser() {
               </button>
             )}
           </div>
-          <span className="text-xs text-muted-foreground whitespace-nowrap">
+          <span className="w-[14vw] text-xs text-muted-foreground text-right">
             {totalCount} found
           </span>
         </div>
