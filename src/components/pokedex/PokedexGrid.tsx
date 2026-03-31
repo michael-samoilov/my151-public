@@ -669,7 +669,7 @@ export function PokedexGrid() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-2 border-b">
+      <div className="flex items-center justify-between px-4 py-2 border-b h-11">
         <h2 className="text-2xl font-extrabold tracking-tight leading-none">
           <span className="text-primary">{totalPlaced}</span>
           <span className="text-foreground">/151</span>
