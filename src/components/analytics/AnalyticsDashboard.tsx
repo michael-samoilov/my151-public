@@ -561,7 +561,7 @@ export function AnalyticsDashboard() {
           <div className="bg-card rounded-lg border p-4">
             {mekkoData.totalLines > 0 ? (() => {
               const chartHeight = 180;
-              const topMargin = 20; // space above tallest bar for label
+              const topMargin = 20;
               const gap = 8;
               const stageTotals: Record<number, number> = {};
               for (const col of mekkoData.columns) {
@@ -572,21 +572,26 @@ export function AnalyticsDashboard() {
               const stageNames = ['Single', 'Double', 'Triple'];
               const STAGE_LINE_COLORS = ['#e88a8a', '#d95050', '#b91c1c'];
               const totalPokemon = mekkoData.columns.reduce((sum, col) => sum + col.segments.reduce((s, seg) => s + seg.count, 0), 0);
-              const lastCol = mekkoData.columns[mekkoData.columns.length - 1];
-              const lastColTotal = lastCol.segments.reduce((s, seg) => s + seg.count, 0);
-              const lastColHeight = fixedMaxColTotal > 0 ? (lastColTotal / fixedMaxColTotal) * chartHeight : 0;
-              const lastColSegHeights = lastCol.segments.map(seg =>
-                lastColTotal > 0 ? Math.max((seg.count / lastColTotal) * lastColHeight, seg.count > 0 ? 18 : 0) : 0
+              // Always render 3 columns for stable layout
+              const allColumns = [1, 2, 3].map(len => {
+                const existing = mekkoData.columns.find(c => c.lineLength === len);
+                return existing || { lineLength: len, chainCount: 0, widthPct: 0, segments: [] as { stage: number; count: number }[] };
+              });
+              // Use the highest-stage column that has data for legend alignment
+              const legendCol = [...mekkoData.columns].reverse().find(c => c.segments.length > 0) || allColumns[2];
+              const legendColTotal = legendCol.segments.reduce((s, seg) => s + seg.count, 0);
+              const legendColHeight = fixedMaxColTotal > 0 ? (legendColTotal / fixedMaxColTotal) * chartHeight : 0;
+              const legendColSegHeights = legendCol.segments.map(seg =>
+                legendColTotal > 0 ? Math.max((seg.count / legendColTotal) * legendColHeight, seg.count > 0 ? 18 : 0) : 0
               );
               const legendStages = [3, 2, 1].filter(s => stageTotals[s]);
               const isFirstLegend = (s: number) => s === legendStages[0];
-              const isFirstCategory = (idx: number) => idx === 0;
               return (
                 <div className="flex">
-                  {/* Columns + labels — fixed width so toggling doesn't jitter */}
+                  {/* Columns + labels — fixed width */}
                   <div style={{ width: '70%' }}>
                     <div className="flex items-end" style={{ height: chartHeight + topMargin, gap }}>
-                      {mekkoData.columns.map(col => {
+                      {allColumns.map(col => {
                         const colTotal = col.segments.reduce((s, seg) => s + seg.count, 0);
                         const colHeight = fixedMaxColTotal > 0 ? (colTotal / fixedMaxColTotal) * chartHeight : 0;
                         const pokePct = totalPokemon > 0 ? ((colTotal / totalPokemon) * 100).toFixed(0) : '0';
@@ -596,63 +601,66 @@ export function AnalyticsDashboard() {
                             className="flex-1 flex flex-col justify-end"
                             style={{ height: '100%' }}
                           >
-                            {/* Total label above column */}
-                            <div className="text-center text-[10px] text-muted-foreground font-semibold mb-0.5">
-                              {colTotal} ({pokePct}%)
-                            </div>
-                            <div className="flex flex-col-reverse">
-                              {col.segments.map(seg => {
-                                const segHeight = colTotal > 0
-                                  ? (seg.count / colTotal) * colHeight
-                                  : 0;
-                                return (
-                                  <div
-                                    key={seg.stage}
-                                    className="flex items-center justify-center text-white text-[10px] font-semibold"
-                                    style={{
-                                      height: segHeight,
-                                      backgroundColor: STAGE_COLORS[seg.stage - 1],
-                                      minHeight: seg.count > 0 ? 18 : 0,
-                                    }}
-                                  >
-                                    {seg.count > 0 && seg.count}
-                                  </div>
-                                );
-                              })}
-                            </div>
+                            {colTotal > 0 && (
+                              <>
+                                <div className="text-center text-[10px] text-muted-foreground font-semibold mb-0.5">
+                                  {colTotal} ({pokePct}%)
+                                </div>
+                                <div className="flex flex-col-reverse">
+                                  {col.segments.map(seg => {
+                                    const segHeight = colTotal > 0
+                                      ? (seg.count / colTotal) * colHeight
+                                      : 0;
+                                    return (
+                                      <div
+                                        key={seg.stage}
+                                        className="flex items-center justify-center text-white text-[10px] font-semibold"
+                                        style={{
+                                          height: segHeight,
+                                          backgroundColor: STAGE_COLORS[seg.stage - 1],
+                                          minHeight: seg.count > 0 ? 18 : 0,
+                                        }}
+                                      >
+                                        {seg.count > 0 && seg.count}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </>
+                            )}
                           </div>
                         );
                       })}
                     </div>
                     {/* X-axis labels */}
                     <div className="flex mt-1" style={{ gap }}>
-                      {mekkoData.columns.map((col, idx) => (
+                      {allColumns.map((col, idx) => (
                         <div
                           key={col.lineLength}
                           className="flex-1 text-center text-[10px] text-muted-foreground leading-tight"
                         >
                           <span className="font-bold" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
-                          {isFirstCategory(idx) ? ' lines' : ''}
+                          {idx === 0 ? ' lines' : ''}
                           <br />
-                          <span className="font-bold">{col.chainCount}</span> (<span className="font-bold">{col.widthPct.toFixed(0)}%</span>{isFirstCategory(idx) ? ' of lines' : ''})
+                          <span className="font-bold">{col.chainCount}</span> (<span className="font-bold">{col.widthPct.toFixed(0)}%</span>)
                         </div>
                       ))}
                     </div>
                   </div>
-                  {/* Inline legend — each row height matches its segment in the last column */}
+                  {/* Inline legend — aligned with rightmost populated column's segments */}
                   <div className="flex flex-col-reverse justify-end shrink-0 pl-3" style={{ height: chartHeight + topMargin }}>
-                    {lastCol.segments.map(seg => (
+                    {legendCol.segments.map(seg => (
                       <div
                         key={seg.stage}
                         className="flex items-center text-[10px] whitespace-nowrap leading-tight"
-                        style={{ height: lastColSegHeights[seg.stage - 1] }}
+                        style={{ height: legendColSegHeights[seg.stage - 1] }}
                       >
                         {seg.count > 0 && (
                           <span>
                             <span className="font-bold" style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span>
                             {isFirstLegend(seg.stage) && <span className="text-muted-foreground font-bold"> Pokémon</span>}
                             <br />
-                            <span className="font-bold">{stageTotals[seg.stage]}</span> (<span className="font-bold">{totalPokemon > 0 ? ((stageTotals[seg.stage] / totalPokemon) * 100).toFixed(0) : 0}%</span>{isFirstLegend(seg.stage) ? ' of Pokémon' : ''})
+                            <span className="font-bold">{stageTotals[seg.stage]}</span> (<span className="font-bold">{totalPokemon > 0 ? ((stageTotals[seg.stage] / totalPokemon) * 100).toFixed(0) : 0}%</span>)
                           </span>
                         )}
                       </div>
