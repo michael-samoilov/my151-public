@@ -331,7 +331,7 @@ export function AnalyticsDashboard() {
     );
   }
 
-  const STAGE_COLORS = ['#ef4444', '#f59e0b', '#3b82f6'];
+  const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden">
