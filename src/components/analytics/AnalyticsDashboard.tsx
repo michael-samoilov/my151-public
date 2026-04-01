@@ -607,8 +607,8 @@ export function AnalyticsDashboard() {
               });
               const LEGEND_LABEL_H = 34;
               const LEGEND_LABEL_H_FIRST = 46; // first label has 3 lines (includes "Pokémon")
-              const legendLabelHeights = activeSegs.map((_, i) =>
-                i === 0 ? LEGEND_LABEL_H_FIRST : LEGEND_LABEL_H
+              const legendLabelHeights = activeSegs.map((seg) =>
+                isFirstLegend(seg.stage) ? LEGEND_LABEL_H_FIRST : LEGEND_LABEL_H
               );
               const LEGEND_GAP = 4; // minimum visual gap between labels
               // Compute minimum center-to-center spacing for each adjacent pair
