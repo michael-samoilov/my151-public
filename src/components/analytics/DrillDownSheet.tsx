@@ -52,10 +52,7 @@ function CardPanel({
   const noOp = useCallback(() => {}, []);
 
   return (
-    <div
-      className="flex flex-col h-full bg-background rounded-t-2xl overflow-hidden"
-      style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.15)' }}
-    >
+    <div className="flex flex-col h-full bg-background overflow-hidden">
       {/* Pull tab: entire area is draggable (handle + header + subtitle) */}
       <div
         className="shrink-0 touch-none cursor-grab active:cursor-grabbing"
@@ -350,15 +347,16 @@ export function DrillDownSheet() {
     : `${Math.max(dragY, 0)}px`;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none">
+    <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none" style={{ paddingTop: '20px' }}>
       <div
         ref={sheetRef}
-        className="pointer-events-auto flex flex-col overflow-hidden"
+        className="pointer-events-auto flex flex-col rounded-t-2xl"
         style={{
           height: `${SHEET_HEIGHT_VH}vh`,
           transform: `translateY(${currentTranslateY})`,
           transition: dragY === 0 && !isAnimating ? 'transform 0.3s ease-out' : 'none',
           overscrollBehavior: 'none',
+          boxShadow: '0 -4px 16px rgba(0,0,0,0.15)',
         }}
       >
         {/* Carousel — entire card (handle + header + accent + content) slides */}
