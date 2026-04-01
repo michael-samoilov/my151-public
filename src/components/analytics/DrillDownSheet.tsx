@@ -4,7 +4,8 @@ import { computeDrillDownData, type DrillDownData } from '@/hooks/useDrillDownDa
 import { EvoLineGrid } from '@/components/browser/EvoLineCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const SHEET_HEIGHT_VH = 85;
+const HEADER_HEIGHT = 49; // app header: py-3 + text + border
+const SHADOW_PAD = 20;   // room for upward box-shadow
 const PEEK_HEIGHT = 68;
 const EXPAND_THRESHOLD = 40;
 const DISMISS_THRESHOLD = 80;
@@ -342,17 +343,19 @@ export function DrillDownSheet() {
 
   if (!currentData) return null;
 
+  const sheetHeight = `calc(100dvh - ${HEADER_HEIGHT}px)`;
+
   const currentTranslateY = peek
-    ? `calc(${SHEET_HEIGHT_VH}vh - ${PEEK_HEIGHT}px + ${Math.max(dragY, -(PEEK_HEIGHT))}px)`
+    ? `calc(100dvh - ${HEADER_HEIGHT}px - ${PEEK_HEIGHT}px + ${Math.max(dragY, -(PEEK_HEIGHT))}px)`
     : `${Math.max(dragY, 0)}px`;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none" style={{ paddingTop: '20px' }}>
+    <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none" style={{ paddingTop: `${SHADOW_PAD}px` }}>
       <div
         ref={sheetRef}
         className="pointer-events-auto flex flex-col rounded-t-2xl"
         style={{
-          height: `${SHEET_HEIGHT_VH}vh`,
+          height: sheetHeight,
           transform: `translateY(${currentTranslateY})`,
           transition: dragY === 0 && !isAnimating ? 'transform 0.3s ease-out' : 'none',
           overscrollBehavior: 'none',
