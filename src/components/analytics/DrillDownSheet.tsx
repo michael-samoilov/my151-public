@@ -350,16 +350,18 @@ export function DrillDownSheet() {
     : `${Math.max(dragY, 0)}px`;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none" style={{ paddingTop: `${SHADOW_PAD}px` }}>
+    <div
+      className="fixed inset-x-0 bottom-0 z-50 pointer-events-none"
+      style={{ paddingTop: `${SHADOW_PAD}px`, filter: 'drop-shadow(0 -4px 8px rgba(0,0,0,0.15))' }}
+    >
       <div
         ref={sheetRef}
-        className="pointer-events-auto flex flex-col rounded-t-2xl"
+        className="pointer-events-auto flex flex-col rounded-t-2xl bg-background overflow-hidden"
         style={{
           height: sheetHeight,
           transform: `translateY(${currentTranslateY})`,
           transition: dragY === 0 && !isAnimating ? 'transform 0.3s ease-out' : 'none',
           overscrollBehavior: 'none',
-          boxShadow: '0 -4px 16px rgba(0,0,0,0.15)',
         }}
       >
         {/* Carousel — entire card (handle + header + accent + content) slides */}
