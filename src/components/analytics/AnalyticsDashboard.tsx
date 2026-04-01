@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAnalytics, fullBaseline, filteredBaseline } from '@/hooks/useAnalytics';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -78,20 +78,17 @@ export function AnalyticsDashboard() {
   // Track max observed height of stage distribution card to prevent jitter on toggle
   const stageCardRef = useRef<HTMLDivElement>(null);
   const stageCardMaxH = useRef(0);
-  const [stageCardMinH, setStageCardMinH] = useState(0);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = stageCardRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => {
-      const h = el.scrollHeight;
-      if (h > stageCardMaxH.current) {
-        stageCardMaxH.current = h;
-        setStageCardMinH(h);
-      }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+    // Temporarily clear minHeight to measure natural content height
+    el.style.minHeight = '';
+    const h = el.scrollHeight;
+    if (h > stageCardMaxH.current) {
+      stageCardMaxH.current = h;
+    }
+    el.style.minHeight = `${stageCardMaxH.current}px`;
+  });
 
   const analytics = useAnalytics();
   const sections = usePokedexStore((s) => s.sections);
@@ -569,7 +566,7 @@ export function AnalyticsDashboard() {
               Exclude starters/legendaries
             </button>
           </div>
-          <div ref={stageCardRef} className="bg-card rounded-lg border p-4" style={stageCardMinH ? { minHeight: stageCardMinH } : undefined}>
+          <div ref={stageCardRef} className="bg-card rounded-lg border p-4">
             {mekkoData.totalLines > 0 ? (() => {
               const chartHeight = 180;
               const topMargin = 20;
