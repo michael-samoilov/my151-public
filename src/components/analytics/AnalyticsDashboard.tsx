@@ -367,7 +367,7 @@ export function AnalyticsDashboard() {
         </h2>
       </div>
 
-      <div className="p-6 space-y-8 max-w-6xl mx-auto">
+      <div className="p-6 pb-0 space-y-8 max-w-6xl mx-auto">
         {/* What's Missing Advisor — moved to top */}
         <section className="bg-card rounded-lg border p-6">
           <WhatsAdvisor />
