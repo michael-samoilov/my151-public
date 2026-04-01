@@ -584,9 +584,12 @@ export function AnalyticsDashboard() {
               };
               const columnSegHeights = allColumns.map(col => computeSegHeights(col.segments));
 
-              // Legend references rightmost populated column
-              const legendIdx = allColumns[2].segments.length > 0 ? 2
-                : allColumns[1].segments.length > 0 ? 1 : 0;
+              // Legend references the tallest populated column (most visual space)
+              const legendIdx = allColumns.reduce((best, col, idx) => {
+                const total = col.segments.reduce((s, seg) => s + seg.count, 0);
+                const bestTotal = allColumns[best].segments.reduce((s, seg) => s + seg.count, 0);
+                return total > bestTotal ? idx : best;
+              }, 0);
               const legendCol = allColumns[legendIdx];
               const legendSegHeights = columnSegHeights[legendIdx];
 
@@ -712,23 +715,20 @@ export function AnalyticsDashboard() {
                                           </text>
                                         );
                                       }
-                                      // Displaced: show label at resolved Y with a small leader line
-                                      const segY = colHeight - label.segCenter;
-                                      const needsLine = Math.abs(labelY - segY) > 2;
+                                      // Displaced: show label at resolved Y with background pill
+                                      const bgColor = STAGE_COLORS[label.stage - 1];
                                       return (
                                         <g key={label.stage}>
-                                          {needsLine && (
-                                            <line
-                                              x1="50%" y1={segY}
-                                              x2="50%" y2={labelY}
-                                              stroke="white" strokeWidth={0.75} opacity={0.5}
-                                            />
-                                          )}
+                                          <rect
+                                            x="15%" y={labelY - 6}
+                                            width="70%" height={12}
+                                            rx={3}
+                                            fill={bgColor}
+                                          />
                                           <text
                                             x="50%" y={labelY}
                                             textAnchor="middle" dominantBaseline="central"
                                             fill="white" fontSize={LABEL_FONT} fontWeight={600}
-                                            style={{ textShadow: '0 0 3px rgba(0,0,0,0.6)' }}
                                           >
                                             {label.count}
                                           </text>
