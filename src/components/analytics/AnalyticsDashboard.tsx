@@ -606,9 +606,13 @@ export function AnalyticsDashboard() {
                 return center;
               });
               const LEGEND_LABEL_H = 34;
+              const LEGEND_LABEL_H_FIRST = 46; // first label has 3 lines (includes "Pokémon")
+              const legendLabelHeights = activeSegs.map((_, i) =>
+                i === 0 ? LEGEND_LABEL_H_FIRST : LEGEND_LABEL_H
+              );
               const labelCentersFromBottom = [...segCentersFromBottom];
               for (let i = 1; i < labelCentersFromBottom.length; i++) {
-                const minY = labelCentersFromBottom[i - 1] + LEGEND_LABEL_H;
+                const minY = labelCentersFromBottom[i - 1] + (legendLabelHeights[i - 1] + legendLabelHeights[i]) / 2;
                 if (labelCentersFromBottom[i] < minY) {
                   labelCentersFromBottom[i] = minY;
                 }
@@ -790,14 +794,14 @@ export function AnalyticsDashboard() {
                     )}
                     {/* Labels — absolutely positioned */}
                     {activeSegs.map((seg, i) => {
-                      const bottomPos = labelCentersFromBottom[i] - LEGEND_LABEL_H / 2;
+                      const bottomPos = labelCentersFromBottom[i] - legendLabelHeights[i] / 2;
                       return (
                         <div
                           key={seg.stage}
                           className="absolute text-[10px] whitespace-nowrap leading-tight flex items-center"
                           style={{
                             bottom: bottomPos,
-                            height: LEGEND_LABEL_H,
+                            height: legendLabelHeights[i],
                             left: anyDisplaced ? 18 : 0,
                           }}
                         >
