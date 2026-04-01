@@ -244,8 +244,8 @@ export function DrillDownSheet() {
     const width = sheetRef.current.offsetWidth;
     pendingNav.current = targetSibling;
     setIsAnimating(true);
-    // Animate to the target panel position (+ 12px gap between cards)
-    setSwipeX(direction * (width + 12));
+    // Animate to the target panel position
+    setSwipeX(direction * width);
   }, []);
 
   // Touch handlers
@@ -363,13 +363,13 @@ export function DrillDownSheet() {
         }}
       >
         {/* Carousel — each panel is its own rounded card */}
-        <div className="h-full relative overflow-x-clip">
+        <div className="h-full relative" style={{ clipPath: 'inset(-20px 0 0 0)' }}>
           <div
             ref={carouselRef}
-            className="absolute inset-0 flex will-change-transform gap-3"
+            className="absolute inset-0 flex will-change-transform"
             style={{
-              width: 'calc(300% + 24px)',
-              left: 'calc(-100% - 12px)',
+              width: '300%',
+              left: '-100%',
               transform: `translateX(${swipeX}px)`,
               transition: isAnimating ? 'transform 0.28s ease-out' : 'none',
             }}
