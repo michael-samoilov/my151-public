@@ -92,13 +92,13 @@ export function AnalyticsDashboard() {
   const activeBstBin = drillDownSegment?.kind === 'bst'
     ? drillDownSegment.binStart + (drillDownSegment.binEnd - drillDownSegment.binStart) / 2 : null;
 
-  const handleDrillToggle = (segment: DrillDownSegment) => {
+  const handleDrillToggle = (segment: DrillDownSegment, siblings?: DrillDownSegment[], excludeFlag?: boolean) => {
     // If tapping same segment, close; otherwise open new
     if (drillDownSegment && drillDownSegment.kind === segment.kind &&
       JSON.stringify(drillDownSegment) === JSON.stringify(segment)) {
       closeDrillDown();
     } else {
-      openDrillDown(segment);
+      openDrillDown(segment, siblings, excludeFlag);
     }
   };
 
@@ -170,6 +170,14 @@ export function AnalyticsDashboard() {
     }),
     [analytics.generationDeviation],
   );
+
+  // Compute sibling lists for swipe navigation
+  const typeSiblings = useMemo((): DrillDownSegment[] =>
+    typeChartData.filter(d => d.count > 0).map(d => ({ kind: 'type' as const, type: d.label.toLowerCase() })),
+    [typeChartData]);
+  const genSiblings = useMemo((): DrillDownSegment[] =>
+    genChartData.filter(d => d.count > 0).map(d => ({ kind: 'generation' as const, generation: parseInt(d.label.replace('Gen ', '')) })),
+    [genChartData]);
 
   // Compute type chart data for a regional/national dex
   const regionalTypeChartData: ButterflyRow[] = useMemo(() => {
@@ -299,6 +307,19 @@ export function AnalyticsDashboard() {
     () => alignHistograms(analytics.yourBstHistogram, analytics.nationalBstHistogram, 50, 100),
     [analytics.yourBstHistogram, analytics.nationalBstHistogram],
   );
+
+  const evoLevelSiblings = useMemo((): DrillDownSegment[] =>
+    evoHist.merged.filter(d => d.yoursPct > 0).map(d => ({
+      kind: 'evoLevel' as const,
+      binStart: d.x - evoHist.binSize / 2,
+      binEnd: d.x + evoHist.binSize / 2,
+    })), [evoHist]);
+  const bstSiblings = useMemo((): DrillDownSegment[] =>
+    bstHist.merged.filter(d => d.yoursPct > 0).map(d => ({
+      kind: 'bst' as const,
+      binStart: d.x - bstHist.binSize / 2,
+      binEnd: d.x + bstHist.binSize / 2,
+    })), [bstHist]);
 
   // Compute fixed Y-axis max across both toggle states for stable chart
   const fixedMaxColTotal = useMemo(() => {
@@ -485,7 +506,7 @@ export function AnalyticsDashboard() {
               hideDeviation={isNationalSelected}
               fixedMaxCount={unfilteredMaxCount}
               fixedDevRight={fixedDevRight}
-              onBarClick={selectedTypeChart === 'yours' ? (label) => handleDrillToggle({ kind: 'type', type: label.toLowerCase() }) : undefined}
+              onBarClick={selectedTypeChart === 'yours' ? (label) => handleDrillToggle({ kind: 'type', type: label.toLowerCase() }, typeSiblings, excludeSpecial) : undefined}
               activeLabel={selectedTypeChart === 'yours' ? activeTypeLabel : null}
             />
           </div>
@@ -500,7 +521,7 @@ export function AnalyticsDashboard() {
           <div className="bg-card rounded-lg border p-4">
             <ButterflyChart data={genChartData} rowHeight={28} onBarClick={(label) => {
               const gen = parseInt(label.replace('Gen ', ''));
-              if (!isNaN(gen)) handleDrillToggle({ kind: 'generation', generation: gen });
+              if (!isNaN(gen)) handleDrillToggle({ kind: 'generation', generation: gen }, genSiblings);
             }} activeLabel={activeGenLabel} />
           </div>
         </section>
@@ -531,7 +552,7 @@ export function AnalyticsDashboard() {
               yTicks={evoHist.yTicks}
               onBarClick={(binCenter) => {
                 const binStart = binCenter - evoHist.binSize / 2;
-                handleDrillToggle({ kind: 'evoLevel', binStart, binEnd: binStart + evoHist.binSize });
+                handleDrillToggle({ kind: 'evoLevel', binStart, binEnd: binStart + evoHist.binSize }, evoLevelSiblings);
               }}
               activeBin={activeEvoBin}
             />
@@ -565,7 +586,7 @@ export function AnalyticsDashboard() {
               yTicks={bstHist.yTicks}
               onBarClick={(binCenter) => {
                 const binStart = binCenter - bstHist.binSize / 2;
-                handleDrillToggle({ kind: 'bst', binStart, binEnd: binStart + bstHist.binSize });
+                handleDrillToggle({ kind: 'bst', binStart, binEnd: binStart + bstHist.binSize }, bstSiblings);
               }}
               activeBin={activeBstBin}
             />
@@ -776,7 +797,7 @@ export function AnalyticsDashboard() {
                                             outlineOffset: '-1px',
                                             opacity: highlighted ? 1 : undefined,
                                           }}
-                                          onClick={seg.count > 0 ? () => handleDrillToggle({ kind: 'stage', lineLength: col.lineLength, stage: seg.stage }) : undefined}
+                                          onClick={seg.count > 0 ? () => handleDrillToggle({ kind: 'stage', lineLength: col.lineLength, stage: seg.stage }, undefined, excludeSpecialMekko) : undefined}
                                         />
                                       );
                                     })}
@@ -839,7 +860,7 @@ export function AnalyticsDashboard() {
                             key={col.lineLength}
                             className="flex-1 text-center text-[10px] text-muted-foreground font-bold leading-tight tabular-nums cursor-pointer"
                             style={{ height: 38, textDecoration: isXActive ? 'underline' : undefined, textDecorationColor: isXActive ? STAGE_LINE_COLORS[col.lineLength - 1] : undefined }}
-                            onClick={() => col.chainCount > 0 && handleDrillToggle({ kind: 'lineLength', lineLength: col.lineLength })}
+                            onClick={() => col.chainCount > 0 && handleDrillToggle({ kind: 'lineLength', lineLength: col.lineLength }, undefined, excludeSpecialMekko)}
                           >
                             <span style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
                             <br />
@@ -883,7 +904,7 @@ export function AnalyticsDashboard() {
                             height: legendLabelHeights[i],
                             left: anyDisplaced ? 18 : 0,
                           }}
-                          onClick={() => handleDrillToggle({ kind: 'stageAll', stage: seg.stage })}
+                          onClick={() => handleDrillToggle({ kind: 'stageAll', stage: seg.stage }, undefined, excludeSpecialMekko)}
                         >
                           <span className="text-muted-foreground font-bold" style={isLegendActive ? { textDecoration: 'underline', textDecorationColor: STAGE_COLORS[seg.stage - 1] } : undefined}>
                             <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span>

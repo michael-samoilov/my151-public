@@ -27,6 +27,8 @@ interface PokedexState {
   mobileBrowserOpen: boolean;
   drillDownSegment: DrillDownSegment | null;
   drillDownPeek: boolean;
+  drillDownSiblings: DrillDownSegment[]; // ordered list of all segments in the same chart
+  drillDownExcludeSpecial: boolean; // whether the chart's exclusion toggle was active
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -45,9 +47,10 @@ interface PokedexState {
   setGenerationFilter: (gens: number[] | null) => void;
   toggleGeneration: (gen: number) => void;
   setEvoLineSizeFilter: (sizes: number[] | null) => void;
-  openDrillDown: (segment: DrillDownSegment) => void;
+  openDrillDown: (segment: DrillDownSegment, siblings?: DrillDownSegment[], excludeSpecial?: boolean) => void;
   expandDrillDown: () => void;
   closeDrillDown: () => void;
+  navigateDrillDown: (segment: DrillDownSegment) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -67,6 +70,8 @@ export const usePokedexStore = create<PokedexState>()(
       mobileBrowserOpen: false,
       drillDownSegment: null,
       drillDownPeek: true,
+      drillDownSiblings: [],
+      drillDownExcludeSpecial: false,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -186,9 +191,10 @@ export const usePokedexStore = create<PokedexState>()(
 
       setEvoLineSizeFilter: (sizes) => set({ evoLineSizeFilter: sizes }),
 
-      openDrillDown: (segment) => set({ drillDownSegment: segment, drillDownPeek: true }),
+      openDrillDown: (segment, siblings, excludeSpecial) => set({ drillDownSegment: segment, drillDownPeek: true, drillDownSiblings: siblings ?? [], drillDownExcludeSpecial: excludeSpecial ?? false }),
       expandDrillDown: () => set({ drillDownPeek: false }),
-      closeDrillDown: () => set({ drillDownSegment: null, drillDownPeek: true }),
+      closeDrillDown: () => set({ drillDownSegment: null, drillDownPeek: true, drillDownSiblings: [], drillDownExcludeSpecial: false }),
+      navigateDrillDown: (segment) => set({ drillDownSegment: segment }),
     }),
     {
       name: 'personal-151-pokedex-v3',

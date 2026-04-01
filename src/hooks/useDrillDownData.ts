@@ -38,6 +38,7 @@ export interface DrillDownData {
 export function useDrillDownData(): DrillDownData | null {
   const segment = usePokedexStore((s) => s.drillDownSegment);
   const storeSections = usePokedexStore((s) => s.sections);
+  const excludeSpecial = usePokedexStore((s) => s.drillDownExcludeSpecial);
 
   return useMemo(() => {
     if (!segment) return null;
@@ -50,8 +51,21 @@ export function useDrillDownData(): DrillDownData | null {
       }
     }
 
+    // Determine which IDs are "excluded" (starters/legendaries/mythicals)
+    const starterSectionIds = new Set(storeSections['starter'] ?? []);
+    const excludedIds = new Set<number>();
+    if (excludeSpecial) {
+      for (const id of pokemonToSection.keys()) {
+        const p = getPokemonById(id);
+        if (p && (p.isLegendary || p.isMythical || starterSectionIds.has(p.id))) {
+          excludedIds.add(id);
+        }
+      }
+    }
+
     // Filter placed Pokemon based on segment criteria
     const matchingIds = new Set<number>();
+    const matchingNonExcludedIds = new Set<number>();
     const allPlacedIds = [...pokemonToSection.keys()];
 
     for (const id of allPlacedIds) {
@@ -59,20 +73,30 @@ export function useDrillDownData(): DrillDownData | null {
       if (!p) continue;
       if (matchesSegment(p, id, segment)) {
         matchingIds.add(id);
+        if (!excludedIds.has(id)) {
+          matchingNonExcludedIds.add(id);
+        }
       }
     }
 
+    // Need at least some matching pokemon (excluded or not) to show anything
     if (matchingIds.size === 0) return null;
 
     // Build evolution line groups, deduped by root
     const seenRoots = new Set<string>();
     const evoLinesBySection = new Map<string, { key: string; members: Pokemon[]; matchedIds: Set<number> }[]>();
+    const nonExcludedLineRoots = new Set<string>();
 
     for (const id of matchingIds) {
       const line = getEvolutionLine(id);
       const rootKey = line.map(m => m.id).join('-');
       if (seenRoots.has(rootKey)) continue;
       seenRoots.add(rootKey);
+
+      // Track if this line has any non-excluded matching member
+      if ([...line].some(m => matchingNonExcludedIds.has(m.id))) {
+        nonExcludedLineRoots.add(rootKey);
+      }
 
       // Figure out which section this line belongs to (use first placed member's section)
       let lineSectionId = 'other';
@@ -81,9 +105,13 @@ export function useDrillDownData(): DrillDownData | null {
         if (sec) { lineSectionId = sec; break; }
       }
 
+      // matchedIds = members matching the segment AND not excluded
+      // Excluded members will appear as part of the line but grayed out
       const lineMatchedIds = new Set<number>();
       for (const m of line) {
-        if (matchingIds.has(m.id)) lineMatchedIds.add(m.id);
+        if (matchingIds.has(m.id) && !excludedIds.has(m.id)) {
+          lineMatchedIds.add(m.id);
+        }
       }
 
       const groups = evoLinesBySection.get(lineSectionId) ?? [];
@@ -105,19 +133,21 @@ export function useDrillDownData(): DrillDownData | null {
       });
     }
 
-    const totalLines = seenRoots.size;
+    // Subtitle counts only non-excluded pokemon
+    const countForSubtitle = matchingNonExcludedIds.size;
+    const linesForSubtitle = nonExcludedLineRoots.size;
     const { title, color, icon } = getSegmentMeta(segment);
 
     return {
       title,
-      subtitle: `${matchingIds.size} Pokémon across ${totalLines} line${totalLines !== 1 ? 's' : ''}`,
+      subtitle: `${countForSubtitle} Pokémon across ${linesForSubtitle} line${linesForSubtitle !== 1 ? 's' : ''}`,
       color,
       icon,
       sections,
-      totalPokemon: matchingIds.size,
-      totalLines,
+      totalPokemon: countForSubtitle,
+      totalLines: linesForSubtitle,
     };
-  }, [segment, storeSections]);
+  }, [segment, storeSections, excludeSpecial]);
 }
 
 function matchesSegment(p: Pokemon, id: number, segment: DrillDownSegment): boolean {

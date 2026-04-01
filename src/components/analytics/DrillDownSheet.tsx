@@ -1,23 +1,42 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { useDrillDownData } from '@/hooks/useDrillDownData';
 import { EvoLineGrid } from '@/components/browser/EvoLineCard';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const SHEET_HEIGHT_VH = 85;
-const PEEK_HEIGHT = 56; // px — pull tab + title only (above accent line)
+const PEEK_HEIGHT = 52; // px — pull tab + title only (above accent line)
 const EXPAND_THRESHOLD = 40;
 const DISMISS_THRESHOLD = 80;
+const SWIPE_THRESHOLD = 50; // px horizontal drag to navigate
+
+function getSegmentLabel(seg: import('@/store/usePokedexStore').DrillDownSegment): string {
+  switch (seg.kind) {
+    case 'type': return seg.type.charAt(0).toUpperCase() + seg.type.slice(1);
+    case 'generation': return `Gen ${seg.generation}`;
+    case 'evoLevel': return `Lv ${seg.binStart}–${seg.binEnd - 1}`;
+    case 'bst': return `${seg.binStart}–${seg.binEnd - 1}`;
+    default: return '';
+  }
+}
 
 export function DrillDownSheet() {
   const expandDrillDown = usePokedexStore((s) => s.expandDrillDown);
   const closeDrillDown = usePokedexStore((s) => s.closeDrillDown);
+  const navigateDrillDown = usePokedexStore((s) => s.navigateDrillDown);
   const peek = usePokedexStore((s) => s.drillDownPeek);
   const sections = usePokedexStore((s) => s.sections);
+  const siblings = usePokedexStore((s) => s.drillDownSiblings);
+  const segment = usePokedexStore((s) => s.drillDownSegment);
   const data = useDrillDownData();
 
   const [dragY, setDragY] = useState(0);
+  const [dragX, setDragX] = useState(0);
   const dragStartY = useRef<number | null>(null);
+  const dragStartX = useRef<number | null>(null);
   const isDragging = useRef(false);
+  const dragAxis = useRef<'none' | 'vertical' | 'horizontal'>('none');
+  const contentRef = useRef<HTMLDivElement>(null);
 
   const assignedIds = useMemo(() => {
     const ids = new Set<number>();
@@ -30,38 +49,81 @@ export function DrillDownSheet() {
   const emptySet = useMemo(() => new Set<number>(), []);
   const noOp = useCallback(() => {}, []);
 
+  // Compute prev/next siblings
+  const { prevSibling, nextSibling } = useMemo(() => {
+    if (!segment || siblings.length < 2) return { prevSibling: null, nextSibling: null };
+    const idx = siblings.findIndex(s => JSON.stringify(s) === JSON.stringify(segment));
+    if (idx === -1) return { prevSibling: null, nextSibling: null };
+    return {
+      prevSibling: idx > 0 ? siblings[idx - 1] : null,
+      nextSibling: idx < siblings.length - 1 ? siblings[idx + 1] : null,
+    };
+  }, [segment, siblings]);
+
+  // Lock body scroll when sheet is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     dragStartY.current = e.touches[0].clientY;
+    dragStartX.current = e.touches[0].clientX;
     isDragging.current = false;
+    dragAxis.current = 'none';
   }, []);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (dragStartY.current === null) return;
+    if (dragStartY.current === null || dragStartX.current === null) return;
     const dy = e.touches[0].clientY - dragStartY.current;
+    const dx = e.touches[0].clientX - dragStartX.current;
+
+    // Lock axis on first significant movement
+    if (dragAxis.current === 'none' && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+      dragAxis.current = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
+    }
+
     isDragging.current = true;
-    setDragY(dy);
-    e.preventDefault();
-  }, []);
+
+    if (dragAxis.current === 'horizontal' && siblings.length >= 2) {
+      setDragX(dx);
+      e.preventDefault();
+    } else if (dragAxis.current === 'vertical') {
+      setDragY(dy);
+      e.preventDefault();
+    }
+  }, [siblings.length]);
 
   const handleTouchEnd = useCallback(() => {
     if (dragStartY.current === null) return;
 
-    if (peek) {
-      if (dragY < -EXPAND_THRESHOLD) {
-        expandDrillDown();
-      } else if (dragY > DISMISS_THRESHOLD) {
-        closeDrillDown();
+    if (dragAxis.current === 'horizontal') {
+      if (dragX > SWIPE_THRESHOLD && prevSibling) {
+        navigateDrillDown(prevSibling);
+      } else if (dragX < -SWIPE_THRESHOLD && nextSibling) {
+        navigateDrillDown(nextSibling);
       }
-    } else {
-      if (dragY > DISMISS_THRESHOLD) {
-        closeDrillDown();
+    } else if (dragAxis.current === 'vertical') {
+      if (peek) {
+        if (dragY < -EXPAND_THRESHOLD) {
+          expandDrillDown();
+        } else if (dragY > DISMISS_THRESHOLD) {
+          closeDrillDown();
+        }
+      } else {
+        if (dragY > DISMISS_THRESHOLD) {
+          closeDrillDown();
+        }
       }
     }
 
     setDragY(0);
+    setDragX(0);
     dragStartY.current = null;
+    dragStartX.current = null;
     isDragging.current = false;
-  }, [dragY, peek, expandDrillDown, closeDrillDown]);
+    dragAxis.current = 'none';
+  }, [dragY, dragX, peek, expandDrillDown, closeDrillDown, navigateDrillDown, prevSibling, nextSibling]);
 
   const handleTabTap = useCallback(() => {
     if (!isDragging.current) {
@@ -73,6 +135,11 @@ export function DrillDownSheet() {
     }
   }, [peek, expandDrillDown, closeDrillDown]);
 
+  // Prevent scroll events on the content from passing through to the page
+  const handleContentTouchMove = useCallback((e: React.TouchEvent) => {
+    e.stopPropagation();
+  }, []);
+
   if (!data) return null;
 
   const currentTranslate = peek
@@ -80,35 +147,72 @@ export function DrillDownSheet() {
     : `${Math.max(dragY, 0)}px`;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none">
-      {/* Sheet — no backdrop overlay */}
+    <div
+      className="fixed inset-x-0 bottom-0 z-50"
+      style={{ touchAction: 'none' }}
+      onTouchMove={(e) => e.preventDefault()}
+    >
+      {/* Sheet */}
       <div
-        className="pointer-events-auto bg-background rounded-t-2xl shadow-2xl flex flex-col"
+        className="bg-background rounded-t-2xl flex flex-col"
         style={{
           height: `${SHEET_HEIGHT_VH}vh`,
           transform: `translateY(${currentTranslate})`,
-          transition: dragY === 0 ? 'transform 0.3s ease-out' : 'none',
+          transition: dragY === 0 && dragX === 0 ? 'transform 0.3s ease-out' : 'none',
           overscrollBehavior: 'none',
+          boxShadow: '0 -4px 16px rgba(0,0,0,0.15)',
         }}
       >
         {/* Header — always visible in peek (above accent line) */}
         <div
-          className="flex flex-col items-center py-2.5 cursor-grab active:cursor-grabbing touch-none shrink-0"
+          className="flex flex-col items-center py-2 cursor-grab active:cursor-grabbing touch-none shrink-0"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onClick={handleTabTap}
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1.5" />
-          <div className="flex items-center gap-2">
-            {data.icon && (
-              <img src={data.icon} alt="" className="w-4 h-4" style={{ imageRendering: 'pixelated' }} />
-            )}
-            <span className="text-sm font-semibold" style={{ color: data.color }}>
-              {data.title}
-            </span>
-            <span className="text-xs text-muted-foreground">{data.subtitle}</span>
+          {/* Title row with prev/next navigation */}
+          <div className="flex items-center w-full px-3">
+            {/* Prev */}
+            <div className="flex-1 flex items-center gap-0.5 min-w-0">
+              {prevSibling && (
+                <button
+                  className="flex items-center gap-0.5 text-[10px] text-muted-foreground truncate"
+                  onClick={(e) => { e.stopPropagation(); navigateDrillDown(prevSibling); }}
+                >
+                  <ChevronLeft className="w-3 h-3 shrink-0" />
+                  <span className="truncate">{getSegmentLabel(prevSibling)}</span>
+                </button>
+              )}
+            </div>
+
+            {/* Center title */}
+            <div className="flex items-center gap-1.5 shrink-0 mx-2">
+              {data.icon && (
+                <img src={data.icon} alt="" className="w-4 h-4" style={{ imageRendering: 'pixelated' }} />
+              )}
+              <span className="text-sm font-semibold" style={{ color: data.color }}>
+                {data.title}
+              </span>
+            </div>
+
+            {/* Next */}
+            <div className="flex-1 flex items-center justify-end gap-0.5 min-w-0">
+              {nextSibling && (
+                <button
+                  className="flex items-center gap-0.5 text-[10px] text-muted-foreground truncate"
+                  onClick={(e) => { e.stopPropagation(); navigateDrillDown(nextSibling); }}
+                >
+                  <span className="truncate">{getSegmentLabel(nextSibling)}</span>
+                  <ChevronRight className="w-3 h-3 shrink-0" />
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* Subtitle on separate line */}
+          <span className="text-[10px] text-muted-foreground mt-0.5">{data.subtitle}</span>
         </div>
 
         {/* Color accent line */}
@@ -116,8 +220,10 @@ export function DrillDownSheet() {
 
         {/* Content — scrollable when expanded */}
         <div
+          ref={contentRef}
           className="flex-1 min-h-0 overflow-y-auto"
-          style={{ overscrollBehavior: 'contain' }}
+          style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}
+          onTouchMove={handleContentTouchMove}
         >
           <div className="px-2 pb-2">
             {data.sections.map((section) => (
