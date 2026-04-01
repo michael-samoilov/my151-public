@@ -619,8 +619,8 @@ export function AnalyticsDashboard() {
 
               return (
                 <div className="flex">
-                  {/* Columns + labels — fixed width */}
-                  <div style={{ width: '70%' }}>
+                  {/* Columns + labels — chart takes remaining space */}
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-end" style={{ height: containerH, gap }}>
                       {allColumns.map((col, colIdx) => {
                         const colTotal = col.segments.reduce((s, seg) => s + seg.count, 0);
@@ -769,7 +769,7 @@ export function AnalyticsDashboard() {
                     </div>
                   </div>
                   {/* Inline legend — with leader lines when labels would overlap */}
-                  <div className="relative shrink-0" style={{ height: containerH, marginLeft: 12 }}>
+                  <div className="relative shrink-0" style={{ height: containerH, marginLeft: 12, width: 68 }}>
                     {/* SVG leader lines (only when labels are displaced) */}
                     {anyDisplaced && (
                       <svg className="absolute inset-0 overflow-visible pointer-events-none" style={{ width: 16, height: containerH }}>
