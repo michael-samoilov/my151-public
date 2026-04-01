@@ -689,7 +689,7 @@ export function AnalyticsDashboard() {
                           >
                             {colTotal > 0 && (
                               <>
-                                <div className="text-center text-[10px] text-muted-foreground font-semibold mb-0.5">
+                                <div className="text-center text-[10px] text-muted-foreground font-semibold mb-0.5 leading-tight">
                                   {colTotal} {colIdx === 0 && 'Pokémon '}({pokePct}%)
                                 </div>
                                 <div className="relative">
