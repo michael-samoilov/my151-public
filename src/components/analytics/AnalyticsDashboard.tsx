@@ -533,11 +533,11 @@ export function AnalyticsDashboard() {
           </div>
         </section>
 
-        {/* Evolution & Stage Stats — Mekko Chart */}
+        {/* Evolution & Stage Stats — Stacked Bar Chart */}
         <section>
           <h3 className="text-lg font-semibold mb-1">Stage Distribution</h3>
           <p className="text-sm text-muted-foreground mb-2">
-            Evolution lines by stage count. Width = % of lines, height = pokemon count.
+            Pokémon grouped by evolution line length. Each bar shows the stage breakdown within that group.
           </p>
           <div className="flex items-center gap-1.5 mb-3">
             <button
