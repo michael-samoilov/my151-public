@@ -680,7 +680,7 @@ export function PokedexGrid() {
 
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
-          <div className="p-3 space-y-1.5">
+          <div className="p-3 pb-0 space-y-1.5">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -716,16 +716,16 @@ export function PokedexGrid() {
                 )}
               </DragOverlay>
             </DndContext>
-            {/* Bottom breathing room with pokeball */}
-            <div className="h-16 flex items-center justify-center !mt-3">
-              <svg width="24" height="24" viewBox="0 0 24 24" className="text-muted-foreground/20">
-                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
-                <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
-                <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-              </svg>
-            </div>
+          </div>
+          {/* Bottom breathing room with pokeball */}
+          <div className="h-16 flex items-center justify-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" className="text-muted-foreground/20">
+              <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
+              <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
+              <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+            </svg>
           </div>
         </ScrollArea>
       </div>

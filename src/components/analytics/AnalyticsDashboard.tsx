@@ -367,7 +367,7 @@ export function AnalyticsDashboard() {
         </h2>
       </div>
 
-      <div className="p-6 pb-3 space-y-8 max-w-6xl mx-auto">
+      <div className="p-6 pb-0 space-y-8 max-w-6xl mx-auto">
         {/* What's Missing Advisor — moved to top */}
         <section className="bg-card rounded-lg border p-6">
           <WhatsAdvisor />
@@ -844,16 +844,16 @@ export function AnalyticsDashboard() {
           </div>
         </section>
 
-        {/* Bottom breathing room with pokeball */}
-        <div className="h-16 flex items-center justify-center" style={{ marginTop: 12 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" className="text-muted-foreground/20">
-            <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
-            <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
-            <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-          </svg>
-        </div>
+      </div>
+      {/* Bottom breathing room with pokeball */}
+      <div className="h-16 flex items-center justify-center">
+        <svg width="24" height="24" viewBox="0 0 24 24" className="text-muted-foreground/20">
+          <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
+          <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+        </svg>
       </div>
     </div>
   );
