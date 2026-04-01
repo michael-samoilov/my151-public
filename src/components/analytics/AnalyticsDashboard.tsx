@@ -761,7 +761,6 @@ export function AnalyticsDashboard() {
                           className="flex-1 text-center text-[10px] text-muted-foreground leading-tight"
                         >
                           <span className="font-bold" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
-                          {idx === 0 ? <span className="font-bold"> lines</span> : ''}
                           <br />
                           <span className="font-bold">{col.chainCount}</span>{idx === 0 && ' lines'} (<span className="font-bold">{col.widthPct.toFixed(0)}%</span>)
                         </div>
