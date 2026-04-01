@@ -52,9 +52,7 @@ function CardPanel({
   const noOp = useCallback(() => {}, []);
 
   return (
-    <div className="flex flex-col h-full rounded-t-2xl bg-background overflow-hidden"
-      style={{ filter: 'drop-shadow(0 -4px 8px rgba(0,0,0,0.15))' }}
-    >
+    <div className="flex flex-col h-full rounded-t-2xl bg-background overflow-hidden">
       {/* Pull tab: entire area is draggable (handle + header + subtitle) */}
       <div
         className="shrink-0 touch-none cursor-grab active:cursor-grabbing"
@@ -360,10 +358,11 @@ export function DrillDownSheet() {
           transform: `translateY(${currentTranslateY})`,
           transition: dragY === 0 && !isAnimating ? 'transform 0.3s ease-out' : 'none',
           overscrollBehavior: 'none',
+          filter: 'drop-shadow(0 -4px 8px rgba(0,0,0,0.15))',
         }}
       >
         {/* Carousel — each panel is its own rounded card */}
-        <div className="h-full relative" style={{ clipPath: 'inset(-20px 0 0 0)' }}>
+        <div className="h-full relative overflow-x-clip">
           <div
             ref={carouselRef}
             className="absolute inset-0 flex will-change-transform"
