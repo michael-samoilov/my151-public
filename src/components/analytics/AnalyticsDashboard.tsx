@@ -584,12 +584,9 @@ export function AnalyticsDashboard() {
               };
               const columnSegHeights = allColumns.map(col => computeSegHeights(col.segments));
 
-              // Legend references the tallest populated column (most visual space)
-              const legendIdx = allColumns.reduce((best, col, idx) => {
-                const total = col.segments.reduce((s, seg) => s + seg.count, 0);
-                const bestTotal = allColumns[best].segments.reduce((s, seg) => s + seg.count, 0);
-                return total > bestTotal ? idx : best;
-              }, 0);
+              // Legend references rightmost populated column
+              const legendIdx = allColumns[2].segments.length > 0 ? 2
+                : allColumns[1].segments.length > 0 ? 1 : 0;
               const legendCol = allColumns[legendIdx];
               const legendSegHeights = columnSegHeights[legendIdx];
 
