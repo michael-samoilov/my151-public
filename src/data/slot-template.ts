@@ -17,8 +17,8 @@ export const BUILD_GROUPS: BuildGroup[] = [
   { id: 'starter', name: 'Starters', filterType: 'category', filterId: 'starter', color: '#888888' },
 
   // Early route
+  { id: 'early-bug', name: 'Early Route Bug', filterType: 'archetype', filterId: 'early-bug', color: '#a6b91a' },
   { id: 'early-bird', name: 'Early Route Bird', filterType: 'archetype', filterId: 'early-bird', color: '#a98ff3' },
-  { id: 'early-bug', name: 'Early Bug', filterType: 'archetype', filterId: 'early-bug', color: '#a6b91a' },
   { id: 'early-rodent', name: 'Early Route Mammal', filterType: 'archetype', filterId: 'early-rodent', color: '#a8a77a' },
   { id: 'pikachu-clone', name: 'Pikaclone', filterType: 'archetype', filterId: 'pikachu-clone', color: '#f7d02c' },
   { id: 'early-normal', name: 'Domestic', filterType: 'archetype', filterId: 'early-normal', color: '#a8a77a' },
