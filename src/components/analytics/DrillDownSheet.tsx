@@ -31,6 +31,8 @@ function CardPanel({
   onHandleTouchMove,
   onHandleTouchEnd,
   onHandleClick,
+  onNavPrev,
+  onNavNext,
   swipeLocked,
 }: {
   data: DrillDownData;
@@ -42,6 +44,8 @@ function CardPanel({
   onHandleTouchMove?: (e: React.TouchEvent) => void;
   onHandleTouchEnd?: () => void;
   onHandleClick?: () => void;
+  onNavPrev?: () => void;
+  onNavNext?: () => void;
   swipeLocked?: boolean;
 }) {
   const emptySet = useMemo(() => new Set<number>(), []);
@@ -52,46 +56,57 @@ function CardPanel({
       className="flex flex-col h-full bg-background rounded-t-2xl overflow-hidden"
       style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.15)' }}
     >
-      {/* Drag handle */}
+      {/* Pull tab: entire area is draggable (handle + header + subtitle) */}
       <div
-        className="flex items-center justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing touch-none shrink-0"
+        className="shrink-0 touch-none cursor-grab active:cursor-grabbing"
         onTouchStart={onHandleTouchStart}
         onTouchMove={onHandleTouchMove}
         onTouchEnd={onHandleTouchEnd}
         onClick={onHandleClick}
       >
-        <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-      </div>
-
-      {/* Card header */}
-      <div className="flex flex-col items-center shrink-0 pt-0.5 pb-1.5">
-        <div className="flex items-center w-full px-3">
-          <div className="flex-1 flex items-center min-w-0">
-            {prevLabel && (
-              <span className="flex items-center gap-0.5 text-xs text-muted-foreground truncate">
-                <ChevronLeft className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">{prevLabel}</span>
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0 mx-2">
-            {data.icon && (
-              <img src={data.icon} alt="" className="w-4 h-4" style={{ imageRendering: 'pixelated' }} />
-            )}
-            <span className="text-sm font-semibold" style={{ color: data.color }}>
-              {data.title}
-            </span>
-          </div>
-          <div className="flex-1 flex items-center justify-end min-w-0">
-            {nextLabel && (
-              <span className="flex items-center gap-0.5 text-xs text-muted-foreground truncate">
-                <span className="truncate">{nextLabel}</span>
-                <ChevronRight className="w-3.5 h-3.5 shrink-0" />
-              </span>
-            )}
-          </div>
+        {/* Drag indicator */}
+        <div className="flex items-center justify-center pt-2 pb-1">
+          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
         </div>
-        <span className="text-[10px] text-muted-foreground mt-0.5">{data.subtitle}</span>
+
+        {/* Card header */}
+        <div className="flex flex-col items-center pt-0.5 pb-1.5">
+          <div className="flex items-center w-full px-3">
+            <div className="flex-1 flex items-center min-w-0">
+              {prevLabel && (
+                <button
+                  className="flex items-center gap-0.5 text-xs text-muted-foreground truncate"
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); onNavPrev?.(); }}
+                >
+                  <ChevronLeft className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{prevLabel}</span>
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0 mx-2">
+              {data.icon && (
+                <img src={data.icon} alt="" className="w-4 h-4" style={{ imageRendering: 'pixelated' }} />
+              )}
+              <span className="text-sm font-semibold" style={{ color: data.color }}>
+                {data.title}
+              </span>
+            </div>
+            <div className="flex-1 flex items-center justify-end min-w-0">
+              {nextLabel && (
+                <button
+                  className="flex items-center gap-0.5 text-xs text-muted-foreground truncate"
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onClick={(e) => { e.stopPropagation(); onNavNext?.(); }}
+                >
+                  <span className="truncate">{nextLabel}</span>
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+                </button>
+              )}
+            </div>
+          </div>
+          <span className="text-[10px] text-muted-foreground mt-0.5">{data.subtitle}</span>
+        </div>
       </div>
 
       {/* Accent line */}
@@ -318,6 +333,16 @@ export function DrillDownSheet() {
     }
   }, [peek, expandDrillDown, closeDrillDown]);
 
+  const handleNavPrev = useCallback(() => {
+    if (isAnimating || !prevSibling) return;
+    commitSwipe(prevSibling, 1);
+  }, [isAnimating, prevSibling, commitSwipe]);
+
+  const handleNavNext = useCallback(() => {
+    if (isAnimating || !nextSibling) return;
+    commitSwipe(nextSibling, -1);
+  }, [isAnimating, nextSibling, commitSwipe]);
+
   if (!currentData) return null;
 
   const currentTranslateY = peek
@@ -366,6 +391,8 @@ export function DrillDownSheet() {
                   onHandleTouchMove={handleHeaderTouchMove}
                   onHandleTouchEnd={handleTouchEnd}
                   onHandleClick={handleTabTap}
+                  onNavPrev={handleNavPrev}
+                  onNavNext={handleNavNext}
                   swipeLocked={swipeLocked}
                 />
               )}
@@ -388,6 +415,8 @@ export function DrillDownSheet() {
                 onHandleTouchMove={handleHeaderTouchMove}
                 onHandleTouchEnd={handleTouchEnd}
                 onHandleClick={handleTabTap}
+                onNavPrev={handleNavPrev}
+                onNavNext={handleNavNext}
                 swipeLocked={swipeLocked}
               />
             </div>
@@ -409,6 +438,8 @@ export function DrillDownSheet() {
                   onHandleTouchMove={handleHeaderTouchMove}
                   onHandleTouchEnd={handleTouchEnd}
                   onHandleClick={handleTabTap}
+                  onNavPrev={handleNavPrev}
+                  onNavNext={handleNavNext}
                   swipeLocked={swipeLocked}
                 />
               )}
