@@ -610,11 +610,30 @@ export function AnalyticsDashboard() {
               const legendLabelHeights = activeSegs.map((_, i) =>
                 i === 0 ? LEGEND_LABEL_H_FIRST : LEGEND_LABEL_H
               );
+              const LEGEND_GAP = 4; // minimum visual gap between labels
+              // Compute minimum center-to-center spacing for each adjacent pair
+              const minSpacings = activeSegs.slice(1).map((_, i) =>
+                (legendLabelHeights[i] + legendLabelHeights[i + 1]) / 2 + LEGEND_GAP
+              );
+              // Check if any natural positions overlap
               const labelCentersFromBottom = [...segCentersFromBottom];
-              for (let i = 1; i < labelCentersFromBottom.length; i++) {
-                const minY = labelCentersFromBottom[i - 1] + (legendLabelHeights[i - 1] + legendLabelHeights[i]) / 2;
-                if (labelCentersFromBottom[i] < minY) {
-                  labelCentersFromBottom[i] = minY;
+              const needsRedistribution = minSpacings.some((minSp, i) =>
+                segCentersFromBottom[i + 1] - segCentersFromBottom[i] < minSp
+              );
+              if (needsRedistribution && labelCentersFromBottom.length > 1) {
+                // Total height needed for all labels with gaps
+                const totalNeeded = legendLabelHeights.reduce((a, b) => a + b, 0) + LEGEND_GAP * (legendLabelHeights.length - 1);
+                // Center the stack around the midpoint of original positions
+                const origMid = (segCentersFromBottom[0] + segCentersFromBottom[segCentersFromBottom.length - 1]) / 2;
+                let startCenter = origMid - totalNeeded / 2 + legendLabelHeights[0] / 2;
+                // Don't let labels go below 0
+                if (startCenter - legendLabelHeights[0] / 2 < 0) startCenter = legendLabelHeights[0] / 2;
+                let acc = startCenter;
+                for (let i = 0; i < labelCentersFromBottom.length; i++) {
+                  labelCentersFromBottom[i] = acc;
+                  if (i < labelCentersFromBottom.length - 1) {
+                    acc += (legendLabelHeights[i] + legendLabelHeights[i + 1]) / 2 + LEGEND_GAP;
+                  }
                 }
               }
               const anyDisplaced = labelCentersFromBottom.some((y, i) =>
