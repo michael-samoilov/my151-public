@@ -77,18 +77,16 @@ export function AnalyticsDashboard() {
 
   // Track max observed height of stage distribution card to prevent jitter on toggle
   const stageCardRef = useRef<HTMLDivElement>(null);
-  const stageCardInnerRef = useRef<HTMLDivElement>(null);
   const stageCardMaxH = useRef(0);
   useLayoutEffect(() => {
-    const inner = stageCardInnerRef.current;
-    const outer = stageCardRef.current;
-    if (!inner || !outer) return;
-    // Measure natural content height from unconstrained inner wrapper
-    const h = inner.offsetHeight;
+    const el = stageCardRef.current;
+    if (!el) return;
+    // scrollHeight returns max(naturalHeight, minHeight) so it only ever grows
+    const h = el.scrollHeight;
     if (h > stageCardMaxH.current) {
       stageCardMaxH.current = h;
+      el.style.minHeight = `${h}px`;
     }
-    outer.style.minHeight = `${stageCardMaxH.current}px`;
   });
 
   const analytics = useAnalytics();
@@ -568,7 +566,6 @@ export function AnalyticsDashboard() {
             </button>
           </div>
           <div ref={stageCardRef} className="bg-card rounded-lg border p-4">
-            <div ref={stageCardInnerRef}>
             {mekkoData.totalLines > 0 ? (() => {
               const chartHeight = 180;
               const topMargin = 20;
@@ -856,7 +853,6 @@ export function AnalyticsDashboard() {
             })() : (
               <p className="text-sm text-muted-foreground text-center py-4">No evolution data yet</p>
             )}
-            </div>
           </div>
         </section>
 
