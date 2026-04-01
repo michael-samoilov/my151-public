@@ -74,7 +74,7 @@ export function WhatsAdvisor() {
         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? '' : '-rotate-90'}`} />
         <h3 className="text-lg font-semibold">What's Missing?</h3>
         {missingCount > 0 && (
-          <Badge variant="destructive" className="text-xs">{missingCount} gaps</Badge>
+          <Badge className="text-xs bg-yellow-500 text-white">{missingCount} gaps</Badge>
         )}
         {missingCount === 0 && completeCount > 0 && (
           <Badge className="text-xs bg-green-600">Looking good!</Badge>
@@ -86,7 +86,7 @@ export function WhatsAdvisor() {
           {advice.map((item, i) => (
             <div key={i} className="flex items-center gap-2 text-sm">
               {item.type === 'missing' && (
-                <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
+                <AlertTriangle className="w-4 h-4 text-yellow-500 flex-shrink-0" />
               )}
               {item.type === 'suggestion' && (
                 <AlertTriangle className="w-4 h-4 text-yellow-500 flex-shrink-0" />
