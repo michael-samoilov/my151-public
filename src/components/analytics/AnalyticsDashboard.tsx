@@ -627,11 +627,11 @@ export function AnalyticsDashboard() {
                         const pokePct = totalPokemon > 0 ? ((colTotal / totalPokemon) * 100).toFixed(0) : '0';
                         const segHeights = columnSegHeights[colIdx];
 
-                        // Think-cell style label placement: inside centered,
-                        // then spread horizontally when crowded
+                        // Think-cell style 2D label placement
+                        // Priority: inside centered → best nearby candidate position
                         const LABEL_FONT = 10;
                         const LABEL_FIT = 14; // min segment height to fit label inside
-                        const LABEL_V_EXTENT = 12; // vertical extent of a label (for overlap)
+                        const PILL_H = 12; // label pill height in px
                         // Build segment geometry (from bottom of stacked bar)
                         let yAcc = 0;
                         const segGeo = col.segments.map((seg, segIdx) => {
@@ -642,45 +642,43 @@ export function AnalyticsDashboard() {
                         }).filter(s => s.count > 0);
                         const colHeight = yAcc;
 
-                        // Place all labels at segment center Y, xPct = 50% (centered)
-                        // Labels that fit inside are "inside", others are "displaced"
-                        const placedLabels = segGeo.map(s => ({
-                          stage: s.stage,
-                          count: s.count,
-                          y: s.center,
-                          xPct: 50,
-                          inside: s.h >= LABEL_FIT,
-                        }));
+                        // Generate candidate positions for each label, ranked by priority.
+                        // Each candidate: { xPct, y, cost } where cost = distance from ideal
+                        const X_SLOTS = [50, 25, 75]; // center first, then left/right
+                        const Y_NUDGES = [0, -8, 8, -16, 16]; // prefer no nudge
 
-                        // Find clusters of overlapping labels and spread them horizontally
-                        // Two labels overlap if their Y centers are within LABEL_V_EXTENT
-                        const visited = new Set<number>();
-                        for (let i = 0; i < placedLabels.length; i++) {
-                          if (visited.has(i)) continue;
-                          // Build cluster of labels that overlap with each other
-                          const cluster = [i];
-                          visited.add(i);
-                          for (let j = i + 1; j < placedLabels.length; j++) {
-                            if (visited.has(j)) continue;
-                            // Check if j overlaps any member of the cluster
-                            const overlapsCluster = cluster.some(
-                              k => Math.abs(placedLabels[k].y - placedLabels[j].y) < LABEL_V_EXTENT
-                            );
-                            if (overlapsCluster) {
-                              cluster.push(j);
-                              visited.add(j);
-                            }
+                        type Placed = { stage: number; count: number; xPct: number; y: number; inside: boolean };
+                        const placedLabels: Placed[] = [];
+
+                        // Check if a candidate overlaps any already-placed label
+                        const overlapsPlaced = (xPct: number, y: number) =>
+                          placedLabels.some(p =>
+                            Math.abs(p.y - y) < PILL_H && Math.abs(p.xPct - xPct) < 30
+                          );
+
+                        for (const s of segGeo) {
+                          // First choice: inside centered (if segment tall enough)
+                          if (s.h >= LABEL_FIT && !overlapsPlaced(50, s.center)) {
+                            placedLabels.push({ stage: s.stage, count: s.count, xPct: 50, y: s.center, inside: true });
+                            continue;
                           }
-                          if (cluster.length <= 1) continue;
-                          // Spread cluster horizontally: evenly across column width
-                          // e.g. 2 labels → 30%, 70%; 3 labels → 20%, 50%, 80%
-                          const positions = cluster.length === 2
-                            ? [30, 70]
-                            : cluster.map((_, ci) => 15 + (ci * 70) / (cluster.length - 1));
-                          cluster.forEach((idx, ci) => {
-                            placedLabels[idx].xPct = positions[ci];
-                            placedLabels[idx].inside = false; // needs background pill
-                          });
+                          // Try candidate positions: X slots × Y nudges, pick first non-overlapping
+                          let placed = false;
+                          for (const dy of Y_NUDGES) {
+                            for (const xPct of X_SLOTS) {
+                              const candY = s.center + dy;
+                              if (!overlapsPlaced(xPct, candY)) {
+                                placedLabels.push({ stage: s.stage, count: s.count, xPct, y: candY, inside: false });
+                                placed = true;
+                                break;
+                              }
+                            }
+                            if (placed) break;
+                          }
+                          // Fallback: force place at center (shouldn't happen with 3 labels)
+                          if (!placed) {
+                            placedLabels.push({ stage: s.stage, count: s.count, xPct: 50, y: s.center, inside: false });
+                          }
                         }
 
                         return (
