@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useAnalytics, fullBaseline, filteredBaseline } from '@/hooks/useAnalytics';
-import { usePokedexStore } from '@/store/usePokedexStore';
+import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
@@ -78,7 +78,29 @@ export function AnalyticsDashboard() {
 
   const analytics = useAnalytics();
   const sections = usePokedexStore((s) => s.sections);
+  const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
   const openDrillDown = usePokedexStore((s) => s.openDrillDown);
+  const closeDrillDown = usePokedexStore((s) => s.closeDrillDown);
+
+  // Compute active labels for chart focus states
+  const activeTypeLabel = drillDownSegment?.kind === 'type'
+    ? drillDownSegment.type.charAt(0).toUpperCase() + drillDownSegment.type.slice(1) : null;
+  const activeGenLabel = drillDownSegment?.kind === 'generation'
+    ? `Gen ${drillDownSegment.generation}` : null;
+  const activeEvoBin = drillDownSegment?.kind === 'evoLevel'
+    ? drillDownSegment.binStart + (drillDownSegment.binEnd - drillDownSegment.binStart) / 2 : null;
+  const activeBstBin = drillDownSegment?.kind === 'bst'
+    ? drillDownSegment.binStart + (drillDownSegment.binEnd - drillDownSegment.binStart) / 2 : null;
+
+  const handleDrillToggle = (segment: DrillDownSegment) => {
+    // If tapping same segment, close; otherwise open new
+    if (drillDownSegment && drillDownSegment.kind === segment.kind &&
+      JSON.stringify(drillDownSegment) === JSON.stringify(segment)) {
+      closeDrillDown();
+    } else {
+      openDrillDown(segment);
+    }
+  };
 
   // "Yours" type chart — computed locally so excludeSpecial only affects this chart
   const typeChartData: ButterflyRow[] = useMemo(() => {
@@ -463,7 +485,8 @@ export function AnalyticsDashboard() {
               hideDeviation={isNationalSelected}
               fixedMaxCount={unfilteredMaxCount}
               fixedDevRight={fixedDevRight}
-              onBarClick={selectedTypeChart === 'yours' ? (label) => openDrillDown({ kind: 'type', type: label.toLowerCase() }) : undefined}
+              onBarClick={selectedTypeChart === 'yours' ? (label) => handleDrillToggle({ kind: 'type', type: label.toLowerCase() }) : undefined}
+              activeLabel={selectedTypeChart === 'yours' ? activeTypeLabel : null}
             />
           </div>
         </section>
@@ -477,8 +500,8 @@ export function AnalyticsDashboard() {
           <div className="bg-card rounded-lg border p-4">
             <ButterflyChart data={genChartData} rowHeight={28} onBarClick={(label) => {
               const gen = parseInt(label.replace('Gen ', ''));
-              if (!isNaN(gen)) openDrillDown({ kind: 'generation', generation: gen });
-            }} />
+              if (!isNaN(gen)) handleDrillToggle({ kind: 'generation', generation: gen });
+            }} activeLabel={activeGenLabel} />
           </div>
         </section>
 
@@ -506,6 +529,11 @@ export function AnalyticsDashboard() {
               xTicks={evoHist.xTicks}
               yDomain={evoHist.yDomain}
               yTicks={evoHist.yTicks}
+              onBarClick={(binCenter) => {
+                const binStart = binCenter - evoHist.binSize / 2;
+                handleDrillToggle({ kind: 'evoLevel', binStart, binEnd: binStart + evoHist.binSize });
+              }}
+              activeBin={activeEvoBin}
             />
           </div>
         </section>
@@ -535,6 +563,11 @@ export function AnalyticsDashboard() {
               minorXTicks={bstHist.xTicks.slice(0, -1).map((t, i) => (t + bstHist.xTicks[i + 1]) / 2)}
               yDomain={bstHist.yDomain}
               yTicks={bstHist.yTicks}
+              onBarClick={(binCenter) => {
+                const binStart = binCenter - bstHist.binSize / 2;
+                handleDrillToggle({ kind: 'bst', binStart, binEnd: binStart + bstHist.binSize });
+              }}
+              activeBin={activeBstBin}
             />
           </div>
         </section>
@@ -723,17 +756,30 @@ export function AnalyticsDashboard() {
                                 </div>
                                 <div className="relative">
                                   <div className="flex flex-col-reverse">
-                                    {col.segments.map((seg, segIdx) => (
-                                      <div
-                                        key={seg.stage}
-                                        className={seg.count > 0 ? 'cursor-pointer hover:brightness-110 transition-[filter]' : ''}
-                                        style={{
-                                          height: segHeights[segIdx],
-                                          backgroundColor: STAGE_COLORS[seg.stage - 1],
-                                        }}
-                                        onClick={seg.count > 0 ? () => openDrillDown({ kind: 'stage', lineLength: col.lineLength, stage: seg.stage }) : undefined}
-                                      />
-                                    ))}
+                                    {col.segments.map((seg, segIdx) => {
+                                      const isSegActive = drillDownSegment?.kind === 'stage' &&
+                                        drillDownSegment.lineLength === col.lineLength &&
+                                        drillDownSegment.stage === seg.stage;
+                                      const isLineLenActive = drillDownSegment?.kind === 'lineLength' &&
+                                        drillDownSegment.lineLength === col.lineLength;
+                                      const isStageAllActive = drillDownSegment?.kind === 'stageAll' &&
+                                        drillDownSegment.stage === seg.stage;
+                                      const highlighted = isSegActive || isLineLenActive || isStageAllActive;
+                                      return (
+                                        <div
+                                          key={seg.stage}
+                                          className={seg.count > 0 ? 'cursor-pointer hover:brightness-110 transition-[filter]' : ''}
+                                          style={{
+                                            height: segHeights[segIdx],
+                                            backgroundColor: STAGE_COLORS[seg.stage - 1],
+                                            outline: highlighted ? '2px solid currentColor' : undefined,
+                                            outlineOffset: '-1px',
+                                            opacity: highlighted ? 1 : undefined,
+                                          }}
+                                          onClick={seg.count > 0 ? () => handleDrillToggle({ kind: 'stage', lineLength: col.lineLength, stage: seg.stage }) : undefined}
+                                        />
+                                      );
+                                    })}
                                   </div>
                                   {/* Label overlay */}
                                   <svg
@@ -784,19 +830,23 @@ export function AnalyticsDashboard() {
                         );
                       })}
                     </div>
-                    {/* X-axis labels */}
+                    {/* X-axis labels — click to drill into all of that line length */}
                     <div className="flex mt-1" style={{ gap }}>
-                      {allColumns.map((col, idx) => (
-                        <div
-                          key={col.lineLength}
-                          className="flex-1 text-center text-[10px] text-muted-foreground font-bold leading-tight tabular-nums"
-                          style={{ height: 38 }}
-                        >
-                          <span style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
-                          <br />
-                          {col.chainCount}{idx === 0 && ' lines'} <span className="font-normal">({col.widthPct.toFixed(0)}%)</span>
-                        </div>
-                      ))}
+                      {allColumns.map((col, idx) => {
+                        const isXActive = drillDownSegment?.kind === 'lineLength' && drillDownSegment.lineLength === col.lineLength;
+                        return (
+                          <div
+                            key={col.lineLength}
+                            className="flex-1 text-center text-[10px] text-muted-foreground font-bold leading-tight tabular-nums cursor-pointer"
+                            style={{ height: 38, textDecoration: isXActive ? 'underline' : undefined, textDecorationColor: isXActive ? STAGE_LINE_COLORS[col.lineLength - 1] : undefined }}
+                            onClick={() => col.chainCount > 0 && handleDrillToggle({ kind: 'lineLength', lineLength: col.lineLength })}
+                          >
+                            <span style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
+                            <br />
+                            {col.chainCount}{idx === 0 && ' lines'} <span className="font-normal">({col.widthPct.toFixed(0)}%)</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                   {/* Inline legend — with leader lines when labels would overlap */}
@@ -820,20 +870,22 @@ export function AnalyticsDashboard() {
                         })}
                       </svg>
                     )}
-                    {/* Labels — absolutely positioned */}
+                    {/* Labels — absolutely positioned, clickable to drill into all of that stage */}
                     {activeSegs.map((seg, i) => {
                       const bottomPos = labelCentersFromBottom[i] - legendLabelHeights[i] / 2;
+                      const isLegendActive = drillDownSegment?.kind === 'stageAll' && drillDownSegment.stage === seg.stage;
                       return (
                         <div
                           key={seg.stage}
-                          className="absolute text-[10px] whitespace-nowrap leading-tight flex items-center tabular-nums"
+                          className="absolute text-[10px] whitespace-nowrap leading-tight flex items-center tabular-nums cursor-pointer"
                           style={{
                             bottom: bottomPos,
                             height: legendLabelHeights[i],
                             left: anyDisplaced ? 18 : 0,
                           }}
+                          onClick={() => handleDrillToggle({ kind: 'stageAll', stage: seg.stage })}
                         >
-                          <span className="text-muted-foreground font-bold">
+                          <span className="text-muted-foreground font-bold" style={isLegendActive ? { textDecoration: 'underline', textDecorationColor: STAGE_COLORS[seg.stage - 1] } : undefined}>
                             <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span>
                             {isFirstLegend(seg.stage) && <><br />Pokémon</>}
                             <br />

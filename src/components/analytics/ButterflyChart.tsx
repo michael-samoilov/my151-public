@@ -24,9 +24,11 @@ interface ButterflyChartProps {
   fixedMaxCount?: number;
   /** Callback when a row is tapped/clicked */
   onBarClick?: (label: string) => void;
+  /** Currently selected/active label for focus highlight */
+  activeLabel?: string | null;
 }
 
-export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -163,13 +165,16 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             const clippedBarX = clampedDev >= 0 ? zeroX : devScale(clampedDev);
             const clippedBarW = Math.abs(devScale(clampedDev) - zeroX);
 
+            const isActive = activeLabel === d.label;
+
             return (
               <g key={d.label} className={onBarClick ? 'cursor-pointer' : ''} onClick={onBarClick ? () => onBarClick(d.label) : undefined}>
-                {/* Full-row hit target */}
+                {/* Full-row hit target + active highlight */}
                 <rect
                   x={0} y={y} width={width} height={barHeight}
-                  fill="transparent"
-                  className={onBarClick ? 'hover:fill-current hover:opacity-[0.04] active:opacity-[0.08]' : ''}
+                  fill={isActive ? d.color : 'transparent'}
+                  opacity={isActive ? 0.12 : 1}
+                  className={!isActive && onBarClick ? 'hover:fill-current hover:opacity-[0.04] active:opacity-[0.08]' : ''}
                 />
                 {/* Label */}
                 <text

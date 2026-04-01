@@ -4,9 +4,9 @@ import { useDrillDownData } from '@/hooks/useDrillDownData';
 import { EvoLineGrid } from '@/components/browser/EvoLineCard';
 
 const SHEET_HEIGHT_VH = 85;
-const PEEK_HEIGHT = 80; // px — header + pull tab
-const EXPAND_THRESHOLD = 40; // upward drag px to expand
-const DISMISS_THRESHOLD = 80; // downward drag px to dismiss/collapse
+const PEEK_HEIGHT = 56; // px — pull tab + title only (above accent line)
+const EXPAND_THRESHOLD = 40;
+const DISMISS_THRESHOLD = 80;
 
 export function DrillDownSheet() {
   const expandDrillDown = usePokedexStore((s) => s.expandDrillDown);
@@ -47,14 +47,12 @@ export function DrillDownSheet() {
     if (dragStartY.current === null) return;
 
     if (peek) {
-      // In peek mode: drag up expands, drag down dismisses
       if (dragY < -EXPAND_THRESHOLD) {
         expandDrillDown();
       } else if (dragY > DISMISS_THRESHOLD) {
         closeDrillDown();
       }
     } else {
-      // In full mode: drag down collapses back to peek
       if (dragY > DISMISS_THRESHOLD) {
         closeDrillDown();
       }
@@ -81,22 +79,11 @@ export function DrillDownSheet() {
     ? `calc(${SHEET_HEIGHT_VH}vh - ${PEEK_HEIGHT}px + ${Math.max(dragY, -(PEEK_HEIGHT))}px)`
     : `${Math.max(dragY, 0)}px`;
 
-  const overlayOpacity = peek
-    ? Math.max(0, 0.2 - dragY / (DISMISS_THRESHOLD * 3))
-    : Math.max(0, 0.5 - dragY / (DISMISS_THRESHOLD * 3));
-
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
+    <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none">
+      {/* Sheet — no backdrop overlay */}
       <div
-        className="absolute inset-0 bg-black"
-        onClick={closeDrillDown}
-        style={{ opacity: overlayOpacity }}
-      />
-
-      {/* Sheet */}
-      <div
-        className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl flex flex-col"
+        className="pointer-events-auto bg-background rounded-t-2xl shadow-2xl flex flex-col"
         style={{
           height: `${SHEET_HEIGHT_VH}vh`,
           transform: `translateY(${currentTranslate})`,
@@ -104,15 +91,15 @@ export function DrillDownSheet() {
           overscrollBehavior: 'none',
         }}
       >
-        {/* Header — always visible */}
+        {/* Header — always visible in peek (above accent line) */}
         <div
-          className="flex flex-col items-center py-3 cursor-grab active:cursor-grabbing touch-none shrink-0"
+          className="flex flex-col items-center py-2.5 cursor-grab active:cursor-grabbing touch-none shrink-0"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
           onClick={handleTabTap}
         >
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-2" />
+          <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1.5" />
           <div className="flex items-center gap-2">
             {data.icon && (
               <img src={data.icon} alt="" className="w-4 h-4" style={{ imageRendering: 'pixelated' }} />
@@ -120,8 +107,8 @@ export function DrillDownSheet() {
             <span className="text-sm font-semibold" style={{ color: data.color }}>
               {data.title}
             </span>
+            <span className="text-xs text-muted-foreground">{data.subtitle}</span>
           </div>
-          <span className="text-xs text-muted-foreground mt-0.5">{data.subtitle}</span>
         </div>
 
         {/* Color accent line */}
@@ -132,28 +119,22 @@ export function DrillDownSheet() {
           className="flex-1 min-h-0 overflow-y-auto"
           style={{ overscrollBehavior: 'contain' }}
         >
-          <div className="p-3 space-y-4">
+          <div className="px-2 pb-2">
             {data.sections.map((section) => (
               <div key={section.sectionId}>
-                <div className="flex items-center gap-2 mb-2">
-                  <div
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: section.sectionColor }}
-                  />
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    {section.sectionName}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    ({section.groups.length})
-                  </span>
+                {/* Sticky section header — matches PokemonBrowser subheader style */}
+                <div className="sticky top-0 z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
+                  {section.sectionName}
                 </div>
-                <EvoLineGrid
-                  groups={section.groups}
-                  assignedIds={assignedIds}
-                  stagedIds={emptySet}
-                  onToggleStage={noOp}
-                  cols={6}
-                />
+                <div className="pt-1">
+                  <EvoLineGrid
+                    groups={section.groups}
+                    assignedIds={assignedIds}
+                    stagedIds={emptySet}
+                    onToggleStage={noOp}
+                    cols={6}
+                  />
+                </div>
               </div>
             ))}
           </div>

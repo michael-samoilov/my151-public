@@ -8,7 +8,11 @@ type TypeFilterMode = 'any' | 'all';
 export type DrillDownSegment =
   | { kind: 'type'; type: string }
   | { kind: 'generation'; generation: number }
-  | { kind: 'stage'; lineLength: number; stage: number };
+  | { kind: 'stage'; lineLength: number; stage: number }
+  | { kind: 'stageAll'; stage: number }
+  | { kind: 'lineLength'; lineLength: number }
+  | { kind: 'evoLevel'; binStart: number; binEnd: number }
+  | { kind: 'bst'; binStart: number; binEnd: number };
 
 interface PokedexState {
   sections: Record<string, number[]>; // groupId -> ordered pokemon IDs

@@ -132,6 +132,20 @@ function matchesSegment(p: Pokemon, id: number, segment: DrillDownSegment): bool
       const stage = Math.min(p.evolutionStage, 3);
       return lineLen === segment.lineLength && stage === segment.stage;
     }
+    case 'stageAll': {
+      const stage = Math.min(p.evolutionStage, 3);
+      return stage === segment.stage;
+    }
+    case 'lineLength': {
+      const line = getEvolutionLine(id);
+      const lineLen = Math.min(line.length, 3);
+      return lineLen === segment.lineLength;
+    }
+    case 'evoLevel':
+      return p.evolutionLevel !== undefined && p.evolutionLevel !== null &&
+        p.evolutionLevel >= segment.binStart && p.evolutionLevel < segment.binEnd;
+    case 'bst':
+      return p.bst >= segment.binStart && p.bst < segment.binEnd;
   }
 }
 
@@ -158,5 +172,27 @@ function getSegmentMeta(segment: DrillDownSegment): { title: string; color: stri
         color: STAGE_COLORS[segment.stage - 1],
       };
     }
+    case 'stageAll':
+      return {
+        title: `All Stage ${segment.stage} Pokémon`,
+        color: STAGE_COLORS[segment.stage - 1],
+      };
+    case 'lineLength': {
+      const names = ['Single', 'Double', 'Triple'];
+      return {
+        title: `${names[segment.lineLength - 1]}-Stage Lines`,
+        color: STAGE_COLORS[segment.lineLength - 1],
+      };
+    }
+    case 'evoLevel':
+      return {
+        title: `Evolves at Lv ${segment.binStart}–${segment.binEnd - 1}`,
+        color: '#ef4444',
+      };
+    case 'bst':
+      return {
+        title: `BST ${segment.binStart}–${segment.binEnd - 1}`,
+        color: '#ef4444',
+      };
   }
 }

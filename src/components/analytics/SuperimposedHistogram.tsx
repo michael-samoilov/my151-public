@@ -15,6 +15,8 @@ interface SuperimposedHistogramProps {
   minorXTicks?: number[];
   yDomain: number;
   yTicks: number[];
+  onBarClick?: (binCenter: number) => void;
+  activeBin?: number | null;
 }
 
 export function SuperimposedHistogram({
@@ -25,6 +27,8 @@ export function SuperimposedHistogram({
   minorXTicks,
   yDomain,
   yTicks,
+  onBarClick,
+  activeBin,
 }: SuperimposedHistogramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -104,6 +108,25 @@ export function SuperimposedHistogram({
                   fill="#ef4444"
                   opacity={0.85}
                   rx={1}
+                />
+              );
+            })}
+
+            {/* Clickable hit targets per bin (full height, full bin width) */}
+            {onBarClick && data.map((d) => {
+              const barX = xScale(d.x - binSize / 2);
+              const isActive = activeBin === d.x;
+              return (
+                <rect
+                  key={`hit-${d.x}`}
+                  x={barX}
+                  y={0}
+                  width={barFullWidth}
+                  height={plotH}
+                  fill={isActive ? '#ef4444' : 'transparent'}
+                  opacity={isActive ? 0.12 : 0}
+                  className={d.yoursPct > 0 ? 'cursor-pointer hover:fill-[#ef4444] hover:opacity-[0.08]' : ''}
+                  onClick={() => { if (d.yoursPct > 0) onBarClick(d.x); }}
                 />
               );
             })}
