@@ -381,7 +381,7 @@ export function AnalyticsDashboard() {
           </p>
 
           {/* Row 1: Region selector tabs */}
-          <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1">
+          <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1 border-x border-border px-2">
             <button
               onClick={() => setSelectedTypeChart('yours')}
               className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
