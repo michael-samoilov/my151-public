@@ -78,6 +78,7 @@ export function AnalyticsDashboard() {
 
   const analytics = useAnalytics();
   const sections = usePokedexStore((s) => s.sections);
+  const openDrillDown = usePokedexStore((s) => s.openDrillDown);
 
   // "Yours" type chart — computed locally so excludeSpecial only affects this chart
   const typeChartData: ButterflyRow[] = useMemo(() => {
@@ -462,6 +463,7 @@ export function AnalyticsDashboard() {
               hideDeviation={isNationalSelected}
               fixedMaxCount={unfilteredMaxCount}
               fixedDevRight={fixedDevRight}
+              onBarClick={selectedTypeChart === 'yours' ? (label) => openDrillDown({ kind: 'type', type: label.toLowerCase() }) : undefined}
             />
           </div>
         </section>
@@ -473,7 +475,10 @@ export function AnalyticsDashboard() {
             Where your Pokemon come from and deviation from national dex proportions.
           </p>
           <div className="bg-card rounded-lg border p-4">
-            <ButterflyChart data={genChartData} rowHeight={28} />
+            <ButterflyChart data={genChartData} rowHeight={28} onBarClick={(label) => {
+              const gen = parseInt(label.replace('Gen ', ''));
+              if (!isNaN(gen)) openDrillDown({ kind: 'generation', generation: gen });
+            }} />
           </div>
         </section>
 
@@ -721,10 +726,12 @@ export function AnalyticsDashboard() {
                                     {col.segments.map((seg, segIdx) => (
                                       <div
                                         key={seg.stage}
+                                        className={seg.count > 0 ? 'cursor-pointer hover:brightness-110 transition-[filter]' : ''}
                                         style={{
                                           height: segHeights[segIdx],
                                           backgroundColor: STAGE_COLORS[seg.stage - 1],
                                         }}
+                                        onClick={seg.count > 0 ? () => openDrillDown({ kind: 'stage', lineLength: col.lineLength, stage: seg.stage }) : undefined}
                                       />
                                     ))}
                                   </div>

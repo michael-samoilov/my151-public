@@ -22,9 +22,11 @@ interface ButterflyChartProps {
   fixedDevRight?: number;
   /** Override the auto-computed max count for the count scale */
   fixedMaxCount?: number;
+  /** Callback when a row is tapped/clicked */
+  onBarClick?: (label: string) => void;
 }
 
-export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -162,7 +164,13 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             const clippedBarW = Math.abs(devScale(clampedDev) - zeroX);
 
             return (
-              <g key={d.label}>
+              <g key={d.label} className={onBarClick ? 'cursor-pointer' : ''} onClick={onBarClick ? () => onBarClick(d.label) : undefined}>
+                {/* Full-row hit target */}
+                <rect
+                  x={0} y={y} width={width} height={barHeight}
+                  fill="transparent"
+                  className={onBarClick ? 'hover:fill-current hover:opacity-[0.04] active:opacity-[0.08]' : ''}
+                />
                 {/* Label */}
                 <text
                   x={labelWidth}

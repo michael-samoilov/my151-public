@@ -5,6 +5,11 @@ import { getEvolutionLine, getDescendantIds, getPokemonById } from '@/hooks/useP
 
 type TypeFilterMode = 'any' | 'all';
 
+export type DrillDownSegment =
+  | { kind: 'type'; type: string }
+  | { kind: 'generation'; generation: number }
+  | { kind: 'stage'; lineLength: number; stage: number };
+
 interface PokedexState {
   sections: Record<string, number[]>; // groupId -> ordered pokemon IDs
   activeSection: string | null; // which group the user is adding to
@@ -16,6 +21,8 @@ interface PokedexState {
   generationFilter: number[] | null; // multi-select generations
   evoLineSizeFilter: number[] | null; // [1], [2], [3] where 3 means 3+
   mobileBrowserOpen: boolean;
+  drillDownSegment: DrillDownSegment | null;
+  drillDownPeek: boolean;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -34,6 +41,9 @@ interface PokedexState {
   setGenerationFilter: (gens: number[] | null) => void;
   toggleGeneration: (gen: number) => void;
   setEvoLineSizeFilter: (sizes: number[] | null) => void;
+  openDrillDown: (segment: DrillDownSegment) => void;
+  expandDrillDown: () => void;
+  closeDrillDown: () => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -51,6 +61,8 @@ export const usePokedexStore = create<PokedexState>()(
       generationFilter: null,
       evoLineSizeFilter: null,
       mobileBrowserOpen: false,
+      drillDownSegment: null,
+      drillDownPeek: true,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -169,6 +181,10 @@ export const usePokedexStore = create<PokedexState>()(
       }),
 
       setEvoLineSizeFilter: (sizes) => set({ evoLineSizeFilter: sizes }),
+
+      openDrillDown: (segment) => set({ drillDownSegment: segment, drillDownPeek: true }),
+      expandDrillDown: () => set({ drillDownPeek: false }),
+      closeDrillDown: () => set({ drillDownSegment: null, drillDownPeek: true }),
     }),
     {
       name: 'personal-151-pokedex-v3',

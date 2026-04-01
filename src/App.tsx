@@ -3,6 +3,7 @@ import { Header } from '@/components/layout/Header';
 import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
+import { DrillDownSheet } from '@/components/analytics/DrillDownSheet';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BUILD_GROUPS } from '@/data/slot-template';
@@ -101,6 +102,7 @@ function App() {
   const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const activeSection = usePokedexStore((s) => s.activeSection);
+  const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
 
   const sectionName = activeSection
     ? BUILD_GROUPS.find((g) => g.id === activeSection)?.name ?? 'Section'
@@ -131,6 +133,9 @@ function App() {
       {mobileBrowserOpen && (
         <MobileSheet sectionName={sectionName} onClose={() => { setMobileBrowserOpen(false); usePokedexStore.getState().setActiveSection(null); }} />
       )}
+
+      {/* Analytics drill-down sheet */}
+      {drillDownSegment && <DrillDownSheet />}
     </TooltipProvider>
   );
 }
