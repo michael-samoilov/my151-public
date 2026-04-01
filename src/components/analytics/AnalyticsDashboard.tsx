@@ -643,7 +643,7 @@ export function AnalyticsDashboard() {
                         const colHeight = yAcc;
 
                         // Generate candidate positions for each label, ranked by priority.
-                        const X_SLOTS = [50, 15, 85]; // center first, then left/right
+                        const X_SLOTS = [50, 25, 75]; // center first, then left/right
                         const Y_NUDGES = [0, -8, 8, -16, 16]; // prefer no nudge
 
                         type Placed = { stage: number; count: number; xPct: number; y: number; inside: boolean };
@@ -653,7 +653,7 @@ export function AnalyticsDashboard() {
                         // X threshold must be less than slot spacing (35) to allow spreading
                         const overlapsPlaced = (xPct: number, y: number) =>
                           placedLabels.some(p =>
-                            Math.abs(p.y - y) < PILL_H && Math.abs(p.xPct - xPct) < 25
+                            Math.abs(p.y - y) < PILL_H && Math.abs(p.xPct - xPct) < 20
                           );
 
                         for (const s of segGeo) {
