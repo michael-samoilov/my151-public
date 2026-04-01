@@ -712,8 +712,8 @@ export function AnalyticsDashboard() {
                           >
                             {colTotal > 0 && (
                               <>
-                                <div className="text-center text-[10px] text-muted-foreground font-bold mb-0.5 leading-tight">
-                                  {colTotal} {colIdx === 0 && 'Pokémon '}<span className="font-normal">({pokePct}%)</span>
+                                <div className="text-center text-[10px] text-muted-foreground font-bold mb-0.5 leading-tight flex items-end justify-center" style={{ minHeight: 24 }}>
+                                  <span>{colTotal} {colIdx === 0 && 'Pokémon '}<span className="font-normal">({pokePct}%)</span></span>
                                 </div>
                                 <div className="relative">
                                   <div className="flex flex-col-reverse">
@@ -782,6 +782,7 @@ export function AnalyticsDashboard() {
                         <div
                           key={col.lineLength}
                           className="flex-1 text-center text-[10px] text-muted-foreground font-bold leading-tight"
+                          style={{ minHeight: 24 }}
                         >
                           <span style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
                           <br />
