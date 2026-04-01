@@ -10,18 +10,30 @@ DEST="public/sprites"
 
 mkdir -p "$DEST/pokemon/shiny" "$DEST/types"
 
+# Download helper with retry and validation
+download() {
+  local url="$1" dest="$2"
+  # Skip if file exists and is non-empty
+  if [ -s "$dest" ]; then return 0; fi
+  for attempt in 1 2 3; do
+    curl -sL -o "$dest" "$url"
+    if [ -s "$dest" ]; then return 0; fi
+    sleep 1
+  done
+  echo "  WARNING: Failed to download $url after 3 attempts" >&2
+  rm -f "$dest"  # Remove empty/corrupt file
+}
+
 # 1. Extract all sprite IDs from pokemon.json
 echo "Extracting sprite IDs from pokemon.json..."
 IDS=$(grep -oP '"sprite":\s*"[^"]+/pokemon/\K\d+' src/data/pokemon.json | sort -un)
 TOTAL=$(echo "$IDS" | wc -l)
 echo "Found $TOTAL pokemon sprites"
 
-# 2. Download base sprites (skip existing)
+# 2. Download base sprites (skip existing non-empty)
 COUNT=0
 for id in $IDS; do
-  if [ ! -f "$DEST/pokemon/${id}.png" ]; then
-    curl -sL -o "$DEST/pokemon/${id}.png" "$BASE/pokemon/${id}.png" &
-  fi
+  download "$BASE/pokemon/${id}.png" "$DEST/pokemon/${id}.png" &
   COUNT=$((COUNT + 1))
   # Limit concurrency to 20
   if (( COUNT % 20 == 0 )); then
@@ -35,26 +47,32 @@ echo "  Pokemon sprites: $COUNT/$TOTAL - done"
 # 3. Shiny sprites (specific IDs used in archetypes)
 echo "Downloading shiny sprites..."
 for id in 77 130 147 443 612; do
-  if [ ! -f "$DEST/pokemon/shiny/${id}.png" ]; then
-    curl -sL -o "$DEST/pokemon/shiny/${id}.png" "$BASE/pokemon/shiny/${id}.png" &
-  fi
+  download "$BASE/pokemon/shiny/${id}.png" "$DEST/pokemon/shiny/${id}.png" &
 done
 wait
 echo "  Shiny sprites done"
 
 # 4. Sprite override (Darmanitan Zen)
-if [ ! -f "$DEST/pokemon/10017.png" ]; then
-  curl -sL -o "$DEST/pokemon/10017.png" "$BASE/pokemon/10017.png"
-fi
+download "$BASE/pokemon/10017.png" "$DEST/pokemon/10017.png"
 
 # 5. Type icons (18 types)
 echo "Downloading type icons..."
 for id in $(seq 1 18); do
-  if [ ! -f "$DEST/types/${id}.png" ]; then
-    curl -sL -o "$DEST/types/${id}.png" "$BASE/types/generation-viii/sword-shield/small/${id}.png" &
-  fi
+  download "$BASE/types/generation-viii/sword-shield/small/${id}.png" "$DEST/types/${id}.png" &
 done
 wait
 echo "  Type icons done"
 
-echo "All sprites cached in $DEST/"
+# 6. Validate all sprites exist
+MISSING=0
+for id in $IDS; do
+  if [ ! -s "$DEST/pokemon/${id}.png" ]; then
+    echo "  MISSING: $DEST/pokemon/${id}.png"
+    MISSING=$((MISSING + 1))
+  fi
+done
+if [ "$MISSING" -gt 0 ]; then
+  echo "WARNING: $MISSING sprites are missing or empty!"
+else
+  echo "All sprites cached and validated in $DEST/"
+fi
