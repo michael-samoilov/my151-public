@@ -3,34 +3,8 @@ import { cn, displayName } from '@/lib/utils';
 import type { Pokemon } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
-import { Plus, ChevronRight } from 'lucide-react';
+import { Plus, ChevronRight, X } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
-
-/** Tiny pokeball icon: red-filled top half, open bottom half, center button */
-function PokeballIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 16 16" className={className} fill="none">
-      {/* Top half – red fill, red outline */}
-      <path
-        d="M1 8 A7 7 0 0 1 15 8"
-        fill="#ef4444"
-        stroke="#ef4444"
-        strokeWidth="1.5"
-      />
-      {/* Bottom half – no fill, red outline */}
-      <path
-        d="M1 8 A7 7 0 0 0 15 8"
-        fill="none"
-        stroke="#ef4444"
-        strokeWidth="1.5"
-      />
-      {/* Middle line */}
-      <line x1="1" y1="8" x2="15" y2="8" stroke="#ef4444" strokeWidth="1.5" />
-      {/* Center button – no fill, red outline */}
-      <circle cx="8" cy="8" r="2.5" fill="white" stroke="#ef4444" strokeWidth="1.5" />
-    </svg>
-  );
-}
 
 const DEFAULT_COLS = 6;
 
@@ -116,18 +90,19 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
   const allInDex = members.every((p) => assignedIds.has(p.id));
 
   const handleClick = () => {
-    if (allInDex) {
-      // Already in dex: remove immediately
-      const firstId = members[0].id;
-      for (const [sectionId, ids] of Object.entries(sections)) {
-        if (ids.includes(firstId)) {
-          removeEvoLine(sectionId, firstId);
-          break;
-        }
-      }
-    } else {
-      // Toggle staging
+    if (!allInDex) {
       onToggleStage(members.map((p) => p.id));
+    }
+  };
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const firstId = members[0].id;
+    for (const [sectionId, ids] of Object.entries(sections)) {
+      if (ids.includes(firstId)) {
+        removeEvoLine(sectionId, firstId);
+        break;
+      }
     }
   };
 
@@ -166,9 +141,12 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
               style={{ backgroundColor: `${bgColor}10` }}
             />
             {inDex && (
-              <div className="absolute top-[3px] right-[6px] md:right-1.5 -translate-y-[0.5px] w-3 h-3 z-10">
-                <PokeballIcon className="w-3 h-3" />
-              </div>
+              <button
+                onClick={handleRemove}
+                className="absolute top-[1px] right-[4px] md:right-1 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full bg-destructive/60 md:bg-destructive/80 text-white flex items-center justify-center z-10"
+              >
+                <X className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2" />
+              </button>
             )}
             {!inDex && stagedIds.has(pokemon.id) && (
               <div className="absolute top-[3px] right-[6px] md:right-1.5 -translate-y-[0.5px] w-3 h-3 bg-primary rounded-full flex items-center justify-center z-10">
