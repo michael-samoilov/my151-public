@@ -680,7 +680,7 @@ export function PokedexGrid() {
 
       <div className="flex-1 min-h-0">
         <ScrollArea className="h-full">
-          <div className="p-3 pb-0 space-y-1.5 -mb-1.5">
+          <div className="p-3 pb-0">
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -689,17 +689,19 @@ export function PokedexGrid() {
               onDragEnd={handleDragEnd}
               onDragCancel={handleDragCancel}
             >
-              {BUILD_GROUPS.map((group) => (
-                <GroupBox
-                  key={group.id}
-                  group={group}
-                  pokemonIds={sections[group.id] ?? []}
-                  dragLineIds={dragLineIds}
-                  dragSet={dragSet}
-                  insertIndicator={insertIndicator}
-                  onAddClick={handleAddClick}
-                />
-              ))}
+              <div className="space-y-1.5">
+                {BUILD_GROUPS.map((group) => (
+                  <GroupBox
+                    key={group.id}
+                    group={group}
+                    pokemonIds={sections[group.id] ?? []}
+                    dragLineIds={dragLineIds}
+                    dragSet={dragSet}
+                    insertIndicator={insertIndicator}
+                    onAddClick={handleAddClick}
+                  />
+                ))}
+              </div>
 
               <DragOverlay dropAnimation={null}>
                 {dragLineIds && (
