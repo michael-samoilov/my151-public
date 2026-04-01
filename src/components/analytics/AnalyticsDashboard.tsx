@@ -712,8 +712,8 @@ export function AnalyticsDashboard() {
                           >
                             {colTotal > 0 && (
                               <>
-                                <div className="text-center text-[10px] text-muted-foreground font-semibold mb-0.5 leading-tight">
-                                  {colTotal} {colIdx === 0 && 'Pokémon '}({pokePct}%)
+                                <div className="text-center text-[10px] text-muted-foreground font-bold mb-0.5 leading-tight">
+                                  {colTotal} {colIdx === 0 && 'Pokémon '}<span className="font-normal">({pokePct}%)</span>
                                 </div>
                                 <div className="relative">
                                   <div className="flex flex-col-reverse">
@@ -781,11 +781,11 @@ export function AnalyticsDashboard() {
                       {allColumns.map((col, idx) => (
                         <div
                           key={col.lineLength}
-                          className="flex-1 text-center text-[10px] text-muted-foreground leading-tight"
+                          className="flex-1 text-center text-[10px] text-muted-foreground font-bold leading-tight"
                         >
-                          <span className="font-bold" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
+                          <span style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
                           <br />
-                          <span className="font-bold">{col.chainCount}</span>{idx === 0 && ' lines'} (<span className="font-bold">{col.widthPct.toFixed(0)}%</span>)
+                          {col.chainCount}{idx === 0 && ' lines'} <span className="font-normal">({col.widthPct.toFixed(0)}%)</span>
                         </div>
                       ))}
                     </div>
@@ -824,11 +824,11 @@ export function AnalyticsDashboard() {
                             left: anyDisplaced ? 18 : 0,
                           }}
                         >
-                          <span className="text-muted-foreground">
-                            <span className="font-bold" style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span>
-                            {isFirstLegend(seg.stage) && <><br /><span className="font-bold">Pokémon</span></>}
+                          <span className="text-muted-foreground font-bold">
+                            <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span>
+                            {isFirstLegend(seg.stage) && <><br />Pokémon</>}
                             <br />
-                            <span className="font-bold">{stageTotals[seg.stage]}</span> (<span className="font-bold">{totalPokemon > 0 ? ((stageTotals[seg.stage] / totalPokemon) * 100).toFixed(0) : 0}%</span>)
+                            {stageTotals[seg.stage]} <span className="font-normal">({totalPokemon > 0 ? ((stageTotals[seg.stage] / totalPokemon) * 100).toFixed(0) : 0}%)</span>
                           </span>
                         </div>
                       );
