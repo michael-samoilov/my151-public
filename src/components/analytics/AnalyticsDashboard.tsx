@@ -627,47 +627,60 @@ export function AnalyticsDashboard() {
                         const pokePct = totalPokemon > 0 ? ((colTotal / totalPokemon) * 100).toFixed(0) : '0';
                         const segHeights = columnSegHeights[colIdx];
 
-                        // Think-cell style label placement for this column
-                        // Priority: inside centered → outside adjacent (pushed apart)
+                        // Think-cell style label placement: inside centered,
+                        // then spread horizontally when crowded
                         const LABEL_FONT = 10;
                         const LABEL_FIT = 14; // min segment height to fit label inside
+                        const LABEL_V_EXTENT = 12; // vertical extent of a label (for overlap)
                         // Build segment geometry (from bottom of stacked bar)
                         let yAcc = 0;
                         const segGeo = col.segments.map((seg, segIdx) => {
                           const h = segHeights[segIdx];
-                          const bottom = yAcc;
                           const center = yAcc + h / 2;
-                          const top = yAcc + h;
                           yAcc += h;
-                          return { stage: seg.stage, count: seg.count, h, bottom, center, top };
+                          return { stage: seg.stage, count: seg.count, h, center };
                         }).filter(s => s.count > 0);
                         const colHeight = yAcc;
 
-                        // Place labels: inside if fits, otherwise mark as displaced
-                        const labels: { stage: number; count: number; y: number; inside: boolean; segCenter: number }[] = [];
-                        const displaced: typeof labels = [];
-                        for (const s of segGeo) {
-                          if (s.h >= LABEL_FIT) {
-                            labels.push({ stage: s.stage, count: s.count, y: s.center, inside: true, segCenter: s.center });
-                          } else {
-                            displaced.push({ stage: s.stage, count: s.count, y: s.center, inside: false, segCenter: s.center });
-                          }
-                        }
+                        // Place all labels at segment center Y, xPct = 50% (centered)
+                        // Labels that fit inside are "inside", others are "displaced"
+                        const placedLabels = segGeo.map(s => ({
+                          stage: s.stage,
+                          count: s.count,
+                          y: s.center,
+                          xPct: 50,
+                          inside: s.h >= LABEL_FIT,
+                        }));
 
-                        // Resolve displaced labels: place at natural Y, then push apart
-                        // to avoid overlapping each other AND inside labels
-                        const allLabels = [...labels, ...displaced].sort((a, b) => a.y - b.y);
-                        for (let i = 1; i < allLabels.length; i++) {
-                          const minY = allLabels[i - 1].y + LABEL_FIT;
-                          if (allLabels[i].y < minY) {
-                            // Only push displaced labels; inside labels stay put
-                            if (!allLabels[i].inside) {
-                              allLabels[i].y = minY;
-                            } else if (!allLabels[i - 1].inside) {
-                              // Push the displaced one down instead
-                              allLabels[i - 1].y = allLabels[i].y - LABEL_FIT;
+                        // Find clusters of overlapping labels and spread them horizontally
+                        // Two labels overlap if their Y centers are within LABEL_V_EXTENT
+                        const visited = new Set<number>();
+                        for (let i = 0; i < placedLabels.length; i++) {
+                          if (visited.has(i)) continue;
+                          // Build cluster of labels that overlap with each other
+                          const cluster = [i];
+                          visited.add(i);
+                          for (let j = i + 1; j < placedLabels.length; j++) {
+                            if (visited.has(j)) continue;
+                            // Check if j overlaps any member of the cluster
+                            const overlapsCluster = cluster.some(
+                              k => Math.abs(placedLabels[k].y - placedLabels[j].y) < LABEL_V_EXTENT
+                            );
+                            if (overlapsCluster) {
+                              cluster.push(j);
+                              visited.add(j);
                             }
                           }
+                          if (cluster.length <= 1) continue;
+                          // Spread cluster horizontally: evenly across column width
+                          // e.g. 2 labels → 30%, 70%; 3 labels → 20%, 50%, 80%
+                          const positions = cluster.length === 2
+                            ? [30, 70]
+                            : cluster.map((_, ci) => 15 + (ci * 70) / (cluster.length - 1));
+                          cluster.forEach((idx, ci) => {
+                            placedLabels[idx].xPct = positions[ci];
+                            placedLabels[idx].inside = false; // needs background pill
+                          });
                         }
 
                         return (
@@ -698,13 +711,13 @@ export function AnalyticsDashboard() {
                                     className="absolute top-0 left-0 overflow-visible pointer-events-none"
                                     style={{ width: '100%', height: colHeight || 1 }}
                                   >
-                                    {allLabels.map(label => {
+                                    {placedLabels.map(label => {
                                       const labelY = colHeight - label.y;
                                       if (label.inside) {
                                         return (
                                           <text
                                             key={label.stage}
-                                            x="50%" y={labelY}
+                                            x={`${label.xPct}%`} y={labelY}
                                             textAnchor="middle" dominantBaseline="central"
                                             fill="white" fontSize={LABEL_FONT} fontWeight={600}
                                           >
@@ -712,18 +725,20 @@ export function AnalyticsDashboard() {
                                           </text>
                                         );
                                       }
-                                      // Displaced: show label at resolved Y with background pill
+                                      // Displaced: background pill in segment color
                                       const bgColor = STAGE_COLORS[label.stage - 1];
+                                      const pillW = String(label.count).length * 7 + 6;
                                       return (
                                         <g key={label.stage}>
                                           <rect
-                                            x="15%" y={labelY - 6}
-                                            width="70%" height={12}
+                                            x={`calc(${label.xPct}% - ${pillW / 2}px)`}
+                                            y={labelY - 6}
+                                            width={pillW} height={12}
                                             rx={3}
                                             fill={bgColor}
                                           />
                                           <text
-                                            x="50%" y={labelY}
+                                            x={`${label.xPct}%`} y={labelY}
                                             textAnchor="middle" dominantBaseline="central"
                                             fill="white" fontSize={LABEL_FONT} fontWeight={600}
                                           >
