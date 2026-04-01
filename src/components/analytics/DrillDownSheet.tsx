@@ -5,7 +5,7 @@ import { EvoLineGrid } from '@/components/browser/EvoLineCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const SHEET_HEIGHT_VH = 85;
-const PEEK_HEIGHT = 52; // px — pull tab + title only (above accent line)
+const PEEK_HEIGHT = 68; // px — pull tab + title + subtitle (above accent line)
 const EXPAND_THRESHOLD = 40;
 const DISMISS_THRESHOLD = 80;
 const SWIPE_THRESHOLD = 50; // px horizontal drag to navigate
@@ -165,7 +165,7 @@ export function DrillDownSheet() {
       >
         {/* Header — always visible in peek (above accent line) */}
         <div
-          className="flex flex-col items-center py-2 cursor-grab active:cursor-grabbing touch-none shrink-0"
+          className="flex flex-col items-center pt-2 pb-2.5 cursor-grab active:cursor-grabbing touch-none shrink-0"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
