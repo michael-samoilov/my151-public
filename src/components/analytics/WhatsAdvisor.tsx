@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { CATEGORIES } from '@/data/categories';
@@ -22,7 +22,8 @@ function GreenPokeball({ className }: { className?: string }) {
 
 export function WhatsAdvisor() {
   const sections = usePokedexStore((s) => s.sections);
-  const [expanded, setExpanded] = useState(true);
+  const expanded = usePokedexStore((s) => s.whatsAdvisorExpanded);
+  const setExpanded = usePokedexStore((s) => s.setWhatsAdvisorExpanded);
 
   const advice = useMemo(() => {
     const items: { type: 'missing' | 'suggestion' | 'complete'; text: string }[] = [];

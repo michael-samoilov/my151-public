@@ -29,6 +29,7 @@ interface PokedexState {
   drillDownPeek: boolean;
   drillDownSiblings: DrillDownSegment[]; // ordered list of all segments in the same chart
   drillDownExcludeSpecial: boolean; // whether the chart's exclusion toggle was active
+  whatsAdvisorExpanded: boolean;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -51,6 +52,7 @@ interface PokedexState {
   expandDrillDown: () => void;
   closeDrillDown: () => void;
   navigateDrillDown: (segment: DrillDownSegment) => void;
+  setWhatsAdvisorExpanded: (expanded: boolean) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -72,6 +74,7 @@ export const usePokedexStore = create<PokedexState>()(
       drillDownPeek: true,
       drillDownSiblings: [],
       drillDownExcludeSpecial: false,
+      whatsAdvisorExpanded: true,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -195,6 +198,7 @@ export const usePokedexStore = create<PokedexState>()(
       expandDrillDown: () => set({ drillDownPeek: false }),
       closeDrillDown: () => set({ drillDownSegment: null, drillDownPeek: true, drillDownSiblings: [], drillDownExcludeSpecial: false }),
       navigateDrillDown: (segment) => set({ drillDownSegment: segment }),
+      setWhatsAdvisorExpanded: (expanded) => set({ whatsAdvisorExpanded: expanded }),
     }),
     {
       name: 'personal-151-pokedex-v3',
