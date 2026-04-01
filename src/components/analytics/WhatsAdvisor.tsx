@@ -35,7 +35,9 @@ export function WhatsAdvisor() {
       const cat = CATEGORIES.find((c) => c.id === catId);
       if (!cat) continue;
       const hasAny = pokemonList.some((p) => cat.filter(p) && allIds.has(p.id));
-      if (!hasAny) {
+      if (hasAny) {
+        items.push({ type: 'complete', text: `${cat.name} represented` });
+      } else {
         items.push({ type: 'missing', text: `No ${cat.name} assigned yet` });
       }
     }
@@ -52,6 +54,8 @@ export function WhatsAdvisor() {
     const missingTypes = allTypes.filter((t) => !typeCoverage.has(t));
     if (missingTypes.length > 0) {
       items.push({ type: 'missing', text: `Missing types: ${missingTypes.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ')}` });
+    } else {
+      items.push({ type: 'complete', text: 'All 18 types covered' });
     }
 
     return items;
