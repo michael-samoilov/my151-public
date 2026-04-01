@@ -267,7 +267,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
 
                 {/* Value label at bar end */}
                 {(() => {
-                  const val = ((Math.max(devLeft, Math.min(devRight, d.deviation)) / 100) + 1).toFixed(1) + 'x';
+                  const val = ((d.deviation / 100) + 1).toFixed(1) + 'x';
                   const barEnd = devSectionStart + devScale(Math.max(devLeft, Math.min(devRight, d.deviation)));
                   if (d.deviation >= 0) {
                     return (
