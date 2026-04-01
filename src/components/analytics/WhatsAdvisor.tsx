@@ -42,13 +42,13 @@ export function WhatsAdvisor() {
     // Check archetype coverage
     const allIds = new Set(Object.values(sections).flat());
 
-    // Starter check: count distinct starter evolution lines
-    const starterCat = CATEGORIES.find((c) => c.id === 'starter');
-    if (starterCat) {
+    // Starter check: count distinct evolution chains in the starter section
+    const starterIds = sections['starter'] ?? [];
+    {
       const starterChains = new Set<number>();
-      for (const id of allIds) {
+      for (const id of starterIds) {
         const p = getPokemonById(id);
-        if (p && starterCat.filter(p)) starterChains.add(p.evolutionChainId);
+        if (p) starterChains.add(p.evolutionChainId);
       }
       if (starterChains.size >= 3) {
         items.push({ type: 'complete', text: `${starterChains.size} Starter lines represented` });
