@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { CATEGORIES } from '@/data/categories';
@@ -7,10 +7,11 @@ import type { Pokemon } from '@/types/pokemon';
 
 const pokemonList = pokemonData as Pokemon[];
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown } from 'lucide-react';
 
 export function WhatsAdvisor() {
   const sections = usePokedexStore((s) => s.sections);
+  const [expanded, setExpanded] = useState(true);
 
   const advice = useMemo(() => {
     const items: { type: 'missing' | 'suggestion' | 'complete'; text: string }[] = [];
@@ -65,8 +66,12 @@ export function WhatsAdvisor() {
   const completeCount = advice.filter((a) => a.type === 'complete').length;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
+    <div>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-2 w-full text-left"
+      >
+        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? '' : '-rotate-90'}`} />
         <h3 className="text-lg font-semibold">What's Missing?</h3>
         {missingCount > 0 && (
           <Badge variant="destructive" className="text-xs">{missingCount} gaps</Badge>
@@ -74,26 +79,28 @@ export function WhatsAdvisor() {
         {missingCount === 0 && completeCount > 0 && (
           <Badge className="text-xs bg-green-600">Looking good!</Badge>
         )}
-      </div>
+      </button>
 
-      <div className="space-y-1.5">
-        {advice.map((item, i) => (
-          <div key={i} className="flex items-center gap-2 text-sm">
-            {item.type === 'missing' && (
-              <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
-            )}
-            {item.type === 'suggestion' && (
-              <AlertTriangle className="w-4 h-4 text-yellow-500 flex-shrink-0" />
-            )}
-            {item.type === 'complete' && (
-              <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
-            )}
-            <span className={item.type === 'complete' ? 'text-muted-foreground' : ''}>
-              {item.text}
-            </span>
-          </div>
-        ))}
-      </div>
+      {expanded && (
+        <div className="space-y-1.5 mt-3">
+          {advice.map((item, i) => (
+            <div key={i} className="flex items-center gap-2 text-sm">
+              {item.type === 'missing' && (
+                <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
+              )}
+              {item.type === 'suggestion' && (
+                <AlertTriangle className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+              )}
+              {item.type === 'complete' && (
+                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+              )}
+              <span className={item.type === 'complete' ? 'text-muted-foreground' : ''}>
+                {item.text}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
