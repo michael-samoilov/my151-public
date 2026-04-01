@@ -5,7 +5,6 @@ import { EvoLineGrid } from '@/components/browser/EvoLineCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const HEADER_HEIGHT = 49; // app header: py-3 + text + border
-const SHADOW_PAD = 20;   // room for upward box-shadow
 const PEEK_HEIGHT = 68;
 const EXPAND_THRESHOLD = 40;
 const DISMISS_THRESHOLD = 80;
@@ -53,7 +52,9 @@ function CardPanel({
   const noOp = useCallback(() => {}, []);
 
   return (
-    <div className="flex flex-col h-full bg-background overflow-hidden">
+    <div className="flex flex-col h-full rounded-t-2xl bg-background overflow-hidden"
+      style={{ filter: 'drop-shadow(0 -4px 8px rgba(0,0,0,0.15))' }}
+    >
       {/* Pull tab: entire area is draggable (handle + header + subtitle) */}
       <div
         className="shrink-0 touch-none cursor-grab active:cursor-grabbing"
@@ -243,8 +244,8 @@ export function DrillDownSheet() {
     const width = sheetRef.current.offsetWidth;
     pendingNav.current = targetSibling;
     setIsAnimating(true);
-    // Animate to the target panel position
-    setSwipeX(direction * width);
+    // Animate to the target panel position (+ 12px gap between cards)
+    setSwipeX(direction * (width + 12));
   }, []);
 
   // Touch handlers
@@ -350,13 +351,10 @@ export function DrillDownSheet() {
     : `${Math.max(dragY, 0)}px`;
 
   return (
-    <div
-      className="fixed inset-x-0 bottom-0 z-50 pointer-events-none"
-      style={{ paddingTop: `${SHADOW_PAD}px`, filter: 'drop-shadow(0 -4px 8px rgba(0,0,0,0.15))' }}
-    >
+    <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none">
       <div
         ref={sheetRef}
-        className="pointer-events-auto flex flex-col rounded-t-2xl bg-background overflow-hidden"
+        className="pointer-events-auto"
         style={{
           height: sheetHeight,
           transform: `translateY(${currentTranslateY})`,
@@ -364,14 +362,14 @@ export function DrillDownSheet() {
           overscrollBehavior: 'none',
         }}
       >
-        {/* Carousel — entire card (handle + header + accent + content) slides */}
-        <div className="flex-1 min-h-0 relative overflow-hidden">
+        {/* Carousel — each panel is its own rounded card */}
+        <div className="h-full relative overflow-x-clip">
           <div
             ref={carouselRef}
-            className="absolute inset-0 flex will-change-transform"
+            className="absolute inset-0 flex will-change-transform gap-3"
             style={{
-              width: '300%',
-              left: '-100%',
+              width: 'calc(300% + 24px)',
+              left: 'calc(-100% - 12px)',
               transform: `translateX(${swipeX}px)`,
               transition: isAnimating ? 'transform 0.28s ease-out' : 'none',
             }}
@@ -379,7 +377,7 @@ export function DrillDownSheet() {
           >
             {/* Prev panel */}
             <div
-              className="w-1/3 h-full overflow-hidden"
+              className="h-full overflow-hidden flex-1 min-w-0"
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -403,7 +401,7 @@ export function DrillDownSheet() {
 
             {/* Current panel */}
             <div
-              className="w-1/3 h-full overflow-hidden"
+              className="h-full overflow-hidden flex-1 min-w-0"
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -426,7 +424,7 @@ export function DrillDownSheet() {
 
             {/* Next panel */}
             <div
-              className="w-1/3 h-full overflow-hidden"
+              className="h-full overflow-hidden flex-1 min-w-0"
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
