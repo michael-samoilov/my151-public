@@ -31,6 +31,7 @@ function CardPanel({
   onHandleTouchMove,
   onHandleTouchEnd,
   onHandleClick,
+  swipeLocked,
 }: {
   data: DrillDownData;
   assignedIds: Set<number>;
@@ -41,6 +42,7 @@ function CardPanel({
   onHandleTouchMove?: (e: React.TouchEvent) => void;
   onHandleTouchEnd?: () => void;
   onHandleClick?: () => void;
+  swipeLocked?: boolean;
 }) {
   const emptySet = useMemo(() => new Set<number>(), []);
   const noOp = useCallback(() => {}, []);
@@ -95,8 +97,12 @@ function CardPanel({
       {/* Scrollable content */}
       <div
         ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto"
-        style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
+        className="flex-1 min-h-0"
+        style={{
+          overflowY: swipeLocked ? 'hidden' : 'auto',
+          overscrollBehavior: 'contain',
+          WebkitOverflowScrolling: 'touch',
+        }}
       >
         <div className="px-2 pb-2" style={{ minHeight: 'calc(100% + 1px)' }}>
           {data.sections.map((section) => (
@@ -134,6 +140,7 @@ export function DrillDownSheet() {
   const [dragY, setDragY] = useState(0);
   const [swipeX, setSwipeX] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [swipeLocked, setSwipeLocked] = useState(false);
   const dragStartY = useRef<number | null>(null);
   const dragStartX = useRef<number | null>(null);
   const isDragging = useRef(false);
@@ -244,6 +251,7 @@ export function DrillDownSheet() {
     isDragging.current = true;
 
     if (dragAxis.current === 'horizontal' && siblings.length >= 2) {
+      setSwipeLocked(true);
       setSwipeX(dx);
       e.preventDefault();
     } else if (dragAxis.current === 'vertical') {
@@ -263,7 +271,11 @@ export function DrillDownSheet() {
 
     if (dragAxis.current === 'horizontal' && siblings.length >= 2) {
       isDragging.current = true;
+      setSwipeLocked(true);
       setSwipeX(dx);
+      e.preventDefault();
+    } else if (dragAxis.current === 'horizontal') {
+      setSwipeLocked(true);
       e.preventDefault();
     }
   }, [siblings.length]);
@@ -293,6 +305,7 @@ export function DrillDownSheet() {
     dragStartX.current = null;
     isDragging.current = false;
     dragAxis.current = 'none';
+    setSwipeLocked(false);
   }, [swipeX, dragY, peek, expandDrillDown, closeDrillDown, prevSibling, nextSibling, commitSwipe]);
 
   const handleTabTap = useCallback(() => {
@@ -351,6 +364,7 @@ export function DrillDownSheet() {
                   onHandleTouchMove={handleHeaderTouchMove}
                   onHandleTouchEnd={handleTouchEnd}
                   onHandleClick={handleTabTap}
+                  swipeLocked={swipeLocked}
                 />
               )}
             </div>
@@ -372,6 +386,7 @@ export function DrillDownSheet() {
                 onHandleTouchMove={handleHeaderTouchMove}
                 onHandleTouchEnd={handleTouchEnd}
                 onHandleClick={handleTabTap}
+                swipeLocked={swipeLocked}
               />
             </div>
 
@@ -392,6 +407,7 @@ export function DrillDownSheet() {
                   onHandleTouchMove={handleHeaderTouchMove}
                   onHandleTouchEnd={handleTouchEnd}
                   onHandleClick={handleTabTap}
+                  swipeLocked={swipeLocked}
                 />
               )}
             </div>
