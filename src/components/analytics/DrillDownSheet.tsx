@@ -48,7 +48,10 @@ function CardPanel({
   const noOp = useCallback(() => {}, []);
 
   return (
-    <div className="flex flex-col h-full">
+    <div
+      className="flex flex-col h-full bg-background rounded-t-2xl overflow-hidden"
+      style={{ boxShadow: '0 -4px 16px rgba(0,0,0,0.15)' }}
+    >
       {/* Drag handle */}
       <div
         className="flex items-center justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing touch-none shrink-0"
@@ -325,13 +328,12 @@ export function DrillDownSheet() {
     <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none">
       <div
         ref={sheetRef}
-        className="pointer-events-auto bg-background rounded-t-2xl flex flex-col overflow-hidden"
+        className="pointer-events-auto flex flex-col overflow-hidden"
         style={{
           height: `${SHEET_HEIGHT_VH}vh`,
           transform: `translateY(${currentTranslateY})`,
           transition: dragY === 0 && !isAnimating ? 'transform 0.3s ease-out' : 'none',
           overscrollBehavior: 'none',
-          boxShadow: '0 -4px 16px rgba(0,0,0,0.15)',
         }}
       >
         {/* Carousel — entire card (handle + header + accent + content) slides */}
