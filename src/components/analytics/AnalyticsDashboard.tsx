@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAnalytics, fullBaseline, filteredBaseline } from '@/hooks/useAnalytics';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -74,6 +74,24 @@ export function AnalyticsDashboard() {
   const [excludeSpecialMekko, setExcludeSpecialMekko] = useState(false);
   const [selectedTypeChart, setSelectedTypeChart] = useState<string>('yours');
   const [newPokemonOnly, setNewPokemonOnly] = useState(true);
+
+  // Track max observed height of stage distribution card to prevent jitter on toggle
+  const stageCardRef = useRef<HTMLDivElement>(null);
+  const stageCardMaxH = useRef(0);
+  const [stageCardMinH, setStageCardMinH] = useState(0);
+  useEffect(() => {
+    const el = stageCardRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      const h = el.scrollHeight;
+      if (h > stageCardMaxH.current) {
+        stageCardMaxH.current = h;
+        setStageCardMinH(h);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const analytics = useAnalytics();
   const sections = usePokedexStore((s) => s.sections);
@@ -551,7 +569,7 @@ export function AnalyticsDashboard() {
               Exclude starters/legendaries
             </button>
           </div>
-          <div className="bg-card rounded-lg border p-4">
+          <div ref={stageCardRef} className="bg-card rounded-lg border p-4" style={stageCardMinH ? { minHeight: stageCardMinH } : undefined}>
             {mekkoData.totalLines > 0 ? (() => {
               const chartHeight = 180;
               const topMargin = 20;
@@ -712,8 +730,8 @@ export function AnalyticsDashboard() {
                           >
                             {colTotal > 0 && (
                               <>
-                                <div className="text-center text-[10px] text-muted-foreground font-bold mb-0.5 leading-tight flex items-end justify-center" style={{ minHeight: 24 }}>
-                                  <span>{colTotal} {colIdx === 0 && 'Pokémon '}<span className="font-normal">({pokePct}%)</span></span>
+                                <div className="text-center text-[10px] text-muted-foreground font-bold mb-0.5 leading-tight">
+                                  {colTotal} {colIdx === 0 && 'Pokémon '}<span className="font-normal">({pokePct}%)</span>
                                 </div>
                                 <div className="relative">
                                   <div className="flex flex-col-reverse">
@@ -782,7 +800,6 @@ export function AnalyticsDashboard() {
                         <div
                           key={col.lineLength}
                           className="flex-1 text-center text-[10px] text-muted-foreground font-bold leading-tight"
-                          style={{ minHeight: 24 }}
                         >
                           <span style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
                           <br />
