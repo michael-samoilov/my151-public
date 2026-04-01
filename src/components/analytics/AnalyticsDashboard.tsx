@@ -713,7 +713,7 @@ export function AnalyticsDashboard() {
                           >
                             {colTotal > 0 && (
                               <>
-                                <div className="text-center text-[10px] text-muted-foreground font-bold mb-0.5 leading-tight flex items-end justify-center" style={{ height: 26 }}>
+                                <div className="text-center text-[10px] text-muted-foreground font-bold mb-0.5 leading-tight flex items-end justify-center tabular-nums" style={{ height: 26 }}>
                                   <span>{colTotal} {colIdx === 0 && 'Pokémon '}<span className="font-normal">({pokePct}%)</span></span>
                                 </div>
                                 <div className="relative">
@@ -782,7 +782,7 @@ export function AnalyticsDashboard() {
                       {allColumns.map((col, idx) => (
                         <div
                           key={col.lineLength}
-                          className="flex-1 text-center text-[10px] text-muted-foreground font-bold leading-tight"
+                          className="flex-1 text-center text-[10px] text-muted-foreground font-bold leading-tight tabular-nums"
                           style={{ height: 38 }}
                         >
                           <span style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
@@ -819,7 +819,7 @@ export function AnalyticsDashboard() {
                       return (
                         <div
                           key={seg.stage}
-                          className="absolute text-[10px] whitespace-nowrap leading-tight flex items-center"
+                          className="absolute text-[10px] whitespace-nowrap leading-tight flex items-center tabular-nums"
                           style={{
                             bottom: bottomPos,
                             height: legendLabelHeights[i],

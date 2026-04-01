@@ -40,12 +40,14 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
 
   if (data.length === 0) return null;
 
+  const countTotal = data.reduce((s, d) => s + d.count, 0);
+
   // Layout: fixed pixel widths for label + icon + count, rest for deviation
   const hasIcons = data.some(d => d.icon);
   const labelWidth = 42;
   const iconSize = hasIcons ? 14 : 0;
   const iconGap = hasIcons ? 3 : 0;
-  const numberWidth = 22;
+  const numberWidth = 42;
   const gap = 6;
   const titleHeight = 18;
   const axisHeight = 18;
@@ -204,8 +206,9 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                   dominantBaseline="middle"
                   fontSize={9}
                   fill="var(--color-muted-foreground)"
+                  style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
-                  {d.count}
+                  {d.count} ({countTotal > 0 ? ((d.count / countTotal) * 100).toFixed(0) : 0}%)
                 </text>
 
                 {!hideDeviation && (<>
@@ -275,6 +278,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                         x={barEnd + 3} y={y + barHeight / 2}
                         textAnchor="start" dominantBaseline="middle"
                         fontSize={9} fill="var(--color-muted-foreground)"
+                        style={{ fontVariantNumeric: 'tabular-nums' }}
                       >{val}</text>
                     );
                   }
@@ -283,6 +287,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                       x={barEnd - 3} y={y + barHeight / 2}
                       textAnchor="end" dominantBaseline="middle"
                       fontSize={9} fill="var(--color-muted-foreground)"
+                      style={{ fontVariantNumeric: 'tabular-nums' }}
                     >{val}</text>
                   );
                 })()}
