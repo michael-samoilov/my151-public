@@ -40,8 +40,16 @@ export function useDrillDownData(): DrillDownData | null {
   const storeSections = usePokedexStore((s) => s.sections);
   const excludeSpecial = usePokedexStore((s) => s.drillDownExcludeSpecial);
 
-  return useMemo(() => {
-    if (!segment) return null;
+  return useMemo(() => computeDrillDownData(segment, storeSections, excludeSpecial), [segment, storeSections, excludeSpecial]);
+}
+
+/** Pure computation — also used by carousel to pre-render adjacent panels */
+export function computeDrillDownData(
+  segment: DrillDownSegment | null,
+  storeSections: Record<string, number[]>,
+  excludeSpecial: boolean,
+): DrillDownData | null {
+  if (!segment) return null;
 
     // Collect all placed Pokemon with their section assignments
     const pokemonToSection = new Map<number, string>();
@@ -124,7 +132,14 @@ export function useDrillDownData(): DrillDownData | null {
     for (const bg of BUILD_GROUPS) {
       const groups = evoLinesBySection.get(bg.id);
       if (!groups || groups.length === 0) continue;
-      groups.sort((a, b) => a.members[0].id - b.members[0].id);
+      // Sort by build page order (position in the section array)
+      const sectionIds = storeSections[bg.id] ?? [];
+      const posMap = new Map(sectionIds.map((id, i) => [id, i]));
+      groups.sort((a, b) => {
+        const aPos = Math.min(...a.members.map(m => posMap.get(m.id) ?? Infinity));
+        const bPos = Math.min(...b.members.map(m => posMap.get(m.id) ?? Infinity));
+        return aPos - bPos;
+      });
       sections.push({
         sectionId: bg.id,
         sectionName: bg.name,
@@ -147,7 +162,6 @@ export function useDrillDownData(): DrillDownData | null {
       totalPokemon: countForSubtitle,
       totalLines: linesForSubtitle,
     };
-  }, [segment, storeSections, excludeSpecial]);
 }
 
 function matchesSegment(p: Pokemon, id: number, segment: DrillDownSegment): boolean {
