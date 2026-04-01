@@ -690,7 +690,7 @@ export function AnalyticsDashboard() {
                             {colTotal > 0 && (
                               <>
                                 <div className="text-center text-[10px] text-muted-foreground font-semibold mb-0.5">
-                                  {colTotal} ({pokePct}%)
+                                  {colTotal} {colIdx === 0 && 'Pokémon '}({pokePct}%)
                                 </div>
                                 <div className="relative">
                                   <div className="flex flex-col-reverse">
@@ -763,7 +763,7 @@ export function AnalyticsDashboard() {
                           <span className="font-bold" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
                           {idx === 0 ? <span className="font-bold"> lines</span> : ''}
                           <br />
-                          <span className="font-bold">{col.chainCount}</span> (<span className="font-bold">{col.widthPct.toFixed(0)}%</span>)
+                          <span className="font-bold">{col.chainCount}</span>{idx === 0 && ' lines'} (<span className="font-bold">{col.widthPct.toFixed(0)}%</span>)
                         </div>
                       ))}
                     </div>
