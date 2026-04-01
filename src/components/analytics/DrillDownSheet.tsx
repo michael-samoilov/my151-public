@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
-import { useDrillDownData, computeDrillDownData, type DrillDownData } from '@/hooks/useDrillDownData';
+import { computeDrillDownData, type DrillDownData } from '@/hooks/useDrillDownData';
 import { EvoLineGrid } from '@/components/browser/EvoLineCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+
 const SHEET_HEIGHT_VH = 85;
 const PEEK_HEIGHT = 68;
 const EXPAND_THRESHOLD = 40;
@@ -19,35 +20,103 @@ function getSegmentLabel(seg: DrillDownSegment): string {
   }
 }
 
-/** Renders one page of drill-down content */
-function DrillDownPage({
+/** A full card panel: drag handle + header + accent line + scrollable content */
+function CardPanel({
   data,
   assignedIds,
+  prevLabel,
+  nextLabel,
+  scrollRef,
+  onHandleTouchStart,
+  onHandleTouchMove,
+  onHandleTouchEnd,
+  onHandleClick,
 }: {
   data: DrillDownData;
   assignedIds: Set<number>;
+  prevLabel?: string;
+  nextLabel?: string;
+  scrollRef?: React.RefObject<HTMLDivElement | null>;
+  onHandleTouchStart?: (e: React.TouchEvent) => void;
+  onHandleTouchMove?: (e: React.TouchEvent) => void;
+  onHandleTouchEnd?: () => void;
+  onHandleClick?: () => void;
 }) {
   const emptySet = useMemo(() => new Set<number>(), []);
   const noOp = useCallback(() => {}, []);
 
   return (
-    <div className="px-2 pb-2" style={{ minHeight: 'calc(100% + 1px)' }}>
-      {data.sections.map((section) => (
-        <div key={section.sectionId}>
-          <div className="sticky top-0 z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
-            {section.sectionName}
+    <div className="flex flex-col h-full">
+      {/* Drag handle */}
+      <div
+        className="flex items-center justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing touch-none shrink-0"
+        onTouchStart={onHandleTouchStart}
+        onTouchMove={onHandleTouchMove}
+        onTouchEnd={onHandleTouchEnd}
+        onClick={onHandleClick}
+      >
+        <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+      </div>
+
+      {/* Card header */}
+      <div className="flex flex-col items-center shrink-0 pt-0.5 pb-1.5">
+        <div className="flex items-center w-full px-3">
+          <div className="flex-1 flex items-center min-w-0">
+            {prevLabel && (
+              <span className="flex items-center gap-0.5 text-xs text-muted-foreground truncate">
+                <ChevronLeft className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{prevLabel}</span>
+              </span>
+            )}
           </div>
-          <div className="pt-1">
-            <EvoLineGrid
-              groups={section.groups}
-              assignedIds={assignedIds}
-              stagedIds={emptySet}
-              onToggleStage={noOp}
-              cols={6}
-            />
+          <div className="flex items-center gap-1.5 shrink-0 mx-2">
+            {data.icon && (
+              <img src={data.icon} alt="" className="w-4 h-4" style={{ imageRendering: 'pixelated' }} />
+            )}
+            <span className="text-sm font-semibold" style={{ color: data.color }}>
+              {data.title}
+            </span>
+          </div>
+          <div className="flex-1 flex items-center justify-end min-w-0">
+            {nextLabel && (
+              <span className="flex items-center gap-0.5 text-xs text-muted-foreground truncate">
+                <span className="truncate">{nextLabel}</span>
+                <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+              </span>
+            )}
           </div>
         </div>
-      ))}
+        <span className="text-[10px] text-muted-foreground mt-0.5">{data.subtitle}</span>
+      </div>
+
+      {/* Accent line */}
+      <div className="h-[2px] shrink-0" style={{ backgroundColor: data.color, opacity: 0.5 }} />
+
+      {/* Scrollable content */}
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0 overflow-y-auto"
+        style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
+      >
+        <div className="px-2 pb-2" style={{ minHeight: 'calc(100% + 1px)' }}>
+          {data.sections.map((section) => (
+            <div key={section.sectionId}>
+              <div className="sticky top-0 z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
+                {section.sectionName}
+              </div>
+              <div className="pt-1">
+                <EvoLineGrid
+                  groups={section.groups}
+                  assignedIds={assignedIds}
+                  stagedIds={emptySet}
+                  onToggleStage={noOp}
+                  cols={6}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -57,49 +126,52 @@ export function DrillDownSheet() {
   const closeDrillDown = usePokedexStore((s) => s.closeDrillDown);
   const navigateDrillDown = usePokedexStore((s) => s.navigateDrillDown);
   const peek = usePokedexStore((s) => s.drillDownPeek);
-  const sections = usePokedexStore((s) => s.sections);
+  const storeSections = usePokedexStore((s) => s.sections);
   const siblings = usePokedexStore((s) => s.drillDownSiblings);
   const segment = usePokedexStore((s) => s.drillDownSegment);
   const excludeSpecial = usePokedexStore((s) => s.drillDownExcludeSpecial);
-  const data = useDrillDownData();
 
   const [dragY, setDragY] = useState(0);
-  const [swipeX, setSwipeX] = useState(0); // unified horizontal drag from either header or content
-  const [isAnimatingSwipe, setIsAnimatingSwipe] = useState(false);
-  const [animateTarget, setAnimateTarget] = useState(0);
+  const [swipeX, setSwipeX] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
   const dragStartY = useRef<number | null>(null);
   const dragStartX = useRef<number | null>(null);
   const isDragging = useRef(false);
   const dragAxis = useRef<'none' | 'vertical' | 'horizontal'>('none');
-  const contentRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const currentScrollRef = useRef<HTMLDivElement>(null);
+  const pendingNav = useRef<DrillDownSegment | null>(null);
 
   const assignedIds = useMemo(() => {
     const ids = new Set<number>();
-    for (const arr of Object.values(sections)) {
+    for (const arr of Object.values(storeSections)) {
       for (const id of arr) ids.add(id);
     }
     return ids;
-  }, [sections]);
+  }, [storeSections]);
 
-  // Compute prev/next siblings with wrap-around
-  const { prevSibling, nextSibling } = useMemo(() => {
-    if (!segment || siblings.length < 2) return { prevSibling: null, nextSibling: null };
-    const idx = siblings.findIndex(s => JSON.stringify(s) === JSON.stringify(segment));
-    if (idx === -1) return { prevSibling: null, nextSibling: null };
-    return {
-      prevSibling: siblings[(idx - 1 + siblings.length) % siblings.length],
-      nextSibling: siblings[(idx + 1) % siblings.length],
-    };
+  // Current index in siblings
+  const currentIdx = useMemo(() => {
+    if (!segment || siblings.length < 2) return -1;
+    return siblings.findIndex(s => JSON.stringify(s) === JSON.stringify(segment));
   }, [segment, siblings]);
 
-  // Pre-compute adjacent panel data for carousel
+  const prevSibling = siblings.length >= 2 && currentIdx >= 0
+    ? siblings[(currentIdx - 1 + siblings.length) % siblings.length] : null;
+  const nextSibling = siblings.length >= 2 && currentIdx >= 0
+    ? siblings[(currentIdx + 1) % siblings.length] : null;
+
+  // Pre-compute all 3 panels' data
+  const currentData = useMemo(() =>
+    computeDrillDownData(segment, storeSections, excludeSpecial),
+    [segment, storeSections, excludeSpecial]);
   const prevData = useMemo(() =>
-    prevSibling ? computeDrillDownData(prevSibling, sections, excludeSpecial) : null,
-    [prevSibling, sections, excludeSpecial]);
+    prevSibling ? computeDrillDownData(prevSibling, storeSections, excludeSpecial) : null,
+    [prevSibling, storeSections, excludeSpecial]);
   const nextData = useMemo(() =>
-    nextSibling ? computeDrillDownData(nextSibling, sections, excludeSpecial) : null,
-    [nextSibling, sections, excludeSpecial]);
+    nextSibling ? computeDrillDownData(nextSibling, storeSections, excludeSpecial) : null,
+    [nextSibling, storeSections, excludeSpecial]);
 
   // Only lock body scroll when fully expanded (not peek)
   useEffect(() => {
@@ -109,16 +181,58 @@ export function DrillDownSheet() {
     }
   }, [peek]);
 
-  // Shared touch start for both header and content
+  // Reset scroll to top when segment changes
+  useEffect(() => {
+    if (currentScrollRef.current) {
+      currentScrollRef.current.scrollTop = 0;
+    }
+  }, [segment]);
+
+  // Handle carousel transitionend: commit the pending navigation
+  const handleTransitionEnd = useCallback(() => {
+    if (!pendingNav.current) return;
+    const target = pendingNav.current;
+    pendingNav.current = null;
+
+    // Disable transition, reset position, update segment — all in one frame
+    if (carouselRef.current) {
+      carouselRef.current.style.transition = 'none';
+      carouselRef.current.style.transform = 'translateX(0px)';
+    }
+
+    // Use rAF to ensure the style reset is painted before React re-renders
+    requestAnimationFrame(() => {
+      navigateDrillDown(target);
+      setSwipeX(0);
+      setIsAnimating(false);
+      // Re-enable transition in next frame
+      requestAnimationFrame(() => {
+        if (carouselRef.current) {
+          carouselRef.current.style.transition = '';
+          carouselRef.current.style.transform = '';
+        }
+      });
+    });
+  }, [navigateDrillDown]);
+
+  const commitSwipe = useCallback((targetSibling: DrillDownSegment, direction: number) => {
+    if (!sheetRef.current) return;
+    const width = sheetRef.current.offsetWidth;
+    pendingNav.current = targetSibling;
+    setIsAnimating(true);
+    // Animate to the target panel position
+    setSwipeX(direction * width);
+  }, []);
+
+  // Touch handlers
   const touchStart = useCallback((e: React.TouchEvent) => {
-    if (isAnimatingSwipe) return;
+    if (isAnimating) return;
     dragStartY.current = e.touches[0].clientY;
     dragStartX.current = e.touches[0].clientX;
     isDragging.current = false;
     dragAxis.current = 'none';
-  }, [isAnimatingSwipe]);
+  }, [isAnimating]);
 
-  // Header touch move: supports both vertical and horizontal
   const handleHeaderTouchMove = useCallback((e: React.TouchEvent) => {
     if (dragStartY.current === null || dragStartX.current === null) return;
     const dy = e.touches[0].clientY - dragStartY.current;
@@ -127,7 +241,6 @@ export function DrillDownSheet() {
     if (dragAxis.current === 'none' && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
       dragAxis.current = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
     }
-
     isDragging.current = true;
 
     if (dragAxis.current === 'horizontal' && siblings.length >= 2) {
@@ -139,7 +252,6 @@ export function DrillDownSheet() {
     }
   }, [siblings.length]);
 
-  // Content touch move: horizontal → swipe, vertical → native scroll
   const handleContentTouchMove = useCallback((e: React.TouchEvent) => {
     if (dragStartY.current === null || dragStartX.current === null) return;
     const dx = e.touches[0].clientX - dragStartX.current;
@@ -154,26 +266,7 @@ export function DrillDownSheet() {
       setSwipeX(dx);
       e.preventDefault();
     }
-    // vertical = native scroll, don't interfere
   }, [siblings.length]);
-
-  const commitSwipe = useCallback((targetSibling: DrillDownSegment | null, direction: number) => {
-    if (!targetSibling || !sheetRef.current) {
-      setSwipeX(0);
-      return;
-    }
-    const width = sheetRef.current.offsetWidth;
-    setAnimateTarget(direction * width);
-    setIsAnimatingSwipe(true);
-
-    // After animation completes, commit navigation and reset
-    setTimeout(() => {
-      navigateDrillDown(targetSibling);
-      setSwipeX(0);
-      setAnimateTarget(0);
-      setIsAnimatingSwipe(false);
-    }, 250);
-  }, [navigateDrillDown]);
 
   const handleTouchEnd = useCallback(() => {
     if (dragStartY.current === null) return;
@@ -209,19 +302,11 @@ export function DrillDownSheet() {
     }
   }, [peek, expandDrillDown, closeDrillDown]);
 
-  const handleNavClick = useCallback((e: React.MouseEvent, target: DrillDownSegment) => {
-    e.stopPropagation();
-    navigateDrillDown(target);
-  }, [navigateDrillDown]);
-
-  if (!data) return null;
+  if (!currentData) return null;
 
   const currentTranslateY = peek
     ? `calc(${SHEET_HEIGHT_VH}vh - ${PEEK_HEIGHT}px + ${Math.max(dragY, -(PEEK_HEIGHT))}px)`
     : `${Math.max(dragY, 0)}px`;
-
-  // Carousel X offset: during drag use swipeX, during animation use animateTarget
-  const carouselX = isAnimatingSwipe ? animateTarget : swipeX;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none">
@@ -231,106 +316,83 @@ export function DrillDownSheet() {
         style={{
           height: `${SHEET_HEIGHT_VH}vh`,
           transform: `translateY(${currentTranslateY})`,
-          transition: dragY === 0 && !isAnimatingSwipe ? 'transform 0.3s ease-out' : (isAnimatingSwipe ? 'none' : 'none'),
+          transition: dragY === 0 && !isAnimating ? 'transform 0.3s ease-out' : 'none',
           overscrollBehavior: 'none',
           boxShadow: '0 -4px 16px rgba(0,0,0,0.15)',
         }}
       >
-        {/* Header — always visible in peek */}
-        <div
-          className="flex flex-col items-center pt-2 pb-2.5 cursor-grab active:cursor-grabbing touch-none shrink-0"
-          onTouchStart={touchStart}
-          onTouchMove={handleHeaderTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onClick={handleTabTap}
-        >
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1.5" />
-          <div className="flex items-center w-full px-3">
-            {/* Prev */}
-            <div className="flex-1 flex items-center min-w-0">
-              {prevSibling && (
-                <button
-                  className="flex items-center gap-0.5 text-xs text-muted-foreground truncate py-1 pr-2 -ml-1 cursor-pointer"
-                  onClick={(e) => handleNavClick(e, prevSibling)}
-                >
-                  <ChevronLeft className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">{getSegmentLabel(prevSibling)}</span>
-                </button>
-              )}
-            </div>
-
-            {/* Center title */}
-            <div className="flex items-center gap-1.5 shrink-0 mx-2">
-              {data.icon && (
-                <img src={data.icon} alt="" className="w-4 h-4" style={{ imageRendering: 'pixelated' }} />
-              )}
-              <span className="text-sm font-semibold" style={{ color: data.color }}>
-                {data.title}
-              </span>
-            </div>
-
-            {/* Next */}
-            <div className="flex-1 flex items-center justify-end min-w-0">
-              {nextSibling && (
-                <button
-                  className="flex items-center gap-0.5 text-xs text-muted-foreground truncate py-1 pl-2 -mr-1 cursor-pointer"
-                  onClick={(e) => handleNavClick(e, nextSibling)}
-                >
-                  <span className="truncate">{getSegmentLabel(nextSibling)}</span>
-                  <ChevronRight className="w-3.5 h-3.5 shrink-0" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          <span className="text-[10px] text-muted-foreground mt-0.5">{data.subtitle}</span>
-        </div>
-
-        <div className="h-[2px] shrink-0" style={{ backgroundColor: data.color, opacity: 0.5 }} />
-
-        {/* Carousel — 3 panels side by side, translated by swipe */}
-        <div
-          className="flex-1 min-h-0 relative"
-          style={{ overflow: 'hidden' }}
-        >
+        {/* Carousel — entire card (handle + header + accent + content) slides */}
+        <div className="flex-1 min-h-0 relative overflow-hidden">
           <div
-            className="absolute inset-0 flex"
+            ref={carouselRef}
+            className="absolute inset-0 flex will-change-transform"
             style={{
               width: '300%',
               left: '-100%',
-              transform: `translateX(${carouselX}px)`,
-              transition: isAnimatingSwipe ? 'transform 0.25s ease-out' : 'none',
+              transform: `translateX(${swipeX}px)`,
+              transition: isAnimating ? 'transform 0.28s ease-out' : 'none',
             }}
+            onTransitionEnd={handleTransitionEnd}
           >
             {/* Prev panel */}
-            <div className="w-1/3 h-full overflow-hidden">
-              {prevData && (
-                <div className="h-full overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
-                  <DrillDownPage data={prevData} assignedIds={assignedIds} />
-                </div>
+            <div
+              className="w-1/3 h-full overflow-hidden"
+              onTouchStart={touchStart}
+              onTouchMove={handleContentTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {prevData && prevSibling && (
+                <CardPanel
+                  data={prevData}
+                  assignedIds={assignedIds}
+                  prevLabel={siblings.length >= 3 ? getSegmentLabel(siblings[(currentIdx - 2 + siblings.length) % siblings.length]) : undefined}
+                  nextLabel={getSegmentLabel(segment!)}
+                  onHandleTouchStart={touchStart}
+                  onHandleTouchMove={handleHeaderTouchMove}
+                  onHandleTouchEnd={handleTouchEnd}
+                  onHandleClick={handleTabTap}
+                />
               )}
             </div>
 
             {/* Current panel */}
-            <div className="w-1/3 h-full overflow-hidden">
-              <div
-                ref={contentRef}
-                className="h-full overflow-y-auto"
-                style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
-                onTouchStart={touchStart}
-                onTouchMove={handleContentTouchMove}
-                onTouchEnd={handleTouchEnd}
-              >
-                <DrillDownPage data={data} assignedIds={assignedIds} />
-              </div>
+            <div
+              className="w-1/3 h-full overflow-hidden"
+              onTouchStart={touchStart}
+              onTouchMove={handleContentTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <CardPanel
+                data={currentData}
+                assignedIds={assignedIds}
+                prevLabel={prevSibling ? getSegmentLabel(prevSibling) : undefined}
+                nextLabel={nextSibling ? getSegmentLabel(nextSibling) : undefined}
+                scrollRef={currentScrollRef}
+                onHandleTouchStart={touchStart}
+                onHandleTouchMove={handleHeaderTouchMove}
+                onHandleTouchEnd={handleTouchEnd}
+                onHandleClick={handleTabTap}
+              />
             </div>
 
             {/* Next panel */}
-            <div className="w-1/3 h-full overflow-hidden">
-              {nextData && (
-                <div className="h-full overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
-                  <DrillDownPage data={nextData} assignedIds={assignedIds} />
-                </div>
+            <div
+              className="w-1/3 h-full overflow-hidden"
+              onTouchStart={touchStart}
+              onTouchMove={handleContentTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {nextData && nextSibling && (
+                <CardPanel
+                  data={nextData}
+                  assignedIds={assignedIds}
+                  prevLabel={getSegmentLabel(segment!)}
+                  nextLabel={siblings.length >= 3 ? getSegmentLabel(siblings[(currentIdx + 2) % siblings.length]) : undefined}
+                  onHandleTouchStart={touchStart}
+                  onHandleTouchMove={handleHeaderTouchMove}
+                  onHandleTouchEnd={handleTouchEnd}
+                  onHandleClick={handleTabTap}
+                />
               )}
             </div>
           </div>
