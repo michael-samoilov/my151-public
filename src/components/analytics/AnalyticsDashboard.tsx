@@ -626,6 +626,50 @@ export function AnalyticsDashboard() {
                         const colTotal = col.segments.reduce((s, seg) => s + seg.count, 0);
                         const pokePct = totalPokemon > 0 ? ((colTotal / totalPokemon) * 100).toFixed(0) : '0';
                         const segHeights = columnSegHeights[colIdx];
+
+                        // Think-cell style label placement for this column
+                        // Priority: inside centered → outside adjacent (pushed apart)
+                        const LABEL_FONT = 10;
+                        const LABEL_FIT = 14; // min segment height to fit label inside
+                        // Build segment geometry (from bottom of stacked bar)
+                        let yAcc = 0;
+                        const segGeo = col.segments.map((seg, segIdx) => {
+                          const h = segHeights[segIdx];
+                          const bottom = yAcc;
+                          const center = yAcc + h / 2;
+                          const top = yAcc + h;
+                          yAcc += h;
+                          return { stage: seg.stage, count: seg.count, h, bottom, center, top };
+                        }).filter(s => s.count > 0);
+                        const colHeight = yAcc;
+
+                        // Place labels: inside if fits, otherwise mark as displaced
+                        const labels: { stage: number; count: number; y: number; inside: boolean; segCenter: number }[] = [];
+                        const displaced: typeof labels = [];
+                        for (const s of segGeo) {
+                          if (s.h >= LABEL_FIT) {
+                            labels.push({ stage: s.stage, count: s.count, y: s.center, inside: true, segCenter: s.center });
+                          } else {
+                            displaced.push({ stage: s.stage, count: s.count, y: s.center, inside: false, segCenter: s.center });
+                          }
+                        }
+
+                        // Resolve displaced labels: place at natural Y, then push apart
+                        // to avoid overlapping each other AND inside labels
+                        const allLabels = [...labels, ...displaced].sort((a, b) => a.y - b.y);
+                        for (let i = 1; i < allLabels.length; i++) {
+                          const minY = allLabels[i - 1].y + LABEL_FIT;
+                          if (allLabels[i].y < minY) {
+                            // Only push displaced labels; inside labels stay put
+                            if (!allLabels[i].inside) {
+                              allLabels[i].y = minY;
+                            } else if (!allLabels[i - 1].inside) {
+                              // Push the displaced one down instead
+                              allLabels[i - 1].y = allLabels[i].y - LABEL_FIT;
+                            }
+                          }
+                        }
+
                         return (
                           <div
                             key={col.lineLength}
@@ -637,20 +681,61 @@ export function AnalyticsDashboard() {
                                 <div className="text-center text-[10px] text-muted-foreground font-semibold mb-0.5">
                                   {colTotal} ({pokePct}%)
                                 </div>
-                                <div className="flex flex-col-reverse">
-                                  {col.segments.map((seg, segIdx) => (
-                                    <div
-                                      key={seg.stage}
-                                      className="flex items-center justify-center text-white text-[10px] font-semibold"
-                                      style={{
-                                        height: segHeights[segIdx],
-                                        backgroundColor: STAGE_COLORS[seg.stage - 1],
-                                        overflow: 'visible',
-                                      }}
-                                    >
-                                      {seg.count > 0 && seg.count}
-                                    </div>
-                                  ))}
+                                <div className="relative">
+                                  <div className="flex flex-col-reverse">
+                                    {col.segments.map((seg, segIdx) => (
+                                      <div
+                                        key={seg.stage}
+                                        style={{
+                                          height: segHeights[segIdx],
+                                          backgroundColor: STAGE_COLORS[seg.stage - 1],
+                                        }}
+                                      />
+                                    ))}
+                                  </div>
+                                  {/* Label overlay */}
+                                  <svg
+                                    className="absolute top-0 left-0 overflow-visible pointer-events-none"
+                                    style={{ width: '100%', height: colHeight || 1 }}
+                                  >
+                                    {allLabels.map(label => {
+                                      const labelY = colHeight - label.y;
+                                      if (label.inside) {
+                                        return (
+                                          <text
+                                            key={label.stage}
+                                            x="50%" y={labelY}
+                                            textAnchor="middle" dominantBaseline="central"
+                                            fill="white" fontSize={LABEL_FONT} fontWeight={600}
+                                          >
+                                            {label.count}
+                                          </text>
+                                        );
+                                      }
+                                      // Displaced: show label at resolved Y with a small leader line
+                                      const segY = colHeight - label.segCenter;
+                                      const needsLine = Math.abs(labelY - segY) > 2;
+                                      return (
+                                        <g key={label.stage}>
+                                          {needsLine && (
+                                            <line
+                                              x1="50%" y1={segY}
+                                              x2="50%" y2={labelY}
+                                              stroke="white" strokeWidth={0.75} opacity={0.5}
+                                            />
+                                          )}
+                                          <text
+                                            x="50%" y={labelY}
+                                            textAnchor="middle" dominantBaseline="central"
+                                            fill="white" fontSize={LABEL_FONT} fontWeight={600}
+                                            style={{ textShadow: '0 0 3px rgba(0,0,0,0.6)' }}
+                                          >
+                                            {label.count}
+                                          </text>
+                                        </g>
+                                      );
+                                    })}
+                                  </svg>
                                 </div>
                               </>
                             )}
