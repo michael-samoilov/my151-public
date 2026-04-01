@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "cache-sprites": "bash scripts/cache-sprites.sh",
-    "build": "bash scripts/cache-sprites.sh && tsc -b && vite build",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
