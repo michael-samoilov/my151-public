@@ -7,7 +7,18 @@ import type { Pokemon } from '@/types/pokemon';
 
 const pokemonList = pokemonData as Pokemon[];
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle2, ChevronDown } from 'lucide-react';
+import { AlertTriangle, ChevronDown } from 'lucide-react';
+
+function GreenPokeball({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} fill="none">
+      <path d="M1 8 A7 7 0 0 1 15 8" fill="#22c55e" stroke="#22c55e" strokeWidth="1.5" />
+      <path d="M1 8 A7 7 0 0 0 15 8" fill="none" stroke="#22c55e" strokeWidth="1.5" />
+      <line x1="1" y1="8" x2="15" y2="8" stroke="#22c55e" strokeWidth="1.5" />
+      <circle cx="8" cy="8" r="2.5" fill="white" stroke="#22c55e" strokeWidth="1.5" />
+    </svg>
+  );
+}
 
 export function WhatsAdvisor() {
   const sections = usePokedexStore((s) => s.sections);
@@ -31,8 +42,26 @@ export function WhatsAdvisor() {
     // Check archetype coverage
     const allIds = new Set(Object.values(sections).flat());
 
-    const criticalCategories = ['starter', 'pseudo-legendary', 'legendary', 'mythical'];
-    for (const catId of criticalCategories) {
+    // Starter check: count distinct starter evolution lines
+    const starterCat = CATEGORIES.find((c) => c.id === 'starter');
+    if (starterCat) {
+      const starterChains = new Set<number>();
+      for (const id of allIds) {
+        const p = getPokemonById(id);
+        if (p && starterCat.filter(p)) starterChains.add(p.evolutionChainId);
+      }
+      if (starterChains.size >= 3) {
+        items.push({ type: 'complete', text: `${starterChains.size} Starter lines represented` });
+      } else if (starterChains.size > 0) {
+        items.push({ type: 'suggestion', text: `${starterChains.size}/3 Starter lines (need 3)` });
+      } else {
+        items.push({ type: 'missing', text: 'No Starter assigned yet' });
+      }
+    }
+
+    // Other archetype checks
+    const otherCategories = ['pseudo-legendary', 'legendary', 'mythical'];
+    for (const catId of otherCategories) {
       const cat = CATEGORIES.find((c) => c.id === catId);
       if (!cat) continue;
       const hasAny = pokemonList.some((p) => cat.filter(p) && allIds.has(p.id));
@@ -92,7 +121,7 @@ export function WhatsAdvisor() {
                 <AlertTriangle className="w-4 h-4 text-yellow-500 flex-shrink-0" />
               )}
               {item.type === 'complete' && (
-                <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                <GreenPokeball className="w-4 h-4 flex-shrink-0" />
               )}
               <span className={item.type === 'complete' ? 'text-muted-foreground' : ''}>
                 {item.text}
