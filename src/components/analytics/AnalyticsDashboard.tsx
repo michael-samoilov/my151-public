@@ -764,6 +764,10 @@ export function AnalyticsDashboard() {
                           }
                         }
 
+                        // Compute column-level highlight states
+                        const isColumnActive = drillDownSegment?.kind === 'lineLength' &&
+                          drillDownSegment.lineLength === col.lineLength;
+
                         return (
                           <div
                             key={col.lineLength}
@@ -775,17 +779,17 @@ export function AnalyticsDashboard() {
                                 <div className="text-center text-[10px] text-muted-foreground font-bold mb-0.5 leading-tight flex items-end justify-center tabular-nums" style={{ height: 26 }}>
                                   <span>{colTotal} {colIdx === 0 && 'Pokémon '}<span className="font-normal">({pokePct}%)</span></span>
                                 </div>
-                                <div className="relative">
-                                  <div className="flex flex-col-reverse">
+                                <div className="relative" style={{
+                                  borderRadius: 3,
+                                  boxShadow: isColumnActive ? `0 0 0 2.5px ${STAGE_LINE_COLORS[col.lineLength - 1]}40` : undefined,
+                                }}>
+                                  <div className="flex flex-col-reverse" style={{ borderRadius: 3, overflow: 'hidden' }}>
                                     {col.segments.map((seg, segIdx) => {
                                       const isSegActive = drillDownSegment?.kind === 'stage' &&
                                         drillDownSegment.lineLength === col.lineLength &&
                                         drillDownSegment.stage === seg.stage;
-                                      const isLineLenActive = drillDownSegment?.kind === 'lineLength' &&
-                                        drillDownSegment.lineLength === col.lineLength;
                                       const isStageAllActive = drillDownSegment?.kind === 'stageAll' &&
                                         drillDownSegment.stage === seg.stage;
-                                      const highlighted = isSegActive || isLineLenActive || isStageAllActive;
                                       return (
                                         <div
                                           key={seg.stage}
@@ -793,9 +797,11 @@ export function AnalyticsDashboard() {
                                           style={{
                                             height: segHeights[segIdx],
                                             backgroundColor: STAGE_COLORS[seg.stage - 1],
-                                            outline: highlighted ? '2px solid currentColor' : undefined,
-                                            outlineOffset: '-1px',
-                                            opacity: highlighted ? 1 : undefined,
+                                            boxShadow: isSegActive
+                                              ? `inset 0 0 0 2px ${STAGE_COLORS[seg.stage - 1]}80, inset 0 0 8px rgba(255,255,255,0.3)`
+                                              : isStageAllActive
+                                                ? `inset 0 0 0 2px ${STAGE_COLORS[seg.stage - 1]}80, inset 0 0 8px rgba(255,255,255,0.3)`
+                                                : undefined,
                                           }}
                                           onClick={seg.count > 0 ? () => handleDrillToggle({ kind: 'stage', lineLength: col.lineLength, stage: seg.stage }, undefined, excludeSpecialMekko) : undefined}
                                         />

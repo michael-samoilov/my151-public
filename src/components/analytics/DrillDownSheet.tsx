@@ -49,36 +49,38 @@ export function DrillDownSheet() {
   const emptySet = useMemo(() => new Set<number>(), []);
   const noOp = useCallback(() => {}, []);
 
-  // Compute prev/next siblings
+  // Compute prev/next siblings with wrap-around
   const { prevSibling, nextSibling } = useMemo(() => {
     if (!segment || siblings.length < 2) return { prevSibling: null, nextSibling: null };
     const idx = siblings.findIndex(s => JSON.stringify(s) === JSON.stringify(segment));
     if (idx === -1) return { prevSibling: null, nextSibling: null };
     return {
-      prevSibling: idx > 0 ? siblings[idx - 1] : null,
-      nextSibling: idx < siblings.length - 1 ? siblings[idx + 1] : null,
+      prevSibling: siblings[(idx - 1 + siblings.length) % siblings.length],
+      nextSibling: siblings[(idx + 1) % siblings.length],
     };
   }, [segment, siblings]);
 
-  // Lock body scroll when sheet is open
+  // Only lock body scroll when fully expanded (not peek)
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
-  }, []);
+    if (!peek) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [peek]);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+  // --- Header drag handlers (vertical + horizontal) ---
+  const handleHeaderTouchStart = useCallback((e: React.TouchEvent) => {
     dragStartY.current = e.touches[0].clientY;
     dragStartX.current = e.touches[0].clientX;
     isDragging.current = false;
     dragAxis.current = 'none';
   }, []);
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+  const handleHeaderTouchMove = useCallback((e: React.TouchEvent) => {
     if (dragStartY.current === null || dragStartX.current === null) return;
     const dy = e.touches[0].clientY - dragStartY.current;
     const dx = e.touches[0].clientX - dragStartX.current;
 
-    // Lock axis on first significant movement
     if (dragAxis.current === 'none' && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
       dragAxis.current = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
     }
@@ -94,7 +96,7 @@ export function DrillDownSheet() {
     }
   }, [siblings.length]);
 
-  const handleTouchEnd = useCallback(() => {
+  const handleDragEnd = useCallback(() => {
     if (dragStartY.current === null) return;
 
     if (dragAxis.current === 'horizontal') {
@@ -135,10 +137,51 @@ export function DrillDownSheet() {
     }
   }, [peek, expandDrillDown, closeDrillDown]);
 
-  // Prevent scroll events on the content from passing through to the page
-  const handleContentTouchMove = useCallback((e: React.TouchEvent) => {
-    e.stopPropagation();
+  // --- Content area drag handlers (horizontal swipe only; vertical = scroll) ---
+  const contentDragStartX = useRef<number | null>(null);
+  const contentDragStartY = useRef<number | null>(null);
+  const contentDragAxis = useRef<'none' | 'vertical' | 'horizontal'>('none');
+  const contentIsDragging = useRef(false);
+  const [contentDragX, setContentDragX] = useState(0);
+
+  const handleContentTouchStart = useCallback((e: React.TouchEvent) => {
+    contentDragStartX.current = e.touches[0].clientX;
+    contentDragStartY.current = e.touches[0].clientY;
+    contentDragAxis.current = 'none';
+    contentIsDragging.current = false;
   }, []);
+
+  const handleContentTouchMove = useCallback((e: React.TouchEvent) => {
+    if (contentDragStartX.current === null || contentDragStartY.current === null) return;
+    const dx = e.touches[0].clientX - contentDragStartX.current;
+    const dy = e.touches[0].clientY - contentDragStartY.current;
+
+    if (contentDragAxis.current === 'none' && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      contentDragAxis.current = Math.abs(dx) > Math.abs(dy) ? 'horizontal' : 'vertical';
+    }
+
+    if (contentDragAxis.current === 'horizontal' && siblings.length >= 2) {
+      contentIsDragging.current = true;
+      setContentDragX(dx);
+      e.preventDefault();
+    }
+    // vertical = default scroll behavior, don't interfere
+  }, [siblings.length]);
+
+  const handleContentTouchEnd = useCallback(() => {
+    if (contentDragAxis.current === 'horizontal' && contentIsDragging.current) {
+      if (contentDragX > SWIPE_THRESHOLD && prevSibling) {
+        navigateDrillDown(prevSibling);
+      } else if (contentDragX < -SWIPE_THRESHOLD && nextSibling) {
+        navigateDrillDown(nextSibling);
+      }
+    }
+    setContentDragX(0);
+    contentDragStartX.current = null;
+    contentDragStartY.current = null;
+    contentDragAxis.current = 'none';
+    contentIsDragging.current = false;
+  }, [contentDragX, prevSibling, nextSibling, navigateDrillDown]);
 
   if (!data) return null;
 
@@ -146,42 +189,41 @@ export function DrillDownSheet() {
     ? `calc(${SHEET_HEIGHT_VH}vh - ${PEEK_HEIGHT}px + ${Math.max(dragY, -(PEEK_HEIGHT))}px)`
     : `${Math.max(dragY, 0)}px`;
 
+  // Check if content is scrollable (for bounce feedback)
+  const hasScrollableContent = data.sections.length > 0;
+
   return (
-    <div
-      className="fixed inset-x-0 bottom-0 z-50"
-      style={{ touchAction: 'none' }}
-      onTouchMove={(e) => e.preventDefault()}
-    >
+    <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none">
       {/* Sheet */}
       <div
-        className="bg-background rounded-t-2xl flex flex-col"
+        className="pointer-events-auto bg-background rounded-t-2xl flex flex-col"
         style={{
           height: `${SHEET_HEIGHT_VH}vh`,
           transform: `translateY(${currentTranslate})`,
-          transition: dragY === 0 && dragX === 0 ? 'transform 0.3s ease-out' : 'none',
+          transition: dragY === 0 && dragX === 0 && contentDragX === 0 ? 'transform 0.3s ease-out' : 'none',
           overscrollBehavior: 'none',
           boxShadow: '0 -4px 16px rgba(0,0,0,0.15)',
         }}
       >
-        {/* Header — always visible in peek (above accent line) */}
+        {/* Header — always visible in peek */}
         <div
           className="flex flex-col items-center pt-2 pb-2.5 cursor-grab active:cursor-grabbing touch-none shrink-0"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          onTouchStart={handleHeaderTouchStart}
+          onTouchMove={handleHeaderTouchMove}
+          onTouchEnd={handleDragEnd}
           onClick={handleTabTap}
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1.5" />
           {/* Title row with prev/next navigation */}
           <div className="flex items-center w-full px-3">
             {/* Prev */}
-            <div className="flex-1 flex items-center gap-0.5 min-w-0">
+            <div className="flex-1 flex items-center min-w-0">
               {prevSibling && (
                 <button
-                  className="flex items-center gap-0.5 text-[10px] text-muted-foreground truncate"
+                  className="flex items-center gap-0.5 text-xs text-muted-foreground truncate py-1 pr-2 -ml-1 cursor-pointer"
                   onClick={(e) => { e.stopPropagation(); navigateDrillDown(prevSibling); }}
                 >
-                  <ChevronLeft className="w-3 h-3 shrink-0" />
+                  <ChevronLeft className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">{getSegmentLabel(prevSibling)}</span>
                 </button>
               )}
@@ -198,14 +240,14 @@ export function DrillDownSheet() {
             </div>
 
             {/* Next */}
-            <div className="flex-1 flex items-center justify-end gap-0.5 min-w-0">
+            <div className="flex-1 flex items-center justify-end min-w-0">
               {nextSibling && (
                 <button
-                  className="flex items-center gap-0.5 text-[10px] text-muted-foreground truncate"
+                  className="flex items-center gap-0.5 text-xs text-muted-foreground truncate py-1 pl-2 -mr-1 cursor-pointer"
                   onClick={(e) => { e.stopPropagation(); navigateDrillDown(nextSibling); }}
                 >
                   <span className="truncate">{getSegmentLabel(nextSibling)}</span>
-                  <ChevronRight className="w-3 h-3 shrink-0" />
+                  <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                 </button>
               )}
             </div>
@@ -218,17 +260,22 @@ export function DrillDownSheet() {
         {/* Color accent line */}
         <div className="h-[2px] shrink-0" style={{ backgroundColor: data.color, opacity: 0.5 }} />
 
-        {/* Content — scrollable when expanded */}
+        {/* Content — scrollable when expanded, with horizontal swipe + bounce overscroll */}
         <div
           ref={contentRef}
           className="flex-1 min-h-0 overflow-y-auto"
-          style={{ overscrollBehavior: 'contain', touchAction: 'pan-y' }}
+          style={{
+            overscrollBehavior: 'contain',
+            WebkitOverflowScrolling: 'touch',
+          }}
+          onTouchStart={handleContentTouchStart}
           onTouchMove={handleContentTouchMove}
+          onTouchEnd={handleContentTouchEnd}
         >
-          <div className="px-2 pb-2">
+          {/* Inner wrapper — ensures minimum scroll height for bounce effect */}
+          <div className="px-2 pb-2" style={{ minHeight: hasScrollableContent ? undefined : 'calc(100% + 1px)' }}>
             {data.sections.map((section) => (
               <div key={section.sectionId}>
-                {/* Sticky section header — matches PokemonBrowser subheader style */}
                 <div className="sticky top-0 z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
                   {section.sectionName}
                 </div>
