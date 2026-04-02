@@ -783,14 +783,25 @@ export function AnalyticsDashboard() {
                                   borderRadius: 3,
                                   boxShadow: isColumnActive ? `0 0 0 2.5px ${STAGE_LINE_COLORS[col.lineLength - 1]}40` : undefined,
                                 }}>
-                                  <div className="flex flex-col-reverse" style={{ borderRadius: 3, overflow: 'hidden' }}>
-                                    {col.segments.map((seg, segIdx) => {
-                                      const isSegActive = drillDownSegment?.kind === 'stage' &&
+                                  {(() => {
+                                    // Check if any segment in this column is individually highlighted
+                                    const activeSegStage = col.segments.find(seg => {
+                                      const isSeg = drillDownSegment?.kind === 'stage' &&
                                         drillDownSegment.lineLength === col.lineLength &&
                                         drillDownSegment.stage === seg.stage;
-                                      const isStageAllActive = drillDownSegment?.kind === 'stageAll' &&
+                                      const isAll = drillDownSegment?.kind === 'stageAll' &&
                                         drillDownSegment.stage === seg.stage;
-                                      const segHighlighted = isSegActive || isStageAllActive;
+                                      return isSeg || isAll;
+                                    });
+                                    const segOutlineColor = activeSegStage ? STAGE_COLORS[activeSegStage.stage - 1] : undefined;
+                                    return (
+                                  <div className="flex flex-col-reverse" style={{
+                                    borderRadius: 3,
+                                    overflow: 'hidden',
+                                    outline: segOutlineColor ? `2.5px solid ${segOutlineColor}` : undefined,
+                                    outlineOffset: '0px',
+                                  }}>
+                                    {col.segments.map((seg, segIdx) => {
                                       return (
                                         <div
                                           key={seg.stage}
@@ -798,16 +809,14 @@ export function AnalyticsDashboard() {
                                           style={{
                                             height: segHeights[segIdx],
                                             backgroundColor: STAGE_COLORS[seg.stage - 1],
-                                            position: segHighlighted ? 'relative' : undefined,
-                                            zIndex: segHighlighted ? 10 : undefined,
-                                            outline: segHighlighted ? `2.5px solid ${STAGE_COLORS[seg.stage - 1]}` : undefined,
-                                            outlineOffset: '0px',
                                           }}
                                           onClick={seg.count > 0 ? () => handleDrillToggle({ kind: 'stage', lineLength: col.lineLength, stage: seg.stage }, undefined, excludeSpecialMekko) : undefined}
                                         />
                                       );
                                     })}
                                   </div>
+                                    );
+                                  })()}
                                   {/* Label overlay */}
                                   <svg
                                     className="absolute top-0 left-0 overflow-visible pointer-events-none"
