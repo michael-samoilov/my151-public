@@ -207,7 +207,7 @@ export const usePokedexStore = create<PokedexState>()(
       setViewSortOption: (option) => set({ viewSortOption: option }),
     }),
     {
-      name: 'personal-151-pokedex-v4',
+      name: 'personal-151-pokedex-v3',
       partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption }),
       // Migrate: if old keys found, dump all Pokemon into 'other'
       migrate: (persisted: unknown) => {
