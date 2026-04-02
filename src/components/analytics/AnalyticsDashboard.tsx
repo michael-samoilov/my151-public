@@ -790,6 +790,7 @@ export function AnalyticsDashboard() {
                                         drillDownSegment.stage === seg.stage;
                                       const isStageAllActive = drillDownSegment?.kind === 'stageAll' &&
                                         drillDownSegment.stage === seg.stage;
+                                      const segHighlighted = isSegActive || isStageAllActive;
                                       return (
                                         <div
                                           key={seg.stage}
@@ -797,11 +798,10 @@ export function AnalyticsDashboard() {
                                           style={{
                                             height: segHeights[segIdx],
                                             backgroundColor: STAGE_COLORS[seg.stage - 1],
-                                            boxShadow: isSegActive
-                                              ? `inset 0 0 0 2px ${STAGE_COLORS[seg.stage - 1]}80, inset 0 0 8px rgba(255,255,255,0.3)`
-                                              : isStageAllActive
-                                                ? `inset 0 0 0 2px ${STAGE_COLORS[seg.stage - 1]}80, inset 0 0 8px rgba(255,255,255,0.3)`
-                                                : undefined,
+                                            position: segHighlighted ? 'relative' : undefined,
+                                            zIndex: segHighlighted ? 10 : undefined,
+                                            outline: segHighlighted ? `2.5px solid ${STAGE_COLORS[seg.stage - 1]}` : undefined,
+                                            outlineOffset: '0px',
                                           }}
                                           onClick={seg.count > 0 ? () => handleDrillToggle({ kind: 'stage', lineLength: col.lineLength, stage: seg.stage }, undefined, excludeSpecialMekko) : undefined}
                                         />
