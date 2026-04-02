@@ -781,7 +781,7 @@ export function AnalyticsDashboard() {
                                 </div>
                                 <div className="relative" style={{
                                   borderRadius: 3,
-                                  boxShadow: isColumnActive ? `0 0 0 2.5px ${STAGE_LINE_COLORS[col.lineLength - 1]}ab` : undefined,
+                                  boxShadow: isColumnActive ? `0 0 0 3.5px ${STAGE_LINE_COLORS[col.lineLength - 1]}ab` : undefined,
                                 }}>
                                   <div className="flex flex-col-reverse" style={{ borderRadius: 3, overflow: 'hidden' }}>
                                     {col.segments.map((seg, segIdx) => {
@@ -825,7 +825,7 @@ export function AnalyticsDashboard() {
                                         style={{
                                           bottom,
                                           height,
-                                          boxShadow: `0 0 0 2.5px ${STAGE_COLORS[activeStage - 1]}ab`,
+                                          boxShadow: `0 0 0 3.5px ${STAGE_COLORS[activeStage - 1]}ab`,
                                           borderRadius: 2,
                                           zIndex: 5,
                                         }}
