@@ -825,8 +825,7 @@ export function AnalyticsDashboard() {
                                         style={{
                                           bottom,
                                           height,
-                                          outline: `2.5px solid ${STAGE_COLORS[activeStage - 1]}`,
-                                          outlineOffset: 0,
+                                          boxShadow: `0 0 0 2.5px ${STAGE_COLORS[activeStage - 1]}40`,
                                           borderRadius: 2,
                                           zIndex: 5,
                                         }}
