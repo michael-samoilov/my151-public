@@ -153,7 +153,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
           </>)}
 
           {/* Rows */}
-          {data.map((d) => {
+          {data.map((d, rowIdx) => {
             const y = yScale(d.label)!;
 
             // Count bar
@@ -167,11 +167,17 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
 
             const isActive = activeLabel === d.label;
 
+            // Highlight extends to midpoints between this row and neighbors
+            const prevBottom = rowIdx > 0 ? yScale(data[rowIdx - 1].label)! + barHeight : topOffset;
+            const nextTop = rowIdx < data.length - 1 ? yScale(data[rowIdx + 1].label)! : topOffset + data.length * rowHeight;
+            const highlightY = (prevBottom + y) / 2;
+            const highlightH = ((y + barHeight + nextTop) / 2) - highlightY;
+
             return (
               <g key={d.label} className={onBarClick ? 'cursor-pointer' : ''} onClick={onBarClick ? () => onBarClick(d.label) : undefined}>
                 {/* Full-row hit target + active highlight */}
                 <rect
-                  x={0} y={y} width={width} height={barHeight}
+                  x={0} y={highlightY} width={width} height={highlightH}
                   fill={isActive ? d.color : 'transparent'}
                   opacity={isActive ? 0.12 : 1}
                   className={!isActive && onBarClick ? 'hover:fill-current hover:opacity-[0.04] active:opacity-[0.08]' : ''}
