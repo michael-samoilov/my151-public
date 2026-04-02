@@ -209,21 +209,43 @@ export const usePokedexStore = create<PokedexState>()(
     {
       name: 'personal-151-pokedex-v3',
       partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption }),
-      // Migrate: if old keys found, dump all Pokemon into 'other'
-      migrate: (persisted: unknown) => {
-        const state = persisted as { sections?: Record<string, number[]> };
-        if (!state.sections) return { sections: createEmptySections() };
-        // Check if it has old section keys
-        const hasOldKeys = Object.keys(state.sections).some(k => !GROUP_ID_SET.has(k));
-        if (hasOldKeys) {
-          const newSections = createEmptySections();
-          const allIds = Object.values(state.sections).flat();
-          newSections['other'] = allIds;
-          return { sections: newSections };
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as {
+          sections?: Record<string, number[]>;
+          whatsAdvisorExpanded?: boolean;
+          viewSortOption?: ViewSortOption;
+        };
+
+        // Preserve all existing fields, only fix what needs fixing
+        const result = { ...state };
+
+        // v0/v1/v2 → v3: old section keys get merged into 'other'
+        if (version < 3 && result.sections) {
+          const hasOldKeys = Object.keys(result.sections).some(k => !GROUP_ID_SET.has(k));
+          if (hasOldKeys) {
+            const newSections = createEmptySections();
+            const allIds = Object.values(result.sections).flat();
+            newSections['other'] = allIds;
+            result.sections = newSections;
+          }
         }
-        // Ensure all group keys exist
-        const sections = { ...createEmptySections(), ...state.sections };
-        return { sections };
+
+        // Ensure all group keys exist in sections
+        if (result.sections) {
+          result.sections = { ...createEmptySections(), ...result.sections };
+        } else {
+          result.sections = createEmptySections();
+        }
+
+        // v3 → v4: new fields get defaults (no data loss)
+        if (result.whatsAdvisorExpanded === undefined) {
+          result.whatsAdvisorExpanded = true;
+        }
+        if (result.viewSortOption === undefined) {
+          result.viewSortOption = 'regional';
+        }
+
+        return result;
       },
       version: 4,
     }
