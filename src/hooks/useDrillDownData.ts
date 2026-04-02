@@ -94,6 +94,8 @@ export function computeDrillDownData(
     const seenRoots = new Set<string>();
     const evoLinesBySection = new Map<string, { key: string; members: Pokemon[]; matchedIds: Set<number> }[]>();
     const nonExcludedLineRoots = new Set<string>();
+    // Count distinct evolution chains (not branches) for subtitle
+    const nonExcludedChainIds = new Set<number>();
 
     for (const id of matchingIds) {
       const line = getEvolutionLine(id);
@@ -102,8 +104,12 @@ export function computeDrillDownData(
       seenRoots.add(rootKey);
 
       // Track if this line has any non-excluded matching member
-      if ([...line].some(m => matchingNonExcludedIds.has(m.id))) {
+      const hasNonExcluded = [...line].some(m => matchingNonExcludedIds.has(m.id));
+      if (hasNonExcluded) {
         nonExcludedLineRoots.add(rootKey);
+        // Track by chain ID for accurate line count (branches share a chain)
+        const p = getPokemonById(id);
+        if (p) nonExcludedChainIds.add(p.evolutionChainId);
       }
 
       // Figure out which section this line belongs to (use first placed member's section)
@@ -148,9 +154,9 @@ export function computeDrillDownData(
       });
     }
 
-    // Subtitle counts only non-excluded pokemon
+    // Subtitle counts only non-excluded pokemon; lines counted by chain (not branch)
     const countForSubtitle = matchingNonExcludedIds.size;
-    const linesForSubtitle = nonExcludedLineRoots.size;
+    const linesForSubtitle = nonExcludedChainIds.size;
     const { title, color, icon } = getSegmentMeta(segment);
 
     return {
