@@ -1,9 +1,11 @@
 import { Button } from '@/components/ui/button';
-import { BarChart3, Grid3X3 } from 'lucide-react';
+import { BarChart3, Grid3X3, Hammer } from 'lucide-react';
+
+export type AppView = 'builder' | 'view' | 'analytics';
 
 interface HeaderProps {
-  currentView: 'builder' | 'analytics';
-  onViewChange: (view: 'builder' | 'analytics') => void;
+  currentView: AppView;
+  onViewChange: (view: AppView) => void;
 }
 
 export function Header({ currentView, onViewChange }: HeaderProps) {
@@ -25,8 +27,16 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
             size="sm"
             onClick={() => onViewChange('builder')}
           >
+            <Hammer className="w-4 h-4 mr-1" />
+            Build
+          </Button>
+          <Button
+            variant={currentView === 'view' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => onViewChange('view')}
+          >
             <Grid3X3 className="w-4 h-4 mr-1" />
-            Builder
+            View
           </Button>
           <Button
             variant={currentView === 'analytics' ? 'default' : 'ghost'}

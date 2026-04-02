@@ -5,6 +5,8 @@ import { getEvolutionLine, getDescendantIds, getPokemonById } from '@/hooks/useP
 
 type TypeFilterMode = 'any' | 'all';
 
+export type ViewSortOption = 'regional' | 'national' | 'type' | 'build-order';
+
 export type DrillDownSegment =
   | { kind: 'type'; type: string }
   | { kind: 'generation'; generation: number }
@@ -30,6 +32,7 @@ interface PokedexState {
   drillDownSiblings: DrillDownSegment[]; // ordered list of all segments in the same chart
   drillDownExcludeSpecial: boolean; // whether the chart's exclusion toggle was active
   whatsAdvisorExpanded: boolean;
+  viewSortOption: ViewSortOption;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -53,6 +56,7 @@ interface PokedexState {
   closeDrillDown: () => void;
   navigateDrillDown: (segment: DrillDownSegment) => void;
   setWhatsAdvisorExpanded: (expanded: boolean) => void;
+  setViewSortOption: (option: ViewSortOption) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -75,6 +79,7 @@ export const usePokedexStore = create<PokedexState>()(
       drillDownSiblings: [],
       drillDownExcludeSpecial: false,
       whatsAdvisorExpanded: true,
+      viewSortOption: 'regional' as ViewSortOption,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -199,10 +204,11 @@ export const usePokedexStore = create<PokedexState>()(
       closeDrillDown: () => set({ drillDownSegment: null, drillDownPeek: true, drillDownSiblings: [], drillDownExcludeSpecial: false }),
       navigateDrillDown: (segment) => set({ drillDownSegment: segment }),
       setWhatsAdvisorExpanded: (expanded) => set({ whatsAdvisorExpanded: expanded }),
+      setViewSortOption: (option) => set({ viewSortOption: option }),
     }),
     {
-      name: 'personal-151-pokedex-v3',
-      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded }),
+      name: 'personal-151-pokedex-v4',
+      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption }),
       // Migrate: if old keys found, dump all Pokemon into 'other'
       migrate: (persisted: unknown) => {
         const state = persisted as { sections?: Record<string, number[]> };
@@ -219,7 +225,7 @@ export const usePokedexStore = create<PokedexState>()(
         const sections = { ...createEmptySections(), ...state.sections };
         return { sections };
       },
-      version: 3,
+      version: 4,
     }
   )
 );

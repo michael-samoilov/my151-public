@@ -1,9 +1,11 @@
 import { useState, useRef, useCallback } from 'react';
 import { Header } from '@/components/layout/Header';
+import type { AppView } from '@/components/layout/Header';
 import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { DrillDownSheet } from '@/components/analytics/DrillDownSheet';
+import { ViewPage } from '@/components/view/ViewPage';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BUILD_GROUPS } from '@/data/slot-template';
@@ -98,7 +100,7 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
 }
 
 function App() {
-  const [currentView, setCurrentView] = useState<'builder' | 'analytics'>('builder');
+  const [currentView, setCurrentView] = useState<AppView>('builder');
   const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const activeSection = usePokedexStore((s) => s.activeSection);
@@ -121,6 +123,10 @@ function App() {
             <div className="w-[420px] flex-shrink-0 hidden md:block">
               <PokemonBrowser />
             </div>
+          </div>
+        ) : currentView === 'view' ? (
+          <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
+            <ViewPage />
           </div>
         ) : (
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
