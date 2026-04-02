@@ -202,7 +202,7 @@ export const usePokedexStore = create<PokedexState>()(
     }),
     {
       name: 'personal-151-pokedex-v3',
-      partialize: (state) => ({ sections: state.sections }),
+      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded }),
       // Migrate: if old keys found, dump all Pokemon into 'other'
       migrate: (persisted: unknown) => {
         const state = persisted as { sections?: Record<string, number[]> };
