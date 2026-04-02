@@ -132,6 +132,7 @@ function CardPanel({
                   stagedIds={emptySet}
                   onToggleStage={noOp}
                   cols={6}
+                  variant="analytics"
                 />
               </div>
             </div>

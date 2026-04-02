@@ -6,6 +6,20 @@ import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
 import { Plus, ChevronRight, X } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
 
+/** Tiny pokeball icon: red-filled top half, open bottom half, center button */
+function PokeballIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} fill="none">
+      <path d="M1 8 A7 7 0 0 1 15 8" fill="#ef4444" stroke="#ef4444" strokeWidth="1.5" />
+      <path d="M1 8 A7 7 0 0 0 15 8" fill="none" stroke="#ef4444" strokeWidth="1.5" />
+      <line x1="1" y1="8" x2="15" y2="8" stroke="#ef4444" strokeWidth="1.5" />
+      <circle cx="8" cy="8" r="2.5" fill="white" stroke="#ef4444" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+export type EvoLineVariant = 'browser' | 'analytics';
+
 const DEFAULT_COLS = 6;
 
 // ---------- Grid wrapper that prevents evo line splitting ----------
@@ -24,6 +38,7 @@ interface EvoLineGridProps {
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
   cols?: number;
+  variant?: EvoLineVariant;
 }
 
 const GRID_CLASSES: Record<number, string> = {
@@ -32,7 +47,7 @@ const GRID_CLASSES: Record<number, string> = {
 };
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols = DEFAULT_COLS }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser' }: EvoLineGridProps) {
   const elements = useMemo(() => {
     const result: React.ReactNode[] = [];
     let col = 0; // 0-based current column position
@@ -57,6 +72,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shi
           onToggleStage={onToggleStage}
           shinyIds={shinyIds}
           spriteOverrides={spriteOverrides}
+          variant={variant}
         />
       );
       col = (col + size) % cols;
@@ -82,21 +98,15 @@ interface EvoLineCardProps {
   onToggleStage: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
+  variant?: EvoLineVariant;
 }
 
-export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides }: EvoLineCardProps) {
+export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser' }: EvoLineCardProps) {
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const sections = usePokedexStore((s) => s.sections);
   const allInDex = members.every((p) => assignedIds.has(p.id));
 
-  const handleClick = () => {
-    if (!allInDex) {
-      onToggleStage(members.map((p) => p.id));
-    }
-  };
-
-  const handleRemove = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const doRemove = () => {
     const firstId = members[0].id;
     for (const [sectionId, ids] of Object.entries(sections)) {
       if (ids.includes(firstId)) {
@@ -104,6 +114,19 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
         break;
       }
     }
+  };
+
+  const handleClick = () => {
+    if (allInDex && variant === 'browser') {
+      doRemove();
+    } else if (!allInDex) {
+      onToggleStage(members.map((p) => p.id));
+    }
+  };
+
+  const handleRemoveButton = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    doRemove();
   };
 
   const primaryType = members[0].types[0];
@@ -140,13 +163,18 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
               )}
               style={{ backgroundColor: `${bgColor}10` }}
             />
-            {inDex && (
+            {inDex && variant === 'analytics' && (
               <button
-                onClick={handleRemove}
+                onClick={handleRemoveButton}
                 className="absolute top-[1px] right-[4px] md:right-1 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full bg-destructive/60 md:bg-destructive/80 text-white flex items-center justify-center z-10"
               >
                 <X className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2" />
               </button>
+            )}
+            {inDex && variant === 'browser' && (
+              <div className="absolute top-[3px] right-[6px] md:right-1.5 -translate-y-[0.5px] w-3 h-3 z-10">
+                <PokeballIcon className="w-3 h-3" />
+              </div>
             )}
             {!inDex && stagedIds.has(pokemon.id) && (
               <div className="absolute top-[3px] right-[6px] md:right-1.5 -translate-y-[0.5px] w-3 h-3 bg-primary rounded-full flex items-center justify-center z-10">
