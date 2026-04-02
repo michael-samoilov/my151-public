@@ -9,6 +9,9 @@ import {
   PSEUDO_LEGENDARY_IDS,
   SUB_LEGENDARY_IDS,
   RESTRICTED_LEGENDARY_IDS,
+  ULTRA_BEAST_IDS,
+  PARADOX_IDS,
+  LEGENDARY_PARADOX_IDS,
 } from '@/data/categories';
 import { BUILD_GROUP_IDS } from '@/data/slot-template';
 import type { ViewSortOption } from '@/store/usePokedexStore';
@@ -44,36 +47,44 @@ function byNationalDex(a: Pokemon, b: Pokemon): number {
 // --- Bucket assignment ---
 
 /**
- * 12 ordered buckets for the regional/national/type sorts:
+ * 15 ordered buckets for the regional/national/type sorts:
  *  0: Starter SECTION (build page order)
  *  1: Middle (sorted by selected sort option)
  *  2: Other fossils not in fossil section (national dex)
  *  3: Fossil SECTION (build page order)
  *  4: Other official starters not in starter section (national dex)
- *  5: Other pseudo-legendaries not in pseudo section (national dex)
- *  6: Pseudo-legendary SECTION (build page order)
- *  7: Other sub-legendaries (national dex)
- *  8: Other restricted legendaries (national dex)
- *  9: Legendary SECTION (build page order)
- * 10: Other mythicals not in mythical section (national dex)
- * 11: Mythical SECTION (build page order)
+ *  5: Non-legendary Paradox Pokemon (national dex)
+ *  6: Other pseudo-legendaries not in pseudo section (national dex)
+ *  7: Pseudo-legendary SECTION (build page order)
+ *  8: Ultra Beasts (national dex)
+ *  9: Legendary Paradox Pokemon (national dex)
+ * 10: Other sub-legendaries (national dex)
+ * 11: Other restricted legendaries (national dex)
+ * 12: Legendary SECTION (build page order)
+ * 13: Other mythicals not in mythical section (national dex)
+ * 14: Mythical SECTION (build page order)
  */
+const NUM_BUCKETS = 15;
+
 function assignBucket(id: number, section: string | undefined): number {
   const p = getPokemonById(id);
   if (!p) return 1;
 
   // Section-based buckets (check which build section the Pokemon is placed in)
   if (section === 'starter') return 0;
-  if (section === 'mythical') return 11;
-  if (section === 'legendary') return 9;
-  if (section === 'pseudo-legendary') return 6;
+  if (section === 'mythical') return 14;
+  if (section === 'legendary') return 12;
+  if (section === 'pseudo-legendary') return 7;
   if (section === 'fossil') return 3;
 
   // Category-based "other" buckets (officially classified but placed elsewhere)
-  if (p.isMythical) return 10;
-  if (RESTRICTED_LEGENDARY_IDS.has(id)) return 8;
-  if (SUB_LEGENDARY_IDS.has(id)) return 7;
-  if (PSEUDO_LEGENDARY_IDS.has(id)) return 5;
+  if (p.isMythical) return 13;
+  if (RESTRICTED_LEGENDARY_IDS.has(id)) return 11;
+  if (SUB_LEGENDARY_IDS.has(id)) return 10;
+  if (LEGENDARY_PARADOX_IDS.has(id)) return 9;
+  if (ULTRA_BEAST_IDS.has(id)) return 8;
+  if (PSEUDO_LEGENDARY_IDS.has(id)) return 6;
+  if (PARADOX_IDS.has(id)) return 5;
   if (STARTER_IDS.has(id)) return 4;
   if (FOSSIL_IDS.has(id)) return 2;
 
@@ -259,51 +270,36 @@ function sortWithBuckets(
 ): Pokemon[] {
   const idToSection = buildIdToSection(sections);
 
-  // 12 buckets: indices match the bucket numbers in assignBucket
-  const buckets: number[][] = Array.from({ length: 12 }, () => []);
+  const buckets: number[][] = Array.from({ length: NUM_BUCKETS }, () => []);
 
   for (const [id, section] of idToSection) {
     const bucket = assignBucket(id, section);
     buckets[bucket].push(id);
   }
 
-  // Bucket 0: starter section — build page order (preserved from sections)
-  const b0 = resolve(sections['starter'] ?? []);
+  // Section buckets preserve build page order; "other" category buckets sort by national dex
+  const sectionBucket = (sectionId: string, bucketIdx: number) =>
+    resolve(sections[sectionId] ?? []).filter((p) => buckets[bucketIdx].includes(p.id));
+  const natDexBucket = (bucketIdx: number) =>
+    resolve(buckets[bucketIdx]).sort(byNationalDex);
 
-  // Bucket 1: middle — sorted by the provided sorter
-  const b1 = middleSorter(buckets[1]);
-
-  // Bucket 2: other fossils — national dex
-  const b2 = resolve(buckets[2]).sort(byNationalDex);
-
-  // Bucket 3: fossil section — build page order
-  const b3 = resolve(sections['fossil'] ?? []).filter((p) => buckets[3].includes(p.id));
-
-  // Bucket 4: other starters — national dex
-  const b4 = resolve(buckets[4]).sort(byNationalDex);
-
-  // Bucket 5: other pseudo-legendaries — national dex
-  const b5 = resolve(buckets[5]).sort(byNationalDex);
-
-  // Bucket 6: pseudo section — build page order
-  const b6 = resolve(sections['pseudo-legendary'] ?? []).filter((p) => buckets[6].includes(p.id));
-
-  // Bucket 7: other sub-legendaries — national dex
-  const b7 = resolve(buckets[7]).sort(byNationalDex);
-
-  // Bucket 8: other restricted legendaries — national dex
-  const b8 = resolve(buckets[8]).sort(byNationalDex);
-
-  // Bucket 9: legendary section — build page order
-  const b9 = resolve(sections['legendary'] ?? []).filter((p) => buckets[9].includes(p.id));
-
-  // Bucket 10: other mythicals — national dex
-  const b10 = resolve(buckets[10]).sort(byNationalDex);
-
-  // Bucket 11: mythical section — build page order
-  const b11 = resolve(sections['mythical'] ?? []);
-
-  return [...b0, ...b1, ...b2, ...b3, ...b4, ...b5, ...b6, ...b7, ...b8, ...b9, ...b10, ...b11];
+  return [
+    ...resolve(sections['starter'] ?? []),     //  0: Starter section
+    ...middleSorter(buckets[1]),               //  1: Middle
+    ...natDexBucket(2),                        //  2: Other fossils
+    ...sectionBucket('fossil', 3),             //  3: Fossil section
+    ...natDexBucket(4),                        //  4: Other starters
+    ...natDexBucket(5),                        //  5: Non-legendary Paradox
+    ...natDexBucket(6),                        //  6: Other pseudo-legendaries
+    ...sectionBucket('pseudo-legendary', 7),   //  7: Pseudo-legendary section
+    ...natDexBucket(8),                        //  8: Ultra Beasts
+    ...natDexBucket(9),                        //  9: Legendary Paradox
+    ...natDexBucket(10),                       // 10: Other sub-legendaries
+    ...natDexBucket(11),                       // 11: Other restricted legendaries
+    ...sectionBucket('legendary', 12),         // 12: Legendary section
+    ...natDexBucket(13),                       // 13: Other mythicals
+    ...resolve(sections['mythical'] ?? []),    // 14: Mythical section
+  ];
 }
 
 /** Sort by national dex number. */

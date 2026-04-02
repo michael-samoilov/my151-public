@@ -13,10 +13,13 @@ export interface PokemonCategory {
 }
 
 // Ultra Beast IDs
-const ULTRA_BEAST_IDS = new Set([793,794,795,796,797,798,799, 803,804,805,806]);
+export const ULTRA_BEAST_IDS = new Set([793,794,795,796,797,798,799, 803,804,805,806]);
 
 // Paradox Pokemon IDs (ancient + future)
-const PARADOX_IDS = new Set([984,985,986,987,988,989, 990,991,992,993,994,995, 1005,1006, 1009,1010, 1020,1021,1022,1023]);
+export const PARADOX_IDS = new Set([984,985,986,987,988,989, 990,991,992,993,994,995, 1005,1006, 1009,1010, 1020,1021,1022,1023]);
+
+// Paradox counterparts of legendary Pokemon (Swords of Justice + Beasts parallels)
+export const LEGENDARY_PARADOX_IDS = new Set([1009,1010, 1020,1021,1022,1023]);
 
 // Convergent Evolution IDs
 const CONVERGENT_IDS = new Set([948,949, 960,961]);
