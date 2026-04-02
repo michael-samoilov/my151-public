@@ -783,24 +783,7 @@ export function AnalyticsDashboard() {
                                   borderRadius: 3,
                                   boxShadow: isColumnActive ? `0 0 0 2.5px ${STAGE_LINE_COLORS[col.lineLength - 1]}40` : undefined,
                                 }}>
-                                  {(() => {
-                                    // Check if any segment in this column is individually highlighted
-                                    const activeSegStage = col.segments.find(seg => {
-                                      const isSeg = drillDownSegment?.kind === 'stage' &&
-                                        drillDownSegment.lineLength === col.lineLength &&
-                                        drillDownSegment.stage === seg.stage;
-                                      const isAll = drillDownSegment?.kind === 'stageAll' &&
-                                        drillDownSegment.stage === seg.stage;
-                                      return isSeg || isAll;
-                                    });
-                                    const segOutlineColor = activeSegStage ? STAGE_COLORS[activeSegStage.stage - 1] : undefined;
-                                    return (
-                                  <div className="flex flex-col-reverse" style={{
-                                    borderRadius: 3,
-                                    overflow: 'hidden',
-                                    outline: segOutlineColor ? `2.5px solid ${segOutlineColor}` : undefined,
-                                    outlineOffset: '0px',
-                                  }}>
+                                  <div className="flex flex-col-reverse" style={{ borderRadius: 3, overflow: 'hidden' }}>
                                     {col.segments.map((seg, segIdx) => {
                                       return (
                                         <div
@@ -815,6 +798,39 @@ export function AnalyticsDashboard() {
                                       );
                                     })}
                                   </div>
+                                  {/* Segment highlight overlay — positioned outside the clip container */}
+                                  {(() => {
+                                    // Find active segment and compute its position from bottom
+                                    let activeStage: number | null = null;
+                                    for (const seg of col.segments) {
+                                      const isSeg = drillDownSegment?.kind === 'stage' &&
+                                        drillDownSegment.lineLength === col.lineLength &&
+                                        drillDownSegment.stage === seg.stage;
+                                      const isAll = drillDownSegment?.kind === 'stageAll' &&
+                                        drillDownSegment.stage === seg.stage;
+                                      if ((isSeg || isAll) && seg.count > 0) { activeStage = seg.stage; break; }
+                                    }
+                                    if (activeStage === null) return null;
+                                    // Compute bottom offset and height (segments indexed 0=stage1 at bottom)
+                                    let bottom = 0;
+                                    let height = 0;
+                                    for (let i = 0; i < col.segments.length; i++) {
+                                      const h = segHeights[i];
+                                      if (col.segments[i].stage === activeStage) { height = h; break; }
+                                      bottom += h;
+                                    }
+                                    return (
+                                      <div
+                                        className="absolute inset-x-0 pointer-events-none"
+                                        style={{
+                                          bottom,
+                                          height,
+                                          outline: `2.5px solid ${STAGE_COLORS[activeStage - 1]}`,
+                                          outlineOffset: 0,
+                                          borderRadius: 2,
+                                          zIndex: 5,
+                                        }}
+                                      />
                                     );
                                   })()}
                                   {/* Label overlay */}
