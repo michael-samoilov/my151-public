@@ -84,8 +84,8 @@ export function ViewPage() {
               <img
                 src={pokemon.sprite}
                 alt={pokemon.name}
-                className="relative z-10"
-                style={{ imageRendering: 'pixelated', width: '120%', height: '120%' }}
+                className="relative z-10 w-[120%] aspect-square"
+                style={{ imageRendering: 'pixelated' }}
                 loading="lazy"
               />
             </div>
