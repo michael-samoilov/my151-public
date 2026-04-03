@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { Settings } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
@@ -61,6 +62,56 @@ function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
   );
 }
 
+/** Settings gear with sort options dropdown. */
+function ViewSettingsMenu() {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const sortOption = usePokedexStore((s) => s.viewSortOption);
+  const setSortOption = usePokedexStore((s) => s.setViewSortOption);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        onClick={() => setOpen(!open)}
+        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+      >
+        <Settings className="w-4 h-4" />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
+          <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+            Sort Order
+          </div>
+          {SORT_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { setSortOption(opt.value); setOpen(false); }}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors ${
+                sortOption === opt.value
+                  ? 'text-primary font-medium bg-primary/10'
+                  : 'text-foreground hover:bg-muted'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Measure container and compute square tile size that fits COLS × ROWS. */
 function useTileSize() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,36 +141,24 @@ function useTileSize() {
 export function ViewPage() {
   const sections = usePokedexStore((s) => s.sections);
   const sortOption = usePokedexStore((s) => s.viewSortOption);
-  const setSortOption = usePokedexStore((s) => s.setViewSortOption);
   const sorted = useViewSort(sections, sortOption);
   const { containerRef, tileSize } = useTileSize();
 
   const count = sorted.length;
 
   return (
-    <div className="h-full flex flex-col p-4 gap-3">
-      {/* Header row */}
-      <div className="flex items-center justify-between flex-shrink-0">
-        <div className="text-sm font-medium text-muted-foreground">
-          <span className="text-foreground font-bold text-lg">{count}</span>
-          <span className="mx-1">/</span>
-          <span>151</span>
-        </div>
-        <select
-          value={sortOption}
-          onChange={(e) => setSortOption(e.target.value as ViewSortOption)}
-          className="text-sm border rounded-md px-2 py-1.5 bg-background text-foreground cursor-pointer"
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+    <div className="h-full flex flex-col">
+      {/* Header band — matches build page */}
+      <div className="flex items-center justify-between px-4 py-2 border-b h-11">
+        <h2 className="text-2xl font-extrabold tracking-tight leading-none">
+          <span className="text-primary">{count}</span>
+          <span className="text-foreground">/151</span>
+        </h2>
+        <ViewSettingsMenu />
       </div>
 
       {/* Grid container — measured for tile sizing */}
-      <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center">
+      <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center p-2">
         {tileSize > 0 && (() => {
           const lastRowCount = count % COLS;
           const fullRowItems = lastRowCount > 0 ? sorted.slice(0, count - lastRowCount) : sorted;
@@ -193,6 +232,17 @@ export function ViewPage() {
           </div>
           );
         })()}
+      </div>
+
+      {/* Bottom breathing room with pokeball */}
+      <div className="h-16 flex items-center justify-center">
+        <svg width="24" height="24" viewBox="0 0 24 24" className="text-muted-foreground/20">
+          <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
+          <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+        </svg>
       </div>
     </div>
   );
