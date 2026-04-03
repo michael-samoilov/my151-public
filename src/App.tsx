@@ -66,7 +66,7 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
       />
       <div
         ref={sheetRef}
-        className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl flex flex-col overflow-hidden"
+        className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl flex flex-col"
         style={{
           height: `${SHEET_HEIGHT_VH}vh`,
           transform: `translateY(${dragY}px)`,
@@ -94,10 +94,8 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
           </span>
         </div>
         <div className="border-b" />
-        <div className="flex-1 min-h-0 relative">
-          <div className="absolute inset-0">
-            <PokemonBrowser />
-          </div>
+        <div className="flex-1 min-h-0">
+          <PokemonBrowser />
         </div>
       </div>
     </div>
