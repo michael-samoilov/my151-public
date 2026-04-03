@@ -71,7 +71,6 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
           height: `${SHEET_HEIGHT_VH}vh`,
           transform: `translateY(${dragY}px)`,
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
-          overscrollBehavior: 'none',
         }}
       >
         {/* Pull tab / drag handle — tap or drag down to close (44px min touch target per Apple HIG) */}
@@ -95,7 +94,7 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
           </span>
         </div>
         <div className="border-b" />
-        <div className="flex-1 min-h-0" style={{ overscrollBehavior: 'contain' }}>
+        <div className="flex-1 min-h-0">
           <PokemonBrowser />
         </div>
       </div>
