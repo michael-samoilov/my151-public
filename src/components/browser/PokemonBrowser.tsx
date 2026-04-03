@@ -278,7 +278,7 @@ export function PokemonBrowser() {
           {hasActivePropertyFilters && (
             <button
               onClick={clearPropertyFilters}
-              className="sticky right-0 shrink-0 self-stretch flex items-center text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border"
+              className="sticky right-0 shrink-0 self-stretch flex items-center text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border -my-1"
             >
               Clear
             </button>
@@ -338,7 +338,7 @@ export function PokemonBrowser() {
           {hasActiveBrowseFilters && (
             <button
               onClick={clearBrowseFilters}
-              className="sticky right-0 shrink-0 self-stretch flex items-center text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border"
+              className="sticky right-0 shrink-0 self-stretch flex items-center text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border -my-1"
             >
               Clear
             </button>
