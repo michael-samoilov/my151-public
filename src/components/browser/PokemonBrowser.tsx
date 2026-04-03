@@ -490,11 +490,11 @@ export function PokemonBrowser() {
 
       {/* Filter bottom sheet overlay */}
       {openSheet && (
-        <div className="absolute inset-0 z-20 flex flex-col justify-end" onTouchMove={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
-          <div className="flex-1 touch-none" onClick={() => setOpenSheet(null)} />
-          <div className="bg-background border-t rounded-t-xl shadow-2xl h-[50%] flex flex-col" style={{ overscrollBehavior: 'contain' }}>
+        <div className="absolute inset-0 z-20 flex flex-col justify-end" onTouchMove={(e) => { e.stopPropagation(); }} onWheel={(e) => { e.stopPropagation(); }}>
+          <div className="flex-1 touch-none" onClick={() => setOpenSheet(null)} onTouchMove={(e) => e.preventDefault()} />
+          <div className="bg-background border-t rounded-t-xl shadow-2xl h-[50%] flex flex-col touch-none" style={{ overscrollBehavior: 'contain' }}>
             {/* Sheet header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b">
+            <div className="flex items-center justify-between px-4 py-3 border-b" onTouchMove={(e) => e.preventDefault()}>
               <span className="text-sm font-semibold">
                 {openSheet === 'type' && 'Type'}
                 {openSheet === 'generation' && 'Generation'}
@@ -510,7 +510,23 @@ export function PokemonBrowser() {
             </div>
 
             {/* Sheet body */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-3" style={{ overscrollBehavior: 'contain' }}>
+            <div
+              className="flex-1 min-h-0 overflow-y-auto p-3 touch-auto"
+              style={{ overscrollBehavior: 'contain' }}
+              ref={(el) => {
+                // 1px hack: ensure element is always slightly scrolled so iOS
+                // doesn't pass scroll-at-boundary to the parent
+                if (el && el.scrollTop === 0) el.scrollTop = 1;
+              }}
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                // Keep 1px from top/bottom boundaries
+                if (el.scrollTop === 0) el.scrollTop = 1;
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight) {
+                  el.scrollTop = el.scrollHeight - el.clientHeight - 1;
+                }
+              }}
+            >
               {openSheet === 'type' && (
                 <div className="space-y-2">
                   {typeFilter && typeFilter.length >= 2 && (
