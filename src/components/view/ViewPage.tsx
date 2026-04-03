@@ -128,11 +128,20 @@ export function ViewPage() {
               gridAutoRows: `${tileSize}px`,
             }}
           >
-            {sorted.map((pokemon) => (
+            {sorted.map((pokemon, index) => {
+              const lastRowCount = count % COLS;
+              const isLastRow = lastRowCount > 0 && index >= count - lastRowCount;
+              const isFirstInLastRow = isLastRow && index === count - lastRowCount;
+              const offset = Math.floor((COLS - lastRowCount) / 2) + 1;
+              return (
               <div
                 key={pokemon.id}
                 className="relative overflow-visible"
-                style={{ width: tileSize, height: tileSize }}
+                style={{
+                  width: tileSize,
+                  height: tileSize,
+                  ...(isFirstInLastRow ? { gridColumnStart: offset } : {}),
+                }}
               >
                 <PokeballBg pokemon={pokemon} />
                 <img
@@ -146,7 +155,8 @@ export function ViewPage() {
                   loading="lazy"
                 />
               </div>
-            ))}
+              );
+            })}
             {/* Empty placeholders */}
             {count < 151 &&
               Array.from({ length: 151 - count }, (_, i) => (
