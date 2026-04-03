@@ -1,6 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { BarChart3, Camera, Hammer } from 'lucide-react';
 
+declare const __BUILD_TIMESTAMP__: string;
+const BUILD_VERSION = __BUILD_TIMESTAMP__.replace(/[-:]/g, '').slice(2, 13);
+
 export type AppView = 'builder' | 'view' | 'analytics';
 
 interface HeaderProps {
@@ -16,8 +19,8 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
           <h1 className="text-lg sm:text-xl font-bold tracking-tight whitespace-nowrap">
             <span className="text-primary">Personal</span> 151
           </h1>
-          <span className="text-xs text-muted-foreground hidden sm:block">
-            Pokedex Region Builder
+          <span className="text-[9px] text-muted-foreground/40 self-end mb-0.5">
+            v{BUILD_VERSION}
           </span>
         </div>
 
