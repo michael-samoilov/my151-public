@@ -184,21 +184,29 @@ export function PokemonBrowser() {
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
   const evoSizeKey = evoLineSizeFilter ? evoLineSizeFilter.join(',') : 'none';
 
-  const browserHeaderRef = useRef<HTMLDivElement>(null);
+  const browserRootRef = useRef<HTMLDivElement>(null);
 
-  // Block touchmove on non-scrollable header area to prevent pull-to-refresh
+  // Block ALL touchmove on PokemonBrowser root (prevents pull-to-refresh).
+  // The gallery scroll div calls stopPropagation so its events never reach here.
   useEffect(() => {
-    const el = browserHeaderRef.current;
+    const root = browserRootRef.current;
+    if (!root) return;
+    const blockOnRoot = (e: TouchEvent) => e.preventDefault();
+    root.addEventListener('touchmove', blockOnRoot, { passive: false });
+    return () => root.removeEventListener('touchmove', blockOnRoot);
+  }, []);
+
+  // Callback ref for gallery — reattaches stopPropagation when element remounts
+  const galleryTouchRef = useCallback((el: HTMLDivElement | null) => {
     if (!el) return;
-    const block = (e: TouchEvent) => e.preventDefault();
-    el.addEventListener('touchmove', block, { passive: false });
-    return () => el.removeEventListener('touchmove', block);
+    const allow = (e: TouchEvent) => e.stopPropagation();
+    el.addEventListener('touchmove', allow, { passive: true });
   }, []);
 
   return (
-    <div className="flex flex-col h-full border-l relative bg-background">
+    <div ref={browserRootRef} className="flex flex-col h-full border-l relative bg-background">
       {/* Search bar + count + filter chips — non-scrollable */}
-      <div ref={browserHeaderRef}>
+      <div>
       <div className="p-3 pb-2">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
@@ -361,6 +369,7 @@ export function PokemonBrowser() {
 
       {/* Results area */}
       <div
+        ref={galleryTouchRef}
         key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
         className="flex-1 min-h-0 overflow-y-auto px-2 pb-2"
         style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' } as React.CSSProperties}
