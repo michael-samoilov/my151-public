@@ -350,7 +350,7 @@ export function PokemonBrowser() {
       <div
         key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
         className="flex-1 min-h-0 overflow-y-auto px-2 pb-2"
-        style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+        style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' } as React.CSSProperties}
       >
           {/* Dual-column headers — sticky, left-aligned with 1st and 4th tile columns */}
           {!isSearching && activeCategoryDef?.dualColumns && (
@@ -709,7 +709,7 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
         {/* Sheet body — natural scroll, body is locked so no chain */}
         <div
           className="flex-1 min-h-0 overflow-y-auto p-3"
-          style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+          style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' } as React.CSSProperties}
         >
           {children}
         </div>
