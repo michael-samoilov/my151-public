@@ -215,7 +215,7 @@ export function PokemonBrowser() {
       {/* Filter chip rows */}
       <div className="px-3 pb-2 border-b relative z-[1] shadow-[0_1px_0_0_var(--color-background)] space-y-1.5">
         {/* Row 1: Property filters (Type, Gen, Stages) */}
-        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity items-center border-x border-border px-2", isSearching && hasActiveFilters && "opacity-40")}>
+        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity items-center px-2", isSearching && hasActiveFilters && "opacity-40", hasActivePropertyFilters ? "border-l border-border" : "border-x border-border")}>
           {typeFilter && typeFilter.length > 0 ? (
             <>
               {typeFilter.length > 1 && (
@@ -278,7 +278,7 @@ export function PokemonBrowser() {
           {hasActivePropertyFilters && (
             <button
               onClick={clearPropertyFilters}
-              className="sticky right-0 shrink-0 text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer px-1 pl-2 self-center bg-background"
+              className="sticky right-0 shrink-0 text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer px-1 pl-2 self-center bg-background border-l border-border"
             >
               Clear
             </button>
@@ -286,7 +286,7 @@ export function PokemonBrowser() {
         </div>
 
         {/* Row 2: Browse filters (Classification, Places, Archetypes, Game Mechanics) */}
-        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity items-center border-x border-border px-2", isSearching && hasActiveFilters && "opacity-40")}>
+        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity items-center px-2", isSearching && hasActiveFilters && "opacity-40", hasActiveBrowseFilters ? "border-l border-border" : "border-x border-border")}>
           {activeCategory ? (
             <FilterChip
               label={categoryName!}
@@ -338,7 +338,7 @@ export function PokemonBrowser() {
           {hasActiveBrowseFilters && (
             <button
               onClick={clearBrowseFilters}
-              className="sticky right-0 shrink-0 text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer px-1 pl-2 self-center bg-background"
+              className="sticky right-0 shrink-0 text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer px-1 pl-2 self-center bg-background border-l border-border"
             >
               Clear
             </button>
