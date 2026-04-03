@@ -668,72 +668,34 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const scrollBodyRef = useRef<HTMLDivElement>(null);
-  const touchStartY = useRef(0);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
+  // Disable pull-to-refresh on html element while sheet is open
   useEffect(() => {
-    const overlay = overlayRef.current;
-    if (!overlay) return;
-
-    // Non-passive touchmove on overlay — blocks all touch scroll by default
-    const blockTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-    };
-    overlay.addEventListener('touchmove', blockTouchMove, { passive: false });
-
-    return () => {
-      overlay.removeEventListener('touchmove', blockTouchMove);
-    };
+    const html = document.documentElement;
+    const prev = html.style.overscrollBehavior;
+    html.style.overscrollBehavior = 'none';
+    return () => { html.style.overscrollBehavior = prev; };
   }, []);
 
+  // Block touchmove on non-scrollable areas (backdrop + header)
   useEffect(() => {
-    const scrollBody = scrollBodyRef.current;
-    if (!scrollBody) return;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY.current = e.touches[0].clientY;
-      // 1px nudge so iOS knows this is scrollable
-      if (scrollBody.scrollTop <= 0) scrollBody.scrollTop = 1;
-      const maxScroll = scrollBody.scrollHeight - scrollBody.clientHeight;
-      if (scrollBody.scrollTop >= maxScroll) scrollBody.scrollTop = maxScroll - 1;
-    };
-
-    // Non-passive touchmove on scroll body — allows scroll when there's room
-    const handleTouchMove = (e: TouchEvent) => {
-      const el = scrollBody;
-      const touchY = e.touches[0].clientY;
-      const delta = touchStartY.current - touchY;
-      const atTop = el.scrollTop <= 0;
-      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight;
-
-      if ((atTop && delta < 0) || (atBottom && delta > 0)) {
-        // At boundary scrolling further — don't allow
-        return;
-      }
-      // Has room to scroll — stop overlay's preventDefault
-      e.stopPropagation();
-    };
-
-    scrollBody.addEventListener('touchstart', handleTouchStart, { passive: true });
-    scrollBody.addEventListener('touchmove', handleTouchMove, { passive: false });
-
-    return () => {
-      scrollBody.removeEventListener('touchstart', handleTouchStart);
-      scrollBody.removeEventListener('touchmove', handleTouchMove);
-    };
+    const els = [backdropRef.current, headerRef.current].filter(Boolean) as HTMLElement[];
+    const block = (e: TouchEvent) => e.preventDefault();
+    els.forEach(el => el.addEventListener('touchmove', block, { passive: false }));
+    return () => { els.forEach(el => el.removeEventListener('touchmove', block)); };
   }, []);
 
   return (
     <div
-      ref={overlayRef}
       className="absolute inset-0 z-20 flex flex-col justify-end"
       onWheel={(e) => e.stopPropagation()}
     >
-      <div className="flex-1" onClick={onClose} />
+      <div ref={backdropRef} className="flex-1" onClick={onClose} />
       <div className="bg-background border-t rounded-t-xl shadow-2xl h-[50%] flex flex-col">
         {/* Sheet header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b">
+        <div ref={headerRef} className="flex items-center justify-between px-4 py-3 border-b">
           <span className="text-sm font-semibold">
             {openSheet === 'type' && 'Type'}
             {openSheet === 'generation' && 'Generation'}
@@ -748,11 +710,10 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
           </button>
         </div>
 
-        {/* Sheet body */}
+        {/* Sheet body — natural scroll with overscroll bounce */}
         <div
-          ref={scrollBodyRef}
           className="flex-1 min-h-0 overflow-y-auto p-3"
-          style={{ overscrollBehavior: 'contain' }}
+          style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
           {children}
         </div>
