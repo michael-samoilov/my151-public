@@ -16,89 +16,15 @@ import {
 import { BUILD_GROUP_IDS } from '@/data/slot-template';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 
-// --- Helpers ---
-
-/** Build a reverse map: pokemonId → sectionId */
-function buildIdToSection(sections: Record<string, number[]>): Map<number, string> {
-  const map = new Map<number, string>();
-  for (const groupId of BUILD_GROUP_IDS) {
-    for (const id of sections[groupId] ?? []) {
-      map.set(id, groupId);
-    }
-  }
-  return map;
-}
-
-/** Resolve Pokemon IDs to Pokemon objects, preserving order. */
-function resolve(ids: number[]): Pokemon[] {
-  const result: Pokemon[] = [];
-  for (const id of ids) {
-    const p = getPokemonById(id);
-    if (p) result.push(p);
-  }
-  return result;
-}
-
-/** Sort Pokemon by national dex number. */
-function byNationalDex(a: Pokemon, b: Pokemon): number {
-  return a.id - b.id;
-}
-
-// --- Bucket assignment ---
-
-/**
- * 15 ordered buckets for the regional/national/type sorts:
- *  0: Starter SECTION (build page order)
- *  1: Middle (sorted by selected sort option)
- *  2: Other fossils not in fossil section (national dex)
- *  3: Fossil SECTION (build page order)
- *  4: Other official starters not in starter section (national dex)
- *  5: Non-legendary Paradox Pokemon (national dex)
- *  6: Other pseudo-legendaries not in pseudo section (national dex)
- *  7: Pseudo-legendary SECTION (build page order)
- *  8: Ultra Beasts (national dex)
- *  9: Legendary Paradox Pokemon (national dex)
- * 10: Other sub-legendaries (national dex)
- * 11: Other restricted legendaries (national dex)
- * 12: Legendary SECTION (build page order)
- * 13: Other mythicals not in mythical section (national dex)
- * 14: Mythical SECTION (build page order)
- */
-const NUM_BUCKETS = 15;
-
-function assignBucket(id: number, section: string | undefined): number {
-  const p = getPokemonById(id);
-  if (!p) return 1;
-
-  // Section-based buckets (check which build section the Pokemon is placed in)
-  if (section === 'starter') return 0;
-  if (section === 'mythical') return 14;
-  if (section === 'legendary') return 12;
-  if (section === 'pseudo-legendary') return 7;
-  if (section === 'fossil') return 3;
-
-  // Category-based "other" buckets (officially classified but placed elsewhere)
-  if (p.isMythical) return 13;
-  if (RESTRICTED_LEGENDARY_IDS.has(id)) return 11;
-  if (SUB_LEGENDARY_IDS.has(id)) return 10;
-  if (LEGENDARY_PARADOX_IDS.has(id)) return 9;
-  if (ULTRA_BEAST_IDS.has(id)) return 8;
-  if (PSEUDO_LEGENDARY_IDS.has(id)) return 6;
-  if (PARADOX_IDS.has(id)) return 5;
-  if (STARTER_IDS.has(id)) return 4;
-  if (FOSSIL_IDS.has(id)) return 2;
-
-  return 1; // middle
-}
-
-// --- Regional dex percentile (for middle bucket) ---
+// --- Evolution clusters ---
 
 interface EvolutionCluster {
   chainId: number;
-  members: Pokemon[];
-  representative: Pokemon;
+  members: Pokemon[];        // sorted by stage then id
+  representative: Pokemon;   // lowest national dex ID in the chain
 }
 
+/** Group Pokemon IDs into evolution-chain clusters. */
 function buildClusters(pokemonIds: number[]): EvolutionCluster[] {
   const chainMap = new Map<number, Pokemon[]>();
   for (const id of pokemonIds) {
@@ -112,33 +38,23 @@ function buildClusters(pokemonIds: number[]): EvolutionCluster[] {
   const clusters: EvolutionCluster[] = [];
   for (const [chainId, members] of chainMap) {
     members.sort((a, b) => a.evolutionStage - b.evolutionStage || a.id - b.id);
-    const representative = members.reduce((best, m) =>
-      m.generation < best.generation || (m.generation === best.generation && m.id < best.id) ? m : best
-    );
+    // Representative = lowest national dex ID in the chain
+    const representative = members.reduce((best, m) => m.id < best.id ? m : best);
     clusters.push({ chainId, members, representative });
   }
   return clusters;
 }
 
-/** Get regional dex percentile for a representative Pokemon. */
-function getRegionalPercentile(rep: Pokemon): number {
-  const dex = REGIONAL_DEXES.find((d) => d.generation === rep.generation);
-  if (!dex) return 0.5;
-  const idx = dex.pokemonIds.indexOf(rep.id);
-  if (idx === -1) return 0.5;
-  return idx / dex.pokemonIds.length;
-}
+// --- Adjacency grouping ---
 
 /**
- * Build a map of chainId → position in the regional dex's chain sequence.
- * Two clusters are "dex-adjacent" if their chain positions are consecutive
- * in the same regional dex and both are present in our placed set.
+ * Build ordered sequence of unique chain IDs as they appear in a regional dex.
+ * Used to determine which chains are neighbors in the original dex.
  */
-function buildDexChainSequence(rep: Pokemon): { dexChainOrder: number[]; chainToPos: Map<number, number> } | null {
-  const dex = REGIONAL_DEXES.find((d) => d.generation === rep.generation);
+function buildDexChainSequence(gen: number): { dexChainOrder: number[]; chainToPos: Map<number, number> } | null {
+  const dex = REGIONAL_DEXES.find((d) => d.generation === gen);
   if (!dex) return null;
 
-  // Build ordered sequence of unique chain IDs as they appear in the dex
   const dexChainOrder: number[] = [];
   const chainToPos = new Map<number, number>();
   for (const pokemonId of dex.pokemonIds) {
@@ -159,18 +75,16 @@ function buildDexChainSequence(rep: Pokemon): { dexChainOrder: number[]; chainTo
 function groupAdjacentClusters(clusters: EvolutionCluster[]): EvolutionCluster[][] {
   if (clusters.length === 0) return [];
 
-  // Build a set of chain IDs we have
   const presentChains = new Set(clusters.map((c) => c.chainId));
 
   // For each cluster, find its position in its generation's regional dex chain sequence
   const clusterDexInfo = new Map<number, { gen: number; pos: number }>();
-  // Cache dex chain sequences by generation
   const dexCache = new Map<number, ReturnType<typeof buildDexChainSequence>>();
 
   for (const c of clusters) {
     const gen = c.representative.generation;
     if (!dexCache.has(gen)) {
-      dexCache.set(gen, buildDexChainSequence(c.representative));
+      dexCache.set(gen, buildDexChainSequence(gen));
     }
     const dexInfo = dexCache.get(gen);
     if (dexInfo) {
@@ -202,23 +116,18 @@ function groupAdjacentClusters(clusters: EvolutionCluster[]): EvolutionCluster[]
     const prevInfo = clusterDexInfo.get(prev.chainId);
     const currInfo = clusterDexInfo.get(curr.chainId);
 
-    // Check if they're in the same generation's dex and truly adjacent
-    // "Truly adjacent" = no other placed chains between them in the dex
     let adjacent = false;
     if (prevInfo && currInfo && prevInfo.gen === currInfo.gen) {
       const dexInfo = dexCache.get(prevInfo.gen);
       if (dexInfo) {
-        // Check all positions between prev and curr — if any present chain is between them, they're not directly adjacent to each other (they'd be adjacent to the in-between chain instead)
         let allBetweenPresent = true;
         for (let pos = prevInfo.pos + 1; pos < currInfo.pos; pos++) {
           const betweenChainId = dexInfo.dexChainOrder[pos];
-          if (presentChains.has(betweenChainId)) {
-            // There's a placed chain between them — they'll be grouped via that chain
-          } else {
+          if (!presentChains.has(betweenChainId)) {
             allBetweenPresent = false;
+            break;
           }
         }
-        // Adjacent if positions differ by exactly 1, OR all chains between them are also present
         adjacent = currInfo.pos === prevInfo.pos + 1 ||
           (currInfo.pos > prevInfo.pos && allBetweenPresent);
       }
@@ -236,12 +145,23 @@ function groupAdjacentClusters(clusters: EvolutionCluster[]): EvolutionCluster[]
   return superClusters;
 }
 
-/** Sort middle-bucket Pokemon by regional dex percentile with adjacency grouping. */
-function sortMiddleRegional(middleIds: number[]): Pokemon[] {
-  const clusters = buildClusters(middleIds);
+// --- Cluster sorting functions ---
+
+/** Sort clusters by representative's national dex ID, with adjacency grouping. */
+function sortClustersNational(ids: number[]): Pokemon[] {
+  const clusters = buildClusters(ids);
   const superClusters = groupAdjacentClusters(clusters);
 
-  // Sort super-clusters by the first cluster's percentile
+  superClusters.sort((a, b) => a[0].representative.id - b[0].representative.id);
+
+  return superClusters.flatMap((sc) => sc.flatMap((c) => c.members));
+}
+
+/** Sort clusters by regional dex percentile, with adjacency grouping. */
+function sortClustersRegional(ids: number[]): Pokemon[] {
+  const clusters = buildClusters(ids);
+  const superClusters = groupAdjacentClusters(clusters);
+
   const tagged = superClusters.map((sc) => ({
     superCluster: sc,
     percentile: getRegionalPercentile(sc[0].representative),
@@ -253,74 +173,152 @@ function sortMiddleRegional(middleIds: number[]): Pokemon[] {
     return a.tiebreak - b.tiebreak;
   });
 
-  return tagged.flatMap((t) =>
-    t.superCluster.flatMap((c) => c.members)
-  );
+  return tagged.flatMap((t) => t.superCluster.flatMap((c) => c.members));
 }
+
+/**
+ * Sort clusters by representative's primary type, then national dex.
+ * NO adjacency grouping — evo lines stay bundled but neighbor chains can split.
+ */
+function sortClustersType(ids: number[]): Pokemon[] {
+  const clusters = buildClusters(ids);
+  const typeOrder = new Map(TYPE_NAMES.map((t, i) => [t, i]));
+
+  clusters.sort((a, b) => {
+    const aType = typeOrder.get(a.representative.types[0]) ?? 999;
+    const bType = typeOrder.get(b.representative.types[0]) ?? 999;
+    if (aType !== bType) return aType - bType;
+    return a.representative.id - b.representative.id;
+  });
+
+  return clusters.flatMap((c) => c.members);
+}
+
+/** Get regional dex percentile for a representative Pokemon. */
+function getRegionalPercentile(rep: Pokemon): number {
+  const dex = REGIONAL_DEXES.find((d) => d.generation === rep.generation);
+  if (!dex) return 0.5;
+  const idx = dex.pokemonIds.indexOf(rep.id);
+  if (idx === -1) return 0.5;
+  return idx / dex.pokemonIds.length;
+}
+
+// --- Bucket assignment ---
+
+/** Build a reverse map: pokemonId → sectionId */
+function buildIdToSection(sections: Record<string, number[]>): Map<number, string> {
+  const map = new Map<number, string>();
+  for (const groupId of BUILD_GROUP_IDS) {
+    for (const id of sections[groupId] ?? []) {
+      map.set(id, groupId);
+    }
+  }
+  return map;
+}
+
+/**
+ * 15 ordered buckets:
+ *  0: Starter SECTION (build page order)
+ *  1: Middle (sorted by selected sort option)
+ *  2: Other fossils not in fossil section
+ *  3: Fossil SECTION (build page order)
+ *  4: Other official starters not in starter section
+ *  5: Non-legendary Paradox Pokemon
+ *  6: Other pseudo-legendaries not in pseudo section
+ *  7: Pseudo-legendary SECTION (build page order)
+ *  8: Ultra Beasts
+ *  9: Legendary Paradox Pokemon
+ * 10: Other sub-legendaries
+ * 11: Other restricted legendaries
+ * 12: Legendary SECTION (build page order)
+ * 13: Other mythicals not in mythical section
+ * 14: Mythical SECTION (build page order)
+ */
+const NUM_BUCKETS = 15;
+
+// Section-based bucket indices (build page order preserved)
+const SECTION_BUCKETS = new Set([0, 3, 7, 12, 14]);
+
+function assignBucket(id: number, section: string | undefined): number {
+  const p = getPokemonById(id);
+  if (!p) return 1;
+
+  // Section-based buckets
+  if (section === 'starter') return 0;
+  if (section === 'mythical') return 14;
+  if (section === 'legendary') return 12;
+  if (section === 'pseudo-legendary') return 7;
+  if (section === 'fossil') return 3;
+
+  // Category-based "other" buckets
+  if (p.isMythical) return 13;
+  if (RESTRICTED_LEGENDARY_IDS.has(id)) return 11;
+  if (SUB_LEGENDARY_IDS.has(id)) return 10;
+  if (LEGENDARY_PARADOX_IDS.has(id)) return 9;
+  if (ULTRA_BEAST_IDS.has(id)) return 8;
+  if (PSEUDO_LEGENDARY_IDS.has(id)) return 6;
+  if (PARADOX_IDS.has(id)) return 5;
+  if (STARTER_IDS.has(id)) return 4;
+  if (FOSSIL_IDS.has(id)) return 2;
+
+  return 1; // middle
+}
+
+// Map bucket index → section ID for section-based buckets
+const BUCKET_TO_SECTION: Record<number, string> = {
+  0: 'starter',
+  3: 'fossil',
+  7: 'pseudo-legendary',
+  12: 'legendary',
+  14: 'mythical',
+};
 
 // --- Main sorting ---
 
+type ClusterSorter = (ids: number[]) => Pokemon[];
+
 /**
- * Partition all placed Pokemon into 12 ordered buckets, then sort each bucket
- * according to its rules.
+ * Partition all placed Pokemon into 15 ordered buckets, then sort each bucket.
+ * - Section buckets (0, 3, 7, 12, 14): preserve build page order
+ * - Middle bucket (1): sorted by the provided middleSorter
+ * - Other category buckets: cluster-sorted by the provided otherSorter
  */
 function sortWithBuckets(
   sections: Record<string, number[]>,
-  middleSorter: (ids: number[]) => Pokemon[]
+  middleSorter: ClusterSorter,
+  otherSorter: ClusterSorter,
 ): Pokemon[] {
   const idToSection = buildIdToSection(sections);
 
   const buckets: number[][] = Array.from({ length: NUM_BUCKETS }, () => []);
-
   for (const [id, section] of idToSection) {
-    const bucket = assignBucket(id, section);
-    buckets[bucket].push(id);
+    buckets[assignBucket(id, section)].push(id);
   }
 
-  // Section buckets preserve build page order; "other" category buckets sort by national dex
-  const sectionBucket = (sectionId: string, bucketIdx: number) =>
-    resolve(sections[sectionId] ?? []).filter((p) => buckets[bucketIdx].includes(p.id));
-  const natDexBucket = (bucketIdx: number) =>
-    resolve(buckets[bucketIdx]).sort(byNationalDex);
-
-  return [
-    ...resolve(sections['starter'] ?? []),     //  0: Starter section
-    ...middleSorter(buckets[1]),               //  1: Middle
-    ...natDexBucket(2),                        //  2: Other fossils
-    ...sectionBucket('fossil', 3),             //  3: Fossil section
-    ...natDexBucket(4),                        //  4: Other starters
-    ...natDexBucket(5),                        //  5: Non-legendary Paradox
-    ...natDexBucket(6),                        //  6: Other pseudo-legendaries
-    ...sectionBucket('pseudo-legendary', 7),   //  7: Pseudo-legendary section
-    ...natDexBucket(8),                        //  8: Ultra Beasts
-    ...natDexBucket(9),                        //  9: Legendary Paradox
-    ...natDexBucket(10),                       // 10: Other sub-legendaries
-    ...natDexBucket(11),                       // 11: Other restricted legendaries
-    ...sectionBucket('legendary', 12),         // 12: Legendary section
-    ...natDexBucket(13),                       // 13: Other mythicals
-    ...resolve(sections['mythical'] ?? []),    // 14: Mythical section
-  ];
+  const result: Pokemon[] = [];
+  for (let i = 0; i < NUM_BUCKETS; i++) {
+    if (SECTION_BUCKETS.has(i)) {
+      // Section bucket: preserve build page order, filter to only IDs assigned to this bucket
+      const sectionId = BUCKET_TO_SECTION[i];
+      const bucketSet = new Set(buckets[i]);
+      for (const id of sections[sectionId] ?? []) {
+        if (bucketSet.has(id)) {
+          const p = getPokemonById(id);
+          if (p) result.push(p);
+        }
+      }
+    } else if (i === 1) {
+      // Middle bucket: use the primary sorter
+      result.push(...middleSorter(buckets[i]));
+    } else {
+      // Other category bucket: cluster-sorted
+      result.push(...otherSorter(buckets[i]));
+    }
+  }
+  return result;
 }
 
-/** Sort by national dex number. */
-function sortNational(ids: number[]): Pokemon[] {
-  return resolve(ids).sort(byNationalDex);
-}
-
-/** Sort by primary type (TYPE_NAMES order), then national dex within each type. */
-function sortByType(ids: number[]): Pokemon[] {
-  const pokemon = resolve(ids);
-  const typeOrder = new Map(TYPE_NAMES.map((t, i) => [t, i]));
-  pokemon.sort((a, b) => {
-    const aType = typeOrder.get(a.types[0]) ?? 999;
-    const bType = typeOrder.get(b.types[0]) ?? 999;
-    if (aType !== bType) return aType - bType;
-    return a.id - b.id;
-  });
-  return pokemon;
-}
-
-/** Sort by build page section order. */
+/** Sort by build page section order (no clustering). */
 function sortBuildOrder(sections: Record<string, number[]>): Pokemon[] {
   const result: Pokemon[] = [];
   for (const groupId of BUILD_GROUP_IDS) {
@@ -352,16 +350,18 @@ export function useViewSort(
       return sortBuildOrder(sections);
     }
 
-    // All non-build-order sorts use the bucket system
     switch (sortOption) {
       case 'regional':
-        return sortWithBuckets(sections, sortMiddleRegional);
+        // Middle: regional percentile + adjacency; Other buckets: national dex + adjacency
+        return sortWithBuckets(sections, sortClustersRegional, sortClustersNational);
       case 'national':
-        return sortWithBuckets(sections, sortNational);
+        // Middle + Other buckets: national dex + adjacency
+        return sortWithBuckets(sections, sortClustersNational, sortClustersNational);
       case 'type':
-        return sortWithBuckets(sections, sortByType);
+        // Middle: type sort (no adjacency); Other buckets: type sort (no adjacency)
+        return sortWithBuckets(sections, sortClustersType, sortClustersType);
       default:
-        return sortWithBuckets(sections, sortNational);
+        return sortWithBuckets(sections, sortClustersNational, sortClustersNational);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionsKey, sortOption]);

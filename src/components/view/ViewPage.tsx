@@ -1,9 +1,8 @@
 import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
-import { displayName } from '@/lib/utils';
-import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
-import type { TypeName } from '@/types/pokemon';
+import { TYPE_COLORS } from '@/data/type-colors';
+import type { Pokemon, TypeName } from '@/types/pokemon';
 
 const SORT_OPTIONS: { value: ViewSortOption; label: string }[] = [
   { value: 'regional', label: 'Regional Dex' },
@@ -11,6 +10,35 @@ const SORT_OPTIONS: { value: ViewSortOption; label: string }[] = [
   { value: 'type', label: 'Type' },
   { value: 'build-order', label: 'Build Order' },
 ];
+
+/** Pokeball SVG background with top/bottom halves colored by type. */
+function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
+  const primary = TYPE_COLORS[pokemon.types[0] as TypeName];
+  const secondary = TYPE_COLORS[(pokemon.types[1] ?? pokemon.types[0]) as TypeName];
+
+  return (
+    <svg
+      viewBox="0 0 40 40"
+      className="absolute inset-0 w-full h-full opacity-25"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Top half — primary type */}
+      <path
+        d="M20 2 C10.06 2 2 10.06 2 20 L15 20 A5 5 0 0 1 25 20 L38 20 C38 10.06 29.94 2 20 2 Z"
+        fill={primary}
+      />
+      {/* Bottom half — secondary type */}
+      <path
+        d="M15 20 A5 5 0 0 0 25 20 L38 20 C38 29.94 29.94 38 20 38 C10.06 38 2 29.94 2 20 L15 20 Z"
+        fill={secondary}
+      />
+      {/* Center band */}
+      <rect x="2" y="19" width="36" height="2" fill="currentColor" opacity="0.15" />
+      {/* Center circle */}
+      <circle cx="20" cy="20" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.15" />
+    </svg>
+  );
+}
 
 export function ViewPage() {
   const sections = usePokedexStore((s) => s.sections);
@@ -48,32 +76,16 @@ export function ViewPage() {
           {sorted.map((pokemon) => (
             <div
               key={pokemon.id}
-              className="flex flex-col items-center py-1 rounded hover:bg-muted/50 transition-colors"
+              className="relative flex items-center justify-center aspect-square rounded"
             >
+              <PokeballBg pokemon={pokemon} />
               <img
                 src={pokemon.sprite}
-                alt={displayName(pokemon.name)}
-                className="w-10 h-10"
+                alt={pokemon.name}
+                className="relative z-10 w-4/5 h-4/5"
                 style={{ imageRendering: 'pixelated' }}
                 loading="lazy"
               />
-              <span className="text-[8px] font-medium capitalize truncate text-center leading-tight w-full px-0.5">
-                {displayName(pokemon.name)}
-              </span>
-              <div className="flex gap-0.5 mt-0.5 justify-center">
-                {pokemon.types.map((t) => (
-                  <span
-                    key={t}
-                    className="w-5 py-px rounded text-[5px] font-semibold capitalize leading-tight text-center truncate flex items-center justify-center"
-                    style={{
-                      backgroundColor: TYPE_COLORS[t as TypeName],
-                      color: TYPE_TEXT_COLORS[t as TypeName],
-                    }}
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
             </div>
           ))}
           {/* Empty placeholders */}
@@ -81,11 +93,17 @@ export function ViewPage() {
             Array.from({ length: 151 - count }, (_, i) => (
               <div
                 key={`empty-${i}`}
-                className="flex flex-col items-center justify-center py-1 rounded"
+                className="relative flex items-center justify-center aspect-square rounded"
               >
-                <div className="w-10 h-10 rounded-full bg-muted/30 flex items-center justify-center">
-                  <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/20" />
-                </div>
+                <svg
+                  viewBox="0 0 40 40"
+                  className="absolute inset-0 w-full h-full opacity-10"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                  <rect x="2" y="19" width="36" height="2" fill="currentColor" />
+                  <circle cx="20" cy="20" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
               </div>
             ))}
         </div>
