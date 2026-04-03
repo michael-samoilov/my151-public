@@ -11,7 +11,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { Search, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type FilterSheet = 'type' | 'generation' | 'evoStage' | 'browse' | null;
+type FilterSheet = 'type' | 'generation' | 'evoStage' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
 
 const PLACES_ORDER = ['forest', 'meadow', 'cave-pokemon', 'swamp', 'beach', 'fishing-pokemon', 'dojo', 'haunted', 'ruins', 'ocean', 'desert', 'volcanic', 'tundra'];
 const PLACES_IDS = new Set(PLACES_ORDER);
@@ -139,16 +139,6 @@ export function PokemonBrowser() {
       .map(([gen, ids]) => ({ label: `Gen ${gen}`, pokemonIds: ids }));
   }, [activeArchetypeDef, groups]);
 
-  const clearAllFilters = () => {
-    setCategoryFilter(null);
-    setArchetypeFilter(null);
-    setTypeFilter(null);
-    setTypeFilterMode('any');
-    setGenerationFilter(null);
-    setEvoLineSizeFilter(null);
-    setSearchQuery('');
-  };
-
   const toggleEvoSize = (size: number) => {
     if (!evoLineSizeFilter) {
       setEvoLineSizeFilter([size]);
@@ -161,7 +151,20 @@ export function PokemonBrowser() {
   };
 
   const isSearching = searchQuery.trim().length > 0;
-  const hasActiveFilters = !!(activeCategory || activeArchetype || (typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || evoLineSizeFilter);
+  const hasActivePropertyFilters = !!((typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || evoLineSizeFilter);
+  const hasActiveBrowseFilters = !!(activeCategory || activeArchetype);
+  const hasActiveFilters = hasActivePropertyFilters || hasActiveBrowseFilters;
+
+  const clearPropertyFilters = () => {
+    setTypeFilter(null);
+    setTypeFilterMode('any');
+    setGenerationFilter(null);
+    setEvoLineSizeFilter(null);
+  };
+  const clearBrowseFilters = () => {
+    setCategoryFilter(null);
+    setArchetypeFilter(null);
+  };
 
   // When searching, generate subgroups from actual results (ignoring filters)
   const searchSubgroups = useMemo((): { label: string; pokemonIds: number[] }[] => {
@@ -209,10 +212,10 @@ export function PokemonBrowser() {
         </div>
       </div>
 
-      {/* Horizontal scrollable chip bar — always visible, muted when search bypasses filters */}
-      <div className="px-3 pb-2 border-b relative z-[1] shadow-[0_1px_0_0_var(--color-background)]">
-        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
-          {/* Type chip(s) */}
+      {/* Filter chip rows */}
+      <div className="px-3 pb-2 border-b relative z-[1] shadow-[0_1px_0_0_var(--color-background)] space-y-1.5">
+        {/* Row 1: Property filters (Type, Gen, Stages) */}
+        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity items-center", isSearching && hasActiveFilters && "opacity-40")}>
           {typeFilter && typeFilter.length > 0 ? (
             <>
               {typeFilter.length > 1 && (
@@ -238,7 +241,6 @@ export function PokemonBrowser() {
             <EntryChip label="Type" onClick={() => setOpenSheet(openSheet === 'type' ? null : 'type')} active={openSheet === 'type'} />
           )}
 
-          {/* Generation chip(s) */}
           {generationFilter && generationFilter.length > 0 ? (
             generationFilter.length <= 3 ? (
               generationFilter.map(g => (
@@ -262,7 +264,6 @@ export function PokemonBrowser() {
             <EntryChip label="Gen" onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')} active={openSheet === 'generation'} />
           )}
 
-          {/* Evo stage chip */}
           {evoLineSizeFilter ? (
             <FilterChip
               label={`${evoLineSizeFilter.map(s => s === 3 ? '3+' : String(s)).join(',')} stage`}
@@ -274,26 +275,69 @@ export function PokemonBrowser() {
             <EntryChip label="Stages" onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
           )}
 
-          {/* Separator */}
-          <div className="shrink-0 w-px bg-border self-stretch my-1" />
+          {hasActivePropertyFilters && (
+            <button
+              onClick={clearPropertyFilters}
+              className="shrink-0 text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer px-1 self-center"
+            >
+              Clear
+            </button>
+          )}
+        </div>
 
-          {/* Browse chip (Category / Places / Archetype) */}
-          {categoryName || archetypeName ? (
+        {/* Row 2: Browse filters (Classification, Places, Archetypes, Game Mechanics) */}
+        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity items-center", isSearching && hasActiveFilters && "opacity-40")}>
+          {activeCategory ? (
             <FilterChip
-              label={categoryName ?? archetypeName!}
-              onDismiss={() => { setCategoryFilter(null); setArchetypeFilter(null); }}
-              onClick={() => setOpenSheet(openSheet === 'browse' ? null : 'browse')}
+              label={categoryName!}
+              onDismiss={() => setCategoryFilter(null)}
+              onClick={() => setOpenSheet(openSheet === 'classification' ? null : 'classification')}
               className="text-white"
-              style={{ backgroundColor: activeCategoryDef?.color ?? activeArchetypeDef?.color ?? undefined }}
+              style={{ backgroundColor: activeCategoryDef?.color }}
             />
           ) : (
-            <EntryChip label="Browse" onClick={() => setOpenSheet(openSheet === 'browse' ? null : 'browse')} active={openSheet === 'browse'} />
+            <EntryChip label="Classification" onClick={() => setOpenSheet(openSheet === 'classification' ? null : 'classification')} active={openSheet === 'classification'} />
           )}
 
-          {/* Clear all */}
-          {hasActiveFilters && (
+          {activeArchetype && PLACES_IDS.has(activeArchetype) ? (
+            <FilterChip
+              label={archetypeName!}
+              onDismiss={() => setArchetypeFilter(null)}
+              onClick={() => setOpenSheet(openSheet === 'places' ? null : 'places')}
+              className="text-white"
+              style={{ backgroundColor: activeArchetypeDef?.color }}
+            />
+          ) : (
+            <EntryChip label="Places" onClick={() => setOpenSheet(openSheet === 'places' ? null : 'places')} active={openSheet === 'places'} />
+          )}
+
+          {activeArchetype && !PLACES_IDS.has(activeArchetype) && !GAME_MECHANICS_IDS.has(activeArchetype) ? (
+            <FilterChip
+              label={archetypeName!}
+              onDismiss={() => setArchetypeFilter(null)}
+              onClick={() => setOpenSheet(openSheet === 'archetypes' ? null : 'archetypes')}
+              className="text-white"
+              style={{ backgroundColor: activeArchetypeDef?.color }}
+            />
+          ) : (
+            <EntryChip label="Archetypes" onClick={() => setOpenSheet(openSheet === 'archetypes' ? null : 'archetypes')} active={openSheet === 'archetypes'} />
+          )}
+
+          {activeArchetype && GAME_MECHANICS_IDS.has(activeArchetype) ? (
+            <FilterChip
+              label={archetypeName!}
+              onDismiss={() => setArchetypeFilter(null)}
+              onClick={() => setOpenSheet(openSheet === 'gameMechanics' ? null : 'gameMechanics')}
+              className="text-white"
+              style={{ backgroundColor: activeArchetypeDef?.color }}
+            />
+          ) : (
+            <EntryChip label="Mechanics" onClick={() => setOpenSheet(openSheet === 'gameMechanics' ? null : 'gameMechanics')} active={openSheet === 'gameMechanics'} />
+          )}
+
+          {hasActiveBrowseFilters && (
             <button
-              onClick={clearAllFilters}
+              onClick={clearBrowseFilters}
               className="shrink-0 text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer px-1 self-center"
             >
               Clear
@@ -446,16 +490,19 @@ export function PokemonBrowser() {
 
       {/* Filter bottom sheet overlay */}
       {openSheet && (
-        <div className="absolute inset-0 z-20 flex flex-col justify-end">
-          <div className="flex-1" onClick={() => setOpenSheet(null)} />
-          <div className="bg-background border-t rounded-t-xl shadow-2xl max-h-[50%] flex flex-col">
+        <div className="absolute inset-0 z-20 flex flex-col justify-end" onTouchMove={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
+          <div className="flex-1 touch-none" onClick={() => setOpenSheet(null)} />
+          <div className="bg-background border-t rounded-t-xl shadow-2xl max-h-[50%] flex flex-col" style={{ overscrollBehavior: 'contain' }}>
             {/* Sheet header */}
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <span className="text-sm font-semibold">
                 {openSheet === 'type' && 'Type'}
                 {openSheet === 'generation' && 'Generation'}
                 {openSheet === 'evoStage' && 'Evo Stages'}
-                {openSheet === 'browse' && 'Browse'}
+                {openSheet === 'classification' && 'Classification'}
+                {openSheet === 'places' && 'Places'}
+                {openSheet === 'archetypes' && 'Archetypes'}
+                {openSheet === 'gameMechanics' && 'Game Mechanics'}
               </span>
               <button onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
                 <X size={16} />
@@ -463,10 +510,9 @@ export function PokemonBrowser() {
             </div>
 
             {/* Sheet body */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-3">
+            <div className="flex-1 min-h-0 overflow-y-auto p-3" style={{ overscrollBehavior: 'contain' }}>
               {openSheet === 'type' && (
                 <div className="space-y-2">
-                  {/* AND/OR toggle — only shown when 2+ types selected */}
                   {typeFilter && typeFilter.length >= 2 && (
                     <div className="flex items-center gap-2 pb-1">
                       <span className="text-[11px] text-muted-foreground">Mode:</span>
@@ -491,14 +537,14 @@ export function PokemonBrowser() {
                       </span>
                     </div>
                   )}
-                  <div className="grid grid-cols-3 gap-1.5">
+                  <div className="grid grid-cols-3 gap-1">
                     {TYPE_NAMES.map((type) => {
                       const isSelected = typeFilter?.includes(type) ?? false;
                       return (
                         <button
                           key={type}
                           onClick={() => toggleType(type)}
-                          className="py-1 rounded-md text-[11px] font-semibold capitalize text-white cursor-pointer transition-all"
+                          className="py-0.5 rounded-md text-[10px] font-semibold capitalize text-white cursor-pointer transition-all"
                           style={{
                             backgroundColor: TYPE_COLORS[type],
                             opacity: typeFilter && typeFilter.length > 0 && !isSelected ? 0.3 : 1,
@@ -546,108 +592,83 @@ export function PokemonBrowser() {
                 </div>
               )}
 
-              {openSheet === 'browse' && (
-                <div className="space-y-3">
-                  {/* Clear selection */}
-                  <button
-                    onClick={() => { setCategoryFilter(null); setArchetypeFilter(null); setOpenSheet(null); }}
-                    className={cn(
-                      'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer',
-                      !activeCategory && !activeArchetype
-                        ? 'bg-foreground text-background'
-                        : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
-                    )}
-                  >
-                    All
-                  </button>
+              {openSheet === 'classification' && (
+                <div className="flex flex-wrap gap-1.5">
+                  {CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => { setCategoryFilter(activeCategory === cat.id ? null : cat.id); setOpenSheet(null); }}
+                      className={cn(
+                        'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
+                        activeCategory === cat.id
+                          ? 'text-white border-transparent'
+                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
+                      )}
+                      style={activeCategory === cat.id ? { backgroundColor: cat.color } : undefined}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-                  {/* Classification section */}
-                  <div>
-                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Classification</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {CATEGORIES.map((cat) => (
-                        <button
-                          key={cat.id}
-                          onClick={() => { setCategoryFilter(activeCategory === cat.id ? null : cat.id); setOpenSheet(null); }}
-                          className={cn(
-                            'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
-                            activeCategory === cat.id
-                              ? 'text-white border-transparent'
-                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
-                          )}
-                          style={activeCategory === cat.id ? { backgroundColor: cat.color } : undefined}
-                        >
-                          {cat.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              {openSheet === 'places' && (
+                <div className="flex flex-wrap gap-1.5">
+                  {PLACES_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!).map((archetype) => (
+                    <button
+                      key={archetype.id}
+                      onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
+                      className={cn(
+                        'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
+                        activeArchetype === archetype.id
+                          ? 'text-white border-transparent'
+                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
+                      )}
+                      style={activeArchetype === archetype.id ? { backgroundColor: archetype.color } : undefined}
+                    >
+                      {archetype.name}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-                  {/* Places section */}
-                  <div>
-                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Places</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {PLACES_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!).map((archetype) => (
-                        <button
-                          key={archetype.id}
-                          onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
-                          className={cn(
-                            'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
-                            activeArchetype === archetype.id
-                              ? 'text-white border-transparent'
-                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
-                          )}
-                          style={activeArchetype === archetype.id ? { backgroundColor: archetype.color } : undefined}
-                        >
-                          {archetype.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              {openSheet === 'archetypes' && (
+                <div className="flex flex-wrap gap-1.5">
+                  {ARCHETYPES.filter(a => !PLACES_IDS.has(a.id) && !GAME_MECHANICS_IDS.has(a.id)).map((archetype) => (
+                    <button
+                      key={archetype.id}
+                      onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
+                      className={cn(
+                        'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
+                        activeArchetype === archetype.id
+                          ? 'text-white border-transparent'
+                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
+                      )}
+                      style={activeArchetype === archetype.id ? { backgroundColor: archetype.color } : undefined}
+                    >
+                      {archetype.name}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-                  {/* Game Mechanics section */}
-                  <div>
-                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Game Mechanics</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {GAME_MECHANICS_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!).map((archetype) => (
-                        <button
-                          key={archetype.id}
-                          onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
-                          className={cn(
-                            'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
-                            activeArchetype === archetype.id
-                              ? 'text-white border-transparent'
-                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
-                          )}
-                          style={activeArchetype === archetype.id ? { backgroundColor: archetype.color } : undefined}
-                        >
-                          {archetype.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Archetype section */}
-                  <div>
-                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Archetype</div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {ARCHETYPES.filter(a => !PLACES_IDS.has(a.id) && !GAME_MECHANICS_IDS.has(a.id)).map((archetype) => (
-                        <button
-                          key={archetype.id}
-                          onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
-                          className={cn(
-                            'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
-                            activeArchetype === archetype.id
-                              ? 'text-white border-transparent'
-                              : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
-                          )}
-                          style={activeArchetype === archetype.id ? { backgroundColor: archetype.color } : undefined}
-                        >
-                          {archetype.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+              {openSheet === 'gameMechanics' && (
+                <div className="flex flex-wrap gap-1.5">
+                  {GAME_MECHANICS_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!).map((archetype) => (
+                    <button
+                      key={archetype.id}
+                      onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
+                      className={cn(
+                        'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
+                        activeArchetype === archetype.id
+                          ? 'text-white border-transparent'
+                          : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
+                      )}
+                      style={activeArchetype === archetype.id ? { backgroundColor: archetype.color } : undefined}
+                    >
+                      {archetype.name}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
