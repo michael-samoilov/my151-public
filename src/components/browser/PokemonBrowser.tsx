@@ -673,29 +673,9 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
   const headerRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
 
-  // Lock body scroll while sheet is open — prevents scroll chaining
-  // without killing overscroll bounce in the sheet's scroll container
-  useEffect(() => {
-    const body = document.body;
-    const prevOverflow = body.style.overflow;
-    const prevPosition = body.style.position;
-    const prevWidth = body.style.width;
-    const prevTop = body.style.top;
-    const scrollY = window.scrollY;
-    body.style.position = 'fixed';
-    body.style.top = `-${scrollY}px`;
-    body.style.width = '100%';
-    body.style.overflow = 'hidden';
-    return () => {
-      body.style.overflow = prevOverflow;
-      body.style.position = prevPosition;
-      body.style.width = prevWidth;
-      body.style.top = prevTop;
-      window.scrollTo(0, scrollY);
-    };
-  }, []);
-
   // Block touchmove on non-scrollable areas (backdrop, header, footer)
+  // The MobileSheet is already position:fixed, so body isn't scrollable —
+  // no need for body lock which kills iOS overscroll bounce
   useEffect(() => {
     const els = [backdropRef.current, headerRef.current, footerRef.current].filter(Boolean) as HTMLElement[];
     const block = (e: TouchEvent) => e.preventDefault();
