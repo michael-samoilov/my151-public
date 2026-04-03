@@ -215,72 +215,70 @@ export function PokemonBrowser() {
       {/* Filter chip rows */}
       <div className="px-3 pb-2 border-b relative z-[1] shadow-[0_1px_0_0_var(--color-background)] space-y-1.5">
         {/* Row 1: Property filters (Type, Gen, Stages) */}
-        <div className={cn("flex items-center transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
-          <div className={cn("flex-1 w-0 flex gap-1.5 overflow-x-auto no-scrollbar items-center border-l border-border pl-2", hasActivePropertyFilters ? "pr-0" : "pr-2 border-r")}>
-            {typeFilter && typeFilter.length > 0 ? (
-              <>
-                {typeFilter.length > 1 && (
-                  <button
-                    onClick={() => setTypeFilterMode(typeFilterMode === 'any' ? 'all' : 'any')}
-                    className="shrink-0 inline-flex items-center px-1.5 py-1 rounded-full text-[10px] font-bold bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer transition-colors"
-                  >
-                    {typeFilterMode === 'any' ? 'OR' : 'AND'}
-                  </button>
-                )}
-                {typeFilter.map(t => (
-                  <FilterChip
-                    key={t}
-                    label={t[0].toUpperCase() + t.slice(1)}
-                    onDismiss={() => toggleType(t)}
-                    onClick={() => setOpenSheet(openSheet === 'type' ? null : 'type')}
-                    className="capitalize text-white"
-                    style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
-                  />
-                ))}
-              </>
-            ) : (
-              <EntryChip label="Type" onClick={() => setOpenSheet(openSheet === 'type' ? null : 'type')} active={openSheet === 'type'} />
-            )}
-
-            {generationFilter && generationFilter.length > 0 ? (
-              generationFilter.length <= 3 ? (
-                generationFilter.map(g => (
-                  <FilterChip
-                    key={g}
-                    label={`Gen ${g}`}
-                    onDismiss={() => toggleGeneration(g)}
-                    onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')}
-                    className="bg-foreground text-background"
-                  />
-                ))
-              ) : (
+        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity items-center border-x border-border px-2", isSearching && hasActiveFilters && "opacity-40")}>
+          {typeFilter && typeFilter.length > 0 ? (
+            <>
+              {typeFilter.length > 1 && (
+                <button
+                  onClick={() => setTypeFilterMode(typeFilterMode === 'any' ? 'all' : 'any')}
+                  className="shrink-0 inline-flex items-center px-1.5 py-1 rounded-full text-[10px] font-bold bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer transition-colors"
+                >
+                  {typeFilterMode === 'any' ? 'OR' : 'AND'}
+                </button>
+              )}
+              {typeFilter.map(t => (
                 <FilterChip
-                  label={`${generationFilter.length} Gens`}
-                  onDismiss={() => setGenerationFilter(null)}
+                  key={t}
+                  label={t[0].toUpperCase() + t.slice(1)}
+                  onDismiss={() => toggleType(t)}
+                  onClick={() => setOpenSheet(openSheet === 'type' ? null : 'type')}
+                  className="capitalize text-white"
+                  style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
+                />
+              ))}
+            </>
+          ) : (
+            <EntryChip label="Type" onClick={() => setOpenSheet(openSheet === 'type' ? null : 'type')} active={openSheet === 'type'} />
+          )}
+
+          {generationFilter && generationFilter.length > 0 ? (
+            generationFilter.length <= 3 ? (
+              generationFilter.map(g => (
+                <FilterChip
+                  key={g}
+                  label={`Gen ${g}`}
+                  onDismiss={() => toggleGeneration(g)}
                   onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')}
                   className="bg-foreground text-background"
                 />
-              )
+              ))
             ) : (
-              <EntryChip label="Gen" onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')} active={openSheet === 'generation'} />
-            )}
-
-            {evoLineSizeFilter ? (
               <FilterChip
-                label={`${evoLineSizeFilter.map(s => s === 3 ? '3+' : String(s)).join(',')} stage`}
-                onDismiss={() => setEvoLineSizeFilter(null)}
-                onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')}
+                label={`${generationFilter.length} Gens`}
+                onDismiss={() => setGenerationFilter(null)}
+                onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')}
                 className="bg-foreground text-background"
               />
-            ) : (
-              <EntryChip label="Stages" onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
-            )}
-          </div>
+            )
+          ) : (
+            <EntryChip label="Gen" onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')} active={openSheet === 'generation'} />
+          )}
+
+          {evoLineSizeFilter ? (
+            <FilterChip
+              label={`${evoLineSizeFilter.map(s => s === 3 ? '3+' : String(s)).join(',')} stage`}
+              onDismiss={() => setEvoLineSizeFilter(null)}
+              onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')}
+              className="bg-foreground text-background"
+            />
+          ) : (
+            <EntryChip label="Stages" onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
+          )}
 
           {hasActivePropertyFilters && (
             <button
               onClick={clearPropertyFilters}
-              className="shrink-0 text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer px-1 pl-2 self-center border-l border-border"
+              className="sticky right-0 shrink-0 self-stretch flex items-center text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer pr-1 pl-2 bg-background border-l border-border"
             >
               Clear
             </button>
@@ -288,61 +286,59 @@ export function PokemonBrowser() {
         </div>
 
         {/* Row 2: Browse filters (Classification, Places, Archetypes, Game Mechanics) */}
-        <div className={cn("flex items-center transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
-          <div className={cn("flex-1 w-0 flex gap-1.5 overflow-x-auto no-scrollbar items-center border-l border-border pl-2", hasActiveBrowseFilters ? "pr-0" : "pr-2 border-r")}>
-            {activeCategory ? (
-              <FilterChip
-                label={categoryName!}
-                onDismiss={() => setCategoryFilter(null)}
-                onClick={() => setOpenSheet(openSheet === 'classification' ? null : 'classification')}
-                className="text-white"
-                style={{ backgroundColor: activeCategoryDef?.color }}
-              />
-            ) : (
-              <EntryChip label="Classification" onClick={() => setOpenSheet(openSheet === 'classification' ? null : 'classification')} active={openSheet === 'classification'} />
-            )}
+        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity items-center border-x border-border px-2", isSearching && hasActiveFilters && "opacity-40")}>
+          {activeCategory ? (
+            <FilterChip
+              label={categoryName!}
+              onDismiss={() => setCategoryFilter(null)}
+              onClick={() => setOpenSheet(openSheet === 'classification' ? null : 'classification')}
+              className="text-white"
+              style={{ backgroundColor: activeCategoryDef?.color }}
+            />
+          ) : (
+            <EntryChip label="Classification" onClick={() => setOpenSheet(openSheet === 'classification' ? null : 'classification')} active={openSheet === 'classification'} />
+          )}
 
-            {activeArchetype && PLACES_IDS.has(activeArchetype) ? (
-              <FilterChip
-                label={archetypeName!}
-                onDismiss={() => setArchetypeFilter(null)}
-                onClick={() => setOpenSheet(openSheet === 'places' ? null : 'places')}
-                className="text-white"
-                style={{ backgroundColor: activeArchetypeDef?.color }}
-              />
-            ) : (
-              <EntryChip label="Places" onClick={() => setOpenSheet(openSheet === 'places' ? null : 'places')} active={openSheet === 'places'} />
-            )}
+          {activeArchetype && PLACES_IDS.has(activeArchetype) ? (
+            <FilterChip
+              label={archetypeName!}
+              onDismiss={() => setArchetypeFilter(null)}
+              onClick={() => setOpenSheet(openSheet === 'places' ? null : 'places')}
+              className="text-white"
+              style={{ backgroundColor: activeArchetypeDef?.color }}
+            />
+          ) : (
+            <EntryChip label="Places" onClick={() => setOpenSheet(openSheet === 'places' ? null : 'places')} active={openSheet === 'places'} />
+          )}
 
-            {activeArchetype && !PLACES_IDS.has(activeArchetype) && !GAME_MECHANICS_IDS.has(activeArchetype) ? (
-              <FilterChip
-                label={archetypeName!}
-                onDismiss={() => setArchetypeFilter(null)}
-                onClick={() => setOpenSheet(openSheet === 'archetypes' ? null : 'archetypes')}
-                className="text-white"
-                style={{ backgroundColor: activeArchetypeDef?.color }}
-              />
-            ) : (
-              <EntryChip label="Archetypes" onClick={() => setOpenSheet(openSheet === 'archetypes' ? null : 'archetypes')} active={openSheet === 'archetypes'} />
-            )}
+          {activeArchetype && !PLACES_IDS.has(activeArchetype) && !GAME_MECHANICS_IDS.has(activeArchetype) ? (
+            <FilterChip
+              label={archetypeName!}
+              onDismiss={() => setArchetypeFilter(null)}
+              onClick={() => setOpenSheet(openSheet === 'archetypes' ? null : 'archetypes')}
+              className="text-white"
+              style={{ backgroundColor: activeArchetypeDef?.color }}
+            />
+          ) : (
+            <EntryChip label="Archetypes" onClick={() => setOpenSheet(openSheet === 'archetypes' ? null : 'archetypes')} active={openSheet === 'archetypes'} />
+          )}
 
-            {activeArchetype && GAME_MECHANICS_IDS.has(activeArchetype) ? (
-              <FilterChip
-                label={archetypeName!}
-                onDismiss={() => setArchetypeFilter(null)}
-                onClick={() => setOpenSheet(openSheet === 'gameMechanics' ? null : 'gameMechanics')}
-                className="text-white"
-                style={{ backgroundColor: activeArchetypeDef?.color }}
-              />
-            ) : (
-              <EntryChip label="Mechanics" onClick={() => setOpenSheet(openSheet === 'gameMechanics' ? null : 'gameMechanics')} active={openSheet === 'gameMechanics'} />
-            )}
-          </div>
+          {activeArchetype && GAME_MECHANICS_IDS.has(activeArchetype) ? (
+            <FilterChip
+              label={archetypeName!}
+              onDismiss={() => setArchetypeFilter(null)}
+              onClick={() => setOpenSheet(openSheet === 'gameMechanics' ? null : 'gameMechanics')}
+              className="text-white"
+              style={{ backgroundColor: activeArchetypeDef?.color }}
+            />
+          ) : (
+            <EntryChip label="Mechanics" onClick={() => setOpenSheet(openSheet === 'gameMechanics' ? null : 'gameMechanics')} active={openSheet === 'gameMechanics'} />
+          )}
 
           {hasActiveBrowseFilters && (
             <button
               onClick={clearBrowseFilters}
-              className="shrink-0 text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer px-1 pl-2 self-center border-l border-border"
+              className="sticky right-0 shrink-0 self-stretch flex items-center text-[10px] text-muted-foreground hover:text-foreground underline cursor-pointer pr-1 pl-2 bg-background border-l border-border"
             >
               Clear
             </button>
