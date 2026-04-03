@@ -142,7 +142,6 @@ export function ViewPage() {
                   style={{
                     imageRendering: 'pixelated',
                     width: tileSize * 1.2,
-                    height: tileSize * 1.2,
                   }}
                   loading="lazy"
                 />
