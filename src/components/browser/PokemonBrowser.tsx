@@ -221,7 +221,7 @@ export function PokemonBrowser() {
               {typeFilter.length > 1 && (
                 <button
                   onClick={() => setTypeFilterMode(typeFilterMode === 'any' ? 'all' : 'any')}
-                  className="shrink-0 inline-flex items-center px-1.5 py-1 rounded-full text-[10px] font-bold bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer transition-colors"
+                  className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer transition-colors"
                 >
                   {typeFilterMode === 'any' ? 'OR' : 'AND'}
                 </button>
@@ -693,7 +693,7 @@ function EntryChip({ label, onClick, active }: { label: string; onClick: () => v
     <button
       onClick={onClick}
       className={cn(
-        'shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer border transition-colors',
+        'shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors',
         active
           ? 'border-primary text-primary bg-primary/5'
           : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
@@ -714,7 +714,7 @@ function FilterChip({
   return (
     <span
       className={cn(
-        'shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium',
+        'shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium',
         className
       )}
       style={style}
