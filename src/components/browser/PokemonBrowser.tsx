@@ -670,39 +670,53 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
 }) {
   const backdropRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
 
-  // Disable pull-to-refresh on html element while sheet is open
+  // Lock body scroll while sheet is open — prevents scroll chaining
+  // without killing overscroll bounce in the sheet's scroll container
   useEffect(() => {
-    const html = document.documentElement;
-    const prev = html.style.overscrollBehavior;
-    html.style.overscrollBehavior = 'none';
-    return () => { html.style.overscrollBehavior = prev; };
+    const body = document.body;
+    const prevOverflow = body.style.overflow;
+    const prevPosition = body.style.position;
+    const prevWidth = body.style.width;
+    const prevTop = body.style.top;
+    const scrollY = window.scrollY;
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    return () => {
+      body.style.overflow = prevOverflow;
+      body.style.position = prevPosition;
+      body.style.width = prevWidth;
+      body.style.top = prevTop;
+      window.scrollTo(0, scrollY);
+    };
   }, []);
 
-  // Block touchmove on non-scrollable areas (backdrop + header)
-  // Nudge scroll body 1px from edges on every touchstart (before iOS decides)
+  // Block touchmove on non-scrollable areas (backdrop, header, footer)
   useEffect(() => {
-    const els = [backdropRef.current, headerRef.current].filter(Boolean) as HTMLElement[];
+    const els = [backdropRef.current, headerRef.current, footerRef.current].filter(Boolean) as HTMLElement[];
     const block = (e: TouchEvent) => e.preventDefault();
     els.forEach(el => el.addEventListener('touchmove', block, { passive: false }));
+    return () => { els.forEach(el => el.removeEventListener('touchmove', block)); };
+  }, []);
 
-    const scrollEl = scrollRef.current;
+  // Nudge scroll 1px from edges on touchstart so bounce works from rest
+  useEffect(() => {
+    const el = scrollBodyRef.current;
+    if (!el) return;
     const nudge = () => {
-      if (!scrollEl) return;
-      if (scrollEl.scrollTop <= 0) scrollEl.scrollTop = 1;
-      const max = scrollEl.scrollHeight - scrollEl.clientHeight;
-      if (max > 0 && scrollEl.scrollTop >= max) scrollEl.scrollTop = max - 1;
+      if (el.scrollTop <= 0) el.scrollTop = 1;
+      const max = el.scrollHeight - el.clientHeight;
+      if (max > 0 && el.scrollTop >= max) el.scrollTop = max - 1;
     };
     // Nudge on mount
     requestAnimationFrame(nudge);
-    // Nudge on every touch start — before iOS decides scroll direction
-    scrollEl?.addEventListener('touchstart', nudge, { passive: true });
-
-    return () => {
-      els.forEach(el => el.removeEventListener('touchmove', block));
-      scrollEl?.removeEventListener('touchstart', nudge);
-    };
+    // Nudge before each touch — iOS decides scroll target at touchstart
+    el.addEventListener('touchstart', nudge, { passive: true });
+    return () => el.removeEventListener('touchstart', nudge);
   }, []);
 
   return (
@@ -728,19 +742,20 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
           </button>
         </div>
 
-        {/* Sheet body — scroll with 1px spacers for iOS overscroll bounce */}
+        {/* Sheet body — natural scroll, body is locked so no chain */}
         <div
-          ref={scrollRef}
+          ref={scrollBodyRef}
           className="flex-1 min-h-0 overflow-y-auto px-3"
           style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
         >
+          {/* 1px spacer so resting position is never at true edge */}
           <div aria-hidden className="h-px shrink-0" />
           <div className="py-3">
             {children}
           </div>
           <div aria-hidden className="h-px shrink-0" />
         </div>
-        {footer}
+        <div ref={footerRef}>{footer}</div>
       </div>
     </div>
   );
