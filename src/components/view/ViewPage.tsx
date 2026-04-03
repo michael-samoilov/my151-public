@@ -7,7 +7,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
 const COLS = 10;
-const ROWS = 16; // ceil(151 / 10)
+const SPACER_HEIGHT = 64; // h-16 pokeball spacer
 
 const SORT_OPTIONS: { value: ViewSortOption; label: string }[] = [
   { value: 'regional', label: 'Regional Dex' },
@@ -112,17 +112,20 @@ function ViewSettingsMenu() {
   );
 }
 
-/** Measure container and compute square tile size that fits COLS × ROWS. */
-function useTileSize() {
+/** Measure container and compute square tile size that fits all items. */
+function useTileSize(totalSlots: number) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [tileSize, setTileSize] = useState(0);
+  const slotsRef = useRef(totalSlots);
+  slotsRef.current = totalSlots;
 
   const measure = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
     const w = el.clientWidth;
-    const h = el.clientHeight;
-    const size = Math.floor(Math.min(w / COLS, h / ROWS));
+    const h = el.clientHeight - SPACER_HEIGHT;
+    const rows = Math.ceil(slotsRef.current / COLS);
+    const size = Math.floor(Math.min(w / COLS, h / Math.max(rows, 1)));
     setTileSize(size);
   }, []);
 
@@ -135,6 +138,11 @@ function useTileSize() {
     return () => ro.disconnect();
   }, [measure]);
 
+  // Re-measure when slot count changes
+  useEffect(() => {
+    measure();
+  }, [totalSlots, measure]);
+
   return { containerRef, tileSize };
 }
 
@@ -142,9 +150,9 @@ export function ViewPage() {
   const sections = usePokedexStore((s) => s.sections);
   const sortOption = usePokedexStore((s) => s.viewSortOption);
   const sorted = useViewSort(sections, sortOption);
-  const { containerRef, tileSize } = useTileSize();
-
   const count = sorted.length;
+  const totalSlots = Math.max(count, 151);
+  const { containerRef, tileSize } = useTileSize(totalSlots);
 
   return (
     <div className="h-full flex flex-col">
@@ -160,12 +168,13 @@ export function ViewPage() {
       {/* Grid container — measured for tile sizing */}
       <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center p-2">
         {tileSize > 0 && (() => {
-          // 151 total slots: 150 in grid (15 full rows), 1 in centered last row
-          const GRID_SLOTS = 150;
-          const gridPokemon = sorted.slice(0, GRID_SLOTS);
-          const lastRowPokemon = sorted.slice(GRID_SLOTS);
-          const gridEmpties = GRID_SLOTS - gridPokemon.length;
-          const lastRowEmpty = lastRowPokemon.length === 0;
+          // Split: full rows in grid, last partial row flex-centered
+          const lastRowCount = totalSlots % COLS || COLS;
+          const gridSlots = totalSlots - lastRowCount;
+          const gridPokemon = sorted.slice(0, gridSlots);
+          const lastRowPokemon = sorted.slice(gridSlots);
+          const gridEmpties = Math.max(0, gridSlots - gridPokemon.length);
+          const lastRowEmpties = Math.max(0, lastRowCount - lastRowPokemon.length);
 
           const EmptyPlaceholder = ({ k }: { k: string }) => (
             <div key={k} className="relative" style={{ width: tileSize, height: tileSize }}>
@@ -209,9 +218,9 @@ export function ViewPage() {
                   <EmptyPlaceholder key={`empty-${i}`} k={`empty-${i}`} />
                 ))}
             </div>
-            {/* Last row (slot 151) — flex centered */}
+            {/* Last partial row — flex centered */}
             <div className="flex justify-center" style={{ height: tileSize }}>
-              {lastRowPokemon.length > 0 ? lastRowPokemon.map((pokemon) => (
+              {lastRowPokemon.map((pokemon) => (
                 <div
                   key={pokemon.id}
                   className="relative overflow-visible"
@@ -226,7 +235,11 @@ export function ViewPage() {
                     loading="lazy"
                   />
                 </div>
-              )) : lastRowEmpty && <EmptyPlaceholder k="empty-last" />}
+              ))}
+              {lastRowEmpties > 0 &&
+                Array.from({ length: lastRowEmpties }, (_, i) => (
+                  <EmptyPlaceholder key={`empty-last-${i}`} k={`empty-last-${i}`} />
+                ))}
             </div>
             {/* Bottom breathing room with pokeball */}
             <div className="h-16 flex items-center justify-center">
