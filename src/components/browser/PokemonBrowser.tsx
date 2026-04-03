@@ -350,6 +350,7 @@ export function PokemonBrowser() {
       <div
         key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
         className="flex-1 min-h-0 overflow-y-auto px-2 pb-2"
+        style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
           {/* Dual-column headers — sticky, left-aligned with 1st and 4th tile columns */}
           {!isSearching && activeCategoryDef?.dualColumns && (
