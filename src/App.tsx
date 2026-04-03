@@ -66,7 +66,7 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
       />
       <div
         ref={sheetRef}
-        className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl flex flex-col"
+        className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl flex flex-col overflow-hidden"
         style={{
           height: `${SHEET_HEIGHT_VH}vh`,
           transform: `translateY(${dragY}px)`,
