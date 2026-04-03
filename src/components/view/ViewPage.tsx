@@ -1,8 +1,12 @@
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
+
+const COLS = 10;
+const ROWS = 16; // ceil(151 / 10)
 
 const SORT_OPTIONS: { value: ViewSortOption; label: string }[] = [
   { value: 'regional', label: 'Regional Dex' },
@@ -57,11 +61,38 @@ function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
   );
 }
 
+/** Measure container and compute square tile size that fits COLS × ROWS. */
+function useTileSize() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [tileSize, setTileSize] = useState(0);
+
+  const measure = useCallback(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const w = el.clientWidth;
+    const h = el.clientHeight;
+    const size = Math.floor(Math.min(w / COLS, h / ROWS));
+    setTileSize(size);
+  }, []);
+
+  useEffect(() => {
+    measure();
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [measure]);
+
+  return { containerRef, tileSize };
+}
+
 export function ViewPage() {
   const sections = usePokedexStore((s) => s.sections);
   const sortOption = usePokedexStore((s) => s.viewSortOption);
   const setSortOption = usePokedexStore((s) => s.setViewSortOption);
   const sorted = useViewSort(sections, sortOption);
+  const { containerRef, tileSize } = useTileSize();
 
   const count = sorted.length;
 
@@ -87,43 +118,57 @@ export function ViewPage() {
         </select>
       </div>
 
-      {/* Grid */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="grid grid-cols-10 content-start">
-          {sorted.map((pokemon) => (
-            <div
-              key={pokemon.id}
-              className="relative flex items-center justify-center aspect-square rounded overflow-visible"
-            >
-              <PokeballBg pokemon={pokemon} />
-              <img
-                src={pokemon.sprite}
-                alt={pokemon.name}
-                className="absolute z-10 w-[120%] aspect-square left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                style={{ imageRendering: 'pixelated' }}
-                loading="lazy"
-              />
-            </div>
-          ))}
-          {/* Empty placeholders */}
-          {count < 151 &&
-            Array.from({ length: 151 - count }, (_, i) => (
+      {/* Grid container — measured for tile sizing */}
+      <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center">
+        {tileSize > 0 && (
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: `repeat(${COLS}, ${tileSize}px)`,
+              gridAutoRows: `${tileSize}px`,
+            }}
+          >
+            {sorted.map((pokemon) => (
               <div
-                key={`empty-${i}`}
-                className="relative flex items-center justify-center aspect-square rounded"
+                key={pokemon.id}
+                className="relative overflow-visible"
+                style={{ width: tileSize, height: tileSize }}
               >
-                <svg
-                  viewBox="0 0 40 40"
-                  className="absolute inset-0 w-full h-full opacity-10"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                  <rect x="2" y="19" width="36" height="2" fill="currentColor" />
-                  <circle cx="20" cy="20" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                </svg>
+                <PokeballBg pokemon={pokemon} />
+                <img
+                  src={pokemon.sprite}
+                  alt={pokemon.name}
+                  className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                  style={{
+                    imageRendering: 'pixelated',
+                    width: tileSize * 1.2,
+                    height: tileSize * 1.2,
+                  }}
+                  loading="lazy"
+                />
               </div>
             ))}
-        </div>
+            {/* Empty placeholders */}
+            {count < 151 &&
+              Array.from({ length: 151 - count }, (_, i) => (
+                <div
+                  key={`empty-${i}`}
+                  className="relative"
+                  style={{ width: tileSize, height: tileSize }}
+                >
+                  <svg
+                    viewBox="0 0 40 40"
+                    className="absolute inset-0 w-full h-full opacity-10"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                    <rect x="2" y="19" width="36" height="2" fill="currentColor" />
+                    <circle cx="20" cy="20" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                </div>
+              ))}
+          </div>
+        )}
       </div>
     </div>
   );
