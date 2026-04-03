@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { BarChart3, Grid3X3, Hammer } from 'lucide-react';
+import { BarChart3, Camera, Hammer } from 'lucide-react';
 
 export type AppView = 'builder' | 'view' | 'analytics';
 
@@ -46,7 +46,7 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
             onClick={() => onViewChange('view')}
             className="px-2 sm:px-3"
           >
-            <Grid3X3 className="w-4 h-4 sm:mr-1" />
+            <Camera className="w-4 h-4 sm:mr-1" />
             <span className="hidden sm:inline">View</span>
           </Button>
         </div>
