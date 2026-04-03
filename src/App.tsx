@@ -94,8 +94,10 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
           </span>
         </div>
         <div className="border-b" />
-        <div className="flex-1 min-h-0">
-          <PokemonBrowser />
+        <div className="flex-1 min-h-0 relative">
+          <div className="absolute inset-0">
+            <PokemonBrowser />
+          </div>
         </div>
       </div>
     </div>
