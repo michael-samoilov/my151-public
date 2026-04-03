@@ -104,7 +104,7 @@ export function WhatsAdvisor() {
         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? '' : '-rotate-90'}`} />
         <h3 className="text-lg font-semibold">What's Missing?</h3>
         {missingCount > 0 && (
-          <Badge className="text-xs bg-yellow-500 text-white">{missingCount} gaps</Badge>
+          <Badge className="text-xs bg-yellow-500 text-white">{missingCount} {missingCount === 1 ? 'gap' : 'gaps'}</Badge>
         )}
         {missingCount === 0 && completeCount > 0 && (
           <Badge className="text-xs bg-green-600">Looking good!</Badge>
