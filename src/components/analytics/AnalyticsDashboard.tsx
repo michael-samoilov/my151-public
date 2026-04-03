@@ -79,10 +79,13 @@ export function AnalyticsDashboard() {
   const analytics = useAnalytics();
   const sections = usePokedexStore((s) => s.sections);
   const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
+  const drillDownDexId = usePokedexStore((s) => s.drillDownDexId);
   const openDrillDown = usePokedexStore((s) => s.openDrillDown);
   const closeDrillDown = usePokedexStore((s) => s.closeDrillDown);
 
   // Compute active labels for chart focus states
+  // activeTypeLabel only highlights when drilldown dex context matches the displayed chart
+  const drillDownIsYours = drillDownDexId === null;
   const activeTypeLabel = drillDownSegment?.kind === 'type'
     ? drillDownSegment.type.charAt(0).toUpperCase() + drillDownSegment.type.slice(1) : null;
   const activeGenLabel = drillDownSegment?.kind === 'generation'
@@ -92,13 +95,14 @@ export function AnalyticsDashboard() {
   const activeBstBin = drillDownSegment?.kind === 'bst'
     ? drillDownSegment.binStart + (drillDownSegment.binEnd - drillDownSegment.binStart) / 2 : null;
 
-  const handleDrillToggle = (segment: DrillDownSegment, siblings?: DrillDownSegment[], excludeFlag?: boolean) => {
-    // If tapping same segment, close; otherwise open new
-    if (drillDownSegment && drillDownSegment.kind === segment.kind &&
+  const handleDrillToggle = (segment: DrillDownSegment, siblings?: DrillDownSegment[], excludeFlag?: boolean, dexId?: string | null, newOnly?: boolean) => {
+    // If tapping same segment with same dex context, close; otherwise open new
+    const sameDex = (dexId ?? null) === drillDownDexId;
+    if (sameDex && drillDownSegment && drillDownSegment.kind === segment.kind &&
       JSON.stringify(drillDownSegment) === JSON.stringify(segment)) {
       closeDrillDown();
     } else {
-      openDrillDown(segment, siblings, excludeFlag);
+      openDrillDown(segment, siblings, excludeFlag, dexId, newOnly);
     }
   };
 
@@ -221,6 +225,10 @@ export function AnalyticsDashboard() {
       ? (a, b) => b.count - a.count
       : (a, b) => b.deviation - a.deviation);
   }, [selectedTypeChart, excludeSpecial, newPokemonOnly]);
+
+  const regionalTypeSiblings = useMemo((): DrillDownSegment[] =>
+    regionalTypeChartData.filter(d => d.count > 0).map(d => ({ kind: 'type' as const, type: d.label.toLowerCase() })),
+    [regionalTypeChartData]);
 
   const activeTypeChartData = selectedTypeChart === 'yours' ? typeChartData : regionalTypeChartData;
   const isNationalSelected = selectedTypeChart === 'national';
@@ -506,8 +514,24 @@ export function AnalyticsDashboard() {
               hideDeviation={isNationalSelected}
               fixedMaxCount={unfilteredMaxCount}
               fixedDevRight={fixedDevRight}
-              onBarClick={selectedTypeChart === 'yours' ? (label) => handleDrillToggle({ kind: 'type', type: label.toLowerCase() }, typeSiblings, excludeSpecial) : undefined}
-              activeLabel={selectedTypeChart === 'yours' ? activeTypeLabel : null}
+              onBarClick={(label) => {
+                if (selectedTypeChart === 'yours') {
+                  handleDrillToggle({ kind: 'type', type: label.toLowerCase() }, typeSiblings, excludeSpecial);
+                } else {
+                  handleDrillToggle(
+                    { kind: 'type', type: label.toLowerCase() },
+                    regionalTypeSiblings,
+                    excludeSpecial,
+                    selectedTypeChart,
+                    newPokemonOnly,
+                  );
+                }
+              }}
+              activeLabel={
+                (selectedTypeChart === 'yours' && drillDownIsYours) ||
+                (selectedTypeChart !== 'yours' && drillDownDexId === selectedTypeChart)
+                  ? activeTypeLabel : null
+              }
             />
           </div>
         </section>

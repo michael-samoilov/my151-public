@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
-import { getPokemonById, getEvolutionLine } from '@/hooks/usePokemonData';
+import { getPokemonById, getEvolutionLine, getAllPokemon } from '@/hooks/usePokemonData';
 import { BUILD_GROUPS } from '@/data/slot-template';
+import { REGIONAL_DEXES } from '@/data/regional-dexes';
+import { STARTER_IDS } from '@/data/categories';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon } from '@/types/pokemon';
 
@@ -39,8 +41,10 @@ export function useDrillDownData(): DrillDownData | null {
   const segment = usePokedexStore((s) => s.drillDownSegment);
   const storeSections = usePokedexStore((s) => s.sections);
   const excludeSpecial = usePokedexStore((s) => s.drillDownExcludeSpecial);
+  const dexId = usePokedexStore((s) => s.drillDownDexId);
+  const newOnly = usePokedexStore((s) => s.drillDownNewOnly);
 
-  return useMemo(() => computeDrillDownData(segment, storeSections, excludeSpecial), [segment, storeSections, excludeSpecial]);
+  return useMemo(() => computeDrillDownData(segment, storeSections, excludeSpecial, dexId, newOnly), [segment, storeSections, excludeSpecial, dexId, newOnly]);
 }
 
 /** Pure computation — also used by carousel to pre-render adjacent panels */
@@ -48,8 +52,15 @@ export function computeDrillDownData(
   segment: DrillDownSegment | null,
   storeSections: Record<string, number[]>,
   excludeSpecial: boolean,
+  dexId?: string | null,
+  newOnly?: boolean,
 ): DrillDownData | null {
   if (!segment) return null;
+
+  // Regional/national dex drilldown — show that dex's Pokemon, mute those not in user's pokedex
+  if (dexId) {
+    return computeRegionalDrillDown(segment, storeSections, excludeSpecial, dexId, newOnly ?? false);
+  }
 
     // Collect all placed Pokemon with their section assignments
     const pokemonToSection = new Map<number, string>();
@@ -168,6 +179,109 @@ export function computeDrillDownData(
       totalPokemon: countForSubtitle,
       totalLines: linesForSubtitle,
     };
+}
+
+/** Regional/national dex drilldown: show all Pokemon from that dex matching the segment,
+ *  muting those not in the user's pokedex. Groups by generation instead of build sections. */
+function computeRegionalDrillDown(
+  segment: DrillDownSegment,
+  storeSections: Record<string, number[]>,
+  excludeSpecial: boolean,
+  dexId: string,
+  newOnly: boolean,
+): DrillDownData | null {
+  const isNational = dexId === 'national';
+  const dex = REGIONAL_DEXES.find(d => d.id === dexId);
+  if (!dex && !isNational) return null;
+
+  // All Pokemon in this dex
+  let dexPokemon: Pokemon[];
+  if (isNational) {
+    dexPokemon = getAllPokemon();
+  } else {
+    dexPokemon = dex!.pokemonIds.map(id => getPokemonById(id)).filter(Boolean) as Pokemon[];
+  }
+
+  // Apply "gen X only" filter
+  if (newOnly && dex) {
+    dexPokemon = dexPokemon.filter(p => p.generation === dex.generation);
+  }
+
+  // Apply exclude starters/legendaries/mythicals
+  if (excludeSpecial) {
+    dexPokemon = dexPokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+  }
+
+  // User's placed Pokemon (for highlight vs mute)
+  const userPlacedIds = new Set(Object.values(storeSections).flat());
+
+  // Filter to Pokemon matching the segment
+  const matchingIds = new Set<number>();
+  for (const p of dexPokemon) {
+    if (matchesSegment(p, p.id, segment)) {
+      matchingIds.add(p.id);
+    }
+  }
+
+  if (matchingIds.size === 0) return null;
+
+  // Build evolution line groups, grouped by generation
+  const seenRoots = new Set<string>();
+  const evoLinesByGen = new Map<number, { key: string; members: Pokemon[]; matchedIds: Set<number> }[]>();
+  const chainIds = new Set<number>();
+
+  for (const id of matchingIds) {
+    const line = getEvolutionLine(id);
+    const rootKey = line.map(m => m.id).join('-');
+    if (seenRoots.has(rootKey)) continue;
+    seenRoots.add(rootKey);
+
+    const p = getPokemonById(id);
+    if (p) chainIds.add(p.evolutionChainId);
+
+    // matchedIds = members that match the segment AND are in the user's pokedex
+    // Non-placed Pokemon will appear but be muted (opacity-35)
+    const lineMatchedIds = new Set<number>();
+    for (const m of line) {
+      if (matchingIds.has(m.id) && userPlacedIds.has(m.id)) {
+        lineMatchedIds.add(m.id);
+      }
+    }
+
+    const gen = line[0].generation;
+    const groups = evoLinesByGen.get(gen) ?? [];
+    groups.push({ key: rootKey, members: line, matchedIds: lineMatchedIds });
+    evoLinesByGen.set(gen, groups);
+  }
+
+  // Build sections grouped by generation, sorted by gen number
+  const genColors = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
+  const sections: SectionGroup[] = [];
+  const sortedGens = [...evoLinesByGen.keys()].sort((a, b) => a - b);
+  for (const gen of sortedGens) {
+    const groups = evoLinesByGen.get(gen)!;
+    // Sort by national dex ID within each gen
+    groups.sort((a, b) => a.members[0].id - b.members[0].id);
+    sections.push({
+      sectionId: `gen-${gen}`,
+      sectionName: `Generation ${gen}`,
+      sectionColor: genColors[(gen - 1) % genColors.length],
+      groups,
+    });
+  }
+
+  const dexLabel = isNational ? 'National Dex' : dex!.name;
+  const { title, color, icon } = getSegmentMeta(segment);
+
+  return {
+    title: `${title} — ${dexLabel}`,
+    subtitle: `${matchingIds.size} Pokémon across ${chainIds.size} line${chainIds.size !== 1 ? 's' : ''}`,
+    color,
+    icon,
+    sections,
+    totalPokemon: matchingIds.size,
+    totalLines: chainIds.size,
+  };
 }
 
 function matchesSegment(p: Pokemon, id: number, segment: DrillDownSegment): boolean {

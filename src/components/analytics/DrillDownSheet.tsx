@@ -152,6 +152,8 @@ export function DrillDownSheet() {
   const siblings = usePokedexStore((s) => s.drillDownSiblings);
   const segment = usePokedexStore((s) => s.drillDownSegment);
   const excludeSpecial = usePokedexStore((s) => s.drillDownExcludeSpecial);
+  const dexId = usePokedexStore((s) => s.drillDownDexId);
+  const newOnly = usePokedexStore((s) => s.drillDownNewOnly);
 
   const [dragY, setDragY] = useState(0);
   const [swipeX, setSwipeX] = useState(0);
@@ -187,14 +189,14 @@ export function DrillDownSheet() {
 
   // Pre-compute all 3 panels' data
   const currentData = useMemo(() =>
-    computeDrillDownData(segment, storeSections, excludeSpecial),
-    [segment, storeSections, excludeSpecial]);
+    computeDrillDownData(segment, storeSections, excludeSpecial, dexId, newOnly),
+    [segment, storeSections, excludeSpecial, dexId, newOnly]);
   const prevData = useMemo(() =>
-    prevSibling ? computeDrillDownData(prevSibling, storeSections, excludeSpecial) : null,
-    [prevSibling, storeSections, excludeSpecial]);
+    prevSibling ? computeDrillDownData(prevSibling, storeSections, excludeSpecial, dexId, newOnly) : null,
+    [prevSibling, storeSections, excludeSpecial, dexId, newOnly]);
   const nextData = useMemo(() =>
-    nextSibling ? computeDrillDownData(nextSibling, storeSections, excludeSpecial) : null,
-    [nextSibling, storeSections, excludeSpecial]);
+    nextSibling ? computeDrillDownData(nextSibling, storeSections, excludeSpecial, dexId, newOnly) : null,
+    [nextSibling, storeSections, excludeSpecial, dexId, newOnly]);
 
   // Only lock body scroll when fully expanded (not peek)
   useEffect(() => {
