@@ -490,11 +490,15 @@ export function PokemonBrowser() {
 
       {/* Filter bottom sheet overlay */}
       {openSheet && (
-        <div className="absolute inset-0 z-20 flex flex-col justify-end" onTouchMove={(e) => { e.stopPropagation(); }} onWheel={(e) => { e.stopPropagation(); }}>
-          <div className="flex-1 touch-none" onClick={() => setOpenSheet(null)} onTouchMove={(e) => e.preventDefault()} />
-          <div className="bg-background border-t rounded-t-xl shadow-2xl h-[50%] flex flex-col touch-none" style={{ overscrollBehavior: 'contain' }}>
+        <div
+          className="absolute inset-0 z-20 flex flex-col justify-end"
+          onTouchMove={(e) => e.preventDefault()}
+          onWheel={(e) => e.stopPropagation()}
+        >
+          <div className="flex-1" onClick={() => setOpenSheet(null)} />
+          <div className="bg-background border-t rounded-t-xl shadow-2xl h-[50%] flex flex-col">
             {/* Sheet header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b" onTouchMove={(e) => e.preventDefault()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b">
               <span className="text-sm font-semibold">
                 {openSheet === 'type' && 'Type'}
                 {openSheet === 'generation' && 'Generation'}
@@ -511,17 +515,30 @@ export function PokemonBrowser() {
 
             {/* Sheet body */}
             <div
-              className="flex-1 min-h-0 overflow-y-auto p-3 touch-auto"
+              className="flex-1 min-h-0 overflow-y-auto p-3"
               style={{ overscrollBehavior: 'contain' }}
-              ref={(el) => {
-                // 1px hack: ensure element is always slightly scrolled so iOS
-                // doesn't pass scroll-at-boundary to the parent
-                if (el && el.scrollTop === 0) el.scrollTop = 1;
-              }}
-              onScroll={(e) => {
+              onTouchMove={(e) => {
                 const el = e.currentTarget;
-                // Keep 1px from top/bottom boundaries
-                if (el.scrollTop === 0) el.scrollTop = 1;
+                const atTop = el.scrollTop <= 0;
+                const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight;
+                // Find the touch direction
+                const touch = e.touches[0];
+                const startY = (el as unknown as Record<string, number>).__touchY ?? touch.clientY;
+                const isScrollingUp = touch.clientY > startY;
+                const isScrollingDown = touch.clientY < startY;
+                // Allow scroll if not at boundary in this direction
+                if ((atTop && isScrollingUp) || (atBottom && isScrollingDown)) {
+                  // At boundary scrolling further — let parent preventDefault handle it
+                  return;
+                }
+                // Has room to scroll — stop parent's preventDefault from blocking it
+                e.stopPropagation();
+              }}
+              onTouchStart={(e) => {
+                const el = e.currentTarget;
+                (el as unknown as Record<string, number>).__touchY = e.touches[0].clientY;
+                // 1px nudge so iOS knows this is scrollable
+                if (el.scrollTop <= 0) el.scrollTop = 1;
                 if (el.scrollTop + el.clientHeight >= el.scrollHeight) {
                   el.scrollTop = el.scrollHeight - el.clientHeight - 1;
                 }
