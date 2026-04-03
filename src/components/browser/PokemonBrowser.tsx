@@ -492,7 +492,7 @@ export function PokemonBrowser() {
       {openSheet && (
         <div className="absolute inset-0 z-20 flex flex-col justify-end" onTouchMove={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
           <div className="flex-1 touch-none" onClick={() => setOpenSheet(null)} />
-          <div className="bg-background border-t rounded-t-xl shadow-2xl max-h-[50%] flex flex-col" style={{ overscrollBehavior: 'contain' }}>
+          <div className="bg-background border-t rounded-t-xl shadow-2xl h-[50%] flex flex-col" style={{ overscrollBehavior: 'contain' }}>
             {/* Sheet header */}
             <div className="flex items-center justify-between px-4 py-3 border-b">
               <span className="text-sm font-semibold">
@@ -548,8 +548,6 @@ export function PokemonBrowser() {
                           style={{
                             backgroundColor: TYPE_COLORS[type],
                             opacity: typeFilter && typeFilter.length > 0 && !isSelected ? 0.3 : 1,
-                            outline: isSelected ? '2px solid white' : 'none',
-                            outlineOffset: '-2px',
                           }}
                         >
                           {type}
