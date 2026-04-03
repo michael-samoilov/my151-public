@@ -120,64 +120,79 @@ export function ViewPage() {
 
       {/* Grid container — measured for tile sizing */}
       <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center">
-        {tileSize > 0 && (
-          <div
-            className="grid"
-            style={{
-              gridTemplateColumns: `repeat(${COLS}, ${tileSize}px)`,
-              gridAutoRows: `${tileSize}px`,
-            }}
-          >
-            {sorted.map((pokemon, index) => {
-              const lastRowCount = count % COLS;
-              const isLastRow = lastRowCount > 0 && index >= count - lastRowCount;
-              const isFirstInLastRow = isLastRow && index === count - lastRowCount;
-              const offset = Math.floor((COLS - lastRowCount) / 2) + 1;
-              return (
-              <div
-                key={pokemon.id}
-                className="relative overflow-visible"
-                style={{
-                  width: tileSize,
-                  height: tileSize,
-                  ...(isFirstInLastRow ? { gridColumnStart: offset } : {}),
-                }}
-              >
-                <PokeballBg pokemon={pokemon} />
-                <img
-                  src={pokemon.sprite}
-                  alt={pokemon.name}
-                  className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    imageRendering: 'pixelated',
-                    width: tileSize * 1.2,
-                  }}
-                  loading="lazy"
-                />
-              </div>
-              );
-            })}
-            {/* Empty placeholders */}
-            {count < 151 &&
-              Array.from({ length: 151 - count }, (_, i) => (
+        {tileSize > 0 && (() => {
+          const lastRowCount = count % COLS;
+          const fullRowItems = lastRowCount > 0 ? sorted.slice(0, count - lastRowCount) : sorted;
+          const lastRowItems = lastRowCount > 0 ? sorted.slice(count - lastRowCount) : [];
+          return (
+          <div>
+            <div
+              className="grid"
+              style={{
+                gridTemplateColumns: `repeat(${COLS}, ${tileSize}px)`,
+                gridAutoRows: `${tileSize}px`,
+              }}
+            >
+              {fullRowItems.map((pokemon) => (
                 <div
-                  key={`empty-${i}`}
-                  className="relative"
+                  key={pokemon.id}
+                  className="relative overflow-visible"
                   style={{ width: tileSize, height: tileSize }}
                 >
-                  <svg
-                    viewBox="0 0 40 40"
-                    className="absolute inset-0 w-full h-full opacity-10"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                    <rect x="2" y="19" width="36" height="2" fill="currentColor" />
-                    <circle cx="20" cy="20" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                  </svg>
+                  <PokeballBg pokemon={pokemon} />
+                  <img
+                    src={pokemon.sprite}
+                    alt={pokemon.name}
+                    className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                    style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
+                    loading="lazy"
+                  />
                 </div>
               ))}
+              {/* Empty placeholders in grid rows */}
+              {count < 151 &&
+                Array.from({ length: 151 - count - (lastRowCount > 0 ? lastRowCount : 0) }, (_, i) => (
+                  <div
+                    key={`empty-${i}`}
+                    className="relative"
+                    style={{ width: tileSize, height: tileSize }}
+                  >
+                    <svg
+                      viewBox="0 0 40 40"
+                      className="absolute inset-0 w-full h-full opacity-10"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                      <rect x="2" y="19" width="36" height="2" fill="currentColor" />
+                      <circle cx="20" cy="20" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                    </svg>
+                  </div>
+                ))}
+            </div>
+            {/* Last partial row — flex centered */}
+            {lastRowItems.length > 0 && (
+              <div className="flex justify-center" style={{ height: tileSize }}>
+                {lastRowItems.map((pokemon) => (
+                  <div
+                    key={pokemon.id}
+                    className="relative overflow-visible"
+                    style={{ width: tileSize, height: tileSize }}
+                  >
+                    <PokeballBg pokemon={pokemon} />
+                    <img
+                      src={pokemon.sprite}
+                      alt={pokemon.name}
+                      className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                      style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
+                      loading="lazy"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );
