@@ -25,7 +25,7 @@ function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
       {/* Colored fills at reduced opacity */}
       <svg
         viewBox="0 0 40 40"
-        className="absolute inset-0 w-full h-full opacity-25 -rotate-45"
+        className="absolute inset-0 w-full h-full opacity-[0.33] -rotate-[30deg]"
         xmlns="http://www.w3.org/2000/svg"
       >
         <path
@@ -40,7 +40,7 @@ function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
       {/* Gap strokes at full opacity to cleanly separate halves */}
       <svg
         viewBox="0 0 40 40"
-        className="absolute inset-0 w-full h-full -rotate-45"
+        className="absolute inset-0 w-full h-full -rotate-[30deg]"
         xmlns="http://www.w3.org/2000/svg"
       >
         <path
