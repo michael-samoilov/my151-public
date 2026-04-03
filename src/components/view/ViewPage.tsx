@@ -196,14 +196,12 @@ export function ViewPage() {
                     className="relative"
                     style={{ width: tileSize, height: tileSize }}
                   >
-                    <svg
-                      viewBox="0 0 40 40"
-                      className="absolute inset-0 w-full h-full opacity-10"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                      <rect x="2" y="19" width="36" height="2" fill="currentColor" />
-                      <circle cx="20" cy="20" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                    <svg viewBox="0 0 24 24" className="absolute inset-[25%] w-1/2 h-1/2 text-muted-foreground/15 -rotate-[30deg]">
+                      <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                      <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
+                      <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
+                      <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
                     </svg>
                   </div>
                 ))}
