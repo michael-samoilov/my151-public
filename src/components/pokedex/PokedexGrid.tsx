@@ -4,7 +4,6 @@ import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
 import { displayName } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, Plus, X, Settings } from 'lucide-react';
 import {
   DndContext,
@@ -678,8 +677,10 @@ export function PokedexGrid() {
         <SettingsMenu onClear={clearAll} />
       </div>
 
-      <div className="flex-1 min-h-0">
-        <ScrollArea className="h-full">
+      <div
+        className="flex-1 min-h-0 overflow-y-auto"
+        style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' } as React.CSSProperties}
+      >
           <div className="p-3 pb-0">
             <DndContext
               sensors={sensors}
@@ -729,7 +730,6 @@ export function PokedexGrid() {
               <circle cx="12" cy="12" r="1.5" fill="currentColor" />
             </svg>
           </div>
-        </ScrollArea>
       </div>
     </div>
   );
