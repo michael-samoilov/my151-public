@@ -180,7 +180,7 @@ export function ViewPage() {
             <div key={k} className="relative" style={{ width: tileSize, height: tileSize }}>
               <svg
                 viewBox="0 0 24 24"
-                className="absolute inset-0 w-full h-full text-muted-foreground/15 -rotate-[30deg]"
+                className="absolute inset-[10%] w-[80%] h-[80%] text-muted-foreground/15 -rotate-[30deg]"
               >
                 <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
                 <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
