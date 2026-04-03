@@ -99,7 +99,7 @@ export function ViewPage() {
               <img
                 src={pokemon.sprite}
                 alt={pokemon.name}
-                className="absolute inset-[-10%] z-10 w-[120%] h-[120%]"
+                className="absolute z-10 w-[120%] aspect-square left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
                 style={{ imageRendering: 'pixelated' }}
                 loading="lazy"
               />
