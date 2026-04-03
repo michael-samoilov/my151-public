@@ -10,6 +10,10 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BUILD_GROUPS } from '@/data/slot-template';
 
+declare const __BUILD_TIMESTAMP__: string;
+// eslint-disable-next-line no-console
+console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
+
 const SHEET_HEIGHT_VH = 85;
 const DISMISS_THRESHOLD = 120; // px drag distance to dismiss
 

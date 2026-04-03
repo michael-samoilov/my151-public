@@ -490,60 +490,13 @@ export function PokemonBrowser() {
 
       {/* Filter bottom sheet overlay */}
       {openSheet && (
-        <div
-          className="absolute inset-0 z-20 flex flex-col justify-end"
-          onTouchMove={(e) => e.preventDefault()}
-          onWheel={(e) => e.stopPropagation()}
-        >
-          <div className="flex-1" onClick={() => setOpenSheet(null)} />
-          <div className="bg-background border-t rounded-t-xl shadow-2xl h-[50%] flex flex-col">
-            {/* Sheet header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b">
-              <span className="text-sm font-semibold">
-                {openSheet === 'type' && 'Type'}
-                {openSheet === 'generation' && 'Generation'}
-                {openSheet === 'evoStage' && 'Evo Stages'}
-                {openSheet === 'classification' && 'Classification'}
-                {openSheet === 'places' && 'Places'}
-                {openSheet === 'archetypes' && 'Archetypes'}
-                {openSheet === 'gameMechanics' && 'Game Mechanics'}
-              </span>
-              <button onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Sheet body */}
-            <div
-              className="flex-1 min-h-0 overflow-y-auto p-3"
-              style={{ overscrollBehavior: 'contain' }}
-              onTouchMove={(e) => {
-                const el = e.currentTarget;
-                const atTop = el.scrollTop <= 0;
-                const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight;
-                // Find the touch direction
-                const touch = e.touches[0];
-                const startY = (el as unknown as Record<string, number>).__touchY ?? touch.clientY;
-                const isScrollingUp = touch.clientY > startY;
-                const isScrollingDown = touch.clientY < startY;
-                // Allow scroll if not at boundary in this direction
-                if ((atTop && isScrollingUp) || (atBottom && isScrollingDown)) {
-                  // At boundary scrolling further — let parent preventDefault handle it
-                  return;
-                }
-                // Has room to scroll — stop parent's preventDefault from blocking it
-                e.stopPropagation();
-              }}
-              onTouchStart={(e) => {
-                const el = e.currentTarget;
-                (el as unknown as Record<string, number>).__touchY = e.touches[0].clientY;
-                // 1px nudge so iOS knows this is scrollable
-                if (el.scrollTop <= 0) el.scrollTop = 1;
-                if (el.scrollTop + el.clientHeight >= el.scrollHeight) {
-                  el.scrollTop = el.scrollHeight - el.clientHeight - 1;
-                }
-              }}
-            >
+        <SheetOverlay onClose={() => setOpenSheet(null)} openSheet={openSheet} footer={
+          <div className="px-4 py-3 border-t">
+            <Button className="w-full" onClick={() => setOpenSheet(null)}>
+              Show {totalCount} results
+            </Button>
+          </div>
+        }>
               {openSheet === 'type' && (
                 <div className="space-y-2">
                   {typeFilter && typeFilter.length >= 2 && (
@@ -702,20 +655,109 @@ export function PokemonBrowser() {
                   ))}
                 </div>
               )}
-            </div>
-
-            {/* Sheet footer — live results count */}
-            <div className="px-4 py-3 border-t">
-              <Button
-                className="w-full"
-                onClick={() => setOpenSheet(null)}
-              >
-                Show {totalCount} results
-              </Button>
-            </div>
-          </div>
-        </div>
+        </SheetOverlay>
       )}
+    </div>
+  );
+}
+
+/** Sheet overlay — blocks scroll passthrough with non-passive touch listeners */
+function SheetOverlay({ onClose, openSheet, children, footer }: {
+  onClose: () => void;
+  openSheet: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef(0);
+
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+
+    // Non-passive touchmove on overlay — blocks all touch scroll by default
+    const blockTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+    };
+    overlay.addEventListener('touchmove', blockTouchMove, { passive: false });
+
+    return () => {
+      overlay.removeEventListener('touchmove', blockTouchMove);
+    };
+  }, []);
+
+  useEffect(() => {
+    const scrollBody = scrollBodyRef.current;
+    if (!scrollBody) return;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartY.current = e.touches[0].clientY;
+      // 1px nudge so iOS knows this is scrollable
+      if (scrollBody.scrollTop <= 0) scrollBody.scrollTop = 1;
+      const maxScroll = scrollBody.scrollHeight - scrollBody.clientHeight;
+      if (scrollBody.scrollTop >= maxScroll) scrollBody.scrollTop = maxScroll - 1;
+    };
+
+    // Non-passive touchmove on scroll body — allows scroll when there's room
+    const handleTouchMove = (e: TouchEvent) => {
+      const el = scrollBody;
+      const touchY = e.touches[0].clientY;
+      const delta = touchStartY.current - touchY;
+      const atTop = el.scrollTop <= 0;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight;
+
+      if ((atTop && delta < 0) || (atBottom && delta > 0)) {
+        // At boundary scrolling further — don't allow
+        return;
+      }
+      // Has room to scroll — stop overlay's preventDefault
+      e.stopPropagation();
+    };
+
+    scrollBody.addEventListener('touchstart', handleTouchStart, { passive: true });
+    scrollBody.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    return () => {
+      scrollBody.removeEventListener('touchstart', handleTouchStart);
+      scrollBody.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={overlayRef}
+      className="absolute inset-0 z-20 flex flex-col justify-end"
+      onWheel={(e) => e.stopPropagation()}
+    >
+      <div className="flex-1" onClick={onClose} />
+      <div className="bg-background border-t rounded-t-xl shadow-2xl h-[50%] flex flex-col">
+        {/* Sheet header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <span className="text-sm font-semibold">
+            {openSheet === 'type' && 'Type'}
+            {openSheet === 'generation' && 'Generation'}
+            {openSheet === 'evoStage' && 'Evo Stages'}
+            {openSheet === 'classification' && 'Classification'}
+            {openSheet === 'places' && 'Places'}
+            {openSheet === 'archetypes' && 'Archetypes'}
+            {openSheet === 'gameMechanics' && 'Game Mechanics'}
+          </span>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Sheet body */}
+        <div
+          ref={scrollBodyRef}
+          className="flex-1 min-h-0 overflow-y-auto p-3"
+          style={{ overscrollBehavior: 'contain' }}
+        >
+          {children}
+        </div>
+        {footer}
+      </div>
     </div>
   );
 }
