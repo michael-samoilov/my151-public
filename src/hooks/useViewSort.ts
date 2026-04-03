@@ -318,13 +318,26 @@ function sortWithBuckets(
   return result;
 }
 
-/** Sort by build page section order (no clustering). */
-function sortBuildOrder(sections: Record<string, number[]>): Pokemon[] {
-  const result: Pokemon[] = [];
+/** Sort IDs by build page order (preserving placement sequence). */
+function sortByBuildOrder(ids: number[], sections: Record<string, number[]>): Pokemon[] {
+  // Build a position map: id → global position across all build groups
+  const posMap = new Map<number, number>();
+  let pos = 0;
   for (const groupId of BUILD_GROUP_IDS) {
     for (const id of sections[groupId] ?? []) {
-      const p = getPokemonById(id);
-      if (p) result.push(p);
+      posMap.set(id, pos++);
+    }
+  }
+
+  const idSet = new Set(ids);
+  const result: Pokemon[] = [];
+  // Iterate in build order, pick only those in the provided id set
+  for (const groupId of BUILD_GROUP_IDS) {
+    for (const id of sections[groupId] ?? []) {
+      if (idSet.has(id)) {
+        const p = getPokemonById(id);
+        if (p) result.push(p);
+      }
     }
   }
   return result;
@@ -346,10 +359,6 @@ export function useViewSort(
   }, [sections]);
 
   return useMemo(() => {
-    if (sortOption === 'build-order') {
-      return sortBuildOrder(sections);
-    }
-
     switch (sortOption) {
       case 'regional':
         // Middle: regional percentile + adjacency; Other buckets: national dex + adjacency
@@ -360,6 +369,13 @@ export function useViewSort(
       case 'type':
         // Middle: type sort (no adjacency); Other buckets: type sort (no adjacency)
         return sortWithBuckets(sections, sortClustersType, sortClustersType);
+      case 'build-order':
+        // Middle: build page order; Other buckets: national dex + adjacency
+        return sortWithBuckets(
+          sections,
+          (ids) => sortByBuildOrder(ids, sections),
+          sortClustersNational,
+        );
       default:
         return sortWithBuckets(sections, sortClustersNational, sortClustersNational);
     }
