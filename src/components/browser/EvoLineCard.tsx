@@ -132,15 +132,9 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
   const primaryType = members[0].types[0];
   const bgColor = TYPE_COLORS[primaryType as keyof typeof TYPE_COLORS] ?? '#888';
 
-  // Generation(s) of the matched members — used to decide if muted members
-  // are muted because of a generation difference vs some other reason
-  const matchedGens = useMemo(() => {
-    const gens = new Set<number>();
-    for (const m of members) {
-      if (matchedIds.has(m.id)) gens.add(m.generation);
-    }
-    return gens;
-  }, [members, matchedIds]);
+  // Generation of the line's root member — used to show gen badges on
+  // members from a different generation (cross-gen evolutions)
+  const lineGen = members[0].generation;
 
   return (
     <>
@@ -149,7 +143,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
         const matched = matchedIds.has(pokemon.id);
         const isFirst = i === 0;
         const isLast = i === members.length - 1;
-        const showGenBadge = !matched && matchedGens.size > 0 && !matchedGens.has(pokemon.generation);
+        const showGenBadge = pokemon.generation !== lineGen;
 
         return (
           <div key={pokemon.id} className="relative px-[3px] md:px-[2px]">
