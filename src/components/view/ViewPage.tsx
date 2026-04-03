@@ -11,7 +11,7 @@ const SORT_OPTIONS: { value: ViewSortOption; label: string }[] = [
   { value: 'build-order', label: 'Build Order' },
 ];
 
-/** Pokeball SVG background with top/bottom halves colored by type. */
+/** Pokeball SVG background with top/bottom halves colored by type, gap between halves. */
 function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
   const primary = TYPE_COLORS[pokemon.types[0] as TypeName];
   const secondary = TYPE_COLORS[(pokemon.types[1] ?? pokemon.types[0]) as TypeName];
@@ -22,20 +22,22 @@ function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
       className="absolute inset-0 w-full h-full opacity-25"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Top half — primary type */}
+      {/* Top half — primary type, with bg-colored stroke for gap */}
       <path
         d="M20 2 C10.06 2 2 10.06 2 20 L15 20 A5 5 0 0 1 25 20 L38 20 C38 10.06 29.94 2 20 2 Z"
         fill={primary}
+        stroke="var(--background)"
+        strokeWidth="2"
       />
-      {/* Bottom half — secondary type */}
+      {/* Bottom half — secondary type, with bg-colored stroke for gap */}
       <path
         d="M15 20 A5 5 0 0 0 25 20 L38 20 C38 29.94 29.94 38 20 38 C10.06 38 2 29.94 2 20 L15 20 Z"
         fill={secondary}
+        stroke="var(--background)"
+        strokeWidth="2"
       />
-      {/* Center band */}
-      <rect x="2" y="19" width="36" height="2" fill="currentColor" opacity="0.15" />
       {/* Center circle */}
-      <circle cx="20" cy="20" r="4" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.15" />
+      <circle cx="20" cy="20" r="4" fill="var(--background)" stroke="var(--background)" strokeWidth="2" />
     </svg>
   );
 }
@@ -76,14 +78,14 @@ export function ViewPage() {
           {sorted.map((pokemon) => (
             <div
               key={pokemon.id}
-              className="relative flex items-center justify-center aspect-square rounded"
+              className="relative flex items-center justify-center aspect-square rounded overflow-visible"
             >
               <PokeballBg pokemon={pokemon} />
               <img
                 src={pokemon.sprite}
                 alt={pokemon.name}
-                className="relative z-10 w-4/5 h-4/5"
-                style={{ imageRendering: 'pixelated' }}
+                className="relative z-10"
+                style={{ imageRendering: 'pixelated', width: '120%', height: '120%' }}
                 loading="lazy"
               />
             </div>
