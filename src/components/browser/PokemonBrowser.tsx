@@ -184,9 +184,21 @@ export function PokemonBrowser() {
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
   const evoSizeKey = evoLineSizeFilter ? evoLineSizeFilter.join(',') : 'none';
 
+  const browserHeaderRef = useRef<HTMLDivElement>(null);
+
+  // Block touchmove on non-scrollable header area to prevent pull-to-refresh
+  useEffect(() => {
+    const el = browserHeaderRef.current;
+    if (!el) return;
+    const block = (e: TouchEvent) => e.preventDefault();
+    el.addEventListener('touchmove', block, { passive: false });
+    return () => el.removeEventListener('touchmove', block);
+  }, []);
+
   return (
     <div className="flex flex-col h-full border-l relative bg-background">
-      {/* Search bar + count */}
+      {/* Search bar + count + filter chips — non-scrollable */}
+      <div ref={browserHeaderRef}>
       <div className="p-3 pb-2">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
@@ -344,6 +356,7 @@ export function PokemonBrowser() {
             </button>
           )}
         </div>
+      </div>
       </div>
 
       {/* Results area */}

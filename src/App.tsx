@@ -58,7 +58,7 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden" style={{ overscrollBehavior: 'none' }}>
+    <div className="fixed inset-0 z-50 md:hidden">
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
