@@ -670,6 +670,23 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
 }) {
   const backdropRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Nudge scroll 1px from edges so iOS always has room for bounce
+  const nudgeScroll = useCallback((el: HTMLDivElement) => {
+    if (el.scrollTop <= 0) el.scrollTop = 1;
+    const maxScroll = el.scrollHeight - el.clientHeight;
+    if (maxScroll > 0 && el.scrollTop >= maxScroll) el.scrollTop = maxScroll - 1;
+  }, []);
+
+  // On mount, nudge to 1px from top
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) {
+      // RAF to ensure layout is done
+      requestAnimationFrame(() => nudgeScroll(el));
+    }
+  }, [nudgeScroll]);
 
   // Disable pull-to-refresh on html element while sheet is open
   useEffect(() => {
@@ -712,10 +729,22 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
 
         {/* Sheet body — natural scroll with overscroll bounce */}
         <div
+          ref={scrollRef}
           className="flex-1 min-h-0 overflow-y-auto p-3"
           style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+          onScroll={(e) => {
+            const el = e.currentTarget;
+            // If we hit an edge, nudge 1px back so iOS can bounce next time
+            if (el.scrollTop <= 0) el.scrollTop = 1;
+            const max = el.scrollHeight - el.clientHeight;
+            if (max > 0 && el.scrollTop >= max) el.scrollTop = max - 1;
+          }}
         >
+          {/* 1px spacer so scroll never starts at true edge */}
+          <div aria-hidden style={{ height: 1, marginBottom: -1 }} />
           {children}
+          {/* 1px spacer at bottom */}
+          <div aria-hidden style={{ height: 1, marginTop: -1 }} />
         </div>
         {footer}
       </div>
