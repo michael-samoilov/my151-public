@@ -160,9 +160,25 @@ export function ViewPage() {
       {/* Grid container — measured for tile sizing */}
       <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center p-2">
         {tileSize > 0 && (() => {
-          const lastRowCount = count % COLS;
-          const fullRowItems = lastRowCount > 0 ? sorted.slice(0, count - lastRowCount) : sorted;
-          const lastRowItems = lastRowCount > 0 ? sorted.slice(count - lastRowCount) : [];
+          // 151 total slots: 150 in grid (15 full rows), 1 in centered last row
+          const GRID_SLOTS = 150;
+          const gridPokemon = sorted.slice(0, GRID_SLOTS);
+          const lastRowPokemon = sorted.slice(GRID_SLOTS);
+          const gridEmpties = GRID_SLOTS - gridPokemon.length;
+          const lastRowEmpty = lastRowPokemon.length === 0;
+
+          const EmptyPlaceholder = ({ k }: { k: string }) => (
+            <div key={k} className="relative" style={{ width: tileSize, height: tileSize }}>
+              <svg viewBox="0 0 24 24" className="absolute inset-[25%] w-1/2 h-1/2 text-muted-foreground/15 -rotate-[30deg]">
+                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
+                <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
+                <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+              </svg>
+            </div>
+          );
+
           return (
           <div>
             <div
@@ -172,7 +188,7 @@ export function ViewPage() {
                 gridAutoRows: `${tileSize}px`,
               }}
             >
-              {fullRowItems.map((pokemon) => (
+              {gridPokemon.map((pokemon) => (
                 <div
                   key={pokemon.id}
                   className="relative overflow-visible"
@@ -188,45 +204,30 @@ export function ViewPage() {
                   />
                 </div>
               ))}
-              {/* Empty placeholders in grid rows */}
-              {count < 151 &&
-                Array.from({ length: 151 - count - (lastRowCount > 0 ? lastRowCount : 0) }, (_, i) => (
-                  <div
-                    key={`empty-${i}`}
-                    className="relative"
-                    style={{ width: tileSize, height: tileSize }}
-                  >
-                    <svg viewBox="0 0 24 24" className="absolute inset-[25%] w-1/2 h-1/2 text-muted-foreground/15 -rotate-[30deg]">
-                      <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                      <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
-                      <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
-                      <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                      <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                    </svg>
-                  </div>
+              {gridEmpties > 0 &&
+                Array.from({ length: gridEmpties }, (_, i) => (
+                  <EmptyPlaceholder key={`empty-${i}`} k={`empty-${i}`} />
                 ))}
             </div>
-            {/* Last partial row — flex centered */}
-            {lastRowItems.length > 0 && (
-              <div className="flex justify-center" style={{ height: tileSize }}>
-                {lastRowItems.map((pokemon) => (
-                  <div
-                    key={pokemon.id}
-                    className="relative overflow-visible"
-                    style={{ width: tileSize, height: tileSize }}
-                  >
-                    <PokeballBg pokemon={pokemon} />
-                    <img
-                      src={pokemon.sprite}
-                      alt={pokemon.name}
-                      className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                      style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
-                      loading="lazy"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Last row (slot 151) — flex centered */}
+            <div className="flex justify-center" style={{ height: tileSize }}>
+              {lastRowPokemon.length > 0 ? lastRowPokemon.map((pokemon) => (
+                <div
+                  key={pokemon.id}
+                  className="relative overflow-visible"
+                  style={{ width: tileSize, height: tileSize }}
+                >
+                  <PokeballBg pokemon={pokemon} />
+                  <img
+                    src={pokemon.sprite}
+                    alt={pokemon.name}
+                    className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                    style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
+                    loading="lazy"
+                  />
+                </div>
+              )) : lastRowEmpty && <EmptyPlaceholder k="empty-last" />}
+            </div>
           </div>
           );
         })()}
