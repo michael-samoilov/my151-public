@@ -35,6 +35,7 @@ export interface DrillDownData {
   sections: SectionGroup[];
   totalPokemon: number;
   totalLines: number;
+  showGenBadges: boolean;
 }
 
 export function useDrillDownData(): DrillDownData | null {
@@ -178,6 +179,7 @@ export function computeDrillDownData(
       sections,
       totalPokemon: countForSubtitle,
       totalLines: linesForSubtitle,
+      showGenBadges: false,
     };
 }
 
@@ -281,6 +283,7 @@ function computeRegionalDrillDown(
     sections,
     totalPokemon: matchingIds.size,
     totalLines: chainIds.size,
+    showGenBadges: true,
   };
 }
 

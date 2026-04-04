@@ -133,6 +133,7 @@ function CardPanel({
                   onToggleStage={noOp}
                   cols={6}
                   variant="analytics"
+                  showGenBadges={data.showGenBadges}
                 />
               </div>
             </div>

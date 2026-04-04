@@ -39,6 +39,7 @@ interface EvoLineGridProps {
   spriteOverrides?: Record<number, string>;
   cols?: number;
   variant?: EvoLineVariant;
+  showGenBadges?: boolean;
 }
 
 const GRID_CLASSES: Record<number, string> = {
@@ -47,7 +48,7 @@ const GRID_CLASSES: Record<number, string> = {
 };
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser' }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true }: EvoLineGridProps) {
   const elements = useMemo(() => {
     const result: React.ReactNode[] = [];
     let col = 0; // 0-based current column position
@@ -73,6 +74,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shi
           shinyIds={shinyIds}
           spriteOverrides={spriteOverrides}
           variant={variant}
+          showGenBadges={showGenBadges}
         />
       );
       col = (col + size) % cols;
@@ -99,9 +101,10 @@ interface EvoLineCardProps {
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
   variant?: EvoLineVariant;
+  showGenBadges?: boolean;
 }
 
-export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser' }: EvoLineCardProps) {
+export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true }: EvoLineCardProps) {
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const sections = usePokedexStore((s) => s.sections);
   const allInDex = members.every((p) => assignedIds.has(p.id));
@@ -143,7 +146,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
         const matched = matchedIds.has(pokemon.id);
         const isFirst = i === 0;
         const isLast = i === members.length - 1;
-        const showGenBadge = pokemon.generation !== lineGen;
+        const showGenBadge = showGenBadges && pokemon.generation !== lineGen;
 
         return (
           <div key={pokemon.id} className="relative px-[3px] md:px-[2px]">

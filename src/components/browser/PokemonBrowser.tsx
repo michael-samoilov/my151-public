@@ -150,6 +150,11 @@ export function PokemonBrowser() {
     }
   };
 
+  // Gen badges only make sense when subgroups are generation-based (auto-generated),
+  // not when using custom thematic subgroups (e.g. "volcanic", "gym ace")
+  const hasCustomSubgroups = !!(activeArchetypeDef?.subgroups || activeCategoryDef?.subgroups);
+  const showGenBadges = !hasCustomSubgroups;
+
   const isSearching = searchQuery.trim().length > 0;
   const hasActivePropertyFilters = !!((typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || evoLineSizeFilter);
   const hasActiveBrowseFilters = !!(activeCategory || activeArchetype);
@@ -429,6 +434,7 @@ export function PokemonBrowser() {
                       stagedIds={stagedSet}
                       onToggleStage={handleToggleStage}
                       cols={3}
+                      showGenBadges={showGenBadges}
                     />
                     <EvoLineGrid
                       groups={rightGroups}
@@ -436,6 +442,7 @@ export function PokemonBrowser() {
                       stagedIds={stagedSet}
                       onToggleStage={handleToggleStage}
                       cols={3}
+                      showGenBadges={showGenBadges}
                     />
                   </div>
                 </div>
@@ -464,6 +471,7 @@ export function PokemonBrowser() {
                     onToggleStage={handleToggleStage}
                     shinyIds={isSearching ? undefined : ('shinyIds' in sub ? new Set((sub as any).shinyIds) : shinyIds)}
                     spriteOverrides={isSearching ? undefined : spriteOverrides}
+                    showGenBadges={showGenBadges}
                   />
                 </div>
               </div>
