@@ -10,7 +10,7 @@ import { TYPE_NAMES } from '@/types/pokemon';
 import { STARTER_IDS } from '@/data/categories';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
-import { computeTypeDominance } from '@/hooks/useTypeDominance';
+import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
@@ -235,8 +235,8 @@ export function AnalyticsDashboard() {
   const isNationalSelected = selectedTypeChart === 'national';
   const selectedDex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
 
-  // Type dominance: best/worst type to navigate the current dex
-  const typeDominance = useMemo(() => {
+  // Type matchup strength: per-type average advantage score + deviation from national
+  const typeMatchupData: ButterflyRow[] = useMemo(() => {
     let pokemon;
     if (selectedTypeChart === 'yours') {
       const allIds = Object.values(sections).flat();
@@ -252,7 +252,7 @@ export function AnalyticsDashboard() {
       }
     } else {
       const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
-      if (!dex) return null;
+      if (!dex) return [];
       pokemon = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
       if (newPokemonOnly) {
         pokemon = pokemon.filter(p => p.generation === dex.generation);
@@ -261,10 +261,20 @@ export function AnalyticsDashboard() {
         pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
       }
     }
-    if (pokemon.length === 0) return null;
+    if (pokemon.length === 0) return [];
+
+    const baseline = excludeSpecial
+      ? getNationalBaselineFiltered(STARTER_IDS)
+      : getNationalBaseline();
     const results = computeTypeDominance(pokemon);
-    const sorted = [...results].sort((a, b) => b.score - a.score);
-    return { best: sorted[0], worst: sorted[sorted.length - 1] };
+
+    return results.map(r => ({
+      label: r.type.charAt(0).toUpperCase() + r.type.slice(1),
+      count: r.score,
+      deviation: r.score - (baseline.get(r.type) ?? 0),
+      color: TYPE_COLORS[r.type as keyof typeof TYPE_COLORS],
+      icon: TYPE_ICON_URLS[r.type],
+    })).sort((a, b) => b.deviation - a.deviation);
   }, [sections, selectedTypeChart, excludeSpecial, newPokemonOnly]);
 
   // Fixed axis extents — max across all toggle permutations (exclusion × gen-only/regional)
@@ -568,45 +578,24 @@ export function AnalyticsDashboard() {
             />
           </div>
 
-          {typeDominance && (
-            <div className="mt-3 flex gap-2">
-              <div className="flex-1 rounded-lg border p-3 flex items-center gap-2.5">
-                <img
-                  src={TYPE_ICON_URLS[typeDominance.best.type]}
-                  alt={typeDominance.best.type}
-                  className="w-5 h-5"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-                <div className="min-w-0">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Strongest</div>
-                  <div className="text-sm font-semibold capitalize" style={{ color: TYPE_COLORS[typeDominance.best.type as keyof typeof TYPE_COLORS] }}>
-                    {typeDominance.best.type}
-                  </div>
-                </div>
-                <div className="ml-auto text-xs text-muted-foreground font-medium tabular-nums">
-                  {typeDominance.best.score > 0 ? '+' : ''}{typeDominance.best.score.toFixed(1)}
-                </div>
-              </div>
-              <div className="flex-1 rounded-lg border p-3 flex items-center gap-2.5">
-                <img
-                  src={TYPE_ICON_URLS[typeDominance.worst.type]}
-                  alt={typeDominance.worst.type}
-                  className="w-5 h-5"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-                <div className="min-w-0">
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">Weakest</div>
-                  <div className="text-sm font-semibold capitalize" style={{ color: TYPE_COLORS[typeDominance.worst.type as keyof typeof TYPE_COLORS] }}>
-                    {typeDominance.worst.type}
-                  </div>
-                </div>
-                <div className="ml-auto text-xs text-muted-foreground font-medium tabular-nums">
-                  {typeDominance.worst.score > 0 ? '+' : ''}{typeDominance.worst.score.toFixed(1)}
-                </div>
-              </div>
-            </div>
-          )}
         </section>
+
+        {/* Type Matchup Strength */}
+        {typeMatchupData.length > 0 && (
+          <section>
+            <h3 className="text-lg font-semibold mb-1">Type Matchup Strength</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Average type advantage per matchup. Score: +1 ≈ super effective edge, 0 = neutral, −1 ≈ resisted. Deviation from national baseline.
+            </p>
+            <div className="bg-card rounded-lg border p-4">
+              <ButterflyChart
+                data={typeMatchupData}
+                scoreMode
+                hideDeviation={isNationalSelected}
+              />
+            </div>
+          </section>
+        )}
 
         {/* Generation Origin */}
         <section>

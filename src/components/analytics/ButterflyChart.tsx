@@ -4,7 +4,7 @@ import { scaleBand, scaleLinear } from 'd3-scale';
 export interface ButterflyRow {
   label: string;
   count: number;
-  deviation: number; // percentage, e.g. +100 = double, -50 = half
+  deviation: number; // percentage, e.g. +100 = double, -50 = half (or raw diff in scoreMode)
   color: string;
   /** Optional icon path (e.g. "/types/fire.svg") or inline SVG render function */
   icon?: string | ((x: number, y: number, size: number) => React.ReactNode);
@@ -26,9 +26,11 @@ interface ButterflyChartProps {
   onBarClick?: (label: string) => void;
   /** Currently selected/active label for focus highlight */
   activeLabel?: string | null;
+  /** Score mode: count is a float score (can be negative), deviation is raw difference */
+  scoreMode?: boolean;
 }
 
-export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -64,7 +66,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
     ? Math.max(0, width - countSectionStart - numberWidth - gap)
     : 51;
   const devSectionStart = countSectionStart + countBarMax + numberWidth + gap;
-  const barLabelPad = 24; // space for "0.0x" labels at bar ends
+  const barLabelPad = 24; // space for labels at bar ends
   const devSectionWidth = Math.max(0, width - devSectionStart);
 
   // Scales
@@ -75,21 +77,43 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
 
   const barHeight = yScale.bandwidth();
 
-  const maxCount = fixedMaxCount ?? Math.max(...data.map((d) => d.count), 1);
-  const countScale = scaleLinear().domain([0, maxCount]).range([0, countBarMax]);
+  // Count scale — in scoreMode, center at 0; otherwise start at 0
+  const maxCount = fixedMaxCount ?? Math.max(...data.map((d) => Math.abs(d.count)), scoreMode ? 0.01 : 1);
+  const countScale = scoreMode
+    ? scaleLinear().domain([0, maxCount]).range([0, countBarMax / 2])
+    : scaleLinear().domain([0, maxCount]).range([0, countBarMax]);
+  const countZeroX = scoreMode ? countBarMax / 2 : 0;
 
-  // Under-representation bottoms out at -100 (0x); over-representation is capped at 200 (3x)
-  const DEV_OVER_CAP = 200;
-  const maxOverDev = Math.max(...data.map((d) => d.deviation), 50);
-  const devRight = fixedDevRight ?? Math.min(Math.ceil(maxOverDev / 50) * 50, DEV_OVER_CAP);
-  const devLeft = -100; // 0x — can't go lower
+  // Deviation scale
+  let devLeft: number;
+  let devRight_: number;
+  let devTickInterval: number;
+  if (scoreMode) {
+    // Symmetric around 0, auto-scale to data range
+    const maxAbsDev = Math.max(...data.map(d => Math.abs(d.deviation)), 0.1);
+    // Snap to nice intervals: 0.1, 0.2, 0.5, 1.0
+    const niceIntervals = [0.05, 0.1, 0.2, 0.5, 1.0, 2.0];
+    const rawInterval = maxAbsDev / 3;
+    devTickInterval = niceIntervals.find(n => n >= rawInterval) ?? 2.0;
+    const bound = Math.ceil(maxAbsDev / devTickInterval) * devTickInterval;
+    devLeft = -bound;
+    devRight_ = fixedDevRight ?? bound;
+  } else {
+    const DEV_OVER_CAP = 200;
+    const maxOverDev = Math.max(...data.map((d) => d.deviation), 50);
+    devRight_ = fixedDevRight ?? Math.min(Math.ceil(maxOverDev / 50) * 50, DEV_OVER_CAP);
+    devLeft = -100; // 0x — can't go lower
+    devTickInterval = 50;
+  }
   const devScale = scaleLinear()
-    .domain([devLeft, devRight])
+    .domain([devLeft, devRight_])
     .range([barLabelPad, devSectionWidth - barLabelPad]);
 
-  // Deviation ticks at 50% intervals
+  // Deviation ticks
   const devTicks: number[] = [];
-  for (let t = devLeft; t <= devRight; t += 50) devTicks.push(t);
+  for (let t = devLeft; t <= devRight_ + devTickInterval * 0.01; t += devTickInterval) {
+    devTicks.push(Math.round(t * 1000) / 1000); // avoid float drift
+  }
 
   const zeroX = devScale(0);
 
@@ -107,7 +131,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
           >
-            COUNT
+            {scoreMode ? 'SCORE' : 'COUNT'}
           </text>
           {!hideDeviation && (<>
           {/* Deviation guide labels anchored to zero line */}
@@ -120,8 +144,8 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
           >
-            <tspan x={devSectionStart + zeroX - 5} dy="0">UNDER-</tspan>
-            <tspan x={devSectionStart + zeroX - 5} dy="10">← INDEXED</tspan>
+            <tspan x={devSectionStart + zeroX - 5} dy="0">{scoreMode ? 'WEAKER' : 'UNDER-'}</tspan>
+            <tspan x={devSectionStart + zeroX - 5} dy="10">{scoreMode ? '← HERE' : '← INDEXED'}</tspan>
           </text>
           <text
             x={devSectionStart + zeroX + 5}
@@ -132,8 +156,8 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
           >
-            <tspan x={devSectionStart + zeroX + 5} dy="0">OVER-</tspan>
-            <tspan x={devSectionStart + zeroX + 5} dy="10">INDEXED →</tspan>
+            <tspan x={devSectionStart + zeroX + 5} dy="0">{scoreMode ? 'STRONGER' : 'OVER-'}</tspan>
+            <tspan x={devSectionStart + zeroX + 5} dy="10">{scoreMode ? 'HERE →' : 'INDEXED →'}</tspan>
           </text>
 
           {/* Deviation grid lines (behind bars) */}
@@ -156,12 +180,17 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
           {data.map((d, rowIdx) => {
             const y = yScale(d.label)!;
 
-            // Count bar
-            const countBarW = countScale(d.count);
+            // Count bar — in scoreMode, bars extend from center
+            const countBarW = scoreMode
+              ? countScale(Math.abs(d.count))
+              : countScale(d.count);
+            const countBarX = scoreMode
+              ? (d.count >= 0 ? countSectionStart + countZeroX : countSectionStart + countZeroX - countBarW)
+              : countSectionStart;
 
             // Deviation bar — clamp to visible scale
-            const clampedDev = Math.max(devLeft, Math.min(devRight, d.deviation));
-            const isClipped = d.deviation > devRight || d.deviation < devLeft;
+            const clampedDev = Math.max(devLeft, Math.min(devRight_, d.deviation));
+            const isClipped = d.deviation > devRight_ || d.deviation < devLeft;
             const clippedBarX = clampedDev >= 0 ? zeroX : devScale(clampedDev);
             const clippedBarW = Math.abs(devScale(clampedDev) - zeroX);
 
@@ -209,7 +238,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
 
                 {/* Count bar */}
                 <rect
-                  x={countSectionStart}
+                  x={countBarX}
                   y={y}
                   width={countBarW}
                   height={barHeight}
@@ -217,24 +246,40 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                   opacity={0.85}
                   rx={1}
                 />
-                {/* Count number */}
+                {/* Score mode: center line for count column */}
+                {scoreMode && rowIdx === 0 && (
+                  <line
+                    x1={countSectionStart + countZeroX}
+                    x2={countSectionStart + countZeroX}
+                    y1={topOffset}
+                    y2={topOffset + data.length * rowHeight}
+                    stroke="var(--color-border)"
+                    strokeWidth={0.75}
+                  />
+                )}
+                {/* Count/score number */}
                 <text
-                  x={countSectionStart + countBarW + 3}
+                  x={scoreMode
+                    ? (d.count >= 0 ? countBarX + countBarW + 3 : countBarX - 3)
+                    : countSectionStart + countBarW + 3}
                   y={y + barHeight / 2}
-                  textAnchor="start"
+                  textAnchor={scoreMode && d.count < 0 ? 'end' : 'start'}
                   dominantBaseline="middle"
                   fontSize={9}
                   fill="var(--color-muted-foreground)"
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
-                  {d.count} ({countTotal > 0 ? ((d.count / countTotal) * 100).toFixed(0) : 0}%)
+                  {scoreMode
+                    ? (d.count >= 0 ? '+' : '') + d.count.toFixed(2)
+                    : `${d.count} (${countTotal > 0 ? ((d.count / countTotal) * 100).toFixed(0) : 0}%)`
+                  }
                 </text>
 
                 {!hideDeviation && (<>
                 {/* Reference deviation marker (behind user's bar) */}
                 {referenceDeviations && d.label in referenceDeviations && (() => {
                   const refDev = referenceDeviations[d.label];
-                  const refClamped = Math.max(devLeft, Math.min(devRight, refDev));
+                  const refClamped = Math.max(devLeft, Math.min(devRight_, refDev));
                   const refX = refClamped >= 0
                     ? devSectionStart + zeroX
                     : devSectionStart + devScale(refClamped);
@@ -289,8 +334,10 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
 
                 {/* Value label at bar end */}
                 {(() => {
-                  const val = ((d.deviation / 100) + 1).toFixed(1) + 'x';
-                  const barEnd = devSectionStart + devScale(Math.max(devLeft, Math.min(devRight, d.deviation)));
+                  const val = scoreMode
+                    ? (d.deviation >= 0 ? '+' : '') + d.deviation.toFixed(2)
+                    : ((d.deviation / 100) + 1).toFixed(1) + 'x';
+                  const barEnd = devSectionStart + devScale(Math.max(devLeft, Math.min(devRight_, d.deviation)));
                   if (d.deviation >= 0) {
                     return (
                       <text
@@ -346,7 +393,10 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                   fontSize={9}
                   fill="var(--color-muted-foreground)"
                 >
-                  {t / 100 + 1}x
+                  {scoreMode
+                    ? (t >= 0 ? '+' : '') + (Number.isInteger(t) ? t.toFixed(0) : t.toFixed(1))
+                    : t / 100 + 1 + 'x'
+                  }
                 </text>
               </g>
             );
