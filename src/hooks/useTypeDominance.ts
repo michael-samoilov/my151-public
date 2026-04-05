@@ -50,6 +50,26 @@ export function computeTypeDominance(pokemon: Pokemon[]): TypeDominanceResult[] 
   });
 }
 
+/**
+ * Compute the individual matchup score of a single attacking type vs each Pokemon.
+ * Returns per-Pokemon log2(offense/defense) values for drill-down grouping.
+ */
+export function computePerPokemonMatchup(attackingType: TypeName, pokemon: Pokemon[]): { pokemon: Pokemon; matchup: number }[] {
+  return pokemon.map(opponent => {
+    const rawOffense = typeEffectiveness(attackingType, opponent.types as TypeName[]);
+    const offense = Math.max(rawOffense, IMMUNITY_FLOOR);
+
+    let bestDefense = 0;
+    for (const oppType of opponent.types) {
+      const eff = typeEffectiveness(oppType as TypeName, [attackingType]);
+      if (eff > bestDefense) bestDefense = eff;
+    }
+    const defense = Math.max(bestDefense, IMMUNITY_FLOOR);
+
+    return { pokemon: opponent, matchup: Math.log2(offense / defense) };
+  });
+}
+
 /** National baseline — computed once lazily and cached */
 let _nationalBaseline: Map<TypeName, number> | null = null;
 

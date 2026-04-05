@@ -5,7 +5,8 @@ import { BUILD_GROUPS } from '@/data/slot-template';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
 import { STARTER_IDS } from '@/data/categories';
 import { TYPE_COLORS } from '@/data/type-colors';
-import type { Pokemon } from '@/types/pokemon';
+import { computePerPokemonMatchup } from '@/hooks/useTypeDominance';
+import type { Pokemon, TypeName } from '@/types/pokemon';
 
 const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
@@ -57,6 +58,11 @@ export function computeDrillDownData(
   newOnly?: boolean,
 ): DrillDownData | null {
   if (!segment) return null;
+
+  // Type matchup drilldown — group Pokemon by per-matchup score tier
+  if (segment.kind === 'typeMatchup') {
+    return computeTypeMatchupDrillDown(segment, storeSections, excludeSpecial);
+  }
 
   // Regional/national dex drilldown — show that dex's Pokemon, mute those not in user's pokedex
   if (dexId) {
@@ -287,6 +293,96 @@ function computeRegionalDrillDown(
   };
 }
 
+/** Type matchup drilldown: group all placed Pokemon by their matchup score tier against the attacking type */
+function computeTypeMatchupDrillDown(
+  segment: DrillDownSegment & { kind: 'typeMatchup' },
+  storeSections: Record<string, number[]>,
+  excludeSpecial: boolean,
+): DrillDownData | null {
+  const allIds = Object.values(storeSections).flat();
+  const starterSectionIds = new Set(storeSections['starter'] ?? []);
+  let pokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+
+  if (excludeSpecial) {
+    pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
+  }
+
+  if (pokemon.length === 0) return null;
+
+  // Compute per-pokemon matchup scores
+  const matchups = computePerPokemonMatchup(segment.type as TypeName, pokemon);
+
+  // Group by integer-floored score tier
+  const tierMap = new Map<number, Set<number>>();
+  const matchupById = new Map<number, number>();
+  for (const m of matchups) {
+    const tier = Math.floor(m.matchup);
+    matchupById.set(m.pokemon.id, m.matchup);
+    if (!tierMap.has(tier)) tierMap.set(tier, new Set());
+    tierMap.get(tier)!.add(m.pokemon.id);
+  }
+
+  // Sort tiers descending (best matchup first)
+  const sortedTiers = [...tierMap.keys()].sort((a, b) => b - a);
+
+  const tierMeta = new Map<number, { label: string; color: string }>([
+    [3,  { label: 'Dominant (+3+)',            color: '#15803d' }],
+    [2,  { label: 'Strong Advantage (+2)',     color: '#22c55e' }],
+    [1,  { label: 'Advantage (+1)',            color: '#86efac' }],
+    [0,  { label: 'Slight Advantage (0)',      color: '#fbbf24' }],
+    [-1, { label: 'Slight Disadvantage (−1)', color: '#fb923c' }],
+    [-2, { label: 'Strong Disadvantage (−2)', color: '#ef4444' }],
+    [-3, { label: 'Dominated (−3−)',          color: '#991b1b' }],
+  ]);
+
+  const sections: SectionGroup[] = [];
+  for (const tier of sortedTiers) {
+    const ids = tierMap.get(tier)!;
+    const meta = tierMeta.get(tier) ?? (tier > 0
+      ? { label: `Advantage (+${tier})`, color: '#15803d' }
+      : { label: `Disadvantage (${tier})`, color: '#991b1b' });
+
+    // Build evolution line groups, sorted by matchup score descending
+    const seenRoots = new Set<string>();
+    const groups: { key: string; members: Pokemon[]; matchedIds: Set<number> }[] = [];
+
+    // Sort Pokemon in this tier by matchup descending
+    const sortedIds = [...ids].sort((a, b) => (matchupById.get(b) ?? 0) - (matchupById.get(a) ?? 0));
+
+    for (const id of sortedIds) {
+      const line = getEvolutionLine(id);
+      const rootKey = line.map(p => p.id).join('-');
+      if (seenRoots.has(rootKey)) continue;
+      seenRoots.add(rootKey);
+
+      const matchedIds = new Set<number>();
+      for (const m of line) {
+        if (ids.has(m.id)) matchedIds.add(m.id);
+      }
+      groups.push({ key: rootKey, members: line, matchedIds });
+    }
+
+    sections.push({
+      sectionId: `tier-${tier}`,
+      sectionName: meta.label,
+      sectionColor: meta.color,
+      groups,
+    });
+  }
+
+  const { title, color, icon } = getSegmentMeta(segment);
+  return {
+    title,
+    subtitle: `${pokemon.length} Pokémon matchup breakdown`,
+    color,
+    icon,
+    sections,
+    totalPokemon: pokemon.length,
+    totalLines: sections.reduce((s, sec) => s + sec.groups.length, 0),
+    showGenBadges: false,
+  };
+}
+
 function matchesSegment(p: Pokemon, id: number, segment: DrillDownSegment): boolean {
   switch (segment.kind) {
     case 'type':
@@ -313,6 +409,8 @@ function matchesSegment(p: Pokemon, id: number, segment: DrillDownSegment): bool
         p.evolutionLevel >= segment.binStart && p.evolutionLevel < segment.binEnd;
     case 'bst':
       return p.bst >= segment.binStart && p.bst < segment.binEnd;
+    case 'typeMatchup':
+      return true; // all pokemon shown, grouped by score tier
   }
 }
 
@@ -361,5 +459,14 @@ function getSegmentMeta(segment: DrillDownSegment): { title: string; color: stri
         title: `BST ${segment.binStart}–${segment.binEnd - 1}`,
         color: '#ef4444',
       };
+    case 'typeMatchup': {
+      const cap = segment.type.charAt(0).toUpperCase() + segment.type.slice(1);
+      const typeId = POKEAPI_TYPE_IDS[segment.type];
+      return {
+        title: `${cap} Matchup`,
+        color: TYPE_COLORS[segment.type as keyof typeof TYPE_COLORS] ?? '#888',
+        icon: typeId ? `/sprites/types/${typeId}.png` : undefined,
+      };
+    }
   }
 }

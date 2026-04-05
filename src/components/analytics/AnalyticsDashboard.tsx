@@ -277,6 +277,14 @@ export function AnalyticsDashboard() {
     })).sort((a, b) => b.deviation - a.deviation);
   }, [sections, selectedTypeChart, excludeSpecial, newPokemonOnly]);
 
+  // Type matchup siblings for drill-down navigation
+  const typeMatchupSiblings = useMemo((): DrillDownSegment[] =>
+    typeMatchupData.map(d => ({ kind: 'typeMatchup' as const, type: d.label.toLowerCase() })),
+    [typeMatchupData]);
+
+  const activeMatchupLabel = drillDownSegment?.kind === 'typeMatchup'
+    ? drillDownSegment.type.charAt(0).toUpperCase() + drillDownSegment.type.slice(1) : null;
+
   // Fixed axis extents — max across all toggle permutations (exclusion × gen-only/regional)
   // so toggling filters only shrinks bars, never shifts axes
   const { fixedMaxCount: unfilteredMaxCount, fixedDevRight } = useMemo(() => {
@@ -592,6 +600,14 @@ export function AnalyticsDashboard() {
                 data={typeMatchupData}
                 scoreMode
                 hideDeviation={isNationalSelected}
+                onBarClick={(label) => {
+                  handleDrillToggle(
+                    { kind: 'typeMatchup', type: label.toLowerCase() },
+                    typeMatchupSiblings,
+                    excludeSpecial,
+                  );
+                }}
+                activeLabel={drillDownSegment?.kind === 'typeMatchup' ? activeMatchupLabel : null}
               />
             </div>
           </section>

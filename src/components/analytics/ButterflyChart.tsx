@@ -48,27 +48,39 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
 
   const countTotal = data.reduce((s, d) => s + d.count, 0);
 
-  // Layout: fixed pixel widths for label + icon + count, rest for deviation
+  // Layout: 3-column system
+  // Col A: labels + icons (fixed) | Col B: chart 1 (count/score) | Col C: chart 2 (deviation)
   const hasIcons = data.some(d => d.icon);
   const labelWidth = 42;
   const iconSize = hasIcons ? 14 : 0;
   const iconGap = hasIcons ? 3 : 0;
-  const numberWidth = 42;
   const gap = 6;
+  const gutter = 8; // space between chart sections
   const titleHeight = 18;
   const axisHeight = 18;
   const topOffset = titleHeight + axisHeight;
   const chartHeight = topOffset + data.length * rowHeight;
 
   const iconStart = labelWidth + iconGap;
-  const scoreLeftPad = scoreMode ? numberWidth : 0; // space for negative bar labels
-  const countSectionStart = iconStart + iconSize + gap + scoreLeftPad;
-  const countBarMax = hideDeviation
-    ? Math.max(0, width - countSectionStart - numberWidth - gap)
-    : 51;
-  const devSectionStart = countSectionStart + countBarMax + numberWidth + gap;
-  const barLabelPad = 24; // space for labels at bar ends
-  const devSectionWidth = Math.max(0, width - devSectionStart);
+
+  // Column A: labels + icons (fixed width)
+  const labelColEnd = iconStart + iconSize + gap;
+
+  // Distribute remaining width 50/50 between chart sections (with gutter)
+  const chartsWidth = Math.max(0, width - labelColEnd);
+  const chart1Width = hideDeviation ? chartsWidth : Math.floor((chartsWidth - gutter) / 2);
+  const chart2Width = hideDeviation ? 0 : chartsWidth - chart1Width - gutter;
+
+  const countSectionStart = labelColEnd;
+  const devSectionStart = labelColEnd + chart1Width + gutter;
+
+  // Chart 1 (count/score): directionality-aware margins
+  const countHasNeg = scoreMode ? data.some(d => d.count < 0) : false;
+  const countHasPos = !scoreMode || data.some(d => d.count > 0);
+  const countLabelPad = scoreMode ? 30 : 42; // wider for "25 (16%)" labels
+  const countLeftPad = countHasNeg ? countLabelPad : 0;
+  const countRightPad = countHasPos ? countLabelPad : 0;
+  const countBarArea = Math.max(0, chart1Width - countLeftPad - countRightPad);
 
   // Scales
   const yScale = scaleBand<string>()
@@ -78,21 +90,23 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
 
   const barHeight = yScale.bandwidth();
 
-  // Count scale — in scoreMode, center at 0; otherwise start at 0
+  // Count scale — zero position depends on data directionality
   const maxCount = fixedMaxCount ?? Math.max(...data.map((d) => Math.abs(d.count)), scoreMode ? 0.01 : 1);
-  const countScale = scoreMode
-    ? scaleLinear().domain([0, maxCount]).range([0, countBarMax / 2])
-    : scaleLinear().domain([0, maxCount]).range([0, countBarMax]);
-  const countZeroX = scoreMode ? countBarMax / 2 : 0;
+  const countZeroX = (() => {
+    if (!scoreMode) return countLeftPad;
+    if (countHasNeg && countHasPos) return countLeftPad + countBarArea / 2;
+    if (countHasNeg) return countLeftPad + countBarArea;
+    return countLeftPad;
+  })();
+  const countHalfWidth = (countHasNeg && countHasPos) ? countBarArea / 2 : countBarArea;
+  const countScale = scaleLinear().domain([0, maxCount]).range([0, countHalfWidth]);
 
-  // Deviation scale
+  // Chart 2 (deviation): domain + directionality-aware margins
   let devLeft: number;
   let devRight_: number;
   let devTickInterval: number;
   if (scoreMode) {
-    // Symmetric around 0, auto-scale to data range
     const maxAbsDev = Math.max(...data.map(d => Math.abs(d.deviation)), 0.1);
-    // Snap to nice intervals: 0.1, 0.2, 0.5, 1.0
     const niceIntervals = [0.05, 0.1, 0.2, 0.5, 1.0, 2.0];
     const rawInterval = maxAbsDev / 3;
     devTickInterval = niceIntervals.find(n => n >= rawInterval) ?? 2.0;
@@ -103,17 +117,24 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
     const DEV_OVER_CAP = 200;
     const maxOverDev = Math.max(...data.map((d) => d.deviation), 50);
     devRight_ = fixedDevRight ?? Math.min(Math.ceil(maxOverDev / 50) * 50, DEV_OVER_CAP);
-    devLeft = -100; // 0x — can't go lower
+    devLeft = -100;
     devTickInterval = 50;
   }
+
+  const devLabelPad = scoreMode ? 30 : 24;
+  const devHasLeft = devLeft < 0;
+  const devHasRight = devRight_ > 0;
+  const devLeftPad = devHasLeft ? devLabelPad : 0;
+  const devRightPad = devHasRight ? devLabelPad : 0;
+
   const devScale = scaleLinear()
     .domain([devLeft, devRight_])
-    .range([barLabelPad, devSectionWidth - barLabelPad]);
+    .range([devLeftPad, chart2Width - devRightPad]);
 
   // Deviation ticks
   const devTicks: number[] = [];
   for (let t = devLeft; t <= devRight_ + devTickInterval * 0.01; t += devTickInterval) {
-    devTicks.push(Math.round(t * 1000) / 1000); // avoid float drift
+    devTicks.push(Math.round(t * 1000) / 1000);
   }
 
   const zeroX = devScale(0);
@@ -124,9 +145,9 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
         <svg width={width} height={chartHeight} className="overflow-visible">
           {/* Titles */}
           <text
-            x={countSectionStart}
+            x={scoreMode ? countSectionStart + countZeroX : countSectionStart}
             y={12}
-            textAnchor="start"
+            textAnchor={scoreMode ? 'middle' : 'start'}
             fontSize={10}
             fontWeight={600}
             fill="var(--color-muted-foreground)"
