@@ -258,22 +258,45 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                   />
                 )}
                 {/* Count/score number */}
-                <text
-                  x={scoreMode
-                    ? (d.count >= 0 ? countBarX + countBarW + 3 : countBarX - 3)
-                    : countSectionStart + countBarW + 3}
-                  y={y + barHeight / 2}
-                  textAnchor={scoreMode && d.count < 0 ? 'end' : 'start'}
-                  dominantBaseline="middle"
-                  fontSize={9}
-                  fill="var(--color-muted-foreground)"
-                  style={{ fontVariantNumeric: 'tabular-nums' }}
-                >
-                  {scoreMode
-                    ? (d.count >= 0 ? '+' : '') + d.count.toFixed(2)
-                    : `${d.count} (${countTotal > 0 ? ((d.count / countTotal) * 100).toFixed(0) : 0}%)`
+                {(() => {
+                  // In scoreMode with negative values, label goes left of bar —
+                  // but clamp so it doesn't overlap the icon/label area
+                  const minLabelX = countSectionStart + 3;
+                  let labelX: number;
+                  let anchor: 'start' | 'end';
+                  if (scoreMode) {
+                    if (d.count >= 0) {
+                      labelX = countBarX + countBarW + 3;
+                      anchor = 'start';
+                    } else if (countBarX - 3 < minLabelX) {
+                      // Would overlap icons — flip to right side of bar
+                      labelX = countBarX + 3;
+                      anchor = 'start';
+                    } else {
+                      labelX = countBarX - 3;
+                      anchor = 'end';
+                    }
+                  } else {
+                    labelX = countSectionStart + countBarW + 3;
+                    anchor = 'start';
                   }
-                </text>
+                  return (
+                    <text
+                      x={labelX}
+                      y={y + barHeight / 2}
+                      textAnchor={anchor}
+                      dominantBaseline="middle"
+                      fontSize={9}
+                      fill="var(--color-muted-foreground)"
+                      style={{ fontVariantNumeric: 'tabular-nums' }}
+                    >
+                      {scoreMode
+                        ? (d.count >= 0 ? '+' : '') + d.count.toFixed(2)
+                        : `${d.count} (${countTotal > 0 ? ((d.count / countTotal) * 100).toFixed(0) : 0}%)`
+                      }
+                    </text>
+                  );
+                })()}
 
                 {!hideDeviation && (<>
                 {/* Reference deviation marker (behind user's bar) */}
