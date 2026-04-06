@@ -54,7 +54,7 @@ function CardPanel({
   const noOp = useCallback(() => {}, []);
 
   return (
-    <div className="flex flex-col h-full rounded-t-2xl bg-background overflow-clip">
+    <div className="flex flex-col h-full rounded-t-2xl bg-background">
       {/* Pull tab: entire area is draggable (handle + header + subtitle) */}
       <div
         className="shrink-0 touch-none cursor-grab active:cursor-grabbing"
@@ -85,7 +85,7 @@ function CardPanel({
             </div>
             <div className="flex items-center gap-1.5 shrink-0 mx-2">
               {data.icon && (
-                <img src={data.icon} alt="" className="w-4 h-4" style={{ imageRendering: 'pixelated' }} />
+                <img src={data.icon} alt="" className="w-4 h-4" />
               )}
               <span className="text-sm font-semibold" style={{ color: data.color }}>
                 {data.title}
@@ -390,7 +390,7 @@ export function DrillDownSheet() {
           >
             {/* Prev panel */}
             <div
-              className="h-full overflow-clip flex-1 min-w-0"
+              className="h-full flex-1 min-w-0"
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -414,7 +414,7 @@ export function DrillDownSheet() {
 
             {/* Current panel */}
             <div
-              className="h-full overflow-clip flex-1 min-w-0"
+              className="h-full flex-1 min-w-0"
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -437,7 +437,7 @@ export function DrillDownSheet() {
 
             {/* Next panel */}
             <div
-              className="h-full overflow-clip flex-1 min-w-0"
+              className="h-full flex-1 min-w-0"
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
