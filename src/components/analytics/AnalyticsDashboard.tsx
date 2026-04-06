@@ -596,7 +596,7 @@ export function AnalyticsDashboard() {
               <div className="inline-flex rounded-full bg-muted overflow-hidden">
                 <button
                   onClick={() => setNewPokemonOnly(true)}
-                  className={`px-2.5 py-0.5 rounded-l-full text-xs font-medium whitespace-nowrap transition-colors ${
+                  className={`px-1.5 py-0.5 rounded-l-full text-xs font-medium whitespace-nowrap transition-colors ${
                     newPokemonOnly
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted/80'
@@ -606,7 +606,7 @@ export function AnalyticsDashboard() {
                 </button>
                 <button
                   onClick={() => setNewPokemonOnly(false)}
-                  className={`px-2.5 py-0.5 rounded-r-full text-xs font-medium whitespace-nowrap transition-colors ${
+                  className={`px-1.5 py-0.5 rounded-r-full text-xs font-medium whitespace-nowrap transition-colors ${
                     !newPokemonOnly
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:bg-muted/80'
