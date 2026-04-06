@@ -215,7 +215,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
         const showGenBadge = showGenBadges && pokemon.generation !== lineGen;
 
         return (
-          <div key={pokemon.id} className="relative px-[3px] md:px-[2px]">
+          <div key={pokemon.id} className="relative px-[3px] md:px-[2px] overflow-visible" style={{ transform: 'translateZ(0)' }}>
             {/* Background + border spanning the evo line */}
             <div
               className={cn(
@@ -250,7 +250,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
               onClick={handleClick}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
               className={cn(
-                `relative flex flex-col items-center ${variant === 'analytics' ? 'py-[0.5vw]' : 'py-[1vw]'} md:py-1 transition-all cursor-pointer w-full`,
+                `relative flex flex-col items-center ${variant === 'analytics' ? 'pt-[0.5vw] pb-[1vw]' : 'py-[1vw]'} md:py-1 transition-all cursor-pointer w-full`,
               )}
             >
               <div className={cn(
