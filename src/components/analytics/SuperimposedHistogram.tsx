@@ -119,33 +119,47 @@ export function SuperimposedHistogram({
               );
             })}
 
-            {/* X axis labels (no tick marks) */}
+            {/* X axis tick marks + labels */}
             {xTicks.map((t) => (
-              <text
-                key={`xtick-${t}`}
-                x={xScale(t)}
-                y={plotH + 15}
-                textAnchor="middle"
-                fontSize={10}
-                fill="var(--color-muted-foreground)"
-              >
-                {t}
-              </text>
+              <g key={`xtick-${t}`}>
+                <line
+                  x1={xScale(t)} x2={xScale(t)}
+                  y1={plotH} y2={plotH + 4}
+                  stroke="var(--color-muted-foreground)"
+                  strokeWidth={1}
+                />
+                <text
+                  x={xScale(t)}
+                  y={plotH + 15}
+                  textAnchor="middle"
+                  fontSize={10}
+                  fill="var(--color-muted-foreground)"
+                >
+                  {t}
+                </text>
+              </g>
             ))}
 
-            {/* Y axis labels (no tick marks) */}
+            {/* Y axis tick marks + labels */}
             {yTicks.map((t) => (
-              <text
-                key={`ytick-${t}`}
-                x={-7}
-                y={yScale(t)}
-                textAnchor="end"
-                dominantBaseline="middle"
-                fontSize={10}
-                fill="var(--color-muted-foreground)"
-              >
-                {t}%
-              </text>
+              <g key={`ytick-${t}`}>
+                <line
+                  x1={-4} x2={0}
+                  y1={yScale(t)} y2={yScale(t)}
+                  stroke="var(--color-muted-foreground)"
+                  strokeWidth={1}
+                />
+                <text
+                  x={-7}
+                  y={yScale(t)}
+                  textAnchor="end"
+                  dominantBaseline="middle"
+                  fontSize={10}
+                  fill="var(--color-muted-foreground)"
+                >
+                  {t}%
+                </text>
+              </g>
             ))}
           </g>
         </svg>

@@ -188,7 +188,7 @@ export function computeDrillDownData(
       sections,
       totalPokemon: countForSubtitle,
       totalLines: linesForSubtitle,
-      showGenBadges: false,
+      showGenBadges: segment.kind === 'generation',
     };
 }
 
@@ -386,7 +386,16 @@ function computeTypeMatchupDrillDown(
 
       const matchedIds = new Set<number>();
       for (const m of line) {
-        if (ids.has(m.id) && (!isRegional || userPlacedIds.has(m.id))) matchedIds.add(m.id);
+        if (ids.has(m.id)) matchedIds.add(m.id);
+      }
+      // Compute matchup info for evo line members not in the filtered set
+      for (const m of line) {
+        if (!matchupInfo.has(m.id)) {
+          const extra = computePerPokemonMatchup(segment.type as TypeName, [m]);
+          if (extra.length > 0) {
+            matchupInfo.set(m.id, { offense: extra[0].offense, defense: extra[0].defense });
+          }
+        }
       }
       groups.push({ key: rootKey, members: line, matchedIds });
     }

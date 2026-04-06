@@ -519,11 +519,6 @@ export function AnalyticsDashboard() {
         {/* Type Analysis — tabbed: Distribution / Matchup */}
         <section>
           <h3 className="text-lg font-semibold mb-1">Pokémon Type</h3>
-          <p className="text-sm text-muted-foreground mb-2">
-            {typeView === 'distribution'
-              ? 'Count of Pokémon with each type and deviation from national dex proportions.'
-              : 'Average number of type advantage doublings (both offensive & defensive) vs. all Pokémon in the region.'}
-          </p>
 
           <div className="space-y-1.5 mb-3">
           {/* Region selector tabs — matches build page filter chip styling */}
@@ -632,6 +627,11 @@ export function AnalyticsDashboard() {
               </button>
             </div>
             <div className="p-4">
+            <p className="text-sm text-muted-foreground mb-3">
+              {typeView === 'distribution'
+                ? 'Count of Pokémon with each type and deviation from national dex proportions.'
+                : 'Average number of type advantage doublings (both offensive & defensive) vs. all Pokémon in the region.'}
+            </p>
             {typeView === 'distribution' ? (
               <ButterflyChart
                 data={activeTypeChartData}

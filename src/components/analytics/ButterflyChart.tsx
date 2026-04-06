@@ -211,11 +211,15 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             const y = yScale(d.label)!;
 
             // Count bar — in scoreMode, bars extend from center
+            // For label direction: treat near-zero values (rounds to ±0.00) as going toward dominant side
+            const countIsPositive = scoreMode
+              ? (Math.abs(d.count) < 0.005 ? rawMaxPos > rawMaxNeg : d.count > 0)
+              : true;
             const countBarW = scoreMode
               ? countScale(Math.abs(d.count))
               : countScale(d.count);
             const countBarX = scoreMode
-              ? (d.count >= 0 ? countSectionStart + countZeroX : countSectionStart + countZeroX - countBarW)
+              ? (countIsPositive ? countSectionStart + countZeroX : countSectionStart + countZeroX - countBarW)
               : countSectionStart;
 
             // Deviation bar — clamp to visible scale
@@ -279,10 +283,10 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                 {/* Count/score number */}
                 <text
                   x={scoreMode
-                    ? (d.count >= 0 ? countBarX + countBarW + 3 : countBarX - 3)
+                    ? (countIsPositive ? countBarX + countBarW + 3 : countBarX - 3)
                     : countSectionStart + countBarW + 3}
                   y={y + barHeight / 2}
-                  textAnchor={scoreMode && d.count < 0 ? 'end' : 'start'}
+                  textAnchor={scoreMode && !countIsPositive ? 'end' : 'start'}
                   dominantBaseline="middle"
                   fontSize={9}
                   fill="var(--color-muted-foreground)"
