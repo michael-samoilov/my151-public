@@ -126,7 +126,8 @@ function doublings(value: number, isDefense: boolean): number {
 }
 
 function formatDoublings(n: number): string {
-  return n >= 0 ? `+${n}` : `${n}`;
+  // Use Unicode minus (U+2212) which is same width as '+' for tabular alignment
+  return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
 export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo }: EvoLineCardProps) {
@@ -174,7 +175,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
         const showGenBadge = showGenBadges && pokemon.generation !== lineGen;
 
         return (
-          <div key={pokemon.id} className="relative px-[3px] md:px-[2px]">
+          <div key={pokemon.id} className="relative px-[3px] md:px-[2px]" style={matchupInfo ? { transform: 'translateZ(0)' } : undefined}>
             {/* Background + border spanning the evo line */}
             <div
               className={cn(
