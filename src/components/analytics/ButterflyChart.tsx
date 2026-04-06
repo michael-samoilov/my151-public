@@ -104,16 +104,24 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
 
   const barHeight = yScale.bandwidth();
 
-  // Count scale — zero position depends on directionality (including forced)
+  // Count scale — zero position proportional to data extents (not fixed 50/50)
   const maxCount = fixedMaxCount ?? Math.max(...data.map((d) => Math.abs(d.count)), scoreMode ? 0.01 : 1);
+  const rawMaxNeg = scoreMode ? Math.max(...data.map(d => d.count < 0 ? -d.count : 0), 0) : 0;
+  const rawMaxPos = scoreMode ? Math.max(...data.map(d => d.count > 0 ? d.count : 0), 0) : maxCount;
   const countZeroX = (() => {
     if (!scoreMode) return countLeftPad;
-    if (countIsBidirectional) return countLeftPad + countBarArea / 2;
+    if (countIsBidirectional) {
+      // Position zero proportionally so each side gets space matching its max extent
+      const negE = Math.max(rawMaxNeg, 0.001);
+      const posE = Math.max(rawMaxPos, 0.001);
+      return countLeftPad + countBarArea * negE / (negE + posE);
+    }
     if (countHasNeg) return countLeftPad + countBarArea;
     return countLeftPad;
   })();
-  const countHalfWidth = countIsBidirectional ? countBarArea / 2 : countBarArea;
-  const countScale = scaleLinear().domain([0, maxCount]).range([0, countHalfWidth]);
+  // For bidirectional: uniform scale across the full bar area (not half)
+  const countTotalExtent = countIsBidirectional ? rawMaxNeg + rawMaxPos || 0.01 : maxCount;
+  const countScale = scaleLinear().domain([0, countTotalExtent]).range([0, countBarArea]);
 
   // Chart 2 (deviation): domain uses raw data extents (no tick snapping needed)
   let devLeft: number;
@@ -192,15 +200,6 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
           </text>
           )}
 
-          {/* Deviation zero line (behind bars) */}
-          <line
-            x1={devSectionStart + zeroX}
-            x2={devSectionStart + zeroX}
-            y1={topOffset}
-            y2={topOffset + data.length * rowHeight}
-            stroke="var(--color-muted-foreground)"
-            strokeWidth={1.5}
-          />
           </>)}
 
           {/* Rows */}
@@ -273,17 +272,6 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                   opacity={0.85}
                   rx={1}
                 />
-                {/* Count zero line for non-bidirectional count charts */}
-                {!scoreMode && rowIdx === 0 && (
-                  <line
-                    x1={countSectionStart}
-                    x2={countSectionStart}
-                    y1={topOffset}
-                    y2={topOffset + data.length * rowHeight}
-                    stroke="var(--color-muted-foreground)"
-                    strokeWidth={1}
-                  />
-                )}
                 {/* Count/score number */}
                 <text
                   x={scoreMode
@@ -389,23 +377,19 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             );
           })}
 
-          {!hideDeviation && (<>
-          {/* Zero line (on top of bars for emphasis) */}
+          {/* Zero lines (on top of bars) */}
           <line
-            x1={devSectionStart + zeroX}
-            x2={devSectionStart + zeroX}
+            x1={countSectionStart + countZeroX}
+            x2={countSectionStart + countZeroX}
             y1={topOffset}
             y2={topOffset + data.length * rowHeight}
             stroke="var(--color-muted-foreground)"
             strokeWidth={1}
           />
-          </>)}
-
-          {/* Count zero line (for bidirectional score charts) */}
-          {scoreMode && countIsBidirectional && (
+          {!hideDeviation && (
             <line
-              x1={countSectionStart + countZeroX}
-              x2={countSectionStart + countZeroX}
+              x1={devSectionStart + zeroX}
+              x2={devSectionStart + zeroX}
               y1={topOffset}
               y2={topOffset + data.length * rowHeight}
               stroke="var(--color-muted-foreground)"

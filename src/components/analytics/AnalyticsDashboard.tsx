@@ -650,7 +650,7 @@ export function AnalyticsDashboard() {
                 data={typeMatchupData}
                 scoreMode
                 hideDeviation={isNationalSelected}
-                forceBidirectionalCount={!isNationalSelected && matchupForceBidirectional}
+                forceBidirectionalCount={matchupForceBidirectional}
                 onBarClick={(label) => {
                   handleDrillToggle(
                     { kind: 'typeMatchup', type: label.toLowerCase() },
