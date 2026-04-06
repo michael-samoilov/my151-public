@@ -54,7 +54,7 @@ function CardPanel({
   const noOp = useCallback(() => {}, []);
 
   return (
-    <div className="flex flex-col h-full rounded-t-2xl bg-background overflow-hidden shadow-[0_-4px_8px_rgba(0,0,0,0.15)]">
+    <div className="flex flex-col h-full rounded-t-2xl bg-background overflow-clip">
       {/* Pull tab: entire area is draggable (handle + header + subtitle) */}
       <div
         className="shrink-0 touch-none cursor-grab active:cursor-grabbing"
@@ -365,12 +365,13 @@ export function DrillDownSheet() {
     <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none">
       <div
         ref={sheetRef}
-        className="pointer-events-auto"
+        className="pointer-events-auto rounded-t-2xl"
         style={{
           height: sheetHeight,
           transform: isAtRest ? undefined : `translateY(${currentTranslateY})`,
           transition: dragY === 0 && !isAnimating ? 'transform 0.3s ease-out' : 'none',
           overscrollBehavior: 'none',
+          boxShadow: '0 -4px 8px rgba(0,0,0,0.15)',
         }}
       >
         {/* Carousel — each panel is its own rounded card */}
@@ -389,7 +390,7 @@ export function DrillDownSheet() {
           >
             {/* Prev panel */}
             <div
-              className="h-full overflow-hidden flex-1 min-w-0"
+              className="h-full overflow-clip flex-1 min-w-0"
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -413,7 +414,7 @@ export function DrillDownSheet() {
 
             {/* Current panel */}
             <div
-              className="h-full overflow-hidden flex-1 min-w-0"
+              className="h-full overflow-clip flex-1 min-w-0"
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -436,7 +437,7 @@ export function DrillDownSheet() {
 
             {/* Next panel */}
             <div
-              className="h-full overflow-hidden flex-1 min-w-0"
+              className="h-full overflow-clip flex-1 min-w-0"
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
