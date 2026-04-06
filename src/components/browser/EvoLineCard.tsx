@@ -250,7 +250,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
               onClick={handleClick}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
               className={cn(
-                `relative flex flex-col items-center ${variant === 'analytics' ? 'pt-[0.5vw] pb-[1vw]' : 'py-[1vw]'} md:py-1 transition-all cursor-pointer w-full`,
+                'relative flex flex-col items-center pt-[0.5vw] pb-[1vw] md:py-1 transition-all cursor-pointer w-full',
               )}
             >
               <div className={cn(
@@ -264,24 +264,19 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   />
                 )}
                 <div
-                  className={variant === 'analytics'
-                    ? "w-[11vw] md:w-8 md:h-8"
-                    : "w-[11vw] h-[11vw] md:w-8 md:h-8"
-                  }
+                  className="w-[11vw] md:w-8 md:h-8"
                   style={{
                     backgroundImage: `url(${spriteOverrides?.[pokemon.id]
                       ?? (shinyIds?.has(pokemon.id)
                         ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
                         : pokemon.sprite)})`,
-                    backgroundSize: variant === 'analytics' && nativeSpriteSizePx
+                    backgroundSize: nativeSpriteSizePx
                       ? `${nativeSpriteSizePx}px ${nativeSpriteSizePx}px`
                       : 'contain',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     imageRendering: 'pixelated',
-                    ...(variant === 'analytics' && nativeSpriteSizePx
-                      ? { height: `${nativeSpriteSizePx}px` }
-                      : {}),
+                    height: nativeSpriteSizePx ? `${nativeSpriteSizePx}px` : '11vw',
                   }}
                   role="img"
                   aria-label={pokemon.name}
