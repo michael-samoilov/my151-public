@@ -175,7 +175,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
         const showGenBadge = showGenBadges && pokemon.generation !== lineGen;
 
         return (
-          <div key={pokemon.id} className="relative px-[3px] md:px-[2px]" style={matchupInfo ? { transform: 'translateZ(0)' } : undefined}>
+          <div key={pokemon.id} className="relative px-[3px] md:px-[2px]">
             {/* Background + border spanning the evo line */}
             <div
               className={cn(
