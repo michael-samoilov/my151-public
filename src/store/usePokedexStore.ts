@@ -88,10 +88,11 @@ export const usePokedexStore = create<PokedexState>()(
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
+          const placedIds = new Set(pokemonIds);
           const allIds: number[] = [];
           const seen = new Set<number>();
           for (const id of pokemonIds) {
-            const line = getEvolutionLine(id);
+            const line = getEvolutionLine(id, placedIds);
             for (const p of line) {
               if (!seen.has(p.id)) {
                 seen.add(p.id);
