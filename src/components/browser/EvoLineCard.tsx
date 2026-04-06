@@ -233,7 +233,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                     backgroundSize: 'contain',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
-                    imageRendering: 'pixelated',
+                    imageRendering: variant === 'browser' ? 'pixelated' : undefined,
                   }}
                   role="img"
                   aria-label={pokemon.name}
