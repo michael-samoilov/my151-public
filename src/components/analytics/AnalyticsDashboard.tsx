@@ -538,30 +538,32 @@ export function AnalyticsDashboard() {
           </p>
 
           {/* Region selector tabs */}
-          <div className="flex items-center gap-1.5 mb-2 py-1 border-x border-border px-2">
+          <div className="flex items-center gap-1.5 mb-2 py-1">
             {/* Sticky left: National + Yours */}
-            <button
-              onClick={() => setSelectedTypeChart('national')}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors shrink-0 ${
-                selectedTypeChart === 'national'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            >
-              National
-            </button>
-            <button
-              onClick={() => setSelectedTypeChart('yours')}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors shrink-0 ${
-                selectedTypeChart === 'yours'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            >
-              Yours
-            </button>
+            <div className="flex items-center gap-1.5 shrink-0 border-l border-border pl-2">
+              <button
+                onClick={() => setSelectedTypeChart('national')}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+                  selectedTypeChart === 'national'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                National
+              </button>
+              <button
+                onClick={() => setSelectedTypeChart('yours')}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+                  selectedTypeChart === 'yours'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                Yours
+              </button>
+            </div>
             {/* Scrollable: regional dexes */}
-            <div className="flex items-center gap-1.5 overflow-x-auto">
+            <div className="flex items-center gap-1.5 overflow-x-auto border-r border-border pr-2">
               {REGIONAL_DEXES.map(dex => (
                 <button
                   key={dex.id}
@@ -648,7 +650,7 @@ export function AnalyticsDashboard() {
                 data={typeMatchupData}
                 scoreMode
                 hideDeviation={isNationalSelected}
-                forceBidirectionalCount={matchupForceBidirectional}
+                forceBidirectionalCount={!isNationalSelected && matchupForceBidirectional}
                 onBarClick={(label) => {
                   handleDrillToggle(
                     { kind: 'typeMatchup', type: label.toLowerCase() },
