@@ -534,7 +534,7 @@ export function AnalyticsDashboard() {
           <p className="text-sm text-muted-foreground mb-2">
             {typeView === 'distribution'
               ? 'Count and deviation from national dex proportions. Sorted most over- to most underrepresented.'
-              : 'Average type advantage per matchup. Score: +1 ≈ super effective edge, 0 = neutral, −1 ≈ resisted. Deviation from national baseline.'}
+              : 'How many type advantage doublings (both offensive & defensive) vs. avg Pokémon in the region.'}
           </p>
 
           {/* Region selector tabs */}
