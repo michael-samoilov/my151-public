@@ -517,7 +517,7 @@ export function AnalyticsDashboard() {
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
-              Distribution
+              Type distribution
             </button>
             <button
               onClick={() => setTypeView('matchup')}
@@ -527,14 +527,14 @@ export function AnalyticsDashboard() {
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
-              Matchup Strength
+              Type matchups
             </button>
           </div>
 
           <p className="text-sm text-muted-foreground mb-2">
             {typeView === 'distribution'
-              ? 'Count and deviation from national dex proportions. Sorted most over- to most underrepresented.'
-              : 'How many type advantage doublings (both offensive & defensive) vs. avg Pokémon in the region.'}
+              ? 'Count of Pokémon with each type and deviation from national dex proportions.'
+              : 'Average number of type advantage doublings (both offensive & defensive) vs. all Pokémon in the region.'}
           </p>
 
           {/* Region selector tabs */}
