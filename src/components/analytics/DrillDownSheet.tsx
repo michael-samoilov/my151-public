@@ -362,7 +362,7 @@ export function DrillDownSheet() {
   const isAtRest = !peek && dragY === 0;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none" style={{ WebkitBackfaceVisibility: 'hidden' }}>
+    <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none" style={{ transform: 'translateZ(0)' }}>
       <div
         ref={sheetRef}
         className="pointer-events-auto rounded-t-2xl"
