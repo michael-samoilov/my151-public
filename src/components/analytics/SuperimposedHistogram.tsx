@@ -24,7 +24,7 @@ export function SuperimposedHistogram({
   binSize,
   xDomain,
   xTicks,
-  minorXTicks,
+  minorXTicks: _minorXTicks,
   yDomain,
   yTicks,
   onBarClick,
@@ -59,20 +59,8 @@ export function SuperimposedHistogram({
       {width > 0 && (
         <svg width={width} height={height}>
           <g transform={`translate(${margin.left},${margin.top})`}>
-            {/* Grid lines */}
-            {yTicks.map((t) => (
-              <line
-                key={`grid-${t}`}
-                x1={0}
-                x2={plotW}
-                y1={yScale(t)}
-                y2={yScale(t)}
-                stroke="var(--color-border)"
-                strokeDasharray="3 3"
-                strokeWidth={0.5}
-                opacity={0.6}
-              />
-            ))}
+            {/* Baseline (x-axis) */}
+            <line x1={0} x2={plotW} y1={plotH} y2={plotH} stroke="var(--color-muted-foreground)" strokeWidth={1} />
 
             {/* National bars (full width, behind) */}
             {data.map((d) => {
@@ -131,64 +119,33 @@ export function SuperimposedHistogram({
               );
             })}
 
-            {/* X axis */}
-            <line x1={0} x2={plotW} y1={plotH} y2={plotH} stroke="var(--color-border)" />
+            {/* X axis labels (no tick marks) */}
             {xTicks.map((t) => (
-              <g key={`xtick-${t}`}>
-                <line
-                  x1={xScale(t)}
-                  x2={xScale(t)}
-                  y1={plotH}
-                  y2={plotH + 4}
-                  stroke="var(--color-muted-foreground)"
-                  strokeWidth={0.5}
-                />
-                <text
-                  x={xScale(t)}
-                  y={plotH + 15}
-                  textAnchor="middle"
-                  fontSize={10}
-                  fill="var(--color-muted-foreground)"
-                >
-                  {t}
-                </text>
-              </g>
-            ))}
-            {minorXTicks?.map((t) => (
-              <line
-                key={`minor-${t}`}
-                x1={xScale(t)}
-                x2={xScale(t)}
-                y1={plotH}
-                y2={plotH + 4}
-                stroke="var(--color-muted-foreground)"
-                strokeWidth={0.5}
-              />
+              <text
+                key={`xtick-${t}`}
+                x={xScale(t)}
+                y={plotH + 15}
+                textAnchor="middle"
+                fontSize={10}
+                fill="var(--color-muted-foreground)"
+              >
+                {t}
+              </text>
             ))}
 
-            {/* Y axis */}
-            <line x1={0} x2={0} y1={0} y2={plotH} stroke="var(--color-border)" />
+            {/* Y axis labels (no tick marks) */}
             {yTicks.map((t) => (
-              <g key={`ytick-${t}`}>
-                <line
-                  x1={-4}
-                  x2={0}
-                  y1={yScale(t)}
-                  y2={yScale(t)}
-                  stroke="var(--color-muted-foreground)"
-                  strokeWidth={0.5}
-                />
-                <text
-                  x={-7}
-                  y={yScale(t)}
-                  textAnchor="end"
-                  dominantBaseline="middle"
-                  fontSize={10}
-                  fill="var(--color-muted-foreground)"
-                >
-                  {t}%
-                </text>
-              </g>
+              <text
+                key={`ytick-${t}`}
+                x={-7}
+                y={yScale(t)}
+                textAnchor="end"
+                dominantBaseline="middle"
+                fontSize={10}
+                fill="var(--color-muted-foreground)"
+              >
+                {t}%
+              </text>
             ))}
           </g>
         </svg>

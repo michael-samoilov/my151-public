@@ -18,10 +18,12 @@ interface ButterflyChartProps {
   referenceDeviations?: Record<string, number>;
   /** Hide the deviation section — count bars use full width */
   hideDeviation?: boolean;
-  /** Override the deviation axis right bound (snapped to 50% intervals, capped at 200) */
+  /** Override the deviation axis right bound */
   fixedDevRight?: number;
   /** Override the auto-computed max count for the count scale */
   fixedMaxCount?: number;
+  /** Force count section to use bidirectional layout (2x weight) even if current data is unidirectional */
+  forceBidirectionalCount?: boolean;
   /** Callback when a row is tapped/clicked */
   onBarClick?: (label: string) => void;
   /** Currently selected/active label for focus highlight */
@@ -30,7 +32,7 @@ interface ButterflyChartProps {
   scoreMode?: boolean;
 }
 
-export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -57,8 +59,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
   const gap = 6;
   const gutter = 8; // space between chart sections
   const titleHeight = 18;
-  const axisHeight = 18;
-  const topOffset = titleHeight + axisHeight;
+  const topOffset = titleHeight;
   const chartHeight = topOffset + data.length * rowHeight;
 
   const iconStart = labelWidth + iconGap;
@@ -66,10 +67,10 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
   // Column A: labels + icons (fixed width)
   const labelColEnd = iconStart + iconSize + gap;
 
-  // Determine directionality BEFORE width distribution (based on actual data)
+  // Determine directionality BEFORE width distribution
   const countHasNeg = scoreMode ? data.some(d => d.count < 0) : false;
   const countHasPos = !scoreMode || data.some(d => d.count > 0);
-  const countIsBidirectional = countHasNeg && countHasPos;
+  const countIsBidirectional = forceBidirectionalCount || (countHasNeg && countHasPos);
   const devIsBidirectional = !hideDeviation; // deviation domain always spans neg-to-pos in practice
 
   // Weighted width distribution: bidirectional charts get 2x weight
@@ -114,24 +115,18 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
   const countHalfWidth = (countHasNeg && countHasPos) ? countBarArea / 2 : countBarArea;
   const countScale = scaleLinear().domain([0, maxCount]).range([0, countHalfWidth]);
 
-  // Chart 2 (deviation): domain + directionality-aware margins
+  // Chart 2 (deviation): domain uses raw data extents (no tick snapping needed)
   let devLeft: number;
   let devRight_: number;
-  let devTickInterval: number;
   if (scoreMode) {
     const maxAbsDev = Math.max(...data.map(d => Math.abs(d.deviation)), 0.1);
-    const niceIntervals = [0.05, 0.1, 0.2, 0.5, 1.0, 2.0];
-    const rawInterval = maxAbsDev / 3;
-    devTickInterval = niceIntervals.find(n => n >= rawInterval) ?? 2.0;
-    const bound = Math.ceil(maxAbsDev / devTickInterval) * devTickInterval;
-    devLeft = -bound;
-    devRight_ = fixedDevRight ?? bound;
+    devLeft = -maxAbsDev;
+    devRight_ = fixedDevRight ?? maxAbsDev;
   } else {
-    const DEV_OVER_CAP = 200;
     const maxOverDev = Math.max(...data.map((d) => d.deviation), 50);
-    devRight_ = fixedDevRight ?? Math.min(Math.ceil(maxOverDev / 50) * 50, DEV_OVER_CAP);
-    devLeft = -100;
-    devTickInterval = 50;
+    const maxUnderDev = Math.max(...data.map((d) => -d.deviation), 50);
+    devRight_ = fixedDevRight ?? maxOverDev;
+    devLeft = -(fixedDevRight ?? maxUnderDev);
   }
 
   const devLabelPad = scoreMode ? 30 : 24;
@@ -143,12 +138,6 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
   const devScale = scaleLinear()
     .domain([devLeft, devRight_])
     .range([devLeftPad, chart2Width - devRightPad]);
-
-  // Deviation ticks
-  const devTicks: number[] = [];
-  for (let t = devLeft; t <= devRight_ + devTickInterval * 0.01; t += devTickInterval) {
-    devTicks.push(Math.round(t * 1000) / 1000);
-  }
 
   const zeroX = devScale(0);
 
@@ -203,20 +192,15 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
           </text>
           )}
 
-          {/* Deviation grid lines (behind bars) */}
-          {devTicks.map((t) => (
-            <line
-              key={`grid-${t}`}
-              x1={devSectionStart + devScale(t)}
-              x2={devSectionStart + devScale(t)}
-              y1={topOffset}
-              y2={topOffset + data.length * rowHeight}
-              stroke="var(--color-border)"
-              strokeDasharray={t === 0 ? undefined : '3 3'}
-              strokeWidth={t === 0 ? 1.5 : 0.75}
-              opacity={t === 0 ? 1 : 0.5}
-            />
-          ))}
+          {/* Deviation zero line (behind bars) */}
+          <line
+            x1={devSectionStart + zeroX}
+            x2={devSectionStart + zeroX}
+            y1={topOffset}
+            y2={topOffset + data.length * rowHeight}
+            stroke="var(--color-muted-foreground)"
+            strokeWidth={1.5}
+          />
           </>)}
 
           {/* Rows */}
@@ -289,15 +273,15 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                   opacity={0.85}
                   rx={1}
                 />
-                {/* Score mode: center line for count column */}
-                {scoreMode && rowIdx === 0 && (
+                {/* Count zero line for non-bidirectional count charts */}
+                {!scoreMode && rowIdx === 0 && (
                   <line
-                    x1={countSectionStart + countZeroX}
-                    x2={countSectionStart + countZeroX}
+                    x1={countSectionStart}
+                    x2={countSectionStart}
                     y1={topOffset}
                     y2={topOffset + data.length * rowHeight}
-                    stroke="var(--color-border)"
-                    strokeWidth={0.75}
+                    stroke="var(--color-muted-foreground)"
+                    strokeWidth={1}
                   />
                 )}
                 {/* Count/score number */}
@@ -379,7 +363,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                 {(() => {
                   const val = scoreMode
                     ? (d.deviation >= 0 ? '+' : '') + d.deviation.toFixed(2)
-                    : ((d.deviation / 100) + 1).toFixed(1) + 'x';
+                    : ((d.deviation / 100) + 1).toFixed(2) + 'x';
                   const barEnd = devSectionStart + devScale(Math.max(devLeft, Math.min(devRight_, d.deviation)));
                   if (d.deviation >= 0) {
                     return (
@@ -415,36 +399,19 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             stroke="var(--color-muted-foreground)"
             strokeWidth={1}
           />
-
-          {/* Deviation axis ticks (above bars, below title) */}
-          {devTicks.map((t) => {
-            const x = devSectionStart + devScale(t);
-            return (
-              <g key={`tick-${t}`}>
-                <line
-                  x1={x}
-                  x2={x}
-                  y1={topOffset - 4}
-                  y2={topOffset}
-                  stroke="var(--color-muted-foreground)"
-                  strokeWidth={0.5}
-                />
-                <text
-                  x={x}
-                  y={topOffset - 7}
-                  textAnchor="middle"
-                  fontSize={9}
-                  fill="var(--color-muted-foreground)"
-                >
-                  {scoreMode
-                    ? (t >= 0 ? '+' : '') + (Number.isInteger(t) ? t.toFixed(0) : t.toFixed(1))
-                    : t / 100 + 1 + 'x'
-                  }
-                </text>
-              </g>
-            );
-          })}
           </>)}
+
+          {/* Count zero line (for bidirectional score charts) */}
+          {scoreMode && countIsBidirectional && (
+            <line
+              x1={countSectionStart + countZeroX}
+              x2={countSectionStart + countZeroX}
+              y1={topOffset}
+              y2={topOffset + data.length * rowHeight}
+              stroke="var(--color-muted-foreground)"
+              strokeWidth={1}
+            />
+          )}
         </svg>
       )}
     </div>

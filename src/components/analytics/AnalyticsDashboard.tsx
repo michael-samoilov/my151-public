@@ -75,6 +75,7 @@ export function AnalyticsDashboard() {
   const [excludeSpecialMekko, setExcludeSpecialMekko] = useState(false);
   const [selectedTypeChart, setSelectedTypeChart] = useState<string>('yours');
   const [newPokemonOnly, setNewPokemonOnly] = useState(true);
+  const [typeView, setTypeView] = useState<'distribution' | 'matchup'>('distribution');
 
 
   const analytics = useAnalytics();
@@ -277,6 +278,36 @@ export function AnalyticsDashboard() {
     })).sort((a, b) => b.deviation - a.deviation);
   }, [sections, selectedTypeChart, excludeSpecial, newPokemonOnly]);
 
+  // Check if any permutation of the matchup chart has negative scores (bidirectional)
+  // so layout stays stable when toggling filters
+  const matchupForceBidirectional = useMemo(() => {
+    const checkHasNeg = (pokemon: NonNullable<ReturnType<typeof getPokemonById>>[]) => {
+      if (pokemon.length === 0) return false;
+      return computeTypeDominance(pokemon).some(r => r.score < 0);
+    };
+    if (selectedTypeChart === 'yours') {
+      const allIds = Object.values(sections).flat();
+      const allPokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+      const starterIds = new Set(sections['starter'] ?? []);
+      const filtered = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !starterIds.has(p.id));
+      return checkHasNeg(allPokemon) || checkHasNeg(filtered);
+    }
+    if (isNationalSelected) {
+      const allPokemon = getAllPokemon();
+      const filtered = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+      return checkHasNeg(allPokemon) || checkHasNeg(filtered);
+    }
+    const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
+    if (!dex) return false;
+    const allInDex = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    const genOnly = allInDex.filter(p => p.generation === dex.generation);
+    for (const set of [allInDex, genOnly]) {
+      if (checkHasNeg(set)) return true;
+      if (checkHasNeg(set.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id)))) return true;
+    }
+    return false;
+  }, [selectedTypeChart, isNationalSelected, sections]);
+
   // Type matchup siblings for drill-down navigation
   const typeMatchupSiblings = useMemo((): DrillDownSegment[] =>
     typeMatchupData.map(d => ({ kind: 'typeMatchup' as const, type: d.label.toLowerCase() })),
@@ -288,10 +319,8 @@ export function AnalyticsDashboard() {
   // Fixed axis extents — max across all toggle permutations (exclusion × gen-only/regional)
   // so toggling filters only shrinks bars, never shifts axes
   const { fixedMaxCount: unfilteredMaxCount, fixedDevRight } = useMemo(() => {
-    const DEV_OVER_CAP = 200;
     const computeDevRight = (deviations: number[]) => {
-      const maxDev = Math.max(...deviations, 50);
-      return Math.min(Math.ceil(maxDev / 50) * 50, DEV_OVER_CAP);
+      return Math.max(...deviations, 50);
     };
     const computeTypeStats = (pokemon: ReturnType<typeof getPokemonById>[], base: typeof fullBaseline) => {
       const total = pokemon.length;
@@ -476,14 +505,39 @@ export function AnalyticsDashboard() {
           <WhatsAdvisor />
         </section>
 
-        {/* Type Distribution */}
+        {/* Type Analysis — tabbed: Distribution / Matchup */}
         <section>
-          <h3 className="text-lg font-semibold mb-1">Type Distribution</h3>
+          {/* Tab headers */}
+          <div className="flex border-b border-border mb-2">
+            <button
+              onClick={() => setTypeView('distribution')}
+              className={`px-3 py-1.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+                typeView === 'distribution'
+                  ? 'border-primary text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Distribution
+            </button>
+            <button
+              onClick={() => setTypeView('matchup')}
+              className={`px-3 py-1.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+                typeView === 'matchup'
+                  ? 'border-primary text-foreground'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Matchup Strength
+            </button>
+          </div>
+
           <p className="text-sm text-muted-foreground mb-2">
-            Count and deviation from national dex proportions. Sorted most over- to most underrepresented.
+            {typeView === 'distribution'
+              ? 'Count and deviation from national dex proportions. Sorted most over- to most underrepresented.'
+              : 'Average type advantage per matchup. Score: +1 ≈ super effective edge, 0 = neutral, −1 ≈ resisted. Deviation from national baseline.'}
           </p>
 
-          {/* Row 1: Region selector tabs */}
+          {/* Region selector tabs */}
           <div className="flex items-center gap-1.5 mb-2 overflow-x-auto py-1 border-x border-border px-2">
             <button
               onClick={() => setSelectedTypeChart('yours')}
@@ -520,7 +574,7 @@ export function AnalyticsDashboard() {
             </button>
           </div>
 
-          {/* Row 2: Filters */}
+          {/* Filters */}
           <div className="flex items-center gap-1.5 mb-3 overflow-x-auto pb-1">
             <button
               onClick={() => setExcludeSpecial(!excludeSpecial)}
@@ -560,46 +614,37 @@ export function AnalyticsDashboard() {
           </div>
 
           <div className="bg-card rounded-lg border p-4">
-            <ButterflyChart
-              data={activeTypeChartData}
-              hideDeviation={isNationalSelected}
-              fixedMaxCount={unfilteredMaxCount}
-              fixedDevRight={fixedDevRight}
-              onBarClick={(label) => {
-                if (selectedTypeChart === 'yours') {
-                  handleDrillToggle({ kind: 'type', type: label.toLowerCase() }, typeSiblings, excludeSpecial);
-                } else {
-                  handleDrillToggle(
-                    { kind: 'type', type: label.toLowerCase() },
-                    regionalTypeSiblings,
-                    excludeSpecial,
-                    selectedTypeChart,
-                    newPokemonOnly,
-                  );
+            {typeView === 'distribution' ? (
+              <ButterflyChart
+                data={activeTypeChartData}
+                hideDeviation={isNationalSelected}
+                fixedMaxCount={unfilteredMaxCount}
+                fixedDevRight={fixedDevRight}
+                onBarClick={(label) => {
+                  if (selectedTypeChart === 'yours') {
+                    handleDrillToggle({ kind: 'type', type: label.toLowerCase() }, typeSiblings, excludeSpecial);
+                  } else {
+                    handleDrillToggle(
+                      { kind: 'type', type: label.toLowerCase() },
+                      regionalTypeSiblings,
+                      excludeSpecial,
+                      selectedTypeChart,
+                      newPokemonOnly,
+                    );
+                  }
+                }}
+                activeLabel={
+                  (selectedTypeChart === 'yours' && drillDownIsYours) ||
+                  (selectedTypeChart !== 'yours' && drillDownDexId === selectedTypeChart)
+                    ? activeTypeLabel : null
                 }
-              }}
-              activeLabel={
-                (selectedTypeChart === 'yours' && drillDownIsYours) ||
-                (selectedTypeChart !== 'yours' && drillDownDexId === selectedTypeChart)
-                  ? activeTypeLabel : null
-              }
-            />
-          </div>
-
-        </section>
-
-        {/* Type Matchup Strength */}
-        {typeMatchupData.length > 0 && (
-          <section>
-            <h3 className="text-lg font-semibold mb-1">Type Matchup Strength</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Average type advantage per matchup. Score: +1 ≈ super effective edge, 0 = neutral, −1 ≈ resisted. Deviation from national baseline.
-            </p>
-            <div className="bg-card rounded-lg border p-4">
+              />
+            ) : typeMatchupData.length > 0 ? (
               <ButterflyChart
                 data={typeMatchupData}
                 scoreMode
                 hideDeviation={isNationalSelected}
+                forceBidirectionalCount={matchupForceBidirectional}
                 onBarClick={(label) => {
                   handleDrillToggle(
                     { kind: 'typeMatchup', type: label.toLowerCase() },
@@ -609,9 +654,11 @@ export function AnalyticsDashboard() {
                 }}
                 activeLabel={drillDownSegment?.kind === 'typeMatchup' ? activeMatchupLabel : null}
               />
-            </div>
-          </section>
-        )}
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No matchup data available.</p>
+            )}
+          </div>
+        </section>
 
         {/* Generation Origin */}
         <section>
