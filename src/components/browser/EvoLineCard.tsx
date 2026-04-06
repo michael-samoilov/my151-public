@@ -223,15 +223,20 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                     className="absolute top-0 left-[6px] md:left-1 w-[2.5vw] h-[2.5vw] md:w-3 md:h-3 z-10"
                   />
                 )}
-                <img
-                  src={spriteOverrides?.[pokemon.id]
-                    ?? (shinyIds?.has(pokemon.id)
-                      ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
-                      : pokemon.sprite)}
-                  alt={pokemon.name}
+                <div
                   className="w-[11vw] h-[11vw] md:w-8 md:h-8"
-                  style={{ imageRendering: 'pixelated' }}
-                  loading="lazy"
+                  style={{
+                    backgroundImage: `url(${spriteOverrides?.[pokemon.id]
+                      ?? (shinyIds?.has(pokemon.id)
+                        ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
+                        : pokemon.sprite)})`,
+                    backgroundSize: 'contain',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'center',
+                    imageRendering: 'pixelated',
+                  }}
+                  role="img"
+                  aria-label={pokemon.name}
                 />
                 <span className="text-[min(2vw,8px)] md:text-[8px] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
                   {displayName(pokemon.name)}
