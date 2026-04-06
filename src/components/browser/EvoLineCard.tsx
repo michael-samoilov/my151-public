@@ -249,8 +249,8 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   const defD = doublings(info.defense, true);
                   return (
                     <div className="flex gap-[0.5vw] md:gap-0.5 mt-[0.3vw] md:mt-0.5 justify-center text-[min(1.5vw,6px)] md:text-[6px] font-semibold tabular-nums" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      <span className="inline-flex items-center gap-px text-emerald-600 dark:text-emerald-400"><Sword className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2 inline" />{formatMult(info.offense)}×({formatDoublings(offD)})</span>
-                      <span className="inline-flex items-center gap-px text-red-500 dark:text-red-400"><Shield className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2 inline" />{formatMult(info.defense)}×({formatDoublings(defD)})</span>
+                      <span className="inline-flex items-center gap-px text-emerald-600 dark:text-emerald-400">{formatMult(info.offense)}×<Sword className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2" />({formatDoublings(offD)})</span>
+                      <span className="inline-flex items-center gap-px text-red-500 dark:text-red-400">{formatMult(info.defense)}×<Shield className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2" />({formatDoublings(defD)})</span>
                     </div>
                   );
                 })()}
