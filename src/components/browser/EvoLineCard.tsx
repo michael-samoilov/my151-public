@@ -203,8 +203,11 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                 <Plus className="w-1.5 h-1.5 text-primary-foreground" />
               </div>
             )}
-            <button
+            <div
+              role="button"
+              tabIndex={0}
               onClick={handleClick}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
               className={cn(
                 'relative flex flex-col items-center py-[1vw] md:py-1 transition-all cursor-pointer w-full',
               )}
@@ -249,7 +252,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   const defD = doublings(info.defense, true);
                   const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
                   return (
-                    <div className="grid mt-[0.3vw] md:mt-0.5 text-[min(1.5vw,6px)] md:text-[6px] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', gridAutoRows: 'minmax(2.5vw, auto)', alignItems: 'center', rowGap: '0px' }}>
+                    <div className="grid mt-[0.3vw] md:mt-0.5 text-[min(1.5vw,6px)] md:text-[6px] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px' }}>
                       <span className="justify-self-end leading-none">{formatMult(info.offense)}×</span>
                       <Sword className="w-[2vw] h-[2vw] md:w-2.5 md:h-2.5 block" />
                       <span className="justify-self-start leading-none">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span>
@@ -260,7 +263,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   );
                 })()}
               </div>
-            </button>
+            </div>
             {/* Chevron between evo line members */}
             {!isLast && (
               <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10">
