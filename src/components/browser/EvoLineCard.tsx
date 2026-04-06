@@ -8,21 +8,39 @@ import { GenBadge } from '@/components/shared/GenBadge';
 
 const SPRITE_SOURCE_PX = 96;
 
-/** Compute CSS pixel size that maps 1:1 to device pixels for the 96px source sprite. */
+/**
+ * Compute the largest CSS pixel size for a 96px sprite that maps to exact
+ * device pixels within the sprite container. Picks the biggest integer
+ * multiple of (96/dpr) that fits, so each source pixel maps to a perfect
+ * N×N block of device pixels — no fractional scaling artifacts.
+ *
+ * The container is 11vw on mobile, 32px (md:w-8) on desktop.
+ */
 function useNativeSpriteSizePx(): number | undefined {
-  const [size, setSize] = useState<number | undefined>(() => {
+  const compute = () => {
     if (typeof window === 'undefined') return undefined;
     const dpr = window.devicePixelRatio || 1;
-    return Math.round(SPRITE_SOURCE_PX / dpr);
-  });
+    // Container size in CSS pixels
+    const vw = window.innerWidth / 100;
+    const containerCssPx = window.innerWidth >= 768 ? 32 : 11 * vw;
+    // Unit = one source pixel in CSS pixels (e.g. 32 on 3× display)
+    const unit = SPRITE_SOURCE_PX / dpr;
+    // How many whole multiples fit in the container?
+    const multiples = Math.floor(containerCssPx / unit);
+    if (multiples < 1) return undefined; // sprite larger than container — fall back to contain
+    return Math.round(unit * multiples);
+  };
+
+  const [size, setSize] = useState<number | undefined>(compute);
   useEffect(() => {
-    const update = () => {
-      const dpr = window.devicePixelRatio || 1;
-      setSize(Math.round(SPRITE_SOURCE_PX / dpr));
-    };
+    const update = () => setSize(compute());
+    window.addEventListener('resize', update);
     const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
+    return () => {
+      window.removeEventListener('resize', update);
+      mq.removeEventListener('change', update);
+    };
   }, []);
   return size;
 }
