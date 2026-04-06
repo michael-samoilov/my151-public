@@ -589,7 +589,7 @@ export function AnalyticsDashboard() {
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
-              Exclude starters/legendaries
+              No Starters/Legendaries
             </button>
 
             {selectedDex && !isNationalSelected && selectedDex.generation >= 2 && selectedDex.id !== 'unova' && (
@@ -602,7 +602,7 @@ export function AnalyticsDashboard() {
                       : 'text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
-                  Gen {selectedDex.generation} Only
+                  Gen {selectedDex.generation} only
                 </button>
                 <button
                   onClick={() => setNewPokemonOnly(false)}
@@ -612,7 +612,7 @@ export function AnalyticsDashboard() {
                       : 'text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
-                  Regional Dex
+                  Full Regional Dex
                 </button>
               </div>
             )}
@@ -772,7 +772,7 @@ export function AnalyticsDashboard() {
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
-              Exclude starters/legendaries
+              No Starters/Legendaries
             </button>
           </div>
           <div className="bg-card rounded-lg border p-4">
