@@ -507,6 +507,7 @@ export function AnalyticsDashboard() {
 
         {/* Type Analysis — tabbed: Distribution / Matchup */}
         <section>
+          <h3 className="text-lg font-semibold mb-1">Pokémon Type</h3>
           <p className="text-sm text-muted-foreground mb-2">
             {typeView === 'distribution'
               ? 'Count of Pokémon with each type and deviation from national dex proportions.'
