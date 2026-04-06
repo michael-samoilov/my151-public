@@ -55,8 +55,9 @@ export function getAllPokemon(): Pokemon[] {
 /**
  * Get the full linear evolution chain for a Pokemon, sorted by evolution stage.
  * For branching evolutions (e.g. Eevee), returns only the branch containing the given Pokemon.
+ * When placedIds is provided, forward walks prefer branches containing placed Pokemon.
  */
-export function getEvolutionLine(pokemonId: number): Pokemon[] {
+export function getEvolutionLine(pokemonId: number, placedIds?: Set<number>): Pokemon[] {
   const pokemon = pokemonById.get(pokemonId);
   if (!pokemon) return [];
 
@@ -77,8 +78,12 @@ export function getEvolutionLine(pokemonId: number): Pokemon[] {
   let searchId = pokemon.id;
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const child = chainMembers.find(p => p.evolvesFrom === searchId);
-    if (!child) break;
+    const children = chainMembers.filter(p => p.evolvesFrom === searchId);
+    if (children.length === 0) break;
+    // Prefer a placed child when there are multiple branches
+    const child = (placedIds && children.length > 1
+      ? children.find(c => placedIds.has(c.id))
+      : undefined) ?? children[0];
     descendants.push(child);
     searchId = child.id;
   }

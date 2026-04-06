@@ -117,8 +117,9 @@ export function computeDrillDownData(
     // Count distinct evolution chains (not branches) for subtitle
     const nonExcludedChainIds = new Set<number>();
 
+    const placedIdSet = new Set(pokemonToSection.keys());
     for (const id of matchingIds) {
-      const line = getEvolutionLine(id);
+      const line = getEvolutionLine(id, placedIdSet);
       const rootKey = line.map(m => m.id).join('-');
       if (seenRoots.has(rootKey)) continue;
       seenRoots.add(rootKey);
@@ -241,7 +242,7 @@ function computeRegionalDrillDown(
   const chainIds = new Set<number>();
 
   for (const id of matchingIds) {
-    const line = getEvolutionLine(id);
+    const line = getEvolutionLine(id, userPlacedIds);
     const rootKey = line.map(m => m.id).join('-');
     if (seenRoots.has(rootKey)) continue;
     seenRoots.add(rootKey);
@@ -302,6 +303,7 @@ function computeTypeMatchupDrillDown(
   excludeSpecial: boolean,
 ): DrillDownData | null {
   const allIds = Object.values(storeSections).flat();
+  const placedIdSet = new Set(allIds);
   const starterSectionIds = new Set(storeSections['starter'] ?? []);
   let pokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
 
@@ -356,7 +358,7 @@ function computeTypeMatchupDrillDown(
     const sortedIds = [...ids].sort((a, b) => (matchupById.get(b) ?? 0) - (matchupById.get(a) ?? 0));
 
     for (const id of sortedIds) {
-      const line = getEvolutionLine(id);
+      const line = getEvolutionLine(id, placedIdSet);
       const rootKey = line.map(p => p.id).join('-');
       if (seenRoots.has(rootKey)) continue;
       seenRoots.add(rootKey);
