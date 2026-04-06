@@ -110,11 +110,23 @@ interface EvoLineCardProps {
 
 function formatMult(v: number): string {
   if (v === 0) return '0';
-  if (v === 0.125) return '⅛';
+  if (v === 0.125) return '0';
   if (v === 0.25) return '¼';
   if (v === 0.5) return '½';
   if (Number.isInteger(v)) return String(v);
   return v.toFixed(1);
+}
+
+/** Compute how many doublings a multiplier contributes to the matchup score.
+ *  Offense: log2(value), Defense: -log2(value). Immunities (0) clamped to 0.125 = ±3. */
+function doublings(value: number, isDefense: boolean): number {
+  const clamped = Math.max(value, 0.125);
+  const d = Math.round(Math.log2(clamped));
+  return isDefense ? -d : d;
+}
+
+function formatDoublings(n: number): string {
+  return n >= 0 ? `+${n}` : `${n}`;
 }
 
 export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo }: EvoLineCardProps) {
@@ -233,10 +245,12 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                 </div>
                 {matchupInfo?.has(pokemon.id) && (() => {
                   const info = matchupInfo.get(pokemon.id)!;
+                  const offD = doublings(info.offense, false);
+                  const defD = doublings(info.defense, true);
                   return (
                     <div className="flex gap-[0.5vw] md:gap-0.5 mt-[0.3vw] md:mt-0.5 justify-center text-[min(1.5vw,6px)] md:text-[6px] font-semibold tabular-nums" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      <span className="text-emerald-600 dark:text-emerald-400">{formatMult(info.offense)}×↑</span>
-                      <span className="text-red-500 dark:text-red-400">{formatMult(info.defense)}×↓</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">⚔{formatMult(info.offense)}×({formatDoublings(offD)})</span>
+                      <span className="text-red-500 dark:text-red-400">🛡{formatMult(info.defense)}×({formatDoublings(defD)})</span>
                     </div>
                   );
                 })()}

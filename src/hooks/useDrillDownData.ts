@@ -332,25 +332,21 @@ function computeTypeMatchupDrillDown(
   // Sort tiers descending (best matchup first)
   const sortedTiers = [...tierMap.keys()].sort((a, b) => b - a);
 
-  const tierMeta = new Map<number, { label: string; color: string }>([
-    [5,  { label: 'Total Dominance (+5)',       color: '#064e3b' }],
-    [4,  { label: 'Overwhelming (+4)',          color: '#065f46' }],
-    [3,  { label: 'Dominant (+3)',              color: '#15803d' }],
-    [2,  { label: 'Strong Advantage (+2)',      color: '#22c55e' }],
-    [1,  { label: 'Advantage (+1)',             color: '#86efac' }],
-    [0,  { label: 'Evenly Matched (0)',         color: '#fbbf24' }],
-    [-1, { label: 'Disadvantage (−1)',          color: '#fb923c' }],
-    [-2, { label: 'Strong Disadvantage (−2)',   color: '#ef4444' }],
-    [-3, { label: 'Dominated (−3)',             color: '#991b1b' }],
-    [-4, { label: 'Helpless (−4)',              color: '#450a0a' }],
+  // Color gradient from green (advantage) through yellow (neutral) to red (disadvantage)
+  const tierColors = new Map<number, string>([
+    [5, '#064e3b'], [4, '#065f46'], [3, '#15803d'], [2, '#22c55e'], [1, '#86efac'],
+    [0, '#fbbf24'],
+    [-1, '#fb923c'], [-2, '#ef4444'], [-3, '#991b1b'], [-4, '#450a0a'],
   ]);
 
   const sections: SectionGroup[] = [];
   for (const tier of sortedTiers) {
     const ids = tierMap.get(tier)!;
-    const meta = tierMeta.get(tier) ?? (tier > 0
-      ? { label: `Advantage (+${tier})`, color: '#15803d' }
-      : { label: `Disadvantage (${tier})`, color: '#991b1b' });
+    const label = tier > 0
+      ? `+${tier} ${tier === 1 ? 'doubling' : 'doublings'} of advantage`
+      : `${tier} ${tier === -1 ? 'doubling' : 'doublings'} of advantage`;
+    const color = tierColors.get(tier) ?? (tier > 0 ? '#15803d' : '#991b1b');
+    const meta = { label, color };
 
     // Build evolution line groups, sorted by matchup score descending
     const seenRoots = new Set<string>();
