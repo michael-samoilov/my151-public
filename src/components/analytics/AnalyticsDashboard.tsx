@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useAnalytics, fullBaseline, filteredBaseline } from '@/hooks/useAnalytics';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -278,34 +278,31 @@ export function AnalyticsDashboard() {
     })).sort((a, b) => isNationalSelected ? b.count - a.count : b.deviation - a.deviation);
   }, [sections, selectedTypeChart, excludeSpecial, newPokemonOnly, isNationalSelected]);
 
-  // Check if any permutation of the matchup chart has negative scores (bidirectional)
+  // Check if any permutation of the matchup chart has both neg AND pos scores (bidirectional)
   // so layout stays stable when toggling filters
   const matchupForceBidirectional = useMemo(() => {
-    const checkHasNeg = (pokemon: NonNullable<ReturnType<typeof getPokemonById>>[]) => {
+    const checkBidi = (pokemon: NonNullable<ReturnType<typeof getPokemonById>>[]) => {
       if (pokemon.length === 0) return false;
-      return computeTypeDominance(pokemon).some(r => r.score < 0);
+      const results = computeTypeDominance(pokemon);
+      return results.some(r => r.score < 0) && results.some(r => r.score > 0);
     };
+    const permutations = (sets: NonNullable<ReturnType<typeof getPokemonById>>[][]) =>
+      sets.some(s => checkBidi(s)) || sets.some(s => checkBidi(s.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id))));
     if (selectedTypeChart === 'yours') {
       const allIds = Object.values(sections).flat();
       const allPokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
       const starterIds = new Set(sections['starter'] ?? []);
       const filtered = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !starterIds.has(p.id));
-      return checkHasNeg(allPokemon) || checkHasNeg(filtered);
+      return checkBidi(allPokemon) || checkBidi(filtered);
     }
     if (isNationalSelected) {
-      const allPokemon = getAllPokemon();
-      const filtered = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
-      return checkHasNeg(allPokemon) || checkHasNeg(filtered);
+      return permutations([getAllPokemon()]);
     }
     const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
     if (!dex) return false;
     const allInDex = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
     const genOnly = allInDex.filter(p => p.generation === dex.generation);
-    for (const set of [allInDex, genOnly]) {
-      if (checkHasNeg(set)) return true;
-      if (checkHasNeg(set.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id)))) return true;
-    }
-    return false;
+    return permutations([allInDex, genOnly]);
   }, [selectedTypeChart, isNationalSelected, sections]);
 
   // Type matchup siblings for drill-down navigation
@@ -315,6 +312,20 @@ export function AnalyticsDashboard() {
 
   const activeMatchupLabel = drillDownSegment?.kind === 'typeMatchup'
     ? drillDownSegment.type.charAt(0).toUpperCase() + drillDownSegment.type.slice(1) : null;
+
+  // Sync drilldown filters when analytics filter chips change while a drilldown is open
+  useEffect(() => {
+    if (!drillDownSegment) return;
+    const kind = drillDownSegment.kind;
+    if (kind === 'type' || kind === 'typeMatchup') {
+      const dexId = selectedTypeChart === 'yours' ? null : selectedTypeChart;
+      const siblings = kind === 'typeMatchup'
+        ? typeMatchupSiblings
+        : (selectedTypeChart === 'yours' ? typeSiblings : regionalTypeSiblings);
+      openDrillDown(drillDownSegment, siblings, excludeSpecial, dexId, newPokemonOnly);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [excludeSpecial, selectedTypeChart, newPokemonOnly]);
 
   // Fixed axis extents — max across all toggle permutations (exclusion × gen-only/regional)
   // so toggling filters only shrinks bars, never shifts axes
@@ -589,7 +600,7 @@ export function AnalyticsDashboard() {
                       : 'text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
-                  Full Regional Dex
+                  Regional Dex
                 </button>
               </div>
             )}
@@ -601,7 +612,7 @@ export function AnalyticsDashboard() {
             <div className="flex border-b border-border">
               <button
                 onClick={() => setTypeView('distribution')}
-                className={`px-3 py-1.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+                className={`flex-1 text-center px-3 py-1.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
                   typeView === 'distribution'
                     ? 'border-primary text-foreground'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -611,7 +622,7 @@ export function AnalyticsDashboard() {
               </button>
               <button
                 onClick={() => setTypeView('matchup')}
-                className={`px-3 py-1.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+                className={`flex-1 text-center px-3 py-1.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
                   typeView === 'matchup'
                     ? 'border-primary text-foreground'
                     : 'border-transparent text-muted-foreground hover:text-foreground'

@@ -63,7 +63,7 @@ export function computeDrillDownData(
 
   // Type matchup drilldown — group Pokemon by per-matchup score tier
   if (segment.kind === 'typeMatchup') {
-    return computeTypeMatchupDrillDown(segment, storeSections, excludeSpecial);
+    return computeTypeMatchupDrillDown(segment, storeSections, excludeSpecial, dexId ?? null, newOnly ?? false);
   }
 
   // Regional/national dex drilldown — show that dex's Pokemon, mute those not in user's pokedex
@@ -296,22 +296,43 @@ function computeRegionalDrillDown(
   };
 }
 
-/** Type matchup drilldown: group all placed Pokemon by their matchup score tier against the attacking type */
+/** Type matchup drilldown: group Pokemon by their matchup score tier against the attacking type.
+ *  Supports regional dex context — when dexId is set, shows that dex's Pokemon instead of user's. */
 function computeTypeMatchupDrillDown(
   segment: DrillDownSegment & { kind: 'typeMatchup' },
   storeSections: Record<string, number[]>,
   excludeSpecial: boolean,
+  dexId: string | null,
+  newOnly: boolean,
 ): DrillDownData | null {
-  const allIds = Object.values(storeSections).flat();
-  const placedIdSet = new Set(allIds);
-  const starterSectionIds = new Set(storeSections['starter'] ?? []);
-  let pokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+  const userPlacedIds = new Set(Object.values(storeSections).flat());
+  const isRegional = dexId !== null && dexId !== 'yours';
 
-  if (excludeSpecial) {
-    pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
+  let pokemon: Pokemon[];
+  if (isRegional) {
+    const isNational = dexId === 'national';
+    const dex = REGIONAL_DEXES.find(d => d.id === dexId);
+    if (!dex && !isNational) return null;
+    pokemon = isNational
+      ? getAllPokemon()
+      : dex!.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    if (newOnly && dex) {
+      pokemon = pokemon.filter(p => p.generation === dex.generation);
+    }
+    if (excludeSpecial) {
+      pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+    }
+  } else {
+    const allIds = Object.values(storeSections).flat();
+    const starterSectionIds = new Set(storeSections['starter'] ?? []);
+    pokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    if (excludeSpecial) {
+      pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
+    }
   }
 
   if (pokemon.length === 0) return null;
+  const placedIdSet = isRegional ? userPlacedIds : new Set(pokemon.map(p => p.id));
 
   // Compute per-pokemon matchup scores
   const matchups = computePerPokemonMatchup(segment.type as TypeName, pokemon);
@@ -365,7 +386,7 @@ function computeTypeMatchupDrillDown(
 
       const matchedIds = new Set<number>();
       for (const m of line) {
-        if (ids.has(m.id)) matchedIds.add(m.id);
+        if (ids.has(m.id) && (!isRegional || userPlacedIds.has(m.id))) matchedIds.add(m.id);
       }
       groups.push({ key: rootKey, members: line, matchedIds });
     }
@@ -379,16 +400,17 @@ function computeTypeMatchupDrillDown(
   }
 
   const { title, color, icon } = getSegmentMeta(segment);
-  const shownPokemon = sections.reduce((s, sec) => s + sec.groups.reduce((g, gr) => g + gr.matchedIds.size, 0), 0);
+  const shownPokemon = [...tierMap.values()].reduce((s, ids) => s + ids.size, 0);
+  const dexLabel = isRegional ? (dexId === 'national' ? 'National Dex' : REGIONAL_DEXES.find(d => d.id === dexId)?.name ?? dexId) : null;
   return {
-    title,
+    title: dexLabel ? `${title} — ${dexLabel}` : title,
     subtitle: `${shownPokemon} Pokémon with non-neutral matchups`,
     color,
     icon,
     sections,
     totalPokemon: shownPokemon,
     totalLines: sections.reduce((s, sec) => s + sec.groups.length, 0),
-    showGenBadges: false,
+    showGenBadges: isRegional,
     matchupInfo,
   };
 }
