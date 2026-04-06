@@ -362,7 +362,7 @@ export function DrillDownSheet() {
   const isAtRest = !peek && dragY === 0;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none">
+    <div className={`${peek ? 'fixed' : 'absolute'} inset-x-0 bottom-0 z-50 pointer-events-none`}>
       <div
         ref={sheetRef}
         className="pointer-events-auto rounded-t-2xl"
