@@ -123,7 +123,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
   const countTotalExtent = countIsBidirectional ? rawMaxNeg + rawMaxPos || 0.01 : maxCount;
   const countScale = scaleLinear().domain([0, countTotalExtent]).range([0, countBarArea]);
 
-  // Chart 2 (deviation): domain uses raw data extents (no tick snapping needed)
+  // Chart 2 (deviation): domain
   let devLeft: number;
   let devRight_: number;
   if (scoreMode) {
@@ -131,10 +131,14 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
     devLeft = -maxAbsDev;
     devRight_ = fixedDevRight ?? maxAbsDev;
   } else {
+    // Left bound: always -100 (0.00x = complete absence) as minimum,
+    // or the actual max under-deviation if all types are present
+    const maxUnderDev = Math.max(...data.map((d) => -d.deviation), 0);
+    devLeft = -Math.max(maxUnderDev, 100);
+    // Right bound: use fixedDevRight for stability, capped at 200 (3.00x)
+    const DEV_OVER_CAP = 200;
     const maxOverDev = Math.max(...data.map((d) => d.deviation), 50);
-    const maxUnderDev = Math.max(...data.map((d) => -d.deviation), 50);
-    devRight_ = fixedDevRight ?? maxOverDev;
-    devLeft = -(fixedDevRight ?? maxUnderDev);
+    devRight_ = Math.min(fixedDevRight ?? maxOverDev, DEV_OVER_CAP);
   }
 
   const devLabelPad = scoreMode ? 30 : 24;
