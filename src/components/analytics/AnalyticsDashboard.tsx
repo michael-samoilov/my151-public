@@ -537,13 +537,13 @@ export function AnalyticsDashboard() {
               : 'Average number of type advantage doublings (both offensive & defensive) vs. all Pokémon in the region.'}
           </p>
 
-          {/* Region selector tabs */}
-          <div className="flex items-center gap-1.5 mb-2 py-1">
+          {/* Region selector tabs — matches build page filter chip styling */}
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center border-x border-border pr-2 py-1">
             {/* Sticky left: National + Yours */}
-            <div className="flex items-center gap-1.5 shrink-0 border-l border-border pl-2">
+            <div className="sticky left-0 shrink-0 self-stretch flex items-center gap-1.5 bg-background border-r border-border -my-1 pl-2 pr-2 z-10">
               <button
                 onClick={() => setSelectedTypeChart('national')}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+                className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                   selectedTypeChart === 'national'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -553,7 +553,7 @@ export function AnalyticsDashboard() {
               </button>
               <button
                 onClick={() => setSelectedTypeChart('yours')}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+                className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                   selectedTypeChart === 'yours'
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -563,21 +563,19 @@ export function AnalyticsDashboard() {
               </button>
             </div>
             {/* Scrollable: regional dexes */}
-            <div className="flex items-center gap-1.5 overflow-x-auto border-r border-border pr-2">
-              {REGIONAL_DEXES.map(dex => (
-                <button
-                  key={dex.id}
-                  onClick={() => setSelectedTypeChart(dex.id)}
-                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
-                    selectedTypeChart === dex.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                  }`}
-                >
-                  {dex.name}
-                </button>
-              ))}
-            </div>
+            {REGIONAL_DEXES.map(dex => (
+              <button
+                key={dex.id}
+                onClick={() => setSelectedTypeChart(dex.id)}
+                className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                  selectedTypeChart === dex.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                {dex.name}
+              </button>
+            ))}
           </div>
 
           {/* Filters */}
@@ -652,11 +650,21 @@ export function AnalyticsDashboard() {
                 hideDeviation={isNationalSelected}
                 forceBidirectionalCount={matchupForceBidirectional}
                 onBarClick={(label) => {
-                  handleDrillToggle(
-                    { kind: 'typeMatchup', type: label.toLowerCase() },
-                    typeMatchupSiblings,
-                    excludeSpecial,
-                  );
+                  if (selectedTypeChart === 'yours') {
+                    handleDrillToggle(
+                      { kind: 'typeMatchup', type: label.toLowerCase() },
+                      typeMatchupSiblings,
+                      excludeSpecial,
+                    );
+                  } else {
+                    handleDrillToggle(
+                      { kind: 'typeMatchup', type: label.toLowerCase() },
+                      typeMatchupSiblings,
+                      excludeSpecial,
+                      selectedTypeChart,
+                      newPokemonOnly,
+                    );
+                  }
                 }}
                 activeLabel={drillDownSegment?.kind === 'typeMatchup' ? activeMatchupLabel : null}
               />
