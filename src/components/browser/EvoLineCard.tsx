@@ -206,7 +206,8 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
             <button
               onClick={handleClick}
               className={cn(
-                'relative flex flex-col items-center py-[1vw] md:py-1 transition-all cursor-pointer w-full',
+                'relative flex flex-col items-center pt-[1vw] md:pt-1 transition-all cursor-pointer w-full',
+                matchupInfo ? 'pb-[2vw] md:pb-1.5' : 'pb-[1vw] md:pb-1',
               )}
             >
               <div className={cn(
