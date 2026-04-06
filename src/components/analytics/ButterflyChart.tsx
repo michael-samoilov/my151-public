@@ -66,17 +66,30 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
   // Column A: labels + icons (fixed width)
   const labelColEnd = iconStart + iconSize + gap;
 
-  // Distribute remaining width 50/50 between chart sections (with gutter)
+  // Determine directionality BEFORE width distribution (based on actual data)
+  const countHasNeg = scoreMode ? data.some(d => d.count < 0) : false;
+  const countHasPos = !scoreMode || data.some(d => d.count > 0);
+  const countIsBidirectional = countHasNeg && countHasPos;
+  const devIsBidirectional = !hideDeviation; // deviation domain always spans neg-to-pos in practice
+
+  // Weighted width distribution: bidirectional charts get 2x weight
   const chartsWidth = Math.max(0, width - labelColEnd);
-  const chart1Width = hideDeviation ? chartsWidth : Math.floor((chartsWidth - gutter) / 2);
-  const chart2Width = hideDeviation ? 0 : chartsWidth - chart1Width - gutter;
+  let chart1Width: number, chart2Width: number;
+  if (hideDeviation) {
+    chart1Width = chartsWidth;
+    chart2Width = 0;
+  } else {
+    const w1 = countIsBidirectional ? 2 : 1;
+    const w2 = devIsBidirectional ? 2 : 1;
+    const available = chartsWidth - gutter;
+    chart1Width = Math.floor(available * w1 / (w1 + w2));
+    chart2Width = available - chart1Width;
+  }
 
   const countSectionStart = labelColEnd;
   const devSectionStart = labelColEnd + chart1Width + gutter;
 
   // Chart 1 (count/score): directionality-aware margins
-  const countHasNeg = scoreMode ? data.some(d => d.count < 0) : false;
-  const countHasPos = !scoreMode || data.some(d => d.count > 0);
   const countLabelPad = scoreMode ? 30 : 42; // wider for "25 (16%)" labels
   const countLeftPad = countHasNeg ? countLabelPad : 0;
   const countRightPad = countHasPos ? countLabelPad : 0;
@@ -143,11 +156,15 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
     <div ref={containerRef} className="w-full">
       {width > 0 && (
         <svg width={width} height={chartHeight} className="overflow-visible">
-          {/* Titles */}
+          {/* Titles — alignment follows actual data directionality */}
           <text
-            x={scoreMode ? countSectionStart + countZeroX : countSectionStart}
+            x={countIsBidirectional
+              ? countSectionStart + countZeroX
+              : countHasNeg
+                ? countSectionStart + chart1Width
+                : countSectionStart}
             y={12}
-            textAnchor={scoreMode ? 'middle' : 'start'}
+            textAnchor={countIsBidirectional ? 'middle' : countHasNeg ? 'end' : 'start'}
             fontSize={10}
             fontWeight={600}
             fill="var(--color-muted-foreground)"
@@ -156,7 +173,8 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             {scoreMode ? 'SCORE' : 'COUNT'}
           </text>
           {!hideDeviation && (<>
-          {/* Deviation guide labels anchored to zero line */}
+          {/* Deviation guide labels — only render sides that have data */}
+          {devHasLeft && (
           <text
             x={devSectionStart + zeroX - 5}
             y={6}
@@ -169,6 +187,8 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             <tspan x={devSectionStart + zeroX - 5} dy="0">{scoreMode ? 'WEAKER' : 'UNDER-'}</tspan>
             <tspan x={devSectionStart + zeroX - 5} dy="10">{scoreMode ? '← HERE' : '← INDEXED'}</tspan>
           </text>
+          )}
+          {devHasRight && (
           <text
             x={devSectionStart + zeroX + 5}
             y={6}
@@ -181,6 +201,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             <tspan x={devSectionStart + zeroX + 5} dy="0">{scoreMode ? 'STRONGER' : 'OVER-'}</tspan>
             <tspan x={devSectionStart + zeroX + 5} dy="10">{scoreMode ? 'HERE →' : 'INDEXED →'}</tspan>
           </text>
+          )}
 
           {/* Deviation grid lines (behind bars) */}
           {devTicks.map((t) => (
