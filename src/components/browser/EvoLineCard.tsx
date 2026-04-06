@@ -250,7 +250,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
               onClick={handleClick}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
               className={cn(
-                'relative flex flex-col items-center py-[1vw] md:py-1 transition-all cursor-pointer w-full',
+                `relative flex flex-col items-center ${variant === 'analytics' ? 'py-[0.5vw]' : 'py-[1vw]'} md:py-1 transition-all cursor-pointer w-full`,
               )}
             >
               <div className={cn(
@@ -264,7 +264,10 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   />
                 )}
                 <div
-                  className="w-[11vw] h-[11vw] md:w-8 md:h-8"
+                  className={variant === 'analytics'
+                    ? "w-[11vw] md:w-8 md:h-8"
+                    : "w-[11vw] h-[11vw] md:w-8 md:h-8"
+                  }
                   style={{
                     backgroundImage: `url(${spriteOverrides?.[pokemon.id]
                       ?? (shinyIds?.has(pokemon.id)
@@ -276,6 +279,9 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     imageRendering: 'pixelated',
+                    ...(variant === 'analytics' && nativeSpriteSizePx
+                      ? { height: `${nativeSpriteSizePx}px` }
+                      : {}),
                   }}
                   role="img"
                   aria-label={pokemon.name}
