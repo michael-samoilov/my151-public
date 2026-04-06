@@ -143,8 +143,8 @@ function App() {
         <MobileSheet sectionName={sectionName} onClose={() => { setMobileBrowserOpen(false); usePokedexStore.getState().setActiveSection(null); }} />
       )}
 
-      {/* Analytics drill-down sheet */}
-      {drillDownSegment && <DrillDownSheet />}
+      {/* Analytics drill-down sheet — only on analytics view */}
+      {currentView === 'analytics' && drillDownSegment && <DrillDownSheet />}
     </TooltipProvider>
   );
 }
