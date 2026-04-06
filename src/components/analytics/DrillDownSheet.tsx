@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect, useLayoutEffect } from 'react';
+import { flushSync } from 'react-dom';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { computeDrillDownData, type DrillDownData } from '@/hooks/useDrillDownData';
 import { EvoLineGrid } from '@/components/browser/EvoLineCard';
@@ -16,6 +17,7 @@ function getSegmentLabel(seg: DrillDownSegment): string {
     case 'generation': return `Gen ${seg.generation}`;
     case 'evoLevel': return `Lv ${seg.binStart}–${seg.binEnd - 1}`;
     case 'bst': return `${seg.binStart}–${seg.binEnd - 1}`;
+    case 'typeMatchup': return seg.type.charAt(0).toUpperCase() + seg.type.slice(1);
     default: return '';
   }
 }
@@ -216,31 +218,34 @@ export function DrillDownSheet() {
   }, [segment]);
 
   // Handle carousel transitionend: commit the pending navigation
+  const justNavigated = useRef(false);
   const handleTransitionEnd = useCallback(() => {
     if (!pendingNav.current) return;
     const target = pendingNav.current;
     pendingNav.current = null;
+    justNavigated.current = true;
 
-    // Disable transition, reset position, update segment — all in one frame
-    if (carouselRef.current) {
-      carouselRef.current.style.transition = 'none';
-      carouselRef.current.style.transform = 'translateX(0px)';
-    }
-
-    // Use rAF to ensure the style reset is painted before React re-renders
-    requestAnimationFrame(() => {
+    // Flush state update synchronously so React updates DOM before browser paints
+    flushSync(() => {
       navigateDrillDown(target);
       setSwipeX(0);
       setIsAnimating(false);
-      // Re-enable transition in next frame
-      requestAnimationFrame(() => {
-        if (carouselRef.current) {
-          carouselRef.current.style.transition = '';
-          carouselRef.current.style.transform = '';
-        }
-      });
     });
   }, [navigateDrillDown]);
+
+  // After navigation state update, snap carousel to center before paint
+  useLayoutEffect(() => {
+    if (!justNavigated.current) return;
+    justNavigated.current = false;
+    if (carouselRef.current) {
+      carouselRef.current.style.transition = 'none';
+      carouselRef.current.style.transform = 'translateX(0px)';
+      // Force reflow then re-enable transition
+      void carouselRef.current.offsetHeight;
+      carouselRef.current.style.transition = '';
+      carouselRef.current.style.transform = '';
+    }
+  }, [segment]);
 
   const commitSwipe = useCallback((targetSibling: DrillDownSegment, direction: number) => {
     if (!sheetRef.current) return;
