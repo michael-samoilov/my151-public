@@ -537,6 +537,7 @@ export function AnalyticsDashboard() {
               : 'Average number of type advantage doublings (both offensive & defensive) vs. all Pokémon in the region.'}
           </p>
 
+          <div className="space-y-1.5 mb-3">
           {/* Region selector tabs — matches build page filter chip styling */}
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center border-x border-border pr-2 py-1">
             {/* Sticky left: National + Yours */}
@@ -579,7 +580,7 @@ export function AnalyticsDashboard() {
           </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-1.5 mb-3 overflow-x-auto pb-1">
+          <div className="flex items-center gap-1.5 overflow-x-auto">
             <button
               onClick={() => setExcludeSpecial(!excludeSpecial)}
               className={`px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
@@ -615,6 +616,7 @@ export function AnalyticsDashboard() {
                 </button>
               </div>
             )}
+          </div>
           </div>
 
           <div className="bg-card rounded-lg border p-4">
