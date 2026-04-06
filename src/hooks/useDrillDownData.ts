@@ -326,13 +326,16 @@ function computeTypeMatchupDrillDown(
   const sortedTiers = [...tierMap.keys()].sort((a, b) => b - a);
 
   const tierMeta = new Map<number, { label: string; color: string }>([
-    [3,  { label: 'Dominant (+3+)',            color: '#15803d' }],
-    [2,  { label: 'Strong Advantage (+2)',     color: '#22c55e' }],
-    [1,  { label: 'Advantage (+1)',            color: '#86efac' }],
-    [0,  { label: 'Slight Advantage (0)',      color: '#fbbf24' }],
-    [-1, { label: 'Slight Disadvantage (−1)', color: '#fb923c' }],
-    [-2, { label: 'Strong Disadvantage (−2)', color: '#ef4444' }],
-    [-3, { label: 'Dominated (−3−)',          color: '#991b1b' }],
+    [5,  { label: 'Total Dominance (+5)',       color: '#064e3b' }],
+    [4,  { label: 'Overwhelming (+4)',          color: '#065f46' }],
+    [3,  { label: 'Dominant (+3)',              color: '#15803d' }],
+    [2,  { label: 'Strong Advantage (+2)',      color: '#22c55e' }],
+    [1,  { label: 'Advantage (+1)',             color: '#86efac' }],
+    [0,  { label: 'Evenly Matched (0)',         color: '#fbbf24' }],
+    [-1, { label: 'Disadvantage (−1)',          color: '#fb923c' }],
+    [-2, { label: 'Strong Disadvantage (−2)',   color: '#ef4444' }],
+    [-3, { label: 'Dominated (−3)',             color: '#991b1b' }],
+    [-4, { label: 'Helpless (−4)',              color: '#450a0a' }],
   ]);
 
   const sections: SectionGroup[] = [];
