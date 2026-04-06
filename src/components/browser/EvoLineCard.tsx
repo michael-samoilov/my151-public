@@ -1,10 +1,31 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { cn, displayName } from '@/lib/utils';
 import type { Pokemon } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
 import { Plus, ChevronRight, X, Sword, Shield } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
+
+const SPRITE_SOURCE_PX = 96;
+
+/** Compute CSS pixel size that maps 1:1 to device pixels for the 96px source sprite. */
+function useNativeSpriteSizePx(): number | undefined {
+  const [size, setSize] = useState<number | undefined>(() => {
+    if (typeof window === 'undefined') return undefined;
+    const dpr = window.devicePixelRatio || 1;
+    return Math.round(SPRITE_SOURCE_PX / dpr);
+  });
+  useEffect(() => {
+    const update = () => {
+      const dpr = window.devicePixelRatio || 1;
+      setSize(Math.round(SPRITE_SOURCE_PX / dpr));
+    };
+    const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+  return size;
+}
 
 /** Tiny pokeball icon: red-filled top half, open bottom half, center button */
 function PokeballIcon({ className }: { className?: string }) {
@@ -134,6 +155,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const sections = usePokedexStore((s) => s.sections);
   const allInDex = members.every((p) => assignedIds.has(p.id));
+  const nativeSpriteSizePx = useNativeSpriteSizePx();
 
   const doRemove = () => {
     const firstId = members[0].id;
@@ -230,10 +252,12 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                       ?? (shinyIds?.has(pokemon.id)
                         ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
                         : pokemon.sprite)})`,
-                    backgroundSize: 'contain',
+                    backgroundSize: variant === 'analytics' && nativeSpriteSizePx
+                      ? `${nativeSpriteSizePx}px ${nativeSpriteSizePx}px`
+                      : 'contain',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
-                    imageRendering: variant === 'browser' ? 'pixelated' : undefined,
+                    imageRendering: 'pixelated',
                   }}
                   role="img"
                   aria-label={pokemon.name}
