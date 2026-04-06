@@ -85,7 +85,7 @@ function CardPanel({
             </div>
             <div className="flex items-center gap-1.5 shrink-0 mx-2">
               {data.icon && (
-                <img src={data.icon} alt="" className="w-4 h-4" style={{ imageRendering: 'pixelated' }} />
+                <img src={data.icon} alt="" className="w-4 h-4" />
               )}
               <span className="text-sm font-semibold" style={{ color: data.color }}>
                 {data.title}
