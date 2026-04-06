@@ -507,30 +507,6 @@ export function AnalyticsDashboard() {
 
         {/* Type Analysis — tabbed: Distribution / Matchup */}
         <section>
-          {/* Tab headers */}
-          <div className="flex border-b border-border mb-2">
-            <button
-              onClick={() => setTypeView('distribution')}
-              className={`px-3 py-1.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
-                typeView === 'distribution'
-                  ? 'border-primary text-foreground'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Type distribution
-            </button>
-            <button
-              onClick={() => setTypeView('matchup')}
-              className={`px-3 py-1.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
-                typeView === 'matchup'
-                  ? 'border-primary text-foreground'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Type matchups
-            </button>
-          </div>
-
           <p className="text-sm text-muted-foreground mb-2">
             {typeView === 'distribution'
               ? 'Count of Pokémon with each type and deviation from national dex proportions.'
@@ -619,7 +595,31 @@ export function AnalyticsDashboard() {
           </div>
           </div>
 
-          <div className="bg-card rounded-lg border p-4">
+          <div className="bg-card rounded-lg border overflow-hidden">
+            {/* Tab headers — inside card */}
+            <div className="flex border-b border-border">
+              <button
+                onClick={() => setTypeView('distribution')}
+                className={`px-3 py-1.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+                  typeView === 'distribution'
+                    ? 'border-primary text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Type distribution
+              </button>
+              <button
+                onClick={() => setTypeView('matchup')}
+                className={`px-3 py-1.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+                  typeView === 'matchup'
+                    ? 'border-primary text-foreground'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Type matchups
+              </button>
+            </div>
+            <div className="p-4">
             {typeView === 'distribution' ? (
               <ButterflyChart
                 data={activeTypeChartData}
@@ -673,6 +673,7 @@ export function AnalyticsDashboard() {
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">No matchup data available.</p>
             )}
+            </div>
           </div>
         </section>
 
