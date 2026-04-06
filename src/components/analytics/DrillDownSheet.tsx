@@ -358,6 +358,9 @@ export function DrillDownSheet() {
     ? `calc(100dvh - ${HEADER_HEIGHT}px - ${PEEK_HEIGHT}px + ${Math.max(dragY, -(PEEK_HEIGHT))}px)`
     : `${Math.max(dragY, 0)}px`;
 
+  // At rest (fully expanded, no drag), avoid transform to prevent GPU compositing blur
+  const isAtRest = !peek && dragY === 0;
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 pointer-events-none">
       <div
@@ -365,7 +368,7 @@ export function DrillDownSheet() {
         className="pointer-events-auto"
         style={{
           height: sheetHeight,
-          transform: `translateY(${currentTranslateY})`,
+          transform: isAtRest ? undefined : `translateY(${currentTranslateY})`,
           transition: dragY === 0 && !isAnimating ? 'transform 0.3s ease-out' : 'none',
           overscrollBehavior: 'none',
         }}
@@ -374,12 +377,13 @@ export function DrillDownSheet() {
         <div className="h-full relative overflow-x-clip">
           <div
             ref={carouselRef}
-            className="absolute inset-0 flex will-change-transform"
+            className="absolute inset-0 flex"
             style={{
               width: '300%',
               left: '-100%',
-              transform: `translateX(${swipeX}px)`,
+              transform: swipeX === 0 && !isAnimating ? undefined : `translateX(${swipeX}px)`,
               transition: isAnimating ? 'transform 0.28s ease-out' : 'none',
+              willChange: isAnimating || swipeX !== 0 ? 'transform' : undefined,
             }}
             onTransitionEnd={handleTransitionEnd}
           >
