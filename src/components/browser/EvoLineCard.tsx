@@ -250,9 +250,13 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   const defD = doublings(info.defense, true);
                   const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
                   return (
-                    <div className="flex flex-col items-center mt-[0.3vw] md:mt-0.5 text-[min(1.5vw,6px)] md:text-[6px] font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      <span className="inline-flex items-center gap-px leading-none"><span className="translate-y-px">{formatMult(info.offense)}×</span><Sword className="w-[2vw] h-[2vw] md:w-2.5 md:h-2.5 shrink-0" /><span className="translate-y-px">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span></span>
-                      <span className="inline-flex items-center gap-px leading-none"><span className="translate-y-px">{formatMult(info.defense)}×</span><Shield className="w-[2vw] h-[2vw] md:w-2.5 md:h-2.5 shrink-0" /><span className="translate-y-px">(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span></span>
+                    <div className="grid mt-[0.3vw] md:mt-0.5 text-[min(1.5vw,6px)] md:text-[6px] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', justifyItems: 'center', rowGap: '0px' }}>
+                      <span className="justify-self-end translate-y-px">{formatMult(info.offense)}×</span>
+                      <Sword className="w-[2vw] h-[2vw] md:w-2.5 md:h-2.5 shrink-0" />
+                      <span className="justify-self-start translate-y-px">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span>
+                      <span className="justify-self-end translate-y-px">{formatMult(info.defense)}×</span>
+                      <Shield className="w-[2vw] h-[2vw] md:w-2.5 md:h-2.5 shrink-0" />
+                      <span className="justify-self-start translate-y-px">(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span>
                     </div>
                   );
                 })()}
