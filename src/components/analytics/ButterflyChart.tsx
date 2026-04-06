@@ -104,15 +104,15 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
 
   const barHeight = yScale.bandwidth();
 
-  // Count scale — zero position depends on data directionality
+  // Count scale — zero position depends on directionality (including forced)
   const maxCount = fixedMaxCount ?? Math.max(...data.map((d) => Math.abs(d.count)), scoreMode ? 0.01 : 1);
   const countZeroX = (() => {
     if (!scoreMode) return countLeftPad;
-    if (countHasNeg && countHasPos) return countLeftPad + countBarArea / 2;
+    if (countIsBidirectional) return countLeftPad + countBarArea / 2;
     if (countHasNeg) return countLeftPad + countBarArea;
     return countLeftPad;
   })();
-  const countHalfWidth = (countHasNeg && countHasPos) ? countBarArea / 2 : countBarArea;
+  const countHalfWidth = countIsBidirectional ? countBarArea / 2 : countBarArea;
   const countScale = scaleLinear().domain([0, maxCount]).range([0, countHalfWidth]);
 
   // Chart 2 (deviation): domain uses raw data extents (no tick snapping needed)
