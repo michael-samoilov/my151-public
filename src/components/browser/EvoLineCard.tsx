@@ -247,10 +247,11 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   const info = matchupInfo.get(pokemon.id)!;
                   const offD = doublings(info.offense, false);
                   const defD = doublings(info.defense, true);
+                  const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
                   return (
-                    <div className="flex gap-[0.5vw] md:gap-0.5 mt-[0.3vw] md:mt-0.5 justify-center text-[min(1.5vw,6px)] md:text-[6px] font-semibold tabular-nums" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      <span className="inline-flex items-center gap-px text-emerald-600 dark:text-emerald-400">{formatMult(info.offense)}×<Sword className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2" />({formatDoublings(offD)})</span>
-                      <span className="inline-flex items-center gap-px text-red-500 dark:text-red-400">{formatMult(info.defense)}×<Shield className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2" />({formatDoublings(defD)})</span>
+                    <div className="flex flex-col items-center mt-[0.3vw] md:mt-0.5 text-[min(1.5vw,6px)] md:text-[6px] font-semibold" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      <span className="inline-flex items-center gap-px"><span>{formatMult(info.offense)}×</span><Sword className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2" /><span>(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span></span>
+                      <span className="inline-flex items-center gap-px"><span>{formatMult(info.defense)}×</span><Shield className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2" /><span>(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span></span>
                     </div>
                   );
                 })()}
