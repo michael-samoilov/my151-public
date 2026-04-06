@@ -37,6 +37,8 @@ export interface DrillDownData {
   totalPokemon: number;
   totalLines: number;
   showGenBadges: boolean;
+  /** Per-Pokemon offense/defense multipliers for typeMatchup drill-downs */
+  matchupInfo?: Map<number, { offense: number; defense: number }>;
 }
 
 export function useDrillDownData(): DrillDownData | null {
@@ -312,11 +314,16 @@ function computeTypeMatchupDrillDown(
   // Compute per-pokemon matchup scores
   const matchups = computePerPokemonMatchup(segment.type as TypeName, pokemon);
 
-  // Group by integer-floored score tier
+  // Store per-pokemon offense/defense for chip display
+  const matchupInfo = new Map<number, { offense: number; defense: number }>();
+
+  // Group by integer-floored score tier (skip tier 0 — evenly matched)
   const tierMap = new Map<number, Set<number>>();
   const matchupById = new Map<number, number>();
   for (const m of matchups) {
+    matchupInfo.set(m.pokemon.id, { offense: m.offense, defense: m.defense });
     const tier = Math.floor(m.matchup);
+    if (tier === 0) continue; // filter out evenly matched
     matchupById.set(m.pokemon.id, m.matchup);
     if (!tierMap.has(tier)) tierMap.set(tier, new Set());
     tierMap.get(tier)!.add(m.pokemon.id);
@@ -374,15 +381,17 @@ function computeTypeMatchupDrillDown(
   }
 
   const { title, color, icon } = getSegmentMeta(segment);
+  const shownPokemon = sections.reduce((s, sec) => s + sec.groups.reduce((g, gr) => g + gr.matchedIds.size, 0), 0);
   return {
     title,
-    subtitle: `${pokemon.length} Pokémon matchup breakdown`,
+    subtitle: `${shownPokemon} Pokémon with non-neutral matchups`,
     color,
     icon,
     sections,
-    totalPokemon: pokemon.length,
+    totalPokemon: shownPokemon,
     totalLines: sections.reduce((s, sec) => s + sec.groups.length, 0),
     showGenBadges: false,
+    matchupInfo,
   };
 }
 

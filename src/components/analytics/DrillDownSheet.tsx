@@ -134,6 +134,7 @@ function CardPanel({
                   cols={6}
                   variant="analytics"
                   showGenBadges={data.showGenBadges}
+                  matchupInfo={data.matchupInfo}
                 />
               </div>
             </div>

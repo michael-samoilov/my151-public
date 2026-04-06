@@ -40,6 +40,8 @@ interface EvoLineGridProps {
   cols?: number;
   variant?: EvoLineVariant;
   showGenBadges?: boolean;
+  /** Per-Pokemon offense/defense multipliers for matchup drill-downs */
+  matchupInfo?: Map<number, { offense: number; defense: number }>;
 }
 
 const GRID_CLASSES: Record<number, string> = {
@@ -48,7 +50,7 @@ const GRID_CLASSES: Record<number, string> = {
 };
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, matchupInfo }: EvoLineGridProps) {
   const elements = useMemo(() => {
     const result: React.ReactNode[] = [];
     let col = 0; // 0-based current column position
@@ -75,13 +77,14 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shi
           spriteOverrides={spriteOverrides}
           variant={variant}
           showGenBadges={showGenBadges}
+          matchupInfo={matchupInfo}
         />
       );
       col = (col + size) % cols;
     }
 
     return result;
-  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols]);
+  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols, matchupInfo]);
 
   return (
     <div className={GRID_CLASSES[cols] ?? `grid gap-x-0 gap-y-1`} style={GRID_CLASSES[cols] ? undefined : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
@@ -102,9 +105,19 @@ interface EvoLineCardProps {
   spriteOverrides?: Record<number, string>;
   variant?: EvoLineVariant;
   showGenBadges?: boolean;
+  matchupInfo?: Map<number, { offense: number; defense: number }>;
 }
 
-export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true }: EvoLineCardProps) {
+function formatMult(v: number): string {
+  if (v === 0) return '0';
+  if (v === 0.125) return '⅛';
+  if (v === 0.25) return '¼';
+  if (v === 0.5) return '½';
+  if (Number.isInteger(v)) return String(v);
+  return v.toFixed(1);
+}
+
+export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo }: EvoLineCardProps) {
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const sections = usePokedexStore((s) => s.sections);
   const allInDex = members.every((p) => assignedIds.has(p.id));
@@ -218,6 +231,15 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                     </span>
                   ))}
                 </div>
+                {matchupInfo?.has(pokemon.id) && (() => {
+                  const info = matchupInfo.get(pokemon.id)!;
+                  return (
+                    <div className="flex gap-[0.5vw] md:gap-0.5 mt-[0.3vw] md:mt-0.5 justify-center text-[min(1.5vw,6px)] md:text-[6px] font-semibold tabular-nums" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                      <span className="text-emerald-600 dark:text-emerald-400">{formatMult(info.offense)}×↑</span>
+                      <span className="text-red-500 dark:text-red-400">{formatMult(info.defense)}×↓</span>
+                    </div>
+                  );
+                })()}
               </div>
             </button>
             {/* Chevron between evo line members */}
