@@ -230,7 +230,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                       : pokemon.sprite)}
                   alt={pokemon.name}
                   className="w-[11vw] h-[11vw] md:w-8 md:h-8"
-                  style={{ imageRendering: variant === 'browser' ? 'pixelated' : 'crisp-edges' }}
+                  style={{ imageRendering: 'pixelated' }}
                   loading="lazy"
                 />
                 <span className="text-[min(2vw,8px)] md:text-[8px] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
