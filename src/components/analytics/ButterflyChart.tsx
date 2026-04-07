@@ -30,9 +30,13 @@ interface ButterflyChartProps {
   activeLabel?: string | null;
   /** Score mode: count is a float score (can be negative), deviation is raw difference */
   scoreMode?: boolean;
+  /** Which column is actively sorted */
+  sortBy?: 'count' | 'deviation';
+  /** Called when user clicks a column title to sort */
+  onSortChange?: (col: 'count' | 'deviation') => void;
 }
 
-export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -177,6 +181,9 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             fontWeight={600}
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
+            className={onSortChange ? 'cursor-pointer' : ''}
+            textDecoration={sortBy === 'count' ? 'underline' : 'none'}
+            onClick={onSortChange ? () => onSortChange('count') : undefined}
           >
             {scoreMode ? 'SCORE' : 'COUNT'}
           </text>
@@ -191,6 +198,9 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             fontWeight={600}
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
+            className={onSortChange ? 'cursor-pointer' : ''}
+            textDecoration={sortBy === 'deviation' ? 'underline' : 'none'}
+            onClick={onSortChange ? () => onSortChange('deviation') : undefined}
           >
             <tspan x={devSectionStart + zeroX - 5} dy="0">{scoreMode ? 'WEAKER' : 'UNDER-'}</tspan>
             <tspan x={devSectionStart + zeroX - 5} dy="10">{scoreMode ? '← HERE' : '← INDEXED'}</tspan>
@@ -205,6 +215,9 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             fontWeight={600}
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
+            className={onSortChange ? 'cursor-pointer' : ''}
+            textDecoration={sortBy === 'deviation' ? 'underline' : 'none'}
+            onClick={onSortChange ? () => onSortChange('deviation') : undefined}
           >
             <tspan x={devSectionStart + zeroX + 5} dy="0">{scoreMode ? 'STRONGER' : 'OVER-'}</tspan>
             <tspan x={devSectionStart + zeroX + 5} dy="10">{scoreMode ? 'HERE →' : 'INDEXED →'}</tspan>
