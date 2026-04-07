@@ -76,6 +76,7 @@ export function AnalyticsDashboard() {
   const [selectedTypeChart, setSelectedTypeChart] = useState<string>('yours');
   const [newPokemonOnly, setNewPokemonOnly] = useState(true);
   const [typeView, setTypeView] = useState<'distribution' | 'matchup'>('distribution');
+  const [typeSortBy, setTypeSortBy] = useState<'count' | 'deviation'>('count');
 
 
   const analytics = useAnalytics();
@@ -630,10 +631,14 @@ export function AnalyticsDashboard() {
             </p>
             {typeView === 'distribution' ? (
               <ButterflyChart
-                data={activeTypeChartData}
+                data={[...activeTypeChartData].sort((a, b) =>
+                  typeSortBy === 'deviation' ? b.deviation - a.deviation : b.count - a.count
+                )}
                 hideDeviation={isNationalSelected}
                 fixedMaxCount={unfilteredMaxCount}
                 fixedDevRight={fixedDevRight}
+                sortBy={typeSortBy}
+                onSortChange={setTypeSortBy}
                 onBarClick={(label) => {
                   if (selectedTypeChart === 'yours') {
                     handleDrillToggle({ kind: 'type', type: label.toLowerCase() }, typeSiblings, excludeSpecial);
@@ -655,10 +660,14 @@ export function AnalyticsDashboard() {
               />
             ) : typeMatchupData.length > 0 ? (
               <ButterflyChart
-                data={typeMatchupData}
+                data={[...typeMatchupData].sort((a, b) =>
+                  typeSortBy === 'deviation' ? b.deviation - a.deviation : b.count - a.count
+                )}
                 scoreMode
                 hideDeviation={isNationalSelected}
                 forceBidirectionalCount={matchupForceBidirectional}
+                sortBy={typeSortBy}
+                onSortChange={setTypeSortBy}
                 onBarClick={(label) => {
                   if (selectedTypeChart === 'yours') {
                     handleDrillToggle(
