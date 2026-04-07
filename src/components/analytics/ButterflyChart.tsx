@@ -109,23 +109,25 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
   const rawMaxNeg = scoreMode ? Math.max(...data.map(d => d.count < 0 ? -d.count : 0), 0) : 0;
   const rawMaxPos = scoreMode ? Math.max(...data.map(d => d.count > 0 ? d.count : 0), 0) : maxCount;
 
-  // In score mode, share symmetric extents across score & deviation charts:
-  // each side = max(leftward, rightward) so zero is always centered
-  const maxAbsDev = scoreMode ? Math.max(...data.map(d => Math.abs(d.deviation)), 0.1) : 0;
-  const sharedExtent = scoreMode ? Math.max(rawMaxNeg, rawMaxPos, maxAbsDev, 0.01) : 0;
+  // In score mode, share extents across score & deviation charts per side:
+  // sharedLeft = max(rawMaxNeg, maxNegDev), sharedRight = max(rawMaxPos, maxPosDev)
+  const maxNegDev = scoreMode ? Math.max(...data.map(d => d.deviation < 0 ? -d.deviation : 0), 0) : 0;
+  const maxPosDev = scoreMode ? Math.max(...data.map(d => d.deviation > 0 ? d.deviation : 0), 0.1) : 0;
+  const sharedLeft = scoreMode ? Math.max(rawMaxNeg, maxNegDev, 0.001) : 0;
+  const sharedRight = scoreMode ? Math.max(rawMaxPos, maxPosDev, 0.001) : 0;
 
   const countZeroX = (() => {
     if (!scoreMode) return countLeftPad;
     if (countIsBidirectional) {
-      // Symmetric: zero always centered
-      return countLeftPad + countBarArea / 2;
+      // Position zero proportionally so each side matches its shared extent
+      return countLeftPad + countBarArea * sharedLeft / (sharedLeft + sharedRight);
     }
     if (countHasNeg) return countLeftPad + countBarArea;
     return countLeftPad;
   })();
-  // For bidirectional: uniform scale across the full bar area (not half)
+  // For bidirectional: uniform scale across the full bar area
   const countTotalExtent = countIsBidirectional
-    ? sharedExtent * 2 || 0.01
+    ? (sharedLeft + sharedRight) || 0.01
     : maxCount;
   const countScale = scaleLinear().domain([0, countTotalExtent]).range([0, countBarArea]);
 
@@ -133,8 +135,8 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
   let devLeft: number;
   let devRight_: number;
   if (scoreMode) {
-    devLeft = -sharedExtent;
-    devRight_ = fixedDevRight ?? sharedExtent;
+    devLeft = -sharedLeft;
+    devRight_ = fixedDevRight ?? sharedRight;
   } else {
     // Left bound: always -100 (0.00x = complete absence) as minimum,
     // or the actual max under-deviation if all types are present
