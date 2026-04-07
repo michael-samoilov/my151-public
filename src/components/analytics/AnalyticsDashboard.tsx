@@ -626,7 +626,7 @@ export function AnalyticsDashboard() {
             <p className="text-sm text-muted-foreground mb-3">
               {typeView === 'distribution'
                 ? 'Count of Pokémon with each type and deviation from national dex proportions.'
-                : 'Avg number of type advantage 2x\u2019s (offensive & defensive) vs. all Pokémon in region.'}
+                : 'Avg number of type advantage 2x\u2019s (offensive & defensive) vs. all Pokémon in region (& vs. Nat dex).'}
             </p>
             {typeView === 'distribution' ? (
               <ButterflyChart
