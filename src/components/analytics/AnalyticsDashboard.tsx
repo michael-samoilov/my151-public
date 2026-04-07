@@ -76,7 +76,7 @@ export function AnalyticsDashboard() {
   const [selectedTypeChart, setSelectedTypeChart] = useState<string>('yours');
   const [newPokemonOnly, setNewPokemonOnly] = useState(true);
   const [typeView, setTypeView] = useState<'distribution' | 'matchup'>('distribution');
-  const [typeSortBy, setTypeSortBy] = useState<'count' | 'deviation'>('count');
+  const [typeSortBy, setTypeSortBy] = useState<'count' | 'deviation'>('deviation');
 
 
   const analytics = useAnalytics();
