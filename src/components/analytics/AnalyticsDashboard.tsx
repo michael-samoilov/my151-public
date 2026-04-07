@@ -630,7 +630,7 @@ export function AnalyticsDashboard() {
             <p className="text-sm text-muted-foreground mb-3">
               {typeView === 'distribution'
                 ? 'Count of Pokémon with each type and deviation from national dex proportions.'
-                : 'Average number of type advantage doublings (both offensive & defensive) vs. all Pokémon in the region.'}
+                : 'Avg number of type advantage doublings (both offensive & defensive) vs. all Pokémon in the region.'}
             </p>
             {typeView === 'distribution' ? (
               <ButterflyChart
