@@ -108,28 +108,33 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
   const maxCount = fixedMaxCount ?? Math.max(...data.map((d) => Math.abs(d.count)), scoreMode ? 0.01 : 1);
   const rawMaxNeg = scoreMode ? Math.max(...data.map(d => d.count < 0 ? -d.count : 0), 0) : 0;
   const rawMaxPos = scoreMode ? Math.max(...data.map(d => d.count > 0 ? d.count : 0), 0) : maxCount;
+
+  // In score mode, share symmetric extents across score & deviation charts:
+  // each side = max(leftward, rightward) so zero is always centered
+  const maxAbsDev = scoreMode ? Math.max(...data.map(d => Math.abs(d.deviation)), 0.1) : 0;
+  const sharedExtent = scoreMode ? Math.max(rawMaxNeg, rawMaxPos, maxAbsDev, 0.01) : 0;
+
   const countZeroX = (() => {
     if (!scoreMode) return countLeftPad;
     if (countIsBidirectional) {
-      // Position zero proportionally so each side gets space matching its max extent
-      const negE = Math.max(rawMaxNeg, 0.001);
-      const posE = Math.max(rawMaxPos, 0.001);
-      return countLeftPad + countBarArea * negE / (negE + posE);
+      // Symmetric: zero always centered
+      return countLeftPad + countBarArea / 2;
     }
     if (countHasNeg) return countLeftPad + countBarArea;
     return countLeftPad;
   })();
   // For bidirectional: uniform scale across the full bar area (not half)
-  const countTotalExtent = countIsBidirectional ? rawMaxNeg + rawMaxPos || 0.01 : maxCount;
+  const countTotalExtent = countIsBidirectional
+    ? sharedExtent * 2 || 0.01
+    : maxCount;
   const countScale = scaleLinear().domain([0, countTotalExtent]).range([0, countBarArea]);
 
   // Chart 2 (deviation): domain
   let devLeft: number;
   let devRight_: number;
   if (scoreMode) {
-    const maxAbsDev = Math.max(...data.map(d => Math.abs(d.deviation)), 0.1);
-    devLeft = -maxAbsDev;
-    devRight_ = fixedDevRight ?? maxAbsDev;
+    devLeft = -sharedExtent;
+    devRight_ = fixedDevRight ?? sharedExtent;
   } else {
     // Left bound: always -100 (0.00x = complete absence) as minimum,
     // or the actual max under-deviation if all types are present
