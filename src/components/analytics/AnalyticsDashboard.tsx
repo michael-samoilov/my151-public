@@ -380,23 +380,19 @@ export function AnalyticsDashboard() {
     const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
     if (!dex) return { fixedMaxCount: undefined, fixedDevRight: undefined };
 
-    // Up to 4 permutations: (exclusion on/off) × (gen-only/regional-dex)
+    // Only share axis extent across exclusion on/off for the *current* gen toggle
     const allInDex = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
-    const genOnly = allInDex.filter(p => p.generation === dex.generation);
-    const permutations = [allInDex, genOnly];
-    let maxCount = 1;
-    let maxDevRight = 50;
-    for (const set of permutations) {
-      const unfiltered = computeTypeStats(set, fullBaseline);
-      const filtered = computeTypeStats(
-        set.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id)),
-        filteredBaseline,
-      );
-      maxCount = Math.max(maxCount, unfiltered.maxCount, filtered.maxCount);
-      maxDevRight = Math.max(maxDevRight, unfiltered.devRight, filtered.devRight);
-    }
-    return { fixedMaxCount: maxCount, fixedDevRight: maxDevRight };
-  }, [selectedTypeChart, isNationalSelected, sections, analytics.typeDeviation]);
+    const base = newPokemonOnly ? allInDex.filter(p => p.generation === dex.generation) : allInDex;
+    const unfiltered = computeTypeStats(base, fullBaseline);
+    const filtered = computeTypeStats(
+      base.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id)),
+      filteredBaseline,
+    );
+    return {
+      fixedMaxCount: Math.max(unfiltered.maxCount, filtered.maxCount),
+      fixedDevRight: Math.max(unfiltered.devRight, filtered.devRight),
+    };
+  }, [selectedTypeChart, isNationalSelected, newPokemonOnly, sections, analytics.typeDeviation]);
 
   const evoHist = useMemo(
     () => alignHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram, 5),
