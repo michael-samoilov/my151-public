@@ -623,7 +623,7 @@ export function AnalyticsDashboard() {
                 Type matchups
               </button>
             </div>
-            <div className="p-4">
+            <div className="px-6 py-4">
             <p className="text-sm text-muted-foreground mb-3">
               {typeView === 'distribution'
                 ? 'Count of Pokémon with each type and deviation from national dex proportions.'
