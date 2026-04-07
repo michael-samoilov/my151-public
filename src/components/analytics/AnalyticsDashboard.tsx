@@ -627,13 +627,14 @@ export function AnalyticsDashboard() {
             <p className="text-sm text-muted-foreground mb-3">
               {typeView === 'distribution'
                 ? 'Count of Pokémon with each type and deviation from national dex proportions.'
-                : 'Avg number of type advantage 2x\u2019s (offensive & defensive) vs. all Pokémon in region (& vs. Nat dex).'}
+                : 'Avg number of type advantage 2x\u2019s (offensive & defensive) vs. all Pokémon in region.'}
             </p>
             {typeView === 'distribution' ? (
               <ButterflyChart
                 data={[...activeTypeChartData].sort((a, b) =>
                   typeSortBy === 'deviation' ? b.deviation - a.deviation : b.count - a.count
                 )}
+                rowHeight={18}
                 hideDeviation={isNationalSelected}
                 fixedMaxCount={unfilteredMaxCount}
                 fixedDevRight={fixedDevRight}
@@ -663,6 +664,7 @@ export function AnalyticsDashboard() {
                 data={[...typeMatchupData].sort((a, b) =>
                   typeSortBy === 'deviation' ? b.deviation - a.deviation : b.count - a.count
                 )}
+                rowHeight={18}
                 scoreMode
                 hideDeviation={isNationalSelected}
                 forceBidirectionalCount={matchupForceBidirectional}
