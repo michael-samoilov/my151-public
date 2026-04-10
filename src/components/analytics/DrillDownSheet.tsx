@@ -365,15 +365,20 @@ export function DrillDownSheet() {
     <div className={`${peek ? 'fixed' : 'absolute'} inset-x-0 bottom-0 z-50 pointer-events-none`}>
       <div
         ref={sheetRef}
-        className="pointer-events-auto rounded-t-2xl"
+        className="pointer-events-auto rounded-t-2xl bg-background"
         style={{
           height: sheetHeight,
           transform: isAtRest ? undefined : `translateY(${currentTranslateY})`,
           transition: dragY === 0 && !isAnimating ? 'transform 0.3s ease-out' : 'none',
           overscrollBehavior: 'none',
-          boxShadow: '0 -4px 8px rgba(0,0,0,0.15)',
         }}
       >
+        {/* Shadow starts below the rounded-corner curve so it's consistent during swipes.
+            The outer sheet has no overflow:hidden, so this shadow extends freely upward. */}
+        <div
+          className="absolute inset-x-0 pointer-events-none"
+          style={{ top: '1rem', height: 0, boxShadow: '0 -16px 20px rgba(0,0,0,0.18)' }}
+        />
         {/* Carousel — each panel is its own rounded card */}
         <div className="h-full relative overflow-x-clip">
           <div
