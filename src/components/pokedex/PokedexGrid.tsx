@@ -679,7 +679,7 @@ export function PokedexGrid() {
 
       <div
         className="flex-1 min-h-0 overflow-y-auto"
-        style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+        style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' } as React.CSSProperties}
       >
           <div className="p-3 pb-0">
             <DndContext

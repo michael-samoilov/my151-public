@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 html {
-  overscroll-behavior: none;
+  /* overscroll-behavior handled per scroll-container so pull-to-refresh works from the header */
 }
 
 @custom-variant dark (&:is(.dark *));

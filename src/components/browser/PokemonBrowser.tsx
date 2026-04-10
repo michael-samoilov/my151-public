@@ -191,14 +191,27 @@ export function PokemonBrowser() {
 
   const browserHeaderRef = useRef<HTMLDivElement>(null);
 
-  // Block touchmove on non-scrollable header (sibling of gallery, not ancestor).
-  // This prevents pull-to-refresh without interfering with gallery bounce.
+  // Block vertical touchmove on header to prevent pull-to-refresh mid-browser,
+  // but allow horizontal movement so chip rows can scroll sideways.
   useEffect(() => {
     const el = browserHeaderRef.current;
     if (!el) return;
-    const block = (e: TouchEvent) => e.preventDefault();
+    let startX = 0, startY = 0;
+    const onStart = (e: TouchEvent) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    };
+    const block = (e: TouchEvent) => {
+      const dx = Math.abs(e.touches[0].clientX - startX);
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      if (dy > dx) e.preventDefault();
+    };
+    el.addEventListener('touchstart', onStart, { passive: true });
     el.addEventListener('touchmove', block, { passive: false });
-    return () => el.removeEventListener('touchmove', block);
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove', block);
+    };
   }, []);
 
   return (

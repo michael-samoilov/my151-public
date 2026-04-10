@@ -498,7 +498,7 @@ export function AnalyticsDashboard() {
   const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden">
+    <div className="h-full overflow-y-auto overflow-x-hidden" style={{ overscrollBehavior: 'contain' }}>
       {/* Header — matches build pane style, no gear icon */}
       <div className="flex items-center justify-between px-4 py-2 border-b h-11">
         <h2 className="text-2xl font-extrabold tracking-tight leading-none">
