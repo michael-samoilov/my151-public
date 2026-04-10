@@ -45,7 +45,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'cave-pokemon',
     name: 'Cave',
     description: 'Pokemon commonly found in caves',
-    pokemonIds: [41,42, 50,51, 10105,10106, 66,67,68, 74,75,76, 10109,10110,10111, 95, 169,208, 299,476, 302, 304,305,306, 524,525,526, 527,528, 529,530, 557,558, 610,611,612, 703, 714,715, 744,745, 932,933,934, 969,970],
+    pokemonIds: [41,42, 50,51, 10105,10106, 66,67,68, 74,75,76, 10109,10110,10111, 95, 169,208, 206,982, 213, 293,294,295, 296,297, 299,476, 302, 303, 304,305,306, 337,338, 524,525,526, 527,528, 529,530, 557,558, 610,611,612, 632, 703, 714,715, 744,745, 932,933,934, 969,970],
     suggestedSlotRange: [26, 32],
     color: '#b6a136',
   },
@@ -56,9 +56,13 @@ export const ARCHETYPES: Archetype[] = [
     pokemonIds: [
       21,22,       // Spearow→Fearow
       111,112,464, // Rhyhorn→Rhydon→Rhyperior
+      207,472,     // Gligar→Gliscor
       227,         // Skarmory
+      231,232,     // Phanpy→Donphan
       333,334,     // Swablu→Altaria
       359,         // Absol
+      950,         // Klawf
+      962,         // Bombirdier
     ],
     suggestedSlotRange: [26, 35],
     color: '#78706c',
@@ -68,6 +72,7 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Fishing',
     description: 'Fish and aquatic creatures you could catch with a fishing rod',
     pokemonIds: [
+      147,148,149, // Dratini→Dragonair→Dragonite (Dragon's Den fishing)
       116,117,230, // Horsea→Seadra→Kingdra
       118,119,     // Goldeen→Seaking
       129,130,     // Magikarp→Gyarados
@@ -135,6 +140,8 @@ export const ARCHETYPES: Archetype[] = [
       739,740,     // Crabrawler→Crabominable
       747,748,     // Mareanie→Toxapex
       767,768,     // Wimpod→Golisopod
+      441,         // Chatot
+      686,687,     // Inkay→Malamar
       769,770,     // Sandygast→Palossand
       771,         // Pyukumuku
       845,         // Cramorant
@@ -193,6 +200,7 @@ export const ARCHETYPES: Archetype[] = [
       590,591,     // Foongus→Amoonguss
       840,841,842, // Applin→Flapple/Appletun
       1011,1019,   // Dipplin→Hydrapple
+      427,428,     // Buneary→Lopunny
       944,945,     // Shroodle→Grafaiai
       948,949,     // Toedscool→Toedscruel
     ],
@@ -248,9 +256,11 @@ export const ARCHETYPES: Archetype[] = [
       854,855,      // Sinistea→Polteageist
       864,          // Cursola
       897,          // Spectrier
+      425,426,      // Drifloon→Drifblim
       946,947,      // Bramblin→Brambleghast
       971,972,      // Greavard→Houndstone
       999,1000,     // Gimmighoul→Gholdengo
+      1012,1013,    // Poltchageist→Sinistcha
     ],
     suggestedSlotRange: [33, 42],
     color: '#735797',
@@ -287,11 +297,19 @@ export const ARCHETYPES: Archetype[] = [
       761,762,763,     // Bounsweet→Steenee→Tsareena
       764,             // Comfey
       829,830,         // Gossifleur→Eldegoss
+      29,30,31,        // Nidoran-F→Nidorina→Nidoqueen
+      32,33,34,        // Nidoran-M→Nidorino→Nidoking
+      83,              // Farfetch'd
+      128,             // Tauros
+      179,180,181,     // Mareep→Flaaffy→Ampharos
+      241,             // Miltank
+      403,404,405,     // Shinx→Luxio→Luxray
       659,660,         // Bunnelby→Diggersby
       672,673,         // Skiddo→Gogoat
       741,             // Oricorio
       928,929,930,     // Smoliv→Dolliv→Arboliva
       955,956,         // Flittle→Espathra
+      967,             // Cyclizar
     ],
     suggestedSlotRange: [33, 42],
     color: '#f9a8d4',
@@ -312,6 +330,7 @@ export const ARCHETYPES: Archetype[] = [
       325,326,         // Spoink→Grumpig
       343,344,         // Baltoy→Claydol
       433,358,         // Chingling→Chimecho
+      517,518,         // Munna→Musharna
       436,437,         // Bronzor→Bronzong
       439,122,866,     // Mime Jr→Mr. Mime→Mr. Rime
       561,             // Sigilyph
@@ -366,7 +385,7 @@ export const ARCHETYPES: Archetype[] = [
       10112,10113,     // Grimer-Alola→Muk-Alola
       193,469,         // Yanma→Yanmega
       194,195,         // Wooper→Quagsire
-      10253,           // Clodsire (Paldean Wooper evo)
+      10253,980,       // Paldean Wooper→Clodsire
       258,259,260,     // Mudkip→Marshtomp→Swampert
       270,271,272,     // Lotad→Lombre→Ludicolo
       283,284,         // Surskit→Masquerain
@@ -377,7 +396,10 @@ export const ARCHETYPES: Archetype[] = [
       535,536,537,     // Tympole→Palpitoad→Seismitoad
       618,             // Stunfisk
       10179,           // Stunfisk-Galar
+      588,589,         // Karrablast→Escavalier
+      616,617,         // Shelmet→Accelgor
       690,691,         // Skrelp→Dragalge
+      704,705,706,     // Goomy→Sliggoo→Goodra
       938,939,         // Tadbulb→Bellibolt
     ],
     suggestedSlotRange: [33, 42],
@@ -393,6 +415,7 @@ export const ARCHETYPES: Archetype[] = [
       218,219,     // Slugma→Magcargo
       322,323,     // Numel→Camerupt
       324,         // Torkoal
+      327,         // Spinda (Route 113 ash route)
       631,         // Heatmor
       636,637,     // Larvesta→Volcarona
       757,758,     // Salandit→Salazzle
@@ -413,6 +436,7 @@ export const ARCHETYPES: Archetype[] = [
       331,332,     // Cacnea→Cacturne
       343,344,     // Baltoy→Claydol
       449,450,     // Hippopotas→Hippowdon
+      451,452,     // Skorupi→Drapion
       551,552,553, // Sandile→Krokorok→Krookodile
       554,555,     // Darumaka→Darmanitan
       556,         // Maractus
@@ -420,6 +444,7 @@ export const ARCHETYPES: Archetype[] = [
       562,563,     // Yamask→Cofagrigus
       843,844,     // Silicobra→Sandaconda
       951,952,     // Capsakid→Scovillain
+      968,         // Orthworm
     ],
     suggestedSlotRange: [33, 42],
     color: '#dda15e',
