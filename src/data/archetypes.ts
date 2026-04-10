@@ -45,7 +45,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'cave-pokemon',
     name: 'Cave',
     description: 'Pokemon commonly found in caves',
-    pokemonIds: [41,42, 50,51, 10105,10106, 74,75,76, 10109,10110,10111, 95, 169,208, 304,305,306, 524,525,526, 527,528, 529,530, 557,558, 703, 714,715, 744,745, 932,933,934, 969,970],
+    pokemonIds: [41,42, 50,51, 10105,10106, 74,75,76, 10109,10110,10111, 95, 169,208, 299,476, 302, 304,305,306, 524,525,526, 527,528, 529,530, 557,558, 610,611,612, 703, 714,715, 744,745, 932,933,934, 969,970],
     suggestedSlotRange: [26, 32],
     color: '#b6a136',
   },
@@ -151,7 +151,9 @@ export const ARCHETYPES: Archetype[] = [
     pokemonIds: [
       54,55,       // Psyduck→Golduck
       418,419,     // Buizel→Floatzel
+      580,581,     // Ducklett→Swanna
       751,752,     // Dewpider→Araquanid
+      973,         // Flamigo
     ],
     suggestedSlotRange: [33, 42],
     color: '#4a9e8d',
@@ -188,6 +190,7 @@ export const ARCHETYPES: Archetype[] = [
       775,         // Komala
       412,413,414, // Burmy→Wormadam/Mothim
       540,541,542, // Sewaddle→Swadloon→Leavanny
+      590,591,     // Foongus→Amoonguss
       840,841,842, // Applin→Flapple/Appletun
       1011,1019,   // Dipplin→Hydrapple
       944,945,     // Shroodle→Grafaiai
