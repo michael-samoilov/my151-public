@@ -54,7 +54,7 @@ function CardPanel({
   const noOp = useCallback(() => {}, []);
 
   return (
-    <div className="flex flex-col h-full rounded-t-2xl bg-background">
+    <div className="flex flex-col h-full bg-background rounded-t-2xl">
       {/* Pull tab: entire area is draggable (handle + header + subtitle) */}
       <div
         className="shrink-0 touch-none cursor-grab active:cursor-grabbing"

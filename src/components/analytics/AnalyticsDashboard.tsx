@@ -624,12 +624,13 @@ export function AnalyticsDashboard() {
                 Type matchups
               </button>
             </div>
-            <div className="px-6 py-4">
-            <p className="text-sm text-muted-foreground mb-3">
+            <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-3 px-3">
               {typeView === 'distribution'
                 ? 'Count of Pokémon with each type and deviation from national dex proportions.'
                 : 'Avg number of type advantage 2x\u2019s (offensive & defensive) vs. all Pokémon in region.'}
             </p>
+            <div className="px-6">
             {typeView === 'distribution' ? (
               <ButterflyChart
                 data={[...activeTypeChartData].sort((a, b) =>
@@ -693,6 +694,7 @@ export function AnalyticsDashboard() {
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">No matchup data available.</p>
             )}
+            </div>
             </div>
           </div>
         </section>
