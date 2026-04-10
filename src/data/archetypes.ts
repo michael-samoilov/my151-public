@@ -141,6 +141,7 @@ export const ARCHETYPES: Archetype[] = [
       747,748,     // Mareanie→Toxapex
       767,768,     // Wimpod→Golisopod
       441,         // Chatot
+      557,558,     // Dwebble→Crustle (also cave)
       686,687,     // Inkay→Malamar
       769,770,     // Sandygast→Palossand
       771,         // Pyukumuku
