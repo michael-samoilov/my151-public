@@ -201,9 +201,11 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
   const primaryType = members[0].types[0];
   const bgColor = TYPE_COLORS[primaryType as keyof typeof TYPE_COLORS] ?? '#888';
 
-  // Generation of the line's root member — used to show gen badges on
-  // members from a different generation (cross-gen evolutions)
-  const lineGen = members[0].generation;
+  // Generation of the matched member — the one that earned this subgroup entry.
+  // Using the matched member's gen (not members[0]) ensures the badge marks
+  // the *other* members as cross-gen, not the highlighted one itself.
+  // e.g. in a Gen 2 subgroup Sudowoodo is matched (Gen 2), so Bonsly (Gen 4) gets the badge.
+  const lineGen = members.find(m => matchedIds.has(m.id))?.generation ?? members[0].generation;
 
   return (
     <>
