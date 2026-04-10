@@ -365,7 +365,7 @@ export function DrillDownSheet() {
     <div className={`${peek ? 'fixed' : 'absolute'} inset-x-0 bottom-0 z-50 pointer-events-none`}>
       <div
         ref={sheetRef}
-        className="pointer-events-auto rounded-t-2xl bg-background"
+        className="pointer-events-auto rounded-t-2xl"
         style={{
           height: sheetHeight,
           transform: isAtRest ? undefined : `translateY(${currentTranslateY})`,
