@@ -498,15 +498,16 @@ export function AnalyticsDashboard() {
   const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden" style={{ overscrollBehavior: 'contain' }}>
-      {/* Header — matches build pane style, no gear icon */}
-      <div className="flex items-center justify-between px-4 py-2 border-b h-11">
+    <div className="h-full flex flex-col">
+      {/* Header — outside scroll container, matches build/view pages */}
+      <div className="flex items-center justify-between px-4 py-2 border-b h-11 shrink-0">
         <h2 className="text-2xl font-extrabold tracking-tight leading-none">
           <span className="text-primary">{analytics.total}</span>
           <span className="text-foreground">/151</span>
         </h2>
       </div>
 
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden" style={{ overscrollBehavior: 'contain' }}>
       <div className="p-6 pb-0 space-y-8 max-w-6xl mx-auto">
         {/* What's Missing Advisor — moved to top */}
         <section className="bg-card rounded-lg border p-6">
@@ -1148,6 +1149,7 @@ export function AnalyticsDashboard() {
           <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
           <circle cx="12" cy="12" r="1.5" fill="currentColor" />
         </svg>
+      </div>
       </div>
     </div>
   );
