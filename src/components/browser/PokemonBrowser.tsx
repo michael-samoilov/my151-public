@@ -150,10 +150,12 @@ export function PokemonBrowser() {
     }
   };
 
-  // Gen badges only make sense when subgroups are generation-based (auto-generated),
-  // not when using custom thematic subgroups (e.g. "volcanic", "gym ace")
+  // Gen badges only make sense when subgroups are generation-based.
+  // Auto-generated subgroups are always generation-based; custom thematic subgroups (e.g.
+  // "volcanic", "gym ace") are not. Cross-gen-evo is an exception: its custom subgroups
+  // are labeled by generation, so badges correctly flag members from a different gen.
   const hasCustomSubgroups = !!(activeArchetypeDef?.subgroups || activeCategoryDef?.subgroups);
-  const showGenBadges = !hasCustomSubgroups;
+  const showGenBadges = !hasCustomSubgroups || activeArchetype === 'cross-gen-evo';
 
   const isSearching = searchQuery.trim().length > 0;
   const hasActivePropertyFilters = !!((typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || evoLineSizeFilter);
