@@ -37,7 +37,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'early-normal',
     name: 'Domestic',
     description: 'Domestic and pet-like Pokemon',
-    pokemonIds: [52,53, 10107,10108, 209,210, 300,301, 431,432, 506,507,508, 509,510, 572,573, 676, 827,828, 831,832, 835,836, 926,927, 942,943],
+    pokemonIds: [52,53, 10107,10108, 209,210, 300,301, 431,432, 506,507,508, 509,510, 572,573, 676, 827,828, 831,832, 835,836, 924,925, 926,927, 942,943],
     suggestedSlotRange: [21, 25],
     color: '#a8a77a',
   },
@@ -45,7 +45,7 @@ export const ARCHETYPES: Archetype[] = [
     id: 'cave-pokemon',
     name: 'Cave',
     description: 'Pokemon commonly found in caves',
-    pokemonIds: [41,42, 50,51, 10105,10106, 74,75,76, 10109,10110,10111, 95, 169,208, 524,525,526, 527,528, 529,530, 557,558, 703, 744,745],
+    pokemonIds: [41,42, 50,51, 10105,10106, 74,75,76, 10109,10110,10111, 95, 169,208, 304,305,306, 524,525,526, 527,528, 529,530, 557,558, 610,611,612, 703, 714,715, 744,745, 932,933,934, 969,970],
     suggestedSlotRange: [26, 32],
     color: '#b6a136',
   },
@@ -114,6 +114,7 @@ export const ARCHETYPES: Archetype[] = [
       98,99,       // Krabby→Kingler
       120,121,     // Staryu→Starmie
       278,279,     // Wingull→Pelipper
+      940,941,     // Wattrel→Kilowattrel
       341,342,     // Corphish→Crawdaunt
       422,423,     // Shellos→Gastrodon
       688,689,     // Binacle→Barbaracle
@@ -128,6 +129,20 @@ export const ARCHETYPES: Archetype[] = [
     ],
     suggestedSlotRange: [33, 42],
     color: '#e9c46a',
+  },
+  {
+    id: 'lake',
+    name: 'Lake / Riverside',
+    description: 'Pokemon found at freshwater lakes, rivers, and ponds across all regions',
+    pokemonIds: [
+      54,55,       // Psyduck→Golduck
+      418,419,     // Buizel→Floatzel
+      580,581,     // Ducklett→Swanna
+      751,752,     // Dewpider→Araquanid
+      973,         // Flamigo
+    ],
+    suggestedSlotRange: [33, 42],
+    color: '#4a9e8d',
   },
   {
     id: 'forest',
@@ -159,8 +174,13 @@ export const ARCHETYPES: Archetype[] = [
       765,         // Oranguru
       766,         // Passimian
       775,         // Komala
+      412,413,414, // Burmy→Wormadam/Mothim
+      540,541,542, // Sewaddle→Swadloon→Leavanny
+      590,591,     // Foongus→Amoonguss
       840,841,842, // Applin→Flapple/Appletun
       1011,1019,   // Dipplin→Hydrapple
+      944,945,     // Shroodle→Grafaiai
+      948,949,     // Toedscool→Toedscruel
     ],
     suggestedSlotRange: [33, 42],
     color: '#2d6a4f',
@@ -187,6 +207,7 @@ export const ARCHETYPES: Archetype[] = [
       872,873,     // Snom→Frosmoth
       875,         // Eiscue
       974,975,     // Cetoddle→Cetitan
+      996,997,     // Frigibax→Arctibax
     ],
     suggestedSlotRange: [33, 42],
     color: '#7ec8e3',
@@ -213,7 +234,9 @@ export const ARCHETYPES: Archetype[] = [
       854,855,      // Sinistea→Polteageist
       864,          // Cursola
       897,          // Spectrier
-      946,947,      // Greavard→Houndstone
+      946,947,      // Bramblin→Brambleghast
+      971,972,      // Greavard→Houndstone
+      999,1000,     // Gimmighoul→Gholdengo
     ],
     suggestedSlotRange: [33, 42],
     color: '#735797',
@@ -250,14 +273,18 @@ export const ARCHETYPES: Archetype[] = [
       761,762,763,     // Bounsweet→Steenee→Tsareena
       764,             // Comfey
       829,830,         // Gossifleur→Eldegoss
+      659,660,         // Bunnelby→Diggersby
+      672,673,         // Skiddo→Gogoat
+      741,             // Oricorio
       928,929,930,     // Smoliv→Dolliv→Arboliva
+      955,956,         // Flittle→Espathra
     ],
     suggestedSlotRange: [33, 42],
     color: '#f9a8d4',
   },
   {
     id: 'ruins',
-    name: 'Ruins / Temple',
+    name: 'Ruins',
     description: 'Psychic and mystical Pokemon found in ancient ruins, temples, and sacred sites',
     pokemonIds: [
       63,64,65,        // Abra→Kadabra→Alakazam
@@ -337,6 +364,7 @@ export const ARCHETYPES: Archetype[] = [
       618,             // Stunfisk
       10179,           // Stunfisk-Galar
       690,691,         // Skrelp→Dragalge
+      938,939,         // Tadbulb→Bellibolt
     ],
     suggestedSlotRange: [33, 42],
     color: '#5c6d3f',
