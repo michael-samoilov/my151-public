@@ -1,49 +1,10 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { cn, displayName } from '@/lib/utils';
 import type { Pokemon } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
 import { Plus, ChevronRight, X, Sword, Shield } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
-
-const SPRITE_SOURCE_PX = 96;
-
-/**
- * Compute the largest CSS pixel size for a 96px sprite that maps to exact
- * device pixels within the sprite container. Picks the biggest integer
- * multiple of (96/dpr) that fits, so each source pixel maps to a perfect
- * N×N block of device pixels — no fractional scaling artifacts.
- *
- * The container is 11vw on mobile, 64px (md:w-16) on desktop.
- */
-function useNativeSpriteSizePx(): number | undefined {
-  const compute = () => {
-    if (typeof window === 'undefined') return undefined;
-    const dpr = window.devicePixelRatio || 1;
-    // Container size in CSS pixels
-    const vw = window.innerWidth / 100;
-    const containerCssPx = window.innerWidth >= 768 ? 64 : 11 * vw;
-    // Unit = one source pixel in CSS pixels (e.g. 32 on 3× display)
-    const unit = SPRITE_SOURCE_PX / dpr;
-    // How many whole multiples fit in the container?
-    const multiples = Math.floor(containerCssPx / unit);
-    if (multiples < 1) return undefined; // sprite larger than container — fall back to contain
-    return Math.round(unit * multiples);
-  };
-
-  const [size, setSize] = useState<number | undefined>(compute);
-  useEffect(() => {
-    const update = () => setSize(compute());
-    window.addEventListener('resize', update);
-    const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
-    mq.addEventListener('change', update);
-    return () => {
-      window.removeEventListener('resize', update);
-      mq.removeEventListener('change', update);
-    };
-  }, []);
-  return size;
-}
 
 /** Tiny pokeball icon: red-filled top half, open bottom half, center button */
 function PokeballIcon({ className }: { className?: string }) {
@@ -173,7 +134,6 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const sections = usePokedexStore((s) => s.sections);
   const allInDex = members.every((p) => assignedIds.has(p.id));
-  const nativeSpriteSizePx = useNativeSpriteSizePx();
 
   const doRemove = () => {
     const firstId = members[0].id;
@@ -231,9 +191,9 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
             {inDex && variant === 'analytics' && (
               <button
                 onClick={handleRemoveButton}
-                className="absolute top-[1px] right-[4px] md:right-1 w-[3vw] h-[3vw] md:w-4 md:h-4 rounded-full bg-destructive/60 md:bg-destructive/80 text-white flex items-center justify-center z-10"
+                className="absolute top-[1px] right-[4px] md:right-1 w-[3vw] h-[3vw] md:w-[min(1.2vw,16px)] md:h-[min(1.2vw,16px)] rounded-full bg-destructive/60 md:bg-destructive/80 text-white flex items-center justify-center z-10"
               >
-                <X className="w-[1.5vw] h-[1.5vw] md:w-2.5 md:h-2.5" />
+                <X className="w-[1.5vw] h-[1.5vw] md:w-[min(0.8vw,10px)] md:h-[min(0.8vw,10px)]" />
               </button>
             )}
             {inDex && variant === 'browser' && (
@@ -262,41 +222,35 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                 {showGenBadge && (
                   <GenBadge
                     gen={pokemon.generation}
-                    className="absolute top-0 left-[6px] md:left-1 w-[2.5vw] h-[2.5vw] md:w-4 md:h-4 z-10"
+                    className="absolute top-0 left-[6px] md:left-1 w-[2.5vw] h-[2.5vw] md:w-[min(1.2vw,16px)] md:h-[min(1.2vw,16px)] z-10"
                   />
                 )}
                 <div
-                  className="w-[11vw] h-[11vw] md:w-16 md:h-16"
+                  className="w-[11vw] h-[11vw] md:w-[clamp(40px,7vw,96px)] md:h-[clamp(40px,7vw,96px)]"
                   style={{
                     backgroundImage: `url(${spriteOverrides?.[pokemon.id]
                       ?? (shinyIds?.has(pokemon.id)
                         ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
                         : pokemon.sprite)})`,
-                    backgroundSize: nativeSpriteSizePx
-                      ? `${nativeSpriteSizePx}px ${nativeSpriteSizePx}px`
-                      : 'contain',
+                    backgroundSize: 'contain',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     imageRendering: 'pixelated',
-                    ...(nativeSpriteSizePx ? {
-                      width: `${nativeSpriteSizePx}px`,
-                      height: `${nativeSpriteSizePx}px`,
-                    } : {}),
                   }}
                   role="img"
                   aria-label={pokemon.name}
                 />
-                <span className="text-[min(2vw,8px)] md:text-[10px] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
+                <span className="text-[min(2vw,8px)] md:text-[min(1vw,10px)] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
                   {displayName(pokemon.name)}
                 </span>
-                <div className="flex gap-[0.5vw] md:gap-0.5 mt-[0.5vw] md:mt-0.5 justify-center">
+                <div className="flex gap-[0.5vw] md:gap-[min(0.3vw,2px)] mt-[0.5vw] md:mt-0.5 justify-center">
                   {pokemon.types.map((t) => (
                     <span
                       key={t}
-                      className="w-[6vw] md:w-7 py-[0.2vw] md:py-px rounded text-[min(1.5vw,5px)] md:text-[7px] font-semibold capitalize leading-tight text-center truncate flex items-center justify-center"
+                      className="w-[6vw] md:w-[clamp(20px,2.5vw,28px)] py-[0.2vw] md:py-[min(0.15vw,1px)] rounded text-[min(1.5vw,5px)] md:text-[min(0.7vw,7px)] font-semibold capitalize leading-tight text-center truncate flex items-center justify-center"
                       style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS], color: TYPE_TEXT_COLORS[t as keyof typeof TYPE_TEXT_COLORS] }}
                     >
-                      <span className="translate-y-[0.5px]">{t}</span>
+                      {t}
                     </span>
                   ))}
                 </div>
@@ -306,13 +260,13 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   const defD = doublings(info.defense, true);
                   const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
                   return (
-                    <div className="grid mt-[0.3vw] md:mt-0.5 text-[min(1.5vw,6px)] md:text-[8px] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'min(0.6vw, 2px)' }}>
-                      <span className="justify-self-end leading-none translate-y-[0.5px]">{formatMult(info.offense)}×</span>
-                      <Sword className="w-2 h-2 md:w-3 md:h-3 block" />
-                      <span className="justify-self-start leading-none translate-y-[0.5px]">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span>
-                      <span className="justify-self-end leading-none translate-y-[0.5px]">{formatMult(info.defense)}×</span>
-                      <Shield className="w-2 h-2 md:w-3 md:h-3 block" />
-                      <span className="justify-self-start leading-none translate-y-[0.5px]">(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span>
+                    <div className="grid mt-[0.3vw] md:mt-0.5 text-[min(1.5vw,6px)] md:text-[min(0.8vw,8px)] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'min(0.6vw, 2px)' }}>
+                      <span className="justify-self-end leading-none">{formatMult(info.offense)}×</span>
+                      <Sword className="w-2 h-2 md:w-[min(1vw,12px)] md:h-[min(1vw,12px)] block" />
+                      <span className="justify-self-start leading-none">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span>
+                      <span className="justify-self-end leading-none">{formatMult(info.defense)}×</span>
+                      <Shield className="w-2 h-2 md:w-[min(1vw,12px)] md:h-[min(1vw,12px)] block" />
+                      <span className="justify-self-start leading-none">(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span>
                     </div>
                   );
                 })()}
@@ -321,7 +275,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
             {/* Chevron between evo line members */}
             {!isLast && (
               <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10">
-                <ChevronRight className="w-[2vw] h-[2vw] md:w-3 md:h-3 text-muted-foreground/60" />
+                <ChevronRight className="w-[2vw] h-[2vw] md:w-[min(1vw,12px)] md:h-[min(1vw,12px)] text-muted-foreground/60" />
               </div>
             )}
           </div>

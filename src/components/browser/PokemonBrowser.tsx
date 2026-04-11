@@ -577,11 +577,6 @@ export function PokemonBrowser() {
             </button>
           </div>
           {filterContent}
-          <div className="mt-2">
-            <Button className="w-full" onClick={() => setOpenSheet(null)}>
-              Show {totalCount} results
-            </Button>
-          </div>
         </div>
       )}
 

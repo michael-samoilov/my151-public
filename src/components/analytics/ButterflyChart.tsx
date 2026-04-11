@@ -34,9 +34,11 @@ interface ButterflyChartProps {
   sortBy?: 'count' | 'deviation';
   /** Called when user clicks a column title to sort */
   onSortChange?: (col: 'count' | 'deviation') => void;
+  /** When true, rows with count === 0 are not clickable */
+  disableEmptyRows?: boolean;
 }
 
-export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -256,7 +258,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             const highlightY = (prevBottom + y) / 2;
             const highlightH = ((y + barHeight + nextTop) / 2) - highlightY;
 
-            const hasData = d.count > 0;
+            const hasData = !disableEmptyRows || d.count > 0;
 
             return (
               <g key={d.label} className={onBarClick && hasData ? 'cursor-pointer' : ''} onClick={onBarClick && hasData ? () => onBarClick(d.label) : undefined}>

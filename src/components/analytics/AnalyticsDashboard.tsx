@@ -642,6 +642,7 @@ export function AnalyticsDashboard() {
                 fixedDevRight={fixedDevRight}
                 sortBy={typeSortBy}
                 onSortChange={setTypeSortBy}
+                disableEmptyRows
                 onBarClick={(label) => {
                   if (selectedTypeChart === 'yours') {
                     handleDrillToggle({ kind: 'type', type: label.toLowerCase() }, typeSiblings, excludeSpecial);
@@ -706,7 +707,7 @@ export function AnalyticsDashboard() {
             Where your Pokemon come from and deviation from national dex proportions.
           </p>
           <div className="bg-card rounded-lg border p-4">
-            <ButterflyChart data={genChartData} rowHeight={28} onBarClick={(label) => {
+            <ButterflyChart data={genChartData} rowHeight={28} disableEmptyRows onBarClick={(label) => {
               const gen = parseInt(label.replace('Gen ', ''));
               if (!isNaN(gen)) handleDrillToggle({ kind: 'generation', generation: gen }, genSiblings);
             }} activeLabel={activeGenLabel} />

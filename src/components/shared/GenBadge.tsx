@@ -11,25 +11,31 @@ export const GEN_STOPS: Record<number, { offset: string; color: string }[]> = {
   9: [{ offset: '50%', color: '#E3350D' }, { offset: '50%', color: '#7B2D8E' }],
 };
 
-function buildGradient(stops: { offset: string; color: string }[]): string {
-  return `linear-gradient(135deg, ${stops.map(s => `${s.color} ${s.offset}`).join(', ')})`;
-}
-
-export function GenBadge({ gen, className, textClass }: { gen: number; className?: string; textClass?: string }) {
+export function GenBadge({ gen, className }: { gen: number; className?: string }) {
   const stops = GEN_STOPS[gen] ?? [{ offset: '100%', color: '#888' }];
+  const gradId = `gen-grad-${gen}`;
   return (
-    <div
-      className={`rounded-full flex items-center justify-center ${className ?? ''}`}
-      style={{ background: buildGradient(stops) }}
-    >
-      <span
-        className={`text-white font-extrabold leading-none translate-y-[1px] ${textClass ?? 'text-[1.5vw] md:text-[7px]'}`}
-        style={{
-          textShadow: '0 0 2px rgba(0,0,0,0.4), 0 0 2px rgba(0,0,0,0.4)',
-        }}
+    <svg viewBox="0 0 20 20" className={className} aria-label={`Gen ${gen}`}>
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="1">
+          {stops.map((s, i) => (
+            <stop key={i} offset={s.offset} stopColor={s.color} />
+          ))}
+        </linearGradient>
+      </defs>
+      <circle cx="10" cy="10" r="10" fill={`url(#${gradId})`} />
+      <text
+        x="10" y="10.5"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fill="white"
+        fontSize="13"
+        fontWeight="800"
+        stroke="rgba(0,0,0,0.3)"
+        strokeWidth="0.5"
       >
         {gen}
-      </span>
-    </div>
+      </text>
+    </svg>
   );
 }
