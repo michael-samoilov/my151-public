@@ -373,10 +373,8 @@ export function DrillDownSheet() {
           overscrollBehavior: 'none',
         }}
       >
-        {/* Carousel — each panel is its own rounded card.
-            clip-path inset with negative top allows CardPanel's upward box-shadow
-            to escape while still clipping prev/next panels at the left/right edges. */}
-        <div className="h-full relative" style={{ clipPath: 'inset(-100px 0 0 0)' }}>
+        {/* Carousel container clips horizontal overflow to hide prev/next panels */}
+        <div className="h-full relative overflow-x-clip">
           <div
             ref={carouselRef}
             className="absolute inset-0 flex"
@@ -389,9 +387,11 @@ export function DrillDownSheet() {
             }}
             onTransitionEnd={handleTransitionEnd}
           >
-            {/* Prev panel */}
+            {/* Prev panel — clip-path allows shadow to escape upward but clips it at
+                panel's own left/right edges, preventing bleed into adjacent panels */}
             <div
               className="h-full flex-1 min-w-0"
+              style={{ clipPath: 'inset(-100px 0 0 0)' }}
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -416,6 +416,7 @@ export function DrillDownSheet() {
             {/* Current panel */}
             <div
               className="h-full flex-1 min-w-0"
+              style={{ clipPath: 'inset(-100px 0 0 0)' }}
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -439,6 +440,7 @@ export function DrillDownSheet() {
             {/* Next panel */}
             <div
               className="h-full flex-1 min-w-0"
+              style={{ clipPath: 'inset(-100px 0 0 0)' }}
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
