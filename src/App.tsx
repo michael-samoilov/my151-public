@@ -4,7 +4,7 @@ import type { AppView } from '@/components/layout/Header';
 import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
-import { DrillDownSheet } from '@/components/analytics/DrillDownSheet';
+import { DrillDownSheet, DrillDownPanel } from '@/components/analytics/DrillDownSheet';
 import { ViewPage } from '@/components/view/ViewPage';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -123,7 +123,7 @@ function App() {
             <div className="flex-1 min-w-0">
               <PokedexGrid />
             </div>
-            <div className="w-[420px] flex-shrink-0 hidden md:block">
+            <div className="flex-1 min-w-0 hidden md:block">
               <PokemonBrowser />
             </div>
           </div>
@@ -132,8 +132,15 @@ function App() {
             <ViewPage />
           </div>
         ) : (
-          <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
-            <AnalyticsDashboard />
+          <div className="flex-1 flex min-h-0">
+            <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
+              <AnalyticsDashboard />
+            </div>
+            {drillDownSegment && (
+              <div className="hidden md:flex w-[420px] flex-shrink-0 border-l">
+                <DrillDownPanel />
+              </div>
+            )}
           </div>
         )}
       </div>

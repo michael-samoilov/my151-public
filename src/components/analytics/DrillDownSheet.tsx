@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { computeDrillDownData, type DrillDownData } from '@/hooks/useDrillDownData';
 import { EvoLineGrid } from '@/components/browser/EvoLineCard';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 const HEADER_HEIGHT = 49; // app header: py-3 + text + border
 const PEEK_HEIGHT = 68;
@@ -362,7 +362,7 @@ export function DrillDownSheet() {
   const isAtRest = !peek && dragY === 0;
 
   return (
-    <div className={`${peek ? 'fixed' : 'absolute'} inset-x-0 bottom-0 z-50 pointer-events-none`}>
+    <div className={`${peek ? 'fixed' : 'absolute'} inset-x-0 bottom-0 z-50 pointer-events-none md:hidden`}>
       <div
         ref={sheetRef}
         className="pointer-events-auto"
@@ -462,6 +462,134 @@ export function DrillDownSheet() {
               )}
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Desktop side panel for analytics drilldown — no drag/carousel, static layout */
+export function DrillDownPanel() {
+  const closeDrillDown = usePokedexStore((s) => s.closeDrillDown);
+  const navigateDrillDown = usePokedexStore((s) => s.navigateDrillDown);
+  const storeSections = usePokedexStore((s) => s.sections);
+  const siblings = usePokedexStore((s) => s.drillDownSiblings);
+  const segment = usePokedexStore((s) => s.drillDownSegment);
+  const excludeSpecial = usePokedexStore((s) => s.drillDownExcludeSpecial);
+  const dexId = usePokedexStore((s) => s.drillDownDexId);
+  const newOnly = usePokedexStore((s) => s.drillDownNewOnly);
+
+  const assignedIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const arr of Object.values(storeSections)) {
+      for (const id of arr) ids.add(id);
+    }
+    return ids;
+  }, [storeSections]);
+
+  const currentIdx = useMemo(() => {
+    if (!segment || siblings.length < 2) return -1;
+    return siblings.findIndex(s => JSON.stringify(s) === JSON.stringify(segment));
+  }, [segment, siblings]);
+
+  const prevSibling = siblings.length >= 2 && currentIdx >= 0
+    ? siblings[(currentIdx - 1 + siblings.length) % siblings.length] : null;
+  const nextSibling = siblings.length >= 2 && currentIdx >= 0
+    ? siblings[(currentIdx + 1) % siblings.length] : null;
+
+  const currentData = useMemo(() =>
+    computeDrillDownData(segment, storeSections, excludeSpecial, dexId, newOnly),
+    [segment, storeSections, excludeSpecial, dexId, newOnly]);
+
+  const emptySet = useMemo(() => new Set<number>(), []);
+  const noOp = useCallback(() => {}, []);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [segment]);
+
+  if (!currentData) return null;
+
+  return (
+    <div className="flex flex-col h-full bg-background w-full">
+      {/* Header */}
+      <div className="shrink-0 border-b">
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            {currentData.icon && (
+              <img src={currentData.icon} alt="" className="w-4 h-4 shrink-0" />
+            )}
+            <span className="text-sm font-semibold truncate" style={{ color: currentData.color }}>
+              {currentData.title}
+            </span>
+          </div>
+          <button
+            onClick={closeDrillDown}
+            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        <div className="px-3 pb-1.5 text-[10px] text-muted-foreground -mt-0.5">
+          {currentData.subtitle}
+        </div>
+        {/* Prev / Next navigation */}
+        {(prevSibling || nextSibling) && (
+          <div className="flex items-center justify-between px-3 pb-2">
+            {prevSibling ? (
+              <button
+                onClick={() => navigateDrillDown(prevSibling)}
+                className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate max-w-[100px]">{getSegmentLabel(prevSibling)}</span>
+              </button>
+            ) : <div />}
+            {nextSibling ? (
+              <button
+                onClick={() => navigateDrillDown(nextSibling)}
+                className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <span className="truncate max-w-[100px]">{getSegmentLabel(nextSibling)}</span>
+                <ChevronRight className="w-3.5 h-3.5 shrink-0" />
+              </button>
+            ) : <div />}
+          </div>
+        )}
+        {/* Accent line */}
+        <div className="h-[2px]" style={{ backgroundColor: currentData.color, opacity: 0.5 }} />
+      </div>
+
+      {/* Scrollable content */}
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0 overflow-y-auto"
+        style={{ overscrollBehavior: 'contain' }}
+      >
+        <div className="px-2 pb-2">
+          {currentData.sections.map((section) => (
+            <div key={section.sectionId}>
+              <div className="sticky top-0 z-20 bg-background text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
+                {section.sectionName}
+              </div>
+              <div className="pt-1">
+                <EvoLineGrid
+                  groups={section.groups}
+                  assignedIds={assignedIds}
+                  stagedIds={emptySet}
+                  onToggleStage={noOp}
+                  cols={6}
+                  variant="analytics"
+                  showGenBadges={currentData.showGenBadges}
+                  matchupInfo={currentData.matchupInfo}
+                />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

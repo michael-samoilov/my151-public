@@ -256,14 +256,16 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             const highlightY = (prevBottom + y) / 2;
             const highlightH = ((y + barHeight + nextTop) / 2) - highlightY;
 
+            const hasData = d.count > 0;
+
             return (
-              <g key={d.label} className={onBarClick ? 'cursor-pointer' : ''} onClick={onBarClick ? () => onBarClick(d.label) : undefined}>
+              <g key={d.label} className={onBarClick && hasData ? 'cursor-pointer' : ''} onClick={onBarClick && hasData ? () => onBarClick(d.label) : undefined}>
                 {/* Full-row hit target + active highlight */}
                 <rect
                   x={0} y={highlightY} width={width} height={highlightH}
                   fill={isActive ? d.color : 'transparent'}
                   opacity={isActive ? 0.12 : 1}
-                  className={!isActive && onBarClick ? 'hover:fill-current hover:opacity-[0.04] active:opacity-[0.08]' : ''}
+                  className={!isActive && onBarClick && hasData ? 'hover:fill-current hover:opacity-[0.04] active:opacity-[0.08]' : ''}
                 />
                 {/* Label */}
                 <text

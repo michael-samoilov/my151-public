@@ -50,10 +50,10 @@ function PokemonTileStatic({ id }: { id: number }) {
     <div className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 aspect-square shadow-lg">
       <GenBadge
         gen={pokemon.generation}
-        className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5"
+        className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-4 md:h-4"
       />
       <div
-        className="w-[8vw] h-[8vw] md:w-10 md:h-10"
+        className="w-[8vw] h-[8vw] md:w-14 md:h-14"
         style={{
           backgroundImage: `url(${pokemon.sprite})`,
           backgroundSize: 'contain',
@@ -64,14 +64,14 @@ function PokemonTileStatic({ id }: { id: number }) {
         role="img"
         aria-label={displayName(pokemon.name)}
       />
-      <span className="text-[min(1.8vw,7px)] md:text-[7px] font-medium capitalize truncate w-full text-center leading-tight">
+      <span className="text-[min(1.8vw,7px)] md:text-[9px] font-medium capitalize truncate w-full text-center leading-tight">
         {displayName(pokemon.name)}
       </span>
       <div className="flex gap-[0.3vw] md:gap-0.5 mt-[0.3vw] md:mt-0.5">
         {pokemon.types.map((t) => (
           <span
             key={t}
-            className="px-[0.8vw] md:px-1 py-[0.1vw] md:py-px rounded text-[min(1.4vw,5px)] md:text-[5px] font-semibold capitalize text-white leading-none translate-y-[0.5px]"
+            className="px-[0.8vw] md:px-1 py-[0.1vw] md:py-px rounded text-[min(1.4vw,5px)] md:text-[7px] font-semibold capitalize text-white leading-none translate-y-[0.5px]"
             style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
           >
             {t}
@@ -135,17 +135,17 @@ function DraggableTile({
       >
         <GenBadge
           gen={pokemon.generation}
-          className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 z-10"
+          className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-4 md:h-4 z-10"
         />
         <button
           onClick={() => removeBranch(sectionId, pokemonId)}
           onPointerDown={(e) => e.stopPropagation()}
-          className="absolute top-[0.5vw] right-[0.5vw] md:top-0.5 md:right-0.5 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full bg-destructive text-white flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
+          className="absolute top-[0.5vw] right-[0.5vw] md:top-0.5 md:right-0.5 w-[3vw] h-[3vw] md:w-4 md:h-4 rounded-full bg-destructive text-white flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
         >
-          <X className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2" />
+          <X className="w-[1.5vw] h-[1.5vw] md:w-2.5 md:h-2.5" />
         </button>
         <div
-          className="w-[8vw] h-[8vw] md:w-10 md:h-10"
+          className="w-[8vw] h-[8vw] md:w-14 md:h-14"
           style={{
             backgroundImage: `url(${pokemon.sprite})`,
             backgroundSize: 'contain',
@@ -156,14 +156,14 @@ function DraggableTile({
           role="img"
           aria-label={displayName(pokemon.name)}
         />
-        <span className="text-[min(1.8vw,7px)] md:text-[7px] font-medium capitalize truncate w-full text-center leading-tight">
+        <span className="text-[min(1.8vw,7px)] md:text-[9px] font-medium capitalize truncate w-full text-center leading-tight">
           {displayName(pokemon.name)}
         </span>
         <div className="flex gap-[0.3vw] md:gap-0.5 mt-[0.3vw] md:mt-0.5">
           {pokemon.types.map((t) => (
             <span
               key={t}
-              className="w-[6.5vw] md:w-[27px] py-[0.1vw] md:py-px rounded text-[min(1.4vw,5px)] md:text-[5px] font-semibold capitalize leading-none translate-y-[0.25px] text-center"
+              className="w-[6.5vw] md:w-8 py-[0.1vw] md:py-px rounded text-[min(1.4vw,5px)] md:text-[7px] font-semibold capitalize leading-none translate-y-[0.25px] text-center"
               style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS], color: TYPE_TEXT_COLORS[t as keyof typeof TYPE_TEXT_COLORS] }}
             >
               {t}
@@ -269,7 +269,7 @@ function StarterContent({
               className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
               style={{ borderColor: `${color}40`, color: `${color}90`, backgroundColor: `${color}10` }}
             >
-              <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+              <Plus className="w-[4vw] h-[4vw] md:w-6 md:h-6" />
             </button>
           );
         }
@@ -302,7 +302,7 @@ function StarterContent({
           onClick={onAddClick}
           className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
         >
-          <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+          <Plus className="w-[4vw] h-[4vw] md:w-6 md:h-6" />
         </button>
       )}
     </>
@@ -375,16 +375,16 @@ function GroupBox({
       onTransitionEnd={handleTransitionEnd}
       className="rounded-lg"
       style={{
-        backgroundColor: `${group.color}${hasPokemon ? '10' : '08'}`,
-        border: `1px solid ${group.color}${hasPokemon ? '25' : '18'}`,
+        backgroundColor: `${group.color}${hasPokemon ? '10' : '10'}`,
+        border: `1px solid ${group.color}${hasPokemon ? '25' : '20'}`,
       }}
     >
       {/* Label */}
       <div
-        className="text-[9px] font-semibold uppercase tracking-wide px-1.5"
+        className="text-[9px] md:text-xs font-semibold uppercase tracking-wide px-1.5"
         style={{
-          color: `${group.color}`,
-          opacity: showEmptyState ? 0.6 : 0.85,
+          color: `color-mix(in srgb, ${group.color} 65%, black)`,
+          opacity: showEmptyState ? 0.75 : 1,
           paddingTop: showEmptyState ? '0px' : '4px',
           paddingBottom: showEmptyState ? '0px' : '2px',
         }}
@@ -403,7 +403,7 @@ function GroupBox({
               color: `${group.color}90`,
             }}
           >
-            <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+            <Plus className="w-[4vw] h-[4vw] md:w-6 md:h-6" />
           </button>
         </div>
       ) : (
@@ -454,7 +454,7 @@ function GroupBox({
                   onClick={() => onAddClick(group.id)}
                   className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
                 >
-                  <Plus className="w-[4vw] h-[4vw] md:w-5 md:h-5" />
+                  <Plus className="w-[4vw] h-[4vw] md:w-6 md:h-6" />
                 </button>
               )}
             </>

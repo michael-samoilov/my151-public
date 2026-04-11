@@ -14,7 +14,7 @@ const SPRITE_SOURCE_PX = 96;
  * multiple of (96/dpr) that fits, so each source pixel maps to a perfect
  * N×N block of device pixels — no fractional scaling artifacts.
  *
- * The container is 11vw on mobile, 32px (md:w-8) on desktop.
+ * The container is 11vw on mobile, 64px (md:w-16) on desktop.
  */
 function useNativeSpriteSizePx(): number | undefined {
   const compute = () => {
@@ -22,7 +22,7 @@ function useNativeSpriteSizePx(): number | undefined {
     const dpr = window.devicePixelRatio || 1;
     // Container size in CSS pixels
     const vw = window.innerWidth / 100;
-    const containerCssPx = window.innerWidth >= 768 ? 32 : 11 * vw;
+    const containerCssPx = window.innerWidth >= 768 ? 64 : 11 * vw;
     // Unit = one source pixel in CSS pixels (e.g. 32 on 3× display)
     const unit = SPRITE_SOURCE_PX / dpr;
     // How many whole multiples fit in the container?
@@ -231,9 +231,9 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
             {inDex && variant === 'analytics' && (
               <button
                 onClick={handleRemoveButton}
-                className="absolute top-[1px] right-[4px] md:right-1 w-[3vw] h-[3vw] md:w-3.5 md:h-3.5 rounded-full bg-destructive/60 md:bg-destructive/80 text-white flex items-center justify-center z-10"
+                className="absolute top-[1px] right-[4px] md:right-1 w-[3vw] h-[3vw] md:w-4 md:h-4 rounded-full bg-destructive/60 md:bg-destructive/80 text-white flex items-center justify-center z-10"
               >
-                <X className="w-[1.5vw] h-[1.5vw] md:w-2 md:h-2" />
+                <X className="w-[1.5vw] h-[1.5vw] md:w-2.5 md:h-2.5" />
               </button>
             )}
             {inDex && variant === 'browser' && (
@@ -252,7 +252,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
               onClick={handleClick}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
               className={cn(
-                'relative flex flex-col items-center pt-[0.5vw] pb-[1vw] md:py-1 transition-all cursor-pointer w-full',
+                'relative flex flex-col items-center pt-[0.5vw] pb-[1vw] md:py-1.5 transition-all cursor-pointer w-full',
               )}
             >
               <div className={cn(
@@ -262,11 +262,11 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                 {showGenBadge && (
                   <GenBadge
                     gen={pokemon.generation}
-                    className="absolute top-0 left-[6px] md:left-1 w-[2.5vw] h-[2.5vw] md:w-3 md:h-3 z-10"
+                    className="absolute top-0 left-[6px] md:left-1 w-[2.5vw] h-[2.5vw] md:w-4 md:h-4 z-10"
                   />
                 )}
                 <div
-                  className="w-[11vw] md:w-8 md:h-8"
+                  className="w-[11vw] h-[11vw] md:w-16 md:h-16"
                   style={{
                     backgroundImage: `url(${spriteOverrides?.[pokemon.id]
                       ?? (shinyIds?.has(pokemon.id)
@@ -278,19 +278,22 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     imageRendering: 'pixelated',
-                    height: nativeSpriteSizePx ? `${nativeSpriteSizePx}px` : '11vw',
+                    ...(nativeSpriteSizePx ? {
+                      width: `${nativeSpriteSizePx}px`,
+                      height: `${nativeSpriteSizePx}px`,
+                    } : {}),
                   }}
                   role="img"
                   aria-label={pokemon.name}
                 />
-                <span className="text-[min(2vw,8px)] md:text-[8px] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
+                <span className="text-[min(2vw,8px)] md:text-[10px] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
                   {displayName(pokemon.name)}
                 </span>
                 <div className="flex gap-[0.5vw] md:gap-0.5 mt-[0.5vw] md:mt-0.5 justify-center">
                   {pokemon.types.map((t) => (
                     <span
                       key={t}
-                      className="w-[6vw] md:w-5 py-[0.2vw] md:py-px rounded text-[min(1.5vw,5px)] md:text-[5px] font-semibold capitalize leading-tight text-center truncate flex items-center justify-center"
+                      className="w-[6vw] md:w-7 py-[0.2vw] md:py-px rounded text-[min(1.5vw,5px)] md:text-[7px] font-semibold capitalize leading-tight text-center truncate flex items-center justify-center"
                       style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS], color: TYPE_TEXT_COLORS[t as keyof typeof TYPE_TEXT_COLORS] }}
                     >
                       <span className="translate-y-[0.5px]">{t}</span>
@@ -303,12 +306,12 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   const defD = doublings(info.defense, true);
                   const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
                   return (
-                    <div className="grid mt-[0.3vw] md:mt-0.5 text-[min(1.5vw,6px)] md:text-[6px] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'min(0.6vw, 2px)' }}>
+                    <div className="grid mt-[0.3vw] md:mt-0.5 text-[min(1.5vw,6px)] md:text-[8px] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'min(0.6vw, 2px)' }}>
                       <span className="justify-self-end leading-none translate-y-[0.5px]">{formatMult(info.offense)}×</span>
-                      <Sword className="w-2 h-2 md:w-2.5 md:h-2.5 block" />
+                      <Sword className="w-2 h-2 md:w-3 md:h-3 block" />
                       <span className="justify-self-start leading-none translate-y-[0.5px]">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span>
                       <span className="justify-self-end leading-none translate-y-[0.5px]">{formatMult(info.defense)}×</span>
-                      <Shield className="w-2 h-2 md:w-2.5 md:h-2.5 block" />
+                      <Shield className="w-2 h-2 md:w-3 md:h-3 block" />
                       <span className="justify-self-start leading-none translate-y-[0.5px]">(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span>
                     </div>
                   );
@@ -318,7 +321,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
             {/* Chevron between evo line members */}
             {!isLast && (
               <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10">
-                <ChevronRight className="w-[2vw] h-[2vw] md:w-2.5 md:h-2.5 text-muted-foreground/60" />
+                <ChevronRight className="w-[2vw] h-[2vw] md:w-3 md:h-3 text-muted-foreground/60" />
               </div>
             )}
           </div>
