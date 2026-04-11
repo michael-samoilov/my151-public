@@ -373,12 +373,13 @@ export function DrillDownSheet() {
           overscrollBehavior: 'none',
         }}
       >
-        {/* Shadow — zero-height, outside carousel so overflow-x-clip can't clip it.
-            inset-x-0 spans full viewport width, so the blur's left/right leakage
-            goes off-screen; only the upward shadow is visible. */}
+        {/* Shadow — zero-height, placed at bottom of the rounded-corner area (top-4 = 1rem
+            = same as rounded-t-2xl radius). Its upward spread fills the transparent corner
+            triangles of the CardPanel. inset-x-0 = full viewport width so left/right
+            leakage is off-screen. Outside carousel so not clipped by overflow-x-clip. */}
         <div
-          className="absolute inset-x-0 top-0 h-0 rounded-t-2xl pointer-events-none"
-          style={{ boxShadow: '0 -4px 24px rgba(0,0,0,0.2)' }}
+          className="absolute inset-x-0 top-4 h-0 pointer-events-none"
+          style={{ boxShadow: '0 -10px 20px rgba(0,0,0,0.22)' }}
         />
         {/* Carousel — each panel is its own rounded card */}
         <div className="h-full relative overflow-x-clip">
