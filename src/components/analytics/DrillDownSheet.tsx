@@ -54,7 +54,7 @@ function CardPanel({
   const noOp = useCallback(() => {}, []);
 
   return (
-    <div className="flex flex-col h-full bg-background rounded-t-2xl" style={{ boxShadow: '0 -4px 24px rgba(0,0,0,0.2)' }}>
+    <div className="flex flex-col h-full bg-background rounded-t-2xl">
       {/* Pull tab: entire area is draggable (handle + header + subtitle) */}
       <div
         className="shrink-0 touch-none cursor-grab active:cursor-grabbing"
@@ -373,6 +373,13 @@ export function DrillDownSheet() {
           overscrollBehavior: 'none',
         }}
       >
+        {/* Shadow — zero-height, outside carousel so overflow-x-clip can't clip it.
+            inset-x-0 spans full viewport width, so the blur's left/right leakage
+            goes off-screen; only the upward shadow is visible. */}
+        <div
+          className="absolute inset-x-0 top-0 h-0 rounded-t-2xl pointer-events-none"
+          style={{ boxShadow: '0 -4px 24px rgba(0,0,0,0.2)' }}
+        />
         {/* Carousel — each panel is its own rounded card */}
         <div className="h-full relative overflow-x-clip">
           <div
