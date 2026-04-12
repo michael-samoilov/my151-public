@@ -6,25 +6,15 @@ import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
 import { getPokemonById, getAllPokemon, getEvolutionLine } from '@/hooks/usePokemonData';
-import { TYPE_NAMES } from '@/types/pokemon';
+import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
 import { STARTER_IDS } from '@/data/categories';
+import { typeIconPath } from '@/data/type-ids';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
-const POKEAPI_TYPE_IDS: Record<string, number> = {
-  normal: 1, fighting: 2, flying: 3, poison: 4, ground: 5, rock: 6,
-  bug: 7, ghost: 8, steel: 9, fire: 10, water: 11, grass: 12,
-  electric: 13, psychic: 14, ice: 15, dragon: 16, dark: 17, fairy: 18,
-};
-const TYPE_ICON_URLS: Record<string, string> = Object.fromEntries(
-  Object.entries(POKEAPI_TYPE_IDS).map(([type, id]) => [
-    type,
-    `/sprites/types/${id}.png`,
-  ]),
-);
 
 /** Align yours + national histograms to the same bins, merge into single dataset */
 function alignHistograms(
@@ -135,7 +125,7 @@ export function AnalyticsDashboard() {
         count: typeCounts[t],
         deviation,
         color: TYPE_COLORS[t as keyof typeof TYPE_COLORS],
-        icon: TYPE_ICON_URLS[t],
+        icon: typeIconPath(t as TypeName),
       };
     }).sort((a, b) => b.deviation - a.deviation);
   }, [sections, excludeSpecial]);
@@ -222,7 +212,7 @@ export function AnalyticsDashboard() {
         count: typeCounts[t],
         deviation,
         color: TYPE_COLORS[t as keyof typeof TYPE_COLORS],
-        icon: TYPE_ICON_URLS[t],
+        icon: typeIconPath(t as TypeName),
       };
     }).sort(isNational
       ? (a, b) => b.count - a.count
@@ -275,7 +265,7 @@ export function AnalyticsDashboard() {
       count: r.score,
       deviation: r.score - (baseline.get(r.type) ?? 0),
       color: TYPE_COLORS[r.type as keyof typeof TYPE_COLORS],
-      icon: TYPE_ICON_URLS[r.type],
+      icon: typeIconPath(r.type as TypeName),
     })).sort((a, b) => isNationalSelected ? b.count - a.count : b.deviation - a.deviation);
   }, [sections, selectedTypeChart, excludeSpecial, newPokemonOnly, isNationalSelected]);
 

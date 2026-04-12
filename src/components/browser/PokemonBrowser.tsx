@@ -8,6 +8,7 @@ import { ARCHETYPES } from '@/data/archetypes';
 import { CATEGORIES } from '@/data/categories';
 import { TYPE_NAMES } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
+import { typeBadgePath } from '@/data/type-ids';
 import { Search, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -275,13 +276,17 @@ export function PokemonBrowser() {
                 <button
                   key={type}
                   onClick={() => toggleType(type)}
-                  className="py-0.5 rounded-md text-[10px] font-semibold capitalize text-white cursor-pointer transition-all"
+                  className="flex items-center justify-center py-0.5 rounded-md cursor-pointer transition-all"
                   style={{
-                    backgroundColor: TYPE_COLORS[type],
                     opacity: typeFilter && typeFilter.length > 0 && !isSelected ? 0.3 : 1,
                   }}
                 >
-                  {type}
+                  <img
+                    src={typeBadgePath(type)}
+                    alt={type}
+                    className="h-[18px] w-auto"
+                    draggable={false}
+                  />
                 </button>
               );
             })}

@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 BASE="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites"
 DEST="public/sprites"
 
-mkdir -p "$DEST/pokemon/shiny" "$DEST/types"
+mkdir -p "$DEST/pokemon/shiny" "$DEST/types/badges" "$DEST/types/small"
 
 # Download helper with retry and validation
 download() {
@@ -55,13 +55,20 @@ echo "  Shiny sprites done"
 # 4. Sprite override (Darmanitan Zen)
 download "$BASE/pokemon/10017.png" "$DEST/pokemon/10017.png"
 
-# 5. Type icons (18 types)
-echo "Downloading type icons..."
+# 5. Type icons - Gen IX Scarlet/Violet (18 types)
+echo "Downloading type badge sprites..."
 for id in $(seq 1 18); do
-  download "$BASE/types/generation-viii/sword-shield/small/${id}.png" "$DEST/types/${id}.png" &
+  download "$BASE/types/generation-ix/scarlet-violet/${id}.png" "$DEST/types/badges/${id}.png" &
 done
 wait
-echo "  Type icons done"
+echo "  Type badge sprites done"
+
+echo "Downloading type small icons..."
+for id in $(seq 1 18); do
+  download "$BASE/types/generation-ix/scarlet-violet/small/${id}.png" "$DEST/types/small/${id}.png" &
+done
+wait
+echo "  Type small icons done"
 
 # 6. Validate all sprites exist
 MISSING=0

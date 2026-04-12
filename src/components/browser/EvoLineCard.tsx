@@ -3,9 +3,11 @@ import { cn, displayName } from '@/lib/utils';
 import { usePixelPerfectSprite } from '@/lib/usePixelPerfectSprite';
 import type { Pokemon } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
+import { TYPE_COLORS } from '@/data/type-colors';
 import { Plus, ChevronRight, X, Sword, Shield } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
+import { TypeBadge } from '@/components/shared/TypeBadge';
+import type { TypeName } from '@/types/pokemon';
 
 /** Tiny pokeball icon: red-filled top half, open bottom half, center button */
 function PokeballIcon({ className }: { className?: string }) {
@@ -253,13 +255,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                 </span>
                 <div className="flex gap-[0.5vw] md:gap-[min(0.4vw,3px)] mt-[0.5vw] md:mt-[min(0.3vw,2px)] justify-center">
                   {pokemon.types.map((t) => (
-                    <span
-                      key={t}
-                      className="w-[6vw] md:w-[clamp(22px,3vw,34px)] py-[0.2vw] md:py-[min(0.2vw,2px)] rounded text-[min(1.5vw,5px)] md:text-[min(0.9vw,10px)] font-semibold capitalize leading-tight text-center truncate flex items-center justify-center"
-                      style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS], color: TYPE_TEXT_COLORS[t as keyof typeof TYPE_TEXT_COLORS] }}
-                    >
-                      {t}
-                    </span>
+                    <TypeBadge key={t} type={t as TypeName} className="h-[min(2vw,10px)] md:h-[min(1.2vw,14px)]" />
                   ))}
                 </div>
                 {matchupInfo?.has(pokemon.id) && (() => {

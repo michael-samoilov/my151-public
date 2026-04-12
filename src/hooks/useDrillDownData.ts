@@ -7,15 +7,10 @@ import { STARTER_IDS } from '@/data/categories';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { computePerPokemonMatchup } from '@/hooks/useTypeDominance';
 import type { Pokemon, TypeName } from '@/types/pokemon';
+import { typeIconPath } from '@/data/type-ids';
 
 const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
-
-const POKEAPI_TYPE_IDS: Record<string, number> = {
-  normal: 1, fighting: 2, flying: 3, poison: 4, ground: 5, rock: 6,
-  bug: 7, ghost: 8, steel: 9, fire: 10, water: 11, grass: 12,
-  electric: 13, psychic: 14, ice: 15, dragon: 16, dark: 17, fairy: 18,
-};
 
 interface SectionGroup {
   sectionId: string;
@@ -459,11 +454,10 @@ function getSegmentMeta(segment: DrillDownSegment): { title: string; color: stri
   switch (segment.kind) {
     case 'type': {
       const cap = segment.type.charAt(0).toUpperCase() + segment.type.slice(1);
-      const typeId = POKEAPI_TYPE_IDS[segment.type];
       return {
         title: `${cap} Type`,
         color: TYPE_COLORS[segment.type as keyof typeof TYPE_COLORS] ?? '#888',
-        icon: typeId ? `/sprites/types/${typeId}.png` : undefined,
+        icon: typeIconPath(segment.type as TypeName),
       };
     }
     case 'generation':
@@ -502,11 +496,10 @@ function getSegmentMeta(segment: DrillDownSegment): { title: string; color: stri
       };
     case 'typeMatchup': {
       const cap = segment.type.charAt(0).toUpperCase() + segment.type.slice(1);
-      const typeId = POKEAPI_TYPE_IDS[segment.type];
       return {
         title: `${cap} Matchup`,
         color: TYPE_COLORS[segment.type as keyof typeof TYPE_COLORS] ?? '#888',
-        icon: typeId ? `/sprites/types/${typeId}.png` : undefined,
+        icon: typeIconPath(segment.type as TypeName),
       };
     }
   }

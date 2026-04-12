@@ -2,7 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
-import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
+import { TypeBadge } from '@/components/shared/TypeBadge';
+import type { TypeName } from '@/types/pokemon';
 import { displayName } from '@/lib/utils';
 import { usePixelPerfectSprite } from '@/lib/usePixelPerfectSprite';
 import { Trash2, Plus, X, Settings } from 'lucide-react';
@@ -72,13 +73,7 @@ function PokemonTileStatic({ id }: { id: number }) {
       </span>
       <div className="flex gap-[0.3vw] md:gap-[min(0.4vw,3px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)]">
         {pokemon.types.map((t) => (
-          <span
-            key={t}
-            className="px-[0.8vw] md:px-[min(0.6vw,5px)] py-[0.1vw] md:py-[min(0.15vw,1px)] rounded text-[min(1.4vw,5px)] md:text-[min(0.9vw,10px)] font-semibold capitalize text-white leading-none flex items-center justify-center"
-            style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
-          >
-            {t}
-          </span>
+          <TypeBadge key={t} type={t as TypeName} className="h-[min(1.8vw,10px)] md:h-[min(1.2vw,14px)]" />
         ))}
       </div>
     </div>
@@ -166,13 +161,7 @@ function DraggableTile({
         </span>
         <div className="flex gap-[0.3vw] md:gap-[min(0.4vw,3px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)]">
           {pokemon.types.map((t) => (
-            <span
-              key={t}
-              className="w-[6.5vw] md:w-[clamp(22px,3vw,36px)] py-[0.1vw] md:py-[min(0.15vw,1px)] rounded text-[min(1.4vw,5px)] md:text-[min(0.9vw,10px)] font-semibold capitalize leading-none text-center flex items-center justify-center"
-              style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS], color: TYPE_TEXT_COLORS[t as keyof typeof TYPE_TEXT_COLORS] }}
-            >
-              {t}
-            </span>
+            <TypeBadge key={t} type={t as TypeName} className="h-[min(1.8vw,10px)] md:h-[min(1.2vw,14px)]" />
           ))}
         </div>
       </div>

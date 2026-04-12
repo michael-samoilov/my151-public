@@ -84,16 +84,22 @@ async function main() {
     });
   }
 
-  // 4. Type icons
+  // 4. Type icons (Gen IX Scarlet/Violet)
   const typeIds = {
     normal: 1, fighting: 2, flying: 3, poison: 4, ground: 5, rock: 6,
     bug: 7, ghost: 8, steel: 9, fire: 10, water: 11, grass: 12,
     electric: 13, psychic: 14, ice: 15, dragon: 16, dark: 17, fairy: 18,
   };
   for (const [, id] of Object.entries(typeIds)) {
+    // Full-size badge sprites (128x40px, type name baked in)
     downloads.push({
-      url: `${POKEAPI_BASE}/types/generation-viii/sword-shield/small/${id}.png`,
-      dest: join(PUBLIC, 'sprites', 'types', `${id}.png`),
+      url: `${POKEAPI_BASE}/types/generation-ix/scarlet-violet/${id}.png`,
+      dest: join(PUBLIC, 'sprites', 'types', 'badges', `${id}.png`),
+    });
+    // Small icon sprites (60x60px)
+    downloads.push({
+      url: `${POKEAPI_BASE}/types/generation-ix/scarlet-violet/small/${id}.png`,
+      dest: join(PUBLIC, 'sprites', 'types', 'small', `${id}.png`),
     });
   }
 

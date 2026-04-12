@@ -1,23 +1,19 @@
 import type { TypeName } from '@/types/pokemon';
-import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
+import { typeBadgePath } from '@/data/type-ids';
 
 interface TypeBadgeProps {
   type: TypeName;
-  size?: 'sm' | 'md';
+  className?: string;
 }
 
-export function TypeBadge({ type, size = 'sm' }: TypeBadgeProps) {
+export function TypeBadge({ type, className = 'h-[14px] md:h-[16px]' }: TypeBadgeProps) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full font-semibold capitalize ${
-        size === 'sm' ? 'px-2 py-0.5 text-[10px]' : 'px-3 py-1 text-xs'
-      }`}
-      style={{
-        backgroundColor: TYPE_COLORS[type],
-        color: TYPE_TEXT_COLORS[type],
-      }}
-    >
-      {type}
-    </span>
+    <img
+      src={typeBadgePath(type)}
+      alt={type}
+      className={`w-auto ${className}`}
+      loading="lazy"
+      draggable={false}
+    />
   );
 }
