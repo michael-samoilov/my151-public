@@ -50,10 +50,10 @@ function PokemonTileStatic({ id }: { id: number }) {
     <div className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 aspect-square shadow-lg">
       <GenBadge
         gen={pokemon.generation}
-        className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-[min(1.2vw,16px)] md:h-[min(1.2vw,16px)]"
+        className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)]"
       />
       <div
-        className="w-[8vw] h-[8vw] md:w-[clamp(32px,5vw,72px)] md:h-[clamp(32px,5vw,72px)]"
+        className="w-[8vw] h-[8vw] md:w-[clamp(40px,7vw,96px)] md:h-[clamp(40px,7vw,96px)]"
         style={{
           backgroundImage: `url(${pokemon.sprite})`,
           backgroundSize: 'contain',
@@ -64,14 +64,14 @@ function PokemonTileStatic({ id }: { id: number }) {
         role="img"
         aria-label={displayName(pokemon.name)}
       />
-      <span className="text-[min(1.8vw,7px)] md:text-[min(0.8vw,9px)] font-medium capitalize truncate w-full text-center leading-tight">
+      <span className="text-[min(1.8vw,7px)] md:text-[min(1.1vw,12px)] font-medium capitalize truncate w-full text-center leading-tight">
         {displayName(pokemon.name)}
       </span>
-      <div className="flex gap-[0.3vw] md:gap-0.5 mt-[0.3vw] md:mt-0.5">
+      <div className="flex gap-[0.3vw] md:gap-[min(0.4vw,3px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)]">
         {pokemon.types.map((t) => (
           <span
             key={t}
-            className="px-[0.8vw] md:px-1 py-[0.1vw] md:py-px rounded text-[min(1.4vw,5px)] md:text-[min(0.6vw,7px)] font-semibold capitalize text-white leading-none flex items-center justify-center"
+            className="px-[0.8vw] md:px-[min(0.6vw,5px)] py-[0.1vw] md:py-[min(0.15vw,1px)] rounded text-[min(1.4vw,5px)] md:text-[min(0.8vw,8px)] font-semibold capitalize text-white leading-none flex items-center justify-center"
             style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
           >
             {t}
@@ -135,17 +135,17 @@ function DraggableTile({
       >
         <GenBadge
           gen={pokemon.generation}
-          className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-[min(1.2vw,16px)] md:h-[min(1.2vw,16px)] z-10"
+          className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] z-10"
         />
         <button
           onClick={() => removeBranch(sectionId, pokemonId)}
           onPointerDown={(e) => e.stopPropagation()}
-          className="absolute top-[0.5vw] right-[0.5vw] md:top-0.5 md:right-0.5 w-[3vw] h-[3vw] md:w-[min(1.2vw,16px)] md:h-[min(1.2vw,16px)] rounded-full bg-destructive text-white flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
+          className="absolute top-[0.5vw] right-[0.5vw] md:top-0.5 md:right-0.5 w-[3vw] h-[3vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] rounded-full bg-destructive text-white flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
         >
-          <X className="w-[1.5vw] h-[1.5vw] md:w-[min(0.8vw,10px)] md:h-[min(0.8vw,10px)]" />
+          <X className="w-[1.5vw] h-[1.5vw] md:w-[min(0.9vw,11px)] md:h-[min(0.9vw,11px)]" />
         </button>
         <div
-          className="w-[8vw] h-[8vw] md:w-[clamp(32px,5vw,72px)] md:h-[clamp(32px,5vw,72px)]"
+          className="w-[8vw] h-[8vw] md:w-[clamp(40px,7vw,96px)] md:h-[clamp(40px,7vw,96px)]"
           style={{
             backgroundImage: `url(${pokemon.sprite})`,
             backgroundSize: 'contain',
@@ -156,14 +156,14 @@ function DraggableTile({
           role="img"
           aria-label={displayName(pokemon.name)}
         />
-        <span className="text-[min(1.8vw,7px)] md:text-[min(0.8vw,9px)] font-medium capitalize truncate w-full text-center leading-tight">
+        <span className="text-[min(1.8vw,7px)] md:text-[min(1.1vw,12px)] font-medium capitalize truncate w-full text-center leading-tight">
           {displayName(pokemon.name)}
         </span>
-        <div className="flex gap-[0.3vw] md:gap-0.5 mt-[0.3vw] md:mt-0.5">
+        <div className="flex gap-[0.3vw] md:gap-[min(0.4vw,3px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)]">
           {pokemon.types.map((t) => (
             <span
               key={t}
-              className="w-[6.5vw] md:w-[clamp(18px,2.3vw,32px)] py-[0.1vw] md:py-px rounded text-[min(1.4vw,5px)] md:text-[min(0.6vw,7px)] font-semibold capitalize leading-none text-center flex items-center justify-center"
+              className="w-[6.5vw] md:w-[clamp(22px,3vw,36px)] py-[0.1vw] md:py-[min(0.15vw,1px)] rounded text-[min(1.4vw,5px)] md:text-[min(0.8vw,8px)] font-semibold capitalize leading-none text-center flex items-center justify-center"
               style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS], color: TYPE_TEXT_COLORS[t as keyof typeof TYPE_TEXT_COLORS] }}
             >
               {t}
