@@ -507,7 +507,7 @@ export function AnalyticsDashboard() {
         </h2>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden" style={{ overscrollBehavior: 'contain' }}>
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain md:overscroll-auto">
       <div className="p-6 pb-0 space-y-8 max-w-6xl mx-auto">
         {/* What's Missing Advisor — moved to top */}
         <section className="bg-card rounded-lg border p-6">

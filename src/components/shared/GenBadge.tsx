@@ -17,13 +17,15 @@ function buildBadgeUri(gen: number, stops: { offset: string; color: string }[]):
   const gradStops = stops
     .map((s) => `<stop offset="${s.offset}" stop-color="${s.color}"/>`)
     .join('');
-  // 2px padding around the 20px circle prevents edge clipping at fractional zoom
+  // 2px padding around the circle prevents edge clipping at fractional zoom.
+  // Use #g in source — encodeURIComponent converts it to %23g which the browser
+  // decodes back to #g when parsing the data URI.
   const svg = [
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">',
     '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">',
     gradStops,
     '</linearGradient></defs>',
-    '<circle cx="12" cy="12" r="11" fill="url(%23g)"/>',
+    '<circle cx="12" cy="12" r="11" fill="url(#g)"/>',
     `<text x="12" y="12.5" text-anchor="middle" dominant-baseline="central" fill="white" font-size="14" font-weight="800" font-family="system-ui,sans-serif" stroke="rgba(0,0,0,0.35)" stroke-width="0.6">${gen}</text>`,
     '</svg>',
   ].join('');

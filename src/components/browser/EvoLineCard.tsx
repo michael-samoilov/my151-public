@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { cn, displayName } from '@/lib/utils';
+import { usePixelPerfectSprite } from '@/lib/usePixelPerfectSprite';
 import type { Pokemon } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
@@ -51,6 +52,9 @@ const GRID_CLASSES: Record<number, string> = {
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
 export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, matchupInfo }: EvoLineGridProps) {
+  // Pixel-perfect sprite size: mobile 11vw, desktop clamp(40px, 7vw, 96px)
+  const spritePx = usePixelPerfectSprite(11, 40, 7, 96);
+
   const elements = useMemo(() => {
     const result: React.ReactNode[] = [];
     let col = 0; // 0-based current column position
@@ -78,13 +82,14 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shi
           variant={variant}
           showGenBadges={showGenBadges}
           matchupInfo={matchupInfo}
+          spritePx={spritePx}
         />
       );
       col = (col + size) % cols;
     }
 
     return result;
-  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols, matchupInfo]);
+  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols, matchupInfo, spritePx]);
 
   return (
     <div className={GRID_CLASSES[cols] ?? `grid gap-x-0 gap-y-1`} style={GRID_CLASSES[cols] ? undefined : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
@@ -106,6 +111,8 @@ interface EvoLineCardProps {
   variant?: EvoLineVariant;
   showGenBadges?: boolean;
   matchupInfo?: Map<number, { offense: number; defense: number }>;
+  /** Pixel-perfect sprite size in CSS px */
+  spritePx: number;
 }
 
 function formatMult(v: number): string {
@@ -130,7 +137,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo }: EvoLineCardProps) {
+export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, spritePx }: EvoLineCardProps) {
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const sections = usePokedexStore((s) => s.sections);
   const allInDex = members.every((p) => assignedIds.has(p.id));
@@ -226,13 +233,14 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   />
                 )}
                 <div
-                  className="w-[11vw] h-[11vw] md:w-[clamp(40px,7vw,96px)] md:h-[clamp(40px,7vw,96px)]"
                   style={{
+                    width: spritePx,
+                    height: spritePx,
                     backgroundImage: `url(${spriteOverrides?.[pokemon.id]
                       ?? (shinyIds?.has(pokemon.id)
                         ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
                         : pokemon.sprite)})`,
-                    backgroundSize: 'contain',
+                    backgroundSize: `${spritePx}px ${spritePx}px`,
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
                     imageRendering: 'pixelated',
@@ -240,14 +248,14 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   role="img"
                   aria-label={pokemon.name}
                 />
-                <span className="text-[min(2vw,8px)] md:text-[min(1.2vw,12px)] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
+                <span className="text-[min(2vw,8px)] md:text-[min(1.2vw,14px)] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
                   {displayName(pokemon.name)}
                 </span>
                 <div className="flex gap-[0.5vw] md:gap-[min(0.4vw,3px)] mt-[0.5vw] md:mt-[min(0.3vw,2px)] justify-center">
                   {pokemon.types.map((t) => (
                     <span
                       key={t}
-                      className="w-[6vw] md:w-[clamp(22px,3vw,34px)] py-[0.2vw] md:py-[min(0.2vw,2px)] rounded text-[min(1.5vw,5px)] md:text-[min(0.8vw,8px)] font-semibold capitalize leading-tight text-center truncate flex items-center justify-center"
+                      className="w-[6vw] md:w-[clamp(22px,3vw,34px)] py-[0.2vw] md:py-[min(0.2vw,2px)] rounded text-[min(1.5vw,5px)] md:text-[min(0.9vw,10px)] font-semibold capitalize leading-tight text-center truncate flex items-center justify-center"
                       style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS], color: TYPE_TEXT_COLORS[t as keyof typeof TYPE_TEXT_COLORS] }}
                     >
                       {t}

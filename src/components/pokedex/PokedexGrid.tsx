@@ -4,6 +4,7 @@ import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { TYPE_COLORS, TYPE_TEXT_COLORS } from '@/data/type-colors';
 import { displayName } from '@/lib/utils';
+import { usePixelPerfectSprite } from '@/lib/usePixelPerfectSprite';
 import { Trash2, Plus, X, Settings } from 'lucide-react';
 import {
   DndContext,
@@ -45,6 +46,7 @@ import { GenBadge } from '@/components/shared/GenBadge';
 
 function PokemonTileStatic({ id }: { id: number }) {
   const pokemon = getPokemonById(id);
+  const spritePx = usePixelPerfectSprite(8, 40, 7, 96);
   if (!pokemon) return null;
   return (
     <div className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 aspect-square shadow-lg">
@@ -53,10 +55,11 @@ function PokemonTileStatic({ id }: { id: number }) {
         className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)]"
       />
       <div
-        className="w-[8vw] h-[8vw] md:w-[clamp(40px,7vw,96px)] md:h-[clamp(40px,7vw,96px)]"
         style={{
+          width: spritePx,
+          height: spritePx,
           backgroundImage: `url(${pokemon.sprite})`,
-          backgroundSize: 'contain',
+          backgroundSize: `${spritePx}px ${spritePx}px`,
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center',
           imageRendering: 'pixelated',
@@ -64,14 +67,14 @@ function PokemonTileStatic({ id }: { id: number }) {
         role="img"
         aria-label={displayName(pokemon.name)}
       />
-      <span className="text-[min(1.8vw,7px)] md:text-[min(1.1vw,12px)] font-medium capitalize truncate w-full text-center leading-tight">
+      <span className="text-[min(1.8vw,7px)] md:text-[min(1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
         {displayName(pokemon.name)}
       </span>
       <div className="flex gap-[0.3vw] md:gap-[min(0.4vw,3px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)]">
         {pokemon.types.map((t) => (
           <span
             key={t}
-            className="px-[0.8vw] md:px-[min(0.6vw,5px)] py-[0.1vw] md:py-[min(0.15vw,1px)] rounded text-[min(1.4vw,5px)] md:text-[min(0.8vw,8px)] font-semibold capitalize text-white leading-none flex items-center justify-center"
+            className="px-[0.8vw] md:px-[min(0.6vw,5px)] py-[0.1vw] md:py-[min(0.15vw,1px)] rounded text-[min(1.4vw,5px)] md:text-[min(0.9vw,10px)] font-semibold capitalize text-white leading-none flex items-center justify-center"
             style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS] }}
           >
             {t}
@@ -99,6 +102,7 @@ function DraggableTile({
 }) {
   const removeBranch = usePokedexStore((s) => s.removeBranch);
   const pokemon = getPokemonById(pokemonId);
+  const spritePx = usePixelPerfectSprite(8, 40, 7, 96);
 
   const {
     attributes,
@@ -145,10 +149,11 @@ function DraggableTile({
           <X className="w-[1.5vw] h-[1.5vw] md:w-[min(0.9vw,11px)] md:h-[min(0.9vw,11px)]" />
         </button>
         <div
-          className="w-[8vw] h-[8vw] md:w-[clamp(40px,7vw,96px)] md:h-[clamp(40px,7vw,96px)]"
           style={{
+            width: spritePx,
+            height: spritePx,
             backgroundImage: `url(${pokemon.sprite})`,
-            backgroundSize: 'contain',
+            backgroundSize: `${spritePx}px ${spritePx}px`,
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
             imageRendering: 'pixelated',
@@ -156,14 +161,14 @@ function DraggableTile({
           role="img"
           aria-label={displayName(pokemon.name)}
         />
-        <span className="text-[min(1.8vw,7px)] md:text-[min(1.1vw,12px)] font-medium capitalize truncate w-full text-center leading-tight">
+        <span className="text-[min(1.8vw,7px)] md:text-[min(1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
           {displayName(pokemon.name)}
         </span>
         <div className="flex gap-[0.3vw] md:gap-[min(0.4vw,3px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)]">
           {pokemon.types.map((t) => (
             <span
               key={t}
-              className="w-[6.5vw] md:w-[clamp(22px,3vw,36px)] py-[0.1vw] md:py-[min(0.15vw,1px)] rounded text-[min(1.4vw,5px)] md:text-[min(0.8vw,8px)] font-semibold capitalize leading-none text-center flex items-center justify-center"
+              className="w-[6.5vw] md:w-[clamp(22px,3vw,36px)] py-[0.1vw] md:py-[min(0.15vw,1px)] rounded text-[min(1.4vw,5px)] md:text-[min(0.9vw,10px)] font-semibold capitalize leading-none text-center flex items-center justify-center"
               style={{ backgroundColor: TYPE_COLORS[t as keyof typeof TYPE_COLORS], color: TYPE_TEXT_COLORS[t as keyof typeof TYPE_TEXT_COLORS] }}
             >
               {t}
@@ -381,7 +386,7 @@ function GroupBox({
     >
       {/* Label */}
       <div
-        className="text-[9px] md:text-xs font-semibold uppercase tracking-wide px-1.5"
+        className="text-[9px] md:text-sm font-semibold uppercase tracking-wide px-1.5"
         style={{
           color: `color-mix(in srgb, ${group.color} 65%, black)`,
           opacity: showEmptyState ? 0.75 : 1,
@@ -678,8 +683,8 @@ export function PokedexGrid() {
       </div>
 
       <div
-        className="flex-1 min-h-0 overflow-y-auto"
-        style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' } as React.CSSProperties}
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain md:overscroll-auto"
+        style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
           <div className="p-3 pb-0">
             <DndContext

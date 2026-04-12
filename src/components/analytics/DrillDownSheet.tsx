@@ -202,9 +202,12 @@ export function DrillDownSheet() {
     nextSibling ? computeDrillDownData(nextSibling, storeSections, excludeSpecial, dexId, newOnly) : null,
     [nextSibling, storeSections, excludeSpecial, dexId, newOnly]);
 
-  // Only lock body scroll when fully expanded (not peek)
+  // Only lock body scroll when fully expanded (not peek) — mobile only
+  // Desktop uses the side panel (DrillDownPanel), so body scroll must stay free
   useEffect(() => {
     if (!peek) {
+      const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+      if (isDesktop) return;
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = ''; };
     }
@@ -568,7 +571,6 @@ export function DrillDownPanel() {
       <div
         ref={scrollRef}
         className="flex-1 min-h-0 overflow-y-auto"
-        style={{ overscrollBehavior: 'contain' }}
       >
         <div className="px-2 pb-2">
           {currentData.sections.map((section) => (
