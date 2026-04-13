@@ -37,7 +37,7 @@ const SHEET_TITLES: Record<string, string> = {
   gameMechanics: 'Game Mechanics',
 };
 
-const PLACES_ORDER = ['forest', 'meadow', 'cave-pokemon', 'mountain', 'swamp', 'beach', 'lake', 'fishing-pokemon', 'dojo', 'haunted', 'ruins', 'ocean', 'desert', 'volcanic', 'tundra'];
+const PLACES_ORDER = ['forest', 'meadow', 'cave-pokemon', 'mountain', 'swamp', 'lake', 'dojo', 'haunted', 'ruins', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra', 'industrial'];
 const PLACES_IDS = new Set(PLACES_ORDER);
 const GAME_MECHANICS_ORDER = ['evolution-item', 'trade-evo', 'branched-evo', 'cross-gen-evo', 'static-encounter', 'gift-pokemon', 'in-game-trade', 'reward-pokemon'];
 const GAME_MECHANICS_IDS = new Set(GAME_MECHANICS_ORDER);
@@ -180,7 +180,7 @@ export function PokemonBrowser() {
   // "volcanic", "gym ace") are not. Cross-gen-evo is an exception: its custom subgroups
   // are labeled by generation, so badges correctly flag members from a different gen.
   const hasCustomSubgroups = !!(activeArchetypeDef?.subgroups || activeCategoryDef?.subgroups);
-  const showGenBadges = !hasCustomSubgroups || activeArchetype === 'cross-gen-evo';
+  const showGenBadges = !hasCustomSubgroups || activeArchetype === 'cross-gen-evo' || activeCategory === 'starter';
 
   const isSearching = searchQuery.trim().length > 0;
   const hasActivePropertyFilters = !!((typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || evoLineSizeFilter);

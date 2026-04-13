@@ -253,7 +253,7 @@ export const usePokedexStore = create<PokedexState>()(
 
         return result;
       },
-      version: 4,
+      version: 5,
     }
   )
 );

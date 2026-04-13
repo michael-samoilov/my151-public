@@ -72,10 +72,10 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Fishing',
     description: 'Fish and aquatic creatures you could catch with a fishing rod',
     pokemonIds: [
-      147,148,149, // Dratini→Dragonair→Dragonite (Dragon's Den fishing)
       116,117,230, // Horsea→Seadra→Kingdra
       118,119,     // Goldeen→Seaking
       129,130,     // Magikarp→Gyarados
+      147,148,149, // Dratini→Dragonair→Dragonite (Dragon's Den fishing)
       170,171,     // Chinchou→Lanturn
       211,         // Qwilfish
       10234, 904,  // Qwilfish-Hisui→Overqwil
@@ -256,7 +256,6 @@ export const ARCHETYPES: Archetype[] = [
       778,          // Mimikyu
       854,855,      // Sinistea→Polteageist
       864,          // Cursola
-      897,          // Spectrier
       425,426,      // Drifloon→Drifblim
       946,947,      // Bramblin→Brambleghast
       971,972,      // Greavard→Houndstone
@@ -387,7 +386,6 @@ export const ARCHETYPES: Archetype[] = [
       193,469,         // Yanma→Yanmega
       194,195,         // Wooper→Quagsire
       10253,980,       // Paldean Wooper→Clodsire
-      258,259,260,     // Mudkip→Marshtomp→Swampert
       270,271,272,     // Lotad→Lombre→Ludicolo
       283,284,         // Surskit→Masquerain
       313,314,         // Volbeat/Illumise
@@ -449,14 +447,6 @@ export const ARCHETYPES: Archetype[] = [
     ],
     suggestedSlotRange: [33, 42],
     color: '#dda15e',
-  },
-  {
-    id: 'elemental-trio',
-    name: 'Elemental Trio/Duo',
-    description: 'Mid-game groups linked by element or theme',
-    pokemonIds: [37,38, 58,59, 77,78, 10103,10104, 10229,10230, 10162,10163, 511,512,513,514,515,516, 133,134,135,136,196,197,470,471,700],
-    suggestedSlotRange: [39, 44],
-    color: '#ee8130',
   },
   {
     id: 'gift-pokemon',
@@ -541,11 +531,45 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'industrial',
-    name: 'Industrial/Artificial',
-    description: 'Mechanical, pollution, and artificially-created Pokemon found in urban/industrial areas',
-    pokemonIds: [81,82, 88,89, 10112,10113, 100,101, 10231,10232, 109,110, 10167, 137,233,474, 462, 532,533,534, 568,569, 599,600,601, 679,680,681, 707, 884,1018, 957,958,959, 965,966, 999,1000],
+    name: 'Industrial',
+    description: 'Pokemon found in factories, construction sites, power plants, sewers, and urban/industrial areas',
+    pokemonIds: [
+      66,67,68,        // Machop→Machoke→Machamp (construction)
+      81,82,462,       // Magnemite→Magneton→Magnezone (power plant)
+      88,89,           // Grimer→Muk (sewer/pollution)
+      10112,10113,     // Grimer-Alola→Muk-Alola
+      109,110,         // Koffing→Weezing (factory pollution)
+      10167,           // Weezing-Galar (industrial smokestacks)
+      532,533,534,     // Timburr→Gurdurr→Conkeldurr (construction)
+      568,569,         // Trubbish→Garbodor (garbage/pollution)
+      599,600,601,     // Klink→Klang→Klinklang (gears/machinery)
+      878,879,         // Cufant→Copperajah (construction)
+      884,1018,        // Duraludon→Archaludon (buildings)
+      957,958,959,     // Tinkatink→Tinkatuff→Tinkaton (forge/metalwork)
+      965,966,         // Varoom→Revavroom (engines)
+    ],
     suggestedSlotRange: [83, 87],
     color: '#b7b7ce',
+  },
+  {
+    id: 'objectmon',
+    name: 'Objectmon',
+    description: 'Pokemon based on everyday objects, artificial creations, and food',
+    pokemonIds: [
+      100,101,         // Voltorb→Electrode (Poke Ball)
+      10231,10232,     // Voltorb-Hisui→Electrode-Hisui
+      137,233,474,     // Porygon→Porygon2→Porygon-Z (digital)
+      582,583,584,     // Vanillite→Vanillish→Vanilluxe (ice cream)
+      679,680,681,     // Honedge→Doublade→Aegislash (sword)
+      707,             // Klefki (key ring)
+      840,841,842,     // Applin→Flapple→Appletun (apple)
+      854,855,         // Sinistea→Polteageist (teapot)
+      868,869,         // Milcery→Alcremie (cream/cake)
+      999,1000,        // Gimmighoul→Gholdengo (coins)
+      1012,1013,       // Poltchageist→Sinistcha (matcha tea set)
+    ],
+    suggestedSlotRange: [83, 87],
+    color: '#e07c4f',
   },
   {
     id: 'version-exclusive',

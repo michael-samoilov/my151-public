@@ -168,8 +168,8 @@ export const FOSSIL_IDS = new Set([
 // Pseudo-Legendary lines (600 BST final forms + pre-evos)
 export const PSEUDO_LEGENDARY_IDS = new Set([
   147,148,149, 246,247,248, 371,372,373, 374,375,376,
-  443,444,445, 633,634,635, 704,705,706, 782,783,784,
-  885,886,887, 996,997,998,
+  443,444,445, 633,634,635, 704,705,706, 10241,10242,
+  782,783,784, 885,886,887, 996,997,998,
 ]);
 
 // Starter Pokemon (all stages, all gens)
