@@ -39,7 +39,7 @@ const SHEET_TITLES: Record<string, string> = {
 
 const PLACES_ORDER = ['forest', 'meadow', 'cave-pokemon', 'mountain', 'swamp', 'lake', 'dojo', 'haunted', 'ruins', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra', 'industrial'];
 const PLACES_IDS = new Set(PLACES_ORDER);
-const GAME_MECHANICS_ORDER = ['evolution-item', 'trade-evo', 'branched-evo', 'cross-gen-evo', 'static-encounter', 'gift-pokemon', 'in-game-trade', 'reward-pokemon'];
+const GAME_MECHANICS_ORDER = ['evolution-item', 'trade-evo', 'branched-evo', 'cross-gen-evo', 'static-encounter', 'gift-pokemon', 'in-game-trade', 'reward-pokemon', 'version-exclusive'];
 const GAME_MECHANICS_IDS = new Set(GAME_MECHANICS_ORDER);
 
 export function PokemonBrowser() {
@@ -747,34 +747,27 @@ export function PokemonBrowser() {
   );
 }
 
-/** Sheet overlay — blocks scroll passthrough with non-passive touch listeners */
+/** Sheet overlay — non-modal bottom sheet that allows interaction with content behind */
 function SheetOverlay({ onClose, openSheet, children, footer }: {
   onClose: () => void;
   openSheet: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
-  const backdropRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
 
-  // Block touchmove on non-scrollable areas (backdrop, header, footer)
-  // The MobileSheet is already position:fixed, so body isn't scrollable —
-  // no need for body lock which kills iOS overscroll bounce
+  // Block touchmove on non-scrollable areas (header, footer) to prevent pull-to-refresh
   useEffect(() => {
-    const els = [backdropRef.current, headerRef.current, footerRef.current].filter(Boolean) as HTMLElement[];
+    const els = [headerRef.current, footerRef.current].filter(Boolean) as HTMLElement[];
     const block = (e: TouchEvent) => e.preventDefault();
     els.forEach(el => el.addEventListener('touchmove', block, { passive: false }));
     return () => { els.forEach(el => el.removeEventListener('touchmove', block)); };
   }, []);
 
   return (
-    <div
-      className="absolute inset-0 z-20 flex flex-col justify-end"
-      onWheel={(e) => e.stopPropagation()}
-    >
-      <div ref={backdropRef} className="flex-1" onClick={onClose} />
-      <div className="bg-background border-t rounded-t-xl shadow-2xl h-[50%] flex flex-col">
+    <div className="absolute inset-x-0 bottom-0 z-20 pointer-events-none">
+      <div className="pointer-events-auto bg-background border-t rounded-t-xl shadow-2xl h-[50vh] flex flex-col">
         {/* Sheet header */}
         <div ref={headerRef} className="flex items-center justify-between px-4 py-3 border-b">
           <span className="text-sm font-semibold">
@@ -791,7 +784,7 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
           </button>
         </div>
 
-        {/* Sheet body — natural scroll, body is locked so no chain */}
+        {/* Sheet body — natural scroll */}
         <div
           className="flex-1 min-h-0 overflow-y-auto p-3"
           style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' } as React.CSSProperties}
