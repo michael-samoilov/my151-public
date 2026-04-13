@@ -255,8 +255,11 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                 </span>
                 <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.5vw] md:mt-[min(0.3vw,2px)] w-full">
                   {pokemon.types.map((t) => (
-                    <TypeBadge key={t} type={t as TypeName} className="w-[80%]" />
+                    <TypeBadge key={t} type={t as TypeName} className="w-[65%]" />
                   ))}
+                  {pokemon.types.length === 1 && (
+                    <div className="w-[65%]" style={{ aspectRatio: '128/40' }} aria-hidden />
+                  )}
                 </div>
                 {matchupInfo?.has(pokemon.id) && (() => {
                   const info = matchupInfo.get(pokemon.id)!;

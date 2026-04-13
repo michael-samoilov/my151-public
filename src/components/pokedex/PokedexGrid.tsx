@@ -74,8 +74,11 @@ function PokemonTileStatic({ id }: { id: number }) {
       </span>
       <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full">
         {pokemon.types.map((t) => (
-          <TypeBadge key={t} type={t as TypeName} className="w-[80%]" />
+          <TypeBadge key={t} type={t as TypeName} className="w-[65%]" />
         ))}
+        {pokemon.types.length === 1 && (
+          <div className="w-[65%]" style={{ aspectRatio: '128/40' }} aria-hidden />
+        )}
       </div>
     </div>
   );
@@ -167,8 +170,11 @@ function DraggableTile({
         </span>
         <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full">
           {pokemon.types.map((t) => (
-            <TypeBadge key={t} type={t as TypeName} className="w-[80%]" />
+            <TypeBadge key={t} type={t as TypeName} className="w-[65%]" />
           ))}
+          {pokemon.types.length === 1 && (
+            <div className="w-[65%]" style={{ aspectRatio: '128/40' }} aria-hidden />
+          )}
         </div>
       </div>
     </div>
@@ -556,7 +562,6 @@ export function PokedexGrid() {
   const [dragFromSection, setDragFromSection] = useState<string | null>(null);
   const [overTileId, setOverTileId] = useState<string | null>(null);
   const isTouchDrag = useRef(false);
-  const pointerXRef = useRef<number>(0);
   const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
 
   const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
@@ -576,26 +581,54 @@ export function PokedexGrid() {
   );
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
-    if (event.activatorEvent && 'clientX' in event.activatorEvent) {
-      const px = (event.activatorEvent as PointerEvent).clientX + event.delta.x;
-      pointerXRef.current = px;
-      const r = overRectRef.current;
-      if (r) {
+    if (!event.over) return;
+
+    const overId = event.over.id as string;
+    if (isEndSentinel(overId)) return;
+
+    const target = parseTileId(overId);
+
+    // Skip if hovering over the dragged evo line itself
+    if (dragLineIds && dragLineIds.includes(target.pokemonId)) return;
+
+    // Get pointer X from activator event + delta
+    let startX: number | null = null;
+    const ae = event.activatorEvent;
+    if ('clientX' in ae) {
+      startX = (ae as MouseEvent).clientX;
+    } else if ('touches' in ae) {
+      const touches = (ae as TouchEvent).touches;
+      if (touches.length > 0) startX = touches[0].clientX;
+    }
+    if (startX === null) return;
+    const px = startX + event.delta.x;
+
+    // Determine which half of the evo line the pointer is in
+    const sectionIds = sections[target.sectionId] ?? [];
+    const lineIds = findEvoLineGroup(target.pokemonId, sectionIds);
+    const memberIdx = lineIds.indexOf(target.pokemonId);
+
+    if (lineIds.length <= 1) {
+      // Single-member line: use pointer position within tile
+      const r = event.over.rect;
+      setDropSide(px > r.left + r.width / 2 ? 'right' : 'left');
+    } else {
+      // Multi-member line: use position within the evo line
+      const mid = (lineIds.length - 1) / 2;
+      if (memberIdx < mid) {
+        setDropSide('left');
+      } else if (memberIdx > mid) {
+        setDropSide('right');
+      } else {
+        // Exact middle member: use pointer position within tile
+        const r = event.over.rect;
         setDropSide(px > r.left + r.width / 2 ? 'right' : 'left');
       }
     }
-  }, []);
-
-  const overRectRef = useRef<{ left: number; width: number } | null>(null);
+  }, [sections, dragLineIds]);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
     setOverTileId(event.over ? (event.over.id as string) : null);
-    if (event.over) {
-      const r = event.over.rect;
-      overRectRef.current = { left: r.left, width: r.width };
-    } else {
-      overRectRef.current = null;
-    }
   }, []);
 
   const handleDragEnd = useCallback(
