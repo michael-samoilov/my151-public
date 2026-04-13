@@ -77,7 +77,7 @@ function PokemonTileStatic({ id }: { id: number }) {
           <TypeBadge key={t} type={t as TypeName} className="w-[65%]" />
         ))}
         {pokemon.types.length === 1 && (
-          <div className="w-[65%]" style={{ aspectRatio: '128/40' }} aria-hidden />
+          <div className="w-[65%]" style={{ aspectRatio: '200/40' }} aria-hidden />
         )}
       </div>
     </div>
@@ -173,7 +173,7 @@ function DraggableTile({
             <TypeBadge key={t} type={t as TypeName} className="w-[65%]" />
           ))}
           {pokemon.types.length === 1 && (
-            <div className="w-[65%]" style={{ aspectRatio: '128/40' }} aria-hidden />
+            <div className="w-[65%]" style={{ aspectRatio: '200/40' }} aria-hidden />
           )}
         </div>
       </div>
