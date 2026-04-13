@@ -19,6 +19,7 @@ import {
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
+  type DragMoveEvent,
 } from '@dnd-kit/core';
 import { useDraggable } from '@dnd-kit/core';
 
@@ -71,9 +72,9 @@ function PokemonTileStatic({ id }: { id: number }) {
       <span className="text-[min(1.8vw,7px)] md:text-[min(1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
         {displayName(pokemon.name)}
       </span>
-      <div className="flex gap-[0.3vw] md:gap-[min(0.4vw,3px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full justify-center">
+      <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full">
         {pokemon.types.map((t) => (
-          <TypeBadge key={t} type={t as TypeName} className="w-[47%]" />
+          <TypeBadge key={t} type={t as TypeName} className="w-[80%]" />
         ))}
       </div>
     </div>
@@ -88,12 +89,14 @@ function DraggableTile({
   sectionId,
   isDraggedLine,
   showInsertBefore,
+  showInsertAfter,
 }: {
   id: string;
   pokemonId: number;
   sectionId: string;
   isDraggedLine: boolean;
   showInsertBefore: boolean;
+  showInsertAfter: boolean;
 }) {
   const removeBranch = usePokedexStore((s) => s.removeBranch);
   const pokemon = getPokemonById(pokemonId);
@@ -127,6 +130,9 @@ function DraggableTile({
       {showInsertBefore && (
         <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 -translate-x-[calc(50%+0.5vw)] md:-translate-x-[calc(50%+2px)]" />
       )}
+      {showInsertAfter && (
+        <div className="absolute right-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 translate-x-[calc(50%+0.5vw)] md:translate-x-[calc(50%+2px)]" />
+      )}
       <div
         {...attributes}
         {...listeners}
@@ -159,9 +165,9 @@ function DraggableTile({
         <span className="text-[min(1.8vw,7px)] md:text-[min(1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
           {displayName(pokemon.name)}
         </span>
-        <div className="flex gap-[0.3vw] md:gap-[min(0.4vw,3px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full justify-center">
+        <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full">
           {pokemon.types.map((t) => (
-            <TypeBadge key={t} type={t as TypeName} className="w-[47%]" />
+            <TypeBadge key={t} type={t as TypeName} className="w-[80%]" />
           ))}
         </div>
       </div>
@@ -207,7 +213,7 @@ function StarterContent({
   pokemonIds: number[];
   dragLineIds: number[] | null;
   dragSet: Set<number>;
-  insertIndicator: { tileId: string | null; endSection: string | null };
+  insertIndicator: { tileId: string | null; endSection: string | null; side: 'left' | 'right' };
   onTypeClick: (type: string) => void;
   onAddClick: () => void;
 }) {
@@ -250,7 +256,8 @@ function StarterContent({
               pokemonId={pid}
               sectionId="starter"
               isDraggedLine={dragSet.has(pid)}
-              showInsertBefore={insertIndicator.tileId === tid}
+              showInsertBefore={insertIndicator.tileId === tid && insertIndicator.side === 'left'}
+              showInsertAfter={insertIndicator.tileId === tid && insertIndicator.side === 'right'}
             />
           );
         }
@@ -284,7 +291,8 @@ function StarterContent({
             pokemonId={pid}
             sectionId="starter"
             isDraggedLine={dragSet.has(pid)}
-            showInsertBefore={insertIndicator.tileId === tid}
+            showInsertBefore={insertIndicator.tileId === tid && insertIndicator.side === 'left'}
+            showInsertAfter={insertIndicator.tileId === tid && insertIndicator.side === 'right'}
           />
         );
       })}
@@ -317,7 +325,7 @@ function GroupBox({
   pokemonIds: number[];
   dragLineIds: number[] | null;
   dragSet: Set<number>;
-  insertIndicator: { tileId: string | null; endSection: string | null };
+  insertIndicator: { tileId: string | null; endSection: string | null; side: 'left' | 'right' };
   onAddClick: (groupId: string) => void;
 }) {
   const isEmpty = pokemonIds.length === 0;
@@ -433,7 +441,8 @@ function GroupBox({
                     pokemonId={pid}
                     sectionId={group.id}
                     isDraggedLine={dragSet.has(pid)}
-                    showInsertBefore={insertIndicator.tileId === tid}
+                    showInsertBefore={insertIndicator.tileId === tid && insertIndicator.side === 'left'}
+                    showInsertAfter={insertIndicator.tileId === tid && insertIndicator.side === 'right'}
                   />
                 );
               })}
@@ -547,6 +556,8 @@ export function PokedexGrid() {
   const [dragFromSection, setDragFromSection] = useState<string | null>(null);
   const [overTileId, setOverTileId] = useState<string | null>(null);
   const isTouchDrag = useRef(false);
+  const pointerXRef = useRef<number>(0);
+  const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
 
   const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
@@ -564,8 +575,27 @@ export function PokedexGrid() {
     [sections]
   );
 
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
+    if (event.activatorEvent && 'clientX' in event.activatorEvent) {
+      const px = (event.activatorEvent as PointerEvent).clientX + event.delta.x;
+      pointerXRef.current = px;
+      const r = overRectRef.current;
+      if (r) {
+        setDropSide(px > r.left + r.width / 2 ? 'right' : 'left');
+      }
+    }
+  }, []);
+
+  const overRectRef = useRef<{ left: number; width: number } | null>(null);
+
   const handleDragOver = useCallback((event: DragOverEvent) => {
     setOverTileId(event.over ? (event.over.id as string) : null);
+    if (event.over) {
+      const r = event.over.rect;
+      overRectRef.current = { left: r.left, width: r.width };
+    } else {
+      overRectRef.current = null;
+    }
   }, []);
 
   const handleDragEnd = useCallback(
@@ -599,10 +629,23 @@ export function PokedexGrid() {
           if (dragFromSection === target.sectionId) {
             const withoutDragged = targetSectionIds.filter((id) => !dragSetLocal.has(id));
             const targetFirstIdx = withoutDragged.indexOf(targetLineIds[0]);
-            insertIdx = targetFirstIdx >= 0 ? targetFirstIdx : withoutDragged.length;
+            if (dropSide === 'right') {
+              // Insert after the target evo line
+              const lastInLine = targetLineIds[targetLineIds.length - 1];
+              const lastIdx = withoutDragged.indexOf(lastInLine);
+              insertIdx = lastIdx >= 0 ? lastIdx + 1 : withoutDragged.length;
+            } else {
+              insertIdx = targetFirstIdx >= 0 ? targetFirstIdx : withoutDragged.length;
+            }
           } else {
             const targetFirstIdx = targetSectionIds.indexOf(targetLineIds[0]);
-            insertIdx = targetFirstIdx >= 0 ? targetFirstIdx : targetSectionIds.length;
+            if (dropSide === 'right') {
+              const lastInLine = targetLineIds[targetLineIds.length - 1];
+              const lastIdx = targetSectionIds.indexOf(lastInLine);
+              insertIdx = lastIdx >= 0 ? lastIdx + 1 : targetSectionIds.length;
+            } else {
+              insertIdx = targetFirstIdx >= 0 ? targetFirstIdx : targetSectionIds.length;
+            }
           }
 
           moveEvoLine(dragFromSection, dragLineIds, target.sectionId, insertIdx);
@@ -612,32 +655,40 @@ export function PokedexGrid() {
       setDragLineIds(null);
       setDragFromSection(null);
       setOverTileId(null);
+      setDropSide('left');
     },
-    [dragLineIds, dragFromSection, sections, moveEvoLine]
+    [dragLineIds, dragFromSection, sections, moveEvoLine, dropSide]
   );
 
   const handleDragCancel = useCallback(() => {
     setDragLineIds(null);
     setDragFromSection(null);
     setOverTileId(null);
+    setDropSide('left');
   }, []);
 
-  const insertIndicator = useMemo<{ tileId: string | null; endSection: string | null }>(() => {
-    if (!overTileId || !dragLineIds) return { tileId: null, endSection: null };
+  const insertIndicator = useMemo<{ tileId: string | null; endSection: string | null; side: 'left' | 'right' }>(() => {
+    if (!overTileId || !dragLineIds) return { tileId: null, endSection: null, side: 'left' };
 
     if (isEndSentinel(overTileId)) {
-      return { tileId: null, endSection: parseEndSentinel(overTileId) };
+      return { tileId: null, endSection: parseEndSentinel(overTileId), side: 'left' };
     }
 
     const target = parseTileId(overTileId);
     const dragSetLocal = new Set(dragLineIds);
-    if (dragSetLocal.has(target.pokemonId)) return { tileId: null, endSection: null };
+    if (dragSetLocal.has(target.pokemonId)) return { tileId: null, endSection: null, side: 'left' };
 
     const targetSectionIds = sections[target.sectionId] ?? [];
     const targetLineIds = findEvoLineGroup(target.pokemonId, targetSectionIds);
-    if (targetLineIds.length === 0) return { tileId: null, endSection: null };
-    return { tileId: tileId(target.sectionId, targetLineIds[0]), endSection: null };
-  }, [overTileId, dragLineIds, sections]);
+    if (targetLineIds.length === 0) return { tileId: null, endSection: null, side: 'left' };
+
+    if (dropSide === 'right') {
+      // Show indicator on right edge of last tile in the target evo line
+      const lastId = targetLineIds[targetLineIds.length - 1];
+      return { tileId: tileId(target.sectionId, lastId), endSection: null, side: 'right' };
+    }
+    return { tileId: tileId(target.sectionId, targetLineIds[0]), endSection: null, side: 'left' };
+  }, [overTileId, dragLineIds, sections, dropSide]);
 
   const handleAddClick = useCallback((groupId: string) => {
     const group = BUILD_GROUPS.find(g => g.id === groupId);
@@ -680,6 +731,7 @@ export function PokedexGrid() {
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragStart={handleDragStart}
+              onDragMove={handleDragMove}
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
               onDragCancel={handleDragCancel}
