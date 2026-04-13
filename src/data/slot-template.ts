@@ -40,7 +40,6 @@ export const BUILD_GROUPS: BuildGroup[] = [
   { id: 'industrial', name: 'Industrial', filterType: 'archetype', filterId: 'industrial', color: '#b7b7ce' },
 
   // Thematic
-  { id: 'objectmon', name: 'Objectmon', filterType: 'archetype', filterId: 'objectmon', color: '#e07c4f' },
   { id: 'mimic', name: 'Mimic/Disguise', filterType: 'archetype', filterId: 'mimic', color: '#735797' },
   { id: 'evil-team', name: 'Evil Team', filterType: 'archetype', filterId: 'evil-team', color: '#705746' },
   { id: 'rivalry-pair', name: 'Rivalry Pair', filterType: 'archetype', filterId: 'rivalry-pair', color: '#c22e28' },

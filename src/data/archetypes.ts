@@ -574,10 +574,84 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'version-exclusive',
     name: 'Version Exclusive Pair',
-    description: 'Pokemon that typically appear as version exclusives',
-    pokemonIds: [538,539, 546,547,548,549, 564,565,566,567, 627,628,629,630, 765,766, 776,780],
+    description: 'Pokemon that commonly appear as version exclusives across multiple games, paired with their counterpart',
+    pokemonIds: [
+      // Gen 1 pairs
+      23,24,           // Ekans→Arbok
+      27,28,           // Sandshrew→Sandslash
+      37,38,           // Vulpix→Ninetales
+      43,44,45,        // Oddish→Gloom→Vileplume
+      52,53,           // Meowth→Persian
+      56,57,           // Mankey→Primeape
+      58,59,           // Growlithe→Arcanine
+      69,70,71,        // Bellsprout→Weepinbell→Victreebel
+      123,             // Scyther
+      125,             // Electabuzz
+      126,             // Magmar
+      127,             // Pinsir
+      // Gen 2 pairs
+      165,166,         // Ledyba→Ledian
+      167,168,         // Spinarak→Ariados
+      198,             // Murkrow
+      200,             // Misdreavus
+      207,             // Gligar
+      216,217,         // Teddiursa→Ursaring
+      225,             // Delibird
+      231,232,         // Phanpy→Donphan
+      // Gen 3 pairs
+      270,271,272,     // Lotad→Lombre→Ludicolo
+      273,274,275,     // Seedot→Nuzleaf→Shiftry
+      302,             // Sableye
+      303,             // Mawile
+      313,             // Volbeat
+      314,             // Illumise
+      335,             // Zangoose
+      336,             // Seviper
+      337,             // Lunatone
+      338,             // Solrock
+      // Gen 4 pairs
+      431,432,         // Glameow→Purugly
+      434,435,         // Stunky→Skuntank
+      // Gen 5 pairs
+      538,             // Throh
+      539,             // Sawk
+      546,547,         // Cottonee→Whimsicott
+      548,549,         // Petilil→Lilligant
+      574,575,576,     // Gothita→Gothorita→Gothitelle
+      577,578,579,     // Solosis→Duosion→Reuniclus
+      627,628,         // Rufflet→Braviary
+      629,630,         // Vullaby→Mandibuzz
+      // Gen 6 pairs
+      682,683,         // Spritzee→Aromatisse
+      684,685,         // Swirlix→Slurpuff
+      690,691,         // Skrelp→Dragalge
+      692,693,         // Clauncher→Clawitzer
+      // Gen 7 pairs
+      765,             // Oranguru
+      766,             // Passimian
+      776,             // Turtonator
+      780,             // Drampa
+      // Gen 8 pairs
+      10162,10163,     // Ponyta-Galar→Rapidash-Galar
+      10166,865,       // Farfetch'd-Galar→Sirfetch'd
+      874,             // Stonjourner
+      875,             // Eiscue
+      // Gen 9 pairs
+      935,936,937,     // Charcadet→Armarouge/Ceruledge
+    ],
     suggestedSlotRange: [106, 112],
     color: '#737373',
+    subgroups: [
+      { label: 'Red / Blue', pokemonIds: [23, 27, 37, 43, 52, 56, 58, 69, 123, 125, 126, 127] },
+      { label: 'Gold / Silver', pokemonIds: [165, 167, 198, 200, 207, 216, 225, 231] },
+      { label: 'Ruby / Sapphire', pokemonIds: [270, 273, 302, 303, 313, 314, 335, 336, 337, 338] },
+      { label: 'Diamond / Pearl', pokemonIds: [431, 434] },
+      { label: 'Black / White', pokemonIds: [538, 539, 546, 548, 574, 577, 627, 629] },
+      { label: 'X / Y', pokemonIds: [682, 684, 690, 692] },
+      { label: 'Sun / Moon', pokemonIds: [765, 766, 776, 780] },
+      { label: 'Sword / Shield', pokemonIds: [10162, 10166, 874, 875] },
+      { label: 'Scarlet / Violet', pokemonIds: [935, 936, 937] },
+    ],
   },
   {
     id: 'trade-evo',
