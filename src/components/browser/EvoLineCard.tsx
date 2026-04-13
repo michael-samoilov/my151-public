@@ -253,7 +253,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                 <span className="text-[min(2vw,8px)] md:text-[min(1.2vw,14px)] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
                   {displayName(pokemon.name)}
                 </span>
-                <div className="flex gap-[0.5vw] md:gap-[min(0.4vw,3px)] mt-[0.5vw] md:mt-[min(0.3vw,2px)] justify-center">
+                <div className="flex gap-[0.5vw] md:gap-[min(0.4vw,3px)] mt-[0.5vw] md:mt-[min(0.3vw,2px)] w-full justify-center">
                   {pokemon.types.map((t) => (
                     <TypeBadge key={t} type={t as TypeName} className="h-[min(2vw,10px)] md:h-[min(1.2vw,14px)]" />
                   ))}

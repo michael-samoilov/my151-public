@@ -11,7 +11,7 @@ export function TypeBadge({ type, className = 'h-[14px] md:h-[16px]' }: TypeBadg
     <img
       src={typeBadgePath(type)}
       alt={type}
-      className={`w-auto ${className}`}
+      className={`w-auto min-w-0 ${className}`}
       loading="lazy"
       draggable={false}
     />
