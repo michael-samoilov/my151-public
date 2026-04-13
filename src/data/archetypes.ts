@@ -576,78 +576,46 @@ export const ARCHETYPES: Archetype[] = [
     name: 'Version Exclusive Pair',
     description: 'Evolutionary line pairs that recur as version exclusives across multiple games',
     pokemonIds: [
-      // 5-game pairs
-      58,59,           // Growlithe→Arcanine
-      37,38,           // Vulpix→Ninetales
-      627,628,         // Rufflet→Braviary
-      629,630,         // Vullaby→Mandibuzz
-      123,             // Scyther
-      127,             // Pinsir
-      56,57,           // Mankey→Primeape
-      52,53,           // Meowth→Persian
-      // 4-game pairs
-      207,             // Gligar
-      216,217,         // Teddiursa→Ursaring
-      408,409,         // Cranidos→Rampardos
-      410,411,         // Shieldon→Bastiodon
-      546,547,         // Cottonee→Whimsicott
-      548,549,         // Petilil→Lilligant
-      765,             // Oranguru
-      766,             // Passimian
-      198,             // Murkrow
-      200,             // Misdreavus
-      // 3-game pairs
-      23,24,           // Ekans→Arbok
-      27,28,           // Sandshrew→Sandslash
-      43,44,45,        // Oddish→Gloom→Vileplume
-      69,70,71,        // Bellsprout→Weepinbell→Victreebel
-      125,             // Electabuzz
-      126,             // Magmar
-      226,             // Mantine
-      227,             // Skarmory
-      273,274,275,     // Seedot→Nuzleaf→Shiftry
-      270,271,272,     // Lotad→Lombre→Ludicolo
-      303,             // Mawile
-      302,             // Sableye
-      338,             // Solrock
-      337,             // Lunatone
-      574,575,576,     // Gothita→Gothorita→Gothitelle
-      577,578,579,     // Solosis→Duosion→Reuniclus
-      692,693,         // Clauncher→Clawitzer
-      690,691,         // Skrelp→Dragalge
-      776,             // Turtonator
-      780,             // Drampa
-      // 2-game pairs
-      335,             // Zangoose
-      336,             // Seviper
-      682,683,         // Spritzee→Aromatisse
-      684,685,         // Swirlix→Slurpuff
-      165,166,         // Ledyba→Ledian
-      167,168,         // Spinarak→Ariados
-      90,91,           // Shellder→Cloyster
-      120,121,         // Staryu→Starmie
-      311,             // Plusle
-      312,             // Minun
-      313,             // Volbeat
-      314,             // Illumise
-      539,             // Sawk
-      538,             // Throh
-      874,             // Stonjourner
-      875,             // Eiscue
-      10103,10104,     // Vulpix-Alola→Ninetales-Alola
-      10101,10102,     // Sandshrew-Alola→Sandslash-Alola
-      434,435,         // Stunky→Skuntank
-      431,432,         // Glameow→Purugly
-      231,232,         // Phanpy→Donphan
+      // Gen 1 — pairs adjacent
+      23,24, 27,28,           // Ekans→Arbok / Sandshrew→Sandslash
+      37,38, 58,59,           // Vulpix→Ninetales / Growlithe→Arcanine
+      43,44,45, 69,70,71,     // Oddish line / Bellsprout line
+      52,53, 56,57,           // Meowth→Persian / Mankey→Primeape
+      90,91, 120,121,         // Shellder→Cloyster / Staryu→Starmie
+      123, 127,               // Scyther / Pinsir
+      125, 126,               // Electabuzz / Magmar
+      // Gen 2 — pairs adjacent
+      165,166, 167,168,       // Ledyba→Ledian / Spinarak→Ariados
+      198, 200,               // Murkrow / Misdreavus
+      207, 216,217, 231,232,  // Gligar / Teddiursa→Ursaring / Phanpy→Donphan
+      226, 227,               // Mantine / Skarmory
+      // Gen 3 — pairs adjacent
+      270,271,272, 273,274,275, // Lotad line / Seedot line
+      302, 303,               // Sableye / Mawile
+      311, 312,               // Plusle / Minun
+      313, 314,               // Volbeat / Illumise
+      335, 336,               // Zangoose / Seviper
+      337, 338,               // Lunatone / Solrock
+      // Gen 4 — pairs adjacent
+      408,409, 410,411,       // Cranidos→Rampardos / Shieldon→Bastiodon
+      431,432, 434,435,       // Glameow→Purugly / Stunky→Skuntank
+      // Gen 5 — pairs adjacent
+      538, 539,               // Throh / Sawk
+      546,547, 548,549,       // Cottonee→Whimsicott / Petilil→Lilligant
+      574,575,576, 577,578,579, // Gothita line / Solosis line
+      627,628, 629,630,       // Rufflet→Braviary / Vullaby→Mandibuzz
+      // Gen 6 — pairs adjacent
+      682,683, 684,685,       // Spritzee→Aromatisse / Swirlix→Slurpuff
+      690,691, 692,693,       // Skrelp→Dragalge / Clauncher→Clawitzer
+      // Gen 7 — pairs adjacent
+      765, 766,               // Oranguru / Passimian
+      776, 780,               // Turtonator / Drampa
+      10103,10104, 10101,10102, // Vulpix-Alola line / Sandshrew-Alola line
+      // Gen 8 — pairs adjacent
+      874, 875,               // Stonjourner / Eiscue
     ],
     suggestedSlotRange: [106, 112],
     color: '#737373',
-    subgroups: [
-      { label: '5-game pairs', pokemonIds: [58, 37, 627, 629, 123, 127, 56, 52] },
-      { label: '4-game pairs', pokemonIds: [207, 216, 408, 410, 546, 548, 765, 766, 198, 200] },
-      { label: '3-game pairs', pokemonIds: [23, 27, 43, 69, 125, 126, 226, 227, 273, 270, 303, 302, 338, 337, 574, 577, 692, 690, 776, 780] },
-      { label: '2-game pairs', pokemonIds: [335, 336, 682, 684, 165, 167, 90, 120, 311, 312, 313, 314, 539, 538, 874, 875, 10103, 10101, 434, 431, 231] },
-    ],
   },
   {
     id: 'trade-evo',
