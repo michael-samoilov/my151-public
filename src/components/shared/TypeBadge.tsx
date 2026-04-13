@@ -6,12 +6,17 @@ interface TypeBadgeProps {
   className?: string;
 }
 
-export function TypeBadge({ type, className = 'h-[14px] md:h-[16px]' }: TypeBadgeProps) {
+/**
+ * Renders a Gen IX Scarlet/Violet type badge sprite.
+ * Width-based sizing: pass a max-width class via className.
+ * Height scales automatically to preserve the 3.2:1 aspect ratio.
+ */
+export function TypeBadge({ type, className }: TypeBadgeProps) {
   return (
     <img
       src={typeBadgePath(type)}
       alt={type}
-      className={`w-auto min-w-0 ${className}`}
+      className={`h-auto ${className ?? ''}`}
       loading="lazy"
       draggable={false}
     />

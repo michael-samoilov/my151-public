@@ -73,7 +73,7 @@ function PokemonTileStatic({ id }: { id: number }) {
       </span>
       <div className="flex gap-[0.3vw] md:gap-[min(0.4vw,3px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full justify-center">
         {pokemon.types.map((t) => (
-          <TypeBadge key={t} type={t as TypeName} className="h-[min(1.8vw,10px)] md:h-[min(1.2vw,14px)]" />
+          <TypeBadge key={t} type={t as TypeName} className="w-[47%]" />
         ))}
       </div>
     </div>
