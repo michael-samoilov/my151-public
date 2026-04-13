@@ -574,83 +574,79 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'version-exclusive',
     name: 'Version Exclusive Pair',
-    description: 'Pokemon that commonly appear as version exclusives across multiple games, paired with their counterpart',
+    description: 'Evolutionary line pairs that recur as version exclusives across multiple games',
     pokemonIds: [
-      // Gen 1 pairs
-      23,24,           // Ekans→Arbok
-      27,28,           // Sandshrew→Sandslash
-      37,38,           // Vulpix→Ninetales
-      43,44,45,        // Oddish→Gloom→Vileplume
-      52,53,           // Meowth→Persian
-      56,57,           // Mankey→Primeape
+      // 5-game pairs
       58,59,           // Growlithe→Arcanine
-      69,70,71,        // Bellsprout→Weepinbell→Victreebel
-      123,             // Scyther
-      125,             // Electabuzz
-      126,             // Magmar
-      127,             // Pinsir
-      // Gen 2 pairs
-      165,166,         // Ledyba→Ledian
-      167,168,         // Spinarak→Ariados
-      198,             // Murkrow
-      200,             // Misdreavus
-      207,             // Gligar
-      216,217,         // Teddiursa→Ursaring
-      225,             // Delibird
-      231,232,         // Phanpy→Donphan
-      // Gen 3 pairs
-      270,271,272,     // Lotad→Lombre→Ludicolo
-      273,274,275,     // Seedot→Nuzleaf→Shiftry
-      302,             // Sableye
-      303,             // Mawile
-      313,             // Volbeat
-      314,             // Illumise
-      335,             // Zangoose
-      336,             // Seviper
-      337,             // Lunatone
-      338,             // Solrock
-      // Gen 4 pairs
-      431,432,         // Glameow→Purugly
-      434,435,         // Stunky→Skuntank
-      // Gen 5 pairs
-      538,             // Throh
-      539,             // Sawk
-      546,547,         // Cottonee→Whimsicott
-      548,549,         // Petilil→Lilligant
-      574,575,576,     // Gothita→Gothorita→Gothitelle
-      577,578,579,     // Solosis→Duosion→Reuniclus
+      37,38,           // Vulpix→Ninetales
       627,628,         // Rufflet→Braviary
       629,630,         // Vullaby→Mandibuzz
-      // Gen 6 pairs
-      682,683,         // Spritzee→Aromatisse
-      684,685,         // Swirlix→Slurpuff
-      690,691,         // Skrelp→Dragalge
-      692,693,         // Clauncher→Clawitzer
-      // Gen 7 pairs
+      123,             // Scyther
+      127,             // Pinsir
+      56,57,           // Mankey→Primeape
+      52,53,           // Meowth→Persian
+      // 4-game pairs
+      207,             // Gligar
+      216,217,         // Teddiursa→Ursaring
+      408,409,         // Cranidos→Rampardos
+      410,411,         // Shieldon→Bastiodon
+      546,547,         // Cottonee→Whimsicott
+      548,549,         // Petilil→Lilligant
       765,             // Oranguru
       766,             // Passimian
+      198,             // Murkrow
+      200,             // Misdreavus
+      // 3-game pairs
+      23,24,           // Ekans→Arbok
+      27,28,           // Sandshrew→Sandslash
+      43,44,45,        // Oddish→Gloom→Vileplume
+      69,70,71,        // Bellsprout→Weepinbell→Victreebel
+      125,             // Electabuzz
+      126,             // Magmar
+      226,             // Mantine
+      227,             // Skarmory
+      273,274,275,     // Seedot→Nuzleaf→Shiftry
+      270,271,272,     // Lotad→Lombre→Ludicolo
+      303,             // Mawile
+      302,             // Sableye
+      338,             // Solrock
+      337,             // Lunatone
+      574,575,576,     // Gothita→Gothorita→Gothitelle
+      577,578,579,     // Solosis→Duosion→Reuniclus
+      692,693,         // Clauncher→Clawitzer
+      690,691,         // Skrelp→Dragalge
       776,             // Turtonator
       780,             // Drampa
-      // Gen 8 pairs
-      10162,10163,     // Ponyta-Galar→Rapidash-Galar
-      10166,865,       // Farfetch'd-Galar→Sirfetch'd
+      // 2-game pairs
+      335,             // Zangoose
+      336,             // Seviper
+      682,683,         // Spritzee→Aromatisse
+      684,685,         // Swirlix→Slurpuff
+      165,166,         // Ledyba→Ledian
+      167,168,         // Spinarak→Ariados
+      90,91,           // Shellder→Cloyster
+      120,121,         // Staryu→Starmie
+      311,             // Plusle
+      312,             // Minun
+      313,             // Volbeat
+      314,             // Illumise
+      539,             // Sawk
+      538,             // Throh
       874,             // Stonjourner
       875,             // Eiscue
-      // Gen 9 pairs
-      935,936,937,     // Charcadet→Armarouge/Ceruledge
+      10103,10104,     // Vulpix-Alola→Ninetales-Alola
+      10101,10102,     // Sandshrew-Alola→Sandslash-Alola
+      434,435,         // Stunky→Skuntank
+      431,432,         // Glameow→Purugly
+      231,232,         // Phanpy→Donphan
     ],
     suggestedSlotRange: [106, 112],
     color: '#737373',
     subgroups: [
-      { label: 'Red / Blue', pokemonIds: [23, 27, 37, 43, 52, 56, 58, 69, 123, 125, 126, 127] },
-      { label: 'Gold / Silver', pokemonIds: [165, 167, 198, 200, 207, 216, 225, 231] },
-      { label: 'Ruby / Sapphire', pokemonIds: [270, 273, 302, 303, 313, 314, 335, 336, 337, 338] },
-      { label: 'Diamond / Pearl', pokemonIds: [431, 434] },
-      { label: 'Black / White', pokemonIds: [538, 539, 546, 548, 574, 577, 627, 629] },
-      { label: 'X / Y', pokemonIds: [682, 684, 690, 692] },
-      { label: 'Sun / Moon', pokemonIds: [765, 766, 776, 780] },
-      { label: 'Sword / Shield', pokemonIds: [10162, 10166, 874, 875] },
-      { label: 'Scarlet / Violet', pokemonIds: [935, 936, 937] },
+      { label: '5-game pairs', pokemonIds: [58, 37, 627, 629, 123, 127, 56, 52] },
+      { label: '4-game pairs', pokemonIds: [207, 216, 408, 410, 546, 548, 765, 766, 198, 200] },
+      { label: '3-game pairs', pokemonIds: [23, 27, 43, 69, 125, 126, 226, 227, 273, 270, 303, 302, 338, 337, 574, 577, 692, 690, 776, 780] },
+      { label: '2-game pairs', pokemonIds: [335, 336, 682, 684, 165, 167, 90, 120, 311, 312, 313, 314, 539, 538, 874, 875, 10103, 10101, 434, 431, 231] },
     ],
   },
   {
