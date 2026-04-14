@@ -1,52 +1,37 @@
 // Service worker: cache sprites and static assets to reduce edge requests
-const CACHE_NAME = 'p151-sprites-v2';
-
-const SPRITE_CDN = 'raw.githubusercontent.com';
+const CACHE_NAME = 'p151-sprites-v1';
 
 // Cache sprites and static assets on fetch
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // Only cache same-origin GET requests for sprites and built assets
   if (event.request.method !== 'GET') return;
+  if (url.origin !== self.location.origin) return;
 
-  // Same-origin: cache sprites and built assets
-  if (url.origin === self.location.origin) {
-    const path = url.pathname;
-    const shouldCache =
-      path.startsWith('/sprites/') ||
-      path.startsWith('/assets/') ||
-      path === '/favicon.svg' ||
-      path === '/icons.svg';
+  const path = url.pathname;
+  const shouldCache =
+    path.startsWith('/sprites/') ||
+    path.startsWith('/assets/') ||
+    path === '/favicon.svg' ||
+    path === '/icons.svg';
 
-    if (!shouldCache) return;
+  if (!shouldCache) return;
 
-    event.respondWith(
-      caches.open(CACHE_NAME).then((cache) =>
-        cache.match(event.request).then((cached) => {
-          if (cached) return cached;
-          return fetch(event.request).then((response) => {
-            if (response.ok) cache.put(event.request, response.clone());
-            return response;
-          });
-        })
-      )
-    );
-    return;
-  }
-
-  // CDN: cache PokeAPI sprite images
-  if (url.hostname === SPRITE_CDN && url.pathname.includes('/sprites/pokemon/')) {
-    event.respondWith(
-      caches.open(CACHE_NAME).then((cache) =>
-        cache.match(event.request).then((cached) => {
-          if (cached) return cached;
-          return fetch(event.request, { mode: 'cors' }).then((response) => {
-            if (response.ok) cache.put(event.request, response.clone());
-            return response;
-          });
-        })
-      )
-    );
-  }
+  event.respondWith(
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          // Only cache successful responses
+          if (response.ok) {
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        });
+      })
+    )
+  );
 });
 
 // Clean up old caches on activation

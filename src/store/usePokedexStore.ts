@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createEmptySections, BUILD_GROUP_IDS } from '@/data/slot-template';
 import { getEvolutionLine, getDescendantIds, getPokemonById } from '@/hooks/usePokemonData';
-import type { SpritePack } from '@/data/sprite-packs';
 
 type TypeFilterMode = 'any' | 'all';
 
@@ -37,7 +36,6 @@ interface PokedexState {
   drillDownNewOnly: boolean; // whether "gen X only" filter was active
   whatsAdvisorExpanded: boolean;
   viewSortOption: ViewSortOption;
-  spritePack: SpritePack;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -62,7 +60,6 @@ interface PokedexState {
   navigateDrillDown: (segment: DrillDownSegment) => void;
   setWhatsAdvisorExpanded: (expanded: boolean) => void;
   setViewSortOption: (option: ViewSortOption) => void;
-  setSpritePack: (pack: SpritePack) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -88,7 +85,6 @@ export const usePokedexStore = create<PokedexState>()(
       drillDownNewOnly: false,
       whatsAdvisorExpanded: true,
       viewSortOption: 'regional' as ViewSortOption,
-      spritePack: 'pixel' as SpritePack,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -215,17 +211,15 @@ export const usePokedexStore = create<PokedexState>()(
       navigateDrillDown: (segment) => set({ drillDownSegment: segment }),
       setWhatsAdvisorExpanded: (expanded) => set({ whatsAdvisorExpanded: expanded }),
       setViewSortOption: (option) => set({ viewSortOption: option }),
-      setSpritePack: (pack) => set({ spritePack: pack }),
     }),
     {
       name: 'personal-151-pokedex-v3',
-      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, spritePack: state.spritePack }),
+      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption }),
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
           sections?: Record<string, number[]>;
           whatsAdvisorExpanded?: boolean;
           viewSortOption?: ViewSortOption;
-          spritePack?: SpritePack;
         };
 
         // Preserve all existing fields, only fix what needs fixing
@@ -255,9 +249,6 @@ export const usePokedexStore = create<PokedexState>()(
         }
         if (result.viewSortOption === undefined) {
           result.viewSortOption = 'regional';
-        }
-        if (result.spritePack === undefined) {
-          result.spritePack = 'pixel';
         }
 
         return result;
