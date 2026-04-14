@@ -273,10 +273,10 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                     return (
                       <div className="grid mt-[0.3vw] md:mt-0.5 text-[clamp(6px,1.5vw,12px)] md:text-[clamp(8px,1vw,10px)] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'min(0.6vw, 3px)' }}>
                         <span className="justify-self-end leading-none">{formatMult(info.offense)}×</span>
-                        <Sword className="w-2 h-2 md:w-[min(1.2vw,14px)] md:h-[min(1.2vw,14px)] block" />
+                        <Sword className="w-[clamp(6px,1.5vw,12px)] h-[clamp(6px,1.5vw,12px)] md:w-[clamp(8px,1vw,10px)] md:h-[clamp(8px,1vw,10px)] block" />
                         <span className="justify-self-start leading-none">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span>
                         <span className="justify-self-end leading-none">{formatMult(info.defense)}×</span>
-                        <Shield className="w-2 h-2 md:w-[min(1.2vw,14px)] md:h-[min(1.2vw,14px)] block" />
+                        <Shield className="w-[clamp(6px,1.5vw,12px)] h-[clamp(6px,1.5vw,12px)] md:w-[clamp(8px,1vw,10px)] md:h-[clamp(8px,1vw,10px)] block" />
                         <span className="justify-self-start leading-none">(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span>
                       </div>
                     );
