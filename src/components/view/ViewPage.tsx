@@ -5,6 +5,7 @@ import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
+import { PageFooter } from '@/components/shared/PageFooter';
 
 const COLS = 10;
 const SPACER_HEIGHT = 64; // h-16 pokeball spacer
@@ -244,16 +245,7 @@ export function ViewPage() {
                   <EmptyPlaceholder key={`empty-last-${i}`} k={`empty-last-${i}`} />
                 ))}
             </div>
-            {/* Bottom breathing room with pokeball */}
-            <div className="h-16 flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" className="text-muted-foreground/20">
-                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
-                <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
-                <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-              </svg>
-            </div>
+            <PageFooter />
           </div>
           );
         })()}

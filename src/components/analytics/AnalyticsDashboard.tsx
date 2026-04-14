@@ -12,6 +12,7 @@ import { typeIconPath } from '@/data/type-ids';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
+import { PageFooter } from '@/components/shared/PageFooter';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
@@ -1133,16 +1134,7 @@ export function AnalyticsDashboard() {
         </section>
 
       </div>
-      {/* Bottom breathing room with pokeball */}
-      <div className="h-16 flex items-center justify-center">
-        <svg width="24" height="24" viewBox="0 0 24 24" className="text-muted-foreground/20">
-          <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
-          <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
-          <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-        </svg>
-      </div>
+      <PageFooter />
       </div>
     </div>
   );

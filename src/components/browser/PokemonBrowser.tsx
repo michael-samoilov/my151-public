@@ -11,6 +11,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { typeBadgePath } from '@/data/type-ids';
 import { Search, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PageFooter } from '@/components/shared/PageFooter';
 
 type FilterSheet = 'type' | 'generation' | 'evoStage' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
 
@@ -703,16 +704,7 @@ export function PokemonBrowser() {
               <p className="text-sm mt-1">Try adjusting your filters.</p>
             </div>
           )}
-          {/* Bottom padding for floating button clearance */}
-          <div className="h-16 flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 24 24" className="text-muted-foreground/20">
-                <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
-                <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
-                <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-              </svg>
-            </div>
+          <PageFooter />
       </div>
 
       {/* Floating "Add X Pokemon" button */}
