@@ -197,24 +197,6 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
               )}
               style={{ backgroundColor: `${bgColor}10` }}
             />
-            {inDex && variant === 'analytics' && (
-              <button
-                onClick={handleRemoveButton}
-                className="absolute top-[1px] right-[4px] md:right-1 w-[3vw] h-[3vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] rounded-full bg-destructive/60 md:bg-destructive/80 text-white flex items-center justify-center z-10"
-              >
-                <X className="w-[1.5vw] h-[1.5vw] md:w-[min(0.9vw,11px)] md:h-[min(0.9vw,11px)]" />
-              </button>
-            )}
-            {inDex && variant === 'browser' && (
-              <div className="absolute top-[3px] right-[6px] md:right-1.5 -translate-y-[0.5px] w-[2.5vw] h-[2.5vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] z-10">
-                <PokeballIcon className="w-full h-full" />
-              </div>
-            )}
-            {!inDex && stagedIds.has(pokemon.id) && (
-              <div className="absolute top-[3px] right-[6px] md:right-1.5 -translate-y-[0.5px] w-[2.5vw] h-[2.5vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] bg-primary rounded-full flex items-center justify-center z-10">
-                <Plus className="w-1/2 h-1/2 text-primary-foreground" />
-              </div>
-            )}
             <div
               role="button"
               tabIndex={0}
@@ -224,59 +206,82 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                 'relative flex flex-col items-center pt-[0.5vw] pb-[1vw] md:py-1.5 transition-all cursor-pointer w-full',
               )}
             >
-              <div className={cn(
-                'relative flex flex-col items-center w-full',
-                !matched && 'opacity-35',
-              )}>
+              <div className="relative flex flex-col items-center w-full">
+                {/* Gen badge + icons — always full opacity, outside the grey wrapper */}
                 {showGenBadge && (
                   <GenBadge
                     gen={pokemon.generation}
                     className="absolute top-0 left-[6px] md:left-1 w-[2.5vw] h-[2.5vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] z-10"
                   />
                 )}
-                <div
-                  style={{
-                    width: spritePx,
-                    height: spritePx,
-                    backgroundImage: `url(${spriteOverrides?.[pokemon.id]
-                      ?? (shinyIds?.has(pokemon.id)
-                        ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
-                        : pokemon.sprite)})`,
-                    backgroundSize: `${spritePx}px ${spritePx}px`,
-                    backgroundRepeat: 'no-repeat',
-                    backgroundPosition: 'center',
-                    imageRendering: 'pixelated',
-                  }}
-                  role="img"
-                  aria-label={pokemon.name}
-                />
-                <span className="text-[clamp(7px,2vw,14px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
-                  {displayName(pokemon.name)}
-                </span>
-                <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.5vw] md:mt-[min(0.3vw,2px)] w-full">
-                  {pokemon.types.map((t) => (
-                    <TypeBadge key={t} type={t as TypeName} className="w-[min(65%,75px)]" />
-                  ))}
-                  {pokemon.types.length === 1 && (
-                    <div className="w-[min(65%,75px)]" style={{ aspectRatio: '200/40' }} aria-hidden />
-                  )}
+                {inDex && variant === 'analytics' && (
+                  <button
+                    onClick={handleRemoveButton}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="absolute top-0 right-[6px] md:right-1 w-[2.5vw] h-[2.5vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] rounded-full bg-destructive/60 md:bg-destructive/80 text-white flex items-center justify-center z-10"
+                  >
+                    <X className="w-1/2 h-1/2" />
+                  </button>
+                )}
+                {inDex && variant === 'browser' && (
+                  <div className="absolute top-0 right-[6px] md:right-1 w-[2.5vw] h-[2.5vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] z-10">
+                    <PokeballIcon className="w-full h-full" />
+                  </div>
+                )}
+                {!inDex && stagedIds.has(pokemon.id) && (
+                  <div className="absolute top-0 right-[6px] md:right-1 w-[2.5vw] h-[2.5vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] bg-primary rounded-full flex items-center justify-center z-10">
+                    <Plus className="w-1/2 h-1/2 text-primary-foreground" />
+                  </div>
+                )}
+                {/* Content — greyed out for gen mismatch (analytics) or filter mismatch (browser) */}
+                <div className={cn(
+                  'flex flex-col items-center w-full',
+                  variant === 'analytics' ? (showGenBadge && 'opacity-35') : (!matched && 'opacity-35'),
+                )}>
+                  <div
+                    style={{
+                      width: spritePx,
+                      height: spritePx,
+                      backgroundImage: `url(${spriteOverrides?.[pokemon.id]
+                        ?? (shinyIds?.has(pokemon.id)
+                          ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
+                          : pokemon.sprite)})`,
+                      backgroundSize: `${spritePx}px ${spritePx}px`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundPosition: 'center',
+                      imageRendering: 'pixelated',
+                    }}
+                    role="img"
+                    aria-label={pokemon.name}
+                  />
+                  <span className="text-[clamp(7px,2vw,14px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
+                    {displayName(pokemon.name)}
+                  </span>
+                  <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.5vw] md:mt-[min(0.3vw,2px)] w-full">
+                    {pokemon.types.map((t) => (
+                      <TypeBadge key={t} type={t as TypeName} className="w-[min(65%,75px)]" />
+                    ))}
+                    {pokemon.types.length === 1 && (
+                      <div className="w-[min(65%,75px)]" style={{ aspectRatio: '200/40' }} aria-hidden />
+                    )}
+                  </div>
+                  {matchupInfo?.has(pokemon.id) && (() => {
+                    const info = matchupInfo.get(pokemon.id)!;
+                    const offD = doublings(info.offense, false);
+                    const defD = doublings(info.defense, true);
+                    const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
+                    return (
+                      <div className="grid mt-[0.3vw] md:mt-0.5 text-[clamp(6px,1.5vw,12px)] md:text-[clamp(8px,1vw,10px)] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'min(0.6vw, 3px)' }}>
+                        <span className="justify-self-end leading-none">{formatMult(info.offense)}×</span>
+                        <Sword className="w-2 h-2 md:w-[min(1.2vw,14px)] md:h-[min(1.2vw,14px)] block" />
+                        <span className="justify-self-start leading-none">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span>
+                        <span className="justify-self-end leading-none">{formatMult(info.defense)}×</span>
+                        <Shield className="w-2 h-2 md:w-[min(1.2vw,14px)] md:h-[min(1.2vw,14px)] block" />
+                        <span className="justify-self-start leading-none">(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span>
+                      </div>
+                    );
+                  })()}
                 </div>
-                {matchupInfo?.has(pokemon.id) && (() => {
-                  const info = matchupInfo.get(pokemon.id)!;
-                  const offD = doublings(info.offense, false);
-                  const defD = doublings(info.defense, true);
-                  const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
-                  return (
-                    <div className="grid mt-[0.3vw] md:mt-0.5 text-[clamp(6px,1.5vw,12px)] md:text-[clamp(8px,1vw,10px)] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'min(0.6vw, 3px)' }}>
-                      <span className="justify-self-end leading-none">{formatMult(info.offense)}×</span>
-                      <Sword className="w-2 h-2 md:w-[min(1.2vw,14px)] md:h-[min(1.2vw,14px)] block" />
-                      <span className="justify-self-start leading-none">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span>
-                      <span className="justify-self-end leading-none">{formatMult(info.defense)}×</span>
-                      <Shield className="w-2 h-2 md:w-[min(1.2vw,14px)] md:h-[min(1.2vw,14px)] block" />
-                      <span className="justify-self-start leading-none">(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span>
-                    </div>
-                  );
-                })()}
               </div>
             </div>
             {/* Chevron between evo line members */}
