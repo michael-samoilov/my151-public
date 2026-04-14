@@ -8,10 +8,14 @@ function hashIds(ids: number[]): string {
   return ids.slice().sort((a, b) => a - b).join(',');
 }
 
+function sendBeacon(ids: number[], source: 'completion' | 'export') {
+  const payload = JSON.stringify({ ids, source });
+  navigator.sendBeacon('/api/submit', new Blob([payload], { type: 'application/json' }));
+}
+
 /**
  * Watches the Pokedex store. When exactly 151 Pokemon are selected
- * and the set hasn't been submitted yet, fires a single beacon POST
- * to /api/submit with the ID array.
+ * and the set hasn't been submitted yet, fires a beacon with source 'completion'.
  */
 export function useCompletionBeacon() {
   const sections = usePokedexStore((s) => s.sections);
@@ -34,17 +38,18 @@ export function useCompletionBeacon() {
       // localStorage may be unavailable
     }
 
-    // Send beacon
-    const payload = JSON.stringify({ ids: allIds });
-    const sent = navigator.sendBeacon('/api/submit', new Blob([payload], { type: 'application/json' }));
-
-    if (sent) {
-      sentRef.current = hash;
-      try {
-        localStorage.setItem(STORAGE_KEY, hash);
-      } catch {
-        // localStorage may be unavailable
-      }
+    sendBeacon(allIds, 'completion');
+    sentRef.current = hash;
+    try {
+      localStorage.setItem(STORAGE_KEY, hash);
+    } catch {
+      // localStorage may be unavailable
     }
   }, [sections]);
+}
+
+/** Fire a one-shot export beacon with the current list. */
+export function sendExportBeacon(ids: number[]) {
+  if (ids.length === 0) return;
+  sendBeacon(ids, 'export');
 }

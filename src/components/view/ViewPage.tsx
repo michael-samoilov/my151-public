@@ -1,11 +1,13 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Settings } from 'lucide-react';
+import { Settings, Download, Loader2 } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { generateExportImage, downloadBlob } from '@/lib/exportImage';
+import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 
 const COLS = 10;
 const SPACER_HEIGHT = 64; // h-16 pokeball spacer
@@ -154,6 +156,21 @@ export function ViewPage() {
   const count = sorted.length;
   const totalSlots = Math.max(count, 151);
   const { containerRef, tileSize } = useTileSize(totalSlots);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = useCallback(async () => {
+    if (exporting || sorted.length === 0) return;
+    setExporting(true);
+    try {
+      const blob = await generateExportImage(sorted, window.location.origin, new Date().getFullYear());
+      downloadBlob(blob, `my-personal-151.png`);
+      sendExportBeacon(sorted.map((p) => p.id));
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setExporting(false);
+    }
+  }, [sorted, exporting]);
 
   return (
     <div className="h-full flex flex-col">
@@ -163,7 +180,16 @@ export function ViewPage() {
           <span className="text-primary">{count}</span>
           <span className="text-foreground">/151</span>
         </h2>
-        <ViewSettingsMenu />
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleExport}
+            disabled={exporting || count === 0}
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
+          >
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          </button>
+          <ViewSettingsMenu />
+        </div>
       </div>
 
       {/* Grid container — measured for tile sizing */}

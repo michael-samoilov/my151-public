@@ -12,17 +12,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const [picks, total] = await Promise.all([
-      redis.hgetall('picks') as Promise<Record<string, number> | null>,
-      redis.get('total_submissions') as Promise<number | null>,
+    const [completionPicks, completionTotal, exportPicks, exportTotal] = await Promise.all([
+      redis.hgetall('picks:completion') as Promise<Record<string, number> | null>,
+      redis.get('total:completion') as Promise<number | null>,
+      redis.hgetall('picks:export') as Promise<Record<string, number> | null>,
+      redis.get('total:export') as Promise<number | null>,
     ]);
 
     // Cache for 60s at CDN, 30s stale-while-revalidate
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30');
 
     return res.status(200).json({
-      picks: picks ?? {},
-      totalSubmissions: total ?? 0,
+      completion: {
+        picks: completionPicks ?? {},
+        total: completionTotal ?? 0,
+      },
+      export: {
+        picks: exportPicks ?? {},
+        total: exportTotal ?? 0,
+      },
     });
   } catch (err) {
     console.error('Stats error:', err);
