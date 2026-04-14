@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
-import { effectiveCursorCollision, dragInputIsTouch } from '@/lib/dragCollision';
+import { effectiveCursorCollision, dragInputIsTouch, TOUCH_OVERLAY_LIFT_PX } from '@/lib/dragCollision';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { TypeName } from '@/types/pokemon';
 import { displayName } from '@/lib/utils';
@@ -20,7 +20,6 @@ import {
   useDroppable,
   type DragStartEvent,
   type DragEndEvent,
-  type DragOverEvent,
   type DragMoveEvent,
 } from '@dnd-kit/core';
 import { useDraggable } from '@dnd-kit/core';
@@ -600,6 +599,12 @@ export function PokedexGrid() {
   );
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
+    // Update overTileId atomically with dropSide. Splitting across
+    // onDragOver (setOverTileId) and onDragMove (setDropSide) renders once
+    // with the NEW overTileId but STALE dropSide — causing the indicator
+    // to flash at the wrong edge of the new bundle before correcting.
+    setOverTileId(event.over ? (event.over.id as string) : null);
+
     if (!event.over) return;
 
     const overId = event.over.id as string;
@@ -664,10 +669,6 @@ export function PokedexGrid() {
     setDropSide(px < bundleCenterX ? 'left' : 'right');
     lastBundleKeyRef.current = currentBundleKey;
   }, [sections, dragLineIds]);
-
-  const handleDragOver = useCallback((event: DragOverEvent) => {
-    setOverTileId(event.over ? (event.over.id as string) : null);
-  }, []);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -810,7 +811,6 @@ export function PokedexGrid() {
               collisionDetection={effectiveCursorCollision}
               onDragStart={handleDragStart}
               onDragMove={handleDragMove}
-              onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
               onDragCancel={handleDragCancel}
             >
@@ -832,7 +832,7 @@ export function PokedexGrid() {
                 {dragLineIds && (
                   <div
                     className="flex gap-[1vw] md:gap-1"
-                    style={isTouchDrag.current ? { transform: 'translateY(-80px)' } : undefined}
+                    style={isTouchDrag.current ? { transform: `translateY(-${TOUCH_OVERLAY_LIFT_PX}px)` } : undefined}
                   >
                     {dragLineIds.map((id) => (
                       <div key={id} className="w-[calc((100vw-24px-5vw)/6)] md:w-[calc((100%-20px)/6)] max-w-[90px]">

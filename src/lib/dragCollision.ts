@@ -11,7 +11,7 @@ import {
  * "effective cursor" matches what the user visually sees under the
  * overlay — not the raw finger position, which sits this many px below.
  */
-export const TOUCH_OVERLAY_LIFT_PX = 80;
+export const TOUCH_OVERLAY_LIFT_PX = 140;
 
 /**
  * Shared mutable flag so the module-scope collision detector can read the

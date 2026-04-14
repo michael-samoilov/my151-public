@@ -9,7 +9,7 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
-import { effectiveCursorCollision, dragInputIsTouch } from '@/lib/dragCollision';
+import { effectiveCursorCollision, dragInputIsTouch, TOUCH_OVERLAY_LIFT_PX } from '@/lib/dragCollision';
 import {
   DndContext,
   MouseSensor,
@@ -21,7 +21,6 @@ import {
   useDraggable,
   type DragStartEvent,
   type DragEndEvent,
-  type DragOverEvent,
   type DragMoveEvent,
 } from '@dnd-kit/core';
 
@@ -253,6 +252,12 @@ export function ViewPage() {
   }, [bundleVisible]);
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
+    // Update overId atomically with dropSide. If we split this across
+    // onDragOver (setOverId) and onDragMove (setDropSide), React renders
+    // once with the NEW overId but STALE dropSide — causing the indicator
+    // to flash at the wrong edge of the new bundle before correcting.
+    setOverId(event.over ? (event.over.id as string) : null);
+
     if (!event.over) return;
     const targetPid = parseDragId(event.over.id as string);
     if (targetPid === null) return;
@@ -321,10 +326,6 @@ export function ViewPage() {
     setDropSide(px < bundleCenterX ? 'left' : 'right');
     lastBundleKeyRef.current = currentBundleKey;
   }, [dragLineIds, bundleVisible, visibleIds]);
-
-  const handleDragOver = useCallback((event: DragOverEvent) => {
-    setOverId(event.over ? (event.over.id as string) : null);
-  }, []);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { over } = event;
@@ -489,7 +490,6 @@ export function ViewPage() {
                 collisionDetection={effectiveCursorCollision}
                 onDragStart={handleDragStart}
                 onDragMove={handleDragMove}
-                onDragOver={handleDragOver}
                 onDragEnd={handleDragEnd}
                 onDragCancel={handleDragCancel}
               >
@@ -521,7 +521,7 @@ export function ViewPage() {
                   {dragOverlayPokemon.length > 0 && (
                     <div
                       className="flex"
-                      style={isTouchDrag.current ? { transform: 'translateY(-80px)' } : undefined}
+                      style={isTouchDrag.current ? { transform: `translateY(-${TOUCH_OVERLAY_LIFT_PX}px)` } : undefined}
                     >
                       {dragOverlayPokemon.map((p) => (
                         <StaticViewTile key={p.id} pokemon={p} tileSize={tileSize} />
