@@ -233,10 +233,10 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                     <Plus className="w-1/2 h-1/2 text-primary-foreground" />
                   </div>
                 )}
-                {/* Content — greyed out for gen mismatch (analytics) or filter mismatch (browser) */}
+                {/* Content — greyed out for gen mismatch, matchup tier mismatch (analytics), or filter mismatch (browser) */}
                 <div className={cn(
                   'flex flex-col items-center w-full',
-                  variant === 'analytics' ? (showGenBadge && 'opacity-35') : (!matched && 'opacity-35'),
+                  variant === 'analytics' ? ((showGenBadge || (matchupInfo && !matched)) && 'opacity-35') : (!matched && 'opacity-35'),
                 )}>
                   <div
                     style={{
