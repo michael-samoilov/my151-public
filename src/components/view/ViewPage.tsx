@@ -9,7 +9,7 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
-import { effectiveCursorCollision, dragInputIsTouch, TOUCH_OVERLAY_LIFT_PX } from '@/lib/dragCollision';
+import { effectiveCursorCollision, dragInputIsTouch, OVERLAY_LIFT_PX } from '@/lib/dragCollision';
 import {
   DndContext,
   MouseSensor,
@@ -208,8 +208,6 @@ export function ViewPage() {
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
-  const isTouchDrag = useRef(false);
-
   const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
   const sensors = useSensors(mouseSensor, touchSensor);
@@ -238,9 +236,7 @@ export function ViewPage() {
     const pid = parseDragId(event.active.id as string);
     if (pid === null) return;
     setDragLineIds(bundleVisible(pid));
-    const touch = event.activatorEvent instanceof TouchEvent;
-    isTouchDrag.current = touch;
-    dragInputIsTouch.current = touch;
+    dragInputIsTouch.current = event.activatorEvent instanceof TouchEvent;
   }, [bundleVisible]);
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
@@ -505,7 +501,7 @@ export function ViewPage() {
                   {dragOverlayPokemon.length > 0 && (
                     <div
                       className="flex"
-                      style={isTouchDrag.current ? { transform: `translateY(-${TOUCH_OVERLAY_LIFT_PX}px)` } : undefined}
+                      style={{ transform: `translateY(-${OVERLAY_LIFT_PX}px)` }}
                     >
                       {dragOverlayPokemon.map((p) => (
                         <StaticViewTile key={p.id} pokemon={p} tileSize={tileSize} />

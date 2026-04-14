@@ -5,49 +5,57 @@ import {
 } from '@dnd-kit/core';
 
 /**
- * How far above the finger the touch DragOverlay is translated. This is
- * purely a VISUAL offset so the held sprite isn't obscured by the user's
- * finger — hit-testing deliberately uses the raw finger position (see
- * `effectiveCursorCollision`). Decoupling visual lift from hit-test keeps
- * the drop indicator visible on the target tile, which otherwise would
- * sit directly under the overlay.
+ * Drag-overlay visual stack:
+ *   • Desktop (mouse): mouse cursor = hit-test target. Overlay floats
+ *     OVERLAY_LIFT_PX above the mouse so the held sprite is visible
+ *     above the cursor, not sitting on top of the target.
+ *   • Touch (thumb): thumb at bottom, held overlay OVERLAY_LIFT_PX above
+ *     thumb, hit-test target TOUCH_HIT_LIFT_PX above thumb — the target
+ *     ends up ABOVE the overlay so the drop indicator on it is visible.
+ *
+ * TOUCH_HIT_LIFT_PX must exceed OVERLAY_LIFT_PX by roughly one tile
+ * height so the target row clears the top of the overlay on touch.
  */
-export const TOUCH_OVERLAY_LIFT_PX = 140;
+export const OVERLAY_LIFT_PX = 140;
+export const TOUCH_HIT_LIFT_PX = 240;
 
 /**
- * Shared mutable flag for the current drag's input modality. Kept for
- * callers that still want to know whether the active drag is touch (used
- * for the overlay's CSS transform). The collision detector itself no
- * longer reads this — hit-testing always uses the raw pointer.
+ * Shared mutable flag for the current drag's input modality. Set in each
+ * page's handleDragStart based on whether the activator event is a
+ * TouchEvent; cleared on end / cancel. A ref-like object rather than
+ * React state because the collision detector runs outside the render
+ * cycle.
  */
 export const dragInputIsTouch = { current: false };
 
 /**
- * Seamless-grid collision detection using the RAW pointer position.
+ * Seamless-grid collision detection with a touch-aware hit-test lift.
  *
- * Design intent: the user's finger (or mouse) is the source of truth for
- * where they want to drop. The touch DragOverlay floats 140px above the
- * finger as a visible reminder of what's being held, but the target tile
- * the user is pointing at is the one directly under their finger. This
- * keeps the drop indicator visible on that target — if the hit-test were
- * lifted to match the overlay, the overlay would sit on top of the target
- * and obscure the indicator.
- *
- * 1. Try pointerWithin against the raw pointer. In a gapless grid this
- *    covers every pixel inside a droppable.
- * 2. Seamless fallback: snap to the droppable whose CENTER is closest to
- *    the raw pointer. This closes every dead zone (container padding,
- *    empty placeholder slots, section gaps) — every point in 2D maps to
- *    exactly one droppable. We do NOT fall back to rectIntersection
- *    because it uses the dragged rect (which is offset differently from
- *    the pointer in a lifted overlay) and can produce a row-jump.
+ * 1. On touch drag, lift the pointer by TOUCH_HIT_LIFT_PX so the hit-test
+ *    lands on the tile ABOVE the overlay the user is holding — not the
+ *    tile under the overlay (which would be covered) or under the thumb
+ *    (also covered). On desktop, use the raw mouse pointer.
+ * 2. Try pointerWithin against the adjusted pointer. In a gapless grid
+ *    this covers every pixel inside a droppable.
+ * 3. Seamless fallback: snap to the droppable whose CENTER is closest to
+ *    the adjusted pointer. This closes every dead zone (container
+ *    padding, empty placeholder slots, section gaps) — every point in
+ *    2D maps to exactly one droppable. We deliberately do NOT fall
+ *    through to rectIntersection, which uses the dragged rect (offset
+ *    differently from the adjusted pointer) and would re-introduce a
+ *    row-jump bug.
  */
 export const effectiveCursorCollision: CollisionDetection = (args) => {
-  const hits = pointerWithin(args);
+  const raw = args.pointerCoordinates;
+  const effective = raw && dragInputIsTouch.current
+    ? { x: raw.x, y: raw.y - TOUCH_HIT_LIFT_PX }
+    : raw;
+  const adjusted = effective === raw ? args : { ...args, pointerCoordinates: effective };
+
+  const hits = pointerWithin(adjusted);
   if (hits.length > 0) return hits;
 
-  const p = args.pointerCoordinates;
-  if (!p) return closestCenter(args);
+  if (!effective) return closestCenter(adjusted);
 
   let bestId: string | number | null = null;
   let bestD2 = Infinity;
@@ -56,7 +64,7 @@ export const effectiveCursorCollision: CollisionDetection = (args) => {
     if (!r) return;
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
-    const d2 = (cx - p.x) ** 2 + (cy - p.y) ** 2;
+    const d2 = (cx - effective.x) ** 2 + (cy - effective.y) ** 2;
     if (d2 < bestD2) {
       bestD2 = d2;
       bestId = c.id;

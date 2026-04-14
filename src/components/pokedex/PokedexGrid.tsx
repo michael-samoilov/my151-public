@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
-import { effectiveCursorCollision, dragInputIsTouch, TOUCH_OVERLAY_LIFT_PX } from '@/lib/dragCollision';
+import { effectiveCursorCollision, dragInputIsTouch, OVERLAY_LIFT_PX } from '@/lib/dragCollision';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { TypeName } from '@/types/pokemon';
 import { displayName } from '@/lib/utils';
@@ -568,7 +568,6 @@ export function PokedexGrid() {
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
   const [dragFromSection, setDragFromSection] = useState<string | null>(null);
   const [overTileId, setOverTileId] = useState<string | null>(null);
-  const isTouchDrag = useRef(false);
   const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
 
   const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
@@ -582,9 +581,7 @@ export function PokedexGrid() {
       const lineIds = findEvoLineGroup(pokemonId, sectionIds);
       setDragLineIds(lineIds);
       setDragFromSection(sectionId);
-      const touch = event.activatorEvent instanceof TouchEvent;
-      isTouchDrag.current = touch;
-      dragInputIsTouch.current = touch;
+      dragInputIsTouch.current = event.activatorEvent instanceof TouchEvent;
     },
     [sections]
   );
@@ -813,7 +810,7 @@ export function PokedexGrid() {
                 {dragLineIds && (
                   <div
                     className="flex gap-[1vw] md:gap-1"
-                    style={isTouchDrag.current ? { transform: `translateY(-${TOUCH_OVERLAY_LIFT_PX}px)` } : undefined}
+                    style={{ transform: `translateY(-${OVERLAY_LIFT_PX}px)` }}
                   >
                     {dragLineIds.map((id) => (
                       <div key={id} className="w-[calc((100vw-24px-5vw)/6)] md:w-[calc((100%-20px)/6)] max-w-[90px]">
