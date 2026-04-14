@@ -209,13 +209,6 @@ export function ViewPage() {
   const [overId, setOverId] = useState<string | null>(null);
   const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
   const isTouchDrag = useRef(false);
-  /**
-   * evolutionChainId of the bundle the pointer was over on the previous
-   * move. While it stays the same, dropSide is frozen (hysteresis) —
-   * preventing the indicator from flashing as the pointer sweeps across a
-   * multi-tile bundle.
-   */
-  const lastBundleKeyRef = useRef<number | null>(null);
 
   const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
@@ -248,7 +241,6 @@ export function ViewPage() {
     const touch = event.activatorEvent instanceof TouchEvent;
     isTouchDrag.current = touch;
     dragInputIsTouch.current = touch;
-    lastBundleKeyRef.current = null;
   }, [bundleVisible]);
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
@@ -263,21 +255,16 @@ export function ViewPage() {
     if (targetPid === null) return;
     if (dragLineIds && dragLineIds.includes(targetPid)) return;
 
-    // Hysteresis: if we're still over the same bundle as the previous move,
-    // leave dropSide alone. It only updates the first time the pointer
-    // enters a new bundle — which is exactly when the user's intent
-    // (before / after) changes.
     const target = getPokemonById(targetPid);
     if (!target) return;
-    const currentBundleKey = target.evolutionChainId;
-    if (currentBundleKey === lastBundleKeyRef.current) return;
 
-    // Entered a new bundle — compute dropSide from effective cursor X vs
-    // the bundle's horizontal center. Bundle center is reconstructed from
-    // the target tile's rect plus the known column offsets of bundle
-    // members on the target's row. Cross-row members are ignored so a
-    // row-wrapped bundle uses only the segment the pointer is actually
-    // interacting with.
+    // dropSide is computed every move from effective cursor X vs bundle
+    // center. Within a multi-tile bundle, bundleCenterX is constant across
+    // the bundle's member tiles, so the indicator stays stable on one side
+    // until the pointer actually crosses the bundle's midpoint — no
+    // per-tile flashing. Across bundles, the setOverId + setDropSide
+    // updates above are batched in one render, avoiding the
+    // stale-dropSide flash at bundle entry.
     const ae = event.activatorEvent;
     let startX: number | null = null;
     if ('clientX' in ae) {
@@ -324,7 +311,6 @@ export function ViewPage() {
     }
 
     setDropSide(px < bundleCenterX ? 'left' : 'right');
-    lastBundleKeyRef.current = currentBundleKey;
   }, [dragLineIds, bundleVisible, visibleIds]);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
@@ -333,7 +319,6 @@ export function ViewPage() {
       setDragLineIds(null);
       setOverId(null);
       setDropSide('left');
-      lastBundleKeyRef.current = null;
       dragInputIsTouch.current = false;
     };
 
@@ -377,7 +362,6 @@ export function ViewPage() {
     setDragLineIds(null);
     setOverId(null);
     setDropSide('left');
-    lastBundleKeyRef.current = null;
     dragInputIsTouch.current = false;
   }, []);
 

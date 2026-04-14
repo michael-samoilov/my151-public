@@ -570,14 +570,6 @@ export function PokedexGrid() {
   const [overTileId, setOverTileId] = useState<string | null>(null);
   const isTouchDrag = useRef(false);
   const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
-  /**
-   * evolutionChainId of the bundle the pointer was over on the previous
-   * move. While it stays the same, dropSide is frozen (hysteresis) — the
-   * indicator only re-evaluates when the pointer enters a NEW bundle,
-   * which eliminates the mid-bundle flash as the pointer sweeps across
-   * multi-tile chains.
-   */
-  const lastBundleKeyRef = useRef<number | null>(null);
 
   const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
@@ -593,7 +585,6 @@ export function PokedexGrid() {
       const touch = event.activatorEvent instanceof TouchEvent;
       isTouchDrag.current = touch;
       dragInputIsTouch.current = touch;
-      lastBundleKeyRef.current = null;
     },
     [sections]
   );
@@ -615,18 +606,12 @@ export function PokedexGrid() {
     // Skip if hovering over the dragged evo line itself
     if (dragLineIds && dragLineIds.includes(target.pokemonId)) return;
 
-    // Hysteresis: once committed to a side of a bundle, stay there until
-    // the pointer enters a different bundle. This prevents the indicator
-    // from flashing as the cursor sweeps across members of a multi-tile
-    // chain.
-    const targetPokemon = getPokemonById(target.pokemonId);
-    if (!targetPokemon) return;
-    const currentBundleKey = targetPokemon.evolutionChainId;
-    if (currentBundleKey === lastBundleKeyRef.current) return;
-
-    // Effective pointer X — startX from the activator event plus accumulated
-    // delta. X is not affected by the touch-lift offset (that applies to Y
-    // only, handled in the collision detector).
+    // dropSide is recomputed every move from effective cursor X vs bundle
+    // center. bundleCenterX is constant across a multi-tile bundle, so the
+    // indicator stays on one side until the pointer actually crosses the
+    // bundle midpoint — no per-tile flash. The setOverTileId + setDropSide
+    // updates batch into one render, so bundle-to-bundle transitions
+    // don't show a stale-side flash either.
     let startX: number | null = null;
     const ae = event.activatorEvent;
     if ('clientX' in ae) {
@@ -667,7 +652,6 @@ export function PokedexGrid() {
     }
 
     setDropSide(px < bundleCenterX ? 'left' : 'right');
-    lastBundleKeyRef.current = currentBundleKey;
   }, [sections, dragLineIds]);
 
   const handleDragEnd = useCallback(
@@ -695,7 +679,6 @@ export function PokedexGrid() {
             setDragFromSection(null);
             setOverTileId(null);
             setDropSide('left');
-            lastBundleKeyRef.current = null;
             dragInputIsTouch.current = false;
             return;
           }
@@ -731,7 +714,6 @@ export function PokedexGrid() {
       setDragFromSection(null);
       setOverTileId(null);
       setDropSide('left');
-      lastBundleKeyRef.current = null;
       dragInputIsTouch.current = false;
     },
     [dragLineIds, dragFromSection, sections, moveEvoLine, dropSide]
@@ -742,7 +724,6 @@ export function PokedexGrid() {
     setDragFromSection(null);
     setOverTileId(null);
     setDropSide('left');
-    lastBundleKeyRef.current = null;
     dragInputIsTouch.current = false;
   }, []);
 
