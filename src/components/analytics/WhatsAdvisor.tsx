@@ -92,7 +92,7 @@ export function WhatsAdvisor() {
     return items;
   }, [sections]);
 
-  const missingCount = advice.filter((a) => a.type === 'missing').length;
+  const gapCount = advice.filter((a) => a.type === 'missing' || a.type === 'suggestion').length;
   const completeCount = advice.filter((a) => a.type === 'complete').length;
 
   return (
@@ -103,10 +103,10 @@ export function WhatsAdvisor() {
       >
         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? '' : '-rotate-90'}`} />
         <h3 className="text-lg font-semibold">What's Missing?</h3>
-        {missingCount > 0 && (
-          <Badge className="text-xs bg-yellow-500 text-white">{missingCount} {missingCount === 1 ? 'gap' : 'gaps'}</Badge>
+        {gapCount > 0 && (
+          <Badge className="text-xs bg-yellow-500 text-white">{gapCount} {gapCount === 1 ? 'gap' : 'gaps'}</Badge>
         )}
-        {missingCount === 0 && completeCount > 0 && (
+        {gapCount === 0 && completeCount > 0 && (
           <Badge className="text-xs bg-green-600">Looking good!</Badge>
         )}
       </button>
