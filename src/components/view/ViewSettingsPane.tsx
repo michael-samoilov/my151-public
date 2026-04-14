@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Check } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
+import { PageFooter } from '@/components/shared/PageFooter';
 
 interface SortOption {
   value: ViewSortOption;
@@ -59,18 +60,15 @@ export function ViewSettingsPane({
   const customOrder = usePokedexStore((s) => s.viewCustomOrder);
   const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
 
-  // Current visible sort (used to seed custom order when user picks Custom
-  // before they've dragged anything, so nothing jumps visually).
+  // Stage changes locally — only commit on "Update & View".
+  const [pendingSort, setPendingSort] = useState<ViewSortOption>(sortOption);
+  const [pendingGrouping, setPendingGrouping] = useState<boolean>(groupSpecialAtEnd);
+  const [pendingCustomOrder, setPendingCustomOrder] = useState<number[] | null>(customOrder);
+
+  // Seed source: what's currently visible on the grid (reflects live store state).
   const currentSorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
 
-  const handleSelectSort = (value: ViewSortOption) => {
-    if (value === 'custom' && customOrder === null) {
-      setCustomOrder(currentSorted.map((p) => p.id));
-    }
-    setSortOption(value);
-  };
-
-  // Close on Escape
+  // Close on Escape (discards any pending changes)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -79,16 +77,45 @@ export function ViewSettingsPane({
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  const hasCustom = customOrder !== null;
+  const hasCustomPending = pendingCustomOrder !== null;
+
+  const handleSelectSort = (value: ViewSortOption) => {
+    if (value === 'custom' && pendingCustomOrder === null) {
+      setPendingCustomOrder(currentSorted.map((p) => p.id));
+    }
+    setPendingSort(value);
+  };
+
+  const handleToggleGrouping = () => {
+    setPendingGrouping((v) => !v);
+  };
 
   const handleResetCustom = () => {
-    setCustomOrder(null);
-    // Fall back to a sensible base sort if the user was viewing custom
-    if (sortOption === 'custom') setSortOption('regional');
+    setPendingCustomOrder(null);
+    if (pendingSort === 'custom') setPendingSort('regional');
+  };
+
+  const customOrderChanged =
+    (pendingCustomOrder === null) !== (customOrder === null) ||
+    (pendingCustomOrder !== null &&
+      customOrder !== null &&
+      (pendingCustomOrder.length !== customOrder.length ||
+        pendingCustomOrder.some((id, i) => id !== customOrder[i])));
+
+  const hasPendingChanges =
+    pendingSort !== sortOption ||
+    pendingGrouping !== groupSpecialAtEnd ||
+    customOrderChanged;
+
+  const handleApply = () => {
+    setSortOption(pendingSort);
+    setGroupSpecialAtEnd(pendingGrouping);
+    setCustomOrder(pendingCustomOrder);
+    onClose();
   };
 
   return (
-    <div className="flex flex-col h-full bg-background w-full">
+    <div className="relative flex flex-col h-full bg-background w-full">
       {/* Header */}
       {!hideHeader && (
         <div className="shrink-0 border-b">
@@ -114,7 +141,7 @@ export function ViewSettingsPane({
           </h3>
           <div className="space-y-1">
             {SORT_OPTIONS.map((opt) => {
-              const selected = sortOption === opt.value;
+              const selected = pendingSort === opt.value;
               return (
                 <button
                   key={opt.value}
@@ -138,9 +165,9 @@ export function ViewSettingsPane({
                     >
                       {opt.label}
                     </span>
-                    {opt.value === 'custom' && hasCustom && (
+                    {opt.value === 'custom' && hasCustomPending && (
                       <span className="ml-auto text-[10px] text-muted-foreground">
-                        {customOrder!.length} pokemon
+                        {pendingCustomOrder!.length} pokemon
                       </span>
                     )}
                   </div>
@@ -159,16 +186,16 @@ export function ViewSettingsPane({
             Grouping
           </h3>
           <button
-            onClick={() => setGroupSpecialAtEnd(!groupSpecialAtEnd)}
+            onClick={handleToggleGrouping}
             className="w-full text-left rounded-md px-3 py-2 hover:bg-muted transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-2">
               <span
                 className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                  groupSpecialAtEnd ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                  pendingGrouping ? 'bg-primary border-primary' : 'border-muted-foreground/40'
                 }`}
               >
-                {groupSpecialAtEnd && <Check className="w-3 h-3 text-primary-foreground" />}
+                {pendingGrouping && <Check className="w-3 h-3 text-primary-foreground" />}
               </span>
               <span className="text-sm text-foreground">Group special Pokemon at end</span>
             </div>
@@ -176,7 +203,7 @@ export function ViewSettingsPane({
               Sends fossils, extra starters, paradox, pseudo-legendaries, ultra beasts,
               legendaries, and mythicals to the back of the grid, each in its own run.
             </p>
-            {sortOption === 'custom' && (
+            {pendingSort === 'custom' && (
               <p className="text-xs text-muted-foreground/80 mt-1 ml-6 leading-snug italic">
                 Does not affect Custom ordering — drag freely.
               </p>
@@ -185,7 +212,7 @@ export function ViewSettingsPane({
         </div>
 
         {/* Custom order management */}
-        {hasCustom && (
+        {hasCustomPending && (
           <div className="px-3 pt-3 pb-4 border-t">
             <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
               Custom Order
@@ -203,7 +230,23 @@ export function ViewSettingsPane({
             </button>
           </div>
         )}
+
+        <PageFooter />
+        {/* Extra bottom padding so the floating button doesn't occlude the last row */}
+        {hasPendingChanges && <div className="h-16" aria-hidden />}
       </div>
+
+      {/* Floating "Update & View" button */}
+      {hasPendingChanges && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
+          <button
+            onClick={handleApply}
+            className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors"
+          >
+            Update & View
+          </button>
+        </div>
+      )}
     </div>
   );
 }

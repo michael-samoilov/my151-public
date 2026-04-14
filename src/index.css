@@ -83,6 +83,18 @@ body {
   border-color: var(--color-border);
 }
 
+/* Suppress iOS Safari long-press image callout (Save/Copy menu) and prevent
+ * dragging images out of the page. Long-press on a sprite during drag-to-
+ * rearrange would otherwise steal focus from dnd-kit's TouchSensor. Applies
+ * everywhere sprites render — build grid, view page, browser, drilldowns,
+ * badges, etc. */
+img {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 /* Always-visible thin scrollbars — mobile browsers hide native scrollbars by default,
  * leaving users without any indicator that content is scrollable. */
 ::-webkit-scrollbar {
