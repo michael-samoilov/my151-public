@@ -71,7 +71,7 @@ function PokemonTileStatic({ id }: { id: number }) {
         role="img"
         aria-label={displayName(pokemon.name)}
       />
-      <span className="text-[min(1.8vw,7px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
+      <span className="text-[clamp(7px,1.8vw,14px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
         {displayName(pokemon.name)}
       </span>
       <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full">
@@ -167,7 +167,7 @@ function DraggableTile({
           role="img"
           aria-label={displayName(pokemon.name)}
         />
-        <span className="text-[min(1.8vw,7px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
+        <span className="text-[clamp(7px,1.8vw,14px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
           {displayName(pokemon.name)}
         </span>
         <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full">
@@ -391,7 +391,7 @@ function GroupBox({
     >
       {/* Label */}
       <div
-        className="text-[9px] md:text-sm font-semibold uppercase tracking-wide px-1.5"
+        className="text-[clamp(9px,1.4vw,14px)] md:text-sm font-semibold uppercase tracking-wide px-1.5"
         style={{
           color: `color-mix(in srgb, ${group.color} 65%, black)`,
           opacity: showEmptyState ? 0.75 : 1,

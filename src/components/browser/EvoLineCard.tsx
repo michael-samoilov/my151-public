@@ -206,13 +206,13 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
               </button>
             )}
             {inDex && variant === 'browser' && (
-              <div className="absolute top-[3px] right-[6px] md:right-1.5 -translate-y-[0.5px] w-3 h-3 z-10">
-                <PokeballIcon className="w-3 h-3" />
+              <div className="absolute top-[3px] right-[6px] md:right-1.5 -translate-y-[0.5px] w-[2.5vw] h-[2.5vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] z-10">
+                <PokeballIcon className="w-full h-full" />
               </div>
             )}
             {!inDex && stagedIds.has(pokemon.id) && (
-              <div className="absolute top-[3px] right-[6px] md:right-1.5 -translate-y-[0.5px] w-3 h-3 bg-primary rounded-full flex items-center justify-center z-10">
-                <Plus className="w-1.5 h-1.5 text-primary-foreground" />
+              <div className="absolute top-[3px] right-[6px] md:right-1.5 -translate-y-[0.5px] w-[2.5vw] h-[2.5vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] bg-primary rounded-full flex items-center justify-center z-10">
+                <Plus className="w-1/2 h-1/2 text-primary-foreground" />
               </div>
             )}
             <div
@@ -250,7 +250,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   role="img"
                   aria-label={pokemon.name}
                 />
-                <span className="text-[min(2vw,8px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
+                <span className="text-[clamp(7px,2vw,14px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
                   {displayName(pokemon.name)}
                 </span>
                 <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.5vw] md:mt-[min(0.3vw,2px)] w-full">
@@ -267,7 +267,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   const defD = doublings(info.defense, true);
                   const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
                   return (
-                    <div className="grid mt-[0.3vw] md:mt-0.5 text-[min(1.5vw,6px)] md:text-[clamp(8px,1vw,10px)] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'min(0.6vw, 3px)' }}>
+                    <div className="grid mt-[0.3vw] md:mt-0.5 text-[clamp(6px,1.5vw,12px)] md:text-[clamp(8px,1vw,10px)] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'min(0.6vw, 3px)' }}>
                       <span className="justify-self-end leading-none">{formatMult(info.offense)}×</span>
                       <Sword className="w-2 h-2 md:w-[min(1.2vw,14px)] md:h-[min(1.2vw,14px)] block" />
                       <span className="justify-self-start leading-none">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span>
