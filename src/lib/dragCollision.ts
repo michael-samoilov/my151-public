@@ -22,8 +22,8 @@ import {
  * user doesn't see dead space between their finger and what they're
  * holding.
  */
-export const OVERLAY_LIFT_PX = 50;
-export const TOUCH_HIT_LIFT_PX = 140;
+export const OVERLAY_LIFT_PX = 90;
+export const TOUCH_HIT_LIFT_PX = 180;
 
 /**
  * Shared mutable flag for the current drag's input modality. Set in each
