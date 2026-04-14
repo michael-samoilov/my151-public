@@ -14,13 +14,13 @@ export function EffectiveCursorMarker({ x, y }: { x: number; y: number }) {
       style={{
         left: x,
         top: y,
-        width: 20,
-        height: 20,
+        width: 3,
+        height: 48,
         transform: 'translate(-50%, -50%)',
       }}
       aria-hidden
     >
-      <div className="w-full h-full rounded-full border-2 border-red-500/40 bg-red-500/15" />
+      <div className="w-full h-full rounded-full bg-red-500/40" />
     </div>
   );
 }
