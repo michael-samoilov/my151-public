@@ -10,7 +10,7 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
-import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, OVERLAY_LIFT_PX, TOUCH_HIT_LIFT_PX } from '@/lib/dragCollision';
+import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, snapCenterToPointer, OVERLAY_LIFT_PX, TOUCH_HIT_LIFT_PX } from '@/lib/dragCollision';
 import {
   DndContext,
   MouseSensor,
@@ -488,6 +488,7 @@ export function ViewPage() {
               <DndContext
                 sensors={sensors}
                 collisionDetection={effectiveCursorCollision}
+                modifiers={[snapCenterToPointer]}
                 onDragStart={handleDragStart}
                 onDragMove={handleDragMove}
                 onDragEnd={handleDragEnd}

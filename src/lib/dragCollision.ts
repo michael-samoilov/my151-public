@@ -2,6 +2,7 @@ import {
   closestCenter,
   pointerWithin,
   type CollisionDetection,
+  type Modifier,
 } from '@dnd-kit/core';
 
 /**
@@ -93,4 +94,40 @@ export const effectiveCursorCollision: CollisionDetection = (args) => {
     }
   });
   return bestId !== null ? [{ id: bestId, data: { value: bestD2 } }] : [];
+};
+
+/**
+ * Center the DragOverlay horizontally and vertically on the pointer,
+ * independent of where on the grabbed tile the user first touched.
+ * Without this, dnd-kit's default behavior preserves the initial
+ * finger-to-tile offset — grab the left edge of a 5-tile bundle and
+ * the overlay sticks to your finger's left; grab the right edge and
+ * it sticks to the right. That breaks the mental model the user
+ * expects: "wherever my thumb is, that's where the bundle is."
+ *
+ * Returns a transform that places the overlay's center at the current
+ * pointer. The vertical lift (OVERLAY_LIFT_PX) is applied separately
+ * via CSS translateY on the overlay's inner div.
+ */
+export const snapCenterToPointer: Modifier = ({
+  activatorEvent,
+  draggingNodeRect,
+  transform,
+}) => {
+  if (!draggingNodeRect || !activatorEvent) return transform;
+  const e = activatorEvent as MouseEvent | TouchEvent;
+  const p =
+    'touches' in e && e.touches.length > 0
+      ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+      : 'clientX' in e
+        ? { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY }
+        : null;
+  if (!p) return transform;
+  const offsetX = p.x - draggingNodeRect.left;
+  const offsetY = p.y - draggingNodeRect.top;
+  return {
+    ...transform,
+    x: transform.x + offsetX - draggingNodeRect.width / 2,
+    y: transform.y + offsetY - draggingNodeRect.height / 2,
+  };
 };
