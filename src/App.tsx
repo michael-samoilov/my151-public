@@ -9,6 +9,7 @@ import { ViewPage } from '@/components/view/ViewPage';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BUILD_GROUPS } from '@/data/slot-template';
+import { useCompletionBeacon } from '@/hooks/useCompletionBeacon';
 
 declare const __BUILD_TIMESTAMP__: string;
 // eslint-disable-next-line no-console
@@ -103,6 +104,7 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
 }
 
 function App() {
+  useCompletionBeacon();
   const [currentView, setCurrentView] = useState<AppView>('builder');
   const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
