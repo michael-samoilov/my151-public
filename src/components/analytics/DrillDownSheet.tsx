@@ -206,7 +206,7 @@ export function DrillDownSheet() {
   // Desktop uses the side panel (DrillDownPanel), so body scroll must stay free
   useEffect(() => {
     if (!peek) {
-      const isDesktop = window.matchMedia('(min-width: 768px)').matches;
+      const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
       if (isDesktop) return;
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = ''; };

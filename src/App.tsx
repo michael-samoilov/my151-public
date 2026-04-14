@@ -111,6 +111,14 @@ function App() {
   const activeSection = usePokedexStore((s) => s.activeSection);
   const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
 
+  const handleViewChange = useCallback((view: AppView) => {
+    setCurrentView(view);
+    if (view !== 'builder') {
+      setMobileBrowserOpen(false);
+      usePokedexStore.getState().setActiveSection(null);
+    }
+  }, [setMobileBrowserOpen]);
+
   const sectionName = activeSection
     ? BUILD_GROUPS.find((g) => g.id === activeSection)?.name ?? 'Section'
     : 'Browse Pokemon';
@@ -118,7 +126,7 @@ function App() {
   return (
     <TooltipProvider>
       <div className="h-dvh flex flex-col">
-        <Header currentView={currentView} onViewChange={setCurrentView} />
+        <Header currentView={currentView} onViewChange={handleViewChange} />
 
         {currentView === 'builder' ? (
           <div className="flex-1 flex min-h-0">
@@ -139,7 +147,7 @@ function App() {
               <AnalyticsDashboard />
             </div>
             {drillDownSegment && (
-              <div className="hidden md:flex w-[420px] flex-shrink-0 border-l">
+              <div className="hidden md:flex w-[min(50vw,546px)] flex-shrink-0 border-l">
                 <DrillDownPanel />
               </div>
             )}
@@ -148,7 +156,7 @@ function App() {
       </div>
 
       {/* Mobile browser sheet */}
-      {mobileBrowserOpen && (
+      {currentView === 'builder' && mobileBrowserOpen && (
         <MobileSheet sectionName={sectionName} onClose={() => { setMobileBrowserOpen(false); usePokedexStore.getState().setActiveSection(null); }} />
       )}
 

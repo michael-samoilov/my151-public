@@ -17,10 +17,10 @@ type FilterSheet = 'type' | 'generation' | 'evoStage' | 'classification' | 'plac
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
-    () => typeof window !== 'undefined' && window.innerWidth >= 768
+    () => typeof window !== 'undefined' && window.innerWidth >= 1024
   );
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)');
+    const mq = window.matchMedia('(min-width: 1024px)');
     const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);

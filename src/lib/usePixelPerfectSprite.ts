@@ -47,7 +47,7 @@ export function usePixelPerfectSprite(
     if (typeof window === 'undefined') return desktopMax;
     const dpr = window.devicePixelRatio || 1;
     const vw = window.innerWidth / 100;
-    const isDesktop = window.innerWidth >= 768;
+    const isDesktop = window.innerWidth >= 1024;
     const cssPx = isDesktop
       ? Math.max(desktopMin, Math.min(desktopVw * vw, desktopMax))
       : mobileVw * vw;

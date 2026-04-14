@@ -50,7 +50,7 @@ import { GenBadge } from '@/components/shared/GenBadge';
 
 function PokemonTileStatic({ id }: { id: number }) {
   const pokemon = getPokemonById(id);
-  const spritePx = usePixelPerfectSprite(8, 40, 7, 96);
+  const spritePx = usePixelPerfectSprite(8, 48, 7, 96);
   if (!pokemon) return null;
   return (
     <div className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 aspect-square shadow-lg">
@@ -71,15 +71,15 @@ function PokemonTileStatic({ id }: { id: number }) {
         role="img"
         aria-label={displayName(pokemon.name)}
       />
-      <span className="text-[min(1.8vw,7px)] md:text-[min(1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
+      <span className="text-[min(1.8vw,7px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
         {displayName(pokemon.name)}
       </span>
       <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full">
         {pokemon.types.map((t) => (
-          <TypeBadge key={t} type={t as TypeName} className="w-[65%]" />
+          <TypeBadge key={t} type={t as TypeName} className="w-[min(65%,75px)]" />
         ))}
         {pokemon.types.length === 1 && (
-          <div className="w-[65%]" style={{ aspectRatio: '200/40' }} aria-hidden />
+          <div className="w-[min(65%,75px)]" style={{ aspectRatio: '200/40' }} aria-hidden />
         )}
       </div>
     </div>
@@ -105,7 +105,7 @@ function DraggableTile({
 }) {
   const removeBranch = usePokedexStore((s) => s.removeBranch);
   const pokemon = getPokemonById(pokemonId);
-  const spritePx = usePixelPerfectSprite(8, 40, 7, 96);
+  const spritePx = usePixelPerfectSprite(8, 48, 7, 96);
 
   const {
     attributes,
@@ -167,15 +167,15 @@ function DraggableTile({
           role="img"
           aria-label={displayName(pokemon.name)}
         />
-        <span className="text-[min(1.8vw,7px)] md:text-[min(1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
+        <span className="text-[min(1.8vw,7px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
           {displayName(pokemon.name)}
         </span>
         <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full">
           {pokemon.types.map((t) => (
-            <TypeBadge key={t} type={t as TypeName} className="w-[65%]" />
+            <TypeBadge key={t} type={t as TypeName} className="w-[min(65%,75px)]" />
           ))}
           {pokemon.types.length === 1 && (
-            <div className="w-[65%]" style={{ aspectRatio: '200/40' }} aria-hidden />
+            <div className="w-[min(65%,75px)]" style={{ aspectRatio: '200/40' }} aria-hidden />
           )}
         </div>
       </div>
