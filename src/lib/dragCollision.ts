@@ -22,7 +22,7 @@ import {
  * user doesn't see dead space between their finger and what they're
  * holding.
  */
-export const OVERLAY_LIFT_PX = 90;
+export const OVERLAY_LIFT_PX = 130;
 export const TOUCH_HIT_LIFT_PX = 180;
 
 /**
