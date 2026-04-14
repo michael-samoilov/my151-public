@@ -218,7 +218,7 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                   <button
                     onClick={handleRemoveButton}
                     onPointerDown={(e) => e.stopPropagation()}
-                    className="absolute top-0 right-[6px] md:right-1 w-[2.5vw] h-[2.5vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] rounded-full bg-destructive/60 md:bg-destructive/80 text-white flex items-center justify-center z-10"
+                    className="absolute top-0 right-[6px] md:right-1 w-[2.5vw] h-[2.5vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] rounded-full bg-destructive text-white flex items-center justify-center z-10"
                   >
                     <X className="w-1/2 h-1/2" />
                   </button>
