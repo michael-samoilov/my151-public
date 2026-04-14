@@ -347,9 +347,33 @@ export function ViewPage() {
     }
     if (startX === null) return;
     const px = startX + event.delta.x;
-    const r = event.over.rect;
-    setDropSide(px > r.left + r.width / 2 ? 'right' : 'left');
-  }, [dragLineIds]);
+
+    // Determine drop side based on the target's position within its evo line as
+    // a whole, not within its individual tile. Early members of the line → left,
+    // later members → right, middle member → use pointer position within tile.
+    const targetSection = idToSection.get(targetPid);
+    if (!targetSection) return;
+    const targetSectionIds = sections[targetSection] ?? [];
+    const line = getEvolutionLine(targetPid);
+    const lineIdSet = new Set(line.map((p) => p.id));
+    const lineInSection = targetSectionIds.filter((id) => lineIdSet.has(id));
+    const memberIdx = lineInSection.indexOf(targetPid);
+
+    if (lineInSection.length <= 1) {
+      const r = event.over.rect;
+      setDropSide(px > r.left + r.width / 2 ? 'right' : 'left');
+    } else {
+      const mid = (lineInSection.length - 1) / 2;
+      if (memberIdx < mid) {
+        setDropSide('left');
+      } else if (memberIdx > mid) {
+        setDropSide('right');
+      } else {
+        const r = event.over.rect;
+        setDropSide(px > r.left + r.width / 2 ? 'right' : 'left');
+      }
+    }
+  }, [dragLineIds, sections, idToSection]);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
     setOverId(event.over ? (event.over.id as string) : null);
