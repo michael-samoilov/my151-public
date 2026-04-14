@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
-import { getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
+import { getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
+import { effectiveCursorCollision, dragInputIsTouch } from '@/lib/dragCollision';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { TypeName } from '@/types/pokemon';
 import { displayName } from '@/lib/utils';
@@ -17,10 +18,6 @@ import {
   useSensors,
   DragOverlay,
   useDroppable,
-  closestCenter,
-  pointerWithin,
-  rectIntersection,
-  type CollisionDetection,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
@@ -28,30 +25,17 @@ import {
 } from '@dnd-kit/core';
 import { useDraggable } from '@dnd-kit/core';
 
-/**
- * Pointer-first collision detection. `closestCenter` compares the dragged
- * RECT's center to each droppable, which misbehaves when the overlay spans
- * multiple tiles (a multi-tile evo line) — the rect's center can sit a
- * full tile away from the pointer, so the "target" tile flips a few pixels
- * before the pointer actually crosses the boundary. Prioritizing
- * `pointerWithin` keeps the target aligned with the pointer; fall back to
- * `rectIntersection` and `closestCenter` when the pointer leaves all
- * droppables.
- */
-const pointerFirstCollision: CollisionDetection = (args) => {
-  const pointer = pointerWithin(args);
-  if (pointer.length > 0) return pointer;
-  const rect = rectIntersection(args);
-  if (rect.length > 0) return rect;
-  return closestCenter(args);
-};
-
 // ---------- helpers ----------
 
+/**
+ * Members of `pokemonId`'s full evolution chain (all branches — Wurmple →
+ * Silcoon, Cascoon, Beautifly, Dustox) that are currently placed in this
+ * section, in section order. Used to treat branched chains as atomic
+ * bundles for drag-to-rearrange.
+ */
 function findEvoLineGroup(pokemonId: number, sectionIds: number[]): number[] {
-  const line = getEvolutionLine(pokemonId);
-  const lineIdSet = new Set(line.map((p) => p.id));
-  return sectionIds.filter((id) => lineIdSet.has(id));
+  const chainSet = new Set(getEvolutionChainIds(pokemonId));
+  return sectionIds.filter((id) => chainSet.has(id));
 }
 
 function tileId(sectionId: string, pokemonId: number) {
@@ -150,6 +134,7 @@ function DraggableTile({
   return (
     <div
       ref={setNodeRef}
+      data-tile-id={id}
       className="relative"
       style={{ opacity: isDragging || isDraggedLine ? 0.25 : 1 }}
     >
@@ -586,6 +571,14 @@ export function PokedexGrid() {
   const [overTileId, setOverTileId] = useState<string | null>(null);
   const isTouchDrag = useRef(false);
   const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
+  /**
+   * evolutionChainId of the bundle the pointer was over on the previous
+   * move. While it stays the same, dropSide is frozen (hysteresis) — the
+   * indicator only re-evaluates when the pointer enters a NEW bundle,
+   * which eliminates the mid-bundle flash as the pointer sweeps across
+   * multi-tile chains.
+   */
+  const lastBundleKeyRef = useRef<number | null>(null);
 
   const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
@@ -598,7 +591,10 @@ export function PokedexGrid() {
       const lineIds = findEvoLineGroup(pokemonId, sectionIds);
       setDragLineIds(lineIds);
       setDragFromSection(sectionId);
-      isTouchDrag.current = event.activatorEvent instanceof TouchEvent;
+      const touch = event.activatorEvent instanceof TouchEvent;
+      isTouchDrag.current = touch;
+      dragInputIsTouch.current = touch;
+      lastBundleKeyRef.current = null;
     },
     [sections]
   );
@@ -614,7 +610,18 @@ export function PokedexGrid() {
     // Skip if hovering over the dragged evo line itself
     if (dragLineIds && dragLineIds.includes(target.pokemonId)) return;
 
-    // Get pointer X from activator event + delta
+    // Hysteresis: once committed to a side of a bundle, stay there until
+    // the pointer enters a different bundle. This prevents the indicator
+    // from flashing as the cursor sweeps across members of a multi-tile
+    // chain.
+    const targetPokemon = getPokemonById(target.pokemonId);
+    if (!targetPokemon) return;
+    const currentBundleKey = targetPokemon.evolutionChainId;
+    if (currentBundleKey === lastBundleKeyRef.current) return;
+
+    // Effective pointer X — startX from the activator event plus accumulated
+    // delta. X is not affected by the touch-lift offset (that applies to Y
+    // only, handled in the collision detector).
     let startX: number | null = null;
     const ae = event.activatorEvent;
     if ('clientX' in ae) {
@@ -626,28 +633,36 @@ export function PokedexGrid() {
     if (startX === null) return;
     const px = startX + event.delta.x;
 
-    // Determine which half of the evo line the pointer is in
+    // Bundle's visual horizontal extent is reconstructed from DOM rects
+    // of every bundle member on the target's row. Multi-row bundles (rare
+    // — sections typically keep chains contiguous) use only the row
+    // segment the pointer is currently interacting with.
     const sectionIds = sections[target.sectionId] ?? [];
-    const lineIds = findEvoLineGroup(target.pokemonId, sectionIds);
-    const memberIdx = lineIds.indexOf(target.pokemonId);
+    const bundle = findEvoLineGroup(target.pokemonId, sectionIds);
+    const targetRect = event.over.rect;
 
-    if (lineIds.length <= 1) {
-      // Single-member line: use pointer position within tile
-      const r = event.over.rect;
-      setDropSide(px > r.left + r.width / 2 ? 'right' : 'left');
-    } else {
-      // Multi-member line: use position within the evo line
-      const mid = (lineIds.length - 1) / 2;
-      if (memberIdx < mid) {
-        setDropSide('left');
-      } else if (memberIdx > mid) {
-        setDropSide('right');
-      } else {
-        // Exact middle member: use pointer position within tile
-        const r = event.over.rect;
-        setDropSide(px > r.left + r.width / 2 ? 'right' : 'left');
+    let bundleCenterX = targetRect.left + targetRect.width / 2;
+    if (bundle.length > 1) {
+      const targetRow = Math.round(targetRect.top);
+      let bundleLeft = Infinity;
+      let bundleRight = -Infinity;
+      for (const pid of bundle) {
+        const el = document.querySelector<HTMLElement>(
+          `[data-tile-id="${tileId(target.sectionId, pid)}"]`
+        );
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (Math.round(r.top) !== targetRow) continue;
+        if (r.left < bundleLeft) bundleLeft = r.left;
+        if (r.right > bundleRight) bundleRight = r.right;
+      }
+      if (bundleLeft !== Infinity && bundleRight !== -Infinity) {
+        bundleCenterX = (bundleLeft + bundleRight) / 2;
       }
     }
+
+    setDropSide(px < bundleCenterX ? 'left' : 'right');
+    lastBundleKeyRef.current = currentBundleKey;
   }, [sections, dragLineIds]);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
@@ -678,6 +693,9 @@ export function PokedexGrid() {
             setDragLineIds(null);
             setDragFromSection(null);
             setOverTileId(null);
+            setDropSide('left');
+            lastBundleKeyRef.current = null;
+            dragInputIsTouch.current = false;
             return;
           }
 
@@ -712,6 +730,8 @@ export function PokedexGrid() {
       setDragFromSection(null);
       setOverTileId(null);
       setDropSide('left');
+      lastBundleKeyRef.current = null;
+      dragInputIsTouch.current = false;
     },
     [dragLineIds, dragFromSection, sections, moveEvoLine, dropSide]
   );
@@ -721,6 +741,8 @@ export function PokedexGrid() {
     setDragFromSection(null);
     setOverTileId(null);
     setDropSide('left');
+    lastBundleKeyRef.current = null;
+    dragInputIsTouch.current = false;
   }, []);
 
   const insertIndicator = useMemo<{ tileId: string | null; endSection: string | null; side: 'left' | 'right' }>(() => {
@@ -785,7 +807,7 @@ export function PokedexGrid() {
           <div className="p-3 pb-0">
             <DndContext
               sensors={sensors}
-              collisionDetection={pointerFirstCollision}
+              collisionDetection={effectiveCursorCollision}
               onDragStart={handleDragStart}
               onDragMove={handleDragMove}
               onDragOver={handleDragOver}

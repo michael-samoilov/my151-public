@@ -7,8 +7,9 @@ import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
-import { getEvolutionLine } from '@/hooks/usePokemonData';
+import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
+import { effectiveCursorCollision, dragInputIsTouch } from '@/lib/dragCollision';
 import {
   DndContext,
   MouseSensor,
@@ -18,33 +19,11 @@ import {
   DragOverlay,
   useDroppable,
   useDraggable,
-  closestCenter,
-  pointerWithin,
-  rectIntersection,
-  type CollisionDetection,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
   type DragMoveEvent,
 } from '@dnd-kit/core';
-
-/**
- * Pointer-first collision detection. `closestCenter` compares the dragged
- * RECT's center to each droppable, which misbehaves when the overlay spans
- * multiple tiles (a multi-tile evo line) — the rect's center can sit a full
- * tile away from the pointer, so the "target" tile flips a few pixels
- * before the pointer actually crosses the boundary. Prioritizing
- * `pointerWithin` keeps the target aligned with where the finger/cursor
- * actually is; we fall back to `rectIntersection` and `closestCenter` only
- * when the pointer leaves all droppables (edge of the grid, fast fling).
- */
-const pointerFirstCollision: CollisionDetection = (args) => {
-  const pointer = pointerWithin(args);
-  if (pointer.length > 0) return pointer;
-  const rect = rectIntersection(args);
-  if (rect.length > 0) return rect;
-  return closestCenter(args);
-};
 
 const COLS = 10;
 
@@ -231,6 +210,13 @@ export function ViewPage() {
   const [overId, setOverId] = useState<string | null>(null);
   const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
   const isTouchDrag = useRef(false);
+  /**
+   * evolutionChainId of the bundle the pointer was over on the previous
+   * move. While it stays the same, dropSide is frozen (hysteresis) —
+   * preventing the indicator from flashing as the pointer sweeps across a
+   * multi-tile bundle.
+   */
+  const lastBundleKeyRef = useRef<number | null>(null);
 
   const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
@@ -244,12 +230,14 @@ export function ViewPage() {
   // Current visible order (flat list of IDs) — our source of truth for drag ops.
   const visibleIds = useMemo(() => sorted.map((p) => p.id), [sorted]);
 
-  /** Evolution line members for a pokemon, restricted to those currently visible. */
-  const evoLineVisible = useCallback(
+  /** Full evolution-chain bundle members for a pokemon, restricted to those
+   *  currently visible, ordered by their on-screen position. Includes all
+   *  branches of the chain (Wurmple → Silcoon, Cascoon, Beautifly, Dustox),
+   *  so a branched family is treated as one atomic unit. */
+  const bundleVisible = useCallback(
     (pokemonId: number): number[] => {
-      const line = getEvolutionLine(pokemonId);
-      const lineIdSet = new Set(line.map((p) => p.id));
-      return visibleIds.filter((id) => lineIdSet.has(id));
+      const chainSet = new Set(getEvolutionChainIds(pokemonId));
+      return visibleIds.filter((id) => chainSet.has(id));
     },
     [visibleIds],
   );
@@ -257,9 +245,12 @@ export function ViewPage() {
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const pid = parseDragId(event.active.id as string);
     if (pid === null) return;
-    setDragLineIds(evoLineVisible(pid));
-    isTouchDrag.current = event.activatorEvent instanceof TouchEvent;
-  }, [evoLineVisible]);
+    setDragLineIds(bundleVisible(pid));
+    const touch = event.activatorEvent instanceof TouchEvent;
+    isTouchDrag.current = touch;
+    dragInputIsTouch.current = touch;
+    lastBundleKeyRef.current = null;
+  }, [bundleVisible]);
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
     if (!event.over) return;
@@ -267,8 +258,23 @@ export function ViewPage() {
     if (targetPid === null) return;
     if (dragLineIds && dragLineIds.includes(targetPid)) return;
 
-    let startX: number | null = null;
+    // Hysteresis: if we're still over the same bundle as the previous move,
+    // leave dropSide alone. It only updates the first time the pointer
+    // enters a new bundle — which is exactly when the user's intent
+    // (before / after) changes.
+    const target = getPokemonById(targetPid);
+    if (!target) return;
+    const currentBundleKey = target.evolutionChainId;
+    if (currentBundleKey === lastBundleKeyRef.current) return;
+
+    // Entered a new bundle — compute dropSide from effective cursor X vs
+    // the bundle's horizontal center. Bundle center is reconstructed from
+    // the target tile's rect plus the known column offsets of bundle
+    // members on the target's row. Cross-row members are ignored so a
+    // row-wrapped bundle uses only the segment the pointer is actually
+    // interacting with.
     const ae = event.activatorEvent;
+    let startX: number | null = null;
     if ('clientX' in ae) {
       startX = (ae as MouseEvent).clientX;
     } else if ('touches' in ae) {
@@ -277,25 +283,44 @@ export function ViewPage() {
     }
     if (startX === null) return;
     const px = startX + event.delta.x;
+    // Note: the touch-lift offset applies to Y, not X, so px is unchanged
+    // on touch drag. Kept explicit for future row-aware logic.
 
-    // Drop side is based on target's position within its entire evo line, not
-    // the hovered tile. Early members → left, later → right, middle → pointer.
-    const lineInView = evoLineVisible(targetPid);
-    const memberIdx = lineInView.indexOf(targetPid);
+    const targetRect = event.over.rect;
+    const bundle = bundleVisible(targetPid);
+    let bundleCenterX: number;
 
-    if (lineInView.length <= 1) {
-      const r = event.over.rect;
-      setDropSide(px > r.left + r.width / 2 ? 'right' : 'left');
+    if (bundle.length <= 1) {
+      // Single-member bundle — center of the tile itself.
+      bundleCenterX = targetRect.left + targetRect.width / 2;
     } else {
-      const mid = (lineInView.length - 1) / 2;
-      if (memberIdx < mid) setDropSide('left');
-      else if (memberIdx > mid) setDropSide('right');
-      else {
-        const r = event.over.rect;
-        setDropSide(px > r.left + r.width / 2 ? 'right' : 'left');
+      const targetIdx = visibleIds.indexOf(targetPid);
+      const targetRow = Math.floor(targetIdx / COLS);
+      const targetCol = targetIdx % COLS;
+      // Bundle members on the same row as the target.
+      const sameRowCols: number[] = [];
+      for (const id of bundle) {
+        const idx = visibleIds.indexOf(id);
+        if (idx < 0) continue;
+        if (Math.floor(idx / COLS) !== targetRow) continue;
+        sameRowCols.push(idx % COLS);
+      }
+      if (sameRowCols.length === 0) {
+        bundleCenterX = targetRect.left + targetRect.width / 2;
+      } else {
+        const minCol = Math.min(...sameRowCols);
+        const maxCol = Math.max(...sameRowCols);
+        // tileSize from the grid; targetRect.width is equivalent.
+        const tw = targetRect.width;
+        const bundleLeft = targetRect.left - (targetCol - minCol) * tw;
+        const bundleRight = targetRect.left + tw + (maxCol - targetCol) * tw;
+        bundleCenterX = (bundleLeft + bundleRight) / 2;
       }
     }
-  }, [dragLineIds, evoLineVisible]);
+
+    setDropSide(px < bundleCenterX ? 'left' : 'right');
+    lastBundleKeyRef.current = currentBundleKey;
+  }, [dragLineIds, bundleVisible, visibleIds]);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
     setOverId(event.over ? (event.over.id as string) : null);
@@ -307,6 +332,8 @@ export function ViewPage() {
       setDragLineIds(null);
       setOverId(null);
       setDropSide('left');
+      lastBundleKeyRef.current = null;
+      dragInputIsTouch.current = false;
     };
 
     if (!over || !dragLineIds) { reset(); return; }
@@ -315,18 +342,18 @@ export function ViewPage() {
     if (targetPid === null || dragLineIds.includes(targetPid)) { reset(); return; }
 
     // Build the base array we're mutating: the current visible order.
-    // (If custom already exists, that's effectively what's visible in custom mode;
-    //  for any base sort, we seed from the visible order at the moment of drag.)
     const base = [...visibleIds];
     const dragSet = new Set(dragLineIds);
 
-    // Remove the dragged line from the base; track original positions for insertion.
+    // Remove the dragged bundle from the base; track positions for insertion.
     const withoutDragged = base.filter((id) => !dragSet.has(id));
 
-    // Resolve target evo line within the base (pre-removal).
-    const targetLine = evoLineVisible(targetPid);
-    const targetFirst = targetLine[0];
-    const targetLast = targetLine[targetLine.length - 1];
+    // Resolve target bundle within the base (pre-removal). Full chain —
+    // all branches — so inserting "after" goes after the last branch
+    // member, not inside the chain.
+    const targetBundle = bundleVisible(targetPid);
+    const targetFirst = targetBundle[0];
+    const targetLast = targetBundle[targetBundle.length - 1];
 
     let insertIdx: number;
     if (dropSide === 'right') {
@@ -343,12 +370,14 @@ export function ViewPage() {
     if (sortOption !== 'custom') setSortOption('custom');
 
     reset();
-  }, [dragLineIds, visibleIds, evoLineVisible, dropSide, sortOption, setCustomOrder, setSortOption]);
+  }, [dragLineIds, visibleIds, bundleVisible, dropSide, sortOption, setCustomOrder, setSortOption]);
 
   const handleDragCancel = useCallback(() => {
     setDragLineIds(null);
     setOverId(null);
     setDropSide('left');
+    lastBundleKeyRef.current = null;
+    dragInputIsTouch.current = false;
   }, []);
 
   const insertIndicator = useMemo<{ pokemonId: number | null; side: 'left' | 'right' }>(() => {
@@ -356,14 +385,14 @@ export function ViewPage() {
     const targetPid = parseDragId(overId);
     if (targetPid === null || dragLineIds.includes(targetPid)) return { pokemonId: null, side: 'left' };
 
-    const line = evoLineVisible(targetPid);
-    if (line.length === 0) return { pokemonId: null, side: 'left' };
+    const bundle = bundleVisible(targetPid);
+    if (bundle.length === 0) return { pokemonId: null, side: 'left' };
 
     if (dropSide === 'right') {
-      return { pokemonId: line[line.length - 1], side: 'right' };
+      return { pokemonId: bundle[bundle.length - 1], side: 'right' };
     }
-    return { pokemonId: line[0], side: 'left' };
-  }, [overId, dragLineIds, evoLineVisible, dropSide]);
+    return { pokemonId: bundle[0], side: 'left' };
+  }, [overId, dragLineIds, bundleVisible, dropSide]);
 
   const handleExport = useCallback(async () => {
     if (exporting || sorted.length === 0) return;
@@ -457,7 +486,7 @@ export function ViewPage() {
             return (
               <DndContext
                 sensors={sensors}
-                collisionDetection={pointerFirstCollision}
+                collisionDetection={effectiveCursorCollision}
                 onDragStart={handleDragStart}
                 onDragMove={handleDragMove}
                 onDragOver={handleDragOver}

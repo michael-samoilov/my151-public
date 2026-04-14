@@ -53,6 +53,22 @@ export function getAllPokemon(): Pokemon[] {
 }
 
 /**
+ * All pokemon in the same evolution chain as `pokemonId`, including every
+ * branch (e.g. Wurmple → Silcoon, Cascoon, Beautifly, Dustox). Unordered.
+ * Singletons return [pokemonId].
+ *
+ * Used by drag-to-rearrange to treat branched chains as a single atomic
+ * bundle. Callers that want just the linear path through a pokemon should
+ * keep using getEvolutionLine.
+ */
+export function getEvolutionChainIds(pokemonId: number): number[] {
+  const p = pokemonById.get(pokemonId);
+  if (!p) return [pokemonId];
+  const members = pokemonByChain.get(p.evolutionChainId) ?? [p];
+  return members.map((m) => m.id);
+}
+
+/**
  * Get the full linear evolution chain for a Pokemon, sorted by evolution stage.
  * For branching evolutions (e.g. Eevee), returns only the branch containing the given Pokemon.
  * When placedIds is provided, forward walks prefer branches containing placed Pokemon.
