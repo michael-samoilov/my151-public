@@ -10,7 +10,7 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
-import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, snapCenterToPointer, OVERLAY_LIFT_PX, TOUCH_HIT_LIFT_PX } from '@/lib/dragCollision';
+import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, snapCenterToPointer, TOUCH_HIT_LIFT_PX } from '@/lib/dragCollision';
 import {
   DndContext,
   MouseSensor,
@@ -520,10 +520,7 @@ export function ViewPage() {
 
                 <DragOverlay dropAnimation={null}>
                   {dragOverlayPokemon.length > 0 && (
-                    <div
-                      className="flex"
-                      style={{ transform: `translateY(-${OVERLAY_LIFT_PX}px)` }}
-                    >
+                    <div className="flex">
                       {dragOverlayPokemon.map((p) => (
                         <StaticViewTile key={p.id} pokemon={p} tileSize={tileSize} />
                       ))}

@@ -97,17 +97,24 @@ export const effectiveCursorCollision: CollisionDetection = (args) => {
 };
 
 /**
- * Center the DragOverlay horizontally and vertically on the pointer,
- * independent of where on the grabbed tile the user first touched.
- * Without this, dnd-kit's default behavior preserves the initial
- * finger-to-tile offset — grab the left edge of a 5-tile bundle and
- * the overlay sticks to your finger's left; grab the right edge and
- * it sticks to the right. That breaks the mental model the user
- * expects: "wherever my thumb is, that's where the bundle is."
+ * Center the DragOverlay on the pointer and lift it by OVERLAY_LIFT_PX
+ * in a single transform. Two things matter here:
  *
- * Returns a transform that places the overlay's center at the current
- * pointer. The vertical lift (OVERLAY_LIFT_PX) is applied separately
- * via CSS translateY on the overlay's inner div.
+ * 1. Centering independent of grab point. Without this, dnd-kit's
+ *    default preserves the initial finger-to-tile offset — grab the
+ *    left edge of a 5-tile bundle and the overlay pins to the thumb's
+ *    left; grab the right and it pins right. We want the bundle
+ *    always centered on the finger/mouse.
+ *
+ * 2. The lift MUST be baked into this transform rather than applied
+ *    via a child `translateY(-N)` style. `draggingNodeRect` is the
+ *    overlay's getBoundingClientRect, which includes any CSS
+ *    transforms on descendants — so a nested translateY shifts the
+ *    rect, and the centering math below (which uses the rect's
+ *    left/top and height) compensates it back out. Net result: the
+ *    inner translate is neutralized and the overlay ends up centered
+ *    on the thumb. Applying the lift here — on the same transform
+ *    dnd-kit uses for positioning — avoids that tug-of-war.
  */
 export const snapCenterToPointer: Modifier = ({
   activatorEvent,
@@ -128,6 +135,6 @@ export const snapCenterToPointer: Modifier = ({
   return {
     ...transform,
     x: transform.x + offsetX - draggingNodeRect.width / 2,
-    y: transform.y + offsetY - draggingNodeRect.height / 2,
+    y: transform.y + offsetY - draggingNodeRect.height / 2 - OVERLAY_LIFT_PX,
   };
 };

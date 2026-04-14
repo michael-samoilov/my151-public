@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
-import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, snapCenterToPointer, OVERLAY_LIFT_PX, TOUCH_HIT_LIFT_PX } from '@/lib/dragCollision';
+import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, snapCenterToPointer, TOUCH_HIT_LIFT_PX } from '@/lib/dragCollision';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { TypeName } from '@/types/pokemon';
 import { displayName } from '@/lib/utils';
@@ -822,10 +822,7 @@ export function PokedexGrid() {
 
               <DragOverlay dropAnimation={null}>
                 {dragLineIds && (
-                  <div
-                    className="flex gap-[1vw] md:gap-1"
-                    style={{ transform: `translateY(-${OVERLAY_LIFT_PX}px)` }}
-                  >
+                  <div className="flex gap-[1vw] md:gap-1">
                     {dragLineIds.map((id) => (
                       <div key={id} className="w-[calc((100vw-24px-5vw)/6)] md:w-[calc((100%-20px)/6)] max-w-[90px]">
                         <PokemonTileStatic id={id} />
