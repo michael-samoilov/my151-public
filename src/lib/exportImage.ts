@@ -223,8 +223,15 @@ function drawTile(
   }
 }
 
-/** Trigger a file download from a blob. */
-export function downloadBlob(blob: Blob, filename: string) {
+/** Share via native share sheet (mobile gallery save) or fall back to file download. */
+export async function shareOrDownload(blob: Blob, filename: string) {
+  const file = new File([blob], filename, { type: blob.type });
+
+  if (navigator.canShare?.({ files: [file] })) {
+    await navigator.share({ files: [file] });
+    return;
+  }
+
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

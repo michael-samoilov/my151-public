@@ -6,7 +6,7 @@ import { useViewSort } from '@/hooks/useViewSort';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
-import { generateExportImage, downloadBlob } from '@/lib/exportImage';
+import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 
 const COLS = 10;
@@ -165,9 +165,10 @@ export function ViewPage() {
     setExporting(true);
     try {
       const blob = await generateExportImage(sorted, window.location.origin, new Date().getFullYear());
-      downloadBlob(blob, `my-personal-151.png`);
+      await shareOrDownload(blob, `my-personal-151.png`);
       sendExportBeacon(sorted.map((p) => p.id));
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return; // share sheet dismissed
       console.error('Export failed:', err);
     } finally {
       setExporting(false);
