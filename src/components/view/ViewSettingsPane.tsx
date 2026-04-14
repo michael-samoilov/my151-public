@@ -2,13 +2,12 @@ import { useEffect } from 'react';
 import { X, Check } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
+import { useViewSort } from '@/hooks/useViewSort';
 
 interface SortOption {
   value: ViewSortOption;
   label: string;
   description: string;
-  /** Only shown when a custom order exists. */
-  customOnly?: boolean;
 }
 
 const SORT_OPTIONS: SortOption[] = [
@@ -40,8 +39,7 @@ const SORT_OPTIONS: SortOption[] = [
     value: 'custom',
     label: 'Custom',
     description:
-      'Your own drag-to-reorder arrangement. Appears as soon as you drag a line into a new position.',
-    customOnly: true,
+      'Your own drag-to-reorder arrangement. Pick this (or just drag a line in the grid) to start from the current order and rearrange freely.',
   },
 ];
 
@@ -53,12 +51,24 @@ export function ViewSettingsPane({
   /** Hide the internal header (for mobile bottom sheet which has its own drag tab). */
   hideHeader?: boolean;
 }) {
+  const sections = usePokedexStore((s) => s.sections);
   const sortOption = usePokedexStore((s) => s.viewSortOption);
   const setSortOption = usePokedexStore((s) => s.setViewSortOption);
   const groupSpecialAtEnd = usePokedexStore((s) => s.viewGroupSpecialAtEnd);
   const setGroupSpecialAtEnd = usePokedexStore((s) => s.setViewGroupSpecialAtEnd);
   const customOrder = usePokedexStore((s) => s.viewCustomOrder);
   const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
+
+  // Current visible sort (used to seed custom order when user picks Custom
+  // before they've dragged anything, so nothing jumps visually).
+  const currentSorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
+
+  const handleSelectSort = (value: ViewSortOption) => {
+    if (value === 'custom' && customOrder === null) {
+      setCustomOrder(currentSorted.map((p) => p.id));
+    }
+    setSortOption(value);
+  };
 
   // Close on Escape
   useEffect(() => {
@@ -104,12 +114,11 @@ export function ViewSettingsPane({
           </h3>
           <div className="space-y-1">
             {SORT_OPTIONS.map((opt) => {
-              if (opt.customOnly && !hasCustom) return null;
               const selected = sortOption === opt.value;
               return (
                 <button
                   key={opt.value}
-                  onClick={() => setSortOption(opt.value)}
+                  onClick={() => handleSelectSort(opt.value)}
                   className={`w-full text-left rounded-md px-3 py-2 transition-colors cursor-pointer ${
                     selected ? 'bg-primary/10' : 'hover:bg-muted'
                   }`}
