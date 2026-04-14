@@ -9,7 +9,7 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
-import { effectiveCursorCollision, dragInputIsTouch, OVERLAY_LIFT_PX } from '@/lib/dragCollision';
+import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, OVERLAY_LIFT_PX } from '@/lib/dragCollision';
 import {
   DndContext,
   MouseSensor,
@@ -254,58 +254,56 @@ export function ViewPage() {
     const target = getPokemonById(targetPid);
     if (!target) return;
 
-    // dropSide is computed every move from effective cursor X vs bundle
-    // center. Within a multi-tile bundle, bundleCenterX is constant across
-    // the bundle's member tiles, so the indicator stays stable on one side
-    // until the pointer actually crosses the bundle's midpoint — no
-    // per-tile flashing. Across bundles, the setOverId + setDropSide
-    // updates above are batched in one render, avoiding the
-    // stale-dropSide flash at bundle entry.
-    const ae = event.activatorEvent;
-    let startX: number | null = null;
-    if ('clientX' in ae) {
-      startX = (ae as MouseEvent).clientX;
-    } else if ('touches' in ae) {
-      const touches = (ae as TouchEvent).touches;
-      if (touches.length > 0) startX = touches[0].clientX;
-    }
-    if (startX === null) return;
-    const px = startX + event.delta.x;
-    // Note: the touch-lift offset applies to Y, not X, so px is unchanged
-    // on touch drag. Kept explicit for future row-aware logic.
+    // dropSide is computed every move from raw pointer X vs the bundle's
+    // full horizontal extent. The pointer X comes from dragPointerRef
+    // (stashed by the collision detector — the authoritative source dnd-kit
+    // uses to resolve event.over). The bundle extent is computed from the
+    // full contiguous row span of bundle members, so hovering any tile in
+    // a 3-, 4-, or N-chain splits cleanly at the bundle's true midpoint.
+    const ptr = dragPointerRef.current;
+    if (!ptr) return;
+    const px = ptr.x;
 
     const targetRect = event.over.rect;
     const bundle = bundleVisible(targetPid);
-    let bundleCenterX: number;
+    let bundleLeft: number;
+    let bundleRight: number;
 
     if (bundle.length <= 1) {
-      // Single-member bundle — center of the tile itself.
-      bundleCenterX = targetRect.left + targetRect.width / 2;
+      bundleLeft = targetRect.left;
+      bundleRight = targetRect.left + targetRect.width;
     } else {
+      // Find the contiguous run of bundle members on the target's row.
+      // If the chain wraps to a second row, we want the run containing the
+      // target — not a shorter prefix/suffix that would bias the midpoint.
       const targetIdx = visibleIds.indexOf(targetPid);
       const targetRow = Math.floor(targetIdx / COLS);
+      const tw = targetRect.width;
       const targetCol = targetIdx % COLS;
-      // Bundle members on the same row as the target.
-      const sameRowCols: number[] = [];
-      for (const id of bundle) {
-        const idx = visibleIds.indexOf(id);
-        if (idx < 0) continue;
-        if (Math.floor(idx / COLS) !== targetRow) continue;
-        sameRowCols.push(idx % COLS);
+
+      const bundleIdxSet = new Set(
+        bundle.map((id) => visibleIds.indexOf(id)).filter((idx) => idx >= 0),
+      );
+
+      // Walk left from target while each successive column still contains
+      // a bundle member. Same going right.
+      let leftCol = targetCol;
+      while (leftCol > 0 && bundleIdxSet.has(targetRow * COLS + (leftCol - 1))) {
+        leftCol--;
       }
-      if (sameRowCols.length === 0) {
-        bundleCenterX = targetRect.left + targetRect.width / 2;
-      } else {
-        const minCol = Math.min(...sameRowCols);
-        const maxCol = Math.max(...sameRowCols);
-        // tileSize from the grid; targetRect.width is equivalent.
-        const tw = targetRect.width;
-        const bundleLeft = targetRect.left - (targetCol - minCol) * tw;
-        const bundleRight = targetRect.left + tw + (maxCol - targetCol) * tw;
-        bundleCenterX = (bundleLeft + bundleRight) / 2;
+      let rightCol = targetCol;
+      while (
+        rightCol < COLS - 1 &&
+        bundleIdxSet.has(targetRow * COLS + (rightCol + 1))
+      ) {
+        rightCol++;
       }
+
+      bundleLeft = targetRect.left - (targetCol - leftCol) * tw;
+      bundleRight = targetRect.left + tw + (rightCol - targetCol) * tw;
     }
 
+    const bundleCenterX = (bundleLeft + bundleRight) / 2;
     setDropSide(px < bundleCenterX ? 'left' : 'right');
   }, [dragLineIds, bundleVisible, visibleIds]);
 
@@ -316,6 +314,7 @@ export function ViewPage() {
       setOverId(null);
       setDropSide('left');
       dragInputIsTouch.current = false;
+      dragPointerRef.current = null;
     };
 
     if (!over || !dragLineIds) { reset(); return; }
@@ -359,6 +358,7 @@ export function ViewPage() {
     setOverId(null);
     setDropSide('left');
     dragInputIsTouch.current = false;
+    dragPointerRef.current = null;
   }, []);
 
   const insertIndicator = useMemo<{ pokemonId: number | null; side: 'left' | 'right' }>(() => {

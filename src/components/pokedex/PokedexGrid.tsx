@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
-import { effectiveCursorCollision, dragInputIsTouch, OVERLAY_LIFT_PX } from '@/lib/dragCollision';
+import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, OVERLAY_LIFT_PX } from '@/lib/dragCollision';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { TypeName } from '@/types/pokemon';
 import { displayName } from '@/lib/utils';
@@ -603,51 +603,45 @@ export function PokedexGrid() {
     // Skip if hovering over the dragged evo line itself
     if (dragLineIds && dragLineIds.includes(target.pokemonId)) return;
 
-    // dropSide is recomputed every move from effective cursor X vs bundle
-    // center. bundleCenterX is constant across a multi-tile bundle, so the
-    // indicator stays on one side until the pointer actually crosses the
-    // bundle midpoint — no per-tile flash. The setOverTileId + setDropSide
-    // updates batch into one render, so bundle-to-bundle transitions
-    // don't show a stale-side flash either.
-    let startX: number | null = null;
-    const ae = event.activatorEvent;
-    if ('clientX' in ae) {
-      startX = (ae as MouseEvent).clientX;
-    } else if ('touches' in ae) {
-      const touches = (ae as TouchEvent).touches;
-      if (touches.length > 0) startX = touches[0].clientX;
-    }
-    if (startX === null) return;
-    const px = startX + event.delta.x;
+    // dropSide is recomputed every move from the authoritative pointer X
+    // (stashed by the collision detector) vs the bundle's horizontal
+    // extent. Bundle extent comes from the actual DOM rects of every
+    // bundle member tile — so a 3-, 4-, or N-chain splits cleanly at its
+    // real visual midpoint regardless of tile width, gaps, or chain
+    // length.
+    const ptr = dragPointerRef.current;
+    if (!ptr) return;
+    const px = ptr.x;
 
-    // Bundle's visual horizontal extent is reconstructed from DOM rects
-    // of every bundle member on the target's row. Multi-row bundles (rare
-    // — sections typically keep chains contiguous) use only the row
-    // segment the pointer is currently interacting with.
     const sectionIds = sections[target.sectionId] ?? [];
     const bundle = findEvoLineGroup(target.pokemonId, sectionIds);
-    const targetRect = event.over.rect;
 
-    let bundleCenterX = targetRect.left + targetRect.width / 2;
-    if (bundle.length > 1) {
-      const targetRow = Math.round(targetRect.top);
-      let bundleLeft = Infinity;
-      let bundleRight = -Infinity;
-      for (const pid of bundle) {
-        const el = document.querySelector<HTMLElement>(
-          `[data-tile-id="${tileId(target.sectionId, pid)}"]`
-        );
-        if (!el) continue;
-        const r = el.getBoundingClientRect();
-        if (Math.round(r.top) !== targetRow) continue;
-        if (r.left < bundleLeft) bundleLeft = r.left;
-        if (r.right > bundleRight) bundleRight = r.right;
-      }
-      if (bundleLeft !== Infinity && bundleRight !== -Infinity) {
-        bundleCenterX = (bundleLeft + bundleRight) / 2;
-      }
+    // Look up each bundle member's live DOM rect. Filter to members on
+    // the target's visual row — a chain that wraps to a second row uses
+    // only the row segment the pointer is currently interacting with.
+    const targetEl = document.querySelector<HTMLElement>(
+      `[data-tile-id="${tileId(target.sectionId, target.pokemonId)}"]`,
+    );
+    const targetDomRect = targetEl?.getBoundingClientRect() ?? event.over.rect;
+    const targetRowY = targetDomRect.top + targetDomRect.height / 2;
+    const rowTolerance = targetDomRect.height / 2;
+
+    let bundleLeft = targetDomRect.left;
+    let bundleRight = targetDomRect.right;
+    for (const pid of bundle) {
+      if (pid === target.pokemonId) continue;
+      const el = document.querySelector<HTMLElement>(
+        `[data-tile-id="${tileId(target.sectionId, pid)}"]`,
+      );
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      const memberCenterY = r.top + r.height / 2;
+      if (Math.abs(memberCenterY - targetRowY) > rowTolerance) continue;
+      if (r.left < bundleLeft) bundleLeft = r.left;
+      if (r.right > bundleRight) bundleRight = r.right;
     }
 
+    const bundleCenterX = (bundleLeft + bundleRight) / 2;
     setDropSide(px < bundleCenterX ? 'left' : 'right');
   }, [sections, dragLineIds]);
 
@@ -677,6 +671,7 @@ export function PokedexGrid() {
             setOverTileId(null);
             setDropSide('left');
             dragInputIsTouch.current = false;
+            dragPointerRef.current = null;
             return;
           }
 
@@ -712,6 +707,7 @@ export function PokedexGrid() {
       setOverTileId(null);
       setDropSide('left');
       dragInputIsTouch.current = false;
+      dragPointerRef.current = null;
     },
     [dragLineIds, dragFromSection, sections, moveEvoLine, dropSide]
   );
@@ -722,6 +718,7 @@ export function PokedexGrid() {
     setOverTileId(null);
     setDropSide('left');
     dragInputIsTouch.current = false;
+    dragPointerRef.current = null;
   }, []);
 
   const insertIndicator = useMemo<{ tileId: string | null; endSection: string | null; side: 'left' | 'right' }>(() => {

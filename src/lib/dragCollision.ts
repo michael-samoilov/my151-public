@@ -22,7 +22,7 @@ import {
  * holding.
  */
 export const OVERLAY_LIFT_PX = 50;
-export const TOUCH_HIT_LIFT_PX = 110;
+export const TOUCH_HIT_LIFT_PX = 180;
 
 /**
  * Shared mutable flag for the current drag's input modality. Set in each
@@ -32,6 +32,19 @@ export const TOUCH_HIT_LIFT_PX = 110;
  * cycle.
  */
 export const dragInputIsTouch = { current: false };
+
+/**
+ * Last raw pointer coordinates observed by the collision detector. Set
+ * on every collision check (which is every pointer move), cleared on
+ * drag end. Drag-move handlers read from this as the authoritative
+ * pointer position — the same coordinate dnd-kit uses to resolve
+ * `event.over` — rather than reconstructing from activatorEvent +
+ * delta, which can drift subtly and produce inverted dropSide on
+ * multi-tile bundles.
+ */
+export const dragPointerRef: { current: { x: number; y: number } | null } = {
+  current: null,
+};
 
 /**
  * Seamless-grid collision detection with a touch-aware hit-test lift.
@@ -52,6 +65,10 @@ export const dragInputIsTouch = { current: false };
  */
 export const effectiveCursorCollision: CollisionDetection = (args) => {
   const raw = args.pointerCoordinates;
+  // Stash for drag-move handlers so they can read the authoritative
+  // pointer X directly instead of reconstructing from activator+delta.
+  dragPointerRef.current = raw ? { x: raw.x, y: raw.y } : null;
+
   const effective = raw && dragInputIsTouch.current
     ? { x: raw.x, y: raw.y - TOUCH_HIT_LIFT_PX }
     : raw;
