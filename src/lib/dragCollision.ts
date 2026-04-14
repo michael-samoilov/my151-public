@@ -5,19 +5,24 @@ import {
 } from '@dnd-kit/core';
 
 /**
- * Drag-overlay visual stack:
+ * Drag-overlay visual stack (zones should sit flush against each other —
+ * no empty space between the pointer and the overlay, or between the
+ * overlay and the hit-test target):
  *   • Desktop (mouse): mouse cursor = hit-test target. Overlay floats
- *     OVERLAY_LIFT_PX above the mouse so the held sprite is visible
- *     above the cursor, not sitting on top of the target.
+ *     OVERLAY_LIFT_PX above the mouse — just enough clearance for the
+ *     held sprite's bottom edge to sit above the cursor.
  *   • Touch (thumb): thumb at bottom, held overlay OVERLAY_LIFT_PX above
- *     thumb, hit-test target TOUCH_HIT_LIFT_PX above thumb — the target
- *     ends up ABOVE the overlay so the drop indicator on it is visible.
+ *     thumb, hit-test target TOUCH_HIT_LIFT_PX above thumb. Target sits
+ *     directly above the overlay so the drop indicator is visible.
  *
- * TOUCH_HIT_LIFT_PX must exceed OVERLAY_LIFT_PX by roughly one tile
- * height so the target row clears the top of the overlay on touch.
+ * Values assume an approximate tile height of ~60-80px. They're sized so
+ * the bottom of the overlay is ~10-20px above the thumb, and the target
+ * tile is ~10-20px above the top of the overlay — tight enough that the
+ * user doesn't see dead space between their finger and what they're
+ * holding.
  */
-export const OVERLAY_LIFT_PX = 140;
-export const TOUCH_HIT_LIFT_PX = 240;
+export const OVERLAY_LIFT_PX = 50;
+export const TOUCH_HIT_LIFT_PX = 110;
 
 /**
  * Shared mutable flag for the current drag's input modality. Set in each
