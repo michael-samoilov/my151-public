@@ -18,12 +18,33 @@ import {
   DragOverlay,
   useDroppable,
   closestCenter,
+  pointerWithin,
+  rectIntersection,
+  type CollisionDetection,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
   type DragMoveEvent,
 } from '@dnd-kit/core';
 import { useDraggable } from '@dnd-kit/core';
+
+/**
+ * Pointer-first collision detection. `closestCenter` compares the dragged
+ * RECT's center to each droppable, which misbehaves when the overlay spans
+ * multiple tiles (a multi-tile evo line) — the rect's center can sit a
+ * full tile away from the pointer, so the "target" tile flips a few pixels
+ * before the pointer actually crosses the boundary. Prioritizing
+ * `pointerWithin` keeps the target aligned with the pointer; fall back to
+ * `rectIntersection` and `closestCenter` when the pointer leaves all
+ * droppables.
+ */
+const pointerFirstCollision: CollisionDetection = (args) => {
+  const pointer = pointerWithin(args);
+  if (pointer.length > 0) return pointer;
+  const rect = rectIntersection(args);
+  if (rect.length > 0) return rect;
+  return closestCenter(args);
+};
 
 // ---------- helpers ----------
 
@@ -764,7 +785,7 @@ export function PokedexGrid() {
           <div className="p-3 pb-0">
             <DndContext
               sensors={sensors}
-              collisionDetection={closestCenter}
+              collisionDetection={pointerFirstCollision}
               onDragStart={handleDragStart}
               onDragMove={handleDragMove}
               onDragOver={handleDragOver}
