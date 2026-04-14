@@ -5,11 +5,12 @@ import { useViewSort } from '@/hooks/useViewSort';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
-import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, OVERLAY_LIFT_PX } from '@/lib/dragCollision';
+import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, OVERLAY_LIFT_PX, TOUCH_HIT_LIFT_PX } from '@/lib/dragCollision';
 import {
   DndContext,
   MouseSensor,
@@ -208,6 +209,12 @@ export function ViewPage() {
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
+  // Effective cursor position — raw mouse on desktop, or
+  // (thumb.x, thumb.y − TOUCH_HIT_LIFT_PX) on touch. Rendered as a faint
+  // marker during drag so the user can see where the hit-test actually
+  // lives, distinct from the strong red indicator that shows where the
+  // drop will land if released.
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
   const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
   const sensors = useSensors(mouseSensor, touchSensor);
@@ -240,6 +247,17 @@ export function ViewPage() {
   }, [bundleVisible]);
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
+    // Update the faint effective-cursor marker — the hit-test point on
+    // touch is lifted above the thumb by TOUCH_HIT_LIFT_PX; on desktop
+    // it's the raw mouse.
+    const rawPtr = dragPointerRef.current;
+    if (rawPtr) {
+      setCursorPos({
+        x: rawPtr.x,
+        y: rawPtr.y - (dragInputIsTouch.current ? TOUCH_HIT_LIFT_PX : 0),
+      });
+    }
+
     // Update overId atomically with dropSide. If we split this across
     // onDragOver (setOverId) and onDragMove (setDropSide), React renders
     // once with the NEW overId but STALE dropSide — causing the indicator
@@ -315,6 +333,7 @@ export function ViewPage() {
       setDropSide('left');
       dragInputIsTouch.current = false;
       dragPointerRef.current = null;
+      setCursorPos(null);
     };
 
     if (!over || !dragLineIds) { reset(); return; }
@@ -359,6 +378,7 @@ export function ViewPage() {
     setDropSide('left');
     dragInputIsTouch.current = false;
     dragPointerRef.current = null;
+    setCursorPos(null);
   }, []);
 
   const insertIndicator = useMemo<{ pokemonId: number | null; side: 'left' | 'right' }>(() => {
@@ -509,6 +529,9 @@ export function ViewPage() {
                     </div>
                   )}
                 </DragOverlay>
+                {cursorPos && dragLineIds && (
+                  <EffectiveCursorMarker x={cursorPos.x} y={cursorPos.y} />
+                )}
               </DndContext>
             );
           })()}

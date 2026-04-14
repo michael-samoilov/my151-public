@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
-import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, OVERLAY_LIFT_PX } from '@/lib/dragCollision';
+import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, OVERLAY_LIFT_PX, TOUCH_HIT_LIFT_PX } from '@/lib/dragCollision';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { TypeName } from '@/types/pokemon';
 import { displayName } from '@/lib/utils';
@@ -10,6 +10,7 @@ import { usePixelPerfectSprite } from '@/lib/usePixelPerfectSprite';
 import { Trash2, Plus, X, Settings } from 'lucide-react';
 
 import { PageFooter } from '@/components/shared/PageFooter';
+import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import {
   DndContext,
   MouseSensor,
@@ -566,6 +567,7 @@ export function PokedexGrid() {
 
   // Drag state
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
   const [dragFromSection, setDragFromSection] = useState<string | null>(null);
   const [overTileId, setOverTileId] = useState<string | null>(null);
   const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
@@ -587,6 +589,17 @@ export function PokedexGrid() {
   );
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
+    // Update the faint effective-cursor marker. The hit-test point on
+    // touch is lifted above the thumb by TOUCH_HIT_LIFT_PX; on desktop
+    // it's the raw mouse.
+    const rawPtr = dragPointerRef.current;
+    if (rawPtr) {
+      setCursorPos({
+        x: rawPtr.x,
+        y: rawPtr.y - (dragInputIsTouch.current ? TOUCH_HIT_LIFT_PX : 0),
+      });
+    }
+
     // Update overTileId atomically with dropSide. Splitting across
     // onDragOver (setOverTileId) and onDragMove (setDropSide) renders once
     // with the NEW overTileId but STALE dropSide — causing the indicator
@@ -672,6 +685,7 @@ export function PokedexGrid() {
             setDropSide('left');
             dragInputIsTouch.current = false;
             dragPointerRef.current = null;
+            setCursorPos(null);
             return;
           }
 
@@ -708,6 +722,7 @@ export function PokedexGrid() {
       setDropSide('left');
       dragInputIsTouch.current = false;
       dragPointerRef.current = null;
+      setCursorPos(null);
     },
     [dragLineIds, dragFromSection, sections, moveEvoLine, dropSide]
   );
@@ -719,6 +734,7 @@ export function PokedexGrid() {
     setDropSide('left');
     dragInputIsTouch.current = false;
     dragPointerRef.current = null;
+    setCursorPos(null);
   }, []);
 
   const insertIndicator = useMemo<{ tileId: string | null; endSection: string | null; side: 'left' | 'right' }>(() => {
@@ -817,6 +833,9 @@ export function PokedexGrid() {
                   </div>
                 )}
               </DragOverlay>
+              {cursorPos && dragLineIds && (
+                <EffectiveCursorMarker x={cursorPos.x} y={cursorPos.y} />
+              )}
             </DndContext>
           </div>
           <PageFooter />
