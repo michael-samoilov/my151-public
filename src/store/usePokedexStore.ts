@@ -5,7 +5,7 @@ import { getEvolutionLine, getDescendantIds, getPokemonById } from '@/hooks/useP
 
 type TypeFilterMode = 'any' | 'all';
 
-export type ViewSortOption = 'regional' | 'national' | 'type' | 'build-order';
+export type ViewSortOption = 'regional' | 'national' | 'type' | 'build-order' | 'custom';
 
 export type DrillDownSegment =
   | { kind: 'type'; type: string }
@@ -37,6 +37,9 @@ interface PokedexState {
   whatsAdvisorExpanded: boolean;
   viewSortOption: ViewSortOption;
   viewGroupSpecialAtEnd: boolean;
+  /** User-defined order applied when viewSortOption === 'custom'.
+   *  Null means no custom order has been created yet. */
+  viewCustomOrder: number[] | null;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -62,6 +65,7 @@ interface PokedexState {
   setWhatsAdvisorExpanded: (expanded: boolean) => void;
   setViewSortOption: (option: ViewSortOption) => void;
   setViewGroupSpecialAtEnd: (value: boolean) => void;
+  setViewCustomOrder: (order: number[] | null) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -88,6 +92,7 @@ export const usePokedexStore = create<PokedexState>()(
       whatsAdvisorExpanded: true,
       viewSortOption: 'regional' as ViewSortOption,
       viewGroupSpecialAtEnd: true,
+      viewCustomOrder: null,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -215,16 +220,18 @@ export const usePokedexStore = create<PokedexState>()(
       setWhatsAdvisorExpanded: (expanded) => set({ whatsAdvisorExpanded: expanded }),
       setViewSortOption: (option) => set({ viewSortOption: option }),
       setViewGroupSpecialAtEnd: (value) => set({ viewGroupSpecialAtEnd: value }),
+      setViewCustomOrder: (order) => set({ viewCustomOrder: order }),
     }),
     {
       name: 'personal-151-pokedex-v3',
-      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd }),
+      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder }),
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
           sections?: Record<string, number[]>;
           whatsAdvisorExpanded?: boolean;
           viewSortOption?: ViewSortOption;
           viewGroupSpecialAtEnd?: boolean;
+          viewCustomOrder?: number[] | null;
         };
 
         // Preserve all existing fields, only fix what needs fixing
@@ -261,9 +268,14 @@ export const usePokedexStore = create<PokedexState>()(
           result.viewGroupSpecialAtEnd = true;
         }
 
+        // v6 → v7: new custom order field
+        if (result.viewCustomOrder === undefined) {
+          result.viewCustomOrder = null;
+        }
+
         return result;
       },
-      version: 6,
+      version: 7,
     }
   )
 );

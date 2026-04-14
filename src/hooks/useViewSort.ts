@@ -354,10 +354,83 @@ function collectAllIds(sections: Record<string, number[]>): number[] {
   return ids;
 }
 
+/**
+ * Reconcile a persisted custom order against the current dex contents.
+ * - Drops IDs no longer in the dex.
+ * - Inserts new IDs adjacent to existing line-mates (preserving stage order
+ *   within the chain). If no line-mate is present, appends to the end.
+ * This keeps evolution lines bundled and matches the user's intent that new
+ * pokemon land roughly where they belong without destroying manual placement.
+ */
+export function reconcileCustomOrder(
+  customOrder: number[],
+  currentIds: number[],
+): number[] {
+  const currentSet = new Set(currentIds);
+
+  // 1. Drop removed, dedupe.
+  const seen = new Set<number>();
+  let next: number[] = [];
+  for (const id of customOrder) {
+    if (currentSet.has(id) && !seen.has(id)) {
+      next.push(id);
+      seen.add(id);
+    }
+  }
+
+  // 2. Insert new IDs.
+  for (const newId of currentIds) {
+    if (seen.has(newId)) continue;
+
+    const newPokemon = getPokemonById(newId);
+    if (!newPokemon) continue;
+
+    // Find all existing line-mates in the current `next` array.
+    const chainId = newPokemon.evolutionChainId;
+    const anchorIndices: number[] = [];
+    for (let i = 0; i < next.length; i++) {
+      const p = getPokemonById(next[i]);
+      if (p && p.evolutionChainId === chainId) anchorIndices.push(i);
+    }
+
+    if (anchorIndices.length > 0) {
+      // Sort all line-mates (existing + new) by (stage, id) and splice back in
+      // at the position of the first existing anchor.
+      const lineIds = [...anchorIndices.map((i) => next[i]), newId];
+      const lineObjs = lineIds
+        .map((id) => getPokemonById(id))
+        .filter((p): p is NonNullable<ReturnType<typeof getPokemonById>> => !!p)
+        .sort((a, b) => a.evolutionStage - b.evolutionStage || a.id - b.id);
+      const sortedLineIds = lineObjs.map((p) => p.id);
+
+      // Insert index in the "without line" array = count of non-line items
+      // before the first anchor in the original next[].
+      let insertIdx = 0;
+      for (let i = 0; i < anchorIndices[0]; i++) {
+        const p = getPokemonById(next[i]);
+        if (!p || p.evolutionChainId !== chainId) insertIdx++;
+      }
+
+      const without = next.filter((id) => {
+        const p = getPokemonById(id);
+        return !p || p.evolutionChainId !== chainId;
+      });
+      without.splice(insertIdx, 0, ...sortedLineIds);
+      next = without;
+    } else {
+      next.push(newId);
+    }
+    seen.add(newId);
+  }
+
+  return next;
+}
+
 export function useViewSort(
   sections: Record<string, number[]>,
   sortOption: ViewSortOption,
   groupSpecialAtEnd: boolean = true,
+  customOrder: number[] | null = null,
 ): Pokemon[] {
   const sectionsKey = useMemo(() => {
     const parts: string[] = [];
@@ -370,7 +443,22 @@ export function useViewSort(
     return parts.join('|');
   }, [sections]);
 
+  const customKey = useMemo(
+    () => (customOrder ? customOrder.join(',') : 'null'),
+    [customOrder],
+  );
+
   return useMemo(() => {
+    // Custom: render the reconciled customOrder verbatim. The grouping toggle
+    // does NOT apply here — custom is fully freeform.
+    if (sortOption === 'custom' && customOrder) {
+      const allIds = collectAllIds(sections);
+      const reconciled = reconcileCustomOrder(customOrder, allIds);
+      return reconciled
+        .map((id) => getPokemonById(id))
+        .filter((p): p is Pokemon => !!p);
+    }
+
     // When grouping is off, sort all placed Pokemon as one flat list (no buckets).
     if (!groupSpecialAtEnd) {
       const allIds = collectAllIds(sections);
@@ -409,5 +497,5 @@ export function useViewSort(
         return sortWithBuckets(sections, sortClustersNational, sortClustersNational);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sectionsKey, sortOption, groupSpecialAtEnd]);
+  }, [sectionsKey, sortOption, groupSpecialAtEnd, customKey]);
 }
