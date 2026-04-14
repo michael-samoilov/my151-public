@@ -460,20 +460,53 @@ export function useViewSort(
     }
 
     // When grouping is off, sort all placed Pokemon as one flat list (no buckets).
+    // Starters from the user's "starter" section are always pinned to the front,
+    // preserving the user's build-page order within that section. In regional sort,
+    // Victini (#494) is placed ahead of the starters when present (per-user request).
     if (!groupSpecialAtEnd) {
       const allIds = collectAllIds(sections);
+      const allIdSet = new Set(allIds);
+
+      const starterIds = (sections['starter'] ?? []).filter((id) => allIdSet.has(id));
+      const starterSet = new Set(starterIds);
+
+      const victiniFirst =
+        sortOption === 'regional' && allIdSet.has(494) && !starterSet.has(494);
+
+      const excluded = new Set<number>(starterSet);
+      if (victiniFirst) excluded.add(494);
+
+      const remainingIds = allIds.filter((id) => !excluded.has(id));
+
+      let sortedRest: Pokemon[];
       switch (sortOption) {
         case 'regional':
-          return sortClustersRegional(allIds);
+          sortedRest = sortClustersRegional(remainingIds);
+          break;
         case 'national':
-          return sortClustersNational(allIds);
+          sortedRest = sortClustersNational(remainingIds);
+          break;
         case 'type':
-          return sortClustersType(allIds);
+          sortedRest = sortClustersType(remainingIds);
+          break;
         case 'build-order':
-          return sortByBuildOrder(allIds, sections);
+          sortedRest = sortByBuildOrder(remainingIds, sections);
+          break;
         default:
-          return sortClustersNational(allIds);
+          sortedRest = sortClustersNational(remainingIds);
       }
+
+      const prefix: Pokemon[] = [];
+      if (victiniFirst) {
+        const v = getPokemonById(494);
+        if (v) prefix.push(v);
+      }
+      for (const id of starterIds) {
+        const p = getPokemonById(id);
+        if (p) prefix.push(p);
+      }
+
+      return [...prefix, ...sortedRest];
     }
 
     switch (sortOption) {

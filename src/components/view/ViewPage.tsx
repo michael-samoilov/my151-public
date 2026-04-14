@@ -485,30 +485,88 @@ export function ViewPage() {
         </div>
       </div>
 
-      {/* Settings pane — docked right on desktop, full-screen sheet on mobile */}
+      {/* Settings pane — docked right on desktop */}
       {settingsOpen && (
-        <>
-          {/* Mobile backdrop */}
-          <div
-            className="md:hidden fixed inset-0 bg-black/50 z-40"
-            onClick={() => setSettingsOpen(false)}
-          />
-          {/* Panel */}
-          <div
-            className="
-              fixed md:relative
-              inset-y-0 right-0 md:inset-auto
-              w-full md:w-[min(50vw,380px)]
-              md:h-full md:flex-shrink-0
-              border-l bg-background
-              z-50 md:z-auto
-              shadow-2xl md:shadow-none
-            "
-          >
-            <ViewSettingsPane onClose={() => setSettingsOpen(false)} />
-          </div>
-        </>
+        <div className="hidden md:block md:relative md:w-[min(50vw,380px)] md:h-full md:flex-shrink-0 border-l bg-background">
+          <ViewSettingsPane onClose={() => setSettingsOpen(false)} />
+        </div>
       )}
+
+      {/* Settings sheet — bottom sheet on mobile (mirrors MobileSheet) */}
+      {settingsOpen && <ViewSettingsSheet onClose={() => setSettingsOpen(false)} />}
+    </div>
+  );
+}
+
+// ---------- Mobile bottom sheet for settings ----------
+
+const SHEET_HEIGHT_VH = 85;
+const DISMISS_THRESHOLD = 120;
+
+function ViewSettingsSheet({ onClose }: { onClose: () => void }) {
+  const [dragY, setDragY] = useState(0);
+  const dragStartY = useRef<number | null>(null);
+  const isDragging = useRef(false);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    dragStartY.current = e.touches[0].clientY;
+    isDragging.current = false;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (dragStartY.current === null) return;
+    const dy = e.touches[0].clientY - dragStartY.current;
+    if (dy > 0) {
+      isDragging.current = true;
+      setDragY(dy);
+      e.preventDefault();
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (dragY > DISMISS_THRESHOLD) {
+      onClose();
+    } else {
+      setDragY(0);
+    }
+    dragStartY.current = null;
+    isDragging.current = false;
+  }, [dragY, onClose]);
+
+  const handleTabTap = useCallback(() => {
+    if (!isDragging.current) onClose();
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50 md:hidden">
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+        style={{ opacity: Math.max(0, 1 - dragY / (DISMISS_THRESHOLD * 3)) }}
+      />
+      <div
+        className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl flex flex-col"
+        style={{
+          height: `${SHEET_HEIGHT_VH}vh`,
+          transform: `translateY(${dragY}px)`,
+          transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
+        }}
+      >
+        <div
+          className="flex flex-col items-center justify-center py-3 cursor-grab active:cursor-grabbing touch-none"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onClick={handleTabTap}
+        >
+          <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
+          <span className="text-sm font-semibold text-foreground">View Settings</span>
+        </div>
+        <div className="border-b" />
+        <div className="flex-1 min-h-0">
+          <ViewSettingsPane onClose={onClose} hideHeader />
+        </div>
+      </div>
     </div>
   );
 }

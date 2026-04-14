@@ -45,7 +45,14 @@ const SORT_OPTIONS: SortOption[] = [
   },
 ];
 
-export function ViewSettingsPane({ onClose }: { onClose: () => void }) {
+export function ViewSettingsPane({
+  onClose,
+  hideHeader = false,
+}: {
+  onClose: () => void;
+  /** Hide the internal header (for mobile bottom sheet which has its own drag tab). */
+  hideHeader?: boolean;
+}) {
   const sortOption = usePokedexStore((s) => s.viewSortOption);
   const setSortOption = usePokedexStore((s) => s.setViewSortOption);
   const groupSpecialAtEnd = usePokedexStore((s) => s.viewGroupSpecialAtEnd);
@@ -73,18 +80,20 @@ export function ViewSettingsPane({ onClose }: { onClose: () => void }) {
   return (
     <div className="flex flex-col h-full bg-background w-full">
       {/* Header */}
-      <div className="shrink-0 border-b">
-        <div className="flex items-center justify-between px-3 py-2 h-11">
-          <span className="text-sm font-semibold text-foreground">View Settings</span>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
-            aria-label="Close settings"
-          >
-            <X className="w-4 h-4" />
-          </button>
+      {!hideHeader && (
+        <div className="shrink-0 border-b">
+          <div className="flex items-center justify-between px-3 py-2 h-11">
+            <span className="text-sm font-semibold text-foreground">View Settings</span>
+            <button
+              onClick={onClose}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
+              aria-label="Close settings"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Scrollable content */}
       <div className="flex-1 min-h-0 overflow-y-auto">
