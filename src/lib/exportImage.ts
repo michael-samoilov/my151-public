@@ -2,14 +2,15 @@ import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 
 const COLS = 10;
-const TILE = 72;
-const SPRITE = Math.round(TILE * 1.05); // slightly larger than tile, less overlap
-const PAD_X = 16;
-const PAD_TOP = 52;
-const PAD_BOTTOM = 44;
+const TILE = 48;
+const SPRITE_SRC = 96; // native sprite resolution
+const SPRITE = SPRITE_SRC / 2; // logical draw size = 48px (1:1 with tile)
+const PAD_X = 12;
+const PAD_TOP = 40;
+const PAD_BOTTOM = 34;
 const BG = '#ffffff';
 const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
-const SCALE = 2; // 2x resolution for sharp export
+const SCALE = 4; // SPRITE * SCALE = 192 = exactly 2× native 96px sprites
 
 /** Load an image by URL, returns a promise. */
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -56,7 +57,7 @@ function drawPokeball(
 
   // Gap strokes to cleanly separate halves (white to match background)
   ctx.strokeStyle = BG;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
 
   ctx.beginPath();
   ctx.arc(0, 0, r, Math.PI, 0);
@@ -74,7 +75,7 @@ function drawPokeball(
   ctx.fillStyle = BG;
   ctx.fill();
   ctx.strokeStyle = BG;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
   ctx.stroke();
 
   // Divider line
@@ -82,7 +83,7 @@ function drawPokeball(
   ctx.moveTo(-r, 0);
   ctx.lineTo(r, 0);
   ctx.strokeStyle = BG;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 2;
   ctx.stroke();
 
   ctx.restore();
@@ -92,7 +93,7 @@ function drawPokeball(
  * Render the user's Pokemon list as a sharp PNG image blob.
  * Mirrors the view page: 10-column grid, type-colored rotated pokeball
  * backgrounds, last row centered. No empty placeholders.
- * Rendered at 2x for crisp output.
+ * Rendered at 4x with pixel-perfect sprite scaling.
  */
 export async function generateExportImage(
   pokemon: Pokemon[],
@@ -115,7 +116,7 @@ export async function generateExportImage(
   canvas.height = h * SCALE;
   const ctx = canvas.getContext('2d')!;
 
-  // Scale everything by 2x for sharp rendering
+  // Scale everything by 4x for sharp rendering
   ctx.scale(SCALE, SCALE);
   ctx.imageSmoothingEnabled = false;
 
@@ -128,25 +129,25 @@ export async function generateExportImage(
   ctx.textBaseline = 'middle';
   const headerY = PAD_TOP / 2;
 
-  ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+  ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
   ctx.fillStyle = '#18181b'; // zinc-900
   const title = 'My Personal 151';
   const titleW = ctx.measureText(title).width;
 
-  ctx.font = '600 14px system-ui, -apple-system, sans-serif';
+  ctx.font = '600 10px system-ui, -apple-system, sans-serif';
   const countStr = `${count}/151`;
   const countW = ctx.measureText(countStr).width;
 
-  const gap = 10;
+  const gap = 7;
   const totalTextW = titleW + gap + countW;
   const textStart = w / 2 - totalTextW / 2;
 
-  ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+  ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
   ctx.fillStyle = '#18181b';
   ctx.textAlign = 'left';
   ctx.fillText(title, textStart, headerY);
 
-  ctx.font = '600 14px system-ui, -apple-system, sans-serif';
+  ctx.font = '600 10px system-ui, -apple-system, sans-serif';
   ctx.fillStyle = '#2563eb'; // blue-600 for contrast on white
   ctx.fillText(countStr, textStart + titleW + gap, headerY);
 
@@ -181,16 +182,16 @@ export async function generateExportImage(
   ctx.textBaseline = 'middle';
   const footerY = PAD_TOP + totalRows * TILE + PAD_BOTTOM / 2;
 
-  ctx.font = '600 11px system-ui, -apple-system, sans-serif';
+  ctx.font = '600 8px system-ui, -apple-system, sans-serif';
   ctx.fillStyle = '#71717a'; // zinc-500
-  ctx.fillText(`Build yours at ${siteUrl.replace(/^https?:\/\//, '')}`, w / 2, footerY - 8);
+  ctx.fillText(`Build yours at ${siteUrl.replace(/^https?:\/\//, '')}`, w / 2, footerY - 6);
 
-  ctx.font = '9px system-ui, -apple-system, sans-serif';
+  ctx.font = '6px system-ui, -apple-system, sans-serif';
   ctx.fillStyle = '#a1a1aa'; // zinc-400
   ctx.fillText(
     `Pokémon © 1995\u2013${year} Nintendo / Game Freak / Creatures`,
     w / 2,
-    footerY + 8,
+    footerY + 6,
   );
 
   return new Promise<Blob>((resolve, reject) => {
@@ -217,9 +218,16 @@ function drawTile(
   drawPokeball(ctx, cx, cy, r, primary, secondary);
 
   if (sprite) {
-    const sx = cx - SPRITE / 2;
-    const sy = cy - SPRITE / 2;
-    ctx.drawImage(sprite, sx, sy, SPRITE, SPRITE);
+    // Draw sprite at exact integer multiple of native resolution
+    // to preserve pixel art without aliasing artifacts
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset to identity (canvas pixels)
+    const drawSize = SPRITE * SCALE; // 192px = exactly 2× native 96px
+    const sx = cx * SCALE - drawSize / 2;
+    const sy = cy * SCALE - drawSize / 2;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(sprite, sx, sy, drawSize, drawSize);
+    ctx.restore();
   }
 }
 
