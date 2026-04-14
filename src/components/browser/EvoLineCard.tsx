@@ -8,6 +8,7 @@ import { Plus, ChevronRight, X, Sword, Shield } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { TypeName } from '@/types/pokemon';
+import { getSpriteUrl, isPixelPack } from '@/data/sprite-packs';
 
 /** Tiny pokeball icon: red-filled top half, open bottom half, center button */
 function PokeballIcon({ className }: { className?: string }) {
@@ -142,6 +143,8 @@ function formatDoublings(n: number): string {
 export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, spritePx }: EvoLineCardProps) {
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const sections = usePokedexStore((s) => s.sections);
+  const spritePack = usePokedexStore((s) => s.spritePack);
+  const pixelated = isPixelPack(spritePack);
   const allInDex = members.every((p) => assignedIds.has(p.id));
 
   const doRemove = () => {
@@ -239,13 +242,11 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                     width: spritePx,
                     height: spritePx,
                     backgroundImage: `url(${spriteOverrides?.[pokemon.id]
-                      ?? (shinyIds?.has(pokemon.id)
-                        ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
-                        : pokemon.sprite)})`,
-                    backgroundSize: `${spritePx}px ${spritePx}px`,
+                      ?? getSpriteUrl(pokemon.id, spritePack, shinyIds?.has(pokemon.id))})`,
+                    backgroundSize: pixelated ? `${spritePx}px ${spritePx}px` : 'contain',
                     backgroundRepeat: 'no-repeat',
                     backgroundPosition: 'center',
-                    imageRendering: 'pixelated',
+                    imageRendering: pixelated ? 'pixelated' : 'auto',
                   }}
                   role="img"
                   aria-label={pokemon.name}

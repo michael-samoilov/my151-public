@@ -5,6 +5,7 @@ import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
+import { SPRITE_PACK_OPTIONS, getSpriteUrl, isPixelPack } from '@/data/sprite-packs';
 
 const COLS = 10;
 const SPACER_HEIGHT = 64; // h-16 pokeball spacer
@@ -62,12 +63,14 @@ function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
   );
 }
 
-/** Settings gear with sort options dropdown. */
+/** Settings gear with sort options and sprite pack dropdown. */
 function ViewSettingsMenu() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const sortOption = usePokedexStore((s) => s.viewSortOption);
   const setSortOption = usePokedexStore((s) => s.setViewSortOption);
+  const spritePack = usePokedexStore((s) => s.spritePack);
+  const setSpritePack = usePokedexStore((s) => s.setSpritePack);
 
   useEffect(() => {
     if (!open) return;
@@ -89,14 +92,14 @@ function ViewSettingsMenu() {
         <Settings className="w-4 h-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
+        <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-30 min-w-[180px] py-1">
           <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
             Sort Order
           </div>
           {SORT_OPTIONS.map((opt) => (
             <button
               key={opt.value}
-              onClick={() => { setSortOption(opt.value); setOpen(false); }}
+              onClick={() => setSortOption(opt.value)}
               className={`w-full flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors ${
                 sortOption === opt.value
                   ? 'text-primary font-medium bg-primary/10'
@@ -104,6 +107,24 @@ function ViewSettingsMenu() {
               }`}
             >
               {opt.label}
+            </button>
+          ))}
+          <div className="border-t my-1" />
+          <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+            Sprite Pack
+          </div>
+          {SPRITE_PACK_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setSpritePack(opt.value)}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors ${
+                spritePack === opt.value
+                  ? 'text-primary font-medium bg-primary/10'
+                  : 'text-foreground hover:bg-muted'
+              }`}
+            >
+              <span>{opt.label}</span>
+              <span className="ml-auto text-[10px] text-muted-foreground">{opt.description}</span>
             </button>
           ))}
         </div>
@@ -149,10 +170,12 @@ function useTileSize(totalSlots: number) {
 export function ViewPage() {
   const sections = usePokedexStore((s) => s.sections);
   const sortOption = usePokedexStore((s) => s.viewSortOption);
+  const spritePack = usePokedexStore((s) => s.spritePack);
   const sorted = useViewSort(sections, sortOption);
   const count = sorted.length;
   const totalSlots = Math.max(count, 151);
   const { containerRef, tileSize } = useTileSize(totalSlots);
+  const pixelated = isPixelPack(spritePack);
 
   return (
     <div className="h-full flex flex-col">
@@ -208,10 +231,10 @@ export function ViewPage() {
                 >
                   <PokeballBg pokemon={pokemon} />
                   <img
-                    src={pokemon.sprite}
+                    src={getSpriteUrl(pokemon.id, spritePack)}
                     alt={pokemon.name}
                     className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                    style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
+                    style={{ imageRendering: pixelated ? 'pixelated' : 'auto', width: tileSize * 1.2 }}
                     loading="lazy"
                   />
                 </div>
@@ -231,10 +254,10 @@ export function ViewPage() {
                 >
                   <PokeballBg pokemon={pokemon} />
                   <img
-                    src={pokemon.sprite}
+                    src={getSpriteUrl(pokemon.id, spritePack)}
                     alt={pokemon.name}
                     className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                    style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
+                    style={{ imageRendering: pixelated ? 'pixelated' : 'auto', width: tileSize * 1.2 }}
                     loading="lazy"
                   />
                 </div>

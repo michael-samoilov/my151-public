@@ -6,6 +6,7 @@ import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { TypeName } from '@/types/pokemon';
 import { displayName } from '@/lib/utils';
 import { usePixelPerfectSprite } from '@/lib/usePixelPerfectSprite';
+import { getSpriteUrl, isPixelPack } from '@/data/sprite-packs';
 import { Trash2, Plus, X, Settings } from 'lucide-react';
 
 declare const __BUILD_TIMESTAMP__: string;
@@ -52,7 +53,9 @@ import { GenBadge } from '@/components/shared/GenBadge';
 function PokemonTileStatic({ id }: { id: number }) {
   const pokemon = getPokemonById(id);
   const spritePx = usePixelPerfectSprite(8, 40, 7, 96);
+  const spritePack = usePokedexStore((s) => s.spritePack);
   if (!pokemon) return null;
+  const pixelated = isPixelPack(spritePack);
   return (
     <div className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 aspect-square shadow-lg">
       <GenBadge
@@ -63,11 +66,11 @@ function PokemonTileStatic({ id }: { id: number }) {
         style={{
           width: spritePx,
           height: spritePx,
-          backgroundImage: `url(${pokemon.sprite})`,
-          backgroundSize: `${spritePx}px ${spritePx}px`,
+          backgroundImage: `url(${getSpriteUrl(pokemon.id, spritePack)})`,
+          backgroundSize: pixelated ? `${spritePx}px ${spritePx}px` : 'contain',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center',
-          imageRendering: 'pixelated',
+          imageRendering: pixelated ? 'pixelated' : 'auto',
         }}
         role="img"
         aria-label={displayName(pokemon.name)}
@@ -105,6 +108,7 @@ function DraggableTile({
   showInsertAfter: boolean;
 }) {
   const removeBranch = usePokedexStore((s) => s.removeBranch);
+  const spritePack = usePokedexStore((s) => s.spritePack);
   const pokemon = getPokemonById(pokemonId);
   const spritePx = usePixelPerfectSprite(8, 40, 7, 96);
 
@@ -159,11 +163,11 @@ function DraggableTile({
           style={{
             width: spritePx,
             height: spritePx,
-            backgroundImage: `url(${pokemon.sprite})`,
-            backgroundSize: `${spritePx}px ${spritePx}px`,
+            backgroundImage: `url(${getSpriteUrl(pokemon.id, spritePack)})`,
+            backgroundSize: isPixelPack(spritePack) ? `${spritePx}px ${spritePx}px` : 'contain',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
-            imageRendering: 'pixelated',
+            imageRendering: isPixelPack(spritePack) ? 'pixelated' : 'auto',
           }}
           role="img"
           aria-label={displayName(pokemon.name)}
