@@ -10,7 +10,6 @@ import { generateExportImage, downloadBlob } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 
 const COLS = 10;
-const SPACER_HEIGHT = 84; // PageFooter: mt-4 + border + py-3 + content
 
 const SORT_OPTIONS: { value: ViewSortOption; label: string }[] = [
   { value: 'regional', label: 'Regional Dex' },
@@ -129,7 +128,7 @@ function useTileSize(totalSlots: number) {
     const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
     const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
     const w = el.clientWidth - padX;
-    const h = el.clientHeight - padY - SPACER_HEIGHT;
+    const h = el.clientHeight - padY;
     const rows = Math.ceil(slotsRef.current / COLS);
     const size = Math.floor(Math.min(w / COLS, h / Math.max(rows, 1)));
     setTileSize(size);
