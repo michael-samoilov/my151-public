@@ -83,16 +83,22 @@ body {
   border-color: var(--color-border);
 }
 
-/* Suppress iOS Safari long-press image callout (Save/Copy menu) and prevent
- * dragging images out of the page. Long-press on a sprite during drag-to-
- * rearrange would otherwise steal focus from dnd-kit's TouchSensor.
+/* iOS Safari long-press image callout blocker.
  *
- * iOS ignores -webkit-touch-callout on <img> when the image itself is the
- * touch target, so we also disable pointer-events: every <img> in this app
- * is decoration inside a button or draggable div, so the interactive parent
- * still receives the touch and the image can't become a long-press target. */
-img {
+ * -webkit-touch-callout is NOT inherited, so it must be applied to every
+ * element that could become a long-press target. Newer iOS versions fire
+ * the callout on elements with background-image, not just <img>, so a
+ * selector of just `img` is insufficient. Applying to `*` is the standard
+ * fix used across touch-first web apps — it has no side effects beyond
+ * disabling the iOS save/copy menu.
+ *
+ * Additional img-level hardening (pointer-events: none, -webkit-user-drag,
+ * user-select) is a backstop for older iOS and non-webkit browsers. */
+* {
   -webkit-touch-callout: none;
+}
+
+img {
   -webkit-user-drag: none;
   user-select: none;
   -webkit-user-select: none;

@@ -1,5 +1,5 @@
 // Service worker: cache sprites and static assets to reduce edge requests
-const CACHE_NAME = 'p151-sprites-v1';
+const CACHE_NAME = 'p151-sprites-v2';
 
 // Cache sprites and static assets on fetch
 self.addEventListener('fetch', (event) => {
