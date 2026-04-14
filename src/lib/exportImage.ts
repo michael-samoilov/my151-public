@@ -3,11 +3,13 @@ import { TYPE_COLORS } from '@/data/type-colors';
 
 const COLS = 10;
 const TILE = 72;
-const SPRITE = Math.round(TILE * 1.2); // match view page 1.2x scale
+const SPRITE = Math.round(TILE * 1.05); // slightly larger than tile, less overlap
 const PAD_X = 16;
 const PAD_TOP = 52;
 const PAD_BOTTOM = 44;
-const BG = '#18181b'; // zinc-900
+const BG = '#ffffff';
+const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
+const SCALE = 2; // 2x resolution for sharp export
 
 /** Load an image by URL, returns a promise. */
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -20,7 +22,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-/** Draw a type-colored pokeball behind a sprite tile. */
+/** Draw a type-colored pokeball behind a sprite tile, rotated to match view page. */
 function drawPokeball(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -30,61 +32,67 @@ function drawPokeball(
   secondary: string,
 ) {
   ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(ROTATION);
+
+  // Colored fills at reduced opacity
   ctx.globalAlpha = 0.33;
 
   // Top half — primary type
   ctx.beginPath();
-  ctx.arc(cx, cy, r, Math.PI, 0);
+  ctx.arc(0, 0, r, Math.PI, 0);
   ctx.closePath();
   ctx.fillStyle = primary;
   ctx.fill();
 
   // Bottom half — secondary type
   ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI);
+  ctx.arc(0, 0, r, 0, Math.PI);
   ctx.closePath();
   ctx.fillStyle = secondary;
   ctx.fill();
-  ctx.restore();
 
-  // Gap strokes to separate halves
+  ctx.globalAlpha = 1;
+
+  // Gap strokes to cleanly separate halves (white to match background)
   ctx.strokeStyle = BG;
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 3;
 
-  // Top half outline
   ctx.beginPath();
-  ctx.arc(cx, cy, r, Math.PI, 0);
+  ctx.arc(0, 0, r, Math.PI, 0);
   ctx.closePath();
   ctx.stroke();
 
-  // Bottom half outline
   ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI);
+  ctx.arc(0, 0, r, 0, Math.PI);
   ctx.closePath();
   ctx.stroke();
 
   // Center button
   ctx.beginPath();
-  ctx.arc(cx, cy, r * 0.2, 0, Math.PI * 2);
+  ctx.arc(0, 0, r * 0.2, 0, Math.PI * 2);
   ctx.fillStyle = BG;
   ctx.fill();
   ctx.strokeStyle = BG;
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 3;
   ctx.stroke();
 
   // Divider line
   ctx.beginPath();
-  ctx.moveTo(cx - r, cy);
-  ctx.lineTo(cx + r, cy);
+  ctx.moveTo(-r, 0);
+  ctx.lineTo(r, 0);
   ctx.strokeStyle = BG;
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 3;
   ctx.stroke();
+
+  ctx.restore();
 }
 
 /**
- * Render the user's Pokemon list as a PNG image blob.
- * Mirrors the view page grid: 10-column layout, type-colored pokeball
+ * Render the user's Pokemon list as a sharp PNG image blob.
+ * Mirrors the view page: 10-column grid, type-colored rotated pokeball
  * backgrounds, last row centered. No empty placeholders.
+ * Rendered at 2x for crisp output.
  */
 export async function generateExportImage(
   pokemon: Pokemon[],
@@ -103,12 +111,15 @@ export async function generateExportImage(
   const h = PAD_TOP + totalRows * TILE + PAD_BOTTOM;
 
   const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = w * SCALE;
+  canvas.height = h * SCALE;
   const ctx = canvas.getContext('2d')!;
+
+  // Scale everything by 2x for sharp rendering
+  ctx.scale(SCALE, SCALE);
   ctx.imageSmoothingEnabled = false;
 
-  // Background
+  // White background
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, w, h);
 
@@ -118,7 +129,7 @@ export async function generateExportImage(
   const headerY = PAD_TOP / 2;
 
   ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = '#18181b'; // zinc-900
   const title = 'My Personal 151';
   const titleW = ctx.measureText(title).width;
 
@@ -131,12 +142,12 @@ export async function generateExportImage(
   const textStart = w / 2 - totalTextW / 2;
 
   ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = '#18181b';
   ctx.textAlign = 'left';
   ctx.fillText(title, textStart, headerY);
 
   ctx.font = '600 14px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = '#3b82f6';
+  ctx.fillStyle = '#2563eb'; // blue-600 for contrast on white
   ctx.fillText(countStr, textStart + titleW + gap, headerY);
 
   // Load all sprites in parallel
@@ -165,7 +176,7 @@ export async function generateExportImage(
     }
   }
 
-  // Footer: URL + copyright
+  // Footer
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   const footerY = PAD_TOP + totalRows * TILE + PAD_BOTTOM / 2;
@@ -175,7 +186,7 @@ export async function generateExportImage(
   ctx.fillText(`Build yours at ${siteUrl.replace(/^https?:\/\//, '')}`, w / 2, footerY - 8);
 
   ctx.font = '9px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = '#52525b'; // zinc-600
+  ctx.fillStyle = '#a1a1aa'; // zinc-400
   ctx.fillText(
     `Pokémon © 1995\u2013${year} Nintendo / Game Freak / Creatures`,
     w / 2,

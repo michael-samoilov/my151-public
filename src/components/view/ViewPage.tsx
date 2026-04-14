@@ -10,7 +10,7 @@ import { generateExportImage, downloadBlob } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 
 const COLS = 10;
-const SPACER_HEIGHT = 64; // h-16 pokeball spacer
+const SPACER_HEIGHT = 84; // PageFooter: mt-4 + border + py-3 + content
 
 const SORT_OPTIONS: { value: ViewSortOption; label: string }[] = [
   { value: 'regional', label: 'Regional Dex' },
@@ -125,8 +125,11 @@ function useTileSize(totalSlots: number) {
   const measure = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
-    const w = el.clientWidth;
-    const h = el.clientHeight - SPACER_HEIGHT;
+    const style = getComputedStyle(el);
+    const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+    const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+    const w = el.clientWidth - padX;
+    const h = el.clientHeight - padY - SPACER_HEIGHT;
     const rows = Math.ceil(slotsRef.current / COLS);
     const size = Math.floor(Math.min(w / COLS, h / Math.max(rows, 1)));
     setTileSize(size);
@@ -193,7 +196,7 @@ export function ViewPage() {
       </div>
 
       {/* Grid container — measured for tile sizing */}
-      <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center p-2">
+      <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center p-2 overflow-y-auto">
         {tileSize > 0 && (() => {
           // Split: full rows in grid, last partial row flex-centered
           const lastRowCount = totalSlots % COLS || COLS;
@@ -219,7 +222,7 @@ export function ViewPage() {
           );
 
           return (
-          <div>
+          <div style={{ width: COLS * tileSize }}>
             <div
               className="grid"
               style={{
