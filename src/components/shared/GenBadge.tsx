@@ -26,7 +26,7 @@ function buildBadgeUri(gen: number, stops: { offset: string; color: string }[]):
     gradStops,
     '</linearGradient></defs>',
     '<circle cx="12" cy="12" r="11" fill="url(#g)"/>',
-    `<text x="12" y="12.5" text-anchor="middle" dominant-baseline="central" fill="white" font-size="14" font-weight="800" font-family="system-ui,sans-serif" stroke="rgba(0,0,0,0.35)" stroke-width="0.6">${gen}</text>`,
+    `<text x="12" y="12.5" text-anchor="middle" dominant-baseline="central" fill="white" font-size="14" font-weight="800" font-family="system-ui,sans-serif" stroke="rgba(0,0,0,0.85)" stroke-width="2" paint-order="stroke">${gen}</text>`,
     '</svg>',
   ].join('');
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;

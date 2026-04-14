@@ -343,9 +343,21 @@ function sortByBuildOrder(ids: number[], sections: Record<string, number[]>): Po
   return result;
 }
 
+/** Collect all placed Pokemon IDs across all sections, in build page order. */
+function collectAllIds(sections: Record<string, number[]>): number[] {
+  const ids: number[] = [];
+  for (const groupId of BUILD_GROUP_IDS) {
+    for (const id of sections[groupId] ?? []) {
+      ids.push(id);
+    }
+  }
+  return ids;
+}
+
 export function useViewSort(
   sections: Record<string, number[]>,
-  sortOption: ViewSortOption
+  sortOption: ViewSortOption,
+  groupSpecialAtEnd: boolean = true,
 ): Pokemon[] {
   const sectionsKey = useMemo(() => {
     const parts: string[] = [];
@@ -359,6 +371,23 @@ export function useViewSort(
   }, [sections]);
 
   return useMemo(() => {
+    // When grouping is off, sort all placed Pokemon as one flat list (no buckets).
+    if (!groupSpecialAtEnd) {
+      const allIds = collectAllIds(sections);
+      switch (sortOption) {
+        case 'regional':
+          return sortClustersRegional(allIds);
+        case 'national':
+          return sortClustersNational(allIds);
+        case 'type':
+          return sortClustersType(allIds);
+        case 'build-order':
+          return sortByBuildOrder(allIds, sections);
+        default:
+          return sortClustersNational(allIds);
+      }
+    }
+
     switch (sortOption) {
       case 'regional':
         // Middle: regional percentile + adjacency; Other buckets: national dex + adjacency
@@ -380,5 +409,5 @@ export function useViewSort(
         return sortWithBuckets(sections, sortClustersNational, sortClustersNational);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sectionsKey, sortOption]);
+  }, [sectionsKey, sortOption, groupSpecialAtEnd]);
 }

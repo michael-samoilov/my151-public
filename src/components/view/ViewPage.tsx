@@ -1,5 +1,5 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
-import { Settings, Download, Loader2 } from 'lucide-react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { Settings, Download, Loader2, Check } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
@@ -8,6 +8,23 @@ import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
+import { getEvolutionLine } from '@/hooks/usePokemonData';
+import { BUILD_GROUP_IDS } from '@/data/slot-template';
+import {
+  DndContext,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  useDroppable,
+  useDraggable,
+  closestCenter,
+  type DragStartEvent,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragMoveEvent,
+} from '@dnd-kit/core';
 
 const COLS = 10;
 
@@ -64,12 +81,14 @@ function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
   );
 }
 
-/** Settings gear with sort options dropdown. */
+/** Settings gear with sort options + grouping toggle. */
 function ViewSettingsMenu() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const sortOption = usePokedexStore((s) => s.viewSortOption);
   const setSortOption = usePokedexStore((s) => s.setViewSortOption);
+  const groupSpecialAtEnd = usePokedexStore((s) => s.viewGroupSpecialAtEnd);
+  const setGroupSpecialAtEnd = usePokedexStore((s) => s.setViewGroupSpecialAtEnd);
 
   useEffect(() => {
     if (!open) return;
@@ -91,7 +110,7 @@ function ViewSettingsMenu() {
         <Settings className="w-4 h-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
+        <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-30 min-w-[220px] py-1">
           <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
             Sort Order
           </div>
@@ -108,6 +127,29 @@ function ViewSettingsMenu() {
               {opt.label}
             </button>
           ))}
+          <div className="border-t my-1" />
+          <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+            Grouping
+          </div>
+          <button
+            onClick={() => setGroupSpecialAtEnd(!groupSpecialAtEnd)}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors text-foreground hover:bg-muted"
+          >
+            <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+              groupSpecialAtEnd ? 'bg-primary border-primary' : 'border-border'
+            }`}>
+              {groupSpecialAtEnd && <Check className="w-3 h-3 text-primary-foreground" />}
+            </span>
+            <span className="text-left">Group legendaries at end</span>
+          </button>
+          {sortOption !== 'build-order' && (
+            <>
+              <div className="border-t my-1" />
+              <div className="px-3 py-2 text-[10px] text-muted-foreground leading-snug">
+                Tip: choose <span className="font-semibold text-foreground">Build Order</span> to drag Pokemon into a custom order.
+              </div>
+            </>
+          )}
         </div>
       )}
     </div>
@@ -143,7 +185,6 @@ function useTileSize(totalSlots: number) {
     return () => ro.disconnect();
   }, [measure]);
 
-  // Re-measure when slot count changes
   useEffect(() => {
     measure();
   }, [totalSlots, measure]);
@@ -151,14 +192,259 @@ function useTileSize(totalSlots: number) {
   return { containerRef, tileSize };
 }
 
+// ---------- Draggable tile ----------
+
+function DraggableViewTile({
+  pokemon,
+  tileSize,
+  draggable,
+  isDraggedLine,
+  showInsertBefore,
+  showInsertAfter,
+}: {
+  pokemon: Pokemon;
+  tileSize: number;
+  draggable: boolean;
+  isDraggedLine: boolean;
+  showInsertBefore: boolean;
+  showInsertAfter: boolean;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    isDragging,
+  } = useDraggable({ id: `view::${pokemon.id}`, disabled: !draggable });
+
+  const { setNodeRef: setDropRef } = useDroppable({ id: `view::${pokemon.id}`, disabled: !draggable });
+
+  const setNodeRef = useCallback(
+    (node: HTMLElement | null) => {
+      setDragRef(node);
+      setDropRef(node);
+    },
+    [setDragRef, setDropRef]
+  );
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...(draggable ? attributes : {})}
+      {...(draggable ? listeners : {})}
+      className={`relative overflow-visible ${draggable ? 'cursor-grab active:cursor-grabbing select-none' : ''}`}
+      style={{
+        width: tileSize,
+        height: tileSize,
+        opacity: isDragging || isDraggedLine ? 0.25 : 1,
+        touchAction: draggable ? 'none' : undefined,
+      }}
+    >
+      {showInsertBefore && (
+        <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 -translate-x-1/2" />
+      )}
+      {showInsertAfter && (
+        <div className="absolute right-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 translate-x-1/2" />
+      )}
+      <PokeballBg pokemon={pokemon} />
+      <img
+        src={pokemon.sprite}
+        alt={pokemon.name}
+        className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
+        loading="lazy"
+        draggable={false}
+      />
+    </div>
+  );
+}
+
+function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSize: number }) {
+  return (
+    <div className="relative overflow-visible" style={{ width: tileSize, height: tileSize }}>
+      <PokeballBg pokemon={pokemon} />
+      <img
+        src={pokemon.sprite}
+        alt={pokemon.name}
+        className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+        style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
+        draggable={false}
+      />
+    </div>
+  );
+}
+
+// ---------- Main page ----------
+
 export function ViewPage() {
   const sections = usePokedexStore((s) => s.sections);
   const sortOption = usePokedexStore((s) => s.viewSortOption);
-  const sorted = useViewSort(sections, sortOption);
+  const groupSpecialAtEnd = usePokedexStore((s) => s.viewGroupSpecialAtEnd);
+  const moveEvoLine = usePokedexStore((s) => s.moveEvoLine);
+  const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd);
   const count = sorted.length;
   const totalSlots = Math.max(count, 151);
   const { containerRef, tileSize } = useTileSize(totalSlots);
   const [exporting, setExporting] = useState(false);
+
+  // Drag enabled only when in build-order mode (otherwise re-sort would undo the drag visually)
+  const dragEnabled = sortOption === 'build-order';
+
+  // Reverse map: pokemonId → sectionId
+  const idToSection = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const groupId of BUILD_GROUP_IDS) {
+      for (const id of sections[groupId] ?? []) {
+        map.set(id, groupId);
+      }
+    }
+    return map;
+  }, [sections]);
+
+  // Drag state
+  const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
+  const [dragFromSection, setDragFromSection] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
+  const isTouchDrag = useRef(false);
+
+  const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
+  const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
+  const sensors = useSensors(mouseSensor, touchSensor);
+
+  const parseDragId = (id: string): number | null => {
+    if (!id.startsWith('view::')) return null;
+    return Number(id.slice(6));
+  };
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const pid = parseDragId(event.active.id as string);
+    if (pid === null) return;
+    const sectionId = idToSection.get(pid);
+    if (!sectionId) return;
+    // Evo line: all members of this pokemon's chain that are also in the same section
+    const line = getEvolutionLine(pid);
+    const lineIdSet = new Set(line.map((p) => p.id));
+    const sectionIds = sections[sectionId] ?? [];
+    const lineInSection = sectionIds.filter((id) => lineIdSet.has(id));
+    setDragLineIds(lineInSection);
+    setDragFromSection(sectionId);
+    isTouchDrag.current = event.activatorEvent instanceof TouchEvent;
+  }, [idToSection, sections]);
+
+  const handleDragMove = useCallback((event: DragMoveEvent) => {
+    if (!event.over) return;
+    const targetPid = parseDragId(event.over.id as string);
+    if (targetPid === null) return;
+    if (dragLineIds && dragLineIds.includes(targetPid)) return;
+
+    let startX: number | null = null;
+    const ae = event.activatorEvent;
+    if ('clientX' in ae) {
+      startX = (ae as MouseEvent).clientX;
+    } else if ('touches' in ae) {
+      const touches = (ae as TouchEvent).touches;
+      if (touches.length > 0) startX = touches[0].clientX;
+    }
+    if (startX === null) return;
+    const px = startX + event.delta.x;
+    const r = event.over.rect;
+    setDropSide(px > r.left + r.width / 2 ? 'right' : 'left');
+  }, [dragLineIds]);
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    setOverId(event.over ? (event.over.id as string) : null);
+  }, []);
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { over } = event;
+    if (!over || !dragLineIds || !dragFromSection) {
+      setDragLineIds(null);
+      setDragFromSection(null);
+      setOverId(null);
+      setDropSide('left');
+      return;
+    }
+
+    const targetPid = parseDragId(over.id as string);
+    if (targetPid === null || dragLineIds.includes(targetPid)) {
+      setDragLineIds(null);
+      setDragFromSection(null);
+      setOverId(null);
+      setDropSide('left');
+      return;
+    }
+
+    const targetSection = idToSection.get(targetPid);
+    if (!targetSection) {
+      setDragLineIds(null);
+      setDragFromSection(null);
+      setOverId(null);
+      setDropSide('left');
+      return;
+    }
+
+    const targetSectionIds = sections[targetSection] ?? [];
+    // Find target's evo line in the target section
+    const targetLine = getEvolutionLine(targetPid);
+    const targetLineIdSet = new Set(targetLine.map((p) => p.id));
+    const targetLineInSection = targetSectionIds.filter((id) => targetLineIdSet.has(id));
+
+    const dragSetLocal = new Set(dragLineIds);
+    let insertIdx: number;
+    if (dragFromSection === targetSection) {
+      const withoutDragged = targetSectionIds.filter((id) => !dragSetLocal.has(id));
+      const firstIdx = withoutDragged.indexOf(targetLineInSection[0]);
+      if (dropSide === 'right') {
+        const lastInLine = targetLineInSection[targetLineInSection.length - 1];
+        const lastIdx = withoutDragged.indexOf(lastInLine);
+        insertIdx = lastIdx >= 0 ? lastIdx + 1 : withoutDragged.length;
+      } else {
+        insertIdx = firstIdx >= 0 ? firstIdx : withoutDragged.length;
+      }
+    } else {
+      const firstIdx = targetSectionIds.indexOf(targetLineInSection[0]);
+      if (dropSide === 'right') {
+        const lastInLine = targetLineInSection[targetLineInSection.length - 1];
+        const lastIdx = targetSectionIds.indexOf(lastInLine);
+        insertIdx = lastIdx >= 0 ? lastIdx + 1 : targetSectionIds.length;
+      } else {
+        insertIdx = firstIdx >= 0 ? firstIdx : targetSectionIds.length;
+      }
+    }
+
+    moveEvoLine(dragFromSection, dragLineIds, targetSection, insertIdx);
+
+    setDragLineIds(null);
+    setDragFromSection(null);
+    setOverId(null);
+    setDropSide('left');
+  }, [dragLineIds, dragFromSection, sections, idToSection, moveEvoLine, dropSide]);
+
+  const handleDragCancel = useCallback(() => {
+    setDragLineIds(null);
+    setDragFromSection(null);
+    setOverId(null);
+    setDropSide('left');
+  }, []);
+
+  const insertIndicator = useMemo<{ pokemonId: number | null; side: 'left' | 'right' }>(() => {
+    if (!overId || !dragLineIds) return { pokemonId: null, side: 'left' };
+    const targetPid = parseDragId(overId);
+    if (targetPid === null || dragLineIds.includes(targetPid)) return { pokemonId: null, side: 'left' };
+
+    const targetSection = idToSection.get(targetPid);
+    if (!targetSection) return { pokemonId: null, side: 'left' };
+    const targetSectionIds = sections[targetSection] ?? [];
+    const targetLine = getEvolutionLine(targetPid);
+    const targetLineIdSet = new Set(targetLine.map((p) => p.id));
+    const targetLineInSection = targetSectionIds.filter((id) => targetLineIdSet.has(id));
+    if (targetLineInSection.length === 0) return { pokemonId: null, side: 'left' };
+
+    if (dropSide === 'right') {
+      return { pokemonId: targetLineInSection[targetLineInSection.length - 1], side: 'right' };
+    }
+    return { pokemonId: targetLineInSection[0], side: 'left' };
+  }, [overId, dragLineIds, sections, idToSection, dropSide]);
 
   const handleExport = useCallback(async () => {
     if (exporting || sorted.length === 0) return;
@@ -168,16 +454,21 @@ export function ViewPage() {
       await shareOrDownload(blob, `my-personal-151.png`);
       sendExportBeacon(sorted.map((p) => p.id));
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return; // share sheet dismissed
+      if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('Export failed:', err);
     } finally {
       setExporting(false);
     }
   }, [sorted, exporting]);
 
+  const dragOverlayPokemon = dragLineIds
+    ? dragLineIds.map((id) => sorted.find((p) => p.id === id)).filter((p): p is Pokemon => !!p)
+    : [];
+
+  const dragSet = useMemo(() => new Set(dragLineIds ?? []), [dragLineIds]);
+
   return (
     <div className="h-full flex flex-col">
-      {/* Header band — matches build page */}
       <div className="flex items-center justify-between px-4 py-2 border-b h-11">
         <h2 className="text-2xl font-extrabold tracking-tight leading-none">
           <span className="text-primary">{count}</span>
@@ -187,7 +478,7 @@ export function ViewPage() {
           <button
             onClick={handleExport}
             disabled={exporting || count === 0}
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
+            className="p-1.5 rounded-md border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-primary"
           >
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
           </button>
@@ -195,10 +486,8 @@ export function ViewPage() {
         </div>
       </div>
 
-      {/* Grid container — measured for tile sizing */}
       <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center p-2 overflow-y-auto">
         {tileSize > 0 && (() => {
-          // Split: full rows in grid, last partial row flex-centered
           const lastRowCount = totalSlots % COLS || COLS;
           const gridSlots = totalSlots - lastRowCount;
           const gridPokemon = sorted.slice(0, gridSlots);
@@ -221,61 +510,65 @@ export function ViewPage() {
             </div>
           );
 
+          const renderTile = (pokemon: Pokemon) => (
+            <DraggableViewTile
+              key={pokemon.id}
+              pokemon={pokemon}
+              tileSize={tileSize}
+              draggable={dragEnabled}
+              isDraggedLine={dragSet.has(pokemon.id)}
+              showInsertBefore={insertIndicator.pokemonId === pokemon.id && insertIndicator.side === 'left'}
+              showInsertAfter={insertIndicator.pokemonId === pokemon.id && insertIndicator.side === 'right'}
+            />
+          );
+
           return (
-          <div style={{ width: COLS * tileSize }}>
-            <div
-              className="grid"
-              style={{
-                gridTemplateColumns: `repeat(${COLS}, ${tileSize}px)`,
-                gridAutoRows: `${tileSize}px`,
-              }}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragMove={handleDragMove}
+              onDragOver={handleDragOver}
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel}
             >
-              {gridPokemon.map((pokemon) => (
+              <div style={{ width: COLS * tileSize }}>
                 <div
-                  key={pokemon.id}
-                  className="relative overflow-visible"
-                  style={{ width: tileSize, height: tileSize }}
+                  className="grid"
+                  style={{
+                    gridTemplateColumns: `repeat(${COLS}, ${tileSize}px)`,
+                    gridAutoRows: `${tileSize}px`,
+                  }}
                 >
-                  <PokeballBg pokemon={pokemon} />
-                  <img
-                    src={pokemon.sprite}
-                    alt={pokemon.name}
-                    className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                    style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
-                    loading="lazy"
-                  />
+                  {gridPokemon.map(renderTile)}
+                  {gridEmpties > 0 &&
+                    Array.from({ length: gridEmpties }, (_, i) => (
+                      <EmptyPlaceholder key={`empty-${i}`} k={`empty-${i}`} />
+                    ))}
                 </div>
-              ))}
-              {gridEmpties > 0 &&
-                Array.from({ length: gridEmpties }, (_, i) => (
-                  <EmptyPlaceholder key={`empty-${i}`} k={`empty-${i}`} />
-                ))}
-            </div>
-            {/* Last partial row — flex centered */}
-            <div className="flex justify-center" style={{ height: tileSize }}>
-              {lastRowPokemon.map((pokemon) => (
-                <div
-                  key={pokemon.id}
-                  className="relative overflow-visible"
-                  style={{ width: tileSize, height: tileSize }}
-                >
-                  <PokeballBg pokemon={pokemon} />
-                  <img
-                    src={pokemon.sprite}
-                    alt={pokemon.name}
-                    className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                    style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
-                    loading="lazy"
-                  />
+                <div className="flex justify-center" style={{ height: tileSize }}>
+                  {lastRowPokemon.map(renderTile)}
+                  {lastRowEmpties > 0 &&
+                    Array.from({ length: lastRowEmpties }, (_, i) => (
+                      <EmptyPlaceholder key={`empty-last-${i}`} k={`empty-last-${i}`} />
+                    ))}
                 </div>
-              ))}
-              {lastRowEmpties > 0 &&
-                Array.from({ length: lastRowEmpties }, (_, i) => (
-                  <EmptyPlaceholder key={`empty-last-${i}`} k={`empty-last-${i}`} />
-                ))}
-            </div>
-            <PageFooter />
-          </div>
+                <PageFooter />
+              </div>
+
+              <DragOverlay dropAnimation={null}>
+                {dragOverlayPokemon.length > 0 && (
+                  <div
+                    className="flex"
+                    style={isTouchDrag.current ? { transform: 'translateY(-80px)' } : undefined}
+                  >
+                    {dragOverlayPokemon.map((p) => (
+                      <StaticViewTile key={p.id} pokemon={p} tileSize={tileSize} />
+                    ))}
+                  </div>
+                )}
+              </DragOverlay>
+            </DndContext>
           );
         })()}
       </div>

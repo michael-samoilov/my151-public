@@ -36,6 +36,7 @@ interface PokedexState {
   drillDownNewOnly: boolean; // whether "gen X only" filter was active
   whatsAdvisorExpanded: boolean;
   viewSortOption: ViewSortOption;
+  viewGroupSpecialAtEnd: boolean;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -60,6 +61,7 @@ interface PokedexState {
   navigateDrillDown: (segment: DrillDownSegment) => void;
   setWhatsAdvisorExpanded: (expanded: boolean) => void;
   setViewSortOption: (option: ViewSortOption) => void;
+  setViewGroupSpecialAtEnd: (value: boolean) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -85,6 +87,7 @@ export const usePokedexStore = create<PokedexState>()(
       drillDownNewOnly: false,
       whatsAdvisorExpanded: true,
       viewSortOption: 'regional' as ViewSortOption,
+      viewGroupSpecialAtEnd: true,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -211,15 +214,17 @@ export const usePokedexStore = create<PokedexState>()(
       navigateDrillDown: (segment) => set({ drillDownSegment: segment }),
       setWhatsAdvisorExpanded: (expanded) => set({ whatsAdvisorExpanded: expanded }),
       setViewSortOption: (option) => set({ viewSortOption: option }),
+      setViewGroupSpecialAtEnd: (value) => set({ viewGroupSpecialAtEnd: value }),
     }),
     {
       name: 'personal-151-pokedex-v3',
-      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption }),
+      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd }),
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
           sections?: Record<string, number[]>;
           whatsAdvisorExpanded?: boolean;
           viewSortOption?: ViewSortOption;
+          viewGroupSpecialAtEnd?: boolean;
         };
 
         // Preserve all existing fields, only fix what needs fixing
@@ -251,9 +256,14 @@ export const usePokedexStore = create<PokedexState>()(
           result.viewSortOption = 'regional';
         }
 
+        // v5 → v6: new view grouping toggle
+        if (result.viewGroupSpecialAtEnd === undefined) {
+          result.viewGroupSpecialAtEnd = true;
+        }
+
         return result;
       },
-      version: 5,
+      version: 6,
     }
   )
 );
