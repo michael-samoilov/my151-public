@@ -100,8 +100,11 @@ export function AnalyticsDashboard() {
     }
   };
 
-  // "Yours" type chart — computed locally so excludeSpecial only affects this chart
-  const typeChartData: ButterflyRow[] = useMemo(() => {
+  // "Yours" type chart — computed locally so excludeSpecial only affects this chart.
+  // Returns the row data plus the pokemon count, which the chart needs as the
+  // percentage-label denominator — a dual-type pokemon contributes to two bars,
+  // so summing the bar counts would overcount the "dex size" the label refers to.
+  const typeChart = useMemo<{ rows: ButterflyRow[]; total: number }>(() => {
     const base = excludeSpecial ? filteredBaseline : fullBaseline;
     const allIds = Object.values(sections).flat();
     const starterSectionIds = new Set(sections['starter'] ?? []);
@@ -110,14 +113,14 @@ export function AnalyticsDashboard() {
       pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
     }
     const total = pokemon.length;
-    if (total === 0) return [];
+    if (total === 0) return { rows: [], total: 0 };
 
     const typeCounts: Record<string, number> = {};
     for (const t of TYPE_NAMES) typeCounts[t] = 0;
     for (const p of pokemon) {
       for (const t of p.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
     }
-    return TYPE_NAMES.map(t => {
+    const rows = TYPE_NAMES.map(t => {
       const yourProportion = typeCounts[t] / total;
       const globalProportion = base.typeProp[t];
       const deviation = globalProportion > 0 ? ((yourProportion / globalProportion) - 1) * 100 : 0;
@@ -129,7 +132,9 @@ export function AnalyticsDashboard() {
         icon: typeIconPath(t as TypeName),
       };
     }).sort((a, b) => b.deviation - a.deviation);
+    return { rows, total };
   }, [sections, excludeSpecial]);
+  const typeChartData = typeChart.rows;
 
   const genChartData: ButterflyRow[] = useMemo(() =>
     analytics.generationDeviation.map((d, i) => {
@@ -177,12 +182,13 @@ export function AnalyticsDashboard() {
     genChartData.filter(d => d.count > 0).map(d => ({ kind: 'generation' as const, generation: parseInt(d.label.replace('Gen ', '')) })),
     [genChartData]);
 
-  // Compute type chart data for a regional/national dex
-  const regionalTypeChartData: ButterflyRow[] = useMemo(() => {
-    if (selectedTypeChart === 'yours') return [];
+  // Compute type chart data for a regional/national dex (also returns the
+  // pokemon count for the chart's percentage-label denominator).
+  const regionalTypeChart = useMemo<{ rows: ButterflyRow[]; total: number }>(() => {
+    if (selectedTypeChart === 'yours') return { rows: [], total: 0 };
     const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
     const isNational = selectedTypeChart === 'national';
-    if (!dex && !isNational) return [];
+    if (!dex && !isNational) return { rows: [], total: 0 };
 
     const base = excludeSpecial ? filteredBaseline : fullBaseline;
     let pokemon = isNational
@@ -195,7 +201,7 @@ export function AnalyticsDashboard() {
       pokemon = pokemon.filter(p => p.generation === dex.generation);
     }
     const total = pokemon.length;
-    if (total === 0) return [];
+    if (total === 0) return { rows: [], total: 0 };
 
     const typeCounts: Record<string, number> = {};
     for (const t of TYPE_NAMES) typeCounts[t] = 0;
@@ -203,7 +209,7 @@ export function AnalyticsDashboard() {
       for (const t of p.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
     }
 
-    return TYPE_NAMES.map(t => {
+    const rows = TYPE_NAMES.map(t => {
       const yourProportion = typeCounts[t] / total;
       const globalProportion = base.typeProp[t];
       const ratio = globalProportion > 0 ? yourProportion / globalProportion : 0;
@@ -218,13 +224,16 @@ export function AnalyticsDashboard() {
     }).sort(isNational
       ? (a, b) => b.count - a.count
       : (a, b) => b.deviation - a.deviation);
+    return { rows, total };
   }, [selectedTypeChart, excludeSpecial, newPokemonOnly]);
+  const regionalTypeChartData = regionalTypeChart.rows;
 
   const regionalTypeSiblings = useMemo((): DrillDownSegment[] =>
     regionalTypeChartData.filter(d => d.count > 0).map(d => ({ kind: 'type' as const, type: d.label.toLowerCase() })),
     [regionalTypeChartData]);
 
   const activeTypeChartData = selectedTypeChart === 'yours' ? typeChartData : regionalTypeChartData;
+  const activeTypeChartTotal = selectedTypeChart === 'yours' ? typeChart.total : regionalTypeChart.total;
   const isNationalSelected = selectedTypeChart === 'national';
   const selectedDex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
 
@@ -634,6 +643,11 @@ export function AnalyticsDashboard() {
                 sortBy={typeSortBy}
                 onSortChange={setTypeSortBy}
                 disableEmptyRows
+                // Types overlap (dual-types contribute to two bars), so the
+                // default "share of type mentions" denominator would dilute
+                // every percentage. Pass the pokemon count so each bar reads
+                // as "share of the dex".
+                countDenominator={activeTypeChartTotal}
                 onBarClick={(label) => {
                   if (selectedTypeChart === 'yours') {
                     handleDrillToggle({ kind: 'type', type: label.toLowerCase() }, typeSiblings, excludeSpecial);

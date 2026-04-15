@@ -36,9 +36,17 @@ interface ButterflyChartProps {
   onSortChange?: (col: 'count' | 'deviation') => void;
   /** When true, rows with count === 0 are not clickable */
   disableEmptyRows?: boolean;
+  /** Override the denominator used for the per-bar percentage label. Defaults
+   *  to the sum of all counts in `data`. That default is correct for
+   *  disjoint categories (e.g. generations), but for overlapping categories
+   *  like types — where a dual-type pokemon contributes to two bars — the
+   *  correct denominator is the number of pokemon, not the sum of type-slot
+   *  mentions. Pass `pokemon.length` in that case so each bar reads as
+   *  "share of the dex" rather than "share of type mentions". */
+  countDenominator?: number;
 }
 
-export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -55,6 +63,10 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
   if (data.length === 0) return null;
 
   const countTotal = data.reduce((s, d) => s + d.count, 0);
+  // Denominator for the per-bar percentage label. Fall back to the sum of
+  // counts when no explicit denominator is provided — correct for disjoint
+  // categories like generations.
+  const pctDenominator = countDenominator ?? countTotal;
 
   // Layout: 3-column system
   // Col A: labels + icons (fixed) | Col B: chart 1 (count/score) | Col C: chart 2 (deviation)
@@ -318,7 +330,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                 >
                   {scoreMode
                     ? (d.count >= 0 ? '+' : '') + d.count.toFixed(2)
-                    : `${d.count} (${countTotal > 0 ? ((d.count / countTotal) * 100).toFixed(0) : 0}%)`
+                    : `${d.count} (${pctDenominator > 0 ? ((d.count / pctDenominator) * 100).toFixed(0) : 0}%)`
                   }
                 </text>
 
