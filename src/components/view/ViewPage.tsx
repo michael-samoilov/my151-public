@@ -520,7 +520,10 @@ export function ViewPage() {
 
                 <DragOverlay dropAnimation={null}>
                   {dragOverlayPokemon.length > 0 && (
-                    <div className="flex">
+                    <div
+                      className="flex absolute top-1/2 left-1/2"
+                      style={{ transform: 'translate(-50%, -50%)' }}
+                    >
                       {dragOverlayPokemon.map((p) => (
                         <StaticViewTile key={p.id} pokemon={p} tileSize={tileSize} />
                       ))}

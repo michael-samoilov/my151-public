@@ -822,7 +822,10 @@ export function PokedexGrid() {
 
               <DragOverlay dropAnimation={null}>
                 {dragLineIds && (
-                  <div className="flex gap-[1vw] md:gap-1">
+                  <div
+                    className="flex gap-[1vw] md:gap-1 absolute top-1/2 left-1/2"
+                    style={{ transform: 'translate(-50%, -50%)' }}
+                  >
                     {dragLineIds.map((id) => (
                       <div key={id} className="w-[calc((100vw-24px-5vw)/6)] md:w-[calc((100%-20px)/6)] max-w-[90px]">
                         <PokemonTileStatic id={id} />
