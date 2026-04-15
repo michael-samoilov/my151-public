@@ -209,6 +209,8 @@ function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSize: num
         alt={pokemon.name}
         className="absolute z-10 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{ imageRendering: 'pixelated', width: tileSize * 1.2 }}
+        loading="lazy"
+        decoding="async"
         draggable={false}
       />
     </div>

@@ -33,9 +33,12 @@ export function useTileSpritePx(): number {
 export const TILE_ROOT_PADDING_CLASS =
   'pt-[calc(var(--tile-sprite)*0.045)] pb-[calc(var(--tile-sprite)*0.09)]';
 
-/** Positioning + size for the gen badge overlay (generation indicator). */
+/** Positioning + size for the gen badge overlay (generation indicator).
+ *  Mirrors the action-button class on the opposite corner — same top
+ *  offset, same size, and a left offset equal to the action button's
+ *  right offset — so gen badge and pokeball/X render as visual siblings. */
 export const TILE_GEN_BADGE_CLASS =
-  'absolute top-0 left-[calc(var(--tile-sprite)*0.14)] w-[calc(var(--tile-sprite)*0.23)] h-[calc(var(--tile-sprite)*0.23)] z-10';
+  'absolute top-[calc(var(--tile-sprite)*0.05)] left-[calc(var(--tile-sprite)*0.14)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] z-10';
 
 /** Positioning + size for action-button overlays (X / pokeball / plus). */
 export const TILE_ACTION_BUTTON_CLASS =
@@ -70,18 +73,26 @@ export function PokemonTileContent({
 }: PokemonTileContentProps) {
   return (
     <div className={cn('flex flex-col items-center w-full', contentClassName)}>
-      <div
-        style={{
-          width: spritePx,
-          height: spritePx,
-          backgroundImage: `url(${spriteUrl ?? pokemon.sprite})`,
-          backgroundSize: `${spritePx}px ${spritePx}px`,
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center',
-          imageRendering: 'pixelated',
-        }}
-        role="img"
-        aria-label={pokemon.name}
+      {/*
+        Native lazy-loaded <img> rather than a CSS background-image on a
+        <div>. CSS backgrounds bypass `loading="lazy"` and fire off all
+        ~151 sprite requests on initial paint, swamping the browser's
+        request queue and starving the lazy type-badge <img>s behind them
+        (the symptom: type badges load long after sprites on desktop).
+        With <img loading="lazy">, only tiles near the viewport request
+        their sprite at first paint; off-screen tiles defer until scrolled
+        into view. width/height attrs match spritePx so the layout is
+        stable and matches the prior background-size snap behavior.
+      */}
+      <img
+        src={spriteUrl ?? pokemon.sprite}
+        alt={pokemon.name}
+        width={spritePx}
+        height={spritePx}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+        style={{ imageRendering: 'pixelated' }}
       />
       <span className="text-[calc(var(--tile-sprite)*0.18)] font-medium capitalize truncate text-center leading-tight w-full px-[calc(var(--tile-sprite)*0.045)]">
         {displayName(pokemon.name)}
