@@ -12,6 +12,7 @@ import { Trash2, Plus, X, Settings } from 'lucide-react';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DebugDropGrid } from '@/components/shared/DebugDropGrid';
+import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import {
   DndContext,
   MouseSensor,
@@ -855,6 +856,7 @@ export function PokedexGrid() {
                 <EffectiveCursorMarker x={cursorPos.x} y={cursorPos.y} />
               )}
               <DebugDropGrid />
+              <DragMeasureKicker />
             </DndContext>
           </div>
           <PageFooter />

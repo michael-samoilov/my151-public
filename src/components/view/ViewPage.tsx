@@ -7,6 +7,7 @@ import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DebugDropGrid } from '@/components/shared/DebugDropGrid';
+import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
@@ -553,6 +554,7 @@ export function ViewPage() {
                   <EffectiveCursorMarker x={cursorPos.x} y={cursorPos.y} />
                 )}
                 <DebugDropGrid />
+                <DragMeasureKicker />
               </DndContext>
             );
           })()}
