@@ -6,6 +6,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
+import { DebugDropGrid } from '@/components/shared/DebugDropGrid';
 import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
@@ -551,6 +552,7 @@ export function ViewPage() {
                 {cursorPos && dragLineIds && (
                   <EffectiveCursorMarker x={cursorPos.x} y={cursorPos.y} />
                 )}
+                <DebugDropGrid />
               </DndContext>
             );
           })()}
