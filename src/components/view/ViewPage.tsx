@@ -20,10 +20,26 @@ import {
   DragOverlay,
   useDroppable,
   useDraggable,
+  MeasuringStrategy,
   type DragStartEvent,
   type DragEndEvent,
   type DragMoveEvent,
 } from '@dnd-kit/core';
+
+/**
+ * Re-measure droppable rects on every frame during a drag. The default
+ * ("WhileDragging") measures once at drag-start, which is stale the
+ * moment layout shifts underneath the drag — the big offender is iOS
+ * Safari collapsing its URL bar on the first touch after a page load,
+ * which shifts every tile up a few px. With stale rects the snap
+ * indicator pins to the pre-shift tile while the faint cursor
+ * (viewport-fixed on raw pointer) keeps pointing at the actual visual
+ * tile, so the two diverge on the first drag only. MeasuringStrategy
+ * .Always keeps them in sync.
+ */
+const DND_MEASURING = {
+  droppable: { strategy: MeasuringStrategy.Always },
+} as const;
 
 const COLS = 10;
 
@@ -489,6 +505,7 @@ export function ViewPage() {
                 sensors={sensors}
                 collisionDetection={effectiveCursorCollision}
                 modifiers={[snapCenterToPointer]}
+                measuring={DND_MEASURING}
                 onDragStart={handleDragStart}
                 onDragMove={handleDragMove}
                 onDragEnd={handleDragEnd}

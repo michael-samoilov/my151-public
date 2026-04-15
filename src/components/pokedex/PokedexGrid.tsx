@@ -19,11 +19,25 @@ import {
   useSensors,
   DragOverlay,
   useDroppable,
+  MeasuringStrategy,
   type DragStartEvent,
   type DragEndEvent,
   type DragMoveEvent,
 } from '@dnd-kit/core';
 import { useDraggable } from '@dnd-kit/core';
+
+/**
+ * Re-measure droppable rects on every frame. See ViewPage.tsx for the
+ * full rationale — in short, iOS Safari collapses its URL bar on the
+ * first touch after a page load, shifting layout; dnd-kit's default
+ * WhileDragging strategy caches rects at drag-start, so the snap
+ * indicator ends up stuck on pre-shift tile positions while the faint
+ * viewport-fixed cursor tracks the real finger. Always-measuring
+ * keeps both in sync.
+ */
+const DND_MEASURING = {
+  droppable: { strategy: MeasuringStrategy.Always },
+} as const;
 
 // ---------- helpers ----------
 
@@ -801,6 +815,7 @@ export function PokedexGrid() {
               sensors={sensors}
               collisionDetection={effectiveCursorCollision}
               modifiers={[snapCenterToPointer]}
+              measuring={DND_MEASURING}
               onDragStart={handleDragStart}
               onDragMove={handleDragMove}
               onDragEnd={handleDragEnd}
