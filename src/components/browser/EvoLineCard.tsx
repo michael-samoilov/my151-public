@@ -178,11 +178,19 @@ export function EvoLineCard({ members, matchedIds, mutedIds, assignedIds, staged
   const primaryType = members[0].types[0];
   const bgColor = TYPE_COLORS[primaryType as keyof typeof TYPE_COLORS] ?? '#888';
 
-  // Generation of the matched member — the one that earned this subgroup entry.
-  // Using the matched member's gen (not members[0]) ensures the badge marks
-  // the *other* members as cross-gen, not the highlighted one itself.
-  // e.g. in a Gen 2 subgroup Sudowoodo is matched (Gen 2), so Bonsly (Gen 4) gets the badge.
-  const lineGen = members.find(m => matchedIds.has(m.id))?.generation ?? members[0].generation;
+  // Line's "home" gen = earliest-introduced member's gen. Matches how the
+  // regional drilldown buckets the line (min gen across members) and handles
+  // retro baby pre-evolutions correctly: for Chingling (Gen 4) → Chimecho
+  // (Gen 3), lineGen = 3, so Chingling (Gen 4) gets the cross-gen badge and
+  // Chimecho (the originally-introduced member shown in its native gen
+  // section) does not. Using chain-order (members[0]) or first-matched-in-
+  // chain-order inverts this for retro babies like Wynaut→Wobbuffet.
+  // Prefer matched members as the reference set when available, so
+  // unmatched chain-mates (e.g. Rolycoly in a Fire drilldown) can't pull the
+  // home gen away from the actual match.
+  const matchedMembers = members.filter(m => matchedIds.has(m.id));
+  const referenceMembers = matchedMembers.length > 0 ? matchedMembers : members;
+  const lineGen = Math.min(...referenceMembers.map(m => m.generation));
 
   return (
     <>
