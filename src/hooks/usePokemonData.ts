@@ -248,44 +248,49 @@ export interface EvolutionGroup {
  */
 export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): EvolutionGroup[] {
   const filtered = useFilteredPokemon(options);
+  const evoLineSizeKey = options.evoLineSize ? options.evoLineSize.join(',') : '';
 
-  // No useMemo — recompute every render to avoid stale cache issues.
-  const filteredIds = new Set(filtered.map((p) => p.id));
+  // Memoized on the already-memoized `filtered` array. Only recomputes
+  // when filter inputs actually change — big INP win, since this walks
+  // every pokemon's evolution chain and was running on every render.
+  return useMemo(() => {
+    const filteredIds = new Set(filtered.map((p) => p.id));
+    const seenBranches = new Set<string>();
+    const result: EvolutionGroup[] = [];
 
-  const seenBranches = new Set<string>();
-  const result: EvolutionGroup[] = [];
+    for (const p of filtered) {
+      const lines = getAllEvolutionLines(p.id);
 
-  for (const p of filtered) {
-    const lines = getAllEvolutionLines(p.id);
+      for (const line of lines) {
+        const branchKey = line.map((m) => m.id).join('-');
+        if (seenBranches.has(branchKey)) continue;
+        seenBranches.add(branchKey);
 
-    for (const line of lines) {
-      const branchKey = line.map((m) => m.id).join('-');
-      if (seenBranches.has(branchKey)) continue;
-      seenBranches.add(branchKey);
+        const matchedIds = new Set(line.filter((m) => filteredIds.has(m.id)).map((m) => m.id));
 
-      const matchedIds = new Set(line.filter((m) => filteredIds.has(m.id)).map((m) => m.id));
+        result.push({
+          chainId: p.evolutionChainId * 10000 + line[line.length - 1].id,
+          members: line,
+          matchedIds,
+        });
+      }
+    }
 
-      result.push({
-        chainId: p.evolutionChainId * 10000 + line[line.length - 1].id,
-        members: line,
-        matchedIds,
+    result.sort((a, b) => a.members[0].id - b.members[0].id);
+
+    // Post-filter by evo line size
+    if (options.evoLineSize && options.evoLineSize.length > 0) {
+      const sizes = new Set(options.evoLineSize);
+      return result.filter(group => {
+        const len = group.members.length;
+        if (sizes.has(3) && len >= 3) return true;
+        if (sizes.has(2) && len === 2) return true;
+        if (sizes.has(1) && len === 1) return true;
+        return false;
       });
     }
-  }
 
-  result.sort((a, b) => a.members[0].id - b.members[0].id);
-
-  // Post-filter by evo line size
-  if (options.evoLineSize && options.evoLineSize.length > 0) {
-    const sizes = new Set(options.evoLineSize);
-    return result.filter(group => {
-      const len = group.members.length;
-      if (sizes.has(3) && len >= 3) return true;
-      if (sizes.has(2) && len === 2) return true;
-      if (sizes.has(1) && len === 1) return true;
-      return false;
-    });
-  }
-
-  return result;
+    return result;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, evoLineSizeKey]);
 }

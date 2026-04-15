@@ -217,6 +217,18 @@ export function PokemonBrowser() {
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
   const evoSizeKey = evoLineSizeFilter ? evoLineSizeFilter.join(',') : 'none';
 
+  // Reset the results scroll position when the active filter set changes.
+  // This used to be implemented by putting a composite key on the scroll
+  // container (forcing React to unmount/remount every child), which made
+  // every filter tap rebuild every evo-line card and decode every sprite
+  // from scratch — catastrophic for INP. Scrolling the existing node to
+  // the top gives the same UX at ~0 ms cost.
+  const resultsScrollRef = useRef<HTMLDivElement>(null);
+  const resultsResetKey = `${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`;
+  useEffect(() => {
+    resultsScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [resultsResetKey]);
+
   const browserHeaderRef = useRef<HTMLDivElement>(null);
 
   // Block vertical touchmove on header to prevent pull-to-refresh mid-browser,
@@ -588,7 +600,7 @@ export function PokemonBrowser() {
 
       {/* Results area */}
       <div
-        key={`${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`}
+        ref={resultsScrollRef}
         className="flex-1 min-h-0 overflow-y-auto px-2 pb-2"
         style={{ WebkitOverflowScrolling: 'touch', ...(!isDesktop && { overscrollBehavior: 'contain' }) } as React.CSSProperties}
       >
