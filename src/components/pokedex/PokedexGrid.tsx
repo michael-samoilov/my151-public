@@ -816,6 +816,7 @@ export function PokedexGrid() {
               collisionDetection={effectiveCursorCollision}
               modifiers={[snapCenterToPointer]}
               measuring={DND_MEASURING}
+              autoScroll={{ layoutShiftCompensation: false }}
               onDragStart={handleDragStart}
               onDragMove={handleDragMove}
               onDragEnd={handleDragEnd}

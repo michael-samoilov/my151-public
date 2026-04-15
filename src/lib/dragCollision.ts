@@ -97,44 +97,41 @@ export const effectiveCursorCollision: CollisionDetection = (args) => {
 };
 
 /**
- * Center the DragOverlay on the pointer and lift it by OVERLAY_LIFT_PX
- * in a single transform. Two things matter here:
+ * Center the DragOverlay on the CURRENT pointer (not the activator
+ * event's initial point) and lift it by OVERLAY_LIFT_PX — all in one
+ * transform. Three things matter:
  *
  * 1. Centering independent of grab point. Without this, dnd-kit's
  *    default preserves the initial finger-to-tile offset — grab the
- *    left edge of a 5-tile bundle and the overlay pins to the thumb's
- *    left; grab the right and it pins right. We want the bundle
- *    always centered on the finger/mouse.
+ *    left edge of a 5-tile bundle and it pins to the thumb's left;
+ *    grab the right and it pins right. We want the bundle always
+ *    centered on the finger/mouse.
  *
- * 2. The lift MUST be baked into this transform rather than applied
- *    via a child `translateY(-N)` style. `draggingNodeRect` is the
- *    overlay's getBoundingClientRect, which includes any CSS
+ * 2. Use live pointer, not activator. The standard snapCenterToCursor
+ *    derives the current pointer indirectly (activator + transform
+ *    delta). That breaks if anything between drag-start and the
+ *    current frame drifts — e.g. an auto-scroll shifts the page
+ *    without generating a pointer-move event, so the overlay ends up
+ *    at a different visual position than the faint cursor and snap
+ *    indicator (which both read from dragPointerRef directly). Using
+ *    dragPointerRef for the overlay too keeps all three aligned on
+ *    the same viewport-coord source of truth.
+ *
+ * 3. The lift MUST be in this transform, not a child translateY.
+ *    draggingNodeRect is getBoundingClientRect — it includes any CSS
  *    transforms on descendants — so a nested translateY shifts the
- *    rect, and the centering math below (which uses the rect's
- *    left/top and height) compensates it back out. Net result: the
- *    inner translate is neutralized and the overlay ends up centered
- *    on the thumb. Applying the lift here — on the same transform
- *    dnd-kit uses for positioning — avoids that tug-of-war.
+ *    rect, and the centering math below compensates it back out
+ *    (they cancel).
  */
 export const snapCenterToPointer: Modifier = ({
-  activatorEvent,
   draggingNodeRect,
   transform,
 }) => {
-  if (!draggingNodeRect || !activatorEvent) return transform;
-  const e = activatorEvent as MouseEvent | TouchEvent;
-  const p =
-    'touches' in e && e.touches.length > 0
-      ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
-      : 'clientX' in e
-        ? { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY }
-        : null;
-  if (!p) return transform;
-  const offsetX = p.x - draggingNodeRect.left;
-  const offsetY = p.y - draggingNodeRect.top;
+  const ptr = dragPointerRef.current;
+  if (!draggingNodeRect || !ptr) return transform;
   return {
     ...transform,
-    x: transform.x + offsetX - draggingNodeRect.width / 2,
-    y: transform.y + offsetY - draggingNodeRect.height / 2 - OVERLAY_LIFT_PX,
+    x: ptr.x - draggingNodeRect.left - draggingNodeRect.width / 2,
+    y: ptr.y - draggingNodeRect.top - draggingNodeRect.height / 2 - OVERLAY_LIFT_PX,
   };
 };

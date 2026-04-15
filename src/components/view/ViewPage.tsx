@@ -506,6 +506,7 @@ export function ViewPage() {
                 collisionDetection={effectiveCursorCollision}
                 modifiers={[snapCenterToPointer]}
                 measuring={DND_MEASURING}
+                autoScroll={{ layoutShiftCompensation: false }}
                 onDragStart={handleDragStart}
                 onDragMove={handleDragMove}
                 onDragEnd={handleDragEnd}
