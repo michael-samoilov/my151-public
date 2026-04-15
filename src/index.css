@@ -2,6 +2,15 @@
 
 html {
   /* overscroll-behavior handled per scroll-container so pull-to-refresh works from the header */
+
+  /* Fluid root font-size so all rem-based Tailwind utilities (text-xs, text-sm,
+   * p-2, gap-3, etc.) scale together with viewport. Calibrated mobile-canonical:
+   * at 390px this clamps to 16px (browser default — today's mobile feel is
+   * preserved), and grows linearly to 20px at/above ~1000px viewport so
+   * chrome text/spacing grows uniformly on desktop instead of getting stuck
+   * at 10–14px caps. Tile-internal sizing uses --tile-sprite (set per-tile,
+   * see usePixelPerfectSprite + EvoLineCard) — it doesn't depend on this. */
+  font-size: clamp(16px, 13px + 0.7vw, 20px);
 }
 
 @custom-variant dark (&:is(.dark *));
