@@ -141,15 +141,17 @@ export function computeDrillDownData(
         if (sec) { lineSectionId = sec; break; }
       }
 
-      // matchedIds = members matching the segment AND not excluded
-      // Excluded members will appear as part of the line but grayed out
+      // matchedIds = members matching the segment AND not excluded.
+      // mutedIds = chain-mates that don't match the segment (e.g. Rolycoly in
+      // a Fire drilldown is Rock-only but travels with Carkol/Coalossal) plus
+      // members matching the segment but excluded by the "No Starters/
+      // Legendaries" toggle. Both get rendered as de-emphasized context.
       const lineMatchedIds = new Set<number>();
       const lineMutedIds = new Set<number>();
       for (const m of line) {
         if (matchingIds.has(m.id) && !excludedIds.has(m.id)) {
           lineMatchedIds.add(m.id);
-        }
-        if (excludedIds.has(m.id)) {
+        } else {
           lineMutedIds.add(m.id);
         }
       }
@@ -275,14 +277,20 @@ function computeRegionalDrillDown(
     if (p) chainIds.add(p.evolutionChainId);
 
     // matchedIds = members that match the segment, are in the user's pokedex,
-    //   and aren't excluded. mutedIds = excluded members of the line.
+    //   and aren't excluded.
+    // mutedIds = chain-mates that don't match the segment (e.g. Rolycoly in a
+    //   Fire drilldown) plus members matching but excluded by the toggle.
+    //   Members matching the segment but not in the user's pokedex stay at
+    //   full opacity so regional-dex context remains visible.
     const lineMatchedIds = new Set<number>();
     const lineMutedIds = new Set<number>();
     for (const m of line) {
-      if (matchingIds.has(m.id) && userPlacedIds.has(m.id) && !excludedIds.has(m.id)) {
+      const matches = matchingIds.has(m.id);
+      const excluded = excludedIds.has(m.id);
+      if (matches && userPlacedIds.has(m.id) && !excluded) {
         lineMatchedIds.add(m.id);
       }
-      if (excludedIds.has(m.id)) {
+      if (!matches || excluded) {
         lineMutedIds.add(m.id);
       }
     }
