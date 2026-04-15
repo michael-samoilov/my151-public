@@ -3,8 +3,24 @@ import { useSyncExternalStore } from 'react';
 const SPRITE_SRC_PX = 96;
 
 /**
- * Shared viewport state — a single pair of listeners for all hook consumers.
- * Recomputes on resize and DPR change, notifying all subscribers.
+ * Shared viewport state — a single set of listeners for all hook consumers.
+ * Recomputes on any viewport-shape change, notifying all subscribers.
+ *
+ * We listen to FOUR signals because no single one is reliable across
+ * browser/OS/zoom-type combos:
+ *   • window.resize — standard layout resize + desktop browser zoom (Ctrl+=)
+ *   • visualViewport.resize — trackpad pinch zoom on macOS Chrome/Safari
+ *     and iOS/Android pinch zoom. These DO NOT fire window.resize.
+ *   • matchMedia(resolution) — DPR changes (moving window between monitors,
+ *     some browser-zoom levels that snap to new DPR buckets).
+ *   • ResizeObserver on documentElement — catch-all for any layout-shape
+ *     change a browser doesn't dispatch one of the above events for
+ *     (observed: some Chromium zoom-out transitions that leave sprites
+ *     stuck at their zoomed-in size because no resize event fires).
+ *
+ * Any of these firing triggers a recompute; the useSyncExternalStore
+ * comparison handles the common case where the computed value is
+ * unchanged (no-op re-render).
  */
 let vpListeners = new Set<() => void>();
 let vpVersion = 0;
@@ -12,12 +28,21 @@ let vpVersion = 0;
 if (typeof window !== 'undefined') {
   const notify = () => { vpVersion++; vpListeners.forEach((fn) => fn()); };
   window.addEventListener('resize', notify);
-  // Track DPR changes (e.g. dragging window between monitors)
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', notify);
+  }
+  // Track DPR changes (e.g. dragging window between monitors, zoom bucket snaps)
   const watchDpr = () => {
     const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     mq.addEventListener('change', () => { notify(); watchDpr(); }, { once: true });
   };
   watchDpr();
+  // Catch-all: ResizeObserver fires on any layout-affecting change to the
+  // document root, including zoom transitions that miss resize events.
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(notify);
+    ro.observe(document.documentElement);
+  }
 }
 
 function subscribeFn(cb: () => void) {
