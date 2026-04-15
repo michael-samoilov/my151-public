@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAnalytics, fullBaseline, filteredBaseline } from '@/hooks/useAnalytics';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -69,6 +69,25 @@ export function AnalyticsDashboard() {
   const [typeView, setTypeView] = useState<'distribution' | 'matchup'>('distribution');
   const [typeSortBy, setTypeSortBy] = useState<'count' | 'deviation'>('deviation');
 
+  // Mekko-chart container width, used to scale chart geometry (bar heights,
+  // legend label heights, count-label font size). Without this, the mekko
+  // chart stays pinned to its mobile-reference pixel constants on desktop
+  // and ends up looking cramped relative to the surrounding type charts
+  // which already scale via ButterflyChart's internal ResizeObserver.
+  const mekkoRef = useRef<HTMLDivElement>(null);
+  const [mekkoWidth, setMekkoWidth] = useState(0);
+  useEffect(() => {
+    if (!mekkoRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? 0;
+      if (w > 0) setMekkoWidth(w);
+    });
+    ro.observe(mekkoRef.current);
+    return () => ro.disconnect();
+  }, []);
+  // Same curve as ButterflyChart / SuperimposedHistogram — 1 at mobile
+  // (≤360px), 2 at desktop (≥720px).
+  const mekkoScale = mekkoWidth > 0 ? Math.max(1, Math.min(mekkoWidth / 360, 2)) : 1;
 
   const analytics = useAnalytics();
   const sections = usePokedexStore((s) => s.sections);
@@ -804,10 +823,10 @@ export function AnalyticsDashboard() {
               No Starters/Legendaries
             </button>
           </div>
-          <div className="bg-card rounded-lg border p-4">
+          <div ref={mekkoRef} className="bg-card rounded-lg border p-4">
             {mekkoData.totalLines > 0 ? (() => {
-              const chartHeight = 180;
-              const topMargin = 20;
+              const chartHeight = 180 * mekkoScale;
+              const topMargin = 20 * mekkoScale;
               const gap = 8;
               const MIN_SEG = 0;
               const stageTotals: Record<number, number> = {};
@@ -858,8 +877,8 @@ export function AnalyticsDashboard() {
                 legendYAccum += s.height;
                 return center;
               });
-              const LEGEND_LABEL_H = 34;
-              const LEGEND_LABEL_H_FIRST = 46; // first label has 3 lines (includes "Pokémon")
+              const LEGEND_LABEL_H = 34 * mekkoScale;
+              const LEGEND_LABEL_H_FIRST = 46 * mekkoScale; // first label has 3 lines (includes "Pokémon")
               const legendLabelHeights = activeSegs.map((seg) =>
                 isFirstLegend(seg.stage) ? LEGEND_LABEL_H_FIRST : LEGEND_LABEL_H
               );
@@ -905,9 +924,9 @@ export function AnalyticsDashboard() {
 
                         // Think-cell style 2D label placement
                         // Priority: inside centered → best nearby candidate position
-                        const LABEL_FONT = 10;
-                        const LABEL_FIT = 14; // min segment height to fit label inside
-                        const PILL_H = 12; // label pill height in px
+                        const LABEL_FONT = 10 * mekkoScale;
+                        const LABEL_FIT = 14 * mekkoScale; // min segment height to fit label inside
+                        const PILL_H = 12 * mekkoScale; // label pill height in px
                         // Build segment geometry (from bottom of stacked bar)
                         let yAcc = 0;
                         const segGeo = col.segments.map((seg, segIdx) => {
@@ -969,7 +988,7 @@ export function AnalyticsDashboard() {
                           >
                             {colTotal > 0 && (
                               <>
-                                <div className="text-center text-xs text-muted-foreground font-bold mb-0.5 leading-tight flex items-end justify-center tabular-nums" style={{ height: 26 }}>
+                                <div className="text-center text-xs text-muted-foreground font-bold mb-0.5 leading-tight flex items-end justify-center tabular-nums" style={{ height: 26 * mekkoScale }}>
                                   <span>{colTotal} {colIdx === 0 && 'Pokémon '}<span className="font-normal">({pokePct}%)</span></span>
                                 </div>
                                 <div className="relative" style={{
@@ -1046,13 +1065,14 @@ export function AnalyticsDashboard() {
                                       }
                                       // Displaced: background pill in segment color
                                       const bgColor = STAGE_COLORS[label.stage - 1];
-                                      const pillW = String(label.count).length * 7 + 6;
+                                      const pillW = (String(label.count).length * 7 + 6) * mekkoScale;
+                                      const pillH = 12 * mekkoScale;
                                       return (
                                         <g key={label.stage}>
                                           <rect
                                             x={`calc(${label.xPct}% - ${pillW / 2}px)`}
-                                            y={labelY - 6}
-                                            width={pillW} height={12}
+                                            y={labelY - pillH / 2}
+                                            width={pillW} height={pillH}
                                             rx={3}
                                             fill={bgColor}
                                           />
@@ -1082,7 +1102,7 @@ export function AnalyticsDashboard() {
                           <div
                             key={col.lineLength}
                             className="flex-1 text-center text-xs text-muted-foreground font-bold leading-tight tabular-nums cursor-pointer"
-                            style={{ height: 38, textDecoration: isXActive ? 'underline' : undefined, textDecorationColor: isXActive ? STAGE_LINE_COLORS[col.lineLength - 1] : undefined }}
+                            style={{ height: 38 * mekkoScale, textDecoration: isXActive ? 'underline' : undefined, textDecorationColor: isXActive ? STAGE_LINE_COLORS[col.lineLength - 1] : undefined }}
                             onClick={() => col.chainCount > 0 && handleDrillToggle({ kind: 'lineLength', lineLength: col.lineLength }, undefined, excludeSpecialMekko)}
                           >
                             <span style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
@@ -1094,17 +1114,19 @@ export function AnalyticsDashboard() {
                     </div>
                   </div>
                   {/* Inline legend — with leader lines when labels would overlap */}
-                  <div className="relative shrink-0" style={{ height: containerH, marginLeft: 12, width: 68 }}>
+                  <div className="relative shrink-0" style={{ height: containerH, marginLeft: 12 * mekkoScale, width: 68 * mekkoScale }}>
                     {/* SVG leader lines (only when labels are displaced) */}
                     {anyDisplaced && (
-                      <svg className="absolute inset-0 overflow-visible pointer-events-none" style={{ width: 16, height: containerH }}>
+                      <svg className="absolute inset-0 overflow-visible pointer-events-none" style={{ width: 16 * mekkoScale, height: containerH }}>
                         {activeSegs.map((seg, i) => {
                           const segY = containerH - segCentersFromBottom[i];
                           const labelY = containerH - labelCentersFromBottom[i];
+                          const lw = 16 * mekkoScale;
+                          const mid = 8 * mekkoScale;
                           return (
                             <path
                               key={seg.stage}
-                              d={`M0,${segY} C8,${segY} 8,${labelY} 16,${labelY}`}
+                              d={`M0,${segY} C${mid},${segY} ${mid},${labelY} ${lw},${labelY}`}
                               fill="none"
                               stroke={STAGE_COLORS[seg.stage - 1]}
                               strokeWidth={1.5}
@@ -1125,7 +1147,7 @@ export function AnalyticsDashboard() {
                           style={{
                             bottom: bottomPos,
                             height: legendLabelHeights[i],
-                            left: anyDisplaced ? 18 : 0,
+                            left: anyDisplaced ? 18 * mekkoScale : 0,
                           }}
                           onClick={() => handleDrillToggle({ kind: 'stageAll', stage: seg.stage }, undefined, excludeSpecialMekko)}
                         >

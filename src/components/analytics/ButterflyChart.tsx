@@ -47,7 +47,7 @@ interface ButterflyChartProps {
   countDenominator?: number;
 }
 
-export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -71,14 +71,30 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
 
   // Layout: 3-column system
   // Col A: labels + icons (fixed) | Col B: chart 1 (count/score) | Col C: chart 2 (deviation)
+  //
+  // Chart-geometry sizing scales with the container width rather than being
+  // hardcoded px. On mobile (~360px) values match today's tuning; on a
+  // desktop dashboard (~900–1100px) icons, labels, and row height grow
+  // proportionally so type icons / gen badges occupy the same visual
+  // fraction of the chart at every width. Clamps preserve legibility at
+  // extreme widths. Callers may still pass `rowHeight` as a floor — but
+  // it is always raised to stay ≥ iconSize + 6 so the icon fits in its
+  // row regardless of the prop.
   const hasIcons = data.some(d => d.icon);
-  const labelWidth = 42;
-  const iconSize = hasIcons ? 14 : 0;
+  // chartScale: 1 at mobile-reference width (~360px), ramping up to 2 at
+  // ~720px and holding at 2 beyond. Used to scale icon size and row
+  // height (and indirectly label width) so the chart's visual density
+  // stays consistent as the container grows — mobile proportions match
+  // today, desktop proportions match mobile (just larger).
+  const chartScale = width > 0 ? Math.max(1, Math.min(width / 360, 2)) : 1;
+  const iconSize = hasIcons ? 14 * chartScale : 0;
+  const labelWidth = 42 * chartScale;
   const iconGap = hasIcons ? 3 : 0;
   const gap = 6;
   const gutter = 8; // space between chart sections
   const titleHeight = 18;
   const topOffset = titleHeight;
+  const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale, iconSize + 6);
   const chartHeight = topOffset + data.length * rowHeight;
 
   const iconStart = labelWidth + iconGap;

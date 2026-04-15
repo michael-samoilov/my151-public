@@ -43,8 +43,18 @@ export function SuperimposedHistogram({
     return () => ro.disconnect();
   }, []);
 
-  const height = 200;
-  const margin = { top: 8, right: 12, bottom: 24, left: 40 };
+  // Chart geometry scales with container width so histograms grow on
+  // desktop dashboards instead of staying pinned at the mobile ~200px
+  // height. chartScale matches the formula in ButterflyChart — 1 at
+  // mobile, 2 at desktop — so both analytics charts scale consistently.
+  const chartScale = width > 0 ? Math.max(1, Math.min(width / 360, 2)) : 1;
+  const height = 200 * chartScale;
+  const margin = {
+    top: 8,
+    right: 12,
+    bottom: 24 * chartScale,
+    left: 40 * chartScale,
+  };
   const plotW = Math.max(0, width - margin.left - margin.right);
   const plotH = height - margin.top - margin.bottom;
 

@@ -3,14 +3,12 @@
 html {
   /* overscroll-behavior handled per scroll-container so pull-to-refresh works from the header */
 
-  /* Fluid root font-size so all rem-based Tailwind utilities (text-xs, text-sm,
-   * p-2, gap-3, etc.) scale together with viewport. Calibrated mobile-canonical:
-   * at 390px this clamps to 16px (browser default — today's mobile feel is
-   * preserved), and grows linearly to 20px at/above ~1000px viewport so
-   * chrome text/spacing grows uniformly on desktop instead of getting stuck
-   * at 10–14px caps. Tile-internal sizing uses --tile-sprite (set per-tile,
-   * see usePixelPerfectSprite + EvoLineCard) — it doesn't depend on this. */
-  font-size: clamp(16px, 13px + 0.7vw, 20px);
+  /* Root font-size is set in JS (see src/lib/layoutFontSize.ts) rather than
+   * via CSS clamp(...vw...) because on iOS the `vw` unit is tied to the
+   * visual viewport — pinch-zoom would otherwise shrink every rem-based
+   * utility (text, padding, gap) across the app. The JS version compensates
+   * the same way usePixelPerfectSprite does so the layout viewport width,
+   * not the zoom-shrunken visual viewport, drives the clamp. */
 }
 
 @custom-variant dark (&:is(.dark *));

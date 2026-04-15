@@ -282,7 +282,7 @@ export function PokemonBrowser() {
               </span>
             </div>
           )}
-          <div className="grid grid-cols-3 gap-1 max-w-sm mx-auto">
+          <div className="grid grid-cols-3 gap-1 max-w-sm md:grid-cols-6 md:max-w-2xl mx-auto">
             {TYPE_NAMES.map((type) => {
               const isSelected = typeFilter?.includes(type) ?? false;
               return (

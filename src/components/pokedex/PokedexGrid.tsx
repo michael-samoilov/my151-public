@@ -80,16 +80,24 @@ import { GenBadge } from '@/components/shared/GenBadge';
 
 function PokemonTileStatic({ id }: { id: number }) {
   const pokemon = getPokemonById(id);
-  const spritePx = usePixelPerfectSprite(8, 48, 7, 96);
+  const spritePx = usePixelPerfectSprite(8, 48, 8, 96);
   if (!pokemon) return null;
   // --tile-sprite locks internal text/badge/icon sizes to a fixed fraction of
   // the sprite so mobile-vs-desktop ratios stay invariant. Fractions calibrated
   // to today's mobile values (390px, sprite ≈ 31px); type badge stays
   // cell-relative (w-[min(65%,75px)]) since in this tile the cell is wider
   // than the sprite and badge looks best spanning the cell.
+  //
+  // aspect-square on mobile only: on desktop the grid cell width
+  // (~100px) and sprite size (~84–96px after pixel-perfect snap) don't
+  // align, so forcing a square outer box centers the sprite at a sub-pixel
+  // offset and the browser interpolates, producing visible artifacts.
+  // Letting the tile height be driven by content on desktop eliminates the
+  // mismatch; EvoLineCard (the selection browser's crisp tile) uses the
+  // same pattern.
   return (
     <div
-      className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[calc(var(--tile-sprite)*0.06)] aspect-square shadow-lg"
+      className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[calc(var(--tile-sprite)*0.06)] aspect-square md:aspect-auto shadow-lg"
       style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
     >
       <GenBadge
@@ -143,7 +151,7 @@ function DraggableTile({
 }) {
   const removeBranch = usePokedexStore((s) => s.removeBranch);
   const pokemon = getPokemonById(pokemonId);
-  const spritePx = usePixelPerfectSprite(8, 48, 7, 96);
+  const spritePx = usePixelPerfectSprite(8, 48, 8, 96);
 
   const {
     attributes,
@@ -183,7 +191,7 @@ function DraggableTile({
       <div
         {...attributes}
         {...listeners}
-        className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[calc(var(--tile-sprite)*0.06)] group aspect-square cursor-grab active:cursor-grabbing select-none"
+        className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[calc(var(--tile-sprite)*0.06)] group aspect-square md:aspect-auto cursor-grab active:cursor-grabbing select-none"
       >
         <GenBadge
           gen={pokemon.generation}
