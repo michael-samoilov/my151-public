@@ -295,7 +295,11 @@ function computeRegionalDrillDown(
       }
     }
 
-    const gen = line[0].generation;
+    // Bucket by the earliest-introduced member, not line[0] (which is the
+    // chain's oldest ancestor). Retroactive baby pre-evolutions like
+    // Chingling (Gen 4, pre-evo of Chimecho Gen 3) would otherwise force a
+    // Gen-3 chain into the Gen 4 section when viewing a Hoenn drilldown.
+    const gen = Math.min(...line.map(m => m.generation));
     const groups = evoLinesByGen.get(gen) ?? [];
     groups.push({
       key: rootKey,
