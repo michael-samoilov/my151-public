@@ -94,7 +94,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const gutter = 8; // space between chart sections
   const titleHeight = 18;
   const topOffset = titleHeight;
-  const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale, iconSize + 6);
+  const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale, iconSize + 4);
   const chartHeight = topOffset + data.length * rowHeight;
 
   const iconStart = labelWidth + iconGap;
@@ -108,7 +108,17 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const countIsBidirectional = forceBidirectionalCount || (countHasNeg && countHasPos);
   const devIsBidirectional = !hideDeviation; // deviation domain always spans neg-to-pos in practice
 
-  // Weighted width distribution: bidirectional charts get 2x weight
+  // Weighted width distribution. Bidirectional charts get 2x weight because
+  // they have to accommodate bars on both sides of zero.
+  //
+  // The deviation chart (chart 2) additionally carries the bidirectional
+  // header labels ("WEAKER ← HERE" / "STRONGER HERE →", or the non-score
+  // equivalent) — those are anchored at zeroX and need ~60–70 px of
+  // scale-range padding on each side of zero (see `devLabelPad` below).
+  // When the count chart is *also* bidirectional (score mode with both
+  // weaknesses and resistances), chart 1 is competing for space too, so
+  // we nudge chart 2 up to 3x weight so its post-padding bar area remains
+  // usable at mobile widths.
   const chartsWidth = Math.max(0, width - labelColEnd);
   let chart1Width: number, chart2Width: number;
   if (hideDeviation) {
@@ -116,7 +126,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
     chart2Width = 0;
   } else {
     const w1 = countIsBidirectional ? 2 : 1;
-    const w2 = devIsBidirectional ? 2 : 1;
+    const w2 = devIsBidirectional ? (countIsBidirectional ? 3 : 2) : 1;
     const available = chartsWidth - gutter;
     chart1Width = Math.floor(available * w1 / (w1 + w2));
     chart2Width = available - chart1Width;
@@ -183,7 +193,18 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
     devRight_ = Math.min(fixedDevRight ?? maxOverDev, DEV_OVER_CAP);
   }
 
-  const devLabelPad = scoreMode ? 30 : 24;
+  // The "WEAKER ← HERE" / "STRONGER HERE →" (score) or "UNDER- ← INDEXED"
+  // / "OVER- INDEXED →" (non-score) header labels are anchored at `zeroX ± 5`
+  // with textAnchor pointing outward, so each label occupies ~(5 + text width)
+  // of pixels to its side of zero. Reserving that as scale-range padding
+  // guarantees `zeroX` never lands closer to a chart edge than the label's
+  // outer extent — so the labels cannot clip no matter how asymmetric the
+  // shared extents push zero. Widest text at mobile base font (0.6875rem ≈ 11px):
+  // "STRONGER" ≈ 56px (score), "INDEXED →" ≈ 62px (non-score). Scales with
+  // chartScale to track the growing root font-size on wider viewports. Clamped
+  // to 45% of chart2Width so the scale range can't invert at extreme widths.
+  const devLabelPadIdeal = (scoreMode ? 60 : 66) * chartScale;
+  const devLabelPad = Math.min(devLabelPadIdeal, chart2Width * 0.45);
   const devHasLeft = devLeft < 0;
   const devHasRight = devRight_ > 0;
   const devLeftPad = devHasLeft ? devLabelPad : 0;

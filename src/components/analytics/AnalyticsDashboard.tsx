@@ -620,31 +620,34 @@ export function AnalyticsDashboard() {
           </div>
 
           <div className="bg-card rounded-lg border overflow-hidden">
-            {/* Tab headers — inside card */}
-            <div className="flex border-b border-border">
+            {/* Tab headers — inside card. Selected tab is filled primary with
+                white text; it sits flush against a primary-colored horizontal
+                bar at the bottom of the tab row so the selected tab visually
+                "merges" into the bar separating the tabs from the content. */}
+            <div className="flex border-b-2 border-primary">
               <button
                 onClick={() => setTypeView('distribution')}
-                className={`flex-1 text-center px-3 py-1.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+                className={`flex-1 text-center px-3 py-1.5 text-sm font-semibold transition-colors ${
                   typeView === 'distribution'
-                    ? 'border-primary text-foreground'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Type distribution
               </button>
               <button
                 onClick={() => setTypeView('matchup')}
-                className={`flex-1 text-center px-3 py-1.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+                className={`flex-1 text-center px-3 py-1.5 text-sm font-semibold transition-colors ${
                   typeView === 'matchup'
-                    ? 'border-primary text-foreground'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Type matchups
               </button>
             </div>
-            <div className="py-4">
-            <p className="text-sm text-muted-foreground mb-3 px-3">
+            <div className="py-2 md:py-4">
+            <p className="text-sm text-muted-foreground mb-2 md:mb-3 px-3">
               {typeView === 'distribution'
                 ? 'Count of Pokémon with each type and deviation from national dex proportions.'
                 : 'Avg number of type advantage 2x\u2019s (offensive & defensive) vs. all Pokémon in region.'}
@@ -655,7 +658,7 @@ export function AnalyticsDashboard() {
                 data={[...activeTypeChartData].sort((a, b) =>
                   typeSortBy === 'deviation' ? b.deviation - a.deviation : b.count - a.count
                 )}
-                rowHeight={18}
+                rowHeight={16}
                 hideDeviation={isNationalSelected}
                 fixedMaxCount={unfilteredMaxCount}
                 fixedDevRight={fixedDevRight}
@@ -691,7 +694,7 @@ export function AnalyticsDashboard() {
                 data={[...typeMatchupData].sort((a, b) =>
                   typeSortBy === 'deviation' ? b.deviation - a.deviation : b.count - a.count
                 )}
-                rowHeight={18}
+                rowHeight={16}
                 scoreMode
                 hideDeviation={isNationalSelected}
                 forceBidirectionalCount={matchupForceBidirectional}
