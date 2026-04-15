@@ -132,7 +132,7 @@ export function SuperimposedHistogram({
                   x={xScale(t)}
                   y={plotH + 15}
                   textAnchor="middle"
-                  fontSize={10}
+                  className="text-xs"
                   fill="var(--color-muted-foreground)"
                 >
                   {t}
@@ -154,7 +154,7 @@ export function SuperimposedHistogram({
                   y={yScale(t)}
                   textAnchor="end"
                   dominantBaseline="middle"
-                  fontSize={10}
+                  className="text-xs"
                   fill="var(--color-muted-foreground)"
                 >
                   {t}%

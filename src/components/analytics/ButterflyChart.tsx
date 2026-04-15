@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { scaleBand, scaleLinear } from 'd3-scale';
+import { cn } from '@/lib/utils';
 
 export interface ButterflyRow {
   label: string;
@@ -191,11 +192,10 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                 : countSectionStart}
             y={12}
             textAnchor={countIsBidirectional ? 'middle' : countHasNeg ? 'end' : 'start'}
-            fontSize={10}
             fontWeight={600}
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
-            className={onSortChange ? 'cursor-pointer' : ''}
+            className={cn('text-xs', onSortChange && 'cursor-pointer')}
             textDecoration={sortBy === 'count' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('count') : undefined}
           >
@@ -208,16 +208,15 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             x={devSectionStart + zeroX - 5}
             y={6}
             textAnchor="end"
-            fontSize={9}
             fontWeight={600}
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
-            className={onSortChange ? 'cursor-pointer' : ''}
+            className={cn('text-[0.6875rem]', onSortChange && 'cursor-pointer')}
             textDecoration={sortBy === 'deviation' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('deviation') : undefined}
           >
             <tspan x={devSectionStart + zeroX - 5} dy="0">{scoreMode ? 'WEAKER' : 'UNDER-'}</tspan>
-            <tspan x={devSectionStart + zeroX - 5} dy="10">{scoreMode ? '← HERE' : '← INDEXED'}</tspan>
+            <tspan x={devSectionStart + zeroX - 5} dy="1.1em">{scoreMode ? '← HERE' : '← INDEXED'}</tspan>
           </text>
           )}
           {devHasRight && (
@@ -225,16 +224,15 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
             x={devSectionStart + zeroX + 5}
             y={6}
             textAnchor="start"
-            fontSize={9}
             fontWeight={600}
             fill="var(--color-muted-foreground)"
             letterSpacing="0.05em"
-            className={onSortChange ? 'cursor-pointer' : ''}
+            className={cn('text-[0.6875rem]', onSortChange && 'cursor-pointer')}
             textDecoration={sortBy === 'deviation' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('deviation') : undefined}
           >
             <tspan x={devSectionStart + zeroX + 5} dy="0">{scoreMode ? 'STRONGER' : 'OVER-'}</tspan>
-            <tspan x={devSectionStart + zeroX + 5} dy="10">{scoreMode ? 'HERE →' : 'INDEXED →'}</tspan>
+            <tspan x={devSectionStart + zeroX + 5} dy="1.1em">{scoreMode ? 'HERE →' : 'INDEXED →'}</tspan>
           </text>
           )}
 
@@ -287,7 +285,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                   y={y + barHeight / 2}
                   textAnchor="end"
                   dominantBaseline="middle"
-                  fontSize={10}
+                  className="text-xs"
                   fill="currentColor"
                 >
                   {d.label}
@@ -324,7 +322,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                   y={y + barHeight / 2}
                   textAnchor={scoreMode && !countIsPositive ? 'end' : 'start'}
                   dominantBaseline="middle"
-                  fontSize={9}
+                  className="text-[0.6875rem]"
                   fill="var(--color-muted-foreground)"
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
@@ -402,7 +400,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                       <text
                         x={barEnd + 3} y={y + barHeight / 2}
                         textAnchor="start" dominantBaseline="middle"
-                        fontSize={9} fill="var(--color-muted-foreground)"
+                        className="text-[0.6875rem]" fill="var(--color-muted-foreground)"
                         style={{ fontVariantNumeric: 'tabular-nums' }}
                       >{val}</text>
                     );
@@ -411,7 +409,7 @@ export function ButterflyChart({ data, rowHeight = 22, referenceDeviations, hide
                     <text
                       x={barEnd - 3} y={y + barHeight / 2}
                       textAnchor="end" dominantBaseline="middle"
-                      fontSize={9} fill="var(--color-muted-foreground)"
+                      className="text-[0.6875rem]" fill="var(--color-muted-foreground)"
                       style={{ fontVariantNumeric: 'tabular-nums' }}
                     >{val}</text>
                   );

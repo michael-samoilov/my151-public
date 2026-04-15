@@ -282,7 +282,7 @@ export function PokemonBrowser() {
               </span>
             </div>
           )}
-          <div className="grid grid-cols-3 gap-1">
+          <div className="grid grid-cols-3 gap-1 max-w-sm mx-auto">
             {TYPE_NAMES.map((type) => {
               const isSelected = typeFilter?.includes(type) ?? false;
               return (
@@ -297,7 +297,7 @@ export function PokemonBrowser() {
                   <img
                     src={typeBadgePath(type)}
                     alt={type}
-                    className="h-[18px] w-auto"
+                    className="h-[1.125rem] w-auto"
                     draggable={false}
                   />
                 </button>
