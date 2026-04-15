@@ -31,6 +31,9 @@ interface EvoLineGroup {
   key: string | number;
   members: Pokemon[];
   matchedIds: Set<number>;
+  /** Members shown at reduced opacity as de-emphasized context (e.g. filtered
+   *  starters/legendaries when the "No Starters/Legendaries" toggle is on). */
+  mutedIds?: Set<number>;
 }
 
 interface EvoLineGridProps {
@@ -76,6 +79,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shi
           key={group.key}
           members={group.members}
           matchedIds={group.matchedIds}
+          mutedIds={group.mutedIds}
           assignedIds={assignedIds}
           stagedIds={stagedIds}
           onToggleStage={onToggleStage}
@@ -105,6 +109,10 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shi
 interface EvoLineCardProps {
   members: Pokemon[];
   matchedIds: Set<number>;
+  /** Members rendered at reduced opacity regardless of variant/matchup state.
+   *  Overrides matchedIds-based highlighting — used to de-emphasize filtered-out
+   *  starters/legendaries that are shown for context only. */
+  mutedIds?: Set<number>;
   assignedIds: Set<number>;
   stagedIds: Set<number>;
   onToggleStage: (memberIds: number[]) => void;
@@ -139,7 +147,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, spritePx }: EvoLineCardProps) {
+export function EvoLineCard({ members, matchedIds, mutedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, spritePx }: EvoLineCardProps) {
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const sections = usePokedexStore((s) => s.sections);
   const allInDex = members.every((p) => assignedIds.has(p.id));
@@ -240,10 +248,15 @@ export function EvoLineCard({ members, matchedIds, assignedIds, stagedIds, onTog
                     <Plus className="w-1/2 h-1/2 text-primary-foreground" />
                   </div>
                 )}
-                {/* Content — greyed out for gen mismatch, matchup tier mismatch (analytics), or filter mismatch (browser) */}
+                {/* Content — greyed out for gen mismatch, matchup tier mismatch (analytics), filter mismatch (browser),
+                     or explicitly muted (e.g. filtered starters/legendaries shown for context). */}
                 <div className={cn(
                   'flex flex-col items-center w-full',
-                  variant === 'analytics' ? ((showGenBadge || (matchupInfo && !matched)) && 'opacity-35') : (!matched && 'opacity-35'),
+                  mutedIds?.has(pokemon.id)
+                    ? 'opacity-35'
+                    : variant === 'analytics'
+                      ? ((showGenBadge || (matchupInfo && !matched)) && 'opacity-35')
+                      : (!matched && 'opacity-35'),
                 )}>
                   <div
                     style={{

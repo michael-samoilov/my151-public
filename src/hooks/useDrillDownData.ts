@@ -20,6 +20,12 @@ interface SectionGroup {
     key: string;
     members: Pokemon[];
     matchedIds: Set<number>;
+    /** Members shown as context but de-emphasized (opacity-35). Used for
+     *  starters/legendaries/mythicals when the "No Starters/Legendaries"
+     *  toggle is on — they're excluded from the over/under-indexing calc
+     *  and from the subtitle counts, but still rendered so the user can
+     *  see what was filtered out. */
+    mutedIds?: Set<number>;
   }[];
 }
 
@@ -107,7 +113,7 @@ export function computeDrillDownData(
 
     // Build evolution line groups, deduped by root
     const seenRoots = new Set<string>();
-    const evoLinesBySection = new Map<string, { key: string; members: Pokemon[]; matchedIds: Set<number> }[]>();
+    const evoLinesBySection = new Map<string, { key: string; members: Pokemon[]; matchedIds: Set<number>; mutedIds?: Set<number> }[]>();
     const nonExcludedLineRoots = new Set<string>();
     // Count distinct evolution chains (not branches) for subtitle
     const nonExcludedChainIds = new Set<number>();
@@ -138,14 +144,23 @@ export function computeDrillDownData(
       // matchedIds = members matching the segment AND not excluded
       // Excluded members will appear as part of the line but grayed out
       const lineMatchedIds = new Set<number>();
+      const lineMutedIds = new Set<number>();
       for (const m of line) {
         if (matchingIds.has(m.id) && !excludedIds.has(m.id)) {
           lineMatchedIds.add(m.id);
         }
+        if (excludedIds.has(m.id)) {
+          lineMutedIds.add(m.id);
+        }
       }
 
       const groups = evoLinesBySection.get(lineSectionId) ?? [];
-      groups.push({ key: rootKey, members: line, matchedIds: lineMatchedIds });
+      groups.push({
+        key: rootKey,
+        members: line,
+        matchedIds: lineMatchedIds,
+        mutedIds: lineMutedIds.size > 0 ? lineMutedIds : undefined,
+      });
       evoLinesBySection.set(lineSectionId, groups);
     }
 
@@ -213,30 +228,44 @@ function computeRegionalDrillDown(
     dexPokemon = dexPokemon.filter(p => p.generation === dex.generation);
   }
 
-  // Apply exclude starters/legendaries/mythicals
+  // Identify starters/legendaries/mythicals for muting (not removal) when
+  // excludeSpecial is active. They're still rendered as context but
+  // de-emphasized and excluded from the subtitle counts.
+  const excludedIds = new Set<number>();
   if (excludeSpecial) {
-    dexPokemon = dexPokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+    for (const p of dexPokemon) {
+      if (p.isLegendary || p.isMythical || STARTER_IDS.has(p.id)) {
+        excludedIds.add(p.id);
+      }
+    }
   }
 
   // User's placed Pokemon (for highlight vs mute)
   const userPlacedIds = new Set(Object.values(storeSections).flat());
 
-  // Filter to Pokemon matching the segment
+  // Filter to Pokemon matching the segment (excluded members kept for context)
   const matchingIds = new Set<number>();
+  const matchingNonExcludedIds = new Set<number>();
   for (const p of dexPokemon) {
     if (matchesSegment(p, p.id, segment)) {
       matchingIds.add(p.id);
+      if (!excludedIds.has(p.id)) matchingNonExcludedIds.add(p.id);
     }
   }
 
-  if (matchingIds.size === 0) return null;
+  // Need at least one non-excluded match to show the drilldown — otherwise
+  // the subtitle would read "0 Pokémon" while still showing greyed cards.
+  if (matchingNonExcludedIds.size === 0) return null;
 
-  // Build evolution line groups, grouped by generation
+  // Build evolution line groups, grouped by generation. Iterate only over
+  // non-excluded seeds so we don't create chains whose only matching member
+  // is an excluded starter/legendary. Excluded chain-mates still render
+  // muted inside chains anchored by a non-excluded match.
   const seenRoots = new Set<string>();
-  const evoLinesByGen = new Map<number, { key: string; members: Pokemon[]; matchedIds: Set<number> }[]>();
+  const evoLinesByGen = new Map<number, { key: string; members: Pokemon[]; matchedIds: Set<number>; mutedIds?: Set<number> }[]>();
   const chainIds = new Set<number>();
 
-  for (const id of matchingIds) {
+  for (const id of matchingNonExcludedIds) {
     const line = getEvolutionLine(id, userPlacedIds);
     const rootKey = line.map(m => m.id).join('-');
     if (seenRoots.has(rootKey)) continue;
@@ -245,18 +274,27 @@ function computeRegionalDrillDown(
     const p = getPokemonById(id);
     if (p) chainIds.add(p.evolutionChainId);
 
-    // matchedIds = members that match the segment AND are in the user's pokedex
-    // Non-placed Pokemon will appear but be muted (opacity-35)
+    // matchedIds = members that match the segment, are in the user's pokedex,
+    //   and aren't excluded. mutedIds = excluded members of the line.
     const lineMatchedIds = new Set<number>();
+    const lineMutedIds = new Set<number>();
     for (const m of line) {
-      if (matchingIds.has(m.id) && userPlacedIds.has(m.id)) {
+      if (matchingIds.has(m.id) && userPlacedIds.has(m.id) && !excludedIds.has(m.id)) {
         lineMatchedIds.add(m.id);
+      }
+      if (excludedIds.has(m.id)) {
+        lineMutedIds.add(m.id);
       }
     }
 
     const gen = line[0].generation;
     const groups = evoLinesByGen.get(gen) ?? [];
-    groups.push({ key: rootKey, members: line, matchedIds: lineMatchedIds });
+    groups.push({
+      key: rootKey,
+      members: line,
+      matchedIds: lineMatchedIds,
+      mutedIds: lineMutedIds.size > 0 ? lineMutedIds : undefined,
+    });
     evoLinesByGen.set(gen, groups);
   }
 
@@ -281,11 +319,11 @@ function computeRegionalDrillDown(
 
   return {
     title: `${title} — ${dexLabel}`,
-    subtitle: `${matchingIds.size} Pokémon across ${chainIds.size} line${chainIds.size !== 1 ? 's' : ''}`,
+    subtitle: `${matchingNonExcludedIds.size} Pokémon across ${chainIds.size} line${chainIds.size !== 1 ? 's' : ''}`,
     color,
     icon,
     sections,
-    totalPokemon: matchingIds.size,
+    totalPokemon: matchingNonExcludedIds.size,
     totalLines: chainIds.size,
     showGenBadges: true,
   };
@@ -303,7 +341,11 @@ function computeTypeMatchupDrillDown(
   const userPlacedIds = new Set(Object.values(storeSections).flat());
   const isRegional = dexId !== null && dexId !== 'yours';
 
+  // Predicate for "excluded" — what counts as a starter differs between
+  // contexts: in a regional/national dex we use the global STARTER_IDS list;
+  // in the user's build we use whatever they placed in the starter section.
   let pokemon: Pokemon[];
+  let isExcluded: (p: Pokemon) => boolean = () => false;
   if (isRegional) {
     const isNational = dexId === 'national';
     const dex = REGIONAL_DEXES.find(d => d.id === dexId);
@@ -315,18 +357,24 @@ function computeTypeMatchupDrillDown(
       pokemon = pokemon.filter(p => p.generation === dex.generation);
     }
     if (excludeSpecial) {
-      pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+      isExcluded = (p) => p.isLegendary || p.isMythical || STARTER_IDS.has(p.id);
     }
   } else {
     const allIds = Object.values(storeSections).flat();
     const starterSectionIds = new Set(storeSections['starter'] ?? []);
     pokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
     if (excludeSpecial) {
-      pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
+      isExcluded = (p) => p.isLegendary || p.isMythical || starterSectionIds.has(p.id);
     }
   }
 
   if (pokemon.length === 0) return null;
+
+  // Excluded pokemon stay in the drilldown as muted context rather than
+  // being removed. Their matchup scores aren't shown as "own" tier members,
+  // but they still appear within their evolution line.
+  const excludedIds = new Set<number>();
+  for (const p of pokemon) if (isExcluded(p)) excludedIds.add(p.id);
   const placedIdSet = isRegional ? userPlacedIds : new Set(pokemon.map(p => p.id));
 
   // Compute per-pokemon matchup scores
@@ -335,7 +383,11 @@ function computeTypeMatchupDrillDown(
   // Store per-pokemon offense/defense for chip display
   const matchupInfo = new Map<number, { offense: number; defense: number }>();
 
-  // Group by integer-floored score tier (skip tier 0 — evenly matched)
+  // Group by integer-floored score tier (skip tier 0 — evenly matched).
+  // Excluded pokemon are kept out of tier buckets (they don't contribute to
+  // the tier count) but their matchupInfo is still populated so they can
+  // render as muted context within evo lines anchored by a non-excluded tier
+  // member.
   const tierMap = new Map<number, Set<number>>();
   const matchupById = new Map<number, number>();
   for (const m of matchups) {
@@ -343,6 +395,7 @@ function computeTypeMatchupDrillDown(
     const tier = Math.floor(m.matchup);
     if (tier === 0) continue; // filter out evenly matched
     matchupById.set(m.pokemon.id, m.matchup);
+    if (excludedIds.has(m.pokemon.id)) continue;
     if (!tierMap.has(tier)) tierMap.set(tier, new Set());
     tierMap.get(tier)!.add(m.pokemon.id);
   }
@@ -368,7 +421,7 @@ function computeTypeMatchupDrillDown(
 
     // Build evolution line groups, sorted by matchup score descending
     const seenRoots = new Set<string>();
-    const groups: { key: string; members: Pokemon[]; matchedIds: Set<number> }[] = [];
+    const groups: { key: string; members: Pokemon[]; matchedIds: Set<number>; mutedIds?: Set<number> }[] = [];
 
     // Sort Pokemon in this tier by matchup descending
     const sortedIds = [...ids].sort((a, b) => (matchupById.get(b) ?? 0) - (matchupById.get(a) ?? 0));
@@ -380,8 +433,10 @@ function computeTypeMatchupDrillDown(
       seenRoots.add(rootKey);
 
       const matchedIds = new Set<number>();
+      const lineMutedIds = new Set<number>();
       for (const m of line) {
         if (ids.has(m.id)) matchedIds.add(m.id);
+        if (excludedIds.has(m.id)) lineMutedIds.add(m.id);
       }
       // Compute matchup info for evo line members not in the filtered set
       for (const m of line) {
@@ -392,7 +447,12 @@ function computeTypeMatchupDrillDown(
           }
         }
       }
-      groups.push({ key: rootKey, members: line, matchedIds });
+      groups.push({
+        key: rootKey,
+        members: line,
+        matchedIds,
+        mutedIds: lineMutedIds.size > 0 ? lineMutedIds : undefined,
+      });
     }
 
     sections.push({
