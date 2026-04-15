@@ -207,13 +207,23 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
         const showGenBadge = showGenBadges && pokemon.generation !== lineGen;
 
         return (
-          <div key={pokemon.id} className="relative px-[3px] md:px-[2px] overflow-visible">
+          // --tile-sprite exposes the per-tile sprite size as a CSS var so every
+          // descendant can size itself as a fraction of the sprite, keeping
+          // name/icon/badge/gap ratios locked across viewports. Fractions are
+          // calibrated off today's mobile (390px, sprite=42.9px) so mobile is
+          // visually unchanged; desktop now scales these proportionally with
+          // the sprite cap instead of drifting to a smaller-relative size.
+          <div
+            key={pokemon.id}
+            className="relative px-[3px] overflow-visible"
+            style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
+          >
             {/* Background + border spanning the evo line */}
             <div
               className={cn(
                 'absolute inset-y-0 border-t border-b',
-                isFirst ? 'left-[3px] md:left-[2px] rounded-l-md border-l' : 'left-0',
-                isLast ? 'right-[3px] md:right-[2px] rounded-r-md border-r' : 'right-0',
+                isFirst ? 'left-[3px] rounded-l-md border-l' : 'left-0',
+                isLast ? 'right-[3px] rounded-r-md border-r' : 'right-0',
                 'border-border',
               )}
               style={{ backgroundColor: `${bgColor}10` }}
@@ -224,7 +234,7 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
               onClick={handleClick}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
               className={cn(
-                'relative flex flex-col items-center pt-[0.5vw] pb-[1vw] md:py-1.5 transition-all cursor-pointer w-full',
+                'relative flex flex-col items-center pt-[calc(var(--tile-sprite)*0.045)] pb-[calc(var(--tile-sprite)*0.09)] transition-all cursor-pointer w-full',
               )}
             >
               <div className="relative flex flex-col items-center w-full">
@@ -232,14 +242,14 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                 {showGenBadge && (
                   <GenBadge
                     gen={pokemon.generation}
-                    className="absolute top-0 left-[6px] md:left-1 w-[2.5vw] h-[2.5vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] z-10"
+                    className="absolute top-0 left-[calc(var(--tile-sprite)*0.14)] w-[calc(var(--tile-sprite)*0.23)] h-[calc(var(--tile-sprite)*0.23)] z-10"
                   />
                 )}
                 {inDex && variant === 'analytics' && (
                   <button
                     onClick={handleRemoveButton}
                     onPointerDown={(e) => e.stopPropagation()}
-                    className="absolute top-[2px] right-[6px] md:top-[3px] md:right-[4px] w-3 h-3 md:w-4 md:h-4 rounded-full bg-destructive text-white flex items-center justify-center z-[15]"
+                    className="absolute top-[calc(var(--tile-sprite)*0.05)] right-[calc(var(--tile-sprite)*0.14)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] rounded-full bg-destructive text-white flex items-center justify-center z-[15]"
                     style={{ transform: 'translateZ(0)' }}
                   >
                     <X className="w-1/2 h-1/2" />
@@ -247,7 +257,7 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                 )}
                 {inDex && variant === 'browser' && (
                   <div
-                    className="absolute top-[2px] right-[6px] md:top-[3px] md:right-[4px] w-3 h-3 md:w-4 md:h-4 z-[15]"
+                    className="absolute top-[calc(var(--tile-sprite)*0.05)] right-[calc(var(--tile-sprite)*0.14)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] z-[15]"
                     style={{ transform: 'translateZ(0)' }}
                   >
                     <PokeballIcon className="w-full h-full" />
@@ -255,7 +265,7 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                 )}
                 {!inDex && stagedIds.has(pokemon.id) && (
                   <div
-                    className="absolute top-[2px] right-[6px] md:top-[3px] md:right-[4px] w-3 h-3 md:w-4 md:h-4 bg-primary rounded-full flex items-center justify-center z-[15]"
+                    className="absolute top-[calc(var(--tile-sprite)*0.05)] right-[calc(var(--tile-sprite)*0.14)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] bg-primary rounded-full flex items-center justify-center z-[15]"
                     style={{ transform: 'translateZ(0)' }}
                   >
                     <Plus className="w-1/2 h-1/2 text-primary-foreground" />
@@ -287,15 +297,15 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                     role="img"
                     aria-label={pokemon.name}
                   />
-                  <span className="text-[clamp(7px,2vw,14px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate text-center leading-tight w-full px-[0.5vw] md:px-0.5">
+                  <span className="text-[calc(var(--tile-sprite)*0.18)] font-medium capitalize truncate text-center leading-tight w-full px-[calc(var(--tile-sprite)*0.045)]">
                     {displayName(pokemon.name)}
                   </span>
-                  <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.5vw] md:mt-[min(0.3vw,2px)] w-full">
+                  <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.03)] mt-[calc(var(--tile-sprite)*0.045)] w-full">
                     {pokemon.types.map((t) => (
-                      <TypeBadge key={t} type={t as TypeName} className="w-[min(65%,75px)]" />
+                      <TypeBadge key={t} type={t as TypeName} className="w-[var(--tile-sprite)]" />
                     ))}
                     {pokemon.types.length === 1 && (
-                      <div className="w-[min(65%,75px)]" style={{ aspectRatio: '200/40' }} aria-hidden />
+                      <div className="w-[var(--tile-sprite)]" style={{ aspectRatio: '200/40' }} aria-hidden />
                     )}
                   </div>
                   {matchupInfo?.has(pokemon.id) && (() => {
@@ -304,12 +314,12 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                     const defD = doublings(info.defense, true);
                     const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
                     return (
-                      <div className="grid mt-[0.3vw] md:mt-0.5 text-[clamp(6px,1.5vw,12px)] md:text-[clamp(8px,1vw,10px)] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'min(0.6vw, 3px)' }}>
+                      <div className="grid mt-[calc(var(--tile-sprite)*0.027)] text-[calc(var(--tile-sprite)*0.14)] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'calc(var(--tile-sprite)*0.055)' }}>
                         <span className="justify-self-end leading-none">{formatMult(info.offense)}×</span>
-                        <Sword className="w-[clamp(6px,1.5vw,12px)] h-[clamp(6px,1.5vw,12px)] md:w-[clamp(8px,1vw,10px)] md:h-[clamp(8px,1vw,10px)] block" />
+                        <Sword className="w-[calc(var(--tile-sprite)*0.14)] h-[calc(var(--tile-sprite)*0.14)] block" />
                         <span className="justify-self-start leading-none">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span>
                         <span className="justify-self-end leading-none">{formatMult(info.defense)}×</span>
-                        <Shield className="w-[clamp(6px,1.5vw,12px)] h-[clamp(6px,1.5vw,12px)] md:w-[clamp(8px,1vw,10px)] md:h-[clamp(8px,1vw,10px)] block" />
+                        <Shield className="w-[calc(var(--tile-sprite)*0.14)] h-[calc(var(--tile-sprite)*0.14)] block" />
                         <span className="justify-self-start leading-none">(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span>
                       </div>
                     );
@@ -320,7 +330,7 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
             {/* Chevron between evo line members */}
             {!isLast && (
               <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10">
-                <ChevronRight className="w-[2vw] h-[2vw] md:w-[min(1.2vw,14px)] md:h-[min(1.2vw,14px)] text-muted-foreground/60" />
+                <ChevronRight className="w-[calc(var(--tile-sprite)*0.18)] h-[calc(var(--tile-sprite)*0.18)] text-muted-foreground/60" />
               </div>
             )}
           </div>

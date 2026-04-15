@@ -82,11 +82,19 @@ function PokemonTileStatic({ id }: { id: number }) {
   const pokemon = getPokemonById(id);
   const spritePx = usePixelPerfectSprite(8, 48, 7, 96);
   if (!pokemon) return null;
+  // --tile-sprite locks internal text/badge/icon sizes to a fixed fraction of
+  // the sprite so mobile-vs-desktop ratios stay invariant. Fractions calibrated
+  // to today's mobile values (390px, sprite ≈ 31px); type badge stays
+  // cell-relative (w-[min(65%,75px)]) since in this tile the cell is wider
+  // than the sprite and badge looks best spanning the cell.
   return (
-    <div className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 aspect-square shadow-lg">
+    <div
+      className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[calc(var(--tile-sprite)*0.06)] aspect-square shadow-lg"
+      style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
+    >
       <GenBadge
         gen={pokemon.generation}
-        className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)]"
+        className="absolute top-[calc(var(--tile-sprite)*0.06)] left-[calc(var(--tile-sprite)*0.06)] w-[calc(var(--tile-sprite)*0.37)] h-[calc(var(--tile-sprite)*0.37)]"
       />
       <div
         style={{
@@ -101,10 +109,10 @@ function PokemonTileStatic({ id }: { id: number }) {
         role="img"
         aria-label={displayName(pokemon.name)}
       />
-      <span className="text-[clamp(7px,1.8vw,14px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
+      <span className="text-[calc(var(--tile-sprite)*0.22)] font-medium capitalize truncate w-full text-center leading-tight">
         {displayName(pokemon.name)}
       </span>
-      <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full">
+      <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.04)] mt-[calc(var(--tile-sprite)*0.04)] w-full">
         {pokemon.types.map((t) => (
           <TypeBadge key={t} type={t as TypeName} className="w-[min(65%,75px)]" />
         ))}
@@ -161,7 +169,10 @@ function DraggableTile({
       ref={setNodeRef}
       data-tile-id={id}
       className="relative"
-      style={{ opacity: isDragging || isDraggedLine ? 0.25 : 1 }}
+      style={{
+        opacity: isDragging || isDraggedLine ? 0.25 : 1,
+        ['--tile-sprite' as string]: `${spritePx}px`,
+      }}
     >
       {showInsertBefore && (
         <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 -translate-x-[calc(50%+0.5vw)] md:-translate-x-[calc(50%+2px)]" />
@@ -172,18 +183,18 @@ function DraggableTile({
       <div
         {...attributes}
         {...listeners}
-        className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[0.5vw] md:p-1 group aspect-square cursor-grab active:cursor-grabbing select-none"
+        className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[calc(var(--tile-sprite)*0.06)] group aspect-square cursor-grab active:cursor-grabbing select-none"
       >
         <GenBadge
           gen={pokemon.generation}
-          className="absolute top-[0.5vw] left-[0.5vw] md:top-0.5 md:left-0.5 w-[3vw] h-[3vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] z-10"
+          className="absolute top-[calc(var(--tile-sprite)*0.06)] left-[calc(var(--tile-sprite)*0.06)] w-[calc(var(--tile-sprite)*0.37)] h-[calc(var(--tile-sprite)*0.37)] z-10"
         />
         <button
           onClick={() => removeBranch(sectionId, pokemonId)}
           onPointerDown={(e) => e.stopPropagation()}
-          className="absolute top-[0.5vw] right-[0.5vw] md:top-0.5 md:right-0.5 w-[3vw] h-[3vw] md:w-[min(1.5vw,18px)] md:h-[min(1.5vw,18px)] rounded-full bg-destructive text-white flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
+          className="absolute top-[calc(var(--tile-sprite)*0.06)] right-[calc(var(--tile-sprite)*0.06)] w-[calc(var(--tile-sprite)*0.37)] h-[calc(var(--tile-sprite)*0.37)] rounded-full bg-destructive text-white flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
         >
-          <X className="w-[1.5vw] h-[1.5vw] md:w-[min(0.9vw,11px)] md:h-[min(0.9vw,11px)]" />
+          <X className="w-1/2 h-1/2" />
         </button>
         <div
           style={{
@@ -198,10 +209,10 @@ function DraggableTile({
           role="img"
           aria-label={displayName(pokemon.name)}
         />
-        <span className="text-[clamp(7px,1.8vw,14px)] md:text-[clamp(10px,1.2vw,14px)] font-medium capitalize truncate w-full text-center leading-tight">
+        <span className="text-[calc(var(--tile-sprite)*0.22)] font-medium capitalize truncate w-full text-center leading-tight">
           {displayName(pokemon.name)}
         </span>
-        <div className="flex flex-col items-center gap-[0.3vw] md:gap-[min(0.3vw,2px)] mt-[0.3vw] md:mt-[min(0.3vw,2px)] w-full">
+        <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.04)] mt-[calc(var(--tile-sprite)*0.04)] w-full">
           {pokemon.types.map((t) => (
             <TypeBadge key={t} type={t as TypeName} className="w-[min(65%,75px)]" />
           ))}
