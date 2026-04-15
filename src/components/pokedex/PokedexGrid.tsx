@@ -175,10 +175,10 @@ function DraggableTile({
       }}
     >
       {showInsertBefore && (
-        <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 -translate-x-[calc(50%+0.5vw)] md:-translate-x-[calc(50%+2px)]" />
+        <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 -translate-x-[calc(50%+2px)]" />
       )}
       {showInsertAfter && (
-        <div className="absolute right-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 translate-x-[calc(50%+0.5vw)] md:translate-x-[calc(50%+2px)]" />
+        <div className="absolute right-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 translate-x-[calc(50%+2px)]" />
       )}
       <div
         {...attributes}
@@ -242,7 +242,7 @@ function EndDropZone({ sectionId, showIndicator }: { sectionId: string; showIndi
       }`}
     >
       {showIndicator && (
-        <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 -translate-x-[calc(50%+0.5vw)] md:-translate-x-[calc(50%+2px)]" />
+        <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 -translate-x-[calc(50%+2px)]" />
       )}
     </div>
   );
@@ -320,7 +320,7 @@ function StarterContent({
               className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
               style={{ borderColor: `${color}40`, color: `${color}90`, backgroundColor: `${color}10` }}
             >
-              <Plus className="w-[4vw] h-[4vw] md:w-[min(2vw,24px)] md:h-[min(2vw,24px)]" />
+              <Plus className="w-[27%] h-[27%]" />
             </button>
           );
         }
@@ -354,7 +354,7 @@ function StarterContent({
           onClick={onAddClick}
           className="aspect-square md:aspect-auto rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
         >
-          <Plus className="w-[4vw] h-[4vw] md:w-[min(2vw,24px)] md:h-[min(2vw,24px)]" />
+          <Plus className="w-[27%] h-[27%]" />
         </button>
       )}
     </>
@@ -452,7 +452,7 @@ function GroupBox({
     >
       {/* Label */}
       <div
-        className="text-[clamp(9px,1.4vw,14px)] md:text-sm font-semibold uppercase tracking-wide px-1.5"
+        className="text-xs font-semibold uppercase tracking-wide px-1.5"
         style={{
           color: `color-mix(in srgb, ${group.color} 65%, black)`,
           opacity: showEmptyState ? 0.75 : 1,
@@ -468,7 +468,7 @@ function GroupBox({
            EndDropZone so the section itself is a drop target — without
            it, there's no droppable here at all and the cursor can't
            snap to an empty section (not even to the left of the "+"). */
-        <div className="grid grid-cols-6 gap-[1vw] md:gap-1 p-1 pt-0">
+        <div className="grid grid-cols-6 gap-1 p-1 pt-0">
           {dragLineIds ? (
             <EndDropZone
               sectionId={group.id}
@@ -483,13 +483,13 @@ function GroupBox({
                 color: `${group.color}90`,
               }}
             >
-              <Plus className="w-[4vw] h-[4vw] md:w-[min(2vw,24px)] md:h-[min(2vw,24px)]" />
+              <Plus className="w-[27%] h-[27%]" />
             </button>
           )}
         </div>
       ) : (
         /* Filled: grid of tiles */
-        <div className="grid grid-cols-6 gap-[1vw] md:gap-1 p-1 pt-0">
+        <div className="grid grid-cols-6 gap-1 p-1 pt-0">
           {isStarter ? (
             <StarterContent
               pokemonIds={pokemonIds}
@@ -536,7 +536,7 @@ function GroupBox({
                   onClick={() => onAddClick(group.id)}
                   className="aspect-square md:aspect-auto rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
                 >
-                  <Plus className="w-[4vw] h-[4vw] md:w-[min(2vw,24px)] md:h-[min(2vw,24px)]" />
+                  <Plus className="w-[27%] h-[27%]" />
                 </button>
               )}
             </>
@@ -890,7 +890,7 @@ export function PokedexGrid() {
               <DragOverlay dropAnimation={null}>
                 {dragLineIds && (
                   <div
-                    className="flex gap-[1vw] md:gap-1 absolute top-1/2 left-1/2"
+                    className="flex gap-1 absolute top-1/2 left-1/2"
                     style={{ transform: 'translate(-50%, -50%)' }}
                   >
                     {dragLineIds.map((id) => (

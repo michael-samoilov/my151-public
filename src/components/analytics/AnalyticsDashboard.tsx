@@ -729,11 +729,11 @@ export function AnalyticsDashboard() {
             <div className="flex items-center gap-4 mb-2">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm bg-slate-400 opacity-50" />
-                <span className="text-[10px] text-muted-foreground font-medium">National Dex</span>
+                <span className="text-[0.625rem] text-muted-foreground font-medium">National Dex</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm bg-red-500 opacity-85" />
-                <span className="text-[10px] text-muted-foreground font-medium">Yours</span>
+                <span className="text-[0.625rem] text-muted-foreground font-medium">Yours</span>
               </div>
             </div>
             <SuperimposedHistogram
@@ -762,11 +762,11 @@ export function AnalyticsDashboard() {
             <div className="flex items-center gap-4 mb-2">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm bg-slate-400 opacity-50" />
-                <span className="text-[10px] text-muted-foreground font-medium">National Dex</span>
+                <span className="text-[0.625rem] text-muted-foreground font-medium">National Dex</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm bg-red-500 opacity-85" />
-                <span className="text-[10px] text-muted-foreground font-medium">Yours</span>
+                <span className="text-[0.625rem] text-muted-foreground font-medium">Yours</span>
               </div>
             </div>
             <SuperimposedHistogram
@@ -795,7 +795,7 @@ export function AnalyticsDashboard() {
           <div className="flex items-center gap-1.5 mb-3">
             <button
               onClick={() => setExcludeSpecialMekko(!excludeSpecialMekko)}
-              className={`px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors ${
+              className={`px-2.5 py-1 rounded-full text-[0.6875rem] font-medium whitespace-nowrap transition-colors ${
                 excludeSpecialMekko
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -969,7 +969,7 @@ export function AnalyticsDashboard() {
                           >
                             {colTotal > 0 && (
                               <>
-                                <div className="text-center text-[10px] text-muted-foreground font-bold mb-0.5 leading-tight flex items-end justify-center tabular-nums" style={{ height: 26 }}>
+                                <div className="text-center text-[0.625rem] text-muted-foreground font-bold mb-0.5 leading-tight flex items-end justify-center tabular-nums" style={{ height: 26 }}>
                                   <span>{colTotal} {colIdx === 0 && 'Pokémon '}<span className="font-normal">({pokePct}%)</span></span>
                                 </div>
                                 <div className="relative" style={{
@@ -1081,7 +1081,7 @@ export function AnalyticsDashboard() {
                         return (
                           <div
                             key={col.lineLength}
-                            className="flex-1 text-center text-[10px] text-muted-foreground font-bold leading-tight tabular-nums cursor-pointer"
+                            className="flex-1 text-center text-[0.625rem] text-muted-foreground font-bold leading-tight tabular-nums cursor-pointer"
                             style={{ height: 38, textDecoration: isXActive ? 'underline' : undefined, textDecorationColor: isXActive ? STAGE_LINE_COLORS[col.lineLength - 1] : undefined }}
                             onClick={() => col.chainCount > 0 && handleDrillToggle({ kind: 'lineLength', lineLength: col.lineLength }, undefined, excludeSpecialMekko)}
                           >
@@ -1121,7 +1121,7 @@ export function AnalyticsDashboard() {
                       return (
                         <div
                           key={seg.stage}
-                          className="absolute text-[10px] whitespace-nowrap leading-tight flex items-center tabular-nums cursor-pointer"
+                          className="absolute text-[0.625rem] whitespace-nowrap leading-tight flex items-center tabular-nums cursor-pointer"
                           style={{
                             bottom: bottomPos,
                             height: legendLabelHeights[i],

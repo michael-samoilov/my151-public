@@ -14,7 +14,7 @@ export function PageFooter() {
         <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
         <circle cx="12" cy="12" r="1.5" fill="currentColor" />
       </svg>
-      <span className="text-[9px] text-muted-foreground/30">
+      <span className="text-[0.5625rem] text-muted-foreground/30">
         v{BUILD_VERSION} · Pokémon © 1995–{YEAR} Nintendo / Game Freak / Creatures
       </span>
       </div>

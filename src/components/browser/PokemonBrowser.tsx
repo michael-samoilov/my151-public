@@ -260,10 +260,10 @@ export function PokemonBrowser() {
         <div className="space-y-2">
           {typeFilter && typeFilter.length >= 2 && (
             <div className="flex items-center gap-2 pb-1">
-              <span className="text-[11px] text-muted-foreground">Mode:</span>
+              <span className="text-[0.6875rem] text-muted-foreground">Mode:</span>
               <button
                 onClick={() => setTypeFilterMode('any')}
-                className={cn('px-2 py-0.5 rounded text-[11px] font-medium cursor-pointer transition-colors',
+                className={cn('px-2 py-0.5 rounded text-[0.6875rem] font-medium cursor-pointer transition-colors',
                   typeFilterMode === 'any' ? 'bg-foreground text-background' : 'bg-secondary text-secondary-foreground'
                 )}
               >
@@ -271,13 +271,13 @@ export function PokemonBrowser() {
               </button>
               <button
                 onClick={() => setTypeFilterMode('all')}
-                className={cn('px-2 py-0.5 rounded text-[11px] font-medium cursor-pointer transition-colors',
+                className={cn('px-2 py-0.5 rounded text-[0.6875rem] font-medium cursor-pointer transition-colors',
                   typeFilterMode === 'all' ? 'bg-foreground text-background' : 'bg-secondary text-secondary-foreground'
                 )}
               >
                 All (AND)
               </button>
-              <span className="text-[10px] text-muted-foreground ml-auto">
+              <span className="text-[0.625rem] text-muted-foreground ml-auto">
                 {typeFilterMode === 'all' ? 'dual-type search' : 'show any match'}
               </span>
             </div>
@@ -459,7 +459,7 @@ export function PokemonBrowser() {
               {typeFilter.length > 1 && (
                 <button
                   onClick={() => setTypeFilterMode(typeFilterMode === 'any' ? 'all' : 'any')}
-                  className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer transition-colors"
+                  className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[0.625rem] font-bold bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer transition-colors"
                 >
                   {typeFilterMode === 'any' ? 'OR' : 'AND'}
                 </button>
@@ -516,7 +516,7 @@ export function PokemonBrowser() {
           {hasActivePropertyFilters && (
             <button
               onClick={clearPropertyFilters}
-              className="sticky right-0 shrink-0 self-stretch flex items-center text-[clamp(10px,1.4vw,12px)] md:text-xs text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border -my-1"
+              className="sticky right-0 shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border -my-1"
             >
               Clear
             </button>
@@ -576,7 +576,7 @@ export function PokemonBrowser() {
           {hasActiveBrowseFilters && (
             <button
               onClick={clearBrowseFilters}
-              className="sticky right-0 shrink-0 self-stretch flex items-center text-[clamp(10px,1.4vw,12px)] md:text-xs text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border -my-1"
+              className="sticky right-0 shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border -my-1"
             >
               Clear
             </button>
@@ -606,11 +606,11 @@ export function PokemonBrowser() {
       >
           {/* Dual-column headers — sticky, left-aligned with 1st and 4th tile columns */}
           {!isSearching && activeCategoryDef?.dualColumns && (
-            <div className="sticky top-0 z-30 bg-background grid grid-cols-2 gap-x-1 px-1 py-[3px] md:py-1.5 border-b">
-              <div className="text-[clamp(10px,1.4vw,12px)] md:text-xs font-semibold text-muted-foreground uppercase tracking-wide pl-[3px] md:pl-[2px]">
+            <div className="sticky top-0 z-30 bg-background grid grid-cols-2 gap-x-1 px-1 py-[3px] border-b">
+              <div className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide pl-[3px]">
                 {activeCategoryDef.dualColumns.left.label}
               </div>
-              <div className="text-[clamp(10px,1.4vw,12px)] md:text-xs font-semibold text-muted-foreground uppercase tracking-wide pl-[3px] md:pl-[2px]">
+              <div className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide pl-[3px]">
                 {activeCategoryDef.dualColumns.right.label}
               </div>
             </div>
@@ -657,7 +657,7 @@ export function PokemonBrowser() {
 
               return (
                 <div key={sub.label}>
-                  <div className="sticky top-[22px] md:top-[28px] z-20 bg-background text-[clamp(10px,1.4vw,12px)] md:text-xs font-semibold text-muted-foreground uppercase tracking-wide py-[3px] md:py-1.5 px-1 border-b">
+                  <div className="sticky top-[22px] z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
                     {sub.label}
                   </div>
                   <div className="grid grid-cols-2 gap-x-1 items-start pt-1">
@@ -684,7 +684,7 @@ export function PokemonBrowser() {
 
             return (
               <div key={sub.label}>
-                <div className="sticky top-0 z-20 bg-background text-[clamp(10px,1.4vw,12px)] md:text-xs font-semibold text-muted-foreground uppercase tracking-wide py-[3px] md:py-1.5 px-1 border-b">
+                <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
                   {sub.label}
                 </div>
                 <div className="pt-1">
@@ -807,7 +807,7 @@ function EntryChip({ label, onClick, active }: { label: string; onClick: () => v
     <button
       onClick={onClick}
       className={cn(
-        'shrink-0 inline-flex items-center gap-1 px-2.5 md:px-3 py-0.5 md:py-1 rounded-full text-xs md:text-sm font-medium cursor-pointer border transition-colors',
+        'shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors',
         active
           ? 'border-primary text-primary bg-primary/5'
           : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
@@ -828,7 +828,7 @@ function FilterChip({
   return (
     <span
       className={cn(
-        'shrink-0 inline-flex items-center gap-1 px-2.5 md:px-3 py-0.5 md:py-1 rounded-full text-xs md:text-sm font-medium',
+        'shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium',
         className
       )}
       style={style}

@@ -136,7 +136,7 @@ export function ViewSettingsPane({
       <div className="flex-1 min-h-0 overflow-y-auto">
         {/* Sort Order */}
         <div className="px-3 pt-3 pb-2">
-          <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+          <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             Sort Order
           </h3>
           <div className="space-y-1">
@@ -166,7 +166,7 @@ export function ViewSettingsPane({
                       {opt.label}
                     </span>
                     {opt.value === 'custom' && hasCustomPending && (
-                      <span className="ml-auto text-[10px] text-muted-foreground">
+                      <span className="ml-auto text-[0.625rem] text-muted-foreground">
                         {pendingCustomOrder!.length} pokemon
                       </span>
                     )}
@@ -182,7 +182,7 @@ export function ViewSettingsPane({
 
         {/* Grouping */}
         <div className="px-3 pt-3 pb-2 border-t">
-          <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+          <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             Grouping
           </h3>
           <button
@@ -214,7 +214,7 @@ export function ViewSettingsPane({
         {/* Custom order management */}
         {hasCustomPending && (
           <div className="px-3 pt-3 pb-4 border-t">
-            <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
               Custom Order
             </h3>
             <p className="text-xs text-muted-foreground leading-snug px-3 mb-2">
