@@ -1,13 +1,17 @@
 import { useMemo } from 'react';
-import { cn, displayName } from '@/lib/utils';
-import { usePixelPerfectSprite } from '@/lib/usePixelPerfectSprite';
+import { cn } from '@/lib/utils';
 import type { Pokemon } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { Plus, ChevronRight, X, Sword, Shield } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
-import { TypeBadge } from '@/components/shared/TypeBadge';
-import type { TypeName } from '@/types/pokemon';
+import {
+  PokemonTileContent,
+  TILE_ACTION_BUTTON_CLASS,
+  TILE_GEN_BADGE_CLASS,
+  TILE_ROOT_PADDING_CLASS,
+  useTileSpritePx,
+} from '@/components/shared/PokemonTile';
 
 /** Tiny pokeball icon: red-filled top half, open bottom half, center button */
 function PokeballIcon({ className }: { className?: string }) {
@@ -63,8 +67,10 @@ const GRID_CLASSES: Record<number, string> = {
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
 export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, matchupInfo }: EvoLineGridProps) {
-  // Pixel-perfect sprite size: mobile 11vw, desktop clamp(40px, 7vw, 96px)
-  const spritePx = usePixelPerfectSprite(11, 40, 7, 96);
+  // Canonical Pokemon-tile sprite size — shared with the build page so
+  // Charizard (etc.) renders identically in the selection pane and in a
+  // section tile at the same viewport width. See `PokemonTile.tsx`.
+  const spritePx = useTileSpritePx();
 
   const elements = useMemo(() => {
     const result: React.ReactNode[] = [];
@@ -209,10 +215,9 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
         return (
           // --tile-sprite exposes the per-tile sprite size as a CSS var so every
           // descendant can size itself as a fraction of the sprite, keeping
-          // name/icon/badge/gap ratios locked across viewports. Fractions are
-          // calibrated off today's mobile (390px, sprite=42.9px) so mobile is
-          // visually unchanged; desktop now scales these proportionally with
-          // the sprite cap instead of drifting to a smaller-relative size.
+          // name/icon/badge/gap ratios locked across viewports. The shared
+          // `PokemonTileContent` handles the sprite + name + type-badge block
+          // at canonical ratios — see `src/components/shared/PokemonTile.tsx`.
           <div
             key={pokemon.id}
             className="relative px-[3px] overflow-visible"
@@ -234,22 +239,20 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
               onClick={handleClick}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
               className={cn(
-                'relative flex flex-col items-center pt-[calc(var(--tile-sprite)*0.045)] pb-[calc(var(--tile-sprite)*0.09)] transition-all cursor-pointer w-full',
+                'relative flex flex-col items-center transition-all cursor-pointer w-full',
+                TILE_ROOT_PADDING_CLASS,
               )}
             >
               <div className="relative flex flex-col items-center w-full">
                 {/* Gen badge + icons — always full opacity, outside the grey wrapper */}
                 {showGenBadge && (
-                  <GenBadge
-                    gen={pokemon.generation}
-                    className="absolute top-0 left-[calc(var(--tile-sprite)*0.14)] w-[calc(var(--tile-sprite)*0.23)] h-[calc(var(--tile-sprite)*0.23)] z-10"
-                  />
+                  <GenBadge gen={pokemon.generation} className={TILE_GEN_BADGE_CLASS} />
                 )}
                 {inDex && variant === 'analytics' && (
                   <button
                     onClick={handleRemoveButton}
                     onPointerDown={(e) => e.stopPropagation()}
-                    className="absolute top-[calc(var(--tile-sprite)*0.05)] right-[calc(var(--tile-sprite)*0.14)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] rounded-full bg-destructive text-white flex items-center justify-center z-[15]"
+                    className={cn(TILE_ACTION_BUTTON_CLASS, 'rounded-full bg-destructive text-white flex items-center justify-center')}
                     style={{ transform: 'translateZ(0)' }}
                   >
                     <X className="w-1/2 h-1/2" />
@@ -257,7 +260,7 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                 )}
                 {inDex && variant === 'browser' && (
                   <div
-                    className="absolute top-[calc(var(--tile-sprite)*0.05)] right-[calc(var(--tile-sprite)*0.14)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] z-[15]"
+                    className={TILE_ACTION_BUTTON_CLASS}
                     style={{ transform: 'translateZ(0)' }}
                   >
                     <PokeballIcon className="w-full h-full" />
@@ -265,7 +268,7 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                 )}
                 {!inDex && stagedIds.has(pokemon.id) && (
                   <div
-                    className="absolute top-[calc(var(--tile-sprite)*0.05)] right-[calc(var(--tile-sprite)*0.14)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] bg-primary rounded-full flex items-center justify-center z-[15]"
+                    className={cn(TILE_ACTION_BUTTON_CLASS, 'bg-primary rounded-full flex items-center justify-center')}
                     style={{ transform: 'translateZ(0)' }}
                   >
                     <Plus className="w-1/2 h-1/2 text-primary-foreground" />
@@ -273,42 +276,21 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                 )}
                 {/* Content — greyed out for gen mismatch, matchup tier mismatch (analytics), filter mismatch (browser),
                      or explicitly muted (e.g. filtered starters/legendaries shown for context). */}
-                <div className={cn(
-                  'flex flex-col items-center w-full',
-                  mutedIds?.has(pokemon.id)
-                    ? 'opacity-35'
-                    : variant === 'analytics'
-                      ? ((showGenBadge || (matchupInfo && !matched)) && 'opacity-35')
-                      : (!matched && 'opacity-35'),
-                )}>
-                  <div
-                    style={{
-                      width: spritePx,
-                      height: spritePx,
-                      backgroundImage: `url(${spriteOverrides?.[pokemon.id]
-                        ?? (shinyIds?.has(pokemon.id)
-                          ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
-                          : pokemon.sprite)})`,
-                      backgroundSize: `${spritePx}px ${spritePx}px`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'center',
-                      imageRendering: 'pixelated',
-                    }}
-                    role="img"
-                    aria-label={pokemon.name}
-                  />
-                  <span className="text-[calc(var(--tile-sprite)*0.18)] font-medium capitalize truncate text-center leading-tight w-full px-[calc(var(--tile-sprite)*0.045)]">
-                    {displayName(pokemon.name)}
-                  </span>
-                  <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.03)] mt-[calc(var(--tile-sprite)*0.045)] w-full">
-                    {pokemon.types.map((t) => (
-                      <TypeBadge key={t} type={t as TypeName} className="w-[var(--tile-sprite)]" />
-                    ))}
-                    {pokemon.types.length === 1 && (
-                      <div className="w-[var(--tile-sprite)]" style={{ aspectRatio: '200/40' }} aria-hidden />
-                    )}
-                  </div>
-                  {matchupInfo?.has(pokemon.id) && (() => {
+                <PokemonTileContent
+                  pokemon={pokemon}
+                  spritePx={spritePx}
+                  spriteUrl={spriteOverrides?.[pokemon.id]
+                    ?? (shinyIds?.has(pokemon.id)
+                      ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
+                      : pokemon.sprite)}
+                  contentClassName={cn(
+                    mutedIds?.has(pokemon.id)
+                      ? 'opacity-35'
+                      : variant === 'analytics'
+                        ? ((showGenBadge || (matchupInfo && !matched)) && 'opacity-35')
+                        : (!matched && 'opacity-35'),
+                  )}
+                  afterTypes={matchupInfo?.has(pokemon.id) ? (() => {
                     const info = matchupInfo.get(pokemon.id)!;
                     const offD = doublings(info.offense, false);
                     const defD = doublings(info.defense, true);
@@ -323,8 +305,8 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                         <span className="justify-self-start leading-none">(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span>
                       </div>
                     );
-                  })()}
-                </div>
+                  })() : undefined}
+                />
               </div>
             </div>
             {/* Chevron between evo line members */}

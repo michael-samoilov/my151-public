@@ -3,10 +3,14 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
-import { TypeBadge } from '@/components/shared/TypeBadge';
-import type { TypeName } from '@/types/pokemon';
-import { displayName } from '@/lib/utils';
-import { usePixelPerfectSprite } from '@/lib/usePixelPerfectSprite';
+import { cn } from '@/lib/utils';
+import {
+  PokemonTileContent,
+  TILE_ACTION_BUTTON_CLASS,
+  TILE_GEN_BADGE_CLASS,
+  TILE_ROOT_PADDING_CLASS,
+  useTileSpritePx,
+} from '@/components/shared/PokemonTile';
 import { Trash2, Plus, X, Settings } from 'lucide-react';
 
 import { PageFooter } from '@/components/shared/PageFooter';
@@ -80,54 +84,21 @@ import { GenBadge } from '@/components/shared/GenBadge';
 
 function PokemonTileStatic({ id }: { id: number }) {
   const pokemon = getPokemonById(id);
-  const spritePx = usePixelPerfectSprite(8, 48, 8, 96);
+  // Sprite sizing + internal ratios come from the shared tile primitives
+  // so the build page, selection pane, and drag overlay all render the
+  // same Pokemon at the same size at a given viewport width.
+  const spritePx = useTileSpritePx();
   if (!pokemon) return null;
-  // --tile-sprite locks internal text/badge/icon sizes to a fixed fraction of
-  // the sprite so mobile-vs-desktop ratios stay invariant. Fractions calibrated
-  // to today's mobile values (390px, sprite ≈ 31px); type badge stays
-  // cell-relative (w-[min(65%,75px)]) since in this tile the cell is wider
-  // than the sprite and badge looks best spanning the cell.
-  //
-  // aspect-square on mobile only: on desktop the grid cell width
-  // (~100px) and sprite size (~84–96px after pixel-perfect snap) don't
-  // align, so forcing a square outer box centers the sprite at a sub-pixel
-  // offset and the browser interpolates, producing visible artifacts.
-  // Letting the tile height be driven by content on desktop eliminates the
-  // mismatch; EvoLineCard (the selection browser's crisp tile) uses the
-  // same pattern.
   return (
     <div
-      className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[calc(var(--tile-sprite)*0.06)] aspect-square md:aspect-auto shadow-lg"
+      className={cn(
+        'relative bg-card border rounded-lg flex flex-col items-center shadow-lg',
+        TILE_ROOT_PADDING_CLASS,
+      )}
       style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
     >
-      <GenBadge
-        gen={pokemon.generation}
-        className="absolute top-[calc(var(--tile-sprite)*0.06)] left-[calc(var(--tile-sprite)*0.06)] w-[calc(var(--tile-sprite)*0.37)] h-[calc(var(--tile-sprite)*0.37)]"
-      />
-      <div
-        style={{
-          width: spritePx,
-          height: spritePx,
-          backgroundImage: `url(${pokemon.sprite})`,
-          backgroundSize: `${spritePx}px ${spritePx}px`,
-          backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'center',
-          imageRendering: 'pixelated',
-        }}
-        role="img"
-        aria-label={displayName(pokemon.name)}
-      />
-      <span className="text-[calc(var(--tile-sprite)*0.22)] font-medium capitalize truncate w-full text-center leading-tight">
-        {displayName(pokemon.name)}
-      </span>
-      <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.04)] mt-[calc(var(--tile-sprite)*0.04)] w-full">
-        {pokemon.types.map((t) => (
-          <TypeBadge key={t} type={t as TypeName} className="w-[min(65%,75px)]" />
-        ))}
-        {pokemon.types.length === 1 && (
-          <div className="w-[min(65%,75px)]" style={{ aspectRatio: '200/40' }} aria-hidden />
-        )}
-      </div>
+      <GenBadge gen={pokemon.generation} className={TILE_GEN_BADGE_CLASS} />
+      <PokemonTileContent pokemon={pokemon} spritePx={spritePx} />
     </div>
   );
 }
@@ -151,7 +122,7 @@ function DraggableTile({
 }) {
   const removeBranch = usePokedexStore((s) => s.removeBranch);
   const pokemon = getPokemonById(pokemonId);
-  const spritePx = usePixelPerfectSprite(8, 48, 8, 96);
+  const spritePx = useTileSpritePx();
 
   const {
     attributes,
@@ -191,43 +162,23 @@ function DraggableTile({
       <div
         {...attributes}
         {...listeners}
-        className="relative bg-card border rounded-lg flex flex-col items-center justify-center p-[calc(var(--tile-sprite)*0.06)] group aspect-square md:aspect-auto cursor-grab active:cursor-grabbing select-none"
+        className={cn(
+          'relative bg-card border rounded-lg flex flex-col items-center group cursor-grab active:cursor-grabbing select-none',
+          TILE_ROOT_PADDING_CLASS,
+        )}
       >
-        <GenBadge
-          gen={pokemon.generation}
-          className="absolute top-[calc(var(--tile-sprite)*0.06)] left-[calc(var(--tile-sprite)*0.06)] w-[calc(var(--tile-sprite)*0.37)] h-[calc(var(--tile-sprite)*0.37)] z-10"
-        />
+        <GenBadge gen={pokemon.generation} className={TILE_GEN_BADGE_CLASS} />
         <button
           onClick={() => removeBranch(sectionId, pokemonId)}
           onPointerDown={(e) => e.stopPropagation()}
-          className="absolute top-[calc(var(--tile-sprite)*0.06)] right-[calc(var(--tile-sprite)*0.06)] w-[calc(var(--tile-sprite)*0.37)] h-[calc(var(--tile-sprite)*0.37)] rounded-full bg-destructive text-white flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity z-10"
+          className={cn(
+            TILE_ACTION_BUTTON_CLASS,
+            'rounded-full bg-destructive text-white flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity',
+          )}
         >
           <X className="w-1/2 h-1/2" />
         </button>
-        <div
-          style={{
-            width: spritePx,
-            height: spritePx,
-            backgroundImage: `url(${pokemon.sprite})`,
-            backgroundSize: `${spritePx}px ${spritePx}px`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center',
-            imageRendering: 'pixelated',
-          }}
-          role="img"
-          aria-label={displayName(pokemon.name)}
-        />
-        <span className="text-[calc(var(--tile-sprite)*0.22)] font-medium capitalize truncate w-full text-center leading-tight">
-          {displayName(pokemon.name)}
-        </span>
-        <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.04)] mt-[calc(var(--tile-sprite)*0.04)] w-full">
-          {pokemon.types.map((t) => (
-            <TypeBadge key={t} type={t as TypeName} className="w-[min(65%,75px)]" />
-          ))}
-          {pokemon.types.length === 1 && (
-            <div className="w-[min(65%,75px)]" style={{ aspectRatio: '200/40' }} aria-hidden />
-          )}
-        </div>
+        <PokemonTileContent pokemon={pokemon} spritePx={spritePx} />
       </div>
     </div>
   );
