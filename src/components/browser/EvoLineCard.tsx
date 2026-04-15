@@ -34,6 +34,12 @@ interface EvoLineGroup {
   /** Members shown at reduced opacity as de-emphasized context (e.g. filtered
    *  starters/legendaries when the "No Starters/Legendaries" toggle is on). */
   mutedIds?: Set<number>;
+  /** Explicit "home gen" for this placement — overrides the gen inferred from
+   *  matched/members. Used by the regional drilldown when the same line is
+   *  placed in multiple gen sections (once per matching member's gen): each
+   *  placement declares its bucket as the home gen so members from other gens
+   *  get cross-gen badges / muting regardless of which one is placed. */
+  anchorGen?: number;
 }
 
 interface EvoLineGridProps {
@@ -80,6 +86,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shi
           members={group.members}
           matchedIds={group.matchedIds}
           mutedIds={group.mutedIds}
+          anchorGen={group.anchorGen}
           assignedIds={assignedIds}
           stagedIds={stagedIds}
           onToggleStage={onToggleStage}
@@ -113,6 +120,8 @@ interface EvoLineCardProps {
    *  Overrides matchedIds-based highlighting — used to de-emphasize filtered-out
    *  starters/legendaries that are shown for context only. */
   mutedIds?: Set<number>;
+  /** Explicit home gen for this placement. Overrides the inferred line gen. */
+  anchorGen?: number;
   assignedIds: Set<number>;
   stagedIds: Set<number>;
   onToggleStage: (memberIds: number[]) => void;
@@ -147,7 +156,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-export function EvoLineCard({ members, matchedIds, mutedIds, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, spritePx }: EvoLineCardProps) {
+export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, spritePx }: EvoLineCardProps) {
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const sections = usePokedexStore((s) => s.sections);
   const allInDex = members.every((p) => assignedIds.has(p.id));
@@ -178,19 +187,15 @@ export function EvoLineCard({ members, matchedIds, mutedIds, assignedIds, staged
   const primaryType = members[0].types[0];
   const bgColor = TYPE_COLORS[primaryType as keyof typeof TYPE_COLORS] ?? '#888';
 
-  // Line's "home" gen = earliest-introduced member's gen. Matches how the
-  // regional drilldown buckets the line (min gen across members) and handles
-  // retro baby pre-evolutions correctly: for Chingling (Gen 4) → Chimecho
-  // (Gen 3), lineGen = 3, so Chingling (Gen 4) gets the cross-gen badge and
-  // Chimecho (the originally-introduced member shown in its native gen
-  // section) does not. Using chain-order (members[0]) or first-matched-in-
-  // chain-order inverts this for retro babies like Wynaut→Wobbuffet.
-  // Prefer matched members as the reference set when available, so
-  // unmatched chain-mates (e.g. Rolycoly in a Fire drilldown) can't pull the
-  // home gen away from the actual match.
+  // Line's "home" gen. If the caller supplies anchorGen (regional drilldown,
+  // where one line may be placed in multiple gen sections), use that — it
+  // encodes which gen this particular placement belongs to. Otherwise infer
+  // from matched members (earliest-introduced = home), falling back to all
+  // members. Retro babies (e.g. Chingling Gen 4 → Chimecho Gen 3) land in the
+  // original's gen so the original isn't wrongly flagged cross-gen.
   const matchedMembers = members.filter(m => matchedIds.has(m.id));
   const referenceMembers = matchedMembers.length > 0 ? matchedMembers : members;
-  const lineGen = Math.min(...referenceMembers.map(m => m.generation));
+  const lineGen = anchorGen ?? Math.min(...referenceMembers.map(m => m.generation));
 
   return (
     <>

@@ -26,6 +26,9 @@ interface SectionGroup {
      *  and from the subtitle counts, but still rendered so the user can
      *  see what was filtered out. */
     mutedIds?: Set<number>;
+    /** Explicit home gen for this placement (regional drilldown places a
+     *  line once per gen that has a matching member in it). */
+    anchorGen?: number;
   }[];
 }
 
@@ -259,71 +262,93 @@ function computeRegionalDrillDown(
   // the subtitle would read "0 Pokémon" while still showing greyed cards.
   if (matchingNonExcludedIds.size === 0) return null;
 
-  // Build evolution line groups, grouped by generation. Iterate only over
-  // non-excluded seeds so we don't create chains whose only matching member
-  // is an excluded starter/legendary. Excluded chain-mates still render
-  // muted inside chains anchored by a non-excluded match.
-  const seenRoots = new Set<string>();
-  const evoLinesByGen = new Map<number, { key: string; members: Pokemon[]; matchedIds: Set<number>; mutedIds?: Set<number> }[]>();
+  // Place each matching-non-excluded member into its own gen bucket.
+  // A line with matches in multiple gens appears once in each — e.g. in the
+  // Hoenn Psychic drilldown, Wynaut (Gen 3) + Wobbuffet (Gen 2) both match,
+  // so the line shows in Gen 2 (Wobbuffet full opacity, Wynaut muted) AND
+  // Gen 3 (Wynaut full opacity, Wobbuffet muted). Within a single gen,
+  // multiple matches from the same line collapse to one entry keyed by
+  // rootKey:gen. In newOnly mode we collapse all matches into a single
+  // section anchored at dex.generation (no sub-buckets — only chain-mates
+  // from other gens get muted/badged).
+  const bucketKey = (rootKey: string, gen: number) => `${rootKey}:${gen}`;
+  const seenAnchors = new Set<string>();
+  const evoLinesByGen = new Map<number, { key: string; members: Pokemon[]; matchedIds: Set<number>; mutedIds?: Set<number>; anchorGen?: number }[]>();
   const chainIds = new Set<number>();
+  const anchorGenForNewOnly = dex?.generation ?? 1;
 
-  for (const id of matchingNonExcludedIds) {
-    const line = getEvolutionLine(id, userPlacedIds);
-    const rootKey = line.map(m => m.id).join('-');
-    if (seenRoots.has(rootKey)) continue;
-    seenRoots.add(rootKey);
-
-    const p = getPokemonById(id);
-    if (p) chainIds.add(p.evolutionChainId);
-
-    // matchedIds = members that match the segment, are in the user's pokedex,
-    //   and aren't excluded.
-    // mutedIds = chain-mates that don't match the segment (e.g. Rolycoly in a
-    //   Fire drilldown) plus members matching but excluded by the toggle.
-    //   Members matching the segment but not in the user's pokedex stay at
-    //   full opacity so regional-dex context remains visible.
+  const buildEntry = (line: Pokemon[], rootKey: string, bucketGen: number) => {
     const lineMatchedIds = new Set<number>();
     const lineMutedIds = new Set<number>();
     for (const m of line) {
       const matches = matchingIds.has(m.id);
       const excluded = excludedIds.has(m.id);
-      if (matches && userPlacedIds.has(m.id) && !excluded) {
+      const rightGen = m.generation === bucketGen;
+      // matchedIds = placed + matching + not excluded + belongs to this gen bucket.
+      // mutedIds = anyone not matching / excluded / from a different gen.
+      // Members matching + right-gen but not placed stay full-opacity context.
+      if (matches && userPlacedIds.has(m.id) && !excluded && rightGen) {
         lineMatchedIds.add(m.id);
       }
-      if (!matches || excluded) {
+      if (!matches || excluded || !rightGen) {
         lineMutedIds.add(m.id);
       }
     }
-
-    // Bucket by the earliest-introduced member, not line[0] (which is the
-    // chain's oldest ancestor). Retroactive baby pre-evolutions like
-    // Chingling (Gen 4, pre-evo of Chimecho Gen 3) would otherwise force a
-    // Gen-3 chain into the Gen 4 section when viewing a Hoenn drilldown.
-    const gen = Math.min(...line.map(m => m.generation));
-    const groups = evoLinesByGen.get(gen) ?? [];
-    groups.push({
-      key: rootKey,
+    return {
+      key: bucketKey(rootKey, bucketGen),
       members: line,
       matchedIds: lineMatchedIds,
       mutedIds: lineMutedIds.size > 0 ? lineMutedIds : undefined,
-    });
-    evoLinesByGen.set(gen, groups);
+      anchorGen: bucketGen,
+    };
+  };
+
+  for (const id of matchingNonExcludedIds) {
+    const member = getPokemonById(id);
+    if (!member) continue;
+    const line = getEvolutionLine(id, userPlacedIds);
+    const rootKey = line.map(m => m.id).join('-');
+    chainIds.add(member.evolutionChainId);
+
+    const bucketGen = newOnly ? anchorGenForNewOnly : member.generation;
+    const anchorKey = bucketKey(rootKey, bucketGen);
+    if (seenAnchors.has(anchorKey)) continue;
+    seenAnchors.add(anchorKey);
+
+    const entry = buildEntry(line, rootKey, bucketGen);
+    const groups = evoLinesByGen.get(bucketGen) ?? [];
+    groups.push(entry);
+    evoLinesByGen.set(bucketGen, groups);
   }
 
-  // Build sections grouped by generation, sorted by gen number
+  // Build sections. In newOnly mode, collapse to a single section; otherwise
+  // one section per gen, sorted by gen number.
   const genColors = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
   const sections: SectionGroup[] = [];
-  const sortedGens = [...evoLinesByGen.keys()].sort((a, b) => a - b);
-  for (const gen of sortedGens) {
-    const groups = evoLinesByGen.get(gen)!;
-    // Sort by national dex ID within each gen
+  if (newOnly) {
+    const groups = evoLinesByGen.get(anchorGenForNewOnly) ?? [];
     groups.sort((a, b) => a.members[0].id - b.members[0].id);
-    sections.push({
-      sectionId: `gen-${gen}`,
-      sectionName: `Generation ${gen}`,
-      sectionColor: genColors[(gen - 1) % genColors.length],
-      groups,
-    });
+    if (groups.length > 0) {
+      sections.push({
+        sectionId: `gen-${anchorGenForNewOnly}`,
+        sectionName: `Generation ${anchorGenForNewOnly}`,
+        sectionColor: genColors[(anchorGenForNewOnly - 1) % genColors.length],
+        groups,
+      });
+    }
+  } else {
+    const sortedGens = [...evoLinesByGen.keys()].sort((a, b) => a - b);
+    for (const gen of sortedGens) {
+      const groups = evoLinesByGen.get(gen)!;
+      // Sort by national dex ID within each gen
+      groups.sort((a, b) => a.members[0].id - b.members[0].id);
+      sections.push({
+        sectionId: `gen-${gen}`,
+        sectionName: `Generation ${gen}`,
+        sectionColor: genColors[(gen - 1) % genColors.length],
+        groups,
+      });
+    }
   }
 
   const dexLabel = isNational ? 'National Dex' : dex!.name;
