@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
-import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, snapCenterToPointer, TOUCH_HIT_LIFT_PX } from '@/lib/dragCollision';
+import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { TypeName } from '@/types/pokemon';
 import { displayName } from '@/lib/utils';
@@ -11,7 +11,6 @@ import { Trash2, Plus, X, Settings } from 'lucide-react';
 
 import { PageFooter } from '@/components/shared/PageFooter';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
-import { DebugDropGrid } from '@/components/shared/DebugDropGrid';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import {
   DndContext,
@@ -40,6 +39,16 @@ import { useDraggable } from '@dnd-kit/core';
 const DND_MEASURING = {
   droppable: { strategy: MeasuringStrategy.Always },
 } as const;
+
+// Page-specific drag geometry. The build page uses ~60-80px tiles on
+// mobile, so the held overlay lifts 90px above the pointer and the
+// hit-test target lifts 180px — enough clearance for the sprite and
+// the target tile above it. See src/lib/dragCollision.ts for the
+// visual stack explanation.
+const OVERLAY_LIFT_PX = 90;
+const TOUCH_HIT_LIFT_PX = 180;
+const effectiveCursorCollision = createEffectiveCursorCollision(TOUCH_HIT_LIFT_PX);
+const snapCenterToPointer = createSnapCenterToPointer(OVERLAY_LIFT_PX);
 
 // ---------- helpers ----------
 
@@ -444,18 +453,28 @@ function GroupBox({
       </div>
 
       {showEmptyState ? (
-        /* Empty: single "+" at tile size */
+        /* Empty: single "+" at tile size. During drag swap to an
+           EndDropZone so the section itself is a drop target — without
+           it, there's no droppable here at all and the cursor can't
+           snap to an empty section (not even to the left of the "+"). */
         <div className="grid grid-cols-6 gap-[1vw] md:gap-1 p-1 pt-0">
-          <button
-            onClick={() => onAddClick(group.id)}
-            className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
-            style={{
-              borderColor: `${group.color}40`,
-              color: `${group.color}90`,
-            }}
-          >
-            <Plus className="w-[4vw] h-[4vw] md:w-[min(2vw,24px)] md:h-[min(2vw,24px)]" />
-          </button>
+          {dragLineIds ? (
+            <EndDropZone
+              sectionId={group.id}
+              showIndicator={insertIndicator.endSection === group.id}
+            />
+          ) : (
+            <button
+              onClick={() => onAddClick(group.id)}
+              className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
+              style={{
+                borderColor: `${group.color}40`,
+                color: `${group.color}90`,
+              }}
+            >
+              <Plus className="w-[4vw] h-[4vw] md:w-[min(2vw,24px)] md:h-[min(2vw,24px)]" />
+            </button>
+          )}
         </div>
       ) : (
         /* Filled: grid of tiles */
@@ -874,7 +893,6 @@ export function PokedexGrid() {
               {cursorPos && dragLineIds && (
                 <EffectiveCursorMarker x={cursorPos.x} y={cursorPos.y} />
               )}
-              <DebugDropGrid />
               <DragMeasureKicker />
             </DndContext>
           </div>

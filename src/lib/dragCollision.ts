@@ -10,20 +10,18 @@ import {
  * no empty space between the pointer and the overlay, or between the
  * overlay and the hit-test target):
  *   • Desktop (mouse): mouse cursor = hit-test target. Overlay floats
- *     OVERLAY_LIFT_PX above the mouse — just enough clearance for the
+ *     overlayLiftPx above the mouse — just enough clearance for the
  *     held sprite's bottom edge to sit above the cursor.
- *   • Touch (thumb): thumb at bottom, held overlay OVERLAY_LIFT_PX above
- *     thumb, hit-test target TOUCH_HIT_LIFT_PX above thumb. Target sits
+ *   • Touch (thumb): thumb at bottom, held overlay overlayLiftPx above
+ *     thumb, hit-test target touchHitLiftPx above thumb. Target sits
  *     directly above the overlay so the drop indicator is visible.
  *
- * Values assume an approximate tile height of ~60-80px. They're sized so
- * the bottom of the overlay is ~10-20px above the thumb, and the target
- * tile is ~10-20px above the top of the overlay — tight enough that the
- * user doesn't see dead space between their finger and what they're
- * holding.
+ * Values are tile-height-dependent. The build page (Pokedex, 6-col grid,
+ * ~60-80px tiles) uses lifts around 90 / 180. The view page (10-col
+ * grid, ~40px tiles) uses roughly half those values. Each page
+ * constructs its own collision detector and modifier via the factories
+ * below so the lifts match the page's tile size.
  */
-export const OVERLAY_LIFT_PX = 90;
-export const TOUCH_HIT_LIFT_PX = 180;
 
 /**
  * Shared mutable flag for the current drag's input modality. Set in each
@@ -48,9 +46,10 @@ export const dragPointerRef: { current: { x: number; y: number } | null } = {
 };
 
 /**
- * Seamless-grid collision detection with a touch-aware hit-test lift.
+ * Factory for a seamless-grid collision detector with a touch-aware
+ * hit-test lift.
  *
- * 1. On touch drag, lift the pointer by TOUCH_HIT_LIFT_PX so the hit-test
+ * 1. On touch drag, lift the pointer by `touchHitLiftPx` so the hit-test
  *    lands on the tile ABOVE the overlay the user is holding — not the
  *    tile under the overlay (which would be covered) or under the thumb
  *    (also covered). On desktop, use the raw mouse pointer.
@@ -64,42 +63,46 @@ export const dragPointerRef: { current: { x: number; y: number } | null } = {
  *    differently from the adjusted pointer) and would re-introduce a
  *    row-jump bug.
  */
-export const effectiveCursorCollision: CollisionDetection = (args) => {
-  const raw = args.pointerCoordinates;
-  // Stash for drag-move handlers so they can read the authoritative
-  // pointer X directly instead of reconstructing from activator+delta.
-  dragPointerRef.current = raw ? { x: raw.x, y: raw.y } : null;
+export function createEffectiveCursorCollision(
+  touchHitLiftPx: number,
+): CollisionDetection {
+  return (args) => {
+    const raw = args.pointerCoordinates;
+    // Stash for drag-move handlers so they can read the authoritative
+    // pointer X directly instead of reconstructing from activator+delta.
+    dragPointerRef.current = raw ? { x: raw.x, y: raw.y } : null;
 
-  const effective = raw && dragInputIsTouch.current
-    ? { x: raw.x, y: raw.y - TOUCH_HIT_LIFT_PX }
-    : raw;
-  const adjusted = effective === raw ? args : { ...args, pointerCoordinates: effective };
+    const effective = raw && dragInputIsTouch.current
+      ? { x: raw.x, y: raw.y - touchHitLiftPx }
+      : raw;
+    const adjusted = effective === raw ? args : { ...args, pointerCoordinates: effective };
 
-  const hits = pointerWithin(adjusted);
-  if (hits.length > 0) return hits;
+    const hits = pointerWithin(adjusted);
+    if (hits.length > 0) return hits;
 
-  if (!effective) return closestCenter(adjusted);
+    if (!effective) return closestCenter(adjusted);
 
-  let bestId: string | number | null = null;
-  let bestD2 = Infinity;
-  args.droppableContainers.forEach((c) => {
-    const r = args.droppableRects.get(c.id);
-    if (!r) return;
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    const d2 = (cx - effective.x) ** 2 + (cy - effective.y) ** 2;
-    if (d2 < bestD2) {
-      bestD2 = d2;
-      bestId = c.id;
-    }
-  });
-  return bestId !== null ? [{ id: bestId, data: { value: bestD2 } }] : [];
-};
+    let bestId: string | number | null = null;
+    let bestD2 = Infinity;
+    args.droppableContainers.forEach((c) => {
+      const r = args.droppableRects.get(c.id);
+      if (!r) return;
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const d2 = (cx - effective.x) ** 2 + (cy - effective.y) ** 2;
+      if (d2 < bestD2) {
+        bestD2 = d2;
+        bestId = c.id;
+      }
+    });
+    return bestId !== null ? [{ id: bestId, data: { value: bestD2 } }] : [];
+  };
+}
 
 /**
- * Center the DragOverlay on the CURRENT pointer (not the activator
- * event's initial point) and lift it by OVERLAY_LIFT_PX — all in one
- * transform. Three things matter:
+ * Factory for a modifier that centers the DragOverlay on the CURRENT
+ * pointer (not the activator event's initial point) and lifts it by
+ * `overlayLiftPx` — all in one transform. Three things matter:
  *
  * 1. Centering independent of grab point. Without this, dnd-kit's
  *    default preserves the initial finger-to-tile offset — grab the
@@ -123,15 +126,14 @@ export const effectiveCursorCollision: CollisionDetection = (args) => {
  *    rect, and the centering math below compensates it back out
  *    (they cancel).
  */
-export const snapCenterToPointer: Modifier = ({
-  draggingNodeRect,
-  transform,
-}) => {
-  const ptr = dragPointerRef.current;
-  if (!draggingNodeRect || !ptr) return transform;
-  return {
-    ...transform,
-    x: ptr.x - draggingNodeRect.left - draggingNodeRect.width / 2,
-    y: ptr.y - draggingNodeRect.top - draggingNodeRect.height / 2 - OVERLAY_LIFT_PX,
+export function createSnapCenterToPointer(overlayLiftPx: number): Modifier {
+  return ({ draggingNodeRect, transform }) => {
+    const ptr = dragPointerRef.current;
+    if (!draggingNodeRect || !ptr) return transform;
+    return {
+      ...transform,
+      x: ptr.x - draggingNodeRect.left - draggingNodeRect.width / 2,
+      y: ptr.y - draggingNodeRect.top - draggingNodeRect.height / 2 - overlayLiftPx,
+    };
   };
-};
+}

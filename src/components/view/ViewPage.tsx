@@ -6,13 +6,12 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
-import { DebugDropGrid } from '@/components/shared/DebugDropGrid';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
-import { effectiveCursorCollision, dragInputIsTouch, dragPointerRef, snapCenterToPointer, TOUCH_HIT_LIFT_PX } from '@/lib/dragCollision';
+import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import {
   DndContext,
   MouseSensor,
@@ -44,6 +43,18 @@ const DND_MEASURING = {
 } as const;
 
 const COLS = 10;
+
+// Page-specific drag geometry. View page tiles are ~40px (10-col grid),
+// roughly half the build page's ~60-80px tiles, so the overlay and
+// hit-test lift are halved to match — otherwise the held line sits too
+// far above the thumb. The faint cursor marker is also shortened to
+// CURSOR_MARKER_HEIGHT since the view page's snap indicator (tileSize
+// minus 8px padding) is likewise ~half the build page's.
+const OVERLAY_LIFT_PX = 45;
+const TOUCH_HIT_LIFT_PX = 90;
+const CURSOR_MARKER_HEIGHT = 24;
+const effectiveCursorCollision = createEffectiveCursorCollision(TOUCH_HIT_LIFT_PX);
+const snapCenterToPointer = createSnapCenterToPointer(OVERLAY_LIFT_PX);
 
 /** Pokeball SVG background with top/bottom halves colored by type, gap between halves. */
 function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
@@ -551,9 +562,8 @@ export function ViewPage() {
                   )}
                 </DragOverlay>
                 {cursorPos && dragLineIds && (
-                  <EffectiveCursorMarker x={cursorPos.x} y={cursorPos.y} />
+                  <EffectiveCursorMarker x={cursorPos.x} y={cursorPos.y} height={CURSOR_MARKER_HEIGHT} />
                 )}
-                <DebugDropGrid />
                 <DragMeasureKicker />
               </DndContext>
             );
