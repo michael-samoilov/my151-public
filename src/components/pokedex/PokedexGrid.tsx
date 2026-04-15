@@ -391,6 +391,25 @@ function GroupBox({
     prevHeightRef.current = newHeight;
   });
 
+  // Keep prevHeightRef current with the element's actual rendered height,
+  // independent of React re-renders. Without this, the useLayoutEffect above
+  // only updates the ref on re-render — so any layout shift that happens
+  // while PokedexGrid is quiet (sprite/font loads, viewport resize) goes
+  // unnoticed, and the next drag-start re-render misreads the accumulated
+  // delta as a fresh change and triggers a 150ms height collapse animation.
+  // ResizeObserver fires on every real layout change, keeping the baseline
+  // in sync. scrollHeight (not offsetHeight) so mid-animation fires don't
+  // capture the transitioning intermediate value.
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      prevHeightRef.current = el.scrollHeight;
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   const handleTransitionEnd = useCallback((e: React.TransitionEvent) => {
     if (e.propertyName === 'height' && boxRef.current) {
       boxRef.current.style.height = '';
