@@ -199,8 +199,8 @@ function DraggableViewTile({
       )}
       <PokeballBg pokemon={pokemon} />
       <span
-        className="absolute top-[3px] left-[3px] z-20 leading-none font-semibold text-foreground/40 select-none"
-        style={{ fontSize: tileSize * 0.14 }}
+        className="absolute top-[3px] left-[2px] z-20 leading-none font-semibold text-foreground/40 select-none"
+        style={{ fontSize: tileSize * 0.12 }}
       >
         {positionNum}.
       </span>
