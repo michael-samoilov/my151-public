@@ -11,7 +11,8 @@ import {
   TILE_ROOT_PADDING_CLASS,
   useTileSpritePx,
 } from '@/components/shared/PokemonTile';
-import { Trash2, Plus, X, Settings } from 'lucide-react';
+import { Trash2, Plus, Settings } from 'lucide-react';
+import { RedXIcon } from '@/components/browser/EvoLineCard';
 
 import { PageFooter } from '@/components/shared/PageFooter';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
@@ -173,10 +174,11 @@ function DraggableTile({
           onPointerDown={(e) => e.stopPropagation()}
           className={cn(
             TILE_ACTION_BUTTON_CLASS,
-            'rounded-full bg-destructive text-white flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity',
+            'md:opacity-0 md:group-hover:opacity-100 transition-opacity',
           )}
+          style={{ transform: 'translateZ(0)' }}
         >
-          <X className="w-1/2 h-1/2" />
+          <RedXIcon className="w-full h-full" />
         </button>
         <PokemonTileContent pokemon={pokemon} spritePx={spritePx} />
       </div>

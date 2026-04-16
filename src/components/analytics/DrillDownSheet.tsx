@@ -456,13 +456,15 @@ export function DrillDownSheet() {
             }}
             onTransitionEnd={handleTransitionEnd}
           >
-            {/* Prev panel — clip-path allows shadow to escape upward but clips it at
-                panel's own left/right edges, preventing bleed into adjacent panels.
-                contain:content isolates paint so React re-renders inside a panel
-                don't flash the parent background through neighbouring panels. */}
+            {/* Panel wrappers keyed by segment identity — when the user
+                swipes from B→C, React physically MOVES C's wrapper div
+                from index 2 to index 1 (preserving its <img> DOM nodes
+                and painted sprites) instead of destroying index 2 and
+                rebuilding index 1 from scratch (which flashes white). */}
             <div
+              key={prevSibling ? JSON.stringify(prevSibling) : 'empty-prev'}
               className="h-full flex-1 min-w-0"
-              style={{ clipPath: 'inset(-100px 0 0 0)', contain: 'content' }}
+              style={{ clipPath: 'inset(-100px 0 0 0)' }}
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -487,8 +489,9 @@ export function DrillDownSheet() {
 
             {/* Current panel */}
             <div
+              key={segment ? JSON.stringify(segment) : 'empty-current'}
               className="h-full flex-1 min-w-0"
-              style={{ clipPath: 'inset(-100px 0 0 0)', contain: 'content' }}
+              style={{ clipPath: 'inset(-100px 0 0 0)' }}
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -515,8 +518,9 @@ export function DrillDownSheet() {
 
             {/* Next panel */}
             <div
+              key={nextSibling ? JSON.stringify(nextSibling) : 'empty-next'}
               className="h-full flex-1 min-w-0"
-              style={{ clipPath: 'inset(-100px 0 0 0)', contain: 'content' }}
+              style={{ clipPath: 'inset(-100px 0 0 0)' }}
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}

@@ -25,7 +25,7 @@ function PokeballIcon({ className }: { className?: string }) {
 }
 
 /** Red circle with a centered X — SVG so centering is pixel-exact */
-function RedXIcon({ className }: { className?: string }) {
+export function RedXIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 16 16" className={className} fill="none">
       <circle cx="8" cy="8" r="7.5" fill="#ef4444" />
@@ -206,18 +206,12 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
   };
 
   const handleClick = () => {
-    if (allInDex && variant === 'browser') {
-      // Stage/unstage for removal instead of immediately removing
+    if (allInDex) {
+      // Stage/unstage for removal
       toggleRemoval();
-    } else if (!allInDex) {
+    } else {
       onToggleStage(members.map((p) => p.id));
     }
-  };
-
-  const handleRemoveButton = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    // Stage/unstage for removal instead of immediately removing
-    toggleRemoval();
   };
 
   const primaryType = members[0].types[0];
@@ -278,15 +272,10 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                 {showGenBadge && (
                   <GenBadge gen={pokemon.generation} className={TILE_GEN_BADGE_CLASS} />
                 )}
-                {inDex && variant === 'analytics' && (
-                  <button
-                    onClick={handleRemoveButton}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    className={TILE_ACTION_BUTTON_CLASS}
-                    style={{ transform: 'translateZ(0)' }}
-                  >
+                {inDex && variant === 'analytics' && markedForRemoval && (
+                  <div className={TILE_ACTION_BUTTON_CLASS} style={{ transform: 'translateZ(0)' }}>
                     <RedXIcon className="w-full h-full" />
-                  </button>
+                  </div>
                 )}
                 {inDex && variant === 'browser' && (
                   markedForRemoval ? (
