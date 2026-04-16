@@ -287,15 +287,16 @@ export async function generateExportImage(
   const footerY = PAD_TOP + totalRows * TILE + PAD_BOTTOM / 2;
   const zinc = '#a1a1aa';
   const FONT_SPEC = '600 8px "Inter Variable", system-ui, -apple-system, sans-serif';
-  const ICON_SZ = 9;  // logical px: square side for type icon / gen badge
-  const ICON_GAP = 2; // gap after icon before next element
+  const TYPE_ICON_SZ = 9;  // logical px: square side for type icons
+  const GEN_ICON_SZ = 14;  // logical px: gen badge circle (larger so the number reads clearly)
+  const ICON_GAP = 2;      // gap after icon before next element
 
   ctx.font = FONT_SPEC;
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
 
-  // Segment types: text or image icon
-  type Seg = { kind: 'text'; text: string; color: string } | { kind: 'icon'; img: HTMLImageElement };
+  // Segment types: text or image icon (with per-icon size)
+  type Seg = { kind: 'text'; text: string; color: string } | { kind: 'icon'; img: HTMLImageElement; sz: number };
   const segs: Seg[] = [];
 
   if (insights.noTypesOverIndex) {
@@ -303,12 +304,12 @@ export async function generateExportImage(
   } else if (insights.leanType || insights.leanGen) {
     if (insights.leanType) {
       const t = insights.leanType;
-      if (leanTypeImg) segs.push({ kind: 'icon', img: leanTypeImg });
+      if (leanTypeImg) segs.push({ kind: 'icon', img: leanTypeImg, sz: TYPE_ICON_SZ });
       segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
     }
     if (insights.leanGen) {
       if (insights.leanType) segs.push({ kind: 'text', text: ' & ', color: zinc });
-      if (leanGenImg) segs.push({ kind: 'icon', img: leanGenImg });
+      if (leanGenImg) segs.push({ kind: 'icon', img: leanGenImg, sz: GEN_ICON_SZ });
       segs.push({ kind: 'text', text: `Gen ${insights.leanGen}`, color: zinc });
     }
     segs.push({ kind: 'text', text: '-heavy', color: zinc });
@@ -318,7 +319,7 @@ export async function generateExportImage(
     if (segs.length > 0) segs.push({ kind: 'text', text: ' · ', color: zinc });
     segs.push({ kind: 'text', text: 'Advantaged: ', color: zinc });
     const t = insights.bestAttackType;
-    if (attackTypeImg) segs.push({ kind: 'icon', img: attackTypeImg });
+    if (attackTypeImg) segs.push({ kind: 'icon', img: attackTypeImg, sz: TYPE_ICON_SZ });
     segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
   }
 
@@ -327,18 +328,18 @@ export async function generateExportImage(
   segs.push({ kind: 'text', text: 'my151', color: '#DC2626' });
   segs.push({ kind: 'text', text: '.app', color: '#0a0a0a' });
 
-  // Measure total width (icons occupy ICON_SZ + ICON_GAP)
+  // Measure total width
   let totalW = 0;
   for (const seg of segs) {
-    totalW += seg.kind === 'icon' ? (ICON_SZ + ICON_GAP) : ctx.measureText(seg.text).width;
+    totalW += seg.kind === 'icon' ? (seg.sz + ICON_GAP) : ctx.measureText(seg.text).width;
   }
 
   // Draw left-to-right centered
   let tx = (w - totalW) / 2;
   for (const seg of segs) {
     if (seg.kind === 'icon') {
-      ctx.drawImage(seg.img, tx, footerY - ICON_SZ / 2, ICON_SZ, ICON_SZ);
-      tx += ICON_SZ + ICON_GAP;
+      ctx.drawImage(seg.img, tx, footerY - seg.sz / 2, seg.sz, seg.sz);
+      tx += seg.sz + ICON_GAP;
     } else {
       ctx.fillStyle = seg.color;
       ctx.fillText(seg.text, tx, footerY);
