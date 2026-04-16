@@ -438,7 +438,7 @@ export function ViewPage() {
     if (exporting || sorted.length === 0) return;
     setExporting(true);
     try {
-      const blob = await generateExportImage(sorted, window.location.origin);
+      const blob = await generateExportImage(sorted);
       await shareOrDownload(blob, `my-personal-151.png`);
       sendExportBeacon(sorted.map((p) => p.id));
     } catch (err) {

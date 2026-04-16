@@ -33,7 +33,7 @@ function buildBadgeUri(gen: number, stops: { offset: string; color: string }[]):
 }
 
 /** Pre-computed data URIs — one per generation */
-const GEN_BADGE_URIS: Record<number, string> = {};
+export const GEN_BADGE_URIS: Record<number, string> = {};
 for (const [gen, stops] of Object.entries(GEN_STOPS)) {
   GEN_BADGE_URIS[Number(gen)] = buildBadgeUri(Number(gen), stops);
 }

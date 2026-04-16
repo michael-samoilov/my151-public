@@ -2,6 +2,8 @@ import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { computeTypeDominance, getNationalBaseline } from '@/hooks/useTypeDominance';
 import { getAllPokemon } from '@/hooks/usePokemonData';
+import { typeIconPath } from '@/data/type-ids';
+import { GEN_BADGE_URIS } from '@/components/shared/GenBadge';
 
 const COLS = 10;
 const TILE = 48;
@@ -15,12 +17,6 @@ const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
 const SCALE = 4; // SPRITE * SCALE = 192 = exactly 2× native 96px sprites
 
 // ---------- Footer insight computation ----------
-
-/** Representative solid color per generation for inline gen dot */
-const GEN_DOT_COLORS: Record<number, string> = {
-  1: '#DC0A2D', 2: '#DAA520', 3: '#A00000', 4: '#AACCEE',
-  5: '#555555', 6: '#025DA6', 7: '#F5A623', 8: '#00A1E9', 9: '#E3350D',
-};
 
 /** National type frequency baseline — proportion of national-dex Pokemon that have each type */
 let _nationalTypeFreq: Map<string, number> | null = null;
@@ -222,7 +218,6 @@ function drawPokeball(
  */
 export async function generateExportImage(
   pokemon: Pokemon[],
-  siteUrl: string,
 ): Promise<Blob> {
   const count = pokemon.length;
   if (count === 0) throw new Error('No Pokemon to export');
@@ -234,6 +229,23 @@ export async function generateExportImage(
   const gridW = COLS * TILE;
   const w = gridW + PAD_X * 2;
   const h = PAD_TOP + totalRows * TILE + PAD_BOTTOM;
+
+  // Compute footer insights before loading images so we know which icons to fetch
+  const insights = computeFooterInsights(pokemon);
+
+  // Load sprites + footer icons in parallel
+  const [sprites, leanTypeImg, leanGenImg, attackTypeImg] = await Promise.all([
+    Promise.all(pokemon.map((p) => loadImage(p.sprite).catch(() => null))),
+    insights.leanType
+      ? loadImage(typeIconPath(insights.leanType)).catch(() => null)
+      : Promise.resolve(null),
+    insights.leanGen != null && GEN_BADGE_URIS[insights.leanGen]
+      ? loadImage(GEN_BADGE_URIS[insights.leanGen]).catch(() => null)
+      : Promise.resolve(null),
+    insights.bestAttackType
+      ? loadImage(typeIconPath(insights.bestAttackType)).catch(() => null)
+      : Promise.resolve(null),
+  ] as const);
 
   const canvas = document.createElement('canvas');
   canvas.width = w * SCALE;
@@ -249,11 +261,6 @@ export async function generateExportImage(
   ctx.fillRect(0, 0, w, h);
 
   // No top header — content starts immediately after PAD_TOP breathing room.
-
-  // Load all sprites in parallel
-  const sprites = await Promise.all(
-    pokemon.map((p) => loadImage(p.sprite).catch(() => null)),
-  );
 
   // Draw full rows (left-aligned in grid)
   for (let i = 0; i < fullRows * COLS; i++) {
@@ -277,22 +284,18 @@ export async function generateExportImage(
   }
 
   // Footer: insights + "made with my151.app"
-  // Segments: [dot] Type-heavy & [dot] Gen N-heavy · Most advantaged: [dot] Type · made with ...
   const footerY = PAD_TOP + totalRows * TILE + PAD_BOTTOM / 2;
-  const domain = siteUrl.replace(/^https?:\/\//, '');
   const zinc = '#a1a1aa';
-  const FONT_SPEC = '600 8px system-ui, -apple-system, sans-serif';
-  const DOT_R = 3.5; // dot radius (logical px)
-  const DOT_GAP = 2;  // gap after dot before text
+  const FONT_SPEC = '600 8px "Inter Variable", system-ui, -apple-system, sans-serif';
+  const ICON_SZ = 9;  // logical px: square side for type icon / gen badge
+  const ICON_GAP = 2; // gap after icon before next element
 
   ctx.font = FONT_SPEC;
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
 
-  const insights = computeFooterInsights(pokemon);
-
-  // Segment types: text or colored dot
-  type Seg = { kind: 'text'; text: string; color: string } | { kind: 'dot'; color: string };
+  // Segment types: text or image icon
+  type Seg = { kind: 'text'; text: string; color: string } | { kind: 'icon'; img: HTMLImageElement };
   const segs: Seg[] = [];
 
   if (insights.noTypesOverIndex) {
@@ -300,14 +303,13 @@ export async function generateExportImage(
   } else if (insights.leanType || insights.leanGen) {
     if (insights.leanType) {
       const t = insights.leanType;
-      segs.push({ kind: 'dot', color: TYPE_COLORS[t] });
+      if (leanTypeImg) segs.push({ kind: 'icon', img: leanTypeImg });
       segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
     }
     if (insights.leanGen) {
       if (insights.leanType) segs.push({ kind: 'text', text: ' & ', color: zinc });
-      const g = insights.leanGen;
-      segs.push({ kind: 'dot', color: GEN_DOT_COLORS[g] ?? '#888' });
-      segs.push({ kind: 'text', text: `Gen ${g}`, color: GEN_DOT_COLORS[g] ?? '#888' });
+      if (leanGenImg) segs.push({ kind: 'icon', img: leanGenImg });
+      segs.push({ kind: 'text', text: `Gen ${insights.leanGen}`, color: zinc });
     }
     segs.push({ kind: 'text', text: '-heavy', color: zinc });
   }
@@ -316,29 +318,27 @@ export async function generateExportImage(
     if (segs.length > 0) segs.push({ kind: 'text', text: ' · ', color: zinc });
     segs.push({ kind: 'text', text: 'Advantaged: ', color: zinc });
     const t = insights.bestAttackType;
-    segs.push({ kind: 'dot', color: TYPE_COLORS[t] });
+    if (attackTypeImg) segs.push({ kind: 'icon', img: attackTypeImg });
     segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
   }
 
   if (segs.length > 0) segs.push({ kind: 'text', text: ' · ', color: zinc });
-  segs.push({ kind: 'text', text: `made with ${domain}`, color: zinc });
+  segs.push({ kind: 'text', text: 'made with ', color: zinc });
+  segs.push({ kind: 'text', text: 'my151', color: '#DC2626' });
+  segs.push({ kind: 'text', text: '.app', color: '#0a0a0a' });
 
-  // Measure total width (dots occupy diameter + gap)
-  const dotW = DOT_R * 2 + DOT_GAP;
+  // Measure total width (icons occupy ICON_SZ + ICON_GAP)
   let totalW = 0;
   for (const seg of segs) {
-    totalW += seg.kind === 'dot' ? dotW : ctx.measureText(seg.text).width;
+    totalW += seg.kind === 'icon' ? (ICON_SZ + ICON_GAP) : ctx.measureText(seg.text).width;
   }
 
   // Draw left-to-right centered
   let tx = (w - totalW) / 2;
   for (const seg of segs) {
-    if (seg.kind === 'dot') {
-      ctx.fillStyle = seg.color;
-      ctx.beginPath();
-      ctx.arc(tx + DOT_R, footerY, DOT_R, 0, Math.PI * 2);
-      ctx.fill();
-      tx += dotW;
+    if (seg.kind === 'icon') {
+      ctx.drawImage(seg.img, tx, footerY - ICON_SZ / 2, ICON_SZ, ICON_SZ);
+      tx += ICON_SZ + ICON_GAP;
     } else {
       ctx.fillStyle = seg.color;
       ctx.fillText(seg.text, tx, footerY);
