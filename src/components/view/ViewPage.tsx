@@ -447,7 +447,7 @@ export function ViewPage() {
     setExporting(true);
     try {
       const blob = await generateExportImage(sorted);
-      await shareOrDownload(blob, `my-personal-151.png`);
+      await shareOrDownload(blob, `my151.png`);
       sendExportBeacon(sorted.map((p) => p.id));
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;

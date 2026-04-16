@@ -277,7 +277,7 @@ export async function generateExportImage(
     const row = Math.floor(i / COLS);
     const x = PAD_X + col * TILE;
     const y = PAD_TOP + row * TILE;
-    drawTile(ctx, x, y, pokemon[i], sprites[i]);
+    drawTile(ctx, x, y, pokemon[i], sprites[i], i + 1);
   }
 
   // Draw last partial row (centered)
@@ -288,7 +288,7 @@ export async function generateExportImage(
       const idx = fullRows * COLS + i;
       const x = lastRowX + i * TILE;
       const y = PAD_TOP + fullRows * TILE;
-      drawTile(ctx, x, y, pokemon[idx], sprites[idx]);
+      drawTile(ctx, x, y, pokemon[idx], sprites[idx], idx + 1);
     }
   }
 
@@ -404,6 +404,7 @@ function drawTile(
   y: number,
   pokemon: Pokemon,
   sprite: HTMLImageElement | null,
+  positionNum: number,
 ) {
   const cx = x + TILE / 2;
   const cy = y + TILE / 2;
@@ -425,6 +426,16 @@ function drawTile(
     ctx.drawImage(sprite, sx, sy, drawSize, drawSize);
     ctx.restore();
   }
+
+  // Position number in top-left corner — matches view page styling
+  const numFontSize = TILE * 0.12; // ~5.76 logical px
+  ctx.save();
+  ctx.font = `600 ${numFontSize}px "Inter Variable", system-ui, -apple-system, sans-serif`;
+  ctx.fillStyle = 'rgba(10, 10, 10, 0.4)';
+  ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
+  ctx.fillText(`${positionNum}.`, x + 1.5, y + 2.5);
+  ctx.restore();
 }
 
 /** Share via native share sheet (mobile gallery save) or fall back to file download. */
