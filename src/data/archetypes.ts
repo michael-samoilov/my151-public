@@ -484,32 +484,6 @@ export const ARCHETYPES: Archetype[] = [
     ],
   },
   {
-    id: 'in-game-trade',
-    name: 'In-Game Trade',
-    description: 'Pokemon obtained through NPC trades',
-    pokemonIds: [
-      // RBY: Farfetch'd (for Spearow), Mr. Mime (for Abra), Jynx (for Poliwhirl)
-      83,865, 122,866, 124,
-      // GSC: Machop (for Drowzee), Voltorb (for Krabby)
-      66,67,68, 100,101,
-      // DPPt: Haunter w/ Everstone (Mindy), Chatot (for Buizel)
-      93,94, 441,
-      // BW: Basculin, Petilil/Cottonee, Emolga
-      550, 546,547,548,549, 587,
-      // SM: Happiny, Bounsweet
-      440,113,242, 761,762,763,
-    ],
-    suggestedSlotRange: [80, 82],
-    color: '#a78bfa',
-    subgroups: [
-      { label: 'Red/Blue/Yellow', pokemonIds: [83, 122, 124] },
-      { label: 'Gold/Silver/Crystal', pokemonIds: [66, 100] },
-      { label: 'Diamond/Pearl/Platinum', pokemonIds: [93, 441] },
-      { label: 'Black/White', pokemonIds: [550, 548, 546, 587] },
-      { label: 'Sun/Moon', pokemonIds: [440, 761] },
-    ],
-  },
-  {
     id: 'reward-pokemon',
     name: 'Prize',
     description: 'Pokemon earned as prizes, rewards, or purchases',
@@ -615,14 +589,6 @@ export const ARCHETYPES: Archetype[] = [
       874, 875,               // Stonjourner / Eiscue
     ],
     suggestedSlotRange: [106, 112],
-    color: '#737373',
-  },
-  {
-    id: 'trade-evo',
-    name: 'Trade Evolution',
-    description: 'Pokemon that evolve through trading',
-    pokemonIds: [61,64,65, 67,68, 75,76, 10111, 93,94, 95,123,125,126,137,186,208,212,233,356,366,367,368,466,467,474,477,525,526, 10172],
-    suggestedSlotRange: [113, 118],
     color: '#737373',
   },
   {
