@@ -6,8 +6,8 @@ const TILE = 48;
 const SPRITE_SRC = 96; // native sprite resolution
 const SPRITE = SPRITE_SRC / 2; // logical draw size = 48px (1:1 with tile)
 const PAD_X = 12;
-const PAD_TOP = 40;
-const PAD_BOTTOM = 34;
+const PAD_TOP = 8;
+const PAD_BOTTOM = 28;
 const BG = '#ffffff';
 const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
 const SCALE = 4; // SPRITE * SCALE = 192 = exactly 2× native 96px sprites
@@ -98,7 +98,6 @@ function drawPokeball(
 export async function generateExportImage(
   pokemon: Pokemon[],
   siteUrl: string,
-  year: number,
 ): Promise<Blob> {
   const count = pokemon.length;
   if (count === 0) throw new Error('No Pokemon to export');
@@ -124,32 +123,7 @@ export async function generateExportImage(
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, w, h);
 
-  // Header: title + count
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const headerY = PAD_TOP / 2;
-
-  ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = '#18181b'; // zinc-900
-  const title = 'My Personal 151';
-  const titleW = ctx.measureText(title).width;
-
-  ctx.font = '600 10px system-ui, -apple-system, sans-serif';
-  const countStr = `${count}/151`;
-  const countW = ctx.measureText(countStr).width;
-
-  const gap = 7;
-  const totalTextW = titleW + gap + countW;
-  const textStart = w / 2 - totalTextW / 2;
-
-  ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = '#18181b';
-  ctx.textAlign = 'left';
-  ctx.fillText(title, textStart, headerY);
-
-  ctx.font = '600 10px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = '#2563eb'; // blue-600 for contrast on white
-  ctx.fillText(countStr, textStart + titleW + gap, headerY);
+  // No top header — content starts immediately after PAD_TOP breathing room.
 
   // Load all sprites in parallel
   const sprites = await Promise.all(
@@ -177,22 +151,15 @@ export async function generateExportImage(
     }
   }
 
-  // Footer
+  // Footer: "{count}/151 · made with my151.app"
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   const footerY = PAD_TOP + totalRows * TILE + PAD_BOTTOM / 2;
+  const domain = siteUrl.replace(/^https?:\/\//, '');
 
   ctx.font = '600 8px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = '#71717a'; // zinc-500
-  ctx.fillText(`Build yours at ${siteUrl.replace(/^https?:\/\//, '')}`, w / 2, footerY - 6);
-
-  ctx.font = '6px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = '#a1a1aa'; // zinc-400
-  ctx.fillText(
-    `Pokémon © 1995\u2013${year} Nintendo / Game Freak / Creatures`,
-    w / 2,
-    footerY + 6,
-  );
+  ctx.fillStyle = '#a1a1aa'; // zinc-400 — subtle caption feel
+  ctx.fillText(`${count}/151 \u00b7 made with ${domain}`, w / 2, footerY);
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {

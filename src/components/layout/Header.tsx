@@ -13,7 +13,7 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
     <header className="border-b bg-card">
       <div className="flex items-center justify-between px-3 sm:px-6 py-2">
         <h1 className="text-lg sm:text-xl font-bold tracking-tight whitespace-nowrap">
-          <span className="text-primary">Personal</span> 151
+          <span className="text-red-500">my151</span><span className="text-foreground">.app</span>
         </h1>
 
         <div className="flex items-center gap-1 flex-shrink-0">
