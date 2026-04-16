@@ -41,14 +41,14 @@ export const BUILD_GROUPS: BuildGroup[] = [
 
   // Thematic
   { id: 'mimic', name: 'Mimic/Disguise', filterType: 'archetype', filterId: 'mimic', color: '#735797' },
-  { id: 'evil-team', name: 'Evil Team', filterType: 'archetype', filterId: 'evil-team', color: '#705746' },
   { id: 'rivalry-pair', name: 'Rivalry Pair', filterType: 'archetype', filterId: 'rivalry-pair', color: '#c22e28' },
+  { id: 'evil-team', name: 'Evil Team', filterType: 'archetype', filterId: 'evil-team', color: '#705746' },
+
+  // Catch-all (before fossil/endgame classifications)
+  { id: 'other', name: 'Other Routes & Areas', filterType: null, filterId: null, color: '#888888' },
 
   // Fossil
   { id: 'fossil', name: 'Fossil', filterType: 'category', filterId: 'fossil', color: '#a0855b' },
-
-  // Catch-all (before endgame classifications)
-  { id: 'other', name: 'Other Routes & Areas', filterType: null, filterId: null, color: '#888888' },
 
   // Endgame
   { id: 'pseudo-legendary', name: 'Pseudo-Legendary', filterType: 'category', filterId: 'pseudo-legendary', color: '#6b46c1' },
