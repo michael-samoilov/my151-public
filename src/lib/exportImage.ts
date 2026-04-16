@@ -297,7 +297,7 @@ export async function generateExportImage(
   const zinc = '#a1a1aa';
   const FONT_SPEC = '600 8px "Inter Variable", system-ui, -apple-system, sans-serif';
   const TYPE_ICON_SZ = 9;  // logical px: square side for type icons
-  const GEN_ICON_SZ = 10;  // logical px: gen badge circle (≈ same area as 9px square type icon)
+  const GEN_ICON_SZ = 11;  // logical px: gen badge circle
   const ICON_GAP = 2;      // gap after icon before next element
 
   ctx.font = FONT_SPEC;
