@@ -51,13 +51,11 @@ function getNationalGenFreq(): Map<number, number> {
 }
 
 interface FooterInsights {
-  /** Most over-indexed type relative to national dex (>1.5x in both full and filtered pools) */
-  leanType?: TypeName;
-  /** True when no type exceeds 1.5x over-representation in both pools */
-  noTypesOverIndex: boolean;
-  /** Most over-indexed generation relative to national dex */
-  leanGen?: number;
-  /** Attacking type with highest advantage *deviation* from national baseline */
+  /** Up to 2 most over-indexed types (>1.5x in both full and legend-excluded pools), desc by ratio */
+  leanTypes: TypeName[];
+  /** Up to 2 most over-indexed generations (>1.3x vs national), desc by ratio */
+  leanGens: number[];
+  /** Attacking type with highest positive deviation from national baseline; only if deviation ≥ 0.3 */
   bestAttackType?: TypeName;
 }
 
@@ -77,49 +75,48 @@ function typeOverIndexRatios(pool: Pokemon[], nationalTypeFreq: Map<string, numb
 }
 
 function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
-  if (pokemon.length < 15) return { noTypesOverIndex: false };
+  if (pokemon.length < 15) return { leanTypes: [], leanGens: [] };
 
   const nationalTypeFreq = getNationalTypeFreq();
 
-  // Type lean — must be >1.5x in both the full pool AND the pool excluding
-  // legendary/mythical Pokemon (prevents starters/legends from inflating a type).
+  // Type lean — must be >1.5x in both the full pool AND the legend/mythical-excluded pool.
   const ratiosAll = typeOverIndexRatios(pokemon, nationalTypeFreq);
   const filtered = pokemon.filter(p => !p.isLegendary && !p.isMythical);
   const ratiosFiltered = filtered.length >= 10
     ? typeOverIndexRatios(filtered, nationalTypeFreq)
-    : ratiosAll; // too few non-special mons — fall back to full pool
+    : ratiosAll;
 
-  let leanType: TypeName | undefined;
-  let bestLean = 1.5; // threshold
+  const qualifyingTypes: { type: TypeName; ratio: number }[] = [];
   for (const [t, ratioAll] of ratiosAll) {
     const ratioFilt = ratiosFiltered.get(t) ?? 0;
-    if (ratioAll > 1.5 && ratioFilt > 1.5 && ratioAll > bestLean) {
-      bestLean = ratioAll;
-      leanType = t as TypeName;
+    if (ratioAll > 1.5 && ratioFilt > 1.5) {
+      qualifyingTypes.push({ type: t as TypeName, ratio: ratioAll });
     }
   }
-  const noTypesOverIndex = !leanType;
+  qualifyingTypes.sort((a, b) => b.ratio - a.ratio);
+  const leanTypes = qualifyingTypes.slice(0, 2).map(x => x.type);
 
-  // Gen lean — most over-represented generation vs national baseline
+  // Gen lean — up to 2 most over-represented generations vs national baseline (>1.3x threshold).
   const nationalGenFreq = getNationalGenFreq();
   const regionGenCount = new Map<number, number>();
   for (const p of pokemon) regionGenCount.set(p.generation, (regionGenCount.get(p.generation) ?? 0) + 1);
   const total = pokemon.length;
-  let bestGenRatio = 1.3;
-  let leanGen: number | undefined;
+  const qualifyingGens: { gen: number; ratio: number }[] = [];
   for (const [g, count] of regionGenCount) {
     const natRatio = nationalGenFreq.get(g) ?? 0;
     if (natRatio > 0) {
       const ratio = (count / total) / natRatio;
-      if (ratio > bestGenRatio) { bestGenRatio = ratio; leanGen = g; }
+      if (ratio > 1.3) qualifyingGens.push({ gen: g, ratio });
     }
   }
+  qualifyingGens.sort((a, b) => b.ratio - a.ratio);
+  const leanGens = qualifyingGens.slice(0, 2).map(x => x.gen);
 
-  // Advantaged attacking type — highest dominance score *deviation* from
-  // national baseline (not absolute score, so Steel doesn't always win).
+  // Attacking type with highest deviation from national baseline — only if ≥ 0.3
+  // (filters out marginal advantages in near-balanced dexes).
   const dominance = computeTypeDominance(pokemon);
   const nationalBaseline = getNationalBaseline();
-  let bestDeviation = 0;
+  let bestDeviation = 0.3; // minimum threshold
   let bestAttackType: TypeName | undefined;
   for (const { type, score } of dominance) {
     const natScore = nationalBaseline.get(type) ?? 0;
@@ -130,7 +127,7 @@ function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
     }
   }
 
-  return { leanType, noTypesOverIndex, leanGen, bestAttackType };
+  return { leanTypes, leanGens, bestAttackType };
 }
 
 /** Load an image by URL, returns a promise. */
@@ -142,6 +139,12 @@ function loadImage(src: string): Promise<HTMLImageElement> {
     img.onerror = reject;
     img.src = src;
   });
+}
+
+/** Load an image that may not exist; resolves to null on missing src or error. */
+function maybeLoadImage(src: string | null | undefined): Promise<HTMLImageElement | null> {
+  if (!src) return Promise.resolve(null);
+  return loadImage(src).catch(() => null);
 }
 
 /** Draw a type-colored pokeball behind a sprite tile, rotated to match view page. */
@@ -234,18 +237,14 @@ export async function generateExportImage(
   const insights = computeFooterInsights(pokemon);
 
   // Load sprites + footer icons in parallel
-  const [sprites, leanTypeImg, leanGenImg, attackTypeImg] = await Promise.all([
+  const [sprites, leanType1Img, leanType2Img, leanGen1Img, leanGen2Img, attackTypeImg] = await Promise.all([
     Promise.all(pokemon.map((p) => loadImage(p.sprite).catch(() => null))),
-    insights.leanType
-      ? loadImage(typeIconPath(insights.leanType)).catch(() => null)
-      : Promise.resolve(null),
-    insights.leanGen != null && GEN_BADGE_URIS[insights.leanGen]
-      ? loadImage(GEN_BADGE_URIS[insights.leanGen]).catch(() => null)
-      : Promise.resolve(null),
-    insights.bestAttackType
-      ? loadImage(typeIconPath(insights.bestAttackType)).catch(() => null)
-      : Promise.resolve(null),
-  ] as const);
+    maybeLoadImage(insights.leanTypes[0] ? typeIconPath(insights.leanTypes[0]) : null),
+    maybeLoadImage(insights.leanTypes[1] ? typeIconPath(insights.leanTypes[1]) : null),
+    maybeLoadImage(insights.leanGens[0] != null ? (GEN_BADGE_URIS[insights.leanGens[0]] ?? null) : null),
+    maybeLoadImage(insights.leanGens[1] != null ? (GEN_BADGE_URIS[insights.leanGens[1]] ?? null) : null),
+    maybeLoadImage(insights.bestAttackType ? typeIconPath(insights.bestAttackType) : null),
+  ]);
 
   const canvas = document.createElement('canvas');
   canvas.width = w * SCALE;
@@ -299,31 +298,56 @@ export async function generateExportImage(
   type Seg = { kind: 'text'; text: string; color: string } | { kind: 'icon'; img: HTMLImageElement; sz: number };
   const segs: Seg[] = [];
 
-  if (insights.noTypesOverIndex) {
-    segs.push({ kind: 'text', text: 'No types over-index', color: zinc });
-  } else if (insights.leanType || insights.leanGen) {
-    if (insights.leanType) {
-      const t = insights.leanType;
-      if (leanTypeImg) segs.push({ kind: 'icon', img: leanTypeImg, sz: TYPE_ICON_SZ });
+  const { leanTypes, leanGens } = insights;
+  const noLean = leanTypes.length === 0 && leanGens.length === 0;
+  const typeImgs = [leanType1Img, leanType2Img];
+  const genImgs  = [leanGen1Img,  leanGen2Img];
+
+  if (noLean && !insights.bestAttackType) {
+    // Perfectly balanced — nothing over-indexes or strongly over-performs
+    segs.push({ kind: 'text', text: 'perfectly balanced dex. ', color: zinc });
+  } else {
+    // --- Lean section (types + gens) ---
+    if (noLean) {
+      segs.push({ kind: 'text', text: 'no types or gens strongly over-index', color: zinc });
+    } else {
+      // Up to 2 lean types
+      for (let i = 0; i < leanTypes.length; i++) {
+        if (i > 0) segs.push({ kind: 'text', text: ' & ', color: zinc });
+        const t = leanTypes[i];
+        const img = typeImgs[i];
+        if (img) segs.push({ kind: 'icon', img, sz: TYPE_ICON_SZ });
+        segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
+      }
+      // Separator between types and gens
+      if (leanTypes.length > 0 && leanGens.length > 0) {
+        segs.push({ kind: 'text', text: ' & ', color: zinc });
+      }
+      // Up to 2 lean gens
+      for (let i = 0; i < leanGens.length; i++) {
+        if (i > 0) segs.push({ kind: 'text', text: ' & ', color: zinc });
+        const g = leanGens[i];
+        const img = genImgs[i];
+        if (img) segs.push({ kind: 'icon', img, sz: GEN_ICON_SZ });
+        segs.push({ kind: 'text', text: `Gen ${g}`, color: zinc });
+      }
+      segs.push({ kind: 'text', text: '-forward', color: zinc });
+    }
+
+    // --- Attack section ---
+    segs.push({ kind: 'text', text: ' · ', color: zinc });
+    if (insights.bestAttackType) {
+      segs.push({ kind: 'text', text: 'over-performs: ', color: zinc });
+      const t = insights.bestAttackType;
+      if (attackTypeImg) segs.push({ kind: 'icon', img: attackTypeImg, sz: TYPE_ICON_SZ });
       segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
+    } else {
+      segs.push({ kind: 'text', text: 'no types strongly over-perform', color: zinc });
     }
-    if (insights.leanGen) {
-      if (insights.leanType) segs.push({ kind: 'text', text: ' & ', color: zinc });
-      if (leanGenImg) segs.push({ kind: 'icon', img: leanGenImg, sz: GEN_ICON_SZ });
-      segs.push({ kind: 'text', text: `Gen ${insights.leanGen}`, color: zinc });
-    }
-    segs.push({ kind: 'text', text: '-forward', color: zinc });
+
+    segs.push({ kind: 'text', text: ' · ', color: zinc });
   }
 
-  if (insights.bestAttackType) {
-    if (segs.length > 0) segs.push({ kind: 'text', text: ' · ', color: zinc });
-    segs.push({ kind: 'text', text: 'over-performs: ', color: zinc });
-    const t = insights.bestAttackType;
-    if (attackTypeImg) segs.push({ kind: 'icon', img: attackTypeImg, sz: TYPE_ICON_SZ });
-    segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
-  }
-
-  if (segs.length > 0) segs.push({ kind: 'text', text: ' · ', color: zinc });
   segs.push({ kind: 'text', text: 'made with ', color: zinc });
   segs.push({ kind: 'text', text: 'my151', color: '#DC2626' });
   segs.push({ kind: 'text', text: '.app', color: '#0a0a0a' });
