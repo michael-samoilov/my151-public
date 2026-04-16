@@ -84,7 +84,7 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
           <span className="text-sm font-semibold">
-            {sectionName !== 'Browse Pokemon' ? (
+            {sectionName !== 'Browse Pokémon' ? (
               <>
                 <span className="text-foreground">Adding to: </span>
                 <span className="text-primary">{sectionName}</span>
@@ -121,7 +121,7 @@ function App() {
 
   const sectionName = activeSection
     ? BUILD_GROUPS.find((g) => g.id === activeSection)?.name ?? 'Section'
-    : 'Browse Pokemon';
+    : 'Browse Pokémon';
 
   return (
     <TooltipProvider>

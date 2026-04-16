@@ -12,7 +12,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'early-bug',
     name: 'Early Route Bug',
-    description: 'Bug-type Pokemon found on early routes',
+    description: 'Bug-type Pokémon found on early routes',
     pokemonIds: [10,11,12, 13,14,15, 165,166, 167,168, 265,266,267,268,269, 401,402, 540,541,542, 664,665,666, 736,737,738, 824,825,826, 917,918, 919,920],
     suggestedSlotRange: [13, 15],
     color: '#a6b91a',
@@ -28,7 +28,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'pikachu-clone',
     name: 'Pikaclone',
-    description: 'Electric rodent mascot Pokemon',
+    description: 'Electric rodent mascot Pokémon',
     pokemonIds: [25,26, 10100, 172, 311,312, 417, 587, 702, 777, 877, 921,922,923],
     suggestedSlotRange: [19, 20],
     color: '#f7d02c',
@@ -36,7 +36,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'early-normal',
     name: 'Domestic',
-    description: 'Domestic and pet-like Pokemon',
+    description: 'Domestic and pet-like Pokémon',
     pokemonIds: [52,53, 10107,10108, 209,210, 300,301, 431,432, 506,507,508, 509,510, 572,573, 676, 827,828, 831,832, 835,836, 924,925, 926,927, 942,943],
     suggestedSlotRange: [21, 25],
     color: '#a8a77a',
@@ -44,7 +44,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'cave-pokemon',
     name: 'Cave',
-    description: 'Pokemon commonly found in caves',
+    description: 'Pokémon commonly found in caves',
     pokemonIds: [41,42, 50,51, 10105,10106, 35,36,173, 66,67,68, 74,75,76, 10109,10110,10111, 95, 169,208, 206,982, 213, 293,294,295, 296,297, 299,476, 302, 303, 304,305,306, 337,338, 524,525,526, 527,528, 529,530, 557,558, 610,611,612, 632, 703, 714,715, 744,745, 932,933,934, 969,970],
     suggestedSlotRange: [26, 32],
     color: '#b6a136',
@@ -52,7 +52,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'mountain',
     name: 'Mountain',
-    description: 'Pokemon found on exposed mountain routes, cliffs, and alpine passes across all regions',
+    description: 'Pokémon found on exposed mountain routes, cliffs, and alpine passes across all regions',
     pokemonIds: [
       21,22,       // Spearow→Fearow
       111,112,464, // Rhyhorn→Rhydon→Rhyperior
@@ -102,7 +102,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'ocean',
     name: 'Ocean',
-    description: 'Marine Pokemon encountered while surfing or diving in open water',
+    description: 'Marine Pokémon encountered while surfing or diving in open water',
     pokemonIds: [
       72,73,       // Tentacool→Tentacruel
       86,87,       // Seel→Dewgong
@@ -128,7 +128,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'beach',
     name: 'Beach',
-    description: 'Coastal Pokemon found on shorelines, tide pools, and sandy shores',
+    description: 'Coastal Pokémon found on shorelines, tide pools, and sandy shores',
     pokemonIds: [
       98,99,       // Krabby→Kingler
       120,121,     // Staryu→Starmie
@@ -155,7 +155,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'lake',
     name: 'Lake / Riverside',
-    description: 'Pokemon found at freshwater lakes, rivers, and ponds across all regions',
+    description: 'Pokémon found at freshwater lakes, rivers, and ponds across all regions',
     pokemonIds: [
       54,55,       // Psyduck→Golduck
       418,419,     // Buizel→Floatzel
@@ -169,7 +169,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'forest',
     name: 'Forest',
-    description: 'Pokemon found in forests, woodlands, and jungles',
+    description: 'Pokémon found in forests, woodlands, and jungles',
     pokemonIds: [
       46,47,       // Paras→Parasect
       102,103,     // Exeggcute→Exeggutor
@@ -211,7 +211,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'tundra',
     name: 'Tundra',
-    description: 'Ice-dwelling Pokemon found in snowy routes, frozen caves, and arctic areas',
+    description: 'Ice-dwelling Pokémon found in snowy routes, frozen caves, and arctic areas',
     pokemonIds: [
       124,         // Jynx
       238,         // Smoochum
@@ -238,7 +238,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'haunted',
     name: 'Haunted',
-    description: 'Ghost-type Pokemon found in haunted houses, towers, graveyards, and cursed locations',
+    description: 'Ghost-type Pokémon found in haunted houses, towers, graveyards, and cursed locations',
     pokemonIds: [
       92,93,94,     // Gastly→Haunter→Gengar
       200,429,      // Misdreavus→Mismagius
@@ -268,7 +268,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'meadow',
     name: 'Meadow',
-    description: 'Fairy-type and flower Pokemon found in meadows, flower fields, and gardens',
+    description: 'Fairy-type and flower Pokémon found in meadows, flower fields, and gardens',
     pokemonIds: [
       35,36,173,       // Clefairy→Clefable (+Cleffa)
       39,40,174,       // Jigglypuff→Wigglytuff (+Igglybuff)
@@ -317,7 +317,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'ruins',
     name: 'Ruins',
-    description: 'Psychic and mystical Pokemon found in ancient ruins, temples, and sacred sites',
+    description: 'Psychic and mystical Pokémon found in ancient ruins, temples, and sacred sites',
     pokemonIds: [
       63,64,65,        // Abra→Kadabra→Alakazam
       79,80,199,       // Slowpoke→Slowbro/Slowking
@@ -349,7 +349,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'dojo',
     name: 'Dojo',
-    description: 'Fighting-type Pokemon found in dojos, training grounds, and martial arts locations',
+    description: 'Fighting-type Pokémon found in dojos, training grounds, and martial arts locations',
     pokemonIds: [
       56,57,979,       // Mankey→Primeape→Annihilape
       66,67,68,        // Machop→Machoke→Machamp
@@ -378,7 +378,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'swamp',
     name: 'Swamp',
-    description: 'Pokemon found in swamps, marshes, bogs, and wetlands',
+    description: 'Pokémon found in swamps, marshes, bogs, and wetlands',
     pokemonIds: [
       60,61,62,186,    // Poliwag→Poliwhirl→Poliwrath/Politoed
       88,89,           // Grimer→Muk
@@ -407,7 +407,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'volcanic',
     name: 'Volcanic',
-    description: 'Pokemon found near volcanoes, lava fields, and geothermal areas',
+    description: 'Pokémon found near volcanoes, lava fields, and geothermal areas',
     pokemonIds: [
       228,229,     // Houndour→Houndoom
       126,240,467, // Magmar→Magby→Magmortar
@@ -428,7 +428,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'desert',
     name: 'Desert',
-    description: 'Pokemon found in deserts, arid ruins, and sandy wastelands',
+    description: 'Pokémon found in deserts, arid ruins, and sandy wastelands',
     pokemonIds: [
       27,28,       // Sandshrew→Sandslash
       328,329,330, // Trapinch→Vibrava→Flygon
@@ -451,7 +451,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'gift-pokemon',
     name: 'Gift',
-    description: 'Pokemon freely given to the player by NPCs',
+    description: 'Pokémon freely given to the player by NPCs',
     pokemonIds: [
       // RBY: Eevee, Lapras
       131, 133,134,135,136,196,197,470,471,700,
@@ -486,7 +486,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'reward-pokemon',
     name: 'Prize',
-    description: 'Pokemon earned as prizes, rewards, or purchases',
+    description: 'Pokémon earned as prizes, rewards, or purchases',
     pokemonIds: [
       // RBY: Hitmonlee/Hitmonchan (Fighting Dojo), Porygon (Game Corner), Magikarp (salesman)
       106,107,236,237, 137,233,474, 129,130,
@@ -506,7 +506,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'industrial',
     name: 'Industrial',
-    description: 'Pokemon found in factories, construction sites, power plants, sewers, and urban/industrial areas',
+    description: 'Pokémon found in factories, construction sites, power plants, sewers, and urban/industrial areas',
     pokemonIds: [
       66,67,68,        // Machop→Machoke→Machamp (construction)
       81,82,462,       // Magnemite→Magneton→Magnezone (power plant)
@@ -528,7 +528,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'objectmon',
     name: 'Objectmon',
-    description: 'Pokemon based on everyday objects, artificial creations, and food',
+    description: 'Pokémon based on everyday objects, artificial creations, and food',
     pokemonIds: [
       100,101,         // Voltorb→Electrode (Poke Ball)
       10231,10232,     // Voltorb-Hisui→Electrode-Hisui
@@ -594,7 +594,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'trade-evo',
     name: 'Trade Evolution',
-    description: 'Pokemon that evolve through trading',
+    description: 'Pokémon that evolve through trading',
     pokemonIds: [61,64,65, 67,68, 75,76, 10111, 93,94, 95,123,125,126,137,186,208,212,233,356,366,367,368,466,467,474,477,525,526, 10172],
     suggestedSlotRange: [113, 118],
     color: '#737373',
@@ -602,7 +602,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'mimic',
     name: 'Mimic/Disguise',
-    description: 'Pokemon that mimic objects or other Pokemon',
+    description: 'Pokémon that mimic objects or other Pokémon',
     pokemonIds: [100,101, 10231,10232, 132, 185, 438, 570,571, 10238,10239, 590,591, 10179, 778, 854,855],
     suggestedSlotRange: [40, 45],
     color: '#735797',
@@ -610,7 +610,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'static-encounter',
     name: 'Static Encounter',
-    description: 'Pokemon found as overworld/scripted encounters',
+    description: 'Pokémon found as overworld/scripted encounters',
     pokemonIds: [
       // RBY/FRLG
       100,101, 131, 143,
@@ -622,7 +622,7 @@ export const ARCHETYPES: Archetype[] = [
       425, 442, 479,
       // BW/BW2
       518, 555, 571, 590,591, 637, 612,
-      // SM/USUM Totem Pokemon
+      // SM/USUM Totem Pokémon
       735, 10092, 746, 758, 754, 738, 778, 784, 752, 10115, 777, 743,
       // Legends Arceus
       77,
@@ -649,7 +649,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'evil-team',
     name: 'Evil Team',
-    description: 'Pokemon commonly used by villain teams',
+    description: 'Pokémon commonly used by villain teams',
     pokemonIds: [
       // Grunts (common across teams)
       19,20, 41,42, 88,89, 109,110, 169, 198, 228,229, 261,262, 430, 434,435, 551,552,553, 559,560, 757,758,
@@ -683,7 +683,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'branched-evo',
     name: 'Branched Evolution',
-    description: 'Pokemon with split evolution paths where you choose which form to evolve into',
+    description: 'Pokémon with split evolution paths where you choose which form to evolve into',
     pokemonIds: [
       43,44,45,182,       // Oddish→Gloom→Vileplume/Bellossom
       60,61,62,186,       // Poliwag→Poliwhirl→Poliwrath/Politoed
@@ -723,7 +723,7 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'cross-gen-evo',
     name: 'Cross-Gen Evolution',
-    description: 'Pokemon that gained new evolutions or pre-evolutions in later generations',
+    description: 'Pokémon that gained new evolutions or pre-evolutions in later generations',
     pokemonIds: [
       // Gen 2 evos of Gen 1
       169,182,186,196,197,199,208,212,230,233,242,
@@ -759,35 +759,35 @@ export const ARCHETYPES: Archetype[] = [
   {
     id: 'gym-champion-ace',
     name: 'Gym/Champion Ace',
-    description: 'Signature Pokemon of Gym Leaders, Elite Four & Champions',
+    description: 'Signature Pokémon of Gym Leaders, Elite Four & Champions',
     pokemonIds: [
       // Kanto Gym Challenge
       95,121,26,45,110,65,59,112,
-      // Kanto Pokemon League
+      // Kanto Pokémon League
       131,68,94,149,6,
       // Johto Gym Challenge
       17,123,241,94,62,208,221,230,
-      // Johto Pokemon League
+      // Johto Pokémon League
       178,169,68,229,149,
       // Hoenn Gym Challenge
       299,296,310,324,289,334,337,338,350,
-      // Hoenn Pokemon League
+      // Hoenn Pokémon League
       359,356,365,373,376,
       // Sinnoh Gym Challenge
       408,407,448,419,429,411,460,466,
-      // Sinnoh Pokemon League
+      // Sinnoh Pokémon League
       452,450,392,437,445,
       // Unova Gym Challenge
       505,542,523,530,581,614,612,
-      // Unova Pokemon League
+      // Unova Pokémon League
       609,625,576,620,637,
       // Kalos Gym Challenge
       666,696,701,673,695,700,678,713,
-      // Kalos Pokemon League
+      // Kalos Pokémon League
       663,689,681,715,282,
       // Alola Island Challenge (Kahunas + Trial Captains)
       740,745,10108,750, 735,752,10115,763,777,770,743,
-      // Alola Pokemon League
+      // Alola Pokémon League
       733,
       // Galar Gym Challenge
       830,834,851,68,94,869,839,131,862,884,
@@ -795,36 +795,36 @@ export const ARCHETYPES: Archetype[] = [
       6,
       // Paldea Gym Challenge
       216,185,429,740,398,849,671,334,
-      // Paldea Pokemon League
+      // Paldea Pokémon League
       980,959,973,998,970,
     ],
     suggestedSlotRange: [40, 60],
     color: '#f5a623',
     subgroups: [
       { label: 'Kanto Gym Challenge', pokemonIds: [95,121,26,45,110,65,59,112] },
-      { label: 'Kanto Pokemon League', pokemonIds: [131,68,94,149,6] },
+      { label: 'Kanto Pokémon League', pokemonIds: [131,68,94,149,6] },
       { label: 'Johto Gym Challenge', pokemonIds: [17,123,241,94,62,208,221,230] },
-      { label: 'Johto Pokemon League', pokemonIds: [178,169,68,229,149] },
+      { label: 'Johto Pokémon League', pokemonIds: [178,169,68,229,149] },
       { label: 'Hoenn Gym Challenge', pokemonIds: [299,296,310,324,289,334,337,338,350] },
-      { label: 'Hoenn Pokemon League', pokemonIds: [359,356,365,373,376] },
+      { label: 'Hoenn Pokémon League', pokemonIds: [359,356,365,373,376] },
       { label: 'Sinnoh Gym Challenge', pokemonIds: [408,407,448,419,429,411,460,466] },
-      { label: 'Sinnoh Pokemon League', pokemonIds: [452,450,392,437,445] },
+      { label: 'Sinnoh Pokémon League', pokemonIds: [452,450,392,437,445] },
       { label: 'Unova Gym Challenge', pokemonIds: [505,542,523,530,581,614,612] },
-      { label: 'Unova Pokemon League', pokemonIds: [609,625,576,620,637] },
+      { label: 'Unova Pokémon League', pokemonIds: [609,625,576,620,637] },
       { label: 'Kalos Gym Challenge', pokemonIds: [666,696,701,673,695,700,678,713] },
-      { label: 'Kalos Pokemon League', pokemonIds: [663,689,681,715,282] },
+      { label: 'Kalos Pokémon League', pokemonIds: [663,689,681,715,282] },
       { label: 'Alola Island Challenge', pokemonIds: [740,745,10108,750, 735,752,10115,763,777,770,743] },
-      { label: 'Alola Pokemon League', pokemonIds: [733] },
+      { label: 'Alola Pokémon League', pokemonIds: [733] },
       { label: 'Galar Gym Challenge', pokemonIds: [830,834,851,68,94,869,839,131,862,884] },
       { label: 'Galar Champion', pokemonIds: [6] },
       { label: 'Paldea Gym Challenge', pokemonIds: [216,185,429,740,398,849,671,334] },
-      { label: 'Paldea Pokemon League', pokemonIds: [980,959,973,998,970] },
+      { label: 'Paldea Pokémon League', pokemonIds: [980,959,973,998,970] },
     ],
   },
   {
     id: 'evolution-item',
     name: 'Evolution Item',
-    description: 'Pokemon that evolve using an evolution item',
+    description: 'Pokémon that evolve using an evolution item',
     pokemonIds: [
       // Gen 1 stones
       37,38, 58,59, 133,136, // Fire Stone: Vulpix, Growlithe, Eevee→Flareon
@@ -954,6 +954,6 @@ export function getArchetypeById(id: string): Archetype | undefined {
   return ARCHETYPES.find(a => a.id === id);
 }
 
-export function getArchetypesForPokemon(pokemonId: number): Archetype[] {
+export function getArchetypesForPokémon(pokemonId: number): Archetype[] {
   return ARCHETYPES.filter(a => a.pokemonIds.includes(pokemonId));
 }

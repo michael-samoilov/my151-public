@@ -751,7 +751,7 @@ export function PokemonBrowser() {
           })}
           {groups.length === 0 && (
             <div className="py-12 text-center text-muted-foreground">
-              <p>No Pokemon found.</p>
+              <p>No Pokémon found.</p>
               <p className="text-sm mt-1">Try adjusting your filters.</p>
             </div>
           )}

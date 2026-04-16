@@ -60,7 +60,7 @@ export function WhatsAdvisor() {
     } else if (totalPlaced === 151) {
       items.push({ type: 'complete', text: '151/151 filled!' });
     } else {
-      items.push({ type: 'missing', text: `${totalPlaced}/151 — over by ${totalPlaced - 151}. Remove some Pokemon to reach 151.` });
+      items.push({ type: 'missing', text: `${totalPlaced}/151 — over by ${totalPlaced - 151}. Remove some Pokémon to reach 151.` });
     }
 
     // Check archetype coverage
@@ -229,7 +229,7 @@ export function WhatsAdvisor() {
             </div>
           ))}
           <p className="pt-2 text-xs text-muted-foreground italic">
-            Tip: Press chart bars to see which Pokemon are driving trends in your dex
+            Tip: Press chart bars to see which Pokémon are driving trends in your dex
           </p>
         </div>
       )}

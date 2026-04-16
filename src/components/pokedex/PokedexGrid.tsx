@@ -50,7 +50,7 @@ const DND_MEASURING = {
 // hit-test target lifts 180px — enough clearance for the sprite and
 // the target tile above it. See src/lib/dragCollision.ts for the
 // visual stack explanation.
-const OVERLAY_LIFT_PX = 90;
+const OVERLAY_LIFT_PX = 63;
 const TOUCH_HIT_LIFT_PX = 180;
 const effectiveCursorCollision = createEffectiveCursorCollision(TOUCH_HIT_LIFT_PX);
 const snapCenterToPointer = createSnapCenterToPointer(OVERLAY_LIFT_PX);

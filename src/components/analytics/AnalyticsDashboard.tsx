@@ -506,9 +506,9 @@ export function AnalyticsDashboard() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center space-y-2">
-          <p className="text-xl font-semibold text-muted-foreground">No Pokemon assigned yet</p>
+          <p className="text-xl font-semibold text-muted-foreground">No Pokémon assigned yet</p>
           <p className="text-sm text-muted-foreground">
-            Add Pokemon to your Pokedex to see analytics
+            Add Pokémon to your Pokédex to see analytics
           </p>
         </div>
       </div>
@@ -740,7 +740,7 @@ export function AnalyticsDashboard() {
         <section>
           <h3 className="text-lg font-semibold mb-1">Generation Origin</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Where your Pokemon come from and deviation from national dex proportions.
+            Where your Pokémon come from and deviation from national dex proportions.
           </p>
           <div className="bg-card rounded-lg border p-4">
             <ButterflyChart
