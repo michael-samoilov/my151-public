@@ -47,6 +47,31 @@ function BluePlusIcon({ className }: { className?: string }) {
   );
 }
 
+/** Square icon split diagonally for dual-type display.
+ *  Top-left triangle = first type; bottom-right triangle = second type.
+ *  Single-type falls back to a plain icon. */
+function TypeSplitIcon({ types, className }: { types: string[]; className?: string }) {
+  if (types.length <= 1) {
+    return <img src={typeIconPath(types[0] as TypeName)} alt="" className={className} />;
+  }
+  return (
+    <span className={cn('relative inline-block overflow-hidden shrink-0', className)}>
+      <img
+        src={typeIconPath(types[0] as TypeName)}
+        alt=""
+        className="absolute inset-0 w-full h-full"
+        style={{ clipPath: 'polygon(0% 0%, 100% 0%, 0% 100%)' }}
+      />
+      <img
+        src={typeIconPath(types[1] as TypeName)}
+        alt=""
+        className="absolute inset-0 w-full h-full"
+        style={{ clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)' }}
+      />
+    </span>
+  );
+}
+
 export type EvoLineVariant = 'browser' | 'analytics';
 
 const DEFAULT_COLS = 6;
@@ -322,17 +347,17 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                   afterTypes={matchupInfo?.has(pokemon.id) && matchupType ? (() => {
                     const info = matchupInfo.get(pokemon.id)!;
                     const offD = doublings(info.offense, false);
-                    const defD = doublings(info.defense, false);
+                    // isDefense:true so opponent hitting hard = negative = red (drilldown-type perspective)
+                    const defD = doublings(info.defense, true);
                     const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
                     const iconCls = 'w-[calc(var(--tile-sprite)*0.18)] h-[calc(var(--tile-sprite)*0.18)]';
                     const iconSz = 'calc(var(--tile-sprite)*0.18)';
                     const gap = 'calc(var(--tile-sprite)*0.04)';
-                    const targetW = 'calc(var(--tile-sprite)*0.40)';
                     return (
                       <div
                         className="grid items-center mt-[calc(var(--tile-sprite)*0.027)] text-[calc(var(--tile-sprite)*0.18)] font-semibold leading-none"
                         style={{
-                          gridTemplateColumns: `auto ${iconSz} ${iconSz} ${targetW} auto`,
+                          gridTemplateColumns: `auto ${iconSz} ${iconSz} ${iconSz} auto`,
                           columnGap: gap,
                           rowGap: 'calc(var(--tile-sprite)*0.02)',
                           fontVariantNumeric: 'tabular-nums',
@@ -342,18 +367,13 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                         <span className={dColor(offD)}>{formatDoublings(offD)}</span>
                         <img src={typeIconPath(matchupType)} alt="" className={iconCls} />
                         <Sword className={iconCls} />
-                        <span className="flex items-center" style={{ gap }}>
-                          <img src={typeIconPath(pokemon.types[0] as TypeName)} alt="" className={iconCls} />
-                          {pokemon.types.length > 1 && <img src={typeIconPath(pokemon.types[1] as TypeName)} alt="" className={iconCls} />}
-                        </span>
+                        <TypeSplitIcon types={pokemon.types} className={iconCls} />
                         <span>{formatMult(info.offense)}×</span>
                         {/* Row 2: pokemon's best type attacks drilldown type */}
                         <span className={dColor(defD)}>{formatDoublings(defD)}</span>
                         <img src={typeIconPath(info.bestDefenseType)} alt="" className={iconCls} />
                         <Sword className={iconCls} />
-                        <span className="flex items-center" style={{ gap }}>
-                          <img src={typeIconPath(matchupType)} alt="" className={iconCls} />
-                        </span>
+                        <img src={typeIconPath(matchupType)} alt="" className={iconCls} />
                         <span>{formatMult(info.defense)}×</span>
                       </div>
                     );
