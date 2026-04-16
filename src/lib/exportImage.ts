@@ -312,12 +312,12 @@ export async function generateExportImage(
       if (leanGenImg) segs.push({ kind: 'icon', img: leanGenImg, sz: GEN_ICON_SZ });
       segs.push({ kind: 'text', text: `Gen ${insights.leanGen}`, color: zinc });
     }
-    segs.push({ kind: 'text', text: '-heavy', color: zinc });
+    segs.push({ kind: 'text', text: '-forward', color: zinc });
   }
 
   if (insights.bestAttackType) {
     if (segs.length > 0) segs.push({ kind: 'text', text: ' · ', color: zinc });
-    segs.push({ kind: 'text', text: 'Advantaged: ', color: zinc });
+    segs.push({ kind: 'text', text: 'Over-performs: ', color: zinc });
     const t = insights.bestAttackType;
     if (attackTypeImg) segs.push({ kind: 'icon', img: attackTypeImg, sz: TYPE_ICON_SZ });
     segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
