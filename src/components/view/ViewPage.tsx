@@ -198,7 +198,7 @@ function DraggableViewTile({
       <PokeballBg pokemon={pokemon} />
       <span
         className="absolute top-[3px] left-[3px] z-20 leading-none font-semibold text-foreground/40 select-none"
-        style={{ fontSize: tileSize * 0.19 }}
+        style={{ fontSize: tileSize * 0.14 }}
       >
         {pokemon.id}.
       </span>
@@ -220,7 +220,7 @@ function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSize: num
       <PokeballBg pokemon={pokemon} />
       <span
         className="absolute top-[3px] left-[3px] z-20 leading-none font-semibold text-foreground/40 select-none"
-        style={{ fontSize: tileSize * 0.19 }}
+        style={{ fontSize: tileSize * 0.14 }}
       >
         {pokemon.id}.
       </span>
