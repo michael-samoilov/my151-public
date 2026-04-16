@@ -108,17 +108,8 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const countIsBidirectional = forceBidirectionalCount || (countHasNeg && countHasPos);
   const devIsBidirectional = !hideDeviation; // deviation domain always spans neg-to-pos in practice
 
-  // Weighted width distribution. Bidirectional charts get 2x weight because
-  // they have to accommodate bars on both sides of zero.
-  //
-  // The deviation chart (chart 2) additionally carries the bidirectional
-  // header labels ("WEAKER ← HERE" / "STRONGER HERE →", or the non-score
-  // equivalent) — those are anchored at zeroX and need ~60–70 px of
-  // scale-range padding on each side of zero (see `devLabelPad` below).
-  // When the count chart is *also* bidirectional (score mode with both
-  // weaknesses and resistances), chart 1 is competing for space too, so
-  // we nudge chart 2 up to 3x weight so its post-padding bar area remains
-  // usable at mobile widths.
+  // Weighted width distribution: bidirectional charts get 2x weight since
+  // they carry bars on both sides of zero.
   const chartsWidth = Math.max(0, width - labelColEnd);
   let chart1Width: number, chart2Width: number;
   if (hideDeviation) {
@@ -126,7 +117,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
     chart2Width = 0;
   } else {
     const w1 = countIsBidirectional ? 2 : 1;
-    const w2 = devIsBidirectional ? (countIsBidirectional ? 3 : 2) : 1;
+    const w2 = devIsBidirectional ? 2 : 1;
     const available = chartsWidth - gutter;
     chart1Width = Math.floor(available * w1 / (w1 + w2));
     chart2Width = available - chart1Width;
@@ -136,7 +127,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const devSectionStart = labelColEnd + chart1Width + gutter;
 
   // Chart 1 (count/score): directionality-aware margins
-  const countLabelPad = scoreMode ? 30 : 42; // wider for "25 (16%)" labels
+  const countLabelPad = scoreMode ? 42 : 42; // needs room for "-0.55" / "25 (16%)"
   const countLeftPad = countHasNeg ? countLabelPad : 0;
   const countRightPad = countHasPos ? countLabelPad : 0;
   const countBarArea = Math.max(0, chart1Width - countLeftPad - countRightPad);
@@ -154,25 +145,29 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const rawMaxNeg = scoreMode ? Math.max(...data.map(d => d.count < 0 ? -d.count : 0), 0) : 0;
   const rawMaxPos = scoreMode ? Math.max(...data.map(d => d.count > 0 ? d.count : 0), 0) : maxCount;
 
-  // In score mode, share extents across score & deviation charts per side:
-  // sharedLeft = max(rawMaxNeg, maxNegDev), sharedRight = max(rawMaxPos, maxPosDev)
+  // Each chart's own data extents — chart 1 (count/score) and chart 2
+  // (deviation) scale independently so each fills its allocated width with
+  // bars instead of reserving horizontal room for the other chart's data.
+  // Earlier versions shared extents via sharedLeft/sharedRight to visually
+  // align the two zero lines, but that left huge empty gaps whenever one
+  // chart's data skewed differently from the other's (e.g. score mode
+  // where scores spanned [-0.5,+0.3] but deviations spanned [-0.17,+0.30]).
   const maxNegDev = scoreMode ? Math.max(...data.map(d => d.deviation < 0 ? -d.deviation : 0), 0) : 0;
-  const maxPosDev = scoreMode ? Math.max(...data.map(d => d.deviation > 0 ? d.deviation : 0), 0.1) : 0;
-  const sharedLeft = scoreMode ? Math.max(rawMaxNeg, maxNegDev, 0.001) : 0;
-  const sharedRight = scoreMode ? Math.max(rawMaxPos, maxPosDev, 0.001) : 0;
+  const maxPosDev = scoreMode ? Math.max(...data.map(d => d.deviation > 0 ? d.deviation : 0), 0) : 0;
 
   const countZeroX = (() => {
     if (!scoreMode) return countLeftPad;
     if (countIsBidirectional) {
-      // Position zero proportionally so each side matches its shared extent
-      return countLeftPad + countBarArea * sharedLeft / (sharedLeft + sharedRight);
+      // Zero's proportional position follows this chart's own asymmetry
+      const total = (rawMaxNeg + rawMaxPos) || 0.01;
+      return countLeftPad + countBarArea * rawMaxNeg / total;
     }
     if (countHasNeg) return countLeftPad + countBarArea;
     return countLeftPad;
   })();
   // For bidirectional: uniform scale across the full bar area
   const countTotalExtent = countIsBidirectional
-    ? (sharedLeft + sharedRight) || 0.01
+    ? (rawMaxNeg + rawMaxPos) || 0.01
     : maxCount;
   const countScale = scaleLinear().domain([0, countTotalExtent]).range([0, countBarArea]);
 
@@ -180,17 +175,22 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   let devLeft: number;
   let devRight_: number;
   if (scoreMode) {
-    devLeft = -sharedLeft;
-    devRight_ = fixedDevRight ?? sharedRight;
+    // Use this chart's own positive/negative data extents — unshared from
+    // chart 1 (see note above). Tiny floor prevents a degenerate zero-width
+    // domain when all deviations are on one side of zero.
+    devLeft = -Math.max(maxNegDev, 0.001);
+    devRight_ = Math.max(maxPosDev, 0.001);
   } else {
-    // Left bound: always -100 (0.00x = complete absence) as minimum,
-    // or the actual max under-deviation if all types are present
+    // Data-adaptive bounds with a small floor (25 = ±0.25×) so the scale
+    // doesn't collapse when everything is near zero but also doesn't waste
+    // huge chunks of whitespace when the data range is narrow. Capped at
+    // ±200 (3.00×). fixedDevRight provides stable right-side extent across
+    // filter permutations.
     const maxUnderDev = Math.max(...data.map((d) => -d.deviation), 0);
-    devLeft = -Math.max(maxUnderDev, 100);
-    // Right bound: use fixedDevRight for stability, capped at 200 (3.00x)
     const DEV_OVER_CAP = 200;
-    const maxOverDev = Math.max(...data.map((d) => d.deviation), 50);
-    devRight_ = Math.min(fixedDevRight ?? maxOverDev, DEV_OVER_CAP);
+    const maxOverDev = Math.max(...data.map((d) => d.deviation), 0);
+    devLeft = -Math.min(Math.max(maxUnderDev, 25), DEV_OVER_CAP);
+    devRight_ = Math.min(Math.max(fixedDevRight ?? maxOverDev, 25), DEV_OVER_CAP);
   }
 
   // The "WEAKER ← HERE" / "STRONGER HERE →" (score) or "UNDER- ← INDEXED"

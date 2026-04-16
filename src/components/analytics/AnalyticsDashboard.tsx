@@ -624,7 +624,7 @@ export function AnalyticsDashboard() {
                 white text; it sits flush against a primary-colored horizontal
                 bar at the bottom of the tab row so the selected tab visually
                 "merges" into the bar separating the tabs from the content. */}
-            <div className="flex border-b-2 border-primary">
+            <div className="flex border-b-[3px] border-primary">
               <button
                 onClick={() => setTypeView('distribution')}
                 className={`flex-1 text-center px-3 py-1.5 text-sm font-semibold transition-colors ${
@@ -838,6 +838,10 @@ export function AnalyticsDashboard() {
                   stageTotals[seg.stage] = (stageTotals[seg.stage] || 0) + seg.count;
                 }
               }
+              // Short labels — the parent section heading ("Stage
+              // Distribution") already establishes context, so we drop the
+              // "-stage" suffix to keep each column's x-axis label inside
+              // its narrow mobile column width.
               const stageNames = ['Single', 'Double', 'Triple'];
               const STAGE_LINE_COLORS = ['#e88a8a', '#d95050', '#b91c1c'];
               const totalPokemon = mekkoData.columns.reduce((sum, col) => sum + col.segments.reduce((s, seg) => s + seg.count, 0), 0);
@@ -1108,7 +1112,7 @@ export function AnalyticsDashboard() {
                             style={{ height: 38 * mekkoScale, textDecoration: isXActive ? 'underline' : undefined, textDecorationColor: isXActive ? STAGE_LINE_COLORS[col.lineLength - 1] : undefined }}
                             onClick={() => col.chainCount > 0 && handleDrillToggle({ kind: 'lineLength', lineLength: col.lineLength }, undefined, excludeSpecialMekko)}
                           >
-                            <span style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}-stage</span>
+                            <span style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}</span>
                             <br />
                             {col.chainCount}{idx === 0 && ' lines'} <span className="font-normal">({col.widthPct.toFixed(0)}%)</span>
                           </div>
@@ -1117,7 +1121,7 @@ export function AnalyticsDashboard() {
                     </div>
                   </div>
                   {/* Inline legend — with leader lines when labels would overlap */}
-                  <div className="relative shrink-0" style={{ height: containerH, marginLeft: 12 * mekkoScale, width: 68 * mekkoScale }}>
+                  <div className="relative shrink-0" style={{ height: containerH, marginLeft: 8 * mekkoScale, width: 56 * mekkoScale }}>
                     {/* SVG leader lines (only when labels are displaced) */}
                     {anyDisplaced && (
                       <svg className="absolute inset-0 overflow-visible pointer-events-none" style={{ width: 16 * mekkoScale, height: containerH }}>
