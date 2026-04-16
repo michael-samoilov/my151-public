@@ -146,7 +146,7 @@ export function WhatsAdvisor() {
       if (overRepTypes.length > 0) {
         items.push({
           type: 'missing',
-          text: `Over-represented type${overRepTypes.length > 1 ? 's' : ''}: ${overRepTypes.join(', ')} (>2× national average)`,
+          text: `Over-represented type${overRepTypes.length > 1 ? 's' : ''}: ${overRepTypes.join(', ')} (>2× national dex proportion)`,
         });
       }
     }
