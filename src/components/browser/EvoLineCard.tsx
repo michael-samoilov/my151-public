@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
-import { ChevronRight, Sword, Shield } from 'lucide-react';
+import { ChevronRight, Sword } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
 import {
   PokemonTileContent,
@@ -83,7 +83,7 @@ interface EvoLineGridProps {
   variant?: EvoLineVariant;
   showGenBadges?: boolean;
   /** Per-Pokemon offense/defense multipliers for matchup drill-downs */
-  matchupInfo?: Map<number, { offense: number; defense: number }>;
+  matchupInfo?: Map<number, { offense: number; defense: number; bestDefenseType: TypeName }>;
   /** The type being matched — required when matchupInfo is present */
   matchupType?: TypeName;
 }
@@ -170,7 +170,7 @@ interface EvoLineCardProps {
   spriteOverrides?: Record<number, string>;
   variant?: EvoLineVariant;
   showGenBadges?: boolean;
-  matchupInfo?: Map<number, { offense: number; defense: number }>;
+  matchupInfo?: Map<number, { offense: number; defense: number; bestDefenseType: TypeName }>;
   matchupType?: TypeName;
   /** Pixel-perfect sprite size in CSS px */
   spritePx: number;
@@ -322,24 +322,39 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                   afterTypes={matchupInfo?.has(pokemon.id) && matchupType ? (() => {
                     const info = matchupInfo.get(pokemon.id)!;
                     const offD = doublings(info.offense, false);
-                    const defD = doublings(info.defense, true);
+                    const defD = doublings(info.defense, false);
                     const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
-                    const iconSz = 'w-[calc(var(--tile-sprite)*0.18)] h-[calc(var(--tile-sprite)*0.18)]';
-                    const rowCls = 'flex items-center gap-[calc(var(--tile-sprite)*0.04)] text-[calc(var(--tile-sprite)*0.18)] font-semibold leading-none';
+                    const iconCls = 'w-[calc(var(--tile-sprite)*0.18)] h-[calc(var(--tile-sprite)*0.18)]';
+                    const iconSz = 'calc(var(--tile-sprite)*0.18)';
+                    const gap = 'calc(var(--tile-sprite)*0.04)';
+                    const targetW = 'calc(var(--tile-sprite)*0.40)';
                     return (
-                      <div className="flex flex-col items-center mt-[calc(var(--tile-sprite)*0.027)] gap-[calc(var(--tile-sprite)*0.02)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                        <div className={rowCls}>
-                          <img src={typeIconPath(matchupType)} alt="" className={iconSz} />
-                          <Sword className={iconSz} />
-                          <span>{formatMult(info.offense)}×</span>
-                          <span className={dColor(offD)}>{formatDoublings(offD)}</span>
-                        </div>
-                        <div className={rowCls}>
-                          <img src={typeIconPath(matchupType)} alt="" className={iconSz} />
-                          <Shield className={iconSz} />
-                          <span>{formatMult(info.defense)}×</span>
-                          <span className={dColor(defD)}>{formatDoublings(defD)}</span>
-                        </div>
+                      <div
+                        className="grid items-center mt-[calc(var(--tile-sprite)*0.027)] text-[calc(var(--tile-sprite)*0.18)] font-semibold leading-none"
+                        style={{
+                          gridTemplateColumns: `auto ${iconSz} ${iconSz} ${targetW} auto`,
+                          columnGap: gap,
+                          rowGap: 'calc(var(--tile-sprite)*0.02)',
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        {/* Row 1: drilldown type attacks pokemon */}
+                        <span className={dColor(offD)}>{formatDoublings(offD)}</span>
+                        <img src={typeIconPath(matchupType)} alt="" className={iconCls} />
+                        <Sword className={iconCls} />
+                        <span className="flex items-center" style={{ gap }}>
+                          <img src={typeIconPath(pokemon.types[0] as TypeName)} alt="" className={iconCls} />
+                          {pokemon.types.length > 1 && <img src={typeIconPath(pokemon.types[1] as TypeName)} alt="" className={iconCls} />}
+                        </span>
+                        <span>{formatMult(info.offense)}×</span>
+                        {/* Row 2: pokemon's best type attacks drilldown type */}
+                        <span className={dColor(defD)}>{formatDoublings(defD)}</span>
+                        <img src={typeIconPath(info.bestDefenseType)} alt="" className={iconCls} />
+                        <Sword className={iconCls} />
+                        <span className="flex items-center" style={{ gap }}>
+                          <img src={typeIconPath(matchupType)} alt="" className={iconCls} />
+                        </span>
+                        <span>{formatMult(info.defense)}×</span>
                       </div>
                     );
                   })() : undefined}

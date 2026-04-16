@@ -54,19 +54,23 @@ export function computeTypeDominance(pokemon: Pokemon[]): TypeDominanceResult[] 
  * Compute the individual matchup score of a single attacking type vs each Pokemon.
  * Returns per-Pokemon log2(offense/defense) values plus raw multipliers for drill-down display.
  */
-export function computePerPokemonMatchup(attackingType: TypeName, pokemon: Pokemon[]): { pokemon: Pokemon; matchup: number; offense: number; defense: number }[] {
+export function computePerPokemonMatchup(attackingType: TypeName, pokemon: Pokemon[]): { pokemon: Pokemon; matchup: number; offense: number; defense: number; bestDefenseType: TypeName }[] {
   return pokemon.map(opponent => {
     const rawOffense = typeEffectiveness(attackingType, opponent.types as TypeName[]);
     const offense = Math.max(rawOffense, IMMUNITY_FLOOR);
 
     let bestDefense = 0;
+    let bestDefenseType: TypeName = opponent.types[0] as TypeName;
     for (const oppType of opponent.types) {
       const eff = typeEffectiveness(oppType as TypeName, [attackingType]);
-      if (eff > bestDefense) bestDefense = eff;
+      if (eff > bestDefense) {
+        bestDefense = eff;
+        bestDefenseType = oppType as TypeName;
+      }
     }
     const defense = Math.max(bestDefense, IMMUNITY_FLOOR);
 
-    return { pokemon: opponent, matchup: Math.log2(offense / defense), offense: rawOffense, defense: Math.max(bestDefense, IMMUNITY_FLOOR) };
+    return { pokemon: opponent, matchup: Math.log2(offense / defense), offense: rawOffense, defense, bestDefenseType };
   });
 }
 

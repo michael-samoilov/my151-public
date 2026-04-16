@@ -459,7 +459,7 @@ export function ViewPage() {
     <div className="h-full flex relative">
       {/* Main grid column */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <div className="flex items-center justify-between px-4 py-2 border-b h-11">
+        <div className="flex items-center justify-between px-3 sm:px-6 py-2 border-b h-11">
           <h2 className="text-2xl font-extrabold tracking-tight leading-none">
             <span className="text-primary">{count}</span>
             <span className="text-foreground">/151</span>

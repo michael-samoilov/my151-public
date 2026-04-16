@@ -520,7 +520,7 @@ export function AnalyticsDashboard() {
   return (
     <div className="h-full flex flex-col">
       {/* Header — outside scroll container, matches build/view pages */}
-      <div className="flex items-center justify-between px-4 py-2 border-b h-11 shrink-0">
+      <div className="flex items-center justify-between px-3 sm:px-6 py-2 border-b h-11 shrink-0">
         <h2 className="text-2xl font-extrabold tracking-tight leading-none">
           <span className="text-primary">{analytics.total}</span>
           <span className="text-foreground">/151</span>

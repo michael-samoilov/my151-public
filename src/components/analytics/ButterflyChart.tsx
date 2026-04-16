@@ -49,7 +49,7 @@ interface ButterflyChartProps {
   countDenominator?: number;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, labelHeader }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -65,11 +65,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
 
   if (data.length === 0) return null;
 
-  const countTotal = data.reduce((s, d) => s + d.count, 0);
-  // Denominator for the per-bar percentage label. Fall back to the sum of
-  // counts when no explicit denominator is provided — correct for disjoint
-  // categories like generations.
-  const pctDenominator = countDenominator ?? countTotal;
+
 
   // Layout: 3-column system
   // Col A: labels + icons (fixed) | Col B: chart 1 (count/score) | Col C: chart 2 (deviation)
@@ -129,10 +125,10 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const devSectionStart = labelColEnd + chart1Width + gutter;
 
   // Chart 1 (count/score): directionality-aware margins. Reserves room for
-  // value labels at bar ends — "-0.54" (~28px) in score mode, "25 (16%)"
-  // (~48px) in non-score mode. Scales with chartScale so labels don't clip
-  // on desktop where the root font grows.
-  const countLabelPad = (scoreMode ? 32 : 52) * chartScale;
+  // value labels at bar ends — "-0.54" (~28px) in score mode, "25" (~20px)
+  // in non-score mode. Scales with chartScale so labels don't clip on
+  // desktop where the root font grows.
+  const countLabelPad = (scoreMode ? 32 : 28) * chartScale;
   const countLeftPad = countHasNeg ? countLabelPad : 0;
   const countRightPad = countHasPos ? countLabelPad : 0;
   const countBarArea = Math.max(0, chart1Width - countLeftPad - countRightPad);
@@ -404,7 +400,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                 >
                   {scoreMode
                     ? (d.count >= 0 ? '+' : '') + d.count.toFixed(2)
-                    : `${d.count} (${pctDenominator > 0 ? ((d.count / pctDenominator) * 100).toFixed(0) : 0}%)`
+                    : `${d.count}`
                   }
                 </text>
 

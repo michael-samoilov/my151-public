@@ -195,7 +195,7 @@ export function PokemonBrowser() {
 
     return [...genMap.entries()]
       .sort((a, b) => a[0] - b[0])
-      .map(([gen, ids]) => ({ label: `Gen ${gen}`, pokemonIds: ids }));
+      .map(([gen, ids]) => ({ label: `Generation ${gen}`, pokemonIds: ids }));
   }, [activeArchetypeDef, groups]);
 
   const toggleEvoSize = (size: number) => {
@@ -244,7 +244,7 @@ export function PokemonBrowser() {
     }
     return [...genMap.entries()]
       .sort((a, b) => a[0] - b[0])
-      .map(([gen, ids]) => ({ label: `Gen ${gen}`, pokemonIds: [...new Set(ids)] }));
+      .map(([gen, ids]) => ({ label: `Generation ${gen}`, pokemonIds: [...new Set(ids)] }));
   }, [isSearching, groups]);
   const typeKey = typeFilter ? `${typeFilterMode}-${typeFilter.join(',')}` : 'none';
   const genKey = generationFilter ? generationFilter.join(',') : 'none';

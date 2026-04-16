@@ -33,16 +33,16 @@ export const CATEGORIES: PokemonCategory[] = [
     color: '#48bb78',
     filter: (p) => STARTER_IDS.has(p.id),
     subgroups: [
-      { label: 'Gen 1', pokemonIds: [1,2,3, 4,5,6, 7,8,9] },
-      { label: 'Gen 2', pokemonIds: [152,153,154, 155,156,157, 158,159,160] },
-      { label: 'Gen 3', pokemonIds: [252,253,254, 255,256,257, 258,259,260] },
-      { label: 'Gen 4', pokemonIds: [387,388,389, 390,391,392, 393,394,395] },
-      { label: 'Gen 5', pokemonIds: [495,496,497, 498,499,500, 501,502,503] },
-      { label: 'Gen 6', pokemonIds: [650,651,652, 653,654,655, 656,657,658] },
-      { label: 'Gen 7', pokemonIds: [722,723,724, 725,726,727, 728,729,730] },
-      { label: 'Gen 8', pokemonIds: [810,811,812, 813,814,815, 816,817,818] },
+      { label: 'Generation 1', pokemonIds: [1,2,3, 4,5,6, 7,8,9] },
+      { label: 'Generation 2', pokemonIds: [152,153,154, 155,156,157, 158,159,160] },
+      { label: 'Generation 3', pokemonIds: [252,253,254, 255,256,257, 258,259,260] },
+      { label: 'Generation 4', pokemonIds: [387,388,389, 390,391,392, 393,394,395] },
+      { label: 'Generation 5', pokemonIds: [495,496,497, 498,499,500, 501,502,503] },
+      { label: 'Generation 6', pokemonIds: [650,651,652, 653,654,655, 656,657,658] },
+      { label: 'Generation 7', pokemonIds: [722,723,724, 725,726,727, 728,729,730] },
+      { label: 'Generation 8', pokemonIds: [810,811,812, 813,814,815, 816,817,818] },
       { label: 'Legends Arceus', pokemonIds: [10244, 10233, 10236] },
-      { label: 'Gen 9', pokemonIds: [906,907,908, 909,910,911, 912,913,914] },
+      { label: 'Generation 9', pokemonIds: [906,907,908, 909,910,911, 912,913,914] },
     ],
   },
   {
@@ -100,10 +100,10 @@ export const CATEGORIES: PokemonCategory[] = [
     color: '#e53e3e',
     filter: (p) => p.name.includes('-galar'),
     subgroups: [
-      { label: 'Gen 1 originals', pokemonIds: [10161,10162,10163,10164,10165,10166,10167,10168,10169,10170,10171] },
-      { label: 'Gen 2 originals', pokemonIds: [10172,10173] },
-      { label: 'Gen 3 originals', pokemonIds: [10174,10175] },
-      { label: 'Gen 5 originals', pokemonIds: [10176,10177,10178,10179] },
+      { label: 'Generation 1 originals', pokemonIds: [10161,10162,10163,10164,10165,10166,10167,10168,10169,10170,10171] },
+      { label: 'Generation 2 originals', pokemonIds: [10172,10173] },
+      { label: 'Generation 3 originals', pokemonIds: [10174,10175] },
+      { label: 'Generation 5 originals', pokemonIds: [10176,10177,10178,10179] },
     ],
   },
   // Gen 8 (Legends Arceus)
@@ -113,11 +113,11 @@ export const CATEGORIES: PokemonCategory[] = [
     color: '#805ad5',
     filter: (p) => p.name.includes('-hisui'),
     subgroups: [
-      { label: 'Gen 1 originals', pokemonIds: [10229,10230,10231,10232] },
-      { label: 'Gen 2 originals', pokemonIds: [10233,10234,10235] },
-      { label: 'Gen 5 originals', pokemonIds: [10236,10237,10238,10239,10240] },
-      { label: 'Gen 6 originals', pokemonIds: [10241,10242,10243] },
-      { label: 'Gen 7 originals', pokemonIds: [10244] },
+      { label: 'Generation 1 originals', pokemonIds: [10229,10230,10231,10232] },
+      { label: 'Generation 2 originals', pokemonIds: [10233,10234,10235] },
+      { label: 'Generation 5 originals', pokemonIds: [10236,10237,10238,10239,10240] },
+      { label: 'Generation 6 originals', pokemonIds: [10241,10242,10243] },
+      { label: 'Generation 7 originals', pokemonIds: [10244] },
     ],
   },
   // Gen 9 (Paldea)
@@ -127,8 +127,8 @@ export const CATEGORIES: PokemonCategory[] = [
     color: '#dd6b20',
     filter: (p) => p.name.includes('-paldea'),
     subgroups: [
-      { label: 'Gen 1 originals', pokemonIds: [10250,10251,10252] },
-      { label: 'Gen 2 originals', pokemonIds: [10253] },
+      { label: 'Generation 1 originals', pokemonIds: [10250,10251,10252] },
+      { label: 'Generation 2 originals', pokemonIds: [10253] },
     ],
   },
   {
@@ -143,10 +143,10 @@ export const CATEGORIES: PokemonCategory[] = [
     color: '#e53e3e',
     filter: (p) => PARADOX_IDS.has(p.id),
     subgroups: [
-      { label: 'Gen 1 originals', pokemonIds: [985,989] }, // Scream Tail (Jigglypuff), Sandy Shocks (Magneton)
-      { label: 'Gen 2 originals', pokemonIds: [984,990, 987, 991,995, 1009,1020,1021] }, // Great Tusk/Iron Treads (Donphan), Flutter Mane (Misdreavus), Iron Bundle (Delibird), Iron Thorns (Tyranitar), Walking Wake (Suicune), Gouging Fire (Entei), Raging Bolt (Raikou)
-      { label: 'Gen 3 originals', pokemonIds: [992,1005, 1006] }, // Iron Hands (Hariyama), Roaring Moon (Salamence), Iron Valiant (Gardevoir/Gallade)
-      { label: 'Gen 5 originals', pokemonIds: [986,988, 993,994, 1010,1022,1023] }, // Brute Bonnet (Amoonguss), Slither Wing (Volcarona), Iron Jugulis (Hydreigon), Iron Moth (Volcarona), Iron Leaves (Virizion), Iron Boulder (Terrakion), Iron Crown (Cobalion)
+      { label: 'Generation 1 originals', pokemonIds: [985,989] }, // Scream Tail (Jigglypuff), Sandy Shocks (Magneton)
+      { label: 'Generation 2 originals', pokemonIds: [984,990, 987, 991,995, 1009,1020,1021] }, // Great Tusk/Iron Treads (Donphan), Flutter Mane (Misdreavus), Iron Bundle (Delibird), Iron Thorns (Tyranitar), Walking Wake (Suicune), Gouging Fire (Entei), Raging Bolt (Raikou)
+      { label: 'Generation 3 originals', pokemonIds: [992,1005, 1006] }, // Iron Hands (Hariyama), Roaring Moon (Salamence), Iron Valiant (Gardevoir/Gallade)
+      { label: 'Generation 5 originals', pokemonIds: [986,988, 993,994, 1010,1022,1023] }, // Brute Bonnet (Amoonguss), Slither Wing (Volcarona), Iron Jugulis (Hydreigon), Iron Moth (Volcarona), Iron Leaves (Virizion), Iron Boulder (Terrakion), Iron Crown (Cobalion)
     ],
     dualColumns: {
       left: { label: 'Past', ids: [984,985,986,987,988,989, 1005, 1009,1020,1021] },

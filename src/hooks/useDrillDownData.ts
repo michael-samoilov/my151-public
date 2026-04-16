@@ -42,7 +42,7 @@ export interface DrillDownData {
   totalLines: number;
   showGenBadges: boolean;
   /** Per-Pokemon offense/defense multipliers for typeMatchup drill-downs */
-  matchupInfo?: Map<number, { offense: number; defense: number }>;
+  matchupInfo?: Map<number, { offense: number; defense: number; bestDefenseType: TypeName }>;
   /** The type being matched (typeMatchup drilldowns only) */
   matchupType?: TypeName;
 }
@@ -436,7 +436,7 @@ function computeTypeMatchupDrillDown(
   const matchups = computePerPokemonMatchup(segment.type as TypeName, pokemon);
 
   // Store per-pokemon offense/defense for chip display
-  const matchupInfo = new Map<number, { offense: number; defense: number }>();
+  const matchupInfo = new Map<number, { offense: number; defense: number; bestDefenseType: TypeName }>();
 
   // Group by integer-floored score tier (skip tier 0 — evenly matched).
   // Excluded pokemon are kept out of tier buckets (they don't contribute to
@@ -446,7 +446,7 @@ function computeTypeMatchupDrillDown(
   const tierMap = new Map<number, Set<number>>();
   const matchupById = new Map<number, number>();
   for (const m of matchups) {
-    matchupInfo.set(m.pokemon.id, { offense: m.offense, defense: m.defense });
+    matchupInfo.set(m.pokemon.id, { offense: m.offense, defense: m.defense, bestDefenseType: m.bestDefenseType });
     const tier = Math.floor(m.matchup);
     if (tier === 0) continue; // filter out evenly matched
     matchupById.set(m.pokemon.id, m.matchup);
@@ -499,7 +499,7 @@ function computeTypeMatchupDrillDown(
         if (!matchupInfo.has(m.id)) {
           const extra = computePerPokemonMatchup(segment.type as TypeName, [m]);
           if (extra.length > 0) {
-            matchupInfo.set(m.id, { offense: extra[0].offense, defense: extra[0].defense });
+            matchupInfo.set(m.id, { offense: extra[0].offense, defense: extra[0].defense, bestDefenseType: extra[0].bestDefenseType });
           }
         }
       }
