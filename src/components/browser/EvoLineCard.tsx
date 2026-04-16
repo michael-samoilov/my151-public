@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import type { Pokemon } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { Plus, ChevronRight, X, Sword, Shield } from 'lucide-react';
+import { ChevronRight, Sword, Shield } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
 import {
   PokemonTileContent,
@@ -20,6 +20,28 @@ function PokeballIcon({ className }: { className?: string }) {
       <path d="M1 8 A7 7 0 0 0 15 8" fill="none" stroke="#ef4444" strokeWidth="1.5" />
       <line x1="1" y1="8" x2="15" y2="8" stroke="#ef4444" strokeWidth="1.5" />
       <circle cx="8" cy="8" r="2.5" fill="white" stroke="#ef4444" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+/** Red circle with a centered X — SVG so centering is pixel-exact */
+function RedXIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} fill="none">
+      <circle cx="8" cy="8" r="7.5" fill="#ef4444" />
+      <line x1="5" y1="5" x2="11" y2="11" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="11" y1="5" x2="5" y2="11" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Blue circle with a centered + — SVG so centering is pixel-exact */
+function BluePlusIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className} fill="none">
+      <circle cx="8" cy="8" r="7.5" fill="var(--color-primary)" />
+      <line x1="4.5" y1="8" x2="11.5" y2="8" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="8" y1="4.5" x2="8" y2="11.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }
@@ -260,35 +282,26 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                   <button
                     onClick={handleRemoveButton}
                     onPointerDown={(e) => e.stopPropagation()}
-                    className={cn(TILE_ACTION_BUTTON_CLASS, 'rounded-full bg-destructive text-white flex items-center justify-center')}
+                    className={TILE_ACTION_BUTTON_CLASS}
                     style={{ transform: 'translateZ(0)' }}
                   >
-                    <X className="w-1/2 h-1/2" />
+                    <RedXIcon className="w-full h-full" />
                   </button>
                 )}
                 {inDex && variant === 'browser' && (
                   markedForRemoval ? (
-                    <div
-                      className={cn(TILE_ACTION_BUTTON_CLASS, 'rounded-full bg-destructive text-white flex items-center justify-center')}
-                      style={{ transform: 'translateZ(0)' }}
-                    >
-                      <X className="w-1/2 h-1/2" />
+                    <div className={TILE_ACTION_BUTTON_CLASS} style={{ transform: 'translateZ(0)' }}>
+                      <RedXIcon className="w-full h-full" />
                     </div>
                   ) : (
-                    <div
-                      className={TILE_ACTION_BUTTON_CLASS}
-                      style={{ transform: 'translateZ(0)' }}
-                    >
+                    <div className={TILE_ACTION_BUTTON_CLASS} style={{ transform: 'translateZ(0)' }}>
                       <PokeballIcon className="w-full h-full" />
                     </div>
                   )
                 )}
                 {!inDex && stagedIds.has(pokemon.id) && (
-                  <div
-                    className={cn(TILE_ACTION_BUTTON_CLASS, 'bg-primary rounded-full flex items-center justify-center')}
-                    style={{ transform: 'translateZ(0)' }}
-                  >
-                    <Plus className="w-1/2 h-1/2 text-primary-foreground" />
+                  <div className={TILE_ACTION_BUTTON_CLASS} style={{ transform: 'translateZ(0)' }}>
+                    <BluePlusIcon className="w-full h-full" />
                   </div>
                 )}
                 {/* Content — greyed out for gen mismatch, matchup tier mismatch (analytics), filter mismatch (browser),
