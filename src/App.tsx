@@ -1,12 +1,30 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
 import { Header } from '@/components/layout/Header';
 import type { AppView } from '@/components/layout/Header';
 import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
-import { AnalyticsDashboard } from '@/components/analytics/AnalyticsDashboard';
 import { DrillDownSheet, DrillDownPanel } from '@/components/analytics/DrillDownSheet';
-import { ViewPage } from '@/components/view/ViewPage';
 import { usePokedexStore } from '@/store/usePokedexStore';
+
+const AnalyticsDashboard = lazy(() =>
+  import('@/components/analytics/AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })),
+);
+const ViewPage = lazy(() =>
+  import('@/components/view/ViewPage').then((m) => ({ default: m.ViewPage })),
+);
+
+function RouteFallback() {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" className="w-12 h-12 animate-spin opacity-70">
+        <circle cx="16" cy="16" r="15" fill="#fafafa" stroke="#dc2626" strokeWidth="1.5" />
+        <path d="M2 16 A14 14 0 0 1 30 16" fill="#dc2626" />
+        <line x1="2" y1="16" x2="30" y2="16" stroke="#fafafa" strokeWidth="2" />
+        <circle cx="16" cy="16" r="4.5" fill="#fafafa" stroke="#dc2626" strokeWidth="2" />
+      </svg>
+    </div>
+  );
+}
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { useCompletionBeacon } from '@/hooks/useCompletionBeacon';
@@ -170,13 +188,17 @@ function App() {
             </div>
           </div>
         ) : currentView === 'view' ? (
-          <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
-            <ViewPage />
+          <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
+            <Suspense fallback={<RouteFallback />}>
+              <ViewPage />
+            </Suspense>
           </div>
         ) : (
           <div className="flex-1 flex min-h-0">
-            <div className="flex-1 min-h-0 min-w-0 overflow-hidden">
-              <AnalyticsDashboard />
+            <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
+              <Suspense fallback={<RouteFallback />}>
+                <AnalyticsDashboard />
+              </Suspense>
             </div>
             {drillDownSegment && (
               <div className="hidden md:flex w-[min(50vw,546px)] flex-shrink-0 border-l">

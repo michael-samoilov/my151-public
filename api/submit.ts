@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
+import { Ratelimit } from '@upstash/ratelimit';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -9,6 +10,44 @@ const redis = new Redis({
 const MAX_POKEMON_ID = 1025;
 const VALID_SOURCES = ['completion', 'export'] as const;
 type Source = typeof VALID_SOURCES[number];
+
+// Rate limiters: per-IP, analytics disabled to avoid doubling Upstash command count.
+const completionLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(2, '1 d'),
+  analytics: false,
+  prefix: 'rl:completion',
+});
+const exportLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(20, '1 d'),
+  analytics: false,
+  prefix: 'rl:export',
+});
+const burstLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(500, '10 m'),
+  analytics: false,
+  prefix: 'rl:burst',
+});
+
+// Single Lua script: bulk HINCRBY + 1 INCR counts as 1 Upstash command regardless of ID count.
+// KEYS[1] = picks:<source>   KEYS[2] = total:<source>
+// ARGV    = list of pokemon IDs as strings
+const SUBMIT_LUA = `
+for i = 1, #ARGV do
+  redis.call('HINCRBY', KEYS[1], ARGV[i], 1)
+end
+redis.call('INCR', KEYS[2])
+return 1
+`;
+
+function getClientIp(req: VercelRequest): string {
+  const fwd = req.headers['x-forwarded-for'];
+  const raw = Array.isArray(fwd) ? fwd[0] : fwd;
+  if (raw) return raw.split(',')[0].trim();
+  return req.socket?.remoteAddress ?? 'unknown';
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -44,13 +83,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       seen.add(id);
     }
 
-    // Pipeline: single HTTP request to Upstash
-    const pipe = redis.pipeline();
-    for (const id of ids) {
-      pipe.hincrby(`picks:${source}`, String(id), 1);
+    // Rate limit per IP before touching state.
+    const ip = getClientIp(req);
+    const burst = await burstLimiter.limit(ip);
+    if (!burst.success) {
+      res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
+      return res.status(429).json({ error: 'Too many requests' });
     }
-    pipe.incr(`total:${source}`);
-    await pipe.exec();
+    const perSource = source === 'completion'
+      ? await completionLimiter.limit(ip)
+      : await exportLimiter.limit(ip);
+    if (!perSource.success) {
+      res.setHeader('Retry-After', Math.ceil((perSource.reset - Date.now()) / 1000));
+      return res.status(429).json({ error: 'Too many requests' });
+    }
+
+    // Single EVAL command — bulk increments in one round-trip.
+    await redis.eval(
+      SUBMIT_LUA,
+      [`picks:${source}`, `total:${source}`],
+      ids.map(String),
+    );
 
     return res.status(200).json({ ok: true });
   } catch (err) {
