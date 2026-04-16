@@ -1,13 +1,36 @@
 import { useMemo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getPokemonById, getAllPokemon, getEvolutionChainIds } from '@/hooks/usePokemonData';
 import { CATEGORIES } from '@/data/categories';
+import { ARCHETYPES } from '@/data/archetypes';
 import pokemonData from '@/data/pokemon.json';
 import type { Pokemon } from '@/types/pokemon';
-
-const pokemonList = pokemonData as Pokemon[];
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, ChevronDown } from 'lucide-react';
+
+const pokemonList = pokemonData as Pokemon[];
+
+// National type frequency baseline (proportion of national-dex Pokemon that have each type)
+let _nationalTypeFreq: Map<string, number> | null = null;
+function getNationalTypeFreq(): Map<string, number> {
+  if (_nationalTypeFreq) return _nationalTypeFreq;
+  const all = getAllPokemon();
+  const freq = new Map<string, number>();
+  for (const p of all) {
+    for (const t of p.types) freq.set(t, (freq.get(t) ?? 0) + 1);
+  }
+  const total = all.length;
+  for (const [t, count] of freq) freq.set(t, count / total);
+  _nationalTypeFreq = freq;
+  return freq;
+}
+
+// Early-route archetype IDs for the late-evolution warning
+const EARLY_ROUTE_IDS = new Set([
+  ...ARCHETYPES.find(a => a.id === 'early-bug')!.pokemonIds,
+  ...ARCHETYPES.find(a => a.id === 'early-bird')!.pokemonIds,
+  ...ARCHETYPES.find(a => a.id === 'early-rodent')!.pokemonIds,
+]);
 
 function GreenPokeball({ className }: { className?: string }) {
   return (
@@ -87,6 +110,76 @@ export function WhatsAdvisor() {
       items.push({ type: 'missing', text: `Missing types: ${missingTypes.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ')}` });
     } else {
       items.push({ type: 'complete', text: 'All 18 types covered' });
+    }
+
+    // Type over-representation warning (>2x vs national, in BOTH full and filtered pools)
+    if (totalPlaced >= 15) {
+      const nationalTypeFreq = getNationalTypeFreq();
+      const placedPokemon = [...allIds].map(id => getPokemonById(id)).filter((p): p is Pokemon => !!p);
+
+      function typeRatios(pool: Pokemon[]): Map<string, number> {
+        const count = new Map<string, number>();
+        for (const p of pool) {
+          for (const t of p.types) count.set(t, (count.get(t) ?? 0) + 1);
+        }
+        const n = pool.length;
+        const ratios = new Map<string, number>();
+        for (const [t, c] of count) {
+          const natRatio = nationalTypeFreq.get(t) ?? 0;
+          if (natRatio > 0) ratios.set(t, (c / n) / natRatio);
+        }
+        return ratios;
+      }
+
+      const ratiosAll = typeRatios(placedPokemon);
+      const starterSet = new Set(sections['starter'] ?? []);
+      const filteredPool = placedPokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSet.has(p.id));
+      const ratiosFiltered = filteredPool.length >= 10 ? typeRatios(filteredPool) : ratiosAll;
+
+      const overRepTypes: string[] = [];
+      for (const [t, ratioAll] of ratiosAll) {
+        const ratioFilt = ratiosFiltered.get(t) ?? 0;
+        if (ratioAll > 2 && ratioFilt > 2) {
+          overRepTypes.push(t.charAt(0).toUpperCase() + t.slice(1));
+        }
+      }
+      if (overRepTypes.length > 0) {
+        items.push({
+          type: 'missing',
+          text: `Over-represented type${overRepTypes.length > 1 ? 's' : ''}: ${overRepTypes.join(', ')} (>2× national average)`,
+        });
+      }
+    }
+
+    // Late-evolving early route Pokemon warning (evolution at level 40+)
+    {
+      const lateEvoWarnings: string[] = [];
+      const checkedChains = new Set<number>();
+
+      for (const id of allIds) {
+        const pokemon = getPokemonById(id);
+        if (!pokemon || !EARLY_ROUTE_IDS.has(id)) continue;
+        if (checkedChains.has(pokemon.evolutionChainId)) continue;
+        checkedChains.add(pokemon.evolutionChainId);
+
+        // Check every member of this evo chain for a level 40+ evolution
+        const chainIds = getEvolutionChainIds(id);
+        for (const chainMemberId of chainIds) {
+          const member = getPokemonById(chainMemberId);
+          if (member && member.evolutionLevel != null && member.evolutionLevel >= 40) {
+            // Find the base form name (stage 1) for the label
+            const base = getPokemonById(id)!;
+            lateEvoWarnings.push(`${base.name} → ${member.name} (Lvl. ${member.evolutionLevel})`);
+            break; // one warning per chain is enough
+          }
+        }
+      }
+      if (lateEvoWarnings.length > 0) {
+        items.push({
+          type: 'missing',
+          text: `Early route Pokémon evolve in lategame: ${lateEvoWarnings.join(', ')}`,
+        });
+      }
     }
 
     return items;

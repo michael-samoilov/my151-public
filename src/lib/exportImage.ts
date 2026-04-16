@@ -1,6 +1,6 @@
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { computeTypeDominance } from '@/hooks/useTypeDominance';
+import { computeTypeDominance, getNationalBaseline } from '@/hooks/useTypeDominance';
 import { getAllPokemon } from '@/hooks/usePokemonData';
 
 const COLS = 10;
@@ -55,38 +55,60 @@ function getNationalGenFreq(): Map<number, number> {
 }
 
 interface FooterInsights {
-  /** Most over-indexed type relative to national dex */
+  /** Most over-indexed type relative to national dex (>1.5x in both full and filtered pools) */
   leanType?: TypeName;
+  /** True when no type exceeds 1.5x over-representation in both pools */
+  noTypesOverIndex: boolean;
   /** Most over-indexed generation relative to national dex */
   leanGen?: number;
-  /** Attacking type with the highest dominance score vs this region — easiest type to sweep it with */
+  /** Attacking type with highest advantage *deviation* from national baseline */
   bestAttackType?: TypeName;
 }
 
-function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
-  if (pokemon.length < 15) return {};
-
-  // Type lean — most over-represented type vs national baseline
-  const nationalTypeFreq = getNationalTypeFreq();
-  const regionTypeCount = new Map<string, number>();
-  for (const p of pokemon) {
-    for (const t of p.types) regionTypeCount.set(t, (regionTypeCount.get(t) ?? 0) + 1);
+/** Compute type over-index ratios for a pool of Pokemon vs national type frequencies */
+function typeOverIndexRatios(pool: Pokemon[], nationalTypeFreq: Map<string, number>): Map<string, number> {
+  const count = new Map<string, number>();
+  for (const p of pool) {
+    for (const t of p.types) count.set(t, (count.get(t) ?? 0) + 1);
   }
-  const total = pokemon.length;
-  let bestTypeRatio = 1.2;
-  let leanType: TypeName | undefined;
-  for (const [t, count] of regionTypeCount) {
+  const total = pool.length;
+  const ratios = new Map<string, number>();
+  for (const [t, c] of count) {
     const natRatio = nationalTypeFreq.get(t) ?? 0;
-    if (natRatio > 0) {
-      const ratio = (count / total) / natRatio;
-      if (ratio > bestTypeRatio) { bestTypeRatio = ratio; leanType = t as TypeName; }
+    if (natRatio > 0) ratios.set(t, (c / total) / natRatio);
+  }
+  return ratios;
+}
+
+function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
+  if (pokemon.length < 15) return { noTypesOverIndex: false };
+
+  const nationalTypeFreq = getNationalTypeFreq();
+
+  // Type lean — must be >1.5x in both the full pool AND the pool excluding
+  // legendary/mythical Pokemon (prevents starters/legends from inflating a type).
+  const ratiosAll = typeOverIndexRatios(pokemon, nationalTypeFreq);
+  const filtered = pokemon.filter(p => !p.isLegendary && !p.isMythical);
+  const ratiosFiltered = filtered.length >= 10
+    ? typeOverIndexRatios(filtered, nationalTypeFreq)
+    : ratiosAll; // too few non-special mons — fall back to full pool
+
+  let leanType: TypeName | undefined;
+  let bestLean = 1.5; // threshold
+  for (const [t, ratioAll] of ratiosAll) {
+    const ratioFilt = ratiosFiltered.get(t) ?? 0;
+    if (ratioAll > 1.5 && ratioFilt > 1.5 && ratioAll > bestLean) {
+      bestLean = ratioAll;
+      leanType = t as TypeName;
     }
   }
+  const noTypesOverIndex = !leanType;
 
   // Gen lean — most over-represented generation vs national baseline
   const nationalGenFreq = getNationalGenFreq();
   const regionGenCount = new Map<number, number>();
   for (const p of pokemon) regionGenCount.set(p.generation, (regionGenCount.get(p.generation) ?? 0) + 1);
+  const total = pokemon.length;
   let bestGenRatio = 1.3;
   let leanGen: number | undefined;
   for (const [g, count] of regionGenCount) {
@@ -97,13 +119,22 @@ function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
     }
   }
 
-  // Most advantaged attacking type — highest dominance score vs this region's Pokemon
-  // (i.e., which type gives a trainer the easiest time sweeping through this region)
+  // Advantaged attacking type — highest dominance score *deviation* from
+  // national baseline (not absolute score, so Steel doesn't always win).
   const dominance = computeTypeDominance(pokemon);
-  const topType = dominance.reduce((a, b) => a.score > b.score ? a : b);
-  const bestAttackType: TypeName | undefined = topType.score > 0 ? topType.type : undefined;
+  const nationalBaseline = getNationalBaseline();
+  let bestDeviation = 0;
+  let bestAttackType: TypeName | undefined;
+  for (const { type, score } of dominance) {
+    const natScore = nationalBaseline.get(type) ?? 0;
+    const deviation = score - natScore;
+    if (deviation > bestDeviation) {
+      bestDeviation = deviation;
+      bestAttackType = type;
+    }
+  }
 
-  return { leanType, leanGen, bestAttackType };
+  return { leanType, noTypesOverIndex, leanGen, bestAttackType };
 }
 
 /** Load an image by URL, returns a promise. */
@@ -264,8 +295,9 @@ export async function generateExportImage(
   type Seg = { kind: 'text'; text: string; color: string } | { kind: 'dot'; color: string };
   const segs: Seg[] = [];
 
-  const hasLean = insights.leanType || insights.leanGen;
-  if (hasLean) {
+  if (insights.noTypesOverIndex) {
+    segs.push({ kind: 'text', text: 'No types over-index', color: zinc });
+  } else if (insights.leanType || insights.leanGen) {
     if (insights.leanType) {
       const t = insights.leanType;
       segs.push({ kind: 'dot', color: TYPE_COLORS[t] });
@@ -282,7 +314,7 @@ export async function generateExportImage(
 
   if (insights.bestAttackType) {
     if (segs.length > 0) segs.push({ kind: 'text', text: ' · ', color: zinc });
-    segs.push({ kind: 'text', text: 'Most advantaged: ', color: zinc });
+    segs.push({ kind: 'text', text: 'Advantaged: ', color: zinc });
     const t = insights.bestAttackType;
     segs.push({ kind: 'dot', color: TYPE_COLORS[t] });
     segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
