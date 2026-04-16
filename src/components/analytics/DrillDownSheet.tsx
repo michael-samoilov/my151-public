@@ -153,6 +153,7 @@ function CardPanel({
                   variant="analytics"
                   showGenBadges={data.showGenBadges}
                   matchupInfo={data.matchupInfo}
+                  matchupType={data.matchupType}
                 />
               </div>
             </div>
@@ -715,6 +716,7 @@ export function DrillDownPanel() {
                   variant="analytics"
                   showGenBadges={currentData.showGenBadges}
                   matchupInfo={currentData.matchupInfo}
+                  matchupType={currentData.matchupType}
                 />
               </div>
             </div>

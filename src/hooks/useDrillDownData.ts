@@ -43,6 +43,8 @@ export interface DrillDownData {
   showGenBadges: boolean;
   /** Per-Pokemon offense/defense multipliers for typeMatchup drill-downs */
   matchupInfo?: Map<number, { offense: number; defense: number }>;
+  /** The type being matched (typeMatchup drilldowns only) */
+  matchupType?: TypeName;
 }
 
 export function useDrillDownData(): DrillDownData | null {
@@ -530,6 +532,7 @@ function computeTypeMatchupDrillDown(
     totalLines: sections.reduce((s, sec) => s + sec.groups.length, 0),
     showGenBadges: isRegional,
     matchupInfo,
+    matchupType: segment.type as TypeName,
   };
   // Cache regional/national results for instant access on re-visit
   if (isRegional) {

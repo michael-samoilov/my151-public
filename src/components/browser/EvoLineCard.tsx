@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import type { Pokemon } from '@/types/pokemon';
+import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
+import { typeIconPath } from '@/data/type-ids';
 import { ChevronRight, Sword, Shield } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
 import {
@@ -83,6 +84,8 @@ interface EvoLineGridProps {
   showGenBadges?: boolean;
   /** Per-Pokemon offense/defense multipliers for matchup drill-downs */
   matchupInfo?: Map<number, { offense: number; defense: number }>;
+  /** The type being matched — required when matchupInfo is present */
+  matchupType?: TypeName;
 }
 
 const GRID_CLASSES: Record<number, string> = {
@@ -91,7 +94,7 @@ const GRID_CLASSES: Record<number, string> = {
 };
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, matchupInfo }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, matchupInfo, matchupType }: EvoLineGridProps) {
   // Canonical Pokemon-tile sprite size — shared with the build page so
   // Charizard (etc.) renders identically in the selection pane and in a
   // section tile at the same viewport width. See `PokemonTile.tsx`.
@@ -128,6 +131,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
           variant={variant}
           showGenBadges={showGenBadges}
           matchupInfo={matchupInfo}
+          matchupType={matchupType}
           spritePx={spritePx}
         />
       );
@@ -135,7 +139,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
     }
 
     return result;
-  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols, matchupInfo, spritePx]);
+  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols, matchupInfo, matchupType, spritePx]);
 
   return (
     <div className={GRID_CLASSES[cols] ?? `grid gap-x-0 gap-y-1`} style={GRID_CLASSES[cols] ? undefined : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
@@ -167,6 +171,7 @@ interface EvoLineCardProps {
   variant?: EvoLineVariant;
   showGenBadges?: boolean;
   matchupInfo?: Map<number, { offense: number; defense: number }>;
+  matchupType?: TypeName;
   /** Pixel-perfect sprite size in CSS px */
   spritePx: number;
 }
@@ -193,7 +198,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, spritePx }: EvoLineCardProps) {
+export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, matchupType, spritePx }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
   const markedForRemoval = removalStagedIds
@@ -314,19 +319,27 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                           ? ((showGenBadge || (matchupInfo && !matched)) && 'opacity-35')
                           : (!matched && 'opacity-35'),
                   )}
-                  afterTypes={matchupInfo?.has(pokemon.id) ? (() => {
+                  afterTypes={matchupInfo?.has(pokemon.id) && matchupType ? (() => {
                     const info = matchupInfo.get(pokemon.id)!;
                     const offD = doublings(info.offense, false);
                     const defD = doublings(info.defense, true);
                     const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
+                    const iconSz = 'w-[calc(var(--tile-sprite)*0.18)] h-[calc(var(--tile-sprite)*0.18)]';
+                    const rowCls = 'flex items-center gap-[calc(var(--tile-sprite)*0.04)] text-[calc(var(--tile-sprite)*0.18)] font-semibold leading-none';
                     return (
-                      <div className="grid mt-[calc(var(--tile-sprite)*0.027)] text-[calc(var(--tile-sprite)*0.18)] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'calc(var(--tile-sprite)*0.055)' }}>
-                        <span className="justify-self-end leading-none">{formatMult(info.offense)}×</span>
-                        <Sword className="w-[calc(var(--tile-sprite)*0.18)] h-[calc(var(--tile-sprite)*0.18)] block" />
-                        <span className="justify-self-start leading-none">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span>
-                        <span className="justify-self-end leading-none">{formatMult(info.defense)}×</span>
-                        <Shield className="w-[calc(var(--tile-sprite)*0.18)] h-[calc(var(--tile-sprite)*0.18)] block" />
-                        <span className="justify-self-start leading-none">(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span>
+                      <div className="flex flex-col items-center mt-[calc(var(--tile-sprite)*0.027)] gap-[calc(var(--tile-sprite)*0.02)]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        <div className={rowCls}>
+                          <img src={typeIconPath(matchupType)} alt="" className={iconSz} />
+                          <Sword className={iconSz} />
+                          <span>{formatMult(info.offense)}×</span>
+                          <span className={dColor(offD)}>{formatDoublings(offD)}</span>
+                        </div>
+                        <div className={rowCls}>
+                          <img src={typeIconPath(matchupType)} alt="" className={iconSz} />
+                          <Shield className={iconSz} />
+                          <span>{formatMult(info.defense)}×</span>
+                          <span className={dColor(defD)}>{formatDoublings(defD)}</span>
+                        </div>
                       </div>
                     );
                   })() : undefined}
