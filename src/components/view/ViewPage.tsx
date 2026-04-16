@@ -178,7 +178,14 @@ function DraggableViewTile({
         width: tileSize,
         height: tileSize,
         opacity: isDragging || isDraggedLine ? 0.25 : 1,
-        touchAction: 'none',
+        // Intentionally NOT setting `touchAction: 'none'` here. The touch
+        // sensor uses delay-based activation (250ms hold), which does not
+        // require disabling native touch behaviours — and disabling them
+        // blocks the user from vertical-scrolling the page on mobile
+        // (tiles fill the entire visible area, so the only surfaces to
+        // touch *are* draggable tiles). Press-and-hold still activates
+        // drag; a quick finger-drag scrolls the page as expected.
+        touchAction: 'pan-y',
       }}
     >
       {showInsertBefore && (
@@ -652,7 +659,7 @@ function ViewSettingsSheet({ onClose }: { onClose: () => void }) {
         </div>
         <div className="border-b" />
         <div className="flex-1 min-h-0">
-          <ViewSettingsPane onClose={onClose} hideHeader />
+          <ViewSettingsPane onClose={onClose} mobileSheet />
         </div>
       </div>
     </div>

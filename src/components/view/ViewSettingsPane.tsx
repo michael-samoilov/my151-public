@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Check } from 'lucide-react';
+import { X, Check, RotateCcw } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
@@ -46,11 +46,15 @@ const SORT_OPTIONS: SortOption[] = [
 
 export function ViewSettingsPane({
   onClose,
-  hideHeader = false,
+  mobileSheet = false,
 }: {
   onClose: () => void;
-  /** Hide the internal header (for mobile bottom sheet which has its own drag tab). */
-  hideHeader?: boolean;
+  /** Mobile bottom-sheet mode: hide the internal header (the sheet has its
+   *  own drag tab) and stage changes behind an explicit "Update & View"
+   *  button. Desktop side-pane mode (the default) applies changes live as
+   *  the user toggles options — the grid is visible in the other pane, so
+   *  waiting for a commit step is friction without payoff. */
+  mobileSheet?: boolean;
 }) {
   const sections = usePokedexStore((s) => s.sections);
   const sortOption = usePokedexStore((s) => s.viewSortOption);
@@ -60,10 +64,17 @@ export function ViewSettingsPane({
   const customOrder = usePokedexStore((s) => s.viewCustomOrder);
   const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
 
-  // Stage changes locally — only commit on "Update & View".
+  // Pending state is only used in mobileSheet mode. In desktop mode handlers
+  // write straight to the store and the pending setters go unused.
   const [pendingSort, setPendingSort] = useState<ViewSortOption>(sortOption);
   const [pendingGrouping, setPendingGrouping] = useState<boolean>(groupSpecialAtEnd);
   const [pendingCustomOrder, setPendingCustomOrder] = useState<number[] | null>(customOrder);
+
+  // Effective values — what the UI reads to render current selection state.
+  // Desktop: live store values. Mobile: pending staged values.
+  const effSort = mobileSheet ? pendingSort : sortOption;
+  const effGrouping = mobileSheet ? pendingGrouping : groupSpecialAtEnd;
+  const effCustomOrder = mobileSheet ? pendingCustomOrder : customOrder;
 
   // Seed source: what's currently visible on the grid (reflects live store state).
   const currentSorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
@@ -77,22 +88,36 @@ export function ViewSettingsPane({
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  const hasCustomPending = pendingCustomOrder !== null;
+  const hasCustomEffective = effCustomOrder !== null;
 
   const handleSelectSort = (value: ViewSortOption) => {
-    if (value === 'custom' && pendingCustomOrder === null) {
-      setPendingCustomOrder(currentSorted.map((p) => p.id));
+    // Picking "Custom" without an existing order seeds it from the current
+    // on-screen sort, so the user has something to drag-rearrange.
+    const needsSeed = value === 'custom' && effCustomOrder === null;
+    const seed = needsSeed ? currentSorted.map((p) => p.id) : null;
+
+    if (mobileSheet) {
+      if (seed) setPendingCustomOrder(seed);
+      setPendingSort(value);
+    } else {
+      if (seed) setCustomOrder(seed);
+      setSortOption(value);
     }
-    setPendingSort(value);
   };
 
   const handleToggleGrouping = () => {
-    setPendingGrouping((v) => !v);
+    if (mobileSheet) setPendingGrouping((v) => !v);
+    else setGroupSpecialAtEnd(!groupSpecialAtEnd);
   };
 
   const handleResetCustom = () => {
-    setPendingCustomOrder(null);
-    if (pendingSort === 'custom') setPendingSort('regional');
+    if (mobileSheet) {
+      setPendingCustomOrder(null);
+      if (pendingSort === 'custom') setPendingSort('regional');
+    } else {
+      setCustomOrder(null);
+      if (sortOption === 'custom') setSortOption('regional');
+    }
   };
 
   const customOrderChanged =
@@ -103,9 +128,10 @@ export function ViewSettingsPane({
         pendingCustomOrder.some((id, i) => id !== customOrder[i])));
 
   const hasPendingChanges =
-    pendingSort !== sortOption ||
-    pendingGrouping !== groupSpecialAtEnd ||
-    customOrderChanged;
+    mobileSheet &&
+    (pendingSort !== sortOption ||
+      pendingGrouping !== groupSpecialAtEnd ||
+      customOrderChanged);
 
   const handleApply = () => {
     setSortOption(pendingSort);
@@ -117,7 +143,7 @@ export function ViewSettingsPane({
   return (
     <div className="relative flex flex-col h-full bg-background w-full">
       {/* Header */}
-      {!hideHeader && (
+      {!mobileSheet && (
         <div className="shrink-0 border-b">
           <div className="flex items-center justify-between px-3 py-2 h-11">
             <span className="text-sm font-semibold text-foreground">View Settings</span>
@@ -141,15 +167,21 @@ export function ViewSettingsPane({
           </h3>
           <div className="space-y-1">
             {SORT_OPTIONS.map((opt) => {
-              const selected = pendingSort === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => handleSelectSort(opt.value)}
-                  className={`w-full text-left rounded-md px-3 py-2 transition-colors cursor-pointer ${
-                    selected ? 'bg-primary/10' : 'hover:bg-muted'
-                  }`}
-                >
+              const selected = effSort === opt.value;
+              const showResetInline =
+                opt.value === 'custom' && hasCustomEffective;
+
+              // The custom row carries a nested Reset button, which can't
+              // legally live inside another <button>. Render that row as a
+              // keyboard-accessible div instead. All other rows remain
+              // plain buttons for simplicity.
+              const handleSelect = () => handleSelectSort(opt.value);
+              const commonClass = `w-full text-left rounded-md px-3 py-2 transition-colors cursor-pointer ${
+                selected ? 'bg-primary/10' : 'hover:bg-muted'
+              }`;
+
+              const inner = (
+                <>
                   <div className="flex items-center gap-2">
                     <span
                       className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
@@ -165,15 +197,57 @@ export function ViewSettingsPane({
                     >
                       {opt.label}
                     </span>
-                    {opt.value === 'custom' && hasCustomPending && (
-                      <span className="ml-auto text-[0.625rem] text-muted-foreground">
-                        {pendingCustomOrder!.length} pokemon
+                    {opt.value === 'custom' && hasCustomEffective && (
+                      <span className="ml-auto flex items-center gap-2 text-[0.625rem] text-muted-foreground">
+                        <span>{effCustomOrder!.length} pokemon</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleResetCustom();
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[0.6875rem] text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                          aria-label="Reset custom order"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          Reset
+                        </button>
                       </span>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
                     {opt.description}
                   </p>
+                </>
+              );
+
+              if (showResetInline) {
+                return (
+                  <div
+                    key={opt.value}
+                    role="button"
+                    tabIndex={0}
+                    onClick={handleSelect}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleSelect();
+                      }
+                    }}
+                    className={commonClass}
+                  >
+                    {inner}
+                  </div>
+                );
+              }
+
+              return (
+                <button
+                  key={opt.value}
+                  onClick={handleSelect}
+                  className={commonClass}
+                >
+                  {inner}
                 </button>
               );
             })}
@@ -192,10 +266,10 @@ export function ViewSettingsPane({
             <div className="flex items-center gap-2">
               <span
                 className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                  pendingGrouping ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                  effGrouping ? 'bg-primary border-primary' : 'border-muted-foreground/40'
                 }`}
               >
-                {pendingGrouping && <Check className="w-3 h-3 text-primary-foreground" />}
+                {effGrouping && <Check className="w-3 h-3 text-primary-foreground" />}
               </span>
               <span className="text-sm text-foreground">Group special Pokemon at end</span>
             </div>
@@ -203,7 +277,7 @@ export function ViewSettingsPane({
               Sends fossils, extra starters, paradox, pseudo-legendaries, ultra beasts,
               legendaries, and mythicals to the back of the grid, each in its own run.
             </p>
-            {pendingSort === 'custom' && (
+            {effSort === 'custom' && (
               <p className="text-xs text-muted-foreground/80 mt-1 ml-6 leading-snug italic">
                 Does not affect Custom ordering — drag freely.
               </p>
@@ -211,32 +285,12 @@ export function ViewSettingsPane({
           </button>
         </div>
 
-        {/* Custom order management */}
-        {hasCustomPending && (
-          <div className="px-3 pt-3 pb-4 border-t">
-            <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              Custom Order
-            </h3>
-            <p className="text-xs text-muted-foreground leading-snug px-3 mb-2">
-              Created automatically when you drag. New pokemon added via the build
-              page slot next to their evolution line-mates, or at the end if none are
-              present.
-            </p>
-            <button
-              onClick={handleResetCustom}
-              className="w-full text-left rounded-md px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-            >
-              Reset custom order
-            </button>
-          </div>
-        )}
-
         <PageFooter />
         {/* Extra bottom padding so the floating button doesn't occlude the last row */}
         {hasPendingChanges && <div className="h-16" aria-hidden />}
       </div>
 
-      {/* Floating "Update & View" button */}
+      {/* Floating "Update & View" button — mobile-sheet only */}
       {hasPendingChanges && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
           <button
