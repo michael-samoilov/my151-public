@@ -159,7 +159,7 @@ export async function generateExportImage(
 
   ctx.font = '600 8px system-ui, -apple-system, sans-serif';
   ctx.fillStyle = '#a1a1aa'; // zinc-400 — subtle caption feel
-  ctx.fillText(`${count}/151 \u00b7 made with ${domain}`, w / 2, footerY);
+  ctx.fillText(`made with ${domain}`, w / 2, footerY);
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
