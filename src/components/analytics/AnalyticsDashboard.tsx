@@ -675,7 +675,7 @@ export function AnalyticsDashboard() {
                 // default "share of type mentions" denominator would dilute
                 // every percentage. Pass the pokemon count so each bar reads
                 // as "share of the dex".
-                countDenominator={activeTypeChartTotal}
+                countDenominator={isNationalSelected ? activeTypeChartTotal : undefined}
                 onBarClick={(label) => {
                   if (selectedTypeChart === 'yours') {
                     handleDrillToggle({ kind: 'type', type: label.toLowerCase() }, typeSiblings, excludeSpecial);

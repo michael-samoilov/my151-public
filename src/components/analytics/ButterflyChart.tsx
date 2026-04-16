@@ -49,7 +49,7 @@ interface ButterflyChartProps {
   countDenominator?: number;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, labelHeader }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -125,10 +125,10 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const devSectionStart = labelColEnd + chart1Width + gutter;
 
   // Chart 1 (count/score): directionality-aware margins. Reserves room for
-  // value labels at bar ends — "-0.54" (~28px) in score mode, "25" (~20px)
-  // in non-score mode. Scales with chartScale so labels don't clip on
-  // desktop where the root font grows.
-  const countLabelPad = (scoreMode ? 32 : 28) * chartScale;
+  // value labels at bar ends — "-0.54" (~28px) in score mode, "25 (16%)"
+  // (~48px) with percentages, "25" (~20px) without. Scales with chartScale
+  // so labels don't clip on desktop where the root font grows.
+  const countLabelPad = (scoreMode ? 32 : countDenominator ? 52 : 28) * chartScale;
   const countLeftPad = countHasNeg ? countLabelPad : 0;
   const countRightPad = countHasPos ? countLabelPad : 0;
   const countBarArea = Math.max(0, chart1Width - countLeftPad - countRightPad);
@@ -400,7 +400,9 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                 >
                   {scoreMode
                     ? (d.count >= 0 ? '+' : '') + d.count.toFixed(2)
-                    : `${d.count}`
+                    : countDenominator
+                      ? `${d.count} (${countDenominator > 0 ? ((d.count / countDenominator) * 100).toFixed(0) : 0}%)`
+                      : `${d.count}`
                   }
                 </text>
 
