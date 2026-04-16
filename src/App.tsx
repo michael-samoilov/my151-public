@@ -133,7 +133,7 @@ function App() {
           <div className="flex-1 min-h-0 relative overflow-hidden">
             <div className={cn(
               'h-full transition-all duration-300 ease-out',
-              'md:w-[max(50%,calc(100%-546px))]',
+              'md:w-1/2',
               activeSection ? 'md:mr-auto' : 'md:mx-auto',
             )}>
               <PokedexGrid />
@@ -141,7 +141,7 @@ function App() {
             {/* Desktop browser panel — slides in from right as an overlay */}
             <div className={cn(
               'hidden md:flex absolute right-0 top-0 bottom-0 z-10',
-              'w-[min(50%,546px)] border-l bg-background',
+              'w-1/2 border-l bg-background',
               'transition-transform duration-300 ease-out',
               activeSection ? 'translate-x-0' : 'translate-x-full',
             )}>
