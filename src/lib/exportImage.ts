@@ -356,10 +356,10 @@ export async function generateExportImage(
     // --- Attack section ---
     segs.push({ kind: 'text', text: ' · ', color: zinc });
     if (insights.bestAttackType) {
-      segs.push({ kind: 'text', text: 'over-performs: ', color: zinc });
       const t = insights.bestAttackType;
       if (attackTypeImg) segs.push({ kind: 'icon', img: attackTypeImg, sz: TYPE_ICON_SZ });
       segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
+      segs.push({ kind: 'text', text: ' over-performs', color: zinc });
     } else {
       segs.push({ kind: 'text', text: 'no types strongly over-perform', color: zinc });
     }

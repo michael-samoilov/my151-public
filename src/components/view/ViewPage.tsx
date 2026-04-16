@@ -196,6 +196,12 @@ function DraggableViewTile({
         <div className="absolute right-0 top-1 bottom-1 w-[3px] bg-primary rounded-full z-20 translate-x-1/2" />
       )}
       <PokeballBg pokemon={pokemon} />
+      <span
+        className="absolute top-[3px] left-[3px] z-20 leading-none font-semibold text-foreground/40 select-none"
+        style={{ fontSize: tileSize * 0.19 }}
+      >
+        {pokemon.id}.
+      </span>
       <img
         src={pokemon.sprite}
         alt={pokemon.name}
@@ -212,6 +218,12 @@ function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSize: num
   return (
     <div className="relative overflow-visible" style={{ width: tileSize, height: tileSize }}>
       <PokeballBg pokemon={pokemon} />
+      <span
+        className="absolute top-[3px] left-[3px] z-20 leading-none font-semibold text-foreground/40 select-none"
+        style={{ fontSize: tileSize * 0.19 }}
+      >
+        {pokemon.id}.
+      </span>
       <img
         src={pokemon.sprite}
         alt={pokemon.name}
