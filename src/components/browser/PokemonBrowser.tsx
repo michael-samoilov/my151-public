@@ -820,7 +820,7 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
   }, []);
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-20 pointer-events-none">
+    <div className="absolute inset-x-0 bottom-0 z-50 pointer-events-none">
       <div className="pointer-events-auto bg-background border-t rounded-t-xl shadow-2xl max-h-[50vh] flex flex-col">
         {/* Sheet header */}
         <div ref={headerRef} className="flex items-center justify-between px-4 py-3 border-b">
