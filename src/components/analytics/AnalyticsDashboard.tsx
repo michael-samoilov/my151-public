@@ -620,11 +620,12 @@ export function AnalyticsDashboard() {
           </div>
 
           <div className="bg-card rounded-lg border overflow-hidden">
-            {/* Tab headers — inside card. Selected tab is filled primary with
-                white text; it sits flush against a primary-colored horizontal
-                bar at the bottom of the tab row so the selected tab visually
-                "merges" into the bar separating the tabs from the content. */}
-            <div className="flex border-b-[3px] border-primary">
+            {/* Tab headers — inside card. Selected tab is filled primary
+                with white text. An explicit primary-colored strip below the
+                tab row visually connects the selected tab into a horizontal
+                bar spanning the full container width, so the tab reads as
+                merging into the divider between tabs and content. */}
+            <div className="flex">
               <button
                 onClick={() => setTypeView('distribution')}
                 className={`flex-1 text-center px-3 py-1.5 text-sm font-semibold transition-colors ${
@@ -646,8 +647,9 @@ export function AnalyticsDashboard() {
                 Type matchups
               </button>
             </div>
+            <div className="h-[3px] bg-primary" />
             <div className="py-2 md:py-4">
-            <p className="text-sm text-muted-foreground mb-2 md:mb-3 px-3">
+            <p className="text-sm text-muted-foreground mb-3 md:mb-4 px-3">
               {typeView === 'distribution'
                 ? 'Count of Pokémon with each type and deviation from national dex proportions.'
                 : 'Avg number of type advantage 2x\u2019s (offensive & defensive) vs. all Pokémon in region.'}

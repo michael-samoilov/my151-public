@@ -172,47 +172,56 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const countScale = scaleLinear().domain([0, countTotalExtent]).range([0, countBarArea]);
 
   // Chart 2 (deviation): domain
-  let devLeft: number;
-  let devRight_: number;
+  //
+  // The bidirectional header labels ("WEAKER ← HERE" / "STRONGER HERE →", or
+  // the non-score "UNDER- ← INDEXED" / "OVER- INDEXED →") are anchored at
+  // `zeroX ± 5` with textAnchor pointing outward. For them to fit inside
+  // chart 2, zeroX must be at least `labelPx` pixels from each edge.
+  //
+  // Earlier versions reserved `labelPx` as scale-range padding on each side,
+  // which guaranteed label fit but left a fixed chunk of chart 2 unused by
+  // bars even when the data was balanced. Here we use a smarter approach:
+  // the scale range spans the *full* chart2Width, and the domain's smaller
+  // side is inflated as needed so zeroX stays at least `labelPx` from each
+  // edge. When data is balanced, bars use the entire chart width; when it's
+  // asymmetric, the short side shows a bit of extra axis (still reflecting
+  // actual bars proportionally) rather than wasting padding.
+  let devLeftRaw: number;
+  let devRightRaw: number;
   if (scoreMode) {
-    // Use this chart's own positive/negative data extents — unshared from
-    // chart 1 (see note above). Tiny floor prevents a degenerate zero-width
-    // domain when all deviations are on one side of zero.
-    devLeft = -Math.max(maxNegDev, 0.001);
-    devRight_ = Math.max(maxPosDev, 0.001);
+    devLeftRaw = Math.max(maxNegDev, 0.001);
+    devRightRaw = Math.max(maxPosDev, 0.001);
   } else {
-    // Data-adaptive bounds with a small floor (25 = ±0.25×) so the scale
-    // doesn't collapse when everything is near zero but also doesn't waste
-    // huge chunks of whitespace when the data range is narrow. Capped at
-    // ±200 (3.00×). fixedDevRight provides stable right-side extent across
-    // filter permutations.
     const maxUnderDev = Math.max(...data.map((d) => -d.deviation), 0);
     const DEV_OVER_CAP = 200;
     const maxOverDev = Math.max(...data.map((d) => d.deviation), 0);
-    devLeft = -Math.min(Math.max(maxUnderDev, 25), DEV_OVER_CAP);
-    devRight_ = Math.min(Math.max(fixedDevRight ?? maxOverDev, 25), DEV_OVER_CAP);
+    devLeftRaw = Math.min(Math.max(maxUnderDev, 25), DEV_OVER_CAP);
+    devRightRaw = Math.min(Math.max(fixedDevRight ?? maxOverDev, 25), DEV_OVER_CAP);
   }
+  // Label pixel extent (text + 5px offset from zeroX). Widest single line is
+  // ~56px at mobile base font; scales with chartScale so the growing root
+  // font on desktop is covered. Capped at 48% so both labels always get ≥4%
+  // of chart width each even at extreme widths.
+  const labelPx = (scoreMode ? 60 : 66) * chartScale;
+  const minSideFrac = chart2Width > 0
+    ? Math.min(0.48, (labelPx + 2) / chart2Width)
+    : 0;
+  let dl = devLeftRaw;
+  let dr = devRightRaw;
+  const dTotal = dl + dr;
+  if (dTotal > 0 && minSideFrac > 0) {
+    if (dl / dTotal < minSideFrac) dl = dr * minSideFrac / (1 - minSideFrac);
+    if (dr / dTotal < minSideFrac) dr = dl * minSideFrac / (1 - minSideFrac);
+  }
+  const devLeft = -dl;
+  const devRight_ = dr;
 
-  // The "WEAKER ← HERE" / "STRONGER HERE →" (score) or "UNDER- ← INDEXED"
-  // / "OVER- INDEXED →" (non-score) header labels are anchored at `zeroX ± 5`
-  // with textAnchor pointing outward, so each label occupies ~(5 + text width)
-  // of pixels to its side of zero. Reserving that as scale-range padding
-  // guarantees `zeroX` never lands closer to a chart edge than the label's
-  // outer extent — so the labels cannot clip no matter how asymmetric the
-  // shared extents push zero. Widest text at mobile base font (0.6875rem ≈ 11px):
-  // "STRONGER" ≈ 56px (score), "INDEXED →" ≈ 62px (non-score). Scales with
-  // chartScale to track the growing root font-size on wider viewports. Clamped
-  // to 45% of chart2Width so the scale range can't invert at extreme widths.
-  const devLabelPadIdeal = (scoreMode ? 60 : 66) * chartScale;
-  const devLabelPad = Math.min(devLabelPadIdeal, chart2Width * 0.45);
   const devHasLeft = devLeft < 0;
   const devHasRight = devRight_ > 0;
-  const devLeftPad = devHasLeft ? devLabelPad : 0;
-  const devRightPad = devHasRight ? devLabelPad : 0;
 
   const devScale = scaleLinear()
     .domain([devLeft, devRight_])
-    .range([devLeftPad, chart2Width - devRightPad]);
+    .range([0, chart2Width]);
 
   const zeroX = devScale(0);
 
