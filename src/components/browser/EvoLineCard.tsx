@@ -320,12 +320,12 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                     const defD = doublings(info.defense, true);
                     const dColor = (d: number) => d > 0 ? 'text-emerald-600 dark:text-emerald-400' : d < 0 ? 'text-red-500 dark:text-red-400' : '';
                     return (
-                      <div className="grid mt-[calc(var(--tile-sprite)*0.027)] text-[calc(var(--tile-sprite)*0.14)] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'calc(var(--tile-sprite)*0.055)' }}>
+                      <div className="grid mt-[calc(var(--tile-sprite)*0.027)] text-[calc(var(--tile-sprite)*0.18)] font-semibold" style={{ fontVariantNumeric: 'tabular-nums', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', rowGap: '0px', columnGap: 'calc(var(--tile-sprite)*0.055)' }}>
                         <span className="justify-self-end leading-none">{formatMult(info.offense)}×</span>
-                        <Sword className="w-[calc(var(--tile-sprite)*0.14)] h-[calc(var(--tile-sprite)*0.14)] block" />
+                        <Sword className="w-[calc(var(--tile-sprite)*0.18)] h-[calc(var(--tile-sprite)*0.18)] block" />
                         <span className="justify-self-start leading-none">(<span className={dColor(offD)}>{formatDoublings(offD)}</span>)</span>
                         <span className="justify-self-end leading-none">{formatMult(info.defense)}×</span>
-                        <Shield className="w-[calc(var(--tile-sprite)*0.14)] h-[calc(var(--tile-sprite)*0.14)] block" />
+                        <Shield className="w-[calc(var(--tile-sprite)*0.18)] h-[calc(var(--tile-sprite)*0.18)] block" />
                         <span className="justify-self-start leading-none">(<span className={dColor(defD)}>{formatDoublings(defD)}</span>)</span>
                       </div>
                     );
