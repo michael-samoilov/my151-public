@@ -68,6 +68,9 @@ function TypeSplitIcon({ types, className }: { types: string[]; className?: stri
         className="absolute inset-0 w-full h-full"
         style={{ clipPath: 'polygon(100% 0%, 100% 100%, 0% 100%)' }}
       />
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1 1" preserveAspectRatio="none">
+        <line x1="1" y1="0" x2="0" y2="1" stroke="white" strokeWidth="0.1" />
+      </svg>
     </span>
   );
 }
