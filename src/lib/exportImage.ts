@@ -1,5 +1,7 @@
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
+import { computeTypeDominance } from '@/hooks/useTypeDominance';
+import { getAllPokemon } from '@/hooks/usePokemonData';
 
 const COLS = 10;
 const TILE = 48;
@@ -11,6 +13,98 @@ const PAD_BOTTOM = 28;
 const BG = '#ffffff';
 const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
 const SCALE = 4; // SPRITE * SCALE = 192 = exactly 2× native 96px sprites
+
+// ---------- Footer insight computation ----------
+
+/** Representative solid color per generation for inline gen dot */
+const GEN_DOT_COLORS: Record<number, string> = {
+  1: '#DC0A2D', 2: '#DAA520', 3: '#A00000', 4: '#AACCEE',
+  5: '#555555', 6: '#025DA6', 7: '#F5A623', 8: '#00A1E9', 9: '#E3350D',
+};
+
+/** National type frequency baseline — proportion of national-dex Pokemon that have each type */
+let _nationalTypeFreq: Map<string, number> | null = null;
+
+function getNationalTypeFreq(): Map<string, number> {
+  if (_nationalTypeFreq) return _nationalTypeFreq;
+  const all = getAllPokemon();
+  const freq = new Map<string, number>();
+  for (const p of all) {
+    for (const t of p.types) {
+      freq.set(t, (freq.get(t) ?? 0) + 1);
+    }
+  }
+  const total = all.length;
+  for (const [t, count] of freq) freq.set(t, count / total);
+  _nationalTypeFreq = freq;
+  return freq;
+}
+
+/** National generation frequency baseline */
+let _nationalGenFreq: Map<number, number> | null = null;
+
+function getNationalGenFreq(): Map<number, number> {
+  if (_nationalGenFreq) return _nationalGenFreq;
+  const all = getAllPokemon();
+  const freq = new Map<number, number>();
+  for (const p of all) freq.set(p.generation, (freq.get(p.generation) ?? 0) + 1);
+  const total = all.length;
+  for (const [g, count] of freq) freq.set(g, count / total);
+  _nationalGenFreq = freq;
+  return freq;
+}
+
+interface FooterInsights {
+  /** Most over-indexed type relative to national dex */
+  leanType?: TypeName;
+  /** Most over-indexed generation relative to national dex */
+  leanGen?: number;
+  /** Attacking type with the highest dominance score vs this region — easiest type to sweep it with */
+  bestAttackType?: TypeName;
+}
+
+function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
+  if (pokemon.length < 15) return {};
+
+  // Type lean — most over-represented type vs national baseline
+  const nationalTypeFreq = getNationalTypeFreq();
+  const regionTypeCount = new Map<string, number>();
+  for (const p of pokemon) {
+    for (const t of p.types) regionTypeCount.set(t, (regionTypeCount.get(t) ?? 0) + 1);
+  }
+  const total = pokemon.length;
+  let bestTypeRatio = 1.2;
+  let leanType: TypeName | undefined;
+  for (const [t, count] of regionTypeCount) {
+    const natRatio = nationalTypeFreq.get(t) ?? 0;
+    if (natRatio > 0) {
+      const ratio = (count / total) / natRatio;
+      if (ratio > bestTypeRatio) { bestTypeRatio = ratio; leanType = t as TypeName; }
+    }
+  }
+
+  // Gen lean — most over-represented generation vs national baseline
+  const nationalGenFreq = getNationalGenFreq();
+  const regionGenCount = new Map<number, number>();
+  for (const p of pokemon) regionGenCount.set(p.generation, (regionGenCount.get(p.generation) ?? 0) + 1);
+  let bestGenRatio = 1.3;
+  let leanGen: number | undefined;
+  for (const [g, count] of regionGenCount) {
+    const natRatio = nationalGenFreq.get(g) ?? 0;
+    if (natRatio > 0) {
+      const ratio = (count / total) / natRatio;
+      if (ratio > bestGenRatio) { bestGenRatio = ratio; leanGen = g; }
+    }
+  }
+
+  // Most advantaged attacking type — highest dominance score vs this region's Pokemon
+  // (i.e., which type gives a trainer the easiest time sweeping through this region)
+  const dominance = computeTypeDominance(pokemon);
+  const topType = dominance.reduce((a, b) => a.score > b.score ? a : b);
+  const bestAttackType: TypeName | undefined = topType.score > 0 ? topType.type : undefined;
+
+  return { leanType, leanGen, bestAttackType };
+}
 
 /** Load an image by URL, returns a promise. */
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -151,15 +245,74 @@ export async function generateExportImage(
     }
   }
 
-  // Footer: "{count}/151 · made with my151.app"
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  // Footer: insights + "made with my151.app"
+  // Segments: [dot] Type-heavy & [dot] Gen N-heavy · Most advantaged: [dot] Type · made with ...
   const footerY = PAD_TOP + totalRows * TILE + PAD_BOTTOM / 2;
   const domain = siteUrl.replace(/^https?:\/\//, '');
+  const zinc = '#a1a1aa';
+  const FONT_SPEC = '600 8px system-ui, -apple-system, sans-serif';
+  const DOT_R = 3.5; // dot radius (logical px)
+  const DOT_GAP = 2;  // gap after dot before text
 
-  ctx.font = '600 8px system-ui, -apple-system, sans-serif';
-  ctx.fillStyle = '#a1a1aa'; // zinc-400 — subtle caption feel
-  ctx.fillText(`made with ${domain}`, w / 2, footerY);
+  ctx.font = FONT_SPEC;
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+
+  const insights = computeFooterInsights(pokemon);
+
+  // Segment types: text or colored dot
+  type Seg = { kind: 'text'; text: string; color: string } | { kind: 'dot'; color: string };
+  const segs: Seg[] = [];
+
+  const hasLean = insights.leanType || insights.leanGen;
+  if (hasLean) {
+    if (insights.leanType) {
+      const t = insights.leanType;
+      segs.push({ kind: 'dot', color: TYPE_COLORS[t] });
+      segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
+    }
+    if (insights.leanGen) {
+      if (insights.leanType) segs.push({ kind: 'text', text: ' & ', color: zinc });
+      const g = insights.leanGen;
+      segs.push({ kind: 'dot', color: GEN_DOT_COLORS[g] ?? '#888' });
+      segs.push({ kind: 'text', text: `Gen ${g}`, color: GEN_DOT_COLORS[g] ?? '#888' });
+    }
+    segs.push({ kind: 'text', text: '-heavy', color: zinc });
+  }
+
+  if (insights.bestAttackType) {
+    if (segs.length > 0) segs.push({ kind: 'text', text: ' · ', color: zinc });
+    segs.push({ kind: 'text', text: 'Most advantaged: ', color: zinc });
+    const t = insights.bestAttackType;
+    segs.push({ kind: 'dot', color: TYPE_COLORS[t] });
+    segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
+  }
+
+  if (segs.length > 0) segs.push({ kind: 'text', text: ' · ', color: zinc });
+  segs.push({ kind: 'text', text: `made with ${domain}`, color: zinc });
+
+  // Measure total width (dots occupy diameter + gap)
+  const dotW = DOT_R * 2 + DOT_GAP;
+  let totalW = 0;
+  for (const seg of segs) {
+    totalW += seg.kind === 'dot' ? dotW : ctx.measureText(seg.text).width;
+  }
+
+  // Draw left-to-right centered
+  let tx = (w - totalW) / 2;
+  for (const seg of segs) {
+    if (seg.kind === 'dot') {
+      ctx.fillStyle = seg.color;
+      ctx.beginPath();
+      ctx.arc(tx + DOT_R, footerY, DOT_R, 0, Math.PI * 2);
+      ctx.fill();
+      tx += dotW;
+    } else {
+      ctx.fillStyle = seg.color;
+      ctx.fillText(seg.text, tx, footerY);
+      tx += ctx.measureText(seg.text).width;
+    }
+  }
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
