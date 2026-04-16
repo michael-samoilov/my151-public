@@ -592,14 +592,6 @@ export const ARCHETYPES: Archetype[] = [
     color: '#737373',
   },
   {
-    id: 'trade-evo',
-    name: 'Trade Evolution',
-    description: 'Pokémon that evolve through trading',
-    pokemonIds: [61,64,65, 67,68, 75,76, 10111, 93,94, 95,123,125,126,137,186,208,212,233,356,366,367,368,466,467,474,477,525,526, 10172],
-    suggestedSlotRange: [113, 118],
-    color: '#737373',
-  },
-  {
     id: 'mimic',
     name: 'Mimic/Disguise',
     description: 'Pokémon that mimic objects or other Pokémon',
