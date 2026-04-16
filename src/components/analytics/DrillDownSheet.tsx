@@ -36,6 +36,9 @@ function CardPanel({
   onNavPrev,
   onNavNext,
   swipeLocked,
+  removalStagedIds,
+  onToggleRemoval,
+  onConfirmRemoval,
 }: {
   data: DrillDownData;
   assignedIds: Set<number>;
@@ -49,9 +52,13 @@ function CardPanel({
   onNavPrev?: () => void;
   onNavNext?: () => void;
   swipeLocked?: boolean;
+  removalStagedIds?: Set<number>;
+  onToggleRemoval?: (memberIds: number[]) => void;
+  onConfirmRemoval?: () => void;
 }) {
   const emptySet = useMemo(() => new Set<number>(), []);
   const noOp = useCallback(() => {}, []);
+  const removalCount = removalStagedIds?.size ?? 0;
 
   return (
     <div className="flex flex-col h-full bg-background rounded-t-2xl overflow-hidden" style={{ boxShadow: '0 -4px 20px rgba(0,0,0,0.2)' }}>
@@ -114,7 +121,7 @@ function CardPanel({
       {/* Scrollable content */}
       <div
         ref={scrollRef}
-        className="flex-1 min-h-0"
+        className="flex-1 min-h-0 relative"
         style={{
           overflowY: swipeLocked ? 'hidden' : 'auto',
           overscrollBehavior: 'contain',
@@ -133,6 +140,8 @@ function CardPanel({
                   assignedIds={assignedIds}
                   stagedIds={emptySet}
                   onToggleStage={noOp}
+                  removalStagedIds={removalStagedIds}
+                  onToggleRemoval={onToggleRemoval}
                   cols={6}
                   variant="analytics"
                   showGenBadges={data.showGenBadges}
@@ -141,8 +150,22 @@ function CardPanel({
               </div>
             </div>
           ))}
+          {/* Extra bottom padding so the floating button doesn't occlude rows */}
+          {removalCount > 0 && <div className="h-14" aria-hidden />}
         </div>
       </div>
+
+      {/* Floating "Remove N Pokemon" confirmation button */}
+      {removalCount > 0 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
+          <button
+            onClick={onConfirmRemoval}
+            className="bg-destructive text-destructive-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-destructive/90 transition-colors"
+          >
+            Remove {removalCount} Pokemon
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -159,10 +182,43 @@ export function DrillDownSheet() {
   const dexId = usePokedexStore((s) => s.drillDownDexId);
   const newOnly = usePokedexStore((s) => s.drillDownNewOnly);
 
+  const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
+
   const [dragY, setDragY] = useState(0);
   const [swipeX, setSwipeX] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [swipeLocked, setSwipeLocked] = useState(false);
+
+  // Staged removals — pending user confirmation
+  const [removalStagedIds, setRemovalStagedIds] = useState<number[]>([]);
+  const removalStagedSet = useMemo(() => new Set(removalStagedIds), [removalStagedIds]);
+
+  const handleToggleRemoval = useCallback((memberIds: number[]) => {
+    setRemovalStagedIds(prev => {
+      const prevSet = new Set(prev);
+      const allStaged = memberIds.every(id => prevSet.has(id));
+      if (allStaged) {
+        const removeSet = new Set(memberIds);
+        return prev.filter(id => !removeSet.has(id));
+      }
+      return [...prev, ...memberIds.filter(id => !prevSet.has(id))];
+    });
+  }, []);
+
+  const handleConfirmRemoval = useCallback(() => {
+    const removed = new Set<number>();
+    for (const id of removalStagedIds) {
+      if (removed.has(id)) continue;
+      for (const [sectionId, ids] of Object.entries(storeSections)) {
+        if (ids.includes(id)) {
+          removeEvoLine(sectionId, id);
+          break;
+        }
+      }
+      removed.add(id);
+    }
+    setRemovalStagedIds([]);
+  }, [removalStagedIds, storeSections, removeEvoLine]);
   const dragStartY = useRef<number | null>(null);
   const dragStartX = useRef<number | null>(null);
   const isDragging = useRef(false);
@@ -213,8 +269,9 @@ export function DrillDownSheet() {
     }
   }, [peek]);
 
-  // Reset scroll to top when segment changes
+  // Reset scroll + staged removals when segment changes
   useEffect(() => {
+    setRemovalStagedIds([]);
     if (currentScrollRef.current) {
       currentScrollRef.current.scrollTop = 0;
     }
@@ -437,6 +494,9 @@ export function DrillDownSheet() {
                 onNavPrev={handleNavPrev}
                 onNavNext={handleNavNext}
                 swipeLocked={swipeLocked}
+                removalStagedIds={removalStagedSet}
+                onToggleRemoval={handleToggleRemoval}
+                onConfirmRemoval={handleConfirmRemoval}
               />
             </div>
 
@@ -475,6 +535,7 @@ export function DrillDownSheet() {
 export function DrillDownPanel() {
   const closeDrillDown = usePokedexStore((s) => s.closeDrillDown);
   const navigateDrillDown = usePokedexStore((s) => s.navigateDrillDown);
+  const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
   const storeSections = usePokedexStore((s) => s.sections);
   const siblings = usePokedexStore((s) => s.drillDownSiblings);
   const segment = usePokedexStore((s) => s.drillDownSegment);
@@ -507,9 +568,42 @@ export function DrillDownPanel() {
   const emptySet = useMemo(() => new Set<number>(), []);
   const noOp = useCallback(() => {}, []);
 
+  // Staged removals — pending user confirmation
+  const [removalStagedIds, setRemovalStagedIds] = useState<number[]>([]);
+  const removalStagedSet = useMemo(() => new Set(removalStagedIds), [removalStagedIds]);
+
+  const handleToggleRemoval = useCallback((memberIds: number[]) => {
+    setRemovalStagedIds(prev => {
+      const prevSet = new Set(prev);
+      const allStaged = memberIds.every(id => prevSet.has(id));
+      if (allStaged) {
+        const removeSet = new Set(memberIds);
+        return prev.filter(id => !removeSet.has(id));
+      }
+      return [...prev, ...memberIds.filter(id => !prevSet.has(id))];
+    });
+  }, []);
+
+  const handleConfirmRemoval = useCallback(() => {
+    const removed = new Set<number>();
+    for (const id of removalStagedIds) {
+      if (removed.has(id)) continue;
+      for (const [sectionId, ids] of Object.entries(storeSections)) {
+        if (ids.includes(id)) {
+          removeEvoLine(sectionId, id);
+          break;
+        }
+      }
+      removed.add(id);
+    }
+    setRemovalStagedIds([]);
+  }, [removalStagedIds, storeSections, removeEvoLine]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Reset staged removals when navigating to a different segment
   useEffect(() => {
+    setRemovalStagedIds([]);
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0;
     }
@@ -518,7 +612,7 @@ export function DrillDownPanel() {
   if (!currentData) return null;
 
   return (
-    <div className="flex flex-col h-full bg-background w-full">
+    <div className="relative flex flex-col h-full bg-background w-full">
       {/* Header */}
       <div className="shrink-0 border-b">
         <div className="flex items-center justify-between px-3 py-2">
@@ -584,6 +678,8 @@ export function DrillDownPanel() {
                   assignedIds={assignedIds}
                   stagedIds={emptySet}
                   onToggleStage={noOp}
+                  removalStagedIds={removalStagedSet}
+                  onToggleRemoval={handleToggleRemoval}
                   cols={6}
                   variant="analytics"
                   showGenBadges={currentData.showGenBadges}
@@ -593,7 +689,21 @@ export function DrillDownPanel() {
             </div>
           ))}
         </div>
+        {/* Extra bottom padding so the floating button doesn't occlude rows */}
+        {removalStagedIds.length > 0 && <div className="h-14" aria-hidden />}
       </div>
+
+      {/* Floating "Remove N Pokemon" confirmation button */}
+      {removalStagedIds.length > 0 && (
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
+          <button
+            onClick={handleConfirmRemoval}
+            className="bg-destructive text-destructive-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-destructive/90 transition-colors"
+          >
+            Remove {removalStagedIds.length} Pokemon
+          </button>
+        </div>
+      )}
     </div>
   );
 }

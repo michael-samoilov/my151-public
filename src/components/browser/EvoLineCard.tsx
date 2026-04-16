@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import type { Pokemon } from '@/types/pokemon';
-import { usePokedexStore } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { Plus, ChevronRight, X, Sword, Shield } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
@@ -51,6 +50,10 @@ interface EvoLineGridProps {
   assignedIds: Set<number>;
   stagedIds: Set<number>;
   onToggleStage: (memberIds: number[]) => void;
+  /** IDs staged for removal (pending user confirmation). */
+  removalStagedIds?: Set<number>;
+  /** Toggle an evo line's removal staging. */
+  onToggleRemoval?: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
   cols?: number;
@@ -66,7 +69,7 @@ const GRID_CLASSES: Record<number, string> = {
 };
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, matchupInfo }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, matchupInfo }: EvoLineGridProps) {
   // Canonical Pokemon-tile sprite size — shared with the build page so
   // Charizard (etc.) renders identically in the selection pane and in a
   // section tile at the same viewport width. See `PokemonTile.tsx`.
@@ -96,6 +99,8 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, shi
           assignedIds={assignedIds}
           stagedIds={stagedIds}
           onToggleStage={onToggleStage}
+          removalStagedIds={removalStagedIds}
+          onToggleRemoval={onToggleRemoval}
           shinyIds={shinyIds}
           spriteOverrides={spriteOverrides}
           variant={variant}
@@ -131,6 +136,10 @@ interface EvoLineCardProps {
   assignedIds: Set<number>;
   stagedIds: Set<number>;
   onToggleStage: (memberIds: number[]) => void;
+  /** IDs staged for removal (pending user confirmation). */
+  removalStagedIds?: Set<number>;
+  /** Toggle an evo line's removal staging. */
+  onToggleRemoval?: (memberIds: number[]) => void;
   shinyIds?: Set<number>;
   spriteOverrides?: Record<number, string>;
   variant?: EvoLineVariant;
@@ -162,24 +171,22 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, spritePx }: EvoLineCardProps) {
-  const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
-  const sections = usePokedexStore((s) => s.sections);
+export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, spritePx }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
+  const markedForRemoval = removalStagedIds
+    ? members.some((p) => removalStagedIds.has(p.id))
+    : false;
 
-  const doRemove = () => {
-    const firstId = members[0].id;
-    for (const [sectionId, ids] of Object.entries(sections)) {
-      if (ids.includes(firstId)) {
-        removeEvoLine(sectionId, firstId);
-        break;
-      }
+  const toggleRemoval = () => {
+    if (onToggleRemoval) {
+      onToggleRemoval(members.map((p) => p.id));
     }
   };
 
   const handleClick = () => {
     if (allInDex && variant === 'browser') {
-      doRemove();
+      // Stage/unstage for removal instead of immediately removing
+      toggleRemoval();
     } else if (!allInDex) {
       onToggleStage(members.map((p) => p.id));
     }
@@ -187,7 +194,8 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
 
   const handleRemoveButton = (e: React.MouseEvent) => {
     e.stopPropagation();
-    doRemove();
+    // Stage/unstage for removal instead of immediately removing
+    toggleRemoval();
   };
 
   const primaryType = members[0].types[0];
@@ -259,12 +267,21 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                   </button>
                 )}
                 {inDex && variant === 'browser' && (
-                  <div
-                    className={TILE_ACTION_BUTTON_CLASS}
-                    style={{ transform: 'translateZ(0)' }}
-                  >
-                    <PokeballIcon className="w-full h-full" />
-                  </div>
+                  markedForRemoval ? (
+                    <div
+                      className={cn(TILE_ACTION_BUTTON_CLASS, 'rounded-full bg-destructive text-white flex items-center justify-center')}
+                      style={{ transform: 'translateZ(0)' }}
+                    >
+                      <X className="w-1/2 h-1/2" />
+                    </div>
+                  ) : (
+                    <div
+                      className={TILE_ACTION_BUTTON_CLASS}
+                      style={{ transform: 'translateZ(0)' }}
+                    >
+                      <PokeballIcon className="w-full h-full" />
+                    </div>
+                  )
                 )}
                 {!inDex && stagedIds.has(pokemon.id) && (
                   <div
@@ -284,11 +301,13 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                       ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
                       : pokemon.sprite)}
                   contentClassName={cn(
-                    mutedIds?.has(pokemon.id)
-                      ? 'opacity-35'
-                      : variant === 'analytics'
-                        ? ((showGenBadge || (matchupInfo && !matched)) && 'opacity-35')
-                        : (!matched && 'opacity-35'),
+                    markedForRemoval
+                      ? 'opacity-30'
+                      : mutedIds?.has(pokemon.id)
+                        ? 'opacity-35'
+                        : variant === 'analytics'
+                          ? ((showGenBadge || (matchupInfo && !matched)) && 'opacity-35')
+                          : (!matched && 'opacity-35'),
                   )}
                   afterTypes={matchupInfo?.has(pokemon.id) ? (() => {
                     const info = matchupInfo.get(pokemon.id)!;

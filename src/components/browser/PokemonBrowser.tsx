@@ -69,12 +69,17 @@ export function PokemonBrowser() {
   // Staged selection: pokemon selected but not yet committed
   const [stagedIds, setStagedIds] = useState<number[]>([]);
   const stagedSet = useMemo(() => new Set(stagedIds), [stagedIds]);
+  // Staged removals: assigned pokemon the user wants to remove (pending confirmation)
+  const [removalStagedIds, setRemovalStagedIds] = useState<number[]>([]);
+  const removalStagedSet = useMemo(() => new Set(removalStagedIds), [removalStagedIds]);
   const prevSectionRef = useRef(activeSection);
+  const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
 
   // Reset staged when activeSection changes
   useEffect(() => {
     if (activeSection !== prevSectionRef.current) {
       setStagedIds([]);
+      setRemovalStagedIds([]);
       prevSectionRef.current = activeSection;
     }
   }, [activeSection]);
@@ -95,6 +100,20 @@ export function PokemonBrowser() {
     });
   }, []);
 
+  const handleToggleRemoval = useCallback((memberIds: number[]) => {
+    setRemovalStagedIds(prev => {
+      const prevSet = new Set(prev);
+      const allStaged = memberIds.every(id => prevSet.has(id));
+      if (allStaged) {
+        const removeSet = new Set(memberIds);
+        return prev.filter(id => !removeSet.has(id));
+      } else {
+        const toAdd = memberIds.filter(id => !prevSet.has(id));
+        return [...prev, ...toAdd];
+      }
+    });
+  }, []);
+
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const setActiveSection = usePokedexStore((s) => s.setActiveSection);
 
@@ -104,14 +123,28 @@ export function PokemonBrowser() {
   );
 
   const handleSubmitStaged = useCallback(() => {
-    if (stagedIds.length === 0) return;
     const targetSection = activeSection ?? 'other';
     const newIds = stagedIds.filter(id => !assignedIds.has(id));
     if (newIds.length > 0) addToSection(targetSection, newIds);
+    // Process removals: find each removal-staged pokemon's section and remove
+    if (removalStagedIds.length > 0) {
+      const removed = new Set<number>();
+      for (const id of removalStagedIds) {
+        if (removed.has(id)) continue;
+        for (const [sectionId, ids] of Object.entries(sections)) {
+          if (ids.includes(id)) {
+            removeEvoLine(sectionId, id);
+            break;
+          }
+        }
+        removed.add(id);
+      }
+    }
     setStagedIds([]);
+    setRemovalStagedIds([]);
     setMobileBrowserOpen(false);
     setActiveSection(null);
-  }, [stagedIds, activeSection, assignedIds, addToSection, setMobileBrowserOpen, setActiveSection]);
+  }, [stagedIds, removalStagedIds, activeSection, assignedIds, sections, addToSection, removeEvoLine, setMobileBrowserOpen, setActiveSection]);
 
   const groups = useFilteredPokemonGrouped({
     search: searchQuery,
@@ -666,6 +699,8 @@ export function PokemonBrowser() {
                       assignedIds={assignedIds}
                       stagedIds={stagedSet}
                       onToggleStage={handleToggleStage}
+                      removalStagedIds={removalStagedSet}
+                      onToggleRemoval={handleToggleRemoval}
                       cols={3}
                       showGenBadges={showGenBadges}
                     />
@@ -674,6 +709,8 @@ export function PokemonBrowser() {
                       assignedIds={assignedIds}
                       stagedIds={stagedSet}
                       onToggleStage={handleToggleStage}
+                      removalStagedIds={removalStagedSet}
+                      onToggleRemoval={handleToggleRemoval}
                       cols={3}
                       showGenBadges={showGenBadges}
                     />
@@ -702,6 +739,8 @@ export function PokemonBrowser() {
                     assignedIds={assignedIds}
                     stagedIds={stagedSet}
                     onToggleStage={handleToggleStage}
+                    removalStagedIds={removalStagedSet}
+                    onToggleRemoval={handleToggleRemoval}
                     shinyIds={isSearching ? undefined : ('shinyIds' in sub ? new Set((sub as any).shinyIds) : shinyIds)}
                     spriteOverrides={isSearching ? undefined : spriteOverrides}
                     showGenBadges={showGenBadges}
@@ -719,17 +758,28 @@ export function PokemonBrowser() {
           <PageFooter />
       </div>
 
-      {/* Floating "Add X Pokemon" button */}
-      {stagedIds.length > 0 && (() => {
+      {/* Floating action button — add/remove staged pokemon */}
+      {(() => {
         const newCount = stagedIds.filter(id => !assignedIds.has(id)).length;
-        if (newCount === 0) return null;
+        const removeCount = removalStagedIds.length;
+        if (newCount === 0 && removeCount === 0) return null;
         return (
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
             <button
               onClick={handleSubmitStaged}
-              className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors"
+              className="bg-primary text-primary-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors leading-snug text-center"
             >
-              Add {newCount} Pokemon
+              {newCount > 0 && removeCount > 0 ? (
+                <>
+                  <span>Add {newCount} Pokemon</span>
+                  <br />
+                  <span className="text-xs font-normal opacity-90">and remove {removeCount}</span>
+                </>
+              ) : newCount > 0 ? (
+                `Add ${newCount} Pokemon`
+              ) : (
+                `Remove ${removeCount} Pokemon`
+              )}
             </button>
           </div>
         );
