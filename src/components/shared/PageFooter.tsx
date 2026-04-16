@@ -15,7 +15,10 @@ export function PageFooter() {
         <circle cx="12" cy="12" r="1.5" fill="currentColor" />
       </svg>
       <span className="text-[0.5625rem] text-muted-foreground/70">
-        v{BUILD_VERSION} · Pokémon © 1995–{YEAR} Nintendo / Game Freak / Creatures
+        v{BUILD_VERSION} · Pokémon © 1995–{YEAR} Nintendo / Game Freak / Creatures / The Pokémon Company
+      </span>
+      <span className="text-[0.5rem] text-muted-foreground/50">
+        Not affiliated with or endorsed by Nintendo.
       </span>
       </div>
     </div>
