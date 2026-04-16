@@ -160,7 +160,10 @@ export const usePokedexStore = create<PokedexState>()(
               }
             }
 
-            const insertAt = Math.min(insertAfter + 1, insertBefore);
+            // No chain relatives found → append at end; otherwise respect constraints
+            const insertAt = insertAfter === -1
+              ? result.length
+              : Math.min(insertAfter + 1, insertBefore);
             result = [...result.slice(0, insertAt), newId, ...result.slice(insertAt)];
           }
 
