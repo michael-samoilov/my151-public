@@ -90,7 +90,7 @@ export const usePokedexStore = create<PokedexState>()(
       drillDownDexId: null,
       drillDownNewOnly: false,
       whatsAdvisorExpanded: true,
-      viewSortOption: 'regional' as ViewSortOption,
+      viewSortOption: 'build-order' as ViewSortOption,
       viewGroupSpecialAtEnd: true,
       viewCustomOrder: null,
 
@@ -260,7 +260,7 @@ export const usePokedexStore = create<PokedexState>()(
           result.whatsAdvisorExpanded = true;
         }
         if (result.viewSortOption === undefined) {
-          result.viewSortOption = 'regional';
+          result.viewSortOption = 'build-order';
         }
 
         // v5 → v6: new view grouping toggle

@@ -13,6 +13,12 @@ interface SortOption {
 
 const SORT_OPTIONS: SortOption[] = [
   {
+    value: 'build-order',
+    label: 'Build Order',
+    description:
+      'Mirrors your build page exactly — the order and sections you set up there.',
+  },
+  {
     value: 'regional',
     label: 'Regional Dex',
     description:
@@ -29,12 +35,6 @@ const SORT_OPTIONS: SortOption[] = [
     label: 'Type',
     description:
       'Groups by each line\'s primary type, then by national dex number within each type.',
-  },
-  {
-    value: 'build-order',
-    label: 'Build Order',
-    description:
-      'Mirrors your build page exactly — the order and sections you set up there.',
   },
   {
     value: 'custom',
@@ -113,10 +113,10 @@ export function ViewSettingsPane({
   const handleResetCustom = () => {
     if (mobileSheet) {
       setPendingCustomOrder(null);
-      if (pendingSort === 'custom') setPendingSort('regional');
+      if (pendingSort === 'custom') setPendingSort('build-order');
     } else {
       setCustomOrder(null);
-      if (sortOption === 'custom') setSortOption('regional');
+      if (sortOption === 'custom') setSortOption('build-order');
     }
   };
 
