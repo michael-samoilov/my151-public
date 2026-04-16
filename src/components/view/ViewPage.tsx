@@ -141,12 +141,14 @@ function useTileSize(totalSlots: number) {
 function DraggableViewTile({
   pokemon,
   tileSize,
+  positionNum,
   isDraggedLine,
   showInsertBefore,
   showInsertAfter,
 }: {
   pokemon: Pokemon;
   tileSize: number;
+  positionNum: number;
   isDraggedLine: boolean;
   showInsertBefore: boolean;
   showInsertAfter: boolean;
@@ -200,7 +202,7 @@ function DraggableViewTile({
         className="absolute top-[3px] left-[3px] z-20 leading-none font-semibold text-foreground/40 select-none"
         style={{ fontSize: tileSize * 0.14 }}
       >
-        {pokemon.id}.
+        {positionNum}.
       </span>
       <img
         src={pokemon.sprite}
@@ -218,12 +220,6 @@ function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSize: num
   return (
     <div className="relative overflow-visible" style={{ width: tileSize, height: tileSize }}>
       <PokeballBg pokemon={pokemon} />
-      <span
-        className="absolute top-[3px] left-[3px] z-20 leading-none font-semibold text-foreground/40 select-none"
-        style={{ fontSize: tileSize * 0.14 }}
-      >
-        {pokemon.id}.
-      </span>
       <img
         src={pokemon.sprite}
         alt={pokemon.name}
@@ -509,8 +505,14 @@ export function ViewPage() {
             const gridEmpties = Math.max(0, gridSlots - gridPokemon.length);
             const lastRowEmpties = Math.max(0, lastRowCount - lastRowPokemon.length);
 
-            const EmptyPlaceholder = ({ k }: { k: string }) => (
+            const EmptyPlaceholder = ({ k, num }: { k: string; num: number }) => (
               <div key={k} className="relative" style={{ width: tileSize, height: tileSize }}>
+                <span
+                  className="absolute top-[3px] left-[3px] z-20 leading-none font-semibold text-foreground/40 select-none"
+                  style={{ fontSize: tileSize * 0.14 }}
+                >
+                  {num}.
+                </span>
                 <svg
                   viewBox="0 0 24 24"
                   className="absolute inset-[10%] w-[80%] h-[80%] text-muted-foreground/15 -rotate-[30deg]"
@@ -524,11 +526,12 @@ export function ViewPage() {
               </div>
             );
 
-            const renderTile = (pokemon: Pokemon) => (
+            const renderTile = (pokemon: Pokemon, positionNum: number) => (
               <DraggableViewTile
                 key={pokemon.id}
                 pokemon={pokemon}
                 tileSize={tileSize}
+                positionNum={positionNum}
                 isDraggedLine={dragSet.has(pokemon.id)}
                 showInsertBefore={insertIndicator.pokemonId === pokemon.id && insertIndicator.side === 'left'}
                 showInsertAfter={insertIndicator.pokemonId === pokemon.id && insertIndicator.side === 'right'}
@@ -555,17 +558,17 @@ export function ViewPage() {
                       gridAutoRows: `${tileSize}px`,
                     }}
                   >
-                    {gridPokemon.map(renderTile)}
+                    {gridPokemon.map((p, i) => renderTile(p, i + 1))}
                     {gridEmpties > 0 &&
                       Array.from({ length: gridEmpties }, (_, i) => (
-                        <EmptyPlaceholder key={`empty-${i}`} k={`empty-${i}`} />
+                        <EmptyPlaceholder key={`empty-${i}`} k={`empty-${i}`} num={gridPokemon.length + i + 1} />
                       ))}
                   </div>
                   <div className="flex justify-center" style={{ height: tileSize }}>
-                    {lastRowPokemon.map(renderTile)}
+                    {lastRowPokemon.map((p, i) => renderTile(p, gridSlots + i + 1))}
                     {lastRowEmpties > 0 &&
                       Array.from({ length: lastRowEmpties }, (_, i) => (
-                        <EmptyPlaceholder key={`empty-last-${i}`} k={`empty-last-${i}`} />
+                        <EmptyPlaceholder key={`empty-last-${i}`} k={`empty-last-${i}`} num={gridSlots + lastRowPokemon.length + i + 1} />
                       ))}
                   </div>
                   <PageFooter />
