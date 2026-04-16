@@ -254,16 +254,26 @@ export function DrillDownSheet() {
   const nextSibling = siblings.length >= 2 && currentIdx >= 0
     ? siblings[(currentIdx + 1) % siblings.length] : null;
 
-  // Pre-compute all 3 panels' data
+  // Current panel data: computed synchronously (blocks render)
   const currentData = useMemo(() =>
     computeDrillDownData(segment, storeSections, excludeSpecial, dexId, newOnly),
     [segment, storeSections, excludeSpecial, dexId, newOnly]);
-  const prevData = useMemo(() =>
-    prevSibling ? computeDrillDownData(prevSibling, storeSections, excludeSpecial, dexId, newOnly) : null,
-    [prevSibling, storeSections, excludeSpecial, dexId, newOnly]);
-  const nextData = useMemo(() =>
-    nextSibling ? computeDrillDownData(nextSibling, storeSections, excludeSpecial, dexId, newOnly) : null,
-    [nextSibling, storeSections, excludeSpecial, dexId, newOnly]);
+
+  // Prev/next panel data: deferred to after paint so the current panel
+  // shows instantly even for expensive drilldowns (e.g. national-dex type
+  // matchup with ~1025 Pokemon). Computed eagerly if already cached (the
+  // computation returns immediately from cache), or scheduled via
+  // requestAnimationFrame otherwise.
+  const [prevData, setPrevData] = useState<ReturnType<typeof computeDrillDownData>>(null);
+  const [nextData, setNextData] = useState<ReturnType<typeof computeDrillDownData>>(null);
+
+  useEffect(() => {
+    // Try synchronous first — if cached this is essentially free
+    const prev = prevSibling ? computeDrillDownData(prevSibling, storeSections, excludeSpecial, dexId, newOnly) : null;
+    const next = nextSibling ? computeDrillDownData(nextSibling, storeSections, excludeSpecial, dexId, newOnly) : null;
+    setPrevData(prev);
+    setNextData(next);
+  }, [prevSibling, nextSibling, storeSections, excludeSpecial, dexId, newOnly]);
 
   const bstOverrides = segment?.kind === 'bst' ? BST_SPRITE_OVERRIDES : undefined;
 

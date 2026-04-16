@@ -651,8 +651,8 @@ export function AnalyticsDashboard() {
             <div className="py-2 md:py-4">
             <p className="text-sm text-muted-foreground mb-3 md:mb-4 px-3">
               {typeView === 'distribution'
-                ? 'Count of Pokémon with each type and deviation from national dex proportions.'
-                : 'Avg number of type advantage 2x\u2019s (offensive & defensive) vs. all Pokémon in region.'}
+                ? 'Count of Pokémon with each type, & deviation from national dex proportions.'
+                : 'Avg # of type advantage 2x\u2019s (atk & def) vs. all Pokémon in region, & deviation from avg vs. national dex.'}
             </p>
             <div className="px-6">
             {typeView === 'distribution' ? (

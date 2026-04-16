@@ -366,6 +366,14 @@ function computeRegionalDrillDown(
   };
 }
 
+/** Cache for national-dex type matchup drilldowns. The national dex's
+ *  matchup data depends only on (type, excludeSpecial) — storeSections
+ *  only matters for which Pokemon are "placed", but the heavy work
+ *  (matchup computation + evo-line grouping) stays the same. We cache
+ *  the expensive structural result and patch in the live placedIds at
+ *  read time by storing a factory that accepts the current storeSections. */
+const _nationalMatchupCache = new Map<string, DrillDownData>();
+
 /** Type matchup drilldown: group Pokemon by their matchup score tier against the attacking type.
  *  Supports regional dex context — when dexId is set, shows that dex's Pokemon instead of user's. */
 function computeTypeMatchupDrillDown(
@@ -377,6 +385,16 @@ function computeTypeMatchupDrillDown(
 ): DrillDownData | null {
   const userPlacedIds = new Set(Object.values(storeSections).flat());
   const isRegional = dexId !== null && dexId !== 'yours';
+
+  // For regional/national dex, the matchup data depends only on (type,
+  // dexId, excludeSpecial, newOnly) — not on storeSections (which only
+  // affects branch preference in multi-branch evo lines like Eevee).
+  // Cache the expensive result so swiping between types is instant.
+  if (isRegional) {
+    const cacheKey = `${segment.type}|${dexId}|${excludeSpecial}|${newOnly}`;
+    const cached = _nationalMatchupCache.get(cacheKey);
+    if (cached) return cached;
+  }
 
   // Predicate for "excluded" — what counts as a starter differs between
   // contexts: in a regional/national dex we use the global STARTER_IDS list;
@@ -450,9 +468,10 @@ function computeTypeMatchupDrillDown(
   const sections: SectionGroup[] = [];
   for (const tier of sortedTiers) {
     const ids = tierMap.get(tier)!;
+    // U+002B (+) and U+2212 (−) are the same width in proportional fonts
     const label = tier > 0
       ? `+${tier} ${tier === 1 ? 'doubling' : 'doublings'} of advantage`
-      : `${tier} ${tier === -1 ? 'doubling' : 'doublings'} of advantage`;
+      : `\u2212${Math.abs(tier)} ${Math.abs(tier) === 1 ? 'doubling' : 'doublings'} of advantage`;
     const color = tierColors.get(tier) ?? (tier > 0 ? '#15803d' : '#991b1b');
     const meta = { label, color };
 
@@ -503,7 +522,7 @@ function computeTypeMatchupDrillDown(
   const { title, color, icon } = getSegmentMeta(segment);
   const shownPokemon = [...tierMap.values()].reduce((s, ids) => s + ids.size, 0);
   const dexLabel = isRegional ? (dexId === 'national' ? 'National Dex' : REGIONAL_DEXES.find(d => d.id === dexId)?.name ?? dexId) : null;
-  return {
+  const result: DrillDownData = {
     title: dexLabel ? `${title} — ${dexLabel}` : title,
     subtitle: `${shownPokemon} Pokémon with non-neutral matchups`,
     color,
@@ -514,6 +533,12 @@ function computeTypeMatchupDrillDown(
     showGenBadges: isRegional,
     matchupInfo,
   };
+  // Cache regional/national results for instant access on re-visit
+  if (isRegional) {
+    const cacheKey = `${segment.type}|${dexId}|${excludeSpecial}|${newOnly}`;
+    _nationalMatchupCache.set(cacheKey, result);
+  }
+  return result;
 }
 
 function matchesSegment(p: Pokemon, id: number, segment: DrillDownSegment): boolean {
