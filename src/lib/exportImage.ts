@@ -55,7 +55,7 @@ interface FooterInsights {
   leanTypes: TypeName[];
   /** Up to 2 most over-indexed generations (>1.3x vs national), desc by ratio */
   leanGens: number[];
-  /** Attacking type with highest positive deviation from national baseline; only if deviation ≥ 0.3 */
+  /** Attacking type with highest positive deviation from national baseline; only if deviation ≥ 0.25 in both full and legend-excluded pools */
   bestAttackType?: TypeName;
 }
 
@@ -112,18 +112,28 @@ function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
   qualifyingGens.sort((a, b) => b.ratio - a.ratio);
   const leanGens = qualifyingGens.slice(0, 2).map(x => x.gen);
 
-  // Attacking type with highest deviation from national baseline — only if ≥ 0.3
-  // (filters out marginal advantages in near-balanced dexes).
-  const dominance = computeTypeDominance(pokemon);
+  // Attacking type with highest deviation from national baseline — only if ≥ 0.25
+  // in both the full pool AND the legend/mythical-excluded pool (filters out
+  // advantages that only exist because of legendary/mythical picks).
+  const dominanceFull = computeTypeDominance(pokemon);
+  const filteredForOverperform = pokemon.filter(p => !p.isLegendary && !p.isMythical);
+  const dominanceFiltered = filteredForOverperform.length >= 10
+    ? computeTypeDominance(filteredForOverperform)
+    : dominanceFull;
+  const dominanceFilteredMap = new Map(dominanceFiltered.map(d => [d.type, d.score]));
   const nationalBaseline = getNationalBaseline();
-  let bestDeviation = 0.3; // minimum threshold
+  let bestDeviation = 0;
   let bestAttackType: TypeName | undefined;
-  for (const { type, score } of dominance) {
+  for (const { type, score } of dominanceFull) {
     const natScore = nationalBaseline.get(type) ?? 0;
-    const deviation = score - natScore;
-    if (deviation > bestDeviation) {
-      bestDeviation = deviation;
-      bestAttackType = type;
+    const devFull = score - natScore;
+    const devFilt = (dominanceFilteredMap.get(type) ?? score) - natScore;
+    if (devFull >= 0.25 && devFilt >= 0.25) {
+      const minDev = Math.min(devFull, devFilt);
+      if (minDev > bestDeviation) {
+        bestDeviation = minDev;
+        bestAttackType = type;
+      }
     }
   }
 
@@ -287,7 +297,7 @@ export async function generateExportImage(
   const zinc = '#a1a1aa';
   const FONT_SPEC = '600 8px "Inter Variable", system-ui, -apple-system, sans-serif';
   const TYPE_ICON_SZ = 9;  // logical px: square side for type icons
-  const GEN_ICON_SZ = 14;  // logical px: gen badge circle (larger so the number reads clearly)
+  const GEN_ICON_SZ = 10;  // logical px: gen badge circle (≈ same area as 9px square type icon)
   const ICON_GAP = 2;      // gap after icon before next element
 
   ctx.font = FONT_SPEC;
@@ -311,25 +321,34 @@ export async function generateExportImage(
     if (noLean) {
       segs.push({ kind: 'text', text: 'no types or gens strongly over-index', color: zinc });
     } else {
-      // Up to 2 lean types
+      // Build flat list of lean items (each item = [optional icon, label])
+      const leanItems: Seg[][] = [];
       for (let i = 0; i < leanTypes.length; i++) {
-        if (i > 0) segs.push({ kind: 'text', text: ' & ', color: zinc });
         const t = leanTypes[i];
+        const item: Seg[] = [];
         const img = typeImgs[i];
-        if (img) segs.push({ kind: 'icon', img, sz: TYPE_ICON_SZ });
-        segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
+        if (img) item.push({ kind: 'icon', img, sz: TYPE_ICON_SZ });
+        item.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
+        leanItems.push(item);
       }
-      // Separator between types and gens
-      if (leanTypes.length > 0 && leanGens.length > 0) {
-        segs.push({ kind: 'text', text: ' & ', color: zinc });
-      }
-      // Up to 2 lean gens
       for (let i = 0; i < leanGens.length; i++) {
-        if (i > 0) segs.push({ kind: 'text', text: ' & ', color: zinc });
         const g = leanGens[i];
+        const item: Seg[] = [];
         const img = genImgs[i];
-        if (img) segs.push({ kind: 'icon', img, sz: GEN_ICON_SZ });
-        segs.push({ kind: 'text', text: `Gen ${g}`, color: zinc });
+        if (img) item.push({ kind: 'icon', img, sz: GEN_ICON_SZ });
+        item.push({ kind: 'text', text: `Gen ${g}`, color: zinc });
+        leanItems.push(item);
+      }
+      // Join with & (2 items) or Oxford commas (3+)
+      for (let i = 0; i < leanItems.length; i++) {
+        if (i > 0) {
+          if (leanItems.length === 2) {
+            segs.push({ kind: 'text', text: ' & ', color: zinc });
+          } else {
+            segs.push({ kind: 'text', text: i === leanItems.length - 1 ? ', & ' : ', ', color: zinc });
+          }
+        }
+        segs.push(...leanItems[i]);
       }
       segs.push({ kind: 'text', text: '-forward', color: zinc });
     }
