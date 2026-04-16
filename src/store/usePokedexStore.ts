@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createEmptySections, BUILD_GROUP_IDS } from '@/data/slot-template';
-import { getEvolutionLine, getDescendantIds, getPokemonById } from '@/hooks/usePokemonData';
+import { getEvolutionChainIds, getEvolutionLine, getDescendantIds, getPokemonById } from '@/hooks/usePokemonData';
 
 type TypeFilterMode = 'any' | 'all';
 
@@ -96,6 +96,7 @@ export const usePokedexStore = create<PokedexState>()(
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
+          // Expand pokemonIds into full evo lines (only members in the batch)
           const placedIds = new Set(pokemonIds);
           const allIds: number[] = [];
           const seen = new Set<number>();
@@ -111,18 +112,60 @@ export const usePokedexStore = create<PokedexState>()(
 
           const newSections = { ...state.sections };
           const addingSet = new Set(allIds);
+
+          // Remove from OTHER sections only — prevents duplicates when moving pokemon
           for (const sid of BUILD_GROUP_IDS) {
-            if (newSections[sid]) {
+            if (sid !== sectionId && newSections[sid]) {
               newSections[sid] = newSections[sid].filter((id) => !addingSet.has(id));
             }
           }
 
-          if (!newSections[sectionId]) newSections[sectionId] = [];
-          newSections[sectionId] = [...newSections[sectionId], ...allIds];
+          // Merge into target section, preserving evo order.
+          // Only insert IDs that aren't already there; for each, find the correct
+          // insertion point: after all ancestors and parallel-branch chain members
+          // already in the section, and before any descendants already there.
+          const existing = newSections[sectionId] ?? [];
+          const existingSet = new Set(existing);
+          const trulyNew = allIds.filter(id => !existingSet.has(id));
 
-          return {
-            sections: newSections,
-          };
+          if (trulyNew.length === 0) {
+            return { sections: newSections };
+          }
+
+          let result = [...existing];
+          for (const newId of trulyNew) {
+            const chainIds = new Set(getEvolutionChainIds(newId));
+            // Ancestors: walk up evolvesFrom chain
+            const ancestors = new Set<number>();
+            let cur = getPokemonById(newId);
+            while (cur?.evolvesFrom) {
+              ancestors.add(cur.evolvesFrom);
+              cur = getPokemonById(cur.evolvesFrom);
+            }
+            // Descendants: everything getDescendantIds returns except self
+            const descendants = new Set(getDescendantIds(newId).slice(1));
+
+            let insertAfter = -1;          // insert after this index
+            let insertBefore = result.length; // insert before this index
+
+            for (let i = 0; i < result.length; i++) {
+              const id = result[i];
+              if (ancestors.has(id)) {
+                insertAfter = Math.max(insertAfter, i);
+              } else if (descendants.has(id)) {
+                insertBefore = Math.min(insertBefore, i);
+              } else if (chainIds.has(id)) {
+                // Parallel branch — append after existing chain members
+                insertAfter = Math.max(insertAfter, i);
+              }
+            }
+
+            const insertAt = Math.min(insertAfter + 1, insertBefore);
+            result = [...result.slice(0, insertAt), newId, ...result.slice(insertAt)];
+          }
+
+          newSections[sectionId] = result;
+          return { sections: newSections };
         }),
 
       removeBranch: (sectionId, pokemonId) =>
