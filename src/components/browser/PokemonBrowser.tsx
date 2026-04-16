@@ -40,7 +40,7 @@ const SHEET_TITLES: Record<string, string> = {
 
 const PLACES_ORDER = ['forest', 'meadow', 'cave-pokemon', 'mountain', 'swamp', 'lake', 'dojo', 'haunted', 'ruins', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra', 'industrial'];
 const PLACES_IDS = new Set(PLACES_ORDER);
-const GAME_MECHANICS_ORDER = ['evolution-item', 'trade-evo', 'branched-evo', 'cross-gen-evo', 'static-encounter', 'gift-pokemon', 'in-game-trade', 'reward-pokemon', 'version-exclusive'];
+const GAME_MECHANICS_ORDER = ['evolution-item', 'trade-evo', 'branched-evo', 'cross-gen-evo', 'static-encounter', 'gift-pokemon', 'reward-pokemon', 'version-exclusive'];
 const GAME_MECHANICS_IDS = new Set(GAME_MECHANICS_ORDER);
 
 export function PokemonBrowser() {

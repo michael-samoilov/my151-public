@@ -52,8 +52,11 @@ done
 wait
 echo "  Shiny sprites done"
 
-# 4. Sprite override (Darmanitan Zen)
-download "$BASE/pokemon/10017.png" "$DEST/pokemon/10017.png"
+# 4. Sprite overrides (alternate forms)
+download "$BASE/pokemon/10017.png" "$DEST/pokemon/10017.png"   # Darmanitan Zen
+download "$BASE/pokemon/10127.png" "$DEST/pokemon/10127.png"   # Wishiwashi school form
+download "$BASE/pokemon/10256.png" "$DEST/pokemon/10256.png"   # Palafin hero form
+download "$BASE/pokemon/10276.png" "$DEST/pokemon/10276.png"   # Terapagos terastal form
 
 # 5. Type icons - Gen IX Scarlet/Violet (18 types)
 echo "Downloading type badge sprites..."

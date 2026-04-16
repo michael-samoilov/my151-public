@@ -10,7 +10,7 @@ export interface BuildGroup {
  * Ordered list of build groups shown on the Pokedex grid.
  * Each maps to an archetype or category that pre-filters the browser.
  * Excluded: game mechanics (evolution-item, trade-evo, branched-evo, cross-gen-evo,
- * static-encounter, gift, in-game-trade, prize) and gym-champion-ace.
+ * static-encounter, gift, prize) and gym-champion-ace.
  */
 export const BUILD_GROUPS: BuildGroup[] = [
   // Starters
