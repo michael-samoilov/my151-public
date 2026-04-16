@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import type { AppView } from '@/components/layout/Header';
 import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
@@ -112,6 +112,25 @@ function App() {
   const activeSection = usePokedexStore((s) => s.activeSection);
   const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
 
+  // Forward wheel events from the whitespace flanking the centered build page
+  // to its internal scroll container when the browser panel is closed.
+  const builderAreaRef = useRef<HTMLDivElement>(null);
+  const activeSectionRef = useRef(activeSection);
+  useEffect(() => { activeSectionRef.current = activeSection; }, [activeSection]);
+  useEffect(() => {
+    const el = builderAreaRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      if (activeSectionRef.current) return; // panel open — let normal layout handle it
+      const scrollEl = el.querySelector('[data-build-scroll]') as HTMLElement | null;
+      if (!scrollEl || scrollEl.contains(e.target as Node)) return; // already inside scroller
+      scrollEl.scrollTop += e.deltaY;
+      e.preventDefault();
+    };
+    el.addEventListener('wheel', handler, { passive: false });
+    return () => el.removeEventListener('wheel', handler);
+  }, []);
+
   const handleViewChange = useCallback((view: AppView) => {
     setCurrentView(view);
     if (view !== 'builder') {
@@ -130,7 +149,7 @@ function App() {
         <Header currentView={currentView} onViewChange={handleViewChange} />
 
         {currentView === 'builder' ? (
-          <div className="flex-1 min-h-0 relative overflow-hidden">
+          <div ref={builderAreaRef} className="flex-1 min-h-0 relative overflow-hidden">
             <div className={cn(
               'h-full transition-all duration-300 ease-out',
               'md:w-1/2',

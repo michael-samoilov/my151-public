@@ -142,7 +142,6 @@ function DraggableTile({
   showInsertBefore,
   showInsertAfter,
   showX = false,
-  onHoverEnter,
 }: {
   id: string;
   pokemonId: number;
@@ -151,7 +150,6 @@ function DraggableTile({
   showInsertBefore: boolean;
   showInsertAfter: boolean;
   showX?: boolean;
-  onHoverEnter?: () => void;
 }) {
   const removeBranch = usePokedexStore((s) => s.removeBranch);
   const pokemon = getPokemonById(pokemonId);
@@ -181,7 +179,6 @@ function DraggableTile({
       ref={setNodeRef}
       data-tile-id={id}
       className="relative"
-      onMouseEnter={onHoverEnter}
       style={{
         opacity: isDragging || isDraggedLine ? 0.25 : 1,
         ['--tile-sprite' as string]: `${spritePx}px`,
@@ -255,7 +252,6 @@ function StarterContent({
   onTypeClick,
   onAddClick,
   showXIds = new Set(),
-  onHoverEnter,
 }: {
   pokemonIds: number[];
   dragLineIds: number[] | null;
@@ -264,7 +260,6 @@ function StarterContent({
   onTypeClick: (type: string) => void;
   onAddClick: () => void;
   showXIds?: Set<number>;
-  onHoverEnter?: (pid: number) => void;
 }) {
   // Check if every pokemon matches a starter type (grass/fire/water)
   const allMatchStarterType = pokemonIds.length === 0 || pokemonIds.every(pid => {
@@ -308,7 +303,6 @@ function StarterContent({
               showInsertBefore={insertIndicator.tileId === tid && insertIndicator.side === 'left'}
               showInsertAfter={insertIndicator.tileId === tid && insertIndicator.side === 'right'}
               showX={showXIds.has(pid)}
-              onHoverEnter={() => onHoverEnter?.(pid)}
             />
           );
         }
@@ -345,7 +339,6 @@ function StarterContent({
             showInsertBefore={insertIndicator.tileId === tid && insertIndicator.side === 'left'}
             showInsertAfter={insertIndicator.tileId === tid && insertIndicator.side === 'right'}
             showX={showXIds.has(pid)}
-            onHoverEnter={() => onHoverEnter?.(pid)}
           />
         );
       })}
@@ -387,12 +380,24 @@ function GroupBox({
   const showEmptyState = isEmpty && !isStarter;
   const hasPokemon = pokemonIds.length > 0;
 
-  // Hover state for evo-line X highlight
+  // Hover state for evo-line X highlight.
+  // Uses onMouseOver on the grid container (bubbles from any descendant) to detect
+  // the current tile via closest('[data-tile-id]'), so X buttons disappear as soon
+  // as the pointer enters a gap/padding area — no debounce needed.
   const [hoveredPokemonId, setHoveredPokemonId] = useState<number | null>(null);
   const showXIds = useMemo(
     () => hoveredPokemonId !== null ? computeRemoveSet(hoveredPokemonId, pokemonIds) : new Set<number>(),
     [hoveredPokemonId, pokemonIds],
   );
+  const handleGridMouseOver = useCallback((e: React.MouseEvent) => {
+    const tileEl = (e.target as HTMLElement).closest('[data-tile-id]');
+    if (tileEl) {
+      const { pokemonId } = parseTileId(tileEl.getAttribute('data-tile-id')!);
+      setHoveredPokemonId(pokemonId);
+    } else {
+      setHoveredPokemonId(null);
+    }
+  }, []);
 
   // Animate height changes (e.g. when removing a pokemon causes a row to collapse)
   const boxRef = useRef<HTMLDivElement>(null);
@@ -502,6 +507,7 @@ function GroupBox({
         /* Filled: grid of tiles */
         <div
           className="grid grid-cols-6 gap-1 p-1 pt-0"
+          onMouseOver={handleGridMouseOver}
           onMouseLeave={() => setHoveredPokemonId(null)}
         >
           {isStarter ? (
@@ -523,7 +529,6 @@ function GroupBox({
               }}
               onAddClick={() => onAddClick('starter')}
               showXIds={showXIds}
-              onHoverEnter={setHoveredPokemonId}
             />
           ) : (
             <>
@@ -539,7 +544,6 @@ function GroupBox({
                     showInsertBefore={insertIndicator.tileId === tid && insertIndicator.side === 'left'}
                     showInsertAfter={insertIndicator.tileId === tid && insertIndicator.side === 'right'}
                     showX={showXIds.has(pid)}
-                    onHoverEnter={() => setHoveredPokemonId(pid)}
                   />
                 );
               })}
@@ -901,6 +905,7 @@ export function PokedexGrid() {
 
       <div
         ref={scrollContainerRef}
+        data-build-scroll
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain md:overscroll-auto"
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
