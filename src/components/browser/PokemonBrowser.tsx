@@ -498,11 +498,11 @@ export function PokemonBrowser() {
     <div className="flex flex-col h-full border-l relative bg-background">
       {/* Desktop header: "Adding to: Section" + close */}
       {isDesktop && activeSection && (
-        <div className="flex items-center justify-between px-3 py-2 border-b">
-          <span className="text-sm font-semibold">
+        <div className="flex items-center justify-between px-3 sm:px-6 py-2 border-b h-11">
+          <h2 className="text-2xl font-extrabold tracking-tight leading-none">
             <span className="text-foreground">Adding to: </span>
             <span className="text-primary">{sectionName}</span>
-          </span>
+          </h2>
           <button
             onClick={handleDesktopClose}
             className="text-muted-foreground hover:text-foreground cursor-pointer p-1"
