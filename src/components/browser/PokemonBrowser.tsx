@@ -84,11 +84,12 @@ export function PokemonBrowser() {
     [sections]
   );
 
-  // Reset staged when activeSection changes
+  // Reset staged + close filter sheet when activeSection changes
   useEffect(() => {
     if (activeSection !== prevSectionRef.current) {
       setStagedIds([]);
       setRemovalStagedIds([]);
+      if (!activeSection) setOpenSheet(null);
       prevSectionRef.current = activeSection;
     }
   }, [activeSection]);
