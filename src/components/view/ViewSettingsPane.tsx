@@ -275,13 +275,8 @@ export function ViewSettingsPane({
             </div>
             <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
               Sends fossils, extra starters, paradox, pseudo-legendaries, ultra beasts,
-              legendaries, and mythicals to the back of the grid, each in its own run.
+              legendaries, and mythicals to the back of the grid. Does not affect Custom ordering.
             </p>
-            {effSort === 'custom' && (
-              <p className="text-xs text-muted-foreground/80 mt-1 ml-6 leading-snug italic">
-                Does not affect Custom ordering — drag freely.
-              </p>
-            )}
           </button>
         </div>
 
