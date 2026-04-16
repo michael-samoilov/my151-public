@@ -10,6 +10,7 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { useCompletionBeacon } from '@/hooks/useCompletionBeacon';
+import { cn } from '@/lib/utils';
 
 declare const __BUILD_TIMESTAMP__: string;
 // eslint-disable-next-line no-console
@@ -129,12 +130,20 @@ function App() {
         <Header currentView={currentView} onViewChange={handleViewChange} />
 
         {currentView === 'builder' ? (
-          <div className="flex-1 flex min-h-0">
-            <div className="flex-1 min-w-0">
+          <div className="flex-1 min-h-0 relative overflow-hidden">
+            <div className="h-full">
               <PokedexGrid />
             </div>
-            <div className="flex-1 min-w-0 hidden md:block">
-              <PokemonBrowser />
+            {/* Desktop browser panel — slides in from right as an overlay */}
+            <div className={cn(
+              'hidden md:flex absolute right-0 top-0 bottom-0 z-10',
+              'w-[min(50%,546px)] border-l bg-background',
+              'transition-transform duration-300 ease-out',
+              activeSection ? 'translate-x-0' : 'translate-x-full',
+            )}>
+              <div className="flex-1 min-w-0">
+                <PokemonBrowser />
+              </div>
             </div>
           </div>
         ) : currentView === 'view' ? (

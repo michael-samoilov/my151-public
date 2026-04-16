@@ -404,6 +404,7 @@ function GroupBox({
   return (
     <div
       ref={boxRef}
+      data-section-id={group.id}
       onTransitionEnd={handleTransitionEnd}
       className="rounded-lg"
       style={{
@@ -590,6 +591,30 @@ export function PokedexGrid() {
   const moveEvoLine = usePokedexStore((s) => s.moveEvoLine);
 
   const totalPlaced = Object.values(sections).reduce((s, a) => s + a.length, 0);
+
+  // Scroll container ref — used for auto-scroll when desktop browser adds pokemon
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const sectionId = (e as CustomEvent<string>).detail;
+      const container = scrollContainerRef.current;
+      if (!container || !sectionId) return;
+      // Wait a frame for the DOM to update with the newly added pokemon
+      requestAnimationFrame(() => {
+        const el = container.querySelector(`[data-section-id="${sectionId}"]`);
+        if (!el) return;
+        // Check if the element is already visible in the scroll container
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        if (elRect.top >= containerRect.top && elRect.bottom <= containerRect.bottom) return;
+        // Scroll smoothly to the section
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    };
+    window.addEventListener('scroll-to-section', handler);
+    return () => window.removeEventListener('scroll-to-section', handler);
+  }, []);
 
   // Drag state
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
@@ -819,6 +844,7 @@ export function PokedexGrid() {
       </div>
 
       <div
+        ref={scrollContainerRef}
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain md:overscroll-auto"
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >

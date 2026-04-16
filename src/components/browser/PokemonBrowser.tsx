@@ -12,6 +12,7 @@ import { typeBadgePath } from '@/data/type-ids';
 import { Search, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { BUILD_GROUPS } from '@/data/slot-template';
 
 type FilterSheet = 'type' | 'generation' | 'evoStage' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
 
@@ -75,6 +76,14 @@ export function PokemonBrowser() {
   const prevSectionRef = useRef(activeSection);
   const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
 
+  const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
+  const setActiveSection = usePokedexStore((s) => s.setActiveSection);
+
+  const assignedIds = useMemo(
+    () => new Set(Object.values(sections).flat()),
+    [sections]
+  );
+
   // Reset staged when activeSection changes
   useEffect(() => {
     if (activeSection !== prevSectionRef.current) {
@@ -85,6 +94,16 @@ export function PokemonBrowser() {
   }, [activeSection]);
 
   const handleToggleStage = useCallback((memberIds: number[]) => {
+    if (isDesktop && activeSection) {
+      // Desktop: instantly add unassigned pokemon (no staging)
+      const newIds = memberIds.filter(id => !assignedIds.has(id));
+      if (newIds.length > 0) {
+        addToSection(activeSection, newIds);
+        // Scroll the build page to the target section
+        window.dispatchEvent(new CustomEvent('scroll-to-section', { detail: activeSection }));
+      }
+      return;
+    }
     setStagedIds(prev => {
       const prevSet = new Set(prev);
       const allStaged = memberIds.every(id => prevSet.has(id));
@@ -98,7 +117,7 @@ export function PokemonBrowser() {
         return [...prev, ...toAdd];
       }
     });
-  }, []);
+  }, [isDesktop, activeSection, assignedIds, addToSection]);
 
   const handleToggleRemoval = useCallback((memberIds: number[]) => {
     setRemovalStagedIds(prev => {
@@ -114,15 +133,25 @@ export function PokemonBrowser() {
     });
   }, []);
 
-  const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
-  const setActiveSection = usePokedexStore((s) => s.setActiveSection);
-
-  const assignedIds = useMemo(
-    () => new Set(Object.values(sections).flat()),
-    [sections]
-  );
-
   const handleSubmitStaged = useCallback(() => {
+    if (isDesktop) {
+      // Desktop: only process removals (adds are instant)
+      if (removalStagedIds.length > 0) {
+        const removed = new Set<number>();
+        for (const id of removalStagedIds) {
+          if (removed.has(id)) continue;
+          for (const [sectionId, ids] of Object.entries(sections)) {
+            if (ids.includes(id)) {
+              removeEvoLine(sectionId, id);
+              break;
+            }
+          }
+          removed.add(id);
+        }
+        setRemovalStagedIds([]);
+      }
+      return;
+    }
     const targetSection = activeSection ?? 'other';
     const newIds = stagedIds.filter(id => !assignedIds.has(id));
     if (newIds.length > 0) addToSection(targetSection, newIds);
@@ -144,7 +173,17 @@ export function PokemonBrowser() {
     setRemovalStagedIds([]);
     setMobileBrowserOpen(false);
     setActiveSection(null);
-  }, [stagedIds, removalStagedIds, activeSection, assignedIds, sections, addToSection, removeEvoLine, setMobileBrowserOpen, setActiveSection]);
+  }, [isDesktop, stagedIds, removalStagedIds, activeSection, assignedIds, sections, addToSection, removeEvoLine, setMobileBrowserOpen, setActiveSection]);
+
+  const handleDesktopClose = useCallback(() => {
+    setStagedIds([]);
+    setRemovalStagedIds([]);
+    setActiveSection(null);
+  }, [setActiveSection]);
+
+  const sectionName = activeSection
+    ? BUILD_GROUPS.find((g) => g.id === activeSection)?.name ?? 'Section'
+    : null;
 
   const groups = useFilteredPokemonGrouped({
     search: searchQuery,
@@ -456,6 +495,21 @@ export function PokemonBrowser() {
 
   return (
     <div className="flex flex-col h-full border-l relative bg-background">
+      {/* Desktop header: "Adding to: Section" + close */}
+      {isDesktop && activeSection && (
+        <div className="flex items-center justify-between px-3 py-2 border-b">
+          <span className="text-sm font-semibold">
+            <span className="text-foreground">Adding to: </span>
+            <span className="text-primary">{sectionName}</span>
+          </span>
+          <button
+            onClick={handleDesktopClose}
+            className="text-muted-foreground hover:text-foreground cursor-pointer p-1"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
       {/* Search bar + count + filter chips — non-scrollable */}
       <div ref={browserHeaderRef}>
       <div className="p-3 pb-2">
@@ -760,7 +814,7 @@ export function PokemonBrowser() {
 
       {/* Floating action button — add/remove staged pokemon */}
       {(() => {
-        const newCount = stagedIds.filter(id => !assignedIds.has(id)).length;
+        const newCount = isDesktop ? 0 : stagedIds.filter(id => !assignedIds.has(id)).length;
         const removeCount = removalStagedIds.length;
         if (newCount === 0 && removeCount === 0) return null;
         return (
