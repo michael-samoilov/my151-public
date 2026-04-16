@@ -508,7 +508,7 @@ export function ViewPage() {
             const EmptyPlaceholder = ({ k, num }: { k: string; num: number }) => (
               <div key={k} className="relative" style={{ width: tileSize, height: tileSize }}>
                 <span
-                  className="absolute top-[3px] left-[3px] z-20 leading-none font-semibold text-foreground/40 select-none"
+                  className="absolute top-[3px] left-[2px] z-20 leading-none font-semibold text-foreground/30 select-none"
                   style={{ fontSize: tileSize * 0.12 }}
                 >
                   {num}.
