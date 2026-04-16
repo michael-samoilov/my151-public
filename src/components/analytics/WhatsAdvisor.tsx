@@ -151,7 +151,7 @@ export function WhatsAdvisor() {
       }
     }
 
-    // Late-evolving early route Pokemon warning (evolution at level 40+)
+    // Late-evolving early route Pokemon warning (direct evolution from base form at level 40+)
     {
       const lateEvoWarnings: string[] = [];
       const checkedChains = new Set<number>();
@@ -162,22 +162,28 @@ export function WhatsAdvisor() {
         if (checkedChains.has(pokemon.evolutionChainId)) continue;
         checkedChains.add(pokemon.evolutionChainId);
 
-        // Check every member of this evo chain for a level 40+ evolution
+        // Find the base form (stage 1, no evolvesFrom) of this chain
         const chainIds = getEvolutionChainIds(id);
-        for (const chainMemberId of chainIds) {
-          const member = getPokemonById(chainMemberId);
-          if (member && member.evolutionLevel != null && member.evolutionLevel >= 40) {
-            // Find the base form name (stage 1) for the label
-            const base = getPokemonById(id)!;
-            lateEvoWarnings.push(`${base.name} → ${member.name} (Lvl. ${member.evolutionLevel})`);
-            break; // one warning per chain is enough
+        const chainMembers = chainIds.map(cid => getPokemonById(cid)).filter((p): p is Pokemon => !!p);
+        const baseForm = chainMembers.find(p => p.evolvesFrom === null) ?? chainMembers[0];
+
+        // Only flag direct evolutions from the base form (not later stages)
+        for (const member of chainMembers) {
+          if (
+            member.evolvesFrom === baseForm.id &&
+            member.evolutionLevel != null &&
+            member.evolutionLevel >= 40
+          ) {
+            const name = member.name.charAt(0).toUpperCase() + member.name.slice(1);
+            lateEvoWarnings.push(`${name} (Lvl. ${member.evolutionLevel})`);
+            break; // one warning per chain
           }
         }
       }
       if (lateEvoWarnings.length > 0) {
         items.push({
           type: 'missing',
-          text: `Early route Pokémon evolve in lategame: ${lateEvoWarnings.join(', ')}`,
+          text: `Early route Pokémon with late evolutions: ${lateEvoWarnings.join(', ')}`,
         });
       }
     }
