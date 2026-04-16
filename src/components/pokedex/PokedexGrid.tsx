@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
-import { getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
+import { getDescendantIds, getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
 import {
@@ -68,6 +68,34 @@ function findEvoLineGroup(pokemonId: number, sectionIds: number[]): number[] {
   return sectionIds.filter((id) => chainSet.has(id));
 }
 
+/**
+ * Returns the set of IDs that would be removed if the user clicked the
+ * delete button on `pokemonId`. Mirrors the logic in removeBranch:
+ * removes target + descendants, then walks up ancestors that become stranded.
+ */
+function computeRemoveSet(pokemonId: number, sectionIds: number[]): Set<number> {
+  const sectionSet = new Set(sectionIds);
+  const descendants = getDescendantIds(pokemonId);
+  const removeSet = new Set(descendants.filter(id => sectionSet.has(id)));
+  const remaining = new Set(sectionIds.filter(id => !removeSet.has(id)));
+  // Walk up: remove ancestors that have no remaining descendants
+  let current = getPokemonById(pokemonId);
+  while (current?.evolvesFrom) {
+    const parent = getPokemonById(current.evolvesFrom);
+    if (!parent || !remaining.has(parent.id)) break;
+    const parentDescendants = getDescendantIds(parent.id);
+    const hasRemaining = parentDescendants.some(id => id !== parent.id && remaining.has(id));
+    if (!hasRemaining) {
+      remaining.delete(parent.id);
+      removeSet.add(parent.id);
+      current = parent;
+    } else {
+      break;
+    }
+  }
+  return removeSet;
+}
+
 function tileId(sectionId: string, pokemonId: number) {
   return `${sectionId}::${pokemonId}`;
 }
@@ -113,6 +141,8 @@ function DraggableTile({
   isDraggedLine,
   showInsertBefore,
   showInsertAfter,
+  showX = false,
+  onHoverEnter,
 }: {
   id: string;
   pokemonId: number;
@@ -120,6 +150,8 @@ function DraggableTile({
   isDraggedLine: boolean;
   showInsertBefore: boolean;
   showInsertAfter: boolean;
+  showX?: boolean;
+  onHoverEnter?: () => void;
 }) {
   const removeBranch = usePokedexStore((s) => s.removeBranch);
   const pokemon = getPokemonById(pokemonId);
@@ -149,6 +181,7 @@ function DraggableTile({
       ref={setNodeRef}
       data-tile-id={id}
       className="relative"
+      onMouseEnter={onHoverEnter}
       style={{
         opacity: isDragging || isDraggedLine ? 0.25 : 1,
         ['--tile-sprite' as string]: `${spritePx}px`,
@@ -164,7 +197,7 @@ function DraggableTile({
         {...attributes}
         {...listeners}
         className={cn(
-          'relative bg-card border rounded-lg flex flex-col items-center group cursor-grab active:cursor-grabbing select-none',
+          'relative bg-card border rounded-lg flex flex-col items-center cursor-grab active:cursor-grabbing select-none',
           TILE_ROOT_PADDING_CLASS,
         )}
       >
@@ -174,7 +207,8 @@ function DraggableTile({
           onPointerDown={(e) => e.stopPropagation()}
           className={cn(
             TILE_ACTION_BUTTON_CLASS,
-            'md:opacity-0 md:group-hover:opacity-100 transition-opacity',
+            'cursor-pointer md:opacity-0 transition-opacity',
+            showX && 'md:!opacity-100',
           )}
           style={{ transform: 'translateZ(0)' }}
         >
@@ -220,6 +254,8 @@ function StarterContent({
   insertIndicator,
   onTypeClick,
   onAddClick,
+  showXIds = new Set(),
+  onHoverEnter,
 }: {
   pokemonIds: number[];
   dragLineIds: number[] | null;
@@ -227,6 +263,8 @@ function StarterContent({
   insertIndicator: { tileId: string | null; endSection: string | null; side: 'left' | 'right' };
   onTypeClick: (type: string) => void;
   onAddClick: () => void;
+  showXIds?: Set<number>;
+  onHoverEnter?: (pid: number) => void;
 }) {
   // Check if every pokemon matches a starter type (grass/fire/water)
   const allMatchStarterType = pokemonIds.length === 0 || pokemonIds.every(pid => {
@@ -269,6 +307,8 @@ function StarterContent({
               isDraggedLine={dragSet.has(pid)}
               showInsertBefore={insertIndicator.tileId === tid && insertIndicator.side === 'left'}
               showInsertAfter={insertIndicator.tileId === tid && insertIndicator.side === 'right'}
+              showX={showXIds.has(pid)}
+              onHoverEnter={() => onHoverEnter?.(pid)}
             />
           );
         }
@@ -304,6 +344,8 @@ function StarterContent({
             isDraggedLine={dragSet.has(pid)}
             showInsertBefore={insertIndicator.tileId === tid && insertIndicator.side === 'left'}
             showInsertAfter={insertIndicator.tileId === tid && insertIndicator.side === 'right'}
+            showX={showXIds.has(pid)}
+            onHoverEnter={() => onHoverEnter?.(pid)}
           />
         );
       })}
@@ -344,6 +386,13 @@ function GroupBox({
   // Starters always use the expanded grid path (for green/red/blue placeholders)
   const showEmptyState = isEmpty && !isStarter;
   const hasPokemon = pokemonIds.length > 0;
+
+  // Hover state for evo-line X highlight
+  const [hoveredPokemonId, setHoveredPokemonId] = useState<number | null>(null);
+  const showXIds = useMemo(
+    () => hoveredPokemonId !== null ? computeRemoveSet(hoveredPokemonId, pokemonIds) : new Set<number>(),
+    [hoveredPokemonId, pokemonIds],
+  );
 
   // Animate height changes (e.g. when removing a pokemon causes a row to collapse)
   const boxRef = useRef<HTMLDivElement>(null);
@@ -451,7 +500,10 @@ function GroupBox({
         </div>
       ) : (
         /* Filled: grid of tiles */
-        <div className="grid grid-cols-6 gap-1 p-1 pt-0">
+        <div
+          className="grid grid-cols-6 gap-1 p-1 pt-0"
+          onMouseLeave={() => setHoveredPokemonId(null)}
+        >
           {isStarter ? (
             <StarterContent
               pokemonIds={pokemonIds}
@@ -470,6 +522,8 @@ function GroupBox({
                 store.setMobileBrowserOpen(true);
               }}
               onAddClick={() => onAddClick('starter')}
+              showXIds={showXIds}
+              onHoverEnter={setHoveredPokemonId}
             />
           ) : (
             <>
@@ -484,6 +538,8 @@ function GroupBox({
                     isDraggedLine={dragSet.has(pid)}
                     showInsertBefore={insertIndicator.tileId === tid && insertIndicator.side === 'left'}
                     showInsertAfter={insertIndicator.tileId === tid && insertIndicator.side === 'right'}
+                    showX={showXIds.has(pid)}
+                    onHoverEnter={() => setHoveredPokemonId(pid)}
                   />
                 );
               })}
