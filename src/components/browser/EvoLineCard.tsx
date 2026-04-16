@@ -195,6 +195,7 @@ function formatDoublings(n: number): string {
 
 export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, spritePx }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
+  const anyInDex = members.some((p) => assignedIds.has(p.id));
   const markedForRemoval = removalStagedIds
     ? members.some((p) => removalStagedIds.has(p.id))
     : false;
@@ -206,10 +207,11 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
   };
 
   const handleClick = () => {
-    if (allInDex) {
-      // Stage/unstage for removal
+    // Analytics variant: any placed member → toggle removal (partial lines ok)
+    // Browser variant: all placed → toggle removal, else toggle staging
+    if (variant === 'analytics' ? anyInDex : allInDex) {
       toggleRemoval();
-    } else {
+    } else if (variant !== 'analytics') {
       onToggleStage(members.map((p) => p.id));
     }
   };

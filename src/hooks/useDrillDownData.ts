@@ -258,9 +258,7 @@ function computeRegionalDrillDown(
     }
   }
 
-  // Need at least one non-excluded match to show the drilldown — otherwise
-  // the subtitle would read "0 Pokémon" while still showing greyed cards.
-  if (matchingNonExcludedIds.size === 0) return null;
+  if (matchingIds.size === 0) return null;
 
   // Place each matching-non-excluded member into its own gen bucket.
   // A line with matches in multiple gens appears once in each — e.g. in the
@@ -303,12 +301,12 @@ function computeRegionalDrillDown(
     };
   };
 
-  for (const id of matchingNonExcludedIds) {
+  for (const id of matchingIds) {
     const member = getPokemonById(id);
     if (!member) continue;
     const line = getEvolutionLine(id, userPlacedIds);
     const rootKey = line.map(m => m.id).join('-');
-    chainIds.add(member.evolutionChainId);
+    if (!excludedIds.has(id)) chainIds.add(member.evolutionChainId);
 
     const bucketGen = newOnly ? anchorGenForNewOnly : member.generation;
     const anchorKey = bucketKey(rootKey, bucketGen);

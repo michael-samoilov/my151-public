@@ -32,9 +32,11 @@ interface ButterflyChartProps {
   /** Score mode: count is a float score (can be negative), deviation is raw difference */
   scoreMode?: boolean;
   /** Which column is actively sorted */
-  sortBy?: 'count' | 'deviation';
+  sortBy?: 'count' | 'deviation' | 'label';
   /** Called when user clicks a column title to sort */
-  onSortChange?: (col: 'count' | 'deviation') => void;
+  onSortChange?: (col: 'count' | 'deviation' | 'label') => void;
+  /** Header text for the label/icon column (e.g. "TYPE", "GEN") */
+  labelHeader?: string;
   /** When true, rows with count === 0 are not clickable */
   disableEmptyRows?: boolean;
   /** Override the denominator used for the per-bar percentage label. Defaults
@@ -47,7 +49,7 @@ interface ButterflyChartProps {
   countDenominator?: number;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
 
@@ -241,6 +243,22 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
     <div ref={containerRef} className="w-full">
       {width > 0 && (
         <svg width={width} height={chartHeight} className="overflow-visible">
+          {/* Label column header (e.g. "TYPE", "GEN") */}
+          {labelHeader && (
+            <text
+              x={iconStart + iconSize}
+              y={12}
+              textAnchor="end"
+              fontWeight={600}
+              fill="var(--color-muted-foreground)"
+              letterSpacing="0.05em"
+              className={cn('text-xs', onSortChange && 'cursor-pointer')}
+              textDecoration={sortBy === 'label' ? 'underline' : 'none'}
+              onClick={onSortChange ? () => onSortChange('label') : undefined}
+            >
+              {labelHeader}
+            </text>
+          )}
           {/* Titles — alignment follows actual data directionality */}
           <text
             x={countIsBidirectional

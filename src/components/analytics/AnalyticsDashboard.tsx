@@ -67,7 +67,8 @@ export function AnalyticsDashboard() {
   const [selectedTypeChart, setSelectedTypeChart] = useState<string>('yours');
   const [newPokemonOnly, setNewPokemonOnly] = useState(true);
   const [typeView, setTypeView] = useState<'distribution' | 'matchup'>('distribution');
-  const [typeSortBy, setTypeSortBy] = useState<'count' | 'deviation'>('deviation');
+  const [typeSortBy, setTypeSortBy] = useState<'count' | 'deviation' | 'label'>('deviation');
+  const [genSortBy, setGenSortBy] = useState<'count' | 'deviation' | 'label'>('label');
 
   // Mekko-chart container width, used to scale chart geometry (bar heights,
   // legend label heights, count-label font size). Without this, the mekko
@@ -658,7 +659,9 @@ export function AnalyticsDashboard() {
             {typeView === 'distribution' ? (
               <ButterflyChart
                 data={[...activeTypeChartData].sort((a, b) =>
-                  typeSortBy === 'deviation' ? b.deviation - a.deviation : b.count - a.count
+                  typeSortBy === 'deviation' ? b.deviation - a.deviation
+                    : typeSortBy === 'label' ? a.label.localeCompare(b.label)
+                    : b.count - a.count
                 )}
                 rowHeight={16}
                 hideDeviation={isNationalSelected}
@@ -666,6 +669,7 @@ export function AnalyticsDashboard() {
                 fixedDevRight={fixedDevRight}
                 sortBy={typeSortBy}
                 onSortChange={setTypeSortBy}
+                labelHeader="TYPE"
                 disableEmptyRows
                 // Types overlap (dual-types contribute to two bars), so the
                 // default "share of type mentions" denominator would dilute
@@ -694,7 +698,9 @@ export function AnalyticsDashboard() {
             ) : typeMatchupData.length > 0 ? (
               <ButterflyChart
                 data={[...typeMatchupData].sort((a, b) =>
-                  typeSortBy === 'deviation' ? b.deviation - a.deviation : b.count - a.count
+                  typeSortBy === 'deviation' ? b.deviation - a.deviation
+                    : typeSortBy === 'label' ? a.label.localeCompare(b.label)
+                    : b.count - a.count
                 )}
                 rowHeight={16}
                 scoreMode
@@ -702,6 +708,7 @@ export function AnalyticsDashboard() {
                 forceBidirectionalCount={matchupForceBidirectional}
                 sortBy={typeSortBy}
                 onSortChange={setTypeSortBy}
+                labelHeader="TYPE"
                 onBarClick={(label) => {
                   if (selectedTypeChart === 'yours') {
                     handleDrillToggle(
@@ -736,10 +743,23 @@ export function AnalyticsDashboard() {
             Where your Pokemon come from and deviation from national dex proportions.
           </p>
           <div className="bg-card rounded-lg border p-4">
-            <ButterflyChart data={genChartData} rowHeight={28} disableEmptyRows onBarClick={(label) => {
-              const gen = parseInt(label.replace('Gen ', ''));
-              if (!isNaN(gen)) handleDrillToggle({ kind: 'generation', generation: gen }, genSiblings);
-            }} activeLabel={activeGenLabel} />
+            <ButterflyChart
+              data={[...genChartData].sort((a, b) =>
+                genSortBy === 'deviation' ? b.deviation - a.deviation
+                  : genSortBy === 'count' ? b.count - a.count
+                  : parseInt(a.label.replace('Gen ', '')) - parseInt(b.label.replace('Gen ', ''))
+              )}
+              rowHeight={28}
+              disableEmptyRows
+              sortBy={genSortBy}
+              onSortChange={setGenSortBy}
+              labelHeader="GEN"
+              onBarClick={(label) => {
+                const gen = parseInt(label.replace('Gen ', ''));
+                if (!isNaN(gen)) handleDrillToggle({ kind: 'generation', generation: gen }, genSiblings);
+              }}
+              activeLabel={activeGenLabel}
+            />
           </div>
         </section>
 
