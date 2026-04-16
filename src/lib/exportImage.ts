@@ -1,9 +1,10 @@
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { computeTypeDominance, getNationalBaseline } from '@/hooks/useTypeDominance';
+import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 import { getAllPokemon } from '@/hooks/usePokemonData';
 import { typeIconPath } from '@/data/type-ids';
 import { GEN_BADGE_URIS } from '@/components/shared/GenBadge';
+import { STARTER_IDS } from '@/data/categories';
 
 const COLS = 10;
 const TILE = 48;
@@ -113,21 +114,25 @@ function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
   const leanGens = qualifyingGens.slice(0, 2).map(x => x.gen);
 
   // Attacking type with highest deviation from national baseline — only if ≥ 0.25
-  // in both the full pool AND the legend/mythical-excluded pool (filters out
+  // in both the full pool AND the legend/mythical/starter-excluded pool (filters out
   // advantages that only exist because of legendary/mythical picks).
+  // Uses the same baselines as the analytics chart's exclude-special toggle, so the
+  // export result matches what the user sees in the chart.
   const dominanceFull = computeTypeDominance(pokemon);
-  const filteredForOverperform = pokemon.filter(p => !p.isLegendary && !p.isMythical);
+  const filteredForOverperform = pokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
   const dominanceFiltered = filteredForOverperform.length >= 10
     ? computeTypeDominance(filteredForOverperform)
     : dominanceFull;
   const dominanceFilteredMap = new Map(dominanceFiltered.map(d => [d.type, d.score]));
   const nationalBaseline = getNationalBaseline();
+  const nationalBaselineFiltered = getNationalBaselineFiltered(STARTER_IDS);
   let bestDeviation = 0;
   let bestAttackType: TypeName | undefined;
   for (const { type, score } of dominanceFull) {
     const natScore = nationalBaseline.get(type) ?? 0;
+    const natScoreFilt = nationalBaselineFiltered.get(type) ?? natScore;
     const devFull = score - natScore;
-    const devFilt = (dominanceFilteredMap.get(type) ?? score) - natScore;
+    const devFilt = (dominanceFilteredMap.get(type) ?? score) - natScoreFilt;
     if (devFull >= 0.25 && devFilt >= 0.25) {
       const minDev = Math.min(devFull, devFilt);
       if (minDev > bestDeviation) {
