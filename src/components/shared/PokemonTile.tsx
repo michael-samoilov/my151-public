@@ -55,6 +55,10 @@ interface PokemonTileContentProps {
   /** Rendered inside the content wrapper after the type badges — e.g.
    *  matchup info in analytics drill-downs. */
   afterTypes?: ReactNode;
+  /** Image loading strategy. Default "lazy" defers off-screen loads; use
+   *  "eager" in contexts like carousels where off-screen panels must
+   *  preload sprites to avoid a blank→load flicker on swipe. */
+  imgLoading?: 'lazy' | 'eager';
 }
 
 /**
@@ -70,6 +74,7 @@ export function PokemonTileContent({
   spriteUrl,
   contentClassName,
   afterTypes,
+  imgLoading = 'lazy',
 }: PokemonTileContentProps) {
   return (
     <div className={cn('flex flex-col items-center w-full', contentClassName)}>
@@ -89,7 +94,7 @@ export function PokemonTileContent({
         alt={pokemon.name}
         width={spritePx}
         height={spritePx}
-        loading="lazy"
+        loading={imgLoading}
         decoding="async"
         draggable={false}
         style={{ imageRendering: 'pixelated' }}

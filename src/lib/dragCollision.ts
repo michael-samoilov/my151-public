@@ -10,8 +10,8 @@ import {
  * no empty space between the pointer and the overlay, or between the
  * overlay and the hit-test target):
  *   • Desktop (mouse): mouse cursor = hit-test target. Overlay floats
- *     overlayLiftPx above the mouse — just enough clearance for the
- *     held sprite's bottom edge to sit above the cursor.
+ *     overlayLiftPx BELOW the mouse so the cursor stays visible above
+ *     the held sprite.
  *   • Touch (thumb): thumb at bottom, held overlay overlayLiftPx above
  *     thumb, hit-test target touchHitLiftPx above thumb. Target sits
  *     directly above the overlay so the drop indicator is visible.
@@ -130,10 +130,12 @@ export function createSnapCenterToPointer(overlayLiftPx: number): Modifier {
   return ({ draggingNodeRect, transform }) => {
     const ptr = dragPointerRef.current;
     if (!draggingNodeRect || !ptr) return transform;
+    // Touch: lift overlay ABOVE the thumb (−). Desktop: drop it BELOW the cursor (+).
+    const lift = dragInputIsTouch.current ? -overlayLiftPx : overlayLiftPx;
     return {
       ...transform,
       x: ptr.x - draggingNodeRect.left - draggingNodeRect.width / 2,
-      y: ptr.y - draggingNodeRect.top - draggingNodeRect.height / 2 - overlayLiftPx,
+      y: ptr.y - draggingNodeRect.top - draggingNodeRect.height / 2 + lift,
     };
   };
 }

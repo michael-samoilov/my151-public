@@ -309,6 +309,7 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                 <PokemonTileContent
                   pokemon={pokemon}
                   spritePx={spritePx}
+                  imgLoading={variant === 'analytics' ? 'eager' : 'lazy'}
                   spriteUrl={spriteOverrides?.[pokemon.id]
                     ?? (shinyIds?.has(pokemon.id)
                       ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')

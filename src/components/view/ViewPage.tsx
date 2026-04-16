@@ -185,7 +185,8 @@ function DraggableViewTile({
         // (tiles fill the entire visible area, so the only surfaces to
         // touch *are* draggable tiles). Press-and-hold still activates
         // drag; a quick finger-drag scrolls the page as expected.
-        touchAction: 'pan-y',
+        // `pinch-zoom` keeps two-finger zoom working over the grid.
+        touchAction: 'pan-y pinch-zoom',
       }}
     >
       {showInsertBefore && (

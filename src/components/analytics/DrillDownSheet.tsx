@@ -22,6 +22,10 @@ function getSegmentLabel(seg: DrillDownSegment): string {
   }
 }
 
+/** Wishiwashi's pokemon.json sprite is the school form, but the BST data
+ *  reflects the solo form — show the original solo sprite in BST drilldowns. */
+const BST_SPRITE_OVERRIDES: Record<number, string> = { 746: '/sprites/pokemon/746.png' };
+
 /** A full card panel: drag handle + header + accent line + scrollable content */
 function CardPanel({
   data,
@@ -29,6 +33,7 @@ function CardPanel({
   prevLabel,
   nextLabel,
   scrollRef,
+  spriteOverrides,
   onHandleTouchStart,
   onHandleTouchMove,
   onHandleTouchEnd,
@@ -45,6 +50,7 @@ function CardPanel({
   prevLabel?: string;
   nextLabel?: string;
   scrollRef?: React.RefObject<HTMLDivElement | null>;
+  spriteOverrides?: Record<number, string>;
   onHandleTouchStart?: (e: React.TouchEvent) => void;
   onHandleTouchMove?: (e: React.TouchEvent) => void;
   onHandleTouchEnd?: () => void;
@@ -142,6 +148,7 @@ function CardPanel({
                   onToggleStage={noOp}
                   removalStagedIds={removalStagedIds}
                   onToggleRemoval={onToggleRemoval}
+                  spriteOverrides={spriteOverrides}
                   cols={6}
                   variant="analytics"
                   showGenBadges={data.showGenBadges}
@@ -257,6 +264,8 @@ export function DrillDownSheet() {
   const nextData = useMemo(() =>
     nextSibling ? computeDrillDownData(nextSibling, storeSections, excludeSpecial, dexId, newOnly) : null,
     [nextSibling, storeSections, excludeSpecial, dexId, newOnly]);
+
+  const bstOverrides = segment?.kind === 'bst' ? BST_SPRITE_OVERRIDES : undefined;
 
   // Only lock body scroll when fully expanded (not peek) — mobile only
   // Desktop uses the side panel (DrillDownPanel), so body scroll must stay free
@@ -448,10 +457,12 @@ export function DrillDownSheet() {
             onTransitionEnd={handleTransitionEnd}
           >
             {/* Prev panel — clip-path allows shadow to escape upward but clips it at
-                panel's own left/right edges, preventing bleed into adjacent panels */}
+                panel's own left/right edges, preventing bleed into adjacent panels.
+                contain:content isolates paint so React re-renders inside a panel
+                don't flash the parent background through neighbouring panels. */}
             <div
               className="h-full flex-1 min-w-0"
-              style={{ clipPath: 'inset(-100px 0 0 0)' }}
+              style={{ clipPath: 'inset(-100px 0 0 0)', contain: 'content' }}
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -462,6 +473,7 @@ export function DrillDownSheet() {
                   assignedIds={assignedIds}
                   prevLabel={siblings.length >= 3 ? getSegmentLabel(siblings[(currentIdx - 2 + siblings.length) % siblings.length]) : undefined}
                   nextLabel={getSegmentLabel(segment!)}
+                  spriteOverrides={bstOverrides}
                   onHandleTouchStart={touchStart}
                   onHandleTouchMove={handleHeaderTouchMove}
                   onHandleTouchEnd={handleTouchEnd}
@@ -476,7 +488,7 @@ export function DrillDownSheet() {
             {/* Current panel */}
             <div
               className="h-full flex-1 min-w-0"
-              style={{ clipPath: 'inset(-100px 0 0 0)' }}
+              style={{ clipPath: 'inset(-100px 0 0 0)', contain: 'content' }}
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -487,6 +499,7 @@ export function DrillDownSheet() {
                 prevLabel={prevSibling ? getSegmentLabel(prevSibling) : undefined}
                 nextLabel={nextSibling ? getSegmentLabel(nextSibling) : undefined}
                 scrollRef={currentScrollRef}
+                spriteOverrides={bstOverrides}
                 onHandleTouchStart={touchStart}
                 onHandleTouchMove={handleHeaderTouchMove}
                 onHandleTouchEnd={handleTouchEnd}
@@ -503,7 +516,7 @@ export function DrillDownSheet() {
             {/* Next panel */}
             <div
               className="h-full flex-1 min-w-0"
-              style={{ clipPath: 'inset(-100px 0 0 0)' }}
+              style={{ clipPath: 'inset(-100px 0 0 0)', contain: 'content' }}
               onTouchStart={touchStart}
               onTouchMove={handleContentTouchMove}
               onTouchEnd={handleTouchEnd}
@@ -514,6 +527,7 @@ export function DrillDownSheet() {
                   assignedIds={assignedIds}
                   prevLabel={getSegmentLabel(segment!)}
                   nextLabel={siblings.length >= 3 ? getSegmentLabel(siblings[(currentIdx + 2) % siblings.length]) : undefined}
+                  spriteOverrides={bstOverrides}
                   onHandleTouchStart={touchStart}
                   onHandleTouchMove={handleHeaderTouchMove}
                   onHandleTouchEnd={handleTouchEnd}
@@ -564,6 +578,8 @@ export function DrillDownPanel() {
   const currentData = useMemo(() =>
     computeDrillDownData(segment, storeSections, excludeSpecial, dexId, newOnly),
     [segment, storeSections, excludeSpecial, dexId, newOnly]);
+
+  const desktopBstOverrides = segment?.kind === 'bst' ? BST_SPRITE_OVERRIDES : undefined;
 
   const emptySet = useMemo(() => new Set<number>(), []);
   const noOp = useCallback(() => {}, []);
@@ -680,6 +696,7 @@ export function DrillDownPanel() {
                   onToggleStage={noOp}
                   removalStagedIds={removalStagedSet}
                   onToggleRemoval={handleToggleRemoval}
+                  spriteOverrides={desktopBstOverrides}
                   cols={6}
                   variant="analytics"
                   showGenBadges={currentData.showGenBadges}
