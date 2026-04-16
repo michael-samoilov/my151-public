@@ -126,8 +126,11 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const countSectionStart = labelColEnd;
   const devSectionStart = labelColEnd + chart1Width + gutter;
 
-  // Chart 1 (count/score): directionality-aware margins
-  const countLabelPad = scoreMode ? 42 : 42; // needs room for "-0.55" / "25 (16%)"
+  // Chart 1 (count/score): directionality-aware margins. Reserves room for
+  // value labels at bar ends — "-0.54" (~28px) in score mode, "25 (16%)"
+  // (~48px) in non-score mode. Scales with chartScale so labels don't clip
+  // on desktop where the root font grows.
+  const countLabelPad = (scoreMode ? 32 : 52) * chartScale;
   const countLeftPad = countHasNeg ? countLabelPad : 0;
   const countRightPad = countHasPos ? countLabelPad : 0;
   const countBarArea = Math.max(0, chart1Width - countLeftPad - countRightPad);
@@ -171,21 +174,25 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
     : maxCount;
   const countScale = scaleLinear().domain([0, countTotalExtent]).range([0, countBarArea]);
 
-  // Chart 2 (deviation): domain
+  // Chart 2 (deviation): domain + scale range
   //
-  // The bidirectional header labels ("WEAKER ← HERE" / "STRONGER HERE →", or
-  // the non-score "UNDER- ← INDEXED" / "OVER- INDEXED →") are anchored at
-  // `zeroX ± 5` with textAnchor pointing outward. For them to fit inside
-  // chart 2, zeroX must be at least `labelPx` pixels from each edge.
+  // Two labels need to fit inside chart 2 without clipping neighbors:
   //
-  // Earlier versions reserved `labelPx` as scale-range padding on each side,
-  // which guaranteed label fit but left a fixed chunk of chart 2 unused by
-  // bars even when the data was balanced. Here we use a smarter approach:
-  // the scale range spans the *full* chart2Width, and the domain's smaller
-  // side is inflated as needed so zeroX stays at least `labelPx` from each
-  // edge. When data is balanced, bars use the entire chart width; when it's
-  // asymmetric, the short side shows a bit of extra axis (still reflecting
-  // actual bars proportionally) rather than wasting padding.
+  // 1. Header labels ("WEAKER ← HERE" / "STRONGER HERE →", etc.) anchor at
+  //    `zeroX ± 5` with textAnchor pointing outward — they need `zeroX` to
+  //    sit at least `labelPx` away from each of chart 2's usable-area edges.
+  // 2. Per-bar value labels ("-0.23", "+0.12") anchor at the bar's outer
+  //    end ± 3, extending outward — they need ~`barPad` of room from the
+  //    bar end to the chart 2 edge, or they spill into the gutter (and,
+  //    on the left, into chart 1's score labels).
+  //
+  // Solution: the scale range is inset by `barPad` on each side to give
+  // bar value labels room. Inside that usable area, the domain's smaller
+  // side is *inflated* (not the range padded) as needed so `zeroX` also
+  // honors the header constraint. When data is balanced, bars fill the
+  // entire usable width; when asymmetric, the short side shows a bit of
+  // extra axis (still proportional to actual data) rather than wasting a
+  // fixed padding chunk.
   let devLeftRaw: number;
   let devRightRaw: number;
   if (scoreMode) {
@@ -198,13 +205,18 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
     devLeftRaw = Math.min(Math.max(maxUnderDev, 25), DEV_OVER_CAP);
     devRightRaw = Math.min(Math.max(fixedDevRight ?? maxOverDev, 25), DEV_OVER_CAP);
   }
-  // Label pixel extent (text + 5px offset from zeroX). Widest single line is
-  // ~56px at mobile base font; scales with chartScale so the growing root
-  // font on desktop is covered. Capped at 48% so both labels always get ≥4%
-  // of chart width each even at extreme widths.
+  // Header label extent (widest single line + 5px offset from zeroX).
   const labelPx = (scoreMode ? 60 : 66) * chartScale;
-  const minSideFrac = chart2Width > 0
-    ? Math.min(0.48, (labelPx + 2) / chart2Width)
+  // Bar value label extent (e.g. "-0.23" ≈ 24px, "2.30x" ≈ 26px at mobile
+  // base font). Reserved on each side of the bar area as scale-range
+  // padding so value labels never spill into the gutter / chart 1.
+  const barPad = 28 * chartScale;
+  const usableW = Math.max(0, chart2Width - 2 * barPad);
+  // In the usable area, zeroX still needs `labelPx` from each edge for the
+  // header labels. The barPad we already reserved buys us some of that, so
+  // the remaining constraint is `labelPx - barPad`.
+  const minSideFrac = usableW > 0
+    ? Math.min(0.48, Math.max(0, (labelPx - barPad + 2) / usableW))
     : 0;
   let dl = devLeftRaw;
   let dr = devRightRaw;
@@ -221,7 +233,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
 
   const devScale = scaleLinear()
     .domain([devLeft, devRight_])
-    .range([0, chart2Width]);
+    .range([barPad, chart2Width - barPad]);
 
   const zeroX = devScale(0);
 
