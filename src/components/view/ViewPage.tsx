@@ -110,6 +110,11 @@ function useTileSize(totalSlots: number) {
   const measure = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
+    // When the View tab is hidden (display:none via App's `hidden` class),
+    // clientWidth/clientHeight report 0. Writing tileSize=0 on hide makes
+    // every sprite shrink to nothing and then pop back on return — the
+    // characteristic "white flash". Retain the last good tileSize instead.
+    if (el.clientWidth === 0 || el.clientHeight === 0) return;
     const style = getComputedStyle(el);
     const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
     const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
