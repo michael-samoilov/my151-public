@@ -407,13 +407,17 @@ function GroupBox({
     const el = boxRef.current;
     if (!el) return;
 
+    // When the builder tab is hidden (display:none on an ancestor) scrollHeight
+    // reports 0. Bail in that case: don't animate and don't overwrite the
+    // baseline. Animating to 0 on hide would lock the element at height:0
+    // (transitionend never fires under display:none), so returning to the tab
+    // would show every section as a 1px line. Animating from 0 on show would
+    // cascade every section back to full height on every tab switch.
     const newHeight = el.scrollHeight;
+    if (newHeight === 0) return;
+
     const oldHeight = prevHeightRef.current;
 
-    // Skip animation when coming back from hidden (display:none → visible):
-    // scrollHeight is 0 while hidden, so `oldHeight === 0` means we just became
-    // visible and the "change" is really the first real measurement. Animating
-    // from 0 to full height produces a cascade on tab switch.
     if (oldHeight !== null && oldHeight !== 0 && oldHeight !== newHeight) {
       el.style.height = `${oldHeight}px`;
       el.style.overflow = 'hidden';
@@ -425,6 +429,13 @@ function GroupBox({
           el.style.height = `${newHeight}px`;
         });
       });
+    } else if (el.style.height) {
+      // No animation needed, but stale inline styles are present from an
+      // earlier animation that was interrupted (e.g. by the tab being hidden
+      // before transitionend fired). Clear them so natural layout resumes.
+      el.style.height = '';
+      el.style.overflow = '';
+      el.style.transition = '';
     }
 
     prevHeightRef.current = newHeight;
@@ -443,7 +454,10 @@ function GroupBox({
     const el = boxRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => {
-      prevHeightRef.current = el.scrollHeight;
+      // Ignore hidden-state measurements (scrollHeight = 0) so the baseline
+      // stays at the last real height across tab switches.
+      const h = el.scrollHeight;
+      if (h > 0) prevHeightRef.current = h;
     });
     ro.observe(el);
     return () => ro.disconnect();
