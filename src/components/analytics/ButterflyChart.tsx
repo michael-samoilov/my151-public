@@ -52,6 +52,7 @@ interface ButterflyChartProps {
 export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
+  const [hoveredSort, setHoveredSort] = useState<'count' | 'deviation' | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -239,7 +240,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
     <div ref={containerRef} className="w-full">
       {width > 0 && (
         <svg width={width} height={chartHeight} className="overflow-visible">
-          {/* Label column header (e.g. "TYPE", "GEN") */}
+          {/* Label column header (e.g. "TYPE", "GEN") — display only, not sortable */}
           {labelHeader && (
             <text
               x={iconStart + iconSize}
@@ -248,9 +249,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
               fontWeight={600}
               fill="var(--color-muted-foreground)"
               letterSpacing="0.05em"
-              className={cn('text-xs', onSortChange && 'cursor-pointer')}
-              textDecoration={sortBy === 'label' ? 'underline' : 'none'}
-              onClick={onSortChange ? () => onSortChange('label') : undefined}
+              className="text-xs"
             >
               {labelHeader}
             </text>
@@ -265,11 +264,13 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             y={12}
             textAnchor={countIsBidirectional ? 'middle' : countHasNeg ? 'end' : 'start'}
             fontWeight={600}
-            fill="var(--color-muted-foreground)"
+            fill={sortBy === 'count' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
             className={cn('text-xs', onSortChange && 'cursor-pointer')}
-            textDecoration={sortBy === 'count' ? 'underline' : 'none'}
+            textDecoration={sortBy === 'count' || hoveredSort === 'count' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('count') : undefined}
+            onMouseEnter={onSortChange ? () => setHoveredSort('count') : undefined}
+            onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
             {scoreMode ? 'SCORE' : 'COUNT'}
           </text>
@@ -281,11 +282,13 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             y={6}
             textAnchor="end"
             fontWeight={600}
-            fill="var(--color-muted-foreground)"
+            fill={sortBy === 'deviation' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
             className={cn('text-[0.6875rem]', onSortChange && 'cursor-pointer')}
-            textDecoration={sortBy === 'deviation' ? 'underline' : 'none'}
+            textDecoration={sortBy === 'deviation' || hoveredSort === 'deviation' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('deviation') : undefined}
+            onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
+            onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
             <tspan x={devSectionStart + zeroX - 5} dy="0">{scoreMode ? 'WEAKER' : 'UNDER-'}</tspan>
             <tspan x={devSectionStart + zeroX - 5} dy="1.1em">{scoreMode ? '← HERE' : '← INDEXED'}</tspan>
@@ -297,11 +300,13 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             y={6}
             textAnchor="start"
             fontWeight={600}
-            fill="var(--color-muted-foreground)"
+            fill={sortBy === 'deviation' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
             className={cn('text-[0.6875rem]', onSortChange && 'cursor-pointer')}
-            textDecoration={sortBy === 'deviation' ? 'underline' : 'none'}
+            textDecoration={sortBy === 'deviation' || hoveredSort === 'deviation' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('deviation') : undefined}
+            onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
+            onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
             <tspan x={devSectionStart + zeroX + 5} dy="0">{scoreMode ? 'STRONGER' : 'OVER-'}</tspan>
             <tspan x={devSectionStart + zeroX + 5} dy="1.1em">{scoreMode ? 'HERE →' : 'INDEXED →'}</tspan>

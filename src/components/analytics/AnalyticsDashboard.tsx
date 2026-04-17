@@ -68,7 +68,7 @@ export function AnalyticsDashboard() {
   const [newPokemonOnly, setNewPokemonOnly] = useState(true);
   const [typeView, setTypeView] = useState<'distribution' | 'matchup'>('distribution');
   const [typeSortBy, setTypeSortBy] = useState<'count' | 'deviation' | 'label'>('deviation');
-  const [genSortBy, setGenSortBy] = useState<'count' | 'deviation' | 'label'>('label');
+  const [genSortBy, setGenSortBy] = useState<'count' | 'deviation' | 'label'>('count');
 
   // Mekko-chart container width, used to scale chart geometry (bar heights,
   // legend label heights, count-label font size). Without this, the mekko
@@ -528,9 +528,9 @@ export function AnalyticsDashboard() {
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain md:overscroll-auto">
-      <div className="p-6 pb-0 space-y-8 max-w-6xl mx-auto">
+      <div className="p-6 pb-0 space-y-8 max-w-6xl md:max-w-2xl mx-auto">
         {/* What's Missing Advisor — moved to top */}
-        <section className="bg-card rounded-lg border p-6">
+        <section className="bg-card rounded-lg border overflow-hidden">
           <WhatsAdvisor />
         </section>
 
@@ -650,10 +650,10 @@ export function AnalyticsDashboard() {
             </div>
             <div className="h-[3px] bg-primary" />
             <div className="py-2 md:py-4">
-            <p className="text-sm text-muted-foreground mb-3 md:mb-4 px-3">
+            <p className="text-sm text-muted-foreground mb-3 md:mb-4 px-3 min-h-[2.75rem]">
               {typeView === 'distribution'
                 ? 'Count of Pokémon with each type, & deviation from national dex proportions.'
-                : 'Avg # of type advantage 2x\u2019s (atk & def) vs. all Pokémon in region, & deviation from avg vs. national dex.'}
+                : 'Avg # of type advantage 2x\u2019s (offensive and defensive) vs. all regional Pokémon, & deviation from national dex.'}
             </p>
             <div className="px-6">
             {typeView === 'distribution' ? (

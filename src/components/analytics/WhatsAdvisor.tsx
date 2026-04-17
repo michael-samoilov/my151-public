@@ -198,7 +198,7 @@ export function WhatsAdvisor() {
     <div>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 w-full text-left"
+        className="flex items-center gap-2 w-full text-left px-6 pt-5 pb-4"
       >
         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? '' : '-rotate-90'}`} />
         <h3 className="text-lg font-semibold">What's Missing?</h3>
@@ -211,7 +211,7 @@ export function WhatsAdvisor() {
       </button>
 
       {expanded && (
-        <div className="space-y-1.5 mt-3">
+        <div className="space-y-1.5 px-6 pb-5 mt-1">
           {advice.map((item, i) => (
             <div key={i} className="flex items-center gap-2 text-sm">
               {item.type === 'missing' && (

@@ -125,6 +125,8 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
 function App() {
   useCompletionBeacon();
   const [currentView, setCurrentView] = useState<AppView>('builder');
+  const viewMounted = useRef(false);
+  const analyticsMounted = useRef(false);
   const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const activeSection = usePokedexStore((s) => s.activeSection);
@@ -150,6 +152,8 @@ function App() {
   }, []);
 
   const handleViewChange = useCallback((view: AppView) => {
+    if (view === 'view') viewMounted.current = true;
+    if (view === 'analytics') analyticsMounted.current = true;
     setCurrentView(view);
     if (view !== 'builder') {
       setMobileBrowserOpen(false);
@@ -166,47 +170,52 @@ function App() {
       <div className="h-dvh flex flex-col">
         <Header currentView={currentView} onViewChange={handleViewChange} />
 
-        {currentView === 'builder' ? (
-          <div ref={builderAreaRef} className="flex-1 min-h-0 relative overflow-hidden">
-            <div className={cn(
-              'h-full transition-all duration-300 ease-out',
-              'md:w-1/2',
-              activeSection ? 'md:mr-auto' : 'md:mx-auto',
-            )}>
-              <PokedexGrid />
-            </div>
-            {/* Desktop browser panel — slides in from right as an overlay */}
-            <div className={cn(
-              'hidden md:flex absolute right-0 top-0 bottom-0 z-10',
-              'w-1/2 border-l bg-background',
-              'transition-transform duration-300 ease-out',
-              activeSection ? 'translate-x-0' : 'translate-x-full',
-            )}>
-              <div className="flex-1 min-w-0">
-                <PokemonBrowser />
-              </div>
+        {/* Builder — always mounted to avoid remount cost on tab switch */}
+        <div ref={builderAreaRef} className={cn('flex-1 min-h-0 relative overflow-hidden', currentView !== 'builder' && 'hidden')}>
+          <div className={cn(
+            'h-full transition-all duration-300 ease-out',
+            'md:w-1/2',
+            activeSection ? 'md:mr-auto' : 'md:mx-auto',
+          )}>
+            <PokedexGrid />
+          </div>
+          {/* Desktop browser panel — slides in from right as an overlay */}
+          <div className={cn(
+            'hidden md:flex absolute right-0 top-0 bottom-0 z-10',
+            'w-1/2 border-l bg-background',
+            'transition-transform duration-300 ease-out',
+            activeSection ? 'translate-x-0' : 'translate-x-full',
+          )}>
+            <div className="flex-1 min-w-0">
+              <PokemonBrowser />
             </div>
           </div>
-        ) : currentView === 'view' ? (
-          <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
+        </div>
+
+        {/* View — lazy, mounted on first visit then kept alive */}
+        <div className={cn('flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col', currentView !== 'view' && 'hidden')}>
+          {viewMounted.current && (
             <Suspense fallback={<RouteFallback />}>
               <ViewPage />
             </Suspense>
-          </div>
-        ) : (
-          <div className="flex-1 flex min-h-0">
-            <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
+          )}
+        </div>
+
+        {/* Analytics — lazy, mounted on first visit then kept alive */}
+        <div className={cn('flex-1 flex min-h-0', currentView !== 'analytics' && 'hidden')}>
+          <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
+            {analyticsMounted.current && (
               <Suspense fallback={<RouteFallback />}>
                 <AnalyticsDashboard />
               </Suspense>
-            </div>
-            {drillDownSegment && (
-              <div className="hidden md:flex w-[min(50vw,546px)] flex-shrink-0 border-l">
-                <DrillDownPanel />
-              </div>
             )}
           </div>
-        )}
+          {drillDownSegment && (
+            <div className="hidden md:flex w-[min(50vw,546px)] flex-shrink-0 border-l">
+              <DrillDownPanel />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Mobile browser sheet */}
