@@ -16,7 +16,7 @@ const SORT_OPTIONS: SortOption[] = [
     value: 'build-order',
     label: 'Build Order',
     description:
-      'Mirrors your build page exactly — the order and sections you set up there.',
+      'Mirrors your build page exactly - the order and sections you set up there.',
   },
   {
     value: 'regional',
