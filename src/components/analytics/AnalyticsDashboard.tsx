@@ -861,11 +861,12 @@ export function AnalyticsDashboard() {
                   stageTotals[seg.stage] = (stageTotals[seg.stage] || 0) + seg.count;
                 }
               }
-              // Short labels — the parent section heading ("Stage
-              // Distribution") already establishes context, so we drop the
-              // "-stage" suffix to keep each column's x-axis label inside
-              // its narrow mobile column width.
-              const stageNames = ['Single', 'Double', 'Triple'];
+              // "-stage" suffix restores full label ("Single-stage" etc).
+              // The rendering span below uses `whitespace-nowrap` so the
+              // label never breaks at the hyphen on narrow columns; worst
+              // case the label overhangs its column width rather than
+              // wrapping to a second line.
+              const stageNames = ['Single-stage', 'Double-stage', 'Triple-stage'];
               const STAGE_LINE_COLORS = ['#e88a8a', '#d95050', '#b91c1c'];
               const totalPokemon = mekkoData.columns.reduce((sum, col) => sum + col.segments.reduce((s, seg) => s + seg.count, 0), 0);
               // Always render 3 columns for stable layout
@@ -1135,7 +1136,7 @@ export function AnalyticsDashboard() {
                             style={{ height: 38 * mekkoScale, textDecoration: isXActive ? 'underline' : undefined, textDecorationColor: isXActive ? STAGE_LINE_COLORS[col.lineLength - 1] : undefined }}
                             onClick={() => col.chainCount > 0 && handleDrillToggle({ kind: 'lineLength', lineLength: col.lineLength }, undefined, excludeSpecialMekko)}
                           >
-                            <span style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}</span>
+                            <span className="whitespace-nowrap" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}</span>
                             <br />
                             {col.chainCount}{idx === 0 && ' lines'} <span className="font-normal">({col.widthPct.toFixed(0)}%)</span>
                           </div>

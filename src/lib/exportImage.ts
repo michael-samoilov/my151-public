@@ -297,21 +297,28 @@ export async function generateExportImage(
     }
   }
 
-  // Footer: insights + "made with my151.app"
-  const footerY = PAD_TOP + totalRows * TILE + PAD_BOTTOM / 2;
+  // Footer: two lines — insights (top, normal size) + "made with my151.app"
+  // (bottom, smaller so the credit reads quietly rather than as an ad).
+  const footerTop = PAD_TOP + totalRows * TILE;
+  const line1Y = footerTop + 10;
+  const line2Y = footerTop + 21;
   const zinc = '#a1a1aa';
-  const FONT_SPEC = '600 6px "Inter Variable", system-ui, -apple-system, sans-serif';
-  const TYPE_ICON_SZ = 7;  // logical px: square side for type icons
-  const GEN_ICON_SZ = 8;   // logical px: gen badge circle
-  const ICON_GAP = 1;      // gap after icon before next element
 
-  ctx.font = FONT_SPEC;
+  // Insights line — original sizes.
+  const INSIGHTS_FONT = '600 8px "Inter Variable", system-ui, -apple-system, sans-serif';
+  const TYPE_ICON_SZ = 9;   // logical px: square side for type icons
+  const GEN_ICON_SZ = 11;   // logical px: gen badge circle
+  const ICON_GAP = 2;       // gap after icon before next element
+
+  // Credit line — smaller so it reads as a quiet credit.
+  const CREDIT_FONT = '600 6px "Inter Variable", system-ui, -apple-system, sans-serif';
+
   ctx.textBaseline = 'middle';
   ctx.textAlign = 'left';
 
   // Segment types: text or image icon (with per-icon size)
   type Seg = { kind: 'text'; text: string; color: string } | { kind: 'icon'; img: HTMLImageElement; sz: number };
-  const segs: Seg[] = [];
+  const insightSegs: Seg[] = [];
 
   const { leanTypes, leanGens } = insights;
   const noLean = leanTypes.length === 0 && leanGens.length === 0;
@@ -320,11 +327,11 @@ export async function generateExportImage(
 
   if (noLean && !insights.bestAttackType) {
     // Perfectly balanced — nothing over-indexes or strongly over-performs
-    segs.push({ kind: 'text', text: 'perfectly balanced dex. ', color: zinc });
+    insightSegs.push({ kind: 'text', text: 'perfectly balanced dex', color: zinc });
   } else {
     // --- Lean section (types + gens) ---
     if (noLean) {
-      segs.push({ kind: 'text', text: 'no types or gens strongly over-index', color: zinc });
+      insightSegs.push({ kind: 'text', text: 'no types or gens strongly over-index', color: zinc });
     } else {
       // Build flat list of lean items (each item = [optional icon, label])
       const leanItems: Seg[][] = [];
@@ -348,52 +355,55 @@ export async function generateExportImage(
       for (let i = 0; i < leanItems.length; i++) {
         if (i > 0) {
           if (leanItems.length === 2) {
-            segs.push({ kind: 'text', text: ' & ', color: zinc });
+            insightSegs.push({ kind: 'text', text: ' & ', color: zinc });
           } else {
-            segs.push({ kind: 'text', text: i === leanItems.length - 1 ? ', & ' : ', ', color: zinc });
+            insightSegs.push({ kind: 'text', text: i === leanItems.length - 1 ? ', & ' : ', ', color: zinc });
           }
         }
-        segs.push(...leanItems[i]);
+        insightSegs.push(...leanItems[i]);
       }
-      segs.push({ kind: 'text', text: '-forward', color: zinc });
+      insightSegs.push({ kind: 'text', text: '-forward', color: zinc });
     }
 
     // --- Attack section ---
-    segs.push({ kind: 'text', text: ' · ', color: zinc });
+    insightSegs.push({ kind: 'text', text: ' · ', color: zinc });
     if (insights.bestAttackType) {
       const t = insights.bestAttackType;
-      if (attackTypeImg) segs.push({ kind: 'icon', img: attackTypeImg, sz: TYPE_ICON_SZ });
-      segs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
-      segs.push({ kind: 'text', text: ' over-performs', color: zinc });
+      if (attackTypeImg) insightSegs.push({ kind: 'icon', img: attackTypeImg, sz: TYPE_ICON_SZ });
+      insightSegs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
+      insightSegs.push({ kind: 'text', text: ' over-performs', color: zinc });
     } else {
-      segs.push({ kind: 'text', text: 'no types strongly over-perform', color: zinc });
-    }
-
-    segs.push({ kind: 'text', text: ' · ', color: zinc });
-  }
-
-  segs.push({ kind: 'text', text: 'made with ', color: zinc });
-  segs.push({ kind: 'text', text: 'my151', color: '#DC2626' });
-  segs.push({ kind: 'text', text: '.app', color: '#0a0a0a' });
-
-  // Measure total width
-  let totalW = 0;
-  for (const seg of segs) {
-    totalW += seg.kind === 'icon' ? (seg.sz + ICON_GAP) : ctx.measureText(seg.text).width;
-  }
-
-  // Draw left-to-right centered
-  let tx = (w - totalW) / 2;
-  for (const seg of segs) {
-    if (seg.kind === 'icon') {
-      ctx.drawImage(seg.img, tx, footerY - seg.sz / 2, seg.sz, seg.sz);
-      tx += seg.sz + ICON_GAP;
-    } else {
-      ctx.fillStyle = seg.color;
-      ctx.fillText(seg.text, tx, footerY);
-      tx += ctx.measureText(seg.text).width;
+      insightSegs.push({ kind: 'text', text: 'no types strongly over-perform', color: zinc });
     }
   }
+
+  const creditSegs: Seg[] = [
+    { kind: 'text', text: 'made with ', color: zinc },
+    { kind: 'text', text: 'my151', color: '#DC2626' },
+    { kind: 'text', text: '.app', color: '#0a0a0a' },
+  ];
+
+  const drawLine = (segs: Seg[], y: number, font: string) => {
+    ctx.font = font;
+    let totalW = 0;
+    for (const seg of segs) {
+      totalW += seg.kind === 'icon' ? (seg.sz + ICON_GAP) : ctx.measureText(seg.text).width;
+    }
+    let tx = (w - totalW) / 2;
+    for (const seg of segs) {
+      if (seg.kind === 'icon') {
+        ctx.drawImage(seg.img, tx, y - seg.sz / 2, seg.sz, seg.sz);
+        tx += seg.sz + ICON_GAP;
+      } else {
+        ctx.fillStyle = seg.color;
+        ctx.fillText(seg.text, tx, y);
+        tx += ctx.measureText(seg.text).width;
+      }
+    }
+  };
+
+  drawLine(insightSegs, line1Y, INSIGHTS_FONT);
+  drawLine(creditSegs, line2Y, CREDIT_FONT);
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
