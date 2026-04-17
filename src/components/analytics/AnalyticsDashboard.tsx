@@ -68,7 +68,7 @@ export function AnalyticsDashboard() {
   const [newPokemonOnly, setNewPokemonOnly] = useState(true);
   const [typeView, setTypeView] = useState<'distribution' | 'matchup'>('distribution');
   const [typeSortBy, setTypeSortBy] = useState<'count' | 'deviation' | 'label'>('deviation');
-  const [genSortBy, setGenSortBy] = useState<'count' | 'deviation' | 'label'>('count');
+  const [genSortBy, setGenSortBy] = useState<'count' | 'deviation' | 'label'>('label');
 
   // Mekko-chart container width, used to scale chart geometry (bar heights,
   // legend label heights, count-label font size). Without this, the mekko
@@ -650,7 +650,7 @@ export function AnalyticsDashboard() {
             </div>
             <div className="h-[3px] bg-primary" />
             <div className="py-2 md:py-4">
-            <p className="text-sm text-muted-foreground mb-3 md:mb-4 px-3 min-h-[2.75rem]">
+            <p className="text-sm text-muted-foreground mb-3 md:mb-4 px-3 min-h-[4.125rem] md:min-h-[2.75rem]">
               {typeView === 'distribution'
                 ? 'Count of Pokémon with each type, & deviation from national dex proportions.'
                 : 'Avg # of type advantage 2x\u2019s (offensive and defensive) vs. all regional Pokémon, & deviation from national dex.'}
@@ -754,6 +754,7 @@ export function AnalyticsDashboard() {
               sortBy={genSortBy}
               onSortChange={setGenSortBy}
               labelHeader="GEN"
+              labelSortable
               onBarClick={(label) => {
                 const gen = parseInt(label.replace('Gen ', ''));
                 if (!isNaN(gen)) handleDrillToggle({ kind: 'generation', generation: gen }, genSiblings);

@@ -37,6 +37,9 @@ interface ButterflyChartProps {
   onSortChange?: (col: 'count' | 'deviation' | 'label') => void;
   /** Header text for the label/icon column (e.g. "TYPE", "GEN") */
   labelHeader?: string;
+  /** When true, the label-column header is clickable and toggles `sortBy='label'`.
+   *  Default false: the label header is display-only. */
+  labelSortable?: boolean;
   /** When true, rows with count === 0 are not clickable */
   disableEmptyRows?: boolean;
   /** Override the denominator used for the per-bar percentage label. Defaults
@@ -49,10 +52,10 @@ interface ButterflyChartProps {
   countDenominator?: number;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
-  const [hoveredSort, setHoveredSort] = useState<'count' | 'deviation' | null>(null);
+  const [hoveredSort, setHoveredSort] = useState<'count' | 'deviation' | 'label' | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -240,16 +243,22 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
     <div ref={containerRef} className="w-full">
       {width > 0 && (
         <svg width={width} height={chartHeight} className="overflow-visible">
-          {/* Label column header (e.g. "TYPE", "GEN") — display only, not sortable */}
+          {/* Label column header (e.g. "TYPE", "GEN"). Sortable only when
+              `labelSortable` is true — e.g. the gen chart uses natural-order
+              sort; the type chart does not. */}
           {labelHeader && (
             <text
               x={iconStart + iconSize}
               y={12}
               textAnchor="end"
               fontWeight={600}
-              fill="var(--color-muted-foreground)"
+              fill={labelSortable && sortBy === 'label' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
               letterSpacing="0.05em"
-              className="text-xs"
+              className={cn('text-xs', labelSortable && onSortChange && 'cursor-pointer')}
+              textDecoration={labelSortable && (sortBy === 'label' || hoveredSort === 'label') ? 'underline' : 'none'}
+              onClick={labelSortable && onSortChange ? () => onSortChange('label') : undefined}
+              onMouseEnter={labelSortable && onSortChange ? () => setHoveredSort('label') : undefined}
+              onMouseLeave={labelSortable && onSortChange ? () => setHoveredSort(null) : undefined}
             >
               {labelHeader}
             </text>

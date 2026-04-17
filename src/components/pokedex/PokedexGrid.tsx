@@ -410,7 +410,11 @@ function GroupBox({
     const newHeight = el.scrollHeight;
     const oldHeight = prevHeightRef.current;
 
-    if (oldHeight !== null && oldHeight !== newHeight) {
+    // Skip animation when coming back from hidden (display:none → visible):
+    // scrollHeight is 0 while hidden, so `oldHeight === 0` means we just became
+    // visible and the "change" is really the first real measurement. Animating
+    // from 0 to full height produces a cascade on tab switch.
+    if (oldHeight !== null && oldHeight !== 0 && oldHeight !== newHeight) {
       el.style.height = `${oldHeight}px`;
       el.style.overflow = 'hidden';
       el.style.transition = 'none';

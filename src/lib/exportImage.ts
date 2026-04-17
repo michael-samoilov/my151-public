@@ -300,10 +300,10 @@ export async function generateExportImage(
   // Footer: insights + "made with my151.app"
   const footerY = PAD_TOP + totalRows * TILE + PAD_BOTTOM / 2;
   const zinc = '#a1a1aa';
-  const FONT_SPEC = '600 8px "Inter Variable", system-ui, -apple-system, sans-serif';
-  const TYPE_ICON_SZ = 9;  // logical px: square side for type icons
-  const GEN_ICON_SZ = 11;  // logical px: gen badge circle
-  const ICON_GAP = 2;      // gap after icon before next element
+  const FONT_SPEC = '600 6px "Inter Variable", system-ui, -apple-system, sans-serif';
+  const TYPE_ICON_SZ = 7;  // logical px: square side for type icons
+  const GEN_ICON_SZ = 8;   // logical px: gen badge circle
+  const ICON_GAP = 1;      // gap after icon before next element
 
   ctx.font = FONT_SPEC;
   ctx.textBaseline = 'middle';
