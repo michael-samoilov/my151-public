@@ -167,7 +167,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
     }
 
     return result;
-  }, [groups, assignedIds, stagedIds, onToggleStage, shinyIds, spriteOverrides, cols, matchupInfo, matchupType, spritePx]);
+  }, [groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols, variant, showGenBadges, matchupInfo, matchupType, spritePx]);
 
   return (
     <div className={GRID_CLASSES[cols] ?? `grid gap-x-0 gap-y-1`} style={GRID_CLASSES[cols] ? undefined : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
