@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
-import { getDescendantIds, getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
+import { computeRemovalCascade, getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
 import {
@@ -70,30 +70,12 @@ function findEvoLineGroup(pokemonId: number, sectionIds: number[]): number[] {
 
 /**
  * Returns the set of IDs that would be removed if the user clicked the
- * delete button on `pokemonId`. Mirrors the logic in removeBranch:
- * removes target + descendants, then walks up ancestors that become stranded.
+ * delete button on `pokemonId`. Delegates to the shared cascade helper so
+ * the hover preview matches `removeBranch` exactly (including the
+ * cross-gen individual-removal carve-out).
  */
 function computeRemoveSet(pokemonId: number, sectionIds: number[]): Set<number> {
-  const sectionSet = new Set(sectionIds);
-  const descendants = getDescendantIds(pokemonId);
-  const removeSet = new Set(descendants.filter(id => sectionSet.has(id)));
-  const remaining = new Set(sectionIds.filter(id => !removeSet.has(id)));
-  // Walk up: remove ancestors that have no remaining descendants
-  let current = getPokemonById(pokemonId);
-  while (current?.evolvesFrom) {
-    const parent = getPokemonById(current.evolvesFrom);
-    if (!parent || !remaining.has(parent.id)) break;
-    const parentDescendants = getDescendantIds(parent.id);
-    const hasRemaining = parentDescendants.some(id => id !== parent.id && remaining.has(id));
-    if (!hasRemaining) {
-      remaining.delete(parent.id);
-      removeSet.add(parent.id);
-      current = parent;
-    } else {
-      break;
-    }
-  }
-  return removeSet;
+  return computeRemovalCascade(pokemonId, sectionIds);
 }
 
 function tileId(sectionId: string, pokemonId: number) {

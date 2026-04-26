@@ -48,6 +48,88 @@ export function getDescendantIds(pokemonId: number): number[] {
   return result;
 }
 
+/**
+ * For a hypothetical placed-set on a given evolution chain, return true if the
+ * placed members form a gap-free structure: walking up evolvesFrom from any
+ * placed member never goes placed → unplaced → placed. (Adjacent runs of
+ * unplaced ancestors above the highest placed root are fine.)
+ */
+function isChainPlacementGapFree(placed: Set<number>, chainId: number): boolean {
+  const chainMembers = pokemonByChain.get(chainId) ?? [];
+  for (const member of chainMembers) {
+    if (!placed.has(member.id)) continue;
+    let cursor: Pokemon | undefined = member;
+    let sawUnplaced = false;
+    while (cursor?.evolvesFrom) {
+      const parent = pokemonById.get(cursor.evolvesFrom);
+      if (!parent) break;
+      if (!placed.has(parent.id)) {
+        sawUnplaced = true;
+      } else if (sawUnplaced) {
+        return false;
+      }
+      cursor = parent;
+    }
+  }
+  return true;
+}
+
+/**
+ * Compute the set of IDs to remove when the user clicks the delete button on
+ * `pokemonId` in a section currently containing `sectionIds`.
+ *
+ * Two modes:
+ *  1. Individual removal — only `pokemonId` is removed. Allowed when the target
+ *     was introduced in a later generation than at least one other placed
+ *     member of the same evolution chain, AND removing it alone keeps the
+ *     placed chain gap-free. Lets users drop cross-gen babies (Pichu) or
+ *     cross-gen later forms (Magmortar) while keeping the original line.
+ *  2. Cascade — target + all descendants + ancestors that become stranded
+ *     (no remaining placed descendants). The pre-existing branch-delete
+ *     behavior, used when individual removal would create a gap or no
+ *     cross-gen relationship exists.
+ *
+ * Returns only IDs that are currently in `sectionIds`.
+ */
+export function computeRemovalCascade(pokemonId: number, sectionIds: number[]): Set<number> {
+  const sectionSet = new Set(sectionIds);
+  const target = pokemonById.get(pokemonId);
+  if (!target || !sectionSet.has(pokemonId)) return new Set([pokemonId]);
+
+  // Mode 1: individual removal eligibility.
+  const chainMembers = pokemonByChain.get(target.evolutionChainId) ?? [];
+  const hasEarlierGenPlaced = chainMembers.some(
+    (m) => m.id !== pokemonId && sectionSet.has(m.id) && m.generation < target.generation,
+  );
+  if (hasEarlierGenPlaced) {
+    const hypothetical = new Set(sectionIds);
+    hypothetical.delete(pokemonId);
+    if (isChainPlacementGapFree(hypothetical, target.evolutionChainId)) {
+      return new Set([pokemonId]);
+    }
+  }
+
+  // Mode 2: cascade. Remove target + descendants present in section, then walk
+  // up ancestors that become stranded (no remaining placed descendants).
+  const removeSet = new Set(getDescendantIds(pokemonId).filter((id) => sectionSet.has(id)));
+  const remaining = new Set(sectionIds.filter((id) => !removeSet.has(id)));
+  let current: Pokemon | undefined = target;
+  while (current?.evolvesFrom) {
+    const parent = pokemonById.get(current.evolvesFrom);
+    if (!parent || !remaining.has(parent.id)) break;
+    const parentDescendants = getDescendantIds(parent.id);
+    const hasRemaining = parentDescendants.some((id) => id !== parent.id && remaining.has(id));
+    if (!hasRemaining) {
+      remaining.delete(parent.id);
+      removeSet.add(parent.id);
+      current = parent;
+    } else {
+      break;
+    }
+  }
+  return removeSet;
+}
+
 export function getAllPokemon(): Pokemon[] {
   return pokemonList;
 }
