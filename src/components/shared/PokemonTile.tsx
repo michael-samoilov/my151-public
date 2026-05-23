@@ -1,8 +1,24 @@
 import type { ReactNode } from 'react';
 import { cn, displayName } from '@/lib/utils';
-import { usePixelPerfectSprite } from '@/lib/usePixelPerfectSprite';
+import { usePixelPerfectSprite, useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
+import { BASE_DPR } from '@/lib/viewport';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { Pokemon, TypeName } from '@/types/pokemon';
+
+/** Above this unzoomed viewport width the sprite IMG renders at 2× source
+ *  resolution and the tile chrome (text, badges, padding) is boosted by
+ *  WIDE_LAYOUT_BOOST. Narrower phones keep the 1× sprite to avoid heavy
+ *  overlap with neighbouring tiles. */
+const MOBILE_2X_MIN_PX = 375;
+
+/** PokeAPI pixel-art sprite source resolution. */
+const SPRITE_SOURCE_PX = 96;
+
+/** Multiplier applied to the 1× layout scale (--tile-sprite) on wide
+ *  viewports. The IMG itself doubles (2× source); the chrome grows by
+ *  this smaller factor so labels stay proportional next to the bigger
+ *  sprite without dominating. */
+const WIDE_LAYOUT_BOOST = 1.4;
 
 /**
  * Canonical tile primitives used by every "Pokemon tile" in the app —
@@ -21,12 +37,30 @@ import type { Pokemon, TypeName } from '@/types/pokemon';
  */
 
 /**
- * Pixel-perfect sprite size for every Pokemon tile. Mobile 11vw,
- * desktop `clamp(40px, 7vw, 96px)`; see `usePixelPerfectSprite` for
- * the snap-to-integer-multiple rationale.
+ * Layout scale (the `--tile-sprite` CSS var) that every tile internal
+ * (name text, type badges, gen badge, padding) is `calc()`-ed off.
+ * Base is pixel-perfect mobile 11vw / desktop clamp(40px, 7vw, 96px).
+ * On wide viewports (≥375px) it's boosted by WIDE_LAYOUT_BOOST so the
+ * chrome stays proportional next to the doubled sprite IMG.
  */
 export function useTileSpritePx(): number {
-  return usePixelPerfectSprite(11, 40, 7, 96);
+  const oneX = usePixelPerfectSprite(11, 40, 7, 96);
+  const wide = useViewportAtLeast(MOBILE_2X_MIN_PX);
+  return wide ? Math.round(oneX * WIDE_LAYOUT_BOOST) : oneX;
+}
+
+/**
+ * Width/height (CSS px) for the sprite `<img>` element. On viewports
+ * ≥375px the IMG renders at exactly 2× the 96px source (192 device
+ * pixels per side, BASE_DPR-compensated) for a crisp, larger pixel-art
+ * sprite that overflows its grid column horizontally by design.
+ * Narrower phones fall back to the 1× layout size to avoid heavy
+ * overlap with neighbouring tiles.
+ */
+export function useTileImagePx(layoutPx: number): number {
+  const wide = useViewportAtLeast(MOBILE_2X_MIN_PX);
+  if (!wide) return layoutPx;
+  return Math.round((SPRITE_SOURCE_PX * 2) / BASE_DPR);
 }
 
 /** Root-padding ratios, shared across tile hosts. */
@@ -34,15 +68,15 @@ export const TILE_ROOT_PADDING_CLASS =
   'pt-[calc(var(--tile-sprite)*0.045)] pb-[calc(var(--tile-sprite)*0.09)]';
 
 /** Positioning + size for the gen badge overlay (generation indicator).
- *  Mirrors the action-button class on the opposite corner — same top
- *  offset, same size, and a left offset equal to the action button's
- *  right offset — so gen badge and pokeball/X render as visual siblings. */
+ *  Sits flush in the top-left corner (0.05 offset) so it stays clear of
+ *  the now-larger sprite that may render behind it. */
 export const TILE_GEN_BADGE_CLASS =
-  'absolute top-[calc(var(--tile-sprite)*0.05)] left-[calc(var(--tile-sprite)*0.14)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] z-10';
+  'absolute top-[calc(var(--tile-sprite)*0.05)] left-[calc(var(--tile-sprite)*0.05)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] z-10';
 
-/** Positioning + size for action-button overlays (X / pokeball / plus). */
+/** Positioning + size for action-button overlays (X / pokeball / plus).
+ *  Mirrors the gen badge: same top/right padding (0.05), same size. */
 export const TILE_ACTION_BUTTON_CLASS =
-  'absolute top-[calc(var(--tile-sprite)*0.05)] right-[calc(var(--tile-sprite)*0.14)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] z-[15]';
+  'absolute top-[calc(var(--tile-sprite)*0.05)] right-[calc(var(--tile-sprite)*0.05)] w-[calc(var(--tile-sprite)*0.28)] h-[calc(var(--tile-sprite)*0.28)] z-[15]';
 
 interface PokemonTileContentProps {
   pokemon: Pokemon;
@@ -76,6 +110,11 @@ export function PokemonTileContent({
   afterTypes,
   imgLoading = 'lazy',
 }: PokemonTileContentProps) {
+  // On wide viewports the IMG renders at 2× the 96px source, which is
+  // larger than its layout footprint (spritePx) — it overflows the grid
+  // column horizontally, centered. The well is a fixed imagePx square so
+  // the bottom-aligned sprite has a stable box regardless of the column.
+  const imagePx = useTileImagePx(spritePx);
   return (
     <div className={cn('flex flex-col items-center w-full', contentClassName)}>
       {/*
@@ -86,19 +125,30 @@ export function PokemonTileContent({
         (the symptom: type badges load long after sprites on desktop).
         With <img loading="lazy">, only tiles near the viewport request
         their sprite at first paint; off-screen tiles defer until scrolled
-        into view. width/height attrs match spritePx so the layout is
-        stable and matches the prior background-size snap behavior.
+        into view.
       */}
-      <img
-        src={spriteUrl ?? pokemon.sprite}
-        alt={pokemon.name}
-        width={spritePx}
-        height={spritePx}
-        loading={imgLoading}
-        decoding="async"
-        draggable={false}
-        style={{ imageRendering: 'pixelated' }}
-      />
+      <div
+        style={{
+          width: `${imagePx}px`,
+          height: `${imagePx}px`,
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+        }}
+      >
+        <img
+          src={spriteUrl ?? pokemon.sprite}
+          alt={pokemon.name}
+          width={imagePx}
+          height={imagePx}
+          loading={imgLoading}
+          decoding="async"
+          draggable={false}
+          // Tailwind's reset constrains img to `max-width: 100%`; override
+          // so the 2× sprite can overflow its narrower flex parent.
+          style={{ imageRendering: 'pixelated', maxWidth: 'none' }}
+        />
+      </div>
       <span className="text-[calc(var(--tile-sprite)*0.18)] font-medium capitalize truncate text-center leading-tight w-full px-[calc(var(--tile-sprite)*0.045)]">
         {displayName(pokemon.name)}
       </span>

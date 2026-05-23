@@ -99,3 +99,20 @@ export function usePixelPerfectSprite(
     () => desktopMax,
   );
 }
+
+/**
+ * Returns true when the (unzoomed) viewport width is at least `minPx`.
+ * Shares the same viewport-change subscription as usePixelPerfectSprite.
+ * Used to gate larger (2×) sprite rendering on viewports wide enough to
+ * absorb the extra sprite width without heavy inter-tile overlap.
+ */
+export function useViewportAtLeast(minPx: number): boolean {
+  return useSyncExternalStore(
+    subscribeFn,
+    () => {
+      void vpVersion;
+      return (typeof window === 'undefined' ? 1024 : getUnzoomedViewportWidth()) >= minPx;
+    },
+    () => true,
+  );
+}
