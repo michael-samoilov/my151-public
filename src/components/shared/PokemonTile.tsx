@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { cn, displayName } from '@/lib/utils';
 import { usePixelPerfectSprite, useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { BASE_DPR } from '@/lib/viewport';
+import { useDebugSpriteScale } from '@/lib/debugSpriteScale';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
@@ -46,7 +47,11 @@ const WIDE_LAYOUT_BOOST = 1.4;
 export function useTileSpritePx(): number {
   const oneX = usePixelPerfectSprite(11, 40, 7, 96);
   const wide = useViewportAtLeast(MOBILE_2X_MIN_PX);
-  return wide ? Math.round(oneX * WIDE_LAYOUT_BOOST) : oneX;
+  // DEBUG: chromeBoost is live-tunable via the slider; defaults to
+  // WIDE_LAYOUT_BOOST. Remove the store read before merging.
+  const { chromeBoost } = useDebugSpriteScale();
+  void WIDE_LAYOUT_BOOST;
+  return wide ? Math.round(oneX * chromeBoost) : oneX;
 }
 
 /**
@@ -59,8 +64,11 @@ export function useTileSpritePx(): number {
  */
 export function useTileImagePx(layoutPx: number): number {
   const wide = useViewportAtLeast(MOBILE_2X_MIN_PX);
+  // DEBUG: imgScale is live-tunable via the slider; defaults to 2.0.
+  // Remove the store read before merging.
+  const { imgScale } = useDebugSpriteScale();
   if (!wide) return layoutPx;
-  return Math.round((SPRITE_SOURCE_PX * 2) / BASE_DPR);
+  return Math.round((SPRITE_SOURCE_PX * imgScale) / BASE_DPR);
 }
 
 /** Root-padding ratios, shared across tile hosts. */
