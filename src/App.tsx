@@ -29,7 +29,6 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { useCompletionBeacon } from '@/hooks/useCompletionBeacon';
 import { cn } from '@/lib/utils';
-import { SpriteScaleDebugSlider } from '@/components/debug/SpriteScaleDebugSlider';
 
 declare const __BUILD_TIMESTAMP__: string;
 // eslint-disable-next-line no-console
@@ -226,9 +225,6 @@ function App() {
 
       {/* Analytics drill-down sheet — only on analytics view */}
       {currentView === 'analytics' && drillDownSegment && <DrillDownSheet />}
-
-      {/* DEBUG: live sprite-size tuner — remove before merging to prod */}
-      <SpriteScaleDebugSlider />
     </TooltipProvider>
   );
 }

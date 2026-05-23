@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { cn, displayName } from '@/lib/utils';
 import { usePixelPerfectSprite, useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { BASE_DPR } from '@/lib/viewport';
-import { useDebugSpriteScale } from '@/lib/debugSpriteScale';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
@@ -14,6 +13,11 @@ const MOBILE_2X_MIN_PX = 375;
 
 /** PokeAPI pixel-art sprite source resolution. */
 const SPRITE_SOURCE_PX = 96;
+
+/** Multiplier on the source resolution for the sprite IMG on wide
+ *  viewports. 1.95× (just under a clean 2×) trades a touch of pixel-art
+ *  crispness for noticeably less overlap with neighbouring tiles. */
+const SPRITE_IMG_SCALE = 1.95;
 
 /** Multiplier applied to the 1× layout scale (--tile-sprite) on wide
  *  viewports. The IMG itself doubles (2× source); the chrome grows by
@@ -47,28 +51,20 @@ const WIDE_LAYOUT_BOOST = 1.4;
 export function useTileSpritePx(): number {
   const oneX = usePixelPerfectSprite(11, 40, 7, 96);
   const wide = useViewportAtLeast(MOBILE_2X_MIN_PX);
-  // DEBUG: chromeBoost is live-tunable via the slider; defaults to
-  // WIDE_LAYOUT_BOOST. Remove the store read before merging.
-  const { chromeBoost } = useDebugSpriteScale();
-  void WIDE_LAYOUT_BOOST;
-  return wide ? Math.round(oneX * chromeBoost) : oneX;
+  return wide ? Math.round(oneX * WIDE_LAYOUT_BOOST) : oneX;
 }
 
 /**
  * Width/height (CSS px) for the sprite `<img>` element. On viewports
- * ≥375px the IMG renders at exactly 2× the 96px source (192 device
- * pixels per side, BASE_DPR-compensated) for a crisp, larger pixel-art
- * sprite that overflows its grid column horizontally by design.
- * Narrower phones fall back to the 1× layout size to avoid heavy
- * overlap with neighbouring tiles.
+ * ≥375px the IMG renders at SPRITE_IMG_SCALE × the 96px source
+ * (BASE_DPR-compensated) for a larger pixel-art sprite that overflows
+ * its grid column horizontally by design. Narrower phones fall back to
+ * the 1× layout size to avoid heavy overlap with neighbouring tiles.
  */
 export function useTileImagePx(layoutPx: number): number {
   const wide = useViewportAtLeast(MOBILE_2X_MIN_PX);
-  // DEBUG: imgScale is live-tunable via the slider; defaults to 2.0.
-  // Remove the store read before merging.
-  const { imgScale } = useDebugSpriteScale();
   if (!wide) return layoutPx;
-  return Math.round((SPRITE_SOURCE_PX * imgScale) / BASE_DPR);
+  return Math.round((SPRITE_SOURCE_PX * SPRITE_IMG_SCALE) / BASE_DPR);
 }
 
 /** Root-padding ratios, shared across tile hosts. */
