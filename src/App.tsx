@@ -34,7 +34,12 @@ declare const __BUILD_TIMESTAMP__: string;
 // eslint-disable-next-line no-console
 console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
 
-const SHEET_HEIGHT_VH = 85;
+// Top gap (px) the mobile selection sheet leaves below the viewport top
+// when fully raised — matches the analytics drilldown sheet
+// (DrillDownSheet HEADER_HEIGHT) so its close handle is always reachable.
+// Uses dvh (not vh) so the dynamic mobile URL bar can't push the top
+// off-screen.
+const SHEET_TOP_GAP_PX = 49;
 const DISMISS_THRESHOLD = 120; // px drag distance to dismiss
 
 function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: () => void }) {
@@ -88,7 +93,7 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
         ref={sheetRef}
         className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl flex flex-col"
         style={{
-          height: `${SHEET_HEIGHT_VH}vh`,
+          height: `calc(100dvh - ${SHEET_TOP_GAP_PX}px)`,
           transform: `translateY(${dragY}px)`,
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
