@@ -44,6 +44,12 @@ const DND_MEASURING = {
 
 const COLS = 10;
 
+/** Parse a `view::<id>` draggable id into its numeric pokemon id, or null. */
+function parseDragId(id: string): number | null {
+  if (!id.startsWith('view::')) return null;
+  return Number(id.slice(6));
+}
+
 // Page-specific drag geometry. View page tiles are ~40px (10-col grid),
 // roughly half the build page's ~60-80px tiles, so the overlay and
 // hit-test lift are halved to match — otherwise the held line sits too
@@ -221,6 +227,30 @@ function DraggableViewTile({
   );
 }
 
+/** Empty grid slot: position number + faint pokeball outline. */
+function EmptyPlaceholder({ tileSize, num }: { tileSize: number; num: number }) {
+  return (
+    <div className="relative" style={{ width: tileSize, height: tileSize }}>
+      <span
+        className="absolute top-[3px] left-[2px] z-20 leading-none font-semibold text-foreground/30 select-none"
+        style={{ fontSize: tileSize * 0.12 }}
+      >
+        {num}.
+      </span>
+      <svg
+        viewBox="0 0 24 24"
+        className="absolute inset-[10%] w-[80%] h-[80%] text-muted-foreground/15 -rotate-[30deg]"
+      >
+        <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
+        <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+      </svg>
+    </div>
+  );
+}
+
 function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSize: number }) {
   return (
     <div className="relative overflow-visible" style={{ width: tileSize, height: tileSize }}>
@@ -271,10 +301,14 @@ export function ViewPage() {
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
   const sensors = useSensors(mouseSensor, touchSensor);
 
-  const parseDragId = (id: string): number | null => {
-    if (!id.startsWith('view::')) return null;
-    return Number(id.slice(6));
-  };
+  const resetDragState = useCallback(() => {
+    setDragLineIds(null);
+    setOverId(null);
+    setDropSide('left');
+    dragInputIsTouch.current = false;
+    dragPointerRef.current = null;
+    setCursorPos(null);
+  }, []);
 
   // Current visible order (flat list of IDs) — our source of truth for drag ops.
   const visibleIds = useMemo(() => sorted.map((p) => p.id), [sorted]);
@@ -379,19 +413,11 @@ export function ViewPage() {
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { over } = event;
-    const reset = () => {
-      setDragLineIds(null);
-      setOverId(null);
-      setDropSide('left');
-      dragInputIsTouch.current = false;
-      dragPointerRef.current = null;
-      setCursorPos(null);
-    };
 
-    if (!over || !dragLineIds) { reset(); return; }
+    if (!over || !dragLineIds) { resetDragState(); return; }
 
     const targetPid = parseDragId(over.id as string);
-    if (targetPid === null || dragLineIds.includes(targetPid)) { reset(); return; }
+    if (targetPid === null || dragLineIds.includes(targetPid)) { resetDragState(); return; }
 
     // Build the base array we're mutating: the current visible order.
     const base = [...visibleIds];
@@ -421,17 +447,10 @@ export function ViewPage() {
     setCustomOrder(withoutDragged);
     if (sortOption !== 'custom') setSortOption('custom');
 
-    reset();
-  }, [dragLineIds, visibleIds, bundleVisible, dropSide, sortOption, setCustomOrder, setSortOption]);
+    resetDragState();
+  }, [dragLineIds, visibleIds, bundleVisible, dropSide, sortOption, setCustomOrder, setSortOption, resetDragState]);
 
-  const handleDragCancel = useCallback(() => {
-    setDragLineIds(null);
-    setOverId(null);
-    setDropSide('left');
-    dragInputIsTouch.current = false;
-    dragPointerRef.current = null;
-    setCursorPos(null);
-  }, []);
+  const handleDragCancel = useCallback(resetDragState, [resetDragState]);
 
   const insertIndicator = useMemo<{ pokemonId: number | null; side: 'left' | 'right' }>(() => {
     if (!overId || !dragLineIds) return { pokemonId: null, side: 'left' };
@@ -510,27 +529,6 @@ export function ViewPage() {
             const gridEmpties = Math.max(0, gridSlots - gridPokemon.length);
             const lastRowEmpties = Math.max(0, lastRowCount - lastRowPokemon.length);
 
-            const EmptyPlaceholder = ({ k, num }: { k: string; num: number }) => (
-              <div key={k} className="relative" style={{ width: tileSize, height: tileSize }}>
-                <span
-                  className="absolute top-[3px] left-[2px] z-20 leading-none font-semibold text-foreground/30 select-none"
-                  style={{ fontSize: tileSize * 0.12 }}
-                >
-                  {num}.
-                </span>
-                <svg
-                  viewBox="0 0 24 24"
-                  className="absolute inset-[10%] w-[80%] h-[80%] text-muted-foreground/15 -rotate-[30deg]"
-                >
-                  <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                  <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" strokeWidth="1.5" />
-                  <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.5" />
-                  <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                  <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-                </svg>
-              </div>
-            );
-
             const renderTile = (pokemon: Pokemon, positionNum: number) => (
               <DraggableViewTile
                 key={pokemon.id}
@@ -566,14 +564,14 @@ export function ViewPage() {
                     {gridPokemon.map((p, i) => renderTile(p, i + 1))}
                     {gridEmpties > 0 &&
                       Array.from({ length: gridEmpties }, (_, i) => (
-                        <EmptyPlaceholder key={`empty-${i}`} k={`empty-${i}`} num={gridPokemon.length + i + 1} />
+                        <EmptyPlaceholder key={`empty-${i}`} tileSize={tileSize} num={gridPokemon.length + i + 1} />
                       ))}
                   </div>
                   <div className="flex justify-center" style={{ height: tileSize }}>
                     {lastRowPokemon.map((p, i) => renderTile(p, gridSlots + i + 1))}
                     {lastRowEmpties > 0 &&
                       Array.from({ length: lastRowEmpties }, (_, i) => (
-                        <EmptyPlaceholder key={`empty-last-${i}`} k={`empty-last-${i}`} num={gridSlots + lastRowPokemon.length + i + 1} />
+                        <EmptyPlaceholder key={`empty-last-${i}`} tileSize={tileSize} num={gridSlots + lastRowPokemon.length + i + 1} />
                       ))}
                   </div>
                   <PageFooter />
@@ -653,6 +651,14 @@ function ViewSettingsSheet({ onClose }: { onClose: () => void }) {
     if (!isDragging.current) onClose();
   }, [onClose]);
 
+  // Keyboard dismissal for the dialog (the backdrop tap and the grab-handle
+  // button cover pointer input).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       <div
@@ -668,8 +674,10 @@ function ViewSettingsSheet({ onClose }: { onClose: () => void }) {
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
       >
-        <div
-          className="flex flex-col items-center justify-center py-3 cursor-grab active:cursor-grabbing touch-none"
+        <button
+          type="button"
+          aria-label="Close settings"
+          className="w-full flex flex-col items-center justify-center py-3 cursor-grab active:cursor-grabbing touch-none"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -677,7 +685,7 @@ function ViewSettingsSheet({ onClose }: { onClose: () => void }) {
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
           <span className="text-sm font-semibold text-foreground">View Settings</span>
-        </div>
+        </button>
         <div className="border-b" />
         <div className="flex-1 min-h-0">
           <ViewSettingsPane onClose={onClose} mobileSheet />
