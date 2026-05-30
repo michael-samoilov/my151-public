@@ -1,29 +1,33 @@
 import type { ReactNode } from 'react';
 import { cn, displayName } from '@/lib/utils';
 import { useFluidSpritePx, useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
-import { BASE_DPR } from '@/lib/viewport';
-import { usePokedexStore } from '@/store/usePokedexStore';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
-/** Mobile (<1024px) base sprite scale, in vw. The chrome is this × the
+/** Base sprite scale, in vw of the tile's *container*. The chrome is this ×
  *  WIDE_LAYOUT_BOOST and the IMG is this × SPRITE_IMG_SCALE, so both grow
- *  smoothly with viewport width. Calibrated so a ~390px phone lands at the
- *  tuned 1× base of ~32px (→ 45px chrome / 62px sprite). */
+ *  smoothly with the container width. Calibrated so a 6-column grid renders
+ *  the sprite at ~96% of its column width (e.g. a ~390px phone → ~45px
+ *  chrome / ~62px sprite). On desktop every tile host is `md:w-1/2`, so the
+ *  container is half the window (see DESKTOP_PANE_DIVISOR). */
 const MOBILE_SPRITE_VW = 8.2;
 
-/** PokeAPI pixel-art sprite source resolution. */
-const SPRITE_SOURCE_PX = 96;
+/** On desktop (≥1024px) every tile host — the build page, the selection
+ *  pane, and the analytics drill-down — is `md:w-1/2`. Sizing off half the
+ *  window therefore matches each host's real width, so the same Pokemon
+ *  renders identically across all of them, and a side pane of width W looks
+ *  exactly like a mobile bottom sheet of width W. */
+const DESKTOP_PANE_DIVISOR = 2;
 
-/** Multiplier on the source resolution for the sprite IMG on wide
- *  viewports. 1.95× (just under a clean 2×) trades a touch of pixel-art
- *  crispness for noticeably less overlap with neighbouring tiles. */
+/** Multiplier on the 1× base for the sprite IMG. 1.95× (just under a clean
+ *  2×) makes the sprite nearly fill its grid column for a bold, readable
+ *  tile while leaving a hair of breathing room before neighbours. */
 const SPRITE_IMG_SCALE = 1.95;
 
-/** Multiplier applied to the 1× layout scale (--tile-sprite) on wide
- *  viewports. The IMG itself doubles (2× source); the chrome grows by
- *  this smaller factor so labels stay proportional next to the bigger
- *  sprite without dominating. */
+/** Multiplier applied to the 1× base to get the layout scale (--tile-sprite).
+ *  The IMG grows by SPRITE_IMG_SCALE; the chrome (text, badges, padding)
+ *  grows by this smaller factor so labels stay proportional next to the
+ *  bigger sprite without dominating. */
 const WIDE_LAYOUT_BOOST = 1.4;
 
 /**
@@ -43,61 +47,40 @@ const WIDE_LAYOUT_BOOST = 1.4;
  */
 
 /**
- * True when the app is in its desktop split-pane layout — the build view
- * with a section selected (browser panel on the right), or analytics
- * with a drilldown panel open. In that state every visible pane is
- * `md:w-1/2`, so tile sizing must use half the window width to avoid
- * sprites overflowing their (now narrower) columns and overlapping.
- * Mobile sheets cover the whole viewport, so this returns false there.
+ * Effective viewport divisor for the current layout. On desktop every tile
+ * host is `md:w-1/2`, so we size off half the window; on mobile the host
+ * fills the viewport, so we size off the whole width. Sizing off the host's
+ * real width is what makes the build page, selection pane, and analytics
+ * drill-down all render the same Pokemon at the same size, and makes a side
+ * pane of width W look identical to a mobile bottom sheet of width W.
  */
-function useIsHalfPaneDesktop(): boolean {
+function useTileDivisor(): number {
   const isDesktop = useViewportAtLeast(1024);
-  const activeSection = usePokedexStore((s) => s.activeSection);
-  const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
-  return isDesktop && (activeSection !== null || drillDownSegment !== null);
+  return isDesktop ? DESKTOP_PANE_DIVISOR : 1;
 }
 
 /**
  * Layout scale (the `--tile-sprite` CSS var) that every tile internal
- * (name text, type badges, gen badge, padding) is `calc()`-ed off.
- * Base (1×) is a fluid mobile MOBILE_SPRITE_VW / desktop clamp(40px, 7vw,
- * 96px) that interpolates continuously with width. It's boosted by
- * WIDE_LAYOUT_BOOST so the chrome stays proportional next to the larger
- * sprite IMG.
- *
- * In the desktop split-pane layout we size off half the window (each
- * pane is `md:w-1/2`) and skip the chrome boost — otherwise the bigger
- * sprite + boosted labels overflow the narrower 6-column grid and
- * overlap their neighbours.
+ * (name text, type badges, gen badge, padding) is `calc()`-ed off. It's the
+ * fluid 1× base × WIDE_LAYOUT_BOOST, so the chrome scales smoothly with the
+ * container width and stays proportional next to the larger sprite IMG.
  */
 export function useTileSpritePx(): number {
-  const halfPane = useIsHalfPaneDesktop();
-  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, halfPane ? 2 : 1);
-  if (halfPane) return oneX;
+  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, useTileDivisor());
   return Math.round(oneX * WIDE_LAYOUT_BOOST);
 }
 
 /**
- * Width/height (CSS px) for the sprite `<img>` element.
- *
- * On the mobile layout the IMG is the fluid 1× scale × SPRITE_IMG_SCALE,
- * so it grows smoothly with width and renders the same CSS size on every
- * device — a desktop window shrunk below the breakpoint matches the phone.
- * The sprite overflows its grid column horizontally by design.
- *
- * In the desktop split-pane layout the columns are halved, so the overflow
- * scaling would make sprites overlap; render the IMG at its layout
- * footprint instead. The full-desktop (≥1024) path renders at
- * SPRITE_IMG_SCALE × the 96px source, BASE_DPR-compensated for crisp
- * rendering at the device grid.
+ * Width/height (CSS px) for the sprite `<img>` element: the fluid 1× base ×
+ * SPRITE_IMG_SCALE. It's larger than the chrome footprint (--tile-sprite)
+ * so the sprite nearly fills — and slightly overflows — its grid column by
+ * design. Because both this and the chrome derive from the same
+ * container-relative base, the sprite-to-tile proportions are identical at
+ * every width and across every tile host.
  */
-export function useTileImagePx(layoutPx: number): number {
-  const halfPane = useIsHalfPaneDesktop();
-  const isDesktop = useViewportAtLeast(1024);
-  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, 1);
-  if (halfPane) return layoutPx;
-  if (!isDesktop) return Math.round(oneX * SPRITE_IMG_SCALE);
-  return Math.round((SPRITE_SOURCE_PX * SPRITE_IMG_SCALE) / BASE_DPR);
+export function useTileImagePx(): number {
+  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, useTileDivisor());
+  return Math.round(oneX * SPRITE_IMG_SCALE);
 }
 
 /** Root-padding ratios, shared across tile hosts. */
@@ -117,7 +100,6 @@ export const TILE_ACTION_BUTTON_CLASS =
 
 interface PokemonTileContentProps {
   pokemon: Pokemon;
-  spritePx: number;
   /** Override the sprite URL (shiny variants, regional art overrides). */
   spriteUrl?: string;
   /** Extra classes for the flex column wrapping sprite + name + types.
@@ -141,17 +123,16 @@ interface PokemonTileContentProps {
  */
 export function PokemonTileContent({
   pokemon,
-  spritePx,
   spriteUrl,
   contentClassName,
   afterTypes,
   imgLoading = 'lazy',
 }: PokemonTileContentProps) {
-  // On wide viewports the IMG renders at 2× the 96px source, which is
-  // larger than its layout footprint (spritePx) — it overflows the grid
-  // column horizontally, centered. The well is a fixed imagePx square so
-  // the bottom-aligned sprite has a stable box regardless of the column.
-  const imagePx = useTileImagePx(spritePx);
+  // The IMG is larger than its layout footprint (--tile-sprite), so it
+  // nearly fills and slightly overflows the grid column, centered. The well
+  // is a fixed imagePx square so the bottom-aligned sprite has a stable box
+  // regardless of the column width.
+  const imagePx = useTileImagePx();
   return (
     <div className={cn('flex flex-col items-center w-full', contentClassName)}>
       {/*

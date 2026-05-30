@@ -332,7 +332,6 @@ export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assigned
                      or explicitly muted (e.g. filtered starters/legendaries shown for context). */}
                 <PokemonTileContent
                   pokemon={pokemon}
-                  spritePx={spritePx}
                   imgLoading={variant === 'analytics' ? 'eager' : 'lazy'}
                   spriteUrl={spriteOverrides?.[pokemon.id]
                     ?? (shinyIds?.has(pokemon.id)

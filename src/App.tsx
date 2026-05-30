@@ -216,7 +216,7 @@ function App() {
             )}
           </div>
           {drillDownSegment && (
-            <div className="hidden md:flex w-[min(50vw,546px)] flex-shrink-0 border-l">
+            <div className="hidden md:flex w-1/2 flex-shrink-0 border-l">
               <DrillDownPanel />
             </div>
           )}

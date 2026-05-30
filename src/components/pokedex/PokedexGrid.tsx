@@ -109,7 +109,7 @@ function PokemonTileStatic({ id }: { id: number }) {
       style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
     >
       <GenBadge gen={pokemon.generation} className={TILE_GEN_BADGE_CLASS} />
-      <PokemonTileContent pokemon={pokemon} spritePx={spritePx} />
+      <PokemonTileContent pokemon={pokemon} />
     </div>
   );
 }
@@ -193,7 +193,7 @@ function DraggableTile({
         >
           <RedXIcon className="w-full h-full" />
         </button>
-        <PokemonTileContent pokemon={pokemon} spritePx={spritePx} />
+        <PokemonTileContent pokemon={pokemon} />
       </div>
     </div>
   );
