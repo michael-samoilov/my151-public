@@ -942,10 +942,3 @@ export const ARCHETYPES: Archetype[] = [
   },
 ];
 
-export function getArchetypeById(id: string): Archetype | undefined {
-  return ARCHETYPES.find(a => a.id === id);
-}
-
-export function getArchetypesForPokémon(pokemonId: number): Archetype[] {
-  return ARCHETYPES.filter(a => a.pokemonIds.includes(pokemonId));
-}

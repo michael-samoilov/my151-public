@@ -208,7 +208,7 @@ export function getEvolutionLine(pokemonId: number, placedIds?: Set<number>): Po
  * For Scyther, returns both [Scyther, Scizor] and [Scyther, Kleavor].
  * For non-branching Pokemon, returns a single-element array with one line.
  */
-export function getAllEvolutionLines(pokemonId: number): Pokemon[][] {
+function getAllEvolutionLines(pokemonId: number): Pokemon[][] {
   const pokemon = pokemonById.get(pokemonId);
   if (!pokemon) return [];
 
@@ -253,7 +253,7 @@ interface UseFilteredPokemonOptions {
   evoLineSize?: number[] | null; // [1], [2], [3] where 3 means 3+
 }
 
-export function useFilteredPokemon({
+function useFilteredPokemon({
   search = '',
   category = null,
   archetype = null,

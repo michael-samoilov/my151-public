@@ -21,23 +21,3 @@ export const TYPE_COLORS: Record<TypeName, string> = {
   fairy: '#EF71EF',
 };
 
-export const TYPE_TEXT_COLORS: Record<TypeName, string> = {
-  normal: '#fff',
-  fire: '#fff',
-  water: '#fff',
-  electric: '#333',
-  grass: '#fff',
-  ice: '#333',
-  fighting: '#fff',
-  poison: '#fff',
-  ground: '#fff',
-  flying: '#333',
-  psychic: '#fff',
-  bug: '#fff',
-  rock: '#333',
-  ghost: '#fff',
-  dragon: '#fff',
-  dark: '#fff',
-  steel: '#fff',
-  fairy: '#fff',
-};

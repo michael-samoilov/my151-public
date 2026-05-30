@@ -1,5 +1,4 @@
-import { useMemo } from 'react';
-import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
+import { type DrillDownSegment } from '@/store/usePokedexStore';
 import { getPokemonById, getEvolutionLine, getAllPokemon } from '@/hooks/usePokemonData';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
@@ -45,16 +44,6 @@ export interface DrillDownData {
   matchupInfo?: Map<number, { offense: number; defense: number; bestDefenseType: TypeName }>;
   /** The type being matched (typeMatchup drilldowns only) */
   matchupType?: TypeName;
-}
-
-export function useDrillDownData(): DrillDownData | null {
-  const segment = usePokedexStore((s) => s.drillDownSegment);
-  const storeSections = usePokedexStore((s) => s.sections);
-  const excludeSpecial = usePokedexStore((s) => s.drillDownExcludeSpecial);
-  const dexId = usePokedexStore((s) => s.drillDownDexId);
-  const newOnly = usePokedexStore((s) => s.drillDownNewOnly);
-
-  return useMemo(() => computeDrillDownData(segment, storeSections, excludeSpecial, dexId, newOnly), [segment, storeSections, excludeSpecial, dexId, newOnly]);
 }
 
 /** Pure computation — also used by carousel to pre-render adjacent panels */

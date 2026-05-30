@@ -25,7 +25,7 @@
  * relative to it.
  */
 
-export const BASE_DPR =
+const BASE_DPR =
   typeof window !== 'undefined' ? (window.devicePixelRatio || 1) : 1;
 
 export function getUnzoomedViewportWidth(): number {

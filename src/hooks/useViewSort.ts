@@ -362,7 +362,7 @@ function collectAllIds(sections: Record<string, number[]>): number[] {
  * This keeps evolution lines bundled and matches the user's intent that new
  * pokemon land roughly where they belong without destroying manual placement.
  */
-export function reconcileCustomOrder(
+function reconcileCustomOrder(
   customOrder: number[],
   currentIds: number[],
 ): number[] {

@@ -226,7 +226,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-export function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, matchupType, spritePx }: EvoLineCardProps) {
+function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, matchupType, spritePx }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
   const markedForRemoval = removalStagedIds

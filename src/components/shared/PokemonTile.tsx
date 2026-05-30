@@ -78,7 +78,7 @@ export function useTileSpritePx(): number {
  * container-relative base, the sprite-to-tile proportions are identical at
  * every width and across every tile host.
  */
-export function useTileImagePx(): number {
+function useTileImagePx(): number {
   const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, useTileDivisor());
   return Math.round(oneX * SPRITE_IMG_SCALE);
 }

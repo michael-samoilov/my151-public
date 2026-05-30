@@ -8,7 +8,7 @@ import type { TypeName } from '@/types/pokemon';
 
 type TypeChart = Record<TypeName, Record<TypeName, number>>;
 
-export const TYPE_EFFECTIVENESS: TypeChart = {
+const TYPE_EFFECTIVENESS: TypeChart = {
   normal: {
     normal: 1, fire: 1, water: 1, electric: 1, grass: 1, ice: 1,
     fighting: 1, poison: 1, ground: 1, flying: 1, psychic: 1, bug: 1,
