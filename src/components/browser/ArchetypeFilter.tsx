@@ -9,7 +9,7 @@ interface ArchetypeFilterProps {
 export function ArchetypeFilter({ active, onSelect }: ArchetypeFilterProps) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      <button
+      <button type="button"
         onClick={() => onSelect(null)}
         className={cn(
           'px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer',
@@ -21,7 +21,7 @@ export function ArchetypeFilter({ active, onSelect }: ArchetypeFilterProps) {
         All
       </button>
       {ARCHETYPES.map((archetype) => (
-        <button
+        <button type="button"
           key={archetype.id}
           onClick={() => onSelect(active === archetype.id ? null : archetype.id)}
           className={cn(

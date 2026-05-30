@@ -334,7 +334,7 @@ export function PokemonBrowser() {
           {typeFilter && typeFilter.length >= 2 && (
             <div className="flex items-center gap-2 pb-1">
               <span className="text-[0.6875rem] text-muted-foreground">Mode:</span>
-              <button
+              <button type="button"
                 onClick={() => setTypeFilterMode('any')}
                 className={cn('px-2 py-0.5 rounded text-[0.6875rem] font-medium cursor-pointer transition-colors',
                   typeFilterMode === 'any' ? 'bg-foreground text-background' : 'bg-secondary text-secondary-foreground'
@@ -342,7 +342,7 @@ export function PokemonBrowser() {
               >
                 Any (OR)
               </button>
-              <button
+              <button type="button"
                 onClick={() => setTypeFilterMode('all')}
                 className={cn('px-2 py-0.5 rounded text-[0.6875rem] font-medium cursor-pointer transition-colors',
                   typeFilterMode === 'all' ? 'bg-foreground text-background' : 'bg-secondary text-secondary-foreground'
@@ -359,7 +359,7 @@ export function PokemonBrowser() {
             {TYPE_NAMES.map((type) => {
               const isSelected = typeFilter?.includes(type) ?? false;
               return (
-                <button
+                <button type="button"
                   key={type}
                   onClick={() => toggleType(type)}
                   className="flex items-center justify-center py-0.5 rounded-md cursor-pointer transition-all"
@@ -415,7 +415,7 @@ export function PokemonBrowser() {
       {openSheet === 'classification' && (
         <div className="flex flex-wrap gap-1.5">
           {CATEGORIES.map((cat) => (
-            <button
+            <button type="button"
               key={cat.id}
               onClick={() => { setCategoryFilter(activeCategory === cat.id ? null : cat.id); setOpenSheet(null); }}
               className={cn(
@@ -435,7 +435,7 @@ export function PokemonBrowser() {
       {openSheet === 'places' && (
         <div className="flex flex-wrap gap-1.5">
           {PLACES_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!).map((archetype) => (
-            <button
+            <button type="button"
               key={archetype.id}
               onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
               className={cn(
@@ -455,7 +455,7 @@ export function PokemonBrowser() {
       {openSheet === 'archetypes' && (
         <div className="flex flex-wrap gap-1.5">
           {ARCHETYPES.filter(a => !PLACES_IDS.has(a.id) && !GAME_MECHANICS_IDS.has(a.id)).map((archetype) => (
-            <button
+            <button type="button"
               key={archetype.id}
               onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
               className={cn(
@@ -475,7 +475,7 @@ export function PokemonBrowser() {
       {openSheet === 'gameMechanics' && (
         <div className="flex flex-wrap gap-1.5">
           {GAME_MECHANICS_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!).map((archetype) => (
-            <button
+            <button type="button"
               key={archetype.id}
               onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
               className={cn(
@@ -503,7 +503,7 @@ export function PokemonBrowser() {
             <span className="text-foreground">Adding to: </span>
             <span className="text-primary">{sectionName}</span>
           </h2>
-          <button
+          <button type="button"
             onClick={handleDesktopClose}
             className="text-muted-foreground hover:text-foreground cursor-pointer p-1"
           >
@@ -524,7 +524,7 @@ export function PokemonBrowser() {
               className="pl-9 pr-9"
             />
             {searchQuery && (
-              <button
+              <button type="button"
                 onClick={() => setSearchQuery('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
               >
@@ -545,7 +545,7 @@ export function PokemonBrowser() {
           {typeFilter && typeFilter.length > 0 ? (
             <>
               {typeFilter.length > 1 && (
-                <button
+                <button type="button"
                   onClick={() => setTypeFilterMode(typeFilterMode === 'any' ? 'all' : 'any')}
                   className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[0.625rem] font-bold bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer transition-colors"
                 >
@@ -602,7 +602,7 @@ export function PokemonBrowser() {
           )}
 
           {hasActivePropertyFilters && (
-            <button
+            <button type="button"
               onClick={clearPropertyFilters}
               className="sticky right-0 shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border -my-1"
             >
@@ -662,7 +662,7 @@ export function PokemonBrowser() {
           )}
 
           {hasActiveBrowseFilters && (
-            <button
+            <button type="button"
               onClick={clearBrowseFilters}
               className="sticky right-0 shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border -my-1"
             >
@@ -678,7 +678,7 @@ export function PokemonBrowser() {
         <div className="border-b px-3 py-2 bg-muted/30 max-h-[40vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-semibold">{SHEET_TITLES[openSheet]}</span>
-            <button onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
+            <button type="button" onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
               <X size={16} />
             </button>
           </div>
@@ -820,7 +820,7 @@ export function PokemonBrowser() {
         if (newCount === 0 && removeCount === 0) return null;
         return (
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
-            <button
+            <button type="button"
               onClick={handleSubmitStaged}
               className="bg-primary text-primary-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors leading-snug text-center"
             >
@@ -888,7 +888,7 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
             {openSheet === 'archetypes' && 'Archetypes'}
             {openSheet === 'gameMechanics' && 'Game Mechanics'}
           </span>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer">
+          <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer">
             <X size={16} />
           </button>
         </div>
@@ -909,7 +909,7 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
 /** Entry-point chip — opens a filter sheet */
 function EntryChip({ label, onClick, active }: { label: string; onClick: () => void; active: boolean }) {
   return (
-    <button
+    <button type="button"
       onClick={onClick}
       className={cn(
         'shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors',
@@ -938,8 +938,8 @@ function FilterChip({
       )}
       style={style}
     >
-      <button onClick={onClick} className="cursor-pointer">{label}</button>
-      <button onClick={(e) => { e.stopPropagation(); onDismiss(); }} className="hover:opacity-70 cursor-pointer">
+      <button type="button" onClick={onClick} className="cursor-pointer">{label}</button>
+      <button type="button" onClick={(e) => { e.stopPropagation(); onDismiss(); }} className="hover:opacity-70 cursor-pointer">
         <X size={10} />
       </button>
     </span>

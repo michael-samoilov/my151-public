@@ -147,7 +147,7 @@ export function ViewSettingsPane({
         <div className="shrink-0 border-b">
           <div className="flex items-center justify-between px-3 py-2 h-11">
             <span className="text-sm font-semibold text-foreground">View Settings</span>
-            <button
+            <button type="button"
               onClick={onClose}
               className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
               aria-label="Close settings"
@@ -242,7 +242,7 @@ export function ViewSettingsPane({
               }
 
               return (
-                <button
+                <button type="button"
                   key={opt.value}
                   onClick={handleSelect}
                   className={commonClass}
@@ -259,7 +259,7 @@ export function ViewSettingsPane({
           <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
             Grouping
           </h3>
-          <button
+          <button type="button"
             onClick={handleToggleGrouping}
             className={`w-full text-left rounded-md px-3 py-2 transition-colors cursor-pointer ${effGrouping ? 'bg-primary/10' : 'hover:bg-muted'}`}
           >
@@ -288,7 +288,7 @@ export function ViewSettingsPane({
       {/* Floating "Update & View" button — mobile-sheet only */}
       {hasPendingChanges && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
-          <button
+          <button type="button"
             onClick={handleApply}
             className="bg-primary text-primary-foreground px-5 py-2.5 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors"
           >

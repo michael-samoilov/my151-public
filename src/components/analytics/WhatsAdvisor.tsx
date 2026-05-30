@@ -196,7 +196,7 @@ export function WhatsAdvisor() {
 
   return (
     <div>
-      <button
+      <button type="button"
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-2 w-full text-left px-6 pt-3 pb-2"
       >

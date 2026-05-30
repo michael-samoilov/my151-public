@@ -86,7 +86,7 @@ function CardPanel({
           <div className="flex items-center w-full px-3">
             <div className="flex-1 flex items-center min-w-0">
               {prevLabel && (
-                <button
+                <button type="button"
                   className="flex items-center gap-0.5 text-xs text-muted-foreground truncate"
                   onTouchStart={(e) => e.stopPropagation()}
                   onClick={(e) => { e.stopPropagation(); onNavPrev?.(); }}
@@ -106,7 +106,7 @@ function CardPanel({
             </div>
             <div className="flex-1 flex items-center justify-end min-w-0">
               {nextLabel && (
-                <button
+                <button type="button"
                   className="flex items-center gap-0.5 text-xs text-muted-foreground truncate"
                   onTouchStart={(e) => e.stopPropagation()}
                   onClick={(e) => { e.stopPropagation(); onNavNext?.(); }}
@@ -166,7 +166,7 @@ function CardPanel({
       {/* Floating "Remove N Pokemon" confirmation button */}
       {removalCount > 0 && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
-          <button
+          <button type="button"
             onClick={onConfirmRemoval}
             className="bg-destructive text-destructive-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-destructive/90 transition-colors"
           >
@@ -655,7 +655,7 @@ export function DrillDownPanel() {
               {currentData.title}
             </span>
           </div>
-          <button
+          <button type="button"
             onClick={closeDrillDown}
             className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer shrink-0"
           >
@@ -669,7 +669,7 @@ export function DrillDownPanel() {
         {(prevSibling || nextSibling) && (
           <div className="flex items-center justify-between px-3 pb-2">
             {prevSibling ? (
-              <button
+              <button type="button"
                 onClick={() => navigateDrillDown(prevSibling)}
                 className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
               >
@@ -678,7 +678,7 @@ export function DrillDownPanel() {
               </button>
             ) : <div />}
             {nextSibling ? (
-              <button
+              <button type="button"
                 onClick={() => navigateDrillDown(nextSibling)}
                 className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
               >
@@ -729,7 +729,7 @@ export function DrillDownPanel() {
       {/* Floating "Remove N Pokemon" confirmation button */}
       {removalStagedIds.length > 0 && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
-          <button
+          <button type="button"
             onClick={handleConfirmRemoval}
             className="bg-destructive text-destructive-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-destructive/90 transition-colors"
           >

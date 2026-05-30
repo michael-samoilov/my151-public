@@ -181,7 +181,7 @@ function DraggableTile({
         )}
       >
         <GenBadge gen={pokemon.generation} className={TILE_GEN_BADGE_CLASS} />
-        <button
+        <button type="button"
           onClick={() => removeBranch(sectionId, pokemonId)}
           onPointerDown={(e) => e.stopPropagation()}
           className={cn(
@@ -291,7 +291,7 @@ function StarterContent({
       } else {
         for (let i = 0; i < 3; i++) {
           elements.push(
-            <button
+            <button type="button"
               key={`${type}-${i}`}
               onClick={() => onTypeClick(type)}
               className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
@@ -328,7 +328,7 @@ function StarterContent({
         <EndDropZone sectionId="starter" showIndicator={insertIndicator.endSection === 'starter'} />
       )}
       {!dragLineIds && (
-        <button
+        <button type="button"
           onClick={onAddClick}
           className="aspect-square md:aspect-auto rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
         >
@@ -491,7 +491,7 @@ function GroupBox({
               showIndicator={insertIndicator.endSection === group.id}
             />
           ) : (
-            <button
+            <button type="button"
               onClick={() => onAddClick(group.id)}
               className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
               style={{
@@ -554,7 +554,7 @@ function GroupBox({
                 />
               )}
               {!dragLineIds && (
-                <button
+                <button type="button"
                   onClick={() => onAddClick(group.id)}
                   className="aspect-square md:aspect-auto rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
                 >
@@ -610,7 +610,7 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
 
   return (
     <div ref={menuRef} className="relative">
-      <button
+      <button type="button"
         onClick={() => { setOpen(!open); setConfirming(false); }}
         className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
       >
@@ -618,7 +618,7 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
       </button>
       {open && (
         <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
-          <button
+          <button type="button"
             onClick={handleClearClick}
             className={`w-full flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors ${
               confirming

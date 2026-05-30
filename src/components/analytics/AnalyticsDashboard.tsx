@@ -543,7 +543,7 @@ export function AnalyticsDashboard() {
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center border-x border-border pr-2 py-1">
             {/* Sticky left: National + Yours */}
             <div className="sticky left-0 shrink-0 self-stretch flex items-center gap-1.5 bg-background border-r border-border -my-1 pl-2 pr-2 z-10">
-              <button
+              <button type="button"
                 onClick={() => setSelectedTypeChart('national')}
                 className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                   selectedTypeChart === 'national'
@@ -553,7 +553,7 @@ export function AnalyticsDashboard() {
               >
                 National
               </button>
-              <button
+              <button type="button"
                 onClick={() => setSelectedTypeChart('yours')}
                 className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                   selectedTypeChart === 'yours'
@@ -566,7 +566,7 @@ export function AnalyticsDashboard() {
             </div>
             {/* Scrollable: regional dexes */}
             {REGIONAL_DEXES.map(dex => (
-              <button
+              <button type="button"
                 key={dex.id}
                 onClick={() => setSelectedTypeChart(dex.id)}
                 className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
@@ -582,7 +582,7 @@ export function AnalyticsDashboard() {
 
           {/* Filters */}
           <div className="flex items-center gap-1.5 overflow-x-auto">
-            <button
+            <button type="button"
               onClick={() => setExcludeSpecial(!excludeSpecial)}
               className={`px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                 excludeSpecial
@@ -595,7 +595,7 @@ export function AnalyticsDashboard() {
 
             {selectedDex && !isNationalSelected && selectedDex.generation >= 2 && selectedDex.id !== 'unova' && (
               <div className="inline-flex rounded-full bg-muted overflow-hidden">
-                <button
+                <button type="button"
                   onClick={() => setNewPokemonOnly(true)}
                   className={`px-1.5 py-0.5 rounded-l-full text-xs font-medium whitespace-nowrap transition-colors ${
                     newPokemonOnly
@@ -605,7 +605,7 @@ export function AnalyticsDashboard() {
                 >
                   Gen {selectedDex.generation} only
                 </button>
-                <button
+                <button type="button"
                   onClick={() => setNewPokemonOnly(false)}
                   className={`px-1.5 py-0.5 rounded-r-full text-xs font-medium whitespace-nowrap transition-colors ${
                     !newPokemonOnly
@@ -627,7 +627,7 @@ export function AnalyticsDashboard() {
                 bar spanning the full container width, so the tab reads as
                 merging into the divider between tabs and content. */}
             <div className="flex">
-              <button
+              <button type="button"
                 onClick={() => setTypeView('distribution')}
                 className={`flex-1 text-center px-3 py-1.5 text-sm font-semibold transition-colors ${
                   typeView === 'distribution'
@@ -637,7 +637,7 @@ export function AnalyticsDashboard() {
               >
                 Type distribution
               </button>
-              <button
+              <button type="button"
                 onClick={() => setTypeView('matchup')}
                 className={`flex-1 text-center px-3 py-1.5 text-sm font-semibold transition-colors ${
                   typeView === 'matchup'
@@ -838,7 +838,7 @@ export function AnalyticsDashboard() {
             Pokémon grouped by evolution line length. Each bar shows the stage breakdown within that group.
           </p>
           <div className="flex items-center gap-1.5 mb-3">
-            <button
+            <button type="button"
               onClick={() => setExcludeSpecialMekko(!excludeSpecialMekko)}
               className={`px-2.5 py-1 rounded-full text-[0.6875rem] font-medium whitespace-nowrap transition-colors ${
                 excludeSpecialMekko
