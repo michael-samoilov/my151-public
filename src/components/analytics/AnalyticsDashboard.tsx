@@ -5,7 +5,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
-import { getPokemonById, getAllPokemon } from '@/hooks/usePokemonData';
+import { getPokemonById, getPokemonByIds, getAllPokemon } from '@/hooks/usePokemonData';
 import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
 import { STARTER_IDS } from '@/data/categories';
 import { typeIconPath } from '@/data/type-ids';
@@ -108,7 +108,7 @@ export function AnalyticsDashboard() {
     const base = excludeSpecial ? filteredBaseline : fullBaseline;
     const allIds = Object.values(sections).flat();
     const starterSectionIds = new Set(sections['starter'] ?? []);
-    let pokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    let pokemon = getPokemonByIds(allIds);
     if (excludeSpecial) {
       pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
     }
@@ -193,7 +193,7 @@ export function AnalyticsDashboard() {
     const base = excludeSpecial ? filteredBaseline : fullBaseline;
     let pokemon = isNational
       ? getAllPokemon()
-      : dex!.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+      : getPokemonByIds(dex!.pokemonIds);
     if (excludeSpecial) {
       pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
     }
@@ -243,7 +243,7 @@ export function AnalyticsDashboard() {
     if (selectedTypeChart === 'yours') {
       const allIds = Object.values(sections).flat();
       const starterSectionIds = new Set(sections['starter'] ?? []);
-      pokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+      pokemon = getPokemonByIds(allIds);
       if (excludeSpecial) {
         pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
       }
@@ -255,7 +255,7 @@ export function AnalyticsDashboard() {
     } else {
       const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
       if (!dex) return [];
-      pokemon = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+      pokemon = getPokemonByIds(dex.pokemonIds);
       if (newPokemonOnly) {
         pokemon = pokemon.filter(p => p.generation === dex.generation);
       }
@@ -291,7 +291,7 @@ export function AnalyticsDashboard() {
       sets.some(s => checkBidi(s)) || sets.some(s => checkBidi(s.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id))));
     if (selectedTypeChart === 'yours') {
       const allIds = Object.values(sections).flat();
-      const allPokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+      const allPokemon = getPokemonByIds(allIds);
       const starterIds = new Set(sections['starter'] ?? []);
       const filtered = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !starterIds.has(p.id));
       return checkBidi(allPokemon) || checkBidi(filtered);
@@ -301,7 +301,7 @@ export function AnalyticsDashboard() {
     }
     const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
     if (!dex) return false;
-    const allInDex = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    const allInDex = getPokemonByIds(dex.pokemonIds);
     const genOnly = allInDex.filter(p => p.generation === dex.generation);
     return permutations([allInDex, genOnly]);
   }, [selectedTypeChart, isNationalSelected, sections]);
@@ -356,7 +356,7 @@ export function AnalyticsDashboard() {
     if (selectedTypeChart === 'yours') {
       // For "yours": permutations are exclusion on/off (no gen-only toggle)
       const allIds = Object.values(sections).flat();
-      const allPokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+      const allPokemon = getPokemonByIds(allIds);
       const starterIds = new Set(sections['starter'] ?? []);
       const filteredPokemon = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !starterIds.has(p.id));
       const s1 = computeTypeStats(allPokemon, fullBaseline);
@@ -382,7 +382,7 @@ export function AnalyticsDashboard() {
     if (!dex) return { fixedMaxCount: undefined, fixedDevRight: undefined };
 
     // Only share axis extent across exclusion on/off for the *current* gen toggle
-    const allInDex = dex.pokemonIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
+    const allInDex = getPokemonByIds(dex.pokemonIds);
     const base = newPokemonOnly ? allInDex.filter(p => p.generation === dex.generation) : allInDex;
     const unfiltered = computeTypeStats(base, fullBaseline);
     const filtered = computeTypeStats(

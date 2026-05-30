@@ -27,6 +27,20 @@ export function getPokemonById(id: number): Pokemon | undefined {
 }
 
 /**
+ * Resolve a collection of Pokémon ids to their (defined) Pokemon records,
+ * silently dropping any ids that don't resolve. Canonical replacement for the
+ * `ids.map(getPokemonById).filter(Boolean).map(p => p!)` pattern.
+ */
+export function getPokemonByIds(ids: Iterable<number>): Pokemon[] {
+  const out: Pokemon[] = [];
+  for (const id of ids) {
+    const p = pokemonById.get(id);
+    if (p) out.push(p);
+  }
+  return out;
+}
+
+/**
  * Get a Pokemon and all its evolutionary descendants (children, grandchildren, etc.)
  * Used for branch removal: removing Gloom removes Vileplume and Bellossom too,
  * but not Oddish (the ancestor).
