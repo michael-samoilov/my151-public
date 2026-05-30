@@ -1,16 +1,16 @@
 import type { ReactNode } from 'react';
 import { cn, displayName } from '@/lib/utils';
-import { usePixelPerfectSprite, useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
+import { useFluidSpritePx, useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { BASE_DPR } from '@/lib/viewport';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
-/** Above this unzoomed viewport width the sprite IMG renders at 2× source
- *  resolution and the tile chrome (text, badges, padding) is boosted by
- *  WIDE_LAYOUT_BOOST. Narrower phones keep the 1× sprite to avoid heavy
- *  overlap with neighbouring tiles. */
-const MOBILE_2X_MIN_PX = 375;
+/** Mobile (<1024px) base sprite scale, in vw. The chrome is this × the
+ *  WIDE_LAYOUT_BOOST and the IMG is this × SPRITE_IMG_SCALE, so both grow
+ *  smoothly with viewport width. Calibrated so a ~390px phone lands at the
+ *  tuned 1× base of ~32px (→ 45px chrome / 62px sprite). */
+const MOBILE_SPRITE_VW = 8.2;
 
 /** PokeAPI pixel-art sprite source resolution. */
 const SPRITE_SOURCE_PX = 96;
@@ -25,15 +25,6 @@ const SPRITE_IMG_SCALE = 1.95;
  *  this smaller factor so labels stay proportional next to the bigger
  *  sprite without dominating. */
 const WIDE_LAYOUT_BOOST = 1.4;
-
-/** Reference DPR used to size tiles on the mobile (<1024px) layout. Sizing
- *  off a fixed DPR — rather than the device's — makes the mobile view render
- *  at the same CSS size on every device, so a desktop window shrunk below
- *  the md: breakpoint matches what a phone shows at that width (instead of
- *  ballooning because a DPR-1 grid can't snap below one 96px sprite unit).
- *  3 reproduces the tuned-on-a-phone look; off-reference DPRs lose a touch
- *  of pixel-art crispness but gain cross-device size consistency. */
-const MOBILE_REF_DPR = 3;
 
 /**
  * Canonical tile primitives used by every "Pokemon tile" in the app —
@@ -69,50 +60,42 @@ function useIsHalfPaneDesktop(): boolean {
 /**
  * Layout scale (the `--tile-sprite` CSS var) that every tile internal
  * (name text, type badges, gen badge, padding) is `calc()`-ed off.
- * Base is pixel-perfect mobile 11vw / desktop clamp(40px, 7vw, 96px).
- * On wide viewports (≥375px) it's boosted by WIDE_LAYOUT_BOOST so the
- * chrome stays proportional next to the doubled sprite IMG.
+ * Base (1×) is a fluid mobile MOBILE_SPRITE_VW / desktop clamp(40px, 7vw,
+ * 96px) that interpolates continuously with width. It's boosted by
+ * WIDE_LAYOUT_BOOST so the chrome stays proportional next to the larger
+ * sprite IMG.
  *
  * In the desktop split-pane layout we size off half the window (each
  * pane is `md:w-1/2`) and skip the chrome boost — otherwise the bigger
  * sprite + boosted labels overflow the narrower 6-column grid and
  * overlap their neighbours.
- *
- * The mobile branch snaps against MOBILE_REF_DPR so the tile is the same
- * CSS size on every device (a shrunk desktop window matches a phone at the
- * same width). The half-pane branch keeps the device DPR — it's desktop
- * only and was tuned that way.
  */
 export function useTileSpritePx(): number {
   const halfPane = useIsHalfPaneDesktop();
-  const oneX = usePixelPerfectSprite(11, 40, 7, 96, halfPane ? 2 : 1, halfPane ? undefined : MOBILE_REF_DPR);
-  const wide = useViewportAtLeast(MOBILE_2X_MIN_PX);
-  if (!wide || halfPane) return oneX;
+  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, halfPane ? 2 : 1);
+  if (halfPane) return oneX;
   return Math.round(oneX * WIDE_LAYOUT_BOOST);
 }
 
 /**
- * Width/height (CSS px) for the sprite `<img>` element. On viewports
- * ≥375px the IMG renders at SPRITE_IMG_SCALE × the 96px source
- * (BASE_DPR-compensated) for a larger pixel-art sprite that overflows
- * its grid column horizontally by design.
+ * Width/height (CSS px) for the sprite `<img>` element.
  *
- * In the desktop split-pane layout the columns are halved, so the
- * overflow scaling would make sprites overlap; render the IMG at its
- * layout footprint instead. Narrower phones (<375px) also fall back to
- * 1× to avoid heavy inter-tile overlap.
+ * On the mobile layout the IMG is the fluid 1× scale × SPRITE_IMG_SCALE,
+ * so it grows smoothly with width and renders the same CSS size on every
+ * device — a desktop window shrunk below the breakpoint matches the phone.
+ * The sprite overflows its grid column horizontally by design.
  *
- * On the mobile layout the IMG is sized off the DPR-independent 1× scale
- * (×SPRITE_IMG_SCALE) so it stays consistent across devices — a shrunk
- * desktop window matches the phone. Only the full-desktop (≥1024) path
- * divides by BASE_DPR for true pixel-perfect rendering at the source grid.
+ * In the desktop split-pane layout the columns are halved, so the overflow
+ * scaling would make sprites overlap; render the IMG at its layout
+ * footprint instead. The full-desktop (≥1024) path renders at
+ * SPRITE_IMG_SCALE × the 96px source, BASE_DPR-compensated for crisp
+ * rendering at the device grid.
  */
 export function useTileImagePx(layoutPx: number): number {
-  const wide = useViewportAtLeast(MOBILE_2X_MIN_PX);
   const halfPane = useIsHalfPaneDesktop();
   const isDesktop = useViewportAtLeast(1024);
-  const oneX = usePixelPerfectSprite(11, 40, 7, 96, 1, MOBILE_REF_DPR);
-  if (!wide || halfPane) return layoutPx;
+  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, 1);
+  if (halfPane) return layoutPx;
   if (!isDesktop) return Math.round(oneX * SPRITE_IMG_SCALE);
   return Math.round((SPRITE_SOURCE_PX * SPRITE_IMG_SCALE) / BASE_DPR);
 }

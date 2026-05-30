@@ -1,8 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { getUnzoomedViewportWidth } from './viewport';
 
-const SPRITE_SRC_PX = 96;
-
 /**
  * Shared viewport state — a single set of listeners for all hook consumers.
  * Recomputes on any viewport-shape change, notifying all subscribers.
@@ -55,13 +53,22 @@ function subscribeFn(cb: () => void) {
 }
 
 /**
- * Returns the optimal pixel-perfect sprite size (CSS px) for a container
- * whose size follows CSS clamp(desktopMin, desktopVw * vw, desktopMax) on
- * desktop and mobileVw * vw on mobile.
+ * Returns a fluid sprite size (CSS px) for a container whose size follows
+ * CSS clamp(desktopMin, desktopVw * vw, desktopMax) on desktop and
+ * mobileVw * vw on mobile. The value interpolates continuously with the
+ * viewport width — resizing grows/shrinks the sprite smoothly rather than
+ * jumping between discrete sizes.
  *
- * The returned size is the largest integer multiple of (96 / devicePixelRatio)
- * that fits within the CSS container, ensuring every source pixel maps to a
- * uniform NxN block of device pixels — no sub-pixel aliasing.
+ * (Earlier this snapped to integer multiples of 96 / devicePixelRatio for
+ * pixel-perfect rendering. That's pointless once sprites render at a
+ * non-integer scale like 1.95×, and it produced visible size "steps" while
+ * resizing — every tile jumped at once because the chrome is sized off this
+ * value. Continuous interpolation trades a touch of pixel-art crispness for
+ * smooth scaling; `image-rendering: pixelated` keeps edges hard.)
+ *
+ * Being independent of devicePixelRatio also means a given CSS viewport
+ * width renders at the same size on every device — a desktop window shrunk
+ * below the md: breakpoint matches what a phone shows at that width.
  *
  * Both browser zoom (desktop Ctrl+=) and iOS pinch-zoom are compensated
  * for via `getUnzoomedViewportWidth` — see src/lib/viewport.ts for the
@@ -72,43 +79,23 @@ function subscribeFn(cb: () => void) {
  * `divisor` (default 1) shrinks the effective viewport — pass 2 when the
  * tile lives inside a half-pane (desktop side-panel layout) so the
  * formula sizes for the pane width rather than the full window.
- *
- * `mobileRefDpr` (default: device DPR) overrides the DPR used for snapping
- * on the MOBILE branch only. The default ties the layout size to the
- * device's pixel grid, which means the same CSS viewport width renders at
- * very different sizes across DPRs (a DPR-1 desktop shrunk to mobile width
- * gets a much larger tile than a DPR-3 phone, because it can't snap down
- * past one 96px unit). Passing a fixed reference DPR makes the mobile
- * layout DPR-independent so every device reproduces the same (phone) look,
- * trading a touch of pixel-perfect crispness on off-reference DPRs.
- *
- * When no clean multiple fits (container < one unit), falls back to the raw
- * CSS container size.
  */
-export function usePixelPerfectSprite(
+export function useFluidSpritePx(
   mobileVw: number,
   desktopMin: number,
   desktopVw: number,
   desktopMax: number,
   divisor: number = 1,
-  mobileRefDpr?: number,
 ): number {
   const compute = (): number => {
     if (typeof window === 'undefined') return desktopMax;
-    const dpr = window.devicePixelRatio || 1;
     const effectiveWidth = getUnzoomedViewportWidth() / divisor;
     const vw = effectiveWidth / 100;
     const isDesktop = effectiveWidth >= 1024;
     const cssPx = isDesktop
       ? Math.max(desktopMin, Math.min(desktopVw * vw, desktopMax))
       : mobileVw * vw;
-    // Desktop keeps true pixel-perfect snapping to the device grid; mobile
-    // can opt into a fixed reference DPR so its layout is device-independent.
-    const snapDpr = isDesktop ? dpr : (mobileRefDpr ?? dpr);
-    const unit = SPRITE_SRC_PX / snapDpr;
-    const multiples = Math.floor(cssPx / unit);
-    if (multiples < 1) return Math.round(cssPx);
-    return Math.round(unit * multiples);
+    return Math.round(cssPx);
   };
 
   return useSyncExternalStore(
@@ -120,7 +107,7 @@ export function usePixelPerfectSprite(
 
 /**
  * Returns true when the (unzoomed) viewport width is at least `minPx`.
- * Shares the same viewport-change subscription as usePixelPerfectSprite.
+ * Shares the same viewport-change subscription as useFluidSpritePx.
  * Used to gate larger (2×) sprite rendering on viewports wide enough to
  * absorb the extra sprite width without heavy inter-tile overlap.
  */

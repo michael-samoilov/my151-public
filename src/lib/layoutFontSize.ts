@@ -10,7 +10,7 @@ import { getUnzoomedViewportWidth } from './viewport';
  * ./viewport.ts reconstructs the layout viewport invariantly under both
  * iOS pinch and desktop zoom.
  *
- * Listens to the same four viewport signals as usePixelPerfectSprite,
+ * Listens to the same four viewport signals as useFluidSpritePx,
  * for the same reasons — see that file's comments.
  */
 
