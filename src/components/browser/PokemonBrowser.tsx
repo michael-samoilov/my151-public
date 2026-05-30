@@ -236,7 +236,9 @@ export function PokemonBrowser() {
     return [...genMap.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([gen, ids]) => ({ label: `Generation ${gen}`, pokemonIds: ids }));
-  }, [activeArchetypeDef, groups]);
+    // activeCategoryDef is read for its `.subgroups`; it's a stable .find() over
+    // the static CATEGORIES array, so it only changes when the category does.
+  }, [activeArchetypeDef, activeCategoryDef, groups]);
 
   const toggleEvoSize = (size: number) => {
     if (!evoLineSizeFilter) {
