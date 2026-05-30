@@ -69,6 +69,10 @@ function subscribeFn(cb: () => void) {
  * zoom levels, so the browser's zoom transform magnifies the sprite in
  * lockstep with the rest of the UI.
  *
+ * `divisor` (default 1) shrinks the effective viewport — pass 2 when the
+ * tile lives inside a half-pane (desktop side-panel layout) so the
+ * formula sizes for the pane width rather than the full window.
+ *
  * When no clean multiple fits (container < one unit), falls back to the raw
  * CSS container size.
  */
@@ -77,13 +81,14 @@ export function usePixelPerfectSprite(
   desktopMin: number,
   desktopVw: number,
   desktopMax: number,
+  divisor: number = 1,
 ): number {
   const compute = (): number => {
     if (typeof window === 'undefined') return desktopMax;
     const dpr = window.devicePixelRatio || 1;
-    const unzoomedInnerWidth = getUnzoomedViewportWidth();
-    const vw = unzoomedInnerWidth / 100;
-    const isDesktop = unzoomedInnerWidth >= 1024;
+    const effectiveWidth = getUnzoomedViewportWidth() / divisor;
+    const vw = effectiveWidth / 100;
+    const isDesktop = effectiveWidth >= 1024;
     const cssPx = isDesktop
       ? Math.max(desktopMin, Math.min(desktopVw * vw, desktopMax))
       : mobileVw * vw;

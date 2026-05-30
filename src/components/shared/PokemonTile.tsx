@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { cn, displayName } from '@/lib/utils';
 import { usePixelPerfectSprite, useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { BASE_DPR } from '@/lib/viewport';
+import { usePokedexStore } from '@/store/usePokedexStore';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
@@ -42,28 +43,55 @@ const WIDE_LAYOUT_BOOST = 1.4;
  */
 
 /**
+ * True when the app is in its desktop split-pane layout — the build view
+ * with a section selected (browser panel on the right), or analytics
+ * with a drilldown panel open. In that state every visible pane is
+ * `md:w-1/2`, so tile sizing must use half the window width to avoid
+ * sprites overflowing their (now narrower) columns and overlapping.
+ * Mobile sheets cover the whole viewport, so this returns false there.
+ */
+function useIsHalfPaneDesktop(): boolean {
+  const isDesktop = useViewportAtLeast(1024);
+  const activeSection = usePokedexStore((s) => s.activeSection);
+  const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
+  return isDesktop && (activeSection !== null || drillDownSegment !== null);
+}
+
+/**
  * Layout scale (the `--tile-sprite` CSS var) that every tile internal
  * (name text, type badges, gen badge, padding) is `calc()`-ed off.
  * Base is pixel-perfect mobile 11vw / desktop clamp(40px, 7vw, 96px).
  * On wide viewports (≥375px) it's boosted by WIDE_LAYOUT_BOOST so the
  * chrome stays proportional next to the doubled sprite IMG.
+ *
+ * In the desktop split-pane layout we size off half the window (each
+ * pane is `md:w-1/2`) and skip the chrome boost — otherwise the bigger
+ * sprite + boosted labels overflow the narrower 6-column grid and
+ * overlap their neighbours.
  */
 export function useTileSpritePx(): number {
-  const oneX = usePixelPerfectSprite(11, 40, 7, 96);
+  const halfPane = useIsHalfPaneDesktop();
+  const oneX = usePixelPerfectSprite(11, 40, 7, 96, halfPane ? 2 : 1);
   const wide = useViewportAtLeast(MOBILE_2X_MIN_PX);
-  return wide ? Math.round(oneX * WIDE_LAYOUT_BOOST) : oneX;
+  if (!wide || halfPane) return oneX;
+  return Math.round(oneX * WIDE_LAYOUT_BOOST);
 }
 
 /**
  * Width/height (CSS px) for the sprite `<img>` element. On viewports
  * ≥375px the IMG renders at SPRITE_IMG_SCALE × the 96px source
  * (BASE_DPR-compensated) for a larger pixel-art sprite that overflows
- * its grid column horizontally by design. Narrower phones fall back to
- * the 1× layout size to avoid heavy overlap with neighbouring tiles.
+ * its grid column horizontally by design.
+ *
+ * In the desktop split-pane layout the columns are halved, so the
+ * overflow scaling would make sprites overlap; render the IMG at its
+ * layout footprint instead. Narrower phones (<375px) also fall back to
+ * 1× to avoid heavy inter-tile overlap.
  */
 export function useTileImagePx(layoutPx: number): number {
   const wide = useViewportAtLeast(MOBILE_2X_MIN_PX);
-  if (!wide) return layoutPx;
+  const halfPane = useIsHalfPaneDesktop();
+  if (!wide || halfPane) return layoutPx;
   return Math.round((SPRITE_SOURCE_PX * SPRITE_IMG_SCALE) / BASE_DPR);
 }
 
