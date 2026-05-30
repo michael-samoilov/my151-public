@@ -73,6 +73,15 @@ function subscribeFn(cb: () => void) {
  * tile lives inside a half-pane (desktop side-panel layout) so the
  * formula sizes for the pane width rather than the full window.
  *
+ * `mobileRefDpr` (default: device DPR) overrides the DPR used for snapping
+ * on the MOBILE branch only. The default ties the layout size to the
+ * device's pixel grid, which means the same CSS viewport width renders at
+ * very different sizes across DPRs (a DPR-1 desktop shrunk to mobile width
+ * gets a much larger tile than a DPR-3 phone, because it can't snap down
+ * past one 96px unit). Passing a fixed reference DPR makes the mobile
+ * layout DPR-independent so every device reproduces the same (phone) look,
+ * trading a touch of pixel-perfect crispness on off-reference DPRs.
+ *
  * When no clean multiple fits (container < one unit), falls back to the raw
  * CSS container size.
  */
@@ -82,6 +91,7 @@ export function usePixelPerfectSprite(
   desktopVw: number,
   desktopMax: number,
   divisor: number = 1,
+  mobileRefDpr?: number,
 ): number {
   const compute = (): number => {
     if (typeof window === 'undefined') return desktopMax;
@@ -92,7 +102,10 @@ export function usePixelPerfectSprite(
     const cssPx = isDesktop
       ? Math.max(desktopMin, Math.min(desktopVw * vw, desktopMax))
       : mobileVw * vw;
-    const unit = SPRITE_SRC_PX / dpr;
+    // Desktop keeps true pixel-perfect snapping to the device grid; mobile
+    // can opt into a fixed reference DPR so its layout is device-independent.
+    const snapDpr = isDesktop ? dpr : (mobileRefDpr ?? dpr);
+    const unit = SPRITE_SRC_PX / snapDpr;
     const multiples = Math.floor(cssPx / unit);
     if (multiples < 1) return Math.round(cssPx);
     return Math.round(unit * multiples);

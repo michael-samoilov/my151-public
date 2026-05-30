@@ -26,6 +26,15 @@ const SPRITE_IMG_SCALE = 1.95;
  *  sprite without dominating. */
 const WIDE_LAYOUT_BOOST = 1.4;
 
+/** Reference DPR used to size tiles on the mobile (<1024px) layout. Sizing
+ *  off a fixed DPR — rather than the device's — makes the mobile view render
+ *  at the same CSS size on every device, so a desktop window shrunk below
+ *  the md: breakpoint matches what a phone shows at that width (instead of
+ *  ballooning because a DPR-1 grid can't snap below one 96px sprite unit).
+ *  3 reproduces the tuned-on-a-phone look; off-reference DPRs lose a touch
+ *  of pixel-art crispness but gain cross-device size consistency. */
+const MOBILE_REF_DPR = 3;
+
 /**
  * Canonical tile primitives used by every "Pokemon tile" in the app —
  * selection browser (`EvoLineCard`), main build page (`DraggableTile`),
@@ -68,10 +77,15 @@ function useIsHalfPaneDesktop(): boolean {
  * pane is `md:w-1/2`) and skip the chrome boost — otherwise the bigger
  * sprite + boosted labels overflow the narrower 6-column grid and
  * overlap their neighbours.
+ *
+ * The mobile branch snaps against MOBILE_REF_DPR so the tile is the same
+ * CSS size on every device (a shrunk desktop window matches a phone at the
+ * same width). The half-pane branch keeps the device DPR — it's desktop
+ * only and was tuned that way.
  */
 export function useTileSpritePx(): number {
   const halfPane = useIsHalfPaneDesktop();
-  const oneX = usePixelPerfectSprite(11, 40, 7, 96, halfPane ? 2 : 1);
+  const oneX = usePixelPerfectSprite(11, 40, 7, 96, halfPane ? 2 : 1, halfPane ? undefined : MOBILE_REF_DPR);
   const wide = useViewportAtLeast(MOBILE_2X_MIN_PX);
   if (!wide || halfPane) return oneX;
   return Math.round(oneX * WIDE_LAYOUT_BOOST);
@@ -87,11 +101,19 @@ export function useTileSpritePx(): number {
  * overflow scaling would make sprites overlap; render the IMG at its
  * layout footprint instead. Narrower phones (<375px) also fall back to
  * 1× to avoid heavy inter-tile overlap.
+ *
+ * On the mobile layout the IMG is sized off the DPR-independent 1× scale
+ * (×SPRITE_IMG_SCALE) so it stays consistent across devices — a shrunk
+ * desktop window matches the phone. Only the full-desktop (≥1024) path
+ * divides by BASE_DPR for true pixel-perfect rendering at the source grid.
  */
 export function useTileImagePx(layoutPx: number): number {
   const wide = useViewportAtLeast(MOBILE_2X_MIN_PX);
   const halfPane = useIsHalfPaneDesktop();
+  const isDesktop = useViewportAtLeast(1024);
+  const oneX = usePixelPerfectSprite(11, 40, 7, 96, 1, MOBILE_REF_DPR);
   if (!wide || halfPane) return layoutPx;
+  if (!isDesktop) return Math.round(oneX * SPRITE_IMG_SCALE);
   return Math.round((SPRITE_SOURCE_PX * SPRITE_IMG_SCALE) / BASE_DPR);
 }
 
