@@ -1,89 +1,101 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { Redis } from '@upstash/redis';
+import { redis, requireAdmin, isSource, isPokedexSource } from './_shared';
 
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
-
-// Any source's individual entries may be removed here (unlike /api/reset, which
-// wipes whole milestone sources and protects completion/export wholesale).
-const ALL_SOURCES = ['completion', 'export', 'interacted', 'engaged'] as const;
-type Source = typeof ALL_SOURCES[number];
-
-function isSource(s: string): s is Source {
-  return (ALL_SOURCES as readonly string[]).includes(s);
-}
-
-/** Constant-time string compare to avoid leaking the token via timing. */
-function safeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i++) {
-    mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return mismatch === 0;
-}
-
-// Find the (newest) list entry whose JSON contains the given needle, replace it
-// with a tombstone, and LREM it — all in one atomic script so a concurrent
-// LPUSH can't shift indices underneath us. Decrement the all-time counter when
-// an entry is actually removed. Returns 1 if removed, 0 if not found.
-// KEYS[1] = submissions:<source>   KEYS[2] = total:<source>
-// ARGV[1] = needle (a unique substring of the target entry's JSON)
+// Find the (newest) list entry whose JSON contains the needle, tombstone it,
+// LREM it, and RETURN the removed raw entry — all in one atomic script so a
+// concurrent LPUSH can't shift indices underneath us. Returns '' if not found.
+// KEYS[1] = submissions:<source>   ARGV[1] = needle (unique substring)
 const DELETE_LUA = `
 local items = redis.call('LRANGE', KEYS[1], 0, -1)
 for i, v in ipairs(items) do
   if string.find(v, ARGV[1], 1, true) then
     redis.call('LSET', KEYS[1], i - 1, '__DELETED__')
     redis.call('LREM', KEYS[1], 1, '__DELETED__')
-    local t = tonumber(redis.call('GET', KEYS[2]) or '0')
-    if t > 0 then redis.call('DECR', KEYS[2]) end
-    return 1
+    return v
   end
 end
-return 0
+return ''
 `;
+
+// Undo the aggregate counters for one removed entry. Runs after the entry is
+// gone from the list, so a retry can't double-decrement (it won't re-find it).
+// KEYS[1] = total:<source>   KEYS[2] = countries:<source>   KEYS[3] = picks:<source>
+// ARGV[1] = country ('' to skip)   ARGV[2] = '1' to decrement picks
+// ARGV[3..] = pokemon ids (only when decrementing picks)
+const DECREMENT_LUA = `
+local t = tonumber(redis.call('GET', KEYS[1]) or '0')
+if t > 0 then redis.call('DECR', KEYS[1]) end
+if ARGV[1] ~= '' then redis.call('HINCRBY', KEYS[2], ARGV[1], -1) end
+if ARGV[2] == '1' then
+  for i = 3, #ARGV do redis.call('HINCRBY', KEYS[3], ARGV[i], -1) end
+end
+return 1
+`;
+
+interface StoredEntry {
+  id?: string;
+  ids?: number[];
+  country?: string;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+  if (!(await requireAdmin(req, res))) return;
 
-  const adminToken = process.env.ADMIN_TOKEN;
-  if (!adminToken) {
-    return res.status(503).json({ error: 'Admin access not configured' });
-  }
-
-  const authHeader = Array.isArray(req.headers.authorization)
-    ? req.headers.authorization[0]
-    : req.headers.authorization ?? '';
-  const provided = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : '';
-  if (!provided || !safeEqual(provided, adminToken)) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  const { source, ts } = (req.body ?? {}) as { source?: unknown; ts?: unknown };
+  const { source, id, ts } = (req.body ?? {}) as { source?: unknown; id?: unknown; ts?: unknown };
   if (typeof source !== 'string' || !isSource(source)) {
     return res.status(400).json({ error: 'invalid source' });
   }
-  if (typeof ts !== 'number' || !Number.isInteger(ts) || ts <= 0) {
-    return res.status(400).json({ error: 'ts (entry timestamp) required' });
+
+  // Prefer the unique per-entry id; fall back to ts for legacy entries that
+  // predate it. `string.find(..., true)` treats the needle as a plain string,
+  // so no characters need escaping.
+  let needle: string;
+  if (typeof id === 'string' && id) {
+    needle = `"id":"${id}"`;
+  } else if (typeof ts === 'number' && Number.isInteger(ts) && ts > 0) {
+    needle = `"ts":${ts},`;
+  } else {
+    return res.status(400).json({ error: 'id or ts required' });
   }
 
   try {
-    // Each entry is JSON with a `"ts":<ms>,` field — a stable, near-unique
-    // marker for a single submission within its source list.
-    const needle = `"ts":${ts},`;
-    const removed = await redis.eval(
-      DELETE_LUA,
-      [`submissions:${source}`, `total:${source}`],
-      [needle],
-    );
-    if (removed === 0) {
+    const removed = (await redis.eval(DELETE_LUA, [`submissions:${source}`], [needle])) as
+      | string
+      | StoredEntry
+      | null;
+    if (!removed) {
       return res.status(404).json({ error: 'Entry not found (already removed?)' });
     }
-    return res.status(200).json({ ok: true, source, ts });
+
+    // @upstash/redis may hand back the JSON already parsed.
+    let entry: StoredEntry = {};
+    if (typeof removed === 'string') {
+      try {
+        entry = JSON.parse(removed) as StoredEntry;
+      } catch {
+        entry = {};
+      }
+    } else {
+      entry = removed;
+    }
+
+    // Keep total / countries / picks consistent with the removed entry.
+    const decrementPicks = isPokedexSource(source) && Array.isArray(entry.ids);
+    await redis.eval(
+      DECREMENT_LUA,
+      [`total:${source}`, `countries:${source}`, `picks:${source}`],
+      [
+        entry.country ?? '',
+        decrementPicks ? '1' : '0',
+        ...(decrementPicks ? entry.ids!.map(String) : []),
+      ],
+    );
+
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json({ ok: true, source });
   } catch (err) {
     console.error('Delete-entry error:', err);
     return res.status(500).json({ error: 'Internal server error' });

@@ -1,26 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { Redis } from '@upstash/redis';
 import { Ratelimit } from '@upstash/ratelimit';
-
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL!,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-});
+import { redis, getClientIp, isMilestone, isSource, type Source } from './_shared';
 
 const MAX_POKEMON_ID = 1025;
-// Full-pokedex sources (store the complete build); milestone sources are
-// lightweight counters that gauge how many real humans engage with the app.
-const POKEDEX_SOURCES = ['completion', 'export'] as const;
-const MILESTONE_SOURCES = ['interacted', 'engaged'] as const;
-const VALID_SOURCES = [...POKEDEX_SOURCES, ...MILESTONE_SOURCES] as const;
-type Source = typeof VALID_SOURCES[number];
-type MilestoneSource = typeof MILESTONE_SOURCES[number];
 
-function isMilestone(s: Source): s is MilestoneSource {
-  return (MILESTONE_SOURCES as readonly string[]).includes(s);
-}
-
-// Cap stored full submissions per source so the list can't grow unbounded.
+// Cap stored submissions per source so the lists can't grow unbounded.
 // LTRIM keeps the most recent MAX_STORED_SUBMISSIONS entries.
 const MAX_STORED_SUBMISSIONS = 10000;
 
@@ -52,17 +36,14 @@ const milestoneLimiter = new Ratelimit({
   prefix: 'rl:milestone',
 });
 
-// Single Lua script: bulk HINCRBY + INCR + LPUSH/LTRIM counts as 1 Upstash command
-// regardless of ID count.
+// Pokedex script: per-Pokemon picks + all-time total + capped snapshot list +
+// by-country tally, in one Upstash command regardless of ID count.
 // KEYS[1] = picks:<source>   KEYS[2] = total:<source>
 // KEYS[3] = submissions:<source>   KEYS[4] = countries:<source>
 // ARGV[1] = full submission entry (JSON string)
 // ARGV[2] = max stored submissions (cap for LTRIM)
 // ARGV[3] = country code ('' if unknown)
 // ARGV[4..] = list of pokemon IDs as strings
-// The countries hash is an all-time tally — it keeps counting past the
-// MAX_STORED_SUBMISSIONS list cap, so per-country totals cover every
-// submission ever received, not just the retained entries.
 const SUBMIT_LUA = `
 for i = 4, #ARGV do
   redis.call('HINCRBY', KEYS[1], ARGV[i], 1)
@@ -76,9 +57,8 @@ end
 return 1
 `;
 
-// Milestone script: total counter + by-country tally + a capped snapshot list
-// of the build at the moment the milestone fired. No `picks` aggregate — these
-// sources measure human engagement, not the most-popular Pokemon.
+// Milestone script: all-time counter + by-country tally + capped snapshot list.
+// No `picks` aggregate — these measure engagement, not Pokemon popularity.
 // KEYS[1] = total:<source>   KEYS[2] = countries:<source>   KEYS[3] = submissions:<source>
 // ARGV[1] = country code ('' if unknown)
 // ARGV[2] = full snapshot entry (JSON string)
@@ -93,13 +73,6 @@ redis.call('LTRIM', KEYS[3], 0, tonumber(ARGV[3]) - 1)
 return 1
 `;
 
-function getClientIp(req: VercelRequest): string {
-  const fwd = req.headers['x-forwarded-for'];
-  const raw = Array.isArray(fwd) ? fwd[0] : fwd;
-  if (raw) return raw.split(',')[0].trim();
-  return req.socket?.remoteAddress ?? 'unknown';
-}
-
 function header(req: VercelRequest, name: string): string | undefined {
   const v = req.headers[name];
   const raw = Array.isArray(v) ? v[0] : v;
@@ -108,10 +81,13 @@ function header(req: VercelRequest, name: string): string | undefined {
 }
 
 /** Coarse geo from Vercel's IP headers. Country/region/timezone only — we
- *  deliberately skip city + lat/long to keep this low-sensitivity. */
+ *  deliberately skip city + lat/long to keep this low-sensitivity. Vercel's
+ *  'XX' placeholder for an unknown country is normalized to undefined so it
+ *  never pollutes the by-country tally. */
 function getGeo(req: VercelRequest) {
+  const country = header(req, 'x-vercel-ip-country');
   return {
-    country: header(req, 'x-vercel-ip-country'),
+    country: country && country !== 'XX' ? country : undefined,
     region: header(req, 'x-vercel-ip-country-region'),
     tz: header(req, 'x-vercel-ip-timezone'),
   };
@@ -168,10 +144,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const { ids, source } = req.body as { ids: unknown; source: unknown };
 
     // Validate source
-    if (!source || !VALID_SOURCES.includes(source as Source)) {
+    if (typeof source !== 'string' || !isSource(source)) {
       return res.status(400).json({ error: 'invalid source' });
     }
-    const src = source as Source;
+    const src: Source = source;
 
     const ip = getClientIp(req);
     const geo = getGeo(req);
@@ -213,10 +189,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Submission entry: the build (full pokedex, or the snapshot at the moment
-    // a milestone fired) plus datetime and coarse request-derived context.
+    // a milestone fired) plus a unique id, datetime, and coarse request-derived
+    // context. The id (timestamp + random) is what delete-entry matches on, so
+    // entries sharing a millisecond are still individually addressable.
     const submittedAt = Date.now();
+    const entryId = `${submittedAt}-${Math.random().toString(36).slice(2, 10)}`;
     const client = getClient(req);
     const entry = JSON.stringify({
+      id: entryId,
       ids,
       source: src,
       ts: submittedAt,
@@ -230,7 +210,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       browser: client.browser,
     });
 
-    // Milestone sources: counter + country tally + snapshot list (no `picks`).
     if (isMilestone(src)) {
       await redis.eval(
         MILESTONE_LUA,
@@ -240,7 +219,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true });
     }
 
-    // Single EVAL command — bulk increments + store full submission in one round-trip.
     await redis.eval(
       SUBMIT_LUA,
       [`picks:${src}`, `total:${src}`, `submissions:${src}`, `countries:${src}`],

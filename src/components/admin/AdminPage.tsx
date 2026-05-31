@@ -24,6 +24,7 @@ const SOURCE_LABEL: Record<Source, string> = {
 };
 
 interface Submission {
+  id?: string;
   ids: number[];
   source: Source;
   ts: number;
@@ -49,14 +50,9 @@ interface SourceData {
 
 type MilestoneSource = 'interacted' | 'engaged';
 
-interface PokedexResult {
-  total: number;
-  offset: number;
-  limit: number;
-  submissions: Submission[];
-  countries?: Record<string, number>;
-}
-interface MilestoneResult {
+// Every source now comes back with the same shape: an all-time `total` counter
+// plus the retained-snapshot `stored` count that drives pagination.
+interface SourceResult {
   total: number;
   stored: number;
   offset: number;
@@ -65,8 +61,8 @@ interface MilestoneResult {
   countries?: Record<string, number>;
 }
 
-type ApiResponse = Partial<Record<'completion' | 'export', PokedexResult>> & {
-  milestones?: Partial<Record<MilestoneSource, MilestoneResult>>;
+type ApiResponse = Partial<Record<'completion' | 'export', SourceResult>> & {
+  milestones?: Partial<Record<MilestoneSource, SourceResult>>;
 };
 
 function emptyData(): Record<Source, SourceData> {
@@ -295,16 +291,16 @@ export function AdminPage() {
       const ms = resp.milestones ?? {};
       setData({
         completion: {
-          // Pokedex sources: `total` from the endpoint is the stored-list
-          // length, which is also what paginates.
+          // `total` is the all-time counter; `stored` is the retained-snapshot
+          // count that drives pagination (they differ past the 10k cap).
           total: resp.completion?.total ?? 0,
-          stored: resp.completion?.total ?? 0,
+          stored: resp.completion?.stored ?? 0,
           submissions: resp.completion?.submissions ?? [],
           countries: resp.completion?.countries ?? {},
         },
         export: {
           total: resp.export?.total ?? 0,
-          stored: resp.export?.total ?? 0,
+          stored: resp.export?.stored ?? 0,
           submissions: resp.export?.submissions ?? [],
           countries: resp.export?.countries ?? {},
         },
@@ -348,18 +344,23 @@ export function AdminPage() {
     setLoadingMore(true);
     setError(null);
     try {
-      const offset = data[activeSource].submissions.length;
-      const resp = await fetchSubmissions(token, { source: activeSource, limit: PAGE_SIZE, offset });
+      // Re-fetch the whole loaded range from offset 0 (growing the window by
+      // one page) rather than paging by current length. Offset-by-length skips
+      // an entry whenever a prior delete shrank the local list; re-fetching
+      // from the top stays correct across deletes and naturally reconciles.
+      const limit = data[activeSource].submissions.length + PAGE_SIZE;
+      const resp = await fetchSubmissions(token, { source: activeSource, limit, offset: 0 });
       // Pokedex sources come back at the top level; milestone sources under
       // `milestones`. Read whichever applies for the active tab.
       const block =
         resp[activeSource as 'completion' | 'export'] ?? resp.milestones?.[activeSource as MilestoneSource];
-      const more = block?.submissions ?? [];
       setData((prev) => ({
         ...prev,
         [activeSource]: {
           ...prev[activeSource],
-          submissions: [...prev[activeSource].submissions, ...more],
+          total: block?.total ?? prev[activeSource].total,
+          stored: block?.stored ?? prev[activeSource].stored,
+          submissions: block?.submissions ?? prev[activeSource].submissions,
           countries: block?.countries ?? prev[activeSource].countries,
         },
       }));
@@ -426,17 +427,21 @@ export function AdminPage() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ source: src, ts: sub.ts }),
+          // Prefer the unique id; ts is a legacy fallback for older entries.
+          body: JSON.stringify({ source: src, id: sub.id, ts: sub.ts }),
         });
         if (!res.ok) throw new Error(`Delete failed (${res.status}).`);
-        // Drop it from local state and decrement the counts.
+        // Drop exactly this entry from local state and decrement the counts.
+        // Match on the unique id so entries sharing a ts (same millisecond)
+        // aren't all removed; fall back to ts only for legacy id-less entries.
+        const matches = (s: Submission) => (sub.id ? s.id === sub.id : s.ts === sub.ts);
         setData((prev) => ({
           ...prev,
           [src]: {
             ...prev[src],
             total: Math.max(0, prev[src].total - 1),
             stored: Math.max(0, prev[src].stored - 1),
-            submissions: prev[src].submissions.filter((s) => s.ts !== sub.ts),
+            submissions: prev[src].submissions.filter((s) => !matches(s)),
           },
         }));
       } catch (e) {
@@ -551,7 +556,7 @@ export function AdminPage() {
           </p>
         )}
         {active.submissions.map((sub, i) => (
-          <SubmissionCard key={`${sub.ts}-${i}`} sub={sub} onDelete={deleteEntry} />
+          <SubmissionCard key={sub.id ?? `${sub.ts}-${i}`} sub={sub} onDelete={deleteEntry} />
         ))}
         {active.submissions.length < active.stored && (
           <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>

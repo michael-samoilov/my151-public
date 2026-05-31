@@ -31,10 +31,9 @@ const MILESTONE_KEY = (s: Milestone) => `p151-milestone-${s}`;
 
 // Owner opt-out: visiting the site once with `?notme` marks this browser as
 // excluded, so none of its beacons are ever sent. Persisted in localStorage so
-// it survives reloads (and the URL param doesn't need to stay on). Complements
-// the server-side EXCLUDE_IPS check, covering devices on changing IPs (mobile
-// cellular) where IP exclusion can't reach. Incognito needs re-flagging since
-// its storage is cleared on close.
+// it survives reloads (and the URL param doesn't need to stay on). This is the
+// sole owner-exclusion mechanism — re-flag each device (and re-flag incognito
+// sessions, whose storage is cleared on close) you don't want counted.
 const OPT_OUT_KEY = 'p151-opt-out';
 if (typeof window !== 'undefined') {
   try {
