@@ -460,9 +460,10 @@ function GroupBox({
       ref={boxRef}
       data-section-id={group.id}
       onTransitionEnd={handleTransitionEnd}
-      className="rounded-lg shadow-elevated"
+      className="rounded-lg"
       style={{
         backgroundColor: `${group.color}${hasPokemon ? '10' : '10'}`,
+        border: `1px solid ${group.color}${hasPokemon ? '25' : '20'}`,
       }}
     >
       {/* Label */}
@@ -616,7 +617,7 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
         <Settings className="w-4 h-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-popover rounded-lg shadow-overlay z-30 min-w-[160px] py-1">
+        <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
           <button type="button"
             onClick={handleClearClick}
             className={`w-full flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors ${
@@ -910,7 +911,7 @@ export function PokedexGrid() {
               onDragEnd={handleDragEnd}
               onDragCancel={handleDragCancel}
             >
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 {BUILD_GROUPS.map((group) => (
                   <GroupBox
                     key={group.id}
