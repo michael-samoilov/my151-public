@@ -103,7 +103,7 @@ function PokemonTileStatic({ id }: { id: number }) {
   return (
     <div
       className={cn(
-        'relative bg-card rounded-lg flex flex-col items-center shadow-overlay',
+        'relative bg-card border rounded-lg flex flex-col items-center shadow-lg',
         TILE_ROOT_PADDING_CLASS,
       )}
       style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
@@ -176,7 +176,7 @@ function DraggableTile({
         {...attributes}
         {...listeners}
         className={cn(
-          'relative bg-card rounded-lg shadow-elevated flex flex-col items-center cursor-grab active:cursor-grabbing select-none',
+          'relative bg-card border rounded-lg flex flex-col items-center cursor-grab active:cursor-grabbing select-none',
           TILE_ROOT_PADDING_CLASS,
         )}
       >
@@ -460,10 +460,9 @@ function GroupBox({
       ref={boxRef}
       data-section-id={group.id}
       onTransitionEnd={handleTransitionEnd}
-      className="rounded-lg"
+      className="rounded-lg shadow-elevated"
       style={{
         backgroundColor: `${group.color}${hasPokemon ? '10' : '10'}`,
-        border: `1px solid ${group.color}${hasPokemon ? '25' : '20'}`,
       }}
     >
       {/* Label */}
