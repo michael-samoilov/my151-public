@@ -272,6 +272,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
         const inDex = assignedIds.has(pokemon.id);
         const matched = matchedIds.has(pokemon.id);
         const isFirst = i === 0;
+        const isLast = i === members.length - 1;
         const showGenBadge = showGenBadges && pokemon.generation !== lineGen;
 
         return (
