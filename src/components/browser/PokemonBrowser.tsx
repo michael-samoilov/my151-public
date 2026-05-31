@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FilterChipList } from './FilterChipList';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
@@ -415,83 +416,23 @@ export function PokemonBrowser() {
       )}
 
       {openSheet === 'classification' && (
-        <div className="flex flex-wrap gap-1.5">
-          {CATEGORIES.map((cat) => (
-            <button type="button"
-              key={cat.id}
-              onClick={() => { setCategoryFilter(activeCategory === cat.id ? null : cat.id); setOpenSheet(null); }}
-              className={cn(
-                'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
-                activeCategory === cat.id
-                  ? 'text-white border-transparent'
-                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
-              )}
-              style={activeCategory === cat.id ? { backgroundColor: cat.color } : undefined}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
+        <FilterChipList items={CATEGORIES} activeId={activeCategory}
+          onSelect={(id) => { setCategoryFilter(activeCategory === id ? null : id); setOpenSheet(null); }} />
       )}
 
       {openSheet === 'places' && (
-        <div className="flex flex-wrap gap-1.5">
-          {PLACES_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!).map((archetype) => (
-            <button type="button"
-              key={archetype.id}
-              onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
-              className={cn(
-                'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
-                activeArchetype === archetype.id
-                  ? 'text-white border-transparent'
-                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
-              )}
-              style={activeArchetype === archetype.id ? { backgroundColor: archetype.color } : undefined}
-            >
-              {archetype.name}
-            </button>
-          ))}
-        </div>
+        <FilterChipList items={PLACES_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!)} activeId={activeArchetype}
+          onSelect={(id) => { setArchetypeFilter(activeArchetype === id ? null : id); setOpenSheet(null); }} />
       )}
 
       {openSheet === 'archetypes' && (
-        <div className="flex flex-wrap gap-1.5">
-          {ARCHETYPES.filter(a => !PLACES_IDS.has(a.id) && !GAME_MECHANICS_IDS.has(a.id)).map((archetype) => (
-            <button type="button"
-              key={archetype.id}
-              onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
-              className={cn(
-                'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
-                activeArchetype === archetype.id
-                  ? 'text-white border-transparent'
-                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
-              )}
-              style={activeArchetype === archetype.id ? { backgroundColor: archetype.color } : undefined}
-            >
-              {archetype.name}
-            </button>
-          ))}
-        </div>
+        <FilterChipList items={ARCHETYPES.filter(a => !PLACES_IDS.has(a.id) && !GAME_MECHANICS_IDS.has(a.id))} activeId={activeArchetype}
+          onSelect={(id) => { setArchetypeFilter(activeArchetype === id ? null : id); setOpenSheet(null); }} />
       )}
 
       {openSheet === 'gameMechanics' && (
-        <div className="flex flex-wrap gap-1.5">
-          {GAME_MECHANICS_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!).map((archetype) => (
-            <button type="button"
-              key={archetype.id}
-              onClick={() => { setArchetypeFilter(activeArchetype === archetype.id ? null : archetype.id); setOpenSheet(null); }}
-              className={cn(
-                'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
-                activeArchetype === archetype.id
-                  ? 'text-white border-transparent'
-                  : 'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent'
-              )}
-              style={activeArchetype === archetype.id ? { backgroundColor: archetype.color } : undefined}
-            >
-              {archetype.name}
-            </button>
-          ))}
-        </div>
+        <FilterChipList items={GAME_MECHANICS_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!)} activeId={activeArchetype}
+          onSelect={(id) => { setArchetypeFilter(activeArchetype === id ? null : id); setOpenSheet(null); }} />
       )}
     </>
   ) : null;
