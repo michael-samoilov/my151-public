@@ -45,8 +45,22 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+const rootEl = document.getElementById('root')!;
+
+// Admin-only submissions view, reached at `?admin`. Code-split so the normal
+// app bundle never pulls it in.
+if (new URLSearchParams(window.location.search).has('admin')) {
+  void import('./components/admin/AdminPage').then(({ AdminPage }) => {
+    createRoot(rootEl).render(
+      <StrictMode>
+        <AdminPage />
+      </StrictMode>,
+    );
+  });
+} else {
+  createRoot(rootEl).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+}
