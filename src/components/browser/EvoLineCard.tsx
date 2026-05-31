@@ -272,7 +272,6 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
         const inDex = assignedIds.has(pokemon.id);
         const matched = matchedIds.has(pokemon.id);
         const isFirst = i === 0;
-        const isLast = i === members.length - 1;
         const showGenBadge = showGenBadges && pokemon.generation !== lineGen;
 
         return (
@@ -286,22 +285,22 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
             className="relative px-[3px] overflow-visible"
             style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
           >
-            {/* Background + border spanning the evo line. On press it shrinks as
-                a single connected rectangle: every segment scales toward the
-                line's center, placed at ((N/2 − i) × 100)% of its own width. */}
-            <div
-              className={cn(
-                'absolute inset-y-0 border-t border-b transition-[scale] duration-75 ease-out',
-                isFirst ? 'left-[3px] rounded-l-md border-l' : 'left-0',
-                isLast ? 'right-[3px] rounded-r-md border-r' : 'right-0',
-                'border-border',
-              )}
-              style={{
-                backgroundColor: `${bgColor}10`,
-                transformOrigin: `${(members.length / 2 - i) * 100}% 50%`,
-                scale: pressed ? '0.97' : '1',
-              }}
-            />
+            {/* Background + border spanning the whole evo line. Rendered once,
+                anchored in the first cell and stretched across all N columns
+                (gap-x is 0), so on press it scales as a single object about its
+                own centre — no per-cell segments means no seams. The outer
+                sprites (later grid items) paint on top of the overflow. */}
+            {isFirst && (
+              <div
+                className="absolute inset-y-0 rounded-md border border-border transition-[scale] duration-75 ease-out"
+                style={{
+                  backgroundColor: `${bgColor}10`,
+                  left: '3px',
+                  width: `calc(${members.length} * 100% - 6px)`,
+                  scale: pressed ? '0.97' : '1',
+                }}
+              />
+            )}
             <div
               role="button"
               tabIndex={0}
