@@ -614,7 +614,6 @@ export function ViewPage() {
 
 // ---------- Mobile bottom sheet for settings ----------
 
-const SHEET_HEIGHT_VH = 85;
 const DISMISS_THRESHOLD = 120;
 
 function ViewSettingsSheet({ onClose }: { onClose: () => void }) {
@@ -660,16 +659,21 @@ function ViewSettingsSheet({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 md:hidden">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end md:hidden">
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
         style={{ opacity: Math.max(0, 1 - dragY / (DISMISS_THRESHOLD * 3)) }}
       />
+      {/* Content-sized, capped to the dynamic viewport (minus a top gap) so the
+          grab handle / "View Settings" header always stays on-screen and the
+          sheet can be dismissed. A fixed 85vh height anchored to the bottom
+          pushed the header up behind the mobile browser chrome. Matches the
+          build-page filter sheet and analytics drilldown, which leave the top
+          app header reachable. */}
       <div
-        className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl flex flex-col"
+        className="relative bg-background rounded-t-2xl shadow-2xl flex flex-col max-h-[calc(100dvh-56px)]"
         style={{
-          height: `${SHEET_HEIGHT_VH}vh`,
           transform: `translateY(${dragY}px)`,
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
