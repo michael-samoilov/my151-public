@@ -58,6 +58,65 @@ function getClientIp(req: VercelRequest): string {
   return req.socket?.remoteAddress ?? 'unknown';
 }
 
+function header(req: VercelRequest, name: string): string | undefined {
+  const v = req.headers[name];
+  const raw = Array.isArray(v) ? v[0] : v;
+  const trimmed = raw?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+/** Coarse geo from Vercel's IP headers. Country/region/timezone only — we
+ *  deliberately skip city + lat/long to keep this low-sensitivity. */
+function getGeo(req: VercelRequest) {
+  return {
+    country: header(req, 'x-vercel-ip-country'),
+    region: header(req, 'x-vercel-ip-country-region'),
+    tz: header(req, 'x-vercel-ip-timezone'),
+  };
+}
+
+/** Primary language tag from Accept-Language, e.g. "en-US". */
+function getLang(req: VercelRequest): string | undefined {
+  const al = header(req, 'accept-language');
+  if (!al) return undefined;
+  const first = al.split(',')[0]?.split(';')[0]?.trim();
+  return first || undefined;
+}
+
+/** Best-effort device/browser/OS classification from the User-Agent string.
+ *  Lightweight substring matching — enough for "mobile iOS Safari" style
+ *  buckets without pulling in a UA-parsing dependency. */
+function getClient(req: VercelRequest) {
+  const ua = header(req, 'user-agent') ?? '';
+
+  let os = 'Unknown';
+  if (/Windows NT/i.test(ua)) os = 'Windows';
+  else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
+  else if (/Android/i.test(ua)) os = 'Android';
+  else if (/Mac OS X|Macintosh/i.test(ua)) os = 'macOS';
+  else if (/Linux/i.test(ua)) os = 'Linux';
+  else if (/CrOS/i.test(ua)) os = 'ChromeOS';
+
+  // Order matters: Edge/Opera/CriOS UAs also contain "Chrome"; Chrome/Edge
+  // also contain "Safari"; check the more specific tokens first.
+  let browser = 'Unknown';
+  if (/Edg(?:A|iOS)?\//i.test(ua)) browser = 'Edge';
+  else if (/OPR\/|Opera/i.test(ua)) browser = 'Opera';
+  else if (/SamsungBrowser/i.test(ua)) browser = 'Samsung Internet';
+  else if (/Firefox\/|FxiOS\//i.test(ua)) browser = 'Firefox';
+  else if (/CriOS\//i.test(ua)) browser = 'Chrome';
+  else if (/Chrome\//i.test(ua)) browser = 'Chrome';
+  else if (/Safari\//i.test(ua)) browser = 'Safari';
+
+  const device = /Mobi|iPhone|iPod|Android.*Mobile/i.test(ua)
+    ? 'Mobile'
+    : /iPad|Tablet|Android/i.test(ua)
+      ? 'Tablet'
+      : 'Desktop';
+
+  return { device, os, browser };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -107,13 +166,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(429).json({ error: 'Too many requests' });
     }
 
-    // Full submission entry: the complete pokedex plus submission datetime.
+    // Full submission entry: the complete pokedex plus submission datetime
+    // and coarse, request-derived context (geo, device, language).
     const submittedAt = Date.now();
+    const geo = getGeo(req);
+    const client = getClient(req);
     const entry = JSON.stringify({
       ids,
       source,
       ts: submittedAt,
       at: new Date(submittedAt).toISOString(),
+      country: geo.country,
+      region: geo.region,
+      tz: geo.tz,
+      lang: getLang(req),
+      device: client.device,
+      os: client.os,
+      browser: client.browser,
     });
 
     // Single EVAL command — bulk increments + store full submission in one round-trip.
