@@ -14,8 +14,14 @@ import { cn, displayName } from '@/lib/utils';
 const TOKEN_KEY = 'p151-admin-token';
 const PAGE_SIZE = 25;
 
-type Source = 'completion' | 'export';
-const SOURCES: Source[] = ['completion', 'export'];
+type Source = 'completion' | 'export' | 'interacted' | 'engaged';
+const SOURCES: Source[] = ['completion', 'export', 'interacted', 'engaged'];
+const SOURCE_LABEL: Record<Source, string> = {
+  completion: 'Completions',
+  export: 'Exports',
+  interacted: 'Interacted (3+)',
+  engaged: 'Engaged (20+)',
+};
 
 interface Submission {
   ids: number[];
@@ -32,37 +38,43 @@ interface Submission {
 }
 
 interface SourceData {
+  /** All-time count (for milestones this exceeds `stored` once past the cap). */
   total: number;
+  /** Number of snapshots actually retained (drives "Load more" pagination). */
+  stored: number;
   submissions: Submission[];
   /** All-time per-country counts (server-side, covers every submission). */
   countries: Record<string, number>;
 }
 
 type MilestoneSource = 'interacted' | 'engaged';
-interface MilestoneData {
+
+interface PokedexResult {
   total: number;
-  countries: Record<string, number>;
+  offset: number;
+  limit: number;
+  submissions: Submission[];
+  countries?: Record<string, number>;
+}
+interface MilestoneResult {
+  total: number;
+  stored: number;
+  offset: number;
+  limit: number;
+  submissions: Submission[];
+  countries?: Record<string, number>;
 }
 
-type ApiResponse = Partial<
-  Record<
-    Source,
-    {
-      total: number;
-      offset: number;
-      limit: number;
-      submissions: Submission[];
-      countries?: Record<string, number>;
-    }
-  >
-> & {
-  milestones?: Partial<Record<MilestoneSource, MilestoneData>>;
+type ApiResponse = Partial<Record<'completion' | 'export', PokedexResult>> & {
+  milestones?: Partial<Record<MilestoneSource, MilestoneResult>>;
 };
 
 function emptyData(): Record<Source, SourceData> {
   return {
-    completion: { total: 0, submissions: [], countries: {} },
-    export: { total: 0, submissions: [], countries: {} },
+    completion: { total: 0, stored: 0, submissions: [], countries: {} },
+    export: { total: 0, stored: 0, submissions: [], countries: {} },
+    interacted: { total: 0, stored: 0, submissions: [], countries: {} },
+    engaged: { total: 0, stored: 0, submissions: [], countries: {} },
   };
 }
 
@@ -227,25 +239,19 @@ function CountryTally({ countries }: { countries: Record<string, number> }) {
  *  engaged (20+), and completed (151). Bots and link-unfurlers never tap
  *  tiles, so these counts are a trustworthy human floor that the raw
  *  page-view number can't give. */
-function EngagementFunnel({
-  milestones,
-  completed,
-}: {
-  milestones: Partial<Record<MilestoneSource, MilestoneData>>;
-  completed: number;
-}) {
-  const steps = [
-    { label: 'Interacted (3+)', value: milestones.interacted?.total ?? 0 },
-    { label: 'Engaged (20+)', value: milestones.engaged?.total ?? 0 },
-    { label: 'Completed (151)', value: completed },
+function EngagementFunnel({ data }: { data: Record<Source, SourceData> }) {
+  const steps: { source: Source; label: string }[] = [
+    { source: 'interacted', label: 'Interacted (3+)' },
+    { source: 'engaged', label: 'Engaged (20+)' },
+    { source: 'completion', label: 'Completed (151)' },
   ];
   return (
     <div className="border rounded-lg p-3 bg-card">
       <div className="text-sm font-medium mb-2">Human engagement (all-time)</div>
       <div className="flex flex-wrap gap-2">
         {steps.map((s) => (
-          <div key={s.label} className="flex flex-col px-3 py-2 rounded-md bg-muted min-w-[7rem]">
-            <span className="text-2xl font-bold tabular-nums">{s.value}</span>
+          <div key={s.source} className="flex flex-col px-3 py-2 rounded-md bg-muted min-w-[7rem]">
+            <span className="text-2xl font-bold tabular-nums">{data[s.source].total}</span>
             <span className="text-xs text-muted-foreground">{s.label}</span>
           </div>
         ))}
@@ -264,7 +270,6 @@ export function AdminPage() {
   });
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<Record<Source, SourceData>>(emptyData);
-  const [milestones, setMilestones] = useState<Partial<Record<MilestoneSource, MilestoneData>>>({});
   const [activeSource, setActiveSource] = useState<Source>('completion');
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -275,21 +280,37 @@ export function AdminPage() {
     setLoading(true);
     setError(null);
     try {
-      // No source param → both lists in one round-trip.
+      // No source param → every source in one round-trip.
       const resp = await fetchSubmissions(tok, { limit: PAGE_SIZE, offset: 0 });
+      const ms = resp.milestones ?? {};
       setData({
         completion: {
+          // Pokedex sources: `total` from the endpoint is the stored-list
+          // length, which is also what paginates.
           total: resp.completion?.total ?? 0,
+          stored: resp.completion?.total ?? 0,
           submissions: resp.completion?.submissions ?? [],
           countries: resp.completion?.countries ?? {},
         },
         export: {
           total: resp.export?.total ?? 0,
+          stored: resp.export?.total ?? 0,
           submissions: resp.export?.submissions ?? [],
           countries: resp.export?.countries ?? {},
         },
+        interacted: {
+          total: ms.interacted?.total ?? 0,
+          stored: ms.interacted?.stored ?? 0,
+          submissions: ms.interacted?.submissions ?? [],
+          countries: ms.interacted?.countries ?? {},
+        },
+        engaged: {
+          total: ms.engaged?.total ?? 0,
+          stored: ms.engaged?.stored ?? 0,
+          submissions: ms.engaged?.submissions ?? [],
+          countries: ms.engaged?.countries ?? {},
+        },
       });
-      setMilestones(resp.milestones ?? {});
       setAuthed(true);
       setToken(tok);
       try {
@@ -319,13 +340,17 @@ export function AdminPage() {
     try {
       const offset = data[activeSource].submissions.length;
       const resp = await fetchSubmissions(token, { source: activeSource, limit: PAGE_SIZE, offset });
-      const more = resp[activeSource]?.submissions ?? [];
+      // Pokedex sources come back at the top level; milestone sources under
+      // `milestones`. Read whichever applies for the active tab.
+      const block =
+        resp[activeSource as 'completion' | 'export'] ?? resp.milestones?.[activeSource as MilestoneSource];
+      const more = block?.submissions ?? [];
       setData((prev) => ({
         ...prev,
         [activeSource]: {
-          total: resp[activeSource]?.total ?? prev[activeSource].total,
+          ...prev[activeSource],
           submissions: [...prev[activeSource].submissions, ...more],
-          countries: resp[activeSource]?.countries ?? prev[activeSource].countries,
+          countries: block?.countries ?? prev[activeSource].countries,
         },
       }));
     } catch (e) {
@@ -398,7 +423,7 @@ export function AdminPage() {
             </Button>
           </div>
         </div>
-        <div className="max-w-5xl mx-auto w-full flex gap-1 px-4 pb-2">
+        <div className="max-w-5xl mx-auto w-full flex flex-wrap gap-1 px-4 pb-2">
           {SOURCES.map((src) => (
             <button
               key={src}
@@ -409,8 +434,7 @@ export function AdminPage() {
                 activeSource === src ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
               )}
             >
-              {src === 'completion' ? 'Completions' : 'Exports'}{' '}
-              <span className="opacity-70">({data[src].total})</span>
+              {SOURCE_LABEL[src]} <span className="opacity-70">({data[src].total})</span>
             </button>
           ))}
         </div>
@@ -418,17 +442,23 @@ export function AdminPage() {
 
       <main className="flex-1 max-w-5xl mx-auto w-full p-4 flex flex-col gap-4">
         {error && <p className="text-sm text-destructive">{error}</p>}
-        <EngagementFunnel milestones={milestones} completed={data.completion.total} />
+        <EngagementFunnel data={data} />
         {active.submissions.length === 0 && !loading && (
-          <p className="text-sm text-muted-foreground">No {activeSource} submissions yet.</p>
+          <p className="text-sm text-muted-foreground">No {SOURCE_LABEL[activeSource]} submissions yet.</p>
         )}
         <CountryTally countries={active.countries} />
+        {/* For milestones, total (all-time) can exceed stored (capped snapshots). */}
+        {active.total > active.stored && (
+          <p className="text-xs text-muted-foreground">
+            Showing {active.stored} most-recent snapshots of {active.total} all-time.
+          </p>
+        )}
         {active.submissions.map((sub, i) => (
           <SubmissionCard key={`${sub.ts}-${i}`} sub={sub} />
         ))}
-        {active.submissions.length < active.total && (
+        {active.submissions.length < active.stored && (
           <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
-            {loadingMore ? 'Loading…' : `Load more (${active.submissions.length} / ${active.total})`}
+            {loadingMore ? 'Loading…' : `Load more (${active.submissions.length} / ${active.stored})`}
           </Button>
         )}
       </main>

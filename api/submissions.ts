@@ -55,12 +55,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  // No source (or an unrecognised one) → return both lists; otherwise narrow to one.
+  // Narrow to one source when asked; otherwise return every source. Pokedex
+  // sources come back at the top level, milestone sources under `milestones`.
   const sourceParam = firstQueryValue(req.query.source as string | string[] | undefined);
-  const sources: Source[] =
-    sourceParam === 'completion' || sourceParam === 'export'
-      ? [sourceParam]
-      : [...VALID_SOURCES];
+  const wantsOne = (s: string): s is Source =>
+    (VALID_SOURCES as readonly string[]).includes(s) ||
+    (MILESTONE_SOURCES as readonly string[]).includes(s);
+  const pokedexSources: Source[] = wantsOne(sourceParam)
+    ? VALID_SOURCES.filter((s) => s === sourceParam)
+    : [...VALID_SOURCES];
+  const milestoneSources: MilestoneSource[] = wantsOne(sourceParam)
+    ? MILESTONE_SOURCES.filter((s) => s === sourceParam)
+    : [...MILESTONE_SOURCES];
 
   const rawLimit = parseInt(firstQueryValue(req.query.limit as string | string[] | undefined), 10);
   const rawOffset = parseInt(firstQueryValue(req.query.offset as string | string[] | undefined), 10);
@@ -80,7 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const result: Partial<Record<Source, SourceResult>> = {};
 
     await Promise.all(
-      sources.map(async (src) => {
+      pokedexSources.map(async (src) => {
         const key = `submissions:${src}`;
         const [total, rows, countries] = await Promise.all([
           redis.llen(key),
@@ -106,15 +112,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }),
     );
 
-    // Engagement milestone counters (total + by-country, no stored pokedexes).
-    const milestones: Partial<Record<MilestoneSource, { total: number; countries: Record<string, number> }>> = {};
+    // Engagement milestones: all-time `total` (the counter, which keeps
+    // counting past the snapshot-list cap), plus a paginated list of build
+    // snapshots captured when the milestone fired. `stored` is the retained
+    // snapshot count, used for pagination.
+    const milestones: Partial<
+      Record<
+        MilestoneSource,
+        {
+          total: number;
+          stored: number;
+          offset: number;
+          limit: number;
+          submissions: Submission[];
+          countries: Record<string, number>;
+        }
+      >
+    > = {};
     await Promise.all(
-      MILESTONE_SOURCES.map(async (src) => {
-        const [total, countries] = await Promise.all([
+      milestoneSources.map(async (src) => {
+        const key = `submissions:${src}`;
+        const [total, stored, rows, countries] = await Promise.all([
           redis.get(`total:${src}`) as Promise<number | null>,
+          redis.llen(key),
+          redis.lrange(key, offset, offset + limit - 1),
           redis.hgetall(`countries:${src}`) as Promise<Record<string, number> | null>,
         ]);
-        milestones[src] = { total: total ?? 0, countries: countries ?? {} };
+        const submissions: Submission[] = (rows as unknown[]).map((row) => {
+          if (typeof row === 'string') {
+            try {
+              return JSON.parse(row) as Submission;
+            } catch {
+              return { ids: [], source: 'export', ts: 0, at: '' };
+            }
+          }
+          return row as Submission;
+        });
+        milestones[src] = {
+          total: total ?? 0,
+          stored,
+          offset,
+          limit,
+          submissions,
+          countries: countries ?? {},
+        };
       }),
     );
 

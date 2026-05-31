@@ -14,6 +14,31 @@ const MILESTONES: { source: Milestone; threshold: number }[] = [
 ];
 const MILESTONE_KEY = (s: Milestone) => `p151-milestone-${s}`;
 
+// Owner opt-out: visiting the site once with `?notme` marks this browser as
+// excluded, so none of its beacons are ever sent. Persisted in localStorage so
+// it survives reloads (and the URL param doesn't need to stay on). Complements
+// the server-side EXCLUDE_IPS check, covering devices on changing IPs (mobile
+// cellular) where IP exclusion can't reach. Incognito needs re-flagging since
+// its storage is cleared on close.
+const OPT_OUT_KEY = 'p151-opt-out';
+if (typeof window !== 'undefined') {
+  try {
+    if (new URLSearchParams(window.location.search).has('notme')) {
+      localStorage.setItem(OPT_OUT_KEY, '1');
+    }
+  } catch {
+    // localStorage / URL may be unavailable
+  }
+}
+
+function isOptedOut(): boolean {
+  try {
+    return localStorage.getItem(OPT_OUT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 type BeaconSource = 'completion' | 'export' | Milestone;
 
 /** Simple hash of a sorted ID array for dedup. */
@@ -22,6 +47,8 @@ function hashIds(ids: number[]): string {
 }
 
 function postSubmission(ids: number[], source: BeaconSource) {
+  // Owner-excluded browser — never send.
+  if (isOptedOut()) return;
   const payload = JSON.stringify({ ids, source });
   // Use fetch+keepalive instead of navigator.sendBeacon: iOS WebKit silently
   // drops sendBeacon in several cases (after the share sheet, and for blobs
@@ -46,27 +73,42 @@ function postSubmission(ids: number[], source: BeaconSource) {
 export function useCompletionBeacon() {
   const sections = usePokedexStore((s) => s.sections);
   const sentRef = useRef<string | null>(null);
+  // Count at the previous render. Starts null so the *initial* count — the
+  // build hydrated from localStorage — is treated as a baseline, not as a
+  // crossing. Without this, loading an already-large saved dex would fire
+  // every milestone on mount (it did: existing 151 builds counted as
+  // "engaged" the first time the milestone code ran).
+  const prevLenRef = useRef<number | null>(null);
 
   useEffect(() => {
     const allIds = Object.values(sections).flat();
+    const curLen = allIds.length;
+    const prevLen = prevLenRef.current;
+    prevLenRef.current = curLen;
 
-    // Engagement milestones — once per browser, on first reaching each count.
-    for (const { source, threshold } of MILESTONES) {
-      if (allIds.length < threshold) continue;
-      try {
-        if (localStorage.getItem(MILESTONE_KEY(source))) continue;
-      } catch {
-        // localStorage may be unavailable
-      }
-      postSubmission([], source);
-      try {
-        localStorage.setItem(MILESTONE_KEY(source), '1');
-      } catch {
-        // localStorage may be unavailable
+    // Engagement milestones — fire once per browser, and only on a genuine
+    // upward crossing of the threshold during this page's lifetime (the user
+    // actually added Pokemon to reach it), never for a count already present
+    // at load.
+    if (prevLen !== null) {
+      for (const { source, threshold } of MILESTONES) {
+        if (!(prevLen < threshold && curLen >= threshold)) continue;
+        try {
+          if (localStorage.getItem(MILESTONE_KEY(source))) continue;
+        } catch {
+          // localStorage may be unavailable
+        }
+        // Snapshot the build at the moment of crossing.
+        postSubmission(allIds, source);
+        try {
+          localStorage.setItem(MILESTONE_KEY(source), '1');
+        } catch {
+          // localStorage may be unavailable
+        }
       }
     }
 
-    if (allIds.length !== 151) return;
+    if (curLen !== 151) return;
 
     const hash = hashIds(allIds);
 
