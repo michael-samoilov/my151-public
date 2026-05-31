@@ -360,6 +360,41 @@ export function AdminPage() {
     }
   }, [token, activeSource, data]);
 
+  const resetMilestone = useCallback(
+    async (src: MilestoneSource) => {
+      if (!token) return;
+      const label = SOURCE_LABEL[src];
+      if (
+        !window.confirm(
+          `Reset all "${label}" data?\n\nThis permanently deletes the count, country tally, and stored snapshots for ${label.toLowerCase()}. Completions and exports are NOT affected. This cannot be undone.`,
+        )
+      ) {
+        return;
+      }
+      setError(null);
+      try {
+        const res = await fetch('/api/reset', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ source: src }),
+        });
+        if (!res.ok) throw new Error(`Reset failed (${res.status}).`);
+        // Clear locally, then refresh from the server.
+        setData((prev) => ({
+          ...prev,
+          [src]: { total: 0, stored: 0, submissions: [], countries: {} },
+        }));
+        await loadInitial(token);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Reset failed.');
+      }
+    },
+    [token, loadInitial],
+  );
+
   const signOut = useCallback(() => {
     try {
       localStorage.removeItem(TOKEN_KEY);
@@ -447,6 +482,17 @@ export function AdminPage() {
           <p className="text-sm text-muted-foreground">No {SOURCE_LABEL[activeSource]} submissions yet.</p>
         )}
         <CountryTally countries={active.countries} />
+        {(activeSource === 'interacted' || activeSource === 'engaged') && active.total > 0 && (
+          <div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => void resetMilestone(activeSource)}
+            >
+              Reset {SOURCE_LABEL[activeSource]}
+            </Button>
+          </div>
+        )}
         {/* For milestones, total (all-time) can exceed stored (capped snapshots). */}
         {active.total > active.stored && (
           <p className="text-xs text-muted-foreground">
