@@ -8,9 +8,20 @@ function hashIds(ids: number[]): string {
   return ids.slice().sort((a, b) => a - b).join(',');
 }
 
-function sendBeacon(ids: number[], source: 'completion' | 'export') {
+function postSubmission(ids: number[], source: 'completion' | 'export') {
   const payload = JSON.stringify({ ids, source });
-  navigator.sendBeacon('/api/submit', new Blob([payload], { type: 'application/json' }));
+  // Use fetch+keepalive instead of navigator.sendBeacon: iOS WebKit silently
+  // drops sendBeacon in several cases (after the share sheet, and for blobs
+  // whose content type isn't CORS-safelisted), so submissions never reached
+  // the server. keepalive still lets the request outlive a page transition.
+  void fetch('/api/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: payload,
+    keepalive: true,
+  }).catch(() => {
+    // best-effort analytics; ignore failures
+  });
 }
 
 /**
@@ -38,7 +49,7 @@ export function useCompletionBeacon() {
       // localStorage may be unavailable
     }
 
-    sendBeacon(allIds, 'completion');
+    postSubmission(allIds, 'completion');
     sentRef.current = hash;
     try {
       localStorage.setItem(STORAGE_KEY, hash);
@@ -51,5 +62,5 @@ export function useCompletionBeacon() {
 /** Fire a one-shot export beacon with the current list. */
 export function sendExportBeacon(ids: number[]) {
   if (ids.length === 0) return;
-  sendBeacon(ids, 'export');
+  postSubmission(ids, 'export');
 }
