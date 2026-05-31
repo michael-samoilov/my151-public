@@ -687,6 +687,16 @@ export function PokedexGrid() {
   const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
   const sensors = useSensors(mouseSensor, touchSensor);
 
+  const resetDrag = useCallback(() => {
+    setDragLineIds(null);
+    setDragFromSection(null);
+    setOverTileId(null);
+    setDropSide('left');
+    dragInputIsTouch.current = false;
+    dragPointerRef.current = null;
+    setCursorPos(null);
+  }, []);
+
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
       const { sectionId, pokemonId } = parseTileId(event.active.id as string);
@@ -790,13 +800,7 @@ export function PokedexGrid() {
           const targetLineIds = findEvoLineGroup(target.pokemonId, targetSectionIds);
 
           if (dragSetLocal.has(target.pokemonId)) {
-            setDragLineIds(null);
-            setDragFromSection(null);
-            setOverTileId(null);
-            setDropSide('left');
-            dragInputIsTouch.current = false;
-            dragPointerRef.current = null;
-            setCursorPos(null);
+            resetDrag();
             return;
           }
 
@@ -827,26 +831,12 @@ export function PokedexGrid() {
         }
       }
 
-      setDragLineIds(null);
-      setDragFromSection(null);
-      setOverTileId(null);
-      setDropSide('left');
-      dragInputIsTouch.current = false;
-      dragPointerRef.current = null;
-      setCursorPos(null);
+      resetDrag();
     },
-    [dragLineIds, dragFromSection, sections, moveEvoLine, dropSide]
+    [dragLineIds, dragFromSection, sections, moveEvoLine, dropSide, resetDrag]
   );
 
-  const handleDragCancel = useCallback(() => {
-    setDragLineIds(null);
-    setDragFromSection(null);
-    setOverTileId(null);
-    setDropSide('left');
-    dragInputIsTouch.current = false;
-    dragPointerRef.current = null;
-    setCursorPos(null);
-  }, []);
+  const handleDragCancel = useCallback(resetDrag, [resetDrag]);
 
   const insertIndicator = useMemo<{ tileId: string | null; endSection: string | null; side: 'left' | 'right' }>(() => {
     if (!overTileId || !dragLineIds) return { tileId: null, endSection: null, side: 'left' };
