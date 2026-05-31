@@ -41,8 +41,9 @@ export function getPokemonByIds(ids: Iterable<number>): Pokemon[] {
 }
 
 /** True if a Pokémon is "special": legendary, mythical, or (when a starter set
- *  is given) a starter. */
-function isSpecial(p: Pokemon, starterIds?: Set<number>): boolean {
+ *  is given) a starter. Canonical predicate for the repeated
+ *  `p.isLegendary || p.isMythical || starters.has(p.id)` checks. */
+export function isSpecial(p: Pokemon, starterIds?: Set<number>): boolean {
   return p.isLegendary || p.isMythical || (starterIds?.has(p.id) ?? false);
 }
 

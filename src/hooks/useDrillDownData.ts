@@ -1,5 +1,5 @@
 import { type DrillDownSegment } from '@/store/usePokedexStore';
-import { getPokemonById, getEvolutionLine, getAllPokemon } from '@/hooks/usePokemonData';
+import { getPokemonById, getEvolutionLine, getAllPokemon, isSpecial } from '@/hooks/usePokemonData';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
 import { STARTER_IDS } from '@/data/categories';
@@ -80,7 +80,7 @@ export function computeDrillDownData(
     if (excludeSpecial) {
       for (const id of pokemonToSection.keys()) {
         const p = getPokemonById(id);
-        if (p && (p.isLegendary || p.isMythical || starterSectionIds.has(p.id))) {
+        if (p && isSpecial(p, starterSectionIds)) {
           excludedIds.add(id);
         }
       }
@@ -230,7 +230,7 @@ function computeRegionalDrillDown(
   const excludedIds = new Set<number>();
   if (excludeSpecial) {
     for (const p of dexPokemon) {
-      if (p.isLegendary || p.isMythical || STARTER_IDS.has(p.id)) {
+      if (isSpecial(p, STARTER_IDS)) {
         excludedIds.add(p.id);
       }
     }
@@ -401,14 +401,14 @@ function computeTypeMatchupDrillDown(
       pokemon = pokemon.filter(p => p.generation === dex.generation);
     }
     if (excludeSpecial) {
-      isExcluded = (p) => p.isLegendary || p.isMythical || STARTER_IDS.has(p.id);
+      isExcluded = (p) => isSpecial(p, STARTER_IDS);
     }
   } else {
     const allIds = Object.values(storeSections).flat();
     const starterSectionIds = new Set(storeSections['starter'] ?? []);
     pokemon = allIds.map(id => getPokemonById(id)).filter(Boolean).map(p => p!);
     if (excludeSpecial) {
-      isExcluded = (p) => p.isLegendary || p.isMythical || starterSectionIds.has(p.id);
+      isExcluded = (p) => isSpecial(p, starterSectionIds);
     }
   }
 
