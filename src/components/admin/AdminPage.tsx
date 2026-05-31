@@ -19,8 +19,8 @@ const SOURCES: Source[] = ['completion', 'export', 'interacted', 'engaged'];
 const SOURCE_LABEL: Record<Source, string> = {
   completion: 'Completions',
   export: 'Exports',
-  interacted: 'Interacted (3+)',
-  engaged: 'Engaged (20+)',
+  interacted: 'Interacted (3+ lines)',
+  engaged: 'Engaged (20+ lines)',
 };
 
 interface Submission {
@@ -241,8 +241,8 @@ function CountryTally({ countries }: { countries: Record<string, number> }) {
  *  page-view number can't give. */
 function EngagementFunnel({ data }: { data: Record<Source, SourceData> }) {
   const steps: { source: Source; label: string }[] = [
-    { source: 'interacted', label: 'Interacted (3+)' },
-    { source: 'engaged', label: 'Engaged (20+)' },
+    { source: 'interacted', label: 'Interacted (3+ lines)' },
+    { source: 'engaged', label: 'Engaged (20+ lines)' },
     { source: 'completion', label: 'Completed (151)' },
   ];
   return (
