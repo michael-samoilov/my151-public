@@ -6,7 +6,8 @@ import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
 import { getPokemonById, getPokemonByIds, getAllPokemon } from '@/hooks/usePokemonData';
-import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
+import { TYPE_NAMES, type TypeName, type Pokemon } from '@/types/pokemon';
+import { countTypes, buildTypeRows } from './typeDistribution';
 import { STARTER_IDS } from '@/data/categories';
 import { typeIconPath } from '@/data/type-ids';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
@@ -115,23 +116,8 @@ export function AnalyticsDashboard() {
     const total = pokemon.length;
     if (total === 0) return { rows: [], total: 0 };
 
-    const typeCounts: Record<string, number> = {};
-    for (const t of TYPE_NAMES) typeCounts[t] = 0;
-    for (const p of pokemon) {
-      for (const t of p.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
-    }
-    const rows = TYPE_NAMES.map(t => {
-      const yourProportion = typeCounts[t] / total;
-      const globalProportion = base.typeProp[t];
-      const deviation = globalProportion > 0 ? ((yourProportion / globalProportion) - 1) * 100 : 0;
-      return {
-        label: t.charAt(0).toUpperCase() + t.slice(1),
-        count: typeCounts[t],
-        deviation,
-        color: TYPE_COLORS[t as keyof typeof TYPE_COLORS],
-        icon: typeIconPath(t as TypeName),
-      };
-    }).sort((a, b) => b.deviation - a.deviation);
+    const rows = buildTypeRows(countTypes(pokemon), total, base.typeProp)
+      .sort((a, b) => b.deviation - a.deviation);
     return { rows, total };
   }, [sections, excludeSpecial]);
   const typeChartData = typeChart.rows;
@@ -203,27 +189,10 @@ export function AnalyticsDashboard() {
     const total = pokemon.length;
     if (total === 0) return { rows: [], total: 0 };
 
-    const typeCounts: Record<string, number> = {};
-    for (const t of TYPE_NAMES) typeCounts[t] = 0;
-    for (const p of pokemon) {
-      for (const t of p.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
-    }
-
-    const rows = TYPE_NAMES.map(t => {
-      const yourProportion = typeCounts[t] / total;
-      const globalProportion = base.typeProp[t];
-      const ratio = globalProportion > 0 ? yourProportion / globalProportion : 0;
-      const deviation = globalProportion > 0 ? (ratio - 1) * 100 : 0;
-      return {
-        label: t.charAt(0).toUpperCase() + t.slice(1),
-        count: typeCounts[t],
-        deviation,
-        color: TYPE_COLORS[t as keyof typeof TYPE_COLORS],
-        icon: typeIconPath(t as TypeName),
-      };
-    }).sort(isNational
-      ? (a, b) => b.count - a.count
-      : (a, b) => b.deviation - a.deviation);
+    const rows = buildTypeRows(countTypes(pokemon), total, base.typeProp)
+      .sort(isNational
+        ? (a, b) => b.count - a.count
+        : (a, b) => b.deviation - a.deviation);
     return { rows, total };
   }, [selectedTypeChart, excludeSpecial, newPokemonOnly]);
   const regionalTypeChartData = regionalTypeChart.rows;
@@ -334,14 +303,10 @@ export function AnalyticsDashboard() {
     const computeDevRight = (deviations: number[]) => {
       return Math.max(...deviations, 50);
     };
-    const computeTypeStats = (pokemon: ReturnType<typeof getPokemonById>[], base: typeof fullBaseline) => {
+    const computeTypeStats = (pokemon: Pokemon[], base: typeof fullBaseline) => {
       const total = pokemon.length;
       if (total === 0) return { maxCount: 1, devRight: 50 };
-      const typeCounts: Record<string, number> = {};
-      for (const t of TYPE_NAMES) typeCounts[t] = 0;
-      for (const p of pokemon) {
-        for (const t of p!.types) typeCounts[t] = (typeCounts[t] || 0) + 1;
-      }
+      const typeCounts = countTypes(pokemon);
       const deviations = TYPE_NAMES.map(t => {
         const prop = typeCounts[t] / total;
         const baseProp = base.typeProp[t];
