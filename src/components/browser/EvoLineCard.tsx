@@ -293,10 +293,9 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                 sprites (later grid items) paint on top of the overflow. */}
             {isFirst && (
               <div
-                // No transition in either direction: the rectangle snaps to the
-                // shrunken state on press and back on release, with zero
-                // animation — matching the instant touch feel on every platform.
-                className="absolute inset-y-0 rounded-md border border-border"
+                // Smooth scale animation both ways — shrink on press, grow back
+                // on release.
+                className="absolute inset-y-0 rounded-md border border-border transition-[scale] duration-100 ease-out"
                 style={{
                   backgroundColor: `${bgColor}10`,
                   left: '3px',
@@ -317,10 +316,9 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
               onPointerCancel={() => setPressed(false)}
               className={cn(
                 // active:scale (CSS :active) shrinks only the tapped sprite; the
-                // shared `pressed` state above shrinks the whole rectangle. No
-                // transition in either direction — instant snap on press and
-                // release, matching the touch feel on every platform.
-                'relative flex flex-col items-center cursor-pointer w-full active:scale-[0.96]',
+                // shared `pressed` state above shrinks the whole rectangle.
+                // Smooth scale animation both ways.
+                'relative flex flex-col items-center cursor-pointer w-full transition-[scale] duration-100 ease-out active:scale-[0.96]',
                 TILE_ROOT_PADDING_CLASS,
               )}
             >
