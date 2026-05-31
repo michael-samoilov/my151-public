@@ -22,6 +22,13 @@ interface Submission {
   source: Source;
   ts: number;
   at: string;
+  country?: string;
+  region?: string;
+  tz?: string;
+  lang?: string;
+  device?: string;
+  os?: string;
+  browser?: string;
 }
 
 interface SourceData {
@@ -48,6 +55,28 @@ function relativeTime(ts: number): string {
   const h = Math.round(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.round(h / 24)}d ago`;
+}
+
+/** Convert an ISO country code (e.g. "US") to its flag emoji. */
+function flag(country?: string): string {
+  if (!country || country.length !== 2) return '';
+  const cc = country.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) return '';
+  return String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
+}
+
+/** Compact, human-readable context line for a submission's metadata. */
+function contextParts(sub: Submission): string[] {
+  const parts: string[] = [];
+  const loc = [sub.country && `${flag(sub.country)} ${sub.country}`, sub.region]
+    .filter(Boolean)
+    .join(' / ');
+  if (loc) parts.push(loc);
+  const dev = [sub.device, sub.os, sub.browser].filter(Boolean).join(' · ');
+  if (dev) parts.push(dev);
+  if (sub.lang) parts.push(sub.lang);
+  if (sub.tz) parts.push(sub.tz);
+  return parts;
 }
 
 async function fetchSubmissions(
@@ -84,7 +113,7 @@ function SubmissionCard({ sub }: { sub: Submission }) {
 
   return (
     <section className="border rounded-lg p-3 bg-card">
-      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+      <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
         <div className="text-sm">
           <span className="font-semibold">{new Date(when).toLocaleString()}</span>
           <span className="text-muted-foreground">
@@ -95,6 +124,13 @@ function SubmissionCard({ sub }: { sub: Submission }) {
           {copied ? 'Copied!' : 'Copy IDs'}
         </Button>
       </div>
+      {contextParts(sub).length > 0 && (
+        <div className="text-xs text-muted-foreground mb-2 flex flex-wrap gap-x-2 gap-y-0.5">
+          {contextParts(sub).map((p, i) => (
+            <span key={i}>{p}</span>
+          ))}
+        </div>
+      )}
       <div className="flex flex-wrap gap-1">
         {sub.ids.map((id, idx) => {
           const p = getPokemonById(id);
@@ -122,6 +158,30 @@ function SubmissionCard({ sub }: { sub: Submission }) {
         })}
       </div>
     </section>
+  );
+}
+
+/** Counts loaded submissions by country, descending. Reflects the currently
+ *  loaded page(s), not the full server-side total. */
+function CountryTally({ subs }: { subs: Submission[] }) {
+  const counts = new Map<string, number>();
+  let unknown = 0;
+  for (const s of subs) {
+    if (s.country) counts.set(s.country, (counts.get(s.country) ?? 0) + 1);
+    else unknown++;
+  }
+  if (counts.size === 0) return null;
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  return (
+    <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 border rounded-lg p-2 bg-card">
+      <span className="font-medium text-foreground">By country (loaded):</span>
+      {sorted.map(([cc, n]) => (
+        <span key={cc}>
+          {flag(cc)} {cc} {n}
+        </span>
+      ))}
+      {unknown > 0 && <span>· unknown {unknown}</span>}
+    </div>
   );
 }
 
@@ -287,6 +347,7 @@ export function AdminPage() {
         {active.submissions.length === 0 && !loading && (
           <p className="text-sm text-muted-foreground">No {activeSource} submissions yet.</p>
         )}
+        {active.submissions.length > 0 && <CountryTally subs={active.submissions} />}
         {active.submissions.map((sub, i) => (
           <SubmissionCard key={`${sub.ts}-${i}`} sub={sub} />
         ))}
