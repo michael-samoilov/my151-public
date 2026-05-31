@@ -8,8 +8,17 @@ const redis = new Redis({
 });
 
 const MAX_POKEMON_ID = 1025;
-const VALID_SOURCES = ['completion', 'export'] as const;
+// Full-pokedex sources (store the complete build); milestone sources are
+// lightweight counters that gauge how many real humans engage with the app.
+const POKEDEX_SOURCES = ['completion', 'export'] as const;
+const MILESTONE_SOURCES = ['interacted', 'engaged'] as const;
+const VALID_SOURCES = [...POKEDEX_SOURCES, ...MILESTONE_SOURCES] as const;
 type Source = typeof VALID_SOURCES[number];
+type MilestoneSource = typeof MILESTONE_SOURCES[number];
+
+function isMilestone(s: Source): s is MilestoneSource {
+  return (MILESTONE_SOURCES as readonly string[]).includes(s);
+}
 
 // Cap stored full submissions per source so the list can't grow unbounded.
 // LTRIM keeps the most recent MAX_STORED_SUBMISSIONS entries.
@@ -34,6 +43,14 @@ const burstLimiter = new Ratelimit({
   analytics: false,
   prefix: 'rl:burst',
 });
+// Milestone beacons are deduped client-side per browser, but cap per IP too
+// so a single client can't inflate the human-engagement counters.
+const milestoneLimiter = new Ratelimit({
+  redis,
+  limiter: Ratelimit.fixedWindow(10, '1 d'),
+  analytics: false,
+  prefix: 'rl:milestone',
+});
 
 // Single Lua script: bulk HINCRBY + INCR + LPUSH/LTRIM counts as 1 Upstash command
 // regardless of ID count.
@@ -55,6 +72,18 @@ redis.call('LPUSH', KEYS[3], ARGV[1])
 redis.call('LTRIM', KEYS[3], 0, tonumber(ARGV[2]) - 1)
 if ARGV[3] ~= '' then
   redis.call('HINCRBY', KEYS[4], ARGV[3], 1)
+end
+return 1
+`;
+
+// Milestone script: just a total counter + by-country tally. No pokedex is
+// stored — these sources measure human engagement, not builds.
+// KEYS[1] = total:<source>   KEYS[2] = countries:<source>
+// ARGV[1] = country code ('' if unknown)
+const MILESTONE_LUA = `
+redis.call('INCR', KEYS[1])
+if ARGV[1] ~= '' then
+  redis.call('HINCRBY', KEYS[2], ARGV[1], 1)
 end
 return 1
 `;
@@ -135,7 +164,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Validate source
     if (!source || !VALID_SOURCES.includes(source as Source)) {
-      return res.status(400).json({ error: 'source must be "completion" or "export"' });
+      return res.status(400).json({ error: 'invalid source' });
+    }
+    const src = source as Source;
+
+    const ip = getClientIp(req);
+    const geo = getGeo(req);
+
+    // Milestone beacons: no pokedex payload — just bump an engagement counter.
+    if (isMilestone(src)) {
+      const burst = await burstLimiter.limit(ip);
+      if (!burst.success) {
+        res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
+        return res.status(429).json({ error: 'Too many requests' });
+      }
+      const ms = await milestoneLimiter.limit(`${src}:${ip}`);
+      if (!ms.success) {
+        res.setHeader('Retry-After', Math.ceil((ms.reset - Date.now()) / 1000));
+        return res.status(429).json({ error: 'Too many requests' });
+      }
+      await redis.eval(
+        MILESTONE_LUA,
+        [`total:${src}`, `countries:${src}`],
+        [geo.country ?? ''],
+      );
+      return res.status(200).json({ ok: true });
     }
 
     // Validate IDs array
@@ -144,7 +197,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Completion source requires exactly 151
-    if (source === 'completion' && ids.length !== 151) {
+    if (src === 'completion' && ids.length !== 151) {
       return res.status(400).json({ error: 'Completion requires exactly 151 Pokemon IDs' });
     }
 
@@ -160,13 +213,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // Rate limit per IP before touching state.
-    const ip = getClientIp(req);
     const burst = await burstLimiter.limit(ip);
     if (!burst.success) {
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
-    const perSource = source === 'completion'
+    const perSource = src === 'completion'
       ? await completionLimiter.limit(ip)
       : await exportLimiter.limit(ip);
     if (!perSource.success) {
@@ -177,11 +229,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Full submission entry: the complete pokedex plus submission datetime
     // and coarse, request-derived context (geo, device, language).
     const submittedAt = Date.now();
-    const geo = getGeo(req);
     const client = getClient(req);
     const entry = JSON.stringify({
       ids,
-      source,
+      source: src,
       ts: submittedAt,
       at: new Date(submittedAt).toISOString(),
       country: geo.country,
@@ -196,7 +247,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Single EVAL command — bulk increments + store full submission in one round-trip.
     await redis.eval(
       SUBMIT_LUA,
-      [`picks:${source}`, `total:${source}`, `submissions:${source}`, `countries:${source}`],
+      [`picks:${src}`, `total:${src}`, `submissions:${src}`, `countries:${src}`],
       [entry, String(MAX_STORED_SUBMISSIONS), geo.country ?? '', ...ids.map(String)],
     );
 

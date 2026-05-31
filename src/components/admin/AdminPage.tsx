@@ -38,6 +38,12 @@ interface SourceData {
   countries: Record<string, number>;
 }
 
+type MilestoneSource = 'interacted' | 'engaged';
+interface MilestoneData {
+  total: number;
+  countries: Record<string, number>;
+}
+
 type ApiResponse = Partial<
   Record<
     Source,
@@ -49,7 +55,9 @@ type ApiResponse = Partial<
       countries?: Record<string, number>;
     }
   >
->;
+> & {
+  milestones?: Partial<Record<MilestoneSource, MilestoneData>>;
+};
 
 function emptyData(): Record<Source, SourceData> {
   return {
@@ -215,6 +223,37 @@ function CountryTally({ countries }: { countries: Record<string, number> }) {
   );
 }
 
+/** Top-of-page engagement funnel: how many real humans interacted (3+),
+ *  engaged (20+), and completed (151). Bots and link-unfurlers never tap
+ *  tiles, so these counts are a trustworthy human floor that the raw
+ *  page-view number can't give. */
+function EngagementFunnel({
+  milestones,
+  completed,
+}: {
+  milestones: Partial<Record<MilestoneSource, MilestoneData>>;
+  completed: number;
+}) {
+  const steps = [
+    { label: 'Interacted (3+)', value: milestones.interacted?.total ?? 0 },
+    { label: 'Engaged (20+)', value: milestones.engaged?.total ?? 0 },
+    { label: 'Completed (151)', value: completed },
+  ];
+  return (
+    <div className="border rounded-lg p-3 bg-card">
+      <div className="text-sm font-medium mb-2">Human engagement (all-time)</div>
+      <div className="flex flex-wrap gap-2">
+        {steps.map((s) => (
+          <div key={s.label} className="flex flex-col px-3 py-2 rounded-md bg-muted min-w-[7rem]">
+            <span className="text-2xl font-bold tabular-nums">{s.value}</span>
+            <span className="text-xs text-muted-foreground">{s.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function AdminPage() {
   const [token, setToken] = useState<string | null>(() => {
     try {
@@ -225,6 +264,7 @@ export function AdminPage() {
   });
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<Record<Source, SourceData>>(emptyData);
+  const [milestones, setMilestones] = useState<Partial<Record<MilestoneSource, MilestoneData>>>({});
   const [activeSource, setActiveSource] = useState<Source>('completion');
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -249,6 +289,7 @@ export function AdminPage() {
           countries: resp.export?.countries ?? {},
         },
       });
+      setMilestones(resp.milestones ?? {});
       setAuthed(true);
       setToken(tok);
       try {
@@ -377,6 +418,7 @@ export function AdminPage() {
 
       <main className="flex-1 max-w-5xl mx-auto w-full p-4 flex flex-col gap-4">
         {error && <p className="text-sm text-destructive">{error}</p>}
+        <EngagementFunnel milestones={milestones} completed={data.completion.total} />
         {active.submissions.length === 0 && !loading && (
           <p className="text-sm text-muted-foreground">No {activeSource} submissions yet.</p>
         )}
