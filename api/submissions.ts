@@ -9,6 +9,10 @@ const redis = new Redis({
 const VALID_SOURCES = ['completion', 'export'] as const;
 type Source = typeof VALID_SOURCES[number];
 
+// Engagement milestones — counter-only sources (no stored pokedexes).
+const MILESTONE_SOURCES = ['interacted', 'engaged'] as const;
+type MilestoneSource = typeof MILESTONE_SOURCES[number];
+
 interface Submission {
   ids: number[];
   source: Source;
@@ -102,10 +106,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }),
     );
 
+    // Engagement milestone counters (total + by-country, no stored pokedexes).
+    const milestones: Partial<Record<MilestoneSource, { total: number; countries: Record<string, number> }>> = {};
+    await Promise.all(
+      MILESTONE_SOURCES.map(async (src) => {
+        const [total, countries] = await Promise.all([
+          redis.get(`total:${src}`) as Promise<number | null>,
+          redis.hgetall(`countries:${src}`) as Promise<Record<string, number> | null>,
+        ]);
+        milestones[src] = { total: total ?? 0, countries: countries ?? {} };
+      }),
+    );
+
     // Private data — never cache.
     res.setHeader('Cache-Control', 'no-store');
 
-    return res.status(200).json(result);
+    return res.status(200).json({ ...result, milestones });
   } catch (err) {
     console.error('Submissions error:', err);
     return res.status(500).json({ error: 'Internal server error' });
