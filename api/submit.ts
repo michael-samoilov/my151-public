@@ -37,17 +37,25 @@ const burstLimiter = new Ratelimit({
 
 // Single Lua script: bulk HINCRBY + INCR + LPUSH/LTRIM counts as 1 Upstash command
 // regardless of ID count.
-// KEYS[1] = picks:<source>   KEYS[2] = total:<source>   KEYS[3] = submissions:<source>
+// KEYS[1] = picks:<source>   KEYS[2] = total:<source>
+// KEYS[3] = submissions:<source>   KEYS[4] = countries:<source>
 // ARGV[1] = full submission entry (JSON string)
 // ARGV[2] = max stored submissions (cap for LTRIM)
-// ARGV[3..] = list of pokemon IDs as strings
+// ARGV[3] = country code ('' if unknown)
+// ARGV[4..] = list of pokemon IDs as strings
+// The countries hash is an all-time tally — it keeps counting past the
+// MAX_STORED_SUBMISSIONS list cap, so per-country totals cover every
+// submission ever received, not just the retained entries.
 const SUBMIT_LUA = `
-for i = 3, #ARGV do
+for i = 4, #ARGV do
   redis.call('HINCRBY', KEYS[1], ARGV[i], 1)
 end
 redis.call('INCR', KEYS[2])
 redis.call('LPUSH', KEYS[3], ARGV[1])
 redis.call('LTRIM', KEYS[3], 0, tonumber(ARGV[2]) - 1)
+if ARGV[3] ~= '' then
+  redis.call('HINCRBY', KEYS[4], ARGV[3], 1)
+end
 return 1
 `;
 
@@ -188,8 +196,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Single EVAL command — bulk increments + store full submission in one round-trip.
     await redis.eval(
       SUBMIT_LUA,
-      [`picks:${source}`, `total:${source}`, `submissions:${source}`],
-      [entry, String(MAX_STORED_SUBMISSIONS), ...ids.map(String)],
+      [`picks:${source}`, `total:${source}`, `submissions:${source}`, `countries:${source}`],
+      [entry, String(MAX_STORED_SUBMISSIONS), geo.country ?? '', ...ids.map(String)],
     );
 
     return res.status(200).json({ ok: true });

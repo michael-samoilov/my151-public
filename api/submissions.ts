@@ -64,16 +64,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const offset = Math.max(Number.isNaN(rawOffset) ? 0 : rawOffset, 0);
 
   try {
-    type SourceResult = { total: number; offset: number; limit: number; submissions: Submission[] };
+    type SourceResult = {
+      total: number;
+      offset: number;
+      limit: number;
+      submissions: Submission[];
+      // All-time per-country counts (covers every submission ever received,
+      // not just the retained list entries).
+      countries: Record<string, number>;
+    };
     const result: Partial<Record<Source, SourceResult>> = {};
 
     await Promise.all(
       sources.map(async (src) => {
         const key = `submissions:${src}`;
-        const [total, rows] = await Promise.all([
+        const [total, rows, countries] = await Promise.all([
           redis.llen(key),
           // Newest first (LPUSH prepends), paginated.
           redis.lrange(key, offset, offset + limit - 1),
+          redis.hgetall(`countries:${src}`) as Promise<Record<string, number> | null>,
         ]);
 
         // The @upstash/redis SDK auto-parses JSON entries on read, but fall back
@@ -89,7 +98,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return row as Submission;
         });
 
-        result[src] = { total, offset, limit, submissions };
+        result[src] = { total, offset, limit, submissions, countries: countries ?? {} };
       }),
     );
 
