@@ -293,15 +293,10 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                 sprites (later grid items) paint on top of the overflow. */}
             {isFirst && (
               <div
-                className={cn(
-                  // Instant scale-down on press (duration-0 while pressed) so the
-                  // shrink tracks the click/tap exactly; eased grow-back on
-                  // release. A symmetric transition makes a fast mouse click
-                  // (down+up in <75ms) animate after the click is already over,
-                  // which reads as a laggy float on desktop.
-                  'absolute inset-y-0 rounded-md border border-border transition-[scale] ease-out',
-                  pressed ? 'duration-0' : 'duration-150',
-                )}
+                // No transition in either direction: the rectangle snaps to the
+                // shrunken state on press and back on release, with zero
+                // animation — matching the instant touch feel on every platform.
+                className="absolute inset-y-0 rounded-md border border-border"
                 style={{
                   backgroundColor: `${bgColor}10`,
                   left: '3px',
@@ -322,11 +317,10 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
               onPointerCancel={() => setPressed(false)}
               className={cn(
                 // active:scale (CSS :active) shrinks only the tapped sprite; the
-                // shared `pressed` state above shrinks the whole rectangle.
-                // Asymmetric timing: active:duration-0 snaps the shrink to the
-                // press exactly, base duration-150 eases the grow-back. Symmetric
-                // timing made fast desktop clicks animate after the click ended.
-                'relative flex flex-col items-center cursor-pointer w-full transition-[scale] duration-150 ease-out active:duration-0 active:scale-[0.96]',
+                // shared `pressed` state above shrinks the whole rectangle. No
+                // transition in either direction — instant snap on press and
+                // release, matching the touch feel on every platform.
+                'relative flex flex-col items-center cursor-pointer w-full active:scale-[0.96]',
                 TILE_ROOT_PADDING_CLASS,
               )}
             >
