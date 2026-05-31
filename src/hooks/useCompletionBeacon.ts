@@ -1,17 +1,32 @@
 import { useEffect, useRef } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
+import { getPokemonById } from '@/hooks/usePokemonData';
 
 const STORAGE_KEY = 'p151-submitted-hash';
 
 /** Engagement milestones — fired once per browser the first time the build
- *  reaches each Pokemon count. They gauge how many real humans interact with
- *  the app (bots/link-unfurlers never tap tiles), which the raw page-view
- *  count can't distinguish. "completion" (151) is the third, separate tier. */
+ *  reaches each evolution-line count. They gauge how many real humans interact
+ *  with the app (bots/link-unfurlers never tap tiles), which the raw page-view
+ *  count can't distinguish. "completion" (151) is the third, separate tier.
+ *  Counting distinct evolution lines (not raw Pokemon) better reflects real
+ *  building effort: adding a 3-stage line is one decision, not three. */
 type Milestone = 'interacted' | 'engaged';
 const MILESTONES: { source: Milestone; threshold: number }[] = [
   { source: 'interacted', threshold: 3 },
   { source: 'engaged', threshold: 20 },
 ];
+
+/** Number of distinct evolution lines (chains) represented by a set of ids. */
+function countEvoLines(ids: number[]): number {
+  const chains = new Set<number>();
+  for (const id of ids) {
+    const p = getPokemonById(id);
+    // Fall back to the raw id when a chain is unknown, so an unrecognised
+    // Pokemon still counts as its own line rather than vanishing.
+    chains.add(p ? p.evolutionChainId : -id);
+  }
+  return chains.size;
+}
 const MILESTONE_KEY = (s: Milestone) => `p151-milestone-${s}`;
 
 // Owner opt-out: visiting the site once with `?notme` marks this browser as
@@ -73,26 +88,25 @@ function postSubmission(ids: number[], source: BeaconSource) {
 export function useCompletionBeacon() {
   const sections = usePokedexStore((s) => s.sections);
   const sentRef = useRef<string | null>(null);
-  // Count at the previous render. Starts null so the *initial* count — the
-  // build hydrated from localStorage — is treated as a baseline, not as a
-  // crossing. Without this, loading an already-large saved dex would fire
-  // every milestone on mount (it did: existing 151 builds counted as
+  // Evolution-line count at the previous render. Starts null so the *initial*
+  // count — the build hydrated from localStorage — is treated as a baseline,
+  // not as a crossing. Without this, loading an already-large saved dex would
+  // fire every milestone on mount (it did: existing 151 builds counted as
   // "engaged" the first time the milestone code ran).
-  const prevLenRef = useRef<number | null>(null);
+  const prevLinesRef = useRef<number | null>(null);
 
   useEffect(() => {
     const allIds = Object.values(sections).flat();
-    const curLen = allIds.length;
-    const prevLen = prevLenRef.current;
-    prevLenRef.current = curLen;
+    const curLines = countEvoLines(allIds);
+    const prevLines = prevLinesRef.current;
+    prevLinesRef.current = curLines;
 
     // Engagement milestones — fire once per browser, and only on a genuine
-    // upward crossing of the threshold during this page's lifetime (the user
-    // actually added Pokemon to reach it), never for a count already present
-    // at load.
-    if (prevLen !== null) {
+    // upward crossing of the threshold (in distinct evolution lines) during
+    // this page's lifetime, never for a count already present at load.
+    if (prevLines !== null) {
       for (const { source, threshold } of MILESTONES) {
-        if (!(prevLen < threshold && curLen >= threshold)) continue;
+        if (!(prevLines < threshold && curLines >= threshold)) continue;
         try {
           if (localStorage.getItem(MILESTONE_KEY(source))) continue;
         } catch {
@@ -108,7 +122,8 @@ export function useCompletionBeacon() {
       }
     }
 
-    if (curLen !== 151) return;
+    // Completion stays keyed off the raw Pokemon count — a full 151.
+    if (allIds.length !== 151) return;
 
     const hash = hashIds(allIds);
 
