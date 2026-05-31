@@ -103,14 +103,15 @@ h1, h2, h3, h4, h5, h6 {
  * (make-interfaces-feel-better #3). Two tiers by how "high" a surface floats:
  *   .shadow-elevated — resting cards (analytics panels, admin cards, platforms)
  *   .shadow-overlay  — floating layers (menus, bottom-sheet)
- * The main layer's blur radius exceeds its y-offset, so the shadow diffuses
- * softly on every side (including a little past the top) without needing an
- * explicit top layer. Dark mode uses much stronger alpha (black shadows are
- * near-invisible on the near-black surface) plus a faint inset hairline to
- * keep the edge legible. */
+ * The first layer is a tight, near-zero-blur contour at a higher alpha — it
+ * does a border's job (a crisp edge against a white background) while the
+ * wider, lower-alpha layers carry the soft depth and diffuse a little past the
+ * top. Dark mode uses much stronger alpha (black shadows are near-invisible on
+ * the near-black surface) plus a faint inset hairline to keep the edge legible. */
 .shadow-elevated {
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 0 0 0.5px rgba(0, 0, 0, 0.10),
+    0 1px 2px rgba(0, 0, 0, 0.06),
     0 4px 16px rgba(0, 0, 0, 0.06);
 }
 .dark .shadow-elevated {
@@ -121,7 +122,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 .shadow-overlay {
   box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.06),
+    0 0 0 0.5px rgba(0, 0, 0, 0.10),
+    0 2px 4px rgba(0, 0, 0, 0.08),
     0 10px 34px rgba(0, 0, 0, 0.14);
 }
 .dark .shadow-overlay {
