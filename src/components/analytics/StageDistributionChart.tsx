@@ -135,7 +135,7 @@ export function StageDistributionChart({ sections, drillDownSegment, onDrillTogg
           No Starters/Legendaries
         </button>
       </div>
-      <div ref={mekkoRef} className="bg-card rounded-lg border p-4">
+      <div ref={mekkoRef} className="bg-card rounded-lg shadow-elevated p-4">
         {mekkoData.totalLines > 0 ? (() => {
           const chartHeight = 180 * mekkoScale;
           const topMargin = 20 * mekkoScale;

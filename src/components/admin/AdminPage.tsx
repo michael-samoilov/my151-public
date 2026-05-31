@@ -157,7 +157,7 @@ function SubmissionCard({ sub, onDelete }: { sub: Submission; onDelete: (sub: Su
   }, [sub.ids]);
 
   return (
-    <section className="border rounded-lg p-3 bg-card">
+    <section className="shadow-elevated rounded-lg p-3 bg-card">
       <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
         <div className="text-sm">
           <span className="font-semibold">{new Date(when).toLocaleString()}</span>
@@ -230,7 +230,7 @@ function CountryTally({ countries }: { countries: Record<string, number> }) {
   const sorted = entries.sort((a, b) => b[1] - a[1]);
   const total = sorted.reduce((sum, [, n]) => sum + n, 0);
   return (
-    <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 border rounded-lg p-2 bg-card">
+    <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 shadow-elevated rounded-lg p-2 bg-card">
       <span className="font-medium text-foreground">By country (all-time, {total}):</span>
       {sorted.map(([cc, n]) => (
         <span key={cc}>
@@ -252,7 +252,7 @@ function EngagementFunnel({ data }: { data: Record<Source, SourceData> }) {
     { source: 'completion', label: 'Completed (151)' },
   ];
   return (
-    <div className="border rounded-lg p-3 bg-card">
+    <div className="shadow-elevated rounded-lg p-3 bg-card">
       <div className="text-sm font-medium mb-2">Human engagement (all-time)</div>
       <div className="flex flex-wrap gap-2">
         {steps.map((s) => (
