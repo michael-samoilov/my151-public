@@ -321,7 +321,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
               <div
                 // Smooth scale animation both ways — shrink on press, grow back
                 // on release.
-                className="absolute inset-y-0 rounded-md shadow-elevated transition-[scale] duration-100 ease-out"
+                className="absolute inset-y-0 rounded-md border border-border transition-[scale] duration-100 ease-out"
                 style={{
                   backgroundColor: `${bgColor}10`,
                   left: '3px',

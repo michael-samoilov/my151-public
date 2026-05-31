@@ -688,7 +688,7 @@ export function PokemonBrowser() {
 
               return (
                 <div key={sub.label}>
-                  <div className="sticky top-[22px] z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
+                  <div className="sticky top-[22px] z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 mt-1 border-b">
                     {sub.label}
                   </div>
                   <div className="grid grid-cols-2 gap-x-1 items-start pt-1">
@@ -719,7 +719,7 @@ export function PokemonBrowser() {
 
             return (
               <div key={sub.label}>
-                <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
+                <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 mt-1 border-b">
                   {sub.label}
                 </div>
                 <div className="pt-1">
