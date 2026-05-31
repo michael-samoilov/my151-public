@@ -11,6 +11,10 @@ const MAX_POKEMON_ID = 1025;
 const VALID_SOURCES = ['completion', 'export'] as const;
 type Source = typeof VALID_SOURCES[number];
 
+// Cap stored full submissions per source so the list can't grow unbounded.
+// LTRIM keeps the most recent MAX_STORED_SUBMISSIONS entries.
+const MAX_STORED_SUBMISSIONS = 10000;
+
 // Rate limiters: per-IP, analytics disabled to avoid doubling Upstash command count.
 const completionLimiter = new Ratelimit({
   redis,
@@ -31,14 +35,19 @@ const burstLimiter = new Ratelimit({
   prefix: 'rl:burst',
 });
 
-// Single Lua script: bulk HINCRBY + 1 INCR counts as 1 Upstash command regardless of ID count.
-// KEYS[1] = picks:<source>   KEYS[2] = total:<source>
-// ARGV    = list of pokemon IDs as strings
+// Single Lua script: bulk HINCRBY + INCR + LPUSH/LTRIM counts as 1 Upstash command
+// regardless of ID count.
+// KEYS[1] = picks:<source>   KEYS[2] = total:<source>   KEYS[3] = submissions:<source>
+// ARGV[1] = full submission entry (JSON string)
+// ARGV[2] = max stored submissions (cap for LTRIM)
+// ARGV[3..] = list of pokemon IDs as strings
 const SUBMIT_LUA = `
-for i = 1, #ARGV do
+for i = 3, #ARGV do
   redis.call('HINCRBY', KEYS[1], ARGV[i], 1)
 end
 redis.call('INCR', KEYS[2])
+redis.call('LPUSH', KEYS[3], ARGV[1])
+redis.call('LTRIM', KEYS[3], 0, tonumber(ARGV[2]) - 1)
 return 1
 `;
 
@@ -98,11 +107,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(429).json({ error: 'Too many requests' });
     }
 
-    // Single EVAL command — bulk increments in one round-trip.
+    // Full submission entry: the complete pokedex plus submission datetime.
+    const submittedAt = Date.now();
+    const entry = JSON.stringify({
+      ids,
+      source,
+      ts: submittedAt,
+      at: new Date(submittedAt).toISOString(),
+    });
+
+    // Single EVAL command — bulk increments + store full submission in one round-trip.
     await redis.eval(
       SUBMIT_LUA,
-      [`picks:${source}`, `total:${source}`],
-      ids.map(String),
+      [`picks:${source}`, `total:${source}`, `submissions:${source}`],
+      [entry, String(MAX_STORED_SUBMISSIONS), ...ids.map(String)],
     );
 
     return res.status(200).json({ ok: true });
