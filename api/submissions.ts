@@ -51,8 +51,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+  // No source (or an unrecognised one) → return both lists; otherwise narrow to one.
   const sourceParam = firstQueryValue(req.query.source as string | string[] | undefined);
-  const source: Source = sourceParam === 'export' ? 'export' : 'completion';
+  const sources: Source[] =
+    sourceParam === 'completion' || sourceParam === 'export'
+      ? [sourceParam]
+      : [...VALID_SOURCES];
 
   const rawLimit = parseInt(firstQueryValue(req.query.limit as string | string[] | undefined), 10);
   const rawOffset = parseInt(firstQueryValue(req.query.offset as string | string[] | undefined), 10);
@@ -60,30 +64,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const offset = Math.max(Number.isNaN(rawOffset) ? 0 : rawOffset, 0);
 
   try {
-    const key = `submissions:${source}`;
-    const [total, rows] = await Promise.all([
-      redis.llen(key),
-      // Newest first (LPUSH prepends), paginated.
-      redis.lrange(key, offset, offset + limit - 1),
-    ]);
+    type SourceResult = { total: number; offset: number; limit: number; submissions: Submission[] };
+    const result: Partial<Record<Source, SourceResult>> = {};
 
-    // The @upstash/redis SDK auto-parses JSON entries on read, but fall back
-    // to manual parse in case an entry comes back as a raw string.
-    const submissions: Submission[] = (rows as unknown[]).map((row) => {
-      if (typeof row === 'string') {
-        try {
-          return JSON.parse(row) as Submission;
-        } catch {
-          return { ids: [], source, ts: 0, at: '' };
-        }
-      }
-      return row as Submission;
-    });
+    await Promise.all(
+      sources.map(async (src) => {
+        const key = `submissions:${src}`;
+        const [total, rows] = await Promise.all([
+          redis.llen(key),
+          // Newest first (LPUSH prepends), paginated.
+          redis.lrange(key, offset, offset + limit - 1),
+        ]);
+
+        // The @upstash/redis SDK auto-parses JSON entries on read, but fall back
+        // to manual parse in case an entry comes back as a raw string.
+        const submissions: Submission[] = (rows as unknown[]).map((row) => {
+          if (typeof row === 'string') {
+            try {
+              return JSON.parse(row) as Submission;
+            } catch {
+              return { ids: [], source: src, ts: 0, at: '' };
+            }
+          }
+          return row as Submission;
+        });
+
+        result[src] = { total, offset, limit, submissions };
+      }),
+    );
 
     // Private data — never cache.
     res.setHeader('Cache-Control', 'no-store');
 
-    return res.status(200).json({ source, total, offset, limit, submissions });
+    return res.status(200).json(result);
   } catch (err) {
     console.error('Submissions error:', err);
     return res.status(500).json({ error: 'Internal server error' });
