@@ -293,12 +293,20 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                 sprites (later grid items) paint on top of the overflow. */}
             {isFirst && (
               <div
-                className="absolute inset-y-0 rounded-md border border-border transition-[scale] duration-75 ease-out"
+                className={cn(
+                  // Instant scale-down on press (duration-0 while pressed) so the
+                  // shrink tracks the click/tap exactly; eased grow-back on
+                  // release. A symmetric transition makes a fast mouse click
+                  // (down+up in <75ms) animate after the click is already over,
+                  // which reads as a laggy float on desktop.
+                  'absolute inset-y-0 rounded-md border border-border transition-[scale] ease-out',
+                  pressed ? 'duration-0' : 'duration-150',
+                )}
                 style={{
                   backgroundColor: `${bgColor}10`,
                   left: '3px',
                   width: `calc(${members.length} * 100% - 6px)`,
-                  scale: pressed ? '0.97' : '1',
+                  scale: pressed ? '0.98' : '1',
                 }}
               />
             )}
