@@ -428,7 +428,8 @@ export function AdminPage() {
             Authorization: `Bearer ${token}`,
           },
           // Prefer the unique id; ts is a legacy fallback for older entries.
-          body: JSON.stringify({ source: src, id: sub.id, ts: sub.ts }),
+          // country/ids let the server floor-decrement the matching aggregates.
+          body: JSON.stringify({ source: src, id: sub.id, ts: sub.ts, country: sub.country, ids: sub.ids }),
         });
         if (!res.ok) throw new Error(`Delete failed (${res.status}).`);
         // Drop exactly this entry from local state and decrement the counts.
