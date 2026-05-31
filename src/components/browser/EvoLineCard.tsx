@@ -323,7 +323,10 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
               className={cn(
                 // active:scale (CSS :active) shrinks only the tapped sprite; the
                 // shared `pressed` state above shrinks the whole rectangle.
-                'relative flex flex-col items-center cursor-pointer w-full transition-[scale] duration-75 ease-out active:scale-[0.96]',
+                // Asymmetric timing: active:duration-0 snaps the shrink to the
+                // press exactly, base duration-150 eases the grow-back. Symmetric
+                // timing made fast desktop clicks animate after the click ended.
+                'relative flex flex-col items-center cursor-pointer w-full transition-[scale] duration-150 ease-out active:duration-0 active:scale-[0.96]',
                 TILE_ROOT_PADDING_CLASS,
               )}
             >
