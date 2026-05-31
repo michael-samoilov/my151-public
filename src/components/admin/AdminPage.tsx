@@ -148,7 +148,7 @@ async function fetchSubmissions(
   return res.json() as Promise<ApiResponse>;
 }
 
-function SubmissionCard({ sub }: { sub: Submission }) {
+function SubmissionCard({ sub, onDelete }: { sub: Submission; onDelete: (sub: Submission) => void }) {
   const [copied, setCopied] = useState(false);
   const when = sub.ts || Date.parse(sub.at) || Date.now();
   const userLocal = localTime(when, sub.tz);
@@ -174,9 +174,19 @@ function SubmissionCard({ sub }: { sub: Submission }) {
             </span>
           )}
         </div>
-        <Button variant="ghost" size="sm" onClick={copyIds}>
-          {copied ? 'Copied!' : 'Copy IDs'}
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" onClick={copyIds}>
+            {copied ? 'Copied!' : 'Copy IDs'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+            onClick={() => onDelete(sub)}
+          >
+            Delete
+          </Button>
+        </div>
       </div>
       {contextParts(sub).length > 0 && (
         <div className="text-xs text-muted-foreground mb-2 flex flex-wrap gap-x-2 gap-y-0.5">
@@ -395,6 +405,47 @@ export function AdminPage() {
     [token, loadInitial],
   );
 
+  const deleteEntry = useCallback(
+    async (sub: Submission) => {
+      if (!token) return;
+      const src = activeSource;
+      if (
+        !window.confirm(
+          `Delete this ${SOURCE_LABEL[src]} entry from ${new Date(
+            sub.ts || Date.parse(sub.at),
+          ).toLocaleString()}?\n\nThis removes just this one snapshot. It cannot be undone.`,
+        )
+      ) {
+        return;
+      }
+      setError(null);
+      try {
+        const res = await fetch('/api/delete-entry', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ source: src, ts: sub.ts }),
+        });
+        if (!res.ok) throw new Error(`Delete failed (${res.status}).`);
+        // Drop it from local state and decrement the counts.
+        setData((prev) => ({
+          ...prev,
+          [src]: {
+            ...prev[src],
+            total: Math.max(0, prev[src].total - 1),
+            stored: Math.max(0, prev[src].stored - 1),
+            submissions: prev[src].submissions.filter((s) => s.ts !== sub.ts),
+          },
+        }));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Delete failed.');
+      }
+    },
+    [token, activeSource],
+  );
+
   const signOut = useCallback(() => {
     try {
       localStorage.removeItem(TOKEN_KEY);
@@ -500,7 +551,7 @@ export function AdminPage() {
           </p>
         )}
         {active.submissions.map((sub, i) => (
-          <SubmissionCard key={`${sub.ts}-${i}`} sub={sub} />
+          <SubmissionCard key={`${sub.ts}-${i}`} sub={sub} onDelete={deleteEntry} />
         ))}
         {active.submissions.length < active.stored && (
           <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>

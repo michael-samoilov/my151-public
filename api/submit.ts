@@ -107,15 +107,6 @@ function header(req: VercelRequest, name: string): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
-// IPs whose submissions are silently ignored (the site owner's own testing).
-// Set EXCLUDE_IPS in Vercel to a comma-separated list, e.g. "1.2.3.4, 5.6.7.8".
-const EXCLUDED_IPS = new Set(
-  (process.env.EXCLUDE_IPS ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean),
-);
-
 /** Coarse geo from Vercel's IP headers. Country/region/timezone only — we
  *  deliberately skip city + lat/long to keep this low-sensitivity. */
 function getGeo(req: VercelRequest) {
@@ -184,13 +175,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const ip = getClientIp(req);
     const geo = getGeo(req);
-
-    // Drop the owner's own testing traffic before it touches any counter.
-    // Reply 200 so the client treats it as sent (and won't retry) — it's
-    // simply not recorded.
-    if (EXCLUDED_IPS.has(ip)) {
-      return res.status(200).json({ ok: true, ignored: true });
-    }
 
     // Validate IDs array. Milestone snapshots carry 1-151 ids (the build so
     // far); pokedex sources the same, with completion pinned to exactly 151.
