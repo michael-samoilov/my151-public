@@ -365,7 +365,7 @@ export function PokemonBrowser() {
                 <button type="button"
                   key={type}
                   onClick={() => toggleType(type)}
-                  className="flex items-center justify-center py-0.5 rounded-md cursor-pointer transition-all"
+                  className="flex items-center justify-center py-0.5 rounded-md cursor-pointer transition-[opacity,scale] duration-150 ease-out active:scale-[0.96]"
                   style={{
                     opacity: typeFilter && typeFilter.length > 0 && !isSelected ? 0.3 : 1,
                   }}

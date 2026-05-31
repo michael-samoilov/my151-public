@@ -294,7 +294,7 @@ function StarterContent({
             <button type="button"
               key={`${type}-${i}`}
               onClick={() => onTypeClick(type)}
-              className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
+              className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,opacity,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer hover:opacity-80"
               style={{ borderColor: `${color}40`, color: `${color}90`, backgroundColor: `${color}10` }}
             >
               <Plus className="w-[27%] h-[27%]" />
@@ -330,7 +330,7 @@ function StarterContent({
       {!dragLineIds && (
         <button type="button"
           onClick={onAddClick}
-          className="aspect-square md:aspect-auto rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
+          className="aspect-square md:aspect-auto rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
         >
           <Plus className="w-[27%] h-[27%]" />
         </button>
@@ -493,7 +493,7 @@ function GroupBox({
           ) : (
             <button type="button"
               onClick={() => onAddClick(group.id)}
-              className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer hover:opacity-80"
+              className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,opacity,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer hover:opacity-80"
               style={{
                 borderColor: `${group.color}40`,
                 color: `${group.color}90`,
@@ -556,7 +556,7 @@ function GroupBox({
               {!dragLineIds && (
                 <button type="button"
                   onClick={() => onAddClick(group.id)}
-                  className="aspect-square md:aspect-auto rounded-lg border-2 border-dashed flex items-center justify-center transition-all cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
+                  className="aspect-square md:aspect-auto rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
                 >
                   <Plus className="w-[27%] h-[27%]" />
                 </button>

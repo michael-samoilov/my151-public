@@ -84,6 +84,19 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-family: 'Inter Variable', system-ui, -apple-system, sans-serif;
+
+  /* Crisper glyph edges on macOS/iOS — Inter is designed for antialiased
+   * rendering, and the default subpixel smoothing makes it look heavier. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Body copy: let the browser avoid orphaned last-line words. */
+  text-wrap: pretty;
+}
+
+/* Headings read better balanced across lines rather than left-heavy. */
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
 }
 
 * {

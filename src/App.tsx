@@ -178,7 +178,7 @@ function App() {
         {/* Builder — always mounted to avoid remount cost on tab switch */}
         <div ref={builderAreaRef} className={cn('flex-1 min-h-0 relative overflow-hidden', currentView !== 'builder' && 'hidden')}>
           <div className={cn(
-            'h-full transition-all duration-300 ease-out',
+            'h-full transition-[margin] duration-300 ease-out',
             'md:w-1/2',
             activeSection ? 'md:mr-auto' : 'md:mx-auto',
           )}>

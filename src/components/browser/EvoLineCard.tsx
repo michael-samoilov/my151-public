@@ -298,7 +298,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
               onClick={handleClick}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
               className={cn(
-                'relative flex flex-col items-center transition-all cursor-pointer w-full',
+                'relative flex flex-col items-center transition-[transform,scale,opacity] duration-150 ease-out active:scale-[0.98] cursor-pointer w-full',
                 TILE_ROOT_PADDING_CLASS,
               )}
             >
