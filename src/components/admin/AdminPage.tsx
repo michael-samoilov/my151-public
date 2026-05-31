@@ -34,16 +34,27 @@ interface Submission {
 interface SourceData {
   total: number;
   submissions: Submission[];
+  /** All-time per-country counts (server-side, covers every submission). */
+  countries: Record<string, number>;
 }
 
 type ApiResponse = Partial<
-  Record<Source, { total: number; offset: number; limit: number; submissions: Submission[] }>
+  Record<
+    Source,
+    {
+      total: number;
+      offset: number;
+      limit: number;
+      submissions: Submission[];
+      countries?: Record<string, number>;
+    }
+  >
 >;
 
 function emptyData(): Record<Source, SourceData> {
   return {
-    completion: { total: 0, submissions: [] },
-    export: { total: 0, submissions: [] },
+    completion: { total: 0, submissions: [], countries: {} },
+    export: { total: 0, submissions: [], countries: {} },
   };
 }
 
@@ -65,6 +76,23 @@ function flag(country?: string): string {
   return String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
 }
 
+/** The submission's wall-clock time in the submitter's own timezone, e.g.
+ *  "May 31, 2026, 11:03 AM". Returns null when no (valid) timezone was
+ *  captured, so the caller can fall back to the admin's local time. */
+function localTime(when: number, tz?: string): string | null {
+  if (!tz) return null;
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      timeZone: tz,
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(when);
+  } catch {
+    // Invalid/unknown timezone string
+    return null;
+  }
+}
+
 /** Compact, human-readable context line for a submission's metadata. */
 function contextParts(sub: Submission): string[] {
   const parts: string[] = [];
@@ -75,7 +103,7 @@ function contextParts(sub: Submission): string[] {
   const dev = [sub.device, sub.os, sub.browser].filter(Boolean).join(' · ');
   if (dev) parts.push(dev);
   if (sub.lang) parts.push(sub.lang);
-  if (sub.tz) parts.push(sub.tz);
+  // Timezone is surfaced separately alongside the user-local time.
   return parts;
 }
 
@@ -103,6 +131,7 @@ async function fetchSubmissions(
 function SubmissionCard({ sub }: { sub: Submission }) {
   const [copied, setCopied] = useState(false);
   const when = sub.ts || Date.parse(sub.at) || Date.now();
+  const userLocal = localTime(when, sub.tz);
 
   const copyIds = useCallback(() => {
     void navigator.clipboard?.writeText(sub.ids.join(',')).then(() => {
@@ -119,6 +148,11 @@ function SubmissionCard({ sub }: { sub: Submission }) {
           <span className="text-muted-foreground">
             {' '}· {relativeTime(when)} · {sub.ids.length} Pokémon
           </span>
+          {userLocal && (
+            <span className="block text-xs text-muted-foreground">
+              User local: {userLocal} ({sub.tz})
+            </span>
+          )}
         </div>
         <Button variant="ghost" size="sm" onClick={copyIds}>
           {copied ? 'Copied!' : 'Copy IDs'}
@@ -161,26 +195,22 @@ function SubmissionCard({ sub }: { sub: Submission }) {
   );
 }
 
-/** Counts loaded submissions by country, descending. Reflects the currently
- *  loaded page(s), not the full server-side total. */
-function CountryTally({ subs }: { subs: Submission[] }) {
-  const counts = new Map<string, number>();
-  let unknown = 0;
-  for (const s of subs) {
-    if (s.country) counts.set(s.country, (counts.get(s.country) ?? 0) + 1);
-    else unknown++;
-  }
-  if (counts.size === 0) return null;
-  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+/** All-time submissions-by-country, descending. Driven by the server-side
+ *  counter, so it covers every submission ever received — not just the
+ *  entries currently loaded into the page. */
+function CountryTally({ countries }: { countries: Record<string, number> }) {
+  const entries = Object.entries(countries).filter(([, n]) => n > 0);
+  if (entries.length === 0) return null;
+  const sorted = entries.sort((a, b) => b[1] - a[1]);
+  const total = sorted.reduce((sum, [, n]) => sum + n, 0);
   return (
     <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 border rounded-lg p-2 bg-card">
-      <span className="font-medium text-foreground">By country (loaded):</span>
+      <span className="font-medium text-foreground">By country (all-time, {total}):</span>
       {sorted.map(([cc, n]) => (
         <span key={cc}>
           {flag(cc)} {cc} {n}
         </span>
       ))}
-      {unknown > 0 && <span>· unknown {unknown}</span>}
     </div>
   );
 }
@@ -211,10 +241,12 @@ export function AdminPage() {
         completion: {
           total: resp.completion?.total ?? 0,
           submissions: resp.completion?.submissions ?? [],
+          countries: resp.completion?.countries ?? {},
         },
         export: {
           total: resp.export?.total ?? 0,
           submissions: resp.export?.submissions ?? [],
+          countries: resp.export?.countries ?? {},
         },
       });
       setAuthed(true);
@@ -252,6 +284,7 @@ export function AdminPage() {
         [activeSource]: {
           total: resp[activeSource]?.total ?? prev[activeSource].total,
           submissions: [...prev[activeSource].submissions, ...more],
+          countries: resp[activeSource]?.countries ?? prev[activeSource].countries,
         },
       }));
     } catch (e) {
@@ -347,7 +380,7 @@ export function AdminPage() {
         {active.submissions.length === 0 && !loading && (
           <p className="text-sm text-muted-foreground">No {activeSource} submissions yet.</p>
         )}
-        {active.submissions.length > 0 && <CountryTally subs={active.submissions} />}
+        <CountryTally countries={active.countries} />
         {active.submissions.map((sub, i) => (
           <SubmissionCard key={`${sub.ts}-${i}`} sub={sub} />
         ))}
