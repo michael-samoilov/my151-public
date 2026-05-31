@@ -103,7 +103,7 @@ function PokemonTileStatic({ id }: { id: number }) {
   return (
     <div
       className={cn(
-        'relative bg-card border rounded-lg flex flex-col items-center shadow-lg',
+        'relative bg-card rounded-lg flex flex-col items-center shadow-overlay',
         TILE_ROOT_PADDING_CLASS,
       )}
       style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
@@ -176,7 +176,7 @@ function DraggableTile({
         {...attributes}
         {...listeners}
         className={cn(
-          'relative bg-card border rounded-lg flex flex-col items-center cursor-grab active:cursor-grabbing select-none',
+          'relative bg-card rounded-lg shadow-elevated flex flex-col items-center cursor-grab active:cursor-grabbing select-none',
           TILE_ROOT_PADDING_CLASS,
         )}
       >
@@ -617,7 +617,7 @@ function SettingsMenu({ onClear }: { onClear: () => void }) {
         <Settings className="w-4 h-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-30 min-w-[160px] py-1">
+        <div className="absolute right-0 top-full mt-1 bg-popover rounded-lg shadow-overlay z-30 min-w-[160px] py-1">
           <button type="button"
             onClick={handleClearClick}
             className={`w-full flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors ${
