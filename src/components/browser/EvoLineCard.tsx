@@ -283,25 +283,24 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
           // at canonical ratios — see `src/components/shared/PokemonTile.tsx`.
           <div
             key={pokemon.id}
-            className="relative px-[3px] overflow-visible transition-[scale] duration-75 ease-out"
-            style={{
-              ['--tile-sprite' as string]: `${spritePx}px`,
-              // Scale toward the line's center: cell i (of N) places the center
-              // at ((N/2 − i) × 100)% of its own width, so all cells converge as
-              // one connected unit when any member is pressed.
-              transformOrigin: `${(members.length / 2 - i) * 100}% 50%`,
-              scale: pressed ? '0.97' : '1',
-            }}
+            className="relative px-[3px] overflow-visible"
+            style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
           >
-            {/* Background + border spanning the evo line */}
+            {/* Background + border spanning the evo line. On press it shrinks as
+                a single connected rectangle: every segment scales toward the
+                line's center, placed at ((N/2 − i) × 100)% of its own width. */}
             <div
               className={cn(
-                'absolute inset-y-0 border-t border-b',
+                'absolute inset-y-0 border-t border-b transition-[scale] duration-75 ease-out',
                 isFirst ? 'left-[3px] rounded-l-md border-l' : 'left-0',
                 isLast ? 'right-[3px] rounded-r-md border-r' : 'right-0',
                 'border-border',
               )}
-              style={{ backgroundColor: `${bgColor}10` }}
+              style={{
+                backgroundColor: `${bgColor}10`,
+                transformOrigin: `${(members.length / 2 - i) * 100}% 50%`,
+                scale: pressed ? '0.97' : '1',
+              }}
             />
             <div
               role="button"
@@ -314,7 +313,9 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
               onPointerLeave={() => setPressed(false)}
               onPointerCancel={() => setPressed(false)}
               className={cn(
-                'relative flex flex-col items-center cursor-pointer w-full',
+                // active:scale (CSS :active) shrinks only the tapped sprite; the
+                // shared `pressed` state above shrinks the whole rectangle.
+                'relative flex flex-col items-center cursor-pointer w-full transition-[scale] duration-75 ease-out active:scale-[0.96]',
                 TILE_ROOT_PADDING_CLASS,
               )}
             >
