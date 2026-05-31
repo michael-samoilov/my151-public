@@ -469,10 +469,13 @@ export function ViewPage() {
   const handleExport = useCallback(async () => {
     if (exporting || sorted.length === 0) return;
     setExporting(true);
+    // Fire the export beacon up front. On iOS the share sheet ("Save Image")
+    // suspends the page, and a sendBeacon issued after navigator.share resolves
+    // often never leaves the device — so record the export before opening it.
+    sendExportBeacon(sorted.map((p) => p.id));
     try {
       const blob = await generateExportImage(sorted);
       await shareOrDownload(blob, `my151.png`);
-      sendExportBeacon(sorted.map((p) => p.id));
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('Export failed:', err);
