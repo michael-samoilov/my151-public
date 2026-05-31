@@ -358,7 +358,7 @@ export function AnalyticsDashboard() {
       fixedMaxCount: Math.max(unfiltered.maxCount, filtered.maxCount),
       fixedDevRight: Math.max(unfiltered.devRight, filtered.devRight),
     };
-  }, [selectedTypeChart, isNationalSelected, newPokemonOnly, sections, analytics.typeDeviation]);
+  }, [selectedTypeChart, isNationalSelected, newPokemonOnly, sections]);
 
   const evoHist = useMemo(
     () => alignHistograms(analytics.yourEvoHistogram, analytics.nationalEvoHistogram, 5),
