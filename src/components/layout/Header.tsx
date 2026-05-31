@@ -10,7 +10,7 @@ interface HeaderProps {
 
 export function Header({ currentView, onViewChange }: HeaderProps) {
   return (
-    <header className="border-b bg-card">
+    <header className="bg-card relative z-10 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_2px_6px_rgba(0,0,0,0.05)] dark:shadow-[0_1px_2px_rgba(0,0,0,0.4),0_2px_8px_rgba(0,0,0,0.3)]">
       <div className="flex items-center justify-between px-3 sm:px-6 py-2">
         <h1 className="text-2xl font-extrabold tracking-tight whitespace-nowrap">
           <span className="text-primary">my151</span><span className="text-foreground">.app</span>
