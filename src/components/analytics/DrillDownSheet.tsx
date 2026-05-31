@@ -137,7 +137,7 @@ function CardPanel({
         <div className="px-2 pb-2" style={{ minHeight: 'calc(100% + 1px)' }}>
           {data.sections.map((section) => (
             <div key={section.sectionId}>
-              <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
+              <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 mt-1 border-b">
                 {section.sectionName}
               </div>
               <div className="pt-1">
@@ -700,7 +700,7 @@ export function DrillDownPanel() {
         <div className="px-2 pb-2">
           {currentData.sections.map((section) => (
             <div key={section.sectionId}>
-              <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
+              <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 mt-1 border-b">
                 {section.sectionName}
               </div>
               <div className="pt-1">

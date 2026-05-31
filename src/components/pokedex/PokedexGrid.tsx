@@ -910,7 +910,7 @@ export function PokedexGrid() {
               onDragEnd={handleDragEnd}
               onDragCancel={handleDragCancel}
             >
-              <div className="space-y-1.5">
+              <div className="space-y-3">
                 {BUILD_GROUPS.map((group) => (
                   <GroupBox
                     key={group.id}
