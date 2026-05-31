@@ -76,15 +76,20 @@ end
 return 1
 `;
 
-// Milestone script: just a total counter + by-country tally. No pokedex is
-// stored — these sources measure human engagement, not builds.
-// KEYS[1] = total:<source>   KEYS[2] = countries:<source>
+// Milestone script: total counter + by-country tally + a capped snapshot list
+// of the build at the moment the milestone fired. No `picks` aggregate — these
+// sources measure human engagement, not the most-popular Pokemon.
+// KEYS[1] = total:<source>   KEYS[2] = countries:<source>   KEYS[3] = submissions:<source>
 // ARGV[1] = country code ('' if unknown)
+// ARGV[2] = full snapshot entry (JSON string)
+// ARGV[3] = max stored submissions (cap for LTRIM)
 const MILESTONE_LUA = `
 redis.call('INCR', KEYS[1])
 if ARGV[1] ~= '' then
   redis.call('HINCRBY', KEYS[2], ARGV[1], 1)
 end
+redis.call('LPUSH', KEYS[3], ARGV[2])
+redis.call('LTRIM', KEYS[3], 0, tonumber(ARGV[3]) - 1)
 return 1
 `;
 
@@ -187,32 +192,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ ok: true, ignored: true });
     }
 
-    // Milestone beacons: no pokedex payload — just bump an engagement counter.
-    if (isMilestone(src)) {
-      const burst = await burstLimiter.limit(ip);
-      if (!burst.success) {
-        res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
-        return res.status(429).json({ error: 'Too many requests' });
-      }
-      const ms = await milestoneLimiter.limit(`${src}:${ip}`);
-      if (!ms.success) {
-        res.setHeader('Retry-After', Math.ceil((ms.reset - Date.now()) / 1000));
-        return res.status(429).json({ error: 'Too many requests' });
-      }
-      await redis.eval(
-        MILESTONE_LUA,
-        [`total:${src}`, `countries:${src}`],
-        [geo.country ?? ''],
-      );
-      return res.status(200).json({ ok: true });
-    }
-
-    // Validate IDs array
+    // Validate IDs array. Milestone snapshots carry 1-151 ids (the build so
+    // far); pokedex sources the same, with completion pinned to exactly 151.
     if (!Array.isArray(ids) || ids.length === 0 || ids.length > 151) {
       return res.status(400).json({ error: 'Expected 1-151 Pokemon IDs' });
     }
-
-    // Completion source requires exactly 151
     if (src === 'completion' && ids.length !== 151) {
       return res.status(400).json({ error: 'Completion requires exactly 151 Pokemon IDs' });
     }
@@ -234,16 +218,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
-    const perSource = src === 'completion'
-      ? await completionLimiter.limit(ip)
-      : await exportLimiter.limit(ip);
+    const perSource = isMilestone(src)
+      ? await milestoneLimiter.limit(`${src}:${ip}`)
+      : src === 'completion'
+        ? await completionLimiter.limit(ip)
+        : await exportLimiter.limit(ip);
     if (!perSource.success) {
       res.setHeader('Retry-After', Math.ceil((perSource.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
 
-    // Full submission entry: the complete pokedex plus submission datetime
-    // and coarse, request-derived context (geo, device, language).
+    // Submission entry: the build (full pokedex, or the snapshot at the moment
+    // a milestone fired) plus datetime and coarse request-derived context.
     const submittedAt = Date.now();
     const client = getClient(req);
     const entry = JSON.stringify({
@@ -259,6 +245,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       os: client.os,
       browser: client.browser,
     });
+
+    // Milestone sources: counter + country tally + snapshot list (no `picks`).
+    if (isMilestone(src)) {
+      await redis.eval(
+        MILESTONE_LUA,
+        [`total:${src}`, `countries:${src}`, `submissions:${src}`],
+        [geo.country ?? '', entry, String(MAX_STORED_SUBMISSIONS)],
+      );
+      return res.status(200).json({ ok: true });
+    }
 
     // Single EVAL command — bulk increments + store full submission in one round-trip.
     await redis.eval(
