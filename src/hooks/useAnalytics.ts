@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { getPokemonById, getAllPokemon } from '@/hooks/usePokemonData';
+import { getPokemonById, getAllPokemon, withoutSpecials } from '@/hooks/usePokemonData';
 import { TYPE_NAMES } from '@/types/pokemon';
 import { STARTER_IDS } from '@/data/categories';
 
@@ -61,7 +61,7 @@ function computeBaseline(pokemon: ReturnType<typeof getAllPokemon>): Baseline {
 
 const allNational = getAllPokemon();
 const fullBaseline = computeBaseline(allNational);
-const filteredNational = allNational.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+const filteredNational = withoutSpecials(allNational, STARTER_IDS);
 const filteredBaseline = computeBaseline(filteredNational);
 
 export { fullBaseline, filteredBaseline, computeBaseline };
@@ -81,9 +81,7 @@ export function useAnalytics(excludeSpecial = false) {
       .map((p) => p!);
 
     if (excludeSpecial) {
-      pokemon = pokemon.filter(p =>
-        !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id)
-      );
+      pokemon = withoutSpecials(pokemon, starterSectionIds);
     }
 
     const total = pokemon.length;

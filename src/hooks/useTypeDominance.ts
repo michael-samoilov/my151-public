@@ -1,7 +1,7 @@
 import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
 import { typeEffectiveness } from '@/data/type-effectiveness';
 import type { Pokemon } from '@/types/pokemon';
-import { getAllPokemon } from '@/hooks/usePokemonData';
+import { getAllPokemon, withoutSpecials } from '@/hooks/usePokemonData';
 
 export interface TypeDominanceResult {
   type: TypeName;
@@ -90,7 +90,7 @@ let _nationalBaselineFiltered: Map<TypeName, number> | null = null;
 
 export function getNationalBaselineFiltered(starterIds: Set<number>): Map<TypeName, number> {
   if (_nationalBaselineFiltered) return _nationalBaselineFiltered;
-  const allPokemon = getAllPokemon().filter(p => !p.isLegendary && !p.isMythical && !starterIds.has(p.id));
+  const allPokemon = withoutSpecials(getAllPokemon(), starterIds);
   const results = computeTypeDominance(allPokemon);
   _nationalBaselineFiltered = new Map(results.map(r => [r.type, r.score]));
   return _nationalBaselineFiltered;

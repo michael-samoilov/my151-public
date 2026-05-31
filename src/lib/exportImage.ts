@@ -1,7 +1,7 @@
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
-import { getAllPokemon } from '@/hooks/usePokemonData';
+import { getAllPokemon, withoutSpecials } from '@/hooks/usePokemonData';
 import { typeIconPath } from '@/data/type-ids';
 import { GEN_BADGE_URIS } from '@/components/shared/GenBadge';
 import { STARTER_IDS } from '@/data/categories';
@@ -82,7 +82,7 @@ function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
 
   // Type lean — must be >1.5x in both the full pool AND the legend/mythical-excluded pool.
   const ratiosAll = typeOverIndexRatios(pokemon, nationalTypeFreq);
-  const filtered = pokemon.filter(p => !p.isLegendary && !p.isMythical);
+  const filtered = withoutSpecials(pokemon);
   const ratiosFiltered = filtered.length >= 10
     ? typeOverIndexRatios(filtered, nationalTypeFreq)
     : ratiosAll;
@@ -119,7 +119,7 @@ function computeFooterInsights(pokemon: Pokemon[]): FooterInsights {
   // Uses the same baselines as the analytics chart's exclude-special toggle, so the
   // export result matches what the user sees in the chart.
   const dominanceFull = computeTypeDominance(pokemon);
-  const filteredForOverperform = pokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+  const filteredForOverperform = withoutSpecials(pokemon, STARTER_IDS);
   const dominanceFiltered = filteredForOverperform.length >= 10
     ? computeTypeDominance(filteredForOverperform)
     : dominanceFull;

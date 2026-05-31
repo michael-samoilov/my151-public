@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { getPokemonById, getAllPokemon, getEvolutionChainIds } from '@/hooks/usePokemonData';
+import { getPokemonById, getAllPokemon, getEvolutionChainIds, withoutSpecials } from '@/hooks/usePokemonData';
 import { CATEGORIES } from '@/data/categories';
 import { ARCHETYPES } from '@/data/archetypes';
 import pokemonData from '@/data/pokemon.json';
@@ -133,7 +133,7 @@ export function WhatsAdvisor() {
 
       const ratiosAll = typeRatios(placedPokemon);
       const starterSet = new Set(sections['starter'] ?? []);
-      const filteredPool = placedPokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSet.has(p.id));
+      const filteredPool = withoutSpecials(placedPokemon, starterSet);
       const ratiosFiltered = filteredPool.length >= 10 ? typeRatios(filteredPool) : ratiosAll;
 
       const overRepTypes: string[] = [];

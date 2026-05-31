@@ -5,7 +5,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { WhatsAdvisor } from './WhatsAdvisor';
 import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
-import { getPokemonById, getPokemonByIds, getAllPokemon } from '@/hooks/usePokemonData';
+import { getPokemonById, getPokemonByIds, getAllPokemon, withoutSpecials } from '@/hooks/usePokemonData';
 import { TYPE_NAMES, type TypeName, type Pokemon } from '@/types/pokemon';
 import { countTypes, buildTypeRows } from './typeDistribution';
 import { STARTER_IDS } from '@/data/categories';
@@ -111,7 +111,7 @@ export function AnalyticsDashboard() {
     const starterSectionIds = new Set(sections['starter'] ?? []);
     let pokemon = getPokemonByIds(allIds);
     if (excludeSpecial) {
-      pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
+      pokemon = withoutSpecials(pokemon, starterSectionIds);
     }
     const total = pokemon.length;
     if (total === 0) return { rows: [], total: 0 };
@@ -181,7 +181,7 @@ export function AnalyticsDashboard() {
       ? getAllPokemon()
       : getPokemonByIds(dex!.pokemonIds);
     if (excludeSpecial) {
-      pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+      pokemon = withoutSpecials(pokemon, STARTER_IDS);
     }
     if (newPokemonOnly && dex) {
       pokemon = pokemon.filter(p => p.generation === dex.generation);
@@ -214,12 +214,12 @@ export function AnalyticsDashboard() {
       const starterSectionIds = new Set(sections['starter'] ?? []);
       pokemon = getPokemonByIds(allIds);
       if (excludeSpecial) {
-        pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
+        pokemon = withoutSpecials(pokemon, starterSectionIds);
       }
     } else if (selectedTypeChart === 'national') {
       pokemon = getAllPokemon();
       if (excludeSpecial) {
-        pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+        pokemon = withoutSpecials(pokemon, STARTER_IDS);
       }
     } else {
       const dex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
@@ -229,7 +229,7 @@ export function AnalyticsDashboard() {
         pokemon = pokemon.filter(p => p.generation === dex.generation);
       }
       if (excludeSpecial) {
-        pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+        pokemon = withoutSpecials(pokemon, STARTER_IDS);
       }
     }
     if (pokemon.length === 0) return [];
@@ -257,12 +257,12 @@ export function AnalyticsDashboard() {
       return results.some(r => r.score < 0) && results.some(r => r.score > 0);
     };
     const permutations = (sets: NonNullable<ReturnType<typeof getPokemonById>>[][]) =>
-      sets.some(s => checkBidi(s)) || sets.some(s => checkBidi(s.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id))));
+      sets.some(s => checkBidi(s)) || sets.some(s => checkBidi(withoutSpecials(s, STARTER_IDS)));
     if (selectedTypeChart === 'yours') {
       const allIds = Object.values(sections).flat();
       const allPokemon = getPokemonByIds(allIds);
       const starterIds = new Set(sections['starter'] ?? []);
-      const filtered = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !starterIds.has(p.id));
+      const filtered = withoutSpecials(allPokemon, starterIds);
       return checkBidi(allPokemon) || checkBidi(filtered);
     }
     if (isNationalSelected) {
@@ -323,7 +323,7 @@ export function AnalyticsDashboard() {
       const allIds = Object.values(sections).flat();
       const allPokemon = getPokemonByIds(allIds);
       const starterIds = new Set(sections['starter'] ?? []);
-      const filteredPokemon = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !starterIds.has(p.id));
+      const filteredPokemon = withoutSpecials(allPokemon, starterIds);
       const s1 = computeTypeStats(allPokemon, fullBaseline);
       const s2 = computeTypeStats(filteredPokemon, filteredBaseline);
       return {
@@ -334,7 +334,7 @@ export function AnalyticsDashboard() {
 
     if (isNationalSelected) {
       const allPokemon = getAllPokemon();
-      const filteredPokemon = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id));
+      const filteredPokemon = withoutSpecials(allPokemon, STARTER_IDS);
       const s1 = computeTypeStats(allPokemon, fullBaseline);
       const s2 = computeTypeStats(filteredPokemon, filteredBaseline);
       return {
@@ -351,7 +351,7 @@ export function AnalyticsDashboard() {
     const base = newPokemonOnly ? allInDex.filter(p => p.generation === dex.generation) : allInDex;
     const unfiltered = computeTypeStats(base, fullBaseline);
     const filtered = computeTypeStats(
-      base.filter(p => !p.isLegendary && !p.isMythical && !STARTER_IDS.has(p.id)),
+      withoutSpecials(base, STARTER_IDS),
       filteredBaseline,
     );
     return {

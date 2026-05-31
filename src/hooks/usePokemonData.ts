@@ -40,6 +40,17 @@ export function getPokemonByIds(ids: Iterable<number>): Pokemon[] {
   return out;
 }
 
+/** True if a Pokémon is "special": legendary, mythical, or (when a starter set
+ *  is given) a starter. */
+function isSpecial(p: Pokemon, starterIds?: Set<number>): boolean {
+  return p.isLegendary || p.isMythical || (starterIds?.has(p.id) ?? false);
+}
+
+/** Filter out legendaries, mythicals, and (when a starter set is given) starters. */
+export function withoutSpecials(pokemon: Pokemon[], starterIds?: Set<number>): Pokemon[] {
+  return pokemon.filter((p) => !isSpecial(p, starterIds));
+}
+
 /**
  * Get a Pokemon and all its evolutionary descendants (children, grandchildren, etc.)
  * Used for branch removal: removing Gloom removes Vileplume and Bellossom too,

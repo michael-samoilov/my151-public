@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { type DrillDownSegment } from '@/store/usePokedexStore';
-import { getPokemonByIds, getEvolutionLine } from '@/hooks/usePokemonData';
+import { getPokemonByIds, getEvolutionLine, withoutSpecials } from '@/hooks/usePokemonData';
 
 const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 const STAGE_LINE_COLORS = ['#e88a8a', '#d95050', '#b91c1c'];
@@ -57,7 +57,7 @@ export function StageDistributionChart({ sections, drillDownSegment, onDrillTogg
     const allIdSet = new Set(Object.values(sections).flat());
     const starterSectionIds = new Set(sections['starter'] ?? []);
     const allPokemon = getPokemonByIds(allIdSet);
-    const filteredPokemon = allPokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
+    const filteredPokemon = withoutSpecials(allPokemon, starterSectionIds);
 
     const getMaxCol = (pokemon: typeof allPokemon) => {
       const counts: Record<number, number> = {};
@@ -77,7 +77,7 @@ export function StageDistributionChart({ sections, drillDownSegment, onDrillTogg
     const starterSectionIds = new Set(sections['starter'] ?? []);
     let pokemon = getPokemonByIds(allIdSet);
     if (excludeSpecialMekko) {
-      pokemon = pokemon.filter(p => !p.isLegendary && !p.isMythical && !starterSectionIds.has(p.id));
+      pokemon = withoutSpecials(pokemon, starterSectionIds);
     }
 
     // Count each of the user's pokemon once, grouped by branch length and stage
