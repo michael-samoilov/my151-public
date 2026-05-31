@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -229,6 +229,10 @@ function formatDoublings(n: number): string {
 function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, matchupType, spritePx }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
+  // Shared press state so clicking any member shrinks the *whole* evo line as a
+  // single unit (each cell scales toward the line's center — see transformOrigin
+  // below) rather than only the tapped sprite popping in isolation.
+  const [pressed, setPressed] = useState(false);
   const markedForRemoval = removalStagedIds
     ? members.some((p) => removalStagedIds.has(p.id))
     : false;
@@ -279,8 +283,15 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
           // at canonical ratios — see `src/components/shared/PokemonTile.tsx`.
           <div
             key={pokemon.id}
-            className="relative px-[3px] overflow-visible"
-            style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
+            className="relative px-[3px] overflow-visible transition-[scale] duration-75 ease-out"
+            style={{
+              ['--tile-sprite' as string]: `${spritePx}px`,
+              // Scale toward the line's center: cell i (of N) places the center
+              // at ((N/2 − i) × 100)% of its own width, so all cells converge as
+              // one connected unit when any member is pressed.
+              transformOrigin: `${(members.length / 2 - i) * 100}% 50%`,
+              scale: pressed ? '0.97' : '1',
+            }}
           >
             {/* Background + border spanning the evo line */}
             <div
@@ -296,9 +307,14 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
               role="button"
               tabIndex={0}
               onClick={handleClick}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPressed(true); handleClick(); } }}
+              onKeyUp={() => setPressed(false)}
+              onPointerDown={() => setPressed(true)}
+              onPointerUp={() => setPressed(false)}
+              onPointerLeave={() => setPressed(false)}
+              onPointerCancel={() => setPressed(false)}
               className={cn(
-                'relative flex flex-col items-center transition-[transform,scale,opacity] duration-150 ease-out active:scale-[0.98] cursor-pointer w-full',
+                'relative flex flex-col items-center cursor-pointer w-full',
                 TILE_ROOT_PADDING_CLASS,
               )}
             >
