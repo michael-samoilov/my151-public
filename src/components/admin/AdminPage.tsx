@@ -140,7 +140,19 @@ async function fetchSubmissions(
   if (res.status === 503) {
     throw new Error('Admin access is not configured on the server (ADMIN_TOKEN is not set).');
   }
-  if (!res.ok) throw new Error(`Request failed (${res.status}).`);
+  if (!res.ok) {
+    // Surface the server's diagnostic body + build marker on screen, so the
+    // real cause is visible without opening DevTools (esp. on mobile).
+    const build = res.headers.get('x-p151-build') ?? 'unknown';
+    let detail = '';
+    try {
+      const body = (await res.json()) as { debug?: { name?: string; message?: string; at?: string } };
+      if (body?.debug) detail = ` — ${body.debug.name}: ${body.debug.message} @ ${body.debug.at ?? '?'}`;
+    } catch {
+      // non-JSON body
+    }
+    throw new Error(`Request failed (${res.status}) [build ${build}]${detail}`);
+  }
   return res.json() as Promise<ApiResponse>;
 }
 
