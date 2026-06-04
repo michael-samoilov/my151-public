@@ -3,7 +3,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
 import { Ratelimit } from '@upstash/ratelimit';
-import crypto from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 
 export const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -63,9 +63,9 @@ export function getClientIp(req: VercelRequest): string {
  * leaks neither content nor the token's length.
  */
 function tokenEqual(provided: string, expected: string): boolean {
-  const a = crypto.createHash('sha256').update(provided).digest();
-  const b = crypto.createHash('sha256').update(expected).digest();
-  return crypto.timingSafeEqual(a, b);
+  const a = createHash('sha256').update(provided).digest();
+  const b = createHash('sha256').update(expected).digest();
+  return timingSafeEqual(a, b);
 }
 
 // Throttle the admin endpoints per IP so a leaked/guessed token can't be used
@@ -101,8 +101,10 @@ export async function requireAdmin(req: VercelRequest, res: VercelResponse): Pro
   const authHeader = Array.isArray(req.headers.authorization)
     ? req.headers.authorization[0]
     : req.headers.authorization ?? '';
-  const provided = authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : '';
-  if (!provided || !tokenEqual(provided, adminToken)) {
+  // Trim both sides so a stray newline/space pasted into the Vercel env var (or
+  // the header) can't cause a silent mismatch.
+  const provided = (authHeader.startsWith('Bearer ') ? authHeader.slice('Bearer '.length) : '').trim();
+  if (!provided || !tokenEqual(provided, adminToken.trim())) {
     res.status(401).json({ error: 'Unauthorized' });
     return false;
   }

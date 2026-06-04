@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
-import crypto from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { redis, getClientIp, isMilestone, isSource, type Source } from './_shared';
 
 const MAX_POKEMON_ID = 1025;
@@ -194,7 +194,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // context. The id is what delete-entry matches on, so a collision-proof
     // UUID keeps entries sharing a millisecond individually addressable.
     const submittedAt = Date.now();
-    const entryId = crypto.randomUUID();
+    const entryId = randomUUID();
     const client = getClient(req);
     const entry = JSON.stringify({
       id: entryId,
