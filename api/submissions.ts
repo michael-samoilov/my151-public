@@ -66,26 +66,30 @@ async function fetchSource(src: Source, offset: number, limit: number): Promise<
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Temporary diagnostic build marker so we can confirm which deploy is live.
+  res.setHeader('x-p151-build', 'diag-1');
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-  if (!(await requireAdmin(req, res))) return;
-
-  // Narrow to one source when asked; otherwise return every source. Pokedex
-  // sources come back at the top level, milestone sources under `milestones`.
-  const sourceParam = firstQueryValue(req.query.source as string | string[] | undefined);
-  const wanted = isSource(sourceParam) ? sourceParam : null;
-  const pokedexSources = wanted ? POKEDEX_SOURCES.filter((s) => s === wanted) : [...POKEDEX_SOURCES];
-  const milestoneSources = wanted
-    ? MILESTONE_SOURCES.filter((s) => s === wanted)
-    : [...MILESTONE_SOURCES];
-
-  const rawLimit = parseInt(firstQueryValue(req.query.limit as string | string[] | undefined), 10);
-  const rawOffset = parseInt(firstQueryValue(req.query.offset as string | string[] | undefined), 10);
-  const limit = Math.min(Math.max(Number.isNaN(rawLimit) ? 100 : rawLimit, 1), 1000);
-  const offset = Math.max(Number.isNaN(rawOffset) ? 0 : rawOffset, 0);
 
   try {
+    if (!(await requireAdmin(req, res))) return;
+
+    // Narrow to one source when asked; otherwise return every source. Pokedex
+    // sources come back at the top level, milestone sources under `milestones`.
+    const sourceParam = firstQueryValue(req.query.source as string | string[] | undefined);
+    const wanted = isSource(sourceParam) ? sourceParam : null;
+    const pokedexSources = wanted ? POKEDEX_SOURCES.filter((s) => s === wanted) : [...POKEDEX_SOURCES];
+    const milestoneSources = wanted
+      ? MILESTONE_SOURCES.filter((s) => s === wanted)
+      : [...MILESTONE_SOURCES];
+
+    const rawLimit = parseInt(firstQueryValue(req.query.limit as string | string[] | undefined), 10);
+    const rawOffset = parseInt(firstQueryValue(req.query.offset as string | string[] | undefined), 10);
+    const limit = Math.min(Math.max(Number.isNaN(rawLimit) ? 100 : rawLimit, 1), 1000);
+    const offset = Math.max(Number.isNaN(rawOffset) ? 0 : rawOffset, 0);
+
     // Fetch every requested source concurrently in a single batch.
     const entries = await Promise.all(
       [...pokedexSources, ...milestoneSources].map(
@@ -104,7 +108,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({ ...top, milestones });
   } catch (err) {
+    // Temporary verbose diagnostic — surfaces the real cause to the admin so we
+    // can pinpoint the 500. To be reverted once resolved.
     console.error('Submissions error:', err);
-    return res.status(500).json({ error: 'Internal server error' });
+    const e = err as Error;
+    return res.status(500).json({
+      error: 'Internal server error',
+      debug: { name: e?.name, message: e?.message, at: e?.stack?.split('\n')[1]?.trim() },
+    });
   }
 }
