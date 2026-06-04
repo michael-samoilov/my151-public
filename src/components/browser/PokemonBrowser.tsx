@@ -365,7 +365,7 @@ export function PokemonBrowser() {
                 <button type="button"
                   key={type}
                   onClick={() => toggleType(type)}
-                  className="flex items-center justify-center py-0.5 rounded-md cursor-pointer transition-all"
+                  className="flex items-center justify-center py-0.5 rounded-md cursor-pointer transition-[opacity,scale] duration-150 ease-out active:scale-[0.96]"
                   style={{
                     opacity: typeFilter && typeFilter.length > 0 && !isSelected ? 0.3 : 1,
                   }}
@@ -484,7 +484,8 @@ export function PokemonBrowser() {
       {/* Filter chip rows */}
       <div className="px-3 pb-2 border-b relative z-[1] shadow-[0_1px_0_0_var(--color-background)] space-y-1.5">
         {/* Row 1: Property filters (Type, Gen, Stages) */}
-        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity items-center border-x border-border pl-2 py-1", isSearching && hasActiveFilters && "opacity-40", !hasActivePropertyFilters && "pr-2")}>
+        <div className={cn("flex items-stretch border-x border-border transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 px-2 py-1">
           {typeFilter && typeFilter.length > 0 ? (
             <>
               {typeFilter.length > 1 && (
@@ -544,10 +545,11 @@ export function PokemonBrowser() {
             <EntryChip label="Stages" onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
           )}
 
+          </div>
           {hasActivePropertyFilters && (
             <button type="button"
               onClick={clearPropertyFilters}
-              className="sticky right-0 shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border -my-1"
+              className="shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border"
             >
               Clear
             </button>
@@ -555,7 +557,8 @@ export function PokemonBrowser() {
         </div>
 
         {/* Row 2: Browse filters (Classification, Places, Archetypes, Game Mechanics) */}
-        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity items-center border-x border-border pl-2 py-1", isSearching && hasActiveFilters && "opacity-40", !hasActiveBrowseFilters && "pr-2")}>
+        <div className={cn("flex items-stretch border-x border-border transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 px-2 py-1">
           {activeCategory ? (
             <FilterChip
               label={categoryName!}
@@ -604,10 +607,11 @@ export function PokemonBrowser() {
             <EntryChip label="Mechanics" onClick={() => setOpenSheet(openSheet === 'gameMechanics' ? null : 'gameMechanics')} active={openSheet === 'gameMechanics'} />
           )}
 
+          </div>
           {hasActiveBrowseFilters && (
             <button type="button"
               onClick={clearBrowseFilters}
-              className="sticky right-0 shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border -my-1"
+              className="shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border"
             >
               Clear
             </button>
@@ -688,7 +692,7 @@ export function PokemonBrowser() {
 
               return (
                 <div key={sub.label}>
-                  <div className="sticky top-[22px] z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
+                  <div className="sticky top-[22px] z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 mt-1 border-b">
                     {sub.label}
                   </div>
                   <div className="grid grid-cols-2 gap-x-1 items-start pt-1">
@@ -719,7 +723,7 @@ export function PokemonBrowser() {
 
             return (
               <div key={sub.label}>
-                <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 border-b">
+                <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 mt-1 border-b">
                   {sub.label}
                 </div>
                 <div className="pt-1">

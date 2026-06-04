@@ -408,7 +408,7 @@ export function AnalyticsDashboard() {
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain md:overscroll-auto">
       <div className="p-6 pb-0 space-y-8 max-w-6xl md:max-w-2xl mx-auto">
         {/* What's Missing Advisor — moved to top */}
-        <section className="bg-card rounded-lg border overflow-hidden">
+        <section className="bg-card rounded-lg shadow-elevated overflow-hidden">
           <WhatsAdvisor />
         </section>
 
@@ -418,9 +418,9 @@ export function AnalyticsDashboard() {
 
           <div className="space-y-1.5 mb-3">
           {/* Region selector tabs — matches build page filter chip styling */}
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center border-x border-border pr-2 py-1">
-            {/* Sticky left: National + Yours */}
-            <div className="sticky left-0 shrink-0 self-stretch flex items-center gap-1.5 bg-background border-r border-border -my-1 pl-2 pr-2 z-10">
+          <div className="flex items-stretch border-x border-border">
+            {/* Fixed left (outside scroll container): National + Yours */}
+            <div className="shrink-0 self-stretch flex items-center gap-1.5 bg-background border-r border-border pl-2 pr-2 py-1">
               <button type="button"
                 onClick={() => setSelectedTypeChart('national')}
                 className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
@@ -443,19 +443,21 @@ export function AnalyticsDashboard() {
               </button>
             </div>
             {/* Scrollable: regional dexes */}
-            {REGIONAL_DEXES.map(dex => (
-              <button type="button"
-                key={dex.id}
-                onClick={() => setSelectedTypeChart(dex.id)}
-                className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                  selectedTypeChart === dex.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-              >
-                {dex.name}
-              </button>
-            ))}
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 pl-2 pr-2 py-1">
+              {REGIONAL_DEXES.map(dex => (
+                <button type="button"
+                  key={dex.id}
+                  onClick={() => setSelectedTypeChart(dex.id)}
+                  className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                    selectedTypeChart === dex.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  {dex.name}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Filters */}
@@ -498,7 +500,7 @@ export function AnalyticsDashboard() {
           </div>
           </div>
 
-          <div className="bg-card rounded-lg border overflow-hidden">
+          <div className="bg-card rounded-lg shadow-elevated overflow-hidden">
             {/* Tab headers — inside card. Selected tab is filled primary
                 with white text. An explicit primary-colored strip below the
                 tab row visually connects the selected tab into a horizontal
@@ -620,7 +622,7 @@ export function AnalyticsDashboard() {
           <p className="text-sm text-muted-foreground mb-4">
             Where your Pokémon come from and deviation from national dex proportions.
           </p>
-          <div className="bg-card rounded-lg border p-4">
+          <div className="bg-card rounded-lg shadow-elevated p-4">
             <ButterflyChart
               data={[...genChartData].sort((a, b) =>
                 genSortBy === 'deviation' ? b.deviation - a.deviation
@@ -648,7 +650,7 @@ export function AnalyticsDashboard() {
           <p className="text-sm text-muted-foreground mb-4">
             Yours avg: {analytics.evolutionStats.avgLevel || 'N/A'}, National avg: {analytics.evolutionStats.nationalAvgLevel}.
           </p>
-          <div className="bg-card rounded-lg border p-4">
+          <div className="bg-card rounded-lg shadow-elevated p-4">
             <div className="flex items-center gap-4 mb-2">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm bg-slate-400 opacity-50" />
@@ -681,7 +683,7 @@ export function AnalyticsDashboard() {
           <p className="text-sm text-muted-foreground mb-4">
             Yours avg: {analytics.bstStats.avg}, National avg: {analytics.nationalAvgBst}.
           </p>
-          <div className="bg-card rounded-lg border p-4">
+          <div className="bg-card rounded-lg shadow-elevated p-4">
             <div className="flex items-center gap-4 mb-2">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm bg-slate-400 opacity-50" />

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -229,6 +229,36 @@ function formatDoublings(n: number): string {
 function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, matchupType, spritePx }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
+  // Shared press state so clicking any member shrinks the *whole* evo line
+  // rectangle, plus `pressedIdx` to shrink the *tapped sprite* specifically.
+  // We DON'T use CSS :active for this: a mobile tap is so short (pointerdown→up
+  // in <30ms) that the press state flips back before the scale transition can
+  // paint, so it looked instant on touch but animated on desktop's slower
+  // click-hold. A JS-enforced minimum hold makes the shrink→grow animation play
+  // fully on every platform regardless of how briefly the user actually pressed.
+  const [pressed, setPressed] = useState(false);
+  const [pressedIdx, setPressedIdx] = useState<number | null>(null);
+  const releaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pressStartedAt = useRef(0);
+  // Hold the pressed state at least this long so a flash tap still animates.
+  const MIN_PRESS_MS = 120;
+
+  const startPress = (idx: number) => {
+    if (releaseTimer.current) { clearTimeout(releaseTimer.current); releaseTimer.current = null; }
+    pressStartedAt.current = performance.now();
+    setPressed(true);
+    setPressedIdx(idx);
+  };
+  const endPress = () => {
+    const held = performance.now() - pressStartedAt.current;
+    const wait = Math.max(0, MIN_PRESS_MS - held);
+    if (releaseTimer.current) clearTimeout(releaseTimer.current);
+    releaseTimer.current = setTimeout(() => {
+      setPressed(false);
+      setPressedIdx(null);
+      releaseTimer.current = null;
+    }, wait);
+  };
   const markedForRemoval = removalStagedIds
     ? members.some((p) => removalStagedIds.has(p.id))
     : false;
@@ -282,25 +312,42 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
             className="relative px-[3px] overflow-visible"
             style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
           >
-            {/* Background + border spanning the evo line */}
-            <div
-              className={cn(
-                'absolute inset-y-0 border-t border-b',
-                isFirst ? 'left-[3px] rounded-l-md border-l' : 'left-0',
-                isLast ? 'right-[3px] rounded-r-md border-r' : 'right-0',
-                'border-border',
-              )}
-              style={{ backgroundColor: `${bgColor}10` }}
-            />
+            {/* Background + border spanning the whole evo line. Rendered once,
+                anchored in the first cell and stretched across all N columns
+                (gap-x is 0), so on press it scales as a single object about its
+                own centre — no per-cell segments means no seams. The outer
+                sprites (later grid items) paint on top of the overflow. */}
+            {isFirst && (
+              <div
+                // Smooth scale animation both ways — shrink on press, grow back
+                // on release.
+                className="absolute inset-y-0 rounded-md border border-border transition-[scale] duration-100 ease-out"
+                style={{
+                  backgroundColor: `${bgColor}10`,
+                  left: '3px',
+                  width: `calc(${members.length} * 100% - 6px)`,
+                  scale: pressed ? '0.98' : '1',
+                }}
+              />
+            )}
             <div
               role="button"
               tabIndex={0}
               onClick={handleClick}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startPress(i); handleClick(); } }}
+              onKeyUp={endPress}
+              onPointerDown={() => startPress(i)}
+              onPointerUp={endPress}
+              onPointerLeave={endPress}
+              onPointerCancel={endPress}
               className={cn(
-                'relative flex flex-col items-center transition-all cursor-pointer w-full',
+                // Scale driven by JS press state (not CSS :active) so the
+                // animation plays fully even on a flash mobile tap. The tapped
+                // sprite shrinks; the whole rectangle (above) shrinks too.
+                'relative flex flex-col items-center cursor-pointer w-full transition-[scale] duration-100 ease-out',
                 TILE_ROOT_PADDING_CLASS,
               )}
+              style={{ scale: pressedIdx === i ? '0.96' : '1' }}
             >
               <div className="relative flex flex-col items-center w-full">
                 {/* Gen badge + icons — always full opacity, outside the grey wrapper */}
