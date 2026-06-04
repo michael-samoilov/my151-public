@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { randomUUID } from 'node:crypto';
-import { redis, getClientIp, isMilestone, isSource, type Source } from './_shared';
+import { redis, getClientIp, isMilestone, isSource, type Source } from './_shared.js';
 
 const MAX_POKEMON_ID = 1025;
 

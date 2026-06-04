@@ -8,7 +8,7 @@ import {
   isSource,
   type Source,
   type MilestoneSource,
-} from './_shared';
+} from './_shared.js';
 
 interface Submission {
   id?: string;
