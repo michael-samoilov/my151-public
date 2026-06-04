@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { redis, requireAdmin, isSource, isPokedexSource } from './_shared';
+import { redis, requireAdmin, isSource, isPokedexSource } from './_shared.js';
 
 // Atomically remove one entry AND reconcile every aggregate in a single script,
 // so there is no window where the entry is gone but counters are stale. Redis
