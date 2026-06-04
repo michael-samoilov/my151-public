@@ -485,7 +485,7 @@ export function PokemonBrowser() {
       <div className="px-3 pb-2 border-b relative z-[1] shadow-[0_1px_0_0_var(--color-background)] space-y-1.5">
         {/* Row 1: Property filters (Type, Gen, Stages) */}
         <div className={cn("flex items-stretch border-x border-border transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
-          <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 pl-2 py-1", !hasActivePropertyFilters && "pr-2")}>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 px-2 py-1">
           {typeFilter && typeFilter.length > 0 ? (
             <>
               {typeFilter.length > 1 && (
@@ -558,7 +558,7 @@ export function PokemonBrowser() {
 
         {/* Row 2: Browse filters (Classification, Places, Archetypes, Game Mechanics) */}
         <div className={cn("flex items-stretch border-x border-border transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
-          <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 pl-2 py-1", !hasActiveBrowseFilters && "pr-2")}>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 px-2 py-1">
           {activeCategory ? (
             <FilterChip
               label={categoryName!}
