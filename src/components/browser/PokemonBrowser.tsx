@@ -484,7 +484,8 @@ export function PokemonBrowser() {
       {/* Filter chip rows */}
       <div className="px-3 pb-2 border-b relative z-[1] shadow-[0_1px_0_0_var(--color-background)] space-y-1.5">
         {/* Row 1: Property filters (Type, Gen, Stages) */}
-        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity items-center border-x border-border pl-2 py-1", isSearching && hasActiveFilters && "opacity-40", !hasActivePropertyFilters && "pr-2")}>
+        <div className={cn("flex items-stretch border-x border-border transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
+          <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 pl-2 py-1", !hasActivePropertyFilters && "pr-2")}>
           {typeFilter && typeFilter.length > 0 ? (
             <>
               {typeFilter.length > 1 && (
@@ -544,10 +545,11 @@ export function PokemonBrowser() {
             <EntryChip label="Stages" onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
           )}
 
+          </div>
           {hasActivePropertyFilters && (
             <button type="button"
               onClick={clearPropertyFilters}
-              className="sticky right-0 shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border -my-1"
+              className="shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border"
             >
               Clear
             </button>
@@ -555,7 +557,8 @@ export function PokemonBrowser() {
         </div>
 
         {/* Row 2: Browse filters (Classification, Places, Archetypes, Game Mechanics) */}
-        <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar transition-opacity items-center border-x border-border pl-2 py-1", isSearching && hasActiveFilters && "opacity-40", !hasActiveBrowseFilters && "pr-2")}>
+        <div className={cn("flex items-stretch border-x border-border transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
+          <div className={cn("flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 pl-2 py-1", !hasActiveBrowseFilters && "pr-2")}>
           {activeCategory ? (
             <FilterChip
               label={categoryName!}
@@ -604,10 +607,11 @@ export function PokemonBrowser() {
             <EntryChip label="Mechanics" onClick={() => setOpenSheet(openSheet === 'gameMechanics' ? null : 'gameMechanics')} active={openSheet === 'gameMechanics'} />
           )}
 
+          </div>
           {hasActiveBrowseFilters && (
             <button type="button"
               onClick={clearBrowseFilters}
-              className="sticky right-0 shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border -my-1"
+              className="shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border"
             >
               Clear
             </button>

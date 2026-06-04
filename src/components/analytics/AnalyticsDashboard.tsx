@@ -418,9 +418,9 @@ export function AnalyticsDashboard() {
 
           <div className="space-y-1.5 mb-3">
           {/* Region selector tabs — matches build page filter chip styling */}
-          <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center border-x border-border pr-2 py-1">
-            {/* Sticky left: National + Yours */}
-            <div className="sticky left-0 shrink-0 self-stretch flex items-center gap-1.5 bg-background border-r border-border -my-1 pl-2 pr-2 z-10">
+          <div className="flex items-stretch border-x border-border">
+            {/* Fixed left (outside scroll container): National + Yours */}
+            <div className="shrink-0 self-stretch flex items-center gap-1.5 bg-background border-r border-border pl-2 pr-2 py-1">
               <button type="button"
                 onClick={() => setSelectedTypeChart('national')}
                 className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
@@ -443,19 +443,21 @@ export function AnalyticsDashboard() {
               </button>
             </div>
             {/* Scrollable: regional dexes */}
-            {REGIONAL_DEXES.map(dex => (
-              <button type="button"
-                key={dex.id}
-                onClick={() => setSelectedTypeChart(dex.id)}
-                className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                  selectedTypeChart === dex.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-              >
-                {dex.name}
-              </button>
-            ))}
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 pl-2 pr-2 py-1">
+              {REGIONAL_DEXES.map(dex => (
+                <button type="button"
+                  key={dex.id}
+                  onClick={() => setSelectedTypeChart(dex.id)}
+                  className={`shrink-0 px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
+                    selectedTypeChart === dex.id
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  {dex.name}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Filters */}
