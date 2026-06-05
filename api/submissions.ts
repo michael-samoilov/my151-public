@@ -66,9 +66,6 @@ async function fetchSource(src: Source, offset: number, limit: number): Promise<
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Temporary diagnostic build marker so we can confirm which deploy is live.
-  res.setHeader('x-p151-build', 'diag-1');
-
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -108,13 +105,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({ ...top, milestones });
   } catch (err) {
-    // Temporary verbose diagnostic — surfaces the real cause to the admin so we
-    // can pinpoint the 500. To be reverted once resolved.
     console.error('Submissions error:', err);
-    const e = err as Error;
-    return res.status(500).json({
-      error: 'Internal server error',
-      debug: { name: e?.name, message: e?.message, at: e?.stack?.split('\n')[1]?.trim() },
-    });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 }
