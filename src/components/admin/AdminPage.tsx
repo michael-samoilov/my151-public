@@ -140,19 +140,7 @@ async function fetchSubmissions(
   if (res.status === 503) {
     throw new Error('Admin access is not configured on the server (ADMIN_TOKEN is not set).');
   }
-  if (!res.ok) {
-    // Surface the server's diagnostic body + build marker on screen, so the
-    // real cause is visible without opening DevTools (esp. on mobile).
-    const build = res.headers.get('x-p151-build') ?? 'unknown';
-    let detail = '';
-    try {
-      const body = (await res.json()) as { debug?: { name?: string; message?: string; at?: string } };
-      if (body?.debug) detail = ` — ${body.debug.name}: ${body.debug.message} @ ${body.debug.at ?? '?'}`;
-    } catch {
-      // non-JSON body
-    }
-    throw new Error(`Request failed (${res.status}) [build ${build}]${detail}`);
-  }
+  if (!res.ok) throw new Error(`Request failed (${res.status}).`);
   return res.json() as Promise<ApiResponse>;
 }
 
@@ -383,13 +371,13 @@ export function AdminPage() {
     }
   }, [token, activeSource, data]);
 
-  const resetMilestone = useCallback(
-    async (src: MilestoneSource) => {
+  const resetSource = useCallback(
+    async (src: Source) => {
       if (!token) return;
       const label = SOURCE_LABEL[src];
       if (
         !window.confirm(
-          `Reset all "${label}" data?\n\nThis permanently deletes the count, country tally, and stored snapshots for ${label.toLowerCase()}. Completions and exports are NOT affected. This cannot be undone.`,
+          `Reset all "${label}" data?\n\nThis permanently deletes the count, country tally, and every stored snapshot for ${label.toLowerCase()}, starting it back at 0. This cannot be undone.`,
         )
       ) {
         return;
@@ -551,12 +539,12 @@ export function AdminPage() {
           <p className="text-sm text-muted-foreground">No {SOURCE_LABEL[activeSource]} submissions yet.</p>
         )}
         <CountryTally countries={active.countries} />
-        {(activeSource === 'interacted' || activeSource === 'engaged') && active.total > 0 && (
+        {active.total > 0 && (
           <div>
             <Button
               variant="destructive"
               size="sm"
-              onClick={() => void resetMilestone(activeSource)}
+              onClick={() => void resetSource(activeSource)}
             >
               Reset {SOURCE_LABEL[activeSource]}
             </Button>
