@@ -182,7 +182,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       submits: 0,
       maxDepth: 0,
       localHour: 0,
-      firstIds: ids,
+      everIds: ids,
       latestIds: ids,
       completed: false,
       exported: false,
@@ -194,6 +194,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     rec.maxDepth = Math.max(rec.maxDepth, depth);
     rec.localHour = localHourIn(geo.tz, now);
     rec.latestIds = ids;
+    // Accumulate every Pokemon ever placed (bounded; ids are 1..1025).
+    rec.everIds = Array.from(new Set([...(rec.everIds ?? []), ...ids])).sort((a, b) => a - b);
     // Refresh request-derived context on every submit (latest wins).
     rec.country = geo.country;
     rec.region = geo.region;

@@ -51,6 +51,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const spanCounts: Record<number, number> = {}; // whole minutes before churn -> users
     let spanOverflow = 0; // > MAX_SPAN_MIN minutes (incl. returning users)
     const picksCompleted: Record<string, number> = {}; // only among completed dexes
+    const droppedCounts: Record<string, number> = {}; // ever placed but not in final dex
 
     let completed = 0;
     let exported = 0;
@@ -72,6 +73,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (r.completed && r.completedIds) {
         completed += 1;
         for (const id of r.completedIds) picksCompleted[id] = (picksCompleted[id] ?? 0) + 1;
+      }
+
+      // Adjustment signal: placed at some point but not kept in the final dex.
+      const kept = new Set(r.latestIds ?? []);
+      for (const id of r.everIds ?? []) {
+        if (!kept.has(id)) droppedCounts[id] = (droppedCounts[id] ?? 0) + 1;
       }
       if (r.exported) exported += 1;
       if (r.lastTs - r.firstTs >= DAY) returning += 1;
@@ -111,6 +118,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       os: osCounts,
       hours,
       popularCompleted: topN(picksCompleted, 40),
+      mostDropped: topN(droppedCounts, 30),
       records: page,
     });
   } catch (err) {

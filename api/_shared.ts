@@ -49,8 +49,10 @@ export interface ClientRecord {
   device?: string;
   os?: string;
   browser?: string;
-  /** Earliest build we saw from this client (their "initial engagement"). */
-  firstIds: number[];
+  /** Union of every Pokemon this client has ever placed, across all submits.
+   *  Compared against latestIds to surface "tried then dropped" picks — the
+   *  real adjustment signal (order-independent, starter-prompt-immune). */
+  everIds: number[];
   /** Most recent build (their "final dex"). */
   latestIds: number[];
   completed: boolean;
