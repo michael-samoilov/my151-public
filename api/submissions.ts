@@ -117,8 +117,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       devices,
       os: osCounts,
       hours,
-      popularFinal: topN(picksFinal, 40),
-      mostDropped: topN(droppedCounts, 30),
+      // Full ranked lists; the admin UI previews the top N and expands the rest.
+      popularFinal: topN(picksFinal, 151),
+      mostDropped: topN(droppedCounts, 151),
       records: page,
     });
   } catch (err) {
