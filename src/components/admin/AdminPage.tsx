@@ -207,7 +207,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 function PopularGrid({ rows }: { rows: [string, number][] }) {
   if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(2.5rem,1fr))] gap-1">
+    <div className="grid grid-cols-9 gap-1">
       {rows.map(([id, n]) => {
         const p = getPokemonById(Number(id));
         return (
@@ -216,7 +216,7 @@ function PopularGrid({ rows }: { rows: [string, number][] }) {
             className="flex flex-col items-center"
             title={p ? `#${id} ${displayName(p.name)}: ${n}` : `#${id}: ${n}`}
           >
-            <div className="w-9 h-9 flex items-center justify-center">
+            <div className="w-full aspect-square flex items-center justify-center">
               {p ? (
                 <img
                   src={p.sprite}
@@ -224,6 +224,7 @@ function PopularGrid({ rows }: { rows: [string, number][] }) {
                   width={36}
                   height={36}
                   loading="lazy"
+                  className="w-full h-full object-contain"
                   style={{ imageRendering: 'pixelated' }}
                 />
               ) : (
