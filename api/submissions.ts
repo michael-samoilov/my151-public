@@ -8,19 +8,11 @@ import {
   type ClientRecord,
 } from './_shared.js';
 
-// Max-depth histogram buckets (distinct evolution lines reached). Edges are
-// inclusive-lower; the last is open-ended. Chosen to show the churn curve.
-const DEPTH_BUCKETS: { label: string; min: number; max: number }[] = [
-  { label: '1–2', min: 1, max: 2 },
-  { label: '3–5', min: 3, max: 5 },
-  { label: '6–10', min: 6, max: 10 },
-  { label: '11–20', min: 11, max: 20 },
-  { label: '21–40', min: 21, max: 40 },
-  { label: '41–79', min: 41, max: 79 },
-  { label: '80+', min: 80, max: Infinity },
-];
-
 const DAY = 86_400_000;
+const MINUTE = 60_000;
+// Per-minute time-before-churn bars up to this cap; everything longer (incl.
+// returning users who came back another day) falls in the final overflow bar.
+const MAX_SPAN_MIN = 20;
 
 function topN(counts: Record<string, number>, n: number): [string, number][] {
   return Object.entries(counts)
@@ -50,38 +42,55 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     records.sort((a, b) => b.lastTs - a.lastTs);
 
     const now = Date.now();
-    const depthHistogram = DEPTH_BUCKETS.map((b) => ({ label: b.label, count: 0 }));
     const countries: Record<string, number> = {};
     const devices: Record<string, number> = {};
     const osCounts: Record<string, number> = {};
     const hours = new Array<number>(24).fill(0);
-    const picksFirst: Record<string, number> = {};
-    const picksFinal: Record<string, number> = {};
+    // One bucket per exact value (no arbitrary ranges).
+    const depthCounts: Record<number, number> = {}; // maxDepth (evo lines) -> users
+    const spanCounts: Record<number, number> = {}; // whole minutes before churn -> users
+    let spanOverflow = 0; // > MAX_SPAN_MIN minutes (incl. returning users)
+    const picksCompleted: Record<string, number> = {}; // only among completed dexes
 
     let completed = 0;
     let exported = 0;
-    let returning = 0; // distinct days active OR first/last > 1 day apart
+    let returning = 0;
     let activeLast7 = 0;
 
     for (const r of records) {
-      // Depth histogram.
-      const bi = DEPTH_BUCKETS.findIndex((b) => r.maxDepth >= b.min && r.maxDepth <= b.max);
-      if (bi >= 0) depthHistogram[bi].count += 1;
+      depthCounts[r.maxDepth] = (depthCounts[r.maxDepth] ?? 0) + 1;
+
+      const spanMin = Math.floor(Math.max(0, r.lastTs - r.firstTs) / MINUTE);
+      if (spanMin > MAX_SPAN_MIN) spanOverflow += 1;
+      else spanCounts[spanMin] = (spanCounts[spanMin] ?? 0) + 1;
 
       if (r.country) countries[r.country] = (countries[r.country] ?? 0) + 1;
       if (r.device) devices[r.device] = (devices[r.device] ?? 0) + 1;
       if (r.os) osCounts[r.os] = (osCounts[r.os] ?? 0) + 1;
       if (typeof r.localHour === 'number') hours[r.localHour % 24] += 1;
 
-      for (const id of r.firstIds ?? []) picksFirst[id] = (picksFirst[id] ?? 0) + 1;
-      for (const id of r.latestIds ?? []) picksFinal[id] = (picksFinal[id] ?? 0) + 1;
-
-      if (r.completed) completed += 1;
+      if (r.completed && r.completedIds) {
+        completed += 1;
+        for (const id of r.completedIds) picksCompleted[id] = (picksCompleted[id] ?? 0) + 1;
+      }
       if (r.exported) exported += 1;
-      // "Returning" = came back at least ~1 day after first seen.
       if (r.lastTs - r.firstTs >= DAY) returning += 1;
       if (now - r.lastTs <= 7 * DAY) activeLast7 += 1;
     }
+
+    // Dense per-line depth bars from 1..maxObserved (skip empty tail).
+    const maxDepthSeen = Math.max(0, ...Object.keys(depthCounts).map(Number));
+    const depthHistogram: { label: string; count: number }[] = [];
+    for (let d = 1; d <= maxDepthSeen; d++) {
+      depthHistogram.push({ label: String(d), count: depthCounts[d] ?? 0 });
+    }
+
+    // Dense per-minute time bars 0..MAX_SPAN_MIN, then an overflow bar.
+    const timeHistogram: { label: string; count: number }[] = [];
+    for (let m = 0; m <= MAX_SPAN_MIN; m++) {
+      timeHistogram.push({ label: `${m}m`, count: spanCounts[m] ?? 0 });
+    }
+    timeHistogram.push({ label: `>${MAX_SPAN_MIN}m`, count: spanOverflow });
 
     const totalUsers = records.length;
     const page = records.slice(offset, offset + limit);
@@ -96,12 +105,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       funnel: { users: totalUsers, completed, exported },
       retention: { returning, activeLast7, newUsers: totalUsers - returning },
       depthHistogram,
+      timeHistogram,
       countries,
       devices,
       os: osCounts,
       hours,
-      popularFirst: topN(picksFirst, 30),
-      popularFinal: topN(picksFinal, 30),
+      popularCompleted: topN(picksCompleted, 40),
       records: page,
     });
   } catch (err) {

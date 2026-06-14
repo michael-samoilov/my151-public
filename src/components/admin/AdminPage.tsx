@@ -46,12 +46,12 @@ interface ApiResponse {
   funnel: { users: number; completed: number; exported: number };
   retention: { returning: number; activeLast7: number; newUsers: number };
   depthHistogram: { label: string; count: number }[];
+  timeHistogram: { label: string; count: number }[];
   countries: Record<string, number>;
   devices: Record<string, number>;
   os: Record<string, number>;
   hours: number[];
-  popularFirst: [string, number][];
-  popularFinal: [string, number][];
+  popularCompleted: [string, number][];
   records: ClientRecord[];
 }
 
@@ -112,7 +112,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-/** Horizontal bar row with a label and count. */
+/** Horizontal bar rows with a label and count — for categorical tallies. */
 function Bars({ rows }: { rows: { label: string; count: number }[] }) {
   const max = Math.max(1, ...rows.map((r) => r.count));
   return (
@@ -126,6 +126,32 @@ function Bars({ rows }: { rows: { label: string; count: number }[] }) {
           <span className="w-8 shrink-0 tabular-nums">{r.count}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Vertical column histogram — for dense, ordered distributions (one bar per
+ *  value). Scrolls horizontally if there are more bars than fit. */
+function Columns({ rows, unit }: { rows: { label: string; count: number }[]; unit?: string }) {
+  const max = Math.max(1, ...rows.map((r) => r.count));
+  if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
+  return (
+    <div className="overflow-x-auto">
+      <div className="flex items-end gap-0.5 h-32 min-w-min">
+        {rows.map((r) => (
+          <div key={r.label} className="flex flex-col items-center justify-end shrink-0" style={{ width: 18 }}>
+            <span className="text-[0.6rem] tabular-nums text-muted-foreground leading-none mb-0.5">
+              {r.count || ''}
+            </span>
+            <div
+              className="w-3 bg-primary/70 rounded-t"
+              style={{ height: `${(r.count / max) * 100}%` }}
+              title={`${r.label}${unit ? ' ' + unit : ''}: ${r.count}`}
+            />
+            <span className="text-[0.55rem] text-muted-foreground leading-none mt-0.5 rotate-0">{r.label}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -207,8 +233,6 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
     [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
     rec.lang,
   ].filter(Boolean);
-  const changed = JSON.stringify(rec.firstIds) !== JSON.stringify(rec.latestIds);
-
   return (
     <section className="shadow-elevated rounded-lg p-3 bg-card">
       <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
@@ -247,24 +271,38 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
       )}
       {expanded && (
         <div className="flex flex-col gap-2 mt-2">
-          <div>
-            <div className="text-xs text-muted-foreground mb-0.5">
-              Final dex ({rec.latestIds.length})
-            </div>
-            <SpriteRow ids={rec.latestIds} />
-          </div>
-          {changed && (
-            <div>
+          {buildSections(rec).map((b) => (
+            <div key={b.key}>
               <div className="text-xs text-muted-foreground mb-0.5">
-                First seen ({rec.firstIds.length})
+                {b.label} ({b.ids.length})
               </div>
-              <SpriteRow ids={rec.firstIds} />
+              <SpriteRow ids={b.ids} />
             </div>
-          )}
+          ))}
         </div>
       )}
     </section>
   );
+}
+
+/** The distinct builds worth showing for a user, deduped by id-set so we don't
+ *  repeat the same list under two labels (e.g. final == completed). */
+function buildSections(rec: ClientRecord): { key: string; label: string; ids: number[] }[] {
+  const out: { key: string; label: string; ids: number[] }[] = [];
+  const seen = new Set<string>();
+  const add = (key: string, label: string, ids?: number[]) => {
+    if (!ids || ids.length === 0) return;
+    const sig = ids.slice().sort((a, b) => a - b).join(',');
+    if (seen.has(sig)) return;
+    seen.add(sig);
+    out.push({ key, label, ids });
+  };
+  // Most meaningful first: what they completed, then exported, then current, then origin.
+  add('completed', 'Completed dex', rec.completedIds);
+  add('exported', 'Exported dex', rec.exportedIds);
+  add('final', 'Final / current', rec.latestIds);
+  add('first', 'First seen', rec.firstIds);
+  return out;
 }
 
 // ---------- main ----------
@@ -443,18 +481,21 @@ export function AdminPage() {
               </div>
             </Card>
 
-            <Card title="How far users get (max evolution lines)">
-              <Bars rows={data.depthHistogram} />
+            <Card title="How far users get before churn (max evolution lines)">
+              <Columns rows={data.depthHistogram} unit="lines" />
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card title="Most-picked (final dex)">
-                <PopularList rows={data.popularFinal} />
-              </Card>
-              <Card title="Most-picked (first seen)">
-                <PopularList rows={data.popularFirst} />
-              </Card>
-            </div>
+            <Card title="Time on app before churn">
+              <Columns rows={data.timeHistogram} />
+            </Card>
+
+            <Card title="Most-picked in completed dexes">
+              {data.popularCompleted.length ? (
+                <PopularList rows={data.popularCompleted} />
+              ) : (
+                <p className="text-xs text-muted-foreground">No completed dexes yet.</p>
+              )}
+            </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card title="By country">
