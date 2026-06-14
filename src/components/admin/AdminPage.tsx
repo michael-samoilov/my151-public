@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
-import { displayName } from '@/lib/utils';
+import { cn, displayName } from '@/lib/utils';
 
 /**
  * Admin-only analytics dashboard. Reached at `my151.app/?admin` (gated in
@@ -132,27 +132,132 @@ function Bars({ rows }: { rows: { label: string; count: number }[] }) {
 }
 
 /** Vertical column histogram — for dense, ordered distributions (one bar per
- *  value). Scrolls horizontally if there are more bars than fit. */
-function Columns({ rows, unit }: { rows: { label: string; count: number }[]; unit?: string }) {
+ *  value). Scrolls horizontally if there are more bars than fit. Each bar lives
+ *  in a fixed-height track so its percentage height actually resolves. Pass
+ *  onBar to make bars clickable (e.g. to drill into a bucket). */
+const BAR_TRACK_PX = 96;
+function Columns({
+  rows,
+  unit,
+  onBar,
+}: {
+  rows: { label: string; count: number }[];
+  unit?: string;
+  onBar?: (label: string, index: number) => void;
+}) {
   const max = Math.max(1, ...rows.map((r) => r.count));
   if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
   return (
     <div className="overflow-x-auto">
-      <div className="flex items-end gap-0.5 h-32 min-w-min">
-        {rows.map((r) => (
-          <div key={r.label} className="flex flex-col items-center justify-end shrink-0" style={{ width: 18 }}>
-            <span className="text-[0.6rem] tabular-nums text-muted-foreground leading-none mb-0.5">
-              {r.count || ''}
-            </span>
-            <div
-              className="w-3 bg-primary/70 rounded-t"
-              style={{ height: `${(r.count / max) * 100}%` }}
-              title={`${r.label}${unit ? ' ' + unit : ''}: ${r.count}`}
-            />
-            <span className="text-[0.55rem] text-muted-foreground leading-none mt-0.5 rotate-0">{r.label}</span>
-          </div>
-        ))}
+      <div className="flex items-end gap-0.5 min-w-min">
+        {rows.map((r, i) => {
+          const clickable = !!onBar && r.count > 0;
+          return (
+            <div key={r.label} className="flex flex-col items-center shrink-0" style={{ width: 18 }}>
+              <span className="text-[0.6rem] tabular-nums text-muted-foreground leading-none mb-0.5">
+                {r.count || ''}
+              </span>
+              {/* Fixed-height track gives the % bar a real reference height. */}
+              <div className="flex items-end" style={{ height: BAR_TRACK_PX }}>
+                <div
+                  className={cn(
+                    'w-3 rounded-t bg-primary/70',
+                    clickable && 'cursor-pointer hover:bg-primary',
+                  )}
+                  style={{ height: `${Math.max(r.count > 0 ? 2 : 0, (r.count / max) * 100)}%` }}
+                  title={`${r.label}${unit ? ' ' + unit : ''}: ${r.count}`}
+                  onClick={clickable ? () => onBar!(r.label, i) : undefined}
+                />
+              </div>
+              <span className="text-[0.55rem] text-muted-foreground leading-none mt-0.5">{r.label}</span>
+            </div>
+          );
+        })}
       </div>
+    </div>
+  );
+}
+
+/** Lightweight modal overlay (no dependency). Click backdrop or ✕ to close. */
+function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
+      <div
+        className="bg-card rounded-lg shadow-elevated w-full max-w-2xl max-h-[85dvh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <span className="text-sm font-semibold">{title}</span>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            ✕
+          </Button>
+        </div>
+        <div className="overflow-y-auto p-4">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/** Grid of small sprites with the pick-count beneath — ~9-10 per row. */
+function PopularGrid({ rows }: { rows: [string, number][] }) {
+  if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
+  return (
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(2.5rem,1fr))] gap-1">
+      {rows.map(([id, n]) => {
+        const p = getPokemonById(Number(id));
+        return (
+          <div
+            key={id}
+            className="flex flex-col items-center"
+            title={p ? `#${id} ${displayName(p.name)}: ${n}` : `#${id}: ${n}`}
+          >
+            <div className="w-9 h-9 flex items-center justify-center">
+              {p ? (
+                <img
+                  src={p.sprite}
+                  alt={p.name}
+                  width={36}
+                  height={36}
+                  loading="lazy"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              ) : (
+                <span className="text-[0.55rem] text-muted-foreground">#{id}</span>
+              )}
+            </div>
+            <span className="text-[0.65rem] tabular-nums leading-none">{n}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** A preview grid (top N) with a "View all" button that opens the full grid in
+ *  a modal. */
+function PopularPanel({ title, rows, preview = 30 }: { title: string; rows: [string, number][]; preview?: number }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="shadow-elevated rounded-lg p-3 bg-card">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium">{title}</span>
+        {rows.length > preview && (
+          <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+            View all ({rows.length})
+          </Button>
+        )}
+      </div>
+      <PopularGrid rows={rows.slice(0, preview)} />
+      {open && (
+        <Modal title={title} onClose={() => setOpen(false)}>
+          <PopularGrid rows={rows} />
+        </Modal>
+      )}
     </div>
   );
 }
@@ -181,38 +286,6 @@ function SpriteRow({ ids }: { ids: number[] }) {
             ) : (
               <span className="text-[0.55rem] text-muted-foreground">#{id}</span>
             )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function PopularList({ rows }: { rows: [string, number][] }) {
-  const max = Math.max(1, ...rows.map(([, n]) => n));
-  return (
-    <div className="flex flex-col gap-1">
-      {rows.map(([id, n]) => {
-        const p = getPokemonById(Number(id));
-        return (
-          <div key={id} className="flex items-center gap-2 text-xs">
-            <div className="w-7 h-7 shrink-0 flex items-center justify-center">
-              {p && (
-                <img
-                  src={p.sprite}
-                  alt={p.name}
-                  width={28}
-                  height={28}
-                  loading="lazy"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-              )}
-            </div>
-            <span className="w-20 shrink-0 capitalize truncate">{p ? displayName(p.name) : `#${id}`}</span>
-            <div className="flex-1 bg-muted rounded h-3 overflow-hidden">
-              <div className="h-full bg-primary/70" style={{ width: `${(n / max) * 100}%` }} />
-            </div>
-            <span className="w-7 shrink-0 tabular-nums text-right">{n}</span>
           </div>
         );
       })}
@@ -310,6 +383,66 @@ function buildSections(rec: ClientRecord): { key: string; label: string; ids: nu
   return out;
 }
 
+/** Minute-level view of a single local hour: each user active in that hour,
+ *  with their exact local time and country. Computed from the loaded records. */
+function HourDetail({
+  hour,
+  records,
+  loadedAll,
+  onClose,
+}: {
+  hour: number;
+  records: ClientRecord[];
+  loadedAll: boolean;
+  onClose: () => void;
+}) {
+  const inHour = records.filter((r) => (r.localHour ?? -1) === hour);
+  // Sub-bucket by minute within the hour (0–59) using the user's own clock.
+  const minuteOf = (r: ClientRecord): number | null => {
+    if (!r.tz) return null;
+    try {
+      const m = new Intl.DateTimeFormat('en-US', { timeZone: r.tz, minute: 'numeric' }).format(r.lastTs);
+      const n = parseInt(m, 10);
+      return Number.isFinite(n) ? n : null;
+    } catch {
+      return null;
+    }
+  };
+  const sorted = inHour
+    .map((r) => ({ r, min: minuteOf(r) }))
+    .sort((a, b) => (a.min ?? 0) - (b.min ?? 0));
+
+  return (
+    <Modal title={`Activity at ${hour}:00–${hour}:59 (users' local time)`} onClose={onClose}>
+      {!loadedAll && (
+        <p className="text-xs text-muted-foreground mb-2">
+          Based on the {records.length} loaded users — “Load more” for the full set.
+        </p>
+      )}
+      {sorted.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No loaded users built in this hour.</p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {sorted.map(({ r, min }) => {
+            const local = localTime(r.lastTs, r.tz);
+            return (
+              <div key={r.cid} className="flex items-center gap-3 text-xs border-b py-1">
+                <span className="w-14 shrink-0 tabular-nums font-medium">
+                  {hour}:{String(min ?? 0).padStart(2, '0')}
+                </span>
+                <span className="w-16 shrink-0">
+                  {r.country ? `${flag(r.country)} ${r.country}` : '—'}
+                </span>
+                <span className="text-muted-foreground truncate">{local ?? r.lastAt}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 // ---------- main ----------
 
 export function AdminPage() {
@@ -322,6 +455,7 @@ export function AdminPage() {
   });
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<ApiResponse | null>(null);
+  const [hourDetail, setHourDetail] = useState<number | null>(null);
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -495,20 +629,8 @@ export function AdminPage() {
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card title="Most-picked (final dex, all users)">
-                {data.popularFinal.length ? (
-                  <PopularList rows={data.popularFinal} />
-                ) : (
-                  <p className="text-xs text-muted-foreground">No data yet.</p>
-                )}
-              </Card>
-              <Card title="Most tried then dropped">
-                {data.mostDropped.length ? (
-                  <PopularList rows={data.mostDropped} />
-                ) : (
-                  <p className="text-xs text-muted-foreground">No adjustments yet.</p>
-                )}
-              </Card>
+              <PopularPanel title="Most-picked (final dex, all users)" rows={data.popularFinal} />
+              <PopularPanel title="Most tried then dropped" rows={data.mostDropped} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -527,8 +649,8 @@ export function AdminPage() {
               </Card>
             </div>
 
-            <Card title="When users build (their local hour)">
-              <Bars rows={hourRows} />
+            <Card title="When users build (their local hour) — click an hour for detail">
+              <Columns rows={hourRows} onBar={(_, h) => setHourDetail(h)} />
             </Card>
 
             <div className="flex items-center justify-between">
@@ -550,6 +672,15 @@ export function AdminPage() {
               <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
                 {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${data.totalUsers})`}
               </Button>
+            )}
+
+            {hourDetail !== null && (
+              <HourDetail
+                hour={hourDetail}
+                records={data.records}
+                loadedAll={data.records.length >= data.totalUsers}
+                onClose={() => setHourDetail(null)}
+              />
             )}
           </>
         )}
