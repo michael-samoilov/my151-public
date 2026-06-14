@@ -51,7 +51,7 @@ interface ApiResponse {
   devices: Record<string, number>;
   os: Record<string, number>;
   hours: number[];
-  popularCompleted: [string, number][];
+  popularFinal: [string, number][];
   mostDropped: [string, number][];
   records: ClientRecord[];
 }
@@ -495,11 +495,11 @@ export function AdminPage() {
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card title="Most-picked in completed dexes">
-                {data.popularCompleted.length ? (
-                  <PopularList rows={data.popularCompleted} />
+              <Card title="Most-picked (final dex, all users)">
+                {data.popularFinal.length ? (
+                  <PopularList rows={data.popularFinal} />
                 ) : (
-                  <p className="text-xs text-muted-foreground">No completed dexes yet.</p>
+                  <p className="text-xs text-muted-foreground">No data yet.</p>
                 )}
               </Card>
               <Card title="Most tried then dropped">
