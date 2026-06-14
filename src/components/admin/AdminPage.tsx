@@ -2,33 +2,26 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
-import { cn, displayName } from '@/lib/utils';
+import { displayName } from '@/lib/utils';
 
 /**
- * Admin-only view of the pokedexes users have assembled. Reached at
- * `my151.app/?admin` (gated in main.tsx). Reads the token-protected
- * /api/submissions endpoint and renders each stored submission — its
- * datetime plus the full sprite list — newest first.
+ * Admin-only analytics dashboard. Reached at `my151.app/?admin` (gated in
+ * main.tsx). Reads the token-protected /api/submissions endpoint, which returns
+ * one record per anonymous client plus precomputed aggregates.
  */
 
 const TOKEN_KEY = 'p151-admin-token';
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 50;
 
-type Source = 'completion' | 'export' | 'interacted' | 'engaged';
-const SOURCES: Source[] = ['completion', 'export', 'interacted', 'engaged'];
-const SOURCE_LABEL: Record<Source, string> = {
-  completion: 'Completions',
-  export: 'Exports',
-  interacted: 'Interacted (3+ lines)',
-  engaged: 'Engaged (20+ lines)',
-};
-
-interface Submission {
-  id?: string;
-  ids: number[];
-  source: Source;
-  ts: number;
-  at: string;
+interface ClientRecord {
+  cid: string;
+  firstTs: number;
+  firstAt: string;
+  lastTs: number;
+  lastAt: string;
+  submits: number;
+  maxDepth: number;
+  localHour: number;
   country?: string;
   region?: string;
   tz?: string;
@@ -36,42 +29,30 @@ interface Submission {
   device?: string;
   os?: string;
   browser?: string;
+  firstIds: number[];
+  latestIds: number[];
+  completed: boolean;
+  completedAt?: string;
+  completedIds?: number[];
+  exported: boolean;
+  exportedAt?: string;
+  exportedIds?: number[];
 }
 
-interface SourceData {
-  /** All-time count (for milestones this exceeds `stored` once past the cap). */
-  total: number;
-  /** Number of snapshots actually retained (drives "Load more" pagination). */
-  stored: number;
-  submissions: Submission[];
-  /** All-time per-country counts (server-side, covers every submission). */
-  countries: Record<string, number>;
-}
-
-type MilestoneSource = 'interacted' | 'engaged';
-
-// Every source now comes back with the same shape: an all-time `total` counter
-// plus the retained-snapshot `stored` count that drives pagination.
-interface SourceResult {
-  total: number;
-  stored: number;
+interface ApiResponse {
+  totalUsers: number;
   offset: number;
   limit: number;
-  submissions: Submission[];
-  countries?: Record<string, number>;
-}
-
-type ApiResponse = Partial<Record<'completion' | 'export', SourceResult>> & {
-  milestones?: Partial<Record<MilestoneSource, SourceResult>>;
-};
-
-function emptyData(): Record<Source, SourceData> {
-  return {
-    completion: { total: 0, stored: 0, submissions: [], countries: {} },
-    export: { total: 0, stored: 0, submissions: [], countries: {} },
-    interacted: { total: 0, stored: 0, submissions: [], countries: {} },
-    engaged: { total: 0, stored: 0, submissions: [], countries: {} },
-  };
+  funnel: { users: number; completed: number; exported: number };
+  retention: { returning: number; activeLast7: number; newUsers: number };
+  depthHistogram: { label: string; count: number }[];
+  countries: Record<string, number>;
+  devices: Record<string, number>;
+  os: Record<string, number>;
+  hours: number[];
+  popularFirst: [string, number][];
+  popularFinal: [string, number][];
+  records: ClientRecord[];
 }
 
 function relativeTime(ts: number): string {
@@ -84,7 +65,6 @@ function relativeTime(ts: number): string {
   return `${Math.round(h / 24)}d ago`;
 }
 
-/** Convert an ISO country code (e.g. "US") to its flag emoji. */
 function flag(country?: string): string {
   if (!country || country.length !== 2) return '';
   const cc = country.toUpperCase();
@@ -92,179 +72,202 @@ function flag(country?: string): string {
   return String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
 }
 
-/** The submission's wall-clock time in the submitter's own timezone, e.g.
- *  "May 31, 2026, 11:03 AM". Returns null when no (valid) timezone was
- *  captured, so the caller can fall back to the admin's local time. */
 function localTime(when: number, tz?: string): string | null {
   if (!tz) return null;
   try {
-    return new Intl.DateTimeFormat(undefined, {
-      timeZone: tz,
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    }).format(when);
+    return new Intl.DateTimeFormat(undefined, { timeZone: tz, dateStyle: 'medium', timeStyle: 'short' }).format(when);
   } catch {
-    // Invalid/unknown timezone string
     return null;
   }
 }
 
-/** Compact, human-readable context line for a submission's metadata. */
-function contextParts(sub: Submission): string[] {
-  const parts: string[] = [];
-  const loc = [sub.country && `${flag(sub.country)} ${sub.country}`, sub.region]
-    .filter(Boolean)
-    .join(' / ');
-  if (loc) parts.push(loc);
-  const dev = [sub.device, sub.os, sub.browser].filter(Boolean).join(' · ');
-  if (dev) parts.push(dev);
-  if (sub.lang) parts.push(sub.lang);
-  // Timezone is surfaced separately alongside the user-local time.
-  return parts;
-}
-
-async function fetchSubmissions(
-  token: string,
-  params: { source?: Source; limit: number; offset: number },
-): Promise<ApiResponse> {
-  const qs = new URLSearchParams();
-  if (params.source) qs.set('source', params.source);
-  qs.set('limit', String(params.limit));
-  qs.set('offset', String(params.offset));
-  // Token goes in the Authorization header, not the URL, so it never lands in
-  // a server/proxy access log.
+async function fetchDashboard(token: string, limit: number, offset: number): Promise<ApiResponse> {
+  const qs = new URLSearchParams({ limit: String(limit), offset: String(offset) });
   const res = await fetch(`/api/submissions?${qs.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (res.status === 401) throw new Error('Invalid admin token.');
-  if (res.status === 503) {
-    throw new Error('Admin access is not configured on the server (ADMIN_TOKEN is not set).');
-  }
+  if (res.status === 503) throw new Error('Admin access is not configured on the server (ADMIN_TOKEN is not set).');
   if (!res.ok) throw new Error(`Request failed (${res.status}).`);
   return res.json() as Promise<ApiResponse>;
 }
 
-function SubmissionCard({ sub, onDelete }: { sub: Submission; onDelete: (sub: Submission) => void }) {
-  const [copied, setCopied] = useState(false);
-  const when = sub.ts || Date.parse(sub.at) || Date.now();
-  const userLocal = localTime(when, sub.tz);
+// ---------- presentational bits ----------
 
-  const copyIds = useCallback(() => {
-    void navigator.clipboard?.writeText(sub.ids.join(',')).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  }, [sub.ids]);
-
+function Stat({ value, label }: { value: number | string; label: string }) {
   return (
-    <section className="shadow-elevated rounded-lg p-3 bg-card">
-      <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-        <div className="text-sm">
-          <span className="font-semibold">{new Date(when).toLocaleString()}</span>
-          <span className="text-muted-foreground">
-            {' '}· {relativeTime(when)} · {sub.ids.length} Pokémon
-          </span>
-          {userLocal && (
-            <span className="block text-xs text-muted-foreground">
-              User local: {userLocal} ({sub.tz})
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={copyIds}>
-            {copied ? 'Copied!' : 'Copy IDs'}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            onClick={() => onDelete(sub)}
-          >
-            Delete
-          </Button>
-        </div>
-      </div>
-      {contextParts(sub).length > 0 && (
-        <div className="text-xs text-muted-foreground mb-2 flex flex-wrap gap-x-2 gap-y-0.5">
-          {contextParts(sub).map((p, i) => (
-            <span key={i}>{p}</span>
-          ))}
-        </div>
-      )}
-      <div className="flex flex-wrap gap-1">
-        {sub.ids.map((id, idx) => {
-          const p = getPokemonById(id);
-          return (
-            <div
-              key={`${id}-${idx}`}
-              title={p ? `#${id} ${displayName(p.name)}` : `#${id}`}
-              className="w-11 h-11 shrink-0 flex items-center justify-center"
-            >
-              {p ? (
-                <img
-                  src={p.sprite}
-                  alt={p.name}
-                  width={44}
-                  height={44}
-                  loading="lazy"
-                  decoding="async"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-              ) : (
-                <span className="text-[0.625rem] text-muted-foreground">#{id}</span>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </section>
+    <div className="flex flex-col px-3 py-2 rounded-md bg-muted min-w-[6.5rem]">
+      <span className="text-2xl font-bold tabular-nums">{value}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
+    </div>
   );
 }
 
-/** All-time submissions-by-country, descending. Driven by the server-side
- *  counter, so it covers every submission ever received — not just the
- *  entries currently loaded into the page. */
-function CountryTally({ countries }: { countries: Record<string, number> }) {
-  const entries = Object.entries(countries).filter(([, n]) => n > 0);
-  if (entries.length === 0) return null;
-  const sorted = entries.sort((a, b) => b[1] - a[1]);
-  const total = sorted.reduce((sum, [, n]) => sum + n, 0);
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-1 shadow-elevated rounded-lg p-2 bg-card">
-      <span className="font-medium text-foreground">By country (all-time, {total}):</span>
-      {sorted.map(([cc, n]) => (
-        <span key={cc}>
-          {flag(cc)} {cc} {n}
-        </span>
+    <div className="shadow-elevated rounded-lg p-3 bg-card">
+      <div className="text-sm font-medium mb-2">{title}</div>
+      {children}
+    </div>
+  );
+}
+
+/** Horizontal bar row with a label and count. */
+function Bars({ rows }: { rows: { label: string; count: number }[] }) {
+  const max = Math.max(1, ...rows.map((r) => r.count));
+  return (
+    <div className="flex flex-col gap-1">
+      {rows.map((r) => (
+        <div key={r.label} className="flex items-center gap-2 text-xs">
+          <span className="w-16 shrink-0 text-muted-foreground text-right">{r.label}</span>
+          <div className="flex-1 bg-muted rounded h-4 overflow-hidden">
+            <div className="h-full bg-primary/70" style={{ width: `${(r.count / max) * 100}%` }} />
+          </div>
+          <span className="w-8 shrink-0 tabular-nums">{r.count}</span>
+        </div>
       ))}
     </div>
   );
 }
 
-/** Top-of-page engagement funnel: how many real humans interacted (3+),
- *  engaged (20+), and completed (151). Bots and link-unfurlers never tap
- *  tiles, so these counts are a trustworthy human floor that the raw
- *  page-view number can't give. */
-function EngagementFunnel({ data }: { data: Record<Source, SourceData> }) {
-  const steps: { source: Source; label: string }[] = [
-    { source: 'interacted', label: 'Interacted (3+ lines)' },
-    { source: 'engaged', label: 'Engaged (20+ lines)' },
-    { source: 'completion', label: 'Completed (151)' },
-  ];
+function SpriteRow({ ids }: { ids: number[] }) {
   return (
-    <div className="shadow-elevated rounded-lg p-3 bg-card">
-      <div className="text-sm font-medium mb-2">Human engagement (all-time)</div>
-      <div className="flex flex-wrap gap-2">
-        {steps.map((s) => (
-          <div key={s.source} className="flex flex-col px-3 py-2 rounded-md bg-muted min-w-[7rem]">
-            <span className="text-2xl font-bold tabular-nums">{data[s.source].total}</span>
-            <span className="text-xs text-muted-foreground">{s.label}</span>
+    <div className="flex flex-wrap gap-0.5">
+      {ids.map((id, idx) => {
+        const p = getPokemonById(id);
+        return (
+          <div
+            key={`${id}-${idx}`}
+            title={p ? `#${id} ${displayName(p.name)}` : `#${id}`}
+            className="w-8 h-8 shrink-0 flex items-center justify-center"
+          >
+            {p ? (
+              <img
+                src={p.sprite}
+                alt={p.name}
+                width={32}
+                height={32}
+                loading="lazy"
+                decoding="async"
+                style={{ imageRendering: 'pixelated' }}
+              />
+            ) : (
+              <span className="text-[0.55rem] text-muted-foreground">#{id}</span>
+            )}
           </div>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 }
+
+function PopularList({ rows }: { rows: [string, number][] }) {
+  const max = Math.max(1, ...rows.map(([, n]) => n));
+  return (
+    <div className="flex flex-col gap-1">
+      {rows.map(([id, n]) => {
+        const p = getPokemonById(Number(id));
+        return (
+          <div key={id} className="flex items-center gap-2 text-xs">
+            <div className="w-7 h-7 shrink-0 flex items-center justify-center">
+              {p && (
+                <img
+                  src={p.sprite}
+                  alt={p.name}
+                  width={28}
+                  height={28}
+                  loading="lazy"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              )}
+            </div>
+            <span className="w-20 shrink-0 capitalize truncate">{p ? displayName(p.name) : `#${id}`}</span>
+            <div className="flex-1 bg-muted rounded h-3 overflow-hidden">
+              <div className="h-full bg-primary/70" style={{ width: `${(n / max) * 100}%` }} />
+            </div>
+            <span className="w-7 shrink-0 tabular-nums text-right">{n}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function tallyRows(counts: Record<string, number>, withFlag = false) {
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([k, n]) => ({ label: withFlag ? `${flag(k)} ${k}` : k, count: n }));
+}
+
+function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const userLocal = localTime(rec.lastTs, rec.tz);
+  const ctx = [
+    rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
+    [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
+    rec.lang,
+  ].filter(Boolean);
+  const changed = JSON.stringify(rec.firstIds) !== JSON.stringify(rec.latestIds);
+
+  return (
+    <section className="shadow-elevated rounded-lg p-3 bg-card">
+      <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+        <div className="text-sm">
+          <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
+          <span className="text-muted-foreground">
+            {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'} · depth {rec.maxDepth}
+          </span>
+          <span className="block text-xs text-muted-foreground">
+            {rec.completed && <span className="text-primary font-medium">✓ completed </span>}
+            {rec.exported && <span>📷 exported </span>}
+            {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning</span>}
+            {userLocal && <> · their {userLocal}</>}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" onClick={() => setExpanded((v) => !v)}>
+            {expanded ? 'Hide' : 'Builds'}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-destructive hover:text-destructive"
+            onClick={() => onDelete(rec)}
+          >
+            Delete
+          </Button>
+        </div>
+      </div>
+      {ctx.length > 0 && (
+        <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
+          {ctx.map((c, i) => (
+            <span key={i}>{c}</span>
+          ))}
+        </div>
+      )}
+      {expanded && (
+        <div className="flex flex-col gap-2 mt-2">
+          <div>
+            <div className="text-xs text-muted-foreground mb-0.5">
+              Final dex ({rec.latestIds.length})
+            </div>
+            <SpriteRow ids={rec.latestIds} />
+          </div>
+          {changed && (
+            <div>
+              <div className="text-xs text-muted-foreground mb-0.5">
+                First seen ({rec.firstIds.length})
+              </div>
+              <SpriteRow ids={rec.firstIds} />
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ---------- main ----------
 
 export function AdminPage() {
   const [token, setToken] = useState<string | null>(() => {
@@ -275,48 +278,18 @@ export function AdminPage() {
     }
   });
   const [tokenInput, setTokenInput] = useState('');
-  const [data, setData] = useState<Record<Source, SourceData>>(emptyData);
-  const [activeSource, setActiveSource] = useState<Source>('completion');
+  const [data, setData] = useState<ApiResponse | null>(null);
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadInitial = useCallback(async (tok: string) => {
+  const load = useCallback(async (tok: string, limit = PAGE_SIZE) => {
     setLoading(true);
     setError(null);
     try {
-      // No source param → every source in one round-trip.
-      const resp = await fetchSubmissions(tok, { limit: PAGE_SIZE, offset: 0 });
-      const ms = resp.milestones ?? {};
-      setData({
-        completion: {
-          // `total` is the all-time counter; `stored` is the retained-snapshot
-          // count that drives pagination (they differ past the 10k cap).
-          total: resp.completion?.total ?? 0,
-          stored: resp.completion?.stored ?? 0,
-          submissions: resp.completion?.submissions ?? [],
-          countries: resp.completion?.countries ?? {},
-        },
-        export: {
-          total: resp.export?.total ?? 0,
-          stored: resp.export?.stored ?? 0,
-          submissions: resp.export?.submissions ?? [],
-          countries: resp.export?.countries ?? {},
-        },
-        interacted: {
-          total: ms.interacted?.total ?? 0,
-          stored: ms.interacted?.stored ?? 0,
-          submissions: ms.interacted?.submissions ?? [],
-          countries: ms.interacted?.countries ?? {},
-        },
-        engaged: {
-          total: ms.engaged?.total ?? 0,
-          stored: ms.engaged?.stored ?? 0,
-          submissions: ms.engaged?.submissions ?? [],
-          countries: ms.engaged?.countries ?? {},
-        },
-      });
+      const resp = await fetchDashboard(tok, limit, 0);
+      setData(resp);
       setAuthed(true);
       setToken(tok);
       try {
@@ -332,125 +305,65 @@ export function AdminPage() {
     }
   }, []);
 
-  // Auto-load once if a token is already stored from a previous visit.
   useEffect(() => {
-    if (token) void loadInitial(token);
+    if (token) void load(token);
     // Run only on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadMore = useCallback(async () => {
-    if (!token) return;
+    if (!token || !data) return;
     setLoadingMore(true);
-    setError(null);
     try {
-      // Re-fetch the whole loaded range from offset 0 (growing the window by
-      // one page) rather than paging by current length. Offset-by-length skips
-      // an entry whenever a prior delete shrank the local list; re-fetching
-      // from the top stays correct across deletes and naturally reconciles.
-      const limit = data[activeSource].submissions.length + PAGE_SIZE;
-      const resp = await fetchSubmissions(token, { source: activeSource, limit, offset: 0 });
-      // Pokedex sources come back at the top level; milestone sources under
-      // `milestones`. Read whichever applies for the active tab.
-      const block =
-        resp[activeSource as 'completion' | 'export'] ?? resp.milestones?.[activeSource as MilestoneSource];
-      setData((prev) => ({
-        ...prev,
-        [activeSource]: {
-          ...prev[activeSource],
-          total: block?.total ?? prev[activeSource].total,
-          stored: block?.stored ?? prev[activeSource].stored,
-          submissions: block?.submissions ?? prev[activeSource].submissions,
-          countries: block?.countries ?? prev[activeSource].countries,
-        },
-      }));
+      const resp = await fetchDashboard(token, data.records.length + PAGE_SIZE, 0);
+      setData(resp);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong.');
     } finally {
       setLoadingMore(false);
     }
-  }, [token, activeSource, data]);
+  }, [token, data]);
 
-  const resetSource = useCallback(
-    async (src: Source) => {
+  const deleteUser = useCallback(
+    async (rec: ClientRecord) => {
       if (!token) return;
-      const label = SOURCE_LABEL[src];
-      if (
-        !window.confirm(
-          `Reset all "${label}" data?\n\nThis permanently deletes the count, country tally, and every stored snapshot for ${label.toLowerCase()}, starting it back at 0. This cannot be undone.`,
-        )
-      ) {
-        return;
-      }
-      setError(null);
-      try {
-        const res = await fetch('/api/reset', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ source: src }),
-        });
-        if (!res.ok) throw new Error(`Reset failed (${res.status}).`);
-        // Clear locally, then refresh from the server.
-        setData((prev) => ({
-          ...prev,
-          [src]: { total: 0, stored: 0, submissions: [], countries: {} },
-        }));
-        await loadInitial(token);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : 'Reset failed.');
-      }
-    },
-    [token, loadInitial],
-  );
-
-  const deleteEntry = useCallback(
-    async (sub: Submission) => {
-      if (!token) return;
-      const src = activeSource;
-      if (
-        !window.confirm(
-          `Delete this ${SOURCE_LABEL[src]} entry from ${new Date(
-            sub.ts || Date.parse(sub.at),
-          ).toLocaleString()}?\n\nThis removes just this one snapshot. It cannot be undone.`,
-        )
-      ) {
-        return;
-      }
+      if (!window.confirm(`Delete this user's record?\n\nRemoves all their data. This cannot be undone.`)) return;
       setError(null);
       try {
         const res = await fetch('/api/delete-entry', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          // Prefer the unique id; ts is a legacy fallback for older entries.
-          // country/ids let the server floor-decrement the matching aggregates.
-          body: JSON.stringify({ source: src, id: sub.id, ts: sub.ts, country: sub.country, ids: sub.ids }),
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ cid: rec.cid }),
         });
         if (!res.ok) throw new Error(`Delete failed (${res.status}).`);
-        // Drop exactly this entry from local state and decrement the counts.
-        // Match on the unique id so entries sharing a ts (same millisecond)
-        // aren't all removed; fall back to ts only for legacy id-less entries.
-        const matches = (s: Submission) => (sub.id ? s.id === sub.id : s.ts === sub.ts);
-        setData((prev) => ({
-          ...prev,
-          [src]: {
-            ...prev[src],
-            total: Math.max(0, prev[src].total - 1),
-            stored: Math.max(0, prev[src].stored - 1),
-            submissions: prev[src].submissions.filter((s) => !matches(s)),
-          },
-        }));
+        setData((prev) =>
+          prev
+            ? { ...prev, totalUsers: Math.max(0, prev.totalUsers - 1), records: prev.records.filter((r) => r.cid !== rec.cid) }
+            : prev,
+        );
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Delete failed.');
       }
     },
-    [token, activeSource],
+    [token],
   );
+
+  const resetAll = useCallback(async () => {
+    if (!token) return;
+    if (!window.confirm('Reset ALL analytics?\n\nPermanently deletes every user record and aggregate, starting from 0. This cannot be undone.')) return;
+    setError(null);
+    try {
+      const res = await fetch('/api/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) throw new Error(`Reset failed (${res.status}).`);
+      await load(token);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Reset failed.');
+    }
+  }, [token, load]);
 
   const signOut = useCallback(() => {
     try {
@@ -460,7 +373,7 @@ export function AdminPage() {
     }
     setToken(null);
     setAuthed(false);
-    setData(emptyData());
+    setData(null);
     setTokenInput('');
   }, []);
 
@@ -471,16 +384,14 @@ export function AdminPage() {
           onSubmit={(e) => {
             e.preventDefault();
             const t = tokenInput.trim();
-            if (t) void loadInitial(t);
+            if (t) void load(t);
           }}
           className="w-full max-w-sm flex flex-col gap-3"
         >
           <h1 className="text-xl font-bold">
-            <span className="text-primary">my151</span> · Submissions admin
+            <span className="text-primary">my151</span> · Analytics admin
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Enter your admin token to view the pokédexes users have assembled.
-          </p>
+          <p className="text-sm text-muted-foreground">Enter your admin token to view analytics.</p>
           <Input
             type="password"
             value={tokenInput}
@@ -489,7 +400,7 @@ export function AdminPage() {
             autoFocus
           />
           <Button type="submit" disabled={loading || !tokenInput.trim()}>
-            {loading ? 'Checking…' : 'View submissions'}
+            {loading ? 'Checking…' : 'View analytics'}
           </Button>
           {error && <p className="text-sm text-destructive">{error}</p>}
         </form>
@@ -497,17 +408,17 @@ export function AdminPage() {
     );
   }
 
-  const active = data[activeSource];
+  const hourRows = (data?.hours ?? []).map((count, h) => ({ label: `${h}:00`, count }));
 
   return (
     <div className="min-h-dvh flex flex-col bg-background">
       <header className="border-b bg-card sticky top-0 z-10">
         <div className="max-w-5xl mx-auto w-full flex items-center justify-between gap-2 px-4 py-3">
           <h1 className="text-lg font-bold whitespace-nowrap">
-            <span className="text-primary">my151</span> · Submissions
+            <span className="text-primary">my151</span> · Analytics
           </h1>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={() => token && void loadInitial(token)} disabled={loading}>
+            <Button variant="ghost" size="sm" onClick={() => token && void load(token)} disabled={loading}>
               {loading ? 'Refreshing…' : 'Refresh'}
             </Button>
             <Button variant="ghost" size="sm" onClick={signOut}>
@@ -515,54 +426,77 @@ export function AdminPage() {
             </Button>
           </div>
         </div>
-        <div className="max-w-5xl mx-auto w-full flex flex-wrap gap-1 px-4 pb-2">
-          {SOURCES.map((src) => (
-            <button
-              key={src}
-              type="button"
-              onClick={() => setActiveSource(src)}
-              className={cn(
-                'px-3 py-1.5 rounded-md text-sm font-medium',
-                activeSource === src ? 'bg-primary text-primary-foreground' : 'hover:bg-muted',
-              )}
-            >
-              {SOURCE_LABEL[src]} <span className="opacity-70">({data[src].total})</span>
-            </button>
-          ))}
-        </div>
       </header>
 
       <main className="flex-1 max-w-5xl mx-auto w-full p-4 flex flex-col gap-4">
         {error && <p className="text-sm text-destructive">{error}</p>}
-        <EngagementFunnel data={data} />
-        {active.submissions.length === 0 && !loading && (
-          <p className="text-sm text-muted-foreground">No {SOURCE_LABEL[activeSource]} submissions yet.</p>
-        )}
-        <CountryTally countries={active.countries} />
-        {active.total > 0 && (
-          <div>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => void resetSource(activeSource)}
-            >
-              Reset {SOURCE_LABEL[activeSource]}
-            </Button>
-          </div>
-        )}
-        {/* For milestones, total (all-time) can exceed stored (capped snapshots). */}
-        {active.total > active.stored && (
-          <p className="text-xs text-muted-foreground">
-            Showing {active.stored} most-recent snapshots of {active.total} all-time.
-          </p>
-        )}
-        {active.submissions.map((sub, i) => (
-          <SubmissionCard key={sub.id ?? `${sub.ts}-${i}`} sub={sub} onDelete={deleteEntry} />
-        ))}
-        {active.submissions.length < active.stored && (
-          <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
-            {loadingMore ? 'Loading…' : `Load more (${active.submissions.length} / ${active.stored})`}
-          </Button>
+
+        {data && (
+          <>
+            <Card title="Overview (all-time)">
+              <div className="flex flex-wrap gap-2">
+                <Stat value={data.funnel.users} label="Users" />
+                <Stat value={data.funnel.completed} label="Completed (151)" />
+                <Stat value={data.funnel.exported} label="Exported" />
+                <Stat value={data.retention.returning} label="Returning" />
+                <Stat value={data.retention.activeLast7} label="Active 7d" />
+              </div>
+            </Card>
+
+            <Card title="How far users get (max evolution lines)">
+              <Bars rows={data.depthHistogram} />
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card title="Most-picked (final dex)">
+                <PopularList rows={data.popularFinal} />
+              </Card>
+              <Card title="Most-picked (first seen)">
+                <PopularList rows={data.popularFirst} />
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card title="By country">
+                {Object.keys(data.countries).length ? (
+                  <Bars rows={tallyRows(data.countries, true)} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">No data yet.</p>
+                )}
+              </Card>
+              <Card title="By device">
+                <Bars rows={tallyRows(data.devices)} />
+              </Card>
+              <Card title="By OS">
+                <Bars rows={tallyRows(data.os)} />
+              </Card>
+            </div>
+
+            <Card title="When users build (their local hour)">
+              <Bars rows={hourRows} />
+            </Card>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">Users ({data.totalUsers})</span>
+              {data.totalUsers > 0 && (
+                <Button variant="destructive" size="sm" onClick={() => void resetAll()}>
+                  Reset all
+                </Button>
+              )}
+            </div>
+
+            {data.records.length === 0 && !loading && (
+              <p className="text-sm text-muted-foreground">No users yet.</p>
+            )}
+            {data.records.map((rec) => (
+              <UserCard key={rec.cid} rec={rec} onDelete={deleteUser} />
+            ))}
+            {data.records.length < data.totalUsers && (
+              <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
+                {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${data.totalUsers})`}
+              </Button>
+            )}
+          </>
         )}
       </main>
     </div>

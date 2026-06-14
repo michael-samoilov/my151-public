@@ -1,78 +1,32 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
-import { randomUUID } from 'node:crypto';
-import { redis, getClientIp, isMilestone, isSource, type Source } from './_shared.js';
+import {
+  redis,
+  getClientIp,
+  isBeaconKind,
+  parseRecord,
+  CLIENTS_KEY,
+  MAX_CLIENTS,
+  type BeaconKind,
+  type ClientRecord,
+} from './_shared.js';
 
 const MAX_POKEMON_ID = 1025;
 
-// Cap stored submissions per source so the lists can't grow unbounded.
-// LTRIM keeps the most recent MAX_STORED_SUBMISSIONS entries.
-const MAX_STORED_SUBMISSIONS = 10000;
-
 // Rate limiters: per-IP, analytics disabled to avoid doubling Upstash command count.
-const completionLimiter = new Ratelimit({
-  redis,
-  limiter: Ratelimit.fixedWindow(2, '1 d'),
-  analytics: false,
-  prefix: 'rl:completion',
-});
-const exportLimiter = new Ratelimit({
-  redis,
-  limiter: Ratelimit.fixedWindow(20, '1 d'),
-  analytics: false,
-  prefix: 'rl:export',
-});
 const burstLimiter = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(500, '10 m'),
   analytics: false,
   prefix: 'rl:burst',
 });
-// Milestone beacons are deduped client-side per browser, but cap per IP too
-// so a single client can't inflate the human-engagement counters.
-const milestoneLimiter = new Ratelimit({
+// Per-client write cap so one browser can't spam updates.
+const clientLimiter = new Ratelimit({
   redis,
-  limiter: Ratelimit.fixedWindow(10, '1 d'),
+  limiter: Ratelimit.slidingWindow(120, '1 d'),
   analytics: false,
-  prefix: 'rl:milestone',
+  prefix: 'rl:client',
 });
-
-// Pokedex script: per-Pokemon picks + all-time total + capped snapshot list +
-// by-country tally, in one Upstash command regardless of ID count.
-// KEYS[1] = picks:<source>   KEYS[2] = total:<source>
-// KEYS[3] = submissions:<source>   KEYS[4] = countries:<source>
-// ARGV[1] = full submission entry (JSON string)
-// ARGV[2] = max stored submissions (cap for LTRIM)
-// ARGV[3] = country code ('' if unknown)
-// ARGV[4..] = list of pokemon IDs as strings
-const SUBMIT_LUA = `
-for i = 4, #ARGV do
-  redis.call('HINCRBY', KEYS[1], ARGV[i], 1)
-end
-redis.call('INCR', KEYS[2])
-redis.call('LPUSH', KEYS[3], ARGV[1])
-redis.call('LTRIM', KEYS[3], 0, tonumber(ARGV[2]) - 1)
-if ARGV[3] ~= '' then
-  redis.call('HINCRBY', KEYS[4], ARGV[3], 1)
-end
-return 1
-`;
-
-// Milestone script: all-time counter + by-country tally + capped snapshot list.
-// No `picks` aggregate — these measure engagement, not Pokemon popularity.
-// KEYS[1] = total:<source>   KEYS[2] = countries:<source>   KEYS[3] = submissions:<source>
-// ARGV[1] = country code ('' if unknown)
-// ARGV[2] = full snapshot entry (JSON string)
-// ARGV[3] = max stored submissions (cap for LTRIM)
-const MILESTONE_LUA = `
-redis.call('INCR', KEYS[1])
-if ARGV[1] ~= '' then
-  redis.call('HINCRBY', KEYS[2], ARGV[1], 1)
-end
-redis.call('LPUSH', KEYS[3], ARGV[2])
-redis.call('LTRIM', KEYS[3], 0, tonumber(ARGV[3]) - 1)
-return 1
-`;
 
 function header(req: VercelRequest, name: string): string | undefined {
   const v = req.headers[name];
@@ -83,8 +37,7 @@ function header(req: VercelRequest, name: string): string | undefined {
 
 /** Coarse geo from Vercel's IP headers. Country/region/timezone only — we
  *  deliberately skip city + lat/long to keep this low-sensitivity. Vercel's
- *  'XX' placeholder for an unknown country is normalized to undefined so it
- *  never pollutes the by-country tally. */
+ *  'XX' placeholder for an unknown country is normalized to undefined. */
 function getGeo(req: VercelRequest) {
   const country = header(req, 'x-vercel-ip-country');
   return {
@@ -94,7 +47,6 @@ function getGeo(req: VercelRequest) {
   };
 }
 
-/** Primary language tag from Accept-Language, e.g. "en-US". */
 function getLang(req: VercelRequest): string | undefined {
   const al = header(req, 'accept-language');
   if (!al) return undefined;
@@ -102,9 +54,22 @@ function getLang(req: VercelRequest): string | undefined {
   return first || undefined;
 }
 
-/** Best-effort device/browser/OS classification from the User-Agent string.
- *  Lightweight substring matching — enough for "mobile iOS Safari" style
- *  buckets without pulling in a UA-parsing dependency. */
+/** Hour-of-day (0–23) in the given IANA timezone, defaulting to UTC. */
+function localHourIn(tz: string | undefined, when: number): number {
+  try {
+    const h = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz || 'UTC',
+      hour: 'numeric',
+      hour12: false,
+    }).format(when);
+    const n = parseInt(h, 10);
+    return Number.isFinite(n) ? n % 24 : new Date(when).getUTCHours();
+  } catch {
+    return new Date(when).getUTCHours();
+  }
+}
+
+/** Best-effort device/browser/OS classification from the User-Agent string. */
 function getClient(req: VercelRequest) {
   const ua = header(req, 'user-agent') ?? '';
 
@@ -136,95 +101,119 @@ function getClient(req: VercelRequest) {
   return { device, os, browser };
 }
 
+/** Validate a 1–151 unique-id build array; returns the ids or null. */
+function validIds(ids: unknown): number[] | null {
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > 151) return null;
+  const seen = new Set<number>();
+  for (const id of ids) {
+    if (typeof id !== 'number' || !Number.isInteger(id) || id < 1 || id > MAX_POKEMON_ID) return null;
+    if (seen.has(id)) return null;
+    seen.add(id);
+  }
+  return ids as number[];
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { ids, source } = req.body as { ids: unknown; source: unknown };
+    const body = (req.body ?? {}) as { cid?: unknown; kind?: unknown; ids?: unknown; depth?: unknown };
 
-    // Validate source
-    if (typeof source !== 'string' || !isSource(source)) {
-      return res.status(400).json({ error: 'invalid source' });
+    // Client id: a UUID minted once per browser. Length-bounded to avoid abuse.
+    if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
+      return res.status(400).json({ error: 'invalid cid' });
     }
-    const src: Source = source;
+    const cid = body.cid;
 
-    const ip = getClientIp(req);
-    const geo = getGeo(req);
-
-    // Validate IDs array. Milestone snapshots carry 1-151 ids (the build so
-    // far); pokedex sources the same, with completion pinned to exactly 151.
-    if (!Array.isArray(ids) || ids.length === 0 || ids.length > 151) {
-      return res.status(400).json({ error: 'Expected 1-151 Pokemon IDs' });
+    if (typeof body.kind !== 'string' || !isBeaconKind(body.kind)) {
+      return res.status(400).json({ error: 'invalid kind' });
     }
-    if (src === 'completion' && ids.length !== 151) {
+    const kind: BeaconKind = body.kind;
+
+    const ids = validIds(body.ids);
+    if (!ids) return res.status(400).json({ error: 'Expected 1-151 Pokemon IDs' });
+    if (kind === 'completion' && ids.length !== 151) {
       return res.status(400).json({ error: 'Completion requires exactly 151 Pokemon IDs' });
     }
 
-    const seen = new Set<number>();
-    for (const id of ids) {
-      if (typeof id !== 'number' || !Number.isInteger(id) || id < 1 || id > MAX_POKEMON_ID) {
-        return res.status(400).json({ error: `Invalid Pokemon ID: ${id}` });
-      }
-      if (seen.has(id)) {
-        return res.status(400).json({ error: `Duplicate Pokemon ID: ${id}` });
-      }
-      seen.add(id);
-    }
+    // Distinct evolution lines reached, computed client-side; clamp defensively.
+    const depth =
+      typeof body.depth === 'number' && Number.isFinite(body.depth)
+        ? Math.max(0, Math.min(151, Math.round(body.depth)))
+        : ids.length;
 
-    // Rate limit per IP before touching state.
+    // Rate limit per IP + per client before touching state.
+    const ip = getClientIp(req);
     const burst = await burstLimiter.limit(ip);
     if (!burst.success) {
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
-    const perSource = isMilestone(src)
-      ? await milestoneLimiter.limit(`${src}:${ip}`)
-      : src === 'completion'
-        ? await completionLimiter.limit(ip)
-        : await exportLimiter.limit(ip);
-    if (!perSource.success) {
-      res.setHeader('Retry-After', Math.ceil((perSource.reset - Date.now()) / 1000));
+    const perClient = await clientLimiter.limit(cid);
+    if (!perClient.success) {
+      res.setHeader('Retry-After', Math.ceil((perClient.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
 
-    // Submission entry: the build (full pokedex, or the snapshot at the moment
-    // a milestone fired) plus a unique id, datetime, and coarse request-derived
-    // context. The id is what delete-entry matches on, so a collision-proof
-    // UUID keeps entries sharing a millisecond individually addressable.
-    const submittedAt = Date.now();
-    const entryId = randomUUID();
-    const client = getClient(req);
-    const entry = JSON.stringify({
-      id: entryId,
-      ids,
-      source: src,
-      ts: submittedAt,
-      at: new Date(submittedAt).toISOString(),
-      country: geo.country,
-      region: geo.region,
-      tz: geo.tz,
-      lang: getLang(req),
-      device: client.device,
-      os: client.os,
-      browser: client.browser,
-    });
+    const now = Date.now();
+    const at = new Date(now).toISOString();
+    const geo = getGeo(req);
+    const ua = getClient(req);
 
-    if (isMilestone(src)) {
-      await redis.eval(
-        MILESTONE_LUA,
-        [`total:${src}`, `countries:${src}`, `submissions:${src}`],
-        [geo.country ?? '', entry, String(MAX_STORED_SUBMISSIONS)],
-      );
-      return res.status(200).json({ ok: true });
+    // Read-merge-write this client's record. Concurrent writes from the *same*
+    // browser are effectively impossible, so a transaction isn't needed.
+    const existing = parseRecord(await redis.hget(CLIENTS_KEY, cid));
+
+    // Cap the number of distinct clients we track. New clients past the cap are
+    // dropped; already-known clients keep updating.
+    if (!existing) {
+      const count = await redis.hlen(CLIENTS_KEY);
+      if (count >= MAX_CLIENTS) return res.status(200).json({ ok: true, capped: true });
     }
 
-    await redis.eval(
-      SUBMIT_LUA,
-      [`picks:${src}`, `total:${src}`, `submissions:${src}`, `countries:${src}`],
-      [entry, String(MAX_STORED_SUBMISSIONS), geo.country ?? '', ...ids.map(String)],
-    );
+    const rec: ClientRecord = existing ?? {
+      cid,
+      firstTs: now,
+      firstAt: at,
+      lastTs: now,
+      lastAt: at,
+      submits: 0,
+      maxDepth: 0,
+      localHour: 0,
+      firstIds: ids,
+      latestIds: ids,
+      completed: false,
+      exported: false,
+    };
+
+    rec.lastTs = now;
+    rec.lastAt = at;
+    rec.submits += 1;
+    rec.maxDepth = Math.max(rec.maxDepth, depth);
+    rec.localHour = localHourIn(geo.tz, now);
+    rec.latestIds = ids;
+    // Refresh request-derived context on every submit (latest wins).
+    rec.country = geo.country;
+    rec.region = geo.region;
+    rec.tz = geo.tz;
+    rec.lang = getLang(req);
+    rec.device = ua.device;
+    rec.os = ua.os;
+    rec.browser = ua.browser;
+
+    if (kind === 'completion') {
+      rec.completed = true;
+      rec.completedAt = at;
+      rec.completedIds = ids;
+    } else if (kind === 'export') {
+      rec.exported = true;
+      rec.exportedAt = at;
+      rec.exportedIds = ids;
+    }
+
+    await redis.hset(CLIENTS_KEY, { [cid]: JSON.stringify(rec) });
 
     return res.status(200).json({ ok: true });
   } catch (err) {

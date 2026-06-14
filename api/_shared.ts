@@ -10,24 +10,55 @@ export const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-// Full-pokedex sources store the complete build; milestone sources are
-// lightweight engagement counters. Single source of truth for all endpoints.
-export const POKEDEX_SOURCES = ['completion', 'export'] as const;
-export const MILESTONE_SOURCES = ['interacted', 'engaged'] as const;
-export const ALL_SOURCES = [...POKEDEX_SOURCES, ...MILESTONE_SOURCES] as const;
+// One record per anonymous client, stored in a single Redis hash keyed by the
+// client id. Every aggregate (counts, histograms, popular Pokemon, country /
+// device tallies, retention) is computed on read from these records — there are
+// no separate counters to drift, and a person's repeated saves overwrite their
+// own record (dedup) rather than appending new events.
+export const CLIENTS_KEY = 'clients';
+// Bound the hash so it can't grow without limit. New clients past this cap are
+// simply not recorded (existing clients keep updating).
+export const MAX_CLIENTS = 50000;
 
-export type PokedexSource = (typeof POKEDEX_SOURCES)[number];
-export type MilestoneSource = (typeof MILESTONE_SOURCES)[number];
-export type Source = (typeof ALL_SOURCES)[number];
+// What triggered a beacon. 'progress' is the running build state (used for
+// retention + max-depth); 'completion'/'export' additionally flag the milestone
+// and capture that specific build.
+export const BEACON_KINDS = ['progress', 'completion', 'export'] as const;
+export type BeaconKind = (typeof BEACON_KINDS)[number];
+export function isBeaconKind(s: string): s is BeaconKind {
+  return (BEACON_KINDS as readonly string[]).includes(s);
+}
 
-export function isPokedexSource(s: string): s is PokedexSource {
-  return (POKEDEX_SOURCES as readonly string[]).includes(s);
-}
-export function isMilestone(s: string): s is MilestoneSource {
-  return (MILESTONE_SOURCES as readonly string[]).includes(s);
-}
-export function isSource(s: string): s is Source {
-  return (ALL_SOURCES as readonly string[]).includes(s);
+/** A single anonymous user's profile, merged across all their submissions. */
+export interface ClientRecord {
+  cid: string;
+  firstTs: number;
+  firstAt: string;
+  lastTs: number;
+  lastAt: string;
+  /** How many beacons this client has sent (≈ how much they fiddled). */
+  submits: number;
+  /** Deepest build (distinct evolution lines) ever reached. */
+  maxDepth: number;
+  /** Hour-of-day (0–23) in the user's own local time at their last submit. */
+  localHour: number;
+  country?: string;
+  region?: string;
+  tz?: string;
+  lang?: string;
+  device?: string;
+  os?: string;
+  browser?: string;
+  /** Earliest build we saw from this client (their "initial engagement"). */
+  firstIds: number[];
+  /** Most recent build (their "final dex"). */
+  latestIds: number[];
+  completed: boolean;
+  completedAt?: string;
+  completedIds?: number[];
+  exported: boolean;
+  exportedAt?: string;
+  exportedIds?: number[];
 }
 
 export function firstQueryValue(value: string | string[] | undefined): string {
@@ -109,4 +140,17 @@ export async function requireAdmin(req: VercelRequest, res: VercelResponse): Pro
     return false;
   }
   return true;
+}
+
+/** Parse a hash field value that may already be auto-parsed by the SDK. */
+export function parseRecord(raw: unknown): ClientRecord | null {
+  if (raw == null) return null;
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw) as ClientRecord;
+    } catch {
+      return null;
+    }
+  }
+  return raw as ClientRecord;
 }
