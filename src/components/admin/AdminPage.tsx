@@ -29,7 +29,7 @@ interface ClientRecord {
   device?: string;
   os?: string;
   browser?: string;
-  firstIds: number[];
+  everIds: number[];
   latestIds: number[];
   completed: boolean;
   completedAt?: string;
@@ -52,6 +52,7 @@ interface ApiResponse {
   os: Record<string, number>;
   hours: number[];
   popularCompleted: [string, number][];
+  mostDropped: [string, number][];
   records: ClientRecord[];
 }
 
@@ -297,11 +298,15 @@ function buildSections(rec: ClientRecord): { key: string; label: string; ids: nu
     seen.add(sig);
     out.push({ key, label, ids });
   };
-  // Most meaningful first: what they completed, then exported, then current, then origin.
+  // Most meaningful first: what they completed, then exported, then current.
   add('completed', 'Completed dex', rec.completedIds);
   add('exported', 'Exported dex', rec.exportedIds);
   add('final', 'Final / current', rec.latestIds);
-  add('first', 'First seen', rec.firstIds);
+  // Tried then dropped: ever placed but not in the final dex — the adjustment
+  // signal (always shown, even if it duplicates nothing above).
+  const kept = new Set(rec.latestIds ?? []);
+  const dropped = (rec.everIds ?? []).filter((id) => !kept.has(id));
+  if (dropped.length) out.push({ key: 'dropped', label: 'Tried then dropped', ids: dropped });
   return out;
 }
 
@@ -489,13 +494,22 @@ export function AdminPage() {
               <Columns rows={data.timeHistogram} />
             </Card>
 
-            <Card title="Most-picked in completed dexes">
-              {data.popularCompleted.length ? (
-                <PopularList rows={data.popularCompleted} />
-              ) : (
-                <p className="text-xs text-muted-foreground">No completed dexes yet.</p>
-              )}
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card title="Most-picked in completed dexes">
+                {data.popularCompleted.length ? (
+                  <PopularList rows={data.popularCompleted} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">No completed dexes yet.</p>
+                )}
+              </Card>
+              <Card title="Most tried then dropped">
+                {data.mostDropped.length ? (
+                  <PopularList rows={data.mostDropped} />
+                ) : (
+                  <p className="text-xs text-muted-foreground">No adjustments yet.</p>
+                )}
+              </Card>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card title="By country">
