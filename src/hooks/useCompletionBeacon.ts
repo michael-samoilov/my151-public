@@ -2,39 +2,19 @@ import { useEffect, useRef } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
 
-const STORAGE_KEY = 'p151-submitted-hash';
+type BeaconKind = 'progress' | 'completion' | 'export';
 
-/** Engagement milestones — fired once per browser the first time the build
- *  reaches each evolution-line count. They gauge how many real humans interact
- *  with the app (bots/link-unfurlers never tap tiles), which the raw page-view
- *  count can't distinguish. "completion" (151) is the third, separate tier.
- *  Counting distinct evolution lines (not raw Pokemon) better reflects real
- *  building effort: adding a 3-stage line is one decision, not three. */
-type Milestone = 'interacted' | 'engaged';
-const MILESTONES: { source: Milestone; threshold: number }[] = [
-  { source: 'interacted', threshold: 3 },
-  { source: 'engaged', threshold: 20 },
-];
-
-/** Number of distinct evolution lines (chains) represented by a set of ids. */
-function countEvoLines(ids: number[]): number {
-  const chains = new Set<number>();
-  for (const id of ids) {
-    const p = getPokemonById(id);
-    // Fall back to the raw id when a chain is unknown, so an unrecognised
-    // Pokemon still counts as its own line rather than vanishing.
-    chains.add(p ? p.evolutionChainId : -id);
-  }
-  return chains.size;
-}
-const MILESTONE_KEY = (s: Milestone) => `p151-milestone-${s}`;
-
-// Owner opt-out: visiting the site once with `?notme` marks this browser as
-// excluded, so none of its beacons are ever sent. Persisted in localStorage so
-// it survives reloads (and the URL param doesn't need to stay on). This is the
-// sole owner-exclusion mechanism — re-flag each device (and re-flag incognito
-// sessions, whose storage is cleared on close) you don't want counted.
+const CID_KEY = 'p151-cid';
 const OPT_OUT_KEY = 'p151-opt-out';
+// Don't send a 'progress' beacon for trivial/empty builds — wait until the user
+// has actually placed a few Pokemon so bots and idle loads don't create users.
+const MIN_PROGRESS_IDS = 1;
+// Debounce progress beacons so rapid edits collapse into one write.
+const PROGRESS_DEBOUNCE_MS = 4000;
+
+// Owner opt-out: visiting once with `?notme` flags this browser so it never
+// sends beacons. The only owner-exclusion mechanism — re-flag each device (and
+// re-flag incognito, whose storage clears on close).
 if (typeof window !== 'undefined') {
   try {
     if (new URLSearchParams(window.location.search).has('notme')) {
@@ -53,21 +33,43 @@ function isOptedOut(): boolean {
   }
 }
 
-type BeaconSource = 'completion' | 'export' | Milestone;
-
-/** Simple hash of a sorted ID array for dedup. */
-function hashIds(ids: number[]): string {
-  return ids.slice().sort((a, b) => a - b).join(',');
+/** Stable anonymous id for this browser, minted once and reused. Enables
+ *  dedup (a person's repeated saves update one record) and retention. */
+function getClientId(): string | null {
+  try {
+    let cid = localStorage.getItem(CID_KEY);
+    if (!cid) {
+      cid =
+        typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(CID_KEY, cid);
+    }
+    return cid;
+  } catch {
+    return null; // storage unavailable → can't dedup, so don't send
+  }
 }
 
-function postSubmission(ids: number[], source: BeaconSource) {
-  // Owner-excluded browser — never send.
-  if (isOptedOut()) return;
-  const payload = JSON.stringify({ ids, source });
-  // Use fetch+keepalive instead of navigator.sendBeacon: iOS WebKit silently
-  // drops sendBeacon in several cases (after the share sheet, and for blobs
-  // whose content type isn't CORS-safelisted), so submissions never reached
-  // the server. keepalive still lets the request outlive a page transition.
+/** Distinct evolution lines (chains) represented by a set of ids — a better
+ *  measure of building effort than raw count (a 3-stage line is one decision). */
+function countEvoLines(ids: number[]): number {
+  const chains = new Set<number>();
+  for (const id of ids) {
+    const p = getPokemonById(id);
+    chains.add(p ? p.evolutionChainId : -id);
+  }
+  return chains.size;
+}
+
+function postBeacon(ids: number[], kind: BeaconKind) {
+  if (isOptedOut() || ids.length === 0) return;
+  const cid = getClientId();
+  if (!cid) return;
+  const payload = JSON.stringify({ cid, kind, ids, depth: countEvoLines(ids) });
+  // fetch+keepalive (not navigator.sendBeacon): iOS WebKit silently drops
+  // sendBeacon in several cases (after the share sheet, non-CORS-safelisted
+  // blob types); keepalive still lets the request outlive a page transition.
   void fetch('/api/submit', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -79,76 +81,46 @@ function postSubmission(ids: number[], source: BeaconSource) {
 }
 
 /**
- * Watches the Pokedex store. Fires:
- *  - engagement milestone beacons ('interacted' at 3, 'engaged' at 20) the
- *    first time this browser reaches each count, deduped via localStorage;
- *  - a 'completion' beacon when exactly 151 are selected (deduped by set).
+ * Watches the Pokedex store and reports build activity to the analytics backend
+ * as one record per anonymous client:
+ *  - a debounced 'progress' beacon as the build changes (drives retention,
+ *    max-depth/churn, last-active), and
+ *  - a 'completion' beacon the moment a full 151 is reached.
  */
 export function useCompletionBeacon() {
   const sections = usePokedexStore((s) => s.sections);
-  const sentRef = useRef<string | null>(null);
-  // Evolution-line count at the previous render. Starts null so the *initial*
-  // count — the build hydrated from localStorage — is treated as a baseline,
-  // not as a crossing. Without this, loading an already-large saved dex would
-  // fire every milestone on mount (it did: existing 151 builds counted as
-  // "engaged" the first time the milestone code ran).
-  const prevLinesRef = useRef<number | null>(null);
+  const completedRef = useRef<string | null>(null);
+  const progressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const allIds = Object.values(sections).flat();
-    const curLines = countEvoLines(allIds);
-    const prevLines = prevLinesRef.current;
-    prevLinesRef.current = curLines;
 
-    // Engagement milestones — fire once per browser, and only on a genuine
-    // upward crossing of the threshold (in distinct evolution lines) during
-    // this page's lifetime, never for a count already present at load.
-    if (prevLines !== null) {
-      for (const { source, threshold } of MILESTONES) {
-        if (!(prevLines < threshold && curLines >= threshold)) continue;
-        try {
-          if (localStorage.getItem(MILESTONE_KEY(source))) continue;
-        } catch {
-          // localStorage may be unavailable
-        }
-        // Snapshot the build at the moment of crossing.
-        postSubmission(allIds, source);
-        try {
-          localStorage.setItem(MILESTONE_KEY(source), '1');
-        } catch {
-          // localStorage may be unavailable
-        }
+    // Completion fires immediately (and once per distinct 151-set this session).
+    if (allIds.length === 151) {
+      const key = allIds.slice().sort((a, b) => a - b).join(',');
+      if (completedRef.current !== key) {
+        completedRef.current = key;
+        postBeacon(allIds, 'completion');
       }
     }
 
-    // Completion stays keyed off the raw Pokemon count — a full 151.
-    if (allIds.length !== 151) return;
-
-    const hash = hashIds(allIds);
-
-    // Skip if already sent this session or matches localStorage
-    if (sentRef.current === hash) return;
-    try {
-      if (localStorage.getItem(STORAGE_KEY) === hash) {
-        sentRef.current = hash;
-        return;
-      }
-    } catch {
-      // localStorage may be unavailable
+    // Progress is debounced so a flurry of edits collapses into one write.
+    if (allIds.length >= MIN_PROGRESS_IDS) {
+      if (progressTimer.current) clearTimeout(progressTimer.current);
+      const idsSnapshot = allIds;
+      progressTimer.current = setTimeout(() => {
+        postBeacon(idsSnapshot, 'progress');
+      }, PROGRESS_DEBOUNCE_MS);
     }
 
-    postSubmission(allIds, 'completion');
-    sentRef.current = hash;
-    try {
-      localStorage.setItem(STORAGE_KEY, hash);
-    } catch {
-      // localStorage may be unavailable
-    }
+    return () => {
+      if (progressTimer.current) clearTimeout(progressTimer.current);
+    };
   }, [sections]);
 }
 
 /** Fire a one-shot export beacon with the current list. */
 export function sendExportBeacon(ids: number[]) {
   if (ids.length === 0) return;
-  postSubmission(ids, 'export');
+  postBeacon(ids, 'export');
 }
