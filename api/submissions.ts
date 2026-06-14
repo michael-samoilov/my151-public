@@ -50,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const depthCounts: Record<number, number> = {}; // maxDepth (evo lines) -> users
     const spanCounts: Record<number, number> = {}; // whole minutes before churn -> users
     let spanOverflow = 0; // > MAX_SPAN_MIN minutes (incl. returning users)
-    const picksCompleted: Record<string, number> = {}; // only among completed dexes
+    const picksFinal: Record<string, number> = {}; // one vote per user's final dex
     const droppedCounts: Record<string, number> = {}; // ever placed but not in final dex
 
     let completed = 0;
@@ -70,10 +70,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (r.os) osCounts[r.os] = (osCounts[r.os] ?? 0) + 1;
       if (typeof r.localHour === 'number') hours[r.localHour % 24] += 1;
 
-      if (r.completed && r.completedIds) {
-        completed += 1;
-        for (const id of r.completedIds) picksCompleted[id] = (picksCompleted[id] ?? 0) + 1;
-      }
+      // Popularity across every user's final/current dex (one vote each), so it
+      // reflects everyone — not just the few who finish a full 151.
+      for (const id of r.latestIds ?? []) picksFinal[id] = (picksFinal[id] ?? 0) + 1;
+      if (r.completed) completed += 1;
 
       // Adjustment signal: placed at some point but not kept in the final dex.
       const kept = new Set(r.latestIds ?? []);
@@ -117,7 +117,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       devices,
       os: osCounts,
       hours,
-      popularCompleted: topN(picksCompleted, 40),
+      popularFinal: topN(picksFinal, 40),
       mostDropped: topN(droppedCounts, 30),
       records: page,
     });
