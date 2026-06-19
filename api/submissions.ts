@@ -12,7 +12,7 @@ const DAY = 86_400_000;
 const MINUTE = 60_000;
 // Per-minute time-before-churn bars up to this cap; everything longer (incl.
 // returning users who came back another day) falls in the final overflow bar.
-const MAX_SPAN_MIN = 20;
+const MAX_SPAN_MIN = 180;
 
 function topN(counts: Record<string, number>, n: number): [string, number][] {
   return Object.entries(counts)
@@ -97,7 +97,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (let m = 0; m <= MAX_SPAN_MIN; m++) {
       timeHistogram.push({ label: `${m}m`, count: spanCounts[m] ?? 0 });
     }
-    timeHistogram.push({ label: `>${MAX_SPAN_MIN}m`, count: spanOverflow });
+    timeHistogram.push({ label: '>3h', count: spanOverflow });
 
     const totalUsers = records.length;
     const page = records.slice(offset, offset + limit);
