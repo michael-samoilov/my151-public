@@ -136,6 +136,7 @@ function Bars({ rows }: { rows: { label: string; count: number }[] }) {
  *  in a fixed-height track so its percentage height actually resolves. Pass
  *  onBar to make bars clickable (e.g. to drill into a bucket). */
 const BAR_TRACK_PX = 96;
+const COL_W = 18;
 function Columns({
   rows,
   unit,
@@ -148,7 +149,7 @@ function Columns({
   const max = Math.max(1, ...rows.map((r) => r.count));
   if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
   // Thin axis labels when dense so they stay horizontal and never overlap:
-  // aim for ~24 labels max, stepping in 1/2/5/10/… so ticks land on round
+  // aim for ~24 ticks max, stepping in 1/2/5/10/… so they land on round
   // numbers. The last bar (often an overflow like ">3h") is always labeled.
   const target = 24;
   let step = 1;
@@ -157,35 +158,54 @@ function Columns({
     const pow = Math.pow(10, Math.floor(Math.log10(rough)));
     step = [1, 2, 5, 10].map((m) => m * pow).find((s) => s >= rough) ?? 10 * pow;
   }
+  const isTick = (i: number) => i % step === 0 || i === rows.length - 1;
   return (
-    <div className="overflow-x-auto">
-      <div className="flex items-end gap-0.5 min-w-min">
-        {rows.map((r, i) => {
-          const clickable = !!onBar && r.count > 0;
-          const showLabel = i % step === 0 || i === rows.length - 1;
-          return (
-            <div key={r.label} className="flex flex-col items-center shrink-0" style={{ width: 18 }}>
-              <span className="text-[0.6rem] tabular-nums text-muted-foreground leading-none mb-0.5 h-3 flex items-end">
-                {showLabel && r.count ? r.count : ''}
-              </span>
-              {/* Fixed-height track gives the % bar a real reference height. */}
-              <div className="flex items-end" style={{ height: BAR_TRACK_PX }}>
-                <div
-                  className={cn(
-                    'w-3 rounded-t bg-primary/70',
-                    clickable && 'cursor-pointer hover:bg-primary',
-                  )}
-                  style={{ height: `${Math.max(r.count > 0 ? 2 : 0, (r.count / max) * 100)}%` }}
-                  title={`${r.label}${unit ? ' ' + unit : ''}: ${r.count}`}
-                  onClick={clickable ? () => onBar!(r.label, i) : undefined}
-                />
+    <div className="overflow-x-auto pb-1">
+      <div className="inline-block min-w-min">
+        {/* Bars */}
+        <div className="flex items-end gap-0.5">
+          {rows.map((r, i) => {
+            const clickable = !!onBar && r.count > 0;
+            return (
+              <div key={r.label} className="flex flex-col items-center shrink-0" style={{ width: COL_W }}>
+                <span className="text-[0.6rem] tabular-nums text-muted-foreground leading-none mb-0.5 h-3 flex items-end">
+                  {isTick(i) && r.count ? r.count : ''}
+                </span>
+                <div className="flex items-end" style={{ height: BAR_TRACK_PX }}>
+                  <div
+                    className={cn(
+                      'w-3 rounded-t bg-primary/70',
+                      clickable && 'cursor-pointer hover:bg-primary',
+                    )}
+                    style={{ height: `${Math.max(r.count > 0 ? 2 : 0, (r.count / max) * 100)}%` }}
+                    title={`${r.label}${unit ? ' ' + unit : ''}: ${r.count}`}
+                    onClick={clickable ? () => onBar!(r.label, i) : undefined}
+                  />
+                </div>
               </div>
-              <span className="text-[0.6rem] tabular-nums text-foreground/80 leading-none mt-1 h-3">
-                {showLabel ? r.label : ''}
-              </span>
+            );
+          })}
+        </div>
+        {/* Axis line + tick marks */}
+        <div className="flex gap-0.5 border-t border-foreground/30">
+          {rows.map((r, i) => (
+            <div key={r.label} className="shrink-0 flex justify-center" style={{ width: COL_W }}>
+              {isTick(i) && <div className="w-px h-1.5 bg-foreground/30" />}
             </div>
-          );
-        })}
+          ))}
+        </div>
+        {/* Tick labels */}
+        <div className="flex gap-0.5">
+          {rows.map((r, i) => (
+            <div
+              key={r.label}
+              className="shrink-0 text-center text-[0.6rem] tabular-nums text-foreground/80 leading-tight"
+              style={{ width: COL_W }}
+            >
+              {isTick(i) ? r.label : ''}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
