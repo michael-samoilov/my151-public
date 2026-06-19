@@ -147,15 +147,26 @@ function Columns({
 }) {
   const max = Math.max(1, ...rows.map((r) => r.count));
   if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
+  // Thin axis labels when dense so they stay horizontal and never overlap:
+  // aim for ~16 labels max, stepping in 1/2/5/10/… so ticks land on round
+  // numbers. The last bar (often an overflow like ">3h") is always labeled.
+  const target = 16;
+  let step = 1;
+  if (rows.length > target) {
+    const rough = rows.length / target;
+    const pow = Math.pow(10, Math.floor(Math.log10(rough)));
+    step = [1, 2, 5, 10].map((m) => m * pow).find((s) => s >= rough) ?? 10 * pow;
+  }
   return (
     <div className="overflow-x-auto">
       <div className="flex items-end gap-0.5 min-w-min">
         {rows.map((r, i) => {
           const clickable = !!onBar && r.count > 0;
+          const showLabel = i % step === 0 || i === rows.length - 1;
           return (
             <div key={r.label} className="flex flex-col items-center shrink-0" style={{ width: 18 }}>
-              <span className="text-[0.6rem] tabular-nums text-muted-foreground leading-none mb-0.5">
-                {r.count || ''}
+              <span className="text-[0.6rem] tabular-nums text-muted-foreground leading-none mb-0.5 h-2">
+                {showLabel && r.count ? r.count : ''}
               </span>
               {/* Fixed-height track gives the % bar a real reference height. */}
               <div className="flex items-end" style={{ height: BAR_TRACK_PX }}>
@@ -169,7 +180,9 @@ function Columns({
                   onClick={clickable ? () => onBar!(r.label, i) : undefined}
                 />
               </div>
-              <span className="text-[0.55rem] text-muted-foreground leading-none mt-0.5">{r.label}</span>
+              <span className="text-[0.55rem] text-muted-foreground leading-none mt-0.5 h-2">
+                {showLabel ? r.label : ''}
+              </span>
             </div>
           );
         })}
