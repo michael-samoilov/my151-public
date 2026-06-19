@@ -186,11 +186,12 @@ function Columns({
             );
           })}
         </div>
-        {/* Axis line + tick marks */}
+        {/* Axis line + tick marks: a minor tick under every column, taller
+            major ticks at labeled positions. */}
         <div className="flex gap-0.5 border-t border-foreground/30">
           {rows.map((r, i) => (
             <div key={r.label} className="shrink-0 flex justify-center" style={{ width: COL_W }}>
-              {isTick(i) && <div className="w-px h-1.5 bg-foreground/30" />}
+              <div className={cn('w-px bg-foreground/30', isTick(i) ? 'h-1.5' : 'h-1 bg-foreground/20')} />
             </div>
           ))}
         </div>

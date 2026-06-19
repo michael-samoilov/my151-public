@@ -85,10 +85,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (now - r.lastTs <= 7 * DAY) activeLast7 += 1;
     }
 
-    // Dense per-line depth bars from 1..maxObserved (skip empty tail).
+    // Dense per-line depth bars from 0..maxObserved (skip empty tail).
     const maxDepthSeen = Math.max(0, ...Object.keys(depthCounts).map(Number));
     const depthHistogram: { label: string; count: number }[] = [];
-    for (let d = 1; d <= maxDepthSeen; d++) {
+    for (let d = 0; d <= maxDepthSeen; d++) {
       depthHistogram.push({ label: String(d), count: depthCounts[d] ?? 0 });
     }
 
