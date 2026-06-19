@@ -169,7 +169,7 @@ function Columns({
             return (
               <div key={r.label} className="flex flex-col items-center shrink-0" style={{ width: COL_W }}>
                 <span className="text-[0.6rem] tabular-nums text-muted-foreground leading-none mb-0.5 h-3 flex items-end">
-                  {isTick(i) && r.count ? r.count : ''}
+                  {r.count ? r.count : ''}
                 </span>
                 <div className="flex items-end" style={{ height: BAR_TRACK_PX }}>
                   <div
