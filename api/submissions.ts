@@ -61,7 +61,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (const r of records) {
       depthCounts[r.maxDepth] = (depthCounts[r.maxDepth] ?? 0) + 1;
 
-      const spanMin = Math.floor(Math.max(0, r.lastTs - r.firstTs) / MINUTE);
+      // Longest continuous sitting. Prefer the sessionized value; fall back to
+      // the first→last span for legacy records that predate sessionization.
+      const sittingMs = r.maxSessionMs ?? Math.max(0, r.lastTs - r.firstTs);
+      const spanMin = Math.floor(sittingMs / MINUTE);
       if (spanMin > MAX_SPAN_MIN) spanOverflow += 1;
       else spanCounts[spanMin] = (spanCounts[spanMin] ?? 0) + 1;
 

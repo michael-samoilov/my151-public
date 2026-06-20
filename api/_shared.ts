@@ -16,6 +16,10 @@ export const redis = new Redis({
 // no separate counters to drift, and a person's repeated saves overwrite their
 // own record (dedup) rather than appending new events.
 export const CLIENTS_KEY = 'clients';
+// A quiet gap longer than this between two beacons ends the current session and
+// starts a new one — so "session" means a continuous sitting, not the whole
+// first-to-last span (which conflates multi-visit/multi-day returns).
+export const SESSION_GAP_MS = 30 * 60_000;
 // Bound the hash so it can't grow without limit. New clients past this cap are
 // simply not recorded (existing clients keep updating).
 export const MAX_CLIENTS = 50000;
@@ -38,6 +42,15 @@ export interface ClientRecord {
   lastAt: string;
   /** How many beacons this client has sent (≈ how much they fiddled). */
   submits: number;
+  /** Number of distinct sessions (visits). A gap > SESSION_GAP_MS between
+   *  beacons starts a new session. Absent on legacy records. */
+  sessions?: number;
+  /** Start timestamp of the session currently in progress (internal bookkeeping
+   *  for extending vs. starting a session). Absent on legacy records. */
+  curSessionStart?: number;
+  /** Longest single continuous session in ms (gaps < SESSION_GAP_MS). This is
+   *  the trustworthy "time in one sitting". Absent on legacy records. */
+  maxSessionMs?: number;
   /** Deepest build (distinct evolution lines) ever reached. */
   maxDepth: number;
   /** Hour-of-day (0–23) in the user's own local time at their last submit. */
