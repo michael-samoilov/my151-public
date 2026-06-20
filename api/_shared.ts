@@ -20,6 +20,8 @@ export const CLIENTS_KEY = 'clients';
 // starts a new one — so "session" means a continuous sitting, not the whole
 // first-to-last span (which conflates multi-visit/multi-day returns).
 export const SESSION_GAP_MS = 30 * 60_000;
+// Keep at most this many per-session durations per client (most recent wins).
+export const MAX_SESSIONS_TRACKED = 50;
 // Bound the hash so it can't grow without limit. New clients past this cap are
 // simply not recorded (existing clients keep updating).
 export const MAX_CLIENTS = 50000;
@@ -51,6 +53,10 @@ export interface ClientRecord {
   /** Longest single continuous session in ms (gaps < SESSION_GAP_MS). This is
    *  the trustworthy "time in one sitting". Absent on legacy records. */
   maxSessionMs?: number;
+  /** Duration (ms) of each session, in order; the last entry is the session
+   *  currently in progress. Capped at the most recent MAX_SESSIONS_TRACKED.
+   *  Absent on legacy records. */
+  sessionMs?: number[];
   /** Deepest build (distinct evolution lines) ever reached. */
   maxDepth: number;
   /** Hour-of-day (0–23) in the user's own local time at their last submit. */

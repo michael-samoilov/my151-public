@@ -22,6 +22,7 @@ interface ClientRecord {
   submits: number;
   sessions?: number;
   maxSessionMs?: number;
+  sessionMs?: number[];
   maxDepth: number;
   localHour: number;
   country?: string;
@@ -152,10 +153,13 @@ function Columns({
   rows,
   unit,
   onBar,
+  alwaysTick,
 }: {
-  rows: { label: string; count: number }[];
+  rows: { label: string; count: number; sub?: string }[];
   unit?: string;
   onBar?: (label: string, index: number) => void;
+  /** Label every bar (skip thinning) — for small fixed axes like the 24 hours. */
+  alwaysTick?: boolean;
 }) {
   const max = Math.max(1, ...rows.map((r) => r.count));
   if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
@@ -169,7 +173,7 @@ function Columns({
     const pow = Math.pow(10, Math.floor(Math.log10(rough)));
     step = [1, 2, 5, 10].map((m) => m * pow).find((s) => s >= rough) ?? 10 * pow;
   }
-  const isTick = (i: number) => i % step === 0 || i === rows.length - 1;
+  const isTick = (i: number) => alwaysTick || i % step === 0 || i === rows.length - 1;
   return (
     <div className="overflow-x-auto pb-1">
       <div className="inline-block min-w-min">
@@ -206,15 +210,16 @@ function Columns({
             </div>
           ))}
         </div>
-        {/* Tick labels */}
+        {/* Tick labels (+ optional sublabel, e.g. AM/PM) */}
         <div className="flex gap-0.5">
           {rows.map((r, i) => (
             <div
               key={r.label}
-              className="shrink-0 text-center text-[0.6rem] tabular-nums text-foreground/80 leading-tight"
+              className="shrink-0 text-center leading-tight"
               style={{ width: COL_W }}
             >
-              {isTick(i) ? r.label : ''}
+              <div className="text-[0.6rem] tabular-nums text-foreground/80">{isTick(i) ? r.label : ''}</div>
+              {r.sub && <div className="text-[0.55rem] text-muted-foreground">{r.sub}</div>}
             </div>
           ))}
         </div>
@@ -359,10 +364,15 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
         <div className="text-sm">
           <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
           <span className="text-muted-foreground">
-            {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'}
-            {rec.sessions ? ` · ${rec.sessions} session${rec.sessions === 1 ? '' : 's'}` : ''}
-            {rec.maxSessionMs ? ` · longest ${fmtDuration(rec.maxSessionMs)}` : ''} · depth {rec.maxDepth}
+            {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'} · depth {rec.maxDepth}
           </span>
+          {(rec.sessionMs?.length || rec.sessions) && (
+            <span className="block text-xs text-muted-foreground">
+              {rec.sessions ?? rec.sessionMs?.length} session
+              {(rec.sessions ?? rec.sessionMs?.length) === 1 ? '' : 's'}
+              {rec.sessionMs?.length ? `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}` : ''}
+            </span>
+          )}
           <span className="block text-xs text-muted-foreground">
             {rec.completed && <span className="text-primary font-medium">✓ completed </span>}
             {rec.exported && <span>📷 exported </span>}
@@ -633,7 +643,12 @@ export function AdminPage() {
     );
   }
 
-  const hourRows = (data?.hours ?? []).map((count, h) => ({ label: `${h}:00`, count }));
+  // 12-hour labels (12, 1, … 11) with an AM/PM marker under each noon/midnight.
+  const hourRows = (data?.hours ?? []).map((count, h) => ({
+    label: String(h % 12 === 0 ? 12 : h % 12),
+    sub: h === 0 ? 'AM' : h === 12 ? 'PM' : undefined,
+    count,
+  }));
 
   return (
     <div className="min-h-dvh flex flex-col bg-background">
@@ -698,7 +713,7 @@ export function AdminPage() {
             </div>
 
             <Card title="When users build (their local hour) — click an hour for detail">
-              <Columns rows={hourRows} onBar={(_, h) => setHourDetail(h)} />
+              <Columns rows={hourRows} onBar={(_, h) => setHourDetail(h)} alwaysTick />
             </Card>
 
             <div className="flex items-center justify-between">
