@@ -20,6 +20,8 @@ interface ClientRecord {
   lastTs: number;
   lastAt: string;
   submits: number;
+  sessions?: number;
+  maxSessionMs?: number;
   maxDepth: number;
   localHour: number;
   country?: string;
@@ -64,6 +66,15 @@ function relativeTime(ts: number): string {
   const h = Math.round(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.round(h / 24)}d ago`;
+}
+
+function fmtDuration(ms: number): string {
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  return `${h}h${m % 60 ? ` ${m % 60}m` : ''}`;
 }
 
 function flag(country?: string): string {
@@ -348,7 +359,9 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
         <div className="text-sm">
           <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
           <span className="text-muted-foreground">
-            {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'} · depth {rec.maxDepth}
+            {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'}
+            {rec.sessions ? ` · ${rec.sessions} session${rec.sessions === 1 ? '' : 's'}` : ''}
+            {rec.maxSessionMs ? ` · longest ${fmtDuration(rec.maxSessionMs)}` : ''} · depth {rec.maxDepth}
           </span>
           <span className="block text-xs text-muted-foreground">
             {rec.completed && <span className="text-primary font-medium">✓ completed </span>}
@@ -659,7 +672,7 @@ export function AdminPage() {
               <Columns rows={data.depthHistogram} unit="lines" />
             </Card>
 
-            <Card title="Time on app before churn">
+            <Card title="Longest single session (continuous sitting)">
               <Columns rows={data.timeHistogram} />
             </Card>
 

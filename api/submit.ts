@@ -7,6 +7,7 @@ import {
   parseRecord,
   CLIENTS_KEY,
   MAX_CLIENTS,
+  SESSION_GAP_MS,
   type BeaconKind,
   type ClientRecord,
 } from './_shared.js';
@@ -187,6 +188,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       completed: false,
       exported: false,
     };
+
+    // Sessionize: a gap > SESSION_GAP_MS since the previous beacon starts a new
+    // session; otherwise we're still in the same sitting and extend it. Legacy
+    // records (no session fields) are seeded from their existing first/last so
+    // their history counts as one prior session.
+    const gap = existing ? now - existing.lastTs : 0;
+    if (!existing) {
+      // Brand-new client: first session starts now.
+      rec.sessions = 1;
+      rec.curSessionStart = now;
+      rec.maxSessionMs = 0;
+    } else if (rec.sessions === undefined) {
+      // First beacon since sessionization shipped on an older record: treat the
+      // legacy first→last span as one prior session, then continue or start anew.
+      const legacySpan = Math.max(0, existing.lastTs - existing.firstTs);
+      rec.maxSessionMs = legacySpan;
+      if (gap > SESSION_GAP_MS) {
+        rec.sessions = 2;
+        rec.curSessionStart = now;
+      } else {
+        rec.sessions = 1;
+        rec.curSessionStart = existing.firstTs;
+      }
+    } else if (gap > SESSION_GAP_MS) {
+      // A long idle gap ends the prior sitting and begins a new one.
+      rec.sessions += 1;
+      rec.curSessionStart = now;
+    }
+    // Extend the in-progress session and track the longest continuous sitting.
+    const curSessionMs = Math.max(0, now - (rec.curSessionStart ?? now));
+    rec.maxSessionMs = Math.max(rec.maxSessionMs ?? 0, curSessionMs);
 
     rec.lastTs = now;
     rec.lastAt = at;
