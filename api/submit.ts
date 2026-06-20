@@ -8,6 +8,7 @@ import {
   CLIENTS_KEY,
   MAX_CLIENTS,
   SESSION_GAP_MS,
+  MAX_SESSIONS_TRACKED,
   type BeaconKind,
   type ClientRecord,
 } from './_shared.js';
@@ -194,31 +195,46 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // records (no session fields) are seeded from their existing first/last so
     // their history counts as one prior session.
     const gap = existing ? now - existing.lastTs : 0;
+    // newSession = this beacon begins a fresh sitting (append a new duration);
+    // otherwise it extends the in-progress one (update the last duration).
+    let newSession: boolean;
     if (!existing) {
       // Brand-new client: first session starts now.
       rec.sessions = 1;
       rec.curSessionStart = now;
-      rec.maxSessionMs = 0;
+      rec.sessionMs = [];
+      newSession = true;
     } else if (rec.sessions === undefined) {
       // First beacon since sessionization shipped on an older record: treat the
       // legacy first→last span as one prior session, then continue or start anew.
       const legacySpan = Math.max(0, existing.lastTs - existing.firstTs);
-      rec.maxSessionMs = legacySpan;
+      rec.sessionMs = [legacySpan];
       if (gap > SESSION_GAP_MS) {
         rec.sessions = 2;
         rec.curSessionStart = now;
+        newSession = true;
       } else {
         rec.sessions = 1;
         rec.curSessionStart = existing.firstTs;
+        newSession = false;
       }
     } else if (gap > SESSION_GAP_MS) {
       // A long idle gap ends the prior sitting and begins a new one.
       rec.sessions += 1;
       rec.curSessionStart = now;
+      newSession = true;
+    } else {
+      newSession = false;
     }
-    // Extend the in-progress session and track the longest continuous sitting.
+
     const curSessionMs = Math.max(0, now - (rec.curSessionStart ?? now));
     rec.maxSessionMs = Math.max(rec.maxSessionMs ?? 0, curSessionMs);
+    // Maintain the per-session duration list (cap at the most recent N).
+    const list = rec.sessionMs ?? [];
+    if (newSession) list.push(curSessionMs);
+    else if (list.length > 0) list[list.length - 1] = curSessionMs;
+    else list.push(curSessionMs);
+    rec.sessionMs = list.slice(-MAX_SESSIONS_TRACKED);
 
     rec.lastTs = now;
     rec.lastAt = at;
