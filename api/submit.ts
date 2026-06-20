@@ -71,6 +71,18 @@ function localHourIn(tz: string | undefined, when: number): number {
   }
 }
 
+/** Day-of-week (0=Sun…6=Sat) in the given IANA timezone, defaulting to UTC. */
+function localDowIn(tz: string | undefined, when: number): number {
+  const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  try {
+    const wd = new Intl.DateTimeFormat('en-US', { timeZone: tz || 'UTC', weekday: 'short' }).format(when);
+    const i = names.indexOf(wd);
+    return i >= 0 ? i : new Date(when).getUTCDay();
+  } catch {
+    return new Date(when).getUTCDay();
+  }
+}
+
 /** Best-effort device/browser/OS classification from the User-Agent string. */
 function getClient(req: VercelRequest) {
   const ua = header(req, 'user-agent') ?? '';
@@ -241,6 +253,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     rec.submits += 1;
     rec.maxDepth = Math.max(rec.maxDepth, depth);
     rec.localHour = localHourIn(geo.tz, now);
+    rec.localDow = localDowIn(geo.tz, now);
     rec.latestIds = ids;
     // Accumulate every Pokemon ever placed (bounded; ids are 1..1025).
     rec.everIds = Array.from(new Set([...(rec.everIds ?? []), ...ids])).sort((a, b) => a - b);
