@@ -61,6 +61,9 @@ export interface ClientRecord {
   maxDepth: number;
   /** Hour-of-day (0–23) in the user's own local time at their last submit. */
   localHour: number;
+  /** Day-of-week (0=Sun…6=Sat) in the user's own local time at their last
+   *  submit. Absent on records that predate the heatmap. */
+  localDow?: number;
   country?: string;
   region?: string;
   tz?: string;

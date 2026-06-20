@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
@@ -25,6 +25,7 @@ interface ClientRecord {
   sessionMs?: number[];
   maxDepth: number;
   localHour: number;
+  localDow?: number;
   country?: string;
   region?: string;
   tz?: string;
@@ -54,6 +55,7 @@ interface ApiResponse {
   devices: Record<string, number>;
   os: Record<string, number>;
   hours: number[];
+  heatmap: number[][];
   popularFinal: [string, number][];
   mostDropped: [string, number][];
   records: ClientRecord[];
@@ -76,6 +78,53 @@ function fmtDuration(ms: number): string {
   if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
   return `${h}h${m % 60 ? ` ${m % 60}m` : ''}`;
+}
+
+const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DOW_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/** 12-hour label for an hour 0–23, optionally with minutes. */
+function hour12(h: number, min?: number): string {
+  const ap = h < 12 ? 'AM' : 'PM';
+  const hr = h % 12 === 0 ? 12 : h % 12;
+  return min === undefined ? `${hr} ${ap}` : `${hr}:${String(min).padStart(2, '0')} ${ap}`;
+}
+
+/** Day-of-week × hour-of-day heatmap of when users build (their local time).
+ *  Cell opacity scales with count; click a cell to drill into that slot. */
+function Heatmap({ matrix, onCell }: { matrix: number[][]; onCell: (dow: number, hour: number) => void }) {
+  const max = Math.max(1, ...matrix.flat());
+  const total = matrix.flat().reduce((a, b) => a + b, 0);
+  if (total === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
+  return (
+    <div className="overflow-x-auto">
+      <div className="inline-grid gap-px" style={{ gridTemplateColumns: `auto repeat(24, 16px)` }}>
+        {/* Header row: hour labels every 3h */}
+        <div />
+        {Array.from({ length: 24 }, (_, h) => (
+          <div key={h} className="text-[0.5rem] text-muted-foreground text-center leading-none h-3">
+            {h % 3 === 0 ? (h % 12 === 0 ? 12 : h % 12) : ''}
+          </div>
+        ))}
+        {matrix.map((row, d) => (
+          <Fragment key={d}>
+            <div className="text-[0.6rem] text-muted-foreground pr-1 flex items-center justify-end h-4">
+              {DOW[d]}
+            </div>
+            {row.map((c, h) => (
+              <div
+                key={h}
+                className={cn('h-4 rounded-[1px]', c > 0 ? 'cursor-pointer hover:ring-1 hover:ring-foreground/40' : '')}
+                style={{ backgroundColor: c > 0 ? `rgba(220,38,38,${0.15 + 0.85 * (c / max)})` : 'var(--color-muted)' }}
+                title={`${DOW_FULL[d]} ${hour12(h)}: ${c}`}
+                onClick={c > 0 ? () => onCell(d, h) : undefined}
+              />
+            ))}
+          </Fragment>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function flag(country?: string): string {
@@ -445,16 +494,20 @@ function buildSections(rec: ClientRecord): { key: string; label: string; ids: nu
  *  with their exact local time and country. Computed from the loaded records. */
 function HourDetail({
   hour,
+  dow,
   records,
   loadedAll,
   onClose,
 }: {
   hour: number;
+  dow?: number;
   records: ClientRecord[];
   loadedAll: boolean;
   onClose: () => void;
 }) {
-  const inHour = records.filter((r) => (r.localHour ?? -1) === hour);
+  const inHour = records.filter(
+    (r) => (r.localHour ?? -1) === hour && (dow === undefined || (r.localDow ?? -1) === dow),
+  );
   // Sub-bucket by minute within the hour (0–59) using the user's own clock.
   const minuteOf = (r: ClientRecord): number | null => {
     if (!r.tz) return null;
@@ -470,23 +523,24 @@ function HourDetail({
     .map((r) => ({ r, min: minuteOf(r) }))
     .sort((a, b) => (a.min ?? 0) - (b.min ?? 0));
 
+  const dayLabel = dow === undefined ? '' : `${DOW_FULL[dow]} · `;
   return (
-    <Modal title={`Activity at ${hour}:00–${hour}:59 (users' local time)`} onClose={onClose}>
+    <Modal title={`${dayLabel}${hour12(hour)} (users' local time)`} onClose={onClose}>
       {!loadedAll && (
         <p className="text-xs text-muted-foreground mb-2">
           Based on the {records.length} loaded users — “Load more” for the full set.
         </p>
       )}
       {sorted.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No loaded users built in this hour.</p>
+        <p className="text-sm text-muted-foreground">No loaded users in this slot.</p>
       ) : (
         <div className="flex flex-col gap-1">
           {sorted.map(({ r, min }) => {
             const local = localTime(r.lastTs, r.tz);
             return (
               <div key={r.cid} className="flex items-center gap-3 text-xs border-b py-1">
-                <span className="w-14 shrink-0 tabular-nums font-medium">
-                  {hour}:{String(min ?? 0).padStart(2, '0')}
+                <span className="w-16 shrink-0 tabular-nums font-medium">
+                  {hour12(hour, min ?? 0)}
                 </span>
                 <span className="w-16 shrink-0">
                   {r.country ? `${flag(r.country)} ${r.country}` : '—'}
@@ -513,7 +567,7 @@ export function AdminPage() {
   });
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<ApiResponse | null>(null);
-  const [hourDetail, setHourDetail] = useState<number | null>(null);
+  const [slotDetail, setSlotDetail] = useState<{ dow: number; hour: number } | null>(null);
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -643,13 +697,6 @@ export function AdminPage() {
     );
   }
 
-  // 12-hour labels (12, 1, … 11) with an AM/PM marker under each noon/midnight.
-  const hourRows = (data?.hours ?? []).map((count, h) => ({
-    label: String(h % 12 === 0 ? 12 : h % 12),
-    sub: h === 0 ? 'AM' : h === 12 ? 'PM' : undefined,
-    count,
-  }));
-
   return (
     <div className="min-h-dvh flex flex-col bg-background">
       <header className="border-b bg-card sticky top-0 z-10">
@@ -712,8 +759,8 @@ export function AdminPage() {
               </Card>
             </div>
 
-            <Card title="When users build (their local hour) — click an hour for detail">
-              <Columns rows={hourRows} onBar={(_, h) => setHourDetail(h)} alwaysTick />
+            <Card title="When users build (local day × hour) — click a cell for detail">
+              <Heatmap matrix={data.heatmap} onCell={(dow, hour) => setSlotDetail({ dow, hour })} />
             </Card>
 
             <div className="flex items-center justify-between">
@@ -737,12 +784,13 @@ export function AdminPage() {
               </Button>
             )}
 
-            {hourDetail !== null && (
+            {slotDetail !== null && (
               <HourDetail
-                hour={hourDetail}
+                hour={slotDetail.hour}
+                dow={slotDetail.dow}
                 records={data.records}
                 loadedAll={data.records.length >= data.totalUsers}
-                onClose={() => setHourDetail(null)}
+                onClose={() => setSlotDetail(null)}
               />
             )}
           </>

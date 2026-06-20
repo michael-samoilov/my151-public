@@ -46,6 +46,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const devices: Record<string, number> = {};
     const osCounts: Record<string, number> = {};
     const hours = new Array<number>(24).fill(0);
+    // 7 (day-of-week, 0=Sun) × 24 (hour) heatmap of users' local build times.
+    const heatmap: number[][] = Array.from({ length: 7 }, () => new Array<number>(24).fill(0));
     // One bucket per exact value (no arbitrary ranges).
     const depthCounts: Record<number, number> = {}; // maxDepth (evo lines) -> users
     const spanCounts: Record<number, number> = {}; // whole minutes before churn -> users
@@ -71,7 +73,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (r.country) countries[r.country] = (countries[r.country] ?? 0) + 1;
       if (r.device) devices[r.device] = (devices[r.device] ?? 0) + 1;
       if (r.os) osCounts[r.os] = (osCounts[r.os] ?? 0) + 1;
-      if (typeof r.localHour === 'number') hours[r.localHour % 24] += 1;
+      if (typeof r.localHour === 'number') {
+        const h = r.localHour % 24;
+        hours[h] += 1;
+        // Only records with a captured day-of-week contribute to the heatmap.
+        if (typeof r.localDow === 'number') heatmap[r.localDow % 7][h] += 1;
+      }
 
       // Popularity across every user's final/current dex (one vote each), so it
       // reflects everyone — not just the few who finish a full 151.
@@ -120,6 +127,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       devices,
       os: osCounts,
       hours,
+      heatmap,
       // Full ranked lists; the admin UI previews the top N and expands the rest.
       popularFinal: topN(picksFinal, 151),
       mostDropped: topN(droppedCounts, 151),
