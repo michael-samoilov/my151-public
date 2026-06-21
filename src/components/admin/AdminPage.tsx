@@ -143,13 +143,13 @@ function Heatmap({ matrix, onCell }: { matrix: number[][]; onCell: (dow: number,
         ))}
         {matrix.map((row, d) => (
           <Fragment key={d}>
-            <div className="text-[0.6rem] text-muted-foreground pr-1 flex items-center justify-end aspect-square">
+            <div className="text-[0.6rem] text-muted-foreground pr-1 flex items-center justify-end h-4">
               {DOW[d]}
             </div>
             {row.map((c, h) => (
               <div
                 key={h}
-                className={cn('aspect-square rounded-[1px]', c > 0 ? 'cursor-pointer hover:ring-1 hover:ring-foreground/40' : '')}
+                className={cn('h-4 rounded-[1px]', c > 0 ? 'cursor-pointer hover:ring-1 hover:ring-foreground/40' : '')}
                 style={{ backgroundColor: c > 0 ? `rgba(220,38,38,${0.15 + 0.85 * (c / max)})` : 'var(--color-muted)' }}
                 title={`${DOW_FULL[d]} ${hour12(h)}: ${c}`}
                 onClick={c > 0 ? () => onCell(d, h) : undefined}
