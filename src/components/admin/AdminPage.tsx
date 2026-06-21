@@ -83,6 +83,29 @@ function fmtDuration(ms: number): string {
 const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DOW_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+/** Local day-of-week + hour for a record, derived from tz + last activity so it
+ *  works for legacy records too (mirrors the server's localSlot). */
+function localSlotOf(r: ClientRecord): { dow: number; hour: number } | null {
+  if (typeof r.localDow === 'number' && typeof r.localHour === 'number') {
+    return { dow: r.localDow % 7, hour: r.localHour % 24 };
+  }
+  if (!r.lastTs) return null;
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: r.tz || 'UTC',
+      weekday: 'short',
+      hour: 'numeric',
+      hour12: false,
+    }).formatToParts(r.lastTs);
+    const dow = DOW.indexOf(parts.find((p) => p.type === 'weekday')?.value ?? '');
+    const hour = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '', 10) % 24;
+    if (dow < 0 || !Number.isFinite(hour)) return null;
+    return { dow, hour };
+  } catch {
+    return null;
+  }
+}
+
 /** 12-hour label for an hour 0–23, optionally with minutes. */
 function hour12(h: number, min?: number): string {
   const ap = h < 12 ? 'AM' : 'PM';
@@ -505,9 +528,10 @@ function HourDetail({
   loadedAll: boolean;
   onClose: () => void;
 }) {
-  const inHour = records.filter(
-    (r) => (r.localHour ?? -1) === hour && (dow === undefined || (r.localDow ?? -1) === dow),
-  );
+  const inHour = records.filter((r) => {
+    const slot = localSlotOf(r);
+    return slot !== null && slot.hour === hour && (dow === undefined || slot.dow === dow);
+  });
   // Sub-bucket by minute within the hour (0–59) using the user's own clock.
   const minuteOf = (r: ClientRecord): number | null => {
     if (!r.tz) return null;
