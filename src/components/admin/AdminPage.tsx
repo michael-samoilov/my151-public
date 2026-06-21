@@ -49,8 +49,10 @@ interface ApiResponse {
   limit: number;
   funnel: { users: number; completed: number; exported: number };
   retention: { returning: number; activeLast7: number; newUsers: number };
-  depthHistogram: { label: string; count: number }[];
-  timeHistogram: { label: string; count: number }[];
+  timeSurvival: { t: number; s: number }[];
+  timeStats: { p50: number; p75: number; p90: number };
+  depthSurvival: { t: number; s: number }[];
+  depthStats: { p50: number; p75: number; p90: number };
   countries: Record<string, number>;
   devices: Record<string, number>;
   os: Record<string, number>;
@@ -69,6 +71,15 @@ function relativeTime(ts: number): string {
   const h = Math.round(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.round(h / 24)}d ago`;
+}
+
+/** Format a whole-seconds value as a compact duration: 45s, 3m, 1h 5m. */
+function fmtSecs(s: number): string {
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return s % 60 ? `${m}m ${s % 60}s` : `${m}m`;
+  const h = Math.floor(m / 60);
+  return m % 60 ? `${h}h ${m % 60}m` : `${h}h`;
 }
 
 function fmtDuration(ms: number): string {
@@ -215,86 +226,6 @@ function Bars({ rows }: { rows: { label: string; count: number }[] }) {
   );
 }
 
-/** Vertical column histogram — for dense, ordered distributions (one bar per
- *  value). Scrolls horizontally if there are more bars than fit. Each bar lives
- *  in a fixed-height track so its percentage height actually resolves. Pass
- *  onBar to make bars clickable (e.g. to drill into a bucket). */
-const BAR_TRACK_PX = 96;
-function Columns({
-  rows,
-  unit,
-  onBar,
-  alwaysTick,
-}: {
-  rows: { label: string; count: number; sub?: string }[];
-  unit?: string;
-  onBar?: (label: string, index: number) => void;
-  /** Label every bar (skip thinning) — for small fixed axes like the 24 hours. */
-  alwaysTick?: boolean;
-}) {
-  const max = Math.max(1, ...rows.map((r) => r.count));
-  if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
-  // Thin axis labels when dense so they stay horizontal and never overlap:
-  // aim for ~24 ticks max, stepping in 1/2/5/10/… so they land on round
-  // numbers. The last bar (often an overflow like ">3h") is always labeled.
-  const target = 24;
-  let step = 1;
-  if (rows.length > target) {
-    const rough = rows.length / target;
-    const pow = Math.pow(10, Math.floor(Math.log10(rough)));
-    step = [1, 2, 5, 10].map((m) => m * pow).find((s) => s >= rough) ?? 10 * pow;
-  }
-  const isTick = (i: number) => alwaysTick || i % step === 0 || i === rows.length - 1;
-  return (
-    <div className="w-full pb-1">
-      <div className="w-full">
-        {/* Bars — each column flexes to fill the width so it never scrolls. */}
-        <div className="flex items-end gap-px">
-          {rows.map((r, i) => {
-            const clickable = !!onBar && r.count > 0;
-            return (
-              <div key={r.label} className="flex-1 min-w-0 flex flex-col items-center">
-                <span className="text-[0.55rem] tabular-nums text-muted-foreground leading-none mb-0.5 h-3 flex items-end">
-                  {r.count ? r.count : ''}
-                </span>
-                <div className="flex items-end w-full justify-center" style={{ height: BAR_TRACK_PX }}>
-                  <div
-                    className={cn(
-                      'w-full max-w-[14px] rounded-t bg-primary/70',
-                      clickable && 'cursor-pointer hover:bg-primary',
-                    )}
-                    style={{ height: `${Math.max(r.count > 0 ? 2 : 0, (r.count / max) * 100)}%` }}
-                    title={`${r.label}${unit ? ' ' + unit : ''}: ${r.count}`}
-                    onClick={clickable ? () => onBar!(r.label, i) : undefined}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        {/* Axis line + tick marks: a minor tick under every column, taller
-            major ticks at labeled positions. */}
-        <div className="flex gap-px border-t border-foreground/30">
-          {rows.map((r, i) => (
-            <div key={r.label} className="flex-1 min-w-0 flex justify-center">
-              <div className={cn('w-px bg-foreground/30', isTick(i) ? 'h-1.5' : 'h-1 bg-foreground/20')} />
-            </div>
-          ))}
-        </div>
-        {/* Tick labels (+ optional sublabel, e.g. AM/PM) */}
-        <div className="flex gap-px">
-          {rows.map((r, i) => (
-            <div key={r.label} className="flex-1 min-w-0 text-center leading-tight">
-              <div className="text-[0.55rem] tabular-nums text-foreground/80">{isTick(i) ? r.label : ''}</div>
-              {r.sub && <div className="text-[0.5rem] text-muted-foreground">{r.sub}</div>}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /** Lightweight modal overlay (no dependency). Click backdrop or ✕ to close. */
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   useEffect(() => {
@@ -377,6 +308,98 @@ function PopularPanel({ title, rows, preview = 30 }: { title: string; rows: [str
         </Modal>
       )}
     </div>
+  );
+}
+
+/** Survival (drop-off) curve: % of sessions still active at each x. The
+ *  steepest segment = where users churn. Renders an SVG line with a shaded
+ *  area, gridlines, and the biggest single-step drop highlighted. `fmtX`
+ *  formats the x-axis (seconds → time, or a raw count). */
+function Survival({
+  points,
+  fmtX,
+  xLabel,
+}: {
+  points: { t: number; s: number }[];
+  fmtX: (t: number) => string;
+  xLabel: string;
+}) {
+  if (points.length < 2 || points[0].s === 0) {
+    return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
+  }
+  const W = 320;
+  const H = 120;
+  const padL = 28;
+  const padB = 16;
+  const padT = 6;
+  const padR = 6;
+  const xMax = points[points.length - 1].t || 1;
+  const px = (t: number) => padL + ((W - padL - padR) * t) / xMax;
+  const py = (s: number) => padT + (H - padT - padB) * (1 - s);
+
+  // Find the steepest drop between consecutive samples (the churn cliff).
+  let dropIdx = -1;
+  let dropAmt = 0;
+  for (let i = 1; i < points.length; i++) {
+    const d = points[i - 1].s - points[i].s;
+    if (d > dropAmt) {
+      dropAmt = d;
+      dropIdx = i;
+    }
+  }
+
+  const line = points.map((p) => `${px(p.t)},${py(p.s)}`).join(' ');
+  const area = `${padL},${py(0)} ${line} ${px(xMax)},${py(0)}`;
+
+  return (
+    <div className="w-full">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 'auto' }} preserveAspectRatio="none">
+        {/* horizontal gridlines at 0/25/50/75/100% */}
+        {[0, 0.25, 0.5, 0.75, 1].map((g) => (
+          <g key={g}>
+            <line x1={padL} y1={py(g)} x2={W - padR} y2={py(g)} stroke="var(--color-muted)" strokeWidth={1} />
+            <text x={2} y={py(g) + 3} fontSize={7} fill="var(--color-muted-foreground)">
+              {Math.round(g * 100)}%
+            </text>
+          </g>
+        ))}
+        <polygon points={area} fill="rgba(220,38,38,0.12)" />
+        <polyline points={line} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} />
+        {/* highlight the steepest-drop segment */}
+        {dropIdx > 0 && dropAmt > 0.01 && (
+          <line
+            x1={px(points[dropIdx - 1].t)}
+            y1={py(points[dropIdx - 1].s)}
+            x2={px(points[dropIdx].t)}
+            y2={py(points[dropIdx].s)}
+            stroke="rgb(220,38,38)"
+            strokeWidth={4}
+          />
+        )}
+      </svg>
+      <div className="flex justify-between text-[0.6rem] text-muted-foreground px-1 mt-0.5">
+        <span>0</span>
+        <span>{xLabel}</span>
+        <span>{fmtX(xMax)}</span>
+      </div>
+      {dropIdx > 0 && dropAmt > 0.01 && (
+        <p className="text-xs text-muted-foreground mt-1">
+          Sharpest drop-off around <span className="font-medium text-foreground">{fmtX(points[dropIdx].t)}</span>{' '}
+          (−{Math.round(dropAmt * 100)}%).
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** "50% by 1m · 75% by 4m · 90% by 12m" readout from p50/p75/p90 stats. */
+function ChurnReadout({ stats, fmt }: { stats: { p50: number; p75: number; p90: number }; fmt: (n: number) => string }) {
+  return (
+    <p className="text-xs text-muted-foreground mt-1">
+      Half drop off by <span className="font-medium text-foreground">{fmt(stats.p50)}</span> · 75% by{' '}
+      <span className="font-medium text-foreground">{fmt(stats.p75)}</span> · 90% by{' '}
+      <span className="font-medium text-foreground">{fmt(stats.p90)}</span>
+    </p>
   );
 }
 
@@ -749,13 +772,16 @@ export function AdminPage() {
               </div>
             </Card>
 
-            <Card title="How far users get before churn (max evolution lines)">
-              <Columns rows={data.depthHistogram} unit="lines" />
-            </Card>
-
-            <Card title="Longest single session (continuous sitting)">
-              <Columns rows={data.timeHistogram} />
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card title="Session drop-off (when users churn by time)">
+                <Survival points={data.timeSurvival} fmtX={fmtSecs} xLabel="session length" />
+                <ChurnReadout stats={data.timeStats} fmt={fmtSecs} />
+              </Card>
+              <Card title="Build drop-off (how far users get)">
+                <Survival points={data.depthSurvival} fmtX={(n) => `${n} lines`} xLabel="evolution lines" />
+                <ChurnReadout stats={data.depthStats} fmt={(n) => `${n} lines`} />
+              </Card>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <PopularPanel title="Most-picked (final dex, all users)" rows={data.popularFinal} />
