@@ -292,7 +292,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // the admin see where Pokemon were placed — including non-default choices.
     // Forward-only: absent on records that predate this.
     const secs = validSections(body.sections);
-    if (secs) rec.latestSections = secs;
+    if (secs) {
+      rec.latestSections = secs;
+      // Accumulate the union of ids ever placed into each section, so the admin
+      // can compute "dropped from section X" = ever-in-X minus currently-in-X.
+      const ever = rec.everSections ?? {};
+      for (const [sid, sIds] of Object.entries(secs)) {
+        ever[sid] = Array.from(new Set([...(ever[sid] ?? []), ...sIds])).slice(0, 200);
+      }
+      rec.everSections = ever;
+    }
     // Accumulate every Pokemon ever placed (bounded; ids are 1..1025).
     rec.everIds = Array.from(new Set([...(rec.everIds ?? []), ...ids])).sort((a, b) => a - b);
     // Refresh request-derived context on every submit (latest wins).
