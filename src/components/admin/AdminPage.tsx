@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
@@ -23,6 +23,7 @@ interface ClientRecord {
   sessions?: number;
   maxSessionMs?: number;
   sessionMs?: number[];
+  sessionLog?: { ts: number; ids: number[] }[];
   maxDepth: number;
   localHour: number;
   localDow?: number;
@@ -324,6 +325,9 @@ function Survival({
   fmtX: (t: number) => string;
   xLabel: string;
 }) {
+  const [cursor, setCursor] = useState<number | null>(null); // index into points
+  const areaRef = useRef<HTMLDivElement>(null);
+
   if (points.length < 2 || points[0].s === 0) {
     return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
   }
@@ -334,10 +338,12 @@ function Survival({
   const padT = 6;
   const padR = 6;
   const xMax = points[points.length - 1].t || 1;
+  const plotLeft = padL / W; // plot area as fractions of total width
+  const plotW = (W - padL - padR) / W;
   const px = (t: number) => padL + ((W - padL - padR) * t) / xMax;
   const py = (s: number) => padT + (H - padT - padB) * (1 - s);
 
-  // Find the steepest drop between consecutive samples (the churn cliff).
+  // Steepest drop between consecutive samples (the churn cliff).
   let dropIdx = -1;
   let dropAmt = 0;
   for (let i = 1; i < points.length; i++) {
@@ -351,32 +357,86 @@ function Survival({
   const line = points.map((p) => `${px(p.t)},${py(p.s)}`).join(' ');
   const area = `${padL},${py(0)} ${line} ${px(xMax)},${py(0)}`;
 
+  // Map a pointer's clientX → nearest sample index (press-and-hold crosshair).
+  const updateCursor = (clientX: number) => {
+    const el = areaRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const frac = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    // Convert full-width fraction → fraction within the plot area → t.
+    const plotFrac = Math.min(1, Math.max(0, (frac - plotLeft) / plotW));
+    const t = plotFrac * xMax;
+    // nearest point by t
+    let best = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < points.length; i++) {
+      const d = Math.abs(points[i].t - t);
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    }
+    setCursor(best);
+  };
+
+  const cur = cursor !== null ? points[cursor] : null;
+  const curLeftPct = cur ? (px(cur.t) / W) * 100 : 0;
+
   return (
     <div className="w-full">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 'auto' }} preserveAspectRatio="none">
-        {/* horizontal gridlines at 0/25/50/75/100% */}
-        {[0, 0.25, 0.5, 0.75, 1].map((g) => (
-          <g key={g}>
-            <line x1={padL} y1={py(g)} x2={W - padR} y2={py(g)} stroke="var(--color-muted)" strokeWidth={1} />
-            <text x={2} y={py(g) + 3} fontSize={7} fill="var(--color-muted-foreground)">
-              {Math.round(g * 100)}%
-            </text>
-          </g>
-        ))}
-        <polygon points={area} fill="rgba(220,38,38,0.12)" />
-        <polyline points={line} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} />
-        {/* highlight the steepest-drop segment */}
-        {dropIdx > 0 && dropAmt > 0.01 && (
-          <line
-            x1={px(points[dropIdx - 1].t)}
-            y1={py(points[dropIdx - 1].s)}
-            x2={px(points[dropIdx].t)}
-            y2={py(points[dropIdx].s)}
-            stroke="rgb(220,38,38)"
-            strokeWidth={4}
-          />
+      <div
+        ref={areaRef}
+        className="relative w-full touch-none select-none cursor-crosshair"
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          updateCursor(e.clientX);
+        }}
+        onPointerMove={(e) => {
+          if (cursor !== null) updateCursor(e.clientX);
+        }}
+        onPointerUp={() => setCursor(null)}
+        onPointerLeave={() => setCursor(null)}
+        onPointerCancel={() => setCursor(null)}
+      >
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" style={{ height: 'auto' }} preserveAspectRatio="none">
+          {[0, 0.25, 0.5, 0.75, 1].map((g) => (
+            <g key={g}>
+              <line x1={padL} y1={py(g)} x2={W - padR} y2={py(g)} stroke="var(--color-muted)" strokeWidth={1} />
+              <text x={2} y={py(g) + 3} fontSize={7} fill="var(--color-muted-foreground)">
+                {Math.round(g * 100)}%
+              </text>
+            </g>
+          ))}
+          <polygon points={area} fill="rgba(220,38,38,0.12)" />
+          <polyline points={line} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} />
+          {dropIdx > 0 && dropAmt > 0.01 && cursor === null && (
+            <line
+              x1={px(points[dropIdx - 1].t)}
+              y1={py(points[dropIdx - 1].s)}
+              x2={px(points[dropIdx].t)}
+              y2={py(points[dropIdx].s)}
+              stroke="rgb(220,38,38)"
+              strokeWidth={4}
+            />
+          )}
+          {cur && <line x1={px(cur.t)} y1={padT} x2={px(cur.t)} y2={H - padB} stroke="var(--color-foreground)" strokeWidth={1} />}
+        </svg>
+        {/* crosshair dot + readout, in HTML so it isn't distorted by the SVG scale */}
+        {cur && (
+          <>
+            <div
+              className="absolute w-2 h-2 -ml-1 -mt-1 rounded-full bg-foreground pointer-events-none"
+              style={{ left: `${curLeftPct}%`, top: `${(py(cur.s) / H) * 100}%` }}
+            />
+            <div
+              className="absolute -translate-x-1/2 -top-1 pointer-events-none whitespace-nowrap rounded bg-foreground text-background text-[0.6rem] px-1 py-0.5"
+              style={{ left: `${Math.min(85, Math.max(15, curLeftPct))}%` }}
+            >
+              {fmtX(cur.t)} · {Math.round(cur.s * 100)}% left
+            </div>
+          </>
         )}
-      </svg>
+      </div>
       <div className="flex justify-between text-[0.6rem] text-muted-foreground px-1 mt-0.5">
         <span>0</span>
         <span>{xLabel}</span>
@@ -385,7 +445,7 @@ function Survival({
       {dropIdx > 0 && dropAmt > 0.01 && (
         <p className="text-xs text-muted-foreground mt-1">
           Sharpest drop-off around <span className="font-medium text-foreground">{fmtX(points[dropIdx].t)}</span>{' '}
-          (−{Math.round(dropAmt * 100)}%).
+          (−{Math.round(dropAmt * 100)}%). <span className="opacity-70">Press &amp; hold the chart to inspect.</span>
         </p>
       )}
     </div>
@@ -501,9 +561,53 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
               <SpriteRow ids={b.ids} />
             </div>
           ))}
+          <SessionChanges rec={rec} />
         </div>
       )}
     </section>
+  );
+}
+
+/** Per-session change summary: diffs each session's end-state against the
+ *  previous one to show what was added/removed visit-to-visit. Only available
+ *  for records captured after session logging shipped. */
+function SessionChanges({ rec }: { rec: ClientRecord }) {
+  const log = rec.sessionLog;
+  if (!log || log.length === 0) return null;
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground mb-0.5">Changes by session</div>
+      <div className="flex flex-col gap-1">
+        {log.map((s, i) => {
+          const prev = i > 0 ? new Set(log[i - 1].ids) : new Set<number>();
+          const cur = new Set(s.ids);
+          const added = i === 0 ? s.ids : s.ids.filter((id) => !prev.has(id));
+          const removed = i === 0 ? [] : log[i - 1].ids.filter((id) => !cur.has(id));
+          return (
+            <div key={i} className="text-xs border-l-2 border-muted pl-2">
+              <span className="text-muted-foreground">
+                Session {i + 1} · {new Date(s.ts).toLocaleDateString()} · {s.ids.length} total
+              </span>
+              {added.length > 0 && (
+                <div className="flex flex-wrap items-center gap-0.5 mt-0.5">
+                  <span className="text-[0.65rem] text-green-600 mr-0.5">+{added.length}</span>
+                  <SpriteRow ids={added} />
+                </div>
+              )}
+              {removed.length > 0 && (
+                <div className="flex flex-wrap items-center gap-0.5 mt-0.5 opacity-60">
+                  <span className="text-[0.65rem] text-destructive mr-0.5">−{removed.length}</span>
+                  <SpriteRow ids={removed} />
+                </div>
+              )}
+              {added.length === 0 && removed.length === 0 && (
+                <div className="text-[0.65rem] text-muted-foreground">no changes</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -519,10 +623,10 @@ function buildSections(rec: ClientRecord): { key: string; label: string; ids: nu
     seen.add(sig);
     out.push({ key, label, ids });
   };
-  // Most meaningful first: what they completed, then exported, then current.
+  // Current state first (what they have right now), then milestones.
+  add('final', 'Final / current', rec.latestIds);
   add('completed', 'Completed dex', rec.completedIds);
   add('exported', 'Exported dex', rec.exportedIds);
-  add('final', 'Final / current', rec.latestIds);
   // Tried then dropped: ever placed but not in the final dex — the adjustment
   // signal (always shown, even if it duplicates nothing above).
   const kept = new Set(rec.latestIds ?? []);
