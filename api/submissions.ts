@@ -10,6 +10,35 @@ import {
 
 const DAY = 86_400_000;
 const MINUTE = 60_000;
+const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/** Local day-of-week (0=Sun) and hour (0–23) for a record, derived from its
+ *  timezone + last-activity timestamp. Prefers stored localDow/localHour when
+ *  present, but falls back to deriving from lastTs+tz — which back-populates
+ *  every legacy record that predates those fields. */
+function localSlot(r: ClientRecord): { dow: number; hour: number } | null {
+  if (typeof r.localDow === 'number' && typeof r.localHour === 'number') {
+    return { dow: r.localDow % 7, hour: r.localHour % 24 };
+  }
+  if (!r.lastTs) return null;
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: r.tz || 'UTC',
+      weekday: 'short',
+      hour: 'numeric',
+      hour12: false,
+    }).formatToParts(r.lastTs);
+    const wd = parts.find((p) => p.type === 'weekday')?.value ?? '';
+    const hrStr = parts.find((p) => p.type === 'hour')?.value ?? '';
+    const dow = DOW_NAMES.indexOf(wd);
+    const hour = parseInt(hrStr, 10) % 24;
+    if (dow < 0 || !Number.isFinite(hour)) return null;
+    return { dow, hour };
+  } catch {
+    return null;
+  }
+}
+
 // Per-minute time-before-churn bars up to this cap; everything longer (incl.
 // returning users who came back another day) falls in the final overflow bar.
 const MAX_SPAN_MIN = 180;
@@ -73,11 +102,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (r.country) countries[r.country] = (countries[r.country] ?? 0) + 1;
       if (r.device) devices[r.device] = (devices[r.device] ?? 0) + 1;
       if (r.os) osCounts[r.os] = (osCounts[r.os] ?? 0) + 1;
-      if (typeof r.localHour === 'number') {
-        const h = r.localHour % 24;
-        hours[h] += 1;
-        // Only records with a captured day-of-week contribute to the heatmap.
-        if (typeof r.localDow === 'number') heatmap[r.localDow % 7][h] += 1;
+      // Derive local day+hour from tz+lastTs (back-populates legacy records).
+      const slot = localSlot(r);
+      if (slot) {
+        hours[slot.hour] += 1;
+        heatmap[slot.dow][slot.hour] += 1;
       }
 
       // Popularity across every user's final/current dex (one vote each), so it
