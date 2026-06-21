@@ -247,6 +247,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     else if (list.length > 0) list[list.length - 1] = curSessionMs;
     else list.push(curSessionMs);
     rec.sessionMs = list.slice(-MAX_SESSIONS_TRACKED);
+    // Parallel per-session end-state snapshot, for visit-to-visit diffs.
+    const log = rec.sessionLog ?? [];
+    if (newSession || log.length === 0) log.push({ ts: now, ids });
+    else log[log.length - 1] = { ts: now, ids };
+    rec.sessionLog = log.slice(-MAX_SESSIONS_TRACKED);
 
     rec.lastTs = now;
     rec.lastAt = at;
