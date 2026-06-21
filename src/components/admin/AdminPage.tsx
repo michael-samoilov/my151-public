@@ -1,8 +1,49 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getPokemonById } from '@/hooks/usePokemonData';
+import { getAllPokemon, getPokemonById } from '@/hooks/usePokemonData';
+import { BUILD_GROUPS } from '@/data/slot-template';
+import { ARCHETYPES } from '@/data/archetypes';
+import { getCategoryById } from '@/data/categories';
 import { cn, displayName } from '@/lib/utils';
+
+// Section order for the "By section" grouped popularity view — the build page's
+// own group order, plus an Unclassified catch-all.
+const SECTION_ORDER: { id: string; name: string; color: string }[] = [
+  ...BUILD_GROUPS.map((g) => ({ id: g.id, name: g.name, color: g.color })),
+  { id: '_none', name: 'Unclassified', color: '#9ca3af' },
+];
+
+// Canonical build-page section per Pokemon id, derived once from the same
+// archetype/category data the builder uses (no per-pick section is stored, so
+// we reconstruct it). First matching BUILD_GROUP wins, mirroring the grid.
+const SECTION_OF = (() => {
+  const map = new Map<number, string>();
+  const archIds = new Map<string, Set<number>>();
+  for (const a of ARCHETYPES) archIds.set(a.id, new Set(a.pokemonIds));
+  for (const p of getAllPokemon()) {
+    let found = '_none';
+    for (const g of BUILD_GROUPS) {
+      if (g.filterType === 'archetype' && g.filterId && archIds.get(g.filterId)?.has(p.id)) {
+        found = g.id;
+        break;
+      }
+      if (g.filterType === 'category' && g.filterId) {
+        const cat = getCategoryById(g.filterId);
+        if (cat?.filter(p)) {
+          found = g.id;
+          break;
+        }
+      }
+    }
+    map.set(p.id, found);
+  }
+  return map;
+})();
+
+function sectionOfPokemon(id: number): string {
+  return SECTION_OF.get(id) ?? '_none';
+}
 
 /**
  * Admin-only analytics dashboard. Reached at `my151.app/?admin` (gated in
@@ -289,25 +330,72 @@ function PopularGrid({ rows }: { rows: [string, number][] }) {
 }
 
 /** A preview grid (top N) with a "View all" button that opens the full grid in
- *  a modal. */
+ *  a modal. Optional "By section" toggle groups picks under their build-page
+ *  section (Starters, Early Bug, …) instead of one flat ranked grid. */
 function PopularPanel({ title, rows, preview = 30 }: { title: string; rows: [string, number][]; preview?: number }) {
   const [open, setOpen] = useState(false);
+  const [bySection, setBySection] = useState(false);
   return (
     <div className="shadow-elevated rounded-lg p-3 bg-card">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 gap-2">
         <span className="text-sm font-medium">{title}</span>
-        {rows.length > preview && (
-          <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
-            View all ({rows.length})
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            variant={bySection ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setBySection((v) => !v)}
+          >
+            By section
           </Button>
-        )}
+          {rows.length > preview && !bySection && (
+            <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+              View all ({rows.length})
+            </Button>
+          )}
+        </div>
       </div>
-      <PopularGrid rows={rows.slice(0, preview)} />
-      {open && (
-        <Modal title={title} onClose={() => setOpen(false)}>
-          <PopularGrid rows={rows} />
-        </Modal>
+      {bySection ? (
+        <SectionGroups rows={rows} />
+      ) : (
+        <>
+          <PopularGrid rows={rows.slice(0, preview)} />
+          {open && (
+            <Modal title={title} onClose={() => setOpen(false)}>
+              <PopularGrid rows={rows} />
+            </Modal>
+          )}
+        </>
       )}
+    </div>
+  );
+}
+
+/** Picks grouped under their build-page section, in the app's section order. */
+function SectionGroups({ rows }: { rows: [string, number][] }) {
+  // Bucket the ranked rows by each Pokemon's canonical section.
+  const buckets = new Map<string, [string, number][]>();
+  for (const row of rows) {
+    const sec = sectionOfPokemon(Number(row[0]));
+    if (!buckets.has(sec)) buckets.set(sec, []);
+    buckets.get(sec)!.push(row);
+  }
+  const ordered = SECTION_ORDER.filter((s) => buckets.has(s.id));
+  if (ordered.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
+  return (
+    <div className="flex flex-col gap-3">
+      {ordered.map((s) => {
+        const items = buckets.get(s.id)!;
+        const subtotal = items.reduce((a, [, n]) => a + n, 0);
+        return (
+          <div key={s.id}>
+            <div className="text-xs font-medium mb-1 flex items-center gap-1">
+              <span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: s.color }} />
+              {s.name} <span className="text-muted-foreground font-normal">· {subtotal}</span>
+            </div>
+            <PopularGrid rows={items} />
+          </div>
+        );
+      })}
     </div>
   );
 }
