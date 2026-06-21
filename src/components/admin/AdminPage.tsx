@@ -120,8 +120,8 @@ function Heatmap({ matrix, onCell }: { matrix: number[][]; onCell: (dow: number,
   const total = matrix.flat().reduce((a, b) => a + b, 0);
   if (total === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
   return (
-    <div className="overflow-x-auto">
-      <div className="inline-grid gap-px" style={{ gridTemplateColumns: `auto repeat(24, 16px)` }}>
+    <div className="w-full">
+      <div className="grid gap-px w-full" style={{ gridTemplateColumns: `1.75rem repeat(24, minmax(0, 1fr))` }}>
         {/* Header row: hour labels every 3h */}
         <div />
         {Array.from({ length: 24 }, (_, h) => (
@@ -131,13 +131,13 @@ function Heatmap({ matrix, onCell }: { matrix: number[][]; onCell: (dow: number,
         ))}
         {matrix.map((row, d) => (
           <Fragment key={d}>
-            <div className="text-[0.6rem] text-muted-foreground pr-1 flex items-center justify-end h-4">
+            <div className="text-[0.6rem] text-muted-foreground pr-1 flex items-center justify-end aspect-square">
               {DOW[d]}
             </div>
             {row.map((c, h) => (
               <div
                 key={h}
-                className={cn('h-4 rounded-[1px]', c > 0 ? 'cursor-pointer hover:ring-1 hover:ring-foreground/40' : '')}
+                className={cn('aspect-square rounded-[1px]', c > 0 ? 'cursor-pointer hover:ring-1 hover:ring-foreground/40' : '')}
                 style={{ backgroundColor: c > 0 ? `rgba(220,38,38,${0.15 + 0.85 * (c / max)})` : 'var(--color-muted)' }}
                 title={`${DOW_FULL[d]} ${hour12(h)}: ${c}`}
                 onClick={c > 0 ? () => onCell(d, h) : undefined}
@@ -220,7 +220,6 @@ function Bars({ rows }: { rows: { label: string; count: number }[] }) {
  *  in a fixed-height track so its percentage height actually resolves. Pass
  *  onBar to make bars clickable (e.g. to drill into a bucket). */
 const BAR_TRACK_PX = 96;
-const COL_W = 18;
 function Columns({
   rows,
   unit,
@@ -247,21 +246,21 @@ function Columns({
   }
   const isTick = (i: number) => alwaysTick || i % step === 0 || i === rows.length - 1;
   return (
-    <div className="overflow-x-auto pb-1">
-      <div className="inline-block min-w-min">
-        {/* Bars */}
-        <div className="flex items-end gap-0.5">
+    <div className="w-full pb-1">
+      <div className="w-full">
+        {/* Bars — each column flexes to fill the width so it never scrolls. */}
+        <div className="flex items-end gap-px">
           {rows.map((r, i) => {
             const clickable = !!onBar && r.count > 0;
             return (
-              <div key={r.label} className="flex flex-col items-center shrink-0" style={{ width: COL_W }}>
-                <span className="text-[0.6rem] tabular-nums text-muted-foreground leading-none mb-0.5 h-3 flex items-end">
+              <div key={r.label} className="flex-1 min-w-0 flex flex-col items-center">
+                <span className="text-[0.55rem] tabular-nums text-muted-foreground leading-none mb-0.5 h-3 flex items-end">
                   {r.count ? r.count : ''}
                 </span>
-                <div className="flex items-end" style={{ height: BAR_TRACK_PX }}>
+                <div className="flex items-end w-full justify-center" style={{ height: BAR_TRACK_PX }}>
                   <div
                     className={cn(
-                      'w-3 rounded-t bg-primary/70',
+                      'w-full max-w-[14px] rounded-t bg-primary/70',
                       clickable && 'cursor-pointer hover:bg-primary',
                     )}
                     style={{ height: `${Math.max(r.count > 0 ? 2 : 0, (r.count / max) * 100)}%` }}
@@ -275,23 +274,19 @@ function Columns({
         </div>
         {/* Axis line + tick marks: a minor tick under every column, taller
             major ticks at labeled positions. */}
-        <div className="flex gap-0.5 border-t border-foreground/30">
+        <div className="flex gap-px border-t border-foreground/30">
           {rows.map((r, i) => (
-            <div key={r.label} className="shrink-0 flex justify-center" style={{ width: COL_W }}>
+            <div key={r.label} className="flex-1 min-w-0 flex justify-center">
               <div className={cn('w-px bg-foreground/30', isTick(i) ? 'h-1.5' : 'h-1 bg-foreground/20')} />
             </div>
           ))}
         </div>
         {/* Tick labels (+ optional sublabel, e.g. AM/PM) */}
-        <div className="flex gap-0.5">
+        <div className="flex gap-px">
           {rows.map((r, i) => (
-            <div
-              key={r.label}
-              className="shrink-0 text-center leading-tight"
-              style={{ width: COL_W }}
-            >
-              <div className="text-[0.6rem] tabular-nums text-foreground/80">{isTick(i) ? r.label : ''}</div>
-              {r.sub && <div className="text-[0.55rem] text-muted-foreground">{r.sub}</div>}
+            <div key={r.label} className="flex-1 min-w-0 text-center leading-tight">
+              <div className="text-[0.55rem] tabular-nums text-foreground/80">{isTick(i) ? r.label : ''}</div>
+              {r.sub && <div className="text-[0.5rem] text-muted-foreground">{r.sub}</div>}
             </div>
           ))}
         </div>
