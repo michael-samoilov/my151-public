@@ -146,15 +146,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // interesting region) at a fixed number of points.
     sittingSecs.sort((a, b) => a - b);
     depths.sort((a, b) => a - b);
-    const SAMPLES = 60;
 
-    // Time survival: x in seconds, 0..p95 (min 60s so a tiny dataset still has range).
+    // Time survival: fine-grained where it matters — every 30s for the first
+    // 10 min, then every 60s out to the 95th percentile (min 60s of range).
     const tMax = Math.max(60, quantile(sittingSecs, 0.95));
-    const timeSurvival: { t: number; s: number }[] = [];
-    for (let i = 0; i <= SAMPLES; i++) {
-      const t = Math.round((tMax * i) / SAMPLES);
-      timeSurvival.push({ t, s: survivalAt(sittingSecs, t) });
-    }
+    const timeTicks: number[] = [];
+    for (let t = 0; t <= Math.min(tMax, 600); t += 30) timeTicks.push(t);
+    for (let t = 660; t <= tMax; t += 60) timeTicks.push(t);
+    if (timeTicks[timeTicks.length - 1] !== tMax) timeTicks.push(tMax);
+    const timeSurvival = timeTicks.map((t) => ({ t, s: survivalAt(sittingSecs, t) }));
     // Median / p75 / p90 churn points (the durations by which that % have left).
     const timeStats = {
       p50: quantile(sittingSecs, 0.5),
