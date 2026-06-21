@@ -81,6 +81,10 @@ export interface ClientRecord {
   everIds: number[];
   /** Most recent build (their "final dex"). */
   latestIds: number[];
+  /** The user's actual section placement at their last build beacon
+   *  (groupId -> ids). Captures where they put each Pokemon, including
+   *  non-default-for-that-section choices. Absent on legacy records. */
+  latestSections?: Record<string, number[]>;
   completed: boolean;
   completedAt?: string;
   completedIds?: number[];

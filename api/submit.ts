@@ -127,13 +127,41 @@ function validIds(ids: unknown): number[] | null {
   return ids as number[];
 }
 
+/** Sanitize the per-section placement map (groupId -> ids). Caps section count
+ *  and ids per section, and validates each id, so a hostile client can't bloat
+ *  the record. Returns undefined when absent/invalid. */
+function validSections(sections: unknown): Record<string, number[]> | undefined {
+  if (!sections || typeof sections !== 'object' || Array.isArray(sections)) return undefined;
+  const out: Record<string, number[]> = {};
+  let groups = 0;
+  for (const [key, val] of Object.entries(sections as Record<string, unknown>)) {
+    if (groups >= 40 || typeof key !== 'string' || key.length > 40) break;
+    if (!Array.isArray(val) || val.length === 0 || val.length > 151) continue;
+    const ids: number[] = [];
+    for (const id of val) {
+      if (typeof id === 'number' && Number.isInteger(id) && id >= 1 && id <= MAX_POKEMON_ID) ids.push(id);
+    }
+    if (ids.length > 0) {
+      out[key] = ids;
+      groups++;
+    }
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const body = (req.body ?? {}) as { cid?: unknown; kind?: unknown; ids?: unknown; depth?: unknown };
+    const body = (req.body ?? {}) as {
+      cid?: unknown;
+      kind?: unknown;
+      ids?: unknown;
+      depth?: unknown;
+      sections?: unknown;
+    };
 
     // Client id: a UUID minted once per browser. Length-bounded to avoid abuse.
     if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
@@ -260,6 +288,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     rec.localHour = localHourIn(geo.tz, now);
     rec.localDow = localDowIn(geo.tz, now);
     rec.latestIds = ids;
+    // The user's actual section placement (groupId -> ids), if provided. Lets
+    // the admin see where Pokemon were placed — including non-default choices.
+    // Forward-only: absent on records that predate this.
+    const secs = validSections(body.sections);
+    if (secs) rec.latestSections = secs;
     // Accumulate every Pokemon ever placed (bounded; ids are 1..1025).
     rec.everIds = Array.from(new Set([...(rec.everIds ?? []), ...ids])).sort((a, b) => a - b);
     // Refresh request-derived context on every submit (latest wins).

@@ -62,11 +62,14 @@ function countEvoLines(ids: number[]): number {
   return chains.size;
 }
 
-function postBeacon(ids: number[], kind: BeaconKind) {
+function postBeacon(ids: number[], kind: BeaconKind, sections?: Record<string, number[]>) {
   if (isOptedOut() || ids.length === 0) return;
   const cid = getClientId();
   if (!cid) return;
-  const payload = JSON.stringify({ cid, kind, ids, depth: countEvoLines(ids) });
+  // `sections` (groupId -> placed ids) captures WHERE the user put each Pokemon
+  // on the build page — the real placement, including non-default choices. Only
+  // sent for build beacons (progress/completion), not the flat export view.
+  const payload = JSON.stringify({ cid, kind, ids, depth: countEvoLines(ids), sections });
   // fetch+keepalive (not navigator.sendBeacon): iOS WebKit silently drops
   // sendBeacon in several cases (after the share sheet, non-CORS-safelisted
   // blob types); keepalive still lets the request outlive a page transition.
@@ -100,7 +103,7 @@ export function useCompletionBeacon() {
       const key = allIds.slice().sort((a, b) => a - b).join(',');
       if (completedRef.current !== key) {
         completedRef.current = key;
-        postBeacon(allIds, 'completion');
+        postBeacon(allIds, 'completion', sections);
       }
     }
 
@@ -108,8 +111,9 @@ export function useCompletionBeacon() {
     if (allIds.length >= MIN_PROGRESS_IDS) {
       if (progressTimer.current) clearTimeout(progressTimer.current);
       const idsSnapshot = allIds;
+      const sectionsSnapshot = sections;
       progressTimer.current = setTimeout(() => {
-        postBeacon(idsSnapshot, 'progress');
+        postBeacon(idsSnapshot, 'progress', sectionsSnapshot);
       }, PROGRESS_DEBOUNCE_MS);
     }
 

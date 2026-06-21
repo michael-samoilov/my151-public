@@ -7,42 +7,34 @@ import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
 import { cn, displayName } from '@/lib/utils';
 
-// Section order for the "By section" grouped popularity view — the build page's
-// own group order, plus an Unclassified catch-all.
-const SECTION_ORDER: { id: string; name: string; color: string }[] = [
-  ...BUILD_GROUPS.map((g) => ({ id: g.id, name: g.name, color: g.color })),
-  { id: '_none', name: 'Unclassified', color: '#9ca3af' },
-];
+const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
+  BUILD_GROUPS.map((g) => [g.id, { name: g.name, color: g.color }]),
+);
 
-// Canonical build-page section per Pokemon id, derived once from the same
-// archetype/category data the builder uses (no per-pick section is stored, so
-// we reconstruct it). First matching BUILD_GROUP wins, mirroring the grid.
-const SECTION_OF = (() => {
-  const map = new Map<number, string>();
+// Set of section ids each Pokemon is a DEFAULT option for (its archetype /
+// category memberships). Used only to FLAG when a user placed a Pokemon in a
+// section it isn't a default for — not to reassign or group anything.
+const DEFAULT_SECTIONS_OF = (() => {
+  const map = new Map<number, Set<string>>();
   const archIds = new Map<string, Set<number>>();
   for (const a of ARCHETYPES) archIds.set(a.id, new Set(a.pokemonIds));
   for (const p of getAllPokemon()) {
-    let found = '_none';
+    const set = new Set<string>();
     for (const g of BUILD_GROUPS) {
-      if (g.filterType === 'archetype' && g.filterId && archIds.get(g.filterId)?.has(p.id)) {
-        found = g.id;
-        break;
-      }
-      if (g.filterType === 'category' && g.filterId) {
-        const cat = getCategoryById(g.filterId);
-        if (cat?.filter(p)) {
-          found = g.id;
-          break;
-        }
-      }
+      if (g.filterType === 'archetype' && g.filterId && archIds.get(g.filterId)?.has(p.id)) set.add(g.id);
+      else if (g.filterType === 'category' && g.filterId && getCategoryById(g.filterId)?.filter(p)) set.add(g.id);
+      else if (g.filterType === null) set.add(g.id); // 'other' catch-all accepts anything
     }
-    map.set(p.id, found);
+    map.set(p.id, set);
   }
   return map;
 })();
 
-function sectionOfPokemon(id: number): string {
-  return SECTION_OF.get(id) ?? '_none';
+/** True when the user placed this Pokemon in a section it is NOT a default
+ *  option for — the signal of interest. The catch-all 'other' never counts. */
+function isOffSection(id: number, sectionId: string): boolean {
+  if (sectionId === 'other') return false;
+  return !(DEFAULT_SECTIONS_OF.get(id)?.has(sectionId) ?? false);
 }
 
 /**
@@ -77,6 +69,7 @@ interface ClientRecord {
   browser?: string;
   everIds: number[];
   latestIds: number[];
+  latestSections?: Record<string, number[]>;
   completed: boolean;
   completedAt?: string;
   completedIds?: number[];
@@ -330,72 +323,25 @@ function PopularGrid({ rows }: { rows: [string, number][] }) {
 }
 
 /** A preview grid (top N) with a "View all" button that opens the full grid in
- *  a modal. Optional "By section" toggle groups picks under their build-page
- *  section (Starters, Early Bug, …) instead of one flat ranked grid. */
+ *  a modal. */
 function PopularPanel({ title, rows, preview = 30 }: { title: string; rows: [string, number][]; preview?: number }) {
   const [open, setOpen] = useState(false);
-  const [bySection, setBySection] = useState(false);
   return (
     <div className="shadow-elevated rounded-lg p-3 bg-card">
-      <div className="flex items-center justify-between mb-2 gap-2">
+      <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-medium">{title}</span>
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant={bySection ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setBySection((v) => !v)}
-          >
-            By section
+        {rows.length > preview && (
+          <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+            View all ({rows.length})
           </Button>
-          {rows.length > preview && !bySection && (
-            <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
-              View all ({rows.length})
-            </Button>
-          )}
-        </div>
+        )}
       </div>
-      {bySection ? (
-        <SectionGroups rows={rows} />
-      ) : (
-        <>
-          <PopularGrid rows={rows.slice(0, preview)} />
-          {open && (
-            <Modal title={title} onClose={() => setOpen(false)}>
-              <PopularGrid rows={rows} />
-            </Modal>
-          )}
-        </>
+      <PopularGrid rows={rows.slice(0, preview)} />
+      {open && (
+        <Modal title={title} onClose={() => setOpen(false)}>
+          <PopularGrid rows={rows} />
+        </Modal>
       )}
-    </div>
-  );
-}
-
-/** Picks grouped under their build-page section, in the app's section order. */
-function SectionGroups({ rows }: { rows: [string, number][] }) {
-  // Bucket the ranked rows by each Pokemon's canonical section.
-  const buckets = new Map<string, [string, number][]>();
-  for (const row of rows) {
-    const sec = sectionOfPokemon(Number(row[0]));
-    if (!buckets.has(sec)) buckets.set(sec, []);
-    buckets.get(sec)!.push(row);
-  }
-  const ordered = SECTION_ORDER.filter((s) => buckets.has(s.id));
-  if (ordered.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
-  return (
-    <div className="flex flex-col gap-3">
-      {ordered.map((s) => {
-        const items = buckets.get(s.id)!;
-        const subtotal = items.reduce((a, [, n]) => a + n, 0);
-        return (
-          <div key={s.id}>
-            <div className="text-xs font-medium mb-1 flex items-center gap-1">
-              <span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: s.color }} />
-              {s.name} <span className="text-muted-foreground font-normal">· {subtotal}</span>
-            </div>
-            <PopularGrid rows={items} />
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -649,10 +595,82 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
               <SpriteRow ids={b.ids} />
             </div>
           ))}
+          <PlacementBySection rec={rec} />
           <SessionChanges rec={rec} />
         </div>
       )}
     </section>
+  );
+}
+
+/** The user's ACTUAL placement, grouped by the section they chose. Pokemon
+ *  placed in a section they aren't a default option for are highlighted — the
+ *  signal of interest. Only for records captured after placement tracking
+ *  shipped (legacy records have no latestSections). */
+function PlacementBySection({ rec }: { rec: ClientRecord }) {
+  const secs = rec.latestSections;
+  if (!secs || Object.keys(secs).length === 0) return null;
+  // Render in the build page's own order; unknown ids/sections fall to the end.
+  const order = BUILD_GROUPS.map((g) => g.id);
+  const present = Object.keys(secs).sort((a, b) => {
+    const ia = order.indexOf(a);
+    const ib = order.indexOf(b);
+    return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+  });
+  const offTotal = present.reduce(
+    (sum, sid) => sum + secs[sid].filter((id) => isOffSection(id, sid)).length,
+    0,
+  );
+  return (
+    <div>
+      <div className="text-xs text-muted-foreground mb-0.5">
+        Placement by section{' '}
+        {offTotal > 0 && <span className="text-amber-600 font-medium">· {offTotal} off-section</span>}
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {present.map((sid) => {
+          const meta = SECTION_META[sid];
+          const ids = secs[sid];
+          return (
+            <div key={sid}>
+              <div className="text-[0.65rem] flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: meta?.color ?? '#9ca3af' }} />
+                {meta?.name ?? sid} <span className="text-muted-foreground">· {ids.length}</span>
+              </div>
+              <div className="flex flex-wrap gap-0.5 mt-0.5">
+                {ids.map((id, idx) => {
+                  const p = getPokemonById(id);
+                  const off = isOffSection(id, sid);
+                  return (
+                    <div
+                      key={`${id}-${idx}`}
+                      title={`${p ? '#' + id + ' ' + displayName(p.name) : '#' + id}${off ? ' — not a default here' : ''}`}
+                      className={cn(
+                        'w-8 h-8 shrink-0 flex items-center justify-center rounded',
+                        off && 'ring-2 ring-amber-500 bg-amber-500/10',
+                      )}
+                    >
+                      {p ? (
+                        <img
+                          src={p.sprite}
+                          alt={p.name}
+                          width={32}
+                          height={32}
+                          loading="lazy"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
+                      ) : (
+                        <span className="text-[0.55rem] text-muted-foreground">#{id}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
