@@ -40,10 +40,12 @@ function localSlot(r: ClientRecord): { dow: number; hour: number } | null {
 
 // Per-minute time-before-churn bars up to this cap; everything longer (incl.
 // returning users who came back another day) falls in the final overflow bar.
-function topN(counts: Record<string, number>, n: number): [string, number][] {
+/** Ranked entries (desc) including only those with count >= min. No hard cap,
+ *  so evolution lines are never truncated mid-family. */
+function rankedAtLeast(counts: Record<string, number>, min: number): [string, number][] {
   return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, n);
+    .filter(([, n]) => n >= min)
+    .sort((a, b) => b[1] - a[1]);
 }
 
 /** Value at quantile q (0..1) of an ascending-sorted array. */
@@ -196,8 +198,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       hours,
       heatmap,
       // Full ranked lists; the admin UI previews the top N and expands the rest.
-      popularFinal: topN(picksFinal, 151),
-      mostDropped: topN(droppedCounts, 151),
+      // Only Pokemon appearing in >= 3 dexes; no cap so evo lines aren't cut off.
+      popularFinal: rankedAtLeast(picksFinal, 3),
+      mostDropped: rankedAtLeast(droppedCounts, 3),
       records: page,
     });
   } catch (err) {
