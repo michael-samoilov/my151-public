@@ -48,6 +48,19 @@ function rankedAtLeast(counts: Record<string, number>, min: number): [string, nu
     .sort((a, b) => b[1] - a[1]);
 }
 
+/** Apply rankedAtLeast within each section, dropping sections left empty. */
+function rankBySection(
+  bySection: Record<string, Record<string, number>>,
+  min: number,
+): Record<string, [string, number][]> {
+  const out: Record<string, [string, number][]> = {};
+  for (const [sid, counts] of Object.entries(bySection)) {
+    const ranked = rankedAtLeast(counts, min);
+    if (ranked.length > 0) out[sid] = ranked;
+  }
+  return out;
+}
+
 /** Value at quantile q (0..1) of an ascending-sorted array. */
 function quantile(sortedAsc: number[], q: number): number {
   if (sortedAsc.length === 0) return 0;
@@ -102,6 +115,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const depths: number[] = []; // max evolution lines reached
     const picksFinal: Record<string, number> = {}; // one vote per user's final dex
     const droppedCounts: Record<string, number> = {}; // ever placed but not in final dex
+    // Same, but split by the section the user actually placed each Pokemon in
+    // (sectionId -> { pokemonId -> count }). Forward-only; only records with
+    // section placement contribute.
+    const picksBySection: Record<string, Record<string, number>> = {};
+    const droppedBySection: Record<string, Record<string, number>> = {};
+    const bump = (m: Record<string, Record<string, number>>, sid: string, id: number) => {
+      (m[sid] ??= {})[id] = (m[sid][id] ?? 0) + 1;
+    };
 
     let completed = 0;
     let exported = 0;
@@ -135,6 +156,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const kept = new Set(r.latestIds ?? []);
       for (const id of r.everIds ?? []) {
         if (!kept.has(id)) droppedCounts[id] = (droppedCounts[id] ?? 0) + 1;
+      }
+
+      // Per-section breakdowns (forward-only; needs captured placement).
+      if (r.latestSections) {
+        for (const [sid, sIds] of Object.entries(r.latestSections)) {
+          for (const id of sIds) bump(picksBySection, sid, id);
+        }
+      }
+      if (r.everSections) {
+        for (const [sid, everIds] of Object.entries(r.everSections)) {
+          const keptHere = new Set(r.latestSections?.[sid] ?? []);
+          for (const id of everIds) if (!keptHere.has(id)) bump(droppedBySection, sid, id);
+        }
       }
       if (r.exported) exported += 1;
       if (r.lastTs - r.firstTs >= DAY) returning += 1;
@@ -201,6 +235,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Only Pokemon appearing in >= 3 dexes; no cap so evo lines aren't cut off.
       popularFinal: rankedAtLeast(picksFinal, 3),
       mostDropped: rankedAtLeast(droppedCounts, 3),
+      // Same, split by the section users actually placed them in (forward-only).
+      popularBySection: rankBySection(picksBySection, 3),
+      droppedBySection: rankBySection(droppedBySection, 3),
       records: page,
     });
   } catch (err) {

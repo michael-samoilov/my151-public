@@ -79,6 +79,10 @@ export interface ClientRecord {
    *  Compared against latestIds to surface "tried then dropped" picks — the
    *  real adjustment signal (order-independent, starter-prompt-immune). */
   everIds: number[];
+  /** Union, per section, of every Pokemon ever placed INTO that section
+   *  (sectionId -> ids). Diffing against latestSections gives "dropped from
+   *  section X". Absent on records that predate section tracking. */
+  everSections?: Record<string, number[]>;
   /** Most recent build (their "final dex"). */
   latestIds: number[];
   /** The user's actual section placement at their last build beacon

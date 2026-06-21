@@ -95,6 +95,8 @@ interface ApiResponse {
   heatmap: number[][];
   popularFinal: [string, number][];
   mostDropped: [string, number][];
+  popularBySection: Record<string, [string, number][]>;
+  droppedBySection: Record<string, [string, number][]>;
   records: ClientRecord[];
 }
 
@@ -322,26 +324,82 @@ function PopularGrid({ rows }: { rows: [string, number][] }) {
   );
 }
 
-/** A preview grid (top N) with a "View all" button that opens the full grid in
- *  a modal. */
-function PopularPanel({ title, rows, preview = 30 }: { title: string; rows: [string, number][]; preview?: number }) {
+/** A preview grid (top N) with a "View all" modal. An optional "By section"
+ *  toggle (shown only when section data exists) groups picks under the section
+ *  users actually placed them in, in the build page's current order. */
+function PopularPanel({
+  title,
+  rows,
+  bySection,
+  preview = 30,
+}: {
+  title: string;
+  rows: [string, number][];
+  bySection?: Record<string, [string, number][]>;
+  preview?: number;
+}) {
   const [open, setOpen] = useState(false);
+  const [grouped, setGrouped] = useState(false);
+  const hasSections = !!bySection && Object.keys(bySection).length > 0;
   return (
     <div className="shadow-elevated rounded-lg p-3 bg-card">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-2 gap-2">
         <span className="text-sm font-medium">{title}</span>
-        {rows.length > preview && (
-          <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
-            View all ({rows.length})
-          </Button>
-        )}
+        <div className="flex items-center gap-1 shrink-0">
+          {hasSections && (
+            <Button variant={grouped ? 'default' : 'ghost'} size="sm" onClick={() => setGrouped((v) => !v)}>
+              By section
+            </Button>
+          )}
+          {!grouped && rows.length > preview && (
+            <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+              View all ({rows.length})
+            </Button>
+          )}
+        </div>
       </div>
-      <PopularGrid rows={rows.slice(0, preview)} />
-      {open && (
-        <Modal title={title} onClose={() => setOpen(false)}>
-          <PopularGrid rows={rows} />
-        </Modal>
+      {grouped && bySection ? (
+        <SectionGroupedGrids bySection={bySection} />
+      ) : (
+        <>
+          <PopularGrid rows={rows.slice(0, preview)} />
+          {open && (
+            <Modal title={title} onClose={() => setOpen(false)}>
+              <PopularGrid rows={rows} />
+            </Modal>
+          )}
+        </>
       )}
+    </div>
+  );
+}
+
+/** Renders one PopularGrid per build section, in the build page's current
+ *  order; sections not in BUILD_GROUPS (e.g. removed later) sort to the end and
+ *  show their raw id. Pure display from raw section ids → never needs a wipe. */
+function SectionGroupedGrids({ bySection }: { bySection: Record<string, [string, number][]> }) {
+  const order = BUILD_GROUPS.map((g) => g.id);
+  const sids = Object.keys(bySection).sort((a, b) => {
+    const ia = order.indexOf(a);
+    const ib = order.indexOf(b);
+    return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+  });
+  return (
+    <div className="flex flex-col gap-3">
+      {sids.map((sid) => {
+        const meta = SECTION_META[sid];
+        const rows = bySection[sid];
+        const subtotal = rows.reduce((a, [, n]) => a + n, 0);
+        return (
+          <div key={sid}>
+            <div className="text-xs font-medium mb-1 flex items-center gap-1">
+              <span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: meta?.color ?? '#9ca3af' }} />
+              {meta?.name ?? sid} <span className="text-muted-foreground font-normal">· {subtotal}</span>
+            </div>
+            <PopularGrid rows={rows} />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -994,8 +1052,16 @@ export function AdminPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <PopularPanel title="Most-picked (final dex, all users)" rows={data.popularFinal} />
-              <PopularPanel title="Most tried then dropped" rows={data.mostDropped} />
+              <PopularPanel
+                title="Most-picked (final dex, all users)"
+                rows={data.popularFinal}
+                bySection={data.popularBySection}
+              />
+              <PopularPanel
+                title="Most tried then dropped"
+                rows={data.mostDropped}
+                bySection={data.droppedBySection}
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
