@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Settings, Download, Loader2 } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { useViewSort } from '@/hooks/useViewSort';
+import { useViewSort, buildIdToSection } from '@/hooks/useViewSort';
+import { BUILD_GROUPS } from '@/data/slot-template';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
@@ -268,6 +269,225 @@ function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSize: num
   );
 }
 
+// ---------- Section outlines ----------
+
+const SHORT_NAMES: Record<string, string> = {
+  'early-bug': 'Early Bug',
+  'early-bird': 'Early Bird',
+  'early-rodent': 'Early Mammal',
+  'early-normal': 'Domestic',
+  'other': 'Other Areas',
+  'cave-pokemon': 'Cave',
+  'fishing-pokemon': 'Fishing',
+  'pseudo-legendary': 'Pseudo-Leg.',
+  'rivalry-pair': 'Rivalry',
+  'evil-team': 'Evil Team',
+  'pikachu-clone': 'Pikaclone',
+  'mimic': 'Mimic',
+  'ruins': 'Ruins',
+};
+
+function getSectionLabel(groupId: string): string {
+  return SHORT_NAMES[groupId] ?? BUILD_GROUPS.find(g => g.id === groupId)?.name ?? groupId;
+}
+
+const BUILD_GROUP_MAP = new Map(BUILD_GROUPS.map(g => [g.id, g]));
+
+interface SectionSpan {
+  sectionId: string;
+  label: string;
+  color: string;
+  row: number;
+  colStart: number;
+  colEnd: number;
+  openLeft: boolean;
+  openRight: boolean;
+  openTop: boolean;
+  openBottom: boolean;
+  showLabel: boolean;
+}
+
+function computeSectionSpans(
+  sorted: Pokemon[],
+  sections: Record<string, number[]>,
+  cols: number,
+): SectionSpan[] {
+  const idToSection = buildIdToSection(sections);
+
+  // First pass: collect raw per-row spans for each contiguous section run
+  const rawSpans: {
+    sectionId: string;
+    label: string;
+    color: string;
+    row: number;
+    colStart: number;
+    colEnd: number;
+    runIndex: number;
+    spanInRun: number;
+  }[] = [];
+
+  let i = 0;
+  let runIndex = 0;
+  while (i < sorted.length) {
+    const sectionId = idToSection.get(sorted[i].id);
+    if (!sectionId) { i++; continue; }
+
+    let end = i + 1;
+    while (end < sorted.length && idToSection.get(sorted[end].id) === sectionId) {
+      end++;
+    }
+
+    const group = BUILD_GROUP_MAP.get(sectionId);
+    const color = group?.color ?? '#888888';
+    const label = getSectionLabel(sectionId);
+
+    let pos = i;
+    let spanInRun = 0;
+    while (pos < end) {
+      const row = Math.floor(pos / cols);
+      const colStart = pos % cols;
+      const rowEnd = Math.min(end, (row + 1) * cols);
+      const colEnd = (rowEnd - 1) % cols;
+
+      rawSpans.push({ sectionId, label, color, row, colStart, colEnd, runIndex, spanInRun });
+      spanInRun++;
+      pos = rowEnd;
+    }
+
+    runIndex++;
+    i = end;
+  }
+
+  // Second pass: determine open edges by checking neighbors in the same run
+  const spans: SectionSpan[] = [];
+  for (let s = 0; s < rawSpans.length; s++) {
+    const raw = rawSpans[s];
+    const prev = s > 0 && rawSpans[s - 1].runIndex === raw.runIndex ? rawSpans[s - 1] : null;
+    const next = s < rawSpans.length - 1 && rawSpans[s + 1].runIndex === raw.runIndex ? rawSpans[s + 1] : null;
+
+    // Wrapping: open left/right when the section continues across a row break
+    const openRight = !!next && raw.colEnd === cols - 1 && next.colStart === 0;
+    const openLeft = !!prev && raw.colStart === 0 && prev.colEnd === cols - 1;
+
+    // Vertical: open top if prev span covers the same column range on the row above
+    // (full-width continuation). Open bottom if next span does the same.
+    const openTop = openLeft && !!prev && prev.row === raw.row - 1
+      && prev.colStart <= raw.colStart && prev.colEnd >= raw.colEnd;
+    const openBottom = openRight && !!next && next.row === raw.row + 1
+      && next.colStart <= raw.colStart && next.colEnd >= raw.colEnd;
+
+    spans.push({
+      sectionId: raw.sectionId,
+      label: raw.label,
+      color: raw.color,
+      row: raw.row,
+      colStart: raw.colStart,
+      colEnd: raw.colEnd,
+      openLeft,
+      openRight,
+      openTop,
+      openBottom,
+      showLabel: raw.spanInRun === 0 || openLeft,
+    });
+  }
+
+  return spans;
+}
+
+function SectionOverlays({
+  spans,
+  tileSize,
+  offsetLeft = 0,
+  labelHeight,
+  sectionStartRows,
+}: {
+  spans: SectionSpan[];
+  tileSize: number;
+  offsetLeft?: number;
+  labelHeight: number;
+  sectionStartRows: Set<number>;
+}) {
+  const fontSize = tileSize * 0.12;
+  const inset = 2;
+
+  // Compute the Y position of the tile area for a given row.
+  // Section-start rows have an extra labelHeight at top; tiles sit at the bottom.
+  const tileTop = (row: number) => {
+    let y = 0;
+    for (let r = 0; r < row; r++) {
+      y += tileSize + (sectionStartRows.has(r) ? labelHeight : 0);
+    }
+    // For the current row, tiles start after the label gap
+    y += sectionStartRows.has(row) ? labelHeight : 0;
+    return y;
+  };
+
+  const labelTop = (row: number) => {
+    let y = 0;
+    for (let r = 0; r < row; r++) {
+      y += tileSize + (sectionStartRows.has(r) ? labelHeight : 0);
+    }
+    return y;
+  };
+
+  return (
+    <>
+      {spans.map((span) => {
+        const left = offsetLeft + span.colStart * tileSize;
+        const top = tileTop(span.row);
+        const width = (span.colEnd - span.colStart + 1) * tileSize;
+        const height = tileSize;
+        const hasLabel = span.showLabel && !span.openTop;
+
+        return (
+          <div key={`${span.sectionId}-${span.row}-${span.colStart}`}>
+            {hasLabel && (
+              <div
+                className="absolute pointer-events-none"
+                style={{
+                  left: left + (span.openLeft ? 0 : inset),
+                  top: labelTop(span.row),
+                  width: width - (span.openLeft ? 0 : inset) - (span.openRight ? 0 : inset),
+                  height: labelHeight,
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  paddingBottom: 1,
+                }}
+              >
+                <span
+                  className="leading-none font-semibold select-none truncate"
+                  style={{
+                    fontSize,
+                    paddingLeft: span.openLeft ? 2 : 1,
+                    color: `${span.color}A0`,
+                  }}
+                >
+                  {span.label}
+                </span>
+              </div>
+            )}
+            <div
+              className="absolute pointer-events-none"
+              style={{
+                left: left + (span.openLeft ? 0 : inset),
+                top: top + (span.openTop ? 0 : inset),
+                width: width - (span.openLeft ? 0 : inset) - (span.openRight ? 0 : inset),
+                height: height - (span.openTop ? 0 : inset) - (span.openBottom ? 0 : inset),
+                borderTop: span.openTop ? 'none' : `1.5px solid ${span.color}50`,
+                borderBottom: span.openBottom ? 'none' : `1.5px solid ${span.color}50`,
+                borderLeft: span.openLeft ? 'none' : `1.5px solid ${span.color}50`,
+                borderRight: span.openRight ? 'none' : `1.5px solid ${span.color}50`,
+                borderRadius: `${span.openLeft || span.openTop ? '0' : '4px'} ${span.openRight || span.openTop ? '0' : '4px'} ${span.openRight || span.openBottom ? '0' : '4px'} ${span.openLeft || span.openBottom ? '0' : '4px'}`,
+                backgroundColor: `${span.color}08`,
+              }}
+            />
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 // ---------- Main page ----------
 
 export function ViewPage() {
@@ -278,6 +498,8 @@ export function ViewPage() {
   const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
   const setSortOption = usePokedexStore((s) => s.setViewSortOption);
 
+  const showSections = usePokedexStore((s) => s.viewShowSections);
+
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
   const totalSlots = Math.max(count, 151);
@@ -286,6 +508,8 @@ export function ViewPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const hasCustom = customOrder !== null;
+
+  const showSectionOverlays = showSections && sortOption === 'build-order';
 
   // Drag state
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
@@ -532,6 +756,35 @@ export function ViewPage() {
             const gridEmpties = Math.max(0, gridSlots - gridPokemon.length);
             const lastRowEmpties = Math.max(0, lastRowCount - lastRowPokemon.length);
 
+            const gridSpans = showSectionOverlays
+              ? computeSectionSpans(gridPokemon, sections, COLS)
+              : [];
+            const lastRowSpans = showSectionOverlays
+              ? computeSectionSpans(lastRowPokemon, sections, lastRowCount)
+              : [];
+
+            const labelHeight = Math.round(tileSize * 0.18);
+            // Rows that start a new section (first span with showLabel and no openTop)
+            const sectionStartRows = new Set<number>();
+            for (const span of gridSpans) {
+              if (span.showLabel && !span.openTop) {
+                sectionStartRows.add(span.row);
+              }
+            }
+            const lastRowSectionStarts = new Set<number>();
+            for (const span of lastRowSpans) {
+              if (span.showLabel && !span.openTop) {
+                lastRowSectionStarts.add(span.row);
+              }
+            }
+
+            const totalGridRows = Math.ceil(gridSlots / COLS);
+            const gridRowTemplate = showSectionOverlays
+              ? Array.from({ length: totalGridRows }, (_, r) =>
+                  sectionStartRows.has(r) ? `${labelHeight + tileSize}px` : `${tileSize}px`
+                ).join(' ')
+              : undefined;
+
             const renderTile = (pokemon: Pokemon, positionNum: number) => (
               <DraggableViewTile
                 key={pokemon.id}
@@ -557,25 +810,46 @@ export function ViewPage() {
                 onDragCancel={handleDragCancel}
               >
                 <div style={{ width: COLS * tileSize }}>
-                  <div
-                    className="grid"
-                    style={{
-                      gridTemplateColumns: `repeat(${COLS}, ${tileSize}px)`,
-                      gridAutoRows: `${tileSize}px`,
-                    }}
-                  >
-                    {gridPokemon.map((p, i) => renderTile(p, i + 1))}
-                    {gridEmpties > 0 &&
-                      Array.from({ length: gridEmpties }, (_, i) => (
-                        <EmptyPlaceholder key={`empty-${i}`} tileSize={tileSize} num={gridPokemon.length + i + 1} />
-                      ))}
+                  <div className="relative">
+                    <div
+                      className="grid items-end"
+                      style={{
+                        gridTemplateColumns: `repeat(${COLS}, ${tileSize}px)`,
+                        ...(gridRowTemplate
+                          ? { gridTemplateRows: gridRowTemplate }
+                          : { gridAutoRows: `${tileSize}px` }),
+                      }}
+                    >
+                      {gridPokemon.map((p, i) => renderTile(p, i + 1))}
+                      {gridEmpties > 0 &&
+                        Array.from({ length: gridEmpties }, (_, i) => (
+                          <EmptyPlaceholder key={`empty-${i}`} tileSize={tileSize} num={gridPokemon.length + i + 1} />
+                        ))}
+                    </div>
+                    {gridSpans.length > 0 && (
+                      <SectionOverlays
+                        spans={gridSpans}
+                        tileSize={tileSize}
+                        labelHeight={labelHeight}
+                        sectionStartRows={sectionStartRows}
+                      />
+                    )}
                   </div>
-                  <div className="flex justify-center" style={{ height: tileSize }}>
+                  <div className="flex justify-center items-end relative" style={{ height: tileSize + (lastRowSectionStarts.size > 0 ? labelHeight : 0) }}>
                     {lastRowPokemon.map((p, i) => renderTile(p, gridSlots + i + 1))}
                     {lastRowEmpties > 0 &&
                       Array.from({ length: lastRowEmpties }, (_, i) => (
                         <EmptyPlaceholder key={`empty-last-${i}`} tileSize={tileSize} num={gridSlots + lastRowPokemon.length + i + 1} />
                       ))}
+                    {lastRowSpans.length > 0 && (
+                      <SectionOverlays
+                        spans={lastRowSpans}
+                        tileSize={tileSize}
+                        offsetLeft={(COLS - lastRowCount) * tileSize / 2}
+                        labelHeight={labelHeight}
+                        sectionStartRows={lastRowSectionStarts}
+                      />
+                    )}
                   </div>
                   <PageFooter />
                 </div>
