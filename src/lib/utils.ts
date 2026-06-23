@@ -13,7 +13,6 @@ const REGION_ABBREVS: Record<string, string> = {
 };
 
 const FORM_DISPLAY_NAMES: Record<string, string> = {
-  'urshifu-single-strike': 'urshifu-dark',
   'urshifu-rapid-strike': 'urshifu-water',
   'alcremie-strawberry': 'alcremie-strwb',
   'alcremie-berry': 'alcremie-berry',
