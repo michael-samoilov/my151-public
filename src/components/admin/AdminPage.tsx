@@ -30,6 +30,15 @@ const DEFAULT_SECTIONS_OF = (() => {
   return map;
 })();
 
+function primarySection(id: number): string {
+  const defaults = DEFAULT_SECTIONS_OF.get(id);
+  if (!defaults) return 'other';
+  for (const g of BUILD_GROUPS) {
+    if (g.id !== 'other' && defaults.has(g.id)) return g.id;
+  }
+  return 'other';
+}
+
 /** True when the user placed this Pokemon in a section it is NOT a default
  *  option for — the signal of interest. The catch-all 'other' never counts. */
 function isOffSection(id: number, sectionId: string): boolean {
@@ -906,6 +915,72 @@ function DroppedPokemon({
   );
 }
 
+function SessionDiffBody({ s, added, removed }: { s: { ts: number; ids: number[]; country?: string }; added: number[]; removed: number[] }) {
+  if (added.length === 0 && removed.length === 0) {
+    return (
+      <div className="mt-1">
+        <span className="text-xs text-muted-foreground">
+          {new Date(s.ts).toLocaleDateString()}{s.country ? ` · ${flag(s.country)} ${s.country}` : ''} · {s.ids.length} total
+        </span>
+        <div className="text-[0.65rem] text-muted-foreground mt-0.5">no changes</div>
+      </div>
+    );
+  }
+
+  const addsBySec = new Map<string, number[]>();
+  const remsBySec = new Map<string, number[]>();
+  for (const id of added) {
+    const sec = primarySection(id);
+    (addsBySec.get(sec) ?? (addsBySec.set(sec, []), addsBySec.get(sec)!)).push(id);
+  }
+  for (const id of removed) {
+    const sec = primarySection(id);
+    (remsBySec.get(sec) ?? (remsBySec.set(sec, []), remsBySec.get(sec)!)).push(id);
+  }
+
+  const affected = BUILD_GROUPS
+    .filter((g) => addsBySec.has(g.id) || remsBySec.has(g.id))
+    .map((g) => ({ id: g.id, name: g.name, color: g.color, added: addsBySec.get(g.id) ?? [], removed: remsBySec.get(g.id) ?? [] }));
+
+  return (
+    <div className="mt-1">
+      <span className="text-xs text-muted-foreground">
+        {new Date(s.ts).toLocaleDateString()}{s.country ? ` · ${flag(s.country)} ${s.country}` : ''} · {s.ids.length} total
+        {added.length > 0 && <span className="text-green-600"> · +{added.length}</span>}
+        {removed.length > 0 && <span className="text-destructive"> · −{removed.length}</span>}
+      </span>
+      <div className="flex flex-col gap-1.5 mt-1">
+        {affected.map((sec) => (
+          <div key={sec.id}>
+            <div className="text-[0.65rem] flex items-center gap-1 mb-0.5">
+              <span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: sec.color }} />
+              <span>{sec.name}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                {sec.added.length > 0 && (
+                  <>
+                    <span className="text-[0.65rem] text-green-600 block mb-0.5">+{sec.added.length}</span>
+                    <SpriteRow ids={sec.added} />
+                  </>
+                )}
+              </div>
+              <div>
+                {sec.removed.length > 0 && (
+                  <div className="opacity-60">
+                    <span className="text-[0.65rem] text-destructive block mb-0.5">−{sec.removed.length}</span>
+                    <SpriteRow ids={sec.removed} />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Session diffs with a switchable session selector. Shows one session's
  *  adds/removes at a time; defaults to the most recent session. */
 function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: number }) {
@@ -945,26 +1020,7 @@ function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: numbe
           );
         })}
       </div>
-      <div className="mt-1">
-        <span className="text-xs text-muted-foreground">
-          {new Date(s.ts).toLocaleDateString()}{s.country ? ` · ${flag(s.country)} ${s.country}` : ''} · {s.ids.length} total
-        </span>
-        {added.length > 0 && (
-          <div className="flex flex-wrap items-center gap-0.5 mt-0.5">
-            <span className="text-[0.65rem] text-green-600 mr-0.5">+{added.length}</span>
-            <SpriteRow ids={added} />
-          </div>
-        )}
-        {removed.length > 0 && (
-          <div className="flex flex-wrap items-center gap-0.5 mt-0.5 opacity-60">
-            <span className="text-[0.65rem] text-destructive mr-0.5">−{removed.length}</span>
-            <SpriteRow ids={removed} />
-          </div>
-        )}
-        {added.length === 0 && removed.length === 0 && (
-          <div className="text-[0.65rem] text-muted-foreground mt-0.5">no changes</div>
-        )}
-      </div>
+      <SessionDiffBody s={s} added={added} removed={removed} />
     </div>
   );
 }
