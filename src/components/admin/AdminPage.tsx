@@ -644,57 +644,77 @@ function tallyRows(counts: Record<string, number>, withFlag = false) {
 
 function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void }) {
   const [expanded, setExpanded] = useState(false);
+  const cardRef = useRef<HTMLElement>(null);
   const userLocal = localTime(rec.lastTs, rec.tz);
   const ctx = [
     rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
     [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
     rec.lang,
   ].filter(Boolean);
+
+  const handleToggle = () => {
+    if (expanded) {
+      setExpanded(false);
+      requestAnimationFrame(() => {
+        const el = cardRef.current;
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        if (rect.top < 0) {
+          el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        }
+      });
+    } else {
+      setExpanded(true);
+    }
+  };
+
   return (
-    <section className="shadow-elevated rounded-lg p-3 bg-card">
-      <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-        <div className="text-sm">
-          <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
-          <span className="text-muted-foreground">
-            {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'} · depth {rec.maxDepth}
-          </span>
-          {(rec.sessionMs?.length || rec.sessions) && (
-            <span className="block text-xs text-muted-foreground">
-              {rec.sessions ?? rec.sessionMs?.length} session
-              {(rec.sessions ?? rec.sessionMs?.length) === 1 ? '' : 's'}
-              {rec.sessionMs?.length ? `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}` : ''}
+    <section ref={cardRef} className="shadow-elevated rounded-lg bg-card">
+      <div className={`sticky top-[48px] z-[5] bg-card rounded-lg p-3 ${expanded ? 'pb-1 border-b border-border/50' : ''}`}>
+        <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+          <div className="text-sm">
+            <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
+            <span className="text-muted-foreground">
+              {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'} · depth {rec.maxDepth}
             </span>
-          )}
-          <span className="block text-xs text-muted-foreground">
-            {rec.completed && <span className="text-primary font-medium">✓ completed </span>}
-            {rec.exported && <span>📷 exported </span>}
-            {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning</span>}
-            {userLocal && <> · their {userLocal}</>}
-          </span>
+            {(rec.sessionMs?.length || rec.sessions) && (
+              <span className="block text-xs text-muted-foreground">
+                {rec.sessions ?? rec.sessionMs?.length} session
+                {(rec.sessions ?? rec.sessionMs?.length) === 1 ? '' : 's'}
+                {rec.sessionMs?.length ? `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}` : ''}
+              </span>
+            )}
+            <span className="block text-xs text-muted-foreground">
+              {rec.completed && <span className="text-primary font-medium">✓ completed </span>}
+              {rec.exported && <span>📷 exported </span>}
+              {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning</span>}
+              {userLocal && <> · their {userLocal}</>}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={handleToggle}>
+              {expanded ? 'Hide' : 'Builds'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive"
+              onClick={() => onDelete(rec)}
+            >
+              Delete
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" onClick={() => setExpanded((v) => !v)}>
-            {expanded ? 'Hide' : 'Builds'}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
-            onClick={() => onDelete(rec)}
-          >
-            Delete
-          </Button>
-        </div>
+        {ctx.length > 0 && (
+          <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
+            {ctx.map((c, i) => (
+              <span key={i}>{c}</span>
+            ))}
+          </div>
+        )}
       </div>
-      {ctx.length > 0 && (
-        <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
-          {ctx.map((c, i) => (
-            <span key={i}>{c}</span>
-          ))}
-        </div>
-      )}
       {expanded && (
-        <div className="flex flex-col gap-2 mt-2">
+        <div className="flex flex-col gap-2 p-3 pt-2">
           {buildSections(rec).map((b) => (
             <div key={b.key}>
               <div className="text-xs text-muted-foreground mb-0.5">
