@@ -680,7 +680,7 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
 
   return (
     <section ref={cardRef} className="shadow-elevated rounded-lg bg-card scroll-mt-[64px]">
-      <div ref={headerRef} className={`sticky top-[64px] z-[5] bg-card rounded-t-lg p-3 ${expanded ? 'pb-1 border-b border-border/50' : 'rounded-b-lg'}`}>
+      <div ref={headerRef} className={`sticky top-[64px] z-[5] bg-card rounded-t-lg p-3 ${expanded ? 'pb-1 border-b border-border/50' : 'rounded-b-lg'}`} style={{ boxShadow: '0 -1.5rem 0 0 var(--color-background)' }}>
         <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
           <div className="text-sm">
             <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
@@ -738,7 +738,7 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
 const STICKY_LABEL_CLASS = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
 function stickyLabelStyle(top?: number): React.CSSProperties | undefined {
   if (!top) return undefined;
-  return { top, boxShadow: '0 -1rem 0 0 var(--color-card)' };
+  return { top };
 }
 
 /** Final/current dex grouped by build section with off-section highlighting.
