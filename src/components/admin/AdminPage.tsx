@@ -162,21 +162,35 @@ function hour12(h: number, min?: number): string {
 }
 
 /** Day-of-week × hour-of-day heatmap of when users build (their local time).
- *  Cell opacity scales with count; click a cell to drill into that slot. */
+ *  Cell opacity scales with count; click a cell to drill into that slot. A
+ *  right column sums each day (all hours) and a bottom row sums each hour (all
+ *  days); the corner is the grand total. `onCell` accepts a -1 wildcard for
+ *  dow or hour to mean "the whole row/column". */
 function Heatmap({ matrix, onCell }: { matrix: number[][]; onCell: (dow: number, hour: number) => void }) {
   const max = Math.max(1, ...matrix.flat());
   const total = matrix.flat().reduce((a, b) => a + b, 0);
   if (total === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
+  const dayTotals = matrix.map((row) => row.reduce((a, b) => a + b, 0));
+  const hourTotals = Array.from({ length: 24 }, (_, h) => matrix.reduce((a, row) => a + row[h], 0));
+  const dayMax = Math.max(1, ...dayTotals);
+  const hourMax = Math.max(1, ...hourTotals);
+  // Neutral (foreground) scale for the summary cells so they read distinctly
+  // from the red activity cells.
+  const sumBg = (v: number, m: number) =>
+    v > 0 ? `color-mix(in srgb, var(--color-foreground) ${Math.round(12 + 48 * (v / m))}%, transparent)` : 'var(--color-muted)';
+
   return (
     <div className="w-full">
-      <div className="grid gap-px w-full" style={{ gridTemplateColumns: `1.75rem repeat(24, minmax(0, 1fr))` }}>
-        {/* Header row: hour labels every 3h */}
+      <div className="grid gap-px w-full" style={{ gridTemplateColumns: `1.75rem repeat(24, minmax(0, 1fr)) 1.4rem` }}>
+        {/* Header row: hour labels every 3h, then a Σ for the day-total column */}
         <div />
         {Array.from({ length: 24 }, (_, h) => (
           <div key={h} className="text-[0.5rem] text-muted-foreground text-center leading-none h-3">
             {h % 3 === 0 ? (h % 12 === 0 ? 12 : h % 12) : ''}
           </div>
         ))}
+        <div className="text-[0.5rem] text-muted-foreground text-center leading-none h-3">Σ</div>
+
         {matrix.map((row, d) => (
           <Fragment key={d}>
             <div className="text-[0.6rem] text-muted-foreground pr-1 flex items-center justify-end h-4">
@@ -191,8 +205,44 @@ function Heatmap({ matrix, onCell }: { matrix: number[][]; onCell: (dow: number,
                 onClick={c > 0 ? () => onCell(d, h) : undefined}
               />
             ))}
+            {/* Day total (all hours) */}
+            <div
+              className={cn(
+                'h-4 rounded-[1px] flex items-center justify-center text-[0.5rem] tabular-nums',
+                dayTotals[d] > 0 ? 'cursor-pointer hover:ring-1 hover:ring-foreground/40' : '',
+              )}
+              style={{ backgroundColor: sumBg(dayTotals[d], dayMax) }}
+              title={`${DOW_FULL[d]} · all hours: ${dayTotals[d]}`}
+              onClick={dayTotals[d] > 0 ? () => onCell(d, -1) : undefined}
+            >
+              {dayTotals[d] || ''}
+            </div>
           </Fragment>
         ))}
+
+        {/* Bottom summary row: per-hour totals (all days), then grand total */}
+        <div className="text-[0.6rem] text-muted-foreground pr-1 flex items-center justify-end h-4">Σ</div>
+        {hourTotals.map((c, h) => (
+          <div
+            key={h}
+            className={cn(
+              'h-4 rounded-[1px] flex items-center justify-center text-[0.5rem] tabular-nums overflow-hidden',
+              c > 0 ? 'cursor-pointer hover:ring-1 hover:ring-foreground/40' : '',
+            )}
+            style={{ backgroundColor: sumBg(c, hourMax) }}
+            title={`${hour12(h)} · all days: ${c}`}
+            onClick={c > 0 ? () => onCell(-1, h) : undefined}
+          >
+            {c || ''}
+          </div>
+        ))}
+        <div
+          className="h-4 rounded-[1px] flex items-center justify-center text-[0.5rem] tabular-nums font-semibold"
+          style={{ backgroundColor: 'color-mix(in srgb, var(--color-foreground) 18%, transparent)' }}
+          title={`Total builds: ${total}`}
+        >
+          {total}
+        </div>
       </div>
     </div>
   );
@@ -814,9 +864,13 @@ function HourDetail({
   loadedAll: boolean;
   onClose: () => void;
 }) {
+  // hour === -1 → all hours of a day; dow === -1 → all days at an hour.
+  const anyHour = hour < 0;
+  const anyDay = dow === undefined || dow < 0;
   const inHour = records.filter((r) => {
     const slot = localSlotOf(r);
-    return slot !== null && slot.hour === hour && (dow === undefined || slot.dow === dow);
+    if (slot === null) return false;
+    return (anyHour || slot.hour === hour) && (anyDay || slot.dow === dow);
   });
   // Sub-bucket by minute within the hour (0–59) using the user's own clock.
   const minuteOf = (r: ClientRecord): number | null => {
@@ -829,13 +883,16 @@ function HourDetail({
       return null;
     }
   };
+  const slotOf = (r: ClientRecord) => localSlotOf(r);
   const sorted = inHour
-    .map((r) => ({ r, min: minuteOf(r) }))
-    .sort((a, b) => (a.min ?? 0) - (b.min ?? 0));
+    .map((r) => ({ r, slot: slotOf(r), min: minuteOf(r) }))
+    // Order by hour then minute (so an all-day view reads chronologically).
+    .sort((a, b) => (a.slot?.hour ?? 0) - (b.slot?.hour ?? 0) || (a.min ?? 0) - (b.min ?? 0));
 
-  const dayLabel = dow === undefined ? '' : `${DOW_FULL[dow]} · `;
+  const dayPart = anyDay ? 'All days' : DOW_FULL[dow!];
+  const hourPart = anyHour ? 'all hours' : hour12(hour);
   return (
-    <Modal title={`${dayLabel}${hour12(hour)} (users' local time)`} onClose={onClose}>
+    <Modal title={`${dayPart} · ${hourPart} (users' local time)`} onClose={onClose}>
       {!loadedAll && (
         <p className="text-xs text-muted-foreground mb-2">
           Based on the {records.length} loaded users — “Load more” for the full set.
@@ -845,12 +902,12 @@ function HourDetail({
         <p className="text-sm text-muted-foreground">No loaded users in this slot.</p>
       ) : (
         <div className="flex flex-col gap-1">
-          {sorted.map(({ r, min }) => {
+          {sorted.map(({ r, slot, min }) => {
             const local = localTime(r.lastTs, r.tz);
             return (
               <div key={r.cid} className="flex items-center gap-3 text-xs border-b py-1">
-                <span className="w-16 shrink-0 tabular-nums font-medium">
-                  {hour12(hour, min ?? 0)}
+                <span className="w-20 shrink-0 tabular-nums font-medium">
+                  {slot ? hour12(slot.hour, min ?? 0) : '—'}
                 </span>
                 <span className="w-16 shrink-0">
                   {r.country ? `${flag(r.country)} ${r.country}` : '—'}
