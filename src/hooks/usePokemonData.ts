@@ -393,10 +393,15 @@ export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): E
     const seenBranches = new Set<string>();
     const result: EvolutionGroup[] = [];
 
+    const hideFormAlts = options.archetype !== 'evolution-item';
+
     for (const p of filtered) {
       const lines = getAllEvolutionLines(p.id);
 
-      for (const line of lines) {
+      for (const rawLine of lines) {
+        const line = hideFormAlts ? rawLine.filter(m => !EVOLUTION_ITEM_ONLY_IDS.has(m.id)) : rawLine;
+        if (line.length === 0) continue;
+
         const branchKey = line.map((m) => m.id).join('-');
         if (seenBranches.has(branchKey)) continue;
         seenBranches.add(branchKey);
