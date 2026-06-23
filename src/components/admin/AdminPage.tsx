@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAllPokemon, getPokemonById } from '@/hooks/usePokemonData';
@@ -645,12 +645,20 @@ function tallyRows(counts: Record<string, number>, withFlag = false) {
 function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void }) {
   const [expanded, setExpanded] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [stickyLabelTop, setStickyLabelTop] = useState(0);
   const userLocal = localTime(rec.lastTs, rec.tz);
   const ctx = [
     rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
     [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
     rec.lang,
   ].filter(Boolean);
+
+  useLayoutEffect(() => {
+    if (expanded && headerRef.current) {
+      setStickyLabelTop(64 + headerRef.current.offsetHeight);
+    }
+  }, [expanded]);
 
   const handleToggle = () => {
     if (expanded) {
@@ -660,7 +668,7 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
         if (!el) return;
         const rect = el.getBoundingClientRect();
         if (rect.top < 0) {
-          el.scrollIntoView({ block: 'start', behavior: 'smooth' });
+          el.scrollIntoView({ block: 'start', behavior: 'instant' });
         }
       });
     } else {
@@ -668,9 +676,11 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
     }
   };
 
+  const stickyLabel = "sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5";
+
   return (
-    <section ref={cardRef} className="shadow-elevated rounded-lg bg-card">
-      <div className={`sticky top-[48px] z-[5] bg-card rounded-lg p-3 ${expanded ? 'pb-1 border-b border-border/50' : ''}`}>
+    <section ref={cardRef} className="shadow-elevated rounded-lg bg-card scroll-mt-[64px]">
+      <div ref={headerRef} className={`sticky top-[64px] z-[5] bg-card rounded-t-lg p-3 ${expanded ? 'pb-1 border-b border-border/50' : 'rounded-b-lg'}`}>
         <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
           <div className="text-sm">
             <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
@@ -717,14 +727,14 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
         <div className="flex flex-col gap-2 p-3 pt-2">
           {buildSections(rec).map((b) => (
             <div key={b.key}>
-              <div className="text-xs text-muted-foreground mb-0.5">
+              <div className={stickyLabel} style={{ top: stickyLabelTop }}>
                 {b.label} ({b.ids.length})
               </div>
               <SpriteRow ids={b.ids} />
             </div>
           ))}
-          <PlacementBySection rec={rec} />
-          <SessionChanges rec={rec} />
+          <PlacementBySection rec={rec} stickyTop={stickyLabelTop} />
+          <SessionChanges rec={rec} stickyTop={stickyLabelTop} />
         </div>
       )}
     </section>
@@ -735,7 +745,7 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
  *  placed in a section they aren't a default option for are highlighted — the
  *  signal of interest. Only for records captured after placement tracking
  *  shipped (legacy records have no latestSections). */
-function PlacementBySection({ rec }: { rec: ClientRecord }) {
+function PlacementBySection({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: number }) {
   const secs = rec.latestSections;
   if (!secs || Object.keys(secs).length === 0) return null;
   // Render in the build page's own order; unknown ids/sections fall to the end.
@@ -751,7 +761,10 @@ function PlacementBySection({ rec }: { rec: ClientRecord }) {
   );
   return (
     <div>
-      <div className="text-xs text-muted-foreground mb-0.5">
+      <div
+        className="sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5"
+        style={stickyTop ? { top: stickyTop } : undefined}
+      >
         Placement by section{' '}
         {offTotal > 0 && <span className="text-amber-600 font-medium">· {offTotal} off-section</span>}
       </div>
@@ -805,12 +818,15 @@ function PlacementBySection({ rec }: { rec: ClientRecord }) {
 /** Per-session change summary: diffs each session's end-state against the
  *  previous one to show what was added/removed visit-to-visit. Only available
  *  for records captured after session logging shipped. */
-function SessionChanges({ rec }: { rec: ClientRecord }) {
+function SessionChanges({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: number }) {
   const log = rec.sessionLog;
   if (!log || log.length === 0) return null;
   return (
     <div>
-      <div className="text-xs text-muted-foreground mb-0.5">Changes by session</div>
+      <div
+        className="sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5"
+        style={stickyTop ? { top: stickyTop } : undefined}
+      >Changes by session</div>
       <div className="flex flex-col gap-1">
         {log.map((s, i) => {
           const prev = i > 0 ? new Set(log[i - 1].ids) : new Set<number>();
