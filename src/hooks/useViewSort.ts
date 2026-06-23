@@ -206,7 +206,7 @@ function getRegionalPercentile(rep: Pokemon): number {
 // --- Bucket assignment ---
 
 /** Build a reverse map: pokemonId → sectionId */
-function buildIdToSection(sections: Record<string, number[]>): Map<number, string> {
+export function buildIdToSection(sections: Record<string, number[]>): Map<number, string> {
   const map = new Map<number, string>();
   for (const groupId of BUILD_GROUP_IDS) {
     for (const id of sections[groupId] ?? []) {

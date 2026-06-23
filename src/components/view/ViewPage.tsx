@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Settings, Download, Loader2 } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { useViewSort } from '@/hooks/useViewSort';
+import { useViewSort, buildIdToSection } from '@/hooks/useViewSort';
+import { BUILD_GROUPS } from '@/data/slot-template';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
@@ -268,6 +269,289 @@ function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSize: num
   );
 }
 
+// ---------- Section outlines ----------
+
+const SHORT_NAMES: Record<string, string> = {
+  'early-bug': 'Early Bug',
+  'early-bird': 'Early Bird',
+  'early-rodent': 'Early Mammal',
+  'early-normal': 'Domestic',
+  'other': 'Other Areas',
+  'cave-pokemon': 'Cave',
+  'fishing-pokemon': 'Fishing',
+  'pseudo-legendary': 'Pseudo-Leg.',
+  'rivalry-pair': 'Rivalry',
+  'evil-team': 'Evil Team',
+  'pikachu-clone': 'Pikaclone',
+  'mimic': 'Mimic',
+  'ruins': 'Ruins',
+};
+
+function getSectionLabel(groupId: string): string {
+  return SHORT_NAMES[groupId] ?? BUILD_GROUPS.find(g => g.id === groupId)?.name ?? groupId;
+}
+
+const BUILD_GROUP_MAP = new Map(BUILD_GROUPS.map(g => [g.id, g]));
+
+interface SectionRun {
+  sectionId: string;
+  label: string;
+  color: string;
+  firstRow: number;
+  firstCol: number;
+  lastRow: number;
+  lastCol: number;
+}
+
+/** Break the sorted list into contiguous reading-order runs of a single
+ *  section. Each run becomes exactly one outline (and one label). */
+function computeSectionRuns(
+  sorted: Pokemon[],
+  sections: Record<string, number[]>,
+  cols: number,
+): SectionRun[] {
+  const idToSection = buildIdToSection(sections);
+  const runs: SectionRun[] = [];
+
+  let i = 0;
+  while (i < sorted.length) {
+    const sectionId = idToSection.get(sorted[i].id);
+    if (!sectionId) { i++; continue; }
+
+    let end = i + 1;
+    while (end < sorted.length && idToSection.get(sorted[end].id) === sectionId) {
+      end++;
+    }
+
+    const group = BUILD_GROUP_MAP.get(sectionId);
+    runs.push({
+      sectionId,
+      label: getSectionLabel(sectionId),
+      color: group?.color ?? '#888888',
+      firstRow: Math.floor(i / cols),
+      firstCol: i % cols,
+      lastRow: Math.floor((end - 1) / cols),
+      lastCol: (end - 1) % cols,
+    });
+
+    i = end;
+  }
+
+  return runs;
+}
+
+type Pt = { x: number; y: number };
+
+/** Build an SVG path that traces an ordered rectilinear polygon with rounded
+ *  corners. Handles both convex and concave (staircase) corners. */
+function roundedPath(pts: Pt[], radius: number): string {
+  // Drop consecutive coincident points (collapsed edges from flush columns).
+  const p: Pt[] = [];
+  for (const pt of pts) {
+    const last = p[p.length - 1];
+    if (!last || Math.abs(last.x - pt.x) > 0.01 || Math.abs(last.y - pt.y) > 0.01) p.push(pt);
+  }
+  if (p.length > 1) {
+    const a = p[0], b = p[p.length - 1];
+    if (Math.abs(a.x - b.x) < 0.01 && Math.abs(a.y - b.y) < 0.01) p.pop();
+  }
+  const n = p.length;
+  if (n < 3) return '';
+
+  const parts: string[] = [];
+  for (let i = 0; i < n; i++) {
+    const prev = p[(i - 1 + n) % n];
+    const curr = p[i];
+    const next = p[(i + 1) % n];
+    const d1 = Math.hypot(curr.x - prev.x, curr.y - prev.y) || 1;
+    const d2 = Math.hypot(next.x - curr.x, next.y - curr.y) || 1;
+    const r = Math.min(radius, d1 / 2, d2 / 2);
+    const t1 = { x: curr.x + (prev.x - curr.x) * (r / d1), y: curr.y + (prev.y - curr.y) * (r / d1) };
+    const t2 = { x: curr.x + (next.x - curr.x) * (r / d2), y: curr.y + (next.y - curr.y) * (r / d2) };
+    parts.push(`${i === 0 ? 'M' : 'L'} ${t1.x.toFixed(2)} ${t1.y.toFixed(2)}`);
+    parts.push(`Q ${curr.x.toFixed(2)} ${curr.y.toFixed(2)} ${t2.x.toFixed(2)} ${t2.y.toFixed(2)}`);
+  }
+  parts.push('Z');
+  return parts.join(' ');
+}
+
+interface OutlineShape {
+  key: string;
+  path: string;
+  color: string;
+  label: string | null;
+  labelX: number;
+  labelY: number;
+  labelMaxW: number;
+}
+
+/** Turn section runs into outline shapes. A run that wraps across rows and
+ *  stays column-contiguous becomes a single enclosing outline; the rare wrap
+ *  with no column overlap falls back to two rectangles. */
+function buildOutlines(
+  runs: SectionRun[],
+  cols: number,
+  tileSize: number,
+  startRows: Set<number>,
+  headroom: number,
+): OutlineShape[] {
+  const maxRow = runs.reduce((m, r) => Math.max(m, r.lastRow), 0);
+  // Cumulative top of each row. Section-start rows carry a label band on top.
+  const rowTop: number[] = new Array(maxRow + 2).fill(0);
+  for (let r = 1; r <= maxRow + 1; r++) {
+    rowTop[r] = rowTop[r - 1] + tileSize + (startRows.has(r - 1) ? headroom : 0);
+  }
+  // Tiles bottom-align in their row, so a start row's tile sits below its band.
+  const tileTop = (r: number) => rowTop[r] + (startRows.has(r) ? headroom : 0);
+
+  const m = tileSize * 0.03;        // clearance from the pokeball circles
+  const bandPad = tileSize * 0.04;  // top inset inside the label band
+  const radius = Math.max(3, tileSize * 0.1);
+
+  const shapes: OutlineShape[] = [];
+
+  for (const run of runs) {
+    const { firstRow, firstCol, lastRow, lastCol, color, label } = run;
+    const xL = m;
+    const xR = cols * tileSize - m;
+    const xFirstL = firstCol * tileSize + m;
+    const xLastR = (lastCol + 1) * tileSize - m;
+
+    const labelX = xFirstL + tileSize * 0.05;
+    const labelY = rowTop[firstRow] + bandPad + tileSize * 0.03;
+    const labelMaxW = xR - labelX - tileSize * 0.05;
+
+    if (firstRow === lastRow) {
+      const yTop = rowTop[firstRow] + bandPad;
+      const yBottom = tileTop(firstRow) + tileSize - m;
+      shapes.push({
+        key: `${run.sectionId}-${firstRow}-${firstCol}`,
+        path: roundedPath([
+          { x: xFirstL, y: yTop },
+          { x: xLastR, y: yTop },
+          { x: xLastR, y: yBottom },
+          { x: xFirstL, y: yBottom },
+        ], radius),
+        color, label, labelX, labelY, labelMaxW,
+      });
+      continue;
+    }
+
+    // A two-row wrap whose rows share no column overlap can't be enclosed as
+    // one shape — draw the two pieces separately, labelling only the first.
+    if (lastRow - firstRow === 1 && firstCol > lastCol) {
+      const yTopA = rowTop[firstRow] + bandPad;
+      const yBotA = tileTop(firstRow) + tileSize - m;
+      shapes.push({
+        key: `${run.sectionId}-a`,
+        path: roundedPath([
+          { x: xFirstL, y: yTopA },
+          { x: xR, y: yTopA },
+          { x: xR, y: yBotA },
+          { x: xFirstL, y: yBotA },
+        ], radius),
+        color, label, labelX, labelY, labelMaxW,
+      });
+      const yTopB = tileTop(lastRow) + m;
+      const yBotB = tileTop(lastRow) + tileSize - m;
+      shapes.push({
+        key: `${run.sectionId}-b`,
+        path: roundedPath([
+          { x: xL, y: yTopB },
+          { x: xLastR, y: yTopB },
+          { x: xLastR, y: yBotB },
+          { x: xL, y: yBotB },
+        ], radius),
+        color, label: null, labelX: 0, labelY: 0, labelMaxW: 0,
+      });
+      continue;
+    }
+
+    // Contiguous multi-row ribbon — one enclosing outline.
+    const yTop = rowTop[firstRow] + bandPad;
+    const yLeftStep = tileTop(firstRow) + tileSize; // bottom of the first row's tiles
+    const yRightStep = rowTop[lastRow];             // top of the last row's band
+    const yBottom = tileTop(lastRow) + tileSize - m;
+    shapes.push({
+      key: `${run.sectionId}-${firstRow}-${firstCol}`,
+      path: roundedPath([
+        { x: xFirstL, y: yTop },
+        { x: xR, y: yTop },
+        { x: xR, y: yRightStep },
+        { x: xLastR, y: yRightStep },
+        { x: xLastR, y: yBottom },
+        { x: xL, y: yBottom },
+        { x: xL, y: yLeftStep },
+        { x: xFirstL, y: yLeftStep },
+      ], radius),
+      color, label, labelX, labelY, labelMaxW,
+    });
+  }
+
+  return shapes;
+}
+
+function SectionOverlays({
+  runs,
+  cols,
+  tileSize,
+  startRows,
+  headroom,
+  totalHeight,
+  offsetLeft = 0,
+}: {
+  runs: SectionRun[];
+  cols: number;
+  tileSize: number;
+  startRows: Set<number>;
+  headroom: number;
+  totalHeight: number;
+  offsetLeft?: number;
+}) {
+  const shapes = buildOutlines(runs, cols, tileSize, startRows, headroom);
+  const width = cols * tileSize;
+  const fontSize = tileSize * 0.13;
+
+  return (
+    <div
+      className="absolute top-0 pointer-events-none"
+      style={{ left: offsetLeft, width, height: totalHeight }}
+    >
+      <svg width={width} height={totalHeight} style={{ overflow: 'visible', display: 'block' }}>
+        {shapes.map((s) => (
+          <path
+            key={s.key}
+            d={s.path}
+            fill={`${s.color}12`}
+            stroke={s.color}
+            strokeOpacity={0.5}
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+          />
+        ))}
+      </svg>
+      {shapes.map((s) =>
+        s.label ? (
+          <div
+            key={`label-${s.key}`}
+            className="absolute leading-none font-semibold select-none truncate"
+            style={{
+              left: s.labelX,
+              top: s.labelY,
+              maxWidth: s.labelMaxW,
+              fontSize,
+              color: s.color,
+              opacity: 0.9,
+            }}
+          >
+            {s.label}
+          </div>
+        ) : null,
+      )}
+    </div>
+  );
+}
+
 // ---------- Main page ----------
 
 export function ViewPage() {
@@ -278,6 +562,8 @@ export function ViewPage() {
   const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
   const setSortOption = usePokedexStore((s) => s.setViewSortOption);
 
+  const showSections = usePokedexStore((s) => s.viewShowSections);
+
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
   const totalSlots = Math.max(count, 151);
@@ -286,6 +572,8 @@ export function ViewPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const hasCustom = customOrder !== null;
+
+  const showSectionOverlays = showSections && sortOption === 'build-order';
 
   // Drag state
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
@@ -532,6 +820,28 @@ export function ViewPage() {
             const gridEmpties = Math.max(0, gridSlots - gridPokemon.length);
             const lastRowEmpties = Math.max(0, lastRowCount - lastRowPokemon.length);
 
+            const gridRuns = showSectionOverlays
+              ? computeSectionRuns(gridPokemon, sections, COLS)
+              : [];
+            const lastRowRuns = showSectionOverlays
+              ? computeSectionRuns(lastRowPokemon, sections, lastRowCount)
+              : [];
+
+            // Extra height above each section's first row to hold its label.
+            const headroom = Math.round(tileSize * 0.26);
+            // A section's first row carries the label band; tiles bottom-align.
+            const sectionStartRows = new Set(gridRuns.map((r) => r.firstRow));
+            const lastRowSectionStarts = new Set(lastRowRuns.map((r) => r.firstRow));
+
+            const totalGridRows = Math.ceil(gridSlots / COLS);
+            const gridRowTemplate = showSectionOverlays
+              ? Array.from({ length: totalGridRows }, (_, r) =>
+                  sectionStartRows.has(r) ? `${headroom + tileSize}px` : `${tileSize}px`
+                ).join(' ')
+              : undefined;
+            const gridBlockHeight = totalGridRows * tileSize + sectionStartRows.size * headroom;
+            const lastRowHeight = tileSize + (lastRowSectionStarts.size > 0 ? headroom : 0);
+
             const renderTile = (pokemon: Pokemon, positionNum: number) => (
               <DraggableViewTile
                 key={pokemon.id}
@@ -557,25 +867,50 @@ export function ViewPage() {
                 onDragCancel={handleDragCancel}
               >
                 <div style={{ width: COLS * tileSize }}>
-                  <div
-                    className="grid"
-                    style={{
-                      gridTemplateColumns: `repeat(${COLS}, ${tileSize}px)`,
-                      gridAutoRows: `${tileSize}px`,
-                    }}
-                  >
-                    {gridPokemon.map((p, i) => renderTile(p, i + 1))}
-                    {gridEmpties > 0 &&
-                      Array.from({ length: gridEmpties }, (_, i) => (
-                        <EmptyPlaceholder key={`empty-${i}`} tileSize={tileSize} num={gridPokemon.length + i + 1} />
-                      ))}
+                  <div className="relative">
+                    <div
+                      className="grid items-end"
+                      style={{
+                        gridTemplateColumns: `repeat(${COLS}, ${tileSize}px)`,
+                        ...(gridRowTemplate
+                          ? { gridTemplateRows: gridRowTemplate }
+                          : { gridAutoRows: `${tileSize}px` }),
+                      }}
+                    >
+                      {gridPokemon.map((p, i) => renderTile(p, i + 1))}
+                      {gridEmpties > 0 &&
+                        Array.from({ length: gridEmpties }, (_, i) => (
+                          <EmptyPlaceholder key={`empty-${i}`} tileSize={tileSize} num={gridPokemon.length + i + 1} />
+                        ))}
+                    </div>
+                    {gridRuns.length > 0 && (
+                      <SectionOverlays
+                        runs={gridRuns}
+                        cols={COLS}
+                        tileSize={tileSize}
+                        startRows={sectionStartRows}
+                        headroom={headroom}
+                        totalHeight={gridBlockHeight}
+                      />
+                    )}
                   </div>
-                  <div className="flex justify-center" style={{ height: tileSize }}>
+                  <div className="flex justify-center items-end relative" style={{ height: lastRowHeight }}>
                     {lastRowPokemon.map((p, i) => renderTile(p, gridSlots + i + 1))}
                     {lastRowEmpties > 0 &&
                       Array.from({ length: lastRowEmpties }, (_, i) => (
                         <EmptyPlaceholder key={`empty-last-${i}`} tileSize={tileSize} num={gridSlots + lastRowPokemon.length + i + 1} />
                       ))}
+                    {lastRowRuns.length > 0 && (
+                      <SectionOverlays
+                        runs={lastRowRuns}
+                        cols={lastRowCount}
+                        tileSize={tileSize}
+                        startRows={lastRowSectionStarts}
+                        headroom={headroom}
+                        totalHeight={lastRowHeight}
+                        offsetLeft={(COLS - lastRowCount) * tileSize / 2}
+                      />
+                    )}
                   </div>
                   <PageFooter />
                 </div>
