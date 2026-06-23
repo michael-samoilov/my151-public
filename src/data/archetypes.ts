@@ -442,6 +442,7 @@ export const ARCHETYPES: Archetype[] = [
       561,         // Sigilyph
       562,563,     // Yamask→Cofagrigus
       843,844,     // Silicobra→Sandaconda
+      946,947,     // Bramblin→Brambleghast
       951,952,     // Capsakid→Scovillain
       968,         // Orthworm
     ],
