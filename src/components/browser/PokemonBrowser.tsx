@@ -3,7 +3,7 @@ import { FilterChipList } from './FilterChipList';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
-import { useFilteredPokemonGrouped, getPokemonById } from '@/hooks/usePokemonData';
+import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { ARCHETYPES } from '@/data/archetypes';
 import { CATEGORIES } from '@/data/categories';
@@ -110,13 +110,27 @@ export function PokemonBrowser() {
       const prevSet = new Set(prev);
       const allStaged = memberIds.every(id => prevSet.has(id));
       if (allStaged) {
-        // Unstage
+        // Unstage: remove members, but keep shared pre-evolutions that
+        // are still needed by another staged exclusive form.
+        const exclusiveIds = new Set(memberIds.flatMap(id => getExclusiveForms(id)));
+        const otherStagedExclusives = prev.filter(id => exclusiveIds.has(id) && !memberIds.includes(id));
+        if (otherStagedExclusives.length > 0) {
+          // Another exclusive form is staged — only remove the exclusive
+          // member(s) from this line, keep shared pre-evolutions.
+          const removeSet = new Set(memberIds.filter(id => exclusiveIds.has(id) || getExclusiveForms(id).length > 0));
+          return prev.filter(id => !removeSet.has(id));
+        }
         const removeSet = new Set(memberIds);
         return prev.filter(id => !removeSet.has(id));
       } else {
-        // Stage (add any not already staged)
-        const toAdd = memberIds.filter(id => !prevSet.has(id));
-        return [...prev, ...toAdd];
+        // Stage: add new members, auto-remove exclusive forms.
+        const exclusiveRemovals = new Set(memberIds.flatMap(id => getExclusiveForms(id)));
+        const cleaned = exclusiveRemovals.size > 0
+          ? prev.filter(id => !exclusiveRemovals.has(id))
+          : prev;
+        const cleanedSet = new Set(cleaned);
+        const toAdd = memberIds.filter(id => !cleanedSet.has(id));
+        return [...cleaned, ...toAdd];
       }
     });
   }, [isDesktop, activeSection, assignedIds, addToSection]);
