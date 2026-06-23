@@ -406,6 +406,17 @@ export function useFilteredPokemonGrouped(options: UseFilteredPokemonOptions): E
         if (seenBranches.has(branchKey)) continue;
         seenBranches.add(branchKey);
 
+        // After filtering alt forms, a truncated line (e.g. [Milcery])
+        // is a strict subset of the full line ([Milcery, Alcremie]).
+        // Skip it so we don't produce duplicate entries.
+        if (line.length < rawLine.length) {
+          const isSubset = result.some(
+            g => g.members.length > line.length &&
+              line.every(m => g.members.some(gm => gm.id === m.id)),
+          );
+          if (isSubset) continue;
+        }
+
         const matchedIds = new Set(line.filter((m) => filteredIds.has(m.id)).map((m) => m.id));
 
         result.push({
