@@ -996,24 +996,28 @@ function SessionDiffBody({ s, added, removed, rec }: {
               <span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: sec.color }} />
               <span>{sec.name}</span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                {sec.added.length > 0 && (
-                  <>
-                    <span className="text-[0.65rem] text-green-600 block mb-0.5">+{sec.added.length}</span>
-                    <SpriteRow ids={sec.added} />
-                  </>
-                )}
+            {sec.added.length > 0 && sec.removed.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="text-[0.65rem] text-green-600 block mb-0.5">+{sec.added.length}</span>
+                  <SpriteRow ids={sec.added} />
+                </div>
+                <div className="opacity-60">
+                  <span className="text-[0.65rem] text-destructive block mb-0.5">−{sec.removed.length}</span>
+                  <SpriteRow ids={sec.removed} />
+                </div>
               </div>
+            ) : sec.added.length > 0 ? (
               <div>
-                {sec.removed.length > 0 && (
-                  <div className="opacity-60">
-                    <span className="text-[0.65rem] text-destructive block mb-0.5">−{sec.removed.length}</span>
-                    <SpriteRow ids={sec.removed} />
-                  </div>
-                )}
+                <span className="text-[0.65rem] text-green-600 block mb-0.5">+{sec.added.length}</span>
+                <SpriteRow ids={sec.added} />
               </div>
-            </div>
+            ) : (
+              <div className="opacity-60">
+                <span className="text-[0.65rem] text-destructive block mb-0.5">−{sec.removed.length}</span>
+                <SpriteRow ids={sec.removed} />
+              </div>
+            )}
           </div>
         ))}
       </div>
