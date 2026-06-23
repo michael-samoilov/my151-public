@@ -368,7 +368,7 @@ export const ARCHETYPES: Archetype[] = [
       766,             // Passimian
       852,853,         // Clobbopus→Grapploct
       870,             // Falinks
-      891,892,10227,   // Kubfu→Urshifu (Single Strike / Rapid Strike)
+      891,892,         // Kubfu→Urshifu
       10166,865,       // Farfetch'd-Galar→Sirfetch'd
       10235,903,       // Sneasel-Hisui→Sneasler
     ],
@@ -539,7 +539,7 @@ export const ARCHETYPES: Archetype[] = [
       707,             // Klefki (key ring)
       840,841,842,     // Applin→Flapple→Appletun (apple)
       854,855,         // Sinistea→Polteageist (teapot)
-      868,869,10254,10255,10256,10257,10258,10259, // Milcery→Alcremie (cream/cake)
+      868,869,         // Milcery→Alcremie (cream/cake)
       999,1000,        // Gimmighoul→Gholdengo (coins)
       1012,1013,       // Poltchageist→Sinistcha (matcha tea set)
     ],
