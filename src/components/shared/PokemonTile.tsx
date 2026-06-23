@@ -112,6 +112,8 @@ interface PokemonTileContentProps {
    *  "eager" in contexts like carousels where off-screen panels must
    *  preload sprites to avoid a blank→load flicker on swipe. */
   imgLoading?: 'lazy' | 'eager';
+  /** Show form-variant suffix for base forms with exclusive alternatives. */
+  showFormVariant?: boolean;
 }
 
 /**
@@ -127,6 +129,7 @@ export function PokemonTileContent({
   contentClassName,
   afterTypes,
   imgLoading = 'lazy',
+  showFormVariant = false,
 }: PokemonTileContentProps) {
   // The IMG is larger than its layout footprint (--tile-sprite), so it
   // nearly fills and slightly overflows the grid column, centered. The well
@@ -168,7 +171,7 @@ export function PokemonTileContent({
         />
       </div>
       <span className="text-[calc(var(--tile-sprite)*0.18)] font-medium capitalize truncate text-center leading-tight w-full px-[calc(var(--tile-sprite)*0.045)]">
-        {displayName(pokemon.name)}
+        {displayName(pokemon.name, showFormVariant)}
       </span>
       <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.03)] mt-[calc(var(--tile-sprite)*0.045)] w-full">
         {pokemon.types.map((t) => (

@@ -22,9 +22,16 @@ const FORM_DISPLAY_NAMES: Record<string, string> = {
   'alcremie-ribbon': 'alcremie-ribbn',
 };
 
-/** Abbreviate regional form suffixes for display: "yamask-galar" → "yamask-G", "tauros-paldea-combat" → "tauros-P-combat" */
-export function displayName(name: string): string {
+const BASE_FORM_NAMES: Record<string, string> = {
+  'urshifu': 'urshifu-dark',
+  'alcremie': 'alcremie-strwb',
+};
+
+/** Abbreviate regional form suffixes for display: "yamask-galar" → "yamask-G", "tauros-paldea-combat" → "tauros-P-combat".
+ *  When showFormVariant is true, base forms with exclusive variants get a suffix (e.g. "alcremie" → "alcremie-strwb"). */
+export function displayName(name: string, showFormVariant = false): string {
   if (FORM_DISPLAY_NAMES[name]) return FORM_DISPLAY_NAMES[name];
+  if (showFormVariant && BASE_FORM_NAMES[name]) return BASE_FORM_NAMES[name];
   for (const [suffix, abbrev] of Object.entries(REGION_ABBREVS)) {
     if (name.endsWith(suffix)) {
       return name.slice(0, -suffix.length) + abbrev;

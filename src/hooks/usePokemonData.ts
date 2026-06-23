@@ -39,6 +39,12 @@ export function getExclusiveForms(pokemonId: number): number[] {
   return exclusiveFormsOf.get(pokemonId) ?? [];
 }
 
+// Alt form IDs that only appear in the evolution-item archetype browser.
+// Hidden from general browsing, type/gen filters, search, etc.
+const EVOLUTION_ITEM_ONLY_IDS = new Set(
+  EXCLUSIVE_FORM_GROUPS.flatMap(group => group.slice(1)),
+);
+
 export function getPokemonById(id: number): Pokemon | undefined {
   return pokemonById.get(id);
 }
@@ -348,6 +354,10 @@ function useFilteredPokemon({
         const genSet = new Set(generations);
         filtered = filtered.filter(p => genSet.has(p.generation));
       }
+    }
+
+    if (archetype !== 'evolution-item') {
+      filtered = filtered.filter(p => !EVOLUTION_ITEM_ONLY_IDS.has(p.id));
     }
 
     if (excludeIds && excludeIds.size > 0) {
