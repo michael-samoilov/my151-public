@@ -368,7 +368,7 @@ export const ARCHETYPES: Archetype[] = [
       766,             // Passimian
       852,853,         // Clobbopus→Grapploct
       870,             // Falinks
-      891,892,         // Kubfu→Urshifu
+      891,892,10227,   // Kubfu→Urshifu (Single Strike / Rapid Strike)
       10166,865,       // Farfetch'd-Galar→Sirfetch'd
       10235,903,       // Sneasel-Hisui→Sneasler
     ],
@@ -875,7 +875,7 @@ export const ARCHETYPES: Archetype[] = [
       868,869, // Milcery Sweets: Milcery→Alcremie
       951,952, // Fire Stone: Capsakid→Scovillain
       10164,10165,10172, // Galarica Cuff / Wreath: G-Slowpoke→G-Slowbro/G-Slowking
-      891,892, // Scroll of Darkness / Waters: Kubfu→Urshifu
+      891,892,10227, // Scroll of Darkness / Waters: Kubfu→Urshifu (Single Strike / Rapid Strike)
       // Gen 8 (Legends Arceus)
       123,900, // Black Augurite: Scyther→Kleavor
       217,901, // Peat Block: Ursaring→Ursaluna
@@ -930,7 +930,7 @@ export const ARCHETYPES: Archetype[] = [
       { label: 'Cracked Pot / Chipped Pot', pokemonIds: [855] },
       { label: 'Sweet (Milcery)', pokemonIds: [869] },
       { label: 'Galarica Cuff / Galarica Wreath', pokemonIds: [10165, 10172] },
-      { label: 'Scroll of Darkness / Scroll of Waters', pokemonIds: [892] },
+      { label: 'Scroll of Darkness / Scroll of Waters', pokemonIds: [892, 10227] },
       // Gen 8 (Legends Arceus)
       { label: 'Black Augurite', pokemonIds: [900] },
       { label: 'Peat Block', pokemonIds: [901] },

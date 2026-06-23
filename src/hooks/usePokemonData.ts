@@ -22,6 +22,22 @@ for (const p of pokemonList) {
   pokemonByChain.set(p.evolutionChainId, chain);
 }
 
+// Mutually exclusive forms — selecting one auto-removes the others.
+// Each group is a set of IDs where at most one can be in the dex at a time.
+const EXCLUSIVE_FORM_GROUPS: number[][] = [
+  [892, 10227], // Urshifu Single Strike / Rapid Strike
+];
+const exclusiveFormsOf = new Map<number, number[]>();
+for (const group of EXCLUSIVE_FORM_GROUPS) {
+  for (const id of group) {
+    exclusiveFormsOf.set(id, group.filter(other => other !== id));
+  }
+}
+
+export function getExclusiveForms(pokemonId: number): number[] {
+  return exclusiveFormsOf.get(pokemonId) ?? [];
+}
+
 export function getPokemonById(id: number): Pokemon | undefined {
   return pokemonById.get(id);
 }

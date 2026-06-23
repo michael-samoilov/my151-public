@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createEmptySections, BUILD_GROUP_IDS } from '@/data/slot-template';
-import { getEvolutionChainIds, getEvolutionLine, getDescendantIds, getPokemonById, computeRemovalCascade } from '@/hooks/usePokemonData';
+import { getEvolutionChainIds, getEvolutionLine, getDescendantIds, getPokemonById, computeRemovalCascade, getExclusiveForms } from '@/hooks/usePokemonData';
 
 type TypeFilterMode = 'any' | 'all';
 
@@ -113,11 +113,23 @@ export const usePokedexStore = create<PokedexState>()(
           const newSections = { ...state.sections };
           const addingSet = new Set(allIds);
 
-          // Remove from OTHER sections only — prevents duplicates when moving pokemon
+          // Collect exclusive forms that must be removed when adding these pokemon
+          const exclusiveRemovals = new Set<number>();
+          for (const id of allIds) {
+            for (const excId of getExclusiveForms(id)) {
+              exclusiveRemovals.add(excId);
+            }
+          }
+
+          // Remove from OTHER sections: duplicates and exclusive forms
           for (const sid of BUILD_GROUP_IDS) {
             if (sid !== sectionId && newSections[sid]) {
-              newSections[sid] = newSections[sid].filter((id) => !addingSet.has(id));
+              newSections[sid] = newSections[sid].filter((id) => !addingSet.has(id) && !exclusiveRemovals.has(id));
             }
+          }
+          // Also remove exclusive forms from the TARGET section
+          if (exclusiveRemovals.size > 0) {
+            newSections[sectionId] = (newSections[sectionId] ?? []).filter((id) => !exclusiveRemovals.has(id));
           }
 
           // Merge into target section, preserving evo order.
