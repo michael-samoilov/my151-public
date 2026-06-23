@@ -676,7 +676,7 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
     }
   };
 
-  const stickyLabel = "sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5";
+  const stickyLabel = "sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50";
 
   return (
     <section ref={cardRef} className="shadow-elevated rounded-lg bg-card scroll-mt-[64px]">
@@ -762,7 +762,7 @@ function PlacementBySection({ rec, stickyTop }: { rec: ClientRecord; stickyTop?:
   return (
     <div>
       <div
-        className="sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5"
+        className="sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50"
         style={stickyTop ? { top: stickyTop } : undefined}
       >
         Placement by section{' '}
@@ -824,7 +824,7 @@ function SessionChanges({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: num
   return (
     <div>
       <div
-        className="sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5"
+        className="sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50"
         style={stickyTop ? { top: stickyTop } : undefined}
       >Changes by session</div>
       <div className="flex flex-col gap-1">
