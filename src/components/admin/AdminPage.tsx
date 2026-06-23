@@ -615,20 +615,20 @@ function SpriteRow({ ids }: { ids: number[] }) {
           <div
             key={`${id}-${idx}`}
             title={p ? `#${id} ${displayName(p.name)}` : `#${id}`}
-            className="w-8 h-8 shrink-0 flex items-center justify-center"
+            className="w-6 h-6 shrink-0 flex items-center justify-center"
           >
             {p ? (
               <img
                 src={p.sprite}
                 alt={p.name}
-                width={32}
-                height={32}
+                width={24}
+                height={24}
                 loading="lazy"
                 decoding="async"
                 style={{ imageRendering: 'pixelated' }}
               />
             ) : (
-              <span className="text-[0.55rem] text-muted-foreground">#{id}</span>
+              <span className="text-[0.5rem] text-muted-foreground">#{id}</span>
             )}
           </div>
         );
@@ -795,14 +795,14 @@ function FinalBySection({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: num
                       key={`${id}-${idx}`}
                       title={`${p ? '#' + id + ' ' + displayName(p.name) : '#' + id}${off ? ' — not a default here' : ''}`}
                       className={cn(
-                        'w-8 h-8 shrink-0 flex items-center justify-center rounded',
-                        off && 'ring-2 ring-amber-500 bg-amber-500/10',
+                        'w-6 h-6 shrink-0 flex items-center justify-center rounded',
+                        off && 'ring-1 ring-amber-500 bg-amber-500/10',
                       )}
                     >
                       {p ? (
-                        <img src={p.sprite} alt={p.name} width={32} height={32} loading="lazy" style={{ imageRendering: 'pixelated' }} />
+                        <img src={p.sprite} alt={p.name} width={24} height={24} loading="lazy" style={{ imageRendering: 'pixelated' }} />
                       ) : (
-                        <span className="text-[0.55rem] text-muted-foreground">#{id}</span>
+                        <span className="text-[0.5rem] text-muted-foreground">#{id}</span>
                       )}
                     </div>
                   );
