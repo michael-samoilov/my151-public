@@ -40,7 +40,6 @@ interface PokedexState {
   /** User-defined order applied when viewSortOption === 'custom'.
    *  Null means no custom order has been created yet. */
   viewCustomOrder: number[] | null;
-  viewShowSections: boolean;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -67,7 +66,6 @@ interface PokedexState {
   setViewSortOption: (option: ViewSortOption) => void;
   setViewGroupSpecialAtEnd: (value: boolean) => void;
   setViewCustomOrder: (order: number[] | null) => void;
-  setViewShowSections: (value: boolean) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -95,7 +93,6 @@ export const usePokedexStore = create<PokedexState>()(
       viewSortOption: 'build-order' as ViewSortOption,
       viewGroupSpecialAtEnd: true,
       viewCustomOrder: null,
-      viewShowSections: false,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -266,11 +263,10 @@ export const usePokedexStore = create<PokedexState>()(
       setViewSortOption: (option) => set({ viewSortOption: option }),
       setViewGroupSpecialAtEnd: (value) => set({ viewGroupSpecialAtEnd: value }),
       setViewCustomOrder: (order) => set({ viewCustomOrder: order }),
-      setViewShowSections: (value) => set({ viewShowSections: value }),
     }),
     {
       name: 'personal-151-pokedex-v3',
-      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections }),
+      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder }),
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
           sections?: Record<string, number[]>;
@@ -278,7 +274,6 @@ export const usePokedexStore = create<PokedexState>()(
           viewSortOption?: ViewSortOption;
           viewGroupSpecialAtEnd?: boolean;
           viewCustomOrder?: number[] | null;
-          viewShowSections?: boolean;
         };
 
         // Preserve all existing fields, only fix what needs fixing

@@ -63,22 +63,18 @@ export function ViewSettingsPane({
   const setGroupSpecialAtEnd = usePokedexStore((s) => s.setViewGroupSpecialAtEnd);
   const customOrder = usePokedexStore((s) => s.viewCustomOrder);
   const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
-  const showSections = usePokedexStore((s) => s.viewShowSections);
-  const setShowSections = usePokedexStore((s) => s.setViewShowSections);
 
   // Pending state is only used in mobileSheet mode. In desktop mode handlers
   // write straight to the store and the pending setters go unused.
   const [pendingSort, setPendingSort] = useState<ViewSortOption>(sortOption);
   const [pendingGrouping, setPendingGrouping] = useState<boolean>(groupSpecialAtEnd);
   const [pendingCustomOrder, setPendingCustomOrder] = useState<number[] | null>(customOrder);
-  const [pendingShowSections, setPendingShowSections] = useState<boolean>(showSections);
 
   // Effective values — what the UI reads to render current selection state.
   // Desktop: live store values. Mobile: pending staged values.
   const effSort = mobileSheet ? pendingSort : sortOption;
   const effGrouping = mobileSheet ? pendingGrouping : groupSpecialAtEnd;
   const effCustomOrder = mobileSheet ? pendingCustomOrder : customOrder;
-  const effShowSections = mobileSheet ? pendingShowSections : showSections;
 
   // Seed source: what's currently visible on the grid (reflects live store state).
   const currentSorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
@@ -114,11 +110,6 @@ export function ViewSettingsPane({
     else setGroupSpecialAtEnd(!groupSpecialAtEnd);
   };
 
-  const handleToggleSections = () => {
-    if (mobileSheet) setPendingShowSections((v) => !v);
-    else setShowSections(!showSections);
-  };
-
   const handleResetCustom = () => {
     if (mobileSheet) {
       setPendingCustomOrder(null);
@@ -140,14 +131,12 @@ export function ViewSettingsPane({
     mobileSheet &&
     (pendingSort !== sortOption ||
       pendingGrouping !== groupSpecialAtEnd ||
-      pendingShowSections !== showSections ||
       customOrderChanged);
 
   const handleApply = () => {
     setSortOption(pendingSort);
     setGroupSpecialAtEnd(pendingGrouping);
     setCustomOrder(pendingCustomOrder);
-    setShowSections(pendingShowSections);
     onClose();
   };
 
@@ -290,33 +279,6 @@ export function ViewSettingsPane({
             </p>
           </button>
         </div>
-
-        {/* Section outlines — only for build-order sort */}
-        {effSort === 'build-order' && (
-          <div className="px-3 pt-3 pb-2 border-t">
-            <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              Sections
-            </h3>
-            <button type="button"
-              onClick={handleToggleSections}
-              className={`w-full text-left rounded-md px-3 py-2 transition-colors cursor-pointer ${effShowSections ? 'bg-primary/10' : 'hover:bg-muted'}`}
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                    effShowSections ? 'bg-primary border-primary' : 'border-muted-foreground/40'
-                  }`}
-                >
-                  {effShowSections && <Check className="w-3 h-3 text-primary-foreground" />}
-                </span>
-                <span className={`text-sm ${effShowSections ? 'text-primary font-medium' : 'text-foreground'}`}>Show build sections</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
-                Outlines groups of Pokémon matching their build page sections.
-              </p>
-            </button>
-          </div>
-        )}
 
         <PageFooter />
         {/* Extra bottom padding so the floating button doesn't occlude the last row */}
