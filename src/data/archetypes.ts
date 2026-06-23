@@ -926,7 +926,7 @@ export const ARCHETYPES: Archetype[] = [
       // Gen 7
       { label: 'Ice Stone', pokemonIds: [10102, 10104, 471, 740, 10177, 975] },
       // Gen 8
-      { label: 'Tart Apple / Sweet Apple', pokemonIds: [841, 842] },
+      { label: 'Tart / Sweet / Syrupy Apple', pokemonIds: [841, 842, 1011, 1019] },
       { label: 'Cracked Pot / Chipped Pot', pokemonIds: [855] },
       { label: 'Sweet (Milcery)', pokemonIds: [869] },
       { label: 'Galarica Cuff / Galarica Wreath', pokemonIds: [10165, 10172] },
@@ -937,7 +937,6 @@ export const ARCHETYPES: Archetype[] = [
       // Gen 9
       { label: 'Auspicious Armor / Malicious Armor', pokemonIds: [936, 937] },
       { label: 'Metal Alloy', pokemonIds: [1018] },
-      { label: 'Syrupy Apple', pokemonIds: [1011, 1019] },
       { label: 'Unremarkable / Masterpiece Teacup', pokemonIds: [1013] },
     ],
   },
