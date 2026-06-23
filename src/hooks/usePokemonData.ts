@@ -26,6 +26,7 @@ for (const p of pokemonList) {
 // Each group is a set of IDs where at most one can be in the dex at a time.
 const EXCLUSIVE_FORM_GROUPS: number[][] = [
   [892, 10227], // Urshifu Single Strike / Rapid Strike
+  [869, 10254, 10255, 10256, 10257, 10258, 10259], // Alcremie sweets
 ];
 const exclusiveFormsOf = new Map<number, number[]>();
 for (const group of EXCLUSIVE_FORM_GROUPS) {

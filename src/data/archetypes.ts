@@ -539,7 +539,7 @@ export const ARCHETYPES: Archetype[] = [
       707,             // Klefki (key ring)
       840,841,842,     // Applin→Flapple→Appletun (apple)
       854,855,         // Sinistea→Polteageist (teapot)
-      868,869,         // Milcery→Alcremie (cream/cake)
+      868,869,10254,10255,10256,10257,10258,10259, // Milcery→Alcremie (cream/cake)
       999,1000,        // Gimmighoul→Gholdengo (coins)
       1012,1013,       // Poltchageist→Sinistcha (matcha tea set)
     ],
@@ -872,7 +872,7 @@ export const ARCHETYPES: Archetype[] = [
       10176,10177, // Ice Stone: G-Darumaka→G-Darmanitan
       840,841, 840,842, // Tart Apple / Sweet Apple: Applin→Flapple, Applin→Appletun
       854,855, // Cracked Pot / Chipped Pot: Sinistea→Polteageist
-      868,869, // Milcery Sweets: Milcery→Alcremie
+      868,869,10254,10255,10256,10257,10258,10259, // Milcery Sweets: Milcery→Alcremie (7 sweets)
       951,952, // Fire Stone: Capsakid→Scovillain
       10164,10165,10172, // Galarica Cuff / Wreath: G-Slowpoke→G-Slowbro/G-Slowking
       891,892,10227, // Scroll of Darkness / Waters: Kubfu→Urshifu (Single Strike / Rapid Strike)
@@ -928,7 +928,7 @@ export const ARCHETYPES: Archetype[] = [
       // Gen 8
       { label: 'Tart / Sweet / Syrupy Apple', pokemonIds: [841, 842, 1011, 1019] },
       { label: 'Cracked Pot / Chipped Pot', pokemonIds: [855] },
-      { label: 'Sweet (Milcery)', pokemonIds: [869] },
+      { label: 'Sweet (Milcery)', pokemonIds: [869, 10254, 10255, 10256, 10257, 10258, 10259] },
       { label: 'Galarica Cuff / Galarica Wreath', pokemonIds: [10165, 10172] },
       { label: 'Scroll of Darkness / Scroll of Waters', pokemonIds: [892, 10227] },
       // Gen 8 (Legends Arceus)

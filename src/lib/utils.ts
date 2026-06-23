@@ -15,6 +15,13 @@ const REGION_ABBREVS: Record<string, string> = {
 const FORM_DISPLAY_NAMES: Record<string, string> = {
   'urshifu-single-strike': 'urshifu-dark',
   'urshifu-rapid-strike': 'urshifu-water',
+  'alcremie-strawberry': 'alcremie-strwb',
+  'alcremie-berry': 'alcremie-berry',
+  'alcremie-love': 'alcremie-love',
+  'alcremie-star': 'alcremie-star',
+  'alcremie-clover': 'alcremie-clovr',
+  'alcremie-flower': 'alcremie-flowr',
+  'alcremie-ribbon': 'alcremie-ribbn',
 };
 
 /** Abbreviate regional form suffixes for display: "yamask-galar" → "yamask-G", "tauros-paldea-combat" → "tauros-P-combat" */
