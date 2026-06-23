@@ -56,7 +56,7 @@ interface ClientRecord {
   sessions?: number;
   maxSessionMs?: number;
   sessionMs?: number[];
-  sessionLog?: { ts: number; ids: number[] }[];
+  sessionLog?: { ts: number; ids: number[]; country?: string }[];
   maxDepth: number;
   localHour: number;
   localDow?: number;
@@ -927,8 +927,9 @@ function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: numbe
         style={stickyTop ? { top: stickyTop } : undefined}
       >
         <span className="mr-0.5">Sessions</span>
-        {log.map((_, i) => {
+        {log.map((entry, i) => {
           const dur = rec.sessionMs?.[i];
+          const f = entry.country ? flag(entry.country) : '';
           return (
             <button
               key={i}
@@ -939,14 +940,14 @@ function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: numbe
                 idx === i ? 'bg-muted font-medium text-foreground' : 'hover:bg-muted/50',
               )}
             >
-              S{i + 1}{dur ? ` · ${fmtDuration(dur)}` : ''}
+              {f ? `${f} ` : ''}S{i + 1}{dur ? ` · ${fmtDuration(dur)}` : ''}
             </button>
           );
         })}
       </div>
       <div className="mt-1">
         <span className="text-xs text-muted-foreground">
-          {new Date(s.ts).toLocaleDateString()} · {s.ids.length} total
+          {new Date(s.ts).toLocaleDateString()}{s.country ? ` · ${flag(s.country)} ${s.country}` : ''} · {s.ids.length} total
         </span>
         {added.length > 0 && (
           <div className="flex flex-wrap items-center gap-0.5 mt-0.5">

@@ -206,7 +206,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Read-merge-write this client's record. Concurrent writes from the *same*
     // browser are effectively impossible, so a transaction isn't needed.
-    const existing = parseRecord(await redis.hget(CLIENTS_KEY, cid));
+    const rawExisting = parseRecord(await redis.hget(CLIENTS_KEY, cid));
+
+    // Detect multi-user CID collision: if the incoming submission is from a
+    // different country AND the Pokemon picks barely overlap the existing build,
+    // this is almost certainly a different person sharing the same browser/CID
+    // (shared device, internet café, etc.). Route to a country-keyed record so
+    // each person gets their own analytics entry.
+    let effectiveCid = cid;
+    let existing = rawExisting;
+    if (
+      rawExisting &&
+      geo.country &&
+      rawExisting.country &&
+      geo.country !== rawExisting.country
+    ) {
+      const existingSet = new Set(rawExisting.latestIds);
+      const overlap = ids.filter((id) => existingSet.has(id)).length;
+      const union = new Set([...rawExisting.latestIds, ...ids]).size;
+      const jaccard = union > 0 ? overlap / union : 1;
+      if (jaccard < 0.2) {
+        effectiveCid = `${cid}::${geo.country}`;
+        existing = parseRecord(await redis.hget(CLIENTS_KEY, effectiveCid));
+      }
+    }
 
     // Cap the number of distinct clients we track. New clients past the cap are
     // dropped; already-known clients keep updating.
@@ -216,7 +239,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const rec: ClientRecord = existing ?? {
-      cid,
+      cid: effectiveCid,
       firstTs: now,
       firstAt: at,
       lastTs: now,
@@ -277,8 +300,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     rec.sessionMs = list.slice(-MAX_SESSIONS_TRACKED);
     // Parallel per-session end-state snapshot, for visit-to-visit diffs.
     const log = rec.sessionLog ?? [];
-    if (newSession || log.length === 0) log.push({ ts: now, ids });
-    else log[log.length - 1] = { ts: now, ids };
+    if (newSession || log.length === 0) log.push({ ts: now, ids, country: geo.country });
+    else log[log.length - 1] = { ts: now, ids, country: geo.country };
     rec.sessionLog = log.slice(-MAX_SESSIONS_TRACKED);
 
     rec.lastTs = now;
@@ -323,7 +346,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       rec.exportedIds = ids;
     }
 
-    await redis.hset(CLIENTS_KEY, { [cid]: JSON.stringify(rec) });
+    await redis.hset(CLIENTS_KEY, { [effectiveCid]: JSON.stringify(rec) });
 
     return res.status(200).json({ ok: true });
   } catch (err) {
