@@ -45,6 +45,14 @@ const DND_MEASURING = {
 
 const COLS = 10;
 
+// Outline-mode spacing, expressed as multiples of tileSize. In outline mode the
+// grid gains real gaps between cells (so neighbouring section outlines never
+// touch) and a label band above each section's first row. useTileSize folds
+// these into its fit calculation so the spaced-out grid still fits on screen.
+const OUTLINE_GAP_X = 0.16;
+const OUTLINE_GAP_Y = 0.1;
+const OUTLINE_HEAD = 0.3;
+
 /** Parse a `view::<id>` draggable id into its numeric pokemon id, or null. */
 function parseDragId(id: string): number | null {
   if (!id.startsWith('view::')) return null;
@@ -107,12 +115,15 @@ function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
   );
 }
 
-/** Measure container and compute square tile size that fits all items. */
-function useTileSize(totalSlots: number) {
+/** Measure container and compute square tile size that fits all items.
+ *  `colFactor` / `rowFactor` are the effective column / row counts in tileSize
+ *  units — they fold in inter-cell gaps and section label bands (outline mode)
+ *  so the whole grid, outlines included, fits on screen without cropping. */
+function useTileSize(colFactor: number, rowFactor: number) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [tileSize, setTileSize] = useState(0);
-  const slotsRef = useRef(totalSlots);
-  slotsRef.current = totalSlots;
+  const factorRef = useRef({ colFactor, rowFactor });
+  factorRef.current = { colFactor, rowFactor };
 
   const measure = useCallback(() => {
     const el = containerRef.current;
@@ -127,8 +138,8 @@ function useTileSize(totalSlots: number) {
     const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
     const w = el.clientWidth - padX;
     const h = el.clientHeight - padY;
-    const rows = Math.ceil(slotsRef.current / COLS);
-    const size = Math.floor(Math.min(w / COLS, h / Math.max(rows, 1)));
+    const { colFactor: cf, rowFactor: rf } = factorRef.current;
+    const size = Math.floor(Math.min(w / Math.max(cf, 1), h / Math.max(rf, 1)));
     setTileSize(size);
   }, []);
 
@@ -143,7 +154,7 @@ function useTileSize(totalSlots: number) {
 
   useEffect(() => {
     measure();
-  }, [totalSlots, measure]);
+  }, [colFactor, rowFactor, measure]);
 
   return { containerRef, tileSize };
 }
@@ -387,43 +398,56 @@ interface OutlineShape {
 
 /** Turn section runs into outline shapes. A run that wraps across rows and
  *  stays column-contiguous becomes a single enclosing outline; the rare wrap
- *  with no column overlap falls back to two rectangles. */
+ *  with no column overlap falls back to two rectangles. Outline borders sit in
+ *  the inter-cell gaps (outside the tiles) so they clear sprites/numbers and
+ *  never touch a neighbouring section's outline. */
 function buildOutlines(
   runs: SectionRun[],
   cols: number,
   tileSize: number,
   startRows: Set<number>,
   headroom: number,
+  gapX: number,
+  gapY: number,
 ): OutlineShape[] {
+  const pitchX = tileSize + gapX;
   const maxRow = runs.reduce((m, r) => Math.max(m, r.lastRow), 0);
-  // Cumulative top of each row. Section-start rows carry a label band on top.
-  const rowTop: number[] = new Array(maxRow + 2).fill(0);
+  // Cumulative top of each row block. A block = optional label band + tile, and
+  // rows are separated by gapY. Tiles bottom-align, so a start row's tile sits
+  // below its band.
+  const blockTop: number[] = new Array(maxRow + 2).fill(0);
   for (let r = 1; r <= maxRow + 1; r++) {
-    rowTop[r] = rowTop[r - 1] + tileSize + (startRows.has(r - 1) ? headroom : 0);
+    blockTop[r] = blockTop[r - 1] + (startRows.has(r - 1) ? headroom : 0) + tileSize + gapY;
   }
-  // Tiles bottom-align in their row, so a start row's tile sits below its band.
-  const tileTop = (r: number) => rowTop[r] + (startRows.has(r) ? headroom : 0);
+  const tileTop = (r: number) => blockTop[r] + (startRows.has(r) ? headroom : 0);
 
-  const m = tileSize * 0.03;        // clearance from the pokeball circles
-  const bandPad = tileSize * 0.04;  // top inset inside the label band
-  const radius = Math.max(3, tileSize * 0.1);
+  const padX = gapX * 0.42;          // how far the border sits into the gap
+  const padY = gapY * 0.42;
+  const topPad = headroom * 0.12;    // outline top, just inside the band
+  const radius = Math.max(4, tileSize * 0.22);
+
+  // Border positions for a column: left edge sits padX into the gap on the left
+  // of the tile, right edge padX into the gap on the right.
+  const colLeft = (c: number) => c * pitchX - padX;
+  const colRight = (c: number) => c * pitchX + tileSize + padX;
 
   const shapes: OutlineShape[] = [];
 
   for (const run of runs) {
     const { firstRow, firstCol, lastRow, lastCol, color, label } = run;
-    const xL = m;
-    const xR = cols * tileSize - m;
-    const xFirstL = firstCol * tileSize + m;
-    const xLastR = (lastCol + 1) * tileSize - m;
+    const xL = colLeft(0);
+    const xR = colRight(cols - 1);
+    const xFirstL = colLeft(firstCol);
+    const xLastR = colRight(lastCol);
 
-    const labelX = xFirstL + tileSize * 0.05;
-    const labelY = rowTop[firstRow] + bandPad + tileSize * 0.03;
-    const labelMaxW = xR - labelX - tileSize * 0.05;
+    const firstRowRight = firstRow === lastRow ? colRight(lastCol) : xR;
+    const labelX = firstCol * pitchX + tileSize * 0.06;
+    const labelY = blockTop[firstRow] + headroom * 0.42;
+    const labelMaxW = Math.max(tileSize, firstRowRight - labelX - tileSize * 0.06);
 
     if (firstRow === lastRow) {
-      const yTop = rowTop[firstRow] + bandPad;
-      const yBottom = tileTop(firstRow) + tileSize - m;
+      const yTop = blockTop[firstRow] + topPad;
+      const yBottom = tileTop(firstRow) + tileSize + padY;
       shapes.push({
         key: `${run.sectionId}-${firstRow}-${firstCol}`,
         path: roundedPath([
@@ -440,8 +464,8 @@ function buildOutlines(
     // A two-row wrap whose rows share no column overlap can't be enclosed as
     // one shape — draw the two pieces separately, labelling only the first.
     if (lastRow - firstRow === 1 && firstCol > lastCol) {
-      const yTopA = rowTop[firstRow] + bandPad;
-      const yBotA = tileTop(firstRow) + tileSize - m;
+      const yTopA = blockTop[firstRow] + topPad;
+      const yBotA = tileTop(firstRow) + tileSize + padY;
       shapes.push({
         key: `${run.sectionId}-a`,
         path: roundedPath([
@@ -452,8 +476,8 @@ function buildOutlines(
         ], radius),
         color, label, labelX, labelY, labelMaxW,
       });
-      const yTopB = tileTop(lastRow) + m;
-      const yBotB = tileTop(lastRow) + tileSize - m;
+      const yTopB = tileTop(lastRow) - padY;
+      const yBotB = tileTop(lastRow) + tileSize + padY;
       shapes.push({
         key: `${run.sectionId}-b`,
         path: roundedPath([
@@ -467,11 +491,12 @@ function buildOutlines(
       continue;
     }
 
-    // Contiguous multi-row ribbon — one enclosing outline.
-    const yTop = rowTop[firstRow] + bandPad;
-    const yLeftStep = tileTop(firstRow) + tileSize; // bottom of the first row's tiles
-    const yRightStep = rowTop[lastRow];             // top of the last row's band
-    const yBottom = tileTop(lastRow) + tileSize - m;
+    // Contiguous multi-row ribbon — one enclosing outline. The staircase steps
+    // sit in the middle of the inter-row gaps.
+    const yTop = blockTop[firstRow] + topPad;
+    const yLeftStep = tileTop(firstRow) + tileSize + gapY * 0.5;
+    const yRightStep = blockTop[lastRow] - gapY * 0.5;
+    const yBottom = tileTop(lastRow) + tileSize + padY;
     shapes.push({
       key: `${run.sectionId}-${firstRow}-${firstCol}`,
       path: roundedPath([
@@ -497,6 +522,8 @@ function SectionOverlays({
   tileSize,
   startRows,
   headroom,
+  gapX,
+  gapY,
   totalHeight,
   offsetLeft = 0,
 }: {
@@ -505,11 +532,13 @@ function SectionOverlays({
   tileSize: number;
   startRows: Set<number>;
   headroom: number;
+  gapX: number;
+  gapY: number;
   totalHeight: number;
   offsetLeft?: number;
 }) {
-  const shapes = buildOutlines(runs, cols, tileSize, startRows, headroom);
-  const width = cols * tileSize;
+  const shapes = buildOutlines(runs, cols, tileSize, startRows, headroom, gapX, gapY);
+  const width = cols * tileSize + (cols - 1) * gapX;
   const fontSize = tileSize * 0.13;
 
   return (
@@ -567,13 +596,40 @@ export function ViewPage() {
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
   const totalSlots = Math.max(count, 151);
-  const { containerRef, tileSize } = useTileSize(totalSlots);
+
+  const showSectionOverlays = showSections && sortOption === 'build-order';
+
+  // Section geometry + the effective grid sizing factors. In outline mode the
+  // grid gains inter-cell gaps and per-section label bands; folding those into
+  // colFactor/rowFactor lets useTileSize shrink the tiles so the whole spaced
+  // grid (outlines included) still fits on screen.
+  const layout = useMemo(() => {
+    const lastRowCount = totalSlots % COLS || COLS;
+    const gridSlots = totalSlots - lastRowCount;
+    const gridPokemon = sorted.slice(0, gridSlots);
+    const lastRowPokemon = sorted.slice(gridSlots);
+    const gridRuns = showSectionOverlays ? computeSectionRuns(gridPokemon, sections, COLS) : [];
+    const lastRowRuns = showSectionOverlays ? computeSectionRuns(lastRowPokemon, sections, lastRowCount) : [];
+    const gridStartRows = new Set(gridRuns.map((r) => r.firstRow));
+    const lastRowStartRows = new Set(lastRowRuns.map((r) => r.firstRow));
+    const totalRows = Math.ceil(totalSlots / COLS);
+    const numStartRows = gridStartRows.size + lastRowStartRows.size;
+    const colFactor = showSectionOverlays ? COLS + (COLS - 1) * OUTLINE_GAP_X : COLS;
+    const rowFactor = showSectionOverlays
+      ? totalRows + Math.max(totalRows - 1, 0) * OUTLINE_GAP_Y + numStartRows * OUTLINE_HEAD
+      : totalRows;
+    return {
+      lastRowCount, gridSlots, gridPokemon, lastRowPokemon,
+      gridRuns, lastRowRuns, gridStartRows, lastRowStartRows,
+      colFactor, rowFactor,
+    };
+  }, [sorted, totalSlots, showSectionOverlays, sections]);
+
+  const { containerRef, tileSize } = useTileSize(layout.colFactor, layout.rowFactor);
   const [exporting, setExporting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const hasCustom = customOrder !== null;
-
-  const showSectionOverlays = showSections && sortOption === 'build-order';
 
   // Drag state
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
@@ -813,34 +869,32 @@ export function ViewPage() {
 
         <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center p-2 overflow-y-auto">
           {tileSize > 0 && (() => {
-            const lastRowCount = totalSlots % COLS || COLS;
-            const gridSlots = totalSlots - lastRowCount;
-            const gridPokemon = sorted.slice(0, gridSlots);
-            const lastRowPokemon = sorted.slice(gridSlots);
+            const {
+              lastRowCount, gridSlots, gridPokemon, lastRowPokemon,
+              gridRuns, lastRowRuns, gridStartRows, lastRowStartRows,
+            } = layout;
             const gridEmpties = Math.max(0, gridSlots - gridPokemon.length);
             const lastRowEmpties = Math.max(0, lastRowCount - lastRowPokemon.length);
 
-            const gridRuns = showSectionOverlays
-              ? computeSectionRuns(gridPokemon, sections, COLS)
-              : [];
-            const lastRowRuns = showSectionOverlays
-              ? computeSectionRuns(lastRowPokemon, sections, lastRowCount)
-              : [];
-
-            // Extra height above each section's first row to hold its label.
-            const headroom = Math.round(tileSize * 0.26);
-            // A section's first row carries the label band; tiles bottom-align.
-            const sectionStartRows = new Set(gridRuns.map((r) => r.firstRow));
-            const lastRowSectionStarts = new Set(lastRowRuns.map((r) => r.firstRow));
+            // Outline mode adds real gaps between cells and a label band above
+            // each section's first row (tiles bottom-align, so the band sits on
+            // top). All zero when overlays are off.
+            const gapX = showSectionOverlays ? tileSize * OUTLINE_GAP_X : 0;
+            const gapY = showSectionOverlays ? tileSize * OUTLINE_GAP_Y : 0;
+            const headroom = showSectionOverlays ? tileSize * OUTLINE_HEAD : 0;
+            const pitchX = tileSize + gapX;
+            const gridWidth = COLS * tileSize + (COLS - 1) * gapX;
 
             const totalGridRows = Math.ceil(gridSlots / COLS);
             const gridRowTemplate = showSectionOverlays
               ? Array.from({ length: totalGridRows }, (_, r) =>
-                  sectionStartRows.has(r) ? `${headroom + tileSize}px` : `${tileSize}px`
+                  gridStartRows.has(r) ? `${headroom + tileSize}px` : `${tileSize}px`
                 ).join(' ')
               : undefined;
-            const gridBlockHeight = totalGridRows * tileSize + sectionStartRows.size * headroom;
-            const lastRowHeight = tileSize + (lastRowSectionStarts.size > 0 ? headroom : 0);
+            const gridBlockHeight =
+              totalGridRows * tileSize + gridStartRows.size * headroom + Math.max(totalGridRows - 1, 0) * gapY;
+            const lastRowHeight = tileSize + (lastRowStartRows.size > 0 ? headroom : 0);
+            const lastRowOffset = (COLS - lastRowCount) * pitchX / 2;
 
             const renderTile = (pokemon: Pokemon, positionNum: number) => (
               <DraggableViewTile
@@ -866,12 +920,14 @@ export function ViewPage() {
                 onDragEnd={handleDragEnd}
                 onDragCancel={handleDragCancel}
               >
-                <div style={{ width: COLS * tileSize }}>
+                <div style={{ width: gridWidth }}>
                   <div className="relative">
                     <div
                       className="grid items-end"
                       style={{
                         gridTemplateColumns: `repeat(${COLS}, ${tileSize}px)`,
+                        columnGap: gapX,
+                        rowGap: gapY,
                         ...(gridRowTemplate
                           ? { gridTemplateRows: gridRowTemplate }
                           : { gridAutoRows: `${tileSize}px` }),
@@ -888,13 +944,18 @@ export function ViewPage() {
                         runs={gridRuns}
                         cols={COLS}
                         tileSize={tileSize}
-                        startRows={sectionStartRows}
+                        startRows={gridStartRows}
                         headroom={headroom}
+                        gapX={gapX}
+                        gapY={gapY}
                         totalHeight={gridBlockHeight}
                       />
                     )}
                   </div>
-                  <div className="flex justify-center items-end relative" style={{ height: lastRowHeight }}>
+                  <div
+                    className="flex justify-center items-end relative"
+                    style={{ height: lastRowHeight, columnGap: gapX, marginTop: gapY }}
+                  >
                     {lastRowPokemon.map((p, i) => renderTile(p, gridSlots + i + 1))}
                     {lastRowEmpties > 0 &&
                       Array.from({ length: lastRowEmpties }, (_, i) => (
@@ -905,10 +966,12 @@ export function ViewPage() {
                         runs={lastRowRuns}
                         cols={lastRowCount}
                         tileSize={tileSize}
-                        startRows={lastRowSectionStarts}
+                        startRows={lastRowStartRows}
                         headroom={headroom}
+                        gapX={gapX}
+                        gapY={gapY}
                         totalHeight={lastRowHeight}
-                        offsetLeft={(COLS - lastRowCount) * tileSize / 2}
+                        offsetLeft={lastRowOffset}
                       />
                     )}
                   </div>
