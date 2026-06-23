@@ -644,6 +644,7 @@ function tallyRows(counts: Record<string, number>, withFlag = false) {
 
 function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void }) {
   const [expanded, setExpanded] = useState(false);
+  const [droppedOpen, setDroppedOpen] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const [stickyLabelTop, setStickyLabelTop] = useState(0);
@@ -675,8 +676,6 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
       setExpanded(true);
     }
   };
-
-  const stickyLabel = "sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50";
 
   return (
     <section ref={cardRef} className="shadow-elevated rounded-lg bg-card scroll-mt-[64px]">
@@ -725,48 +724,51 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
       </div>
       {expanded && (
         <div className="flex flex-col gap-2 p-3 pt-2">
-          {buildSections(rec).map((b) => (
-            <div key={b.key}>
-              <div className={stickyLabel} style={{ top: stickyLabelTop }}>
-                {b.label} ({b.ids.length})
-              </div>
-              <SpriteRow ids={b.ids} />
-            </div>
-          ))}
-          <PlacementBySection rec={rec} stickyTop={stickyLabelTop} />
-          <SessionChanges rec={rec} stickyTop={stickyLabelTop} />
+          <FinalBySection rec={rec} stickyTop={stickyLabelTop} />
+          <DexMilestones rec={rec} stickyTop={stickyLabelTop} />
+          <SessionDiffs rec={rec} stickyTop={stickyLabelTop} />
+          <DroppedPokemon rec={rec} stickyTop={stickyLabelTop} droppedOpen={droppedOpen} setDroppedOpen={setDroppedOpen} />
         </div>
       )}
     </section>
   );
 }
 
-/** The user's ACTUAL placement, grouped by the section they chose. Pokemon
- *  placed in a section they aren't a default option for are highlighted — the
- *  signal of interest. Only for records captured after placement tracking
- *  shipped (legacy records have no latestSections). */
-function PlacementBySection({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: number }) {
+/** Final/current dex grouped by build section with off-section highlighting.
+ *  Falls back to a flat sprite row for legacy records without section data. */
+function FinalBySection({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: number }) {
   const secs = rec.latestSections;
-  if (!secs || Object.keys(secs).length === 0) return null;
-  // Render in the build page's own order; unknown ids/sections fall to the end.
+  const stickyClass = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
+
+  if (!secs || Object.keys(secs).length === 0) {
+    if (!rec.latestIds?.length) return null;
+    return (
+      <div>
+        <div className={stickyClass} style={stickyTop ? { top: stickyTop } : undefined}>
+          Final / current ({rec.latestIds.length})
+        </div>
+        <SpriteRow ids={rec.latestIds} />
+      </div>
+    );
+  }
+
   const order = BUILD_GROUPS.map((g) => g.id);
   const present = Object.keys(secs).sort((a, b) => {
     const ia = order.indexOf(a);
     const ib = order.indexOf(b);
     return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
   });
+  const total = present.reduce((sum, sid) => sum + secs[sid].length, 0);
   const offTotal = present.reduce(
     (sum, sid) => sum + secs[sid].filter((id) => isOffSection(id, sid)).length,
     0,
   );
+
   return (
     <div>
-      <div
-        className="sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50"
-        style={stickyTop ? { top: stickyTop } : undefined}
-      >
-        Placement by section{' '}
-        {offTotal > 0 && <span className="text-amber-600 font-medium">· {offTotal} off-section</span>}
+      <div className={stickyClass} style={stickyTop ? { top: stickyTop } : undefined}>
+        Final / current ({total})
+        {offTotal > 0 && <span className="text-amber-600 font-medium"> · {offTotal} off-section</span>}
       </div>
       <div className="flex flex-col gap-1.5">
         {present.map((sid) => {
@@ -792,14 +794,7 @@ function PlacementBySection({ rec, stickyTop }: { rec: ClientRecord; stickyTop?:
                       )}
                     >
                       {p ? (
-                        <img
-                          src={p.sprite}
-                          alt={p.name}
-                          width={32}
-                          height={32}
-                          loading="lazy"
-                          style={{ imageRendering: 'pixelated' }}
-                        />
+                        <img src={p.sprite} alt={p.name} width={32} height={32} loading="lazy" style={{ imageRendering: 'pixelated' }} />
                       ) : (
                         <span className="text-[0.55rem] text-muted-foreground">#{id}</span>
                       )}
@@ -815,75 +810,164 @@ function PlacementBySection({ rec, stickyTop }: { rec: ClientRecord; stickyTop?:
   );
 }
 
-/** Per-session change summary: diffs each session's end-state against the
- *  previous one to show what was added/removed visit-to-visit. Only available
- *  for records captured after session logging shipped. */
-function SessionChanges({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: number }) {
-  const log = rec.sessionLog;
-  if (!log || log.length === 0) return null;
+/** Unified completed/exported dex block with tabs when snapshots differ. */
+function DexMilestones({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: number }) {
+  const [activeKey, setActiveKey] = useState('');
+
+  const latestSig = (rec.latestIds ?? []).slice().sort((a, b) => a - b).join(',');
+  const seen = new Set<string>([latestSig]);
+  const tabs: { key: string; label: string; ids: number[] }[] = [];
+
+  const maybeAdd = (key: string, label: string, ids?: number[]) => {
+    if (!ids?.length) return;
+    const sig = ids.slice().sort((a, b) => a - b).join(',');
+    if (seen.has(sig)) return;
+    seen.add(sig);
+    tabs.push({ key, label, ids });
+  };
+
+  maybeAdd('completed', 'Completed', rec.completedIds);
+  maybeAdd('exported', 'Exported', rec.exportedIds);
+
+  if (tabs.length === 0) return null;
+
+  const active = tabs.find((t) => t.key === activeKey) ?? tabs[0];
+  const stickyClass = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
+
   return (
     <div>
       <div
-        className="sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50"
+        className={cn(stickyClass, 'flex items-center gap-1')}
         style={stickyTop ? { top: stickyTop } : undefined}
-      >Changes by session</div>
-      <div className="flex flex-col gap-1">
-        {log.map((s, i) => {
-          const prev = i > 0 ? new Set(log[i - 1].ids) : new Set<number>();
-          const cur = new Set(s.ids);
-          const added = i === 0 ? s.ids : s.ids.filter((id) => !prev.has(id));
-          const removed = i === 0 ? [] : log[i - 1].ids.filter((id) => !cur.has(id));
+      >
+        {tabs.length === 1 ? (
+          <span>{active.label} dex ({active.ids.length})</span>
+        ) : (
+          tabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setActiveKey(t.key)}
+              className={cn(
+                'px-1.5 py-0.5 rounded text-xs cursor-pointer transition-colors',
+                active.key === t.key ? 'bg-muted font-medium text-foreground' : 'hover:bg-muted/50',
+              )}
+            >
+              {t.label} ({t.ids.length})
+            </button>
+          ))
+        )}
+      </div>
+      <SpriteRow ids={active.ids} />
+    </div>
+  );
+}
+
+/** Collapsible "tried then dropped" section. */
+function DroppedPokemon({
+  rec,
+  stickyTop,
+  droppedOpen,
+  setDroppedOpen,
+}: {
+  rec: ClientRecord;
+  stickyTop?: number;
+  droppedOpen: boolean;
+  setDroppedOpen: (fn: (v: boolean) => boolean) => void;
+}) {
+  const kept = new Set(rec.latestIds ?? []);
+  const dropped = (rec.everIds ?? []).filter((id) => !kept.has(id));
+  if (dropped.length === 0) return null;
+
+  const stickyClass = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
+
+  return (
+    <div>
+      <div
+        className={cn(stickyClass, 'flex items-center gap-1 cursor-pointer select-none')}
+        style={stickyTop ? { top: stickyTop } : undefined}
+        onClick={() => setDroppedOpen((v) => !v)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setDroppedOpen((v) => !v);
+          }
+        }}
+      >
+        <span className={cn('text-[0.5rem] transition-transform inline-block', droppedOpen && 'rotate-90')}>▶</span>
+        Tried then dropped ({dropped.length})
+      </div>
+      {droppedOpen && <SpriteRow ids={dropped} />}
+    </div>
+  );
+}
+
+/** Session diffs with a switchable session selector. Shows one session's
+ *  adds/removes at a time; defaults to the most recent session. */
+function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: number }) {
+  const log = rec.sessionLog;
+  const [activeIdx, setActiveIdx] = useState(() => Math.max(0, (log?.length ?? 1) - 1));
+
+  if (!log || log.length === 0) return null;
+
+  const idx = Math.min(activeIdx, log.length - 1);
+  const s = log[idx];
+  const prev = idx > 0 ? new Set(log[idx - 1].ids) : new Set<number>();
+  const added = idx === 0 ? s.ids : s.ids.filter((id) => !prev.has(id));
+  const removed = idx === 0 ? [] : log[idx - 1].ids.filter((id) => !new Set(s.ids).has(id));
+
+  const stickyClass = 'sticky z-[4] bg-card text-xs text-muted-foreground py-0.5 border-b border-border/50';
+
+  return (
+    <div>
+      <div
+        className={cn(stickyClass, 'flex items-center gap-1 flex-wrap')}
+        style={stickyTop ? { top: stickyTop } : undefined}
+      >
+        <span className="mr-0.5">Sessions</span>
+        {log.map((_, i) => {
+          const dur = rec.sessionMs?.[i];
           return (
-            <div key={i} className="text-xs border-l-2 border-muted pl-2">
-              <span className="text-muted-foreground">
-                Session {i + 1} · {new Date(s.ts).toLocaleDateString()} · {s.ids.length} total
-              </span>
-              {added.length > 0 && (
-                <div className="flex flex-wrap items-center gap-0.5 mt-0.5">
-                  <span className="text-[0.65rem] text-green-600 mr-0.5">+{added.length}</span>
-                  <SpriteRow ids={added} />
-                </div>
+            <button
+              key={i}
+              type="button"
+              onClick={() => setActiveIdx(i)}
+              className={cn(
+                'px-1.5 py-0.5 rounded text-xs cursor-pointer transition-colors',
+                idx === i ? 'bg-muted font-medium text-foreground' : 'hover:bg-muted/50',
               )}
-              {removed.length > 0 && (
-                <div className="flex flex-wrap items-center gap-0.5 mt-0.5 opacity-60">
-                  <span className="text-[0.65rem] text-destructive mr-0.5">−{removed.length}</span>
-                  <SpriteRow ids={removed} />
-                </div>
-              )}
-              {added.length === 0 && removed.length === 0 && (
-                <div className="text-[0.65rem] text-muted-foreground">no changes</div>
-              )}
-            </div>
+            >
+              S{i + 1}{dur ? ` · ${fmtDuration(dur)}` : ''}
+            </button>
           );
         })}
+      </div>
+      <div className="mt-1">
+        <span className="text-xs text-muted-foreground">
+          {new Date(s.ts).toLocaleDateString()} · {s.ids.length} total
+        </span>
+        {added.length > 0 && (
+          <div className="flex flex-wrap items-center gap-0.5 mt-0.5">
+            <span className="text-[0.65rem] text-green-600 mr-0.5">+{added.length}</span>
+            <SpriteRow ids={added} />
+          </div>
+        )}
+        {removed.length > 0 && (
+          <div className="flex flex-wrap items-center gap-0.5 mt-0.5 opacity-60">
+            <span className="text-[0.65rem] text-destructive mr-0.5">−{removed.length}</span>
+            <SpriteRow ids={removed} />
+          </div>
+        )}
+        {added.length === 0 && removed.length === 0 && (
+          <div className="text-[0.65rem] text-muted-foreground mt-0.5">no changes</div>
+        )}
       </div>
     </div>
   );
 }
 
-/** The distinct builds worth showing for a user, deduped by id-set so we don't
- *  repeat the same list under two labels (e.g. final == completed). */
-function buildSections(rec: ClientRecord): { key: string; label: string; ids: number[] }[] {
-  const out: { key: string; label: string; ids: number[] }[] = [];
-  const seen = new Set<string>();
-  const add = (key: string, label: string, ids?: number[]) => {
-    if (!ids || ids.length === 0) return;
-    const sig = ids.slice().sort((a, b) => a - b).join(',');
-    if (seen.has(sig)) return;
-    seen.add(sig);
-    out.push({ key, label, ids });
-  };
-  // Current state first (what they have right now), then milestones.
-  add('final', 'Final / current', rec.latestIds);
-  add('completed', 'Completed dex', rec.completedIds);
-  add('exported', 'Exported dex', rec.exportedIds);
-  // Tried then dropped: ever placed but not in the final dex — the adjustment
-  // signal (always shown, even if it duplicates nothing above).
-  const kept = new Set(rec.latestIds ?? []);
-  const dropped = (rec.everIds ?? []).filter((id) => !kept.has(id));
-  if (dropped.length) out.push({ key: 'dropped', label: 'Tried then dropped', ids: dropped });
-  return out;
-}
 
 /** Minute-level view of a single local hour: each user active in that hour,
  *  with their exact local time and country. Computed from the loaded records. */
