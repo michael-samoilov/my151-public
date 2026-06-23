@@ -14,7 +14,6 @@ const REGION_ABBREVS: Record<string, string> = {
 
 const FORM_DISPLAY_NAMES: Record<string, string> = {
   'urshifu-rapid-strike': 'urshifu-water',
-  'alcremie-strawberry': 'alcremie-strwb',
   'alcremie-berry': 'alcremie-berry',
   'alcremie-love': 'alcremie-love',
   'alcremie-star': 'alcremie-star',
