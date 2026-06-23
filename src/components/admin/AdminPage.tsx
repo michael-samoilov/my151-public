@@ -734,17 +734,22 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
   );
 }
 
+const STICKY_LABEL_CLASS = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
+function stickyLabelStyle(top?: number): React.CSSProperties | undefined {
+  if (!top) return undefined;
+  return { top, boxShadow: '0 -1rem 0 0 var(--color-card)' };
+}
+
 /** Final/current dex grouped by build section with off-section highlighting.
  *  Falls back to a flat sprite row for legacy records without section data. */
 function FinalBySection({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: number }) {
   const secs = rec.latestSections;
-  const stickyClass = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
 
   if (!secs || Object.keys(secs).length === 0) {
     if (!rec.latestIds?.length) return null;
     return (
       <div>
-        <div className={stickyClass} style={stickyTop ? { top: stickyTop } : undefined}>
+        <div className={STICKY_LABEL_CLASS} style={stickyLabelStyle(stickyTop)}>
           Final / current ({rec.latestIds.length})
         </div>
         <SpriteRow ids={rec.latestIds} />
@@ -766,7 +771,7 @@ function FinalBySection({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: num
 
   return (
     <div>
-      <div className={stickyClass} style={stickyTop ? { top: stickyTop } : undefined}>
+      <div className={STICKY_LABEL_CLASS} style={stickyLabelStyle(stickyTop)}>
         Final / current ({total})
         {offTotal > 0 && <span className="text-amber-600 font-medium"> · {offTotal} off-section</span>}
       </div>
@@ -832,13 +837,12 @@ function DexMilestones({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: numb
   if (tabs.length === 0) return null;
 
   const active = tabs.find((t) => t.key === activeKey) ?? tabs[0];
-  const stickyClass = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
 
   return (
     <div>
       <div
-        className={cn(stickyClass, 'flex items-center gap-1')}
-        style={stickyTop ? { top: stickyTop } : undefined}
+        className={cn(STICKY_LABEL_CLASS, 'flex items-center gap-1')}
+        style={stickyLabelStyle(stickyTop)}
       >
         {tabs.length === 1 ? (
           <span>{active.label} dex ({active.ids.length})</span>
@@ -879,13 +883,11 @@ function DroppedPokemon({
   const dropped = (rec.everIds ?? []).filter((id) => !kept.has(id));
   if (dropped.length === 0) return null;
 
-  const stickyClass = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
-
   return (
     <div>
       <div
-        className={cn(stickyClass, 'flex items-center gap-1 cursor-pointer select-none')}
-        style={stickyTop ? { top: stickyTop } : undefined}
+        className={cn(STICKY_LABEL_CLASS, 'flex items-center gap-1 cursor-pointer select-none')}
+        style={stickyLabelStyle(stickyTop)}
         onClick={() => setDroppedOpen((v) => !v)}
         role="button"
         tabIndex={0}
@@ -918,13 +920,11 @@ function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: numbe
   const added = idx === 0 ? s.ids : s.ids.filter((id) => !prev.has(id));
   const removed = idx === 0 ? [] : log[idx - 1].ids.filter((id) => !new Set(s.ids).has(id));
 
-  const stickyClass = 'sticky z-[4] bg-card text-xs text-muted-foreground py-0.5 border-b border-border/50';
-
   return (
     <div>
       <div
-        className={cn(stickyClass, 'flex items-center gap-1 flex-wrap')}
-        style={stickyTop ? { top: stickyTop } : undefined}
+        className={cn(STICKY_LABEL_CLASS, 'flex items-center gap-1 flex-wrap')}
+        style={stickyLabelStyle(stickyTop)}
       >
         <span className="mr-0.5">Sessions</span>
         {log.map((entry, i) => {
