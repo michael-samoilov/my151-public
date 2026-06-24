@@ -644,7 +644,7 @@ function tallyRows(counts: Record<string, number>, withFlag = false) {
     .map(([k, n]) => ({ label: withFlag ? `${flag(k)} ${k}` : k, count: n }));
 }
 
-function UserCard({ rec, onDelete, expanded, onToggle, zIndex }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void; expanded: boolean; onToggle: () => void; zIndex: number }) {
+function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void; expanded: boolean; onToggle: () => void; zIndex: number; stickyOffset: number }) {
   const [droppedOpen, setDroppedOpen] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -658,9 +658,9 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex }: { rec: ClientRe
 
   useLayoutEffect(() => {
     if (expanded && headerRef.current) {
-      setStickyLabelTop(64 + headerRef.current.offsetHeight);
+      setStickyLabelTop(stickyOffset + headerRef.current.offsetHeight);
     }
-  }, [expanded]);
+  }, [expanded, stickyOffset]);
 
   const handleToggle = () => {
     if (expanded) {
@@ -679,8 +679,8 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex }: { rec: ClientRe
   };
 
   return (
-    <section ref={cardRef} className="scroll-mt-[64px]" style={{ zIndex }}>
-      <div ref={headerRef} className="sticky top-[64px] z-[5]">
+    <section ref={cardRef} style={{ zIndex, scrollMarginTop: stickyOffset }}>
+      <div ref={headerRef} className="sticky z-[5]" style={{ top: stickyOffset }}>
         <div className="h-4 bg-background" />
         <div className={`bg-card p-3 ${expanded ? 'pb-1 border-b border-border/50 rounded-t-lg shadow-elevated' : 'rounded-lg shadow-elevated'}`}>
           <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
@@ -1164,6 +1164,12 @@ export function AdminPage() {
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pageHeaderRef = useRef<HTMLElement>(null);
+  const [pageHeaderH, setPageHeaderH] = useState(0);
+
+  useLayoutEffect(() => {
+    if (pageHeaderRef.current) setPageHeaderH(pageHeaderRef.current.offsetHeight);
+  });
 
   const load = useCallback(async (tok: string, limit = PAGE_SIZE) => {
     setLoading(true);
@@ -1289,7 +1295,7 @@ export function AdminPage() {
 
   return (
     <div className="min-h-dvh flex flex-col bg-background">
-      <header className="border-b bg-card sticky top-0 z-10">
+      <header ref={pageHeaderRef} className="border-b bg-card sticky top-0 z-[100]">
         <div className="max-w-5xl mx-auto w-full flex items-center justify-between gap-2 px-4 py-3">
           <h1 className="text-lg font-bold whitespace-nowrap">
             <span className="text-primary">my151</span> · Analytics
@@ -1386,6 +1392,7 @@ export function AdminPage() {
                   expanded={expandedCid === rec.cid}
                   onToggle={() => setExpandedCid((prev) => (prev === rec.cid ? null : rec.cid))}
                   zIndex={data.records.length - i}
+                  stickyOffset={pageHeaderH}
                 />
               ))}
             </div>
