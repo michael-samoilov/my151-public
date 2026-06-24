@@ -653,8 +653,8 @@ function SectionOverlays({
           <path
             key={`fill-${s.key}`}
             d={s.fill}
-            fill={s.open ? `url(#outline-fade-${s.key})` : s.fillColor}
-            fillOpacity={0.4}
+            fill={s.open ? `url(#outline-fade-${s.key})` : `${s.fillColor}12`}
+            fillOpacity={s.open ? 0.07 : 1}
             fillRule="evenodd"
             stroke="none"
           />
