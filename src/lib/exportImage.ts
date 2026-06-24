@@ -330,7 +330,7 @@ export async function generateExportImage(
   const genImgs  = [leanGen1Img,  leanGen2Img];
 
   if (isKanto151) {
-    insightSegs.push({ kind: 'text', text: 'the originals — all 151 · nothing else needed', color: zinc });
+    insightSegs.push({ kind: 'text', text: 'This Pokédex is the very best. Like no one ever was.', color: zinc });
   } else if (noLean && !insights.bestAttackType) {
     // Perfectly balanced — nothing over-indexes or strongly over-performs
     insightSegs.push({ kind: 'text', text: 'perfectly balanced dex', color: zinc });
