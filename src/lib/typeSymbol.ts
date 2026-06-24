@@ -29,14 +29,34 @@ function buildMask(type: TypeName): Promise<string> {
         ctx.drawImage(img, 0, 0);
         const im = ctx.getImageData(0, 0, w, h);
         const p = im.data;
-        for (let i = 0; i < p.length; i += 4) {
-          const mn = Math.min(p[i], p[i + 1], p[i + 2]);
-          const a = mn <= WHITE_T ? 0 : Math.round(((mn - WHITE_T) / (255 - WHITE_T)) * 255);
-          p[i] = p[i + 1] = p[i + 2] = 255; // colour comes from CSS; only alpha matters
-          p[i + 3] = a;
+        // Threshold to the white symbol and record its bounding box so the mask
+        // can be cropped tight — different type symbols have different built-in
+        // padding, and cropping normalises them to one consistent rendered size.
+        let minX = w, minY = h, maxX = -1, maxY = -1;
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4;
+            const mn = Math.min(p[i], p[i + 1], p[i + 2]);
+            const a = mn <= WHITE_T ? 0 : Math.round(((mn - WHITE_T) / (255 - WHITE_T)) * 255);
+            p[i] = p[i + 1] = p[i + 2] = 255; // colour comes from CSS; only alpha matters
+            p[i + 3] = a;
+            if (a > 20) {
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
         }
         ctx.putImageData(im, 0, 0);
-        resolve(c.toDataURL());
+        if (maxX < minX) { resolve(c.toDataURL()); return; } // no symbol found
+        const cw = maxX - minX + 1, ch = maxY - minY + 1;
+        const out = document.createElement('canvas');
+        out.width = cw; out.height = ch;
+        const octx = out.getContext('2d');
+        if (!octx) { resolve(c.toDataURL()); return; }
+        octx.drawImage(c, minX, minY, cw, ch, 0, 0, cw, ch);
+        resolve(out.toDataURL());
       } catch (e) {
         reject(e as Error);
       }
