@@ -538,6 +538,28 @@ function roundRectStroke(x0: number, y0: number, x1: number, y1: number, r: numb
   return roundRectFill(x0, y0, x1, y1, r, false, false);
 }
 
+/** Curved 4-pointed star (plus-oriented: points up / right / down / left), used
+ *  as a spandrel marker in the corner gap between contiguous same-section cells.
+ *  The control points pull toward the centre so the sides curve concavely. */
+function starPath(cx: number, cy: number, r: number): string {
+  const c = r * 0.16;
+  const f = (n: number) => n.toFixed(2);
+  return [
+    `M ${f(cx)} ${f(cy - r)}`,
+    `Q ${f(cx + c)} ${f(cy - c)} ${f(cx + r)} ${f(cy)}`,
+    `Q ${f(cx + c)} ${f(cy + c)} ${f(cx)} ${f(cy + r)}`,
+    `Q ${f(cx - c)} ${f(cy + c)} ${f(cx - r)} ${f(cy)}`,
+    `Q ${f(cx - c)} ${f(cy - c)} ${f(cx)} ${f(cy - r)}`,
+    'Z',
+  ].join(' ');
+}
+
+interface Spandrel {
+  key: string;
+  d: string;
+  color: string;
+}
+
 interface OutlineShape {
   key: string;
   sectionId: string;
@@ -575,7 +597,7 @@ function buildOutlines(
   pad: number,
   vBias: number = 0.5,
   lastRowGeom: { index: number; count: number; offsetCols: number } | null = null,
-): OutlineShape[] {
+): { shapes: OutlineShape[]; spandrels: Spandrel[] } {
   const pitch = tileSize + gap;
   const maxRow = runs.reduce((m, r) => Math.max(m, r.lastRow), 0);
   // Cumulative top of each row block. A block = optional label band + tile, and
@@ -810,7 +832,36 @@ function buildOutlines(
     ], label, labelX, labelY, labelMaxW);
   }
 
-  return shapes;
+  // --- Corner spandrels (WIP test) ----------------------------------------
+  // A curved 4-point star in each interior corner where (1) all four diagonally
+  // adjacent cells belong to the same section, and (2) the lower of the two rows
+  // carries the extended top gap (it is a band row — another section begins later
+  // in it). Eventually these become per-section type icons; for now, just stars.
+  const spandrels: Spandrel[] = [];
+  const posSec = new Map<number, string>();
+  const secStroke = new Map<string, string>();
+  for (const r of runs) {
+    secStroke.set(r.sectionId, r.strokeColor);
+    const start = r.firstRow * cols + r.firstCol;
+    const end = r.lastRow * cols + r.lastCol;
+    for (let p = start; p <= end; p++) posSec.set(p, r.sectionId);
+  }
+  const secAt = (row: number, col: number) => posSec.get(row * cols + col);
+  for (let n = 0; n < maxRow; n++) {
+    const below = n + 1;
+    if (!startRows.has(below)) continue;
+    // Skip the centered overflow row for now — its cells are column-offset.
+    if (lastRowGeom && below === lastRowGeom.index) continue;
+    for (let c = 0; c < cols - 1; c++) {
+      const s = secAt(n, c);
+      if (!s || secAt(n, c + 1) !== s || secAt(below, c) !== s || secAt(below, c + 1) !== s) continue;
+      const cx = c * pitch + tileSize + gap / 2;
+      const cy = (tileTop(n) + tileSize + tileTop(below)) / 2;
+      spandrels.push({ key: `sp-${n}-${c}`, d: starPath(cx, cy, tileSize * 0.16), color: secStroke.get(s) ?? '#555555' });
+    }
+  }
+
+  return { shapes, spandrels };
 }
 
 function SectionOverlays({
@@ -844,7 +895,7 @@ function SectionOverlays({
   shortenTitles?: boolean;
   lastRow?: { index: number; count: number; offsetCols: number } | null;
 }) {
-  const shapes = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad, titleVBias, lastRow);
+  const { shapes, spandrels } = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad, titleVBias, lastRow);
   const width = cols * tileSize + (cols - 1) * gap;
   const fontSize = tileSize * 0.26;
   // Re-measure labels once the real font is loaded (canvas metrics depend on it).
@@ -924,6 +975,9 @@ function SectionOverlays({
             )),
           );
         })}
+        {spandrels.map((sp) => (
+          <path key={sp.key} d={sp.d} fill={sp.color} fillOpacity={0.55} stroke="none" />
+        ))}
       </svg>
       {shapes.map((s) => {
           if (!s.label) return null;
