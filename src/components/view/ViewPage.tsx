@@ -665,7 +665,9 @@ function SectionOverlays({
             strokeOpacity={0.5}
             strokeWidth={OUTLINE_STROKE_W}
             strokeLinejoin="round"
-            strokeLinecap="round"
+            // Open pieces end flush (butt) so the last gap before the dots is a
+            // full dot-width; a round cap would extend the line and shrink it.
+            strokeLinecap={s.open ? 'butt' : 'round'}
           />
         ))}
         {shapes.map((s) => {
