@@ -574,6 +574,7 @@ function buildOutlines(
   gap: number,
   pad: number,
   vBias: number = 0.5,
+  lastRowGeom: { index: number; count: number; offsetCols: number } | null = null,
 ): OutlineShape[] {
   const pitch = tileSize + gap;
   const maxRow = runs.reduce((m, r) => Math.max(m, r.lastRow), 0);
@@ -622,6 +623,23 @@ function buildOutlines(
     shapes.push({ key: `${run.sectionId}-${suffix}`, sectionId: run.sectionId, fill: d, stroke: d, fillColor: run.fillColor, strokeColor: run.strokeColor, label: lbl, labelAlts: run.labelAlts, labelX: lx, labelY: ly, labelMaxW: lw });
   };
 
+  // --- Centered last (overflow) row ---------------------------------------
+  // Rows past the 151st are center-aligned, so their cells sit at fractional
+  // column offsets and don't line up with the regular grid columns. These
+  // helpers give the last row's tile/outline x in pixels, and decide — by actual
+  // x-overlap rather than integer-column adjacency — whether a section's cells in
+  // that row connect to its cells in the row above.
+  const lrIdx = lastRowGeom ? lastRowGeom.index : -1;
+  const lrOffset = lastRowGeom ? lastRowGeom.offsetCols * pitch : 0;
+  const lrLeft = (c: number) => lrOffset + c * pitch - pad;
+  const lrRight = (c: number) => lrOffset + c * pitch + tileSize + pad;
+  // The run occupies [topLeftCol .. cols-1] on the row directly above the last
+  // row (its own firstCol if that row is firstRow, else the full row).
+  const topLeftColOf = (r: SectionRun) => (r.firstRow === lrIdx - 1 ? r.firstCol : 0);
+  // x-overlap in column units: bottom (centered) right edge past the top-left.
+  const lastRowConnects = (r: SectionRun) =>
+    lastRowGeom!.offsetCols + r.lastCol + 1 > topLeftColOf(r);
+
   for (run of runs) {
     const { firstRow, firstCol, lastRow, lastCol, fillColor, strokeColor, label } = run;
     const xL = colLeft(0);
@@ -637,6 +655,84 @@ function buildOutlines(
     // The top border sits `pad` above the label band (the band is part of the
     // section's content box, so its top counts as the section's top edge).
     const yTop = blockTop[firstRow] - pad;
+
+    // Runs reaching the centered overflow row: the bottom cells sit at a
+    // fractional offset, so connect/separate by actual x-overlap, not columns.
+    if (lastRowGeom && lastRowGeom.offsetCols > 0 && run.lastRow === lrIdx) {
+      const yLastTop = blockTop[lrIdx] - pad;
+      const yLastBot = tileTop(lrIdx) + tileSize + pad;
+
+      // Section that lives entirely within the centered row → one offset rect.
+      if (firstRow === lrIdx) {
+        const bL = lrLeft(firstCol), bR = lrRight(lastCol);
+        const lx = lrLeft(firstCol) + LABEL_PAD;
+        pushPoly(`${firstRow}-${firstCol}`, [
+          { x: bL, y: yLastTop }, { x: bR, y: yLastTop },
+          { x: bR, y: yLastBot }, { x: bL, y: yLastBot },
+        ], label, lx, labelCenterY(lrIdx), lrRight(lastCol) - LABEL_PAD - lx);
+        continue;
+      }
+
+      // Junction: grid portion (rows firstRow..lrIdx-1) + centered bottom row.
+      const F = colRight(cols - 1);
+      const yAboveBottom = tileTop(lrIdx - 1) + tileSize + pad;
+      const jbL = lrLeft(0), jbR = lrRight(lastCol);
+      const topLeftAtBottom = firstRow === lrIdx - 1 ? colLeft(firstCol) : colLeft(0);
+
+      if (lastRowConnects(run)) {
+        // One enclosing shape — the centered bottom necks up into the overlap.
+        const pts: Pt[] = [
+          { x: colLeft(firstCol), y: yTop },
+          { x: F, y: yTop },
+          { x: F, y: yAboveBottom },
+        ];
+        if (jbR < F - 0.01) pts.push({ x: jbR, y: yAboveBottom });
+        pts.push({ x: jbR, y: yLastBot });
+        pts.push({ x: jbL, y: yLastBot });
+        if (jbL > topLeftAtBottom + 0.01) {
+          // bottom contained within the row above → step in along its underside
+          pts.push({ x: jbL, y: yAboveBottom });
+          pts.push({ x: topLeftAtBottom, y: yAboveBottom });
+        } else {
+          // bottom spills left of the row above → step along the bottom's top edge
+          pts.push({ x: jbL, y: yLastTop });
+          pts.push({ x: topLeftAtBottom, y: yLastTop });
+        }
+        if (firstRow < lrIdx - 1) {
+          const yFirstBot = blockTop[firstRow + 1] - pad;
+          pts.push({ x: colLeft(0), y: yFirstBot });
+          pts.push({ x: colLeft(firstCol), y: yFirstBot });
+        }
+        pushPoly(`${firstRow}-${firstCol}`, pts, label, labelX, labelY, labelMaxW);
+        continue;
+      }
+
+      // No x-overlap → two pieces: grid portion + centered continuation.
+      const topPts: Pt[] = firstRow === lrIdx - 1
+        ? [
+            { x: colLeft(firstCol), y: yTop }, { x: F, y: yTop },
+            { x: F, y: yAboveBottom }, { x: colLeft(firstCol), y: yAboveBottom },
+          ]
+        : [
+            { x: colLeft(firstCol), y: yTop }, { x: F, y: yTop },
+            { x: F, y: yAboveBottom }, { x: colLeft(0), y: yAboveBottom },
+            { x: colLeft(0), y: blockTop[firstRow + 1] - pad },
+            { x: colLeft(firstCol), y: blockTop[firstRow + 1] - pad },
+          ];
+      pushPoly(`${firstRow}-${firstCol}`, topPts, label, labelX, labelY, labelMaxW);
+      const cd = roundedPath([
+        { x: jbL, y: yLastTop }, { x: jbR, y: yLastTop },
+        { x: jbR, y: yLastBot }, { x: jbL, y: yLastBot },
+      ], radius, outlineGap);
+      const clx = lrLeft(0) + LABEL_PAD;
+      shapes.push({
+        key: `${run.sectionId}-last`, sectionId: run.sectionId, fill: cd, stroke: cd,
+        fillColor, strokeColor, label, labelAlts: run.labelAlts,
+        labelX: clx, labelY: labelCenterY(lrIdx), labelMaxW: lrRight(lastCol) - LABEL_PAD - clx,
+        isContinuation: true,
+      });
+      continue;
+    }
 
     if (firstRow === lastRow) {
       const yBottom = tileTop(firstRow) + tileSize + pad;
@@ -728,6 +824,7 @@ function SectionOverlays({
   repeatTitles = false,
   titleVBias = 0.6,
   shortenTitles = true,
+  lastRow = null,
 }: {
   runs: SectionRun[];
   cols: number;
@@ -742,8 +839,9 @@ function SectionOverlays({
   repeatTitles?: boolean;
   titleVBias?: number;
   shortenTitles?: boolean;
+  lastRow?: { index: number; count: number; offsetCols: number } | null;
 }) {
-  const shapes = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad, titleVBias);
+  const shapes = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad, titleVBias, lastRow);
   const width = cols * tileSize + (cols - 1) * gap;
   const fontSize = tileSize * 0.26;
   // Re-measure labels once the real font is loaded (canvas metrics depend on it).
@@ -892,22 +990,39 @@ export function ViewPage() {
     const gridSlots = totalSlots - lastRowCount;
     const gridPokemon = sorted.slice(0, gridSlots);
     const lastRowPokemon = sorted.slice(gridSlots);
-    const gridRuns = showSectionOverlays ? computeSectionRuns(gridPokemon, sections, COLS) : [];
-    const lastRowRuns = showSectionOverlays ? computeSectionRuns(lastRowPokemon, sections, lastRowCount) : [];
-    // Rows that carry a label band: every section's first row, plus the second
-    // row of a ≤9-pokemon open wrap (whose name re-appears and needs band space).
-    const bandRowsFor = (rs: SectionRun[]) => {
-      const set = new Set<number>();
-      for (const r of rs) {
-        set.add(r.firstRow);
-        if (r.lastRow - r.firstRow === 1 && r.firstCol > r.lastCol + 1) set.add(r.lastRow);
-      }
-      return set;
-    };
-    const gridStartRows = bandRowsFor(gridRuns);
-    const lastRowStartRows = bandRowsFor(lastRowRuns);
     const totalRows = Math.ceil(totalSlots / COLS);
-    const numStartRows = gridStartRows.size + lastRowStartRows.size;
+    const lastRowIndex = totalRows - 1;
+    const lastRowOffsetCols = (COLS - lastRowCount) / 2;
+    // The centered overflow row only needs special junction handling when it is
+    // actually narrower than the grid (offset > 0); a full last row is uniform.
+    const lastRowGeom = showSectionOverlays && lastRowOffsetCols > 0
+      ? { index: lastRowIndex, count: lastRowCount, offsetCols: lastRowOffsetCols }
+      : null;
+    // One run list across the whole grid, so a section reaching into the centered
+    // last row is a single run that can connect to the cells above it.
+    const allRuns = showSectionOverlays ? computeSectionRuns(sorted, sections, COLS) : [];
+
+    // Does a centered-last-row run's bottom x-overlap the cells above it? (Mirror
+    // of buildOutlines.lastRowConnects — drives band reservation below.)
+    const lastConnects = (r: SectionRun) => {
+      const topLeftCol = r.firstRow === lastRowIndex - 1 ? r.firstCol : 0;
+      return lastRowOffsetCols + r.lastCol + 1 > topLeftCol;
+    };
+    // Rows carrying a label band: each section's first row; the re-shown row of a
+    // ≤9 grid open-wrap; and a *disconnected* centered continuation (which shows
+    // its name again). A connected junction has no band — it flows as one shape.
+    const bandRows = new Set<number>();
+    for (const r of allRuns) {
+      bandRows.add(r.firstRow);
+      if (r.lastRow !== lastRowIndex) {
+        if (r.lastRow - r.firstRow === 1 && r.firstCol > r.lastCol + 1) bandRows.add(r.lastRow);
+      } else if (lastRowGeom && r.firstRow < lastRowIndex && !lastConnects(r)) {
+        bandRows.add(lastRowIndex);
+      }
+    }
+    const gridStartRows = new Set([...bandRows].filter((r) => r < lastRowIndex));
+    const lastRowStartRows = new Set([...bandRows].filter((r) => r === lastRowIndex));
+    const numStartRows = bandRows.size;
     // Fold the uniform gaps, label bands, and the outline's outer `pad` overhang
     // (it sticks `pad` past the grid edges on every side) into the fit factors.
     const colFactor = showSectionOverlays
@@ -918,7 +1033,7 @@ export function ViewPage() {
       : totalRows;
     return {
       lastRowCount, gridSlots, gridPokemon, lastRowPokemon,
-      gridRuns, lastRowRuns, gridStartRows, lastRowStartRows,
+      allRuns, lastRowGeom, gridStartRows, lastRowStartRows,
       colFactor, rowFactor,
     };
   }, [sorted, totalSlots, showSectionOverlays, sections]);
@@ -1169,8 +1284,9 @@ export function ViewPage() {
           {tileSize > 0 && (() => {
             const {
               lastRowCount, gridSlots, gridPokemon, lastRowPokemon,
-              gridRuns, lastRowRuns, gridStartRows, lastRowStartRows,
+              allRuns, lastRowGeom, gridStartRows, lastRowStartRows,
             } = layout;
+            const allStartRows = new Set<number>([...gridStartRows, ...lastRowStartRows]);
             const gridEmpties = Math.max(0, gridSlots - gridPokemon.length);
             const lastRowEmpties = Math.max(0, lastRowCount - lastRowPokemon.length);
 
@@ -1180,7 +1296,6 @@ export function ViewPage() {
             const gap = showSectionOverlays ? tileSize * OUTLINE_GAP : 0;
             const pad = showSectionOverlays ? tileSize * OUTLINE_PAD : 0;
             const headroom = showSectionOverlays ? tileSize * OUTLINE_HEAD : 0;
-            const pitch = tileSize + gap;
             const gridWidth = COLS * tileSize + (COLS - 1) * gap;
 
             const totalGridRows = Math.ceil(gridSlots / COLS);
@@ -1192,7 +1307,6 @@ export function ViewPage() {
             const gridBlockHeight =
               totalGridRows * tileSize + gridStartRows.size * headroom + Math.max(totalGridRows - 1, 0) * gap;
             const lastRowHeight = tileSize + (lastRowStartRows.size > 0 ? headroom : 0);
-            const lastRowOffset = (COLS - lastRowCount) * pitch / 2;
 
             const renderTile = (pokemon: Pokemon, positionNum: number) => (
               <DraggableViewTile
@@ -1219,6 +1333,8 @@ export function ViewPage() {
                 onDragCancel={handleDragCancel}
               >
                 <div style={{ width: gridWidth }}>
+                  {/* Grid + centered overflow row share one relative box so a
+                      single overlay can draw outlines that span the boundary. */}
                   <div className="relative">
                     <div
                       className="grid items-end"
@@ -1237,43 +1353,29 @@ export function ViewPage() {
                           <EmptyPlaceholder key={`empty-${i}`} tileSize={tileSize} num={gridPokemon.length + i + 1} />
                         ))}
                     </div>
-                    {gridRuns.length > 0 && (
+                    {lastRowPokemon.length + lastRowEmpties > 0 && (
+                      <div
+                        className="flex justify-center items-end"
+                        style={{ height: lastRowHeight, columnGap: gap, marginTop: gap }}
+                      >
+                        {lastRowPokemon.map((p, i) => renderTile(p, gridSlots + i + 1))}
+                        {lastRowEmpties > 0 &&
+                          Array.from({ length: lastRowEmpties }, (_, i) => (
+                            <EmptyPlaceholder key={`empty-last-${i}`} tileSize={tileSize} num={gridSlots + lastRowPokemon.length + i + 1} />
+                          ))}
+                      </div>
+                    )}
+                    {allRuns.length > 0 && (
                       <SectionOverlays
-                        runs={gridRuns}
+                        runs={allRuns}
                         cols={COLS}
                         tileSize={tileSize}
-                        startRows={gridStartRows}
+                        startRows={allStartRows}
                         headroom={headroom}
                         gap={gap}
                         pad={pad}
-                        totalHeight={gridBlockHeight}
-                        titleOpacity={titleOpacity}
-                        repeatTitles={repeatTitles}
-                        titleVBias={titleVBias}
-                        shortenTitles={shortenTitles}
-                      />
-                    )}
-                  </div>
-                  <div
-                    className="flex justify-center items-end relative"
-                    style={{ height: lastRowHeight, columnGap: gap, marginTop: gap }}
-                  >
-                    {lastRowPokemon.map((p, i) => renderTile(p, gridSlots + i + 1))}
-                    {lastRowEmpties > 0 &&
-                      Array.from({ length: lastRowEmpties }, (_, i) => (
-                        <EmptyPlaceholder key={`empty-last-${i}`} tileSize={tileSize} num={gridSlots + lastRowPokemon.length + i + 1} />
-                      ))}
-                    {lastRowRuns.length > 0 && (
-                      <SectionOverlays
-                        runs={lastRowRuns}
-                        cols={lastRowCount}
-                        tileSize={tileSize}
-                        startRows={lastRowStartRows}
-                        headroom={headroom}
-                        gap={gap}
-                        pad={pad}
-                        totalHeight={lastRowHeight}
-                        offsetLeft={lastRowOffset}
+                        totalHeight={gridBlockHeight + (lastRowPokemon.length + lastRowEmpties > 0 ? gap + lastRowHeight : 0)}
+                        lastRow={lastRowGeom}
                         titleOpacity={titleOpacity}
                         repeatTitles={repeatTitles}
                         titleVBias={titleVBias}
