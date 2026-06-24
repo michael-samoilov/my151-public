@@ -680,7 +680,7 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex }: { rec: ClientRe
 
   return (
     <section ref={cardRef} className="shadow-elevated rounded-lg bg-card scroll-mt-[64px] relative" style={{ zIndex }}>
-      <div ref={headerRef} className={`sticky top-[64px] z-[5] bg-card rounded-t-lg p-3 ${expanded ? 'pb-1 border-b border-border/50' : 'rounded-b-lg'}`} style={{ boxShadow: '0 -1.5rem 0 0 var(--color-background)' }}>
+      <div ref={headerRef} className={`sticky top-[64px] z-[5] bg-card rounded-t-lg p-3 ${expanded ? 'pb-1 border-b border-border/50' : 'rounded-b-lg'}`} style={{ boxShadow: '0 -5rem 0 0 var(--color-background)' }}>
         <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
           <div className="text-sm">
             <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
