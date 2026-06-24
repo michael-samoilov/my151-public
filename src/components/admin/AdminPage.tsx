@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAllPokemon, getPokemonById } from '@/hooks/usePokemonData';
@@ -1254,6 +1254,20 @@ export function AdminPage() {
     setTokenInput('');
   }, []);
 
+  const { offPickRows, offPickBySection } = useMemo(() => {
+    const bySec = data?.popularBySection;
+    if (!bySec) return { offPickRows: [] as [string, number][], offPickBySection: {} as Record<string, [string, number][]> };
+    const perSection: Record<string, [string, number][]> = {};
+    const totals: Record<string, number> = {};
+    for (const [sid, entries] of Object.entries(bySec)) {
+      const off = entries.filter(([id]) => isOffSection(Number(id), sid));
+      if (off.length > 0) perSection[sid] = off;
+      for (const [id, n] of off) totals[id] = (totals[id] ?? 0) + n;
+    }
+    const rows: [string, number][] = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    return { offPickRows: rows, offPickBySection: perSection };
+  }, [data?.popularBySection]);
+
   if (!authed) {
     return (
       <div className="min-h-dvh flex items-center justify-center p-4 bg-background">
@@ -1341,6 +1355,14 @@ export function AdminPage() {
                 bySection={data.droppedBySection}
               />
             </div>
+
+            {offPickRows.length > 0 && (
+              <PopularPanel
+                title="Most off-section picks"
+                rows={offPickRows}
+                bySection={offPickBySection}
+              />
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card title="By country">
