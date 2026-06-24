@@ -497,6 +497,14 @@ function buildOutlines(
   }
   const tileTop = (r: number) => blockTop[r] + (startRows.has(r) ? headroom : 0);
 
+  // Vertical centre line for a section's name: midway between the outline's top
+  // edge (pad above the band) and the top of that row's pokeball circles (the
+  // circle graphic starts ~5% into the tile). The label is translateY(-50%)'d
+  // onto this line in the render, so it stays centred regardless of font size.
+  const CIRCLE_TOP_INSET = 0.05;
+  const labelCenterY = (row: number) =>
+    blockTop[row] + (headroom - pad + tileSize * CIRCLE_TOP_INSET) / 2;
+
   const radius = Math.max(4, tileSize * 0.26);
 
   // A border for column c sits `pad` outside the tile, into the surrounding gap.
@@ -524,7 +532,7 @@ function buildOutlines(
 
     const firstRowRight = firstRow === lastRow ? colRight(lastCol) : xR;
     const labelX = firstCol * pitch + tileSize * 0.07;
-    const labelY = blockTop[firstRow] + headroom * 0.45;
+    const labelY = labelCenterY(firstRow);
     const labelMaxW = Math.max(tileSize, firstRowRight - labelX - tileSize * 0.06);
 
     // The top border sits `pad` above the label band (the band is part of the
@@ -558,7 +566,7 @@ function buildOutlines(
       const yTopB = blockTop[lastRow] - pad;
       const yBotB = tileTop(lastRow) + tileSize + pad;
       const labelBX = tileSize * 0.07;
-      const labelBY = blockTop[lastRow] + headroom * 0.45;
+      const labelBY = labelCenterY(lastRow);
       const labelBW = Math.max(tileSize, xLastR - labelBX - tileSize * 0.06);
       shapes.push({
         key: `${run.sectionId}-b`,
@@ -620,7 +628,7 @@ function SectionOverlays({
 }) {
   const shapes = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad);
   const width = cols * tileSize + (cols - 1) * gap;
-  const fontSize = tileSize * 0.13;
+  const fontSize = tileSize * 0.325;
 
   return (
     <div
@@ -701,10 +709,11 @@ function SectionOverlays({
         s.label ? (
           <div
             key={`label-${s.key}`}
-            className="absolute leading-none font-semibold select-none truncate"
+            className="absolute leading-none font-semibold uppercase select-none truncate"
             style={{
               left: s.labelX,
               top: s.labelY,
+              transform: 'translateY(-50%)',
               maxWidth: s.labelMaxW,
               fontSize,
               color: s.strokeColor,
