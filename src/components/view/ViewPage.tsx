@@ -349,26 +349,35 @@ function getSectionLabelChain(groupId: string): string[] {
 }
 
 // --- Label fitting -------------------------------------------------------
-// A section name is drawn at a fixed font size, but its outline may be as narrow
-// as a single tile. To keep names whole (never truncated) we, in order:
-//   1. squash the name horizontally (scaleX) down to MIN_LABEL_SCALE, then
-//   2. fall back to the next shorter name (un-squashed first), repeating.
-// MIN_LABEL_SCALE is the tightest condensing that still reads at "black" weight.
+// A section name is drawn at a base font size, but its outline may be as narrow
+// as a single tile (or much wider). To keep names whole we, per candidate name:
+//   • squash horizontally (scaleX < 1) down to MIN_LABEL_SCALE if too wide, else
+//   • stretch (scaleX > 1) up to MAX_LABEL_STRETCH, capped at the section width.
+// If a name still overflows when squashed to the floor, the next shorter name in
+// the chain is tried. If even the shortest overflows, it is left to WRAP within
+// the section width — a deliberate WIP signal that nothing fits (rather than
+// silently spilling on one line).
+// TODO (WIP): play with kerning (letter-spacing) alongside squash/stretch.
 const MIN_LABEL_SCALE = 0.72;
+const MAX_LABEL_STRETCH = 1.4;
 
 let _measureCanvas: HTMLCanvasElement | null = null;
 function measureLabelWidth(text: string, fontPx: number): number {
-  if (typeof document === 'undefined') return text.length * fontPx * 0.62;
+  // Labels render uppercase (CSS), and caps are wider than the title-case source
+  // strings — so measure the uppercased form or the fit will be under-estimated.
+  const t = text.toUpperCase();
+  if (typeof document === 'undefined') return t.length * fontPx * 0.62;
   _measureCanvas ??= document.createElement('canvas');
   const ctx = _measureCanvas.getContext('2d');
-  if (!ctx) return text.length * fontPx * 0.62;
+  if (!ctx) return t.length * fontPx * 0.62;
   ctx.font = `900 ${fontPx}px 'Inter Variable', system-ui, sans-serif`;
-  return ctx.measureText(text).width;
+  return ctx.measureText(t).width;
 }
 
-/** Pick the longest name from the chain that fits `availWidth` at `fontPx`,
- *  squashing up to MIN_LABEL_SCALE before moving to a shorter name. Returns the
- *  chosen text, its horizontal scale, and whether it fits at all. */
+/** Pick the longest chain name that fits `availWidth` at `fontPx`. A fitting
+ *  name stretches up to MAX_LABEL_STRETCH (bounded by the width); an over-wide
+ *  name squashes down to MIN_LABEL_SCALE before the next shorter name is tried.
+ *  `fits: false` means nothing fit — the caller should let the label wrap. */
 function fitLabel(
   alts: string[],
   availWidth: number,
@@ -376,13 +385,16 @@ function fitLabel(
 ): { text: string; scaleX: number; fits: boolean } {
   for (const text of alts) {
     const w = measureLabelWidth(text, fontPx);
-    if (w <= availWidth) return { text, scaleX: 1, fits: true };
-    const scale = availWidth / w;
-    if (scale >= MIN_LABEL_SCALE) return { text, scaleX: scale, fits: true };
+    if (w <= availWidth) {
+      const scaleX = Math.min(MAX_LABEL_STRETCH, availWidth / w);
+      return { text, scaleX, fits: true };
+    }
+    const squash = availWidth / w;
+    if (squash >= MIN_LABEL_SCALE) return { text, scaleX: squash, fits: true };
   }
-  // Nothing fits even at the shortest name squashed to the limit: keep the
-  // shortest name at the readable minimum scale (it will overflow the outline).
-  return { text: alts[alts.length - 1], scaleX: MIN_LABEL_SCALE, fits: false };
+  // Nothing fits even squashed to the floor: render the shortest name un-scaled
+  // and let it wrap within the section, so the overflow is visible (WIP).
+  return { text: alts[alts.length - 1], scaleX: 1, fits: false };
 }
 
 interface SectionRun {
@@ -660,6 +672,13 @@ function buildOutlines(
     // Contiguous multi-row ribbon — one enclosing outline. The left step rises
     // to the band of the row below (so a last row sharing a band row reaches the
     // same height as the new section); the right step sits below the row above.
+    //
+    // TODO (WIP): grid corner spandrels. At the inner corner where this ribbon's
+    // bottom row shares a row with a NEW section that starts there (the row gains
+    // a top band/gap, leaving an L-shaped notch above the step), fill that
+    // spandrel with the type icon of the section's most-common constituent
+    // default-pokemon type. Non-type-adjacent sections (starter, legendary,
+    // mythical, fossil, …) use a curved 4-point star instead.
     const yLeftStep = blockTop[firstRow + 1] - pad;
     const yRightStep = tileTop(lastRow - 1) + tileSize + pad;
     const yBottom = tileTop(lastRow) + tileSize + pad;
@@ -782,15 +801,16 @@ function SectionOverlays({
       </svg>
       {shapes.map((s) => {
         if (!s.label) return null;
-        // Fit the name to its outline: squash, then fall back to shorter names.
+        // Fit the name to its outline: stretch/squash, fall back to shorter
+        // names, and when nothing fits let it wrap so the overflow is visible.
         // (fontsReady is read so the result re-measures once the font loads.)
         const fit = fontsReady
           ? fitLabel(s.labelAlts, s.labelMaxW, fontSize)
-          : { text: s.labelAlts[0], scaleX: 1 };
+          : { text: s.labelAlts[0], scaleX: 1, fits: true };
         return (
           <div
             key={`label-${s.key}`}
-            className="absolute leading-none font-black uppercase select-none whitespace-nowrap"
+            className="absolute leading-none font-black uppercase select-none"
             style={{
               left: s.labelX,
               top: s.labelY,
@@ -799,6 +819,8 @@ function SectionOverlays({
               fontSize,
               color: s.strokeColor,
               opacity: 0.9,
+              whiteSpace: fit.fits ? 'nowrap' : 'normal',
+              maxWidth: fit.fits ? undefined : s.labelMaxW,
             }}
           >
             {fit.text}
