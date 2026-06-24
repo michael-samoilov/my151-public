@@ -319,7 +319,6 @@ const SHORT_NAMES: Record<string, string> = {
   'other': 'Other Areas',
   'cave-pokemon': 'Cave',
   'fishing-pokemon': 'Fishing',
-  'pseudo-legendary': 'Pseudo-Leg.',
   'rivalry-pair': 'Rivalry',
   'evil-team': 'Evil Team',
   'pikachu-clone': 'Pikaclone',
@@ -336,12 +335,10 @@ function getSectionLabel(groupId: string): string {
 // shorter form is tried. Sections not listed here only have their single label.
 const SECTION_NAME_CHAINS: Record<string, string[]> = {
   'pikachu-clone': ['Pikaclone', 'Pika'],
-  'other': ['Other Routes & Areas', 'Other Areas', 'Other'],
-  'early-bug': ['Early Bug', 'E. Bug', 'Bug'],
-  'early-bird': ['Early Bird', 'E. Bird', 'Bird'],
-  'early-rodent': ['Early Mammal', 'E. Mammal', 'Mammal'],
+  'other': ['Other Areas', 'Other'],
+  'early-rodent': ['Early Mammal', 'Mammal'],
   'industrial': ['Industrial', 'Indust.'],
-  'evil-team': ['Evil Team', 'Evil'],
+  'pseudo-legendary': ['Pseudo-Legendary', 'Pseudo'],
 };
 
 function getSectionLabelChain(groupId: string): string[] {
@@ -727,9 +724,9 @@ function SectionOverlays({
   pad,
   totalHeight,
   offsetLeft = 0,
-  titleOpacity = 0.7,
-  repeatTitles = true,
-  titleVBias = 0.5,
+  titleOpacity = 0.5,
+  repeatTitles = false,
+  titleVBias = 0.6,
   shortenTitles = true,
 }: {
   runs: SectionRun[];

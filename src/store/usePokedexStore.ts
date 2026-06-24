@@ -118,9 +118,9 @@ export const usePokedexStore = create<PokedexState>()(
       viewGroupSpecialAtEnd: true,
       viewCustomOrder: null,
       viewShowSections: DEMO_MODE,
-      viewTitleOpacity: 0.7,
-      viewRepeatTitles: true,
-      viewTitleVBias: 0.5,
+      viewTitleOpacity: 0.5,
+      viewRepeatTitles: false,
+      viewTitleVBias: 0.6,
       viewShortenTitles: true,
 
       addToSection: (sectionId, pokemonIds) =>
@@ -300,7 +300,11 @@ export const usePokedexStore = create<PokedexState>()(
     }),
     {
       name: POKEDEX_STORAGE_KEY,
-      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections, viewTitleOpacity: state.viewTitleOpacity, viewRepeatTitles: state.viewRepeatTitles, viewTitleVBias: state.viewTitleVBias, viewShortenTitles: state.viewShortenTitles }),
+      // NB: the four title tuning knobs (opacity / repeat / vBias / shorten) are
+      // deliberately NOT persisted — they are preview-only debug controls, so the
+      // code defaults stay authoritative and a default change takes effect on load
+      // rather than being shadowed by a stale persisted value.
+      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections }),
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
           sections?: Record<string, number[]>;
@@ -350,9 +354,17 @@ export const usePokedexStore = create<PokedexState>()(
           result.viewCustomOrder = null;
         }
 
+        // v7 → v8: title tuning knobs are no longer persisted — strip any stale
+        // values so the (preview-only) code defaults take effect on load.
+        const r = result as Record<string, unknown>;
+        delete r.viewTitleOpacity;
+        delete r.viewRepeatTitles;
+        delete r.viewTitleVBias;
+        delete r.viewShortenTitles;
+
         return result;
       },
-      version: 7,
+      version: 8,
     }
   )
 );
