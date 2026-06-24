@@ -4,6 +4,7 @@ import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { computeRemovalCascade, getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
+import { sectionColor } from '@/lib/sectionColors';
 import {
   PokemonTileContent,
   TILE_ACTION_BUTTON_CLASS,
@@ -361,6 +362,10 @@ function GroupBox({
   // Starters always use the expanded grid path (for green/red/blue placeholders)
   const showEmptyState = isEmpty && !isStarter;
   const hasPokemon = pokemonIds.length > 0;
+  // Accessible fill/stroke pair (see src/lib/sectionColors.ts): the light FILL
+  // tints the section background, the dark STROKE draws the border, label, and
+  // empty-state "+", so text/outline stay legible on the fill for every section.
+  const { fill: sectionFill, stroke: sectionStroke } = sectionColor(group.id);
 
   // Hover state for evo-line X highlight.
   // Uses onMouseOver on the grid container (bubbles from any descendant) to detect
@@ -462,15 +467,15 @@ function GroupBox({
       onTransitionEnd={handleTransitionEnd}
       className="rounded-lg"
       style={{
-        backgroundColor: `${group.color}${hasPokemon ? '10' : '10'}`,
-        border: `1px solid ${group.color}${hasPokemon ? '25' : '20'}`,
+        backgroundColor: `${sectionFill}${hasPokemon ? '40' : '20'}`,
+        border: `1px solid ${sectionStroke}30`,
       }}
     >
       {/* Label */}
       <div
         className="text-xs font-semibold uppercase tracking-wide px-1.5"
         style={{
-          color: `color-mix(in srgb, ${group.color} 65%, black)`,
+          color: sectionStroke,
           opacity: showEmptyState ? 0.75 : 1,
           paddingTop: showEmptyState ? '0px' : '4px',
           paddingBottom: showEmptyState ? '0px' : '2px',
@@ -495,8 +500,8 @@ function GroupBox({
               onClick={() => onAddClick(group.id)}
               className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,opacity,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer hover:opacity-80"
               style={{
-                borderColor: `${group.color}40`,
-                color: `${group.color}90`,
+                borderColor: `${sectionStroke}55`,
+                color: `${sectionStroke}b0`,
               }}
             >
               <Plus className="w-[27%] h-[27%]" />

@@ -14,6 +14,7 @@ import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { PREVIEW_FEATURES } from '@/lib/demoMode';
+import { sectionColor } from '@/lib/sectionColors';
 import {
   DndContext,
   MouseSensor,
@@ -314,12 +315,11 @@ function getSectionLabel(groupId: string): string {
   return SHORT_NAMES[groupId] ?? BUILD_GROUPS.find(g => g.id === groupId)?.name ?? groupId;
 }
 
-const BUILD_GROUP_MAP = new Map(BUILD_GROUPS.map(g => [g.id, g]));
-
 interface SectionRun {
   sectionId: string;
   label: string;
-  color: string;
+  fillColor: string;
+  strokeColor: string;
   firstRow: number;
   firstCol: number;
   lastRow: number;
@@ -346,11 +346,12 @@ function computeSectionRuns(
       end++;
     }
 
-    const group = BUILD_GROUP_MAP.get(sectionId);
+    const { fill, stroke } = sectionColor(sectionId);
     runs.push({
       sectionId,
       label: getSectionLabel(sectionId),
-      color: group?.color ?? '#888888',
+      fillColor: fill,
+      strokeColor: stroke,
       firstRow: Math.floor(i / cols),
       firstCol: i % cols,
       lastRow: Math.floor((end - 1) / cols),
@@ -459,7 +460,8 @@ interface OutlineShape {
   key: string;
   fill: string;
   stroke: string;
-  color: string;
+  fillColor: string;
+  strokeColor: string;
   label: string | null;
   labelX: number;
   labelY: number;
@@ -510,11 +512,11 @@ function buildOutlines(
   let run: SectionRun;
   const pushPoly = (suffix: string, pts: Pt[], lbl: string | null, lx: number, ly: number, lw: number) => {
     const d = roundedPath(pts, radius, outlineGap);
-    shapes.push({ key: `${run.sectionId}-${suffix}`, fill: d, stroke: d, color: run.color, label: lbl, labelX: lx, labelY: ly, labelMaxW: lw });
+    shapes.push({ key: `${run.sectionId}-${suffix}`, fill: d, stroke: d, fillColor: run.fillColor, strokeColor: run.strokeColor, label: lbl, labelX: lx, labelY: ly, labelMaxW: lw });
   };
 
   for (run of runs) {
-    const { firstRow, firstCol, lastRow, lastCol, color, label } = run;
+    const { firstRow, firstCol, lastRow, lastCol, fillColor, strokeColor, label } = run;
     const xL = colLeft(0);
     const xR = colRight(cols - 1);
     const xFirstL = colLeft(firstCol);
@@ -548,7 +550,7 @@ function buildOutlines(
         key: `${run.sectionId}-a`,
         fill: roundRectFill(xFirstL, yTop, xR, yBotA, radius, false, true),
         stroke: roundRectStroke(xFirstL, yTop, xR, yBotA, radius, false, true, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
-        color, label, labelX, labelY, labelMaxW,
+        fillColor, strokeColor, label, labelX, labelY, labelMaxW,
         open: { side: 'right', x0: xFirstL, x1: xR, topY: yTop, botY: yBotA },
       });
       // lastRow is guaranteed a band row (see layout memo), so the re-shown
@@ -562,7 +564,7 @@ function buildOutlines(
         key: `${run.sectionId}-b`,
         fill: roundRectFill(xL, yTopB, xLastR, yBotB, radius, true, false),
         stroke: roundRectStroke(xL, yTopB, xLastR, yBotB, radius, true, false, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
-        color, label, labelX: labelBX, labelY: labelBY, labelMaxW: labelBW,
+        fillColor, strokeColor, label, labelX: labelBX, labelY: labelBY, labelMaxW: labelBW,
         open: { side: 'left', x0: xL, x1: xLastR, topY: yTopB, botY: yBotB },
       });
       continue;
@@ -641,8 +643,8 @@ function SectionOverlays({
                 gradientUnits="userSpaceOnUse"
                 x1={gx1} y1={0} x2={gx2} y2={0}
               >
-                <stop offset="0%" stopColor={s.color} stopOpacity={1} />
-                <stop offset="100%" stopColor={s.color} stopOpacity={0} />
+                <stop offset="0%" stopColor={s.fillColor} stopOpacity={1} />
+                <stop offset="100%" stopColor={s.fillColor} stopOpacity={0} />
               </linearGradient>
             );
           })}
@@ -651,8 +653,8 @@ function SectionOverlays({
           <path
             key={`fill-${s.key}`}
             d={s.fill}
-            fill={s.open ? `url(#outline-fade-${s.key})` : `${s.color}12`}
-            fillOpacity={s.open ? 0.07 : 1}
+            fill={s.open ? `url(#outline-fade-${s.key})` : s.fillColor}
+            fillOpacity={0.4}
             fillRule="evenodd"
             stroke="none"
           />
@@ -662,8 +664,8 @@ function SectionOverlays({
             key={`stroke-${s.key}`}
             d={s.stroke}
             fill="none"
-            stroke={s.color}
-            strokeOpacity={0.5}
+            stroke={s.strokeColor}
+            strokeOpacity={0.85}
             strokeWidth={OUTLINE_STROKE_W}
             strokeLinejoin="round"
             // Round caps. The open stroke's path is lengthened by half a stroke
@@ -688,7 +690,7 @@ function SectionOverlays({
                 cx={edge + dir * (0.5 + 2 * i) * OUTLINE_STROKE_W}
                 cy={cy}
                 r={OUTLINE_STROKE_W / 2}
-                fill={s.color}
+                fill={s.strokeColor}
                 fillOpacity={0.5}
               />
             )),
@@ -705,7 +707,7 @@ function SectionOverlays({
               top: s.labelY,
               maxWidth: s.labelMaxW,
               fontSize,
-              color: s.color,
+              color: s.strokeColor,
               opacity: 0.9,
             }}
           >
