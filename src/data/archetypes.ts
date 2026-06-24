@@ -316,7 +316,7 @@ export const ARCHETYPES: Archetype[] = [
   },
   {
     id: 'ruins',
-    name: 'Ruins',
+    name: 'Temple',
     description: 'Psychic and mystical Pokémon found in ancient ruins, temples, and sacred sites',
     pokemonIds: [
       63,64,65,        // Abra→Kadabra→Alakazam

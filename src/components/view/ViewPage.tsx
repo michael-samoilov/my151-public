@@ -323,7 +323,7 @@ const SHORT_NAMES: Record<string, string> = {
   'evil-team': 'Evil Team',
   'pikachu-clone': 'Pikaclone',
   'mimic': 'Mimic',
-  'ruins': 'Ruins',
+  'ruins': 'Temple',
 };
 
 function getSectionLabel(groupId: string): string {
