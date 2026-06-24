@@ -50,6 +50,12 @@ interface PokedexState {
    *  Null means no custom order has been created yet. */
   viewCustomOrder: number[] | null;
   viewShowSections: boolean;
+  /** Preview-only debug knobs for the section-outline titles. */
+  viewTitleOpacity: number;
+  viewRepeatTitles: boolean;
+  /** Vertical placement of the title between the outline top (0) and the top of
+   *  the row's pokeball circles (1). */
+  viewTitleVBias: number;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -77,6 +83,9 @@ interface PokedexState {
   setViewGroupSpecialAtEnd: (value: boolean) => void;
   setViewCustomOrder: (order: number[] | null) => void;
   setViewShowSections: (value: boolean) => void;
+  setViewTitleOpacity: (value: number) => void;
+  setViewRepeatTitles: (value: boolean) => void;
+  setViewTitleVBias: (value: number) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -105,6 +114,9 @@ export const usePokedexStore = create<PokedexState>()(
       viewGroupSpecialAtEnd: true,
       viewCustomOrder: null,
       viewShowSections: DEMO_MODE,
+      viewTitleOpacity: 0.7,
+      viewRepeatTitles: true,
+      viewTitleVBias: 0.5,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -276,10 +288,13 @@ export const usePokedexStore = create<PokedexState>()(
       setViewGroupSpecialAtEnd: (value) => set({ viewGroupSpecialAtEnd: value }),
       setViewCustomOrder: (order) => set({ viewCustomOrder: order }),
       setViewShowSections: (value) => set({ viewShowSections: value }),
+      setViewTitleOpacity: (value) => set({ viewTitleOpacity: value }),
+      setViewRepeatTitles: (value) => set({ viewRepeatTitles: value }),
+      setViewTitleVBias: (value) => set({ viewTitleVBias: value }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,
-      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections }),
+      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections, viewTitleOpacity: state.viewTitleOpacity, viewRepeatTitles: state.viewRepeatTitles, viewTitleVBias: state.viewTitleVBias }),
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
           sections?: Record<string, number[]>;

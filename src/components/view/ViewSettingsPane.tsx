@@ -66,6 +66,13 @@ export function ViewSettingsPane({
   const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
   const showSections = usePokedexStore((s) => s.viewShowSections);
   const setShowSections = usePokedexStore((s) => s.setViewShowSections);
+  // Preview-only debug knobs — applied live (no pending/mobile-sheet buffering).
+  const titleOpacity = usePokedexStore((s) => s.viewTitleOpacity);
+  const setTitleOpacity = usePokedexStore((s) => s.setViewTitleOpacity);
+  const repeatTitles = usePokedexStore((s) => s.viewRepeatTitles);
+  const setRepeatTitles = usePokedexStore((s) => s.setViewRepeatTitles);
+  const titleVBias = usePokedexStore((s) => s.viewTitleVBias);
+  const setTitleVBias = usePokedexStore((s) => s.setViewTitleVBias);
 
   // Pending state is only used in mobileSheet mode. In desktop mode handlers
   // write straight to the store and the pending setters go unused.
@@ -316,6 +323,68 @@ export function ViewSettingsPane({
                 Outlines groups of Pokémon matching their build page sections.
               </p>
             </button>
+
+            {effShowSections && (
+              <div className="mt-2 space-y-3 px-3">
+                {/* Title opacity slider (debug) */}
+                <label className="block">
+                  <div className="flex items-center justify-between text-sm text-foreground">
+                    <span>Title opacity</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {titleOpacity.toFixed(2)}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={titleOpacity}
+                    onChange={(e) => setTitleOpacity(Number(e.target.value))}
+                    className="w-full mt-1 accent-primary cursor-pointer"
+                  />
+                </label>
+
+                {/* Title vertical position slider (debug): 0 = top border, 1 = circles */}
+                <label className="block">
+                  <div className="flex items-center justify-between text-sm text-foreground">
+                    <span>Title vertical position</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {titleVBias.toFixed(2)}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={titleVBias}
+                    onChange={(e) => setTitleVBias(Number(e.target.value))}
+                    className="w-full mt-1 accent-primary cursor-pointer"
+                  />
+                </label>
+
+                {/* Repeat-titles toggle (debug): A = every piece, B = first only */}
+                <button type="button"
+                  onClick={() => setRepeatTitles(!repeatTitles)}
+                  className={`w-full text-left rounded-md px-3 py-2 transition-colors cursor-pointer ${repeatTitles ? 'bg-primary/10' : 'hover:bg-muted'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                        repeatTitles ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                      }`}
+                    >
+                      {repeatTitles && <Check className="w-3 h-3 text-primary-foreground" />}
+                    </span>
+                    <span className={`text-sm ${repeatTitles ? 'text-primary font-medium' : 'text-foreground'}`}>Repeat titles on split sections</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
+                    Off: a section's title shows only above its first Pokémon.
+                  </p>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
