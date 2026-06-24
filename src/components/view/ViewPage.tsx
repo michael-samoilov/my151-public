@@ -13,6 +13,7 @@ import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
+import { PREVIEW_FEATURES } from '@/lib/demoMode';
 import {
   DndContext,
   MouseSensor,
@@ -732,7 +733,8 @@ export function ViewPage() {
   const count = sorted.length;
   const totalSlots = Math.max(count, 151);
 
-  const showSectionOverlays = showSections && sortOption === 'build-order';
+  // Build-section outlines are a preview-only feature — never on production.
+  const showSectionOverlays = PREVIEW_FEATURES && showSections && sortOption === 'build-order';
 
   // Section geometry + the effective grid sizing factors. In outline mode the
   // grid gains inter-cell gaps and per-section label bands; folding those into

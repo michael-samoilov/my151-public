@@ -4,6 +4,7 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { PREVIEW_FEATURES } from '@/lib/demoMode';
 
 interface SortOption {
   value: ViewSortOption;
@@ -291,8 +292,8 @@ export function ViewSettingsPane({
           </button>
         </div>
 
-        {/* Section outlines — only for build-order sort */}
-        {effSort === 'build-order' && (
+        {/* Section outlines — preview-only feature, build-order sort only */}
+        {PREVIEW_FEATURES && effSort === 'build-order' && (
           <div className="px-3 pt-3 pb-2 border-t">
             <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
               Sections
