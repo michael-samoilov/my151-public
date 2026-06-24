@@ -14,6 +14,19 @@
 // vite.config.ts); it is '' locally and on non-Vercel builds.
 declare const __DEPLOY_ENV__: string;
 
+const DEPLOY_ENV: string = (() => {
+  try {
+    return typeof __DEPLOY_ENV__ !== 'undefined' ? __DEPLOY_ENV__ : '';
+  } catch {
+    return '';
+  }
+})();
+
+/** Whether unfinished, preview-only features (the View-page build-section
+ *  outlines) are available. Hidden on the live production build; on for Vercel
+ *  preview deployments and local dev. */
+export const PREVIEW_FEATURES: boolean = DEPLOY_ENV !== 'production';
+
 export const DEMO_MODE: boolean = (() => {
   try {
     const env = typeof __DEPLOY_ENV__ !== 'undefined' ? __DEPLOY_ENV__ : '';
