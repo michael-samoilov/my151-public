@@ -665,7 +665,7 @@ function SectionOverlays({
             d={s.stroke}
             fill="none"
             stroke={s.strokeColor}
-            strokeOpacity={0.85}
+            strokeOpacity={0.2}
             strokeWidth={OUTLINE_STROKE_W}
             strokeLinejoin="round"
             // Round caps. The open stroke's path is lengthened by half a stroke
@@ -691,7 +691,7 @@ function SectionOverlays({
                 cy={cy}
                 r={OUTLINE_STROKE_W / 2}
                 fill={s.strokeColor}
-                fillOpacity={0.5}
+                fillOpacity={0.2}
               />
             )),
           );
