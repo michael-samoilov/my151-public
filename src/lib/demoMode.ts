@@ -35,12 +35,29 @@ export const PREVIEW_FEATURES: boolean = (() => {
   }
 })();
 
+/** Whether the `?demo=spandrels` test fixture is requested — a crafted dex that
+ *  exercises every section's corner spandrel. Production-gated like DEMO_MODE. */
+export const SPANDREL_DEMO: boolean = (() => {
+  try {
+    const env = typeof __DEPLOY_ENV__ !== 'undefined' ? __DEPLOY_ENV__ : '';
+    if (env === 'production') return false;
+    return (
+      typeof window !== 'undefined' &&
+      new URLSearchParams(window.location.search).get('demo') === 'spandrels'
+    );
+  } catch {
+    return false;
+  }
+})();
+
 export const DEMO_MODE: boolean = (() => {
   try {
     const env = typeof __DEPLOY_ENV__ !== 'undefined' ? __DEPLOY_ENV__ : '';
     // Hard stop on production: the flag is ignored there, so there is no way for
     // a real user to trigger the demo dex on the live site.
     if (env === 'production') return false;
+    // The spandrel test fixture also runs in demo mode.
+    if (SPANDREL_DEMO) return true;
     // Auto-on for Vercel preview deployments.
     if (env === 'preview') return true;
     // Otherwise (preview/local) honour an explicit opt-in flag.
@@ -54,7 +71,10 @@ export const DEMO_MODE: boolean = (() => {
 })();
 
 /** localStorage key for the persisted dex — a separate, throwaway key in demo
- *  mode so real saved data is never touched. */
-export const POKEDEX_STORAGE_KEY = DEMO_MODE
-  ? 'personal-151-pokedex-demo'
-  : 'personal-151-pokedex-v3';
+ *  mode so real saved data is never touched. The spandrel fixture gets its own
+ *  key too, so it never clobbers the regular demo dex. */
+export const POKEDEX_STORAGE_KEY = SPANDREL_DEMO
+  ? 'personal-151-pokedex-spandrel-demo'
+  : DEMO_MODE
+    ? 'personal-151-pokedex-demo'
+    : 'personal-151-pokedex-v3';
