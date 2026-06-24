@@ -340,7 +340,7 @@ const SECTION_NAME_CHAINS: Record<string, string[]> = {
   'early-bug': ['Early Bug', 'E. Bug', 'Bug'],
   'early-bird': ['Early Bird', 'E. Bird', 'Bird'],
   'early-rodent': ['Early Mammal', 'E. Mammal', 'Mammal'],
-  'industrial': ['Industrial', 'Industry'],
+  'industrial': ['Industrial', 'Indust.'],
   'evil-team': ['Evil Team', 'Evil'],
 };
 
@@ -354,9 +354,9 @@ function getSectionLabelChain(groupId: string): string[] {
 //   • squash horizontally (scaleX < 1) down to MIN_LABEL_SCALE if too wide, else
 //   • stretch (scaleX > 1) up to MAX_LABEL_STRETCH, capped at the section width.
 // If a name still overflows when squashed to the floor, the next shorter name in
-// the chain is tried. If even the shortest overflows, it is left to WRAP within
-// the section width — a deliberate WIP signal that nothing fits (rather than
-// silently spilling on one line).
+// the chain is tried. If even the shortest name doesn't fit at the floor, it is
+// squashed the rest of the way to fit the available space exactly (below the
+// floor) — names are never truncated or wrapped.
 // TODO (WIP): play with kerning (letter-spacing) alongside squash/stretch.
 const MIN_LABEL_SCALE = 0.72;
 const MAX_LABEL_STRETCH = 1.4;
@@ -377,24 +377,25 @@ function measureLabelWidth(text: string, fontPx: number): number {
 /** Pick the longest chain name that fits `availWidth` at `fontPx`. A fitting
  *  name stretches up to MAX_LABEL_STRETCH (bounded by the width); an over-wide
  *  name squashes down to MIN_LABEL_SCALE before the next shorter name is tried.
- *  `fits: false` means nothing fit — the caller should let the label wrap. */
+ *  If nothing fits at the floor, the shortest name is squashed to fit exactly. */
 function fitLabel(
   alts: string[],
   availWidth: number,
   fontPx: number,
-): { text: string; scaleX: number; fits: boolean } {
+): { text: string; scaleX: number } {
   for (const text of alts) {
     const w = measureLabelWidth(text, fontPx);
     if (w <= availWidth) {
-      const scaleX = Math.min(MAX_LABEL_STRETCH, availWidth / w);
-      return { text, scaleX, fits: true };
+      return { text, scaleX: Math.min(MAX_LABEL_STRETCH, availWidth / w) };
     }
     const squash = availWidth / w;
-    if (squash >= MIN_LABEL_SCALE) return { text, scaleX: squash, fits: true };
+    if (squash >= MIN_LABEL_SCALE) return { text, scaleX: squash };
   }
-  // Nothing fits even squashed to the floor: render the shortest name un-scaled
-  // and let it wrap within the section, so the overflow is visible (WIP).
-  return { text: alts[alts.length - 1], scaleX: 1, fits: false };
+  // Nothing fits even squashed to the floor: squash the shortest name the rest
+  // of the way so it fits the available space exactly (no wrap, no truncation).
+  const shortest = alts[alts.length - 1];
+  const w = measureLabelWidth(shortest, fontPx);
+  return { text: shortest, scaleX: availWidth / w };
 }
 
 interface SectionRun {
@@ -542,6 +543,7 @@ function roundRectStroke(x0: number, y0: number, x1: number, y1: number, r: numb
 
 interface OutlineShape {
   key: string;
+  sectionId: string;
   fill: string;
   stroke: string;
   fillColor: string;
@@ -582,19 +584,31 @@ function buildOutlines(
   }
   const tileTop = (r: number) => blockTop[r] + (startRows.has(r) ? headroom : 0);
 
-  // Vertical centre line for a section's name: midway between the outline's top
-  // edge (pad above the band) and the top of that row's pokeball circles (the
-  // circle graphic starts ~5% into the tile). The label is translateY(-50%)'d
-  // onto this line in the render, so it stays centred regardless of font size.
+  // Vertical line the section name is centred on (translateY(-50%) in render).
+  // It sits between the outline's top edge and the top of that row's pokeball
+  // circles, biased downward (LABEL_V_BIAS > 0.5) so it reads nearer the circles
+  // than the border rather than hugging the top edge.
   const CIRCLE_TOP_INSET = 0.05;
-  const labelCenterY = (row: number) =>
-    blockTop[row] + (headroom - pad + tileSize * CIRCLE_TOP_INSET) / 2;
+  const LABEL_V_BIAS = 0.66;
+  const labelCenterY = (row: number) => {
+    const outlineTop = blockTop[row] - pad;
+    const circleTop = tileTop(row) + tileSize * CIRCLE_TOP_INSET;
+    return outlineTop + LABEL_V_BIAS * (circleTop - outlineTop);
+  };
 
   const radius = Math.max(4, tileSize * 0.26);
 
   // A border for column c sits `pad` outside the tile, into the surrounding gap.
   const colLeft = (c: number) => c * pitch - pad;
   const colRight = (c: number) => c * pitch + tileSize + pad;
+
+  // Title horizontal padding — equal on both sides: the gap from the outline's
+  // left edge to the start of the text matches the gap from the end of the
+  // available text space to the outline's right edge.
+  const LABEL_PAD = tileSize * 0.14;
+  const labelLeft = (col: number) => colLeft(col) + LABEL_PAD;
+  const labelAvail = (col: number, rightEdge: number) =>
+    rightEdge - LABEL_PAD - labelLeft(col);
 
   const shapes: OutlineShape[] = [];
 
@@ -605,7 +619,7 @@ function buildOutlines(
   let run: SectionRun;
   const pushPoly = (suffix: string, pts: Pt[], lbl: string | null, lx: number, ly: number, lw: number) => {
     const d = roundedPath(pts, radius, outlineGap);
-    shapes.push({ key: `${run.sectionId}-${suffix}`, fill: d, stroke: d, fillColor: run.fillColor, strokeColor: run.strokeColor, label: lbl, labelAlts: run.labelAlts, labelX: lx, labelY: ly, labelMaxW: lw });
+    shapes.push({ key: `${run.sectionId}-${suffix}`, sectionId: run.sectionId, fill: d, stroke: d, fillColor: run.fillColor, strokeColor: run.strokeColor, label: lbl, labelAlts: run.labelAlts, labelX: lx, labelY: ly, labelMaxW: lw });
   };
 
   for (run of runs) {
@@ -616,9 +630,9 @@ function buildOutlines(
     const xLastR = colRight(lastCol);
 
     const firstRowRight = firstRow === lastRow ? colRight(lastCol) : xR;
-    const labelX = firstCol * pitch + tileSize * 0.07;
+    const labelX = labelLeft(firstCol);
     const labelY = labelCenterY(firstRow);
-    const labelMaxW = Math.max(tileSize, firstRowRight - labelX - tileSize * 0.06);
+    const labelMaxW = labelAvail(firstCol, firstRowRight);
 
     // The top border sits `pad` above the label band (the band is part of the
     // section's content box, so its top counts as the section's top edge).
@@ -641,6 +655,7 @@ function buildOutlines(
       const yBotA = tileTop(firstRow) + tileSize + pad;
       shapes.push({
         key: `${run.sectionId}-a`,
+        sectionId: run.sectionId,
         fill: roundRectFill(xFirstL, yTop, xR, yBotA, radius, false, true),
         stroke: roundRectStroke(xFirstL, yTop, xR, yBotA, radius, false, true, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
         fillColor, strokeColor, label, labelAlts: run.labelAlts, labelX, labelY, labelMaxW,
@@ -650,11 +665,12 @@ function buildOutlines(
       // label has band space and the piece tops out uniformly.
       const yTopB = blockTop[lastRow] - pad;
       const yBotB = tileTop(lastRow) + tileSize + pad;
-      const labelBX = tileSize * 0.07;
+      const labelBX = labelLeft(0);
       const labelBY = labelCenterY(lastRow);
-      const labelBW = Math.max(tileSize, xLastR - labelBX - tileSize * 0.06);
+      const labelBW = labelAvail(0, xLastR);
       shapes.push({
         key: `${run.sectionId}-b`,
+        sectionId: run.sectionId,
         fill: roundRectFill(xL, yTopB, xLastR, yBotB, radius, true, false),
         stroke: roundRectStroke(xL, yTopB, xLastR, yBotB, radius, true, false, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
         fillColor, strokeColor, label, labelAlts: run.labelAlts, labelX: labelBX, labelY: labelBY, labelMaxW: labelBW,
@@ -707,6 +723,8 @@ function SectionOverlays({
   pad,
   totalHeight,
   offsetLeft = 0,
+  titleOpacity = 0.7,
+  repeatTitles = true,
 }: {
   runs: SectionRun[];
   cols: number;
@@ -717,6 +735,8 @@ function SectionOverlays({
   pad: number;
   totalHeight: number;
   offsetLeft?: number;
+  titleOpacity?: number;
+  repeatTitles?: boolean;
 }) {
   const shapes = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad);
   const width = cols * tileSize + (cols - 1) * gap;
@@ -799,34 +819,41 @@ function SectionOverlays({
           );
         })}
       </svg>
-      {shapes.map((s) => {
-        if (!s.label) return null;
-        // Fit the name to its outline: stretch/squash, fall back to shorter
-        // names, and when nothing fits let it wrap so the overflow is visible.
-        // (fontsReady is read so the result re-measures once the font loads.)
-        const fit = fontsReady
-          ? fitLabel(s.labelAlts, s.labelMaxW, fontSize)
-          : { text: s.labelAlts[0], scaleX: 1, fits: true };
-        return (
-          <div
-            key={`label-${s.key}`}
-            className="absolute leading-none font-black uppercase select-none"
-            style={{
-              left: s.labelX,
-              top: s.labelY,
-              transform: `translateY(-50%) scaleX(${fit.scaleX})`,
-              transformOrigin: 'left center',
-              fontSize,
-              color: s.strokeColor,
-              opacity: 0.9,
-              whiteSpace: fit.fits ? 'nowrap' : 'normal',
-              maxWidth: fit.fits ? undefined : s.labelMaxW,
-            }}
-          >
-            {fit.text}
-          </div>
-        );
-      })}
+      {(() => {
+        // Mode B (repeatTitles off): a section's title shows only on its first
+        // shape in reading order — no repeats for split / non-contiguous runs.
+        const titled = new Set<string>();
+        return shapes.map((s) => {
+          if (!s.label) return null;
+          if (!repeatTitles) {
+            if (titled.has(s.sectionId)) return null;
+            titled.add(s.sectionId);
+          }
+          // Fit the name to its outline: stretch/squash, fall back to shorter
+          // names, else squash to fit exactly. (fontsReady is read so the result
+          // re-measures once the font loads.)
+          const fit = fontsReady
+            ? fitLabel(s.labelAlts, s.labelMaxW, fontSize)
+            : { text: s.labelAlts[0], scaleX: 1 };
+          return (
+            <div
+              key={`label-${s.key}`}
+              className="absolute leading-none font-black uppercase select-none whitespace-nowrap"
+              style={{
+                left: s.labelX,
+                top: s.labelY,
+                transform: `translateY(-50%) scaleX(${fit.scaleX})`,
+                transformOrigin: 'left center',
+                fontSize,
+                color: s.strokeColor,
+                opacity: titleOpacity,
+              }}
+            >
+              {fit.text}
+            </div>
+          );
+        });
+      })()}
     </div>
   );
 }
@@ -842,6 +869,8 @@ export function ViewPage() {
   const setSortOption = usePokedexStore((s) => s.setViewSortOption);
 
   const showSections = usePokedexStore((s) => s.viewShowSections);
+  const titleOpacity = usePokedexStore((s) => s.viewTitleOpacity);
+  const repeatTitles = usePokedexStore((s) => s.viewRepeatTitles);
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
@@ -1214,6 +1243,8 @@ export function ViewPage() {
                         gap={gap}
                         pad={pad}
                         totalHeight={gridBlockHeight}
+                        titleOpacity={titleOpacity}
+                        repeatTitles={repeatTitles}
                       />
                     )}
                   </div>
@@ -1237,6 +1268,8 @@ export function ViewPage() {
                         pad={pad}
                         totalHeight={lastRowHeight}
                         offsetLeft={lastRowOffset}
+                        titleOpacity={titleOpacity}
+                        repeatTitles={repeatTitles}
                       />
                     )}
                   </div>
