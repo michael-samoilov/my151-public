@@ -320,20 +320,45 @@ export async function generateExportImage(
   type Seg = { kind: 'text'; text: string; color: string } | { kind: 'icon'; img: HTMLImageElement; sz: number };
   const insightSegs: Seg[] = [];
 
+  const isKanto151 = pokemon.length === 151 &&
+    pokemon.every((p) => p.id >= 1 && p.id <= 151) &&
+    new Set(pokemon.map((p) => p.id)).size === 151;
+
   const { leanTypes, leanGens } = insights;
   const noLean = leanTypes.length === 0 && leanGens.length === 0;
   const typeImgs = [leanType1Img, leanType2Img];
   const genImgs  = [leanGen1Img,  leanGen2Img];
 
-  if (noLean && !insights.bestAttackType) {
-    // Perfectly balanced — nothing over-indexes or strongly over-performs
+  if (isKanto151) {
+    insightSegs.push({ kind: 'text', text: 'The very best. Like no one ever was.', color: zinc });
+    // Still show type lean (skip gen — obvious for Kanto) + attack insights
+    if (leanTypes.length > 0 || insights.bestAttackType) {
+      insightSegs.push({ kind: 'text', text: ' · ', color: zinc });
+      if (leanTypes.length > 0) {
+        for (let i = 0; i < leanTypes.length; i++) {
+          if (i > 0) insightSegs.push({ kind: 'text', text: ' & ', color: zinc });
+          const t = leanTypes[i];
+          const img = typeImgs[i];
+          if (img) insightSegs.push({ kind: 'icon', img, sz: TYPE_ICON_SZ });
+          insightSegs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
+        }
+        insightSegs.push({ kind: 'text', text: '-forward', color: zinc });
+        if (insights.bestAttackType) insightSegs.push({ kind: 'text', text: ' · ', color: zinc });
+      }
+      if (insights.bestAttackType) {
+        const t = insights.bestAttackType;
+        if (attackTypeImg) insightSegs.push({ kind: 'icon', img: attackTypeImg, sz: TYPE_ICON_SZ });
+        insightSegs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
+        insightSegs.push({ kind: 'text', text: ' over-performs', color: zinc });
+      }
+    }
+  } else if (noLean && !insights.bestAttackType) {
     insightSegs.push({ kind: 'text', text: 'perfectly balanced dex', color: zinc });
   } else {
     // --- Lean section (types + gens) ---
     if (noLean) {
       insightSegs.push({ kind: 'text', text: 'no types or gens strongly over-index', color: zinc });
     } else {
-      // Build flat list of lean items (each item = [optional icon, label])
       const leanItems: Seg[][] = [];
       for (let i = 0; i < leanTypes.length; i++) {
         const t = leanTypes[i];
@@ -351,7 +376,6 @@ export async function generateExportImage(
         item.push({ kind: 'text', text: `Gen ${g}`, color: zinc });
         leanItems.push(item);
       }
-      // Join with & (2 items) or Oxford commas (3+)
       for (let i = 0; i < leanItems.length; i++) {
         if (i > 0) {
           if (leanItems.length === 2) {

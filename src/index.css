@@ -16,7 +16,7 @@ html {
 @theme {
   --breakpoint-md: 1024px;
 
-  --color-background: #ffffff;
+  --color-background: #f7f7f8;
   --color-foreground: #0a0a0a;
   --color-card: #ffffff;
   --color-card-foreground: #0a0a0a;

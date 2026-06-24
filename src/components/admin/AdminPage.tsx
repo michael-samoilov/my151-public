@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { getAllPokemon, getPokemonById } from '@/hooks/usePokemonData';
@@ -56,7 +56,7 @@ interface ClientRecord {
   sessions?: number;
   maxSessionMs?: number;
   sessionMs?: number[];
-  sessionLog?: { ts: number; ids: number[] }[];
+  sessionLog?: { ts: number; ids: number[]; country?: string }[];
   maxDepth: number;
   localHour: number;
   localDow?: number;
@@ -68,6 +68,7 @@ interface ClientRecord {
   os?: string;
   browser?: string;
   everIds: number[];
+  everSections?: Record<string, number[]>;
   latestIds: number[];
   latestSections?: Record<string, number[]>;
   completed: boolean;
@@ -97,6 +98,7 @@ interface ApiResponse {
   mostDropped: [string, number][];
   popularBySection: Record<string, [string, number][]>;
   droppedBySection: Record<string, [string, number][]>;
+  picksBySectionAll: Record<string, [string, number][]>;
   records: ClientRecord[];
 }
 
@@ -614,20 +616,20 @@ function SpriteRow({ ids }: { ids: number[] }) {
           <div
             key={`${id}-${idx}`}
             title={p ? `#${id} ${displayName(p.name)}` : `#${id}`}
-            className="w-8 h-8 shrink-0 flex items-center justify-center"
+            className="w-6 h-6 shrink-0 flex items-center justify-center"
           >
             {p ? (
               <img
                 src={p.sprite}
                 alt={p.name}
-                width={32}
-                height={32}
+                width={24}
+                height={24}
                 loading="lazy"
                 decoding="async"
                 style={{ imageRendering: 'pixelated' }}
               />
             ) : (
-              <span className="text-[0.55rem] text-muted-foreground">#{id}</span>
+              <span className="text-[0.5rem] text-muted-foreground">#{id}</span>
             )}
           </div>
         );
@@ -642,8 +644,7 @@ function tallyRows(counts: Record<string, number>, withFlag = false) {
     .map(([k, n]) => ({ label: withFlag ? `${flag(k)} ${k}` : k, count: n }));
 }
 
-function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void }) {
-  const [expanded, setExpanded] = useState(false);
+function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void; expanded: boolean; onToggle: () => void; zIndex: number; stickyOffset: number }) {
   const [droppedOpen, setDroppedOpen] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -657,13 +658,13 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
 
   useLayoutEffect(() => {
     if (expanded && headerRef.current) {
-      setStickyLabelTop(64 + headerRef.current.offsetHeight);
+      setStickyLabelTop(stickyOffset + headerRef.current.offsetHeight);
     }
-  }, [expanded]);
+  }, [expanded, stickyOffset]);
 
   const handleToggle = () => {
     if (expanded) {
-      setExpanded(false);
+      onToggle();
       requestAnimationFrame(() => {
         const el = cardRef.current;
         if (!el) return;
@@ -673,57 +674,60 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
         }
       });
     } else {
-      setExpanded(true);
+      onToggle();
     }
   };
 
   return (
-    <section ref={cardRef} className="shadow-elevated rounded-lg bg-card scroll-mt-[64px]">
-      <div ref={headerRef} className={`sticky top-[64px] z-[5] bg-card rounded-t-lg p-3 ${expanded ? 'pb-1 border-b border-border/50' : 'rounded-b-lg'}`}>
-        <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-          <div className="text-sm">
-            <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
-            <span className="text-muted-foreground">
-              {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'} · depth {rec.maxDepth}
-            </span>
-            {(rec.sessionMs?.length || rec.sessions) && (
-              <span className="block text-xs text-muted-foreground">
-                {rec.sessions ?? rec.sessionMs?.length} session
-                {(rec.sessions ?? rec.sessionMs?.length) === 1 ? '' : 's'}
-                {rec.sessionMs?.length ? `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}` : ''}
+    <section ref={cardRef} style={{ zIndex, scrollMarginTop: stickyOffset }}>
+      <div ref={headerRef} className="sticky z-[5]" style={{ top: stickyOffset }}>
+        <div className="h-4 bg-background" />
+        <div className={`bg-card p-3 ${expanded ? 'pb-1 border-b border-border/50 rounded-t-lg shadow-elevated' : 'rounded-lg shadow-elevated'}`}>
+          <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+            <div className="text-sm">
+              <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
+              <span className="text-muted-foreground">
+                {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'} · depth {rec.maxDepth}
               </span>
-            )}
-            <span className="block text-xs text-muted-foreground">
-              {rec.completed && <span className="text-primary font-medium">✓ completed </span>}
-              {rec.exported && <span>📷 exported </span>}
-              {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning</span>}
-              {userLocal && <> · their {userLocal}</>}
-            </span>
+              {(rec.sessionMs?.length || rec.sessions) && (
+                <span className="block text-xs text-muted-foreground">
+                  {rec.sessions ?? rec.sessionMs?.length} session
+                  {(rec.sessions ?? rec.sessionMs?.length) === 1 ? '' : 's'}
+                  {rec.sessionMs?.length ? `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}` : ''}
+                </span>
+              )}
+              <span className="block text-xs text-muted-foreground">
+                {rec.completed && <span className="text-primary font-medium">✓ completed </span>}
+                {rec.exported && <span>📷 exported </span>}
+                {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning</span>}
+                {userLocal && <> · their {userLocal}</>}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" onClick={handleToggle}>
+                {expanded ? 'Hide' : 'Builds'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => onDelete(rec)}
+              >
+                Delete
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={handleToggle}>
-              {expanded ? 'Hide' : 'Builds'}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-              onClick={() => onDelete(rec)}
-            >
-              Delete
-            </Button>
-          </div>
+          {ctx.length > 0 && (
+            <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
+              {ctx.map((c, i) => (
+                <span key={i}>{c}</span>
+              ))}
+            </div>
+          )}
         </div>
-        {ctx.length > 0 && (
-          <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
-            {ctx.map((c, i) => (
-              <span key={i}>{c}</span>
-            ))}
-          </div>
-        )}
       </div>
       {expanded && (
-        <div className="flex flex-col gap-2 p-3 pt-2">
+        <div className="flex flex-col gap-2 p-3 pt-2 bg-card rounded-b-lg shadow-elevated">
           <FinalBySection rec={rec} stickyTop={stickyLabelTop} />
           <DexMilestones rec={rec} stickyTop={stickyLabelTop} />
           <SessionDiffs rec={rec} stickyTop={stickyLabelTop} />
@@ -734,17 +738,22 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
   );
 }
 
+const STICKY_LABEL_CLASS = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
+function stickyLabelStyle(top?: number): React.CSSProperties | undefined {
+  if (!top) return undefined;
+  return { top };
+}
+
 /** Final/current dex grouped by build section with off-section highlighting.
  *  Falls back to a flat sprite row for legacy records without section data. */
 function FinalBySection({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: number }) {
   const secs = rec.latestSections;
-  const stickyClass = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
 
   if (!secs || Object.keys(secs).length === 0) {
     if (!rec.latestIds?.length) return null;
     return (
       <div>
-        <div className={stickyClass} style={stickyTop ? { top: stickyTop } : undefined}>
+        <div className={STICKY_LABEL_CLASS} style={stickyLabelStyle(stickyTop)}>
           Final / current ({rec.latestIds.length})
         </div>
         <SpriteRow ids={rec.latestIds} />
@@ -766,7 +775,7 @@ function FinalBySection({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: num
 
   return (
     <div>
-      <div className={stickyClass} style={stickyTop ? { top: stickyTop } : undefined}>
+      <div className={STICKY_LABEL_CLASS} style={stickyLabelStyle(stickyTop)}>
         Final / current ({total})
         {offTotal > 0 && <span className="text-amber-600 font-medium"> · {offTotal} off-section</span>}
       </div>
@@ -789,14 +798,14 @@ function FinalBySection({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: num
                       key={`${id}-${idx}`}
                       title={`${p ? '#' + id + ' ' + displayName(p.name) : '#' + id}${off ? ' — not a default here' : ''}`}
                       className={cn(
-                        'w-8 h-8 shrink-0 flex items-center justify-center rounded',
-                        off && 'ring-2 ring-amber-500 bg-amber-500/10',
+                        'w-6 h-6 shrink-0 flex items-center justify-center rounded',
+                        off && 'ring-1 ring-amber-500 bg-amber-500/10',
                       )}
                     >
                       {p ? (
-                        <img src={p.sprite} alt={p.name} width={32} height={32} loading="lazy" style={{ imageRendering: 'pixelated' }} />
+                        <img src={p.sprite} alt={p.name} width={24} height={24} loading="lazy" style={{ imageRendering: 'pixelated' }} />
                       ) : (
-                        <span className="text-[0.55rem] text-muted-foreground">#{id}</span>
+                        <span className="text-[0.5rem] text-muted-foreground">#{id}</span>
                       )}
                     </div>
                   );
@@ -832,13 +841,12 @@ function DexMilestones({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: numb
   if (tabs.length === 0) return null;
 
   const active = tabs.find((t) => t.key === activeKey) ?? tabs[0];
-  const stickyClass = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
 
   return (
     <div>
       <div
-        className={cn(stickyClass, 'flex items-center gap-1')}
-        style={stickyTop ? { top: stickyTop } : undefined}
+        className={cn(STICKY_LABEL_CLASS, 'flex items-center gap-1')}
+        style={stickyLabelStyle(stickyTop)}
       >
         {tabs.length === 1 ? (
           <span>{active.label} dex ({active.ids.length})</span>
@@ -879,13 +887,11 @@ function DroppedPokemon({
   const dropped = (rec.everIds ?? []).filter((id) => !kept.has(id));
   if (dropped.length === 0) return null;
 
-  const stickyClass = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
-
   return (
     <div>
       <div
-        className={cn(stickyClass, 'flex items-center gap-1 cursor-pointer select-none')}
-        style={stickyTop ? { top: stickyTop } : undefined}
+        className={cn(STICKY_LABEL_CLASS, 'flex items-center gap-1 cursor-pointer select-none')}
+        style={stickyLabelStyle(stickyTop)}
         onClick={() => setDroppedOpen((v) => !v)}
         role="button"
         tabIndex={0}
@@ -904,6 +910,124 @@ function DroppedPokemon({
   );
 }
 
+function SessionDiffBody({ s, added, removed, rec }: {
+  s: { ts: number; ids: number[]; country?: string };
+  added: number[];
+  removed: number[];
+  rec: ClientRecord;
+}) {
+  const summary = (
+    <span className="text-xs text-muted-foreground">
+      {new Date(s.ts).toLocaleDateString()}{s.country ? ` · ${flag(s.country)} ${s.country}` : ''} · {s.ids.length} total
+      {added.length > 0 && <span className="text-green-600"> · +{added.length}</span>}
+      {removed.length > 0 && <span className="text-destructive"> · −{removed.length}</span>}
+    </span>
+  );
+
+  if (added.length === 0 && removed.length === 0) {
+    return (
+      <div className="mt-1">
+        {summary}
+        <div className="text-[0.65rem] text-muted-foreground mt-0.5">no changes</div>
+      </div>
+    );
+  }
+
+  // Build reverse map: pokemonId → sectionId from the user's ACTUAL placement.
+  // latestSections (current) overrides everSections (historical).
+  const secOf = new Map<number, string>();
+  if (rec.everSections) {
+    for (const g of BUILD_GROUPS) {
+      if (g.id === 'other') continue;
+      for (const id of rec.everSections[g.id] ?? []) {
+        if (!secOf.has(id)) secOf.set(id, g.id);
+      }
+    }
+    for (const id of rec.everSections['other'] ?? []) {
+      if (!secOf.has(id)) secOf.set(id, 'other');
+    }
+  }
+  if (rec.latestSections) {
+    for (const [sid, ids] of Object.entries(rec.latestSections)) {
+      for (const id of ids) secOf.set(id, sid);
+    }
+  }
+
+  // Fall back to flat display for legacy records without section data
+  if (secOf.size === 0) {
+    return (
+      <div className="mt-1">
+        {summary}
+        {added.length > 0 && (
+          <div className="flex flex-wrap items-center gap-0.5 mt-0.5">
+            <span className="text-[0.65rem] text-green-600 mr-0.5">+{added.length}</span>
+            <SpriteRow ids={added} />
+          </div>
+        )}
+        {removed.length > 0 && (
+          <div className="flex flex-wrap items-center gap-0.5 mt-0.5 opacity-60">
+            <span className="text-[0.65rem] text-destructive mr-0.5">−{removed.length}</span>
+            <SpriteRow ids={removed} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const addsBySec = new Map<string, number[]>();
+  const remsBySec = new Map<string, number[]>();
+  for (const id of added) {
+    const sec = secOf.get(id) ?? 'other';
+    (addsBySec.get(sec) ?? (addsBySec.set(sec, []), addsBySec.get(sec)!)).push(id);
+  }
+  for (const id of removed) {
+    const sec = secOf.get(id) ?? 'other';
+    (remsBySec.get(sec) ?? (remsBySec.set(sec, []), remsBySec.get(sec)!)).push(id);
+  }
+
+  const affected = BUILD_GROUPS
+    .filter((g) => addsBySec.has(g.id) || remsBySec.has(g.id))
+    .map((g) => ({ id: g.id, name: g.name, color: g.color, added: addsBySec.get(g.id) ?? [], removed: remsBySec.get(g.id) ?? [] }));
+
+  return (
+    <div className="mt-1">
+      {summary}
+      <div className="flex flex-col gap-1.5 mt-1">
+        {affected.map((sec) => (
+          <div key={sec.id}>
+            <div className="text-[0.65rem] flex items-center gap-1 mb-0.5">
+              <span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: sec.color }} />
+              <span>{sec.name}</span>
+            </div>
+            {sec.added.length > 0 && sec.removed.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <span className="text-[0.65rem] text-green-600 block mb-0.5">+{sec.added.length}</span>
+                  <SpriteRow ids={sec.added} />
+                </div>
+                <div className="opacity-60">
+                  <span className="text-[0.65rem] text-destructive block mb-0.5">−{sec.removed.length}</span>
+                  <SpriteRow ids={sec.removed} />
+                </div>
+              </div>
+            ) : sec.added.length > 0 ? (
+              <div>
+                <span className="text-[0.65rem] text-green-600 block mb-0.5">+{sec.added.length}</span>
+                <SpriteRow ids={sec.added} />
+              </div>
+            ) : (
+              <div className="opacity-60">
+                <span className="text-[0.65rem] text-destructive block mb-0.5">−{sec.removed.length}</span>
+                <SpriteRow ids={sec.removed} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Session diffs with a switchable session selector. Shows one session's
  *  adds/removes at a time; defaults to the most recent session. */
 function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: number }) {
@@ -918,17 +1042,16 @@ function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: numbe
   const added = idx === 0 ? s.ids : s.ids.filter((id) => !prev.has(id));
   const removed = idx === 0 ? [] : log[idx - 1].ids.filter((id) => !new Set(s.ids).has(id));
 
-  const stickyClass = 'sticky z-[4] bg-card text-xs text-muted-foreground py-0.5 border-b border-border/50';
-
   return (
     <div>
       <div
-        className={cn(stickyClass, 'flex items-center gap-1 flex-wrap')}
-        style={stickyTop ? { top: stickyTop } : undefined}
+        className={cn(STICKY_LABEL_CLASS, 'flex items-center gap-1 flex-wrap')}
+        style={stickyLabelStyle(stickyTop)}
       >
         <span className="mr-0.5">Sessions</span>
-        {log.map((_, i) => {
+        {log.map((entry, i) => {
           const dur = rec.sessionMs?.[i];
+          const f = entry.country ? flag(entry.country) : '';
           return (
             <button
               key={i}
@@ -939,31 +1062,12 @@ function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: numbe
                 idx === i ? 'bg-muted font-medium text-foreground' : 'hover:bg-muted/50',
               )}
             >
-              S{i + 1}{dur ? ` · ${fmtDuration(dur)}` : ''}
+              {f ? `${f} ` : ''}S{i + 1}{dur ? ` · ${fmtDuration(dur)}` : ''}
             </button>
           );
         })}
       </div>
-      <div className="mt-1">
-        <span className="text-xs text-muted-foreground">
-          {new Date(s.ts).toLocaleDateString()} · {s.ids.length} total
-        </span>
-        {added.length > 0 && (
-          <div className="flex flex-wrap items-center gap-0.5 mt-0.5">
-            <span className="text-[0.65rem] text-green-600 mr-0.5">+{added.length}</span>
-            <SpriteRow ids={added} />
-          </div>
-        )}
-        {removed.length > 0 && (
-          <div className="flex flex-wrap items-center gap-0.5 mt-0.5 opacity-60">
-            <span className="text-[0.65rem] text-destructive mr-0.5">−{removed.length}</span>
-            <SpriteRow ids={removed} />
-          </div>
-        )}
-        {added.length === 0 && removed.length === 0 && (
-          <div className="text-[0.65rem] text-muted-foreground mt-0.5">no changes</div>
-        )}
-      </div>
+      <SessionDiffBody s={s} added={added} removed={removed} rec={rec} />
     </div>
   );
 }
@@ -1055,10 +1159,17 @@ export function AdminPage() {
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<ApiResponse | null>(null);
   const [slotDetail, setSlotDetail] = useState<{ dow: number; hour: number } | null>(null);
+  const [expandedCid, setExpandedCid] = useState<string | null>(null);
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const pageHeaderRef = useRef<HTMLElement>(null);
+  const [pageHeaderH, setPageHeaderH] = useState(0);
+
+  useLayoutEffect(() => {
+    if (pageHeaderRef.current) setPageHeaderH(pageHeaderRef.current.offsetHeight);
+  });
 
   const load = useCallback(async (tok: string, limit = PAGE_SIZE) => {
     setLoading(true);
@@ -1124,22 +1235,6 @@ export function AdminPage() {
     [token],
   );
 
-  const resetAll = useCallback(async () => {
-    if (!token) return;
-    if (!window.confirm('Reset ALL analytics?\n\nPermanently deletes every user record and aggregate, starting from 0. This cannot be undone.')) return;
-    setError(null);
-    try {
-      const res = await fetch('/api/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({}),
-      });
-      if (!res.ok) throw new Error(`Reset failed (${res.status}).`);
-      await load(token);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Reset failed.');
-    }
-  }, [token, load]);
 
   const signOut = useCallback(() => {
     try {
@@ -1152,6 +1247,20 @@ export function AdminPage() {
     setData(null);
     setTokenInput('');
   }, []);
+
+  const { offPickRows, offPickBySection } = useMemo(() => {
+    const bySec = data?.picksBySectionAll;
+    if (!bySec) return { offPickRows: [] as [string, number][], offPickBySection: {} as Record<string, [string, number][]> };
+    const perSection: Record<string, [string, number][]> = {};
+    const totals: Record<string, number> = {};
+    for (const [sid, entries] of Object.entries(bySec)) {
+      const off = entries.filter(([id]) => isOffSection(Number(id), sid));
+      if (off.length > 0) perSection[sid] = off;
+      for (const [id, n] of off) totals[id] = (totals[id] ?? 0) + n;
+    }
+    const rows: [string, number][] = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    return { offPickRows: rows, offPickBySection: perSection };
+  }, [data?.picksBySectionAll]);
 
   if (!authed) {
     return (
@@ -1186,7 +1295,7 @@ export function AdminPage() {
 
   return (
     <div className="min-h-dvh flex flex-col bg-background">
-      <header className="border-b bg-card sticky top-0 z-10">
+      <header ref={pageHeaderRef} className="border-b bg-card sticky top-0 z-[100]">
         <div className="max-w-5xl mx-auto w-full flex items-center justify-between gap-2 px-4 py-3">
           <h1 className="text-lg font-bold whitespace-nowrap">
             <span className="text-primary">my151</span> · Analytics
@@ -1241,6 +1350,14 @@ export function AdminPage() {
               />
             </div>
 
+            {offPickRows.length > 0 && (
+              <PopularPanel
+                title="Most off-section picks"
+                rows={offPickRows}
+                bySection={offPickBySection}
+              />
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card title="By country">
                 {Object.keys(data.countries).length ? (
@@ -1261,21 +1378,24 @@ export function AdminPage() {
               <Heatmap matrix={data.heatmap} onCell={(dow, hour) => setSlotDetail({ dow, hour })} />
             </Card>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Users ({data.totalUsers})</span>
-              {data.totalUsers > 0 && (
-                <Button variant="destructive" size="sm" onClick={() => void resetAll()}>
-                  Reset all
-                </Button>
-              )}
-            </div>
+            <span className="text-sm font-medium">Users ({data.totalUsers})</span>
 
             {data.records.length === 0 && !loading && (
               <p className="text-sm text-muted-foreground">No users yet.</p>
             )}
-            {data.records.map((rec) => (
-              <UserCard key={rec.cid} rec={rec} onDelete={deleteUser} />
-            ))}
+            <div className="flex flex-col -mt-4">
+              {data.records.map((rec, i) => (
+                <UserCard
+                  key={rec.cid}
+                  rec={rec}
+                  onDelete={deleteUser}
+                  expanded={expandedCid === rec.cid}
+                  onToggle={() => setExpandedCid((prev) => (prev === rec.cid ? null : rec.cid))}
+                  zIndex={data.records.length - i}
+                  stickyOffset={pageHeaderH}
+                />
+              ))}
+            </div>
             {data.records.length < data.totalUsers && (
               <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
                 {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${data.totalUsers})`}

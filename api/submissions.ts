@@ -238,6 +238,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Same, split by the section users actually placed them in (forward-only).
       popularBySection: rankBySection(picksBySection, 3),
       droppedBySection: rankBySection(droppedBySection, 3),
+      picksBySectionAll: rankBySection(picksBySection, 1),
       records: page,
     });
   } catch (err) {
