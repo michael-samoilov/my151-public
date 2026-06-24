@@ -880,8 +880,10 @@ function buildOutlines(
     for (let c = 0; c < cols - 1; c++) {
       const s = secAt(n, c);
       if (!s || secAt(n, c + 1) !== s || secAt(below, c) !== s || secAt(below, c + 1) !== s) continue;
-      const cx = c * pitch + tileSize + gap / 2;
-      const cy = (tileTop(n) + tileSize + tileTop(below)) / 2;
+      // Centre of the corner gap, nudged a hair up-and-left so the lower-right
+      // tile's position number (which sits toward this corner) doesn't crowd it.
+      const cx = c * pitch + tileSize + gap / 2 - tileSize * 0.03;
+      const cy = (tileTop(n) + tileSize + tileTop(below)) / 2 - tileSize * 0.03;
       spandrels.push({
         key: `sp-${n}-${c}`, cx, cy, r: tileSize * 0.16,
         color: secStroke.get(s) ?? '#555555', type: SECTION_TYPE[s] ?? null,
