@@ -56,6 +56,14 @@ const OUTLINE_GAP = 0.24;
 const OUTLINE_PAD = 0.07;
 const OUTLINE_HEAD = 0.28;
 
+// Outline border stroke width (CSS px). The open side of a ≤9 wrap ends in a
+// dotted tail: three dots of diameter = stroke width, separated by equal
+// (dot-width) spaces. The outermost dot's edge sits on the old border line, and
+// the solid stroke resumes one space past the innermost dot — so the tail is
+// 3 dots + 3 spaces = 6× the stroke width, and the fill fades across that span.
+const OUTLINE_STROKE_W = 1.5;
+const OUTLINE_DOT_TAIL = 6 * OUTLINE_STROKE_W;
+
 /** Parse a `view::<id>` draggable id into its numeric pokemon id, or null. */
 function parseDragId(id: string): number | null {
   if (!id.startsWith('view::')) return null;
@@ -417,27 +425,30 @@ function roundRectFill(x0: number, y0: number, x1: number, y1: number, r: number
 }
 
 /** Open stroke for a rounded rect: the open side is left undrawn so the border
- *  visibly continues off that edge. */
-function roundRectStroke(x0: number, y0: number, x1: number, y1: number, r: number, openLeft: boolean, openRight: boolean): string {
+ *  continues off that edge. `openInset` pulls the top/bottom borders back from
+ *  the open edge by that much, leaving room for the trailing dots. */
+function roundRectStroke(x0: number, y0: number, x1: number, y1: number, r: number, openLeft: boolean, openRight: boolean, openInset = 0): string {
   const f = (n: number) => n.toFixed(2);
   if (openRight) {
+    const xe = x1 - openInset;
     return [
-      `M ${f(x1)} ${f(y0)}`,
+      `M ${f(xe)} ${f(y0)}`,
       `L ${f(x0 + r)} ${f(y0)}`,
       `Q ${f(x0)} ${f(y0)} ${f(x0)} ${f(y0 + r)}`,
       `L ${f(x0)} ${f(y1 - r)}`,
       `Q ${f(x0)} ${f(y1)} ${f(x0 + r)} ${f(y1)}`,
-      `L ${f(x1)} ${f(y1)}`,
+      `L ${f(xe)} ${f(y1)}`,
     ].join(' ');
   }
   if (openLeft) {
+    const xe = x0 + openInset;
     return [
-      `M ${f(x0)} ${f(y0)}`,
+      `M ${f(xe)} ${f(y0)}`,
       `L ${f(x1 - r)} ${f(y0)}`,
       `Q ${f(x1)} ${f(y0)} ${f(x1)} ${f(y0 + r)}`,
       `L ${f(x1)} ${f(y1 - r)}`,
       `Q ${f(x1)} ${f(y1)} ${f(x1 - r)} ${f(y1)}`,
-      `L ${f(x0)} ${f(y1)}`,
+      `L ${f(xe)} ${f(y1)}`,
     ].join(' ');
   }
   return roundRectFill(x0, y0, x1, y1, r, false, false);
@@ -452,6 +463,9 @@ interface OutlineShape {
   labelX: number;
   labelY: number;
   labelMaxW: number;
+  // Set on the open side of a ≤9-pokemon wrap piece: the fill fades out toward
+  // the open edge and the top/bottom borders trail off into three dots.
+  open?: { side: 'left' | 'right'; x0: number; x1: number; topY: number; botY: number };
 }
 
 /** Turn section runs into outline shapes. A run that wraps across rows and
@@ -532,8 +546,9 @@ function buildOutlines(
       shapes.push({
         key: `${run.sectionId}-a`,
         fill: roundRectFill(xFirstL, yTop, xR, yBotA, radius, false, true),
-        stroke: roundRectStroke(xFirstL, yTop, xR, yBotA, radius, false, true),
+        stroke: roundRectStroke(xFirstL, yTop, xR, yBotA, radius, false, true, OUTLINE_DOT_TAIL),
         color, label, labelX, labelY, labelMaxW,
+        open: { side: 'right', x0: xFirstL, x1: xR, topY: yTop, botY: yBotA },
       });
       // lastRow is guaranteed a band row (see layout memo), so the re-shown
       // label has band space and the piece tops out uniformly.
@@ -545,8 +560,9 @@ function buildOutlines(
       shapes.push({
         key: `${run.sectionId}-b`,
         fill: roundRectFill(xL, yTopB, xLastR, yBotB, radius, true, false),
-        stroke: roundRectStroke(xL, yTopB, xLastR, yBotB, radius, true, false),
+        stroke: roundRectStroke(xL, yTopB, xLastR, yBotB, radius, true, false, OUTLINE_DOT_TAIL),
         color, label, labelX: labelBX, labelY: labelBY, labelMaxW: labelBW,
+        open: { side: 'left', x0: xL, x1: xLastR, topY: yTopB, botY: yBotB },
       });
       continue;
     }
@@ -609,8 +625,36 @@ function SectionOverlays({
       style={{ left: offsetLeft, width, height: totalHeight }}
     >
       <svg width={width} height={totalHeight} style={{ overflow: 'visible', display: 'block' }}>
+        <defs>
+          {shapes.map((s) => {
+            if (!s.open) return null;
+            // Fill fades over the same horizontal span the three dots cover.
+            const fadeW = OUTLINE_DOT_TAIL;
+            const right = s.open.side === 'right';
+            const gx1 = right ? s.open.x1 - fadeW : s.open.x0 + fadeW;
+            const gx2 = right ? s.open.x1 : s.open.x0;
+            return (
+              <linearGradient
+                key={`g-${s.key}`}
+                id={`outline-fade-${s.key}`}
+                gradientUnits="userSpaceOnUse"
+                x1={gx1} y1={0} x2={gx2} y2={0}
+              >
+                <stop offset="0%" stopColor={s.color} stopOpacity={1} />
+                <stop offset="100%" stopColor={s.color} stopOpacity={0} />
+              </linearGradient>
+            );
+          })}
+        </defs>
         {shapes.map((s) => (
-          <path key={`fill-${s.key}`} d={s.fill} fill={`${s.color}12`} fillRule="evenodd" stroke="none" />
+          <path
+            key={`fill-${s.key}`}
+            d={s.fill}
+            fill={s.open ? `url(#outline-fade-${s.key})` : `${s.color}12`}
+            fillOpacity={s.open ? 0.07 : 1}
+            fillRule="evenodd"
+            stroke="none"
+          />
         ))}
         {shapes.map((s) => (
           <path
@@ -619,11 +663,32 @@ function SectionOverlays({
             fill="none"
             stroke={s.color}
             strokeOpacity={0.5}
-            strokeWidth={1.5}
+            strokeWidth={OUTLINE_STROKE_W}
             strokeLinejoin="round"
             strokeLinecap="round"
           />
         ))}
+        {shapes.map((s) => {
+          const open = s.open;
+          if (!open) return null;
+          // Dotted tail: dot/space rhythm of one stroke-width each. Centre i sits
+          // (0.5 + 2i)·W inward, so dot 0's outer edge lands on the old border and
+          // a full space separates dot 2 from the resumed solid stroke (at 6·W).
+          const edge = open.side === 'right' ? open.x1 : open.x0;
+          const dir = open.side === 'right' ? -1 : 1;
+          return [0, 1, 2].flatMap((i) =>
+            [open.topY, open.botY].map((cy, j) => (
+              <circle
+                key={`dot-${s.key}-${i}-${j}`}
+                cx={edge + dir * (0.5 + 2 * i) * OUTLINE_STROKE_W}
+                cy={cy}
+                r={OUTLINE_STROKE_W / 2}
+                fill={s.color}
+                fillOpacity={0.5}
+              />
+            )),
+          );
+        })}
       </svg>
       {shapes.map((s) =>
         s.label ? (
