@@ -15,6 +15,8 @@ import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { PREVIEW_FEATURES } from '@/lib/demoMode';
 import { sectionColor } from '@/lib/sectionColors';
+import { SECTION_TYPE } from '@/data/section-types';
+import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
 import {
   DndContext,
   MouseSensor,
@@ -186,6 +188,25 @@ function useFontsReady(): boolean {
     return () => { alive = false; };
   }, [ready]);
   return ready;
+}
+
+/** Generate (once) the alpha masks for the given type symbols and re-render when
+ *  they're ready. Returns the set of types whose mask is now available. */
+function useTypeMasks(types: TypeName[]): Set<TypeName> {
+  const [, force] = useState(0);
+  const keyStr = types.slice().sort().join(',');
+  useEffect(() => {
+    if (types.length === 0) return;
+    let alive = true;
+    const missing = types.filter((t) => !getTypeMask(t));
+    if (missing.length === 0) return;
+    Promise.all(missing.map((t) => ensureTypeMask(t).catch(() => null))).then(() => {
+      if (alive) force((n) => n + 1);
+    });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyStr]);
+  return new Set(types.filter((t) => getTypeMask(t)));
 }
 
 // ---------- Draggable tile ----------
@@ -542,7 +563,7 @@ function roundRectStroke(x0: number, y0: number, x1: number, y1: number, r: numb
  *  as a spandrel marker in the corner gap between contiguous same-section cells.
  *  The control points pull toward the centre so the sides curve concavely. */
 function starPath(cx: number, cy: number, r: number): string {
-  const c = r * 0.16;
+  const c = r * 0.12;
   const f = (n: number) => n.toFixed(2);
   return [
     `M ${f(cx)} ${f(cy - r)}`,
@@ -556,8 +577,12 @@ function starPath(cx: number, cy: number, r: number): string {
 
 interface Spandrel {
   key: string;
-  d: string;
+  cx: number;
+  cy: number;
+  r: number;
   color: string;
+  /** The section's representative type → type-symbol icon, or null → 4-point star. */
+  type: TypeName | null;
 }
 
 interface OutlineShape {
@@ -857,7 +882,10 @@ function buildOutlines(
       if (!s || secAt(n, c + 1) !== s || secAt(below, c) !== s || secAt(below, c + 1) !== s) continue;
       const cx = c * pitch + tileSize + gap / 2;
       const cy = (tileTop(n) + tileSize + tileTop(below)) / 2;
-      spandrels.push({ key: `sp-${n}-${c}`, d: starPath(cx, cy, tileSize * 0.16), color: secStroke.get(s) ?? '#555555' });
+      spandrels.push({
+        key: `sp-${n}-${c}`, cx, cy, r: tileSize * 0.16,
+        color: secStroke.get(s) ?? '#555555', type: SECTION_TYPE[s] ?? null,
+      });
     }
   }
 
@@ -898,6 +926,13 @@ function SectionOverlays({
   const { shapes, spandrels } = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad, titleVBias, lastRow);
   const width = cols * tileSize + (cols - 1) * gap;
   const fontSize = tileSize * 0.26;
+  // Generate the type-symbol masks the visible spandrels need; until a mask is
+  // ready that spandrel falls back to the 4-point star.
+  const spandrelTypes = useMemo(
+    () => [...new Set(spandrels.map((s) => s.type).filter((t): t is TypeName => t !== null))],
+    [spandrels],
+  );
+  const readyTypes = useTypeMasks(spandrelTypes);
   // Re-measure labels once the real font is loaded (canvas metrics depend on it).
   const fontsReady = useFontsReady();
 
@@ -975,10 +1010,41 @@ function SectionOverlays({
             )),
           );
         })}
-        {spandrels.map((sp) => (
-          <path key={sp.key} d={sp.d} fill={sp.color} fillOpacity={0.55} stroke="none" />
-        ))}
+        {/* Spandrels: a type symbol where its mask is ready, else a 4-point star.
+            Both use the section's stroke colour at the outline-border opacity. */}
+        {spandrels.map((sp) =>
+          sp.type && readyTypes.has(sp.type) ? null : (
+            <path key={sp.key} d={starPath(sp.cx, sp.cy, sp.r)} fill={sp.color} fillOpacity={0.2} stroke="none" />
+          ),
+        )}
       </svg>
+      {spandrels.map((sp) => {
+        if (!sp.type || !readyTypes.has(sp.type)) return null;
+        const mask = getTypeMask(sp.type)!;
+        const size = sp.r * 2.8;
+        return (
+          <div
+            key={`icon-${sp.key}`}
+            className="absolute pointer-events-none"
+            style={{
+              left: sp.cx - size / 2,
+              top: sp.cy - size / 2,
+              width: size,
+              height: size,
+              backgroundColor: sp.color,
+              opacity: 0.2,
+              WebkitMaskImage: `url(${mask})`,
+              maskImage: `url(${mask})`,
+              WebkitMaskSize: 'contain',
+              maskSize: 'contain',
+              WebkitMaskRepeat: 'no-repeat',
+              maskRepeat: 'no-repeat',
+              WebkitMaskPosition: 'center',
+              maskPosition: 'center',
+            }}
+          />
+        );
+      })}
       {shapes.map((s) => {
           if (!s.label) return null;
           // "Show once" mode (repeatTitles off): suppress only the re-shown title
