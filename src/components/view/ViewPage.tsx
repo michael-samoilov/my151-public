@@ -636,9 +636,12 @@ function buildOutlines(
   // The run occupies [topLeftCol .. cols-1] on the row directly above the last
   // row (its own firstCol if that row is firstRow, else the full row).
   const topLeftColOf = (r: SectionRun) => (r.firstRow === lrIdx - 1 ? r.firstCol : 0);
-  // x-overlap in column units: bottom (centered) right edge past the top-left.
+  // Connect when the centered bottom's right edge reaches the top-left column —
+  // `>` is an x-overlap, `===` is a diagonal corner touch (only possible when the
+  // count is even, so the offset is integral). Both join; a real gap (`<`) stays
+  // split. The diagonal case relies on spoon rounding, like the exactly-10 wrap.
   const lastRowConnects = (r: SectionRun) =>
-    lastRowGeom!.offsetCols + r.lastCol + 1 > topLeftColOf(r);
+    lastRowGeom!.offsetCols + r.lastCol + 1 >= topLeftColOf(r);
 
   for (run of runs) {
     const { firstRow, firstCol, lastRow, lastCol, fillColor, strokeColor, label } = run;
@@ -707,28 +710,28 @@ function buildOutlines(
         continue;
       }
 
-      // No x-overlap → two pieces: grid portion + centered continuation.
-      const topPts: Pt[] = firstRow === lrIdx - 1
-        ? [
-            { x: colLeft(firstCol), y: yTop }, { x: F, y: yTop },
-            { x: F, y: yAboveBottom }, { x: colLeft(firstCol), y: yAboveBottom },
-          ]
-        : [
-            { x: colLeft(firstCol), y: yTop }, { x: F, y: yTop },
-            { x: F, y: yAboveBottom }, { x: colLeft(0), y: yAboveBottom },
-            { x: colLeft(0), y: blockTop[firstRow + 1] - pad },
-            { x: colLeft(firstCol), y: blockTop[firstRow + 1] - pad },
-          ];
-      pushPoly(`${firstRow}-${firstCol}`, topPts, label, labelX, labelY, labelMaxW);
-      const cd = roundedPath([
-        { x: jbL, y: yLastTop }, { x: jbR, y: yLastTop },
-        { x: jbR, y: yLastBot }, { x: jbL, y: yLastBot },
-      ], radius, outlineGap);
+      // No x-overlap → two pieces with open inner edges (dots + fade), like the
+      // in-grid ≤9 wrap. The grid portion is always a single row here: a full row
+      // above the centered row would overlap it, so a disconnect is only ever the
+      // 2-row case (firstRow === lrIdx - 1). The top continues off its right edge,
+      // the centered bottom off its left.
+      shapes.push({
+        key: `${run.sectionId}-${firstRow}-${firstCol}`,
+        sectionId: run.sectionId,
+        fill: roundRectFill(colLeft(firstCol), yTop, F, yAboveBottom, radius, false, true),
+        stroke: roundRectStroke(colLeft(firstCol), yTop, F, yAboveBottom, radius, false, true, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
+        fillColor, strokeColor, label, labelAlts: run.labelAlts, labelX, labelY, labelMaxW,
+        open: { side: 'right', x0: colLeft(firstCol), x1: F, topY: yTop, botY: yAboveBottom },
+      });
       const clx = lrLeft(0) + LABEL_PAD;
       shapes.push({
-        key: `${run.sectionId}-last`, sectionId: run.sectionId, fill: cd, stroke: cd,
+        key: `${run.sectionId}-last`,
+        sectionId: run.sectionId,
+        fill: roundRectFill(jbL, yLastTop, jbR, yLastBot, radius, true, false),
+        stroke: roundRectStroke(jbL, yLastTop, jbR, yLastBot, radius, true, false, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
         fillColor, strokeColor, label, labelAlts: run.labelAlts,
         labelX: clx, labelY: labelCenterY(lrIdx), labelMaxW: lrRight(lastCol) - LABEL_PAD - clx,
+        open: { side: 'left', x0: jbL, x1: jbR, topY: yLastTop, botY: yLastBot },
         isContinuation: true,
       });
       continue;
@@ -1006,7 +1009,7 @@ export function ViewPage() {
     // of buildOutlines.lastRowConnects — drives band reservation below.)
     const lastConnects = (r: SectionRun) => {
       const topLeftCol = r.firstRow === lastRowIndex - 1 ? r.firstCol : 0;
-      return lastRowOffsetCols + r.lastCol + 1 > topLeftCol;
+      return lastRowOffsetCols + r.lastCol + 1 >= topLeftCol;
     };
     // Rows carrying a label band: each section's first row; the re-shown row of a
     // ≤9 grid open-wrap; and a *disconnected* centered continuation (which shows
