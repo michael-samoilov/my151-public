@@ -2,13 +2,16 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createEmptySections, BUILD_GROUP_IDS } from '@/data/slot-template';
 import { getEvolutionChainIds, getEvolutionLine, getDescendantIds, getPokemonById, computeRemovalCascade, getExclusiveForms } from '@/hooks/usePokemonData';
-import { DEMO_MODE, POKEDEX_STORAGE_KEY } from '@/lib/demoMode';
+import { DEMO_MODE, SPANDREL_DEMO, POKEDEX_STORAGE_KEY } from '@/lib/demoMode';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
+import { SPANDREL_SEED_SECTIONS } from '@/data/spandrelSeed';
 
-/** Initial sections — empty for real users, or the sample dex in demo mode. */
+/** Initial sections — empty for real users, the sample dex in demo mode, or the
+ *  spandrel test fixture when ?demo=spandrels is set. */
 function initialSections(): Record<string, number[]> {
   const base = createEmptySections();
-  if (DEMO_MODE) for (const [g, ids] of Object.entries(DEMO_DEX_SECTIONS)) base[g] = [...ids];
+  const seed = SPANDREL_DEMO ? SPANDREL_SEED_SECTIONS : DEMO_MODE ? DEMO_DEX_SECTIONS : null;
+  if (seed) for (const [g, ids] of Object.entries(seed)) base[g] = [...ids];
   return base;
 }
 
