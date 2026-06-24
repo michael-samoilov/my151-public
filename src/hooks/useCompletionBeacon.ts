@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
+import { DEMO_MODE } from '@/lib/demoMode';
 
 type BeaconKind = 'progress' | 'completion' | 'export';
 
@@ -63,7 +64,8 @@ function countEvoLines(ids: number[]): number {
 }
 
 function postBeacon(ids: number[], kind: BeaconKind, sections?: Record<string, number[]>) {
-  if (isOptedOut() || ids.length === 0) return;
+  // Demo mode never reports to analytics — keep the sample dex out of admin stats.
+  if (DEMO_MODE || isOptedOut() || ids.length === 0) return;
   const cid = getClientId();
   if (!cid) return;
   // `sections` (groupId -> placed ids) captures WHERE the user put each Pokemon
