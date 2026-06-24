@@ -45,7 +45,7 @@ export const BUILD_GROUPS: BuildGroup[] = [
   { id: 'evil-team', name: 'Evil Team', filterType: 'archetype', filterId: 'evil-team', color: '#705746' },
 
   // Catch-all (before fossil/endgame classifications)
-  { id: 'other', name: 'Other Routes & Areas', filterType: null, filterId: null, color: '#888888' },
+  { id: 'other', name: 'Other Areas', filterType: null, filterId: null, color: '#888888' },
 
   // Fossil
   { id: 'fossil', name: 'Fossil', filterType: 'category', filterId: 'fossil', color: '#a0855b' },
