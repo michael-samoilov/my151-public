@@ -3,10 +3,19 @@ import { BUILD_GROUPS } from '@/data/slot-template';
 // Each build section has a single theme colour. For legibility we split it into
 // an accessible pair: a light FILL and a dark STROKE (used for the outline and
 // the section name). Both are derived from the theme colour by darkening the
-// stroke and lightening the fill in equal steps until their contrast meets the
-// WCAG AA text ratio — so neither is pushed to an extreme and the section's hue
-// stays recognisable. (The app is light-mode only, so contrast is vs each other,
-// effectively against the white page.)
+// stroke and lightening the fill until their contrast meets the target ratio.
+//
+// Hue preservation: darkening the stroke is what erodes a section's recognisable
+// hue (a yellow forced dark enough to hit 4.5:1 reads as olive/brown). So we
+// LEAN the contrast work onto the fill — it lightens FILL_LEAN× faster than the
+// stroke darkens — which keeps the stroke as light (and as on-hue) as possible
+// for a given ratio. Leaning on the fill is essentially free: fills are painted
+// at very low opacity (≈0.07–0.20 over the white page), so pushing the fill
+// colour close to white barely changes what's drawn. We also target 4.0:1
+// rather than 4.5 — these are bold/semibold labels and decorative outlines
+// (WCAG AA "large text" is 3:1), and the faint fill means the on-screen label
+// sits on a near-white background, so real legibility runs well above the
+// nominal stroke-vs-fill ratio. (The app is light-mode only.)
 
 type RGB = [number, number, number];
 
@@ -47,16 +56,19 @@ export interface SectionColor {
   stroke: string;
 }
 
+/** How much faster the fill lightens than the stroke darkens (see header). */
+const FILL_LEAN = 2;
+
 /** Derive the accessible {fill, stroke} pair from a theme colour. */
-export function deriveSectionColor(hex: string, target = 4.5): SectionColor {
+export function deriveSectionColor(hex: string, target = 4.0): SectionColor {
   const base = hexToRgb(hex);
   let t = 0;
   let stroke = base;
   let fill = base;
   while (t < 1 && contrast(stroke, fill) < target) {
-    t += 0.02;
+    t += 0.01;
     stroke = mix(base, BLACK, t);
-    fill = mix(base, WHITE, t);
+    fill = mix(base, WHITE, Math.min(1, t * FILL_LEAN));
   }
   return { fill: rgbToHex(fill), stroke: rgbToHex(stroke) };
 }
