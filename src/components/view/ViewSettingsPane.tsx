@@ -71,6 +71,8 @@ export function ViewSettingsPane({
   const setTitleOpacity = usePokedexStore((s) => s.setViewTitleOpacity);
   const repeatTitles = usePokedexStore((s) => s.viewRepeatTitles);
   const setRepeatTitles = usePokedexStore((s) => s.setViewRepeatTitles);
+  const titleVBias = usePokedexStore((s) => s.viewTitleVBias);
+  const setTitleVBias = usePokedexStore((s) => s.setViewTitleVBias);
 
   // Pending state is only used in mobileSheet mode. In desktop mode handlers
   // write straight to the store and the pending setters go unused.
@@ -339,6 +341,25 @@ export function ViewSettingsPane({
                     step={0.01}
                     value={titleOpacity}
                     onChange={(e) => setTitleOpacity(Number(e.target.value))}
+                    className="w-full mt-1 accent-primary cursor-pointer"
+                  />
+                </label>
+
+                {/* Title vertical position slider (debug): 0 = top border, 1 = circles */}
+                <label className="block">
+                  <div className="flex items-center justify-between text-sm text-foreground">
+                    <span>Title vertical position</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {titleVBias.toFixed(2)}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={titleVBias}
+                    onChange={(e) => setTitleVBias(Number(e.target.value))}
                     className="w-full mt-1 accent-primary cursor-pointer"
                   />
                 </label>

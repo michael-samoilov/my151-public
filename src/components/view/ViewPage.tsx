@@ -572,6 +572,7 @@ function buildOutlines(
   headroom: number,
   gap: number,
   pad: number,
+  vBias: number = 0.5,
 ): OutlineShape[] {
   const pitch = tileSize + gap;
   const maxRow = runs.reduce((m, r) => Math.max(m, r.lastRow), 0);
@@ -585,15 +586,13 @@ function buildOutlines(
   const tileTop = (r: number) => blockTop[r] + (startRows.has(r) ? headroom : 0);
 
   // Vertical line the section name is centred on (translateY(-50%) in render).
-  // It sits between the outline's top edge and the top of that row's pokeball
-  // circles, biased downward (LABEL_V_BIAS > 0.5) so it reads nearer the circles
-  // than the border rather than hugging the top edge.
+  // It sits between the outline's top edge (vBias 0) and the top of that row's
+  // pokeball circles (vBias 1); the debug slider drives vBias.
   const CIRCLE_TOP_INSET = 0.05;
-  const LABEL_V_BIAS = 0.66;
   const labelCenterY = (row: number) => {
     const outlineTop = blockTop[row] - pad;
     const circleTop = tileTop(row) + tileSize * CIRCLE_TOP_INSET;
-    return outlineTop + LABEL_V_BIAS * (circleTop - outlineTop);
+    return outlineTop + vBias * (circleTop - outlineTop);
   };
 
   const radius = Math.max(4, tileSize * 0.26);
@@ -725,6 +724,7 @@ function SectionOverlays({
   offsetLeft = 0,
   titleOpacity = 0.7,
   repeatTitles = true,
+  titleVBias = 0.5,
 }: {
   runs: SectionRun[];
   cols: number;
@@ -737,8 +737,9 @@ function SectionOverlays({
   offsetLeft?: number;
   titleOpacity?: number;
   repeatTitles?: boolean;
+  titleVBias?: number;
 }) {
-  const shapes = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad);
+  const shapes = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad, titleVBias);
   const width = cols * tileSize + (cols - 1) * gap;
   const fontSize = tileSize * 0.26;
   // Re-measure labels once the real font is loaded (canvas metrics depend on it).
@@ -871,6 +872,7 @@ export function ViewPage() {
   const showSections = usePokedexStore((s) => s.viewShowSections);
   const titleOpacity = usePokedexStore((s) => s.viewTitleOpacity);
   const repeatTitles = usePokedexStore((s) => s.viewRepeatTitles);
+  const titleVBias = usePokedexStore((s) => s.viewTitleVBias);
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
@@ -1245,6 +1247,7 @@ export function ViewPage() {
                         totalHeight={gridBlockHeight}
                         titleOpacity={titleOpacity}
                         repeatTitles={repeatTitles}
+                        titleVBias={titleVBias}
                       />
                     )}
                   </div>
@@ -1270,6 +1273,7 @@ export function ViewPage() {
                         offsetLeft={lastRowOffset}
                         titleOpacity={titleOpacity}
                         repeatTitles={repeatTitles}
+                        titleVBias={titleVBias}
                       />
                     )}
                   </div>
