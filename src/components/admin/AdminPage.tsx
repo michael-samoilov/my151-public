@@ -679,52 +679,55 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex }: { rec: ClientRe
   };
 
   return (
-    <section ref={cardRef} className="shadow-elevated rounded-lg bg-card scroll-mt-[64px] relative" style={{ zIndex }}>
-      <div ref={headerRef} className={`sticky top-[64px] z-[5] bg-card rounded-t-lg p-3 ${expanded ? 'pb-1 border-b border-border/50' : 'rounded-b-lg'}`} style={{ boxShadow: '0 -5rem 0 0 var(--color-background)' }}>
-        <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-          <div className="text-sm">
-            <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
-            <span className="text-muted-foreground">
-              {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'} · depth {rec.maxDepth}
-            </span>
-            {(rec.sessionMs?.length || rec.sessions) && (
-              <span className="block text-xs text-muted-foreground">
-                {rec.sessions ?? rec.sessionMs?.length} session
-                {(rec.sessions ?? rec.sessionMs?.length) === 1 ? '' : 's'}
-                {rec.sessionMs?.length ? `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}` : ''}
+    <section ref={cardRef} className="scroll-mt-[64px]" style={{ zIndex }}>
+      <div ref={headerRef} className="sticky top-[64px] z-[5]">
+        <div className="h-4 bg-background" />
+        <div className={`bg-card p-3 ${expanded ? 'pb-1 border-b border-border/50 rounded-t-lg shadow-elevated' : 'rounded-lg shadow-elevated'}`}>
+          <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+            <div className="text-sm">
+              <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
+              <span className="text-muted-foreground">
+                {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'} · depth {rec.maxDepth}
               </span>
-            )}
-            <span className="block text-xs text-muted-foreground">
-              {rec.completed && <span className="text-primary font-medium">✓ completed </span>}
-              {rec.exported && <span>📷 exported </span>}
-              {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning</span>}
-              {userLocal && <> · their {userLocal}</>}
-            </span>
+              {(rec.sessionMs?.length || rec.sessions) && (
+                <span className="block text-xs text-muted-foreground">
+                  {rec.sessions ?? rec.sessionMs?.length} session
+                  {(rec.sessions ?? rec.sessionMs?.length) === 1 ? '' : 's'}
+                  {rec.sessionMs?.length ? `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}` : ''}
+                </span>
+              )}
+              <span className="block text-xs text-muted-foreground">
+                {rec.completed && <span className="text-primary font-medium">✓ completed </span>}
+                {rec.exported && <span>📷 exported </span>}
+                {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning</span>}
+                {userLocal && <> · their {userLocal}</>}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" onClick={handleToggle}>
+                {expanded ? 'Hide' : 'Builds'}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => onDelete(rec)}
+              >
+                Delete
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={handleToggle}>
-              {expanded ? 'Hide' : 'Builds'}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-              onClick={() => onDelete(rec)}
-            >
-              Delete
-            </Button>
-          </div>
+          {ctx.length > 0 && (
+            <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
+              {ctx.map((c, i) => (
+                <span key={i}>{c}</span>
+              ))}
+            </div>
+          )}
         </div>
-        {ctx.length > 0 && (
-          <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
-            {ctx.map((c, i) => (
-              <span key={i}>{c}</span>
-            ))}
-          </div>
-        )}
       </div>
       {expanded && (
-        <div className="flex flex-col gap-2 p-3 pt-2">
+        <div className="flex flex-col gap-2 p-3 pt-2 bg-card rounded-b-lg shadow-elevated">
           <FinalBySection rec={rec} stickyTop={stickyLabelTop} />
           <DexMilestones rec={rec} stickyTop={stickyLabelTop} />
           <SessionDiffs rec={rec} stickyTop={stickyLabelTop} />
@@ -1374,16 +1377,18 @@ export function AdminPage() {
             {data.records.length === 0 && !loading && (
               <p className="text-sm text-muted-foreground">No users yet.</p>
             )}
-            {data.records.map((rec, i) => (
-              <UserCard
-                key={rec.cid}
-                rec={rec}
-                onDelete={deleteUser}
-                expanded={expandedCid === rec.cid}
-                onToggle={() => setExpandedCid((prev) => (prev === rec.cid ? null : rec.cid))}
-                zIndex={data.records.length - i}
-              />
-            ))}
+            <div className="flex flex-col -mt-4">
+              {data.records.map((rec, i) => (
+                <UserCard
+                  key={rec.cid}
+                  rec={rec}
+                  onDelete={deleteUser}
+                  expanded={expandedCid === rec.cid}
+                  onToggle={() => setExpandedCid((prev) => (prev === rec.cid ? null : rec.cid))}
+                  zIndex={data.records.length - i}
+                />
+              ))}
+            </div>
             {data.records.length < data.totalUsers && (
               <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
                 {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${data.totalUsers})`}
