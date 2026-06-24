@@ -546,7 +546,7 @@ function buildOutlines(
       shapes.push({
         key: `${run.sectionId}-a`,
         fill: roundRectFill(xFirstL, yTop, xR, yBotA, radius, false, true),
-        stroke: roundRectStroke(xFirstL, yTop, xR, yBotA, radius, false, true, OUTLINE_DOT_TAIL),
+        stroke: roundRectStroke(xFirstL, yTop, xR, yBotA, radius, false, true, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
         color, label, labelX, labelY, labelMaxW,
         open: { side: 'right', x0: xFirstL, x1: xR, topY: yTop, botY: yBotA },
       });
@@ -560,7 +560,7 @@ function buildOutlines(
       shapes.push({
         key: `${run.sectionId}-b`,
         fill: roundRectFill(xL, yTopB, xLastR, yBotB, radius, true, false),
-        stroke: roundRectStroke(xL, yTopB, xLastR, yBotB, radius, true, false, OUTLINE_DOT_TAIL),
+        stroke: roundRectStroke(xL, yTopB, xLastR, yBotB, radius, true, false, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
         color, label, labelX: labelBX, labelY: labelBY, labelMaxW: labelBW,
         open: { side: 'left', x0: xL, x1: xLastR, topY: yTopB, botY: yBotB },
       });
@@ -665,9 +665,11 @@ function SectionOverlays({
             strokeOpacity={0.5}
             strokeWidth={OUTLINE_STROKE_W}
             strokeLinejoin="round"
-            // Open pieces end flush (butt) so the last gap before the dots is a
-            // full dot-width; a round cap would extend the line and shrink it.
-            strokeLinecap={s.open ? 'butt' : 'round'}
+            // Round caps. The open stroke's path is lengthened by half a stroke
+            // width (see roundRectStroke calls) so the rounded cap's tip lands
+            // exactly at the intended edge — extending the end, not past it —
+            // keeping the three dot gaps even.
+            strokeLinecap="round"
           />
         ))}
         {shapes.map((s) => {
