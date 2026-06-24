@@ -356,9 +356,12 @@ function computeSectionRuns(
 
 type Pt = { x: number; y: number };
 
-/** Build an SVG path that traces an ordered rectilinear polygon with rounded
- *  corners. Handles both convex and concave (staircase) corners. */
-function roundedPath(pts: Pt[], radius: number): string {
+/** Build an SVG path that traces an ordered (clockwise) rectilinear polygon with
+ *  rounded corners. Convex corners use `radius`; concave corners use
+ *  `radius + concaveExtra`. Passing concaveExtra = the inter-outline gap makes a
+ *  concave "big spoon" corner share a centre with the convex "little spoon"
+ *  corner that nests inside it, so the gap stays uniform around the bend. */
+function roundedPath(pts: Pt[], radius: number, concaveExtra = 0): string {
   // Drop consecutive coincident points (collapsed edges from flush columns).
   const p: Pt[] = [];
   for (const pt of pts) {
@@ -377,9 +380,13 @@ function roundedPath(pts: Pt[], radius: number): string {
     const prev = p[(i - 1 + n) % n];
     const curr = p[i];
     const next = p[(i + 1) % n];
-    const d1 = Math.hypot(curr.x - prev.x, curr.y - prev.y) || 1;
-    const d2 = Math.hypot(next.x - curr.x, next.y - curr.y) || 1;
-    const r = Math.min(radius, d1 / 2, d2 / 2);
+    const v1x = curr.x - prev.x, v1y = curr.y - prev.y;
+    const v2x = next.x - curr.x, v2y = next.y - curr.y;
+    const d1 = Math.hypot(v1x, v1y) || 1;
+    const d2 = Math.hypot(v2x, v2y) || 1;
+    // Cross product < 0 is a left turn = concave corner on a clockwise polygon.
+    const concave = v1x * v2y - v1y * v2x < 0;
+    const r = Math.min(radius + (concave ? concaveExtra : 0), d1 / 2, d2 / 2);
     const t1 = { x: curr.x + (prev.x - curr.x) * (r / d1), y: curr.y + (prev.y - curr.y) * (r / d1) };
     const t2 = { x: curr.x + (next.x - curr.x) * (r / d2), y: curr.y + (next.y - curr.y) * (r / d2) };
     parts.push(`${i === 0 ? 'M' : 'L'} ${t1.x.toFixed(2)} ${t1.y.toFixed(2)}`);
@@ -389,9 +396,57 @@ function roundedPath(pts: Pt[], radius: number): string {
   return parts.join(' ');
 }
 
+/** Closed rounded-rect path. The open side (left or right) gets square corners
+ *  so the fill reads as continuing off that edge. */
+function roundRectFill(x0: number, y0: number, x1: number, y1: number, r: number, openLeft: boolean, openRight: boolean): string {
+  const rTL = openLeft ? 0 : r, rBL = openLeft ? 0 : r;
+  const rTR = openRight ? 0 : r, rBR = openRight ? 0 : r;
+  const f = (n: number) => n.toFixed(2);
+  return [
+    `M ${f(x0 + rTL)} ${f(y0)}`,
+    `L ${f(x1 - rTR)} ${f(y0)}`,
+    rTR ? `Q ${f(x1)} ${f(y0)} ${f(x1)} ${f(y0 + rTR)}` : `L ${f(x1)} ${f(y0)}`,
+    `L ${f(x1)} ${f(y1 - rBR)}`,
+    rBR ? `Q ${f(x1)} ${f(y1)} ${f(x1 - rBR)} ${f(y1)}` : `L ${f(x1)} ${f(y1)}`,
+    `L ${f(x0 + rBL)} ${f(y1)}`,
+    rBL ? `Q ${f(x0)} ${f(y1)} ${f(x0)} ${f(y1 - rBL)}` : `L ${f(x0)} ${f(y1)}`,
+    `L ${f(x0)} ${f(y0 + rTL)}`,
+    rTL ? `Q ${f(x0)} ${f(y0)} ${f(x0 + rTL)} ${f(y0)}` : `L ${f(x0)} ${f(y0)}`,
+    'Z',
+  ].join(' ');
+}
+
+/** Open stroke for a rounded rect: the open side is left undrawn so the border
+ *  visibly continues off that edge. */
+function roundRectStroke(x0: number, y0: number, x1: number, y1: number, r: number, openLeft: boolean, openRight: boolean): string {
+  const f = (n: number) => n.toFixed(2);
+  if (openRight) {
+    return [
+      `M ${f(x1)} ${f(y0)}`,
+      `L ${f(x0 + r)} ${f(y0)}`,
+      `Q ${f(x0)} ${f(y0)} ${f(x0)} ${f(y0 + r)}`,
+      `L ${f(x0)} ${f(y1 - r)}`,
+      `Q ${f(x0)} ${f(y1)} ${f(x0 + r)} ${f(y1)}`,
+      `L ${f(x1)} ${f(y1)}`,
+    ].join(' ');
+  }
+  if (openLeft) {
+    return [
+      `M ${f(x0)} ${f(y0)}`,
+      `L ${f(x1 - r)} ${f(y0)}`,
+      `Q ${f(x1)} ${f(y0)} ${f(x1)} ${f(y0 + r)}`,
+      `L ${f(x1)} ${f(y1 - r)}`,
+      `Q ${f(x1)} ${f(y1)} ${f(x1 - r)} ${f(y1)}`,
+      `L ${f(x0)} ${f(y1)}`,
+    ].join(' ');
+  }
+  return roundRectFill(x0, y0, x1, y1, r, false, false);
+}
+
 interface OutlineShape {
   key: string;
-  path: string;
+  fill: string;
+  stroke: string;
   color: string;
   label: string | null;
   labelX: number;
@@ -433,7 +488,17 @@ function buildOutlines(
 
   const shapes: OutlineShape[] = [];
 
-  for (const run of runs) {
+  // Uniform gap between neighbouring outlines — concave corners are widened by
+  // this so a convex corner nesting inside keeps the gap constant round the bend.
+  const outlineGap = gap - 2 * pad;
+
+  let run: SectionRun;
+  const pushPoly = (suffix: string, pts: Pt[], lbl: string | null, lx: number, ly: number, lw: number) => {
+    const d = roundedPath(pts, radius, outlineGap);
+    shapes.push({ key: `${run.sectionId}-${suffix}`, fill: d, stroke: d, color: run.color, label: lbl, labelX: lx, labelY: ly, labelMaxW: lw });
+  };
+
+  for (run of runs) {
     const { firstRow, firstCol, lastRow, lastCol, color, label } = run;
     const xL = colLeft(0);
     const xR = colRight(cols - 1);
@@ -451,70 +516,63 @@ function buildOutlines(
 
     if (firstRow === lastRow) {
       const yBottom = tileTop(firstRow) + tileSize + pad;
-      shapes.push({
-        key: `${run.sectionId}-${firstRow}-${firstCol}`,
-        path: roundedPath([
-          { x: xFirstL, y: yTop },
-          { x: xLastR, y: yTop },
-          { x: xLastR, y: yBottom },
-          { x: xFirstL, y: yBottom },
-        ], radius),
-        color, label, labelX, labelY, labelMaxW,
-      });
+      pushPoly(`${firstRow}-${firstCol}`, [
+        { x: xFirstL, y: yTop },
+        { x: xLastR, y: yTop },
+        { x: xLastR, y: yBottom },
+        { x: xFirstL, y: yBottom },
+      ], label, labelX, labelY, labelMaxW);
       continue;
     }
 
-    // A two-row wrap whose rows share no column overlap can't be enclosed as
-    // one shape — draw the two pieces separately, labelling only the first.
-    if (lastRow - firstRow === 1 && firstCol > lastCol) {
+    // Two-row wrap with no column overlap (≤9 pokemon): two pieces with their
+    // inner edges left open to read as continuation, name re-shown on row two.
+    if (lastRow - firstRow === 1 && firstCol > lastCol + 1) {
       const yBotA = tileTop(firstRow) + tileSize + pad;
       shapes.push({
         key: `${run.sectionId}-a`,
-        path: roundedPath([
-          { x: xFirstL, y: yTop },
-          { x: xR, y: yTop },
-          { x: xR, y: yBotA },
-          { x: xFirstL, y: yBotA },
-        ], radius),
+        fill: roundRectFill(xFirstL, yTop, xR, yBotA, radius, false, true),
+        stroke: roundRectStroke(xFirstL, yTop, xR, yBotA, radius, false, true),
         color, label, labelX, labelY, labelMaxW,
       });
-      // If the wrap's lower row carries a label band (another section starts
-      // there), top this piece at the band so its gap above stays uniform.
-      const yTopB = (startRows.has(lastRow) ? blockTop[lastRow] : tileTop(lastRow)) - pad;
+      // lastRow is guaranteed a band row (see layout memo), so the re-shown
+      // label has band space and the piece tops out uniformly.
+      const yTopB = blockTop[lastRow] - pad;
       const yBotB = tileTop(lastRow) + tileSize + pad;
+      const labelBX = tileSize * 0.07;
+      const labelBY = blockTop[lastRow] + headroom * 0.45;
+      const labelBW = Math.max(tileSize, xLastR - labelBX - tileSize * 0.06);
       shapes.push({
         key: `${run.sectionId}-b`,
-        path: roundedPath([
-          { x: xL, y: yTopB },
-          { x: xLastR, y: yTopB },
-          { x: xLastR, y: yBotB },
-          { x: xL, y: yBotB },
-        ], radius),
-        color, label: null, labelX: 0, labelY: 0, labelMaxW: 0,
+        fill: roundRectFill(xL, yTopB, xLastR, yBotB, radius, true, false),
+        stroke: roundRectStroke(xL, yTopB, xLastR, yBotB, radius, true, false),
+        color, label, labelX: labelBX, labelY: labelBY, labelMaxW: labelBW,
       });
       continue;
     }
 
-    // Contiguous multi-row ribbon — one enclosing outline. Each staircase step
-    // sits `pad` outside the ribbon's own tiles: the left step is `pad` above
-    // the second row's tiles, the right step `pad` below the second-last row's.
-    const yLeftStep = tileTop(firstRow + 1) - pad;
+    // Exactly-10 wrap (firstCol === lastCol + 1) is left to the contiguous-ribbon
+    // path below: its staircase vertices "cross" at the two diagonally-adjacent
+    // corners, and the spoon rounding (concave radius = convex + gap) pulls those
+    // corners apart into a smooth diagonal join automatically. The name is not
+    // re-shown (single ribbon outline).
+
+    // Contiguous multi-row ribbon — one enclosing outline. The left step rises
+    // to the band of the row below (so a last row sharing a band row reaches the
+    // same height as the new section); the right step sits below the row above.
+    const yLeftStep = blockTop[firstRow + 1] - pad;
     const yRightStep = tileTop(lastRow - 1) + tileSize + pad;
     const yBottom = tileTop(lastRow) + tileSize + pad;
-    shapes.push({
-      key: `${run.sectionId}-${firstRow}-${firstCol}`,
-      path: roundedPath([
-        { x: xFirstL, y: yTop },
-        { x: xR, y: yTop },
-        { x: xR, y: yRightStep },
-        { x: xLastR, y: yRightStep },
-        { x: xLastR, y: yBottom },
-        { x: xL, y: yBottom },
-        { x: xL, y: yLeftStep },
-        { x: xFirstL, y: yLeftStep },
-      ], radius),
-      color, label, labelX, labelY, labelMaxW,
-    });
+    pushPoly(`${firstRow}-${firstCol}`, [
+      { x: xFirstL, y: yTop },
+      { x: xR, y: yTop },
+      { x: xR, y: yRightStep },
+      { x: xLastR, y: yRightStep },
+      { x: xLastR, y: yBottom },
+      { x: xL, y: yBottom },
+      { x: xL, y: yLeftStep },
+      { x: xFirstL, y: yLeftStep },
+    ], label, labelX, labelY, labelMaxW);
   }
 
   return shapes;
@@ -552,14 +610,18 @@ function SectionOverlays({
     >
       <svg width={width} height={totalHeight} style={{ overflow: 'visible', display: 'block' }}>
         {shapes.map((s) => (
+          <path key={`fill-${s.key}`} d={s.fill} fill={`${s.color}12`} fillRule="evenodd" stroke="none" />
+        ))}
+        {shapes.map((s) => (
           <path
-            key={s.key}
-            d={s.path}
-            fill={`${s.color}12`}
+            key={`stroke-${s.key}`}
+            d={s.stroke}
+            fill="none"
             stroke={s.color}
             strokeOpacity={0.5}
             strokeWidth={1.5}
             strokeLinejoin="round"
+            strokeLinecap="round"
           />
         ))}
       </svg>
@@ -614,8 +676,18 @@ export function ViewPage() {
     const lastRowPokemon = sorted.slice(gridSlots);
     const gridRuns = showSectionOverlays ? computeSectionRuns(gridPokemon, sections, COLS) : [];
     const lastRowRuns = showSectionOverlays ? computeSectionRuns(lastRowPokemon, sections, lastRowCount) : [];
-    const gridStartRows = new Set(gridRuns.map((r) => r.firstRow));
-    const lastRowStartRows = new Set(lastRowRuns.map((r) => r.firstRow));
+    // Rows that carry a label band: every section's first row, plus the second
+    // row of a ≤9-pokemon open wrap (whose name re-appears and needs band space).
+    const bandRowsFor = (rs: SectionRun[]) => {
+      const set = new Set<number>();
+      for (const r of rs) {
+        set.add(r.firstRow);
+        if (r.lastRow - r.firstRow === 1 && r.firstCol > r.lastCol + 1) set.add(r.lastRow);
+      }
+      return set;
+    };
+    const gridStartRows = bandRowsFor(gridRuns);
+    const lastRowStartRows = bandRowsFor(lastRowRuns);
     const totalRows = Math.ceil(totalSlots / COLS);
     const numStartRows = gridStartRows.size + lastRowStartRows.size;
     // Fold the uniform gaps, label bands, and the outline's outer `pad` overhang
