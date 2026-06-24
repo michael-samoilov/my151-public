@@ -467,7 +467,7 @@ function GroupBox({
       onTransitionEnd={handleTransitionEnd}
       className="rounded-lg"
       style={{
-        backgroundColor: `${sectionFill}${hasPokemon ? '40' : '20'}`,
+        backgroundColor: `${sectionFill}${hasPokemon ? '10' : '10'}`,
         border: `1px solid ${sectionStroke}30`,
       }}
     >
