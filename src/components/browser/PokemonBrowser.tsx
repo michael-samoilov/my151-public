@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { FilterChipList } from './FilterChipList';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -66,6 +66,7 @@ export function PokemonBrowser() {
   const activeSection = usePokedexStore((s) => s.activeSection);
   const addToSection = usePokedexStore((s) => s.addToSection);
   const [openSheet, setOpenSheet] = useState<FilterSheet>(null);
+  const [sheetH, setSheetH] = useState(0);
   const isDesktop = useIsDesktop();
 
   // Staged selection: pokemon selected but not yet committed
@@ -781,7 +782,7 @@ export function PokemonBrowser() {
         const removeCount = removalStagedIds.length;
         if (newCount === 0 && removeCount === 0) return null;
         return (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40">
+          <div className="absolute left-1/2 -translate-x-1/2 z-40 transition-[bottom] duration-200" style={{ bottom: openSheet && !isDesktop && sheetH > 0 ? sheetH + 12 : 12 }}>
             <button type="button"
               onClick={handleSubmitStaged}
               className="bg-primary text-primary-foreground px-5 py-2 rounded-full shadow-lg text-sm font-semibold cursor-pointer hover:bg-primary/90 transition-colors leading-snug text-center"
@@ -804,7 +805,7 @@ export function PokemonBrowser() {
 
       {/* Filter bottom sheet overlay (mobile only) */}
       {openSheet && !isDesktop && (
-        <SheetOverlay onClose={() => setOpenSheet(null)} openSheet={openSheet} footer={
+        <SheetOverlay onClose={() => setOpenSheet(null)} openSheet={openSheet} onHeight={setSheetH} footer={
           <div className="px-4 py-3 border-t">
             <Button className="w-full" onClick={() => setOpenSheet(null)}>
               Show {totalCount} results
@@ -819,14 +820,16 @@ export function PokemonBrowser() {
 }
 
 /** Sheet overlay — non-modal bottom sheet that allows interaction with content behind */
-function SheetOverlay({ onClose, openSheet, children, footer }: {
+function SheetOverlay({ onClose, openSheet, children, footer, onHeight }: {
   onClose: () => void;
   openSheet: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
+  onHeight?: (h: number) => void;
 }) {
   const headerRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   // Block touchmove on non-scrollable areas (header, footer) to prevent pull-to-refresh
   useEffect(() => {
@@ -836,9 +839,14 @@ function SheetOverlay({ onClose, openSheet, children, footer }: {
     return () => { els.forEach(el => el.removeEventListener('touchmove', block)); };
   }, []);
 
+  useLayoutEffect(() => {
+    if (sheetRef.current && onHeight) onHeight(sheetRef.current.offsetHeight);
+    return () => { onHeight?.(0); };
+  }, [openSheet, onHeight]);
+
   return (
     <div className="absolute inset-x-0 bottom-0 z-50 pointer-events-none">
-      <div className="pointer-events-auto bg-background border-t rounded-t-xl shadow-2xl max-h-[50vh] flex flex-col">
+      <div ref={sheetRef} className="pointer-events-auto bg-background border-t rounded-t-xl shadow-2xl max-h-[50vh] flex flex-col">
         {/* Sheet header */}
         <div ref={headerRef} className="flex items-center justify-between px-4 py-3 border-b">
           <span className="text-sm font-semibold">
