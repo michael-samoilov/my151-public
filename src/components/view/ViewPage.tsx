@@ -1021,7 +1021,8 @@ function SectionOverlays({
       {spandrels.map((sp) => {
         if (!sp.type || !readyTypes.has(sp.type)) return null;
         const mask = getTypeMask(sp.type)!;
-        const size = sp.r * 2.8;
+        // Cropped mask fills its box, so match the star's bounding box (2·r).
+        const size = sp.r * 2;
         return (
           <div
             key={`icon-${sp.key}`}
