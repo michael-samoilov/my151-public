@@ -2,6 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createEmptySections, BUILD_GROUP_IDS } from '@/data/slot-template';
 import { getEvolutionChainIds, getEvolutionLine, getDescendantIds, getPokemonById, computeRemovalCascade, getExclusiveForms } from '@/hooks/usePokemonData';
+import { DEMO_MODE, POKEDEX_STORAGE_KEY } from '@/lib/demoMode';
+import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
+
+/** Initial sections — empty for real users, or the sample dex in demo mode. */
+function initialSections(): Record<string, number[]> {
+  const base = createEmptySections();
+  if (DEMO_MODE) for (const [g, ids] of Object.entries(DEMO_DEX_SECTIONS)) base[g] = [...ids];
+  return base;
+}
 
 type TypeFilterMode = 'any' | 'all';
 
@@ -75,7 +84,7 @@ const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
 export const usePokedexStore = create<PokedexState>()(
   persist(
     (set, get) => ({
-      sections: createEmptySections(),
+      sections: initialSections(),
       activeSection: null,
       activeCategoryFilter: null,
       activeArchetypeFilter: null,
@@ -95,7 +104,7 @@ export const usePokedexStore = create<PokedexState>()(
       viewSortOption: 'build-order' as ViewSortOption,
       viewGroupSpecialAtEnd: true,
       viewCustomOrder: null,
-      viewShowSections: false,
+      viewShowSections: DEMO_MODE,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -269,7 +278,7 @@ export const usePokedexStore = create<PokedexState>()(
       setViewShowSections: (value) => set({ viewShowSections: value }),
     }),
     {
-      name: 'personal-151-pokedex-v3',
+      name: POKEDEX_STORAGE_KEY,
       partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections }),
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
