@@ -23,9 +23,17 @@ const DEPLOY_ENV: string = (() => {
 })();
 
 /** Whether unfinished, preview-only features (the View-page build-section
- *  outlines) are available. Hidden on the live production build; on for Vercel
- *  preview deployments and local dev. */
-export const PREVIEW_FEATURES: boolean = DEPLOY_ENV !== 'production';
+ *  outlines) are available. Opt-IN: only an explicit Vercel preview deployment
+ *  or local dev turns them on. Any other environment — production, or a build
+ *  where VERCEL_ENV is missing/unexpected — leaves them off, so there is no path
+ *  for them to reach the live site. */
+export const PREVIEW_FEATURES: boolean = (() => {
+  try {
+    return DEPLOY_ENV === 'preview' || import.meta.env.DEV === true;
+  } catch {
+    return false;
+  }
+})();
 
 export const DEMO_MODE: boolean = (() => {
   try {
