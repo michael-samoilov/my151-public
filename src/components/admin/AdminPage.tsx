@@ -644,8 +644,7 @@ function tallyRows(counts: Record<string, number>, withFlag = false) {
     .map(([k, n]) => ({ label: withFlag ? `${flag(k)} ${k}` : k, count: n }));
 }
 
-function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void }) {
-  const [expanded, setExpanded] = useState(false);
+function UserCard({ rec, onDelete, expanded, onToggle, zIndex }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void; expanded: boolean; onToggle: () => void; zIndex: number }) {
   const [droppedOpen, setDroppedOpen] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -665,7 +664,7 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
 
   const handleToggle = () => {
     if (expanded) {
-      setExpanded(false);
+      onToggle();
       requestAnimationFrame(() => {
         const el = cardRef.current;
         if (!el) return;
@@ -675,12 +674,12 @@ function UserCard({ rec, onDelete }: { rec: ClientRecord; onDelete: (rec: Client
         }
       });
     } else {
-      setExpanded(true);
+      onToggle();
     }
   };
 
   return (
-    <section ref={cardRef} className="shadow-elevated rounded-lg bg-card scroll-mt-[64px]">
+    <section ref={cardRef} className="shadow-elevated rounded-lg bg-card scroll-mt-[64px] relative" style={{ zIndex }}>
       <div ref={headerRef} className={`sticky top-[64px] z-[5] bg-card rounded-t-lg p-3 ${expanded ? 'pb-1 border-b border-border/50' : 'rounded-b-lg'}`} style={{ boxShadow: '0 -1.5rem 0 0 var(--color-background)' }}>
         <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
           <div className="text-sm">
@@ -1157,6 +1156,7 @@ export function AdminPage() {
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<ApiResponse | null>(null);
   const [slotDetail, setSlotDetail] = useState<{ dow: number; hour: number } | null>(null);
+  const [expandedCid, setExpandedCid] = useState<string | null>(null);
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -1226,22 +1226,6 @@ export function AdminPage() {
     [token],
   );
 
-  const resetAll = useCallback(async () => {
-    if (!token) return;
-    if (!window.confirm('Reset ALL analytics?\n\nPermanently deletes every user record and aggregate, starting from 0. This cannot be undone.')) return;
-    setError(null);
-    try {
-      const res = await fetch('/api/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({}),
-      });
-      if (!res.ok) throw new Error(`Reset failed (${res.status}).`);
-      await load(token);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Reset failed.');
-    }
-  }, [token, load]);
 
   const signOut = useCallback(() => {
     try {
@@ -1385,20 +1369,20 @@ export function AdminPage() {
               <Heatmap matrix={data.heatmap} onCell={(dow, hour) => setSlotDetail({ dow, hour })} />
             </Card>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Users ({data.totalUsers})</span>
-              {data.totalUsers > 0 && (
-                <Button variant="destructive" size="sm" onClick={() => void resetAll()}>
-                  Reset all
-                </Button>
-              )}
-            </div>
+            <span className="text-sm font-medium">Users ({data.totalUsers})</span>
 
             {data.records.length === 0 && !loading && (
               <p className="text-sm text-muted-foreground">No users yet.</p>
             )}
-            {data.records.map((rec) => (
-              <UserCard key={rec.cid} rec={rec} onDelete={deleteUser} />
+            {data.records.map((rec, i) => (
+              <UserCard
+                key={rec.cid}
+                rec={rec}
+                onDelete={deleteUser}
+                expanded={expandedCid === rec.cid}
+                onToggle={() => setExpandedCid((prev) => (prev === rec.cid ? null : rec.cid))}
+                zIndex={data.records.length - i}
+              />
             ))}
             {data.records.length < data.totalUsers && (
               <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>

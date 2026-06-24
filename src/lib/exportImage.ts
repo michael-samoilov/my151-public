@@ -320,12 +320,18 @@ export async function generateExportImage(
   type Seg = { kind: 'text'; text: string; color: string } | { kind: 'icon'; img: HTMLImageElement; sz: number };
   const insightSegs: Seg[] = [];
 
+  const isKanto151 = pokemon.length === 151 &&
+    pokemon.every((p) => p.id >= 1 && p.id <= 151) &&
+    new Set(pokemon.map((p) => p.id)).size === 151;
+
   const { leanTypes, leanGens } = insights;
   const noLean = leanTypes.length === 0 && leanGens.length === 0;
   const typeImgs = [leanType1Img, leanType2Img];
   const genImgs  = [leanGen1Img,  leanGen2Img];
 
-  if (noLean && !insights.bestAttackType) {
+  if (isKanto151) {
+    insightSegs.push({ kind: 'text', text: 'the originals — all 151 · nothing else needed', color: zinc });
+  } else if (noLean && !insights.bestAttackType) {
     // Perfectly balanced — nothing over-indexes or strongly over-performs
     insightSegs.push({ kind: 'text', text: 'perfectly balanced dex', color: zinc });
   } else {
