@@ -30,7 +30,7 @@ export const BUILD_GROUPS: BuildGroup[] = [
   { id: 'swamp', name: 'Swamp', filterType: 'archetype', filterId: 'swamp', color: '#5c6d3f' },
   { id: 'dojo', name: 'Dojo', filterType: 'archetype', filterId: 'dojo', color: '#c22e28' },
   { id: 'haunted', name: 'Haunted', filterType: 'archetype', filterId: 'haunted', color: '#735797' },
-  { id: 'ruins', name: 'Ruins / Temple', filterType: 'archetype', filterId: 'ruins', color: '#c4b5fd' },
+  { id: 'ruins', name: 'Temple', filterType: 'archetype', filterId: 'ruins', color: '#c4b5fd' },
   { id: 'beach', name: 'Beach', filterType: 'archetype', filterId: 'beach', color: '#e9c46a' },
   { id: 'fishing-pokemon', name: 'Fishing', filterType: 'archetype', filterId: 'fishing-pokemon', color: '#6390f0' },
   { id: 'ocean', name: 'Ocean', filterType: 'archetype', filterId: 'ocean', color: '#006494' },
