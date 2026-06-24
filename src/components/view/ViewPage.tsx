@@ -172,6 +172,22 @@ function useTileSize(colFactor: number, rowFactor: number) {
   return { containerRef, tileSize };
 }
 
+/** True once web fonts have finished loading, so canvas text measurement (used
+ *  to fit section names) reflects the real Inter metrics rather than a fallback.
+ *  Flips state on load to trigger a re-measure/re-render. */
+function useFontsReady(): boolean {
+  const [ready, setReady] = useState(
+    () => typeof document !== 'undefined' && (document as Document).fonts?.status === 'loaded',
+  );
+  useEffect(() => {
+    if (ready || typeof document === 'undefined' || !document.fonts) return;
+    let alive = true;
+    document.fonts.ready.then(() => { if (alive) setReady(true); });
+    return () => { alive = false; };
+  }, [ready]);
+  return ready;
+}
+
 // ---------- Draggable tile ----------
 
 function DraggableViewTile({
@@ -315,9 +331,64 @@ function getSectionLabel(groupId: string): string {
   return SHORT_NAMES[groupId] ?? BUILD_GROUPS.find(g => g.id === groupId)?.name ?? groupId;
 }
 
+// Progressive label fallbacks, longest → shortest. When a section's name is too
+// wide for its outline even after horizontal squashing (see fitLabel), the next
+// shorter form is tried. Sections not listed here only have their single label.
+const SECTION_NAME_CHAINS: Record<string, string[]> = {
+  'pikachu-clone': ['Pikaclone', 'Pika'],
+  'other': ['Other Routes & Areas', 'Other Areas', 'Other'],
+  'early-bug': ['Early Bug', 'E. Bug', 'Bug'],
+  'early-bird': ['Early Bird', 'E. Bird', 'Bird'],
+  'early-rodent': ['Early Mammal', 'E. Mammal', 'Mammal'],
+  'industrial': ['Industrial', 'Industry'],
+  'evil-team': ['Evil Team', 'Evil'],
+};
+
+function getSectionLabelChain(groupId: string): string[] {
+  return SECTION_NAME_CHAINS[groupId] ?? [getSectionLabel(groupId)];
+}
+
+// --- Label fitting -------------------------------------------------------
+// A section name is drawn at a fixed font size, but its outline may be as narrow
+// as a single tile. To keep names whole (never truncated) we, in order:
+//   1. squash the name horizontally (scaleX) down to MIN_LABEL_SCALE, then
+//   2. fall back to the next shorter name (un-squashed first), repeating.
+// MIN_LABEL_SCALE is the tightest condensing that still reads at "black" weight.
+const MIN_LABEL_SCALE = 0.72;
+
+let _measureCanvas: HTMLCanvasElement | null = null;
+function measureLabelWidth(text: string, fontPx: number): number {
+  if (typeof document === 'undefined') return text.length * fontPx * 0.62;
+  _measureCanvas ??= document.createElement('canvas');
+  const ctx = _measureCanvas.getContext('2d');
+  if (!ctx) return text.length * fontPx * 0.62;
+  ctx.font = `900 ${fontPx}px 'Inter Variable', system-ui, sans-serif`;
+  return ctx.measureText(text).width;
+}
+
+/** Pick the longest name from the chain that fits `availWidth` at `fontPx`,
+ *  squashing up to MIN_LABEL_SCALE before moving to a shorter name. Returns the
+ *  chosen text, its horizontal scale, and whether it fits at all. */
+function fitLabel(
+  alts: string[],
+  availWidth: number,
+  fontPx: number,
+): { text: string; scaleX: number; fits: boolean } {
+  for (const text of alts) {
+    const w = measureLabelWidth(text, fontPx);
+    if (w <= availWidth) return { text, scaleX: 1, fits: true };
+    const scale = availWidth / w;
+    if (scale >= MIN_LABEL_SCALE) return { text, scaleX: scale, fits: true };
+  }
+  // Nothing fits even at the shortest name squashed to the limit: keep the
+  // shortest name at the readable minimum scale (it will overflow the outline).
+  return { text: alts[alts.length - 1], scaleX: MIN_LABEL_SCALE, fits: false };
+}
+
 interface SectionRun {
   sectionId: string;
   label: string;
+  labelAlts: string[];
   fillColor: string;
   strokeColor: string;
   firstRow: number;
@@ -350,6 +421,7 @@ function computeSectionRuns(
     runs.push({
       sectionId,
       label: getSectionLabel(sectionId),
+      labelAlts: getSectionLabelChain(sectionId),
       fillColor: fill,
       strokeColor: stroke,
       firstRow: Math.floor(i / cols),
@@ -463,6 +535,7 @@ interface OutlineShape {
   fillColor: string;
   strokeColor: string;
   label: string | null;
+  labelAlts: string[];
   labelX: number;
   labelY: number;
   labelMaxW: number;
@@ -520,7 +593,7 @@ function buildOutlines(
   let run: SectionRun;
   const pushPoly = (suffix: string, pts: Pt[], lbl: string | null, lx: number, ly: number, lw: number) => {
     const d = roundedPath(pts, radius, outlineGap);
-    shapes.push({ key: `${run.sectionId}-${suffix}`, fill: d, stroke: d, fillColor: run.fillColor, strokeColor: run.strokeColor, label: lbl, labelX: lx, labelY: ly, labelMaxW: lw });
+    shapes.push({ key: `${run.sectionId}-${suffix}`, fill: d, stroke: d, fillColor: run.fillColor, strokeColor: run.strokeColor, label: lbl, labelAlts: run.labelAlts, labelX: lx, labelY: ly, labelMaxW: lw });
   };
 
   for (run of runs) {
@@ -558,7 +631,7 @@ function buildOutlines(
         key: `${run.sectionId}-a`,
         fill: roundRectFill(xFirstL, yTop, xR, yBotA, radius, false, true),
         stroke: roundRectStroke(xFirstL, yTop, xR, yBotA, radius, false, true, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
-        fillColor, strokeColor, label, labelX, labelY, labelMaxW,
+        fillColor, strokeColor, label, labelAlts: run.labelAlts, labelX, labelY, labelMaxW,
         open: { side: 'right', x0: xFirstL, x1: xR, topY: yTop, botY: yBotA },
       });
       // lastRow is guaranteed a band row (see layout memo), so the re-shown
@@ -572,7 +645,7 @@ function buildOutlines(
         key: `${run.sectionId}-b`,
         fill: roundRectFill(xL, yTopB, xLastR, yBotB, radius, true, false),
         stroke: roundRectStroke(xL, yTopB, xLastR, yBotB, radius, true, false, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
-        fillColor, strokeColor, label, labelX: labelBX, labelY: labelBY, labelMaxW: labelBW,
+        fillColor, strokeColor, label, labelAlts: run.labelAlts, labelX: labelBX, labelY: labelBY, labelMaxW: labelBW,
         open: { side: 'left', x0: xL, x1: xLastR, topY: yTopB, botY: yBotB },
       });
       continue;
@@ -628,7 +701,9 @@ function SectionOverlays({
 }) {
   const shapes = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad);
   const width = cols * tileSize + (cols - 1) * gap;
-  const fontSize = tileSize * 0.325;
+  const fontSize = tileSize * 0.26;
+  // Re-measure labels once the real font is loaded (canvas metrics depend on it).
+  const fontsReady = useFontsReady();
 
   return (
     <div
@@ -705,25 +780,31 @@ function SectionOverlays({
           );
         })}
       </svg>
-      {shapes.map((s) =>
-        s.label ? (
+      {shapes.map((s) => {
+        if (!s.label) return null;
+        // Fit the name to its outline: squash, then fall back to shorter names.
+        // (fontsReady is read so the result re-measures once the font loads.)
+        const fit = fontsReady
+          ? fitLabel(s.labelAlts, s.labelMaxW, fontSize)
+          : { text: s.labelAlts[0], scaleX: 1 };
+        return (
           <div
             key={`label-${s.key}`}
-            className="absolute leading-none font-semibold uppercase select-none truncate"
+            className="absolute leading-none font-black uppercase select-none whitespace-nowrap"
             style={{
               left: s.labelX,
               top: s.labelY,
-              transform: 'translateY(-50%)',
-              maxWidth: s.labelMaxW,
+              transform: `translateY(-50%) scaleX(${fit.scaleX})`,
+              transformOrigin: 'left center',
               fontSize,
               color: s.strokeColor,
               opacity: 0.9,
             }}
           >
-            {s.label}
+            {fit.text}
           </div>
-        ) : null,
-      )}
+        );
+      })}
     </div>
   );
 }
