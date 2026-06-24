@@ -56,6 +56,9 @@ interface PokedexState {
   /** Vertical placement of the title between the outline top (0) and the top of
    *  the row's pokeball circles (1). */
   viewTitleVBias: number;
+  /** Whether long titles fall back to shorter names (true) or always use the
+   *  full name, squashed to fit (false). */
+  viewShortenTitles: boolean;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -86,6 +89,7 @@ interface PokedexState {
   setViewTitleOpacity: (value: number) => void;
   setViewRepeatTitles: (value: boolean) => void;
   setViewTitleVBias: (value: number) => void;
+  setViewShortenTitles: (value: boolean) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -117,6 +121,7 @@ export const usePokedexStore = create<PokedexState>()(
       viewTitleOpacity: 0.7,
       viewRepeatTitles: true,
       viewTitleVBias: 0.5,
+      viewShortenTitles: true,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -291,10 +296,11 @@ export const usePokedexStore = create<PokedexState>()(
       setViewTitleOpacity: (value) => set({ viewTitleOpacity: value }),
       setViewRepeatTitles: (value) => set({ viewRepeatTitles: value }),
       setViewTitleVBias: (value) => set({ viewTitleVBias: value }),
+      setViewShortenTitles: (value) => set({ viewShortenTitles: value }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,
-      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections, viewTitleOpacity: state.viewTitleOpacity, viewRepeatTitles: state.viewRepeatTitles, viewTitleVBias: state.viewTitleVBias }),
+      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections, viewTitleOpacity: state.viewTitleOpacity, viewRepeatTitles: state.viewRepeatTitles, viewTitleVBias: state.viewTitleVBias, viewShortenTitles: state.viewShortenTitles }),
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
           sections?: Record<string, number[]>;

@@ -556,6 +556,10 @@ interface OutlineShape {
   // Set on the open side of a ≤9-pokemon wrap piece: the fill fades out toward
   // the open edge and the top/bottom borders trail off into three dots.
   open?: { side: 'left' | 'right'; x0: number; x1: number; topY: number; botY: number };
+  // True on the *continuation* piece of a single wrapped run (the re-shown half
+  // of a ≤9 open wrap). Its title is the only one suppressed in "show once" mode
+  // — separate runs of a section each keep their own title.
+  isContinuation?: boolean;
 }
 
 /** Turn section runs into outline shapes. A run that wraps across rows and
@@ -674,6 +678,7 @@ function buildOutlines(
         stroke: roundRectStroke(xL, yTopB, xLastR, yBotB, radius, true, false, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
         fillColor, strokeColor, label, labelAlts: run.labelAlts, labelX: labelBX, labelY: labelBY, labelMaxW: labelBW,
         open: { side: 'left', x0: xL, x1: xLastR, topY: yTopB, botY: yBotB },
+        isContinuation: true,
       });
       continue;
     }
@@ -725,6 +730,7 @@ function SectionOverlays({
   titleOpacity = 0.7,
   repeatTitles = true,
   titleVBias = 0.5,
+  shortenTitles = true,
 }: {
   runs: SectionRun[];
   cols: number;
@@ -738,6 +744,7 @@ function SectionOverlays({
   titleOpacity?: number;
   repeatTitles?: boolean;
   titleVBias?: number;
+  shortenTitles?: boolean;
 }) {
   const shapes = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad, titleVBias);
   const width = cols * tileSize + (cols - 1) * gap;
@@ -820,22 +827,20 @@ function SectionOverlays({
           );
         })}
       </svg>
-      {(() => {
-        // Mode B (repeatTitles off): a section's title shows only on its first
-        // shape in reading order — no repeats for split / non-contiguous runs.
-        const titled = new Set<string>();
-        return shapes.map((s) => {
+      {shapes.map((s) => {
           if (!s.label) return null;
-          if (!repeatTitles) {
-            if (titled.has(s.sectionId)) return null;
-            titled.add(s.sectionId);
-          }
+          // "Show once" mode (repeatTitles off): suppress only the re-shown title
+          // on the continuation half of a single wrapped run. Separate runs of a
+          // section — recurring because of ordering — each keep their own title.
+          if (!repeatTitles && s.isContinuation) return null;
           // Fit the name to its outline: stretch/squash, fall back to shorter
-          // names, else squash to fit exactly. (fontsReady is read so the result
-          // re-measures once the font loads.)
+          // names, else squash to fit exactly. With shortenTitles off, only the
+          // full name is offered, so it squashes hard rather than shortening.
+          // (fontsReady is read so the result re-measures once the font loads.)
+          const alts = shortenTitles ? s.labelAlts : [s.labelAlts[0]];
           const fit = fontsReady
-            ? fitLabel(s.labelAlts, s.labelMaxW, fontSize)
-            : { text: s.labelAlts[0], scaleX: 1 };
+            ? fitLabel(alts, s.labelMaxW, fontSize)
+            : { text: alts[0], scaleX: 1 };
           return (
             <div
               key={`label-${s.key}`}
@@ -853,8 +858,7 @@ function SectionOverlays({
               {fit.text}
             </div>
           );
-        });
-      })()}
+        })}
     </div>
   );
 }
@@ -873,6 +877,7 @@ export function ViewPage() {
   const titleOpacity = usePokedexStore((s) => s.viewTitleOpacity);
   const repeatTitles = usePokedexStore((s) => s.viewRepeatTitles);
   const titleVBias = usePokedexStore((s) => s.viewTitleVBias);
+  const shortenTitles = usePokedexStore((s) => s.viewShortenTitles);
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
@@ -1248,6 +1253,7 @@ export function ViewPage() {
                         titleOpacity={titleOpacity}
                         repeatTitles={repeatTitles}
                         titleVBias={titleVBias}
+                        shortenTitles={shortenTitles}
                       />
                     )}
                   </div>
@@ -1274,6 +1280,7 @@ export function ViewPage() {
                         titleOpacity={titleOpacity}
                         repeatTitles={repeatTitles}
                         titleVBias={titleVBias}
+                        shortenTitles={shortenTitles}
                       />
                     )}
                   </div>

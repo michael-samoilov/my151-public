@@ -73,6 +73,8 @@ export function ViewSettingsPane({
   const setRepeatTitles = usePokedexStore((s) => s.setViewRepeatTitles);
   const titleVBias = usePokedexStore((s) => s.viewTitleVBias);
   const setTitleVBias = usePokedexStore((s) => s.setViewTitleVBias);
+  const shortenTitles = usePokedexStore((s) => s.viewShortenTitles);
+  const setShortenTitles = usePokedexStore((s) => s.setViewShortenTitles);
 
   // Pending state is only used in mobileSheet mode. In desktop mode handlers
   // write straight to the store and the pending setters go unused.
@@ -380,7 +382,29 @@ export function ViewSettingsPane({
                     <span className={`text-sm ${repeatTitles ? 'text-primary font-medium' : 'text-foreground'}`}>Repeat titles on split sections</span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
-                    Off: a section's title shows only above its first Pokémon.
+                    Off: a wrapped section shows its title once (separate
+                    occurrences still repeat).
+                  </p>
+                </button>
+
+                {/* Shorten-titles toggle (debug): use short-name chain vs. always
+                    full name squashed to fit */}
+                <button type="button"
+                  onClick={() => setShortenTitles(!shortenTitles)}
+                  className={`w-full text-left rounded-md px-3 py-2 transition-colors cursor-pointer ${shortenTitles ? 'bg-primary/10' : 'hover:bg-muted'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                        shortenTitles ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                      }`}
+                    >
+                      {shortenTitles && <Check className="w-3 h-3 text-primary-foreground" />}
+                    </span>
+                    <span className={`text-sm ${shortenTitles ? 'text-primary font-medium' : 'text-foreground'}`}>Shorten long titles</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
+                    Off: always use the full name, squashed to fit.
                   </p>
                 </button>
               </div>
