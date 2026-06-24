@@ -98,6 +98,7 @@ interface ApiResponse {
   mostDropped: [string, number][];
   popularBySection: Record<string, [string, number][]>;
   droppedBySection: Record<string, [string, number][]>;
+  picksBySectionAll: Record<string, [string, number][]>;
   records: ClientRecord[];
 }
 
@@ -1255,7 +1256,7 @@ export function AdminPage() {
   }, []);
 
   const { offPickRows, offPickBySection } = useMemo(() => {
-    const bySec = data?.popularBySection;
+    const bySec = data?.picksBySectionAll;
     if (!bySec) return { offPickRows: [] as [string, number][], offPickBySection: {} as Record<string, [string, number][]> };
     const perSection: Record<string, [string, number][]> = {};
     const totals: Record<string, number> = {};
@@ -1266,7 +1267,7 @@ export function AdminPage() {
     }
     const rows: [string, number][] = Object.entries(totals).sort((a, b) => b[1] - a[1]);
     return { offPickRows: rows, offPickBySection: perSection };
-  }, [data?.popularBySection]);
+  }, [data?.picksBySectionAll]);
 
   if (!authed) {
     return (
