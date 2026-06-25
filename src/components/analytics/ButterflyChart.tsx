@@ -94,8 +94,14 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const iconGap = hasIcons ? 3 : 0;
   const gap = 6;
   const gutter = 8; // space between chart sections
-  const titleHeight = 18;
+  // Header band. Tall enough for the two-line deviation header ("UNDER- / ←
+  // INDEXED") to sit bottom-aligned — its lower line shares the baseline with the
+  // single-line "COUNT" / "TYPE" headers (headerBaseline), and its upper line
+  // stacks above within the band — instead of being vertically centred (which
+  // pushed the lower line down into the first chart row).
+  const titleHeight = 28;
   const topOffset = titleHeight;
+  const headerBaseline = topOffset - 8;
   const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale, iconSize + 4);
   const chartHeight = topOffset + data.length * rowHeight;
 
@@ -249,7 +255,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
           {labelHeader && (
             <text
               x={iconStart + iconSize}
-              y={12}
+              y={headerBaseline}
               textAnchor="end"
               fontWeight={600}
               fill={labelSortable && sortBy === 'label' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
@@ -270,7 +276,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
               : countHasNeg
                 ? countSectionStart + chart1Width
                 : countSectionStart}
-            y={12}
+            y={headerBaseline}
             textAnchor={countIsBidirectional ? 'middle' : countHasNeg ? 'end' : 'start'}
             fontWeight={600}
             fill={sortBy === 'count' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
@@ -288,7 +294,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
           {devHasLeft && (
           <text
             x={devSectionStart + zeroX - 5}
-            y={6}
+            y={headerBaseline}
             textAnchor="end"
             fontWeight={600}
             fill={sortBy === 'deviation' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
@@ -299,14 +305,14 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
             onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
-            <tspan x={devSectionStart + zeroX - 5} dy="0">{scoreMode ? 'WEAKER' : 'UNDER-'}</tspan>
+            <tspan x={devSectionStart + zeroX - 5} dy="-1.1em">{scoreMode ? 'WEAKER' : 'UNDER-'}</tspan>
             <tspan x={devSectionStart + zeroX - 5} dy="1.1em">{scoreMode ? '← HERE' : '← INDEXED'}</tspan>
           </text>
           )}
           {devHasRight && (
           <text
             x={devSectionStart + zeroX + 5}
-            y={6}
+            y={headerBaseline}
             textAnchor="start"
             fontWeight={600}
             fill={sortBy === 'deviation' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
@@ -317,7 +323,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
             onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
-            <tspan x={devSectionStart + zeroX + 5} dy="0">{scoreMode ? 'STRONGER' : 'OVER-'}</tspan>
+            <tspan x={devSectionStart + zeroX + 5} dy="-1.1em">{scoreMode ? 'STRONGER' : 'OVER-'}</tspan>
             <tspan x={devSectionStart + zeroX + 5} dy="1.1em">{scoreMode ? 'HERE →' : 'INDEXED →'}</tspan>
           </text>
           )}
