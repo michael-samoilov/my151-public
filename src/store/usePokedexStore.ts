@@ -60,6 +60,9 @@ interface PokedexState {
   removeBranch: (sectionId: string, pokemonId: number) => void;
   removeEvoLine: (sectionId: string, pokemonId: number) => void;
   moveEvoLine: (fromSection: string, evoLineIds: number[], toSection: string, insertBeforeIndex: number) => void;
+  /** Reorder a single build group's id list (must be a permutation of it). Used
+   *  by the View page to apply an in-section drag without leaving build order. */
+  reorderSection: (groupId: string, orderedIds: number[]) => void;
   setActiveSection: (sectionId: string | null) => void;
   clearAll: () => void;
   setMobileBrowserOpen: (open: boolean) => void;
@@ -233,6 +236,18 @@ export const usePokedexStore = create<PokedexState>()(
           dest.splice(insertBeforeIndex, 0, ...evoLineIds);
           newSections[toSection] = dest;
           return { sections: newSections };
+        }),
+
+      reorderSection: (groupId, orderedIds) =>
+        set((state) => {
+          const current = state.sections[groupId];
+          if (!current || current.length !== orderedIds.length) return {};
+          // Guard: only accept a true permutation of the group's current members.
+          const curSet = new Set(current);
+          for (const id of orderedIds) {
+            if (!curSet.has(id)) return {};
+          }
+          return { sections: { ...state.sections, [groupId]: [...orderedIds] } };
         }),
 
       setActiveSection: (sectionId) => set({ activeSection: sectionId }),
