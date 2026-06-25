@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 import type { Pokemon } from '@/types/pokemon';
 import { TYPE_NAMES } from '@/types/pokemon';
-import { getPokemonById } from '@/hooks/usePokemonData';
-import { REGIONAL_DEXES } from '@/data/regional-dexes';
+import { getPokemonById, getAllPokemon } from '@/hooks/usePokemonData';
 import {
   STARTER_IDS,
   FOSSIL_IDS,
@@ -47,25 +46,65 @@ function buildClusters(pokemonIds: number[]): EvolutionCluster[] {
 
 // --- Adjacency grouping ---
 
-/**
- * Build ordered sequence of unique chain IDs as they appear in a regional dex.
- * Used to determine which chains are neighbors in the original dex.
- */
-function buildDexChainSequence(gen: number): { dexChainOrder: number[]; chainToPos: Map<number, number> } | null {
-  const dex = REGIONAL_DEXES.find((d) => d.generation === gen);
-  if (!dex) return null;
+// Victini (#494) leads the National Dex for Gen 5 but is a pre-release mythical,
+// not the real Unova opener (Snivy, #495). So we exclude it from the Gen-5
+// baseline — making Snivy the 0-point — and score Victini itself at -1 so, when
+// present, it sorts ahead of every regional opener.
+const VICTINI_ID = 494;
 
-  const dexChainOrder: number[] = [];
-  const chainToPos = new Map<number, number>();
-  for (const pokemonId of dex.pokemonIds) {
-    const p = getPokemonById(pokemonId);
-    if (!p) continue;
-    if (!chainToPos.has(p.evolutionChainId)) {
-      chainToPos.set(p.evolutionChainId, dexChainOrder.length);
-      dexChainOrder.push(p.evolutionChainId);
+// Per-generation index over the national dex. A Pokémon's "home regional"
+// position is just its rank within its own generation's slice of the national
+// dex, rebased so the generation's first member sits at 0 and its last at 1 —
+// so e.g. Treecko (the first Gen-3 Pokémon) reads as the Hoenn opener, on par
+// with Bulbasaur in Kanto, and Snivy as the Unova opener. This replaces
+// hand-maintained regional dex orderings (which were national-number-ordered
+// subsets and so mis-ranked every region's true opener). `chainOrder` is the
+// same slice deduped to evolution chains, used to keep nationally-adjacent lines
+// together ("package deal" antijank).
+interface GenIndex {
+  ids: number[];
+  idToPos: Map<number, number>;
+  chainOrder: number[];
+  chainToPos: Map<number, number>;
+}
+let _genIndex: Map<number, GenIndex> | null = null;
+function genIndexFor(gen: number): GenIndex | null {
+  if (!_genIndex) {
+    const byGen = new Map<number, Pokemon[]>();
+    for (const p of getAllPokemon()) {
+      if (p.id === VICTINI_ID) continue; // scored separately (see getRegionalPercentile)
+      const arr = byGen.get(p.generation);
+      if (arr) arr.push(p);
+      else byGen.set(p.generation, [p]);
+    }
+    _genIndex = new Map();
+    for (const [g, list] of byGen) {
+      list.sort((a, b) => a.id - b.id);
+      const ids = list.map((p) => p.id);
+      const idToPos = new Map(ids.map((id, i) => [id, i] as const));
+      const chainOrder: number[] = [];
+      const chainToPos = new Map<number, number>();
+      for (const p of list) {
+        if (!chainToPos.has(p.evolutionChainId)) {
+          chainToPos.set(p.evolutionChainId, chainOrder.length);
+          chainOrder.push(p.evolutionChainId);
+        }
+      }
+      _genIndex.set(g, { ids, idToPos, chainOrder, chainToPos });
     }
   }
-  return { dexChainOrder, chainToPos };
+  return _genIndex.get(gen) ?? null;
+}
+
+/**
+ * Ordered sequence of unique chain IDs as they appear in a generation's slice of
+ * the national dex. Used to determine which chains are neighbors in their home
+ * dex (so adjacent lines stay grouped).
+ */
+function buildDexChainSequence(gen: number): { dexChainOrder: number[]; chainToPos: Map<number, number> } | null {
+  const gi = genIndexFor(gen);
+  if (!gi) return null;
+  return { dexChainOrder: gi.chainOrder, chainToPos: gi.chainToPos };
 }
 
 /**
@@ -194,13 +233,17 @@ function sortClustersType(ids: number[]): Pokemon[] {
   return clusters.flatMap((c) => c.members);
 }
 
-/** Get regional dex percentile for a representative Pokemon. */
+/** Home-region depth of a line's representative: its rank within its own
+ *  generation's national-dex slice, rebased so the generation's first member is
+ *  0 and its last is 1. (Ties across generations — e.g. every region's opener at
+ *  0 — are broken by national id, i.e. earliest generation first.) */
 function getRegionalPercentile(rep: Pokemon): number {
-  const dex = REGIONAL_DEXES.find((d) => d.generation === rep.generation);
-  if (!dex) return 0.5;
-  const idx = dex.pokemonIds.indexOf(rep.id);
-  if (idx === -1) return 0.5;
-  return idx / dex.pokemonIds.length;
+  if (rep.id === VICTINI_ID) return -1; // precedes every regional opener
+  const gi = genIndexFor(rep.generation);
+  if (!gi || gi.ids.length <= 1) return 0;
+  const pos = gi.idToPos.get(rep.id);
+  if (pos === undefined) return 0.5;
+  return pos / (gi.ids.length - 1);
 }
 
 // --- Bucket assignment ---
