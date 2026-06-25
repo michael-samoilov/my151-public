@@ -52,6 +52,13 @@ function buildClusters(pokemonIds: number[]): EvolutionCluster[] {
 // present, it sorts ahead of every regional opener.
 const VICTINI_ID = 494;
 
+// Alternate forms (Galarian/Alolan/Mega/Gigantamax/…) use national IDs ≥ 10000.
+// They must NOT count toward a generation's baseline: e.g. Gen 8 carries 42 such
+// form entries that all sort after the real species, which would pad the tail and
+// pull a late-dex line like Dreepy (#885, ~79% through real Gen 8) back to ~55%.
+// Excluding them keeps the 0..1 range spanning only the true national-dex species.
+const ALT_FORM_ID_FLOOR = 10000;
+
 // Per-generation index over the national dex. A Pokémon's "home regional"
 // position is just its rank within its own generation's slice of the national
 // dex, rebased so the generation's first member sits at 0 and its last at 1 —
@@ -72,6 +79,7 @@ function genIndexFor(gen: number): GenIndex | null {
   if (!_genIndex) {
     const byGen = new Map<number, Pokemon[]>();
     for (const p of getAllPokemon()) {
+      if (p.id >= ALT_FORM_ID_FLOOR) continue; // alt forms don't define dex depth
       if (p.id === VICTINI_ID) continue; // scored separately (see getRegionalPercentile)
       const arr = byGen.get(p.generation);
       if (arr) arr.push(p);
