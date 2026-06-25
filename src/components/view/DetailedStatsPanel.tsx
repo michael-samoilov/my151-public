@@ -49,14 +49,34 @@ function alignHistograms(
   return { merged, xTicks, xDomain, binSize, yDomain, yTicks };
 }
 
-function Card({ title, subtitle, children, bare }: { title: string; subtitle?: string; children: React.ReactNode; bare?: boolean }) {
-  return (
-    <section>
+/** Card chrome variants used to QA how the stats read alongside the dex:
+ *  - 'bare'           : no chrome — charts sit directly on the canvas (export look)
+ *  - 'card-title-out' : title on the canvas, chart on a shadowed card (analytics look)
+ *  - 'card-title-in'  : title + chart together on one shadowed card */
+export type StatsVariant = 'bare' | 'card-title-out' | 'card-title-in';
+const CARD_CHROME = 'bg-card rounded-lg shadow-elevated p-3';
+
+function Card({ title, subtitle, children, variant }: { title: string; subtitle?: string; children: React.ReactNode; variant: StatsVariant }) {
+  const titleEl = (
+    <>
       <h3 className="text-sm font-semibold mb-0.5">{title}</h3>
       {subtitle && <p className="text-xs text-muted-foreground mb-2 leading-snug">{subtitle}</p>}
-      {/* `bare` drops the panel chrome so the charts sit directly on the canvas
-          (matches the export look); otherwise they're framed like a card. */}
-      <div className={bare ? '' : 'bg-card rounded-lg shadow-elevated p-3'}>{children}</div>
+    </>
+  );
+  if (variant === 'card-title-in') {
+    return (
+      <section>
+        <div className={CARD_CHROME}>
+          {titleEl}
+          {children}
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section>
+      {titleEl}
+      <div className={variant === 'card-title-out' ? CARD_CHROME : ''}>{children}</div>
     </section>
   );
 }
@@ -82,7 +102,7 @@ function HistogramLegend() {
  * page, reused here without its drill-down interactivity. Data comes from the
  * live store (same dex the grid shows).
  */
-export function DetailedStatsPanel({ className = '', bare = false }: { className?: string; bare?: boolean }) {
+export function DetailedStatsPanel({ className = '', variant = 'bare' }: { className?: string; variant?: StatsVariant }) {
   const sections = usePokedexStore((s) => s.sections);
   const analytics = useAnalytics(false);
 
@@ -140,11 +160,11 @@ export function DetailedStatsPanel({ className = '', bare = false }: { className
 
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
-      <Card bare={bare} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
+      <Card variant={variant} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
         <ButterflyChart data={typeRows} rowHeight={16} labelHeader="TYPE" disableEmptyRows />
       </Card>
 
-      <Card bare={bare} title="Region Distribution" subtitle="Which generation your Pokémon come from, vs the national dex.">
+      <Card variant={variant} title="Region Distribution" subtitle="Which generation your Pokémon come from, vs the national dex.">
         <ButterflyChart
           data={[...genRows].sort((a, b) => parseInt(a.label.replace('Gen ', '')) - parseInt(b.label.replace('Gen ', '')))}
           rowHeight={24}
@@ -153,7 +173,7 @@ export function DetailedStatsPanel({ className = '', bare = false }: { className
         />
       </Card>
 
-      <Card bare={bare} title="Base Stat Total" subtitle={`Yours avg: ${analytics.bstStats.avg}, National avg: ${analytics.nationalAvgBst}.`}>
+      <Card variant={variant} title="Base Stat Total" subtitle={`Yours avg: ${analytics.bstStats.avg}, National avg: ${analytics.nationalAvgBst}.`}>
         <HistogramLegend />
         <SuperimposedHistogram
           data={bstHist.merged}

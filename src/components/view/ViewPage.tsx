@@ -11,7 +11,7 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
-import { DetailedStatsPanel, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
+import { DetailedStatsPanel, STATS_MIN_POKEMON, type StatsVariant } from '@/components/view/DetailedStatsPanel';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { PREVIEW_FEATURES } from '@/lib/demoMode';
 import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
@@ -545,6 +545,14 @@ export function ViewPage() {
 
   // Detailed-stats side panel (preview-only): needs enough Pokémon to be useful.
   const showStatsPanel = PREVIEW_FEATURES && showStats && count >= STATS_MIN_POKEMON;
+  // QA knob (preview only): ?stats=cardsA → chart-on-card w/ title above (analytics
+  // look); ?stats=cardsB → title+chart on one card; default → bare (on the canvas).
+  const statsVariant: StatsVariant = useMemo(() => {
+    if (typeof window === 'undefined') return 'bare';
+    const p = new URLSearchParams(window.location.search).get('stats');
+    return p === 'cardsA' ? 'card-title-out' : p === 'cardsB' ? 'card-title-in' : 'bare';
+  }, []);
+  const statsAsCards = showStatsPanel && statsVariant !== 'bare';
 
   // Section geometry + the effective grid sizing factors. In outline mode the
   // grid gains inter-cell gaps and per-section label bands; folding those into
@@ -991,7 +999,7 @@ export function ViewPage() {
                 onDragEnd={handleDragEnd}
                 onDragCancel={handleDragCancel}
               >
-                <div style={{ width: gridWidth }}>
+                <div style={{ width: gridWidth }} className={statsAsCards ? 'bg-card rounded-lg shadow-elevated p-3' : ''}>
                   {/* Grid + centered overflow row share one relative box so a
                       single overlay can draw outlines that span the boundary. */}
                   <div className="relative">
@@ -1084,12 +1092,12 @@ export function ViewPage() {
                     transformOrigin: 'top left',
                   }}
                 >
-                  <DetailedStatsPanel bare />
+                  <DetailedStatsPanel variant={statsVariant} />
                 </div>
               </div>
             ) : (
               <div className="w-full max-w-md mt-5 px-1">
-                <DetailedStatsPanel bare />
+                <DetailedStatsPanel variant={statsVariant} />
               </div>
             )
           )}
