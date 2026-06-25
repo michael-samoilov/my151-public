@@ -66,17 +66,6 @@ export function ViewSettingsPane({
   const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
   const showSections = usePokedexStore((s) => s.viewShowSections);
   const setShowSections = usePokedexStore((s) => s.setViewShowSections);
-  // Preview-only debug knobs — applied live (no pending/mobile-sheet buffering).
-  const titleOpacity = usePokedexStore((s) => s.viewTitleOpacity);
-  const setTitleOpacity = usePokedexStore((s) => s.setViewTitleOpacity);
-  const repeatTitles = usePokedexStore((s) => s.viewRepeatTitles);
-  const setRepeatTitles = usePokedexStore((s) => s.setViewRepeatTitles);
-  const titleVBias = usePokedexStore((s) => s.viewTitleVBias);
-  const setTitleVBias = usePokedexStore((s) => s.setViewTitleVBias);
-  const shortenTitles = usePokedexStore((s) => s.viewShortenTitles);
-  const setShortenTitles = usePokedexStore((s) => s.setViewShortenTitles);
-  const outlineWidth = usePokedexStore((s) => s.viewOutlineWidth);
-  const setOutlineWidth = usePokedexStore((s) => s.setViewOutlineWidth);
 
   // Pending state is only used in mobileSheet mode. In desktop mode handlers
   // write straight to the store and the pending setters go unused.
@@ -244,34 +233,57 @@ export function ViewSettingsPane({
                 </>
               );
 
-              if (showResetInline) {
-                return (
-                  <div
-                    key={opt.value}
-                    role="button"
-                    tabIndex={0}
-                    onClick={handleSelect}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleSelect();
-                      }
-                    }}
-                    className={commonClass}
-                  >
-                    {inner}
-                  </div>
-                );
-              }
-
-              return (
-                <button type="button"
-                  key={opt.value}
+              const rowEl = showResetInline ? (
+                <div
+                  role="button"
+                  tabIndex={0}
                   onClick={handleSelect}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelect();
+                    }
+                  }}
                   className={commonClass}
                 >
                   {inner}
+                </div>
+              ) : (
+                <button type="button" onClick={handleSelect} className={commonClass}>
+                  {inner}
                 </button>
+              );
+
+              // Outlines is a preview-only feature, disclosed under (and scoped
+              // to) Build Order — the sort that mirrors your build-page sections.
+              const showOutlinesToggle =
+                opt.value === 'build-order' && PREVIEW_FEATURES && selected;
+
+              return (
+                <div key={opt.value}>
+                  {rowEl}
+                  {showOutlinesToggle && (
+                    <button
+                      type="button"
+                      onClick={handleToggleSections}
+                      className={`w-[calc(100%-1.5rem)] ml-6 mt-1 text-left rounded-md px-3 py-2 transition-colors cursor-pointer ${effShowSections ? 'bg-primary/10' : 'hover:bg-muted'}`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                            effShowSections ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                          }`}
+                        >
+                          {effShowSections && <Check className="w-3 h-3 text-primary-foreground" />}
+                        </span>
+                        <span className={`text-sm ${effShowSections ? 'text-primary font-medium' : 'text-foreground'}`}>Show section outlines</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
+                        Outlines groups of Pokémon matching your build-page sections.
+                      </p>
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -303,135 +315,6 @@ export function ViewSettingsPane({
           </button>
         </div>
 
-        {/* Section outlines — preview-only feature, build-order sort only */}
-        {PREVIEW_FEATURES && effSort === 'build-order' && (
-          <div className="px-3 pt-3 pb-2 border-t">
-            <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              Sections
-            </h3>
-            <button type="button"
-              onClick={handleToggleSections}
-              className={`w-full text-left rounded-md px-3 py-2 transition-colors cursor-pointer ${effShowSections ? 'bg-primary/10' : 'hover:bg-muted'}`}
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                    effShowSections ? 'bg-primary border-primary' : 'border-muted-foreground/40'
-                  }`}
-                >
-                  {effShowSections && <Check className="w-3 h-3 text-primary-foreground" />}
-                </span>
-                <span className={`text-sm ${effShowSections ? 'text-primary font-medium' : 'text-foreground'}`}>Show build sections</span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
-                Outlines groups of Pokémon matching their build page sections.
-              </p>
-            </button>
-
-            {effShowSections && (
-              <div className="mt-2 space-y-3 px-3">
-                {/* Title opacity slider (debug) */}
-                <label className="block">
-                  <div className="flex items-center justify-between text-sm text-foreground">
-                    <span>Title opacity</span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {titleOpacity.toFixed(2)}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={titleOpacity}
-                    onChange={(e) => setTitleOpacity(Number(e.target.value))}
-                    className="w-full mt-1 accent-primary cursor-pointer"
-                  />
-                </label>
-
-                {/* Title vertical position slider (debug): 0 = top border, 1 = circles */}
-                <label className="block">
-                  <div className="flex items-center justify-between text-sm text-foreground">
-                    <span>Title vertical position</span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {titleVBias.toFixed(2)}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={titleVBias}
-                    onChange={(e) => setTitleVBias(Number(e.target.value))}
-                    className="w-full mt-1 accent-primary cursor-pointer"
-                  />
-                </label>
-
-                {/* Outline thickness slider (debug): stroke width as a % of tile */}
-                <label className="block">
-                  <div className="flex items-center justify-between text-sm text-foreground">
-                    <span>Outline thickness</span>
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {(outlineWidth * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0.01}
-                    max={0.06}
-                    step={0.0025}
-                    value={outlineWidth}
-                    onChange={(e) => setOutlineWidth(Number(e.target.value))}
-                    className="w-full mt-1 accent-primary cursor-pointer"
-                  />
-                </label>
-
-                {/* Repeat-titles toggle (debug): A = every piece, B = first only */}
-                <button type="button"
-                  onClick={() => setRepeatTitles(!repeatTitles)}
-                  className={`w-full text-left rounded-md px-3 py-2 transition-colors cursor-pointer ${repeatTitles ? 'bg-primary/10' : 'hover:bg-muted'}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                        repeatTitles ? 'bg-primary border-primary' : 'border-muted-foreground/40'
-                      }`}
-                    >
-                      {repeatTitles && <Check className="w-3 h-3 text-primary-foreground" />}
-                    </span>
-                    <span className={`text-sm ${repeatTitles ? 'text-primary font-medium' : 'text-foreground'}`}>Repeat titles on split sections</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
-                    Off: a wrapped section shows its title once (separate
-                    occurrences still repeat).
-                  </p>
-                </button>
-
-                {/* Shorten-titles toggle (debug): use short-name chain vs. always
-                    full name squashed to fit */}
-                <button type="button"
-                  onClick={() => setShortenTitles(!shortenTitles)}
-                  className={`w-full text-left rounded-md px-3 py-2 transition-colors cursor-pointer ${shortenTitles ? 'bg-primary/10' : 'hover:bg-muted'}`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                        shortenTitles ? 'bg-primary border-primary' : 'border-muted-foreground/40'
-                      }`}
-                    >
-                      {shortenTitles && <Check className="w-3 h-3 text-primary-foreground" />}
-                    </span>
-                    <span className={`text-sm ${shortenTitles ? 'text-primary font-medium' : 'text-foreground'}`}>Shorten long titles</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
-                    Off: always use the full name, squashed to fit.
-                  </p>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
         <PageFooter />
         {/* Extra bottom padding so the floating button doesn't occlude the last row */}

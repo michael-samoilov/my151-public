@@ -52,18 +52,8 @@ interface PokedexState {
   /** User-defined order applied when viewSortOption === 'custom'.
    *  Null means no custom order has been created yet. */
   viewCustomOrder: number[] | null;
+  /** Whether the build-section outlines overlay is shown on the View grid. */
   viewShowSections: boolean;
-  /** Preview-only debug knobs for the section-outline titles. */
-  viewTitleOpacity: number;
-  viewRepeatTitles: boolean;
-  /** Vertical placement of the title between the outline top (0) and the top of
-   *  the row's pokeball circles (1). */
-  viewTitleVBias: number;
-  /** Whether long titles fall back to shorter names (true) or always use the
-   *  full name, squashed to fit (false). */
-  viewShortenTitles: boolean;
-  /** Outline stroke width as a fraction of the tile size. */
-  viewOutlineWidth: number;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -91,11 +81,6 @@ interface PokedexState {
   setViewGroupSpecialAtEnd: (value: boolean) => void;
   setViewCustomOrder: (order: number[] | null) => void;
   setViewShowSections: (value: boolean) => void;
-  setViewTitleOpacity: (value: number) => void;
-  setViewRepeatTitles: (value: boolean) => void;
-  setViewTitleVBias: (value: number) => void;
-  setViewShortenTitles: (value: boolean) => void;
-  setViewOutlineWidth: (value: number) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -124,11 +109,6 @@ export const usePokedexStore = create<PokedexState>()(
       viewGroupSpecialAtEnd: true,
       viewCustomOrder: null,
       viewShowSections: DEMO_MODE,
-      viewTitleOpacity: 0.5,
-      viewRepeatTitles: false,
-      viewTitleVBias: 0.6,
-      viewShortenTitles: true,
-      viewOutlineWidth: 0.05,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -300,18 +280,9 @@ export const usePokedexStore = create<PokedexState>()(
       setViewGroupSpecialAtEnd: (value) => set({ viewGroupSpecialAtEnd: value }),
       setViewCustomOrder: (order) => set({ viewCustomOrder: order }),
       setViewShowSections: (value) => set({ viewShowSections: value }),
-      setViewTitleOpacity: (value) => set({ viewTitleOpacity: value }),
-      setViewRepeatTitles: (value) => set({ viewRepeatTitles: value }),
-      setViewTitleVBias: (value) => set({ viewTitleVBias: value }),
-      setViewShortenTitles: (value) => set({ viewShortenTitles: value }),
-      setViewOutlineWidth: (value) => set({ viewOutlineWidth: value }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,
-      // NB: the four title tuning knobs (opacity / repeat / vBias / shorten) are
-      // deliberately NOT persisted — they are preview-only debug controls, so the
-      // code defaults stay authoritative and a default change takes effect on load
-      // rather than being shadowed by a stale persisted value.
       partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections }),
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
