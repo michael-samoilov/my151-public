@@ -70,7 +70,11 @@ const COLS = 10;
 // tuned for a readable width); the block is then uniformly scaled to match the
 // dex height (see statsScale), and only the scaled width is reserved.
 const STATS_GAP_FACTOR = 1; // ~one grid column of space between dex and stats
-const STATS_NATURAL_TILES = 6.5;
+// Width the charts are rendered at (before the uniform height-match scale). Wider
+// gives the chart headers and x-axis labels room so they don't overlap; since the
+// block is then scaled down to the dex height, a wider natural width also makes the
+// displayed stats column wider.
+const STATS_NATURAL_TILES = 9;
 // The dex/stats heights are matched against this many rows (a full 151 = 16). A
 // taller dex (>151) does NOT stretch the stats further — they stay at 16-row height.
 const STATS_REF_ROWS = 16;
