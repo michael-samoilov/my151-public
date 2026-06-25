@@ -5,6 +5,24 @@ import { getAllPokemon, withoutSpecials } from '@/hooks/usePokemonData';
 import { typeIconPath } from '@/data/type-ids';
 import { GEN_BADGE_URIS } from '@/components/shared/GenBadge';
 import { STARTER_IDS } from '@/data/categories';
+import { ensureTypeMask } from '@/lib/typeSymbol';
+import {
+  computeOutlineLayout,
+  buildOutlines,
+  fitLabel,
+  starPath,
+  outlineStrokeW,
+  type OutlineShape,
+  type Spandrel,
+  OUTLINE_GAP,
+  OUTLINE_PAD,
+  OUTLINE_HEAD,
+  OUTLINE_STROKE_FRAC,
+  OUTLINE_TITLE_VBIAS,
+  OUTLINE_TITLE_OPACITY,
+  OUTLINE_REPEAT_TITLES,
+  OUTLINE_SHORTEN_TITLES,
+} from '@/lib/sectionOutlines';
 
 const COLS = 10;
 const TILE = 48;
@@ -233,32 +251,100 @@ function drawPokeball(
  * Mirrors the view page: 10-column grid, type-colored rotated pokeball
  * backgrounds, last row centered. No empty placeholders.
  * Rendered at 4x with pixel-perfect sprite scaling.
+ *
+ * When `options.sections` is provided, the build-section outlines (fills,
+ * borders, dotted continuation tails, titles and corner spandrels) are drawn
+ * over the grid — matching the View page's outline overlay — using the shared
+ * geometry in src/lib/sectionOutlines.ts and a gapped/banded layout.
  */
 export async function generateExportImage(
   pokemon: Pokemon[],
+  options: { sections?: Record<string, number[]> | null } = {},
 ): Promise<Blob> {
   const count = pokemon.length;
   if (count === 0) throw new Error('No Pokemon to export');
 
-  const fullRows = Math.floor(count / COLS);
-  const lastRowCount = count % COLS;
-  const totalRows = fullRows + (lastRowCount > 0 ? 1 : 0);
+  const sections = options.sections ?? null;
 
-  const gridW = COLS * TILE;
-  const w = gridW + PAD_X * 2;
-  const h = PAD_TOP + totalRows * TILE + PAD_BOTTOM;
+  // --- Outline geometry (only when section outlines are enabled) -----------
+  let outline: {
+    gridSlots: number;
+    lastRowGeom: { index: number; count: number; offsetCols: number } | null;
+    lastRowIndex: number;
+    pitch: number;
+    ox: number;
+    oy: number;
+    shapes: OutlineShape[];
+    spandrels: Spandrel[];
+    tileTop: (r: number) => number;
+    spandrelTypes: TypeName[];
+  } | null = null;
+
+  // Canvas dimensions + where the footer begins.
+  let w: number;
+  let h: number;
+  let footerTop: number;
+
+  if (sections) {
+    // Canvas text metrics for title fitting need the real font; wait for it.
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      try { await document.fonts.ready; } catch { /* fall back to metrics-as-is */ }
+    }
+    const oLayout = computeOutlineLayout(pokemon, sections, count, COLS);
+    const gap = TILE * OUTLINE_GAP;
+    const pad = TILE * OUTLINE_PAD;
+    const headroom = TILE * OUTLINE_HEAD;
+    const pitch = TILE + gap;
+    const startRows = oLayout.bandRows;
+    const { shapes, spandrels } = buildOutlines(
+      oLayout.allRuns, COLS, TILE, startRows, headroom, gap, pad,
+      OUTLINE_TITLE_VBIAS, oLayout.lastRowGeom, OUTLINE_STROKE_FRAC,
+    );
+    // Row tops mirror buildOutlines' blockTop/tileTop (bands push start rows down).
+    const blockTop: number[] = new Array(oLayout.totalRows + 1).fill(0);
+    for (let r = 1; r <= oLayout.totalRows; r++) {
+      blockTop[r] = blockTop[r - 1] + (startRows.has(r - 1) ? headroom : 0) + TILE + gap;
+    }
+    const tileTop = (r: number) => blockTop[r] + (startRows.has(r) ? headroom : 0);
+
+    const contentH = oLayout.rowFactor * TILE;
+    w = oLayout.colFactor * TILE + PAD_X * 2;
+    h = PAD_TOP + contentH + PAD_BOTTOM;
+    footerTop = PAD_TOP + contentH;
+
+    outline = {
+      gridSlots: oLayout.gridSlots,
+      lastRowGeom: oLayout.lastRowGeom,
+      lastRowIndex: oLayout.lastRowIndex,
+      pitch,
+      ox: PAD_X + pad,
+      oy: PAD_TOP + pad,
+      shapes,
+      spandrels,
+      tileTop,
+      spandrelTypes: [...new Set(spandrels.map((s) => s.type).filter((t): t is TypeName => t !== null))],
+    };
+  } else {
+    const fullRows = Math.floor(count / COLS);
+    const lastRowCount = count % COLS;
+    const totalRows = fullRows + (lastRowCount > 0 ? 1 : 0);
+    w = COLS * TILE + PAD_X * 2;
+    h = PAD_TOP + totalRows * TILE + PAD_BOTTOM;
+    footerTop = PAD_TOP + totalRows * TILE;
+  }
 
   // Compute footer insights before loading images so we know which icons to fetch
   const insights = computeFooterInsights(pokemon);
 
-  // Load sprites + footer icons in parallel
-  const [sprites, leanType1Img, leanType2Img, leanGen1Img, leanGen2Img, attackTypeImg] = await Promise.all([
+  // Load sprites + footer icons (and any spandrel type masks) in parallel
+  const [sprites, leanType1Img, leanType2Img, leanGen1Img, leanGen2Img, attackTypeImg, maskImgs] = await Promise.all([
     Promise.all(pokemon.map((p) => loadImage(p.sprite).catch(() => null))),
     maybeLoadImage(insights.leanTypes[0] ? typeIconPath(insights.leanTypes[0]) : null),
     maybeLoadImage(insights.leanTypes[1] ? typeIconPath(insights.leanTypes[1]) : null),
     maybeLoadImage(insights.leanGens[0] != null ? (GEN_BADGE_URIS[insights.leanGens[0]] ?? null) : null),
     maybeLoadImage(insights.leanGens[1] != null ? (GEN_BADGE_URIS[insights.leanGens[1]] ?? null) : null),
     maybeLoadImage(insights.bestAttackType ? typeIconPath(insights.bestAttackType) : null),
+    loadSpandrelMasks(outline?.spandrelTypes ?? []),
   ]);
 
   const canvas = document.createElement('canvas');
@@ -276,30 +362,54 @@ export async function generateExportImage(
 
   // No top header — content starts immediately after PAD_TOP breathing room.
 
-  // Draw full rows (left-aligned in grid)
-  for (let i = 0; i < fullRows * COLS; i++) {
-    const col = i % COLS;
-    const row = Math.floor(i / COLS);
-    const x = PAD_X + col * TILE;
-    const y = PAD_TOP + row * TILE;
-    drawTile(ctx, x, y, pokemon[i], sprites[i], i + 1);
-  }
+  if (outline) {
+    // Outlined grid: tiles sit on the gapped/banded layout, then the section
+    // outlines are drawn on top (matching the View page's overlay).
+    const { ox, oy, pitch, gridSlots, lastRowGeom, lastRowIndex, tileTop } = outline;
+    for (let i = 0; i < count; i++) {
+      let x: number, y: number;
+      if (i < gridSlots) {
+        const col = i % COLS;
+        const row = Math.floor(i / COLS);
+        x = ox + col * pitch;
+        y = oy + tileTop(row);
+      } else {
+        const c = i - gridSlots;
+        const off = lastRowGeom ? lastRowGeom.offsetCols * pitch : 0;
+        x = ox + off + c * pitch;
+        y = oy + tileTop(lastRowIndex);
+      }
+      drawTile(ctx, x, y, pokemon[i], sprites[i], i + 1);
+    }
+    drawOutlines(ctx, outline.shapes, outline.spandrels, ox, oy, maskImgs);
+  } else {
+    const fullRows = Math.floor(count / COLS);
+    const lastRowCount = count % COLS;
 
-  // Draw last partial row (centered)
-  if (lastRowCount > 0) {
-    const lastRowW = lastRowCount * TILE;
-    const lastRowX = (w - lastRowW) / 2;
-    for (let i = 0; i < lastRowCount; i++) {
-      const idx = fullRows * COLS + i;
-      const x = lastRowX + i * TILE;
-      const y = PAD_TOP + fullRows * TILE;
-      drawTile(ctx, x, y, pokemon[idx], sprites[idx], idx + 1);
+    // Draw full rows (left-aligned in grid)
+    for (let i = 0; i < fullRows * COLS; i++) {
+      const col = i % COLS;
+      const row = Math.floor(i / COLS);
+      const x = PAD_X + col * TILE;
+      const y = PAD_TOP + row * TILE;
+      drawTile(ctx, x, y, pokemon[i], sprites[i], i + 1);
+    }
+
+    // Draw last partial row (centered)
+    if (lastRowCount > 0) {
+      const lastRowW = lastRowCount * TILE;
+      const lastRowX = (w - lastRowW) / 2;
+      for (let i = 0; i < lastRowCount; i++) {
+        const idx = fullRows * COLS + i;
+        const x = lastRowX + i * TILE;
+        const y = PAD_TOP + fullRows * TILE;
+        drawTile(ctx, x, y, pokemon[idx], sprites[idx], idx + 1);
+      }
     }
   }
 
   // Footer: two lines — insights (top, normal size) + "made with my151.app"
   // (bottom, smaller so the credit reads quietly rather than as an ad).
-  const footerTop = PAD_TOP + totalRows * TILE;
   const line1Y = footerTop + 10;
   const line2Y = footerTop + 21;
   const zinc = '#a1a1aa';
@@ -411,6 +521,149 @@ export async function generateExportImage(
       else reject(new Error('Canvas toBlob failed'));
     }, 'image/png');
   });
+}
+
+/** Generate + load the recolourable alpha masks for the given spandrel types.
+ *  Failures are skipped (the spandrel falls back to the 4-point star). */
+async function loadSpandrelMasks(types: TypeName[]): Promise<Map<TypeName, HTMLImageElement>> {
+  const out = new Map<TypeName, HTMLImageElement>();
+  await Promise.all(
+    types.map(async (t) => {
+      try {
+        const url = await ensureTypeMask(t);
+        const img = await loadImage(url);
+        out.set(t, img);
+      } catch {
+        /* keep falling back to the star */
+      }
+    }),
+  );
+  return out;
+}
+
+/** Draw the section outlines onto the canvas, in the outline coordinate system
+ *  translated by (ox, oy). Mirrors the View page's SectionOverlays SVG render:
+ *  faint fills (fading on open edges), 20%-opacity borders, dotted continuation
+ *  tails, corner spandrels (type icon or 4-point star), and fitted titles. */
+function drawOutlines(
+  ctx: CanvasRenderingContext2D,
+  shapes: OutlineShape[],
+  spandrels: Spandrel[],
+  ox: number,
+  oy: number,
+  maskImgs: Map<TypeName, HTMLImageElement>,
+) {
+  const fontSize = TILE * 0.26;
+  const strokeW = outlineStrokeW(TILE, OUTLINE_STROKE_FRAC);
+  const dotTail = 6 * strokeW;
+
+  ctx.save();
+  ctx.translate(ox, oy);
+
+  // Fills — open pieces fade toward their open edge, closed pieces are uniform.
+  for (const s of shapes) {
+    ctx.save();
+    ctx.globalAlpha = 0.07;
+    if (s.open) {
+      const right = s.open.side === 'right';
+      const gx1 = right ? s.open.x1 - dotTail : s.open.x0 + dotTail;
+      const gx2 = right ? s.open.x1 : s.open.x0;
+      const grad = ctx.createLinearGradient(gx1, 0, gx2, 0);
+      grad.addColorStop(0, s.fillColor);
+      grad.addColorStop(1, s.fillColor + '00');
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = s.fillColor;
+    }
+    ctx.fill(new Path2D(s.fill), 'evenodd');
+    ctx.restore();
+  }
+
+  // Borders.
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = strokeW;
+  for (const s of shapes) {
+    ctx.save();
+    ctx.globalAlpha = 0.2;
+    ctx.strokeStyle = s.strokeColor;
+    ctx.stroke(new Path2D(s.stroke));
+    ctx.restore();
+  }
+
+  // Dotted continuation tails on open edges.
+  for (const s of shapes) {
+    if (!s.open) continue;
+    const edge = s.open.side === 'right' ? s.open.x1 : s.open.x0;
+    const dir = s.open.side === 'right' ? -1 : 1;
+    ctx.save();
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = s.strokeColor;
+    for (let i = 0; i < 3; i++) {
+      for (const cy of [s.open.topY, s.open.botY]) {
+        ctx.beginPath();
+        ctx.arc(edge + dir * (0.5 + 2 * i) * strokeW, cy, strokeW / 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+
+  // Spandrels: recoloured type icon where its mask loaded, else a 4-point star.
+  for (const sp of spandrels) {
+    const img = sp.type ? maskImgs.get(sp.type) : undefined;
+    if (img) {
+      const size = sp.r * 2;
+      const px = Math.max(1, Math.round(size * SCALE));
+      const tmp = document.createElement('canvas');
+      tmp.width = px;
+      tmp.height = px;
+      const tctx = tmp.getContext('2d');
+      if (tctx) {
+        tctx.imageSmoothingEnabled = true;
+        const iw = img.naturalWidth || 1;
+        const ih = img.naturalHeight || 1;
+        const scale = Math.min(px / iw, px / ih); // contain-fit, centred
+        const dw = iw * scale;
+        const dh = ih * scale;
+        tctx.drawImage(img, (px - dw) / 2, (px - dh) / 2, dw, dh);
+        tctx.globalCompositeOperation = 'source-in';
+        tctx.fillStyle = sp.color;
+        tctx.fillRect(0, 0, px, px);
+        ctx.save();
+        ctx.globalAlpha = 0.2;
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(tmp, sp.cx - size / 2, sp.cy - size / 2, size, size);
+        ctx.restore();
+      }
+    } else {
+      ctx.save();
+      ctx.globalAlpha = 0.2;
+      ctx.fillStyle = sp.color;
+      ctx.fill(new Path2D(starPath(sp.cx, sp.cy, sp.r)));
+      ctx.restore();
+    }
+  }
+
+  // Titles — uppercase, weight 900, fitted (squash/stretch) to their outline.
+  for (const s of shapes) {
+    if (!s.label) continue;
+    if (!OUTLINE_REPEAT_TITLES && s.isContinuation) continue;
+    const alts = OUTLINE_SHORTEN_TITLES ? s.labelAlts : [s.labelAlts[0]];
+    const fit = fitLabel(alts, s.labelMaxW, fontSize);
+    ctx.save();
+    ctx.translate(s.labelX, s.labelY);
+    ctx.scale(fit.scaleX, 1);
+    ctx.font = `900 ${fontSize}px 'Inter Variable', system-ui, sans-serif`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = OUTLINE_TITLE_OPACITY;
+    ctx.fillStyle = s.strokeColor;
+    ctx.fillText(fit.text.toUpperCase(), 0, 0);
+    ctx.restore();
+  }
+
+  ctx.restore();
 }
 
 function drawTile(
