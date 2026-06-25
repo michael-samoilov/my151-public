@@ -999,9 +999,15 @@ export function ViewPage() {
                 onDragEnd={handleDragEnd}
                 onDragCancel={handleDragCancel}
               >
-                <div style={{ width: gridWidth }} className={statsAsCards ? 'bg-card rounded-lg shadow-elevated p-3' : ''}>
+                <div
+                  style={{ width: gridWidth, boxSizing: statsAsCards ? 'content-box' : undefined }}
+                  className={statsAsCards ? 'bg-card rounded-lg shadow-elevated p-3' : ''}
+                >
                   {/* Grid + centered overflow row share one relative box so a
-                      single overlay can draw outlines that span the boundary. */}
+                      single overlay can draw outlines that span the boundary.
+                      In card mode the box is content-box so the card's padding
+                      sits OUTSIDE the grid — otherwise it would shrink gridWidth
+                      and the centered last row would mis-align with its outline. */}
                   <div className="relative">
                     <div
                       className="grid items-end"
@@ -1082,7 +1088,7 @@ export function ViewPage() {
                   height: dexRefHeight || undefined,
                   marginLeft: STATS_GAP_FACTOR * tileSize,
                 }}
-                className="shrink-0 overflow-hidden"
+                className="shrink-0 overflow-visible"
               >
                 <div
                   ref={statsContentRef}
