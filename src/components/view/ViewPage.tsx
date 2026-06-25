@@ -11,9 +11,7 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
-import { DetailedStatsPanel, STATS_MIN_POKEMON, type StatsVariant } from '@/components/view/DetailedStatsPanel';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
-import { PREVIEW_FEATURES } from '@/lib/demoMode';
 import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
 import {
   type SectionRun,
@@ -62,22 +60,6 @@ const DND_MEASURING = {
 } as const;
 
 const COLS = 10;
-
-// Detailed-stats column geometry, in tile-size units, used when the stats sit to
-// the right of the grid on the same canvas (desktop). The grid reflows narrower
-// so the whole [grid · gap · stats] composition fits the viewport width.
-// STATS_NATURAL_TILES is the width the charts are *rendered* at (so their text is
-// tuned for a readable width); the block is then uniformly scaled to match the
-// dex height (see statsScale), and only the scaled width is reserved.
-const STATS_GAP_FACTOR = 1; // ~one grid column of space between dex and stats
-// Width the charts are rendered at (before the uniform height-match scale). Wider
-// gives the chart headers and x-axis labels room so they don't overlap; since the
-// block is then scaled down to the dex height, a wider natural width also makes the
-// displayed stats column wider.
-const STATS_NATURAL_TILES = 9;
-// The dex/stats heights are matched against this many rows (a full 151 = 16). A
-// taller dex (>151) does NOT stretch the stats further — they stay at 16-row height.
-const STATS_REF_ROWS = 16;
 
 /** Parse a `view::<id>` draggable id into its numeric pokemon id, or null. */
 function parseDragId(id: string): number | null {
@@ -538,7 +520,6 @@ export function ViewPage() {
   const reorderSection = usePokedexStore((s) => s.reorderSection);
 
   const showSections = usePokedexStore((s) => s.viewShowSections);
-  const showStats = usePokedexStore((s) => s.viewShowStats);
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
@@ -546,17 +527,6 @@ export function ViewPage() {
 
   // Build-section outlines overlay: shown when the user enables it, in build order.
   const showSectionOverlays = showSections && sortOption === 'build-order';
-
-  // Detailed-stats side panel (preview-only): needs enough Pokémon to be useful.
-  const showStatsPanel = PREVIEW_FEATURES && showStats && count >= STATS_MIN_POKEMON;
-  // QA knob (preview only): ?stats=cardsA → chart-on-card w/ title above (analytics
-  // look); ?stats=cardsB → title+chart on one card; default → bare (on the canvas).
-  const statsVariant: StatsVariant = useMemo(() => {
-    if (typeof window === 'undefined') return 'bare';
-    const p = new URLSearchParams(window.location.search).get('stats');
-    return p === 'cardsA' ? 'card-title-out' : p === 'cardsB' ? 'card-title-in' : 'bare';
-  }, []);
-  const statsAsCards = showStatsPanel && statsVariant !== 'bare';
 
   // Section geometry + the effective grid sizing factors. In outline mode the
   // grid gains inter-cell gaps and per-section label bands; folding those into
@@ -619,51 +589,7 @@ export function ViewPage() {
     };
   }, [sorted, totalSlots, showSectionOverlays, sections]);
 
-  // The detailed-stats column always sits to the right of the grid on the same
-  // canvas (at any width). Its width is folded into the tile-fit, so the whole
-  // [grid | gap | stats] composition scales to fit the viewport at once. The
-  // stats are rendered at STATS_NATURAL_TILES wide then uniformly scaled to the
-  // dex height; only the *scaled* width is reserved. statsScale converges to a
-  // tile-size-independent constant (height ∝ width for the charts), so this
-  // settles in a frame or two without oscillating.
-  const [statsScale, setStatsScale] = useState(1);
-  const [statsNaturalH, setStatsNaturalH] = useState(0);
-  const statsContentRef = useRef<HTMLDivElement>(null);
-  const statsBesideGrid = showStatsPanel;
-  const statsColFactor = statsBesideGrid ? STATS_GAP_FACTOR + STATS_NATURAL_TILES * statsScale : 0;
-
-  const { containerRef, tileSize } = useTileSize(layout.colFactor + statsColFactor, layout.rowFactor);
-
-  // Height of the dex's first STATS_REF_ROWS rows (capped at 16), in both outline
-  // and plain modes — the target the stats column is scaled to match.
-  const dexRefHeight = useMemo(() => {
-    if (!statsBesideGrid || tileSize <= 0) return 0;
-    const gapPx = showSectionOverlays ? tileSize * OUTLINE_GAP : 0;
-    const headPx = showSectionOverlays ? tileSize * OUTLINE_HEAD : 0;
-    const allStart = new Set<number>([...layout.gridStartRows, ...layout.lastRowStartRows]);
-    const bands = [...allStart].filter((r) => r < STATS_REF_ROWS).length;
-    return STATS_REF_ROWS * tileSize + (showSectionOverlays ? bands * headPx + (STATS_REF_ROWS - 1) * gapPx : 0);
-  }, [statsBesideGrid, tileSize, showSectionOverlays, layout.gridStartRows, layout.lastRowStartRows]);
-
-  // Measure the stats' natural (unscaled) height; ResizeObserver reports the
-  // layout box, which a CSS transform does not affect — so this is stable.
-  useEffect(() => {
-    const el = statsContentRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setStatsNaturalH(el.offsetHeight));
-    ro.observe(el);
-    setStatsNaturalH(el.offsetHeight);
-    return () => ro.disconnect();
-  }, [statsBesideGrid, showStatsPanel]);
-
-  // Drive statsScale toward (dex height / natural stats height). Capped at 1 so we
-  // only ever scale the stats *down* — never blow them up past their tuned size.
-  useEffect(() => {
-    if (!statsBesideGrid) { if (statsScale !== 1) setStatsScale(1); return; }
-    if (statsNaturalH <= 0 || dexRefHeight <= 0) return;
-    const target = Math.max(0.3, Math.min(1, dexRefHeight / statsNaturalH));
-    if (Math.abs(target - statsScale) > 0.005) setStatsScale(target);
-  }, [statsBesideGrid, statsNaturalH, dexRefHeight, statsScale]);
+  const { containerRef, tileSize } = useTileSize(layout.colFactor, layout.rowFactor);
   const [exporting, setExporting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -939,8 +865,7 @@ export function ViewPage() {
           </div>
         </div>
 
-        <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto p-2">
-          <div className={statsBesideGrid ? 'flex flex-row items-start justify-center' : 'flex flex-col items-center'}>
+        <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center p-2 overflow-y-auto">
           {tileSize > 0 && (() => {
             const {
               lastRowCount, gridSlots, gridPokemon, lastRowPokemon,
@@ -992,15 +917,9 @@ export function ViewPage() {
                 onDragEnd={handleDragEnd}
                 onDragCancel={handleDragCancel}
               >
-                <div
-                  style={{ width: gridWidth, boxSizing: statsAsCards ? 'content-box' : undefined }}
-                  className={statsAsCards ? 'bg-card rounded-lg shadow-elevated p-3' : ''}
-                >
+                <div style={{ width: gridWidth }}>
                   {/* Grid + centered overflow row share one relative box so a
-                      single overlay can draw outlines that span the boundary.
-                      In card mode the box is content-box so the card's padding
-                      sits OUTSIDE the grid — otherwise it would shrink gridWidth
-                      and the centered last row would mis-align with its outline. */}
+                      single overlay can draw outlines that span the boundary. */}
                   <div className="relative">
                     <div
                       className="grid items-end"
@@ -1067,40 +986,6 @@ export function ViewPage() {
               </DndContext>
             );
           })()}
-          {/* Detailed stats — part of the same canvas: a column to the right of
-              the grid on desktop, stacked below it on mobile (no panel chrome,
-              so it reads like the export). */}
-          {showStatsPanel && tileSize > 0 && (
-            statsBesideGrid ? (
-              // Rendered at natural width, then uniformly scaled to the dex height.
-              // The outer box reserves only the scaled footprint; the inner box's
-              // layout size (what ResizeObserver reads) is unaffected by the scale.
-              <div
-                style={{
-                  width: STATS_NATURAL_TILES * tileSize * statsScale,
-                  height: dexRefHeight || undefined,
-                  marginLeft: STATS_GAP_FACTOR * tileSize,
-                }}
-                className="shrink-0 overflow-visible"
-              >
-                <div
-                  ref={statsContentRef}
-                  style={{
-                    width: STATS_NATURAL_TILES * tileSize,
-                    transform: `scale(${statsScale})`,
-                    transformOrigin: 'top left',
-                  }}
-                >
-                  <DetailedStatsPanel variant={statsVariant} />
-                </div>
-              </div>
-            ) : (
-              <div className="w-full max-w-md mt-5 px-1">
-                <DetailedStatsPanel variant={statsVariant} />
-              </div>
-            )
-          )}
-          </div>
         </div>
       </div>
 

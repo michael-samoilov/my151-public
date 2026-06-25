@@ -4,8 +4,6 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { PageFooter } from '@/components/shared/PageFooter';
-import { PREVIEW_FEATURES } from '@/lib/demoMode';
-import { STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 
 interface SortOption {
   value: ViewSortOption;
@@ -67,10 +65,6 @@ export function ViewSettingsPane({
   const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
   const showSections = usePokedexStore((s) => s.viewShowSections);
   const setShowSections = usePokedexStore((s) => s.setViewShowSections);
-  const showStats = usePokedexStore((s) => s.viewShowStats);
-  const setShowStats = usePokedexStore((s) => s.setViewShowStats);
-  const placedCount = Object.values(sections).flat().length;
-  const statsEnabled = placedCount >= STATS_MIN_POKEMON;
 
   // Pending state is only used in mobileSheet mode. In desktop mode handlers
   // write straight to the store and the pending setters go unused.
@@ -319,40 +313,6 @@ export function ViewSettingsPane({
           </button>
         </div>
 
-        {/* Detailed stats — preview-only experiment */}
-        {PREVIEW_FEATURES && (
-          <div className="px-3 pt-3 pb-2 border-t">
-            <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              Stats
-            </h3>
-            <button
-              type="button"
-              onClick={() => statsEnabled && setShowStats(!showStats)}
-              disabled={!statsEnabled}
-              className={`w-full text-left rounded-md px-3 py-2 transition-colors ${
-                !statsEnabled ? 'opacity-50 cursor-default' : 'cursor-pointer'
-              } ${showStats && statsEnabled ? 'bg-primary/10' : 'hover:bg-muted'}`}
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                    showStats && statsEnabled ? 'bg-primary border-primary' : 'border-muted-foreground/40'
-                  }`}
-                >
-                  {showStats && statsEnabled && <Check className="w-3 h-3 text-primary-foreground" />}
-                </span>
-                <span className={`text-sm ${showStats && statsEnabled ? 'text-primary font-medium' : 'text-foreground'}`}>
-                  Show detailed stats
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
-                {statsEnabled
-                  ? 'Adds type, region, and base-stat-total charts beside the grid.'
-                  : `Add at least ${STATS_MIN_POKEMON} Pokémon to enable detailed stats (${placedCount}/${STATS_MIN_POKEMON}).`}
-              </p>
-            </button>
-          </div>
-        )}
 
         <PageFooter />
         {/* Extra bottom padding so the floating button doesn't occlude the last row */}
