@@ -1069,7 +1069,7 @@ function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: numbe
   const log = rec.sessionLog;
   const [activeIdx, setActiveIdx] = useState(() => Math.max(0, (log?.length ?? 1) - 1));
 
-  if (!log || log.length === 0) return null;
+  if (!log || log.length <= 1) return null;
 
   const idx = Math.min(activeIdx, log.length - 1);
   const s = log[idx];
