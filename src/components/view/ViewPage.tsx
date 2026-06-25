@@ -1144,12 +1144,16 @@ export function ViewPage() {
       const topLeftCol = r.firstRow === lastRowIndex - 1 ? r.firstCol : 0;
       return lastRowOffsetCols + r.lastCol + 1 >= topLeftCol;
     };
-    // Rows carrying a label band: each section's first row; the re-shown row of a
-    // ≤9 grid open-wrap; and a *disconnected* centered continuation (which shows
-    // its name again). A connected junction has no band — it flows as one shape.
+    // Rows carrying a label band: each section's first row always (its title is
+    // always drawn). A *continuation* row — the re-shown row of a ≤9 grid
+    // open-wrap, or a disconnected centered continuation — only earns a band when
+    // its title is actually re-drawn (repeatTitles); otherwise the band would be
+    // empty wasted space. (A connected junction never has a band — it flows as
+    // one shape.)
     const bandRows = new Set<number>();
     for (const r of allRuns) {
       bandRows.add(r.firstRow);
+      if (!repeatTitles) continue;
       if (r.lastRow !== lastRowIndex) {
         if (r.lastRow - r.firstRow === 1 && r.firstCol > r.lastCol + 1) bandRows.add(r.lastRow);
       } else if (lastRowGeom && r.firstRow < lastRowIndex && !lastConnects(r)) {
@@ -1172,7 +1176,7 @@ export function ViewPage() {
       allRuns, lastRowGeom, gridStartRows, lastRowStartRows,
       colFactor, rowFactor,
     };
-  }, [sorted, totalSlots, showSectionOverlays, sections]);
+  }, [sorted, totalSlots, showSectionOverlays, sections, repeatTitles]);
 
   const { containerRef, tileSize } = useTileSize(layout.colFactor, layout.rowFactor);
   const [exporting, setExporting] = useState(false);
