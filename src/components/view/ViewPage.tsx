@@ -11,7 +11,9 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
+import { DetailedStatsPanel, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
+import { PREVIEW_FEATURES } from '@/lib/demoMode';
 import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
 import {
   type SectionRun,
@@ -520,6 +522,7 @@ export function ViewPage() {
   const reorderSection = usePokedexStore((s) => s.reorderSection);
 
   const showSections = usePokedexStore((s) => s.viewShowSections);
+  const showStats = usePokedexStore((s) => s.viewShowStats);
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
@@ -527,6 +530,9 @@ export function ViewPage() {
 
   // Build-section outlines overlay: shown when the user enables it, in build order.
   const showSectionOverlays = showSections && sortOption === 'build-order';
+
+  // Detailed-stats side panel (preview-only): needs enough Pokémon to be useful.
+  const showStatsPanel = PREVIEW_FEATURES && showStats && count >= STATS_MIN_POKEMON;
 
   // Section geometry + the effective grid sizing factors. In outline mode the
   // grid gains inter-cell gaps and per-section label bands; folding those into
@@ -865,7 +871,8 @@ export function ViewPage() {
           </div>
         </div>
 
-        <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center p-2 overflow-y-auto">
+        <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto p-2">
+          <div className="flex flex-col items-center">
           {tileSize > 0 && (() => {
             const {
               lastRowCount, gridSlots, gridPokemon, lastRowPokemon,
@@ -986,8 +993,22 @@ export function ViewPage() {
               </DndContext>
             );
           })()}
+          {/* Mobile: detailed stats stack below the grid (desktop uses the side pane). */}
+          {showStatsPanel && (
+            <div className="md:hidden w-full max-w-md mt-4 px-1">
+              <DetailedStatsPanel />
+            </div>
+          )}
+          </div>
         </div>
       </div>
+
+      {/* Detailed stats — docked right on desktop (preview-only) */}
+      {showStatsPanel && (
+        <aside className="hidden md:block md:w-[min(40vw,400px)] md:h-full md:flex-shrink-0 border-l bg-background overflow-y-auto p-3">
+          <DetailedStatsPanel />
+        </aside>
+      )}
 
       {/* Settings pane — docked right on desktop */}
       {settingsOpen && (
