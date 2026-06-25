@@ -230,7 +230,7 @@ export const ARCHETYPES: Archetype[] = [
       872,873,     // Snom→Frosmoth
       875,         // Eiscue
       974,975,     // Cetoddle→Cetitan
-      996,997,     // Frigibax→Arctibax
+      996,997,998,  // Frigibax→Arctibax→Baxcalibur
     ],
     suggestedSlotRange: [33, 42],
     color: '#7ec8e3',
