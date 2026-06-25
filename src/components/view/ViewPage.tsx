@@ -624,7 +624,7 @@ function buildOutlines(
   pad: number,
   vBias: number = 0.5,
   lastRowGeom: { index: number; count: number; offsetCols: number } | null = null,
-  strokeFrac: number = 0.03,
+  strokeFrac: number = 0.05,
 ): { shapes: OutlineShape[]; spandrels: Spandrel[] } {
   const pitch = tileSize + gap;
   const maxRow = runs.reduce((m, r) => Math.max(m, r.lastRow), 0);
@@ -914,7 +914,7 @@ function SectionOverlays({
   titleVBias = 0.6,
   shortenTitles = true,
   lastRow = null,
-  outlineWidth = 0.03,
+  outlineWidth = 0.05,
 }: {
   runs: SectionRun[];
   cols: number;
