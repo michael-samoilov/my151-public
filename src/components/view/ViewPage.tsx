@@ -63,6 +63,12 @@ const DND_MEASURING = {
 
 const COLS = 10;
 
+// Detailed-stats column geometry, in tile-size units, used when the stats sit to
+// the right of the grid on the same canvas (desktop). The grid reflows narrower
+// so the whole [grid · gap · stats] composition fits the viewport width.
+const STATS_GAP_FACTOR = 0.6;
+const STATS_WIDTH_FACTOR = 6.5;
+
 /** Parse a `view::<id>` draggable id into its numeric pokemon id, or null. */
 function parseDragId(id: string): number | null {
   if (!id.startsWith('view::')) return null;
@@ -595,7 +601,24 @@ export function ViewPage() {
     };
   }, [sorted, totalSlots, showSectionOverlays, sections]);
 
-  const { containerRef, tileSize } = useTileSize(layout.colFactor, layout.rowFactor);
+  // Desktop (≥md, 1024px) places the detailed-stats column to the right of the
+  // grid on the same canvas; below md it stacks under the grid. We fold the
+  // column's width into the tile-fit on desktop so the grid reflows to leave
+  // room (the whole [grid | stats] unit fits, like the export will).
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
+  );
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const on = () => setIsDesktop(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  const statsBesideGrid = showStatsPanel && isDesktop;
+  const statsColFactor = statsBesideGrid ? STATS_GAP_FACTOR + STATS_WIDTH_FACTOR : 0;
+
+  const { containerRef, tileSize } = useTileSize(layout.colFactor + statsColFactor, layout.rowFactor);
   const [exporting, setExporting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -872,7 +895,7 @@ export function ViewPage() {
         </div>
 
         <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto p-2">
-          <div className="flex flex-col items-center">
+          <div className={statsBesideGrid ? 'flex flex-row items-start justify-center' : 'flex flex-col items-center'}>
           {tileSize > 0 && (() => {
             const {
               lastRowCount, gridSlots, gridPokemon, lastRowPokemon,
@@ -993,22 +1016,26 @@ export function ViewPage() {
               </DndContext>
             );
           })()}
-          {/* Mobile: detailed stats stack below the grid (desktop uses the side pane). */}
-          {showStatsPanel && (
-            <div className="md:hidden w-full max-w-md mt-4 px-1">
-              <DetailedStatsPanel />
-            </div>
+          {/* Detailed stats — part of the same canvas: a column to the right of
+              the grid on desktop, stacked below it on mobile (no panel chrome,
+              so it reads like the export). */}
+          {showStatsPanel && tileSize > 0 && (
+            statsBesideGrid ? (
+              <div
+                style={{ width: STATS_WIDTH_FACTOR * tileSize, marginLeft: STATS_GAP_FACTOR * tileSize }}
+                className="shrink-0"
+              >
+                <DetailedStatsPanel bare />
+              </div>
+            ) : (
+              <div className="w-full max-w-md mt-5 px-1">
+                <DetailedStatsPanel bare />
+              </div>
+            )
           )}
           </div>
         </div>
       </div>
-
-      {/* Detailed stats — docked right on desktop (preview-only) */}
-      {showStatsPanel && (
-        <aside className="hidden md:block md:w-[min(40vw,400px)] md:h-full md:flex-shrink-0 border-l bg-background overflow-y-auto p-3">
-          <DetailedStatsPanel />
-        </aside>
-      )}
 
       {/* Settings pane — docked right on desktop */}
       {settingsOpen && (

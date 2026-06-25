@@ -49,12 +49,14 @@ function alignHistograms(
   return { merged, xTicks, xDomain, binSize, yDomain, yTicks };
 }
 
-function Card({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Card({ title, subtitle, children, bare }: { title: string; subtitle?: string; children: React.ReactNode; bare?: boolean }) {
   return (
     <section>
       <h3 className="text-sm font-semibold mb-0.5">{title}</h3>
       {subtitle && <p className="text-xs text-muted-foreground mb-2 leading-snug">{subtitle}</p>}
-      <div className="bg-card rounded-lg shadow-elevated p-3">{children}</div>
+      {/* `bare` drops the panel chrome so the charts sit directly on the canvas
+          (matches the export look); otherwise they're framed like a card. */}
+      <div className={bare ? '' : 'bg-card rounded-lg shadow-elevated p-3'}>{children}</div>
     </section>
   );
 }
@@ -80,7 +82,7 @@ function HistogramLegend() {
  * page, reused here without its drill-down interactivity. Data comes from the
  * live store (same dex the grid shows).
  */
-export function DetailedStatsPanel({ className = '' }: { className?: string }) {
+export function DetailedStatsPanel({ className = '', bare = false }: { className?: string; bare?: boolean }) {
   const sections = usePokedexStore((s) => s.sections);
   const analytics = useAnalytics(false);
 
@@ -138,11 +140,11 @@ export function DetailedStatsPanel({ className = '' }: { className?: string }) {
 
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
-      <Card title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
+      <Card bare={bare} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
         <ButterflyChart data={typeRows} rowHeight={16} labelHeader="TYPE" disableEmptyRows />
       </Card>
 
-      <Card title="Region Distribution" subtitle="Which generation your Pokémon come from, vs the national dex.">
+      <Card bare={bare} title="Region Distribution" subtitle="Which generation your Pokémon come from, vs the national dex.">
         <ButterflyChart
           data={[...genRows].sort((a, b) => parseInt(a.label.replace('Gen ', '')) - parseInt(b.label.replace('Gen ', '')))}
           rowHeight={24}
@@ -151,7 +153,7 @@ export function DetailedStatsPanel({ className = '' }: { className?: string }) {
         />
       </Card>
 
-      <Card title="Base Stat Total" subtitle={`Yours avg: ${analytics.bstStats.avg}, National avg: ${analytics.nationalAvgBst}.`}>
+      <Card bare={bare} title="Base Stat Total" subtitle={`Yours avg: ${analytics.bstStats.avg}, National avg: ${analytics.nationalAvgBst}.`}>
         <HistogramLegend />
         <SuperimposedHistogram
           data={bstHist.merged}
