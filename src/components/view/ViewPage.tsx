@@ -1045,7 +1045,6 @@ export function ViewPage() {
                       />
                     )}
                   </div>
-                  <PageFooter />
                 </div>
 
                 <DragOverlay dropAnimation={null}>
@@ -1101,6 +1100,9 @@ export function ViewPage() {
             )
           )}
           </div>
+          {/* Footer stays centered on the full page width — it sits outside the
+              dex+stats composition so it doesn't shift left when stats slide in. */}
+          <PageFooter />
         </div>
       </div>
 
