@@ -68,7 +68,7 @@ const OUTLINE_HEAD = 0.28;
 // equal (dot-width) spaces; the outermost dot's edge sits on the old border line
 // and the solid stroke resumes one space past the innermost dot, so the tail is
 // 3 dots + 3 spaces = 6× the stroke width, and the fill fades across that span.
-const outlineStrokeW = (tileSize: number) => Math.max(0.6, tileSize * 0.025);
+const outlineStrokeW = (tileSize: number, frac: number) => Math.max(0.6, tileSize * frac);
 
 /** Parse a `view::<id>` draggable id into its numeric pokemon id, or null. */
 function parseDragId(id: string): number | null {
@@ -624,6 +624,7 @@ function buildOutlines(
   pad: number,
   vBias: number = 0.5,
   lastRowGeom: { index: number; count: number; offsetCols: number } | null = null,
+  strokeFrac: number = 0.03,
 ): { shapes: OutlineShape[]; spandrels: Spandrel[] } {
   const pitch = tileSize + gap;
   const maxRow = runs.reduce((m, r) => Math.max(m, r.lastRow), 0);
@@ -665,7 +666,7 @@ function buildOutlines(
   // Uniform gap between neighbouring outlines — concave corners are widened by
   // this so a convex corner nesting inside keeps the gap constant round the bend.
   const outlineGap = gap - 2 * pad;
-  const strokeW = outlineStrokeW(tileSize);
+  const strokeW = outlineStrokeW(tileSize, strokeFrac);
   const dotTail = 6 * strokeW;
 
   let run: SectionRun;
@@ -913,6 +914,7 @@ function SectionOverlays({
   titleVBias = 0.6,
   shortenTitles = true,
   lastRow = null,
+  outlineWidth = 0.03,
 }: {
   runs: SectionRun[];
   cols: number;
@@ -928,11 +930,12 @@ function SectionOverlays({
   titleVBias?: number;
   shortenTitles?: boolean;
   lastRow?: { index: number; count: number; offsetCols: number } | null;
+  outlineWidth?: number;
 }) {
-  const { shapes, spandrels } = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad, titleVBias, lastRow);
+  const { shapes, spandrels } = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad, titleVBias, lastRow, outlineWidth);
   const width = cols * tileSize + (cols - 1) * gap;
   const fontSize = tileSize * 0.26;
-  const strokeW = outlineStrokeW(tileSize);
+  const strokeW = outlineStrokeW(tileSize, outlineWidth);
   const dotTail = 6 * strokeW;
   // Generate the type-symbol masks the visible spandrels need; until a mask is
   // ready that spandrel falls back to the 4-point star.
@@ -1105,6 +1108,7 @@ export function ViewPage() {
   const repeatTitles = usePokedexStore((s) => s.viewRepeatTitles);
   const titleVBias = usePokedexStore((s) => s.viewTitleVBias);
   const shortenTitles = usePokedexStore((s) => s.viewShortenTitles);
+  const outlineWidth = usePokedexStore((s) => s.viewOutlineWidth);
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
@@ -1512,6 +1516,7 @@ export function ViewPage() {
                         repeatTitles={repeatTitles}
                         titleVBias={titleVBias}
                         shortenTitles={shortenTitles}
+                        outlineWidth={outlineWidth}
                       />
                     )}
                   </div>

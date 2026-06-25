@@ -62,6 +62,8 @@ interface PokedexState {
   /** Whether long titles fall back to shorter names (true) or always use the
    *  full name, squashed to fit (false). */
   viewShortenTitles: boolean;
+  /** Outline stroke width as a fraction of the tile size. */
+  viewOutlineWidth: number;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -93,6 +95,7 @@ interface PokedexState {
   setViewRepeatTitles: (value: boolean) => void;
   setViewTitleVBias: (value: number) => void;
   setViewShortenTitles: (value: boolean) => void;
+  setViewOutlineWidth: (value: number) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -125,6 +128,7 @@ export const usePokedexStore = create<PokedexState>()(
       viewRepeatTitles: false,
       viewTitleVBias: 0.6,
       viewShortenTitles: true,
+      viewOutlineWidth: 0.03,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -300,6 +304,7 @@ export const usePokedexStore = create<PokedexState>()(
       setViewRepeatTitles: (value) => set({ viewRepeatTitles: value }),
       setViewTitleVBias: (value) => set({ viewTitleVBias: value }),
       setViewShortenTitles: (value) => set({ viewShortenTitles: value }),
+      setViewOutlineWidth: (value) => set({ viewOutlineWidth: value }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,
@@ -364,6 +369,7 @@ export const usePokedexStore = create<PokedexState>()(
         delete r.viewRepeatTitles;
         delete r.viewTitleVBias;
         delete r.viewShortenTitles;
+        delete r.viewOutlineWidth;
 
         return result;
       },

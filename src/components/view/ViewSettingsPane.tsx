@@ -75,6 +75,8 @@ export function ViewSettingsPane({
   const setTitleVBias = usePokedexStore((s) => s.setViewTitleVBias);
   const shortenTitles = usePokedexStore((s) => s.viewShortenTitles);
   const setShortenTitles = usePokedexStore((s) => s.setViewShortenTitles);
+  const outlineWidth = usePokedexStore((s) => s.viewOutlineWidth);
+  const setOutlineWidth = usePokedexStore((s) => s.setViewOutlineWidth);
 
   // Pending state is only used in mobileSheet mode. In desktop mode handlers
   // write straight to the store and the pending setters go unused.
@@ -362,6 +364,25 @@ export function ViewSettingsPane({
                     step={0.01}
                     value={titleVBias}
                     onChange={(e) => setTitleVBias(Number(e.target.value))}
+                    className="w-full mt-1 accent-primary cursor-pointer"
+                  />
+                </label>
+
+                {/* Outline thickness slider (debug): stroke width as a % of tile */}
+                <label className="block">
+                  <div className="flex items-center justify-between text-sm text-foreground">
+                    <span>Outline thickness</span>
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {(outlineWidth * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0.01}
+                    max={0.06}
+                    step={0.0025}
+                    value={outlineWidth}
+                    onChange={(e) => setOutlineWidth(Number(e.target.value))}
                     className="w-full mt-1 accent-primary cursor-pointer"
                   />
                 </label>
