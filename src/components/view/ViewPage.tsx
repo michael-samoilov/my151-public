@@ -60,13 +60,15 @@ const OUTLINE_GAP = 0.24;
 const OUTLINE_PAD = 0.07;
 const OUTLINE_HEAD = 0.28;
 
-// Outline border stroke width (CSS px). The open side of a ≤9 wrap ends in a
-// dotted tail: three dots of diameter = stroke width, separated by equal
-// (dot-width) spaces. The outermost dot's edge sits on the old border line, and
-// the solid stroke resumes one space past the innermost dot — so the tail is
+// Outline border stroke width. It scales WITH the tile size (≈2.5% of it) so the
+// border-to-gap ratio stays constant across screen sizes — a fixed px width looks
+// fine on a wide screen but far too thick on a phone (small tiles ⇒ small gaps).
+// Clamped to a hairline minimum so it never vanishes. The open side of a ≤9 wrap
+// ends in a dotted tail: three dots of diameter = stroke width, separated by
+// equal (dot-width) spaces; the outermost dot's edge sits on the old border line
+// and the solid stroke resumes one space past the innermost dot, so the tail is
 // 3 dots + 3 spaces = 6× the stroke width, and the fill fades across that span.
-const OUTLINE_STROKE_W = 1.5;
-const OUTLINE_DOT_TAIL = 6 * OUTLINE_STROKE_W;
+const outlineStrokeW = (tileSize: number) => Math.max(0.6, tileSize * 0.025);
 
 /** Parse a `view::<id>` draggable id into its numeric pokemon id, or null. */
 function parseDragId(id: string): number | null {
@@ -663,6 +665,8 @@ function buildOutlines(
   // Uniform gap between neighbouring outlines — concave corners are widened by
   // this so a convex corner nesting inside keeps the gap constant round the bend.
   const outlineGap = gap - 2 * pad;
+  const strokeW = outlineStrokeW(tileSize);
+  const dotTail = 6 * strokeW;
 
   let run: SectionRun;
   const pushPoly = (suffix: string, pts: Pt[], lbl: string | null, lx: number, ly: number, lw: number) => {
@@ -766,7 +770,7 @@ function buildOutlines(
         key: `${run.sectionId}-${firstRow}-${firstCol}`,
         sectionId: run.sectionId,
         fill: roundRectFill(colLeft(firstCol), yTop, F, yAboveBottom, radius, false, true),
-        stroke: roundRectStroke(colLeft(firstCol), yTop, F, yAboveBottom, radius, false, true, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
+        stroke: roundRectStroke(colLeft(firstCol), yTop, F, yAboveBottom, radius, false, true, dotTail + strokeW / 2),
         fillColor, strokeColor, label, labelAlts: run.labelAlts, labelX, labelY, labelMaxW,
         open: { side: 'right', x0: colLeft(firstCol), x1: F, topY: yTop, botY: yAboveBottom },
       });
@@ -775,7 +779,7 @@ function buildOutlines(
         key: `${run.sectionId}-last`,
         sectionId: run.sectionId,
         fill: roundRectFill(jbL, yLastTop, jbR, yLastBot, radius, true, false),
-        stroke: roundRectStroke(jbL, yLastTop, jbR, yLastBot, radius, true, false, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
+        stroke: roundRectStroke(jbL, yLastTop, jbR, yLastBot, radius, true, false, dotTail + strokeW / 2),
         fillColor, strokeColor, label, labelAlts: run.labelAlts,
         labelX: clx, labelY: labelCenterY(lrIdx), labelMaxW: lrRight(lastCol) - LABEL_PAD - clx,
         open: { side: 'left', x0: jbL, x1: jbR, topY: yLastTop, botY: yLastBot },
@@ -803,7 +807,7 @@ function buildOutlines(
         key: `${run.sectionId}-a`,
         sectionId: run.sectionId,
         fill: roundRectFill(xFirstL, yTop, xR, yBotA, radius, false, true),
-        stroke: roundRectStroke(xFirstL, yTop, xR, yBotA, radius, false, true, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
+        stroke: roundRectStroke(xFirstL, yTop, xR, yBotA, radius, false, true, dotTail + strokeW / 2),
         fillColor, strokeColor, label, labelAlts: run.labelAlts, labelX, labelY, labelMaxW,
         open: { side: 'right', x0: xFirstL, x1: xR, topY: yTop, botY: yBotA },
       });
@@ -818,7 +822,7 @@ function buildOutlines(
         key: `${run.sectionId}-b`,
         sectionId: run.sectionId,
         fill: roundRectFill(xL, yTopB, xLastR, yBotB, radius, true, false),
-        stroke: roundRectStroke(xL, yTopB, xLastR, yBotB, radius, true, false, OUTLINE_DOT_TAIL + OUTLINE_STROKE_W / 2),
+        stroke: roundRectStroke(xL, yTopB, xLastR, yBotB, radius, true, false, dotTail + strokeW / 2),
         fillColor, strokeColor, label, labelAlts: run.labelAlts, labelX: labelBX, labelY: labelBY, labelMaxW: labelBW,
         open: { side: 'left', x0: xL, x1: xLastR, topY: yTopB, botY: yBotB },
         isContinuation: true,
@@ -928,6 +932,8 @@ function SectionOverlays({
   const { shapes, spandrels } = buildOutlines(runs, cols, tileSize, startRows, headroom, gap, pad, titleVBias, lastRow);
   const width = cols * tileSize + (cols - 1) * gap;
   const fontSize = tileSize * 0.26;
+  const strokeW = outlineStrokeW(tileSize);
+  const dotTail = 6 * strokeW;
   // Generate the type-symbol masks the visible spandrels need; until a mask is
   // ready that spandrel falls back to the 4-point star.
   const spandrelTypes = useMemo(
@@ -948,7 +954,7 @@ function SectionOverlays({
           {shapes.map((s) => {
             if (!s.open) return null;
             // Fill fades over the same horizontal span the three dots cover.
-            const fadeW = OUTLINE_DOT_TAIL;
+            const fadeW = dotTail;
             const right = s.open.side === 'right';
             const gx1 = right ? s.open.x1 - fadeW : s.open.x0 + fadeW;
             const gx2 = right ? s.open.x1 : s.open.x0;
@@ -982,7 +988,7 @@ function SectionOverlays({
             fill="none"
             stroke={s.strokeColor}
             strokeOpacity={0.2}
-            strokeWidth={OUTLINE_STROKE_W}
+            strokeWidth={strokeW}
             strokeLinejoin="round"
             // Round caps. The open stroke's path is lengthened by half a stroke
             // width (see roundRectStroke calls) so the rounded cap's tip lands
@@ -1003,9 +1009,9 @@ function SectionOverlays({
             [open.topY, open.botY].map((cy, j) => (
               <circle
                 key={`dot-${s.key}-${i}-${j}`}
-                cx={edge + dir * (0.5 + 2 * i) * OUTLINE_STROKE_W}
+                cx={edge + dir * (0.5 + 2 * i) * strokeW}
                 cy={cy}
-                r={OUTLINE_STROKE_W / 2}
+                r={strokeW / 2}
                 fill={s.strokeColor}
                 fillOpacity={0.2}
               />
