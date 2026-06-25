@@ -12,7 +12,6 @@ import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
-import { PREVIEW_FEATURES } from '@/lib/demoMode';
 import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
 import {
   type SectionRun,
@@ -526,8 +525,8 @@ export function ViewPage() {
   const count = sorted.length;
   const totalSlots = Math.max(count, 151);
 
-  // Build-section outlines are a preview-only feature — never on production.
-  const showSectionOverlays = PREVIEW_FEATURES && showSections && sortOption === 'build-order';
+  // Build-section outlines overlay: shown when the user enables it, in build order.
+  const showSectionOverlays = showSections && sortOption === 'build-order';
 
   // Section geometry + the effective grid sizing factors. In outline mode the
   // grid gains inter-cell gaps and per-section label bands; folding those into
@@ -809,7 +808,11 @@ export function ViewPage() {
     // Fire the export beacon up front. On iOS the share sheet ("Save Image")
     // suspends the page, and a sendBeacon issued after navigator.share resolves
     // often never leaves the device — so record the export before opening it.
-    sendExportBeacon(sorted.map((p) => p.id));
+    sendExportBeacon(sorted.map((p) => p.id), {
+      sort: sortOption,
+      outlines: showSectionOverlays,
+      groupSpecial: groupSpecialAtEnd,
+    });
     try {
       const blob = await generateExportImage(sorted, {
         sections: showSectionOverlays ? sections : null,
@@ -821,7 +824,7 @@ export function ViewPage() {
     } finally {
       setExporting(false);
     }
-  }, [sorted, exporting, showSectionOverlays, sections]);
+  }, [sorted, exporting, showSectionOverlays, sections, sortOption, groupSpecialAtEnd]);
 
   const dragOverlayPokemon = dragLineIds
     ? dragLineIds.map((id) => sorted.find((p) => p.id === id)).filter((p): p is Pokemon => !!p)

@@ -95,6 +95,14 @@ export interface ClientRecord {
   exported: boolean;
   exportedAt?: string;
   exportedIds?: number[];
+  /** The View settings in effect at the user's last export: which sort order,
+   *  whether the build-section outlines overlay was on, and whether specials were
+   *  grouped at the end. Absent on records that predate export-settings capture. */
+  exportSettings?: {
+    sort: string;
+    outlines: boolean;
+    groupSpecial: boolean;
+  };
 }
 
 export function firstQueryValue(value: string | string[] | undefined): string {

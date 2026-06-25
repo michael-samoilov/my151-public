@@ -4,7 +4,6 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { PageFooter } from '@/components/shared/PageFooter';
-import { PREVIEW_FEATURES } from '@/lib/demoMode';
 
 interface SortOption {
   value: ViewSortOption;
@@ -254,10 +253,9 @@ export function ViewSettingsPane({
                 </button>
               );
 
-              // Outlines is a preview-only feature, disclosed under (and scoped
-              // to) Build Order — the sort that mirrors your build-page sections.
-              const showOutlinesToggle =
-                opt.value === 'build-order' && PREVIEW_FEATURES && selected;
+              // Outlines are disclosed under (and scoped to) Build Order — the
+              // sort that mirrors your build-page sections.
+              const showOutlinesToggle = opt.value === 'build-order' && selected;
 
               return (
                 <div key={opt.value}>
