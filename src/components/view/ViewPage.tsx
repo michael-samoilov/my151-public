@@ -66,8 +66,14 @@ const COLS = 10;
 // Detailed-stats column geometry, in tile-size units, used when the stats sit to
 // the right of the grid on the same canvas (desktop). The grid reflows narrower
 // so the whole [grid · gap · stats] composition fits the viewport width.
-const STATS_GAP_FACTOR = 0.6;
-const STATS_WIDTH_FACTOR = 6.5;
+// STATS_NATURAL_TILES is the width the charts are *rendered* at (so their text is
+// tuned for a readable width); the block is then uniformly scaled to match the
+// dex height (see statsScale), and only the scaled width is reserved.
+const STATS_GAP_FACTOR = 1; // ~one grid column of space between dex and stats
+const STATS_NATURAL_TILES = 6.5;
+// The dex/stats heights are matched against this many rows (a full 151 = 16). A
+// taller dex (>151) does NOT stretch the stats further — they stay at 16-row height.
+const STATS_REF_ROWS = 16;
 
 /** Parse a `view::<id>` draggable id into its numeric pokemon id, or null. */
 function parseDragId(id: string): number | null {
@@ -616,9 +622,47 @@ export function ViewPage() {
     return () => mq.removeEventListener('change', on);
   }, []);
   const statsBesideGrid = showStatsPanel && isDesktop;
-  const statsColFactor = statsBesideGrid ? STATS_GAP_FACTOR + STATS_WIDTH_FACTOR : 0;
+  // The stats are rendered at STATS_NATURAL_TILES wide then uniformly scaled to
+  // the dex height; only the *scaled* width is reserved in the tile-fit. statsScale
+  // converges to a tile-size-independent constant (height ∝ width for the charts),
+  // so this settles in a frame or two without oscillating.
+  const [statsScale, setStatsScale] = useState(1);
+  const [statsNaturalH, setStatsNaturalH] = useState(0);
+  const statsContentRef = useRef<HTMLDivElement>(null);
+  const statsColFactor = statsBesideGrid ? STATS_GAP_FACTOR + STATS_NATURAL_TILES * statsScale : 0;
 
   const { containerRef, tileSize } = useTileSize(layout.colFactor + statsColFactor, layout.rowFactor);
+
+  // Height of the dex's first STATS_REF_ROWS rows (capped at 16), in both outline
+  // and plain modes — the target the stats column is scaled to match.
+  const dexRefHeight = useMemo(() => {
+    if (!statsBesideGrid || tileSize <= 0) return 0;
+    const gapPx = showSectionOverlays ? tileSize * OUTLINE_GAP : 0;
+    const headPx = showSectionOverlays ? tileSize * OUTLINE_HEAD : 0;
+    const allStart = new Set<number>([...layout.gridStartRows, ...layout.lastRowStartRows]);
+    const bands = [...allStart].filter((r) => r < STATS_REF_ROWS).length;
+    return STATS_REF_ROWS * tileSize + (showSectionOverlays ? bands * headPx + (STATS_REF_ROWS - 1) * gapPx : 0);
+  }, [statsBesideGrid, tileSize, showSectionOverlays, layout.gridStartRows, layout.lastRowStartRows]);
+
+  // Measure the stats' natural (unscaled) height; ResizeObserver reports the
+  // layout box, which a CSS transform does not affect — so this is stable.
+  useEffect(() => {
+    const el = statsContentRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setStatsNaturalH(el.offsetHeight));
+    ro.observe(el);
+    setStatsNaturalH(el.offsetHeight);
+    return () => ro.disconnect();
+  }, [statsBesideGrid, showStatsPanel]);
+
+  // Drive statsScale toward (dex height / natural stats height). Capped at 1 so we
+  // only ever scale the stats *down* — never blow them up past their tuned size.
+  useEffect(() => {
+    if (!statsBesideGrid) { if (statsScale !== 1) setStatsScale(1); return; }
+    if (statsNaturalH <= 0 || dexRefHeight <= 0) return;
+    const target = Math.max(0.3, Math.min(1, dexRefHeight / statsNaturalH));
+    if (Math.abs(target - statsScale) > 0.005) setStatsScale(target);
+  }, [statsBesideGrid, statsNaturalH, dexRefHeight, statsScale]);
   const [exporting, setExporting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -1021,11 +1065,27 @@ export function ViewPage() {
               so it reads like the export). */}
           {showStatsPanel && tileSize > 0 && (
             statsBesideGrid ? (
+              // Rendered at natural width, then uniformly scaled to the dex height.
+              // The outer box reserves only the scaled footprint; the inner box's
+              // layout size (what ResizeObserver reads) is unaffected by the scale.
               <div
-                style={{ width: STATS_WIDTH_FACTOR * tileSize, marginLeft: STATS_GAP_FACTOR * tileSize }}
-                className="shrink-0"
+                style={{
+                  width: STATS_NATURAL_TILES * tileSize * statsScale,
+                  height: dexRefHeight || undefined,
+                  marginLeft: STATS_GAP_FACTOR * tileSize,
+                }}
+                className="shrink-0 overflow-hidden"
               >
-                <DetailedStatsPanel bare />
+                <div
+                  ref={statsContentRef}
+                  style={{
+                    width: STATS_NATURAL_TILES * tileSize,
+                    transform: `scale(${statsScale})`,
+                    transformOrigin: 'top left',
+                  }}
+                >
+                  <DetailedStatsPanel bare />
+                </div>
               </div>
             ) : (
               <div className="w-full max-w-md mt-5 px-1">
