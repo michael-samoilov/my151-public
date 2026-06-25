@@ -448,87 +448,100 @@ export function useViewSort(
     [customOrder],
   );
 
-  return useMemo(() => {
-    // Custom: render the reconciled customOrder verbatim. The grouping toggle
-    // does NOT apply here — custom is fully freeform.
-    if (sortOption === 'custom' && customOrder) {
-      const allIds = collectAllIds(sections);
-      const reconciled = reconcileCustomOrder(customOrder, allIds);
-      return reconciled
-        .map((id) => getPokemonById(id))
-        .filter((p): p is Pokemon => !!p);
-    }
+  return useMemo(
+    () => computeViewSort(sections, sortOption, groupSpecialAtEnd, customOrder),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sectionsKey, sortOption, groupSpecialAtEnd, customKey],
+  );
+}
 
-    // When grouping is off, sort all placed Pokemon as one flat list (no buckets).
-    // Starters from the user's "starter" section are always pinned to the front,
-    // preserving the user's build-page order within that section. In regional sort,
-    // Victini (#494) is placed ahead of the starters when present (per-user request).
-    if (!groupSpecialAtEnd) {
-      const allIds = collectAllIds(sections);
-      const allIdSet = new Set(allIds);
+/** Pure build of the View-page order from the current sections + sort settings.
+ *  The hook wraps this in useMemo; drag handlers call it directly to predict
+ *  whether a reorder is representable in the active sort. */
+export function computeViewSort(
+  sections: Record<string, number[]>,
+  sortOption: ViewSortOption,
+  groupSpecialAtEnd: boolean = true,
+  customOrder: number[] | null = null,
+): Pokemon[] {
+  // Custom: render the reconciled customOrder verbatim. The grouping toggle
+  // does NOT apply here — custom is fully freeform.
+  if (sortOption === 'custom' && customOrder) {
+    const allIds = collectAllIds(sections);
+    const reconciled = reconcileCustomOrder(customOrder, allIds);
+    return reconciled
+      .map((id) => getPokemonById(id))
+      .filter((p): p is Pokemon => !!p);
+  }
 
-      const starterIds = (sections['starter'] ?? []).filter((id) => allIdSet.has(id));
-      const starterSet = new Set(starterIds);
+  // When grouping is off, sort all placed Pokemon as one flat list (no buckets).
+  // Starters from the user's "starter" section are always pinned to the front,
+  // preserving the user's build-page order within that section. In regional sort,
+  // Victini (#494) is placed ahead of the starters when present (per-user request).
+  if (!groupSpecialAtEnd) {
+    const allIds = collectAllIds(sections);
+    const allIdSet = new Set(allIds);
 
-      const victiniFirst =
-        sortOption === 'regional' && allIdSet.has(494) && !starterSet.has(494);
+    const starterIds = (sections['starter'] ?? []).filter((id) => allIdSet.has(id));
+    const starterSet = new Set(starterIds);
 
-      const excluded = new Set<number>(starterSet);
-      if (victiniFirst) excluded.add(494);
+    const victiniFirst =
+      sortOption === 'regional' && allIdSet.has(494) && !starterSet.has(494);
 
-      const remainingIds = allIds.filter((id) => !excluded.has(id));
+    const excluded = new Set<number>(starterSet);
+    if (victiniFirst) excluded.add(494);
 
-      let sortedRest: Pokemon[];
-      switch (sortOption) {
-        case 'regional':
-          sortedRest = sortClustersRegional(remainingIds);
-          break;
-        case 'national':
-          sortedRest = sortClustersNational(remainingIds);
-          break;
-        case 'type':
-          sortedRest = sortClustersType(remainingIds);
-          break;
-        case 'build-order':
-          sortedRest = sortByBuildOrder(remainingIds, sections);
-          break;
-        default:
-          sortedRest = sortClustersNational(remainingIds);
-      }
+    const remainingIds = allIds.filter((id) => !excluded.has(id));
 
-      const prefix: Pokemon[] = [];
-      if (victiniFirst) {
-        const v = getPokemonById(494);
-        if (v) prefix.push(v);
-      }
-      for (const id of starterIds) {
-        const p = getPokemonById(id);
-        if (p) prefix.push(p);
-      }
-
-      return [...prefix, ...sortedRest];
-    }
-
+    let sortedRest: Pokemon[];
     switch (sortOption) {
       case 'regional':
-        // Middle: regional percentile + adjacency; Other buckets: national dex + adjacency
-        return sortWithBuckets(sections, sortClustersRegional, sortClustersNational);
+        sortedRest = sortClustersRegional(remainingIds);
+        break;
       case 'national':
-        // Middle + Other buckets: national dex + adjacency
-        return sortWithBuckets(sections, sortClustersNational, sortClustersNational);
+        sortedRest = sortClustersNational(remainingIds);
+        break;
       case 'type':
-        // Middle: type sort (no adjacency); Other buckets: type sort (no adjacency)
-        return sortWithBuckets(sections, sortClustersType, sortClustersType);
+        sortedRest = sortClustersType(remainingIds);
+        break;
       case 'build-order':
-        // Middle: build page order; Other buckets: national dex + adjacency
-        return sortWithBuckets(
-          sections,
-          (ids) => sortByBuildOrder(ids, sections),
-          sortClustersNational,
-        );
+        sortedRest = sortByBuildOrder(remainingIds, sections);
+        break;
       default:
-        return sortWithBuckets(sections, sortClustersNational, sortClustersNational);
+        sortedRest = sortClustersNational(remainingIds);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sectionsKey, sortOption, groupSpecialAtEnd, customKey]);
+
+    const prefix: Pokemon[] = [];
+    if (victiniFirst) {
+      const v = getPokemonById(494);
+      if (v) prefix.push(v);
+    }
+    for (const id of starterIds) {
+      const p = getPokemonById(id);
+      if (p) prefix.push(p);
+    }
+
+    return [...prefix, ...sortedRest];
+  }
+
+  switch (sortOption) {
+    case 'regional':
+      // Middle: regional percentile + adjacency; Other buckets: national dex + adjacency
+      return sortWithBuckets(sections, sortClustersRegional, sortClustersNational);
+    case 'national':
+      // Middle + Other buckets: national dex + adjacency
+      return sortWithBuckets(sections, sortClustersNational, sortClustersNational);
+    case 'type':
+      // Middle: type sort (no adjacency); Other buckets: type sort (no adjacency)
+      return sortWithBuckets(sections, sortClustersType, sortClustersType);
+    case 'build-order':
+      // Middle: build page order; Other buckets: national dex + adjacency
+      return sortWithBuckets(
+        sections,
+        (ids) => sortByBuildOrder(ids, sections),
+        sortClustersNational,
+      );
+    default:
+      return sortWithBuckets(sections, sortClustersNational, sortClustersNational);
+  }
 }

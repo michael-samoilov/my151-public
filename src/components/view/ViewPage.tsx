@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { Settings, Download, Loader2 } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { useViewSort } from '@/hooks/useViewSort';
+import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewSort';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
@@ -518,6 +518,7 @@ export function ViewPage() {
   const customOrder = usePokedexStore((s) => s.viewCustomOrder);
   const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
   const setSortOption = usePokedexStore((s) => s.setViewSortOption);
+  const reorderSection = usePokedexStore((s) => s.reorderSection);
 
   const showSections = usePokedexStore((s) => s.viewShowSections);
 
@@ -751,12 +752,40 @@ export function ViewPage() {
     }
 
     withoutDragged.splice(insertIdx, 0, ...dragLineIds);
+    const newOrder = withoutDragged;
 
-    setCustomOrder(withoutDragged);
+    // In build order, a drag that stays within a single section occurrence keeps
+    // build order (it just reorders that build group); anything else falls
+    // through to custom. We detect "stays within the occurrence" by construction:
+    // reorder only the dragged bundle's own build group to match the new visual
+    // order, then re-run the build-order sort. If it reproduces `newOrder`
+    // exactly, the move was representable in build order (same section, same
+    // occurrence) and we apply it as a section reorder. If not — a cross-section
+    // drop, or a jump to a *different* occurrence of the same section (e.g.
+    // tundra-1 → tundra-2, which build order can't express because the dragged
+    // pokemon's bucket is fixed by its category) — we break to custom as before.
+    if (sortOption === 'build-order') {
+      const idToSection = buildIdToSection(sections);
+      const groupId = idToSection.get(dragLineIds[0]);
+      const allSameSection =
+        groupId !== undefined && dragLineIds.every((id) => idToSection.get(id) === groupId);
+      if (groupId && allSameSection) {
+        const newGroupOrder = newOrder.filter((id) => idToSection.get(id) === groupId);
+        const candidate = { ...sections, [groupId]: newGroupOrder };
+        const predicted = computeViewSort(candidate, 'build-order', groupSpecialAtEnd, null).map((p) => p.id);
+        if (predicted.length === newOrder.length && predicted.every((id, i) => id === newOrder[i])) {
+          reorderSection(groupId, newGroupOrder);
+          resetDragState();
+          return;
+        }
+      }
+    }
+
+    setCustomOrder(newOrder);
     if (sortOption !== 'custom') setSortOption('custom');
 
     resetDragState();
-  }, [dragLineIds, visibleIds, bundleVisible, dropSide, sortOption, setCustomOrder, setSortOption, resetDragState]);
+  }, [dragLineIds, visibleIds, bundleVisible, dropSide, sortOption, sections, groupSpecialAtEnd, reorderSection, setCustomOrder, setSortOption, resetDragState]);
 
   const handleDragCancel = useCallback(resetDragState, [resetDragState]);
 
