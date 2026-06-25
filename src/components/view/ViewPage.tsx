@@ -71,12 +71,13 @@ const STATS_GAP_FACTOR = 1; // ~one grid column of space between dex and stats
 // A fixed rem width (not a multiple of the tile size) keeps the chart internals at
 // the width they're tuned for — ButterflyChart's chartScale floors at 1 below ~360px,
 // so a tile-coupled width on mobile (tiles ≈ 21px → ~190px) squashes the deviation
-// chart until its headers overlap and the "OVER-INDEXED →" header overflows. 22.5rem
-// ≈ 360px at the mobile root font and scales up with the root font on desktop, so the
-// chart geometry tracks its rem-based text on every device. The block is then scaled
-// down to the dex height; because the chart's height is clamp-limited below 360px,
-// rendering at the full tuned width also widens the displayed column.
-const STATS_NATURAL_REM = 22.5;
+// chart until its headers overlap and the "OVER-INDEXED →" header overflows. The
+// value scales up with the root font on desktop, so the chart geometry tracks its
+// rem-based text on every device. The block is then scaled down to the dex height.
+// 19.7rem (≈315px): the type/gen charts drop their per-row label text (icon only),
+// freeing the ~45px label column, so the chart bodies keep the ~295px width that was
+// overlap-free at the old 360px-with-labels render while the column reads narrower.
+const STATS_NATURAL_REM = 19.7;
 // The dex/stats heights are matched against this many rows (a full 151 = 16). A
 // taller dex (>151) does NOT stretch the stats further — they stay at 16-row height.
 const STATS_REF_ROWS = 16;

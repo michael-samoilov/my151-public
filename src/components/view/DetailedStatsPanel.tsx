@@ -161,14 +161,14 @@ export function DetailedStatsPanel({ className = '', variant = 'bare' }: { class
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
       <Card variant={variant} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
-        <ButterflyChart data={typeRows} rowHeight={16} labelHeader="TYPE" disableEmptyRows />
+        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText disableEmptyRows />
       </Card>
 
       <Card variant={variant} title="Region Distribution" subtitle="Which generation your Pokémon come from, vs the national dex.">
         <ButterflyChart
           data={[...genRows].sort((a, b) => parseInt(a.label.replace('Gen ', '')) - parseInt(b.label.replace('Gen ', '')))}
           rowHeight={24}
-          labelHeader="GEN"
+          hideLabelText
           disableEmptyRows
         />
       </Card>

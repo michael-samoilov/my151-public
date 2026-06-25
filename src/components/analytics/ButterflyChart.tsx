@@ -37,6 +37,11 @@ interface ButterflyChartProps {
   onSortChange?: (col: 'count' | 'deviation' | 'label') => void;
   /** Header text for the label/icon column (e.g. "TYPE", "GEN") */
   labelHeader?: string;
+  /** Drop the per-row label text (and the label-column header), keeping only the
+   *  row icon as the identifier. Collapses the label column to just the icon so
+   *  the chart bodies reclaim the freed width. Only sensible when every row has an
+   *  icon that stands on its own (type symbols, numbered gen badges). */
+  hideLabelText?: boolean;
   /** When true, the label-column header is clickable and toggles `sortBy='label'`.
    *  Default false: the label header is display-only. */
   labelSortable?: boolean;
@@ -52,7 +57,7 @@ interface ButterflyChartProps {
   countDenominator?: number;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, hideLabelText }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hoveredSort, setHoveredSort] = useState<'count' | 'deviation' | 'label' | null>(null);
@@ -90,8 +95,10 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   // today, desktop proportions match mobile (just larger).
   const chartScale = width > 0 ? Math.max(1, Math.min(width / 360, 2)) : 1;
   const iconSize = hasIcons ? 14 * chartScale : 0;
-  const labelWidth = 42 * chartScale;
-  const iconGap = hasIcons ? 3 : 0;
+  // With label text hidden the column collapses to just the icon (flush left); the
+  // freed width flows into the chart bodies below via labelColEnd.
+  const labelWidth = hideLabelText ? 0 : 42 * chartScale;
+  const iconGap = hasIcons && !hideLabelText ? 3 : 0;
   const gap = 6;
   const gutter = 8; // space between chart sections
   // Header band. Tall enough for the two-line deviation header ("UNDER- / ←
@@ -105,7 +112,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale, iconSize + 4);
   const chartHeight = topOffset + data.length * rowHeight;
 
-  const iconStart = labelWidth + iconGap;
+  const iconStart = hideLabelText ? 0 : labelWidth + iconGap;
 
   // Column A: labels + icons (fixed width)
   const labelColEnd = iconStart + iconSize + gap;
@@ -215,10 +222,11 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   }
   // Header label extent (widest single line + 5px offset from zeroX).
   const labelPx = (scoreMode ? 60 : 66) * chartScale;
-  // Bar value label extent (e.g. "-0.23" ≈ 24px, "2.30x" ≈ 26px at mobile
-  // base font). Reserved on each side of the bar area as scale-range
-  // padding so value labels never spill into the gutter / chart 1.
-  const barPad = 28 * chartScale;
+  // Bar value label extent (e.g. "-0.23" ≈ 24px, "1.54x" ≈ 30px with the +3
+  // anchor offset at mobile base font). Reserved on each side of the bar area as
+  // scale-range padding so value labels never spill into the gutter / chart 1 (or,
+  // on the right, past the chart edge into the page margin).
+  const barPad = 32 * chartScale;
   const usableW = Math.max(0, chart2Width - 2 * barPad);
   // In the usable area, zeroX still needs `labelPx` from each edge for the
   // header labels. The barPad we already reserved buys us some of that, so
@@ -251,8 +259,9 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
         <svg width={width} height={chartHeight} className="overflow-visible">
           {/* Label column header (e.g. "TYPE", "GEN"). Sortable only when
               `labelSortable` is true — e.g. the gen chart uses natural-order
-              sort; the type chart does not. */}
-          {labelHeader && (
+              sort; the type chart does not. Suppressed when the label text is
+              hidden (the collapsed icon column has no room for it). */}
+          {labelHeader && !hideLabelText && (
             <text
               x={iconStart + iconSize}
               y={headerBaseline}
@@ -372,16 +381,18 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                   className={!isActive && onBarClick && hasData ? 'hover:fill-current hover:opacity-[0.04] active:opacity-[0.08]' : ''}
                 />
                 {/* Label */}
-                <text
-                  x={labelWidth}
-                  y={y + barHeight / 2}
-                  textAnchor="end"
-                  dominantBaseline="middle"
-                  className="text-xs"
-                  fill="currentColor"
-                >
-                  {d.label}
-                </text>
+                {!hideLabelText && (
+                  <text
+                    x={labelWidth}
+                    y={y + barHeight / 2}
+                    textAnchor="end"
+                    dominantBaseline="middle"
+                    className="text-xs"
+                    fill="currentColor"
+                  >
+                    {d.label}
+                  </text>
+                )}
 
                 {/* Row icon */}
                 {d.icon && (
