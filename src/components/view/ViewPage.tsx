@@ -63,18 +63,20 @@ const DND_MEASURING = {
 
 const COLS = 10;
 
-// Detailed-stats column geometry, in tile-size units, used when the stats sit to
-// the right of the grid on the same canvas (desktop). The grid reflows narrower
-// so the whole [grid · gap · stats] composition fits the viewport width.
-// STATS_NATURAL_TILES is the width the charts are *rendered* at (so their text is
-// tuned for a readable width); the block is then uniformly scaled to match the
-// dex height (see statsScale), and only the scaled width is reserved.
+// Detailed-stats column geometry, used when the stats sit to the right of the grid
+// on the same canvas (at any width). The grid reflows narrower so the whole
+// [grid · gap · stats] composition fits the viewport width.
 const STATS_GAP_FACTOR = 1; // ~one grid column of space between dex and stats
-// Width the charts are rendered at (before the uniform height-match scale). Wider
-// gives the chart headers and x-axis labels room so they don't overlap; since the
-// block is then scaled down to the dex height, a wider natural width also makes the
-// displayed stats column wider.
-const STATS_NATURAL_TILES = 9;
+// Width the charts are *rendered* at, in rem, before the uniform height-match scale.
+// A fixed rem width (not a multiple of the tile size) keeps the chart internals at
+// the width they're tuned for — ButterflyChart's chartScale floors at 1 below ~360px,
+// so a tile-coupled width on mobile (tiles ≈ 21px → ~190px) squashes the deviation
+// chart until its headers overlap and the "OVER-INDEXED →" header overflows. 22.5rem
+// ≈ 360px at the mobile root font and scales up with the root font on desktop, so the
+// chart geometry tracks its rem-based text on every device. The block is then scaled
+// down to the dex height; because the chart's height is clamp-limited below 360px,
+// rendering at the full tuned width also widens the displayed column.
+const STATS_NATURAL_REM = 22.5;
 // The dex/stats heights are matched against this many rows (a full 151 = 16). A
 // taller dex (>151) does NOT stretch the stats further — they stay at 16-row height.
 const STATS_REF_ROWS = 16;
@@ -622,48 +624,55 @@ export function ViewPage() {
   // The detailed-stats column always sits to the right of the grid on the same
   // canvas (at any width). Its width is folded into the tile-fit, so the whole
   // [grid | gap | stats] composition scales to fit the viewport at once. The
-  // stats are rendered at STATS_NATURAL_TILES wide then uniformly scaled to the
-  // dex height; only the *scaled* width is reserved. statsScale converges to a
-  // tile-size-independent constant (height ∝ width for the charts), so this
-  // settles in a frame or two without oscillating.
-  const [statsScale, setStatsScale] = useState(1);
-  const [statsNaturalH, setStatsNaturalH] = useState(0);
+  // charts are rendered at a fixed rem width (STATS_NATURAL_REM) then uniformly
+  // scaled down to the dex's reference height. Only the *scaled* footprint is
+  // reserved — and that footprint, in grid columns, is just the stats' aspect
+  // ratio × the reference-row height (both tileSize-independent), so the layout
+  // settles without the old scale↔tileSize feedback loop.
+  const [statsNatural, setStatsNatural] = useState({ w: 0, h: 0 });
   const statsContentRef = useRef<HTMLDivElement>(null);
   const statsBesideGrid = showStatsPanel;
-  const statsColFactor = statsBesideGrid ? STATS_GAP_FACTOR + STATS_NATURAL_TILES * statsScale : 0;
+
+  // Height of the STATS_REF_ROWS reference block in *tile units* (constant — no
+  // tileSize), folding in the outline gaps/label bands when overlays are on.
+  const dexRefRowsFactor = useMemo(() => {
+    const allStart = new Set<number>([...layout.gridStartRows, ...layout.lastRowStartRows]);
+    const bands = [...allStart].filter((r) => r < STATS_REF_ROWS).length;
+    return STATS_REF_ROWS + (showSectionOverlays ? bands * OUTLINE_HEAD + (STATS_REF_ROWS - 1) * OUTLINE_GAP : 0);
+  }, [showSectionOverlays, layout.gridStartRows, layout.lastRowStartRows]);
+
+  // Stats footprint in grid columns: aspect (w/h) × reference-row height. Aspect is
+  // rootFont-independent (both natural w and h scale with the root font), so this is
+  // stable across zoom/device. Falls back to a typical aspect until first measured.
+  const statsAspect = statsNatural.h > 0 ? statsNatural.w / statsNatural.h : 0.4;
+  const statsTileCols = statsBesideGrid ? statsAspect * dexRefRowsFactor : 0;
+  const statsColFactor = statsBesideGrid ? STATS_GAP_FACTOR + statsTileCols : 0;
 
   const { containerRef, tileSize } = useTileSize(layout.colFactor + statsColFactor, layout.rowFactor);
 
-  // Height of the dex's first STATS_REF_ROWS rows (capped at 16), in both outline
-  // and plain modes — the target the stats column is scaled to match.
-  const dexRefHeight = useMemo(() => {
-    if (!statsBesideGrid || tileSize <= 0) return 0;
-    const gapPx = showSectionOverlays ? tileSize * OUTLINE_GAP : 0;
-    const headPx = showSectionOverlays ? tileSize * OUTLINE_HEAD : 0;
-    const allStart = new Set<number>([...layout.gridStartRows, ...layout.lastRowStartRows]);
-    const bands = [...allStart].filter((r) => r < STATS_REF_ROWS).length;
-    return STATS_REF_ROWS * tileSize + (showSectionOverlays ? bands * headPx + (STATS_REF_ROWS - 1) * gapPx : 0);
-  }, [statsBesideGrid, tileSize, showSectionOverlays, layout.gridStartRows, layout.lastRowStartRows]);
+  // Derived (no feedback loop): the reference height the stats are scaled to, the
+  // scaled-down display width, and the scale factor (capped at 1 — only ever shrink).
+  const dexRefHeight = statsBesideGrid && tileSize > 0 ? dexRefRowsFactor * tileSize : 0;
+  const statsDisplayW = statsTileCols * tileSize;
+  const statsScale = statsNatural.w > 0 ? Math.min(1, statsDisplayW / statsNatural.w) : 1;
 
-  // Measure the stats' natural (unscaled) height; ResizeObserver reports the
-  // layout box, which a CSS transform does not affect — so this is stable.
+  // Measure the stats' natural (unscaled) box; ResizeObserver reports the layout
+  // box, which a CSS transform does not affect — so this is stable. The natural
+  // width is a fixed rem value, so its height (hence the aspect) settles at once.
   useEffect(() => {
     const el = statsContentRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setStatsNaturalH(el.offsetHeight));
+    const measure = () =>
+      setStatsNatural((prev) =>
+        prev.w === el.offsetWidth && prev.h === el.offsetHeight
+          ? prev
+          : { w: el.offsetWidth, h: el.offsetHeight },
+      );
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    setStatsNaturalH(el.offsetHeight);
+    measure();
     return () => ro.disconnect();
-  }, [statsBesideGrid, showStatsPanel]);
-
-  // Drive statsScale toward (dex height / natural stats height). Capped at 1 so we
-  // only ever scale the stats *down* — never blow them up past their tuned size.
-  useEffect(() => {
-    if (!statsBesideGrid) { if (statsScale !== 1) setStatsScale(1); return; }
-    if (statsNaturalH <= 0 || dexRefHeight <= 0) return;
-    const target = Math.max(0.3, Math.min(1, dexRefHeight / statsNaturalH));
-    if (Math.abs(target - statsScale) > 0.005) setStatsScale(target);
-  }, [statsBesideGrid, statsNaturalH, dexRefHeight, statsScale]);
+  }, [statsBesideGrid, showStatsPanel, statsVariant]);
   const [exporting, setExporting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -1076,7 +1085,7 @@ export function ViewPage() {
               // layout size (what ResizeObserver reads) is unaffected by the scale.
               <div
                 style={{
-                  width: STATS_NATURAL_TILES * tileSize * statsScale,
+                  width: statsDisplayW || undefined,
                   height: dexRefHeight || undefined,
                   marginLeft: STATS_GAP_FACTOR * tileSize,
                 }}
@@ -1085,7 +1094,7 @@ export function ViewPage() {
                 <div
                   ref={statsContentRef}
                   style={{
-                    width: STATS_NATURAL_TILES * tileSize,
+                    width: `${STATS_NATURAL_REM}rem`,
                     transform: `scale(${statsScale})`,
                     transformOrigin: 'top left',
                   }}
