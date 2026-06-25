@@ -149,6 +149,22 @@ function validSections(sections: unknown): Record<string, number[]> | undefined 
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
+/** Sanitize the export-settings object sent with an export beacon. Returns
+ *  undefined when absent/invalid so a hostile client can't store junk. */
+const VALID_SORTS = new Set(['build-order', 'regional', 'national', 'type', 'custom']);
+function validExportSettings(
+  v: unknown,
+): { sort: string; outlines: boolean; groupSpecial: boolean } | undefined {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+  const o = v as Record<string, unknown>;
+  if (typeof o.sort !== 'string' || !VALID_SORTS.has(o.sort)) return undefined;
+  return {
+    sort: o.sort,
+    outlines: o.outlines === true,
+    groupSpecial: o.groupSpecial === true,
+  };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -161,6 +177,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ids?: unknown;
       depth?: unknown;
       sections?: unknown;
+      exportSettings?: unknown;
     };
 
     // Client id: a UUID minted once per browser. Length-bounded to avoid abuse.
@@ -344,6 +361,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       rec.exported = true;
       rec.exportedAt = at;
       rec.exportedIds = ids;
+      const settings = validExportSettings(body.exportSettings);
+      if (settings) rec.exportSettings = settings;
     }
 
     await redis.hset(CLIENTS_KEY, { [effectiveCid]: JSON.stringify(rec) });

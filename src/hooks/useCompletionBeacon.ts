@@ -63,7 +63,19 @@ function countEvoLines(ids: number[]): number {
   return chains.size;
 }
 
-function postBeacon(ids: number[], kind: BeaconKind, sections?: Record<string, number[]>) {
+/** View settings captured with an export beacon — what the shared image used. */
+export interface ExportSettings {
+  sort: string;
+  outlines: boolean;
+  groupSpecial: boolean;
+}
+
+function postBeacon(
+  ids: number[],
+  kind: BeaconKind,
+  sections?: Record<string, number[]>,
+  exportSettings?: ExportSettings,
+) {
   // Demo mode never reports to analytics — keep the sample dex out of admin stats.
   if (DEMO_MODE || isOptedOut() || ids.length === 0) return;
   const cid = getClientId();
@@ -71,7 +83,8 @@ function postBeacon(ids: number[], kind: BeaconKind, sections?: Record<string, n
   // `sections` (groupId -> placed ids) captures WHERE the user put each Pokemon
   // on the build page — the real placement, including non-default choices. Only
   // sent for build beacons (progress/completion), not the flat export view.
-  const payload = JSON.stringify({ cid, kind, ids, depth: countEvoLines(ids), sections });
+  // `exportSettings` records the View settings used for an export (sort/outlines).
+  const payload = JSON.stringify({ cid, kind, ids, depth: countEvoLines(ids), sections, exportSettings });
   // fetch+keepalive (not navigator.sendBeacon): iOS WebKit silently drops
   // sendBeacon in several cases (after the share sheet, non-CORS-safelisted
   // blob types); keepalive still lets the request outlive a page transition.
@@ -125,8 +138,9 @@ export function useCompletionBeacon() {
   }, [sections]);
 }
 
-/** Fire a one-shot export beacon with the current list. */
-export function sendExportBeacon(ids: number[]) {
+/** Fire a one-shot export beacon with the current list and the View settings
+ *  that produced the exported image. */
+export function sendExportBeacon(ids: number[], settings?: ExportSettings) {
   if (ids.length === 0) return;
-  postBeacon(ids, 'export');
+  postBeacon(ids, 'export', undefined, settings);
 }

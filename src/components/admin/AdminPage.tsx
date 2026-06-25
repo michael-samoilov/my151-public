@@ -77,6 +77,11 @@ interface ClientRecord {
   exported: boolean;
   exportedAt?: string;
   exportedIds?: number[];
+  exportSettings?: {
+    sort: string;
+    outlines: boolean;
+    groupSpecial: boolean;
+  };
 }
 
 interface ApiResponse {
@@ -84,6 +89,12 @@ interface ApiResponse {
   offset: number;
   limit: number;
   funnel: { users: number; completed: number; exported: number };
+  exportSettings?: {
+    tracked: number;
+    outlines: number;
+    groupSpecial: number;
+    sorts: Record<string, number>;
+  };
   retention: { returning: number; activeLast7: number; newUsers: number };
   timeSurvival: { t: number; s: number }[];
   timeStats: { p50: number; p75: number; p90: number };
@@ -644,6 +655,23 @@ function tallyRows(counts: Record<string, number>, withFlag = false) {
     .map(([k, n]) => ({ label: withFlag ? `${flag(k)} ${k}` : k, count: n }));
 }
 
+const SORT_LABELS: Record<string, string> = {
+  'build-order': 'Build Order',
+  regional: 'Regional',
+  national: 'National',
+  type: 'Type',
+  custom: 'Custom',
+};
+
+/** Compact summary of the View settings used for an export, e.g.
+ *  "Build Order · outlines · specials grouped". */
+function fmtExportSettings(s: NonNullable<ClientRecord['exportSettings']>): string {
+  const parts = [SORT_LABELS[s.sort] ?? s.sort];
+  if (s.outlines) parts.push('outlines');
+  parts.push(s.groupSpecial ? 'specials grouped' : 'specials inline');
+  return parts.join(' · ');
+}
+
 function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void; expanded: boolean; onToggle: () => void; zIndex: number; stickyOffset: number }) {
   const [droppedOpen, setDroppedOpen] = useState(false);
   const cardRef = useRef<HTMLElement>(null);
@@ -698,7 +726,14 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: {
               )}
               <span className="block text-xs text-muted-foreground">
                 {rec.completed && <span className="text-primary font-medium">✓ completed </span>}
-                {rec.exported && <span>📷 exported </span>}
+                {rec.exported && (
+                  <span>
+                    📷 exported
+                    {rec.exportSettings && (
+                      <span className="text-muted-foreground"> ({fmtExportSettings(rec.exportSettings)})</span>
+                    )}{' '}
+                  </span>
+                )}
                 {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning</span>}
                 {userLocal && <> · their {userLocal}</>}
               </span>
@@ -1325,6 +1360,34 @@ export function AdminPage() {
                 <Stat value={data.retention.activeLast7} label="Active 7d" />
               </div>
             </Card>
+
+            {data.exportSettings && data.exportSettings.tracked > 0 && (
+              <Card title={`Export settings (${data.exportSettings.tracked} export${data.exportSettings.tracked === 1 ? '' : 's'} tracked)`}>
+                {(() => {
+                  const es = data.exportSettings!;
+                  const pct = (n: number) => `${Math.round((n / es.tracked) * 100)}%`;
+                  const sortRows = Object.entries(es.sorts).sort((a, b) => b[1] - a[1]);
+                  return (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-wrap gap-2">
+                        <Stat value={`${es.outlines} (${pct(es.outlines)})`} label="With outlines" />
+                        <Stat value={`${es.groupSpecial} (${pct(es.groupSpecial)})`} label="Specials grouped" />
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Sort order used</div>
+                        <div className="flex flex-wrap gap-2">
+                          {sortRows.map(([sort, n]) => (
+                            <span key={sort} className="text-xs rounded bg-muted px-2 py-1">
+                              {SORT_LABELS[sort] ?? sort} · {n} ({pct(n)})
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </Card>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card title="Session drop-off (when users churn by time)">

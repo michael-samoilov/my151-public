@@ -128,6 +128,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let exported = 0;
     let returning = 0;
     let activeLast7 = 0;
+    // Tally the View settings exporters actually used (forward-only — only
+    // exports captured since settings-tracking shipped contribute).
+    const exportSettingsAgg = {
+      tracked: 0,
+      outlines: 0,
+      groupSpecial: 0,
+      sorts: {} as Record<string, number>,
+    };
 
     for (const r of records) {
       depths.push(r.maxDepth);
@@ -171,6 +179,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
       if (r.exported) exported += 1;
+      if (r.exportSettings) {
+        exportSettingsAgg.tracked += 1;
+        if (r.exportSettings.outlines) exportSettingsAgg.outlines += 1;
+        if (r.exportSettings.groupSpecial) exportSettingsAgg.groupSpecial += 1;
+        const s = r.exportSettings.sort;
+        exportSettingsAgg.sorts[s] = (exportSettingsAgg.sorts[s] ?? 0) + 1;
+      }
       if (r.lastTs - r.firstTs >= DAY) returning += 1;
       if (now - r.lastTs <= 7 * DAY) activeLast7 += 1;
     }
@@ -221,6 +236,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       offset,
       limit,
       funnel: { users: totalUsers, completed, exported },
+      exportSettings: exportSettingsAgg,
       retention: { returning, activeLast7, newUsers: totalUsers - returning },
       timeSurvival,
       timeStats,
