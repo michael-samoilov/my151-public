@@ -619,28 +619,17 @@ export function ViewPage() {
     };
   }, [sorted, totalSlots, showSectionOverlays, sections]);
 
-  // Desktop (≥md, 1024px) places the detailed-stats column to the right of the
-  // grid on the same canvas; below md it stacks under the grid. We fold the
-  // column's width into the tile-fit on desktop so the grid reflows to leave
-  // room (the whole [grid | stats] unit fits, like the export will).
-  const [isDesktop, setIsDesktop] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches,
-  );
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(min-width: 1024px)');
-    const on = () => setIsDesktop(mq.matches);
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
-  const statsBesideGrid = showStatsPanel && isDesktop;
-  // The stats are rendered at STATS_NATURAL_TILES wide then uniformly scaled to
-  // the dex height; only the *scaled* width is reserved in the tile-fit. statsScale
-  // converges to a tile-size-independent constant (height ∝ width for the charts),
-  // so this settles in a frame or two without oscillating.
+  // The detailed-stats column always sits to the right of the grid on the same
+  // canvas (at any width). Its width is folded into the tile-fit, so the whole
+  // [grid | gap | stats] composition scales to fit the viewport at once. The
+  // stats are rendered at STATS_NATURAL_TILES wide then uniformly scaled to the
+  // dex height; only the *scaled* width is reserved. statsScale converges to a
+  // tile-size-independent constant (height ∝ width for the charts), so this
+  // settles in a frame or two without oscillating.
   const [statsScale, setStatsScale] = useState(1);
   const [statsNaturalH, setStatsNaturalH] = useState(0);
   const statsContentRef = useRef<HTMLDivElement>(null);
+  const statsBesideGrid = showStatsPanel;
   const statsColFactor = statsBesideGrid ? STATS_GAP_FACTOR + STATS_NATURAL_TILES * statsScale : 0;
 
   const { containerRef, tileSize } = useTileSize(layout.colFactor + statsColFactor, layout.rowFactor);
