@@ -128,7 +128,7 @@ export const usePokedexStore = create<PokedexState>()(
       viewRepeatTitles: false,
       viewTitleVBias: 0.6,
       viewShortenTitles: true,
-      viewOutlineWidth: 0.03,
+      viewOutlineWidth: 0.05,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
