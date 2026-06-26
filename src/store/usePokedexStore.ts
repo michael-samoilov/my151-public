@@ -5,6 +5,7 @@ import { getEvolutionChainIds, getEvolutionLine, getDescendantIds, getPokemonByI
 import { DEMO_MODE, SPANDREL_DEMO, POKEDEX_STORAGE_KEY } from '@/lib/demoMode';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
 import { SPANDREL_SEED_SECTIONS } from '@/data/spandrelSeed';
+import type { StatsVariant } from '@/components/view/DetailedStatsPanel';
 
 /** Initial sections — empty for real users, the sample dex in demo mode, or the
  *  spandrel test fixture when ?demo=spandrels is set. */
@@ -56,6 +57,10 @@ interface PokedexState {
   viewShowSections: boolean;
   /** Preview-only: whether the detailed-stats side panel is shown on the View. */
   viewShowStats: boolean;
+  /** Preview-only: how the View grid + stats are presented — 'bare' (on the
+   *  canvas, export look), or on raised cards with the chart titles either above
+   *  the card ('card-title-out') or inside it ('card-title-in'). */
+  viewStatsVariant: StatsVariant;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -87,6 +92,7 @@ interface PokedexState {
   setViewCustomOrder: (order: number[] | null) => void;
   setViewShowSections: (value: boolean) => void;
   setViewShowStats: (value: boolean) => void;
+  setViewStatsVariant: (value: StatsVariant) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -116,6 +122,7 @@ export const usePokedexStore = create<PokedexState>()(
       viewCustomOrder: null,
       viewShowSections: DEMO_MODE,
       viewShowStats: false,
+      viewStatsVariant: 'bare' as StatsVariant,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -300,6 +307,7 @@ export const usePokedexStore = create<PokedexState>()(
       setViewCustomOrder: (order) => set({ viewCustomOrder: order }),
       setViewShowSections: (value) => set({ viewShowSections: value }),
       setViewShowStats: (value) => set({ viewShowStats: value }),
+      setViewStatsVariant: (value) => set({ viewStatsVariant: value }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,

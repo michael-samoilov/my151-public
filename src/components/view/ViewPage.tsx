@@ -11,7 +11,7 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
-import { DetailedStatsPanel, STATS_MIN_POKEMON, type StatsVariant } from '@/components/view/DetailedStatsPanel';
+import { DetailedStatsPanel, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { PREVIEW_FEATURES } from '@/lib/demoMode';
 import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
@@ -542,6 +542,7 @@ export function ViewPage() {
 
   const showSections = usePokedexStore((s) => s.viewShowSections);
   const showStats = usePokedexStore((s) => s.viewShowStats);
+  const statsVariant = usePokedexStore((s) => s.viewStatsVariant);
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
@@ -552,13 +553,10 @@ export function ViewPage() {
 
   // Detailed-stats side panel (preview-only): needs enough Pokémon to be useful.
   const showStatsPanel = PREVIEW_FEATURES && showStats && count >= STATS_MIN_POKEMON;
-  // QA knob (preview only): ?stats=cardsA → chart-on-card w/ title above (analytics
-  // look); ?stats=cardsB → title+chart on one card; default → bare (on the canvas).
-  const statsVariant: StatsVariant = useMemo(() => {
-    if (typeof window === 'undefined') return 'bare';
-    const p = new URLSearchParams(window.location.search).get('stats');
-    return p === 'cardsA' ? 'card-title-out' : p === 'cardsB' ? 'card-title-in' : 'bare';
-  }, []);
+  // Presentation style (set in View settings): 'bare' draws the grid + charts on
+  // the canvas (export look); the card variants put the grid on a raised card and
+  // each chart on its own card, with the chart title above ('card-title-out') or
+  // inside ('card-title-in') the card.
   const statsAsCards = showStatsPanel && statsVariant !== 'bare';
 
   // Section geometry + the effective grid sizing factors. In outline mode the

@@ -5,13 +5,20 @@ import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { PREVIEW_FEATURES } from '@/lib/demoMode';
-import { STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
+import { STATS_MIN_POKEMON, type StatsVariant } from '@/components/view/DetailedStatsPanel';
 
 interface SortOption {
   value: ViewSortOption;
   label: string;
   description: string;
 }
+
+/** Preview-only: how the View grid + detailed-stats charts are presented. */
+const STATS_PRESENTATION_OPTIONS: { value: StatsVariant; label: string; description: string }[] = [
+  { value: 'bare', label: 'On canvas', description: 'Grid and charts sit directly on the page (matches the export).' },
+  { value: 'card-title-out', label: 'Cards', description: 'Grid and each chart on raised cards; chart titles sit above the cards.' },
+  { value: 'card-title-in', label: 'Cards, titles inside', description: 'Like Cards, but each chart’s title sits on its own card.' },
+];
 
 const SORT_OPTIONS: SortOption[] = [
   {
@@ -69,6 +76,8 @@ export function ViewSettingsPane({
   const setShowSections = usePokedexStore((s) => s.setViewShowSections);
   const showStats = usePokedexStore((s) => s.viewShowStats);
   const setShowStats = usePokedexStore((s) => s.setViewShowStats);
+  const statsVariant = usePokedexStore((s) => s.viewStatsVariant);
+  const setStatsVariant = usePokedexStore((s) => s.setViewStatsVariant);
   const placedCount = Object.values(sections).flat().length;
   const statsEnabled = placedCount >= STATS_MIN_POKEMON;
 
@@ -351,6 +360,44 @@ export function ViewSettingsPane({
                   : `Add at least ${STATS_MIN_POKEMON} Pokémon to enable detailed stats (${placedCount}/${STATS_MIN_POKEMON}).`}
               </p>
             </button>
+
+            {/* Presentation style — only relevant once the stats are showing. */}
+            {showStats && statsEnabled && (
+              <div className="mt-1 ml-6">
+                <p className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                  Presentation
+                </p>
+                {STATS_PRESENTATION_OPTIONS.map((opt) => {
+                  const active = statsVariant === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setStatsVariant(opt.value)}
+                      className={`w-full text-left rounded-md px-3 py-1.5 transition-colors cursor-pointer ${
+                        active ? 'bg-primary/10' : 'hover:bg-muted'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                            active ? 'border-primary' : 'border-muted-foreground/40'
+                          }`}
+                        >
+                          {active && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                        </span>
+                        <span className={`text-sm ${active ? 'text-primary font-medium' : 'text-foreground'}`}>
+                          {opt.label}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 ml-[1.375rem] leading-snug">
+                        {opt.description}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
