@@ -20,6 +20,11 @@ const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1ab
  *  vertical content to justify the side panel. (Tunable; under QA.) */
 export const STATS_MIN_POKEMON = 12;
 
+/** Default per-chart vertical-height multipliers for the three detailed-stats
+ *  charts (debug-tunable). BST/Generation are shorter so the Type chart — with its
+ *  18 rows — gets the most room. */
+export const DEFAULT_STATS_HEIGHTS = { type: 1.2, region: 0.6, bst: 0.7 };
+
 /** Align yours + national histograms to shared bins (mirror of the analytics
  *  dashboard's helper) so the superimposed histogram can overlay both. */
 function alignHistograms(
@@ -107,7 +112,7 @@ function HistogramLegend() {
  * page, reused here without its drill-down interactivity. Data comes from the
  * live store (same dex the grid shows).
  */
-export function DetailedStatsPanel({ className = '', variant = 'bare', typeBadges = false, heights = { type: 1, region: 1, bst: 1 } }: { className?: string; variant?: StatsVariant; typeBadges?: boolean; heights?: { type: number; region: number; bst: number } }) {
+export function DetailedStatsPanel({ className = '', variant = 'bare', typeBadges = false, heights = DEFAULT_STATS_HEIGHTS }: { className?: string; variant?: StatsVariant; typeBadges?: boolean; heights?: { type: number; region: number; bst: number } }) {
   const sections = usePokedexStore((s) => s.sections);
   const analytics = useAnalytics(false);
 
@@ -174,15 +179,16 @@ export function DetailedStatsPanel({ className = '', variant = 'bare', typeBadge
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
       <Card variant={variant} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
-        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText iconColAspect={iconColAspect} heightScale={heights.type} disableEmptyRows />
+        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows />
       </Card>
 
-      <Card variant={variant} title="Region Distribution" subtitle="Which generation your Pokémon come from, vs the national dex.">
+      <Card variant={variant} title="Generation Origin" subtitle="Which generation your Pokémon come from, vs the national dex.">
         <ButterflyChart
           data={[...genRows].sort((a, b) => parseInt(a.label.replace('Gen ', '')) - parseInt(b.label.replace('Gen ', '')))}
           rowHeight={24}
           hideLabelText
           iconColAspect={iconColAspect}
+          iconFillsRow={typeBadges}
           heightScale={heights.region}
           disableEmptyRows
         />

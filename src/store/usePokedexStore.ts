@@ -132,7 +132,9 @@ export const usePokedexStore = create<PokedexState>()(
       viewShowStats: false,
       viewStatsVariant: 'bare' as StatsVariant,
       viewStatsTypeBadges: false,
-      viewStatsHeights: { type: 1, region: 1, bst: 1 },
+      // Defaults mirror DEFAULT_STATS_HEIGHTS (inlined to avoid a store→component
+      // import cycle): Type taller, Generation/BST shorter.
+      viewStatsHeights: { type: 1.2, region: 0.6, bst: 0.7 },
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {

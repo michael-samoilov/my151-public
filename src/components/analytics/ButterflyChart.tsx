@@ -50,6 +50,9 @@ interface ButterflyChartProps {
   /** Multiplier on the per-row height (default 1). Lets a caller make the whole
    *  chart taller/shorter to tune how much vertical space it takes vs. its peers. */
   heightScale?: number;
+  /** Size the row icon to fill the row height instead of the fixed ~14px icon size.
+   *  Used for tall identifiers like type-name badges so the name reads at bar size. */
+  iconFillsRow?: boolean;
   /** When true, the label-column header is clickable and toggles `sortBy='label'`.
    *  Default false: the label header is display-only. */
   labelSortable?: boolean;
@@ -65,7 +68,7 @@ interface ButterflyChartProps {
   countDenominator?: number;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, hideLabelText, iconColAspect = 1, heightScale = 1 }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hoveredSort, setHoveredSort] = useState<'count' | 'deviation' | 'label' | null>(null);
@@ -103,8 +106,6 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   // today, desktop proportions match mobile (just larger).
   const chartScale = width > 0 ? Math.max(1, Math.min(width / 360, 2)) : 1;
   const iconSize = hasIcons ? 14 * chartScale : 0;
-  // Reserved icon-column width. Square by default; wider for type-name badges etc.
-  const iconColW = iconSize * iconColAspect;
   // With label text hidden the column collapses to just the icon (flush left); the
   // freed width flows into the chart bodies below via labelColEnd.
   const labelWidth = hideLabelText ? 0 : 42 * chartScale;
@@ -121,6 +122,12 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const headerBaseline = topOffset - 8;
   const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale * heightScale, iconSize + 4);
   const chartHeight = topOffset + data.length * rowHeight;
+
+  // Icon box height: a fixed ~14px square by default, or the full row height for
+  // tall identifiers (type-name badges) so the name reads at roughly bar height.
+  const iconBoxH = hasIcons ? (iconFillsRow ? rowHeight : iconSize) : 0;
+  // Reserved icon-column width. Square by default; wider for type-name badges etc.
+  const iconColW = iconBoxH * iconColAspect;
 
   const iconStart = hideLabelText ? 0 : labelWidth + iconGap;
 
@@ -410,12 +417,12 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                     <image
                       href={d.icon}
                       x={iconStart}
-                      y={y + barHeight / 2 - iconSize / 2}
+                      y={y + barHeight / 2 - iconBoxH / 2}
                       width={iconColW}
-                      height={iconSize}
+                      height={iconBoxH}
                       preserveAspectRatio="xMidYMid meet"
                     />
-                  ) : d.icon(iconStart, y + barHeight / 2 - iconSize / 2, iconSize)
+                  ) : d.icon(iconStart, y + barHeight / 2 - iconBoxH / 2, iconBoxH)
                 )}
 
                 {/* Count bar */}

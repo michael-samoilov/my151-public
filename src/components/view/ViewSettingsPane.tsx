@@ -5,7 +5,7 @@ import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { PREVIEW_FEATURES } from '@/lib/demoMode';
-import { STATS_MIN_POKEMON, type StatsVariant } from '@/components/view/DetailedStatsPanel';
+import { STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS, type StatsVariant } from '@/components/view/DetailedStatsPanel';
 
 interface SortOption {
   value: ViewSortOption;
@@ -434,7 +434,7 @@ export function ViewSettingsPane({
                   </p>
                   {([
                     ['type', 'Type'],
-                    ['region', 'Region'],
+                    ['region', 'Generation'],
                     ['bst', 'Base stat total'],
                   ] as const).map(([key, label]) => (
                     <div key={key} className="flex items-center gap-2 py-0.5">
@@ -457,10 +457,10 @@ export function ViewSettingsPane({
                   ))}
                   <button
                     type="button"
-                    onClick={() => setStatsHeights({ type: 1, region: 1, bst: 1 })}
+                    onClick={() => setStatsHeights({ ...DEFAULT_STATS_HEIGHTS })}
                     className="text-xs text-primary hover:underline mt-1 cursor-pointer"
                   >
-                    Reset to equal
+                    Reset to default
                   </button>
                 </div>
               </div>
