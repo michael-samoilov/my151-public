@@ -47,6 +47,9 @@ interface ButterflyChartProps {
    *  this aspect; function icons still render square (left-aligned in the column),
    *  so two charts can share an aspect to keep their bar columns aligned. */
   iconColAspect?: number;
+  /** Multiplier on the per-row height (default 1). Lets a caller make the whole
+   *  chart taller/shorter to tune how much vertical space it takes vs. its peers. */
+  heightScale?: number;
   /** When true, the label-column header is clickable and toggles `sortBy='label'`.
    *  Default false: the label header is display-only. */
   labelSortable?: boolean;
@@ -62,7 +65,7 @@ interface ButterflyChartProps {
   countDenominator?: number;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, hideLabelText, iconColAspect = 1 }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, hideLabelText, iconColAspect = 1, heightScale = 1 }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hoveredSort, setHoveredSort] = useState<'count' | 'deviation' | 'label' | null>(null);
@@ -116,7 +119,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const titleHeight = 28;
   const topOffset = titleHeight;
   const headerBaseline = topOffset - 8;
-  const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale, iconSize + 4);
+  const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale * heightScale, iconSize + 4);
   const chartHeight = topOffset + data.length * rowHeight;
 
   const iconStart = hideLabelText ? 0 : labelWidth + iconGap;

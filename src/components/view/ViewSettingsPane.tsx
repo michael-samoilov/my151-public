@@ -80,6 +80,8 @@ export function ViewSettingsPane({
   const setStatsVariant = usePokedexStore((s) => s.setViewStatsVariant);
   const statsTypeBadges = usePokedexStore((s) => s.viewStatsTypeBadges);
   const setStatsTypeBadges = usePokedexStore((s) => s.setViewStatsTypeBadges);
+  const statsHeights = usePokedexStore((s) => s.viewStatsHeights);
+  const setStatsHeights = usePokedexStore((s) => s.setViewStatsHeights);
   const placedCount = Object.values(sections).flat().length;
   const statsEnabled = placedCount >= STATS_MIN_POKEMON;
 
@@ -423,6 +425,44 @@ export function ViewSettingsPane({
                     Use the full type-name images (as in the type filter) instead of the type symbols.
                   </p>
                 </button>
+
+                {/* Debug: per-chart height proportions. The stack is scaled to a
+                    fixed total height, so these only redistribute the split. */}
+                <div className="mt-2 px-3">
+                  <p className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                    Debug · chart height split
+                  </p>
+                  {([
+                    ['type', 'Type'],
+                    ['region', 'Region'],
+                    ['bst', 'Base stat total'],
+                  ] as const).map(([key, label]) => (
+                    <div key={key} className="flex items-center gap-2 py-0.5">
+                      <span className="text-xs text-foreground w-24 flex-shrink-0">{label}</span>
+                      <input
+                        type="range"
+                        min={0.3}
+                        max={2}
+                        step={0.05}
+                        value={statsHeights[key]}
+                        onChange={(e) =>
+                          setStatsHeights({ ...statsHeights, [key]: parseFloat(e.target.value) })
+                        }
+                        className="flex-1 cursor-pointer accent-primary"
+                      />
+                      <span className="text-xs text-muted-foreground tabular-nums w-8 text-right">
+                        {statsHeights[key].toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setStatsHeights({ type: 1, region: 1, bst: 1 })}
+                    className="text-xs text-primary hover:underline mt-1 cursor-pointer"
+                  >
+                    Reset to equal
+                  </button>
+                </div>
               </div>
             )}
           </div>

@@ -17,6 +17,8 @@ interface SuperimposedHistogramProps {
   yTicks: number[];
   onBarClick?: (binCenter: number) => void;
   activeBin?: number | null;
+  /** Multiplier on the plot height (default 1) to tune vertical space vs. peers. */
+  heightScale?: number;
 }
 
 export function SuperimposedHistogram({
@@ -29,6 +31,7 @@ export function SuperimposedHistogram({
   yTicks,
   onBarClick,
   activeBin,
+  heightScale = 1,
 }: SuperimposedHistogramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -48,7 +51,7 @@ export function SuperimposedHistogram({
   // height. chartScale matches the formula in ButterflyChart — 1 at
   // mobile, 2 at desktop — so both analytics charts scale consistently.
   const chartScale = width > 0 ? Math.max(1, Math.min(width / 360, 2)) : 1;
-  const height = 200 * chartScale;
+  const height = 200 * chartScale * heightScale;
   const margin = {
     top: 8,
     right: 12,

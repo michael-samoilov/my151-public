@@ -544,6 +544,7 @@ export function ViewPage() {
   const showStats = usePokedexStore((s) => s.viewShowStats);
   const statsVariant = usePokedexStore((s) => s.viewStatsVariant);
   const statsTypeBadges = usePokedexStore((s) => s.viewStatsTypeBadges);
+  const statsHeights = usePokedexStore((s) => s.viewStatsHeights);
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
@@ -1125,12 +1126,12 @@ export function ViewPage() {
                     transformOrigin: 'top left',
                   }}
                 >
-                  <DetailedStatsPanel variant={statsVariant} typeBadges={statsTypeBadges} />
+                  <DetailedStatsPanel variant={statsVariant} typeBadges={statsTypeBadges} heights={statsHeights} />
                 </div>
               </div>
             ) : (
               <div className="w-full max-w-md mt-5 px-1">
-                <DetailedStatsPanel variant={statsVariant} typeBadges={statsTypeBadges} />
+                <DetailedStatsPanel variant={statsVariant} typeBadges={statsTypeBadges} heights={statsHeights} />
               </div>
             )
           )}

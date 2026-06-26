@@ -64,6 +64,9 @@ interface PokedexState {
   /** Preview-only: show full type-name badge images (as used by the type filter)
    *  instead of the small type symbols in the Type Distribution chart. */
   viewStatsTypeBadges: boolean;
+  /** Preview-only debug knob: per-chart vertical-height multipliers for the three
+   *  detailed-stats charts, to tune how much vertical space each takes. */
+  viewStatsHeights: { type: number; region: number; bst: number };
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -97,6 +100,7 @@ interface PokedexState {
   setViewShowStats: (value: boolean) => void;
   setViewStatsVariant: (value: StatsVariant) => void;
   setViewStatsTypeBadges: (value: boolean) => void;
+  setViewStatsHeights: (value: { type: number; region: number; bst: number }) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -128,6 +132,7 @@ export const usePokedexStore = create<PokedexState>()(
       viewShowStats: false,
       viewStatsVariant: 'bare' as StatsVariant,
       viewStatsTypeBadges: false,
+      viewStatsHeights: { type: 1, region: 1, bst: 1 },
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -314,6 +319,7 @@ export const usePokedexStore = create<PokedexState>()(
       setViewShowStats: (value) => set({ viewShowStats: value }),
       setViewStatsVariant: (value) => set({ viewStatsVariant: value }),
       setViewStatsTypeBadges: (value) => set({ viewStatsTypeBadges: value }),
+      setViewStatsHeights: (value) => set({ viewStatsHeights: value }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,

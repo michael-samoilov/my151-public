@@ -107,7 +107,7 @@ function HistogramLegend() {
  * page, reused here without its drill-down interactivity. Data comes from the
  * live store (same dex the grid shows).
  */
-export function DetailedStatsPanel({ className = '', variant = 'bare', typeBadges = false }: { className?: string; variant?: StatsVariant; typeBadges?: boolean }) {
+export function DetailedStatsPanel({ className = '', variant = 'bare', typeBadges = false, heights = { type: 1, region: 1, bst: 1 } }: { className?: string; variant?: StatsVariant; typeBadges?: boolean; heights?: { type: number; region: number; bst: number } }) {
   const sections = usePokedexStore((s) => s.sections);
   const analytics = useAnalytics(false);
 
@@ -174,7 +174,7 @@ export function DetailedStatsPanel({ className = '', variant = 'bare', typeBadge
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
       <Card variant={variant} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
-        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText iconColAspect={iconColAspect} disableEmptyRows />
+        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText iconColAspect={iconColAspect} heightScale={heights.type} disableEmptyRows />
       </Card>
 
       <Card variant={variant} title="Region Distribution" subtitle="Which generation your Pokémon come from, vs the national dex.">
@@ -183,6 +183,7 @@ export function DetailedStatsPanel({ className = '', variant = 'bare', typeBadge
           rowHeight={24}
           hideLabelText
           iconColAspect={iconColAspect}
+          heightScale={heights.region}
           disableEmptyRows
         />
       </Card>
@@ -197,6 +198,7 @@ export function DetailedStatsPanel({ className = '', variant = 'bare', typeBadge
           minorXTicks={bstHist.xTicks.slice(0, -1).map((t, i) => (t + bstHist.xTicks[i + 1]) / 2)}
           yDomain={bstHist.yDomain}
           yTicks={bstHist.yTicks}
+          heightScale={heights.bst}
         />
       </Card>
     </div>
