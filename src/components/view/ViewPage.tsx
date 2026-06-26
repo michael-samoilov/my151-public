@@ -82,6 +82,31 @@ const STATS_NATURAL_REM = 19.7;
 // taller dex (>151) does NOT stretch the stats further — they stay at 16-row height.
 const STATS_REF_ROWS = 16;
 
+/** Inline the computed font + fill styles onto every SVG <text>/<tspan> under
+ *  `root`, returning a revert fn. html-to-image otherwise drops the Tailwind
+ *  font-size classes on SVG text (rendering chart labels oversized) and doesn't
+ *  resolve CSS-var fills. Setting the styles to their current computed values is a
+ *  visual no-op, so there's no flicker. */
+function inlineSvgTextStyles(root: HTMLElement): () => void {
+  const els = Array.from(root.querySelectorAll('text, tspan')) as SVGElement[];
+  const saved: Array<[SVGElement, string | null]> = [];
+  for (const el of els) {
+    saved.push([el, el.getAttribute('style')]);
+    const cs = getComputedStyle(el);
+    el.style.fontSize = cs.fontSize;
+    el.style.fontFamily = cs.fontFamily;
+    el.style.fontWeight = cs.fontWeight;
+    el.style.letterSpacing = cs.letterSpacing;
+    if (cs.fill && cs.fill !== 'none') el.style.fill = cs.fill;
+  }
+  return () => {
+    for (const [el, prev] of saved) {
+      if (prev === null) el.removeAttribute('style');
+      else el.setAttribute('style', prev);
+    }
+  };
+}
+
 /** Parse a `view::<id>` draggable id into its numeric pokemon id, or null. */
 function parseDragId(id: string): number | null {
   if (!id.startsWith('view::')) return null;
@@ -919,8 +944,31 @@ export function ViewPage() {
       groupSpecial: groupSpecialAtEnd,
     });
     try {
+      // When the detailed-stats panel is showing, rasterize it (its natural,
+      // un-transformed render — the inner ref holds the scaled wrapper, so its
+      // child is the full-size panel) and hand it to the exporter to composite
+      // beside the grid. Best-effort: if capture fails, export the grid alone.
+      let statsCanvas: HTMLCanvasElement | null = null;
+      const statsNode = statsContentRef.current?.firstElementChild as HTMLElement | undefined;
+      if (showStatsPanel && statsNode) {
+        // html-to-image drops class-based font-size on SVG <text>, rendering the
+        // chart labels ~1.4x too big. Inline the *computed* text styles first so
+        // they survive the clone (setting them to their current values is a no-op
+        // visually, so there's no flicker), then revert after capture.
+        const revert = inlineSvgTextStyles(statsNode);
+        try {
+          const { toCanvas } = await import('html-to-image');
+          await document.fonts?.ready;
+          statsCanvas = await toCanvas(statsNode, { pixelRatio: 4, backgroundColor: undefined });
+        } catch (e) {
+          console.error('Stats capture failed; exporting grid only:', e);
+        } finally {
+          revert();
+        }
+      }
       const blob = await generateExportImage(sorted, {
         sections: showSectionOverlays ? sections : null,
+        statsCanvas,
       });
       await shareOrDownload(blob, `my151.png`);
     } catch (err) {
@@ -929,7 +977,7 @@ export function ViewPage() {
     } finally {
       setExporting(false);
     }
-  }, [sorted, exporting, showSectionOverlays, sections, sortOption, groupSpecialAtEnd]);
+  }, [sorted, exporting, showSectionOverlays, sections, sortOption, groupSpecialAtEnd, showStatsPanel]);
 
   const dragOverlayPokemon = dragLineIds
     ? dragLineIds.map((id) => sorted.find((p) => p.id === id)).filter((p): p is Pokemon => !!p)

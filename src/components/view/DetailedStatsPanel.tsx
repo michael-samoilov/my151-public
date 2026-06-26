@@ -64,7 +64,7 @@ function alignHistograms(
  *  - 'card-title-out' : title on the canvas, chart on a shadowed card (analytics look)
  *  - 'card-title-in'  : title + chart together on one shadowed card */
 export type StatsVariant = 'bare' | 'card-title-out' | 'card-title-in';
-const CARD_CHROME = 'bg-card rounded-lg shadow-elevated p-3';
+const CARD_CHROME = 'bg-card rounded-lg shadow-elevated py-3 px-5';
 
 function Card({ title, subtitle, children, variant }: { title: string; subtitle?: string; children: React.ReactNode; variant: StatsVariant }) {
   const titleEl = (

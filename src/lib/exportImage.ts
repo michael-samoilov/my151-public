@@ -259,12 +259,17 @@ function drawPokeball(
  */
 export async function generateExportImage(
   pokemon: Pokemon[],
-  options: { sections?: Record<string, number[]> | null } = {},
+  options: {
+    sections?: Record<string, number[]> | null;
+    /** Pre-rasterized detailed-stats panel to composite to the right of the grid. */
+    statsCanvas?: HTMLCanvasElement | null;
+  } = {},
 ): Promise<Blob> {
   const count = pokemon.length;
   if (count === 0) throw new Error('No Pokemon to export');
 
   const sections = options.sections ?? null;
+  const statsCanvas = options.statsCanvas ?? null;
 
   // --- Outline geometry (only when section outlines are enabled) -----------
   let outline: {
@@ -347,8 +352,21 @@ export async function generateExportImage(
     loadSpandrelMasks(outline?.spandrelTypes ?? []),
   ]);
 
+  // Detailed-stats panel (if captured): composite it to the right of the grid,
+  // height-matched to the grid content. The grid keeps its own width `w` for its
+  // internal centering (last row, footer); the canvas just grows to the right.
+  const STATS_GAP = TILE * 0.6;
+  const statsTargetH = footerTop - PAD_TOP; // grid content height
+  const stats = statsCanvas && statsCanvas.height > 0
+    ? (() => {
+        const drawW = statsTargetH * (statsCanvas.width / statsCanvas.height);
+        return { x: w - PAD_X + STATS_GAP, y: PAD_TOP, w: drawW, h: statsTargetH };
+      })()
+    : null;
+  const canvasW = stats ? stats.x + stats.w + PAD_X : w;
+
   const canvas = document.createElement('canvas');
-  canvas.width = w * SCALE;
+  canvas.width = canvasW * SCALE;
   canvas.height = h * SCALE;
   const ctx = canvas.getContext('2d')!;
 
@@ -358,7 +376,7 @@ export async function generateExportImage(
 
   // White background
   ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, w, h);
+  ctx.fillRect(0, 0, canvasW, h);
 
   // No top header — content starts immediately after PAD_TOP breathing room.
 
@@ -406,6 +424,14 @@ export async function generateExportImage(
         drawTile(ctx, x, y, pokemon[idx], sprites[idx], idx + 1);
       }
     }
+  }
+
+  // Detailed-stats panel to the right of the grid (smoothing on for the
+  // anti-aliased charts/text, then back off for the pixel sprites/footer icons).
+  if (stats) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(statsCanvas!, stats.x, stats.y, stats.w, stats.h);
+    ctx.imageSmoothingEnabled = false;
   }
 
   // Footer: two lines — insights (top, normal size) + "made with my151.app"
