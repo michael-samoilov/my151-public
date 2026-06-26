@@ -276,13 +276,14 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
         <svg width={width} height={chartHeight} className="overflow-visible">
           {/* Label column header (e.g. "TYPE", "GEN"). Sortable only when
               `labelSortable` is true — e.g. the gen chart uses natural-order
-              sort; the type chart does not. Suppressed when the label text is
-              hidden (the collapsed icon column has no room for it). */}
-          {labelHeader && !hideLabelText && (
+              sort; the type chart does not. With the label text hidden the header
+              centers over the (wide) icon column; otherwise it right-aligns to the
+              label+icon column edge. */}
+          {labelHeader && (
             <text
-              x={iconStart + iconSize}
+              x={hideLabelText ? iconStart + iconColW / 2 : iconStart + iconSize}
               y={headerBaseline}
-              textAnchor="end"
+              textAnchor={hideLabelText ? 'middle' : 'end'}
               fontWeight={600}
               fill={labelSortable && sortBy === 'label' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
               letterSpacing="0.05em"
@@ -422,7 +423,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                       height={iconBoxH}
                       preserveAspectRatio="xMidYMid meet"
                     />
-                  ) : d.icon(iconStart, y + barHeight / 2 - iconBoxH / 2, iconBoxH)
+                  ) : d.icon(iconStart + (iconColW - iconBoxH) / 2, y + barHeight / 2 - iconBoxH / 2, iconBoxH)
                 )}
 
                 {/* Count bar */}

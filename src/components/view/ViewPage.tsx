@@ -542,9 +542,6 @@ export function ViewPage() {
 
   const showSections = usePokedexStore((s) => s.viewShowSections);
   const showStats = usePokedexStore((s) => s.viewShowStats);
-  const statsVariant = usePokedexStore((s) => s.viewStatsVariant);
-  const statsTypeBadges = usePokedexStore((s) => s.viewStatsTypeBadges);
-  const statsHeights = usePokedexStore((s) => s.viewStatsHeights);
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
@@ -554,12 +551,10 @@ export function ViewPage() {
   const showSectionOverlays = showSections && sortOption === 'build-order';
 
   // Detailed-stats side panel (preview-only): needs enough Pokémon to be useful.
+  // Locked presentation: the grid on a raised card and each chart on its own card
+  // with the title inside ('card-title-in'), with type-name badges.
   const showStatsPanel = PREVIEW_FEATURES && showStats && count >= STATS_MIN_POKEMON;
-  // Presentation style (set in View settings): 'bare' draws the grid + charts on
-  // the canvas (export look); the card variants put the grid on a raised card and
-  // each chart on its own card, with the chart title above ('card-title-out') or
-  // inside ('card-title-in') the card.
-  const statsAsCards = showStatsPanel && statsVariant !== 'bare';
+  const statsAsCards = showStatsPanel;
 
   // Section geometry + the effective grid sizing factors. In outline mode the
   // grid gains inter-cell gaps and per-section label bands; folding those into
@@ -699,7 +694,7 @@ export function ViewPage() {
     ro.observe(el);
     measure();
     return () => ro.disconnect();
-  }, [statsBesideGrid, showStatsPanel, statsVariant]);
+  }, [statsBesideGrid, showStatsPanel]);
   const [exporting, setExporting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -1029,8 +1024,15 @@ export function ViewPage() {
                 onDragCancel={handleDragCancel}
               >
                 <div
-                  style={{ width: gridWidth, boxSizing: statsAsCards ? 'content-box' : undefined }}
-                  className={statsAsCards ? 'bg-card rounded-lg shadow-elevated p-3' : ''}
+                  style={{
+                    width: gridWidth,
+                    boxSizing: statsAsCards ? 'content-box' : undefined,
+                    // Match the stats cards' *visual* corner radius: they use
+                    // rounded-lg (var(--radius)) but are scaled by statsScale, so
+                    // the unscaled dex card needs the same radius pre-multiplied.
+                    borderRadius: statsAsCards ? `calc(var(--radius) * ${statsScale})` : undefined,
+                  }}
+                  className={statsAsCards ? 'bg-card shadow-elevated p-3' : ''}
                 >
                   {/* Grid + centered overflow row share one relative box so a
                       single overlay can draw outlines that span the boundary.
@@ -1126,12 +1128,12 @@ export function ViewPage() {
                     transformOrigin: 'top left',
                   }}
                 >
-                  <DetailedStatsPanel variant={statsVariant} typeBadges={statsTypeBadges} heights={statsHeights} />
+                  <DetailedStatsPanel />
                 </div>
               </div>
             ) : (
               <div className="w-full max-w-md mt-5 px-1">
-                <DetailedStatsPanel variant={statsVariant} typeBadges={statsTypeBadges} heights={statsHeights} />
+                <DetailedStatsPanel />
               </div>
             )
           )}

@@ -112,7 +112,7 @@ function HistogramLegend() {
  * page, reused here without its drill-down interactivity. Data comes from the
  * live store (same dex the grid shows).
  */
-export function DetailedStatsPanel({ className = '', variant = 'bare', typeBadges = false, heights = DEFAULT_STATS_HEIGHTS }: { className?: string; variant?: StatsVariant; typeBadges?: boolean; heights?: { type: number; region: number; bst: number } }) {
+export function DetailedStatsPanel({ className = '', variant = 'card-title-in', typeBadges = true, heights = DEFAULT_STATS_HEIGHTS }: { className?: string; variant?: StatsVariant; typeBadges?: boolean; heights?: { type: number; region: number; bst: number } }) {
   const sections = usePokedexStore((s) => s.sections);
   const analytics = useAnalytics(false);
 
@@ -179,7 +179,7 @@ export function DetailedStatsPanel({ className = '', variant = 'bare', typeBadge
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
       <Card variant={variant} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
-        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows />
+        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText labelHeader="TYPE" iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows />
       </Card>
 
       <Card variant={variant} title="Generation Origin" subtitle="Which generation your Pokémon come from, vs the national dex.">
@@ -187,6 +187,7 @@ export function DetailedStatsPanel({ className = '', variant = 'bare', typeBadge
           data={[...genRows].sort((a, b) => parseInt(a.label.replace('Gen ', '')) - parseInt(b.label.replace('Gen ', '')))}
           rowHeight={24}
           hideLabelText
+          labelHeader="GEN"
           iconColAspect={iconColAspect}
           iconFillsRow={typeBadges}
           heightScale={heights.region}

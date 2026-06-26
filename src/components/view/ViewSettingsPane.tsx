@@ -5,7 +5,7 @@ import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { PREVIEW_FEATURES } from '@/lib/demoMode';
-import { STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS, type StatsVariant } from '@/components/view/DetailedStatsPanel';
+import { STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 
 interface SortOption {
   value: ViewSortOption;
@@ -13,12 +13,6 @@ interface SortOption {
   description: string;
 }
 
-/** Preview-only: how the View grid + detailed-stats charts are presented. */
-const STATS_PRESENTATION_OPTIONS: { value: StatsVariant; label: string; description: string }[] = [
-  { value: 'bare', label: 'On canvas', description: 'Grid and charts sit directly on the page (matches the export).' },
-  { value: 'card-title-out', label: 'Cards', description: 'Grid and each chart on raised cards; chart titles sit above the cards.' },
-  { value: 'card-title-in', label: 'Cards, titles inside', description: 'Like Cards, but each chart’s title sits on its own card.' },
-];
 
 const SORT_OPTIONS: SortOption[] = [
   {
@@ -31,7 +25,7 @@ const SORT_OPTIONS: SortOption[] = [
     value: 'regional',
     label: 'Regional Dex',
     description:
-      'Places each evolution line roughly as deep into your grid as its earliest member appeared in its home regional dex. Evolution lines stay bundled, and lines that were neighbors in the original dex stay adjacent.',
+      'Places each evolution line roughly as deep into your grid as its earliest member appeared in its home dex',
   },
   {
     value: 'national',
@@ -76,12 +70,6 @@ export function ViewSettingsPane({
   const setShowSections = usePokedexStore((s) => s.setViewShowSections);
   const showStats = usePokedexStore((s) => s.viewShowStats);
   const setShowStats = usePokedexStore((s) => s.setViewShowStats);
-  const statsVariant = usePokedexStore((s) => s.viewStatsVariant);
-  const setStatsVariant = usePokedexStore((s) => s.setViewStatsVariant);
-  const statsTypeBadges = usePokedexStore((s) => s.viewStatsTypeBadges);
-  const setStatsTypeBadges = usePokedexStore((s) => s.setViewStatsTypeBadges);
-  const statsHeights = usePokedexStore((s) => s.viewStatsHeights);
-  const setStatsHeights = usePokedexStore((s) => s.setViewStatsHeights);
   const placedCount = Object.values(sections).flat().length;
   const statsEnabled = placedCount >= STATS_MIN_POKEMON;
 
@@ -91,6 +79,7 @@ export function ViewSettingsPane({
   const [pendingGrouping, setPendingGrouping] = useState<boolean>(groupSpecialAtEnd);
   const [pendingCustomOrder, setPendingCustomOrder] = useState<number[] | null>(customOrder);
   const [pendingShowSections, setPendingShowSections] = useState<boolean>(showSections);
+  const [pendingShowStats, setPendingShowStats] = useState<boolean>(showStats);
 
   // Effective values — what the UI reads to render current selection state.
   // Desktop: live store values. Mobile: pending staged values.
@@ -98,6 +87,7 @@ export function ViewSettingsPane({
   const effGrouping = mobileSheet ? pendingGrouping : groupSpecialAtEnd;
   const effCustomOrder = mobileSheet ? pendingCustomOrder : customOrder;
   const effShowSections = mobileSheet ? pendingShowSections : showSections;
+  const effShowStats = mobileSheet ? pendingShowStats : showStats;
 
   // Seed source: what's currently visible on the grid (reflects live store state).
   const currentSorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
@@ -138,6 +128,12 @@ export function ViewSettingsPane({
     else setShowSections(!showSections);
   };
 
+  const handleToggleStats = () => {
+    if (!statsEnabled) return;
+    if (mobileSheet) setPendingShowStats((v) => !v);
+    else setShowStats(!showStats);
+  };
+
   const handleResetCustom = () => {
     if (mobileSheet) {
       setPendingCustomOrder(null);
@@ -160,6 +156,7 @@ export function ViewSettingsPane({
     (pendingSort !== sortOption ||
       pendingGrouping !== groupSpecialAtEnd ||
       pendingShowSections !== showSections ||
+      pendingShowStats !== showStats ||
       customOrderChanged);
 
   const handleApply = () => {
@@ -167,6 +164,7 @@ export function ViewSettingsPane({
     setGroupSpecialAtEnd(pendingGrouping);
     setCustomOrder(pendingCustomOrder);
     setShowSections(pendingShowSections);
+    setShowStats(pendingShowStats);
     onClose();
   };
 
@@ -332,7 +330,8 @@ export function ViewSettingsPane({
           </button>
         </div>
 
-        {/* Detailed stats — preview-only experiment */}
+        {/* Detailed stats — preview-only experiment. Staged like the other view
+            options (mobile sheet applies on "Update & View"). */}
         {PREVIEW_FEATURES && (
           <div className="px-3 pt-3 pb-2 border-t">
             <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
@@ -340,131 +339,30 @@ export function ViewSettingsPane({
             </h3>
             <button
               type="button"
-              onClick={() => statsEnabled && setShowStats(!showStats)}
+              onClick={handleToggleStats}
               disabled={!statsEnabled}
               className={`w-full text-left rounded-md px-3 py-2 transition-colors ${
                 !statsEnabled ? 'opacity-50 cursor-default' : 'cursor-pointer'
-              } ${showStats && statsEnabled ? 'bg-primary/10' : 'hover:bg-muted'}`}
+              } ${effShowStats && statsEnabled ? 'bg-primary/10' : 'hover:bg-muted'}`}
             >
               <div className="flex items-center gap-2">
                 <span
                   className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                    showStats && statsEnabled ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                    effShowStats && statsEnabled ? 'bg-primary border-primary' : 'border-muted-foreground/40'
                   }`}
                 >
-                  {showStats && statsEnabled && <Check className="w-3 h-3 text-primary-foreground" />}
+                  {effShowStats && statsEnabled && <Check className="w-3 h-3 text-primary-foreground" />}
                 </span>
-                <span className={`text-sm ${showStats && statsEnabled ? 'text-primary font-medium' : 'text-foreground'}`}>
+                <span className={`text-sm ${effShowStats && statsEnabled ? 'text-primary font-medium' : 'text-foreground'}`}>
                   Show detailed stats
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
                 {statsEnabled
-                  ? 'Adds type, region, and base-stat-total charts beside the grid.'
+                  ? 'Adds type, generation, and base-stat-total charts beside the grid.'
                   : `Add at least ${STATS_MIN_POKEMON} Pokémon to enable detailed stats (${placedCount}/${STATS_MIN_POKEMON}).`}
               </p>
             </button>
-
-            {/* Presentation style — only relevant once the stats are showing. */}
-            {showStats && statsEnabled && (
-              <div className="mt-1 ml-6">
-                <p className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                  Presentation
-                </p>
-                {STATS_PRESENTATION_OPTIONS.map((opt) => {
-                  const active = statsVariant === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setStatsVariant(opt.value)}
-                      className={`w-full text-left rounded-md px-3 py-1.5 transition-colors cursor-pointer ${
-                        active ? 'bg-primary/10' : 'hover:bg-muted'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center flex-shrink-0 ${
-                            active ? 'border-primary' : 'border-muted-foreground/40'
-                          }`}
-                        >
-                          {active && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
-                        </span>
-                        <span className={`text-sm ${active ? 'text-primary font-medium' : 'text-foreground'}`}>
-                          {opt.label}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 ml-[1.375rem] leading-snug">
-                        {opt.description}
-                      </p>
-                    </button>
-                  );
-                })}
-
-                {/* Type chart: full type-name badges vs. the small type symbols. */}
-                <button
-                  type="button"
-                  onClick={() => setStatsTypeBadges(!statsTypeBadges)}
-                  className={`w-full text-left rounded-md px-3 py-1.5 mt-1 transition-colors cursor-pointer ${
-                    statsTypeBadges ? 'bg-primary/10' : 'hover:bg-muted'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${
-                        statsTypeBadges ? 'bg-primary border-primary' : 'border-muted-foreground/40'
-                      }`}
-                    >
-                      {statsTypeBadges && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
-                    </span>
-                    <span className={`text-sm ${statsTypeBadges ? 'text-primary font-medium' : 'text-foreground'}`}>
-                      Type name labels
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5 ml-[1.375rem] leading-snug">
-                    Use the full type-name images (as in the type filter) instead of the type symbols.
-                  </p>
-                </button>
-
-                {/* Debug: per-chart height proportions. The stack is scaled to a
-                    fixed total height, so these only redistribute the split. */}
-                <div className="mt-2 px-3">
-                  <p className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-                    Debug · chart height split
-                  </p>
-                  {([
-                    ['type', 'Type'],
-                    ['region', 'Generation'],
-                    ['bst', 'Base stat total'],
-                  ] as const).map(([key, label]) => (
-                    <div key={key} className="flex items-center gap-2 py-0.5">
-                      <span className="text-xs text-foreground w-24 flex-shrink-0">{label}</span>
-                      <input
-                        type="range"
-                        min={0.3}
-                        max={2}
-                        step={0.05}
-                        value={statsHeights[key]}
-                        onChange={(e) =>
-                          setStatsHeights({ ...statsHeights, [key]: parseFloat(e.target.value) })
-                        }
-                        className="flex-1 cursor-pointer accent-primary"
-                      />
-                      <span className="text-xs text-muted-foreground tabular-nums w-8 text-right">
-                        {statsHeights[key].toFixed(2)}
-                      </span>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setStatsHeights({ ...DEFAULT_STATS_HEIGHTS })}
-                    className="text-xs text-primary hover:underline mt-1 cursor-pointer"
-                  >
-                    Reset to default
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
