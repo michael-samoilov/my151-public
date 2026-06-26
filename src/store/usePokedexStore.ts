@@ -61,6 +61,9 @@ interface PokedexState {
    *  canvas, export look), or on raised cards with the chart titles either above
    *  the card ('card-title-out') or inside it ('card-title-in'). */
   viewStatsVariant: StatsVariant;
+  /** Preview-only: show full type-name badge images (as used by the type filter)
+   *  instead of the small type symbols in the Type Distribution chart. */
+  viewStatsTypeBadges: boolean;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -93,6 +96,7 @@ interface PokedexState {
   setViewShowSections: (value: boolean) => void;
   setViewShowStats: (value: boolean) => void;
   setViewStatsVariant: (value: StatsVariant) => void;
+  setViewStatsTypeBadges: (value: boolean) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -123,6 +127,7 @@ export const usePokedexStore = create<PokedexState>()(
       viewShowSections: DEMO_MODE,
       viewShowStats: false,
       viewStatsVariant: 'bare' as StatsVariant,
+      viewStatsTypeBadges: false,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -308,6 +313,7 @@ export const usePokedexStore = create<PokedexState>()(
       setViewShowSections: (value) => set({ viewShowSections: value }),
       setViewShowStats: (value) => set({ viewShowStats: value }),
       setViewStatsVariant: (value) => set({ viewStatsVariant: value }),
+      setViewStatsTypeBadges: (value) => set({ viewStatsTypeBadges: value }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,

@@ -7,6 +7,11 @@ import { countTypes, buildTypeRows } from '@/components/analytics/typeDistributi
 import { ButterflyChart, type ButterflyRow } from '@/components/analytics/ButterflyChart';
 import { SuperimposedHistogram } from '@/components/analytics/SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
+import { typeBadgePath } from '@/data/type-ids';
+import type { TypeName } from '@/types/pokemon';
+
+/** Aspect ratio (w/h) of the Gen IX type-name badge sprites (128×40). */
+const TYPE_BADGE_ASPECT = 128 / 40;
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
@@ -102,7 +107,7 @@ function HistogramLegend() {
  * page, reused here without its drill-down interactivity. Data comes from the
  * live store (same dex the grid shows).
  */
-export function DetailedStatsPanel({ className = '', variant = 'bare' }: { className?: string; variant?: StatsVariant }) {
+export function DetailedStatsPanel({ className = '', variant = 'bare', typeBadges = false }: { className?: string; variant?: StatsVariant; typeBadges?: boolean }) {
   const sections = usePokedexStore((s) => s.sections);
   const analytics = useAnalytics(false);
 
@@ -110,9 +115,17 @@ export function DetailedStatsPanel({ className = '', variant = 'bare' }: { class
     const pokemon = getPokemonByIds(Object.values(sections).flat());
     const total = pokemon.length;
     if (total === 0) return [];
-    return buildTypeRows(countTypes(pokemon), total, fullBaseline.typeProp)
+    const rows = buildTypeRows(countTypes(pokemon), total, fullBaseline.typeProp)
       .sort((a, b) => b.deviation - a.deviation);
-  }, [sections]);
+    // Swap the small type symbol for the full type-name badge image when requested.
+    return typeBadges
+      ? rows.map((r) => ({ ...r, icon: typeBadgePath(r.label.toLowerCase() as TypeName) }))
+      : rows;
+  }, [sections, typeBadges]);
+
+  // Both charts share this icon-column aspect so their bar columns stay aligned
+  // even when the type chart's identifier is a wide name badge.
+  const iconColAspect = typeBadges ? TYPE_BADGE_ASPECT : 1;
 
   const genRows = useMemo<ButterflyRow[]>(
     () =>
@@ -161,7 +174,7 @@ export function DetailedStatsPanel({ className = '', variant = 'bare' }: { class
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
       <Card variant={variant} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
-        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText disableEmptyRows />
+        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText iconColAspect={iconColAspect} disableEmptyRows />
       </Card>
 
       <Card variant={variant} title="Region Distribution" subtitle="Which generation your Pokémon come from, vs the national dex.">
@@ -169,6 +182,7 @@ export function DetailedStatsPanel({ className = '', variant = 'bare' }: { class
           data={[...genRows].sort((a, b) => parseInt(a.label.replace('Gen ', '')) - parseInt(b.label.replace('Gen ', '')))}
           rowHeight={24}
           hideLabelText
+          iconColAspect={iconColAspect}
           disableEmptyRows
         />
       </Card>

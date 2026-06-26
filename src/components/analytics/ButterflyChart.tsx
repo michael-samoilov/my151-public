@@ -42,6 +42,11 @@ interface ButterflyChartProps {
    *  the chart bodies reclaim the freed width. Only sensible when every row has an
    *  icon that stands on its own (type symbols, numbered gen badges). */
   hideLabelText?: boolean;
+  /** Width-to-height ratio reserved for the icon column (default 1 = square). Use
+   *  >1 for wide identifiers like type-name badges. String icons fill the column at
+   *  this aspect; function icons still render square (left-aligned in the column),
+   *  so two charts can share an aspect to keep their bar columns aligned. */
+  iconColAspect?: number;
   /** When true, the label-column header is clickable and toggles `sortBy='label'`.
    *  Default false: the label header is display-only. */
   labelSortable?: boolean;
@@ -57,7 +62,7 @@ interface ButterflyChartProps {
   countDenominator?: number;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, hideLabelText }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, hideLabelText, iconColAspect = 1 }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hoveredSort, setHoveredSort] = useState<'count' | 'deviation' | 'label' | null>(null);
@@ -95,6 +100,8 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   // today, desktop proportions match mobile (just larger).
   const chartScale = width > 0 ? Math.max(1, Math.min(width / 360, 2)) : 1;
   const iconSize = hasIcons ? 14 * chartScale : 0;
+  // Reserved icon-column width. Square by default; wider for type-name badges etc.
+  const iconColW = iconSize * iconColAspect;
   // With label text hidden the column collapses to just the icon (flush left); the
   // freed width flows into the chart bodies below via labelColEnd.
   const labelWidth = hideLabelText ? 0 : 42 * chartScale;
@@ -115,7 +122,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const iconStart = hideLabelText ? 0 : labelWidth + iconGap;
 
   // Column A: labels + icons (fixed width)
-  const labelColEnd = iconStart + iconSize + gap;
+  const labelColEnd = iconStart + iconColW + gap;
 
   // Determine directionality BEFORE width distribution
   const countHasNeg = scoreMode ? data.some(d => d.count < 0) : false;
@@ -401,8 +408,9 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                       href={d.icon}
                       x={iconStart}
                       y={y + barHeight / 2 - iconSize / 2}
-                      width={iconSize}
+                      width={iconColW}
                       height={iconSize}
+                      preserveAspectRatio="xMidYMid meet"
                     />
                   ) : d.icon(iconStart, y + barHeight / 2 - iconSize / 2, iconSize)
                 )}

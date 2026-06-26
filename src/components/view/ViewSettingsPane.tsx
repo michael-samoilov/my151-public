@@ -78,6 +78,8 @@ export function ViewSettingsPane({
   const setShowStats = usePokedexStore((s) => s.setViewShowStats);
   const statsVariant = usePokedexStore((s) => s.viewStatsVariant);
   const setStatsVariant = usePokedexStore((s) => s.setViewStatsVariant);
+  const statsTypeBadges = usePokedexStore((s) => s.viewStatsTypeBadges);
+  const setStatsTypeBadges = usePokedexStore((s) => s.setViewStatsTypeBadges);
   const placedCount = Object.values(sections).flat().length;
   const statsEnabled = placedCount >= STATS_MIN_POKEMON;
 
@@ -396,6 +398,31 @@ export function ViewSettingsPane({
                     </button>
                   );
                 })}
+
+                {/* Type chart: full type-name badges vs. the small type symbols. */}
+                <button
+                  type="button"
+                  onClick={() => setStatsTypeBadges(!statsTypeBadges)}
+                  className={`w-full text-left rounded-md px-3 py-1.5 mt-1 transition-colors cursor-pointer ${
+                    statsTypeBadges ? 'bg-primary/10' : 'hover:bg-muted'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0 ${
+                        statsTypeBadges ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                      }`}
+                    >
+                      {statsTypeBadges && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                    </span>
+                    <span className={`text-sm ${statsTypeBadges ? 'text-primary font-medium' : 'text-foreground'}`}>
+                      Type name labels
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5 ml-[1.375rem] leading-snug">
+                    Use the full type-name images (as in the type filter) instead of the type symbols.
+                  </p>
+                </button>
               </div>
             )}
           </div>
