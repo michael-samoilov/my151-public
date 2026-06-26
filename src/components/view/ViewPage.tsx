@@ -65,8 +65,8 @@ const COLS = 10;
 
 // Detailed-stats column geometry, used when the stats sit to the right of the grid
 // on the same canvas (at any width). The grid reflows narrower so the whole
-// [grid · gap · stats] composition fits the viewport width.
-const STATS_GAP_FACTOR = 1; // ~one grid column of space between dex and stats
+// [grid · gap · stats] composition fits the viewport width. The gutter between dex
+// and stats is derived (= one card gap), not a fixed constant — see statsGapCols.
 // Width the charts are *rendered* at, in rem, before the uniform height-match scale.
 // A fixed rem width (not a multiple of the tile size) keeps the chart internals at
 // the width they're tuned for — ButterflyChart's chartScale floors at 1 below ~360px,
@@ -629,6 +629,11 @@ export function ViewPage() {
   // ratio × the reference-row height (both tileSize-independent), so the layout
   // settles without the old scale↔tileSize feedback loop.
   const [statsNatural, setStatsNatural] = useState({ w: 0, h: 0 });
+  // Prior frame's tile size — used only to express the cards' rem-based padding in
+  // grid-column units (rem and tiles are independent scales, so this can't be done
+  // analytically). Only matters in card mode; the container is stable, so it settles
+  // in one extra frame.
+  const [tilePx, setTilePx] = useState(0);
   const statsContentRef = useRef<HTMLDivElement>(null);
   const statsBesideGrid = showStatsPanel;
 
@@ -640,20 +645,41 @@ export function ViewPage() {
     return STATS_REF_ROWS + (showSectionOverlays ? bands * OUTLINE_HEAD + (STATS_REF_ROWS - 1) * OUTLINE_GAP : 0);
   }, [showSectionOverlays, layout.gridStartRows, layout.lastRowStartRows]);
 
-  // Stats footprint in grid columns: aspect (w/h) × reference-row height. Aspect is
+  // In card mode the stats are matched to the dex *card* (grid + p-3 top/bottom
+  // padding), not the bare grid, so the card edges line up top and bottom. p-3 =
+  // 0.75rem, so the card adds 1.5rem on each axis. Root font px is recovered from the
+  // fixed-rem natural-width measurement; the per-axis padding in columns needs the
+  // tile size (rem↔tile), taken from the prior frame.
+  const rootFontPx = statsNatural.w > 0 ? statsNatural.w / STATS_NATURAL_REM : 0;
+  const cardPadPx = statsAsCards ? 1.5 * rootFontPx : 0;
+  const cardPadCols = statsAsCards && tilePx > 0 ? cardPadPx / tilePx : 0;
+
+  // Stats footprint in grid columns: aspect (w/h) × target-height-in-tiles. Aspect is
   // rootFont-independent (both natural w and h scale with the root font), so this is
   // stable across zoom/device. Falls back to a typical aspect until first measured.
   const statsAspect = statsNatural.h > 0 ? statsNatural.w / statsNatural.h : 0.4;
-  const statsTileCols = statsBesideGrid ? statsAspect * dexRefRowsFactor : 0;
-  const statsColFactor = statsBesideGrid ? STATS_GAP_FACTOR + statsTileCols : 0;
+  const statsTileCols = statsBesideGrid ? statsAspect * (dexRefRowsFactor + cardPadCols) : 0;
+  // Gutter between dex and stats = one card gap (gap-4 = 1rem, scaled), so it equals
+  // the vertical gap between the stacked stats cards: (1rem / STATS_NATURAL_REM rem)
+  // of the stats' displayed width = statsTileCols / STATS_NATURAL_REM columns.
+  const statsGapCols = statsBesideGrid ? statsTileCols / STATS_NATURAL_REM : 0;
+  // The dex card's own left/right padding (content-box) also needs reserving.
+  const dexCardCols = statsAsCards ? cardPadCols : 0;
+  const statsColFactor = statsBesideGrid ? statsGapCols + statsTileCols : 0;
 
-  const { containerRef, tileSize } = useTileSize(layout.colFactor + statsColFactor, layout.rowFactor);
+  const { containerRef, tileSize } = useTileSize(layout.colFactor + dexCardCols + statsColFactor, layout.rowFactor);
 
-  // Derived (no feedback loop): the reference height the stats are scaled to, the
-  // scaled-down display width, and the scale factor (capped at 1 — only ever shrink).
+  useEffect(() => {
+    if (tileSize !== tilePx) setTilePx(tileSize);
+  }, [tileSize, tilePx]);
+
+  // The target height the stats stack is scaled to match: the dex card in card mode
+  // (so top/bottom edges align), or the bare 16-row grid otherwise. The display width
+  // follows from the uniform scale (capped at 1 — only ever shrink).
   const dexRefHeight = statsBesideGrid && tileSize > 0 ? dexRefRowsFactor * tileSize : 0;
-  const statsDisplayW = statsTileCols * tileSize;
-  const statsScale = statsNatural.w > 0 ? Math.min(1, statsDisplayW / statsNatural.w) : 1;
+  const statsTargetHeight = dexRefHeight > 0 ? dexRefHeight + cardPadPx : 0;
+  const statsScale = statsNatural.h > 0 ? Math.min(1, statsTargetHeight / statsNatural.h) : 1;
+  const statsDisplayW = statsNatural.w > 0 ? statsNatural.w * statsScale : statsTileCols * tileSize;
 
   // Measure the stats' natural (unscaled) box; ResizeObserver reports the layout
   // box, which a CSS transform does not affect — so this is stable. The natural
@@ -1085,8 +1111,8 @@ export function ViewPage() {
               <div
                 style={{
                   width: statsDisplayW || undefined,
-                  height: dexRefHeight || undefined,
-                  marginLeft: STATS_GAP_FACTOR * tileSize,
+                  height: statsTargetHeight || undefined,
+                  marginLeft: statsGapCols * tileSize,
                 }}
                 className="shrink-0 overflow-visible"
               >
