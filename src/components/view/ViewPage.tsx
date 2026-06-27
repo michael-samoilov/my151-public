@@ -1018,7 +1018,9 @@ export function ViewPage() {
           </div>
         </div>
 
-        <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto p-2">
+        {/* px-4 (not p-2): overflow-y-auto forces overflow-x to clip, so the extra
+            horizontal padding gives the cards' soft shadows room before that clip. */}
+        <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-2">
           <div className={statsBesideGrid ? 'flex flex-row items-start justify-center' : 'flex flex-col items-center'}>
           {tileSize > 0 && (() => {
             const {

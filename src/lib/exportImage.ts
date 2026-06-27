@@ -39,6 +39,9 @@ const DEX_CARD_PAD = 14;
 const CARD_RADIUS = 12;
 const CARD_BG = '#ffffff';
 const PAGE_BG = '#f7f7f8';
+// Outer margin around the carded content so the cards' soft shadow has room and
+// isn't clipped at the canvas edge.
+const CARD_SHADOW_ROOM = 20;
 const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
 const SCALE = 4; // SPRITE * SCALE = 192 = exactly 2× native 96px sprites
 
@@ -365,6 +368,10 @@ export async function generateExportImage(
   // card + stats. Grid-only exports skip the card entirely (unchanged white look).
   const willCard = !!(statsCanvas && statsCanvas.height > 0);
   const cardPad = willCard ? DEX_CARD_PAD : 0;
+  // Outer margins: roomy when carded (so card shadows aren't clipped at the canvas
+  // edge), tight otherwise (unchanged grid-only export).
+  const mx = willCard ? CARD_SHADOW_ROOM : PAD_X;
+  const my = willCard ? CARD_SHADOW_ROOM : PAD_TOP;
   const dexContentW = w - PAD_X * 2;
   const dexContentH = footerTop - PAD_TOP;
   const dexCardW = dexContentW + cardPad * 2;
@@ -374,16 +381,16 @@ export async function generateExportImage(
   const stats = willCard
     ? (() => {
         const drawW = dexCardH * (statsCanvas!.width / statsCanvas!.height);
-        return { x: PAD_X + dexCardW + STATS_GAP, y: PAD_TOP, w: drawW, h: dexCardH };
+        return { x: mx + dexCardW + STATS_GAP, y: my, w: drawW, h: dexCardH };
       })()
     : null;
-  const canvasW = stats ? stats.x + stats.w + PAD_X : w;
+  const canvasW = stats ? stats.x + stats.w + mx : w;
 
   // Footer sits below the dex card (a clear gap, like the app footer below the
   // fold), centered under the whole image rather than just the grid.
   const footerSep = stats ? 22 : 0;
   const footerCenterX = canvasW / 2;
-  footerTop = PAD_TOP + dexCardH;
+  footerTop = my + dexCardH;
   h = footerTop + footerSep + PAD_BOTTOM;
 
   const canvas = document.createElement('canvas');
@@ -410,14 +417,16 @@ export async function generateExportImage(
     ctx.shadowOffsetY = 4;
     ctx.fillStyle = CARD_BG;
     ctx.beginPath();
-    ctx.roundRect(PAD_X, PAD_TOP, dexCardW, dexCardH, CARD_RADIUS);
+    ctx.roundRect(mx, my, dexCardW, dexCardH, CARD_RADIUS);
     ctx.fill();
     ctx.restore();
   }
 
-  // Shift the grid in by the card padding (no-op when not carded).
+  // Shift the grid to sit inside the card (no-op when not carded: mx=PAD_X,
+  // my=PAD_TOP, cardPad=0). drawTile maps through the live transform, so sprites
+  // follow this translate too.
   ctx.save();
-  ctx.translate(cardPad, cardPad);
+  ctx.translate(mx + cardPad - PAD_X, my + cardPad - PAD_TOP);
 
   // No top header — content starts immediately after PAD_TOP breathing room.
 
@@ -776,13 +785,17 @@ function drawTile(
   drawPokeball(ctx, cx, cy, r, primary, secondary);
 
   if (sprite) {
-    // Draw sprite at exact integer multiple of native resolution
-    // to preserve pixel art without aliasing artifacts
+    // Draw sprite at exact integer multiple of native resolution to preserve
+    // pixel art without aliasing artifacts. We reset to the identity transform
+    // (raw canvas pixels) for this, so map the tile centre through the *current*
+    // transform first — otherwise any active translate (e.g. the dex-card offset)
+    // is dropped and the sprite drifts off its pokeball.
     ctx.save();
+    const m = ctx.getTransform();
     ctx.setTransform(1, 0, 0, 1, 0, 0); // reset to identity (canvas pixels)
     const drawSize = SPRITE * SCALE; // 192px = exactly 2× native 96px
-    const sx = cx * SCALE - drawSize / 2;
-    const sy = cy * SCALE - drawSize / 2;
+    const sx = m.a * cx + m.c * cy + m.e - drawSize / 2;
+    const sy = m.b * cx + m.d * cy + m.f - drawSize / 2;
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(sprite, sx, sy, drawSize, drawSize);
     ctx.restore();
