@@ -39,9 +39,6 @@ const DEX_CARD_PAD = 14;
 const CARD_RADIUS = 12;
 const CARD_BG = '#ffffff';
 const PAGE_BG = '#f7f7f8';
-// Outer margin around the carded content so the cards' soft shadow has room and
-// isn't clipped at the canvas edge.
-const CARD_SHADOW_ROOM = 20;
 const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
 const SCALE = 4; // SPRITE * SCALE = 192 = exactly 2× native 96px sprites
 
@@ -368,10 +365,6 @@ export async function generateExportImage(
   // card + stats. Grid-only exports skip the card entirely (unchanged white look).
   const willCard = !!(statsCanvas && statsCanvas.height > 0);
   const cardPad = willCard ? DEX_CARD_PAD : 0;
-  // Outer margins: roomy when carded (so card shadows aren't clipped), tight
-  // otherwise (unchanged grid-only export).
-  const mx = willCard ? CARD_SHADOW_ROOM : PAD_X;
-  const my = willCard ? CARD_SHADOW_ROOM : PAD_TOP;
   const dexContentW = w - PAD_X * 2;
   const dexContentH = footerTop - PAD_TOP;
   const dexCardW = dexContentW + cardPad * 2;
@@ -381,16 +374,16 @@ export async function generateExportImage(
   const stats = willCard
     ? (() => {
         const drawW = dexCardH * (statsCanvas!.width / statsCanvas!.height);
-        return { x: mx + dexCardW + STATS_GAP, y: my, w: drawW, h: dexCardH };
+        return { x: PAD_X + dexCardW + STATS_GAP, y: PAD_TOP, w: drawW, h: dexCardH };
       })()
     : null;
-  const canvasW = stats ? stats.x + stats.w + mx : w;
+  const canvasW = stats ? stats.x + stats.w + PAD_X : w;
 
   // Footer sits below the dex card (a clear gap, like the app footer below the
   // fold), centered under the whole image rather than just the grid.
   const footerSep = stats ? 22 : 0;
   const footerCenterX = canvasW / 2;
-  footerTop = my + dexCardH;
+  footerTop = PAD_TOP + dexCardH;
   h = footerTop + footerSep + PAD_BOTTOM;
 
   const canvas = document.createElement('canvas');
@@ -417,15 +410,14 @@ export async function generateExportImage(
     ctx.shadowOffsetY = 4;
     ctx.fillStyle = CARD_BG;
     ctx.beginPath();
-    ctx.roundRect(mx, my, dexCardW, dexCardH, CARD_RADIUS);
+    ctx.roundRect(PAD_X, PAD_TOP, dexCardW, dexCardH, CARD_RADIUS);
     ctx.fill();
     ctx.restore();
   }
 
-  // Shift the grid to sit inside the card (no-op when not carded: mx=PAD_X,
-  // my=PAD_TOP, cardPad=0).
+  // Shift the grid in by the card padding (no-op when not carded).
   ctx.save();
-  ctx.translate(mx + cardPad - PAD_X, my + cardPad - PAD_TOP);
+  ctx.translate(cardPad, cardPad);
 
   // No top header — content starts immediately after PAD_TOP breathing room.
 
