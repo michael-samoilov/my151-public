@@ -32,6 +32,13 @@ const PAD_X = 12;
 const PAD_TOP = 8;
 const PAD_BOTTOM = 28;
 const BG = '#ffffff';
+// When the stats panel is composited, the grid is wrapped in a white card (like
+// the website). Padding around the grid inside the card, corner radius, and the
+// muted page background the cards sit on.
+const DEX_CARD_PAD = 14;
+const CARD_RADIUS = 12;
+const CARD_BG = '#ffffff';
+const PAGE_BG = '#f7f7f8';
 const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
 const SCALE = 4; // SPRITE * SCALE = 192 = exactly 2× native 96px sprites
 
@@ -352,25 +359,32 @@ export async function generateExportImage(
     loadSpandrelMasks(outline?.spandrelTypes ?? []),
   ]);
 
-  // Detailed-stats panel (if captured): composite it to the right of the grid,
-  // height-matched to the grid content. The grid keeps its own width `w` for its
-  // internal centering (last row, footer); the canvas just grows to the right.
+  // Detailed-stats panel (if captured): the grid is wrapped in a white card (like
+  // the website) and the stats are composited to its right, height-matched to the
+  // dex card. The grid is shifted in by the card padding; the canvas grows for the
+  // card + stats. Grid-only exports skip the card entirely (unchanged white look).
+  const willCard = !!(statsCanvas && statsCanvas.height > 0);
+  const cardPad = willCard ? DEX_CARD_PAD : 0;
+  const dexContentW = w - PAD_X * 2;
+  const dexContentH = footerTop - PAD_TOP;
+  const dexCardW = dexContentW + cardPad * 2;
+  const dexCardH = dexContentH + cardPad * 2;
+
   const STATS_GAP = TILE * 0.6;
-  const statsTargetH = footerTop - PAD_TOP; // grid content height
-  const stats = statsCanvas && statsCanvas.height > 0
+  const stats = willCard
     ? (() => {
-        const drawW = statsTargetH * (statsCanvas.width / statsCanvas.height);
-        return { x: w - PAD_X + STATS_GAP, y: PAD_TOP, w: drawW, h: statsTargetH };
+        const drawW = dexCardH * (statsCanvas!.width / statsCanvas!.height);
+        return { x: PAD_X + dexCardW + STATS_GAP, y: PAD_TOP, w: drawW, h: dexCardH };
       })()
     : null;
   const canvasW = stats ? stats.x + stats.w + PAD_X : w;
 
-  // With stats, drop the credit/insights footer further below the content (a
-  // clear gap, like the app footer sitting below the fold) and center it under the
-  // whole image rather than just the grid.
+  // Footer sits below the dex card (a clear gap, like the app footer below the
+  // fold), centered under the whole image rather than just the grid.
   const footerSep = stats ? 22 : 0;
   const footerCenterX = canvasW / 2;
-  h += footerSep;
+  footerTop = PAD_TOP + dexCardH;
+  h = footerTop + footerSep + PAD_BOTTOM;
 
   const canvas = document.createElement('canvas');
   canvas.width = canvasW * SCALE;
@@ -382,10 +396,28 @@ export async function generateExportImage(
   ctx.imageSmoothingEnabled = false;
 
   // Background. With the stats panel present, use the app's muted page background
-  // (not pure white) so the white stat cards read as cards — matching the website,
-  // where white cards sit on the muted page bg. A grid-only export stays white.
-  ctx.fillStyle = stats ? '#f7f7f8' : BG;
+  // (not pure white) so the white cards read as cards — matching the website. A
+  // grid-only export stays white.
+  ctx.fillStyle = stats ? PAGE_BG : BG;
   ctx.fillRect(0, 0, canvasW, h);
+
+  // Dex card behind the grid (white rounded rect + soft shadow), matching the
+  // stat cards. Drawn before the grid; the grid is then shifted in by cardPad.
+  if (cardPad > 0) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.06)';
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = CARD_BG;
+    ctx.beginPath();
+    ctx.roundRect(PAD_X, PAD_TOP, dexCardW, dexCardH, CARD_RADIUS);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Shift the grid in by the card padding (no-op when not carded).
+  ctx.save();
+  ctx.translate(cardPad, cardPad);
 
   // No top header — content starts immediately after PAD_TOP breathing room.
 
@@ -434,6 +466,8 @@ export async function generateExportImage(
       }
     }
   }
+
+  ctx.restore(); // end grid translate
 
   // Detailed-stats panel to the right of the grid (smoothing on for the
   // anti-aliased charts/text, then back off for the pixel sprites/footer icons).
