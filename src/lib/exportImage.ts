@@ -365,6 +365,13 @@ export async function generateExportImage(
     : null;
   const canvasW = stats ? stats.x + stats.w + PAD_X : w;
 
+  // With stats, drop the credit/insights footer further below the content (a
+  // clear gap, like the app footer sitting below the fold) and center it under the
+  // whole image rather than just the grid.
+  const footerSep = stats ? 22 : 0;
+  const footerCenterX = canvasW / 2;
+  h += footerSep;
+
   const canvas = document.createElement('canvas');
   canvas.width = canvasW * SCALE;
   canvas.height = h * SCALE;
@@ -374,8 +381,10 @@ export async function generateExportImage(
   ctx.scale(SCALE, SCALE);
   ctx.imageSmoothingEnabled = false;
 
-  // White background
-  ctx.fillStyle = BG;
+  // Background. With the stats panel present, use the app's muted page background
+  // (not pure white) so the white stat cards read as cards — matching the website,
+  // where white cards sit on the muted page bg. A grid-only export stays white.
+  ctx.fillStyle = stats ? '#f7f7f8' : BG;
   ctx.fillRect(0, 0, canvasW, h);
 
   // No top header — content starts immediately after PAD_TOP breathing room.
@@ -436,8 +445,8 @@ export async function generateExportImage(
 
   // Footer: two lines — insights (top, normal size) + "made with my151.app"
   // (bottom, smaller so the credit reads quietly rather than as an ad).
-  const line1Y = footerTop + 10;
-  const line2Y = footerTop + 21;
+  const line1Y = footerTop + footerSep + 10;
+  const line2Y = footerTop + footerSep + 21;
   const zinc = '#a1a1aa';
 
   // Insights line — original sizes.
@@ -549,7 +558,7 @@ export async function generateExportImage(
     for (const seg of segs) {
       totalW += seg.kind === 'icon' ? (seg.sz + ICON_GAP) : ctx.measureText(seg.text).width;
     }
-    let tx = (w - totalW) / 2;
+    let tx = footerCenterX - totalW / 2;
     for (const seg of segs) {
       if (seg.kind === 'icon') {
         ctx.drawImage(seg.img, tx, y - seg.sz / 2, seg.sz, seg.sz);
