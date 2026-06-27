@@ -176,8 +176,10 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
     [analytics.yourBstHistogram, analytics.nationalBstHistogram],
   );
 
+    // p-3 gives the cards' shadows room inside the panel box, so they aren't
+    // clipped by the scroll container (on-screen) or the capture box (export).
   return (
-    <div className={`flex flex-col gap-4 ${className}`}>
+    <div className={`flex flex-col gap-4 p-3 ${className}`}>
       <Card variant={variant} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
         <ButterflyChart data={typeRows} rowHeight={16} hideLabelText labelHeader="TYPE" iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows />
       </Card>

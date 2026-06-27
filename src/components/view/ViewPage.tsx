@@ -77,7 +77,8 @@ const COLS = 10;
 // 19.7rem (≈315px): the type/gen charts drop their per-row label text (icon only),
 // freeing the ~45px label column, so the chart bodies keep the ~295px width that was
 // overlap-free at the old 360px-with-labels render while the column reads narrower.
-const STATS_NATURAL_REM = 19.7;
+// 19.7rem of charts + 0.75rem (p-3) shadow-room padding on each side of the panel.
+const STATS_NATURAL_REM = 21.2;
 // The dex/stats heights are matched against this many rows (a full 151 = 16). A
 // taller dex (>151) does NOT stretch the stats further — they stay at 16-row height.
 const STATS_REF_ROWS = 16;
