@@ -387,12 +387,12 @@ export async function generateExportImage(
   // the website) and the stats are drawn natively to its right, height-matched to
   // the dex card. The grid is shifted in by the card padding; the canvas grows for
   // the card + stats. Grid-only exports skip the card entirely (unchanged white).
-  const statsNatH = (() => {
-    if (!statsData || !statsHeights) return 0;
+  const statsLayout = (() => {
+    if (!statsData || !statsHeights) return null;
     const mc = document.createElement('canvas').getContext('2d');
-    if (!mc) return 0;
-    return measureStatsPanel(mc, statsData, statsHeights).h;
+    return mc ? measureStatsPanel(mc, statsData, statsHeights) : null;
   })();
+  const statsNatH = statsLayout?.h ?? 0;
   const willCard = !!(statsData && statsNatH > 0);
   const cardPad = willCard ? DEX_CARD_PAD : 0;
   // Outer margins: roomy when carded (so card shadows aren't clipped at the canvas
@@ -509,9 +509,24 @@ export async function generateExportImage(
   ctx.restore(); // end grid translate
 
   // Detailed-stats panel to the right of the grid — drawn natively (NOT via
-  // html-to-image, which hangs/fails on iOS). Smoothing on for the anti-aliased
-  // charts/text + badge images, then back off for the pixel sprites/footer icons.
-  if (stats && statsData && statsHeights) {
+  // html-to-image, which hangs/fails on iOS).
+  if (stats && statsData && statsHeights && statsLayout) {
+    // Card backgrounds drawn in the export's logical space so their corner radius
+    // and soft shadow match the dex card exactly (same CARD_RADIUS + shadow).
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.06)';
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = CARD_BG;
+    for (const c of statsLayout.cards) {
+      ctx.beginPath();
+      ctx.roundRect(stats.x, stats.y + c.y * stats.scale, STATS_NAT_W * stats.scale, c.h * stats.scale, CARD_RADIUS);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Chart/text content scaled on top (smoothing on for anti-aliased charts +
+    // badge images, then back off for the pixel sprites/footer icons).
     ctx.save();
     ctx.imageSmoothingEnabled = true;
     ctx.translate(stats.x, stats.y);

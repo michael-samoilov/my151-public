@@ -341,12 +341,19 @@ function genIcon(gen: number): IconDrawer {
   };
 }
 
-/** Build the per-row icon drawer for a type-name badge image (contain-fit). */
+/** Build the per-row icon drawer for a type-name badge image. Contain-fit and
+ *  centre within the column (mirrors the on-screen SVG's
+ *  preserveAspectRatio="xMidYMid meet"); the badge sprite's aspect (5:1) differs
+ *  from the column's, so stretching to fill would distort it vertically. */
 function typeBadgeIcon(img: HTMLImageElement | null): IconDrawer {
   return (ctx, x, y, w, h) => {
     if (!img) return;
-    // Badge aspect (128/40) matches the column aspect, so it fills the box.
-    ctx.drawImage(img, x, y, w, h);
+    const iw = img.naturalWidth || 1;
+    const ih = img.naturalHeight || 1;
+    const s = Math.min(w / iw, h / ih);
+    const dw = iw * s;
+    const dh = ih * s;
+    ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
   };
 }
 
@@ -358,15 +365,22 @@ interface CardSpec {
   drawChart: (ctx: CanvasRenderingContext2D, x: number, y: number) => void;
 }
 
+export interface StatsCardBox { y: number; h: number }
+export interface StatsLayout { w: number; h: number; cards: StatsCardBox[] }
+
 /** Lay out + (optionally) draw the whole stats panel at natural scale, top-left
- *  at the current origin. Returns the panel's natural { w, h }. */
+ *  at the current origin. Returns the panel's natural { w, h } and per-card boxes
+ *  (natural coords). When `cardBg` is false the white card backgrounds are NOT
+ *  filled here — the caller draws them (with shadow) in the export's logical
+ *  space so their radius/shadow match the dex card. */
 function renderPanel(
   ctx: CanvasRenderingContext2D,
   data: DetailedStatsData,
   badges: Map<string, HTMLImageElement>,
   heights: StatsHeights,
   draw: boolean,
-): { w: number; h: number } {
+  cardBg: boolean,
+): StatsLayout {
   const typeRows: ButterflyRowInput[] = data.typeData.map((d) => ({
     count: d.count,
     deviation: d.deviation,
@@ -402,6 +416,7 @@ function renderPanel(
     },
   ];
 
+  const boxes: StatsCardBox[] = [];
   let cursorY = 0;
   for (const card of cards) {
     // Measure content height.
@@ -411,12 +426,15 @@ function renderPanel(
     const chartH = card.chartH(false);
     const contentH = TITLE_LH + 2 + subLines.length * SUB_LH + 8 + legendH + chartH;
     const cardH = CARD_PADY * 2 + contentH;
+    boxes.push({ y: cursorY, h: cardH });
 
     if (draw) {
-      // Card background.
-      ctx.fillStyle = CARD_BG;
-      roundRect(ctx, 0, cursorY, STATS_NAT_W, cardH, CARD_RADIUS);
-      ctx.fill();
+      // Card background (skipped when the caller draws it in logical space).
+      if (cardBg) {
+        ctx.fillStyle = CARD_BG;
+        roundRect(ctx, 0, cursorY, STATS_NAT_W, cardH, CARD_RADIUS);
+        ctx.fill();
+      }
 
       let y = cursorY + CARD_PADY;
       const x = CARD_PADX;
@@ -447,7 +465,7 @@ function renderPanel(
     cursorY += cardH + CARD_GAP;
   }
   const totalH = cursorY - CARD_GAP;
-  return { w: STATS_NAT_W, h: totalH };
+  return { w: STATS_NAT_W, h: totalH, cards: boxes };
 }
 
 function drawLegend(ctx: CanvasRenderingContext2D, x: number, y: number) {
@@ -493,22 +511,24 @@ export function statsBadgeUrls(data: DetailedStatsData): { type: string; url: st
   });
 }
 
-/** Natural height of the panel for a given dataset (for aspect-ratio sizing). */
+/** Natural size + per-card boxes for a dataset (for aspect-ratio sizing and for
+ *  drawing the card backgrounds/shadows in the export's logical space). */
 export function measureStatsPanel(
   ctx: CanvasRenderingContext2D,
   data: DetailedStatsData,
   heights: StatsHeights,
-): { w: number; h: number } {
-  return renderPanel(ctx, data, new Map(), heights, false);
+): StatsLayout {
+  return renderPanel(ctx, data, new Map(), heights, false, true);
 }
 
-/** Draw the stats panel at natural scale with its top-left at the current
- *  origin (caller applies translate + scale beforehand). */
+/** Draw the stats panel CONTENT (no card backgrounds) at natural scale with its
+ *  top-left at the current origin (caller applies translate + scale, and draws
+ *  the shadowed card backgrounds itself so they match the dex card). */
 export function drawStatsPanel(
   ctx: CanvasRenderingContext2D,
   data: DetailedStatsData,
   badges: Map<string, HTMLImageElement>,
   heights: StatsHeights,
 ) {
-  renderPanel(ctx, data, badges, heights, true);
+  renderPanel(ctx, data, badges, heights, true, false);
 }
