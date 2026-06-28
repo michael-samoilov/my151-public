@@ -280,7 +280,7 @@ export async function generateExportImage(
   options: {
     sections?: Record<string, number[]> | null;
     /** Detailed-stats data to redraw (natively) to the right of the grid. */
-    stats?: { data: DetailedStatsData; heights: StatsHeights } | null;
+    stats?: { data: DetailedStatsData; heights: StatsHeights; blackTitles?: boolean } | null;
   } = {},
 ): Promise<Blob> {
   const count = pokemon.length;
@@ -289,6 +289,7 @@ export async function generateExportImage(
   const sections = options.sections ?? null;
   const statsData = options.stats?.data ?? null;
   const statsHeights = options.stats?.heights ?? null;
+  const statsBlackTitles = options.stats?.blackTitles ?? false;
 
   // --- Outline geometry (only when section outlines are enabled) -----------
   let outline: {
@@ -531,7 +532,7 @@ export async function generateExportImage(
     ctx.imageSmoothingEnabled = true;
     ctx.translate(stats.x, stats.y);
     ctx.scale(stats.scale, stats.scale);
-    drawStatsPanel(ctx, statsData, statsBadges, statsHeights);
+    drawStatsPanel(ctx, statsData, statsBadges, statsHeights, statsBlackTitles);
     ctx.restore();
     ctx.imageSmoothingEnabled = false;
   }

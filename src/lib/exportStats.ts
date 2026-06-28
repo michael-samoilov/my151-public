@@ -1,5 +1,6 @@
 import { scaleBand, scaleLinear } from 'd3-scale';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
+import { MAX_LABEL_STRETCH } from '@/lib/sectionOutlines';
 import { typeBadgePath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
@@ -380,6 +381,7 @@ function renderPanel(
   heights: StatsHeights,
   draw: boolean,
   cardBg: boolean,
+  blackTitles: boolean,
 ): StatsLayout {
   const typeRows: ButterflyRowInput[] = data.typeData.map((d) => ({
     count: d.count,
@@ -440,10 +442,24 @@ function renderPanel(
       const x = CARD_PADX;
       // Title
       ctx.fillStyle = FG;
-      ctx.font = font(600, TITLE_SIZE);
       ctx.textAlign = 'left';
       ctx.textBaseline = 'alphabetic';
-      ctx.fillText(card.title, x, y + TITLE_SIZE);
+      if (blackTitles) {
+        // Outline-section style: Inter Black, uppercase, stretched (scaleX) to
+        // fill the card width, capped at the same MAX_LABEL_STRETCH the grid uses.
+        const up = card.title.toUpperCase();
+        ctx.font = font(900, TITLE_SIZE);
+        const tw = ctx.measureText(up).width;
+        const sx = tw > 0 ? Math.min(MAX_LABEL_STRETCH, CONTENT_W / tw) : 1;
+        ctx.save();
+        ctx.translate(x, y + TITLE_SIZE);
+        ctx.scale(sx, 1);
+        ctx.fillText(up, 0, 0);
+        ctx.restore();
+      } else {
+        ctx.font = font(600, TITLE_SIZE);
+        ctx.fillText(card.title, x, y + TITLE_SIZE);
+      }
       y += TITLE_LH + 2;
       // Subtitle
       ctx.fillStyle = MUTED;
@@ -518,7 +534,7 @@ export function measureStatsPanel(
   data: DetailedStatsData,
   heights: StatsHeights,
 ): StatsLayout {
-  return renderPanel(ctx, data, new Map(), heights, false, true);
+  return renderPanel(ctx, data, new Map(), heights, false, true, false);
 }
 
 /** Draw the stats panel CONTENT (no card backgrounds) at natural scale with its
@@ -529,6 +545,7 @@ export function drawStatsPanel(
   data: DetailedStatsData,
   badges: Map<string, HTMLImageElement>,
   heights: StatsHeights,
+  blackTitles = false,
 ) {
-  renderPanel(ctx, data, badges, heights, true, false);
+  renderPanel(ctx, data, badges, heights, true, false, blackTitles);
 }

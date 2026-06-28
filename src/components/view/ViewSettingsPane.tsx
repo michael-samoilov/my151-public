@@ -70,6 +70,8 @@ export function ViewSettingsPane({
   const setShowSections = usePokedexStore((s) => s.setViewShowSections);
   const showStats = usePokedexStore((s) => s.viewShowStats);
   const setShowStats = usePokedexStore((s) => s.setViewShowStats);
+  const statsBlackTitles = usePokedexStore((s) => s.viewStatsBlackTitles);
+  const setStatsBlackTitles = usePokedexStore((s) => s.setViewStatsBlackTitles);
   const placedCount = Object.values(sections).flat().length;
   const statsEnabled = placedCount >= STATS_MIN_POKEMON;
 
@@ -363,6 +365,34 @@ export function ViewSettingsPane({
                   : `Add at least ${STATS_MIN_POKEMON} Pokémon to enable detailed stats (${placedCount}/${STATS_MIN_POKEMON}).`}
               </p>
             </button>
+
+            {/* Debug: render stat-card titles like the outline section titles
+                (Inter Black, uppercase, stretched). Applies live; not staged. */}
+            {statsEnabled && effShowStats && (
+              <button
+                type="button"
+                onClick={() => setStatsBlackTitles(!statsBlackTitles)}
+                className={`w-full text-left rounded-md px-3 py-2 mt-1 cursor-pointer transition-colors ${
+                  statsBlackTitles ? 'bg-primary/10' : 'hover:bg-muted'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                      statsBlackTitles ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                    }`}
+                  >
+                    {statsBlackTitles && <Check className="w-3 h-3 text-primary-foreground" />}
+                  </span>
+                  <span className={`text-sm ${statsBlackTitles ? 'text-primary font-medium' : 'text-foreground'}`}>
+                    Debug: outline-style titles
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
+                  Inter Black, uppercase, stretched to fill the card — like the grid's section titles.
+                </p>
+              </button>
+            )}
           </div>
         )}
 

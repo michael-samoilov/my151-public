@@ -56,6 +56,9 @@ interface PokedexState {
   viewShowSections: boolean;
   /** Preview-only: whether the detailed-stats side panel is shown on the View. */
   viewShowStats: boolean;
+  /** Preview-only DEBUG: render stat-card titles in the outline-section style
+   *  (Inter Black, uppercase, stretched to fill the card width). Transient. */
+  viewStatsBlackTitles: boolean;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -87,6 +90,7 @@ interface PokedexState {
   setViewCustomOrder: (order: number[] | null) => void;
   setViewShowSections: (value: boolean) => void;
   setViewShowStats: (value: boolean) => void;
+  setViewStatsBlackTitles: (value: boolean) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -116,6 +120,7 @@ export const usePokedexStore = create<PokedexState>()(
       viewCustomOrder: null,
       viewShowSections: DEMO_MODE,
       viewShowStats: false,
+      viewStatsBlackTitles: false,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -300,6 +305,7 @@ export const usePokedexStore = create<PokedexState>()(
       setViewCustomOrder: (order) => set({ viewCustomOrder: order }),
       setViewShowSections: (value) => set({ viewShowSections: value }),
       setViewShowStats: (value) => set({ viewShowStats: value }),
+      setViewStatsBlackTitles: (value) => set({ viewStatsBlackTitles: value }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,
