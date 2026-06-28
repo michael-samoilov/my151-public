@@ -543,7 +543,6 @@ export function ViewPage() {
 
   const showSections = usePokedexStore((s) => s.viewShowSections);
   const showStats = usePokedexStore((s) => s.viewShowStats);
-  const statsBlackTitles = usePokedexStore((s) => s.viewStatsBlackTitles);
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
@@ -929,7 +928,7 @@ export function ViewPage() {
       // canvas drawing is the same reliable mechanism the grid uses.
       const blob = await generateExportImage(sorted, {
         sections: showSectionOverlays ? sections : null,
-        stats: showStatsPanel ? { data: statsData, heights: DEFAULT_STATS_HEIGHTS, blackTitles: statsBlackTitles } : null,
+        stats: showStatsPanel ? { data: statsData, heights: DEFAULT_STATS_HEIGHTS } : null,
       });
       await shareOrDownload(blob, `my151.png`);
     } catch (err) {
@@ -938,7 +937,7 @@ export function ViewPage() {
     } finally {
       setExporting(false);
     }
-  }, [sorted, exporting, showSectionOverlays, sections, sortOption, groupSpecialAtEnd, showStatsPanel, statsData, statsBlackTitles]);
+  }, [sorted, exporting, showSectionOverlays, sections, sortOption, groupSpecialAtEnd, showStatsPanel, statsData]);
 
   const dragOverlayPokemon = dragLineIds
     ? dragLineIds.map((id) => sorted.find((p) => p.id === id)).filter((p): p is Pokemon => !!p)
@@ -1139,12 +1138,12 @@ export function ViewPage() {
                     transformOrigin: 'top left',
                   }}
                 >
-                  <DetailedStatsPanel blackTitles={statsBlackTitles} />
+                  <DetailedStatsPanel />
                 </div>
               </div>
             ) : (
               <div className="w-full max-w-md mt-5 px-1">
-                <DetailedStatsPanel blackTitles={statsBlackTitles} />
+                <DetailedStatsPanel />
               </div>
             )
           )}

@@ -19,8 +19,13 @@ import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 
 export const STATS_NAT_W = 320;
 
-const CARD_GAP = 16;
-const CARD_PADX = 20; // px-5
+/** Vertical gap between stacked stat cards (natural units). Exported so the
+ *  exporter can make the dex↔stats horizontal gutter match it after scaling. */
+export const CARD_GAP = 16;
+/** Stat-card inner padding (natural units): px-5 horizontal, py-3 vertical. The
+ *  horizontal value is exported so the exporter can match the dex card's padding
+ *  to it (uniform content-to-edge spacing across all cards). */
+export const CARD_PADX = 20; // px-5
 const CARD_PADY = 12; // py-3
 const CARD_RADIUS = 8; // rounded-lg
 const CONTENT_W = STATS_NAT_W - CARD_PADX * 2;
@@ -381,7 +386,6 @@ function renderPanel(
   heights: StatsHeights,
   draw: boolean,
   cardBg: boolean,
-  blackTitles: boolean,
 ): StatsLayout {
   const typeRows: ButterflyRowInput[] = data.typeData.map((d) => ({
     count: d.count,
@@ -440,26 +444,20 @@ function renderPanel(
 
       let y = cursorY + CARD_PADY;
       const x = CARD_PADX;
-      // Title
+      // Title — outline-section style: Inter Black, uppercase, stretched (scaleX)
+      // to fill the card width, capped at the same MAX_LABEL_STRETCH the grid uses.
       ctx.fillStyle = FG;
       ctx.textAlign = 'left';
       ctx.textBaseline = 'alphabetic';
-      if (blackTitles) {
-        // Outline-section style: Inter Black, uppercase, stretched (scaleX) to
-        // fill the card width, capped at the same MAX_LABEL_STRETCH the grid uses.
-        const up = card.title.toUpperCase();
-        ctx.font = font(900, TITLE_SIZE);
-        const tw = ctx.measureText(up).width;
-        const sx = tw > 0 ? Math.min(MAX_LABEL_STRETCH, CONTENT_W / tw) : 1;
-        ctx.save();
-        ctx.translate(x, y + TITLE_SIZE);
-        ctx.scale(sx, 1);
-        ctx.fillText(up, 0, 0);
-        ctx.restore();
-      } else {
-        ctx.font = font(600, TITLE_SIZE);
-        ctx.fillText(card.title, x, y + TITLE_SIZE);
-      }
+      const up = card.title.toUpperCase();
+      ctx.font = font(900, TITLE_SIZE);
+      const tw = ctx.measureText(up).width;
+      const sx = tw > 0 ? Math.min(MAX_LABEL_STRETCH, CONTENT_W / tw) : 1;
+      ctx.save();
+      ctx.translate(x, y + TITLE_SIZE);
+      ctx.scale(sx, 1);
+      ctx.fillText(up, 0, 0);
+      ctx.restore();
       y += TITLE_LH + 2;
       // Subtitle
       ctx.fillStyle = MUTED;
@@ -534,7 +532,7 @@ export function measureStatsPanel(
   data: DetailedStatsData,
   heights: StatsHeights,
 ): StatsLayout {
-  return renderPanel(ctx, data, new Map(), heights, false, true, false);
+  return renderPanel(ctx, data, new Map(), heights, false, true);
 }
 
 /** Draw the stats panel CONTENT (no card backgrounds) at natural scale with its
@@ -545,7 +543,6 @@ export function drawStatsPanel(
   data: DetailedStatsData,
   badges: Map<string, HTMLImageElement>,
   heights: StatsHeights,
-  blackTitles = false,
 ) {
-  renderPanel(ctx, data, badges, heights, true, false, blackTitles);
+  renderPanel(ctx, data, badges, heights, true, false);
 }

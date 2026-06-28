@@ -6,7 +6,7 @@ import { typeIconPath } from '@/data/type-ids';
 import { GEN_BADGE_URIS } from '@/components/shared/GenBadge';
 import { STARTER_IDS } from '@/data/categories';
 import { ensureTypeMask } from '@/lib/typeSymbol';
-import { measureStatsPanel, drawStatsPanel, statsBadgeUrls, STATS_NAT_W, type StatsHeights } from './exportStats';
+import { measureStatsPanel, drawStatsPanel, statsBadgeUrls, STATS_NAT_W, CARD_PADX as STATS_CARD_PADX, CARD_GAP as STATS_CARD_GAP, type StatsHeights } from './exportStats';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 import {
   computeOutlineLayout,
@@ -35,9 +35,9 @@ const PAD_TOP = 8;
 const PAD_BOTTOM = 28;
 const BG = '#ffffff';
 // When the stats panel is composited, the grid is wrapped in a white card (like
-// the website). Padding around the grid inside the card, corner radius, and the
-// muted page background the cards sit on.
-const DEX_CARD_PAD = 14;
+// the website). The card's inner padding is computed to match the stat cards'
+// padding (see generateExportImage); corner radius + the muted page background
+// the cards sit on are below.
 const CARD_RADIUS = 12;
 const CARD_BG = '#ffffff';
 const PAGE_BG = '#f7f7f8';
@@ -280,7 +280,7 @@ export async function generateExportImage(
   options: {
     sections?: Record<string, number[]> | null;
     /** Detailed-stats data to redraw (natively) to the right of the grid. */
-    stats?: { data: DetailedStatsData; heights: StatsHeights; blackTitles?: boolean } | null;
+    stats?: { data: DetailedStatsData; heights: StatsHeights } | null;
   } = {},
 ): Promise<Blob> {
   const count = pokemon.length;
@@ -289,7 +289,6 @@ export async function generateExportImage(
   const sections = options.sections ?? null;
   const statsData = options.stats?.data ?? null;
   const statsHeights = options.stats?.heights ?? null;
-  const statsBlackTitles = options.stats?.blackTitles ?? false;
 
   // --- Outline geometry (only when section outlines are enabled) -----------
   let outline: {
@@ -395,30 +394,42 @@ export async function generateExportImage(
   })();
   const statsNatH = statsLayout?.h ?? 0;
   const willCard = !!(statsData && statsNatH > 0);
-  const cardPad = willCard ? DEX_CARD_PAD : 0;
   // Outer margins: roomy when carded (so card shadows aren't clipped at the canvas
   // edge), tight otherwise (unchanged grid-only export).
   const mx = willCard ? CARD_SHADOW_ROOM : PAD_X;
   const my = willCard ? CARD_SHADOW_ROOM : PAD_TOP;
   const dexContentW = w - PAD_X * 2;
   const dexContentH = footerTop - PAD_TOP;
+  // Dex-card inner padding. When stats are present, match it to the stat cards'
+  // padding in final-image units (= STATS_CARD_PADX × statsScale) so all cards
+  // share the same content-to-edge spacing. statsScale depends on dexCardH which
+  // depends on the pad, so solve the resulting equation in closed form:
+  //   pad = P·dexContentH / (statsNatH − 2P),  where P = STATS_CARD_PADX.
+  const cardPad = willCard
+    ? Math.max(4, (STATS_CARD_PADX * dexContentH) / (statsNatH - 2 * STATS_CARD_PADX))
+    : 0;
   const dexCardW = dexContentW + cardPad * 2;
   const dexCardH = dexContentH + cardPad * 2;
 
-  const STATS_GAP = TILE * 0.6;
   // Scale the natural-width panel so its height matches the dex card.
   const statsScale = willCard ? dexCardH / statsNatH : 0;
+  // Horizontal gutter between the dex card and the stats column == the vertical
+  // gutter between the stat cards (CARD_GAP, scaled), so all gutters are uniform.
+  const STATS_GAP = STATS_CARD_GAP * statsScale;
   const stats = willCard
     ? { x: mx + dexCardW + STATS_GAP, y: my, w: STATS_NAT_W * statsScale, h: dexCardH, scale: statsScale }
     : null;
   const canvasW = stats ? stats.x + stats.w + mx : w;
 
   // Footer sits below the dex card (a clear gap, like the app footer below the
-  // fold), centered under the whole image rather than just the grid.
+  // fold), centered under the whole image rather than just the grid. The stats
+  // export shows a single, larger credit line (the charts already convey the
+  // type/gen lean), so it gets a taller band for legibility.
   const footerSep = stats ? 22 : 0;
+  const footerBandH = stats ? 40 : PAD_BOTTOM;
   const footerCenterX = canvasW / 2;
   footerTop = my + dexCardH;
-  h = footerTop + footerSep + PAD_BOTTOM;
+  h = footerTop + footerSep + footerBandH;
 
   // Cap the backing store to the iOS canvas-area limit. At 151 + stats this pulls
   // SCALE 4 down to ~3.4; grid-only stays at 4 (it's well under the cap).
@@ -532,7 +543,7 @@ export async function generateExportImage(
     ctx.imageSmoothingEnabled = true;
     ctx.translate(stats.x, stats.y);
     ctx.scale(stats.scale, stats.scale);
-    drawStatsPanel(ctx, statsData, statsBadges, statsHeights, statsBlackTitles);
+    drawStatsPanel(ctx, statsData, statsBadges, statsHeights);
     ctx.restore();
     ctx.imageSmoothingEnabled = false;
   }
@@ -665,8 +676,16 @@ export async function generateExportImage(
     }
   };
 
-  drawLine(insightSegs, line1Y, INSIGHTS_FONT);
-  drawLine(creditSegs, line2Y, CREDIT_FONT);
+  if (stats) {
+    // Stats export: the charts already convey the type/gen lean, so drop the
+    // insights line and show just a larger, legible "made with my151.app" credit,
+    // vertically centred in the footer band.
+    const STATS_CREDIT_FONT = '600 13px "Inter Variable", system-ui, -apple-system, sans-serif';
+    drawLine(creditSegs, footerTop + footerSep + footerBandH / 2, STATS_CREDIT_FONT);
+  } else {
+    drawLine(insightSegs, line1Y, INSIGHTS_FONT);
+    drawLine(creditSegs, line2Y, CREDIT_FONT);
+  }
 
   return new Promise<Blob>((resolve, reject) => {
     // Guard against iOS occasionally never invoking the toBlob callback (which

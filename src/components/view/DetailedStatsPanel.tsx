@@ -67,7 +67,7 @@ function alignHistograms(
 export type StatsVariant = 'bare' | 'card-title-out' | 'card-title-in';
 const CARD_CHROME = 'bg-card rounded-lg shadow-elevated py-3 px-5';
 
-/** DEBUG title rendered like the grid's outline section titles: Inter Black,
+/** Card title rendered like the grid's outline section titles: Inter Black,
  *  uppercase, horizontally stretched (scaleX) to fill the card width — capped at
  *  the same MAX_LABEL_STRETCH the outlines use. */
 function StretchTitle({ text }: { text: string }) {
@@ -99,12 +99,10 @@ function StretchTitle({ text }: { text: string }) {
   );
 }
 
-function Card({ title, subtitle, children, variant, blackTitles }: { title: string; subtitle?: string; children: React.ReactNode; variant: StatsVariant; blackTitles?: boolean }) {
+function Card({ title, subtitle, children, variant }: { title: string; subtitle?: string; children: React.ReactNode; variant: StatsVariant }) {
   const titleEl = (
     <>
-      {blackTitles
-        ? <StretchTitle text={title} />
-        : <h3 className="text-sm font-semibold mb-0.5">{title}</h3>}
+      <StretchTitle text={title} />
       {subtitle && <p className="text-xs text-muted-foreground mb-2 leading-snug">{subtitle}</p>}
     </>
   );
@@ -147,7 +145,7 @@ function HistogramLegend() {
  * page, reused here without its drill-down interactivity. Data comes from the
  * live store (same dex the grid shows).
  */
-export function DetailedStatsPanel({ className = '', variant = 'card-title-in', typeBadges = true, heights = DEFAULT_STATS_HEIGHTS, blackTitles = false }: { className?: string; variant?: StatsVariant; typeBadges?: boolean; heights?: { type: number; region: number; bst: number }; blackTitles?: boolean }) {
+export function DetailedStatsPanel({ className = '', variant = 'card-title-in', typeBadges = true, heights = DEFAULT_STATS_HEIGHTS }: { className?: string; variant?: StatsVariant; typeBadges?: boolean; heights?: { type: number; region: number; bst: number } }) {
   const sections = usePokedexStore((s) => s.sections);
   const analytics = useAnalytics(false);
 
@@ -213,11 +211,11 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
 
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
-      <Card variant={variant} blackTitles={blackTitles} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
+      <Card variant={variant} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
         <ButterflyChart data={typeRows} rowHeight={16} hideLabelText labelHeader="TYPE" iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows />
       </Card>
 
-      <Card variant={variant} blackTitles={blackTitles} title="Generation Origin" subtitle="Which generation your Pokémon come from, vs the national dex.">
+      <Card variant={variant} title="Generation Origin" subtitle="Which generation your Pokémon come from, vs the national dex.">
         <ButterflyChart
           data={[...genRows].sort((a, b) => parseInt(a.label.replace('Gen ', '')) - parseInt(b.label.replace('Gen ', '')))}
           rowHeight={24}
@@ -230,7 +228,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
         />
       </Card>
 
-      <Card variant={variant} blackTitles={blackTitles} title="Base Stat Total" subtitle={`Yours avg: ${analytics.bstStats.avg}, National avg: ${analytics.nationalAvgBst}.`}>
+      <Card variant={variant} title="Base Stat Total" subtitle={`Yours avg: ${analytics.bstStats.avg}, National avg: ${analytics.nationalAvgBst}.`}>
         <HistogramLegend />
         <SuperimposedHistogram
           data={bstHist.merged}
