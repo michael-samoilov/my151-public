@@ -957,22 +957,21 @@ export function ViewPage() {
         // visually, so there's no flicker), then revert after capture.
         const revert = inlineSvgTextStyles(statsNode);
         try {
-          const { toCanvas } = await import('html-to-image');
-          await document.fonts?.ready;
-          const opts = { pixelRatio: 4, backgroundColor: undefined } as const;
-          // Safari/WebKit frequently drops embedded resources on the FIRST
-          // html-to-image pass — and sometimes the SVG-foreignObject image load
-          // never settles, hanging the await forever (the "spinner that never
-          // finishes"). So: (1) do a throwaway warm-up render to prime resource
-          // loading, then capture for real; (2) race the whole thing against a
-          // timeout so a stuck capture can never hang the export — worst case we
-          // fall back to a grid-only export instead of spinning indefinitely.
+          // Guard the ENTIRE capture — dynamic import, font readiness, AND the
+          // html-to-image render — behind one timeout. On iOS WebKit any of these
+          // can stall, and an unguarded await here is what leaves the export
+          // spinner stuck forever. The biggest offender is html-to-image's
+          // webfont embed (it fetches every stylesheet + woff2 over the network);
+          // skipFonts turns that off entirely. We already inline the chart text's
+          // font-size above, so the only effect is the captured charts fall back
+          // to the system font — fine — while removing the iOS hang/CORS path.
           const capture = (async () => {
-            await toCanvas(statsNode, opts).catch(() => null); // warm-up (Safari)
-            return toCanvas(statsNode, opts);
+            const { toCanvas } = await import('html-to-image');
+            await document.fonts?.ready;
+            return toCanvas(statsNode, { pixelRatio: 4, backgroundColor: undefined, skipFonts: true });
           })();
           const timeout = new Promise<null>((resolve) => {
-            window.setTimeout(() => resolve(null), 10000);
+            window.setTimeout(() => resolve(null), 8000);
           });
           statsCanvas = await Promise.race([capture, timeout]);
           if (!statsCanvas) console.warn('Stats capture timed out; exporting grid only.');
