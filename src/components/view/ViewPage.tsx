@@ -959,7 +959,23 @@ export function ViewPage() {
         try {
           const { toCanvas } = await import('html-to-image');
           await document.fonts?.ready;
-          statsCanvas = await toCanvas(statsNode, { pixelRatio: 4, backgroundColor: undefined });
+          const opts = { pixelRatio: 4, backgroundColor: undefined } as const;
+          // Safari/WebKit frequently drops embedded resources on the FIRST
+          // html-to-image pass — and sometimes the SVG-foreignObject image load
+          // never settles, hanging the await forever (the "spinner that never
+          // finishes"). So: (1) do a throwaway warm-up render to prime resource
+          // loading, then capture for real; (2) race the whole thing against a
+          // timeout so a stuck capture can never hang the export — worst case we
+          // fall back to a grid-only export instead of spinning indefinitely.
+          const capture = (async () => {
+            await toCanvas(statsNode, opts).catch(() => null); // warm-up (Safari)
+            return toCanvas(statsNode, opts);
+          })();
+          const timeout = new Promise<null>((resolve) => {
+            window.setTimeout(() => resolve(null), 10000);
+          });
+          statsCanvas = await Promise.race([capture, timeout]);
+          if (!statsCanvas) console.warn('Stats capture timed out; exporting grid only.');
         } catch (e) {
           console.error('Stats capture failed; exporting grid only:', e);
         } finally {
