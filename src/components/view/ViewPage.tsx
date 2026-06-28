@@ -11,7 +11,8 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
-import { DetailedStatsPanel, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
+import { DetailedStatsPanel, STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
+import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { PREVIEW_FEATURES } from '@/lib/demoMode';
 import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
@@ -81,31 +82,6 @@ const STATS_NATURAL_REM = 19.7;
 // The dex/stats heights are matched against this many rows (a full 151 = 16). A
 // taller dex (>151) does NOT stretch the stats further — they stay at 16-row height.
 const STATS_REF_ROWS = 16;
-
-/** Inline the computed font + fill styles onto every SVG <text>/<tspan> under
- *  `root`, returning a revert fn. html-to-image otherwise drops the Tailwind
- *  font-size classes on SVG text (rendering chart labels oversized) and doesn't
- *  resolve CSS-var fills. Setting the styles to their current computed values is a
- *  visual no-op, so there's no flicker. */
-function inlineSvgTextStyles(root: HTMLElement): () => void {
-  const els = Array.from(root.querySelectorAll('text, tspan')) as SVGElement[];
-  const saved: Array<[SVGElement, string | null]> = [];
-  for (const el of els) {
-    saved.push([el, el.getAttribute('style')]);
-    const cs = getComputedStyle(el);
-    el.style.fontSize = cs.fontSize;
-    el.style.fontFamily = cs.fontFamily;
-    el.style.fontWeight = cs.fontWeight;
-    el.style.letterSpacing = cs.letterSpacing;
-    if (cs.fill && cs.fill !== 'none') el.style.fill = cs.fill;
-  }
-  return () => {
-    for (const [el, prev] of saved) {
-      if (prev === null) el.removeAttribute('style');
-      else el.setAttribute('style', prev);
-    }
-  };
-}
 
 /** Parse a `view::<id>` draggable id into its numeric pokemon id, or null. */
 function parseDragId(id: string): number | null {
@@ -580,6 +556,8 @@ export function ViewPage() {
   // with the title inside ('card-title-in'), with type-name badges.
   const showStatsPanel = PREVIEW_FEATURES && showStats && count >= STATS_MIN_POKEMON;
   const statsAsCards = showStatsPanel;
+  // Stats data (single source of truth shared with the native export renderer).
+  const statsData = useDetailedStatsData();
 
   // Section geometry + the effective grid sizing factors. In outline mode the
   // grid gains inter-cell gaps and per-section label bands; folding those into
@@ -944,46 +922,13 @@ export function ViewPage() {
       groupSpecial: groupSpecialAtEnd,
     });
     try {
-      // When the detailed-stats panel is showing, rasterize it (its natural,
-      // un-transformed render — the inner ref holds the scaled wrapper, so its
-      // child is the full-size panel) and hand it to the exporter to composite
-      // beside the grid. Best-effort: if capture fails, export the grid alone.
-      let statsCanvas: HTMLCanvasElement | null = null;
-      const statsNode = statsContentRef.current?.firstElementChild as HTMLElement | undefined;
-      if (showStatsPanel && statsNode) {
-        // html-to-image drops class-based font-size on SVG <text>, rendering the
-        // chart labels ~1.4x too big. Inline the *computed* text styles first so
-        // they survive the clone (setting them to their current values is a no-op
-        // visually, so there's no flicker), then revert after capture.
-        const revert = inlineSvgTextStyles(statsNode);
-        try {
-          // Guard the ENTIRE capture — dynamic import, font readiness, AND the
-          // html-to-image render — behind one timeout. On iOS WebKit any of these
-          // can stall, and an unguarded await here is what leaves the export
-          // spinner stuck forever. The biggest offender is html-to-image's
-          // webfont embed (it fetches every stylesheet + woff2 over the network);
-          // skipFonts turns that off entirely. We already inline the chart text's
-          // font-size above, so the only effect is the captured charts fall back
-          // to the system font — fine — while removing the iOS hang/CORS path.
-          const capture = (async () => {
-            const { toCanvas } = await import('html-to-image');
-            await document.fonts?.ready;
-            return toCanvas(statsNode, { pixelRatio: 4, backgroundColor: undefined, skipFonts: true });
-          })();
-          const timeout = new Promise<null>((resolve) => {
-            window.setTimeout(() => resolve(null), 8000);
-          });
-          statsCanvas = await Promise.race([capture, timeout]);
-          if (!statsCanvas) console.warn('Stats capture timed out; exporting grid only.');
-        } catch (e) {
-          console.error('Stats capture failed; exporting grid only:', e);
-        } finally {
-          revert();
-        }
-      }
+      // The detailed-stats panel is redrawn natively onto the export canvas (see
+      // exportStats.ts) — NOT rasterized from the DOM. html-to-image relies on an
+      // SVG <foreignObject>, which hangs/poisons the export on iOS WebKit; native
+      // canvas drawing is the same reliable mechanism the grid uses.
       const blob = await generateExportImage(sorted, {
         sections: showSectionOverlays ? sections : null,
-        statsCanvas,
+        stats: showStatsPanel ? { data: statsData, heights: DEFAULT_STATS_HEIGHTS } : null,
       });
       await shareOrDownload(blob, `my151.png`);
     } catch (err) {
@@ -992,7 +937,7 @@ export function ViewPage() {
     } finally {
       setExporting(false);
     }
-  }, [sorted, exporting, showSectionOverlays, sections, sortOption, groupSpecialAtEnd, showStatsPanel]);
+  }, [sorted, exporting, showSectionOverlays, sections, sortOption, groupSpecialAtEnd, showStatsPanel, statsData]);
 
   const dragOverlayPokemon = dragLineIds
     ? dragLineIds.map((id) => sorted.find((p) => p.id === id)).filter((p): p is Pokemon => !!p)

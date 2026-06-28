@@ -6,6 +6,8 @@ import { typeIconPath } from '@/data/type-ids';
 import { GEN_BADGE_URIS } from '@/components/shared/GenBadge';
 import { STARTER_IDS } from '@/data/categories';
 import { ensureTypeMask } from '@/lib/typeSymbol';
+import { measureStatsPanel, drawStatsPanel, statsBadgeUrls, STATS_NAT_W, type StatsHeights } from './exportStats';
+import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 import {
   computeOutlineLayout,
   buildOutlines,
@@ -277,15 +279,16 @@ export async function generateExportImage(
   pokemon: Pokemon[],
   options: {
     sections?: Record<string, number[]> | null;
-    /** Pre-rasterized detailed-stats panel to composite to the right of the grid. */
-    statsCanvas?: HTMLCanvasElement | null;
+    /** Detailed-stats data to redraw (natively) to the right of the grid. */
+    stats?: { data: DetailedStatsData; heights: StatsHeights } | null;
   } = {},
 ): Promise<Blob> {
   const count = pokemon.length;
   if (count === 0) throw new Error('No Pokemon to export');
 
   const sections = options.sections ?? null;
-  const statsCanvas = options.statsCanvas ?? null;
+  const statsData = options.stats?.data ?? null;
+  const statsHeights = options.stats?.heights ?? null;
 
   // --- Outline geometry (only when section outlines are enabled) -----------
   let outline: {
@@ -306,11 +309,12 @@ export async function generateExportImage(
   let h: number;
   let footerTop: number;
 
+  // Canvas text metrics for title fitting / stats wrapping need the real font.
+  if ((sections || statsData) && typeof document !== 'undefined' && document.fonts?.ready) {
+    try { await document.fonts.ready; } catch { /* fall back to metrics-as-is */ }
+  }
+
   if (sections) {
-    // Canvas text metrics for title fitting need the real font; wait for it.
-    if (typeof document !== 'undefined' && document.fonts?.ready) {
-      try { await document.fonts.ready; } catch { /* fall back to metrics-as-is */ }
-    }
     const oLayout = computeOutlineLayout(pokemon, sections, count, COLS);
     const gap = TILE * OUTLINE_GAP;
     const pad = TILE * OUTLINE_PAD;
@@ -368,11 +372,28 @@ export async function generateExportImage(
     loadSpandrelMasks(outline?.spandrelTypes ?? []),
   ]);
 
-  // Detailed-stats panel (if captured): the grid is wrapped in a white card (like
-  // the website) and the stats are composited to its right, height-matched to the
-  // dex card. The grid is shifted in by the card padding; the canvas grows for the
-  // card + stats. Grid-only exports skip the card entirely (unchanged white look).
-  const willCard = !!(statsCanvas && statsCanvas.height > 0);
+  // Type-name badge sprites for the stats Type-Distribution chart.
+  const statsBadges = new Map<string, HTMLImageElement>();
+  if (statsData) {
+    await Promise.all(
+      statsBadgeUrls(statsData).map(async ({ type, url }) => {
+        const img = await maybeLoadImage(url);
+        if (img) statsBadges.set(type, img);
+      }),
+    );
+  }
+
+  // Detailed-stats panel (if requested): the grid is wrapped in a white card (like
+  // the website) and the stats are drawn natively to its right, height-matched to
+  // the dex card. The grid is shifted in by the card padding; the canvas grows for
+  // the card + stats. Grid-only exports skip the card entirely (unchanged white).
+  const statsNatH = (() => {
+    if (!statsData || !statsHeights) return 0;
+    const mc = document.createElement('canvas').getContext('2d');
+    if (!mc) return 0;
+    return measureStatsPanel(mc, statsData, statsHeights).h;
+  })();
+  const willCard = !!(statsData && statsNatH > 0);
   const cardPad = willCard ? DEX_CARD_PAD : 0;
   // Outer margins: roomy when carded (so card shadows aren't clipped at the canvas
   // edge), tight otherwise (unchanged grid-only export).
@@ -384,11 +405,10 @@ export async function generateExportImage(
   const dexCardH = dexContentH + cardPad * 2;
 
   const STATS_GAP = TILE * 0.6;
+  // Scale the natural-width panel so its height matches the dex card.
+  const statsScale = willCard ? dexCardH / statsNatH : 0;
   const stats = willCard
-    ? (() => {
-        const drawW = dexCardH * (statsCanvas!.width / statsCanvas!.height);
-        return { x: mx + dexCardW + STATS_GAP, y: my, w: drawW, h: dexCardH };
-      })()
+    ? { x: mx + dexCardW + STATS_GAP, y: my, w: STATS_NAT_W * statsScale, h: dexCardH, scale: statsScale }
     : null;
   const canvasW = stats ? stats.x + stats.w + mx : w;
 
@@ -488,11 +508,16 @@ export async function generateExportImage(
 
   ctx.restore(); // end grid translate
 
-  // Detailed-stats panel to the right of the grid (smoothing on for the
-  // anti-aliased charts/text, then back off for the pixel sprites/footer icons).
-  if (stats) {
+  // Detailed-stats panel to the right of the grid — drawn natively (NOT via
+  // html-to-image, which hangs/fails on iOS). Smoothing on for the anti-aliased
+  // charts/text + badge images, then back off for the pixel sprites/footer icons.
+  if (stats && statsData && statsHeights) {
+    ctx.save();
     ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(statsCanvas!, stats.x, stats.y, stats.w, stats.h);
+    ctx.translate(stats.x, stats.y);
+    ctx.scale(stats.scale, stats.scale);
+    drawStatsPanel(ctx, statsData, statsBadges, statsHeights);
+    ctx.restore();
     ctx.imageSmoothingEnabled = false;
   }
 
