@@ -44,6 +44,12 @@ const PAGE_BG = '#f7f7f8';
 const CARD_SHADOW_ROOM = 20;
 const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
 const SCALE = 4; // SPRITE * SCALE = 192 = exactly 2× native 96px sprites
+// iOS/Safari (and therefore every iOS browser, incl. Chrome) caps a canvas's
+// backing store at ~16.7M px (4096²). Past it, canvas ops silently no-op and
+// toBlob never fires its callback — the export spinner hangs forever. The
+// with-stats export at SCALE=4 (~4400×4900 ≈ 21.6M px) exceeds this, so we cap
+// the area and derive the effective scale from it. Margin under the hard limit.
+const MAX_CANVAS_AREA = 16_000_000;
 
 // ---------- Footer insight computation ----------
 
@@ -393,13 +399,17 @@ export async function generateExportImage(
   footerTop = my + dexCardH;
   h = footerTop + footerSep + PAD_BOTTOM;
 
+  // Cap the backing store to the iOS canvas-area limit. At 151 + stats this pulls
+  // SCALE 4 down to ~3.4; grid-only stays at 4 (it's well under the cap).
+  const expScale = Math.min(SCALE, Math.sqrt(MAX_CANVAS_AREA / (canvasW * h)));
+
   const canvas = document.createElement('canvas');
-  canvas.width = canvasW * SCALE;
-  canvas.height = h * SCALE;
+  canvas.width = Math.round(canvasW * expScale);
+  canvas.height = Math.round(h * expScale);
   const ctx = canvas.getContext('2d')!;
 
-  // Scale everything by 4x for sharp rendering
-  ctx.scale(SCALE, SCALE);
+  // Scale everything for sharp rendering (≤ SCALE, lowered when capped above).
+  ctx.scale(expScale, expScale);
   ctx.imageSmoothingEnabled = false;
 
   // Background. With the stats panel present, use the app's muted page background
@@ -618,7 +628,11 @@ export async function generateExportImage(
   drawLine(creditSegs, line2Y, CREDIT_FONT);
 
   return new Promise<Blob>((resolve, reject) => {
+    // Guard against iOS occasionally never invoking the toBlob callback (which
+    // would hang the export spinner indefinitely).
+    const timer = window.setTimeout(() => reject(new Error('Canvas toBlob timed out')), 15000);
     canvas.toBlob((blob) => {
+      window.clearTimeout(timer);
       if (blob) resolve(blob);
       else reject(new Error('Canvas toBlob failed'));
     }, 'image/png');
@@ -793,7 +807,9 @@ function drawTile(
     ctx.save();
     const m = ctx.getTransform();
     ctx.setTransform(1, 0, 0, 1, 0, 0); // reset to identity (canvas pixels)
-    const drawSize = SPRITE * SCALE; // 192px = exactly 2× native 96px
+    // Size the sprite from the *live* scale (m.a), not the SCALE constant, so it
+    // tracks the effective scale when the canvas area is capped (iOS).
+    const drawSize = SPRITE * m.a; // = 2× native 96px at full SCALE
     const sx = m.a * cx + m.c * cy + m.e - drawSize / 2;
     const sy = m.b * cx + m.d * cy + m.f - drawSize / 2;
     ctx.imageSmoothingEnabled = false;
