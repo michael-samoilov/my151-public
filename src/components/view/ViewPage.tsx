@@ -636,6 +636,12 @@ export function ViewPage() {
   // analytically). Only matters in card mode; the container is stable, so it settles
   // in one extra frame.
   const [tilePx, setTilePx] = useState(0);
+  // Gate the stats panel's visibility until its size has settled after being
+  // toggled on. On enable, tileSize jumps from its stats-off value down to the
+  // stats-on value as the fit loop converges; revealing before then flashes the
+  // panel oversized. We only ever set this TRUE (reset to false when the panel is
+  // off), so window resizes — which keep it true — never re-hide / blink it.
+  const [statsRevealed, setStatsRevealed] = useState(false);
   const statsContentRef = useRef<HTMLDivElement>(null);
   const statsBesideGrid = showStatsPanel;
 
@@ -674,7 +680,12 @@ export function ViewPage() {
 
   const { containerRef, tileSize } = useTileSize(layout.colFactor + dexCardCols + statsColFactor, layout.rowFactor);
 
-  useEffect(() => {
+  // useLayoutEffect (not useEffect): tilePx feeds cardPadCols → statsColFactor →
+  // tileSize, a small fixed-point loop. Running it before paint lets the whole
+  // stats fit (incl. statsScale) converge in one pre-paint pass when the panel is
+  // toggled on — otherwise tileSize jumps from its stats-off (large) value to the
+  // stats-on value across a few painted frames, flashing the panel huge first.
+  useLayoutEffect(() => {
     if (tileSize !== tilePx) setTilePx(tileSize);
   }, [tileSize, tilePx]);
 
@@ -712,6 +723,56 @@ export function ViewPage() {
     measure();
     return () => ro.disconnect();
   }, [statsBesideGrid, showStatsPanel]);
+
+  // Hide-until-settled gate for the stats panel (prevents the toggle-on size
+  // flash). When the panel is toggled on, tileSize jumps from its stats-off value
+  // down to the stats-on value over a few frames as the fit loop converges; the
+  // panel mirrors tileSize, so revealing before then flashes it oversized. We
+  // can't use "tilePx === tileSize" — both already match (at the stale stats-off
+  // value) on the enable frame. Instead, on each enable, stay hidden and reveal
+  // only once tileSize has held steady for two consecutive animation frames
+  // (i.e. the fit has actually converged to the stats-on value). The off-reset
+  // (init false + reset whenever the panel is off) guarantees the first painted
+  // frame after an enable is already hidden. Reveal-only, so resizes don't blink.
+  const tileSizeRef = useRef(tileSize);
+  tileSizeRef.current = tileSize;
+  const statsShownRef = useRef(false);
+  useEffect(() => {
+    const wasShown = statsShownRef.current;
+    statsShownRef.current = showStatsPanel;
+    if (!showStatsPanel) {
+      setStatsRevealed(false);
+      return;
+    }
+    if (wasShown) return; // already shown (e.g. a resize-driven re-run); leave revealed
+    setStatsRevealed(false);
+    // Reveal once tileSize has CHANGED from its value at enable-time and then held
+    // steady for two frames. The oversized scale comes from the stale (stats-off)
+    // tileSize, which can sit "stable" for several frames before the fit recomputes
+    // — so plain stability isn't enough; we must wait for it to move off that stale
+    // value first. A frame cap reveals anyway if the size legitimately never
+    // changes (e.g. a height-constrained viewport, where there's no flash).
+    let raf = 0;
+    let baseline = -1;
+    let last = -1;
+    let stable = 0;
+    let frames = 0;
+    const tick = () => {
+      const t = tileSizeRef.current;
+      if (baseline < 0) baseline = t;
+      stable = t > 0 && t === last ? stable + 1 : 0;
+      last = t;
+      frames += 1;
+      if ((t > 0 && t !== baseline && stable >= 2) || frames >= 10) {
+        setStatsRevealed(true);
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [showStatsPanel]);
+
   const [exporting, setExporting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -1152,11 +1213,11 @@ export function ViewPage() {
                     width: `${STATS_NATURAL_REM}rem`,
                     transform: `scale(${statsScale})`,
                     transformOrigin: 'top left',
-                    // Until the natural box is measured, statsScale falls back to 1
-                    // (unscaled). Stay hidden for that first measure pass so the
-                    // oversized panel never paints — belt-and-suspenders with the
-                    // useLayoutEffect measure above.
-                    visibility: statsNatural.h > 0 ? undefined : 'hidden',
+                    // Stay hidden until the fit has settled (statsRevealed), so the
+                    // panel never paints at the transient oversized scale while
+                    // tileSize converges after the toggle. The layout box is still
+                    // present (visibility, not display) so it can be measured.
+                    visibility: statsRevealed ? undefined : 'hidden',
                   }}
                 >
                   <DetailedStatsPanel />
