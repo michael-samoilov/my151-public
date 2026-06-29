@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { Settings, Download, Loader2 } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewSort';
@@ -684,7 +684,12 @@ export function ViewPage() {
   // Measure the stats' natural (unscaled) box; ResizeObserver reports the layout
   // box, which a CSS transform does not affect — so this is stable. The natural
   // width is a fixed rem value, so its height (hence the aspect) settles at once.
-  useEffect(() => {
+  //
+  // useLayoutEffect (not useEffect) so the first measurement + scale are applied
+  // BEFORE the browser paints — otherwise the panel briefly paints at scale 1
+  // (full natural size, oversized text) for one frame before shrinking, which
+  // reads as a flicker when arriving on the View page.
+  useLayoutEffect(() => {
     const el = statsContentRef.current;
     if (!el) return;
     const measure = () =>
@@ -1136,6 +1141,11 @@ export function ViewPage() {
                     width: `${STATS_NATURAL_REM}rem`,
                     transform: `scale(${statsScale})`,
                     transformOrigin: 'top left',
+                    // Until the natural box is measured, statsScale falls back to 1
+                    // (unscaled). Stay hidden for that first measure pass so the
+                    // oversized panel never paints — belt-and-suspenders with the
+                    // useLayoutEffect measure above.
+                    visibility: statsNatural.h > 0 ? undefined : 'hidden',
                   }}
                 >
                   <DetailedStatsPanel />

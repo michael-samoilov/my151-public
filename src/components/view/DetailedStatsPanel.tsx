@@ -19,7 +19,7 @@ const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1ab
 /** Minimum number of placed Pokémon before the detailed-stats panel is worth
  *  showing — below this the charts are too sparse to read and there isn't enough
  *  vertical content to justify the side panel. (Tunable; under QA.) */
-export const STATS_MIN_POKEMON = 12;
+export const STATS_MIN_POKEMON = 100;
 
 /** Default per-chart vertical-height multipliers for the three detailed-stats
  *  charts (debug-tunable). BST/Generation are shorter so the Type chart — with its
