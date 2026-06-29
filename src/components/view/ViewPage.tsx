@@ -984,8 +984,10 @@ export function ViewPage() {
         </div>
 
         {/* px-4 (not p-2): overflow-y-auto forces overflow-x to clip, so the extra
-            horizontal padding gives the cards' soft shadows room before that clip. */}
-        <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-2">
+            horizontal padding gives the cards' soft shadows room before that clip.
+            pb-8: comfortable breathing room below the footer/cards at the bottom of
+            the scroll (py-2 alone left it jammed against the page edge). */}
+        <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-2 pb-8">
           <div className={statsBesideGrid ? 'flex flex-row items-start justify-center' : 'flex flex-col items-center'}>
           {tileSize > 0 && (() => {
             const {
