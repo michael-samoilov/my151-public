@@ -125,35 +125,41 @@ function isChainPlacementGapFree(placed: Set<number>, chainId: number): boolean 
 
 /**
  * For a hypothetical placed-set on a chain, return true if any placed member is
- * left as a "dangling tail" — a non-terminal whose base-line evolution is absent.
+ * left as a "dangling tail" — a non-terminal that *must* have a final evolution
+ * placed but doesn't.
  *
- * A child counts as part of the base line when it was introduced in the same (or
- * an earlier) generation as its parent; children from a *later* generation are
- * optional cross-gen forms (e.g. Magmar→Magmortar, Quilava→Typhlosion-Hisui) and
- * may be left unplaced. So a placed member is dangling iff it has at least one
- * base-line child yet *none* of its base-line children has any placed member in
- * its subtree. (A member is fine if it's a chain leaf, if all its children are
- * later-gen forms, or if at least one base-line branch is still placed — so
- * choosing a single same-gen branch like Silcoon→Beautifly over Cascoon→Dustox
- * stays valid.)
+ * A placed member only *requires* a placed descendant if it once existed with a
+ * contemporary evolution — i.e. it has a child introduced in the same generation
+ * as itself (Quilava→Typhlosion, both Gen 2; Pikachu→Raichu, both Gen 1). If all
+ * of a member's children are from *later* generations, it once existed as a
+ * complete standalone line and may be left a leaf (Magmar→Magmortar gen 4,
+ * Zubat→Golbat→Crobat gen 2 — Crobat may be dropped).
+ *
+ * When a descendant IS required, it is satisfied by ANY placed member anywhere in
+ * the member's subtree, through ANY branch — including a later-gen form. So
+ * Pikachu + Raichu-Alola (no plain Raichu) is fine, as is Cyndaquil + Quilava +
+ * Typhlosion-Hisui; and choosing a single same-gen branch (Silcoon→Beautifly,
+ * not Cascoon→Dustox) is fine. What is NOT fine is leaving such a member with no
+ * placed descendant at all (e.g. Cyndaquil + Quilava after removing the line's
+ * only placed terminal, or lone Pikachu after removing Raichu-Alola).
  *
  * This complements isChainPlacementGapFree: that catches placed→unplaced→placed
- * gaps walking *up*; this catches a severed *tail* walking *down* (e.g. leaving
- * Cyndaquil + Quilava after the line's only placed terminal, Typhlosion-Hisui,
- * is removed).
+ * gaps walking *up*; this catches a severed *tail* walking *down*.
  */
 function hasDanglingTail(placed: Set<number>, chainId: number): boolean {
   const chainMembers = pokemonByChain.get(chainId) ?? [];
   for (const member of chainMembers) {
     if (!placed.has(member.id)) continue;
-    const baseChildren = chainMembers.filter(
-      (c) => c.evolvesFrom === member.id && c.generation <= member.generation,
-    );
-    if (baseChildren.length === 0) continue; // leaf, or only later-gen forms — fine
-    const anyBaseBranchPlaced = baseChildren.some((c) =>
+    const children = chainMembers.filter((c) => c.evolvesFrom === member.id);
+    // Needs a placed descendant only if it had a same-generation evolution (it
+    // never existed as a complete line on its own).
+    const requiresDescendant = children.some((c) => c.generation <= member.generation);
+    if (!requiresDescendant) continue;
+    // Satisfied by any placed descendant through any branch (incl. later-gen forms).
+    const anyDescendantPlaced = children.some((c) =>
       getDescendantIds(c.id).some((id) => placed.has(id)),
     );
-    if (!anyBaseBranchPlaced) return true;
+    if (!anyDescendantPlaced) return true;
   }
   return false;
 }
