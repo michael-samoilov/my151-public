@@ -79,9 +79,6 @@ const COLS = 10;
 // freeing the ~45px label column, so the chart bodies keep the ~295px width that was
 // overlap-free at the old 360px-with-labels render while the column reads narrower.
 const STATS_NATURAL_REM = 19.7;
-// The dex/stats heights are matched against this many rows (a full 151 = 16). A
-// taller dex (>151) does NOT stretch the stats further — they stay at 16-row height.
-const STATS_REF_ROWS = 16;
 
 /** Parse a `view::<id>` draggable id into its numeric pokemon id, or null. */
 function parseDragId(id: string): number | null {
@@ -182,7 +179,12 @@ function useTileSize(colFactor: number, rowFactor: number) {
     return () => ro.disconnect();
   }, [measure]);
 
-  useEffect(() => {
+  // Re-fit BEFORE paint when the fit factors change (e.g. toggling section
+  // outlines flips colFactor/rowFactor). A plain useEffect runs after paint, so
+  // the grid would paint one frame with the new outline template (gaps + label
+  // bands) at the OLD tile size — a visible jank between the two layouts.
+  // useLayoutEffect applies the new tile size in the same commit, before paint.
+  useLayoutEffect(() => {
     measure();
   }, [colFactor, rowFactor, measure]);
 
@@ -616,7 +618,7 @@ export function ViewPage() {
     return {
       lastRowCount, gridSlots, gridPokemon, lastRowPokemon,
       allRuns, lastRowGeom, gridStartRows, lastRowStartRows,
-      colFactor, rowFactor,
+      colFactor, rowFactor, totalRows,
     };
   }, [sorted, totalSlots, showSectionOverlays, sections]);
 
@@ -637,13 +639,16 @@ export function ViewPage() {
   const statsContentRef = useRef<HTMLDivElement>(null);
   const statsBesideGrid = showStatsPanel;
 
-  // Height of the STATS_REF_ROWS reference block in *tile units* (constant — no
-  // tileSize), folding in the outline gaps/label bands when overlays are on.
+  // Height of the dex grid in *tile units* (tileSize-independent), folding in the
+  // outline gaps/label bands when overlays are on. Matches the actual rendered row
+  // count (totalRows = max(count,151)/COLS, so ≥16) — not a fixed constant — so the
+  // stats stay height-matched to the dex card even past 151.
   const dexRefRowsFactor = useMemo(() => {
+    const rows = layout.totalRows;
     const allStart = new Set<number>([...layout.gridStartRows, ...layout.lastRowStartRows]);
-    const bands = [...allStart].filter((r) => r < STATS_REF_ROWS).length;
-    return STATS_REF_ROWS + (showSectionOverlays ? bands * OUTLINE_HEAD + (STATS_REF_ROWS - 1) * OUTLINE_GAP : 0);
-  }, [showSectionOverlays, layout.gridStartRows, layout.lastRowStartRows]);
+    const bands = [...allStart].filter((r) => r < rows).length;
+    return rows + (showSectionOverlays ? bands * OUTLINE_HEAD + Math.max(rows - 1, 0) * OUTLINE_GAP : 0);
+  }, [showSectionOverlays, layout.totalRows, layout.gridStartRows, layout.lastRowStartRows]);
 
   // In card mode the stats are matched to the dex *card* (grid + p-3 top/bottom
   // padding), not the bare grid, so the card edges line up top and bottom. p-3 =
@@ -678,7 +683,11 @@ export function ViewPage() {
   // follows from the uniform scale (capped at 1 — only ever shrink).
   const dexRefHeight = statsBesideGrid && tileSize > 0 ? dexRefRowsFactor * tileSize : 0;
   const statsTargetHeight = dexRefHeight > 0 ? dexRefHeight + cardPadPx : 0;
-  const statsScale = statsNatural.h > 0 ? Math.min(1, statsTargetHeight / statsNatural.h) : 1;
+  // Uniform scale to fit the panel's natural height to the dex card height. NOT
+  // capped at 1 — the panel must scale UP as well as down so its cards reach the
+  // full dex-card height (the natural 3-card stack is shorter than a 16-row dex).
+  // The charts are SVG/text, so scaling up stays crisp.
+  const statsScale = statsNatural.h > 0 ? statsTargetHeight / statsNatural.h : 1;
   const statsDisplayW = statsNatural.w > 0 ? statsNatural.w * statsScale : statsTileCols * tileSize;
 
   // Measure the stats' natural (unscaled) box; ResizeObserver reports the layout
