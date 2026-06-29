@@ -421,15 +421,13 @@ export async function generateExportImage(
     : null;
   const canvasW = stats ? stats.x + stats.w + mx : w;
 
-  // Footer sits below the dex card (a clear gap, like the app footer below the
-  // fold), centered under the whole image rather than just the grid. The stats
-  // export shows a single, larger credit line (the charts already convey the
-  // type/gen lean), so it gets a taller band for legibility.
-  const footerSep = stats ? 22 : 0;
-  const footerBandH = stats ? 40 : PAD_BOTTOM;
+  // Footer centered under the whole image. For the stats export the bottom margin
+  // mirrors the top margin (my), and the single "made with my151.app" credit sits
+  // inside that bottom margin (the charts already convey the type/gen lean).
+  // Grid-only exports keep their original footer band (PAD_BOTTOM, two lines).
   const footerCenterX = canvasW / 2;
   footerTop = my + dexCardH;
-  h = footerTop + footerSep + footerBandH;
+  h = footerTop + (stats ? my : PAD_BOTTOM);
 
   // Cap the backing store to the iOS canvas-area limit. At 151 + stats this pulls
   // SCALE 4 down to ~3.4; grid-only stays at 4 (it's well under the cap).
@@ -548,10 +546,9 @@ export async function generateExportImage(
     ctx.imageSmoothingEnabled = false;
   }
 
-  // Footer: two lines — insights (top, normal size) + "made with my151.app"
-  // (bottom, smaller so the credit reads quietly rather than as an ad).
-  const line1Y = footerTop + footerSep + 10;
-  const line2Y = footerTop + footerSep + 21;
+  // Grid-only footer: two lines — insights (top) + "made with my151.app" (bottom).
+  const line1Y = footerTop + 10;
+  const line2Y = footerTop + 21;
   const zinc = '#a1a1aa';
 
   // Insights line — original sizes.
@@ -679,9 +676,9 @@ export async function generateExportImage(
   if (stats) {
     // Stats export: the charts already convey the type/gen lean, so drop the
     // insights line and show just a larger, legible "made with my151.app" credit,
-    // vertically centred in the footer band.
+    // centred inside the bottom margin (which mirrors the top margin).
     const STATS_CREDIT_FONT = '600 13px "Inter Variable", system-ui, -apple-system, sans-serif';
-    drawLine(creditSegs, footerTop + footerSep + footerBandH / 2, STATS_CREDIT_FONT);
+    drawLine(creditSegs, footerTop + my / 2, STATS_CREDIT_FONT);
   } else {
     drawLine(insightSegs, line1Y, INSIGHTS_FONT);
     drawLine(creditSegs, line2Y, CREDIT_FONT);
