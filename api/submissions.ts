@@ -111,7 +111,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 7 (day-of-week, 0=Sun) × 24 (hour) heatmap of users' local build times.
     const heatmap: number[][] = Array.from({ length: 7 }, () => new Array<number>(24).fill(0));
     // Raw per-user values; we build survival (drop-off) curves from these.
-    const sittingSecs: number[] = []; // longest-session duration in seconds
+    const longestSecs: number[] = []; // each user's longest session, seconds
+    const firstSecs: number[] = []; // each user's first session, seconds
+    const allSecs: number[] = []; // every session pooled, seconds (per-session)
     const depths: number[] = []; // max evolution lines reached
     const picksFinal: Record<string, number> = {}; // one vote per user's final dex
     const droppedCounts: Record<string, number> = {}; // ever placed but not in final dex
@@ -140,10 +142,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (const r of records) {
       depths.push(r.maxDepth);
 
-      // Longest continuous sitting. Prefer the sessionized value; fall back to
-      // the first→last span for legacy records that predate sessionization.
-      const sittingMs = r.maxSessionMs ?? Math.max(0, r.lastTs - r.firstTs);
-      sittingSecs.push(Math.round(sittingMs / 1000));
+      // Session durations. Prefer the per-session list; fall back to the
+      // first→last span (as a single session) for legacy records.
+      const sessSecs =
+        r.sessionMs && r.sessionMs.length > 0
+          ? r.sessionMs.map((ms) => Math.round(ms / 1000))
+          : [Math.round(Math.max(0, r.lastTs - r.firstTs) / 1000)];
+      longestSecs.push(Math.max(...sessSecs));
+      firstSecs.push(sessSecs[0]);
+      for (const s of sessSecs) allSecs.push(s);
 
       if (r.country) countries[r.country] = (countries[r.country] ?? 0) + 1;
       if (r.device) devices[r.device] = (devices[r.device] ?? 0) + 1;
@@ -195,23 +202,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // curve is where people churn — that's where to intervene. We sample the
     // x-axis up to the 95th percentile (so the long tail doesn't flatten the
     // interesting region) at a fixed number of points.
-    sittingSecs.sort((a, b) => a - b);
     depths.sort((a, b) => a - b);
 
-    // Time survival: fine-grained where it matters — every 30s for the first
-    // 10 min, then every 60s out to the 95th percentile (min 60s of range).
-    const tMax = Math.max(60, quantile(sittingSecs, 0.95));
-    const timeTicks: number[] = [];
-    for (let t = 0; t <= Math.min(tMax, 600); t += 30) timeTicks.push(t);
-    for (let t = 660; t <= tMax; t += 60) timeTicks.push(t);
-    if (timeTicks[timeTicks.length - 1] !== tMax) timeTicks.push(tMax);
-    const timeSurvival = timeTicks.map((t) => ({ t, s: survivalAt(sittingSecs, t) }));
-    // Median / p75 / p90 churn points (the durations by which that % have left).
-    const timeStats = {
-      p50: quantile(sittingSecs, 0.5),
-      p75: quantile(sittingSecs, 0.75),
-      p90: quantile(sittingSecs, 0.9),
+    // Build a time survival curve + percentile stats from a set of durations.
+    // Sampled fine-grained where it matters — every 30s for the first 10 min,
+    // then every 60s out to the 95th percentile (min 60s of range).
+    const buildTimeCurve = (secsRaw: number[]) => {
+      const secs = secsRaw.slice().sort((a, b) => a - b);
+      const tMax = Math.max(60, quantile(secs, 0.95));
+      const ticks: number[] = [];
+      for (let t = 0; t <= Math.min(tMax, 600); t += 30) ticks.push(t);
+      for (let t = 660; t <= tMax; t += 60) ticks.push(t);
+      if (ticks[ticks.length - 1] !== tMax) ticks.push(tMax);
+      return {
+        survival: ticks.map((t) => ({ t, s: survivalAt(secs, t) })),
+        stats: { p50: quantile(secs, 0.5), p75: quantile(secs, 0.75), p90: quantile(secs, 0.9) },
+        n: secs.length,
+      };
     };
+    // Three bases the admin can toggle between.
+    const timeCurves = {
+      longest: buildTimeCurve(longestSecs),
+      first: buildTimeCurve(firstSecs),
+      all: buildTimeCurve(allSecs),
+    };
+    // Back-compat default surface (longest session).
+    const timeSurvival = timeCurves.longest.survival;
+    const timeStats = timeCurves.longest.stats;
 
     // Depth survival: x in evolution lines, 0..maxObserved.
     const dMax = Math.max(1, depths[depths.length - 1] ?? 1);
@@ -240,6 +257,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       retention: { returning, activeLast7, newUsers: totalUsers - returning },
       timeSurvival,
       timeStats,
+      timeCurves,
       depthSurvival,
       depthStats,
       countries,
