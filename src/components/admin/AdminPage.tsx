@@ -104,6 +104,10 @@ interface ApiResponse {
   >;
   depthSurvival: { t: number; s: number }[];
   depthStats: { p50: number; p75: number; p90: number };
+  depthCurves?: Record<
+    'longest' | 'first' | 'all',
+    { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number }
+  >;
   countries: Record<string, number>;
   devices: Record<string, number>;
   os: Record<string, number>;
@@ -622,12 +626,25 @@ function ChurnReadout({ stats, fmt }: { stats: { p50: number; p75: number; p90: 
   );
 }
 
-/** Session-length drop-off card with a basis toggle: which session per user to
- *  count — their longest, their first, or every session pooled. */
-function TimeDropoffCard({ data }: { data: ApiResponse }) {
+type SurvivalCurve = { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number };
+
+/** Drop-off card with a per-session basis toggle (longest / first / all). Works
+ *  for both the time and build (depth) curves. */
+function BasisDropoffCard({
+  title,
+  curves,
+  fallback,
+  fmtX,
+  xLabel,
+}: {
+  title: string;
+  curves?: Record<'longest' | 'first' | 'all', SurvivalCurve>;
+  fallback: SurvivalCurve;
+  fmtX: (n: number) => string;
+  xLabel: string;
+}) {
   const [basis, setBasis] = useState<'longest' | 'first' | 'all'>('longest');
-  // Fall back to the flat surface if timeCurves isn't present (older deploy).
-  const curve = data.timeCurves?.[basis] ?? { survival: data.timeSurvival, stats: data.timeStats, n: 0 };
+  const curve = curves?.[basis] ?? fallback;
   const tabs: { key: 'longest' | 'first' | 'all'; label: string }[] = [
     { key: 'longest', label: 'Longest' },
     { key: 'first', label: 'First' },
@@ -636,8 +653,8 @@ function TimeDropoffCard({ data }: { data: ApiResponse }) {
   return (
     <div className="shadow-elevated rounded-lg p-3 bg-card">
       <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-        <span className="text-sm font-medium">Session drop-off (when users churn by time)</span>
-        {data.timeCurves && (
+        <span className="text-sm font-medium">{title}</span>
+        {curves && (
           <div className="flex items-center gap-1 shrink-0">
             {tabs.map((t) => (
               <Button
@@ -652,13 +669,15 @@ function TimeDropoffCard({ data }: { data: ApiResponse }) {
           </div>
         )}
       </div>
-      <Survival points={curve.survival} fmtX={fmtSecs} xLabel="session length" />
-      <ChurnReadout stats={curve.stats} fmt={fmtSecs} />
-      <p className="text-[0.65rem] text-muted-foreground mt-0.5">
-        {basis === 'longest' && "Each user's longest session."}
-        {basis === 'first' && "Each user's first session."}
-        {basis === 'all' && `Every session pooled${curve.n ? ` (${curve.n})` : ''}.`}
-      </p>
+      <Survival points={curve.survival} fmtX={fmtX} xLabel={xLabel} />
+      <ChurnReadout stats={curve.stats} fmt={fmtX} />
+      {curves && (
+        <p className="text-[0.65rem] text-muted-foreground mt-0.5">
+          {basis === 'longest' && "Each user's longest session."}
+          {basis === 'first' && "Each user's first session."}
+          {basis === 'all' && `Every session pooled${curve.n ? ` (${curve.n})` : ''}.`}
+        </p>
+      )}
     </div>
   );
 }
@@ -1435,11 +1454,20 @@ export function AdminPage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <TimeDropoffCard data={data} />
-              <Card title="Build drop-off (how far users get)">
-                <Survival points={data.depthSurvival} fmtX={(n) => `${n} lines`} xLabel="evolution lines" />
-                <ChurnReadout stats={data.depthStats} fmt={(n) => `${n} lines`} />
-              </Card>
+              <BasisDropoffCard
+                title="Session drop-off (when users churn by time)"
+                curves={data.timeCurves}
+                fallback={{ survival: data.timeSurvival, stats: data.timeStats, n: 0 }}
+                fmtX={fmtSecs}
+                xLabel="session length"
+              />
+              <BasisDropoffCard
+                title="Build drop-off (how far users get)"
+                curves={data.depthCurves}
+                fallback={{ survival: data.depthSurvival, stats: data.depthStats, n: 0 }}
+                fmtX={(n) => `${n} lines`}
+                xLabel="evolution lines"
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

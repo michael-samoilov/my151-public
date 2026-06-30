@@ -57,6 +57,9 @@ export interface ClientRecord {
    *  currently in progress. Capped at the most recent MAX_SESSIONS_TRACKED.
    *  Absent on legacy records. */
   sessionMs?: number[];
+  /** Peak depth (max evolution lines) reached within each session, parallel to
+   *  sessionMs. Most-recent MAX_SESSIONS_TRACKED. Absent on legacy records. */
+  sessionDepth?: number[];
   /** End-state snapshot of each session (ts + the build at that session's last
    *  beacon), most-recent MAX_SESSIONS_TRACKED. Diffing consecutive entries
    *  shows what changed visit-to-visit. Absent on legacy records. */
