@@ -98,6 +98,10 @@ interface ApiResponse {
   retention: { returning: number; activeLast7: number; newUsers: number };
   timeSurvival: { t: number; s: number }[];
   timeStats: { p50: number; p75: number; p90: number };
+  timeCurves?: Record<
+    'longest' | 'first' | 'all',
+    { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number }
+  >;
   depthSurvival: { t: number; s: number }[];
   depthStats: { p50: number; p75: number; p90: number };
   countries: Record<string, number>;
@@ -615,6 +619,47 @@ function ChurnReadout({ stats, fmt }: { stats: { p50: number; p75: number; p90: 
       <span className="font-medium text-foreground">{fmt(stats.p75)}</span> · 90% by{' '}
       <span className="font-medium text-foreground">{fmt(stats.p90)}</span>
     </p>
+  );
+}
+
+/** Session-length drop-off card with a basis toggle: which session per user to
+ *  count — their longest, their first, or every session pooled. */
+function TimeDropoffCard({ data }: { data: ApiResponse }) {
+  const [basis, setBasis] = useState<'longest' | 'first' | 'all'>('longest');
+  // Fall back to the flat surface if timeCurves isn't present (older deploy).
+  const curve = data.timeCurves?.[basis] ?? { survival: data.timeSurvival, stats: data.timeStats, n: 0 };
+  const tabs: { key: 'longest' | 'first' | 'all'; label: string }[] = [
+    { key: 'longest', label: 'Longest' },
+    { key: 'first', label: 'First' },
+    { key: 'all', label: 'All sessions' },
+  ];
+  return (
+    <div className="shadow-elevated rounded-lg p-3 bg-card">
+      <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+        <span className="text-sm font-medium">Session drop-off (when users churn by time)</span>
+        {data.timeCurves && (
+          <div className="flex items-center gap-1 shrink-0">
+            {tabs.map((t) => (
+              <Button
+                key={t.key}
+                variant={basis === t.key ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setBasis(t.key)}
+              >
+                {t.label}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+      <Survival points={curve.survival} fmtX={fmtSecs} xLabel="session length" />
+      <ChurnReadout stats={curve.stats} fmt={fmtSecs} />
+      <p className="text-[0.65rem] text-muted-foreground mt-0.5">
+        {basis === 'longest' && "Each user's longest session."}
+        {basis === 'first' && "Each user's first session."}
+        {basis === 'all' && `Every session pooled${curve.n ? ` (${curve.n})` : ''}.`}
+      </p>
+    </div>
   );
 }
 
@@ -1390,10 +1435,7 @@ export function AdminPage() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card title="Session drop-off (when users churn by time)">
-                <Survival points={data.timeSurvival} fmtX={fmtSecs} xLabel="session length" />
-                <ChurnReadout stats={data.timeStats} fmt={fmtSecs} />
-              </Card>
+              <TimeDropoffCard data={data} />
               <Card title="Build drop-off (how far users get)">
                 <Survival points={data.depthSurvival} fmtX={(n) => `${n} lines`} xLabel="evolution lines" />
                 <ChurnReadout stats={data.depthStats} fmt={(n) => `${n} lines`} />
