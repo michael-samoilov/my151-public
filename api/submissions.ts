@@ -114,7 +114,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const longestSecs: number[] = []; // each user's longest session, seconds
     const firstSecs: number[] = []; // each user's first session, seconds
     const allSecs: number[] = []; // every session pooled, seconds (per-session)
-    const depths: number[] = []; // max evolution lines reached
+    const depths: number[] = []; // max evolution lines reached (overall, default)
+    const longestDepth: number[] = []; // peak depth of each user's deepest session
+    const firstDepth: number[] = []; // peak depth of each user's first session
+    const allDepth: number[] = []; // peak depth of every session pooled
     const picksFinal: Record<string, number> = {}; // one vote per user's final dex
     const droppedCounts: Record<string, number> = {}; // ever placed but not in final dex
     // Same, but split by the section the user actually placed each Pokemon in
@@ -141,6 +144,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     for (const r of records) {
       depths.push(r.maxDepth);
+      // Per-session peak depths; fall back to overall maxDepth as one session.
+      const sessDepths = r.sessionDepth && r.sessionDepth.length > 0 ? r.sessionDepth : [r.maxDepth];
+      longestDepth.push(Math.max(...sessDepths));
+      firstDepth.push(sessDepths[0]);
+      for (const d of sessDepths) allDepth.push(d);
 
       // Session durations. Prefer the per-session list; fall back to the
       // first→last span (as a single session) for legacy records.
@@ -202,7 +210,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // curve is where people churn — that's where to intervene. We sample the
     // x-axis up to the 95th percentile (so the long tail doesn't flatten the
     // interesting region) at a fixed number of points.
-    depths.sort((a, b) => a - b);
 
     // Build a time survival curve + percentile stats from a set of durations.
     // Sampled fine-grained where it matters — every 30s for the first 10 min,
@@ -231,16 +238,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const timeStats = timeCurves.longest.stats;
 
     // Depth survival: x in evolution lines, 0..maxObserved.
-    const dMax = Math.max(1, depths[depths.length - 1] ?? 1);
-    const depthSurvival: { t: number; s: number }[] = [];
-    for (let d = 0; d <= dMax; d++) {
-      depthSurvival.push({ t: d, s: survivalAt(depths, d) });
-    }
-    const depthStats = {
-      p50: quantile(depths, 0.5),
-      p75: quantile(depths, 0.75),
-      p90: quantile(depths, 0.9),
+    const buildDepthCurve = (vals: number[]) => {
+      const v = vals.slice().sort((a, b) => a - b);
+      const dMax = Math.max(1, v[v.length - 1] ?? 1);
+      const survival: { t: number; s: number }[] = [];
+      for (let d = 0; d <= dMax; d++) survival.push({ t: d, s: survivalAt(v, d) });
+      return {
+        survival,
+        stats: { p50: quantile(v, 0.5), p75: quantile(v, 0.75), p90: quantile(v, 0.9) },
+        n: v.length,
+      };
     };
+    const depthCurves = {
+      longest: buildDepthCurve(longestDepth),
+      first: buildDepthCurve(firstDepth),
+      all: buildDepthCurve(allDepth),
+    };
+    // Back-compat default surface (overall max depth).
+    depths.sort((a, b) => a - b);
+    const overall = buildDepthCurve(depths);
+    const depthSurvival = overall.survival;
+    const depthStats = overall.stats;
 
     const totalUsers = records.length;
     const page = records.slice(offset, offset + limit);
@@ -260,6 +278,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       timeCurves,
       depthSurvival,
       depthStats,
+      depthCurves,
       countries,
       devices,
       os: osCounts,
