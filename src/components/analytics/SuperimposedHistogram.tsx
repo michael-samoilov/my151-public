@@ -19,6 +19,8 @@ interface SuperimposedHistogramProps {
   activeBin?: number | null;
   /** Multiplier on the plot height (default 1) to tune vertical space vs. peers. */
   heightScale?: number;
+  /** Overrides the font-size class on the axis tick labels (default text-xs). */
+  textClass?: string;
 }
 
 export function SuperimposedHistogram({
@@ -32,6 +34,7 @@ export function SuperimposedHistogram({
   onBarClick,
   activeBin,
   heightScale = 1,
+  textClass,
 }: SuperimposedHistogramProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
@@ -145,7 +148,7 @@ export function SuperimposedHistogram({
                   x={xScale(t)}
                   y={plotH + 15}
                   textAnchor="middle"
-                  className="text-xs"
+                  className={textClass ?? 'text-xs'}
                   fill="var(--color-muted-foreground)"
                 >
                   {t}
@@ -167,7 +170,7 @@ export function SuperimposedHistogram({
                   y={yScale(t)}
                   textAnchor="end"
                   dominantBaseline="middle"
-                  className="text-xs"
+                  className={textClass ?? 'text-xs'}
                   fill="var(--color-muted-foreground)"
                 >
                   {t}%

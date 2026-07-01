@@ -14,6 +14,10 @@ import type { TypeName } from '@/types/pokemon';
 /** Aspect ratio (w/h) of the Gen IX type-name badge sprites (128×40). */
 const TYPE_BADGE_ASPECT = 128 / 40;
 
+/** Single font size shared by all stats text — chart headers, axis + value
+ *  numbers, and the card subtitles — so they read uniformly. */
+const STATS_TEXT = 'text-[0.6875rem]';
+
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
 /** Minimum number of placed Pokémon before the detailed-stats panel is worth
@@ -103,7 +107,7 @@ function Card({ title, subtitle, children, variant }: { title: string; subtitle?
   const titleEl = (
     <>
       <StretchTitle text={title} />
-      {subtitle && <p className="text-xs text-muted-foreground mb-2 leading-snug">{subtitle}</p>}
+      {subtitle && <p className={`${STATS_TEXT} text-muted-foreground mb-2 leading-snug`}>{subtitle}</p>}
     </>
   );
   if (variant === 'card-title-in') {
@@ -212,7 +216,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
       <Card variant={variant} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
-        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText labelHeader="TYPE" iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows />
+        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText labelHeader="TYPE" iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows textClass={STATS_TEXT} />
       </Card>
 
       <Card variant={variant} title="Generation Origin" subtitle="Which generation your Pokémon come from, vs the national dex.">
@@ -225,6 +229,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
           iconFillsRow={typeBadges}
           heightScale={heights.region}
           disableEmptyRows
+          textClass={STATS_TEXT}
         />
       </Card>
 
@@ -239,6 +244,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
           yDomain={bstHist.yDomain}
           yTicks={bstHist.yTicks}
           heightScale={heights.bst}
+          textClass={STATS_TEXT}
         />
       </Card>
     </div>

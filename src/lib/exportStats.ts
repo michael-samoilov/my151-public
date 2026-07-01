@@ -38,9 +38,12 @@ const YOURS = '#ef4444';
 
 const TITLE_SIZE = 14;
 const TITLE_LH = 20;
-const SUB_SIZE = 12;
-const SUB_LH = 16.5;
+const SUB_SIZE = 11; // matches CHART_TEXT (subtitle unified with chart text)
+const SUB_LH = 15; // 11px * leading-snug (1.375)
 const LEGEND_SIZE = 12;
+/** Single font size for all chart text (headers, axis + value numbers), matching
+ *  the on-screen STATS_TEXT (text-[0.6875rem] = 11px). */
+const CHART_TEXT = 11;
 
 /** Per-chart vertical-height multipliers (mirror DEFAULT_STATS_HEIGHTS). */
 export interface StatsHeights { type: number; region: number; bst: number }
@@ -175,16 +178,15 @@ function butterfly(
   ctx.save();
   ctx.translate(ox, oy);
 
-  // Headers
+  // Headers — all at the uniform CHART_TEXT size.
   ctx.fillStyle = MUTED;
   ctx.textBaseline = 'alphabetic';
-  ctx.font = font(600, 12);
-  spacedText(ctx, labelHeader, iconStart + iconColW / 2, headerBaseline, 0.05 * 12, 'middle');
-  spacedText(ctx, 'COUNT', countSectionStart, headerBaseline, 0.05 * 12, 'start');
-  // Deviation two-line headers (11px), bottom line on headerBaseline.
-  ctx.font = font(600, 11);
-  const dy = 1.1 * 11;
-  spacedText(ctx, 'UNDER-', devSectionStart + zeroX - 5, headerBaseline - dy, 0.05 * 11, 'end');
+  ctx.font = font(600, CHART_TEXT);
+  spacedText(ctx, labelHeader, iconStart + iconColW / 2, headerBaseline, 0.05 * CHART_TEXT, 'middle');
+  spacedText(ctx, 'COUNT', countSectionStart, headerBaseline, 0.05 * CHART_TEXT, 'start');
+  // Deviation two-line headers, bottom line on headerBaseline.
+  const dy = 1.1 * CHART_TEXT;
+  spacedText(ctx, 'UNDER-', devSectionStart + zeroX - 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'end');
   spacedText(ctx, '← INDEXED', devSectionStart + zeroX - 5, headerBaseline, 0.05 * 11, 'end');
   spacedText(ctx, 'OVER-', devSectionStart + zeroX + 5, headerBaseline - dy, 0.05 * 11, 'start');
   spacedText(ctx, 'INDEXED →', devSectionStart + zeroX + 5, headerBaseline, 0.05 * 11, 'start');
@@ -205,7 +207,7 @@ function butterfly(
     ctx.fill();
     ctx.globalAlpha = 1;
     ctx.fillStyle = MUTED;
-    ctx.font = font(400, 11);
+    ctx.font = font(400, CHART_TEXT);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(`${d.count}`, countSectionStart + countBarW + 3, rowMid);
@@ -301,7 +303,7 @@ function histogram(
   // X ticks
   ctx.fillStyle = MUTED;
   ctx.strokeStyle = MUTED;
-  ctx.font = font(400, 12);
+  ctx.font = font(400, CHART_TEXT);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   for (const t of bst.xTicks) {

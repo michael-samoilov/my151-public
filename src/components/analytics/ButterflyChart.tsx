@@ -66,9 +66,13 @@ interface ButterflyChartProps {
    *  mentions. Pass `pokemon.length` in that case so each bar reads as
    *  "share of the dex" rather than "share of type mentions". */
   countDenominator?: number;
+  /** When set, overrides the font-size class on every text element (headers,
+   *  count numbers, value labels) so they render at a single uniform size.
+   *  Defaults to the per-element sizes (used by the analytics dashboard). */
+  textClass?: string;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hoveredSort, setHoveredSort] = useState<'count' | 'deviation' | 'label' | null>(null);
@@ -287,7 +291,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
               fontWeight={600}
               fill={labelSortable && sortBy === 'label' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
               letterSpacing="0.05em"
-              className={cn('text-xs', labelSortable && onSortChange && 'cursor-pointer')}
+              className={cn(textClass ?? 'text-xs', labelSortable && onSortChange && 'cursor-pointer')}
               textDecoration={labelSortable && (sortBy === 'label' || hoveredSort === 'label') ? 'underline' : 'none'}
               onClick={labelSortable && onSortChange ? () => onSortChange('label') : undefined}
               onMouseEnter={labelSortable && onSortChange ? () => setHoveredSort('label') : undefined}
@@ -308,7 +312,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             fontWeight={600}
             fill={sortBy === 'count' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
-            className={cn('text-xs', onSortChange && 'cursor-pointer')}
+            className={cn(textClass ?? 'text-xs', onSortChange && 'cursor-pointer')}
             textDecoration={sortBy === 'count' || hoveredSort === 'count' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('count') : undefined}
             onMouseEnter={onSortChange ? () => setHoveredSort('count') : undefined}
@@ -326,7 +330,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             fontWeight={600}
             fill={sortBy === 'deviation' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
-            className={cn('text-[0.6875rem]', onSortChange && 'cursor-pointer')}
+            className={cn(textClass ?? 'text-[0.6875rem]', onSortChange && 'cursor-pointer')}
             textDecoration={sortBy === 'deviation' || hoveredSort === 'deviation' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('deviation') : undefined}
             onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
@@ -344,7 +348,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             fontWeight={600}
             fill={sortBy === 'deviation' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
-            className={cn('text-[0.6875rem]', onSortChange && 'cursor-pointer')}
+            className={cn(textClass ?? 'text-[0.6875rem]', onSortChange && 'cursor-pointer')}
             textDecoration={sortBy === 'deviation' || hoveredSort === 'deviation' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('deviation') : undefined}
             onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
@@ -405,7 +409,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                     y={y + barHeight / 2}
                     textAnchor="end"
                     dominantBaseline="middle"
-                    className="text-xs"
+                    className={textClass ?? 'text-xs'}
                     fill="currentColor"
                   >
                     {d.label}
@@ -444,7 +448,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                   y={y + barHeight / 2}
                   textAnchor={scoreMode && !countIsPositive ? 'end' : 'start'}
                   dominantBaseline="middle"
-                  className="text-[0.6875rem]"
+                  className={textClass ?? 'text-[0.6875rem]'}
                   fill="var(--color-muted-foreground)"
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
@@ -524,7 +528,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                       <text
                         x={barEnd + 3} y={y + barHeight / 2}
                         textAnchor="start" dominantBaseline="middle"
-                        className="text-[0.6875rem]" fill="var(--color-muted-foreground)"
+                        className={textClass ?? 'text-[0.6875rem]'} fill="var(--color-muted-foreground)"
                         style={{ fontVariantNumeric: 'tabular-nums' }}
                       >{val}</text>
                     );
