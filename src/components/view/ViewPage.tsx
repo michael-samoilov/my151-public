@@ -1119,13 +1119,16 @@ export function ViewPage() {
                 <div
                   style={{
                     width: gridWidth,
-                    boxSizing: statsAsCards ? 'content-box' : undefined,
+                    // Gate the dex-card chrome on statsRevealed (not showStatsPanel)
+                    // so the card appears in the SAME step as the stats cards, not a
+                    // frame earlier — one transition instead of two.
+                    boxSizing: statsRevealed ? 'content-box' : undefined,
                     // Match the stats cards' *visual* corner radius: they use
                     // rounded-lg (var(--radius)) but are scaled by statsScale, so
                     // the unscaled dex card needs the same radius pre-multiplied.
-                    borderRadius: statsAsCards ? `calc(var(--radius) * ${statsScale})` : undefined,
+                    borderRadius: statsRevealed ? `calc(var(--radius) * ${statsScale})` : undefined,
                   }}
-                  className={statsAsCards ? 'bg-card shadow-elevated p-3' : ''}
+                  className={statsRevealed ? 'bg-card shadow-elevated p-3' : ''}
                 >
                   {/* Grid + centered overflow row share one relative box so a
                       single overlay can draw outlines that span the boundary.

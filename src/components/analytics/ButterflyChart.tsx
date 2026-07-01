@@ -537,7 +537,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                     <text
                       x={barEnd - 3} y={y + barHeight / 2}
                       textAnchor="end" dominantBaseline="middle"
-                      className="text-[0.6875rem]" fill="var(--color-muted-foreground)"
+                      className={textClass ?? 'text-[0.6875rem]'} fill="var(--color-muted-foreground)"
                       style={{ fontVariantNumeric: 'tabular-nums' }}
                     >{val}</text>
                   );

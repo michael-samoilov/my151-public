@@ -16,7 +16,7 @@ const TYPE_BADGE_ASPECT = 128 / 40;
 
 /** Single font size shared by all stats text — chart headers, axis + value
  *  numbers, and the card subtitles — so they read uniformly. */
-const STATS_TEXT = 'text-[0.6875rem]';
+const STATS_TEXT = 'text-[0.625rem]';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 

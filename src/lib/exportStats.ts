@@ -38,12 +38,12 @@ const YOURS = '#ef4444';
 
 const TITLE_SIZE = 14;
 const TITLE_LH = 20;
-const SUB_SIZE = 11; // matches CHART_TEXT (subtitle unified with chart text)
-const SUB_LH = 15; // 11px * leading-snug (1.375)
+const SUB_SIZE = 10; // matches CHART_TEXT (subtitle unified with chart text)
+const SUB_LH = 14; // 10px * leading-snug (1.375)
 const LEGEND_SIZE = 12;
 /** Single font size for all chart text (headers, axis + value numbers), matching
- *  the on-screen STATS_TEXT (text-[0.6875rem] = 11px). */
-const CHART_TEXT = 11;
+ *  the on-screen STATS_TEXT (text-[0.625rem] = 10px). */
+const CHART_TEXT = 10;
 
 /** Per-chart vertical-height multipliers (mirror DEFAULT_STATS_HEIGHTS). */
 export interface StatsHeights { type: number; region: number; bst: number }
