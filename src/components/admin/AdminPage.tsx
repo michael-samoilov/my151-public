@@ -673,9 +673,12 @@ function BasisDropoffCard({
       <ChurnReadout stats={curve.stats} fmt={fmtX} />
       {curves && (
         <p className="text-[0.65rem] text-muted-foreground mt-0.5">
-          {basis === 'longest' && "Each user's longest session."}
-          {basis === 'first' && "Each user's first session."}
-          {basis === 'all' && `Every session pooled${curve.n ? ` (${curve.n})` : ''}.`}
+          {basis === 'longest' && `Each user's longest session (n=${curve.n}).`}
+          {basis === 'first' && `Each user's first session (n=${curve.n}).`}
+          {basis === 'all' && `Every session pooled (n=${curve.n}).`}
+          {curves.longest.n === curves.all.n && (
+            <> All users are single-session so far, so the three views match — they’ll diverge once users return.</>
+          )}
         </p>
       )}
     </div>
