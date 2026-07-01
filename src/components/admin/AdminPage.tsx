@@ -1464,13 +1464,10 @@ export function AdminPage() {
                 fmtX={fmtSecs}
                 xLabel="session length"
               />
-              <BasisDropoffCard
-                title="Build drop-off (how far users get)"
-                curves={data.depthCurves}
-                fallback={{ survival: data.depthSurvival, stats: data.depthStats, n: 0 }}
-                fmtX={(n) => `${n} lines`}
-                xLabel="evolution lines"
-              />
+              <Card title="Build drop-off (how far users get)">
+                <Survival points={data.depthSurvival} fmtX={(n) => `${n} lines`} xLabel="evolution lines" />
+                <ChurnReadout stats={data.depthStats} fmt={(n) => `${n} lines`} />
+              </Card>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
