@@ -30,6 +30,11 @@ const SPRITE_IMG_SCALE = 1.95;
  *  bigger sprite without dominating. */
 const WIDE_LAYOUT_BOOST = 1.4;
 
+/** Native sprite resolution (px). Desktop snaps the rendered IMG to integer
+ *  multiples of this so `image-rendering: pixelated` produces artifact-free
+ *  nearest-neighbour scaling. */
+const SPRITE_NATIVE = 96;
+
 /**
  * Canonical tile primitives used by every "Pokemon tile" in the app —
  * selection browser (`EvoLineCard`), main build page (`DraggableTile`),
@@ -47,40 +52,56 @@ const WIDE_LAYOUT_BOOST = 1.4;
  */
 
 /**
- * Effective viewport divisor for the current layout. On desktop every tile
- * host is `md:w-1/2`, so we size off half the window; on mobile the host
- * fills the viewport, so we size off the whole width. Sizing off the host's
- * real width is what makes the build page, selection pane, and analytics
- * drill-down all render the same Pokemon at the same size, and makes a side
- * pane of width W look identical to a mobile bottom sheet of width W.
+ * Compute the 1× base with desktop pixel-perfect snapping. On desktop, the
+ * sprite IMG is snapped to an integer multiple of the native 96px so
+ * `image-rendering: pixelated` produces clean nearest-neighbour scaling
+ * instead of the sub-pixel artefacts that a non-integer scale produces.
+ * On mobile, the fluid continuous value is kept (mobile sprites are small
+ * enough that the artefacts aren't visible).
  */
-function useTileDivisor(): number {
+function useSnappedOneX(): number {
   const isDesktop = useViewportAtLeast(1024);
-  return isDesktop ? DESKTOP_PANE_DIVISOR : 1;
+  const divisor = isDesktop ? DESKTOP_PANE_DIVISOR : 1;
+  const fluid = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, divisor);
+  if (!isDesktop) return fluid;
+  const fluidImage = fluid * SPRITE_IMG_SCALE;
+  const multiple = Math.max(1, Math.round(fluidImage / SPRITE_NATIVE));
+  return (multiple * SPRITE_NATIVE) / SPRITE_IMG_SCALE;
 }
 
 /**
  * Layout scale (the `--tile-sprite` CSS var) that every tile internal
  * (name text, type badges, gen badge, padding) is `calc()`-ed off. It's the
- * fluid 1× base × WIDE_LAYOUT_BOOST, so the chrome scales smoothly with the
- * container width and stays proportional next to the larger sprite IMG.
+ * (possibly snapped) 1× base × WIDE_LAYOUT_BOOST.
  */
 export function useTileSpritePx(): number {
-  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, useTileDivisor());
-  return Math.round(oneX * WIDE_LAYOUT_BOOST);
+  return Math.round(useSnappedOneX() * WIDE_LAYOUT_BOOST);
 }
 
 /**
- * Width/height (CSS px) for the sprite `<img>` element: the fluid 1× base ×
- * SPRITE_IMG_SCALE. It's larger than the chrome footprint (--tile-sprite)
- * so the sprite nearly fills — and slightly overflows — its grid column by
- * design. Because both this and the chrome derive from the same
- * container-relative base, the sprite-to-tile proportions are identical at
- * every width and across every tile host.
+ * Width/height (CSS px) for the sprite `<img>` element. On desktop this is
+ * an exact integer multiple of SPRITE_NATIVE (96px) for pixel-perfect
+ * rendering. On mobile it's the fluid continuous value.
  */
 function useTileImagePx(): number {
-  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, useTileDivisor());
-  return Math.round(oneX * SPRITE_IMG_SCALE);
+  return Math.round(useSnappedOneX() * SPRITE_IMG_SCALE);
+}
+
+/**
+ * Max-width (CSS px) for a desktop pixel-perfect tile grid, or undefined on
+ * mobile. Use this to cap the grid container and center it with
+ * `marginInline: 'auto'`, producing whitespace bands on wide viewports
+ * instead of stretching tile columns beyond their natural content width.
+ */
+export function useTileGridMaxWidth(
+  cols: number = 6,
+  gapPx: number = 0,
+  cellPaddingPx: number = 0,
+): number | undefined {
+  const isDesktop = useViewportAtLeast(1024);
+  const spritePx = useTileSpritePx();
+  if (!isDesktop) return undefined;
+  return cols * (spritePx + cellPaddingPx) + Math.max(0, cols - 1) * gapPx;
 }
 
 /** Root-padding ratios, shared across tile hosts. */

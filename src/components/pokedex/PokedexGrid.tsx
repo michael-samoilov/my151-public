@@ -11,6 +11,7 @@ import {
   TILE_GEN_BADGE_CLASS,
   TILE_ROOT_PADDING_CLASS,
   useTileSpritePx,
+  useTileGridMaxWidth,
 } from '@/components/shared/PokemonTile';
 import { Trash2, Plus, Settings } from 'lucide-react';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
@@ -887,6 +888,10 @@ export function PokedexGrid() {
   }, [setSearchQuery, setTypeFilter, setGenerationFilter, setEvoLineSizeFilter, setActiveSection, setCategoryFilter, setArchetypeFilter, setMobileBrowserOpen]);
 
   const dragSet = useMemo(() => new Set(dragLineIds ?? []), [dragLineIds]);
+  // PokedexGrid uses gap-1 (4px) grids with no per-cell horizontal padding.
+  // Add section box padding (p-1 = 8px) + outer padding (p-3 = 24px).
+  const innerGridMaxW = useTileGridMaxWidth(6, 4, 0);
+  const containerMaxW = innerGridMaxW ? innerGridMaxW + 32 : undefined;
 
   return (
     <div className="flex flex-col h-full">
@@ -904,7 +909,7 @@ export function PokedexGrid() {
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain md:overscroll-auto"
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-          <div className="p-3 pb-0">
+          <div className="p-3 pb-0" style={{ maxWidth: containerMaxW, marginInline: containerMaxW ? 'auto' : undefined }}>
             <DndContext
               sensors={sensors}
               collisionDetection={effectiveCursorCollision}
