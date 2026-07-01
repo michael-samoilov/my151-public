@@ -7,6 +7,16 @@ import {
   CLIENTS_KEY,
   type ClientRecord,
 } from './_shared.js';
+import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
+
+/** Distinct evolution lines represented by a set of ids (unknown ids count as
+ *  their own line). Mirrors the client's countEvoLines so server-derived depth
+ *  matches what the beacon reports. */
+function countEvoLines(ids: number[]): number {
+  const chains = new Set<number>();
+  for (const id of ids) chains.add(EVOLUTION_CHAIN_BY_ID[id] ?? -id);
+  return chains.size;
+}
 
 const DAY = 86_400_000;
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -140,6 +150,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let exported = 0;
     let returning = 0;
     let activeLast7 = 0;
+    let multiSession = 0; // users with 2+ sessions (why the bases can differ)
     // Tally the View settings exporters actually used (forward-only — only
     // exports captured since settings-tracking shipped contribute).
     const exportSettingsAgg = {
@@ -163,9 +174,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       for (const s of sessSecs) allSecs.push(s);
 
       // Per-session lines ADDED = diff of cumulative end-depths (sessionDepth),
-      // floored at 0. Legacy records (no sessionDepth) contribute their overall
-      // maxDepth as a single first-session add.
-      const ends = r.sessionDepth && r.sessionDepth.length > 0 ? r.sessionDepth : [r.maxDepth];
+      // floored at 0. Prefer stored per-session end depths; otherwise
+      // BACK-POPULATE from sessionLog (each entry has that session's ids), which
+      // has existed far longer — so existing multi-session users differentiate
+      // immediately. Final fallback: overall maxDepth as one session.
+      const ends =
+        r.sessionDepth && r.sessionDepth.length > 0
+          ? r.sessionDepth
+          : r.sessionLog && r.sessionLog.length > 0
+            ? r.sessionLog.map((s) => countEvoLines(s.ids ?? []))
+            : [r.maxDepth];
       const added = ends.map((d, i) => Math.max(0, i === 0 ? d : d - ends[i - 1]));
       firstDepth.push(added[0]);
       // "Longest" = the session with the longest DURATION (aligns with the time
@@ -174,6 +192,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       for (let i = 1; i < sessSecs.length && i < added.length; i++) if (sessSecs[i] > sessSecs[li]) li = i;
       longestDepth.push(added[Math.min(li, added.length - 1)]);
       for (const a of added) allDepth.push(a);
+      if (ends.length >= 2) multiSession += 1;
 
       if (r.country) countries[r.country] = (countries[r.country] ?? 0) + 1;
       if (r.device) devices[r.device] = (devices[r.device] ?? 0) + 1;
@@ -288,6 +307,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       funnel: { users: totalUsers, completed, exported },
       exportSettings: exportSettingsAgg,
       retention: { returning, activeLast7, newUsers: totalUsers - returning },
+      multiSession,
       timeSurvival,
       timeStats,
       timeCurves,

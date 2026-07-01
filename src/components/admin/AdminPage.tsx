@@ -96,6 +96,7 @@ interface ApiResponse {
     sorts: Record<string, number>;
   };
   retention: { returning: number; activeLast7: number; newUsers: number };
+  multiSession?: number;
   timeSurvival: { t: number; s: number }[];
   timeStats: { p50: number; p75: number; p90: number };
   timeCurves?: Record<
@@ -638,6 +639,7 @@ function BasisDropoffCard<K extends string>({
   fallback,
   fmtX,
   xLabel,
+  hint,
 }: {
   title: string;
   curves?: Partial<Record<K, SurvivalCurve>>;
@@ -645,6 +647,7 @@ function BasisDropoffCard<K extends string>({
   fallback: SurvivalCurve;
   fmtX: (n: number) => string;
   xLabel: string;
+  hint?: string;
 }) {
   const [basis, setBasis] = useState<K>(tabs[0].key);
   const curve = curves?.[basis] ?? fallback;
@@ -672,7 +675,7 @@ function BasisDropoffCard<K extends string>({
       <ChurnReadout stats={curve.stats} fmt={fmtX} />
       {curves && (
         <p className="text-[0.65rem] text-muted-foreground mt-0.5">
-          {active.note} (n={curve.n}).
+          {active.note} (n={curve.n}).{hint ? ` ${hint}` : ''}
         </p>
       )}
     </div>
@@ -1475,6 +1478,11 @@ export function AdminPage() {
                 fallback={{ survival: data.depthSurvival, stats: data.depthStats, n: 0 }}
                 fmtX={(n) => `${n} lines`}
                 xLabel="evolution lines"
+                hint={
+                  data.multiSession === 0
+                    ? 'All users are single-session so far, so First/Longest/All match Total — they diverge once a user builds across 2+ visits.'
+                    : `${data.multiSession} multi-session user${data.multiSession === 1 ? '' : 's'} differentiate these views.`
+                }
               />
             </div>
 
