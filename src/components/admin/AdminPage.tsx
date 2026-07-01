@@ -105,7 +105,7 @@ interface ApiResponse {
   depthSurvival: { t: number; s: number }[];
   depthStats: { p50: number; p75: number; p90: number };
   depthCurves?: Record<
-    'longest' | 'first' | 'all',
+    'total' | 'first' | 'longest' | 'all',
     { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number }
   >;
   countries: Record<string, number>;
@@ -628,34 +628,33 @@ function ChurnReadout({ stats, fmt }: { stats: { p50: number; p75: number; p90: 
 
 type SurvivalCurve = { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number };
 
-/** Drop-off card with a per-session basis toggle (longest / first / all). Works
- *  for both the time and build (depth) curves. */
-function BasisDropoffCard({
+/** Drop-off card with a configurable basis toggle. `tabs` lists the available
+ *  bases (key/label/note); `curves` maps each key to its survival curve. Falls
+ *  back to a flat surface if `curves` is absent (older deploy). */
+function BasisDropoffCard<K extends string>({
   title,
   curves,
+  tabs,
   fallback,
   fmtX,
   xLabel,
 }: {
   title: string;
-  curves?: Record<'longest' | 'first' | 'all', SurvivalCurve>;
+  curves?: Partial<Record<K, SurvivalCurve>>;
+  tabs: { key: K; label: string; note: string }[];
   fallback: SurvivalCurve;
   fmtX: (n: number) => string;
   xLabel: string;
 }) {
-  const [basis, setBasis] = useState<'longest' | 'first' | 'all'>('longest');
+  const [basis, setBasis] = useState<K>(tabs[0].key);
   const curve = curves?.[basis] ?? fallback;
-  const tabs: { key: 'longest' | 'first' | 'all'; label: string }[] = [
-    { key: 'longest', label: 'Longest' },
-    { key: 'first', label: 'First' },
-    { key: 'all', label: 'All sessions' },
-  ];
+  const active = tabs.find((t) => t.key === basis) ?? tabs[0];
   return (
     <div className="shadow-elevated rounded-lg p-3 bg-card">
       <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
         <span className="text-sm font-medium">{title}</span>
         {curves && (
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 shrink-0 flex-wrap">
             {tabs.map((t) => (
               <Button
                 key={t.key}
@@ -673,12 +672,7 @@ function BasisDropoffCard({
       <ChurnReadout stats={curve.stats} fmt={fmtX} />
       {curves && (
         <p className="text-[0.65rem] text-muted-foreground mt-0.5">
-          {basis === 'longest' && `Each user's longest session (n=${curve.n}).`}
-          {basis === 'first' && `Each user's first session (n=${curve.n}).`}
-          {basis === 'all' && `Every session pooled (n=${curve.n}).`}
-          {curves.longest.n === curves.all.n && (
-            <> All users are single-session so far, so the three views match — they’ll diverge once users return.</>
-          )}
+          {active.note} (n={curve.n}).
         </p>
       )}
     </div>
@@ -1460,14 +1454,28 @@ export function AdminPage() {
               <BasisDropoffCard
                 title="Session drop-off (when users churn by time)"
                 curves={data.timeCurves}
+                tabs={[
+                  { key: 'longest', label: 'Longest', note: "Each user's longest session" },
+                  { key: 'first', label: 'First', note: "Each user's first session" },
+                  { key: 'all', label: 'All', note: 'Every session pooled' },
+                ]}
                 fallback={{ survival: data.timeSurvival, stats: data.timeStats, n: 0 }}
                 fmtX={fmtSecs}
                 xLabel="session length"
               />
-              <Card title="Build drop-off (how far users get)">
-                <Survival points={data.depthSurvival} fmtX={(n) => `${n} lines`} xLabel="evolution lines" />
-                <ChurnReadout stats={data.depthStats} fmt={(n) => `${n} lines`} />
-              </Card>
+              <BasisDropoffCard
+                title="Build drop-off (how far users get)"
+                curves={data.depthCurves}
+                tabs={[
+                  { key: 'total', label: 'Total', note: 'Peak evolution lines ever reached' },
+                  { key: 'first', label: 'First', note: 'Lines added in the first session' },
+                  { key: 'longest', label: 'Longest', note: 'Lines added in the longest session' },
+                  { key: 'all', label: 'All', note: 'Lines added per session, pooled' },
+                ]}
+                fallback={{ survival: data.depthSurvival, stats: data.depthStats, n: 0 }}
+                fmtX={(n) => `${n} lines`}
+                xLabel="evolution lines"
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -315,10 +315,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     else if (list.length > 0) list[list.length - 1] = curSessionMs;
     else list.push(curSessionMs);
     rec.sessionMs = list.slice(-MAX_SESSIONS_TRACKED);
-    // Parallel per-session PEAK depth (max evolution lines reached that sitting).
+    // Parallel per-session END depth: the cumulative build size (distinct evo
+    // lines) at each session's last beacon. Consecutive diffs give how many
+    // lines each session net-added. (The build persists across sessions, so
+    // these are cumulative, not per-session peaks.)
     const depthList = rec.sessionDepth ?? [];
     if (newSession || depthList.length === 0) depthList.push(depth);
-    else depthList[depthList.length - 1] = Math.max(depthList[depthList.length - 1], depth);
+    else depthList[depthList.length - 1] = depth;
     rec.sessionDepth = depthList.slice(-MAX_SESSIONS_TRACKED);
     // Parallel per-session end-state snapshot, for visit-to-visit diffs.
     const log = rec.sessionLog ?? [];
