@@ -14,7 +14,6 @@ import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { DetailedStatsPanel, STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
 import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
-import { PREVIEW_FEATURES } from '@/lib/demoMode';
 import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
 import {
   type SectionRun,
@@ -553,10 +552,10 @@ export function ViewPage() {
   // Build-section outlines overlay: shown when the user enables it, in build order.
   const showSectionOverlays = showSections && sortOption === 'build-order';
 
-  // Detailed-stats side panel (preview-only): needs enough Pokémon to be useful.
-  // Locked presentation: the grid on a raised card and each chart on its own card
-  // with the title inside ('card-title-in'), with type-name badges.
-  const showStatsPanel = PREVIEW_FEATURES && showStats && count >= STATS_MIN_POKEMON;
+  // Detailed-stats side panel: needs enough Pokémon to be useful. Locked
+  // presentation: the grid on a raised card and each chart on its own card with
+  // the title inside ('card-title-in'), with type-name badges.
+  const showStatsPanel = showStats && count >= STATS_MIN_POKEMON;
   const statsAsCards = showStatsPanel;
   // Stats data (single source of truth shared with the native export renderer).
   const statsData = useDetailedStatsData();
@@ -1001,6 +1000,7 @@ export function ViewPage() {
       sort: sortOption,
       outlines: showSectionOverlays,
       groupSpecial: groupSpecialAtEnd,
+      showStats: showStatsPanel,
     });
     try {
       // The detailed-stats panel is redrawn natively onto the export canvas (see

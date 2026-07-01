@@ -134,6 +134,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tracked: 0,
       outlines: 0,
       groupSpecial: 0,
+      showStats: 0,
       sorts: {} as Record<string, number>,
     };
 
@@ -183,6 +184,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         exportSettingsAgg.tracked += 1;
         if (r.exportSettings.outlines) exportSettingsAgg.outlines += 1;
         if (r.exportSettings.groupSpecial) exportSettingsAgg.groupSpecial += 1;
+        if (r.exportSettings.showStats) exportSettingsAgg.showStats += 1;
         const s = r.exportSettings.sort;
         exportSettingsAgg.sorts[s] = (exportSettingsAgg.sorts[s] ?? 0) + 1;
       }

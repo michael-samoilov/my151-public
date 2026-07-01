@@ -4,7 +4,6 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { PageFooter } from '@/components/shared/PageFooter';
-import { PREVIEW_FEATURES } from '@/lib/demoMode';
 import { STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 
 interface SortOption {
@@ -330,41 +329,39 @@ export function ViewSettingsPane({
           </button>
         </div>
 
-        {/* Detailed stats — preview-only experiment. Staged like the other view
-            options (mobile sheet applies on "Update & View"). */}
-        {PREVIEW_FEATURES && (
-          <div className="px-3 pt-3 pb-2 border-t">
-            <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              Stats
-            </h3>
-            <button
-              type="button"
-              onClick={handleToggleStats}
-              disabled={!statsEnabled}
-              className={`w-full text-left rounded-md px-3 py-2 transition-colors ${
-                !statsEnabled ? 'opacity-50 cursor-default' : 'cursor-pointer'
-              } ${effShowStats && statsEnabled ? 'bg-primary/10' : 'hover:bg-muted'}`}
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                    effShowStats && statsEnabled ? 'bg-primary border-primary' : 'border-muted-foreground/40'
-                  }`}
-                >
-                  {effShowStats && statsEnabled && <Check className="w-3 h-3 text-primary-foreground" />}
-                </span>
-                <span className={`text-sm ${effShowStats && statsEnabled ? 'text-primary font-medium' : 'text-foreground'}`}>
-                  Show detailed stats
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
-                {statsEnabled
-                  ? 'Adds type, generation, and base-stat-total charts beside the grid.'
-                  : `Add at least ${STATS_MIN_POKEMON} Pokémon to enable detailed stats (${placedCount}/${STATS_MIN_POKEMON}).`}
-              </p>
-            </button>
-          </div>
-        )}
+        {/* Detailed stats. Staged like the other view options (mobile sheet
+            applies on "Update & View"). */}
+        <div className="px-3 pt-3 pb-2 border-t">
+          <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            Stats
+          </h3>
+          <button
+            type="button"
+            onClick={handleToggleStats}
+            disabled={!statsEnabled}
+            className={`w-full text-left rounded-md px-3 py-2 transition-colors ${
+              !statsEnabled ? 'opacity-50 cursor-default' : 'cursor-pointer'
+            } ${effShowStats && statsEnabled ? 'bg-primary/10' : 'hover:bg-muted'}`}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                  effShowStats && statsEnabled ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                }`}
+              >
+                {effShowStats && statsEnabled && <Check className="w-3 h-3 text-primary-foreground" />}
+              </span>
+              <span className={`text-sm ${effShowStats && statsEnabled ? 'text-primary font-medium' : 'text-foreground'}`}>
+                Show detailed stats
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
+              {statsEnabled
+                ? 'Adds type, generation, and base-stat-total charts beside the grid.'
+                : `Add at least ${STATS_MIN_POKEMON} Pokémon to enable detailed stats (${placedCount}/${STATS_MIN_POKEMON}).`}
+            </p>
+          </button>
+        </div>
 
         <PageFooter />
         {/* Extra bottom padding so the floating button doesn't occlude the last row */}
