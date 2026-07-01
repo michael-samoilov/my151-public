@@ -537,7 +537,7 @@ export const ARCHETYPES: Archetype[] = [
       582,583,584,     // Vanillite→Vanillish→Vanilluxe (ice cream)
       679,680,681,     // Honedge→Doublade→Aegislash (sword)
       707,             // Klefki (key ring)
-      840,841,842,     // Applin→Flapple→Appletun (apple)
+      840,841,842,1011,1019, // Applin→Flapple/Appletun/Dipplin→Hydrapple (apple)
       854,855,         // Sinistea→Polteageist (teapot)
       868,869,         // Milcery→Alcremie (cream/cake)
       999,1000,        // Gimmighoul→Gholdengo (coins)
@@ -770,8 +770,8 @@ export const ARCHETYPES: Archetype[] = [
       408,407,448,419,429,411,460,466,
       // Sinnoh Pokémon League
       452,450,392,437,445,
-      // Unova Gym Challenge
-      505,542,523,530,581,614,612,
+      // Unova Gym Challenge (BW + B2W2)
+      511,513,515,505,542,523,530,581,614,612,508,545,593,
       // Unova Pokémon League
       609,625,576,620,637,
       // Kalos Gym Challenge
@@ -802,7 +802,7 @@ export const ARCHETYPES: Archetype[] = [
       { label: 'Hoenn Pokémon League', pokemonIds: [359,356,365,373,376] },
       { label: 'Sinnoh Gym Challenge', pokemonIds: [408,407,448,419,429,411,460,466] },
       { label: 'Sinnoh Pokémon League', pokemonIds: [452,450,392,437,445] },
-      { label: 'Unova Gym Challenge', pokemonIds: [505,542,523,530,581,614,612] },
+      { label: 'Unova Gym Challenge', pokemonIds: [511,513,515,505,542,523,530,581,614,612,508,545,593] },
       { label: 'Unova Pokémon League', pokemonIds: [609,625,576,620,637] },
       { label: 'Kalos Gym Challenge', pokemonIds: [666,696,701,673,695,700,678,713] },
       { label: 'Kalos Pokémon League', pokemonIds: [663,689,681,715,282] },
