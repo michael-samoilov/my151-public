@@ -154,7 +154,7 @@ function validSections(sections: unknown): Record<string, number[]> | undefined 
 const VALID_SORTS = new Set(['build-order', 'regional', 'national', 'type', 'custom']);
 function validExportSettings(
   v: unknown,
-): { sort: string; outlines: boolean; groupSpecial: boolean } | undefined {
+): { sort: string; outlines: boolean; groupSpecial: boolean; showStats: boolean } | undefined {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
   const o = v as Record<string, unknown>;
   if (typeof o.sort !== 'string' || !VALID_SORTS.has(o.sort)) return undefined;
@@ -162,6 +162,7 @@ function validExportSettings(
     sort: o.sort,
     outlines: o.outlines === true,
     groupSpecial: o.groupSpecial === true,
+    showStats: o.showStats === true,
   };
 }
 

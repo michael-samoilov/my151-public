@@ -54,6 +54,8 @@ interface PokedexState {
   viewCustomOrder: number[] | null;
   /** Whether the build-section outlines overlay is shown on the View grid. */
   viewShowSections: boolean;
+  /** Whether the detailed-stats side panel is shown on the View grid. */
+  viewShowStats: boolean;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -84,6 +86,7 @@ interface PokedexState {
   setViewGroupSpecialAtEnd: (value: boolean) => void;
   setViewCustomOrder: (order: number[] | null) => void;
   setViewShowSections: (value: boolean) => void;
+  setViewShowStats: (value: boolean) => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -112,6 +115,7 @@ export const usePokedexStore = create<PokedexState>()(
       viewGroupSpecialAtEnd: true,
       viewCustomOrder: null,
       viewShowSections: DEMO_MODE,
+      viewShowStats: false,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -295,6 +299,7 @@ export const usePokedexStore = create<PokedexState>()(
       setViewGroupSpecialAtEnd: (value) => set({ viewGroupSpecialAtEnd: value }),
       setViewCustomOrder: (order) => set({ viewCustomOrder: order }),
       setViewShowSections: (value) => set({ viewShowSections: value }),
+      setViewShowStats: (value) => set({ viewShowStats: value }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,

@@ -37,6 +37,22 @@ interface ButterflyChartProps {
   onSortChange?: (col: 'count' | 'deviation' | 'label') => void;
   /** Header text for the label/icon column (e.g. "TYPE", "GEN") */
   labelHeader?: string;
+  /** Drop the per-row label text (and the label-column header), keeping only the
+   *  row icon as the identifier. Collapses the label column to just the icon so
+   *  the chart bodies reclaim the freed width. Only sensible when every row has an
+   *  icon that stands on its own (type symbols, numbered gen badges). */
+  hideLabelText?: boolean;
+  /** Width-to-height ratio reserved for the icon column (default 1 = square). Use
+   *  >1 for wide identifiers like type-name badges. String icons fill the column at
+   *  this aspect; function icons still render square (left-aligned in the column),
+   *  so two charts can share an aspect to keep their bar columns aligned. */
+  iconColAspect?: number;
+  /** Multiplier on the per-row height (default 1). Lets a caller make the whole
+   *  chart taller/shorter to tune how much vertical space it takes vs. its peers. */
+  heightScale?: number;
+  /** Size the row icon to fill the row height instead of the fixed ~14px icon size.
+   *  Used for tall identifiers like type-name badges so the name reads at bar size. */
+  iconFillsRow?: boolean;
   /** When true, the label-column header is clickable and toggles `sortBy='label'`.
    *  Default false: the label header is display-only. */
   labelSortable?: boolean;
@@ -50,9 +66,13 @@ interface ButterflyChartProps {
    *  mentions. Pass `pokemon.length` in that case so each bar reads as
    *  "share of the dex" rather than "share of type mentions". */
   countDenominator?: number;
+  /** When set, overrides the font-size class on every text element (headers,
+   *  count numbers, value labels) so they render at a single uniform size.
+   *  Defaults to the per-element sizes (used by the analytics dashboard). */
+  textClass?: string;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hoveredSort, setHoveredSort] = useState<'count' | 'deviation' | 'label' | null>(null);
@@ -90,8 +110,10 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   // today, desktop proportions match mobile (just larger).
   const chartScale = width > 0 ? Math.max(1, Math.min(width / 360, 2)) : 1;
   const iconSize = hasIcons ? 14 * chartScale : 0;
-  const labelWidth = 42 * chartScale;
-  const iconGap = hasIcons ? 3 : 0;
+  // With label text hidden the column collapses to just the icon (flush left); the
+  // freed width flows into the chart bodies below via labelColEnd.
+  const labelWidth = hideLabelText ? 0 : 42 * chartScale;
+  const iconGap = hasIcons && !hideLabelText ? 3 : 0;
   const gap = 6;
   const gutter = 8; // space between chart sections
   // Header band. Tall enough for the two-line deviation header ("UNDER- / ←
@@ -102,13 +124,19 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const titleHeight = 28;
   const topOffset = titleHeight;
   const headerBaseline = topOffset - 8;
-  const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale, iconSize + 4);
+  const rowHeight = Math.max((rowHeightProp ?? 22) * chartScale * heightScale, iconSize + 4);
   const chartHeight = topOffset + data.length * rowHeight;
 
-  const iconStart = labelWidth + iconGap;
+  // Icon box height: a fixed ~14px square by default, or the full row height for
+  // tall identifiers (type-name badges) so the name reads at roughly bar height.
+  const iconBoxH = hasIcons ? (iconFillsRow ? rowHeight : iconSize) : 0;
+  // Reserved icon-column width. Square by default; wider for type-name badges etc.
+  const iconColW = iconBoxH * iconColAspect;
+
+  const iconStart = hideLabelText ? 0 : labelWidth + iconGap;
 
   // Column A: labels + icons (fixed width)
-  const labelColEnd = iconStart + iconSize + gap;
+  const labelColEnd = iconStart + iconColW + gap;
 
   // Determine directionality BEFORE width distribution
   const countHasNeg = scoreMode ? data.some(d => d.count < 0) : false;
@@ -215,10 +243,11 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   }
   // Header label extent (widest single line + 5px offset from zeroX).
   const labelPx = (scoreMode ? 60 : 66) * chartScale;
-  // Bar value label extent (e.g. "-0.23" ≈ 24px, "2.30x" ≈ 26px at mobile
-  // base font). Reserved on each side of the bar area as scale-range
-  // padding so value labels never spill into the gutter / chart 1.
-  const barPad = 28 * chartScale;
+  // Bar value label extent (e.g. "-0.23" ≈ 24px, "1.54x" ≈ 30px with the +3
+  // anchor offset at mobile base font). Reserved on each side of the bar area as
+  // scale-range padding so value labels never spill into the gutter / chart 1 (or,
+  // on the right, past the chart edge into the page margin).
+  const barPad = 32 * chartScale;
   const usableW = Math.max(0, chart2Width - 2 * barPad);
   // In the usable area, zeroX still needs `labelPx` from each edge for the
   // header labels. The barPad we already reserved buys us some of that, so
@@ -251,16 +280,18 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
         <svg width={width} height={chartHeight} className="overflow-visible">
           {/* Label column header (e.g. "TYPE", "GEN"). Sortable only when
               `labelSortable` is true — e.g. the gen chart uses natural-order
-              sort; the type chart does not. */}
+              sort; the type chart does not. With the label text hidden the header
+              centers over the (wide) icon column; otherwise it right-aligns to the
+              label+icon column edge. */}
           {labelHeader && (
             <text
-              x={iconStart + iconSize}
+              x={hideLabelText ? iconStart + iconColW / 2 : iconStart + iconSize}
               y={headerBaseline}
-              textAnchor="end"
+              textAnchor={hideLabelText ? 'middle' : 'end'}
               fontWeight={600}
               fill={labelSortable && sortBy === 'label' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
               letterSpacing="0.05em"
-              className={cn('text-xs', labelSortable && onSortChange && 'cursor-pointer')}
+              className={cn(textClass ?? 'text-xs', labelSortable && onSortChange && 'cursor-pointer')}
               textDecoration={labelSortable && (sortBy === 'label' || hoveredSort === 'label') ? 'underline' : 'none'}
               onClick={labelSortable && onSortChange ? () => onSortChange('label') : undefined}
               onMouseEnter={labelSortable && onSortChange ? () => setHoveredSort('label') : undefined}
@@ -281,7 +312,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             fontWeight={600}
             fill={sortBy === 'count' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
-            className={cn('text-xs', onSortChange && 'cursor-pointer')}
+            className={cn(textClass ?? 'text-xs', onSortChange && 'cursor-pointer')}
             textDecoration={sortBy === 'count' || hoveredSort === 'count' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('count') : undefined}
             onMouseEnter={onSortChange ? () => setHoveredSort('count') : undefined}
@@ -299,7 +330,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             fontWeight={600}
             fill={sortBy === 'deviation' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
-            className={cn('text-[0.6875rem]', onSortChange && 'cursor-pointer')}
+            className={cn(textClass ?? 'text-[0.6875rem]', onSortChange && 'cursor-pointer')}
             textDecoration={sortBy === 'deviation' || hoveredSort === 'deviation' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('deviation') : undefined}
             onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
@@ -317,7 +348,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             fontWeight={600}
             fill={sortBy === 'deviation' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
-            className={cn('text-[0.6875rem]', onSortChange && 'cursor-pointer')}
+            className={cn(textClass ?? 'text-[0.6875rem]', onSortChange && 'cursor-pointer')}
             textDecoration={sortBy === 'deviation' || hoveredSort === 'deviation' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('deviation') : undefined}
             onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
@@ -372,16 +403,18 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                   className={!isActive && onBarClick && hasData ? 'hover:fill-current hover:opacity-[0.04] active:opacity-[0.08]' : ''}
                 />
                 {/* Label */}
-                <text
-                  x={labelWidth}
-                  y={y + barHeight / 2}
-                  textAnchor="end"
-                  dominantBaseline="middle"
-                  className="text-xs"
-                  fill="currentColor"
-                >
-                  {d.label}
-                </text>
+                {!hideLabelText && (
+                  <text
+                    x={labelWidth}
+                    y={y + barHeight / 2}
+                    textAnchor="end"
+                    dominantBaseline="middle"
+                    className={textClass ?? 'text-xs'}
+                    fill="currentColor"
+                  >
+                    {d.label}
+                  </text>
+                )}
 
                 {/* Row icon */}
                 {d.icon && (
@@ -389,11 +422,12 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                     <image
                       href={d.icon}
                       x={iconStart}
-                      y={y + barHeight / 2 - iconSize / 2}
-                      width={iconSize}
-                      height={iconSize}
+                      y={y + barHeight / 2 - iconBoxH / 2}
+                      width={iconColW}
+                      height={iconBoxH}
+                      preserveAspectRatio="xMidYMid meet"
                     />
-                  ) : d.icon(iconStart, y + barHeight / 2 - iconSize / 2, iconSize)
+                  ) : d.icon(iconStart + (iconColW - iconBoxH) / 2, y + barHeight / 2 - iconBoxH / 2, iconBoxH)
                 )}
 
                 {/* Count bar */}
@@ -414,7 +448,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                   y={y + barHeight / 2}
                   textAnchor={scoreMode && !countIsPositive ? 'end' : 'start'}
                   dominantBaseline="middle"
-                  className="text-[0.6875rem]"
+                  className={textClass ?? 'text-[0.6875rem]'}
                   fill="var(--color-muted-foreground)"
                   style={{ fontVariantNumeric: 'tabular-nums' }}
                 >
@@ -494,7 +528,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                       <text
                         x={barEnd + 3} y={y + barHeight / 2}
                         textAnchor="start" dominantBaseline="middle"
-                        className="text-[0.6875rem]" fill="var(--color-muted-foreground)"
+                        className={textClass ?? 'text-[0.6875rem]'} fill="var(--color-muted-foreground)"
                         style={{ fontVariantNumeric: 'tabular-nums' }}
                       >{val}</text>
                     );
@@ -503,7 +537,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                     <text
                       x={barEnd - 3} y={y + barHeight / 2}
                       textAnchor="end" dominantBaseline="middle"
-                      className="text-[0.6875rem]" fill="var(--color-muted-foreground)"
+                      className={textClass ?? 'text-[0.6875rem]'} fill="var(--color-muted-foreground)"
                       style={{ fontVariantNumeric: 'tabular-nums' }}
                     >{val}</text>
                   );

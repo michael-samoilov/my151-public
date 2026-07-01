@@ -6,6 +6,8 @@ import { typeIconPath } from '@/data/type-ids';
 import { GEN_BADGE_URIS } from '@/components/shared/GenBadge';
 import { STARTER_IDS } from '@/data/categories';
 import { ensureTypeMask } from '@/lib/typeSymbol';
+import { measureStatsPanel, drawStatsPanel, statsBadgeUrls, STATS_NAT_W, CARD_PADX as STATS_CARD_PADX, CARD_GAP as STATS_CARD_GAP, type StatsHeights } from './exportStats';
+import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 import {
   computeOutlineLayout,
   buildOutlines,
@@ -32,8 +34,24 @@ const PAD_X = 12;
 const PAD_TOP = 8;
 const PAD_BOTTOM = 28;
 const BG = '#ffffff';
+// When the stats panel is composited, the grid is wrapped in a white card (like
+// the website). The card's inner padding is computed to match the stat cards'
+// padding (see generateExportImage); corner radius + the muted page background
+// the cards sit on are below.
+const CARD_RADIUS = 12;
+const CARD_BG = '#ffffff';
+const PAGE_BG = '#f7f7f8';
+// Outer margin around the carded content so the cards' soft shadow has room and
+// isn't clipped at the canvas edge.
+const CARD_SHADOW_ROOM = 20;
 const ROTATION = -30 * (Math.PI / 180); // match view page -rotate-[30deg]
 const SCALE = 4; // SPRITE * SCALE = 192 = exactly 2× native 96px sprites
+// iOS/Safari (and therefore every iOS browser, incl. Chrome) caps a canvas's
+// backing store at ~16.7M px (4096²). Past it, canvas ops silently no-op and
+// toBlob never fires its callback — the export spinner hangs forever. The
+// with-stats export at SCALE=4 (~4400×4900 ≈ 21.6M px) exceeds this, so we cap
+// the area and derive the effective scale from it. Margin under the hard limit.
+const MAX_CANVAS_AREA = 16_000_000;
 
 // ---------- Footer insight computation ----------
 
@@ -259,12 +277,18 @@ function drawPokeball(
  */
 export async function generateExportImage(
   pokemon: Pokemon[],
-  options: { sections?: Record<string, number[]> | null } = {},
+  options: {
+    sections?: Record<string, number[]> | null;
+    /** Detailed-stats data to redraw (natively) to the right of the grid. */
+    stats?: { data: DetailedStatsData; heights: StatsHeights } | null;
+  } = {},
 ): Promise<Blob> {
   const count = pokemon.length;
   if (count === 0) throw new Error('No Pokemon to export');
 
   const sections = options.sections ?? null;
+  const statsData = options.stats?.data ?? null;
+  const statsHeights = options.stats?.heights ?? null;
 
   // --- Outline geometry (only when section outlines are enabled) -----------
   let outline: {
@@ -285,11 +309,12 @@ export async function generateExportImage(
   let h: number;
   let footerTop: number;
 
+  // Canvas text metrics for title fitting / stats wrapping need the real font.
+  if ((sections || statsData) && typeof document !== 'undefined' && document.fonts?.ready) {
+    try { await document.fonts.ready; } catch { /* fall back to metrics-as-is */ }
+  }
+
   if (sections) {
-    // Canvas text metrics for title fitting need the real font; wait for it.
-    if (typeof document !== 'undefined' && document.fonts?.ready) {
-      try { await document.fonts.ready; } catch { /* fall back to metrics-as-is */ }
-    }
     const oLayout = computeOutlineLayout(pokemon, sections, count, COLS);
     const gap = TILE * OUTLINE_GAP;
     const pad = TILE * OUTLINE_PAD;
@@ -347,18 +372,101 @@ export async function generateExportImage(
     loadSpandrelMasks(outline?.spandrelTypes ?? []),
   ]);
 
+  // Type-name badge sprites for the stats Type-Distribution chart.
+  const statsBadges = new Map<string, HTMLImageElement>();
+  if (statsData) {
+    await Promise.all(
+      statsBadgeUrls(statsData).map(async ({ type, url }) => {
+        const img = await maybeLoadImage(url);
+        if (img) statsBadges.set(type, img);
+      }),
+    );
+  }
+
+  // Detailed-stats panel (if requested): the grid is wrapped in a white card (like
+  // the website) and the stats are drawn natively to its right, height-matched to
+  // the dex card. The grid is shifted in by the card padding; the canvas grows for
+  // the card + stats. Grid-only exports skip the card entirely (unchanged white).
+  const statsLayout = (() => {
+    if (!statsData || !statsHeights) return null;
+    const mc = document.createElement('canvas').getContext('2d');
+    return mc ? measureStatsPanel(mc, statsData, statsHeights) : null;
+  })();
+  const statsNatH = statsLayout?.h ?? 0;
+  const willCard = !!(statsData && statsNatH > 0);
+  // Outer margins: roomy when carded (so card shadows aren't clipped at the canvas
+  // edge), tight otherwise (unchanged grid-only export).
+  const mx = willCard ? CARD_SHADOW_ROOM : PAD_X;
+  const my = willCard ? CARD_SHADOW_ROOM : PAD_TOP;
+  const dexContentW = w - PAD_X * 2;
+  const dexContentH = footerTop - PAD_TOP;
+  // Dex-card inner padding. When stats are present, match it to the stat cards'
+  // padding in final-image units (= STATS_CARD_PADX × statsScale) so all cards
+  // share the same content-to-edge spacing. statsScale depends on dexCardH which
+  // depends on the pad, so solve the resulting equation in closed form:
+  //   pad = P·dexContentH / (statsNatH − 2P),  where P = STATS_CARD_PADX.
+  const cardPad = willCard
+    ? Math.max(4, (STATS_CARD_PADX * dexContentH) / (statsNatH - 2 * STATS_CARD_PADX))
+    : 0;
+  const dexCardW = dexContentW + cardPad * 2;
+  const dexCardH = dexContentH + cardPad * 2;
+
+  // Scale the natural-width panel so its height matches the dex card.
+  const statsScale = willCard ? dexCardH / statsNatH : 0;
+  // Horizontal gutter between the dex card and the stats column == the vertical
+  // gutter between the stat cards (CARD_GAP, scaled), so all gutters are uniform.
+  const STATS_GAP = STATS_CARD_GAP * statsScale;
+  const stats = willCard
+    ? { x: mx + dexCardW + STATS_GAP, y: my, w: STATS_NAT_W * statsScale, h: dexCardH, scale: statsScale }
+    : null;
+  const canvasW = stats ? stats.x + stats.w + mx : w;
+
+  // Footer centered under the whole image. For the stats export the bottom margin
+  // mirrors the top margin (my), and the single "made with my151.app" credit sits
+  // inside that bottom margin (the charts already convey the type/gen lean).
+  // Grid-only exports keep their original footer band (PAD_BOTTOM, two lines).
+  const footerCenterX = canvasW / 2;
+  footerTop = my + dexCardH;
+  h = footerTop + (stats ? my : PAD_BOTTOM);
+
+  // Cap the backing store to the iOS canvas-area limit. At 151 + stats this pulls
+  // SCALE 4 down to ~3.4; grid-only stays at 4 (it's well under the cap).
+  const expScale = Math.min(SCALE, Math.sqrt(MAX_CANVAS_AREA / (canvasW * h)));
+
   const canvas = document.createElement('canvas');
-  canvas.width = w * SCALE;
-  canvas.height = h * SCALE;
+  canvas.width = Math.round(canvasW * expScale);
+  canvas.height = Math.round(h * expScale);
   const ctx = canvas.getContext('2d')!;
 
-  // Scale everything by 4x for sharp rendering
-  ctx.scale(SCALE, SCALE);
+  // Scale everything for sharp rendering (≤ SCALE, lowered when capped above).
+  ctx.scale(expScale, expScale);
   ctx.imageSmoothingEnabled = false;
 
-  // White background
-  ctx.fillStyle = BG;
-  ctx.fillRect(0, 0, w, h);
+  // Background. With the stats panel present, use the app's muted page background
+  // (not pure white) so the white cards read as cards — matching the website. A
+  // grid-only export stays white.
+  ctx.fillStyle = stats ? PAGE_BG : BG;
+  ctx.fillRect(0, 0, canvasW, h);
+
+  // Dex card behind the grid (white rounded rect + soft shadow), matching the
+  // stat cards. Drawn before the grid; the grid is then shifted in by cardPad.
+  if (cardPad > 0) {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.06)';
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = CARD_BG;
+    ctx.beginPath();
+    ctx.roundRect(mx, my, dexCardW, dexCardH, CARD_RADIUS);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Shift the grid to sit inside the card (no-op when not carded: mx=PAD_X,
+  // my=PAD_TOP, cardPad=0). drawTile maps through the live transform, so sprites
+  // follow this translate too.
+  ctx.save();
+  ctx.translate(mx + cardPad - PAD_X, my + cardPad - PAD_TOP);
 
   // No top header — content starts immediately after PAD_TOP breathing room.
 
@@ -408,8 +516,37 @@ export async function generateExportImage(
     }
   }
 
-  // Footer: two lines — insights (top, normal size) + "made with my151.app"
-  // (bottom, smaller so the credit reads quietly rather than as an ad).
+  ctx.restore(); // end grid translate
+
+  // Detailed-stats panel to the right of the grid — drawn natively (NOT via
+  // html-to-image, which hangs/fails on iOS).
+  if (stats && statsData && statsHeights && statsLayout) {
+    // Card backgrounds drawn in the export's logical space so their corner radius
+    // and soft shadow match the dex card exactly (same CARD_RADIUS + shadow).
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.06)';
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetY = 4;
+    ctx.fillStyle = CARD_BG;
+    for (const c of statsLayout.cards) {
+      ctx.beginPath();
+      ctx.roundRect(stats.x, stats.y + c.y * stats.scale, STATS_NAT_W * stats.scale, c.h * stats.scale, CARD_RADIUS);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // Chart/text content scaled on top (smoothing on for anti-aliased charts +
+    // badge images, then back off for the pixel sprites/footer icons).
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.translate(stats.x, stats.y);
+    ctx.scale(stats.scale, stats.scale);
+    drawStatsPanel(ctx, statsData, statsBadges, statsHeights);
+    ctx.restore();
+    ctx.imageSmoothingEnabled = false;
+  }
+
+  // Grid-only footer: two lines — insights (top) + "made with my151.app" (bottom).
   const line1Y = footerTop + 10;
   const line2Y = footerTop + 21;
   const zinc = '#a1a1aa';
@@ -523,7 +660,7 @@ export async function generateExportImage(
     for (const seg of segs) {
       totalW += seg.kind === 'icon' ? (seg.sz + ICON_GAP) : ctx.measureText(seg.text).width;
     }
-    let tx = (w - totalW) / 2;
+    let tx = footerCenterX - totalW / 2;
     for (const seg of segs) {
       if (seg.kind === 'icon') {
         ctx.drawImage(seg.img, tx, y - seg.sz / 2, seg.sz, seg.sz);
@@ -536,11 +673,23 @@ export async function generateExportImage(
     }
   };
 
-  drawLine(insightSegs, line1Y, INSIGHTS_FONT);
-  drawLine(creditSegs, line2Y, CREDIT_FONT);
+  if (stats) {
+    // Stats export: the charts already convey the type/gen lean, so drop the
+    // insights line and show just a larger, legible "made with my151.app" credit,
+    // centred inside the bottom margin (which mirrors the top margin).
+    const STATS_CREDIT_FONT = '600 13px "Inter Variable", system-ui, -apple-system, sans-serif';
+    drawLine(creditSegs, footerTop + my / 2, STATS_CREDIT_FONT);
+  } else {
+    drawLine(insightSegs, line1Y, INSIGHTS_FONT);
+    drawLine(creditSegs, line2Y, CREDIT_FONT);
+  }
 
   return new Promise<Blob>((resolve, reject) => {
+    // Guard against iOS occasionally never invoking the toBlob callback (which
+    // would hang the export spinner indefinitely).
+    const timer = window.setTimeout(() => reject(new Error('Canvas toBlob timed out')), 15000);
     canvas.toBlob((blob) => {
+      window.clearTimeout(timer);
       if (blob) resolve(blob);
       else reject(new Error('Canvas toBlob failed'));
     }, 'image/png');
@@ -707,13 +856,19 @@ function drawTile(
   drawPokeball(ctx, cx, cy, r, primary, secondary);
 
   if (sprite) {
-    // Draw sprite at exact integer multiple of native resolution
-    // to preserve pixel art without aliasing artifacts
+    // Draw sprite at exact integer multiple of native resolution to preserve
+    // pixel art without aliasing artifacts. We reset to the identity transform
+    // (raw canvas pixels) for this, so map the tile centre through the *current*
+    // transform first — otherwise any active translate (e.g. the dex-card offset)
+    // is dropped and the sprite drifts off its pokeball.
     ctx.save();
+    const m = ctx.getTransform();
     ctx.setTransform(1, 0, 0, 1, 0, 0); // reset to identity (canvas pixels)
-    const drawSize = SPRITE * SCALE; // 192px = exactly 2× native 96px
-    const sx = cx * SCALE - drawSize / 2;
-    const sy = cy * SCALE - drawSize / 2;
+    // Size the sprite from the *live* scale (m.a), not the SCALE constant, so it
+    // tracks the effective scale when the canvas area is capped (iOS).
+    const drawSize = SPRITE * m.a; // = 2× native 96px at full SCALE
+    const sx = m.a * cx + m.c * cy + m.e - drawSize / 2;
+    const sy = m.b * cx + m.d * cy + m.f - drawSize / 2;
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(sprite, sx, sy, drawSize, drawSize);
     ctx.restore();

@@ -68,6 +68,8 @@ export interface ExportSettings {
   sort: string;
   outlines: boolean;
   groupSpecial: boolean;
+  /** Whether the detailed-stats panel was included in the export. */
+  showStats: boolean;
 }
 
 function postBeacon(

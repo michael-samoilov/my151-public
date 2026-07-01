@@ -105,6 +105,8 @@ export interface ClientRecord {
     sort: string;
     outlines: boolean;
     groupSpecial: boolean;
+    /** Whether the detailed-stats panel was included. Absent on older records. */
+    showStats?: boolean;
   };
 }
 

@@ -84,7 +84,7 @@ export function getSectionLabelChain(groupId: string): string[] {
 // squashed the rest of the way to fit the available space exactly (below the
 // floor) — names are never truncated or wrapped.
 const MIN_LABEL_SCALE = 0.72;
-const MAX_LABEL_STRETCH = 1.4;
+export const MAX_LABEL_STRETCH = 1.4;
 
 let _measureCanvas: HTMLCanvasElement | null = null;
 export function measureLabelWidth(text: string, fontPx: number): number {

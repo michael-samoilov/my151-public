@@ -81,6 +81,7 @@ interface ClientRecord {
     sort: string;
     outlines: boolean;
     groupSpecial: boolean;
+    showStats?: boolean;
   };
 }
 
@@ -93,6 +94,7 @@ interface ApiResponse {
     tracked: number;
     outlines: number;
     groupSpecial: number;
+    showStats: number;
     sorts: Record<string, number>;
   };
   retention: { returning: number; activeLast7: number; newUsers: number };
@@ -733,6 +735,7 @@ function fmtExportSettings(s: NonNullable<ClientRecord['exportSettings']>): stri
   const parts = [SORT_LABELS[s.sort] ?? s.sort];
   if (s.outlines) parts.push('outlines');
   parts.push(s.groupSpecial ? 'specials grouped' : 'specials inline');
+  if (s.showStats) parts.push('stats');
   return parts.join(' · ');
 }
 
@@ -1436,6 +1439,7 @@ export function AdminPage() {
                       <div className="flex flex-wrap gap-2">
                         <Stat value={`${es.outlines} (${pct(es.outlines)})`} label="With outlines" />
                         <Stat value={`${es.groupSpecial} (${pct(es.groupSpecial)})`} label="Specials grouped" />
+                        <Stat value={`${es.showStats ?? 0} (${pct(es.showStats ?? 0)})`} label="With stats" />
                       </div>
                       <div>
                         <div className="text-xs text-muted-foreground mb-1">Sort order used</div>
