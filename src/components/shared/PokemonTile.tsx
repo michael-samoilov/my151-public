@@ -67,9 +67,10 @@ export function useTileSpritePx(): number {
 
 /**
  * Width/height (CSS px) for the sprite `<img>` element. On desktop, snapped
- * to the nearest integer multiple of SPRITE_NATIVE (96px) so
- * `image-rendering: pixelated` produces clean nearest-neighbour scaling.
- * On mobile, the fluid continuous value is kept.
+ * to the largest integer multiple of SPRITE_NATIVE (96px) that doesn't
+ * exceed the fluid value — so tiles are never denser than mobile. When the
+ * pane is wide enough for 2× (≈2400px viewport), sprites step up; otherwise
+ * they stay at 1×. On mobile, the fluid continuous value is kept.
  */
 function useTileImagePx(): number {
   const isDesktop = useViewportAtLeast(1024);
@@ -77,8 +78,33 @@ function useTileImagePx(): number {
   const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, divisor);
   if (!isDesktop) return Math.round(oneX * SPRITE_IMG_SCALE);
   const fluidImage = oneX * SPRITE_IMG_SCALE;
-  const multiple = Math.max(1, Math.round(fluidImage / SPRITE_NATIVE));
+  const multiple = Math.max(1, Math.floor(fluidImage / SPRITE_NATIVE));
   return multiple * SPRITE_NATIVE;
+}
+
+/**
+ * Max-width (CSS px) for a desktop pixel-perfect tile grid, or undefined on
+ * mobile. Sized so each column matches the mobile sprite-to-column ratio
+ * (sprite fills ~96% of column width), producing whitespace bands when the
+ * pane is wider than the grid needs.
+ *
+ * `gapPx`:      the grid's column gap (e.g. 4 for gap-1 in PokedexGrid)
+ * `overheadPx`: extra container padding outside the grid (e.g. p-1 + p-3)
+ */
+export function useTileGridMaxWidth(
+  cols: number = 6,
+  gapPx: number = 0,
+  overheadPx: number = 0,
+): number | undefined {
+  const isDesktop = useViewportAtLeast(1024);
+  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, isDesktop ? DESKTOP_PANE_DIVISOR : 1);
+  if (!isDesktop) return undefined;
+  const fluidImage = oneX * SPRITE_IMG_SCALE;
+  const multiple = Math.max(1, Math.floor(fluidImage / SPRITE_NATIVE));
+  const imagePx = multiple * SPRITE_NATIVE;
+  // Column width that matches mobile's sprite-to-column fill ratio (~96%)
+  const targetCol = imagePx * 100 / (MOBILE_SPRITE_VW * SPRITE_IMG_SCALE * 6);
+  return Math.round(cols * targetCol + Math.max(0, cols - 1) * gapPx + overheadPx);
 }
 
 /** Root-padding ratios, shared across tile hosts. */
