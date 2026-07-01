@@ -114,10 +114,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const longestSecs: number[] = []; // each user's longest session, seconds
     const firstSecs: number[] = []; // each user's first session, seconds
     const allSecs: number[] = []; // every session pooled, seconds (per-session)
-    const depths: number[] = []; // max evolution lines reached (overall, default)
-    const longestDepth: number[] = []; // peak depth of each user's deepest session
-    const firstDepth: number[] = []; // peak depth of each user's first session
-    const allDepth: number[] = []; // peak depth of every session pooled
+    // Depth (evolution-line) drop-off, four bases:
+    //  total   = peak lines ever reached (overall breadth) — the default view.
+    //  first   = lines net-added in the user's FIRST session.
+    //  longest = lines net-added in the user's longest-DURATION session.
+    //  all     = lines net-added per session, pooled (one point per session).
+    // Per-session contribution = diff of cumulative end-depths, floored at 0
+    // (a session that net-pruned counts as 0 added, not negative).
+    const depths: number[] = []; // total: max lines ever
+    const firstDepth: number[] = [];
+    const longestDepth: number[] = [];
+    const allDepth: number[] = [];
     const picksFinal: Record<string, number> = {}; // one vote per user's final dex
     const droppedCounts: Record<string, number> = {}; // ever placed but not in final dex
     // Same, but split by the section the user actually placed each Pokemon in
@@ -143,12 +150,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     for (const r of records) {
-      depths.push(r.maxDepth);
-      // Per-session peak depths; fall back to overall maxDepth as one session.
-      const sessDepths = r.sessionDepth && r.sessionDepth.length > 0 ? r.sessionDepth : [r.maxDepth];
-      longestDepth.push(Math.max(...sessDepths));
-      firstDepth.push(sessDepths[0]);
-      for (const d of sessDepths) allDepth.push(d);
+      depths.push(r.maxDepth); // total = peak lines ever reached
 
       // Session durations. Prefer the per-session list; fall back to the
       // first→last span (as a single session) for legacy records.
@@ -159,6 +161,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       longestSecs.push(Math.max(...sessSecs));
       firstSecs.push(sessSecs[0]);
       for (const s of sessSecs) allSecs.push(s);
+
+      // Per-session lines ADDED = diff of cumulative end-depths (sessionDepth),
+      // floored at 0. Legacy records (no sessionDepth) contribute their overall
+      // maxDepth as a single first-session add.
+      const ends = r.sessionDepth && r.sessionDepth.length > 0 ? r.sessionDepth : [r.maxDepth];
+      const added = ends.map((d, i) => Math.max(0, i === 0 ? d : d - ends[i - 1]));
+      firstDepth.push(added[0]);
+      // "Longest" = the session with the longest DURATION (aligns with the time
+      // chart's longest); its line contribution.
+      let li = 0;
+      for (let i = 1; i < sessSecs.length && i < added.length; i++) if (sessSecs[i] > sessSecs[li]) li = i;
+      longestDepth.push(added[Math.min(li, added.length - 1)]);
+      for (const a of added) allDepth.push(a);
 
       if (r.country) countries[r.country] = (countries[r.country] ?? 0) + 1;
       if (r.device) devices[r.device] = (devices[r.device] ?? 0) + 1;
@@ -249,16 +264,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         n: v.length,
       };
     };
+    const total = buildDepthCurve(depths); // peak lines ever reached
     const depthCurves = {
-      longest: buildDepthCurve(longestDepth),
+      total,
       first: buildDepthCurve(firstDepth),
+      longest: buildDepthCurve(longestDepth),
       all: buildDepthCurve(allDepth),
     };
-    // Back-compat default surface (overall max depth).
-    depths.sort((a, b) => a - b);
-    const overall = buildDepthCurve(depths);
-    const depthSurvival = overall.survival;
-    const depthStats = overall.stats;
+    // Back-compat flat surface (total = overall peak depth).
+    const depthSurvival = total.survival;
+    const depthStats = total.stats;
 
     const totalUsers = records.length;
     const page = records.slice(offset, offset + limit);
