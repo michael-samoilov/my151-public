@@ -62,7 +62,15 @@ export function useTileSpritePx(): number {
   const isDesktop = useViewportAtLeast(1024);
   const divisor = isDesktop ? DESKTOP_PANE_DIVISOR : 1;
   const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, divisor);
-  return Math.round(oneX * WIDE_LAYOUT_BOOST);
+  const fluid = Math.round(oneX * WIDE_LAYOUT_BOOST);
+  if (!isDesktop) return fluid;
+  // When the grid is max-width constrained, cap chrome so text/badges
+  // stay proportional to the column width (matching mobile's ratio).
+  const fluidImage = oneX * SPRITE_IMG_SCALE;
+  const multiple = Math.max(1, Math.floor(fluidImage / SPRITE_NATIVE));
+  const imagePx = multiple * SPRITE_NATIVE;
+  const cap = Math.round(imagePx * WIDE_LAYOUT_BOOST / SPRITE_IMG_SCALE);
+  return Math.min(fluid, cap);
 }
 
 /**

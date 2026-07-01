@@ -3,6 +3,7 @@ import { FilterChipList } from './FilterChipList';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
+import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
 import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { ARCHETYPES } from '@/data/archetypes';
@@ -68,6 +69,7 @@ export function PokemonBrowser() {
   const [openSheet, setOpenSheet] = useState<FilterSheet>(null);
   const [sheetH, setSheetH] = useState(0);
   const isDesktop = useIsDesktop();
+  const gridMaxW = useTileGridMaxWidth(6, 0, 0);
 
   // Staged selection: pokemon selected but not yet committed
   const [stagedIds, setStagedIds] = useState<number[]>([]);
@@ -738,8 +740,10 @@ export function PokemonBrowser() {
 
             return (
               <div key={sub.label}>
-                <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 mt-1 border-b">
-                  {sub.label}
+                <div className="sticky top-0 z-20 bg-background mt-1 border-b">
+                  <div className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1" style={{ maxWidth: gridMaxW, marginInline: gridMaxW ? 'auto' : undefined }}>
+                    {sub.label}
+                  </div>
                 </div>
                 <div className="pt-1">
                   <EvoLineGrid
