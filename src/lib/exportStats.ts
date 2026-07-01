@@ -187,9 +187,9 @@ function butterfly(
   // Deviation two-line headers, bottom line on headerBaseline.
   const dy = 1.1 * CHART_TEXT;
   spacedText(ctx, 'UNDER-', devSectionStart + zeroX - 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'end');
-  spacedText(ctx, '← INDEXED', devSectionStart + zeroX - 5, headerBaseline, 0.05 * 11, 'end');
-  spacedText(ctx, 'OVER-', devSectionStart + zeroX + 5, headerBaseline - dy, 0.05 * 11, 'start');
-  spacedText(ctx, 'INDEXED →', devSectionStart + zeroX + 5, headerBaseline, 0.05 * 11, 'start');
+  spacedText(ctx, '← INDEXED', devSectionStart + zeroX - 5, headerBaseline, 0.05 * CHART_TEXT, 'end');
+  spacedText(ctx, 'OVER-', devSectionStart + zeroX + 5, headerBaseline - dy, 0.05 * CHART_TEXT, 'start');
+  spacedText(ctx, 'INDEXED →', devSectionStart + zeroX + 5, headerBaseline, 0.05 * CHART_TEXT, 'start');
 
   // Rows
   rows.forEach((d, i) => {
