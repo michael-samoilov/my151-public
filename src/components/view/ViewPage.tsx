@@ -678,7 +678,13 @@ export function ViewPage() {
   const dexCardCols = statsAsCards ? cardPadCols : 0;
   const statsColFactor = statsBesideGrid ? statsGapCols + statsTileCols : 0;
 
-  const { containerRef, tileSize } = useTileSize(layout.colFactor + dexCardCols + statsColFactor, layout.rowFactor);
+  // The stats column is folded into the grid fit ONLY once the panel is revealed
+  // (settled). During the settle the grid fits alone (the hidden panel is taken
+  // out of flow), so the grid keeps a stable size instead of wobbling as the fit
+  // converges; when revealed, the reservation applies and the dex shifts left as
+  // the stats slide in — one clean transition.
+  const reserveStats = statsRevealed ? dexCardCols + statsColFactor : 0;
+  const { containerRef, tileSize } = useTileSize(layout.colFactor + reserveStats, layout.rowFactor);
 
   // useLayoutEffect (not useEffect): tilePx feeds cardPadCols → statsColFactor →
   // tileSize, a small fixed-point loop. Running it before paint lets the whole
@@ -1204,6 +1210,10 @@ export function ViewPage() {
                   width: statsDisplayW || undefined,
                   height: statsTargetHeight || undefined,
                   marginLeft: statsGapCols * tileSize,
+                  // Until revealed, sit out of flow (absolute) so the hidden panel
+                  // doesn't reserve flex width and shift/re-fit the grid mid-settle.
+                  // Its natural box is still measurable while absolute.
+                  position: statsRevealed ? undefined : 'absolute',
                 }}
                 className="shrink-0 overflow-visible"
               >
