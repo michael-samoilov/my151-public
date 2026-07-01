@@ -40,7 +40,7 @@ const TITLE_SIZE = 14;
 const TITLE_LH = 20;
 const SUB_SIZE = 10; // matches CHART_TEXT (subtitle unified with chart text)
 const SUB_LH = 14; // 10px * leading-snug (1.375)
-const LEGEND_SIZE = 12;
+const LEGEND_SIZE = 10; // unified with CHART_TEXT (matches on-screen STATS_TEXT)
 /** Single font size for all chart text (headers, axis + value numbers), matching
  *  the on-screen STATS_TEXT (text-[0.625rem] = 10px). */
 const CHART_TEXT = 10;
@@ -500,7 +500,7 @@ function drawLegend(ctx: CanvasRenderingContext2D, x: number, y: number) {
     ctx.globalAlpha = 1;
     cx += 12 + 6;
     ctx.fillStyle = MUTED;
-    ctx.font = font(500, 12);
+    ctx.font = font(500, LEGEND_SIZE);
     ctx.fillText(label, cx, y + 6);
     cx += ctx.measureText(label).width + 16;
   }

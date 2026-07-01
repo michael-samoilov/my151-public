@@ -133,11 +133,11 @@ function HistogramLegend() {
     <div className="flex items-center gap-4 mb-2">
       <div className="flex items-center gap-1.5">
         <div className="w-3 h-3 rounded-sm bg-slate-400 opacity-50" />
-        <span className="text-xs text-muted-foreground font-medium">National Dex</span>
+        <span className={`${STATS_TEXT} text-muted-foreground font-medium`}>National Dex</span>
       </div>
       <div className="flex items-center gap-1.5">
         <div className="w-3 h-3 rounded-sm bg-red-500 opacity-85" />
-        <span className="text-xs text-muted-foreground font-medium">Yours</span>
+        <span className={`${STATS_TEXT} text-muted-foreground font-medium`}>Yours</span>
       </div>
     </div>
   );
