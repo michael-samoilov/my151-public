@@ -52,56 +52,33 @@ const SPRITE_NATIVE = 96;
  */
 
 /**
- * Compute the 1× base with desktop pixel-perfect snapping. On desktop, the
- * sprite IMG is snapped to an integer multiple of the native 96px so
- * `image-rendering: pixelated` produces clean nearest-neighbour scaling
- * instead of the sub-pixel artefacts that a non-integer scale produces.
- * On mobile, the fluid continuous value is kept (mobile sprites are small
- * enough that the artefacts aren't visible).
- */
-function useSnappedOneX(): number {
-  const isDesktop = useViewportAtLeast(1024);
-  const divisor = isDesktop ? DESKTOP_PANE_DIVISOR : 1;
-  const fluid = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, divisor);
-  if (!isDesktop) return fluid;
-  const fluidImage = fluid * SPRITE_IMG_SCALE;
-  const multiple = Math.max(1, Math.round(fluidImage / SPRITE_NATIVE));
-  return (multiple * SPRITE_NATIVE) / SPRITE_IMG_SCALE;
-}
-
-/**
  * Layout scale (the `--tile-sprite` CSS var) that every tile internal
  * (name text, type badges, gen badge, padding) is `calc()`-ed off. It's the
- * (possibly snapped) 1× base × WIDE_LAYOUT_BOOST.
+ * fluid 1× base × WIDE_LAYOUT_BOOST — intentionally NOT snapped to the
+ * pixel-perfect image multiple, so the chrome stays proportional to the
+ * column width rather than jumping up with a 2× sprite snap.
  */
 export function useTileSpritePx(): number {
-  return Math.round(useSnappedOneX() * WIDE_LAYOUT_BOOST);
+  const isDesktop = useViewportAtLeast(1024);
+  const divisor = isDesktop ? DESKTOP_PANE_DIVISOR : 1;
+  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, divisor);
+  return Math.round(oneX * WIDE_LAYOUT_BOOST);
 }
 
 /**
- * Width/height (CSS px) for the sprite `<img>` element. On desktop this is
- * an exact integer multiple of SPRITE_NATIVE (96px) for pixel-perfect
- * rendering. On mobile it's the fluid continuous value.
+ * Width/height (CSS px) for the sprite `<img>` element. On desktop, snapped
+ * to the nearest integer multiple of SPRITE_NATIVE (96px) so
+ * `image-rendering: pixelated` produces clean nearest-neighbour scaling.
+ * On mobile, the fluid continuous value is kept.
  */
 function useTileImagePx(): number {
-  return Math.round(useSnappedOneX() * SPRITE_IMG_SCALE);
-}
-
-/**
- * Max-width (CSS px) for a desktop pixel-perfect tile grid, or undefined on
- * mobile. Use this to cap the grid container and center it with
- * `marginInline: 'auto'`, producing whitespace bands on wide viewports
- * instead of stretching tile columns beyond their natural content width.
- */
-export function useTileGridMaxWidth(
-  cols: number = 6,
-  gapPx: number = 0,
-  cellPaddingPx: number = 0,
-): number | undefined {
   const isDesktop = useViewportAtLeast(1024);
-  const spritePx = useTileSpritePx();
-  if (!isDesktop) return undefined;
-  return cols * (spritePx + cellPaddingPx) + Math.max(0, cols - 1) * gapPx;
+  const divisor = isDesktop ? DESKTOP_PANE_DIVISOR : 1;
+  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, divisor);
+  if (!isDesktop) return Math.round(oneX * SPRITE_IMG_SCALE);
+  const fluidImage = oneX * SPRITE_IMG_SCALE;
+  const multiple = Math.max(1, Math.round(fluidImage / SPRITE_NATIVE));
+  return multiple * SPRITE_NATIVE;
 }
 
 /** Root-padding ratios, shared across tile hosts. */
