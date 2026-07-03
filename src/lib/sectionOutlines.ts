@@ -492,7 +492,10 @@ export function buildOutlines(
       });
       const clx = lrLeft(0) + LABEL_PAD;
       shapes.push({
-        key: `${run.sectionId}-last`,
+        // Position-qualified so multiple runs of the same section never collide
+        // (a bare `${sectionId}-last` key duplicates across runs → React renders
+        // stacked, un-reconciled orphan outlines that pile up on re-render).
+        key: `${run.sectionId}-${firstRow}-${firstCol}-last`,
         sectionId: run.sectionId,
         fill: roundRectFill(jbL, yLastTop, jbR, yLastBot, radius, true, false),
         stroke: roundRectStroke(jbL, yLastTop, jbR, yLastBot, radius, true, false, dotTail + strokeW / 2),
@@ -520,7 +523,10 @@ export function buildOutlines(
     if (lastRow - firstRow === 1 && firstCol > lastCol + 1) {
       const yBotA = tileTop(firstRow) + tileSize + pad;
       shapes.push({
-        key: `${run.sectionId}-a`,
+        // Position-qualified: a section can wrap in more than one place (build
+        // order splits sections across the grid), so a bare `-a`/`-b` key would
+        // collide between runs and leave duplicate outlines stacked on re-render.
+        key: `${run.sectionId}-${firstRow}-${firstCol}-a`,
         sectionId: run.sectionId,
         fill: roundRectFill(xFirstL, yTop, xR, yBotA, radius, false, true),
         stroke: roundRectStroke(xFirstL, yTop, xR, yBotA, radius, false, true, dotTail + strokeW / 2),
@@ -535,7 +541,7 @@ export function buildOutlines(
       const labelBY = labelCenterY(lastRow);
       const labelBW = labelAvail(0, xLastR);
       shapes.push({
-        key: `${run.sectionId}-b`,
+        key: `${run.sectionId}-${firstRow}-${firstCol}-b`,
         sectionId: run.sectionId,
         fill: roundRectFill(xL, yTopB, xLastR, yBotB, radius, true, false),
         stroke: roundRectStroke(xL, yTopB, xLastR, yBotB, radius, true, false, dotTail + strokeW / 2),
