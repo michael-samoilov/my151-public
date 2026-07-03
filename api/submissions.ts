@@ -58,6 +58,18 @@ function rankedAtLeast(counts: Record<string, number>, min: number): [string, nu
     .sort((a, b) => b[1] - a[1]);
 }
 
+/** Self-scaling qualification threshold: the MEAN per-Pokemon count. For a
+ *  long-tailed distribution the head pulls the mean above the median, so
+ *  "appears in >= the average number of dexes" naturally cuts the sparse tail
+ *  without a hand-picked constant. Floored at 2 (a single-dex Pokemon is tail
+ *  by definition) and rounded up. */
+function tailThreshold(counts: Record<string, number>): number {
+  const v = Object.values(counts);
+  if (v.length === 0) return 2;
+  const mean = v.reduce((a, b) => a + b, 0) / v.length;
+  return Math.max(2, Math.ceil(mean));
+}
+
 /** Apply rankedAtLeast within each section, dropping sections left empty. */
 function rankBySection(
   bySection: Record<string, Record<string, number>>,
@@ -299,6 +311,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const totalUsers = records.length;
     const page = records.slice(offset, offset + limit);
 
+    // Self-scaling qualification thresholds: median per-Pokemon count per list.
+    const popularMin = tailThreshold(picksFinal);
+    const droppedMin = tailThreshold(droppedCounts);
+
     // Private data — never cache.
     res.setHeader('Cache-Control', 'no-store');
 
@@ -322,12 +338,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       hours,
       heatmap,
       // Full ranked lists; the admin UI previews the top N and expands the rest.
-      // Only Pokemon appearing in >= 3 dexes; no cap so evo lines aren't cut off.
-      popularFinal: rankedAtLeast(picksFinal, 3),
-      mostDropped: rankedAtLeast(droppedCounts, 3),
+      // Qualification threshold = the median per-Pokemon count for that list, so
+      // it self-scales with the data. No cap, so evo lines aren't cut off.
+      popularFinal: rankedAtLeast(picksFinal, popularMin),
+      mostDropped: rankedAtLeast(droppedCounts, droppedMin),
+      popularMin,
+      droppedMin,
       // Same, split by the section users actually placed them in (forward-only).
-      popularBySection: rankBySection(picksBySection, 3),
-      droppedBySection: rankBySection(droppedBySection, 3),
+      popularBySection: rankBySection(picksBySection, popularMin),
+      droppedBySection: rankBySection(droppedBySection, droppedMin),
       picksBySectionAll: rankBySection(picksBySection, 1),
       records: page,
     });

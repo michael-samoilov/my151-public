@@ -118,6 +118,8 @@ interface ApiResponse {
   heatmap: number[][];
   popularFinal: [string, number][];
   mostDropped: [string, number][];
+  popularMin?: number;
+  droppedMin?: number;
   popularBySection: Record<string, [string, number][]>;
   droppedBySection: Record<string, [string, number][]>;
   picksBySectionAll: Record<string, [string, number][]>;
@@ -405,11 +407,13 @@ function PopularPanel({
   title,
   rows,
   bySection,
+  minCount,
   preview = 30,
 }: {
   title: string;
   rows: [string, number][];
   bySection?: Record<string, [string, number][]>;
+  minCount?: number;
   preview?: number;
 }) {
   const [open, setOpen] = useState(false);
@@ -418,7 +422,12 @@ function PopularPanel({
   return (
     <div className="shadow-elevated rounded-lg p-3 bg-card">
       <div className="flex items-center justify-between mb-2 gap-2">
-        <span className="text-sm font-medium">{title}</span>
+        <span className="text-sm font-medium">
+          {title}
+          {minCount && minCount > 1 ? (
+            <span className="text-muted-foreground font-normal"> · in ≥{minCount} dexes (above avg)</span>
+          ) : null}
+        </span>
         <div className="flex items-center gap-1 shrink-0">
           {hasSections && (
             <Button variant={grouped ? 'default' : 'ghost'} size="sm" onClick={() => setGrouped((v) => !v)}>
@@ -1495,11 +1504,13 @@ export function AdminPage() {
                 title="Most-picked (final dex, all users)"
                 rows={data.popularFinal}
                 bySection={data.popularBySection}
+                minCount={data.popularMin}
               />
               <PopularPanel
                 title="Most tried then dropped"
                 rows={data.mostDropped}
                 bySection={data.droppedBySection}
+                minCount={data.droppedMin}
               />
             </div>
 
