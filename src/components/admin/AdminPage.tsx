@@ -425,7 +425,7 @@ function PopularPanel({
         <span className="text-sm font-medium">
           {title}
           {minCount && minCount > 1 ? (
-            <span className="text-muted-foreground font-normal"> · in ≥{minCount} dexes (median)</span>
+            <span className="text-muted-foreground font-normal"> · in ≥{minCount} dexes (above avg)</span>
           ) : null}
         </span>
         <div className="flex items-center gap-1 shrink-0">
