@@ -81,6 +81,7 @@ interface ClientRecord {
     sort: string;
     outlines: boolean;
     groupSpecial: boolean;
+    showStats?: boolean;
   };
 }
 
@@ -93,6 +94,7 @@ interface ApiResponse {
     tracked: number;
     outlines: number;
     groupSpecial: number;
+    showStats: number;
     sorts: Record<string, number>;
   };
   retention: { returning: number; activeLast7: number; newUsers: number };
@@ -116,6 +118,8 @@ interface ApiResponse {
   heatmap: number[][];
   popularFinal: [string, number][];
   mostDropped: [string, number][];
+  popularMin?: number;
+  droppedMin?: number;
   popularBySection: Record<string, [string, number][]>;
   droppedBySection: Record<string, [string, number][]>;
   picksBySectionAll: Record<string, [string, number][]>;
@@ -403,11 +407,13 @@ function PopularPanel({
   title,
   rows,
   bySection,
+  minCount,
   preview = 30,
 }: {
   title: string;
   rows: [string, number][];
   bySection?: Record<string, [string, number][]>;
+  minCount?: number;
   preview?: number;
 }) {
   const [open, setOpen] = useState(false);
@@ -416,7 +422,12 @@ function PopularPanel({
   return (
     <div className="shadow-elevated rounded-lg p-3 bg-card">
       <div className="flex items-center justify-between mb-2 gap-2">
-        <span className="text-sm font-medium">{title}</span>
+        <span className="text-sm font-medium">
+          {title}
+          {minCount && minCount > 1 ? (
+            <span className="text-muted-foreground font-normal"> · in ≥{minCount} dexes (median)</span>
+          ) : null}
+        </span>
         <div className="flex items-center gap-1 shrink-0">
           {hasSections && (
             <Button variant={grouped ? 'default' : 'ghost'} size="sm" onClick={() => setGrouped((v) => !v)}>
@@ -733,6 +744,7 @@ function fmtExportSettings(s: NonNullable<ClientRecord['exportSettings']>): stri
   const parts = [SORT_LABELS[s.sort] ?? s.sort];
   if (s.outlines) parts.push('outlines');
   parts.push(s.groupSpecial ? 'specials grouped' : 'specials inline');
+  if (s.showStats) parts.push('stats');
   return parts.join(' · ');
 }
 
@@ -1436,6 +1448,7 @@ export function AdminPage() {
                       <div className="flex flex-wrap gap-2">
                         <Stat value={`${es.outlines} (${pct(es.outlines)})`} label="With outlines" />
                         <Stat value={`${es.groupSpecial} (${pct(es.groupSpecial)})`} label="Specials grouped" />
+                        <Stat value={`${es.showStats ?? 0} (${pct(es.showStats ?? 0)})`} label="With stats" />
                       </div>
                       <div>
                         <div className="text-xs text-muted-foreground mb-1">Sort order used</div>
@@ -1491,11 +1504,13 @@ export function AdminPage() {
                 title="Most-picked (final dex, all users)"
                 rows={data.popularFinal}
                 bySection={data.popularBySection}
+                minCount={data.popularMin}
               />
               <PopularPanel
                 title="Most tried then dropped"
                 rows={data.mostDropped}
                 bySection={data.droppedBySection}
+                minCount={data.droppedMin}
               />
             </div>
 

@@ -4,12 +4,14 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 
 interface SortOption {
   value: ViewSortOption;
   label: string;
   description: string;
 }
+
 
 const SORT_OPTIONS: SortOption[] = [
   {
@@ -22,7 +24,7 @@ const SORT_OPTIONS: SortOption[] = [
     value: 'regional',
     label: 'Regional Dex',
     description:
-      'Places each evolution line roughly as deep into your grid as its earliest member appeared in its home regional dex. Evolution lines stay bundled, and lines that were neighbors in the original dex stay adjacent.',
+      'Places each evolution line roughly as deep into your grid as its earliest member appeared in its home dex',
   },
   {
     value: 'national',
@@ -65,6 +67,10 @@ export function ViewSettingsPane({
   const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
   const showSections = usePokedexStore((s) => s.viewShowSections);
   const setShowSections = usePokedexStore((s) => s.setViewShowSections);
+  const showStats = usePokedexStore((s) => s.viewShowStats);
+  const setShowStats = usePokedexStore((s) => s.setViewShowStats);
+  const placedCount = Object.values(sections).flat().length;
+  const statsEnabled = placedCount >= STATS_MIN_POKEMON;
 
   // Pending state is only used in mobileSheet mode. In desktop mode handlers
   // write straight to the store and the pending setters go unused.
@@ -72,6 +78,7 @@ export function ViewSettingsPane({
   const [pendingGrouping, setPendingGrouping] = useState<boolean>(groupSpecialAtEnd);
   const [pendingCustomOrder, setPendingCustomOrder] = useState<number[] | null>(customOrder);
   const [pendingShowSections, setPendingShowSections] = useState<boolean>(showSections);
+  const [pendingShowStats, setPendingShowStats] = useState<boolean>(showStats);
 
   // Effective values — what the UI reads to render current selection state.
   // Desktop: live store values. Mobile: pending staged values.
@@ -79,6 +86,7 @@ export function ViewSettingsPane({
   const effGrouping = mobileSheet ? pendingGrouping : groupSpecialAtEnd;
   const effCustomOrder = mobileSheet ? pendingCustomOrder : customOrder;
   const effShowSections = mobileSheet ? pendingShowSections : showSections;
+  const effShowStats = mobileSheet ? pendingShowStats : showStats;
 
   // Seed source: what's currently visible on the grid (reflects live store state).
   const currentSorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
@@ -119,6 +127,12 @@ export function ViewSettingsPane({
     else setShowSections(!showSections);
   };
 
+  const handleToggleStats = () => {
+    if (!statsEnabled) return;
+    if (mobileSheet) setPendingShowStats((v) => !v);
+    else setShowStats(!showStats);
+  };
+
   const handleResetCustom = () => {
     if (mobileSheet) {
       setPendingCustomOrder(null);
@@ -141,6 +155,7 @@ export function ViewSettingsPane({
     (pendingSort !== sortOption ||
       pendingGrouping !== groupSpecialAtEnd ||
       pendingShowSections !== showSections ||
+      pendingShowStats !== showStats ||
       customOrderChanged);
 
   const handleApply = () => {
@@ -148,6 +163,7 @@ export function ViewSettingsPane({
     setGroupSpecialAtEnd(pendingGrouping);
     setCustomOrder(pendingCustomOrder);
     setShowSections(pendingShowSections);
+    setShowStats(pendingShowStats);
     onClose();
   };
 
@@ -313,6 +329,39 @@ export function ViewSettingsPane({
           </button>
         </div>
 
+        {/* Detailed stats. Staged like the other view options (mobile sheet
+            applies on "Update & View"). */}
+        <div className="px-3 pt-3 pb-2 border-t">
+          <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
+            Stats
+          </h3>
+          <button
+            type="button"
+            onClick={handleToggleStats}
+            disabled={!statsEnabled}
+            className={`w-full text-left rounded-md px-3 py-2 transition-colors ${
+              !statsEnabled ? 'opacity-50 cursor-default' : 'cursor-pointer'
+            } ${effShowStats && statsEnabled ? 'bg-primary/10' : 'hover:bg-muted'}`}
+          >
+            <div className="flex items-center gap-2">
+              <span
+                className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                  effShowStats && statsEnabled ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                }`}
+              >
+                {effShowStats && statsEnabled && <Check className="w-3 h-3 text-primary-foreground" />}
+              </span>
+              <span className={`text-sm ${effShowStats && statsEnabled ? 'text-primary font-medium' : 'text-foreground'}`}>
+                Show detailed stats
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
+              {statsEnabled
+                ? 'Adds type, generation, and base-stat-total charts beside the grid.'
+                : `Add at least ${STATS_MIN_POKEMON} Pokémon to enable detailed stats (${placedCount}/${STATS_MIN_POKEMON}).`}
+            </p>
+          </button>
+        </div>
 
         <PageFooter />
         {/* Extra bottom padding so the floating button doesn't occlude the last row */}

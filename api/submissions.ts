@@ -58,6 +58,17 @@ function rankedAtLeast(counts: Record<string, number>, min: number): [string, nu
     .sort((a, b) => b[1] - a[1]);
 }
 
+/** Median of a set of per-Pokemon counts (>= 1). Used as a self-scaling
+ *  qualification threshold: only include Pokemon appearing in at least the
+ *  median number of dexes. */
+function medianCount(counts: Record<string, number>): number {
+  const v = Object.values(counts).sort((a, b) => a - b);
+  if (v.length === 0) return 1;
+  const mid = Math.floor(v.length / 2);
+  const m = v.length % 2 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
+  return Math.max(1, m);
+}
+
 /** Apply rankedAtLeast within each section, dropping sections left empty. */
 function rankBySection(
   bySection: Record<string, Record<string, number>>,
@@ -157,6 +168,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tracked: 0,
       outlines: 0,
       groupSpecial: 0,
+      showStats: 0,
       sorts: {} as Record<string, number>,
     };
 
@@ -232,6 +244,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         exportSettingsAgg.tracked += 1;
         if (r.exportSettings.outlines) exportSettingsAgg.outlines += 1;
         if (r.exportSettings.groupSpecial) exportSettingsAgg.groupSpecial += 1;
+        if (r.exportSettings.showStats) exportSettingsAgg.showStats += 1;
         const s = r.exportSettings.sort;
         exportSettingsAgg.sorts[s] = (exportSettingsAgg.sorts[s] ?? 0) + 1;
       }
@@ -297,6 +310,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const totalUsers = records.length;
     const page = records.slice(offset, offset + limit);
 
+    // Self-scaling qualification thresholds: median per-Pokemon count per list.
+    const popularMin = medianCount(picksFinal);
+    const droppedMin = medianCount(droppedCounts);
+
     // Private data — never cache.
     res.setHeader('Cache-Control', 'no-store');
 
@@ -320,12 +337,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       hours,
       heatmap,
       // Full ranked lists; the admin UI previews the top N and expands the rest.
-      // Only Pokemon appearing in >= 3 dexes; no cap so evo lines aren't cut off.
-      popularFinal: rankedAtLeast(picksFinal, 3),
-      mostDropped: rankedAtLeast(droppedCounts, 3),
+      // Qualification threshold = the median per-Pokemon count for that list, so
+      // it self-scales with the data. No cap, so evo lines aren't cut off.
+      popularFinal: rankedAtLeast(picksFinal, popularMin),
+      mostDropped: rankedAtLeast(droppedCounts, droppedMin),
+      popularMin,
+      droppedMin,
       // Same, split by the section users actually placed them in (forward-only).
-      popularBySection: rankBySection(picksBySection, 3),
-      droppedBySection: rankBySection(droppedBySection, 3),
+      popularBySection: rankBySection(picksBySection, popularMin),
+      droppedBySection: rankBySection(droppedBySection, droppedMin),
       picksBySectionAll: rankBySection(picksBySection, 1),
       records: page,
     });

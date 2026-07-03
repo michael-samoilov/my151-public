@@ -30,6 +30,11 @@ const SPRITE_IMG_SCALE = 1.95;
  *  bigger sprite without dominating. */
 const WIDE_LAYOUT_BOOST = 1.4;
 
+/** Native sprite resolution (px). Desktop snaps the rendered IMG to integer
+ *  multiples of this so `image-rendering: pixelated` produces artifact-free
+ *  nearest-neighbour scaling. */
+const SPRITE_NATIVE = 96;
+
 /**
  * Canonical tile primitives used by every "Pokemon tile" in the app —
  * selection browser (`EvoLineCard`), main build page (`DraggableTile`),
@@ -47,40 +52,67 @@ const WIDE_LAYOUT_BOOST = 1.4;
  */
 
 /**
- * Effective viewport divisor for the current layout. On desktop every tile
- * host is `md:w-1/2`, so we size off half the window; on mobile the host
- * fills the viewport, so we size off the whole width. Sizing off the host's
- * real width is what makes the build page, selection pane, and analytics
- * drill-down all render the same Pokemon at the same size, and makes a side
- * pane of width W look identical to a mobile bottom sheet of width W.
- */
-function useTileDivisor(): number {
-  const isDesktop = useViewportAtLeast(1024);
-  return isDesktop ? DESKTOP_PANE_DIVISOR : 1;
-}
-
-/**
  * Layout scale (the `--tile-sprite` CSS var) that every tile internal
  * (name text, type badges, gen badge, padding) is `calc()`-ed off. It's the
- * fluid 1× base × WIDE_LAYOUT_BOOST, so the chrome scales smoothly with the
- * container width and stays proportional next to the larger sprite IMG.
+ * fluid 1× base × WIDE_LAYOUT_BOOST — intentionally NOT snapped to the
+ * pixel-perfect image multiple, so the chrome stays proportional to the
+ * column width rather than jumping up with a 2× sprite snap.
  */
 export function useTileSpritePx(): number {
-  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, useTileDivisor());
-  return Math.round(oneX * WIDE_LAYOUT_BOOST);
+  const isDesktop = useViewportAtLeast(1024);
+  const divisor = isDesktop ? DESKTOP_PANE_DIVISOR : 1;
+  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, divisor);
+  const fluid = Math.round(oneX * WIDE_LAYOUT_BOOST);
+  if (!isDesktop) return fluid;
+  // When the grid is max-width constrained, cap chrome so text/badges
+  // stay proportional to the column width (matching mobile's ratio).
+  const fluidImage = oneX * SPRITE_IMG_SCALE;
+  const multiple = Math.max(1, Math.floor(fluidImage / SPRITE_NATIVE));
+  const imagePx = multiple * SPRITE_NATIVE;
+  const cap = Math.round(imagePx * WIDE_LAYOUT_BOOST / SPRITE_IMG_SCALE);
+  return Math.min(fluid, cap);
 }
 
 /**
- * Width/height (CSS px) for the sprite `<img>` element: the fluid 1× base ×
- * SPRITE_IMG_SCALE. It's larger than the chrome footprint (--tile-sprite)
- * so the sprite nearly fills — and slightly overflows — its grid column by
- * design. Because both this and the chrome derive from the same
- * container-relative base, the sprite-to-tile proportions are identical at
- * every width and across every tile host.
+ * Width/height (CSS px) for the sprite `<img>` element. On desktop, snapped
+ * to the largest integer multiple of SPRITE_NATIVE (96px) that doesn't
+ * exceed the fluid value — so tiles are never denser than mobile. When the
+ * pane is wide enough for 2× (≈2400px viewport), sprites step up; otherwise
+ * they stay at 1×. On mobile, the fluid continuous value is kept.
  */
 function useTileImagePx(): number {
-  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, useTileDivisor());
-  return Math.round(oneX * SPRITE_IMG_SCALE);
+  const isDesktop = useViewportAtLeast(1024);
+  const divisor = isDesktop ? DESKTOP_PANE_DIVISOR : 1;
+  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, divisor);
+  if (!isDesktop) return Math.round(oneX * SPRITE_IMG_SCALE);
+  const fluidImage = oneX * SPRITE_IMG_SCALE;
+  const multiple = Math.max(1, Math.floor(fluidImage / SPRITE_NATIVE));
+  return multiple * SPRITE_NATIVE;
+}
+
+/**
+ * Max-width (CSS px) for a desktop pixel-perfect tile grid, or undefined on
+ * mobile. Sized so each column matches the mobile sprite-to-column ratio
+ * (sprite fills ~96% of column width), producing whitespace bands when the
+ * pane is wider than the grid needs.
+ *
+ * `gapPx`:      the grid's column gap (e.g. 4 for gap-1 in PokedexGrid)
+ * `overheadPx`: extra container padding outside the grid (e.g. p-1 + p-3)
+ */
+export function useTileGridMaxWidth(
+  cols: number = 6,
+  gapPx: number = 0,
+  overheadPx: number = 0,
+): number | undefined {
+  const isDesktop = useViewportAtLeast(1024);
+  const oneX = useFluidSpritePx(MOBILE_SPRITE_VW, 40, 7, 96, isDesktop ? DESKTOP_PANE_DIVISOR : 1);
+  if (!isDesktop) return undefined;
+  const fluidImage = oneX * SPRITE_IMG_SCALE;
+  const multiple = Math.max(1, Math.floor(fluidImage / SPRITE_NATIVE));
+  const imagePx = multiple * SPRITE_NATIVE;
+  // Column width that matches mobile's sprite-to-column fill ratio (~96%)
+  const targetCol = imagePx * 100 / (MOBILE_SPRITE_VW * SPRITE_IMG_SCALE * 6);
+  return Math.round(cols * targetCol + Math.max(0, cols - 1) * gapPx + overheadPx);
 }
 
 /** Root-padding ratios, shared across tile hosts. */

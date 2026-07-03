@@ -10,6 +10,7 @@ import {
   TILE_ACTION_BUTTON_CLASS,
   TILE_GEN_BADGE_CLASS,
   TILE_ROOT_PADDING_CLASS,
+  useTileGridMaxWidth,
   useTileSpritePx,
 } from '@/components/shared/PokemonTile';
 
@@ -128,6 +129,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
   // Charizard (etc.) renders identically in the selection pane and in a
   // section tile at the same viewport width. See `PokemonTile.tsx`.
   const spritePx = useTileSpritePx();
+  const gridMaxW = useTileGridMaxWidth(cols, 0, 0);
 
   const elements = useMemo(() => {
     const result: React.ReactNode[] = [];
@@ -172,7 +174,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
   }, [groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols, variant, showGenBadges, matchupInfo, matchupType, spritePx, showFormVariant]);
 
   return (
-    <div className={GRID_CLASSES[cols] ?? `grid gap-x-0 gap-y-1`} style={GRID_CLASSES[cols] ? undefined : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+    <div className={GRID_CLASSES[cols] ?? `grid gap-x-0 gap-y-1`} style={{ ...(GRID_CLASSES[cols] ? {} : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }), maxWidth: gridMaxW, marginInline: gridMaxW ? 'auto' : undefined }}>
       {elements}
     </div>
   );

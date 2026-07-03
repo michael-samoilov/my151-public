@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { Settings, Download, Loader2 } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewSort';
@@ -11,6 +11,8 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
+import { DetailedStatsPanel, STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
+import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
 import {
@@ -60,6 +62,22 @@ const DND_MEASURING = {
 } as const;
 
 const COLS = 10;
+
+// Detailed-stats column geometry, used when the stats sit to the right of the grid
+// on the same canvas (at any width). The grid reflows narrower so the whole
+// [grid · gap · stats] composition fits the viewport width. The gutter between dex
+// and stats is derived (= one card gap), not a fixed constant — see statsGapCols.
+// Width the charts are *rendered* at, in rem, before the uniform height-match scale.
+// A fixed rem width (not a multiple of the tile size) keeps the chart internals at
+// the width they're tuned for — ButterflyChart's chartScale floors at 1 below ~360px,
+// so a tile-coupled width on mobile (tiles ≈ 21px → ~190px) squashes the deviation
+// chart until its headers overlap and the "OVER-INDEXED →" header overflows. The
+// value scales up with the root font on desktop, so the chart geometry tracks its
+// rem-based text on every device. The block is then scaled down to the dex height.
+// 19.7rem (≈315px): the type/gen charts drop their per-row label text (icon only),
+// freeing the ~45px label column, so the chart bodies keep the ~295px width that was
+// overlap-free at the old 360px-with-labels render while the column reads narrower.
+const STATS_NATURAL_REM = 19.7;
 
 /** Parse a `view::<id>` draggable id into its numeric pokemon id, or null. */
 function parseDragId(id: string): number | null {
@@ -160,7 +178,12 @@ function useTileSize(colFactor: number, rowFactor: number) {
     return () => ro.disconnect();
   }, [measure]);
 
-  useEffect(() => {
+  // Re-fit BEFORE paint when the fit factors change (e.g. toggling section
+  // outlines flips colFactor/rowFactor). A plain useEffect runs after paint, so
+  // the grid would paint one frame with the new outline template (gaps + label
+  // bands) at the OLD tile size — a visible jank between the two layouts.
+  // useLayoutEffect applies the new tile size in the same commit, before paint.
+  useLayoutEffect(() => {
     measure();
   }, [colFactor, rowFactor, measure]);
 
@@ -520,6 +543,7 @@ export function ViewPage() {
   const reorderSection = usePokedexStore((s) => s.reorderSection);
 
   const showSections = usePokedexStore((s) => s.viewShowSections);
+  const showStats = usePokedexStore((s) => s.viewShowStats);
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
@@ -527,6 +551,14 @@ export function ViewPage() {
 
   // Build-section outlines overlay: shown when the user enables it, in build order.
   const showSectionOverlays = showSections && sortOption === 'build-order';
+
+  // Detailed-stats side panel: needs enough Pokémon to be useful. Locked
+  // presentation: the grid on a raised card and each chart on its own card with
+  // the title inside ('card-title-in'), with type-name badges.
+  const showStatsPanel = showStats && count >= STATS_MIN_POKEMON;
+  const statsAsCards = showStatsPanel;
+  // Stats data (single source of truth shared with the native export renderer).
+  const statsData = useDetailedStatsData();
 
   // Section geometry + the effective grid sizing factors. In outline mode the
   // grid gains inter-cell gaps and per-section label bands; folding those into
@@ -585,11 +617,167 @@ export function ViewPage() {
     return {
       lastRowCount, gridSlots, gridPokemon, lastRowPokemon,
       allRuns, lastRowGeom, gridStartRows, lastRowStartRows,
-      colFactor, rowFactor,
+      colFactor, rowFactor, totalRows,
     };
   }, [sorted, totalSlots, showSectionOverlays, sections]);
 
-  const { containerRef, tileSize } = useTileSize(layout.colFactor, layout.rowFactor);
+  // The detailed-stats column always sits to the right of the grid on the same
+  // canvas (at any width). Its width is folded into the tile-fit, so the whole
+  // [grid | gap | stats] composition scales to fit the viewport at once. The
+  // charts are rendered at a fixed rem width (STATS_NATURAL_REM) then uniformly
+  // scaled down to the dex's reference height. Only the *scaled* footprint is
+  // reserved — and that footprint, in grid columns, is just the stats' aspect
+  // ratio × the reference-row height (both tileSize-independent), so the layout
+  // settles without the old scale↔tileSize feedback loop.
+  const [statsNatural, setStatsNatural] = useState({ w: 0, h: 0 });
+  // Prior frame's tile size — used only to express the cards' rem-based padding in
+  // grid-column units (rem and tiles are independent scales, so this can't be done
+  // analytically). Only matters in card mode; the container is stable, so it settles
+  // in one extra frame.
+  const [tilePx, setTilePx] = useState(0);
+  // Gate the stats panel's visibility until its size has settled after being
+  // toggled on. On enable, tileSize jumps from its stats-off value down to the
+  // stats-on value as the fit loop converges; revealing before then flashes the
+  // panel oversized. We only ever set this TRUE (reset to false when the panel is
+  // off), so window resizes — which keep it true — never re-hide / blink it.
+  const [statsRevealed, setStatsRevealed] = useState(false);
+  const statsContentRef = useRef<HTMLDivElement>(null);
+  const statsBesideGrid = showStatsPanel;
+
+  // Height of the dex grid in *tile units* (tileSize-independent), folding in the
+  // outline gaps/label bands when overlays are on. Matches the actual rendered row
+  // count (totalRows = max(count,151)/COLS, so ≥16) — not a fixed constant — so the
+  // stats stay height-matched to the dex card even past 151.
+  const dexRefRowsFactor = useMemo(() => {
+    const rows = layout.totalRows;
+    const allStart = new Set<number>([...layout.gridStartRows, ...layout.lastRowStartRows]);
+    const bands = [...allStart].filter((r) => r < rows).length;
+    return rows + (showSectionOverlays ? bands * OUTLINE_HEAD + Math.max(rows - 1, 0) * OUTLINE_GAP : 0);
+  }, [showSectionOverlays, layout.totalRows, layout.gridStartRows, layout.lastRowStartRows]);
+
+  // In card mode the stats are matched to the dex *card* (grid + p-3 top/bottom
+  // padding), not the bare grid, so the card edges line up top and bottom. p-3 =
+  // 0.75rem, so the card adds 1.5rem on each axis. Root font px is recovered from the
+  // fixed-rem natural-width measurement; the per-axis padding in columns needs the
+  // tile size (rem↔tile), taken from the prior frame.
+  const rootFontPx = statsNatural.w > 0 ? statsNatural.w / STATS_NATURAL_REM : 0;
+  const cardPadPx = statsAsCards ? 1.5 * rootFontPx : 0;
+  const cardPadCols = statsAsCards && tilePx > 0 ? cardPadPx / tilePx : 0;
+
+  // Stats footprint in grid columns: aspect (w/h) × target-height-in-tiles. Aspect is
+  // rootFont-independent (both natural w and h scale with the root font), so this is
+  // stable across zoom/device. Falls back to a typical aspect until first measured.
+  const statsAspect = statsNatural.h > 0 ? statsNatural.w / statsNatural.h : 0.4;
+  const statsTileCols = statsBesideGrid ? statsAspect * (dexRefRowsFactor + cardPadCols) : 0;
+  // Gutter between dex and stats = one card gap (gap-4 = 1rem, scaled), so it equals
+  // the vertical gap between the stacked stats cards: (1rem / STATS_NATURAL_REM rem)
+  // of the stats' displayed width = statsTileCols / STATS_NATURAL_REM columns.
+  const statsGapCols = statsBesideGrid ? statsTileCols / STATS_NATURAL_REM : 0;
+  // The dex card's own left/right padding (content-box) also needs reserving.
+  const dexCardCols = statsAsCards ? cardPadCols : 0;
+  const statsColFactor = statsBesideGrid ? statsGapCols + statsTileCols : 0;
+
+  // The stats column is folded into the grid fit ONLY once the panel is revealed
+  // (settled). During the settle the grid fits alone (the hidden panel is taken
+  // out of flow), so the grid keeps a stable size instead of wobbling as the fit
+  // converges; when revealed, the reservation applies and the dex shifts left as
+  // the stats slide in — one clean transition.
+  const reserveStats = statsRevealed ? dexCardCols + statsColFactor : 0;
+  const { containerRef, tileSize } = useTileSize(layout.colFactor + reserveStats, layout.rowFactor);
+
+  // useLayoutEffect (not useEffect): tilePx feeds cardPadCols → statsColFactor →
+  // tileSize, a small fixed-point loop. Running it before paint lets the whole
+  // stats fit (incl. statsScale) converge in one pre-paint pass when the panel is
+  // toggled on — otherwise tileSize jumps from its stats-off (large) value to the
+  // stats-on value across a few painted frames, flashing the panel huge first.
+  useLayoutEffect(() => {
+    if (tileSize !== tilePx) setTilePx(tileSize);
+  }, [tileSize, tilePx]);
+
+  // The target height the stats stack is scaled to match: the dex card in card mode
+  // (so top/bottom edges align), or the bare 16-row grid otherwise. The display width
+  // follows from the uniform scale (capped at 1 — only ever shrink).
+  const dexRefHeight = statsBesideGrid && tileSize > 0 ? dexRefRowsFactor * tileSize : 0;
+  const statsTargetHeight = dexRefHeight > 0 ? dexRefHeight + cardPadPx : 0;
+  // Uniform scale to fit the panel's natural height to the dex card height. NOT
+  // capped at 1 — the panel must scale UP as well as down so its cards reach the
+  // full dex-card height (the natural 3-card stack is shorter than a 16-row dex).
+  // The charts are SVG/text, so scaling up stays crisp.
+  const statsScale = statsNatural.h > 0 ? statsTargetHeight / statsNatural.h : 1;
+  const statsDisplayW = statsNatural.w > 0 ? statsNatural.w * statsScale : statsTileCols * tileSize;
+
+  // Measure the stats' natural (unscaled) box; ResizeObserver reports the layout
+  // box, which a CSS transform does not affect — so this is stable. The natural
+  // width is a fixed rem value, so its height (hence the aspect) settles at once.
+  //
+  // useLayoutEffect (not useEffect) so the first measurement + scale are applied
+  // BEFORE the browser paints — otherwise the panel briefly paints at scale 1
+  // (full natural size, oversized text) for one frame before shrinking, which
+  // reads as a flicker when arriving on the View page.
+  useLayoutEffect(() => {
+    const el = statsContentRef.current;
+    if (!el) return;
+    const measure = () =>
+      setStatsNatural((prev) =>
+        prev.w === el.offsetWidth && prev.h === el.offsetHeight
+          ? prev
+          : { w: el.offsetWidth, h: el.offsetHeight },
+      );
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    measure();
+    return () => ro.disconnect();
+  }, [statsBesideGrid, showStatsPanel]);
+
+  // Hide-until-settled gate for the stats panel (prevents the toggle-on size
+  // flash). When the panel is toggled on, tileSize jumps from its stats-off value
+  // down to the stats-on value over a few frames as the fit loop converges; the
+  // panel mirrors tileSize, so revealing before then flashes it oversized. We
+  // can't use "tilePx === tileSize" — both already match (at the stale stats-off
+  // value) on the enable frame. Instead, on each enable, stay hidden and reveal
+  // only once tileSize has held steady for two consecutive animation frames
+  // (i.e. the fit has actually converged to the stats-on value). The off-reset
+  // (init false + reset whenever the panel is off) guarantees the first painted
+  // frame after an enable is already hidden. Reveal-only, so resizes don't blink.
+  const tileSizeRef = useRef(tileSize);
+  tileSizeRef.current = tileSize;
+  const statsShownRef = useRef(false);
+  useEffect(() => {
+    const wasShown = statsShownRef.current;
+    statsShownRef.current = showStatsPanel;
+    if (!showStatsPanel) {
+      setStatsRevealed(false);
+      return;
+    }
+    if (wasShown) return; // already shown (e.g. a resize-driven re-run); leave revealed
+    setStatsRevealed(false);
+    // Reveal once tileSize has CHANGED from its value at enable-time and then held
+    // steady for two frames. The oversized scale comes from the stale (stats-off)
+    // tileSize, which can sit "stable" for several frames before the fit recomputes
+    // — so plain stability isn't enough; we must wait for it to move off that stale
+    // value first. A frame cap reveals anyway if the size legitimately never
+    // changes (e.g. a height-constrained viewport, where there's no flash).
+    let raf = 0;
+    let baseline = -1;
+    let last = -1;
+    let stable = 0;
+    let frames = 0;
+    const tick = () => {
+      const t = tileSizeRef.current;
+      if (baseline < 0) baseline = t;
+      stable = t > 0 && t === last ? stable + 1 : 0;
+      last = t;
+      frames += 1;
+      if ((t > 0 && t !== baseline && stable >= 2) || frames >= 10) {
+        setStatsRevealed(true);
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [showStatsPanel]);
+
   const [exporting, setExporting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -812,10 +1000,16 @@ export function ViewPage() {
       sort: sortOption,
       outlines: showSectionOverlays,
       groupSpecial: groupSpecialAtEnd,
+      showStats: showStatsPanel,
     });
     try {
+      // The detailed-stats panel is redrawn natively onto the export canvas (see
+      // exportStats.ts) — NOT rasterized from the DOM. html-to-image relies on an
+      // SVG <foreignObject>, which hangs/poisons the export on iOS WebKit; native
+      // canvas drawing is the same reliable mechanism the grid uses.
       const blob = await generateExportImage(sorted, {
         sections: showSectionOverlays ? sections : null,
+        stats: showStatsPanel ? { data: statsData, heights: DEFAULT_STATS_HEIGHTS } : null,
       });
       await shareOrDownload(blob, `my151.png`);
     } catch (err) {
@@ -824,7 +1018,7 @@ export function ViewPage() {
     } finally {
       setExporting(false);
     }
-  }, [sorted, exporting, showSectionOverlays, sections, sortOption, groupSpecialAtEnd]);
+  }, [sorted, exporting, showSectionOverlays, sections, sortOption, groupSpecialAtEnd, showStatsPanel, statsData]);
 
   const dragOverlayPokemon = dragLineIds
     ? dragLineIds.map((id) => sorted.find((p) => p.id === id)).filter((p): p is Pokemon => !!p)
@@ -865,7 +1059,12 @@ export function ViewPage() {
           </div>
         </div>
 
-        <div ref={containerRef} className="flex-1 min-h-0 flex items-start justify-center p-2 overflow-y-auto">
+        {/* px-4 (not p-2): overflow-y-auto forces overflow-x to clip, so the extra
+            horizontal padding gives the cards' soft shadows room before that clip.
+            pb-8: comfortable breathing room below the footer/cards at the bottom of
+            the scroll (py-2 alone left it jammed against the page edge). */}
+        <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-2 pb-8">
+          <div className={statsBesideGrid ? 'flex flex-row items-start justify-center' : 'flex flex-col items-center'}>
           {tileSize > 0 && (() => {
             const {
               lastRowCount, gridSlots, gridPokemon, lastRowPokemon,
@@ -917,9 +1116,25 @@ export function ViewPage() {
                 onDragEnd={handleDragEnd}
                 onDragCancel={handleDragCancel}
               >
-                <div style={{ width: gridWidth }}>
+                <div
+                  style={{
+                    width: gridWidth,
+                    // Gate the dex-card chrome on statsRevealed (not showStatsPanel)
+                    // so the card appears in the SAME step as the stats cards, not a
+                    // frame earlier — one transition instead of two.
+                    boxSizing: statsRevealed ? 'content-box' : undefined,
+                    // Match the stats cards' *visual* corner radius: they use
+                    // rounded-lg (var(--radius)) but are scaled by statsScale, so
+                    // the unscaled dex card needs the same radius pre-multiplied.
+                    borderRadius: statsRevealed ? `calc(var(--radius) * ${statsScale})` : undefined,
+                  }}
+                  className={statsRevealed ? 'bg-card shadow-elevated p-3' : ''}
+                >
                   {/* Grid + centered overflow row share one relative box so a
-                      single overlay can draw outlines that span the boundary. */}
+                      single overlay can draw outlines that span the boundary.
+                      In card mode the box is content-box so the card's padding
+                      sits OUTSIDE the grid — otherwise it would shrink gridWidth
+                      and the centered last row would mis-align with its outline. */}
                   <div className="relative">
                     <div
                       className="grid items-end"
@@ -964,7 +1179,6 @@ export function ViewPage() {
                       />
                     )}
                   </div>
-                  <PageFooter />
                 </div>
 
                 <DragOverlay dropAnimation={null}>
@@ -986,6 +1200,52 @@ export function ViewPage() {
               </DndContext>
             );
           })()}
+          {/* Detailed stats — part of the same canvas: a column to the right of
+              the grid on desktop, stacked below it on mobile (no panel chrome,
+              so it reads like the export). */}
+          {showStatsPanel && tileSize > 0 && (
+            statsBesideGrid ? (
+              // Rendered at natural width, then uniformly scaled to the dex height.
+              // The outer box reserves only the scaled footprint; the inner box's
+              // layout size (what ResizeObserver reads) is unaffected by the scale.
+              <div
+                style={{
+                  width: statsDisplayW || undefined,
+                  height: statsTargetHeight || undefined,
+                  marginLeft: statsGapCols * tileSize,
+                  // Until revealed, sit out of flow (absolute) so the hidden panel
+                  // doesn't reserve flex width and shift/re-fit the grid mid-settle.
+                  // Its natural box is still measurable while absolute.
+                  position: statsRevealed ? undefined : 'absolute',
+                }}
+                className="shrink-0 overflow-visible"
+              >
+                <div
+                  ref={statsContentRef}
+                  style={{
+                    width: `${STATS_NATURAL_REM}rem`,
+                    transform: `scale(${statsScale})`,
+                    transformOrigin: 'top left',
+                    // Stay hidden until the fit has settled (statsRevealed), so the
+                    // panel never paints at the transient oversized scale while
+                    // tileSize converges after the toggle. The layout box is still
+                    // present (visibility, not display) so it can be measured.
+                    visibility: statsRevealed ? undefined : 'hidden',
+                  }}
+                >
+                  <DetailedStatsPanel />
+                </div>
+              </div>
+            ) : (
+              <div className="w-full max-w-md mt-5 px-1">
+                <DetailedStatsPanel />
+              </div>
+            )
+          )}
+          </div>
+          {/* Footer stays centered on the full page width — it sits outside the
+              dex+stats composition so it doesn't shift left when stats slide in. */}
+          <PageFooter />
         </div>
       </div>
 

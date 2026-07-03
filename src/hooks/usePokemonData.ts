@@ -124,6 +124,47 @@ function isChainPlacementGapFree(placed: Set<number>, chainId: number): boolean 
 }
 
 /**
+ * For a hypothetical placed-set on a chain, return true if any placed member is
+ * left as a "dangling tail" — a non-terminal that *must* have a final evolution
+ * placed but doesn't.
+ *
+ * A placed member only *requires* a placed descendant if it once existed with a
+ * contemporary evolution — i.e. it has a child introduced in the same generation
+ * as itself (Quilava→Typhlosion, both Gen 2; Pikachu→Raichu, both Gen 1). If all
+ * of a member's children are from *later* generations, it once existed as a
+ * complete standalone line and may be left a leaf (Magmar→Magmortar gen 4,
+ * Zubat→Golbat→Crobat gen 2 — Crobat may be dropped).
+ *
+ * When a descendant IS required, it is satisfied by ANY placed member anywhere in
+ * the member's subtree, through ANY branch — including a later-gen form. So
+ * Pikachu + Raichu-Alola (no plain Raichu) is fine, as is Cyndaquil + Quilava +
+ * Typhlosion-Hisui; and choosing a single same-gen branch (Silcoon→Beautifly,
+ * not Cascoon→Dustox) is fine. What is NOT fine is leaving such a member with no
+ * placed descendant at all (e.g. Cyndaquil + Quilava after removing the line's
+ * only placed terminal, or lone Pikachu after removing Raichu-Alola).
+ *
+ * This complements isChainPlacementGapFree: that catches placed→unplaced→placed
+ * gaps walking *up*; this catches a severed *tail* walking *down*.
+ */
+function hasDanglingTail(placed: Set<number>, chainId: number): boolean {
+  const chainMembers = pokemonByChain.get(chainId) ?? [];
+  for (const member of chainMembers) {
+    if (!placed.has(member.id)) continue;
+    const children = chainMembers.filter((c) => c.evolvesFrom === member.id);
+    // Needs a placed descendant only if it had a same-generation evolution (it
+    // never existed as a complete line on its own).
+    const requiresDescendant = children.some((c) => c.generation <= member.generation);
+    if (!requiresDescendant) continue;
+    // Satisfied by any placed descendant through any branch (incl. later-gen forms).
+    const anyDescendantPlaced = children.some((c) =>
+      getDescendantIds(c.id).some((id) => placed.has(id)),
+    );
+    if (!anyDescendantPlaced) return true;
+  }
+  return false;
+}
+
+/**
  * Compute the set of IDs to remove when the user clicks the delete button on
  * `pokemonId` in a section currently containing `sectionIds`.
  *
@@ -153,7 +194,14 @@ export function computeRemovalCascade(pokemonId: number, sectionIds: number[]): 
   if (hasEarlierGenPlaced) {
     const hypothetical = new Set(sectionIds);
     hypothetical.delete(pokemonId);
-    if (isChainPlacementGapFree(hypothetical, target.evolutionChainId)) {
+    // Individual removal is only safe if it leaves no gap *and* no dangling tail
+    // (a placed non-terminal whose base-line evolution is now absent). Without the
+    // tail check, removing a line's only placed terminal — e.g. Typhlosion-Hisui
+    // from Cyndaquil→Quilava→Typhlosion-Hisui — would strand Cyndaquil + Quilava.
+    if (
+      isChainPlacementGapFree(hypothetical, target.evolutionChainId) &&
+      !hasDanglingTail(hypothetical, target.evolutionChainId)
+    ) {
       return new Set([pokemonId]);
     }
   }

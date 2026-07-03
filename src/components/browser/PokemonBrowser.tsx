@@ -3,6 +3,7 @@ import { FilterChipList } from './FilterChipList';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
+import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
 import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { ARCHETYPES } from '@/data/archetypes';
@@ -68,6 +69,8 @@ export function PokemonBrowser() {
   const [openSheet, setOpenSheet] = useState<FilterSheet>(null);
   const [sheetH, setSheetH] = useState(0);
   const isDesktop = useIsDesktop();
+  const gridMaxW = useTileGridMaxWidth(6, 0, 0);
+  const gridMaxW3 = useTileGridMaxWidth(3, 0, 0);
 
   // Staged selection: pokemon selected but not yet committed
   const [stagedIds, setStagedIds] = useState<number[]>([]);
@@ -656,12 +659,14 @@ export function PokemonBrowser() {
       >
           {/* Dual-column headers — sticky, left-aligned with 1st and 4th tile columns */}
           {!isSearching && activeCategoryDef?.dualColumns && (
-            <div className="sticky top-0 z-30 bg-background grid grid-cols-2 gap-x-1 px-1 py-[3px] border-b">
-              <div className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide pl-[3px]">
-                {activeCategoryDef.dualColumns.left.label}
-              </div>
-              <div className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide pl-[3px]">
-                {activeCategoryDef.dualColumns.right.label}
+            <div className="sticky top-0 z-30 bg-background border-b">
+              <div className="grid grid-cols-2 gap-x-1">
+                <div className="w-full text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1" style={{ maxWidth: gridMaxW3, marginInline: gridMaxW3 ? 'auto' : undefined }}>
+                  {activeCategoryDef.dualColumns.left.label}
+                </div>
+                <div className="w-full text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1" style={{ maxWidth: gridMaxW3, marginInline: gridMaxW3 ? 'auto' : undefined }}>
+                  {activeCategoryDef.dualColumns.right.label}
+                </div>
               </div>
             </div>
           )}
@@ -707,8 +712,12 @@ export function PokemonBrowser() {
 
               return (
                 <div key={sub.label}>
-                  <div className="sticky top-[22px] z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 mt-1 border-b">
-                    {sub.label}
+                  <div className="sticky top-[22px] z-20 bg-background mt-1 border-b">
+                    <div className="grid grid-cols-2 gap-x-1">
+                      <div className="w-full text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1" style={{ maxWidth: gridMaxW3, marginInline: gridMaxW3 ? 'auto' : undefined }}>
+                        {sub.label}
+                      </div>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-x-1 items-start pt-1">
                     <EvoLineGrid
@@ -738,8 +747,10 @@ export function PokemonBrowser() {
 
             return (
               <div key={sub.label}>
-                <div className="sticky top-0 z-20 bg-background text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1 mt-1 border-b">
-                  {sub.label}
+                <div className="sticky top-0 z-20 bg-background mt-1 border-b">
+                  <div className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1" style={{ maxWidth: gridMaxW, marginInline: gridMaxW ? 'auto' : undefined }}>
+                    {sub.label}
+                  </div>
                 </div>
                 <div className="pt-1">
                   <EvoLineGrid

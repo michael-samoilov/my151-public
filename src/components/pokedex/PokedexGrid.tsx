@@ -10,6 +10,7 @@ import {
   TILE_ACTION_BUTTON_CLASS,
   TILE_GEN_BADGE_CLASS,
   TILE_ROOT_PADDING_CLASS,
+  useTileGridMaxWidth,
   useTileSpritePx,
 } from '@/components/shared/PokemonTile';
 import { Trash2, Plus, Settings } from 'lucide-react';
@@ -656,6 +657,7 @@ export function PokedexGrid() {
   const moveEvoLine = usePokedexStore((s) => s.moveEvoLine);
 
   const totalPlaced = Object.values(sections).reduce((s, a) => s + a.length, 0);
+  const containerMaxW = useTileGridMaxWidth(6, 4, 32);
 
   // Scroll container ref — used for auto-scroll when desktop browser adds pokemon
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -904,7 +906,7 @@ export function PokedexGrid() {
         className="flex-1 min-h-0 overflow-y-auto overscroll-contain md:overscroll-auto"
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-          <div className="p-3 pb-0">
+          <div className="p-3 pb-0" style={{ maxWidth: containerMaxW, marginInline: containerMaxW ? 'auto' : undefined }}>
             <DndContext
               sensors={sensors}
               collisionDetection={effectiveCursorCollision}
