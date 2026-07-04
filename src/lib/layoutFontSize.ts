@@ -10,8 +10,11 @@ import { getUnzoomedViewportWidth } from './viewport';
  * ./viewport.ts reconstructs the layout viewport invariantly under both
  * iOS pinch and desktop zoom.
  *
- * Listens to the same four viewport signals as useFluidSpritePx,
- * for the same reasons — see that file's comments.
+ * Listens to the same layout-viewport signals as useFluidSpritePx, and
+ * deliberately NOT to visualViewport — for the same reasons. See that
+ * file's comments: visualViewport events fire every frame of a pinch and
+ * would make the root font-size (hence every rem utility) reflow during
+ * the gesture. Freezing it lets the browser magnify uniformly instead.
  */
 
 function computeFontSize(): number {
@@ -44,13 +47,10 @@ export function installLayoutFontSize() {
   if (typeof window === 'undefined') return;
   apply();
   window.addEventListener('resize', apply);
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', apply);
-    // Pinch-zoom fires 'resize' on visualViewport in most browsers, but
-    // 'scroll' can also correspond to a scale change on iOS. Listening to
-    // both is defensive and idempotent (the rAF dedupes).
-    window.visualViewport.addEventListener('scroll', apply);
-  }
+  // NB: intentionally no visualViewport listeners — those fire every frame
+  // of a pinch and would reflow the root font-size mid-gesture. The layout
+  // viewport (resize + ResizeObserver below) is invariant under pinch, so
+  // the font-size stays frozen and the browser magnifies it uniformly.
   const watchDpr = () => {
     const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     mq.addEventListener('change', () => { apply(); watchDpr(); }, { once: true });
