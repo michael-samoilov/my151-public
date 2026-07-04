@@ -22,12 +22,17 @@ function computeFontSize(): number {
 }
 
 let rafHandle: number | null = null;
+let lastFontSize = '';
 
 function apply() {
   if (rafHandle !== null) return;
   rafHandle = requestAnimationFrame(() => {
     rafHandle = null;
-    document.documentElement.style.fontSize = `${computeFontSize()}px`;
+    const next = `${computeFontSize()}px`;
+    if (next !== lastFontSize) {
+      lastFontSize = next;
+      document.documentElement.style.fontSize = next;
+    }
   });
 }
 

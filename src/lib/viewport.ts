@@ -34,8 +34,12 @@ export function getUnzoomedViewportWidth(): number {
   // Prefer visualViewport — reconstructing layout viewport from it is
   // correct on both iOS pinch and desktop pinch. Fallback to innerWidth
   // for older browsers without the API.
-  const layoutWidth = vv ? vv.width * vv.scale : window.innerWidth;
+  // Round the reconstructed layout width to the nearest integer —
+  // vv.width * vv.scale can drift by fractions of a CSS px during
+  // pinch-zoom, and even 0.01px propagates into the root font-size,
+  // triggering a full style recalc / layout reflow on every zoom frame.
+  const layoutWidth = vv ? Math.round(vv.width * vv.scale) : window.innerWidth;
   const dpr = window.devicePixelRatio || 1;
   const zoomFactor = dpr / BASE_DPR;
-  return layoutWidth * zoomFactor;
+  return Math.round(layoutWidth * zoomFactor);
 }
