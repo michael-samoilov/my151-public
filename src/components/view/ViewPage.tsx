@@ -1251,7 +1251,7 @@ export function ViewPage() {
 
       {/* Settings pane — docked right on desktop */}
       {settingsOpen && (
-        <div className="hidden md:block md:relative md:w-[min(50vw,380px)] md:h-full md:flex-shrink-0 border-l bg-background">
+        <div className="hidden md:block md:relative md:w-[min(50%,380px)] md:h-full md:flex-shrink-0 border-l bg-background">
           <ViewSettingsPane onClose={() => setSettingsOpen(false)} />
         </div>
       )}

@@ -3,23 +3,34 @@ import { getUnzoomedViewportWidth } from './viewport';
 
 /**
  * Shared viewport state — a single set of listeners for all hook consumers.
- * Recomputes on any viewport-shape change, notifying all subscribers.
+ * Recomputes on any *layout*-viewport change, notifying all subscribers.
  *
- * We listen to FOUR signals because no single one is reliable across
- * browser/OS/zoom-type combos:
+ * We deliberately track ONLY the layout viewport and NOT the visual
+ * viewport, so a pinch-zoom is a pure browser magnification with zero JS
+ * recompute (see the note on visualViewport below). The signals:
  *   • window.resize — standard layout resize + desktop browser zoom (Ctrl+=)
- *   • visualViewport.resize + scroll — trackpad pinch zoom on macOS
- *     Chrome/Safari and iOS/Android pinch zoom. These DO NOT fire
- *     window.resize. On iOS the `scroll` event also accompanies scale
- *     changes.
+ *     + orientation change. Fires when the layout viewport actually changes.
  *   • matchMedia(resolution) — DPR changes (moving window between monitors,
  *     some browser-zoom levels that snap to new DPR buckets).
  *   • ResizeObserver on documentElement — catch-all for any layout-shape
  *     change a browser doesn't dispatch one of the above events for
  *     (observed: some Chromium zoom-out transitions that leave sprites
- *     stuck at their zoomed-in size because no resize event fires).
+ *     stuck at their zoomed-in size because no resize event fires). The
+ *     document root is the LAYOUT viewport, so this does NOT fire during a
+ *     pinch (the layout viewport is invariant under pinch-zoom).
  *
- * Any of these firing triggers a recompute; the useSyncExternalStore
+ * Why NOT visualViewport.resize/scroll: those fire on every frame of a
+ * pinch-zoom gesture, and vv.width / vv.scale update in separate ticks —
+ * so mid-gesture `vv.width * vv.scale` is transiently wrong (e.g. width
+ * already halved but scale still 1), driving the font-size and every sprite
+ * to a garbage value for a frame and back. That is the "layout reflows while
+ * I pinch" bug. Now that root font-size is JS-driven and no sizing uses CSS
+ * `vw` (both were the original reasons for the visualViewport listeners),
+ * freezing all JS sizes during a pinch is exactly right: the browser
+ * magnifies the frozen layout uniformly, text and sprites grow together,
+ * and nothing reflows.
+ *
+ * Any signal firing triggers a recompute; the useSyncExternalStore
  * comparison handles the common case where the computed value is
  * unchanged (no-op re-render).
  */
@@ -29,10 +40,6 @@ let vpVersion = 0;
 if (typeof window !== 'undefined') {
   const notify = () => { vpVersion++; vpListeners.forEach((fn) => fn()); };
   window.addEventListener('resize', notify);
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', notify);
-    window.visualViewport.addEventListener('scroll', notify);
-  }
   // Track DPR changes (e.g. dragging window between monitors, zoom bucket snaps)
   const watchDpr = () => {
     const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
