@@ -15,6 +15,7 @@ import { DetailedStatsPanel, STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS } from '@/
 import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
+import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import {
   type SectionRun,
   computeSectionRuns,
@@ -642,7 +643,42 @@ export function ViewPage() {
   // off), so window resizes — which keep it true — never re-hide / blink it.
   const [statsRevealed, setStatsRevealed] = useState(false);
   const statsContentRef = useRef<HTMLDivElement>(null);
-  const statsBesideGrid = showStatsPanel;
+
+  // Desktop-only slide-in / faster-retract animation for the stats block. Mobile
+  // keeps the instant visibility flip untouched (the deferred mobile-flash work
+  // owns that path). See the outer-box style + inner visibility gate in render.
+  const isDesktop = useViewportAtLeast(1024);
+  // On desktop, keep the block (and thus its beside-grid geometry) mounted after
+  // stats are toggled off so the slide-out can play before React unmounts it.
+  // The actual unmount is driven by the outer box's transitionend (see the
+  // onTransitionEnd handler in render), so the exit always plays to completion
+  // regardless of the exact CSS duration; this timer is only a fallback for when
+  // that event is missed (e.g. the box is off-screen, so no transition runs) and
+  // is set well beyond the 180ms exit. Enter is immediate. On mobile, statsMounted
+  // follows showStatsPanel exactly (statsBesideGrid stays === showStatsPanel), so
+  // mobile is byte-for-byte as before. isDesktop is read from a ref so this effect
+  // depends only on showStatsPanel — a transient isDesktop flicker during the
+  // retract reflow must not re-run it and trip the mobile immediate-unmount branch.
+  const STATS_EXIT_FALLBACK_MS = 400;
+  const isDesktopRef = useRef(isDesktop);
+  isDesktopRef.current = isDesktop;
+  const [statsMounted, setStatsMounted] = useState(showStatsPanel);
+  useEffect(() => {
+    if (showStatsPanel) {
+      setStatsMounted(true);
+      return;
+    }
+    if (!isDesktopRef.current) {
+      setStatsMounted(false);
+      return;
+    }
+    const t = setTimeout(() => setStatsMounted(false), STATS_EXIT_FALLBACK_MS);
+    return () => clearTimeout(t);
+  }, [showStatsPanel]);
+
+  // Beside-grid layout stays active through the desktop retract window so the
+  // geometry (footprint, gap, height-match) doesn't collapse mid-slide-out.
+  const statsBesideGrid = showStatsPanel || statsMounted;
 
   // Height of the dex grid in *tile units* (tileSize-independent), folding in the
   // outline gaps/label bands when overlays are on. Matches the actual rendered row
@@ -1203,7 +1239,7 @@ export function ViewPage() {
           {/* Detailed stats — part of the same canvas: a column to the right of
               the grid on desktop, stacked below it on mobile (no panel chrome,
               so it reads like the export). */}
-          {showStatsPanel && tileSize > 0 && (
+          {(showStatsPanel || statsMounted) && tileSize > 0 && (
             statsBesideGrid ? (
               // Rendered at natural width, then uniformly scaled to the dex height.
               // The outer box reserves only the scaled footprint; the inner box's
@@ -1217,8 +1253,27 @@ export function ViewPage() {
                   // doesn't reserve flex width and shift/re-fit the grid mid-settle.
                   // Its natural box is still measurable while absolute.
                   position: statsRevealed ? undefined : 'absolute',
+                  // Desktop: fade + slide in from the right once the fit has
+                  // settled (statsRevealed), and slide out faster on retract. The
+                  // opacity-0 pre-reveal state also hides the oversized settle
+                  // transient, so the inner visibility gate is desktop-exempt below.
+                  ...(isDesktop
+                    ? {
+                        opacity: statsRevealed ? 1 : 0,
+                        transform: statsRevealed ? 'translateX(0)' : 'translateX(1rem)',
+                        transition: statsRevealed
+                          ? 'opacity 280ms ease-out, transform 280ms ease-out'
+                          : 'opacity 180ms ease-in, transform 180ms ease-in',
+                      }
+                    : null),
                 }}
                 className="shrink-0 overflow-visible"
+                onTransitionEnd={(e) => {
+                  // Once the retract fade has fully played, unmount. Gated on
+                  // !showStatsPanel so the enter transition doesn't unmount it,
+                  // and on opacity so it fires once (not per animated property).
+                  if (e.propertyName === 'opacity' && !showStatsPanel) setStatsMounted(false);
+                }}
               >
                 <div
                   ref={statsContentRef}
@@ -1230,7 +1285,9 @@ export function ViewPage() {
                     // panel never paints at the transient oversized scale while
                     // tileSize converges after the toggle. The layout box is still
                     // present (visibility, not display) so it can be measured.
-                    visibility: statsRevealed ? undefined : 'hidden',
+                    // Desktop hides via the outer box's opacity instead (so the
+                    // slide-out can fade), so the visibility gate is mobile-only.
+                    visibility: isDesktop ? undefined : statsRevealed ? undefined : 'hidden',
                   }}
                 >
                   <DetailedStatsPanel />

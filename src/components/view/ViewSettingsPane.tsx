@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Check, RotateCcw } from 'lucide-react';
+import { X, Check, RotateCcw, Lock } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
@@ -344,13 +344,17 @@ export function ViewSettingsPane({
             } ${effShowStats && statsEnabled ? 'bg-primary/10' : 'hover:bg-muted'}`}
           >
             <div className="flex items-center gap-2">
-              <span
-                className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                  effShowStats && statsEnabled ? 'bg-primary border-primary' : 'border-muted-foreground/40'
-                }`}
-              >
-                {effShowStats && statsEnabled && <Check className="w-3 h-3 text-primary-foreground" />}
-              </span>
+              {!statsEnabled ? (
+                <Lock className="w-4 h-4 text-muted-foreground/70 flex-shrink-0" />
+              ) : (
+                <span
+                  className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
+                    effShowStats ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+                  }`}
+                >
+                  {effShowStats && <Check className="w-3 h-3 text-primary-foreground" />}
+                </span>
+              )}
               <span className={`text-sm ${effShowStats && statsEnabled ? 'text-primary font-medium' : 'text-foreground'}`}>
                 Show detailed stats
               </span>
