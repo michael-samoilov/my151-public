@@ -746,33 +746,15 @@ export function ViewPage() {
   // converges; when revealed, the reservation applies and the dex shifts left as
   // the stats slide in — one clean transition.
   const reserveStats = statsRevealed ? dexCardCols + statsColFactor : 0;
-  // The page footer shares the scroll container's height. Measure its full
-  // vertical footprint (its box + its mt-4 top-margin gap) and reserve it in the
-  // fit, so the grid is sized for [grid + footer] to fill the viewport exactly —
-  // otherwise the grid alone fills the height and pushes the footer off the
-  // bottom edge. Re-measures on font/viewport changes (both change its height).
-  const footerRef = useRef<HTMLDivElement>(null);
-  const [footerH, setFooterH] = useState(0);
-  useLayoutEffect(() => {
-    const el = footerRef.current;
-    if (!el) return;
-    const measure = () => {
-      const mt = parseFloat(getComputedStyle(el).marginTop) || 0;
-      const next = el.offsetHeight + mt;
-      setFooterH((prev) => (Math.abs(prev - next) < 0.5 ? prev : next));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  // When revealed the grid is wrapped in a card whose p-3 padding (cardPadPx =
-  // 1.5rem total per axis) makes the rendered composition taller than the bare
-  // grid; reserve it too so [card + footer] fills exactly rather than overflowing.
+  // The grid fills the full viewport height; the page footer is intentionally NOT
+  // reserved, so it sits just under the fold (scroll a hair to see it) and the
+  // dex gets the whole screen to scale into. Only the dex card's own p-3 vertical
+  // padding (cardPadPx = 1.5rem/axis) is reserved when revealed, so the card —
+  // and thus the last grid row — fills to the fold rather than spilling past it.
   const { containerRef, tileSize } = useTileSize(
     layout.colFactor + reserveStats,
     layout.rowFactor,
-    footerH + (statsRevealed ? cardPadPx : 0),
+    statsRevealed ? cardPadPx : 0,
   );
 
   // useLayoutEffect (not useEffect): tilePx feeds cardPadCols → statsColFactor →
@@ -1453,8 +1435,8 @@ export function ViewPage() {
           </div>
           {/* Footer stays centered on the full page width — it sits outside the
               dex+stats composition so it doesn't shift left when stats slide in.
-              Its height is measured (footerRef) and reserved in the tile fit. */}
-          <PageFooter ref={footerRef} />
+              Not reserved in the fit, so it rests just under the fold. */}
+          <PageFooter />
         </div>
       </div>
 
