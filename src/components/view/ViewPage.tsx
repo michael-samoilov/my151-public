@@ -1232,9 +1232,12 @@ export function ViewPage() {
 
         {/* px-4 (not p-2): overflow-y-auto forces overflow-x to clip, so the extra
             horizontal padding gives the cards' soft shadows room before that clip.
-            pb-8: comfortable breathing room below the footer/cards at the bottom of
-            the scroll (py-2 alone left it jammed against the page edge). */}
-        <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-2 pb-8">
+            pb-2 (small, matches pt-2): the content is fit to fill the viewport, so
+            a large bottom pad would just hold the footer up off the bottom as dead
+            whitespace and shrink the grid — keep it tight so the footer sits flush
+            (its own py-3 still gives the text breathing room). The small buffer also
+            absorbs sub-pixel fit rounding so it can't trip the scrollbar. */}
+        <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-2 pb-2">
           <div className={statsBesideGrid ? 'flex flex-row items-start justify-center' : 'flex flex-col items-center'}>
           {tileSize > 0 && (() => {
             const {
