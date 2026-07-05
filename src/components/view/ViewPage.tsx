@@ -146,11 +146,11 @@ function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
  *  `colFactor` / `rowFactor` are the effective column / row counts in tileSize
  *  units — they fold in inter-cell gaps and section label bands (outline mode)
  *  so the whole grid, outlines included, fits on screen without cropping. */
-function useTileSize(colFactor: number, rowFactor: number) {
+function useTileSize(colFactor: number, rowFactor: number, reserveH: number = 0) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [tileSize, setTileSize] = useState(0);
-  const factorRef = useRef({ colFactor, rowFactor });
-  factorRef.current = { colFactor, rowFactor };
+  const factorRef = useRef({ colFactor, rowFactor, reserveH });
+  factorRef.current = { colFactor, rowFactor, reserveH };
 
   const measure = useCallback(() => {
     const el = containerRef.current;
@@ -164,9 +164,16 @@ function useTileSize(colFactor: number, rowFactor: number) {
     const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
     const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
     const w = el.clientWidth - padX;
-    const h = el.clientHeight - padY;
-    const { colFactor: cf, rowFactor: rf } = factorRef.current;
-    const size = Math.floor(Math.min(w / Math.max(cf, 1), h / Math.max(rf, 1)));
+    // reserveH is non-grid content that shares the scroll container's height
+    // (the page footer + its top-margin gap). Subtracting it makes the grid fit
+    // so the WHOLE composition (grid + footer) fills the viewport exactly, rather
+    // than the grid alone filling it and pushing the footer off the bottom edge.
+    const { colFactor: cf, rowFactor: rf, reserveH: rh } = factorRef.current;
+    const h = el.clientHeight - padY - Math.max(0, rh);
+    // No Math.floor: an integer tile leaves up to ~one row of unused height, so
+    // the footer would float above the bottom. A fractional size fills exactly
+    // and scales the grid maximally; sprites stay crisp enough at this size.
+    const size = Math.max(0, Math.min(w / Math.max(cf, 1), h / Math.max(rf, 1)));
     setTileSize(size);
   }, []);
 
@@ -180,13 +187,13 @@ function useTileSize(colFactor: number, rowFactor: number) {
   }, [measure]);
 
   // Re-fit BEFORE paint when the fit factors change (e.g. toggling section
-  // outlines flips colFactor/rowFactor). A plain useEffect runs after paint, so
-  // the grid would paint one frame with the new outline template (gaps + label
-  // bands) at the OLD tile size — a visible jank between the two layouts.
+  // outlines flips colFactor/rowFactor, or the footer height changes). A plain
+  // useEffect runs after paint, so the grid would paint one frame with the new
+  // template at the OLD tile size — a visible jank between the two layouts.
   // useLayoutEffect applies the new tile size in the same commit, before paint.
   useLayoutEffect(() => {
     measure();
-  }, [colFactor, rowFactor, measure]);
+  }, [colFactor, rowFactor, reserveH, measure]);
 
   return { containerRef, tileSize };
 }
@@ -739,7 +746,34 @@ export function ViewPage() {
   // converges; when revealed, the reservation applies and the dex shifts left as
   // the stats slide in — one clean transition.
   const reserveStats = statsRevealed ? dexCardCols + statsColFactor : 0;
-  const { containerRef, tileSize } = useTileSize(layout.colFactor + reserveStats, layout.rowFactor);
+  // The page footer shares the scroll container's height. Measure its full
+  // vertical footprint (its box + its mt-4 top-margin gap) and reserve it in the
+  // fit, so the grid is sized for [grid + footer] to fill the viewport exactly —
+  // otherwise the grid alone fills the height and pushes the footer off the
+  // bottom edge. Re-measures on font/viewport changes (both change its height).
+  const footerRef = useRef<HTMLDivElement>(null);
+  const [footerH, setFooterH] = useState(0);
+  useLayoutEffect(() => {
+    const el = footerRef.current;
+    if (!el) return;
+    const measure = () => {
+      const mt = parseFloat(getComputedStyle(el).marginTop) || 0;
+      const next = el.offsetHeight + mt;
+      setFooterH((prev) => (Math.abs(prev - next) < 0.5 ? prev : next));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  // When revealed the grid is wrapped in a card whose p-3 padding (cardPadPx =
+  // 1.5rem total per axis) makes the rendered composition taller than the bare
+  // grid; reserve it too so [card + footer] fills exactly rather than overflowing.
+  const { containerRef, tileSize } = useTileSize(
+    layout.colFactor + reserveStats,
+    layout.rowFactor,
+    footerH + (statsRevealed ? cardPadPx : 0),
+  );
 
   // useLayoutEffect (not useEffect): tilePx feeds cardPadCols → statsColFactor →
   // tileSize, a small fixed-point loop. Running it before paint lets the whole
@@ -1415,8 +1449,9 @@ export function ViewPage() {
           )}
           </div>
           {/* Footer stays centered on the full page width — it sits outside the
-              dex+stats composition so it doesn't shift left when stats slide in. */}
-          <PageFooter />
+              dex+stats composition so it doesn't shift left when stats slide in.
+              Its height is measured (footerRef) and reserved in the tile fit. */}
+          <PageFooter ref={footerRef} />
         </div>
       </div>
 

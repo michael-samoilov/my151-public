@@ -1,10 +1,12 @@
+import { forwardRef } from 'react';
+
 declare const __BUILD_TIMESTAMP__: string;
 const BUILD_VERSION = __BUILD_TIMESTAMP__.replace(/[-:T]/g, '').slice(2, 12);
 const YEAR = new Date().getFullYear();
 
-export function PageFooter() {
+export const PageFooter = forwardRef<HTMLDivElement>(function PageFooter(_props, ref) {
   return (
-    <div className="mt-4 flex flex-col items-center gap-1">
+    <div ref={ref} className="mt-4 flex flex-col items-center gap-1">
       <div className="w-[85%] border-t" />
       <div className="py-3 flex flex-col items-center gap-1">
       <svg width="24" height="24" viewBox="0 0 24 24" className="text-muted-foreground/40">
@@ -23,4 +25,4 @@ export function PageFooter() {
       </div>
     </div>
   );
-}
+});
