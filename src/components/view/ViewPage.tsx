@@ -642,6 +642,7 @@ export function ViewPage() {
   // off), so window resizes — which keep it true — never re-hide / blink it.
   const [statsRevealed, setStatsRevealed] = useState(false);
   const statsContentRef = useRef<HTMLDivElement>(null);
+  const dexCardRef = useRef<HTMLDivElement>(null);
 
   // Desktop-only slide-in / faster-retract animation for the stats block. Mobile
   // keeps the instant visibility flip untouched (the deferred mobile-flash work
@@ -826,6 +827,60 @@ export function ViewPage() {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [showStatsPanel]);
+
+  // FLIP the dex card when stats toggle so it eases (slides + scales) between
+  // its full-width size and its shrunk, carded size instead of snapping — the
+  // grid is re-fit (every tile resizes) rather than moved, so there's no single
+  // CSS property to transition; a First-Last-Invert-Play transform is the way.
+  // Deps are the size-affecting stats values only (NOT drag state), so it never
+  // fires mid-drag; play is gated on statsHeld actually flipping, so a window
+  // resize (which also changes tileSize) just re-records the rect, no animation.
+  type DexBox = { left: number; top: number; width: number; height: number };
+  const dexFlip = useRef<{ box: DexBox | null; held: boolean }>({ box: null, held: statsHeld });
+  useLayoutEffect(() => {
+    const el = dexCardRef.current;
+    if (!el) {
+      dexFlip.current = { box: null, held: statsHeld };
+      return;
+    }
+    // Offset-based (layout-relative), not getBoundingClientRect: the dex sits in
+    // a scroll container, so viewport rects would fold scroll delta into the FLIP.
+    const box: DexBox = { left: el.offsetLeft, top: el.offsetTop, width: el.offsetWidth, height: el.offsetHeight };
+    const prev = dexFlip.current;
+    const heldChanged = prev.held !== statsHeld;
+    dexFlip.current = { box, held: statsHeld };
+    if (!isDesktop || !prev.box || !heldChanged) return;
+    const dx = prev.box.left - box.left;
+    const dy = prev.box.top - box.top;
+    const sx = box.width ? prev.box.width / box.width : 1;
+    const sy = box.height ? prev.box.height / box.height : 1;
+    // Skip if nothing meaningfully moved/resized.
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.02 && Math.abs(sy - 1) < 0.02) return;
+    // Invert: jump the card to visually occupy its previous rect, no transition.
+    el.style.transformOrigin = 'top left';
+    el.style.transition = 'none';
+    el.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+    void el.offsetWidth; // force reflow so the inverted start is committed
+    // Play: ease the transform back to identity. Match the stats block's curve
+    // on the way in; a touch faster (and ease-in) on the way out.
+    const entering = statsHeld;
+    requestAnimationFrame(() => {
+      const e2 = dexCardRef.current;
+      if (!e2) return;
+      e2.style.transition = entering
+        ? 'transform 280ms ease-out'
+        : 'transform 220ms ease-in';
+      e2.style.transform = 'translate(0px, 0px) scale(1, 1)';
+      const clear = (ev: TransitionEvent) => {
+        if (ev.propertyName !== 'transform') return;
+        e2.style.transition = '';
+        e2.style.transform = '';
+        e2.style.transformOrigin = '';
+        e2.removeEventListener('transitionend', clear);
+      };
+      e2.addEventListener('transitionend', clear);
+    });
+  }, [statsHeld, tileSize, showSectionOverlays, isDesktop]);
 
   const [exporting, setExporting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -1166,6 +1221,7 @@ export function ViewPage() {
                 onDragCancel={handleDragCancel}
               >
                 <div
+                  ref={dexCardRef}
                   style={{
                     width: gridWidth,
                     // Gate the dex-card chrome on statsHeld (not showStatsPanel) so
