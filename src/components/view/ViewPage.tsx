@@ -557,7 +557,6 @@ export function ViewPage() {
   // presentation: the grid on a raised card and each chart on its own card with
   // the title inside ('card-title-in'), with type-name badges.
   const showStatsPanel = showStats && count >= STATS_MIN_POKEMON;
-  const statsAsCards = showStatsPanel;
   // Stats data (single source of truth shared with the native export renderer).
   const statsData = useDetailedStatsData();
 
@@ -679,6 +678,20 @@ export function ViewPage() {
   // Beside-grid layout stays active through the desktop retract window so the
   // geometry (footprint, gap, height-match) doesn't collapse mid-slide-out.
   const statsBesideGrid = showStatsPanel || statsMounted;
+  // The desktop exit window: toggled off but still animating out. During it we
+  // hold the panel exactly where it was rather than re-flowing.
+  const statsExiting = isDesktop && statsMounted && !showStatsPanel;
+  // "Held": the panel occupies its reserved space and sits in flow. True while
+  // revealed AND through the exit, so on retract the grid stays put and the
+  // stats fade/slide out in place — instead of the box flipping to position
+  // absolute (which yanked it to the centre for a frame) and the grid snapping
+  // wide underneath it. The grid only reclaims the space once it fully unmounts.
+  const statsHeld = statsRevealed || statsExiting;
+  // statsAsCards drives only the card-padding geometry below; keying it off
+  // statsBesideGrid (rather than showStatsPanel) holds that geometry steady
+  // through the desktop exit so the footprint doesn't shrink mid-slide-out.
+  // On mobile statsBesideGrid === showStatsPanel, so this is unchanged there.
+  const statsAsCards = statsBesideGrid;
 
   // Height of the dex grid in *tile units* (tileSize-independent), folding in the
   // outline gaps/label bands when overlays are on. Matches the actual rendered row
@@ -718,7 +731,7 @@ export function ViewPage() {
   // out of flow), so the grid keeps a stable size instead of wobbling as the fit
   // converges; when revealed, the reservation applies and the dex shifts left as
   // the stats slide in — one clean transition.
-  const reserveStats = statsRevealed ? dexCardCols + statsColFactor : 0;
+  const reserveStats = statsHeld ? dexCardCols + statsColFactor : 0;
   const { containerRef, tileSize } = useTileSize(layout.colFactor + reserveStats, layout.rowFactor);
 
   // useLayoutEffect (not useEffect): tilePx feeds cardPadCols → statsColFactor →
@@ -1155,16 +1168,19 @@ export function ViewPage() {
                 <div
                   style={{
                     width: gridWidth,
-                    // Gate the dex-card chrome on statsRevealed (not showStatsPanel)
-                    // so the card appears in the SAME step as the stats cards, not a
-                    // frame earlier — one transition instead of two.
-                    boxSizing: statsRevealed ? 'content-box' : undefined,
+                    // Gate the dex-card chrome on statsHeld (not showStatsPanel) so
+                    // the card appears in the SAME step as the stats cards, not a
+                    // frame earlier — one transition instead of two — and, because
+                    // statsHeld stays true through the retract, the card also stays
+                    // put while the stats slide out (releasing only on unmount)
+                    // rather than snapping away and shifting the grid mid-animation.
+                    boxSizing: statsHeld ? 'content-box' : undefined,
                     // Match the stats cards' *visual* corner radius: they use
                     // rounded-lg (var(--radius)) but are scaled by statsScale, so
                     // the unscaled dex card needs the same radius pre-multiplied.
-                    borderRadius: statsRevealed ? `calc(var(--radius) * ${statsScale})` : undefined,
+                    borderRadius: statsHeld ? `calc(var(--radius) * ${statsScale})` : undefined,
                   }}
-                  className={statsRevealed ? 'bg-card shadow-elevated p-3' : ''}
+                  className={statsHeld ? 'bg-card shadow-elevated p-3' : ''}
                 >
                   {/* Grid + centered overflow row share one relative box so a
                       single overlay can draw outlines that span the boundary.
@@ -1249,10 +1265,12 @@ export function ViewPage() {
                   width: statsDisplayW || undefined,
                   height: statsTargetHeight || undefined,
                   marginLeft: statsGapCols * tileSize,
-                  // Until revealed, sit out of flow (absolute) so the hidden panel
-                  // doesn't reserve flex width and shift/re-fit the grid mid-settle.
-                  // Its natural box is still measurable while absolute.
-                  position: statsRevealed ? undefined : 'absolute',
+                  // Out of flow (absolute) only during the pre-reveal settle, so
+                  // the hidden panel doesn't reserve flex width / re-fit the grid
+                  // while the fit converges. Once held (revealed OR exiting) it
+                  // sits in flow, so the retract slides out in place rather than
+                  // jumping to the centre. Its natural box is measurable either way.
+                  position: statsHeld ? undefined : 'absolute',
                   // Desktop: fade + slide in from the right once the fit has
                   // settled (statsRevealed), and slide out faster on retract. The
                   // opacity-0 pre-reveal state also hides the oversized settle
