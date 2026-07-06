@@ -605,12 +605,9 @@ for (const P of prelims) {
   // game-breadth (the strongest evidence first); capped in the JSON to keep
   // the file reviewable (Magikarp's fishing tag alone spans ~190 locations).
   const EVIDENCE_CAP = 40;
-  let evidence = null;
-  // Weak lines cite the evidence for their would-be top tag so reviewers can
-  // see exactly what was rejected (e.g. Larvesta's 1% Lush Jungle slots).
-  const evidenceTag = source === 'encounters' || source === 'override' ? recommended : source === 'encounters-weak' ? ranked[0]?.tag : null;
-  if (evidenceTag && agg.has(evidenceTag)) {
-    const t = agg.get(evidenceTag);
+  const tagEvidence = (tag, share) => {
+    const t = agg.get(tag);
+    if (!t) return null;
     const fmtLoc = (locKey) => {
       const [region, name] = locKey.split('|');
       const reg = region.charAt(0).toUpperCase() + region.slice(1);
@@ -619,8 +616,15 @@ for (const P of prelims) {
     const all = [...t.locGames.entries()]
       .map(([locKey, games]) => ({ ...fmtLoc(locKey), games: [...games].sort(), bestRarity: t.locRarity.get(locKey) ?? null }))
       .sort((a, b) => b.games.length - a.games.length || a.location.localeCompare(b.location));
-    evidence = { tag: evidenceTag, locations: all.slice(0, EVIDENCE_CAP), omittedLocations: Math.max(0, all.length - EVIDENCE_CAP) };
-  }
+    return { tag, share: share != null ? +share.toFixed(3) : undefined, locations: all.slice(0, EVIDENCE_CAP), omittedLocations: Math.max(0, all.length - EVIDENCE_CAP) };
+  };
+  // Weak lines cite the evidence for their would-be top tag so reviewers can
+  // see exactly what was rejected (e.g. Larvesta's 1% Lush Jungle slots).
+  const evidenceTag = source === 'encounters' || source === 'override' ? recommended : source === 'encounters-weak' ? ranked[0]?.tag : null;
+  const evidence = evidenceTag ? tagEvidence(evidenceTag) : null;
+  // Top-two ranked biomes with their full location lists — the review surface
+  // for catching lines placed under their SECOND-likeliest biome.
+  const topBiomes = ranked.slice(0, 2).map((s) => tagEvidence(s.tag, s.share)).filter(Boolean);
 
   records.push({
     chainId,
@@ -639,6 +643,7 @@ for (const P of prelims) {
     evidenceStrength: +totalStrength.toFixed(2),
     totalContexts,
     evidence,
+    topBiomes,
     currentlyCovered: coveredSectionsFor(ids),
   });
 }
@@ -703,7 +708,8 @@ md.push('- **Evidence-strength gate** — lines whose total weighted evidence is
 md.push('- **Specificity (IDF) ranking with breadth eligibility** — generic tags (meadow is the background of nearly every grass route) are down-ranked against distinctive ones, but a tag needs ≥2 locations and ≥2 games to earn its boost, so one odd location cannot hijack a broad line. Effective ties prefer the more specific tag.');
 md.push("- **Let's Go excluded** — LGPE's catch-combo rare-spawn system puts species on ~20 routes at once with no usable rates; Kanto is covered by RBY/FRLG/HGSS instead.");
 md.push('- **Curated overrides** (`scripts/biome/overrides.json`) — a short, fully documented list for lines whose data is systematically misleading (e.g. Bagon\'s identity home is a single Meteor Falls room). Applied last, always disclosed in the rationale.');
-md.push('- **Validation harness** (`scripts/biome/validate-assignments.mjs`) — 79 golden expectations a knowledgeable person can assert, plus red-flag detectors (rare-only, single-location, narrow-margin, minority-slice, curation-disagreement) whose output is `validation-report.md`.');
+md.push('- **Validation harness** (`scripts/biome/validate-assignments.mjs`) — golden expectations a knowledgeable person can assert (85 lines), plus red-flag detectors (cameo-suspect, single-location, narrow-margin, minority-slice, curation-disagreement) whose output is `validation-report.md`.');
+md.push('- **Evidence review** — `biome-evidence.md` lists every line\'s top-ranked biome AND runner-up with full location lists, to catch placements under a second-likeliest biome.');
 md.push('');
 
 const fmtLine = (r) => {
@@ -816,6 +822,49 @@ md.push('');
 
 writeFileSync(join(OUT_DIR, 'biome-report.md'), md.join('\n'));
 
+// ----- Evidence review document: top-two biomes with full location lists -----
+// Purpose: catch false positives where a line got placed under its SECOND-
+// likeliest biome (or where the runner-up is plainly its real home).
+const ev = [];
+ev.push('# Biome evidence review — top biome vs runner-up');
+ev.push('');
+ev.push('For every line with encounter data: all substantiating locations of its top-ranked biome, then of its runner-up. Location format: name (Region, #games, best rate). NOTE: 1st/2nd reflect the FINAL ranking (after specificity weighting), while the % shown is the raw appearance share — so a "1st" with a lower % than its "2nd" (e.g. Larvitar: cave 36% over mountain 44%) marks exactly the places where specificity overrode raw frequency; review those closely. Lines whose final recommendation came from an override/knowledge entry are marked, with their ranked data shown for transparency.');
+const fmtEvLoc = (l) => `${l.location} (${l.region}, ${l.games.length}g${l.bestRarity != null ? `, ≤${l.bestRarity}%` : ''})`;
+const evLine = (b, label) => {
+  const locs = b.locations.map(fmtEvLoc).join('; ');
+  const more = b.omittedLocations ? `; +${b.omittedLocations} more` : '';
+  return `- **${label} — ${b.tag}** (${Math.round((b.share ?? 0) * 100)}%): ${locs}${more}`;
+};
+for (const tag of [...SECTION_ORDER, ...nonPlace.sort()]) {
+  const rs = records.filter((r) => r.recommended === tag && r.topBiomes.length);
+  if (!rs.length) continue;
+  ev.push('');
+  ev.push(`## Recommended: ${tag} (${rs.length} lines with data)`);
+  for (const r of rs) {
+    ev.push('');
+    const marker = r.source === 'override' || r.source === 'knowledge' ? ` — recommendation from ${r.source}, ranked data below for transparency` : '';
+    ev.push(`### ${r.line} → ${r.recommended} (${r.confidence ?? '—'}, ${r.source})${marker}`);
+    if (r.topBiomes[0]) ev.push(evLine(r.topBiomes[0], '1st'));
+    if (r.topBiomes[1]) ev.push(evLine(r.topBiomes[1], '2nd'));
+    else ev.push('- _no second biome — single-biome evidence_');
+  }
+}
+// Lines placed by knowledge/structural with ranked data but a non-section tag
+// (e.g. a legendary with real encounter rows) still deserve review visibility.
+const otherWithData = records.filter((r) => r.topBiomes.length && !SECTION_ORDER.includes(r.recommended) && !nonPlace.includes(r.recommended));
+if (otherWithData.length) {
+  ev.push('');
+  ev.push(`## Other lines with ranked data (${otherWithData.length})`);
+  for (const r of otherWithData) {
+    ev.push('');
+    ev.push(`### ${r.line} → ${r.recommended} (${r.confidence ?? '—'}, ${r.source})`);
+    if (r.topBiomes[0]) ev.push(evLine(r.topBiomes[0], '1st'));
+    if (r.topBiomes[1]) ev.push(evLine(r.topBiomes[1], '2nd'));
+  }
+}
+ev.push('');
+writeFileSync(join(OUT_DIR, 'biome-evidence.md'), ev.join('\n'));
+
 // Console summary.
 console.log('=== biome pipeline summary ===');
 console.log(JSON.stringify(summary, null, 2));
@@ -827,3 +876,4 @@ if (unclassifiedLocs.size) {
 if (missing.length) console.log(`\nWARNING: base-dex ids missing from line records: ${missing.join(', ')}`);
 console.log(`\nWrote ${join(OUT_DIR, 'biome-assignments.json')}`);
 console.log(`Wrote ${join(OUT_DIR, 'biome-report.md')}`);
+console.log(`Wrote ${join(OUT_DIR, 'biome-evidence.md')}`);
