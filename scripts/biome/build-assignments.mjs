@@ -73,13 +73,32 @@ const GEN78_VIDS = new Set(['27', '28', '29', '30', '33', '34', '35', '36', '50'
 const HIGH = { share: 0.55, games: 3, margin: 1.5 };
 const MED = { share: 0.35, games: 2 };
 
-// Rarity weighting: an encounter context's weight scales with its best slot
-// rarity, so a 1% SOS cameo (e.g. Larvesta in USUM's Lush Jungle) cannot
-// masquerade as habitat identity. A context at normal rates counts fully.
-function rarityWeight(r) {
-  if (r >= 10) return 1;
-  if (r >= 5) return 0.5;
+// RELATIVE rarity weighting: low rarity is NOT a counter-signal by itself —
+// pseudo-legendaries and mons like Dreepy are 1-5% EVERYWHERE, and those rare
+// slots ARE their canonical presence. A context is downweighted only when the
+// line has substantially HIGHER rates elsewhere (rare here + common there =
+// cameo). Weight is judged against the line's own best rarity.
+function relativeRarityWeight(rarity, lineMaxRarity) {
+  const rel = rarity / Math.max(lineMaxRarity, 1);
+  if (rel >= 0.34) return 1;
+  if (rel >= 0.1) return 0.5;
   return 0.2;
+}
+
+// Method-class weighting: gimmick mechanics are weaker evidence of habitat
+// than core wild spawns regardless of rate. SOS chaining (call-for-help
+// crossovers like Larvesta in Lush Jungle) and Island Scan (daily one-off
+// out-of-region spawns) don't establish "this is where the line lives".
+function methodClassWeight(method) {
+  const m = method.toLowerCase();
+  if (m === 'sos-encounter' || m === 'sos-from-bubbling-spot') return 0.3;
+  // SM terrain-ambush spots (dust clouds / rustling / bubbling): one-off spawn
+  // points PokeAPI encodes at rarity "100". Real presence, weak habitat claim —
+  // and NOT water-specific (Diglett's are sand clouds), so they follow the
+  // location's tags in votesFor rather than the water branch.
+  if (m === 'bubbling-spots') return 0.3;
+  if (m === 'island-scan') return 0.2;
+  return 1;
 }
 // Evidence-strength gate: if a line's TOTAL weighted evidence is below this,
 // the encounter data is too thin/rare to trust as a default placement — the
@@ -105,7 +124,7 @@ function votesFor(method, locTags, locName) {
   if (m === 'rock-smash') return { tags: ['cave'] };
   if (m === 'cave-spots') return { tags: ['cave'] };
   if (m === 'bridge-spots') return { tags: [] };
-  if (/^(surf|surf-spots|overworld-water|wanderer-water|seaweed|bubbling-spots|sos-from-bubbling-spot|roaming-water)$/.test(m)) {
+  if (/^(surf|surf-spots|overworld-water|wanderer-water|seaweed|roaming-water)$/.test(m)) {
     const water = locTags.filter((t) => WATERY.has(t));
     if (water.length) return { tags: water };
     if (/sea route|\bsea\b|\bbay\b|shoal|undella|ocean/i.test(locName)) return { tags: ['ocean'] };
@@ -142,26 +161,29 @@ function statFor(id) {
   return speciesStats.get(id);
 }
 
-function addVotes(speciesId, game, region, locKey, tags, acquisition, rarity = 10) {
+function addVotes(speciesId, game, region, locKey, tags, acquisition, rarity = 10, methodW = 1) {
   const s = statFor(speciesId);
   if (acquisition) s.acquisitions.add(acquisition);
   const useful = tags.filter((t) => t !== 'special' && VALID_TAGS.has(t));
   if (!useful.length) return;
   const ctx = `${game}|${locKey}`;
   s.contexts.add(ctx);
-  // Track the BEST slot rarity seen for each context (per species and per tag)
-  // — repeated slots for the same place/game keep their max, so weighting
+  // Track the BEST slot rarity and BEST method class seen per context —
+  // repeated slots for the same place/game keep their max, so weighting
   // reflects the most accessible way to find the Pokémon there.
   if (!s.ctxRarity) s.ctxRarity = new Map();
+  if (!s.ctxMethodW) s.ctxMethodW = new Map();
   s.ctxRarity.set(ctx, Math.max(s.ctxRarity.get(ctx) ?? 0, rarity));
+  s.ctxMethodW.set(ctx, Math.max(s.ctxMethodW.get(ctx) ?? 0, methodW));
   for (const tag of useful) {
-    if (!s.tags.has(tag)) s.tags.set(tag, { contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set(), locGames: new Map(), ctxRarity: new Map(), locRarity: new Map() });
+    if (!s.tags.has(tag)) s.tags.set(tag, { contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set(), locGames: new Map(), ctxRarity: new Map(), locRarity: new Map(), ctxMethodW: new Map() });
     const t = s.tags.get(tag);
     t.contexts.add(ctx);
     t.games.add(game);
     t.regions.add(region);
     t.locs.add(locKey);
     t.ctxRarity.set(ctx, Math.max(t.ctxRarity.get(ctx) ?? 0, rarity));
+    t.ctxMethodW.set(ctx, Math.max(t.ctxMethodW.get(ctx) ?? 0, methodW));
     t.locRarity.set(locKey, Math.max(t.locRarity.get(locKey) ?? 0, rarity));
     if (!t.locGames.has(locKey)) t.locGames.set(locKey, new Set());
     t.locGames.get(locKey).add(game);
@@ -190,7 +212,7 @@ for (const r of readCsv(join(RESEARCH, 'pokemon_encounters_gen1-8.csv'))) {
   }
   const { tags, acquisition } = votesFor(method, locTags, locName);
   const rarity = Number(r[13]) || 10;
-  addVotes(id, game, region, `${region}|${locName}`, tags, acquisition, rarity);
+  addVotes(id, game, region, `${region}|${locName}`, tags, acquisition, rarity, methodClassWeight(method));
 }
 
 // ------------------------------------------------ 2. PokeAPI gen7/8 dataset
@@ -240,7 +262,7 @@ for (const r of paRows('encounters.csv')) {
   const method = paMethods.get(slot?.methodId) ?? 'walk';
   const game = paVersions.get(vid) ?? `v${vid}`;
   const { tags, acquisition } = votesFor(method, locTags, dispName);
-  addVotes(speciesId, game, region, `${region}|${dispName}`, tags, acquisition, slot?.rarity ?? 10);
+  addVotes(speciesId, game, region, `${region}|${dispName}`, tags, acquisition, slot?.rarity ?? 10, methodClassWeight(method));
 }
 
 // --------------------------------------------- 3. App data + structural sets
@@ -344,8 +366,9 @@ for (const [chainId, members] of lines) {
   const ids = members.map((m) => m.id);
 
   // Union member stats.
-  const agg = new Map(); // tag -> {contexts:Set, games:Set, regions:Set, locs:Set, locGames:Map, ctxRarity:Map, locRarity:Map}
+  const agg = new Map(); // tag -> {contexts:Set, games:Set, regions:Set, locs:Set, locGames:Map, ctxRarity:Map, locRarity:Map, ctxMethodW:Map}
   const allCtxRarity = new Map(); // ctx -> best rarity across members/tags
+  const allCtxMethodW = new Map(); // ctx -> best method-class weight
   const acquisitions = new Set();
   const mergeTag = (a, t) => {
     for (const c of t.contexts) a.contexts.add(c);
@@ -357,14 +380,16 @@ for (const [chainId, members] of lines) {
       for (const g of games) a.locGames.get(loc).add(g);
     }
     for (const [c, r] of t.ctxRarity) a.ctxRarity.set(c, Math.max(a.ctxRarity.get(c) ?? 0, r));
+    for (const [c, w] of t.ctxMethodW) a.ctxMethodW.set(c, Math.max(a.ctxMethodW.get(c) ?? 0, w));
     for (const [l, r] of t.locRarity) a.locRarity.set(l, Math.max(a.locRarity.get(l) ?? 0, r));
   };
-  const emptyTag = () => ({ contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set(), locGames: new Map(), ctxRarity: new Map(), locRarity: new Map() });
+  const emptyTag = () => ({ contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set(), locGames: new Map(), ctxRarity: new Map(), locRarity: new Map(), ctxMethodW: new Map() });
   for (const id of ids) {
     const s = speciesStats.get(id);
     if (!s) continue;
     for (const a of s.acquisitions) acquisitions.add(a);
     for (const [c, r] of s.ctxRarity ?? []) allCtxRarity.set(c, Math.max(allCtxRarity.get(c) ?? 0, r));
+    for (const [c, w] of s.ctxMethodW ?? []) allCtxMethodW.set(c, Math.max(allCtxMethodW.get(c) ?? 0, w));
     for (const [tag, t] of s.tags) {
       if (!agg.has(tag)) agg.set(tag, emptyTag());
       mergeTag(agg.get(tag), t);
@@ -385,17 +410,23 @@ for (const [chainId, members] of lines) {
     mergeTag(agg.get(target), w);
   }
 
-  // Rarity-weighted exclusivity: each context contributes rarityWeight(best
-  // slot rarity) — so shares reflect how findable the line is in each place,
-  // not just that some 1% slot exists there.
-  const strengthOf = (ctxRarity) => [...ctxRarity.values()].reduce((s, r) => s + rarityWeight(r), 0);
+  // Weighted exclusivity: each context contributes (relative-rarity weight ×
+  // method-class weight). Relative means judged against the LINE's own best
+  // rarity — a rare-everywhere line (Dreepy, pseudo-legendaries) keeps full
+  // weight on its rare slots; only "rare here, common elsewhere" is a cameo.
+  const lineMaxRarity = Math.max(0, ...allCtxRarity.values());
+  const ctxWeight = (ctx, ctxRarity, ctxMethodW) =>
+    relativeRarityWeight(ctxRarity.get(ctx) ?? 10, lineMaxRarity) * (ctxMethodW.get(ctx) ?? 1);
+  const strengthOf = (ctxRarity, ctxMethodW) =>
+    [...ctxRarity.keys()].reduce((s, ctx) => s + ctxWeight(ctx, ctxRarity, ctxMethodW), 0);
   const totalContexts = allCtxRarity.size;
-  const totalStrength = strengthOf(allCtxRarity);
+  const totalStrength = strengthOf(allCtxRarity, allCtxMethodW);
   const scored = [...agg.entries()]
     .map(([tag, t]) => ({
       tag,
-      share: totalStrength ? strengthOf(t.ctxRarity) / totalStrength : 0,
-      strength: +strengthOf(t.ctxRarity).toFixed(2),
+      share: totalStrength ? strengthOf(t.ctxRarity, t.ctxMethodW) / totalStrength : 0,
+      strength: +strengthOf(t.ctxRarity, t.ctxMethodW).toFixed(2),
+      maxRarity: Math.max(0, ...t.ctxRarity.values()),
       games: t.games.size,
       regions: t.regions.size,
       locations: t.locs.size,
@@ -430,20 +461,58 @@ for (const P of prelims) {
   const { chainId, members, base, ids, agg, scored, totalContexts, totalStrength, structural, knowledgeEntry, acquisitions } = P;
 
   // Specificity-adjusted ranking (raw shares are kept for confidence gates
-  // and reporting — the IDF only decides WHICH tag wins). A tag must have
-  // BREADTH (≥2 locations and ≥2 games) to earn its specificity boost:
-  // without this, one odd location hijacks broad lines (Snorlax → swamp on a
-  // single marsh, Misdreavus → tundra on Mount Lanakila alone).
+  // and reporting — the IDF only decides WHICH tag wins), with three guards
+  // that keep the boost an arbiter of CONTESTED races, not a hijack vector:
+  //
+  // 1. DOMINANCE: a raw leader with share ≥ 0.5 and ≥ 1.8× the runner-up wins
+  //    outright — no boost may overturn it (Skarmory's 63% mountain must not
+  //    lose to a boosted 27% volcanic).
+  // 2. BREADTH: a tag needs ≥2 locations and ≥2 games to earn its boost (one
+  //    odd location must not hijack a broad line), AND its share must be
+  //    competitive (≥ leader/3) — a fringe tag can't boost past everyone.
+  // 3. INDEPENDENCE: no boost if the tag's contexts are ≈a subset (≥90%
+  //    overlap) of the raw leader's — co-tagged locations (Kanto Routes 12/16
+  //    are meadow|swamp) are the SAME evidence, not independent support for
+  //    the more specific tag.
+  const rawLeaderScored = scored[0];
+  const leaderCtx = rawLeaderScored ? agg.get(rawLeaderScored.tag)?.ctxRarity : null;
+  const dominant = rawLeaderScored && scored[1]
+    ? rawLeaderScored.share >= 0.5 && rawLeaderScored.share >= 1.8 * scored[1].share
+    : Boolean(rawLeaderScored);
   const ranked = scored
     .map((s) => {
-      const boostEligible = s.locations >= 2 && s.games >= 2;
+      let boostEligible = !dominant && s.locations >= 2 && s.games >= 2 &&
+        rawLeaderScored && s.share >= rawLeaderScored.share / 3;
+      if (boostEligible && s.tag !== rawLeaderScored.tag && leaderCtx) {
+        const own = agg.get(s.tag)?.ctxRarity;
+        if (own) {
+          let overlap = 0;
+          for (const c of own.keys()) if (leaderCtx.has(c)) overlap++;
+          if (overlap / own.size >= 0.9) boostEligible = false;
+        }
+      }
       return { ...s, score: s.share * (boostEligible ? Math.pow(idfOf(s.tag), IDF_ALPHA) : 1) };
     })
-    // On an effective tie, prefer the more SPECIFIC tag (higher IDF): a line
-    // split evenly between mountain and tundra (Snom's Route 10 vs Giant's
-    // Cap) reads better under the rarer, more characterful biome.
+    // On an effective tie, prefer the more SPECIFIC tag — but only when the
+    // two tags rest on substantially different contexts (Stonjourner's Route
+    // 10 tundra vs Lake of Outrage mountain). If one side's contexts are just
+    // a subset of the other's (co-tagged meadow|swamp routes: Snorlax), the
+    // "specific" reading has no independent evidence — prefer the generic.
     .sort((a, b) => {
       if (Math.abs(a.score - b.score) >= 0.01) return b.score - a.score;
+      const aCtx = agg.get(a.tag)?.ctxRarity;
+      const bCtx = agg.get(b.tag)?.ctxRarity;
+      if (aCtx && bCtx) {
+        let aInB = 0;
+        let bInA = 0;
+        for (const c of aCtx.keys()) if (bCtx.has(c)) aInB++;
+        for (const c of bCtx.keys()) if (aCtx.has(c)) bInA++;
+        const aSubset = aInB / aCtx.size >= 0.9;
+        const bSubset = bInA / bCtx.size >= 0.9;
+        if (aSubset && !bSubset) return 1; // a is derivative evidence — b first
+        if (bSubset && !aSubset) return -1;
+        if (aSubset && bSubset) return idfOf(a.tag) - idfOf(b.tag); // same evidence → generic first
+      }
       return idfOf(b.tag) - idfOf(a.tag) || b.share - a.share || b.games - a.games;
     });
 
@@ -628,8 +697,9 @@ md.push(`- Confidence: ${Object.entries(summary.byConfidence).map(([k, v]) => `$
 md.push('');
 md.push('### Guardrails');
 md.push('');
-md.push('- **Rarity weighting** — each (game, location) context is weighted by its best slot rarity (≥10% full, 5–9% half, <5% ≈ one-fifth), so rare cameos cannot masquerade as habitat.');
-md.push('- **Evidence-strength gate** — lines whose total weighted evidence is under 1.0 are never confidently placed: they fall back to structural identity or curated knowledge, or land in the needs-review bucket. (A 1% slot is a user\'s off-section pick, not an app default — this is what re-routed Larvesta away from "forest".)');
+md.push("- **Relative rarity weighting** — low rarity is NOT a counter-signal by itself: pseudo-legendaries and mons like Dreepy are 1-5% everywhere, and those rare slots ARE their canonical presence. A context is downweighted only relative to the line's OWN best rate (rare here + common elsewhere = cameo).");
+md.push('- **Method-class weighting** — gimmick mechanics (SOS call-chains, Island Scan) carry a fraction of the evidentiary weight of core wild spawns regardless of rate; an SOS-only record (Larvesta in Lush Jungle) does not establish habitat.');
+md.push('- **Evidence-strength gate** — lines whose total weighted evidence is under 1.0 are never confidently placed: they fall back to structural identity or curated knowledge, or land in the needs-review bucket. (A chain-mechanic cameo is a user\'s off-section pick, not an app default — this is what re-routed Larvesta away from "forest".)');
 md.push('- **Specificity (IDF) ranking with breadth eligibility** — generic tags (meadow is the background of nearly every grass route) are down-ranked against distinctive ones, but a tag needs ≥2 locations and ≥2 games to earn its boost, so one odd location cannot hijack a broad line. Effective ties prefer the more specific tag.');
 md.push("- **Let's Go excluded** — LGPE's catch-combo rare-spawn system puts species on ~20 routes at once with no usable rates; Kanto is covered by RBY/FRLG/HGSS instead.");
 md.push('- **Curated overrides** (`scripts/biome/overrides.json`) — a short, fully documented list for lines whose data is systematically misleading (e.g. Bagon\'s identity home is a single Meteor Falls room). Applied last, always disclosed in the rationale.');

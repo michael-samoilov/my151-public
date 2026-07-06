@@ -77,6 +77,12 @@
     { "species": "ponyta",     "allowed": ["mountain", "meadow", "volcanic"], "reason": "Kanto routes / Mt. Silver area" },
     { "species": "shellder",   "allowed": ["beach", "ocean", "fishing", "lake"], "reason": "shores and seas" },
     { "species": "staryu",     "allowed": ["beach", "ocean", "fishing"],     "reason": "night beaches" },
+    { "species": "dreepy",     "allowed": ["lake", "haunted"],               "reason": "Lake of Outrage phantom dragon — rare EVERYWHERE (1-2%), so its rare slots are its canonical presence, not a cameo" },
+    { "species": "eiscue",     "allowed": ["tundra"],                        "reason": "ice-face penguin; snow-weather spawns" },
+    { "species": "stonjourner", "allowed": ["mountain", "ruins", "tundra"],  "reason": "standing-stone Pokémon of rocky wilds/megaliths; its Route 10 home is a snowy moor, so tundra is defensible" },
+    { "species": "snorlax",    "allowed": ["meadow", "mountain"],            "reason": "route-blocking statics (12/16 Kanto, Route 7 Kalos)" },
+    { "species": "oranguru",   "allowed": ["forest"],                        "reason": "Lush Jungle sage — low-rate but rare everywhere, so forest stands" },
+    { "species": "passimian",  "allowed": ["forest"],                        "reason": "Lush Jungle teamwork lemur — same rare-everywhere logic" },
     { "species": "cetoddle",   "allowed": ["tundra"],                        "reason": "Glaseado Mountain (knowledge)" },
     { "species": "lechonk",    "allowed": ["meadow"],                        "reason": "Paldean fields (knowledge)" },
     { "species": "gimmighoul", "allowed": ["ruins"],                         "reason": "chest form haunts ruins/towers (knowledge)" }

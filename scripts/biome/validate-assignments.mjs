@@ -76,9 +76,16 @@ const placed = records.filter((r) => r.source === 'encounters');
 // records like Larvesta's two 1% slots.)
 const gateViolations = placed.filter((r) => r.evidenceStrength < 1.0);
 
-const rareOnly = placed.filter((r) =>
-  r.evidence && r.evidence.locations.length > 0 && r.evidence.omittedLocations === 0 &&
-  r.evidence.locations.every((l) => l.bestRarity != null && l.bestRarity < 10));
+// Cameo-suspect: low rarity is NOT a counter-signal by itself (Dreepy and the
+// pseudo-legendaries are rare EVERYWHERE — their rare slots are canonical).
+// Suspicion arises only when the recommended tag's best rate is low while the
+// line has a substantially better rate (≥3×) under some OTHER tag: rare here,
+// common there = possible cameo win.
+const cameoSuspect = placed.filter((r) => {
+  const top = r.scores[0];
+  if (!top || top.maxRarity == null || top.maxRarity >= 10) return false;
+  return r.scores.slice(1).some((s) => s.maxRarity != null && s.maxRarity >= 3 * top.maxRarity);
+});
 
 const singleLocation = placed.filter((r) =>
   r.evidence && r.evidence.locations.length + r.evidence.omittedLocations === 1);
@@ -139,8 +146,8 @@ flagSection(
   gateViolations, (r) => `- ${r.line} → ${r.recommended} (strength ${r.evidenceStrength}, ${r.totalContexts} ctx)`);
 
 flagSection(
-  'Rare-only placements', 'Every cited location is a sub-10% slot. The gate passed on volume, but a human should confirm the biome is really home.',
-  rareOnly, (r) => `- ${r.line} → ${r.recommended} (${r.confidence}); ${r.evidence.locations.map((l) => `${l.location} ≤${l.bestRarity}%`).join('; ')}`);
+  'Cameo-suspect placements', 'The recommended tag\'s best encounter rate is low (<10%) while another tag offers ≥3× better rates — "rare here, common there" suggests the winner may be a cameo. (Rare-everywhere lines like Dreepy are NOT flagged: their rare slots are canonical.)',
+  cameoSuspect, (r) => `- ${r.line} → ${r.recommended} (${r.confidence}; best ≤${r.scores[0].maxRarity}%) vs ${r.scores.slice(1).filter((s) => s.maxRarity >= 3 * r.scores[0].maxRarity).map((s) => `${s.tag} ≤${s.maxRarity}%`).join(', ')}`);
 
 flagSection(
   'Single-location placements', 'Substantiated by exactly one location. Legitimate for true endemics (Minior/Mount Hokulani) — review the rest.',
@@ -164,6 +171,6 @@ writeFileSync(join(OUT_DIR, 'validation-report.md'), md.join('\n'));
 console.log(`Goldens: ${goldenResults.length - failures.length}/${goldenResults.length} pass`);
 for (const f of failures) console.log(`  FAIL ${f.species}: expected [${f.allowed.join(', ')}], got ${f.got} (${f.source}) — ${f.rationale ?? ''}`);
 console.log(`Gate violations: ${gateViolations.length} (must be 0)`);
-console.log(`Flags — rare-only: ${rareOnly.length}, single-location: ${singleLocation.length}, narrow-margin: ${narrowMargin.length}, minority-slice: ${minoritySlice.length}, curation-disagreement: ${curationDisagreement.length}`);
+console.log(`Flags — cameo-suspect: ${cameoSuspect.length}, single-location: ${singleLocation.length}, narrow-margin: ${narrowMargin.length}, minority-slice: ${minoritySlice.length}, curation-disagreement: ${curationDisagreement.length}`);
 console.log(`Wrote ${join(OUT_DIR, 'validation-report.md')}`);
 if (failures.length || gateViolations.length) process.exitCode = 1;
