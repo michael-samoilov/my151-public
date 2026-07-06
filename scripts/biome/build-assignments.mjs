@@ -62,12 +62,31 @@ const SECTION_BY_TAG = {
 const VALID_TAGS = new Set([...Object.keys(SECTION_BY_TAG), 'urban', 'special', 'water']);
 const WATERY = new Set(['ocean', 'lake', 'beach', 'swamp']);
 
-// Version ids (PokeAPI) for the Gen VII/VIII merge.
-const GEN78_VIDS = new Set(['27', '28', '29', '30', '31', '32', '33', '34', '35', '36', '50', '51']);
+// Version ids (PokeAPI) for the Gen VII/VIII merge. Let's Go (31/32) is
+// deliberately EXCLUDED: its catch-combo rare-spawn system puts species like
+// Dratini on ~20 routes at once (and PokeAPI encodes every LGPE slot at
+// rarity 100), which is gimmick-spawn pollution rather than habitat identity —
+// Kanto is already richly covered by RBY/FRLG/HGSS.
+const GEN78_VIDS = new Set(['27', '28', '29', '30', '33', '34', '35', '36', '50', '51']);
 
 // Confidence thresholds (calibrated against the spot checks at the bottom).
 const HIGH = { share: 0.55, games: 3, margin: 1.5 };
 const MED = { share: 0.35, games: 2 };
+
+// Rarity weighting: an encounter context's weight scales with its best slot
+// rarity, so a 1% SOS cameo (e.g. Larvesta in USUM's Lush Jungle) cannot
+// masquerade as habitat identity. A context at normal rates counts fully.
+function rarityWeight(r) {
+  if (r >= 10) return 1;
+  if (r >= 5) return 0.5;
+  return 0.2;
+}
+// Evidence-strength gate: if a line's TOTAL weighted evidence is below this,
+// the encounter data is too thin/rare to trust as a default placement — the
+// line reroutes to structural/knowledge, or lands in the needs-review bucket.
+// (Rare off-biome encounters are exactly the kind of thing that should be a
+// user's own off-section pick, not an app default.)
+const MIN_EVIDENCE_STRENGTH = 1.0;
 
 // ------------------------------------------------- Method → biome vote rules
 
@@ -123,20 +142,27 @@ function statFor(id) {
   return speciesStats.get(id);
 }
 
-function addVotes(speciesId, game, region, locKey, tags, acquisition) {
+function addVotes(speciesId, game, region, locKey, tags, acquisition, rarity = 10) {
   const s = statFor(speciesId);
   if (acquisition) s.acquisitions.add(acquisition);
   const useful = tags.filter((t) => t !== 'special' && VALID_TAGS.has(t));
   if (!useful.length) return;
   const ctx = `${game}|${locKey}`;
   s.contexts.add(ctx);
+  // Track the BEST slot rarity seen for each context (per species and per tag)
+  // — repeated slots for the same place/game keep their max, so weighting
+  // reflects the most accessible way to find the Pokémon there.
+  if (!s.ctxRarity) s.ctxRarity = new Map();
+  s.ctxRarity.set(ctx, Math.max(s.ctxRarity.get(ctx) ?? 0, rarity));
   for (const tag of useful) {
-    if (!s.tags.has(tag)) s.tags.set(tag, { contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set(), locGames: new Map() });
+    if (!s.tags.has(tag)) s.tags.set(tag, { contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set(), locGames: new Map(), ctxRarity: new Map(), locRarity: new Map() });
     const t = s.tags.get(tag);
     t.contexts.add(ctx);
     t.games.add(game);
     t.regions.add(region);
     t.locs.add(locKey);
+    t.ctxRarity.set(ctx, Math.max(t.ctxRarity.get(ctx) ?? 0, rarity));
+    t.locRarity.set(locKey, Math.max(t.locRarity.get(locKey) ?? 0, rarity));
     if (!t.locGames.has(locKey)) t.locGames.set(locKey, new Set());
     t.locGames.get(locKey).add(game);
   }
@@ -163,7 +189,8 @@ for (const r of readCsv(join(RESEARCH, 'pokemon_encounters_gen1-8.csv'))) {
     if (!localNameTags.has(key)) localNameTags.set(key, locTags);
   }
   const { tags, acquisition } = votesFor(method, locTags, locName);
-  addVotes(id, game, region, `${region}|${locName}`, tags, acquisition);
+  const rarity = Number(r[13]) || 10;
+  addVotes(id, game, region, `${region}|${locName}`, tags, acquisition, rarity);
 }
 
 // ------------------------------------------------ 2. PokeAPI gen7/8 dataset
@@ -174,7 +201,7 @@ const paLocs = new Map(paRows('locations.csv').map((r) => [r[0], { regionId: r[1
 const paRegions = new Map(paRows('regions.csv').map((r) => [r[0], r[1]]));
 const paVersions = new Map(paRows('versions.csv').map((r) => [r[0], r[2]]));
 const paMethods = new Map(paRows('encounter_methods.csv').map((r) => [r[0], r[1].trim()]));
-const paSlotMethod = new Map(paRows('encounter_slots.csv').map((r) => [r[0], r[2]])); // slot id -> method id
+const paSlots = new Map(paRows('encounter_slots.csv').map((r) => [r[0], { methodId: r[2], rarity: Number(r[4]) || 10 }])); // slot id -> method + slot rarity
 const paFormSpecies = new Map(paRows('pokemon.csv').map((r) => [r[0], Number(r[2])])); // pokemon id -> species id
 const paLocNames = new Map(); // location id -> english display name
 for (const r of paRows('location_names.csv')) if (r[1] === '9') paLocNames.set(r[0], r[2]);
@@ -209,10 +236,11 @@ for (const r of paRows('encounters.csv')) {
     locTags = [];
   }
 
-  const method = paMethods.get(paSlotMethod.get(slotId)) ?? 'walk';
+  const slot = paSlots.get(slotId);
+  const method = paMethods.get(slot?.methodId) ?? 'walk';
   const game = paVersions.get(vid) ?? `v${vid}`;
   const { tags, acquisition } = votesFor(method, locTags, dispName);
-  addVotes(speciesId, game, region, `${region}|${dispName}`, tags, acquisition);
+  addVotes(speciesId, game, region, `${region}|${dispName}`, tags, acquisition, slot?.rarity ?? 10);
 }
 
 // --------------------------------------------- 3. App data + structural sets
@@ -289,6 +317,8 @@ for (const p of pokemon) {
 
 const knowledge = JSON.parse(readFileSync(join(SCRIPT_DIR, 'knowledge-fill.json'), 'utf8')).entries;
 const knowledgeByName = new Map(knowledge.map((e) => [e.species, e]));
+const overrides = JSON.parse(readFileSync(join(SCRIPT_DIR, 'overrides.json'), 'utf8')).entries;
+const overrideByName = new Map(overrides.map((e) => [e.species, e]));
 
 function structuralTagFor(members) {
   const ids = members.map((m) => m.id);
@@ -305,32 +335,39 @@ function structuralTagFor(members) {
   return null;
 }
 
-const records = [];
+// ---- Pass A: aggregate stats per line (no decisions yet — the specificity
+// weights below need the full distribution first).
+const prelims = [];
 for (const [chainId, members] of lines) {
   members.sort((a, b) => a.evolutionStage - b.evolutionStage || a.id - b.id);
   const base = members.find((m) => m.id < 10000) ?? members[0];
   const ids = members.map((m) => m.id);
 
   // Union member stats.
-  const agg = new Map(); // tag -> {contexts:Set, games:Set, regions:Set, locs:Set}
-  const allContexts = new Set();
+  const agg = new Map(); // tag -> {contexts:Set, games:Set, regions:Set, locs:Set, locGames:Map, ctxRarity:Map, locRarity:Map}
+  const allCtxRarity = new Map(); // ctx -> best rarity across members/tags
   const acquisitions = new Set();
+  const mergeTag = (a, t) => {
+    for (const c of t.contexts) a.contexts.add(c);
+    for (const g of t.games) a.games.add(g);
+    for (const rg of t.regions) a.regions.add(rg);
+    for (const l of t.locs) a.locs.add(l);
+    for (const [loc, games] of t.locGames) {
+      if (!a.locGames.has(loc)) a.locGames.set(loc, new Set());
+      for (const g of games) a.locGames.get(loc).add(g);
+    }
+    for (const [c, r] of t.ctxRarity) a.ctxRarity.set(c, Math.max(a.ctxRarity.get(c) ?? 0, r));
+    for (const [l, r] of t.locRarity) a.locRarity.set(l, Math.max(a.locRarity.get(l) ?? 0, r));
+  };
+  const emptyTag = () => ({ contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set(), locGames: new Map(), ctxRarity: new Map(), locRarity: new Map() });
   for (const id of ids) {
     const s = speciesStats.get(id);
     if (!s) continue;
     for (const a of s.acquisitions) acquisitions.add(a);
-    for (const c of s.contexts) allContexts.add(c);
+    for (const [c, r] of s.ctxRarity ?? []) allCtxRarity.set(c, Math.max(allCtxRarity.get(c) ?? 0, r));
     for (const [tag, t] of s.tags) {
-      if (!agg.has(tag)) agg.set(tag, { contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set(), locGames: new Map() });
-      const a = agg.get(tag);
-      for (const c of t.contexts) a.contexts.add(c);
-      for (const g of t.games) a.games.add(g);
-      for (const rg of t.regions) a.regions.add(rg);
-      for (const l of t.locs) a.locs.add(l);
-      for (const [loc, games] of t.locGames) {
-        if (!a.locGames.has(loc)) a.locGames.set(loc, new Set());
-        for (const g of games) a.locGames.get(loc).add(g);
-      }
+      if (!agg.has(tag)) agg.set(tag, emptyTag());
+      mergeTag(agg.get(tag), t);
     }
   }
 
@@ -344,23 +381,21 @@ for (const [chainId, members] of lines) {
     const oceanN = agg.get('ocean')?.contexts.size ?? 0;
     const lakeN = agg.get('lake')?.contexts.size ?? 0;
     const target = oceanN > lakeN ? 'ocean' : 'lake';
-    if (!agg.has(target)) agg.set(target, { contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set(), locGames: new Map() });
-    const t = agg.get(target);
-    for (const c of w.contexts) t.contexts.add(c);
-    for (const g of w.games) t.games.add(g);
-    for (const rg of w.regions) t.regions.add(rg);
-    for (const l of w.locs) t.locs.add(l);
-    for (const [loc, games] of w.locGames) {
-      if (!t.locGames.has(loc)) t.locGames.set(loc, new Set());
-      for (const g of games) t.locGames.get(loc).add(g);
-    }
+    if (!agg.has(target)) agg.set(target, emptyTag());
+    mergeTag(agg.get(target), w);
   }
 
-  const totalContexts = allContexts.size;
+  // Rarity-weighted exclusivity: each context contributes rarityWeight(best
+  // slot rarity) — so shares reflect how findable the line is in each place,
+  // not just that some 1% slot exists there.
+  const strengthOf = (ctxRarity) => [...ctxRarity.values()].reduce((s, r) => s + rarityWeight(r), 0);
+  const totalContexts = allCtxRarity.size;
+  const totalStrength = strengthOf(allCtxRarity);
   const scored = [...agg.entries()]
     .map(([tag, t]) => ({
       tag,
-      share: totalContexts ? t.contexts.size / totalContexts : 0,
+      share: totalStrength ? strengthOf(t.ctxRarity) / totalStrength : 0,
+      strength: +strengthOf(t.ctxRarity).toFixed(2),
       games: t.games.size,
       regions: t.regions.size,
       locations: t.locs.size,
@@ -368,37 +403,104 @@ for (const [chainId, members] of lines) {
     .sort((a, b) => b.share - a.share || b.games - a.games);
 
   const structural = structuralTagFor(members);
+  const knowledgeEntry = members.map((m) => knowledgeByName.get(m.name)).find(Boolean);
+
+  prelims.push({ chainId, members, base, ids, agg, scored, totalContexts, totalStrength, structural, knowledgeEntry, acquisitions });
+}
+
+// ---- Tag specificity (IDF): "meadow" is the background tag of nearly every
+// grass route, so raw share lets it absorb identity mons (Sandshrew, Grimer).
+// Weight each tag by how UNCOMMON meaningful presence of it is across all
+// lines — a desert vote says far more than a meadow vote. Clamped so ultra-
+// rare tags (dojo ≈ one location) can't hijack every line that passes by.
+const IDF_ALPHA = 1.5;
+const dfByTag = new Map();
+const dataLines = prelims.filter((p) => p.scored.length).length;
+for (const p of prelims) {
+  for (const s of p.scored) if (s.share >= 0.10) dfByTag.set(s.tag, (dfByTag.get(s.tag) ?? 0) + 1);
+}
+const idfOf = (tag) => {
+  const df = dfByTag.get(tag) ?? 1;
+  return Math.min(3, Math.max(1, Math.log2(1 + dataLines / df)));
+};
+
+// ---- Pass B: decide each line's recommendation.
+const records = [];
+for (const P of prelims) {
+  const { chainId, members, base, ids, agg, scored, totalContexts, totalStrength, structural, knowledgeEntry, acquisitions } = P;
+
+  // Specificity-adjusted ranking (raw shares are kept for confidence gates
+  // and reporting — the IDF only decides WHICH tag wins). A tag must have
+  // BREADTH (≥2 locations and ≥2 games) to earn its specificity boost:
+  // without this, one odd location hijacks broad lines (Snorlax → swamp on a
+  // single marsh, Misdreavus → tundra on Mount Lanakila alone).
+  const ranked = scored
+    .map((s) => {
+      const boostEligible = s.locations >= 2 && s.games >= 2;
+      return { ...s, score: s.share * (boostEligible ? Math.pow(idfOf(s.tag), IDF_ALPHA) : 1) };
+    })
+    // On an effective tie, prefer the more SPECIFIC tag (higher IDF): a line
+    // split evenly between mountain and tundra (Snom's Route 10 vs Giant's
+    // Cap) reads better under the rarer, more characterful biome.
+    .sort((a, b) => {
+      if (Math.abs(a.score - b.score) >= 0.01) return b.score - a.score;
+      return idfOf(b.tag) - idfOf(a.tag) || b.share - a.share || b.games - a.games;
+    });
+
+  // Weak evidence = the line's TOTAL rarity-weighted presence is under the
+  // gate (Larvesta's whole record was two 1% Lush Jungle slots). The 1-2
+  // context test only reroutes lines that have a structural/curated identity
+  // to fall back on — 2 full-rate contexts (Burmy's honey trees) are enough
+  // to place when nothing contradicts them.
+  const weakEvidence = scored.length > 0 && totalStrength < MIN_EVIDENCE_STRENGTH;
+  const thinContexts = scored.length > 0 && totalContexts <= 2;
   let recommended = null;
   let confidence = null;
   let source = null;
   let rationale = '';
 
-  if (scored.length && structural && totalContexts <= 2) {
+  if ((weakEvidence || thinContexts) && structural) {
     // A category mon (legendary/mythical/starter/…) with only a trace of
     // encounter data (e.g. Magearna's single gift-city row): the structural
     // identity is the better recommendation than one thin biome vote.
     recommended = structural;
     source = 'structural';
     confidence = 'high';
-    rationale = `${structural} per official metadata; encounter evidence too thin to override (${totalContexts} context(s))`;
+    rationale = `${structural} per official metadata; encounter evidence too weak to override (${totalContexts} context(s), strength ${totalStrength.toFixed(1)})`;
+  } else if ((weakEvidence || thinContexts) && knowledgeEntry) {
+    // Curated knowledge beats a handful of rare slots (the marquee habitat is
+    // often a static encounter that wild-encounter tables never contained).
+    recommended = knowledgeEntry.biome;
+    source = 'knowledge';
+    confidence = knowledgeEntry.confidence === 'medium' ? 'medium' : 'low';
+    rationale = `encounter evidence too weak to trust (${totalContexts} context(s), strength ${totalStrength.toFixed(1)}); curated: ${knowledgeEntry.note}`;
+  } else if (weakEvidence) {
+    // Real data exists but it's all rare/thin — flag for human review instead
+    // of confidently placing. The weak evidence stays attached for context.
+    recommended = 'needs-review';
+    source = 'encounters-weak';
+    confidence = null;
+    rationale = `evidence too weak for a default placement: ${totalContexts} context(s), strength ${totalStrength.toFixed(1)} < ${MIN_EVIDENCE_STRENGTH}; top tag would be ${ranked[0].tag} (${Math.round(ranked[0].share * 100)}%)`;
   } else if (scored.length) {
-    const top = scored[0];
-    const second = scored[1];
-    const margin = second ? top.share / Math.max(second.share, 1e-9) : Infinity;
+    const top = ranked[0];
+    const second = ranked[1];
+    const margin = second ? top.score / Math.max(second.score, 1e-9) : Infinity;
     recommended = top.tag;
     source = 'encounters';
     if (top.share >= HIGH.share && top.games >= HIGH.games && margin >= HIGH.margin) confidence = 'high';
     else if (top.share >= MED.share && top.games >= MED.games) confidence = 'medium';
     else confidence = 'low';
+    const rawLeader = scored[0];
     rationale = `${top.tag} in ${Math.round(top.share * 100)}% of its distinct wild appearances (${top.games} game(s), ${top.regions} region(s), ${top.locations} location(s))` +
-      (second ? `; runner-up ${second.tag} at ${Math.round(second.share * 100)}%` : '');
+      (second ? `; runner-up ${second.tag} at ${Math.round(second.share * 100)}%` : '') +
+      (rawLeader.tag !== top.tag ? `; preferred over generic ${rawLeader.tag} (${Math.round(rawLeader.share * 100)}%) for specificity` : '');
   } else if (structural) {
     recommended = structural;
     source = 'structural';
     confidence = 'high';
     rationale = `no wild encounter rows; line is ${structural} per official metadata`;
   } else {
-    const k = members.map((m) => knowledgeByName.get(m.name)).find(Boolean);
+    const k = knowledgeEntry;
     if (k) {
       recommended = k.biome;
       source = 'knowledge';
@@ -417,22 +519,38 @@ for (const [chainId, members] of lines) {
     }
   }
 
+  // Curated override — applied last and transparently (see overrides.json):
+  // for lines where the data is systematically misleading and no general rule
+  // fixes them without breaking others (e.g. Bagon's identity is Meteor
+  // Falls, a single location that breadth rules can't reward).
+  const overrideEntry = members.map((m) => overrideByName.get(m.name)).find(Boolean);
+  if (overrideEntry && overrideEntry.biome !== recommended) {
+    rationale = `curated override: ${overrideEntry.reason} — pipeline would have said ${recommended ?? 'nothing'} (${rationale})`;
+    recommended = overrideEntry.biome;
+    source = 'override';
+    confidence = 'medium';
+  }
+
   // Substantiating in-game locations for the recommended tag: every distinct
   // location that voted for it, with the games it appears in there. Sorted by
   // game-breadth (the strongest evidence first); capped in the JSON to keep
   // the file reviewable (Magikarp's fishing tag alone spans ~190 locations).
   const EVIDENCE_CAP = 40;
   let evidence = null;
-  if (source === 'encounters' && agg.has(recommended)) {
+  // Weak lines cite the evidence for their would-be top tag so reviewers can
+  // see exactly what was rejected (e.g. Larvesta's 1% Lush Jungle slots).
+  const evidenceTag = source === 'encounters' || source === 'override' ? recommended : source === 'encounters-weak' ? ranked[0]?.tag : null;
+  if (evidenceTag && agg.has(evidenceTag)) {
+    const t = agg.get(evidenceTag);
     const fmtLoc = (locKey) => {
       const [region, name] = locKey.split('|');
       const reg = region.charAt(0).toUpperCase() + region.slice(1);
       return { location: name, region: reg };
     };
-    const all = [...agg.get(recommended).locGames.entries()]
-      .map(([locKey, games]) => ({ ...fmtLoc(locKey), games: [...games].sort() }))
+    const all = [...t.locGames.entries()]
+      .map(([locKey, games]) => ({ ...fmtLoc(locKey), games: [...games].sort(), bestRarity: t.locRarity.get(locKey) ?? null }))
       .sort((a, b) => b.games.length - a.games.length || a.location.localeCompare(b.location));
-    evidence = { tag: recommended, locations: all.slice(0, EVIDENCE_CAP), omittedLocations: Math.max(0, all.length - EVIDENCE_CAP) };
+    evidence = { tag: evidenceTag, locations: all.slice(0, EVIDENCE_CAP), omittedLocations: Math.max(0, all.length - EVIDENCE_CAP) };
   }
 
   records.push({
@@ -448,7 +566,9 @@ for (const [chainId, members] of lines) {
     structuralTags: structural ? [structural] : [],
     acquisitions: [...acquisitions],
     rationale,
-    scores: scored.slice(0, 5).map((s) => ({ ...s, share: +s.share.toFixed(3) })),
+    scores: ranked.slice(0, 5).map((s) => ({ ...s, share: +s.share.toFixed(3), score: +s.score.toFixed(3) })),
+    evidenceStrength: +totalStrength.toFixed(2),
+    totalContexts,
     evidence,
     currentlyCovered: coveredSectionsFor(ids),
   });
@@ -486,7 +606,7 @@ const summary = {
     pokeapiGen78Rows: gen78Rows,
     unclassifiedGen78Locations: unclassifiedLocs.size,
   },
-  bySource: Object.fromEntries(['encounters', 'structural', 'knowledge', 'none'].map((s) => [s, records.filter((r) => r.source === s).length])),
+  bySource: Object.fromEntries(['encounters', 'structural', 'knowledge', 'override', 'encounters-weak', 'none'].map((s) => [s, records.filter((r) => r.source === s).length])),
   byConfidence: Object.fromEntries(['high', 'medium', 'low', null].map((c) => [String(c), records.filter((r) => r.confidence === c).length])),
 };
 
@@ -506,6 +626,15 @@ md.push(`- Species with real encounter data: **${speciesWithData}** / 1025 (Gens
 md.push(`- Assignment source: ${Object.entries(summary.bySource).map(([k, v]) => `${k} ${v}`).join(' · ')}`);
 md.push(`- Confidence: ${Object.entries(summary.byConfidence).map(([k, v]) => `${k} ${v}`).join(' · ')}`);
 md.push('');
+md.push('### Guardrails');
+md.push('');
+md.push('- **Rarity weighting** — each (game, location) context is weighted by its best slot rarity (≥10% full, 5–9% half, <5% ≈ one-fifth), so rare cameos cannot masquerade as habitat.');
+md.push('- **Evidence-strength gate** — lines whose total weighted evidence is under 1.0 are never confidently placed: they fall back to structural identity or curated knowledge, or land in the needs-review bucket. (A 1% slot is a user\'s off-section pick, not an app default — this is what re-routed Larvesta away from "forest".)');
+md.push('- **Specificity (IDF) ranking with breadth eligibility** — generic tags (meadow is the background of nearly every grass route) are down-ranked against distinctive ones, but a tag needs ≥2 locations and ≥2 games to earn its boost, so one odd location cannot hijack a broad line. Effective ties prefer the more specific tag.');
+md.push("- **Let's Go excluded** — LGPE's catch-combo rare-spawn system puts species on ~20 routes at once with no usable rates; Kanto is covered by RBY/FRLG/HGSS instead.");
+md.push('- **Curated overrides** (`scripts/biome/overrides.json`) — a short, fully documented list for lines whose data is systematically misleading (e.g. Bagon\'s identity home is a single Meteor Falls room). Applied last, always disclosed in the rationale.');
+md.push('- **Validation harness** (`scripts/biome/validate-assignments.mjs`) — 79 golden expectations a knowledgeable person can assert, plus red-flag detectors (rare-only, single-location, narrow-margin, minority-slice, curation-disagreement) whose output is `validation-report.md`.');
+md.push('');
 
 const fmtLine = (r) => {
   const cov = r.currentlyCovered.length ? r.currentlyCovered.join(', ') : '**UNCOVERED**';
@@ -516,11 +645,15 @@ const fmtLine = (r) => {
   let where = '—';
   if (r.evidence) {
     const SHOW = 5;
-    const shown = r.evidence.locations.slice(0, SHOW).map((l) => `${l.location} (${l.region}, ${l.games.length}g)`).join('; ');
+    const shown = r.evidence.locations.slice(0, SHOW)
+      .map((l) => `${l.location} (${l.region}, ${l.games.length}g${l.bestRarity != null && l.bestRarity < 10 ? `, ≤${l.bestRarity}%` : ''})`)
+      .join('; ');
     const more = r.evidence.locations.length - SHOW + r.evidence.omittedLocations;
     where = more > 0 ? `${shown}; +${more} more` : shown;
   } else if (r.source === 'knowledge') {
-    where = r.rationale.replace(/^no reachable encounter dataset \(SV\/DLC\); curated from official spawn areas: /, 'SV/DLC (curated): ');
+    where = r.rationale
+      .replace(/^no reachable encounter dataset \(SV\/DLC\); curated from official spawn areas: /, 'SV/DLC (curated): ')
+      .replace(/^encounter evidence too weak to trust \([^)]*\); curated: /, 'curated (weak data rejected): ');
   }
   return `| ${r.line} | ${r.confidence ?? '—'} | ${metrics} | ${where} | ${cov} |`;
 };
@@ -564,6 +697,26 @@ for (const tag of nonPlace.sort()) {
   md.push(`### ${tag} — ${rs.length} lines`);
   md.push('');
   md.push(rs.map((r) => `${r.line}${r.currentlyCovered.length ? '' : ' **(uncovered)**'}`).join(' · '));
+}
+
+md.push('');
+md.push('## Needs review — weak evidence rejected as a default placement');
+md.push('');
+md.push('These lines have real encounter rows, but the total rarity-weighted evidence is below the trust gate (rare slots / 1–2 contexts). Their would-be tag and the rejected evidence are shown; each should get a curated knowledge entry or stay unplaced.');
+const needsReview = records.filter((r) => r.recommended === 'needs-review');
+if (needsReview.length) {
+  md.push('');
+  md.push('| Line | Would-be tag | Rejected evidence | Currently in |');
+  md.push('|---|---|---|---|');
+  for (const r of needsReview) {
+    const ev = r.evidence
+      ? r.evidence.locations.map((l) => `${l.location} (${l.region}, ${l.games.length}g${l.bestRarity != null && l.bestRarity < 10 ? `, ≤${l.bestRarity}%` : ''})`).join('; ')
+      : '—';
+    md.push(`| ${r.line} | ${r.scores[0]?.tag ?? '—'} | ${ev} | ${r.currentlyCovered.join(', ') || '**UNCOVERED**'} |`);
+  }
+} else {
+  md.push('');
+  md.push('_None._');
 }
 
 md.push('');

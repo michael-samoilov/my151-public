@@ -38,6 +38,10 @@
     { "species": "frigibax",     "biome": "tundra",     "confidence": "medium", "note": "Glaseado Mountain caves/snowline" },
     { "species": "gimmighoul",   "biome": "ruins",      "confidence": "medium", "note": "chest form haunts ruins/watchtowers" },
     { "species": "poltchageist", "biome": "haunted",    "confidence": "medium", "note": "Kitakami: haunts old settlements/Oni Mountain sites" },
-    { "species": "spiritomb",    "biome": "haunted",    "confidence": "medium", "note": "summoned at the Hallowed Tower (Route 209) via the Odd Keystone — not a wild encounter table entry" }
+    { "species": "spiritomb",    "biome": "haunted",    "confidence": "medium", "note": "summoned at the Hallowed Tower (Route 209) via the Odd Keystone — not a wild encounter table entry" },
+    { "species": "larvesta",     "biome": "desert",     "confidence": "medium", "note": "marquee Volcarona encounter is the Relic Castle static in the Desert Resort (BW/B2W2); Larvesta itself is only a Route 18 egg gift. The USUM Lush Jungle 1% SOS slot is a rare off-biome cameo, not habitat" },
+    { "species": "stonjourner",  "biome": "mountain",   "confidence": "low",    "note": "standing-stone Pokémon of Galar's rocky wilds (Route 10 area / Wild Area megaliths); its only encounter rows are ≤5% Lake of Outrage slots, rejected by the strength gate" },
+    { "species": "eiscue",       "biome": "tundra",     "confidence": "medium", "note": "ice-face penguin of snowy Route 10 / Crown Tundra waters; its only encounter rows are ≤5% Lake of Outrage slots, rejected by the strength gate" },
+    { "species": "dreepy",       "biome": "lake",       "confidence": "medium", "note": "the Lake of Outrage's resident phantom dragon line (SwSh overworld/wanderer spawns at 1-2%); famous precisely for being a rare lake-dweller" }
   ]
 }
