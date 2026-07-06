@@ -131,12 +131,14 @@ function addVotes(speciesId, game, region, locKey, tags, acquisition) {
   const ctx = `${game}|${locKey}`;
   s.contexts.add(ctx);
   for (const tag of useful) {
-    if (!s.tags.has(tag)) s.tags.set(tag, { contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set() });
+    if (!s.tags.has(tag)) s.tags.set(tag, { contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set(), locGames: new Map() });
     const t = s.tags.get(tag);
     t.contexts.add(ctx);
     t.games.add(game);
     t.regions.add(region);
     t.locs.add(locKey);
+    if (!t.locGames.has(locKey)) t.locGames.set(locKey, new Set());
+    t.locGames.get(locKey).add(game);
   }
 }
 
@@ -319,12 +321,16 @@ for (const [chainId, members] of lines) {
     for (const a of s.acquisitions) acquisitions.add(a);
     for (const c of s.contexts) allContexts.add(c);
     for (const [tag, t] of s.tags) {
-      if (!agg.has(tag)) agg.set(tag, { contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set() });
+      if (!agg.has(tag)) agg.set(tag, { contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set(), locGames: new Map() });
       const a = agg.get(tag);
       for (const c of t.contexts) a.contexts.add(c);
       for (const g of t.games) a.games.add(g);
       for (const rg of t.regions) a.regions.add(rg);
       for (const l of t.locs) a.locs.add(l);
+      for (const [loc, games] of t.locGames) {
+        if (!a.locGames.has(loc)) a.locGames.set(loc, new Set());
+        for (const g of games) a.locGames.get(loc).add(g);
+      }
     }
   }
 
@@ -338,12 +344,16 @@ for (const [chainId, members] of lines) {
     const oceanN = agg.get('ocean')?.contexts.size ?? 0;
     const lakeN = agg.get('lake')?.contexts.size ?? 0;
     const target = oceanN > lakeN ? 'ocean' : 'lake';
-    if (!agg.has(target)) agg.set(target, { contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set() });
+    if (!agg.has(target)) agg.set(target, { contexts: new Set(), games: new Set(), regions: new Set(), locs: new Set(), locGames: new Map() });
     const t = agg.get(target);
     for (const c of w.contexts) t.contexts.add(c);
     for (const g of w.games) t.games.add(g);
     for (const rg of w.regions) t.regions.add(rg);
     for (const l of w.locs) t.locs.add(l);
+    for (const [loc, games] of w.locGames) {
+      if (!t.locGames.has(loc)) t.locGames.set(loc, new Set());
+      for (const g of games) t.locGames.get(loc).add(g);
+    }
   }
 
   const totalContexts = allContexts.size;
@@ -407,6 +417,24 @@ for (const [chainId, members] of lines) {
     }
   }
 
+  // Substantiating in-game locations for the recommended tag: every distinct
+  // location that voted for it, with the games it appears in there. Sorted by
+  // game-breadth (the strongest evidence first); capped in the JSON to keep
+  // the file reviewable (Magikarp's fishing tag alone spans ~190 locations).
+  const EVIDENCE_CAP = 40;
+  let evidence = null;
+  if (source === 'encounters' && agg.has(recommended)) {
+    const fmtLoc = (locKey) => {
+      const [region, name] = locKey.split('|');
+      const reg = region.charAt(0).toUpperCase() + region.slice(1);
+      return { location: name, region: reg };
+    };
+    const all = [...agg.get(recommended).locGames.entries()]
+      .map(([locKey, games]) => ({ ...fmtLoc(locKey), games: [...games].sort() }))
+      .sort((a, b) => b.games.length - a.games.length || a.location.localeCompare(b.location));
+    evidence = { tag: recommended, locations: all.slice(0, EVIDENCE_CAP), omittedLocations: Math.max(0, all.length - EVIDENCE_CAP) };
+  }
+
   records.push({
     chainId,
     line: members.filter((m) => m.id < 10000).map((m) => m.name).join(' → ') || base.name,
@@ -421,6 +449,7 @@ for (const [chainId, members] of lines) {
     acquisitions: [...acquisitions],
     rationale,
     scores: scored.slice(0, 5).map((s) => ({ ...s, share: +s.share.toFixed(3) })),
+    evidence,
     currentlyCovered: coveredSectionsFor(ids),
   });
 }
@@ -482,7 +511,18 @@ const fmtLine = (r) => {
   const cov = r.currentlyCovered.length ? r.currentlyCovered.join(', ') : '**UNCOVERED**';
   const top = r.scores[0];
   const metrics = r.source === 'encounters' && top ? `${Math.round(top.share * 100)}% · ${top.games}g · ${top.regions}r` : r.source;
-  return `| ${r.line} | ${r.confidence ?? '—'} | ${metrics} | ${cov} |`;
+  // Substantiating locations: encounter-derived rows cite the top in-game
+  // locations (by game breadth); knowledge rows cite the curated note.
+  let where = '—';
+  if (r.evidence) {
+    const SHOW = 5;
+    const shown = r.evidence.locations.slice(0, SHOW).map((l) => `${l.location} (${l.region}, ${l.games.length}g)`).join('; ');
+    const more = r.evidence.locations.length - SHOW + r.evidence.omittedLocations;
+    where = more > 0 ? `${shown}; +${more} more` : shown;
+  } else if (r.source === 'knowledge') {
+    where = r.rationale.replace(/^no reachable encounter dataset \(SV\/DLC\); curated from official spawn areas: /, 'SV/DLC (curated): ');
+  }
+  return `| ${r.line} | ${r.confidence ?? '—'} | ${metrics} | ${where} | ${cov} |`;
 };
 
 md.push('## Recommended additions per place section');
@@ -498,8 +538,8 @@ for (const tag of SECTION_ORDER) {
   md.push('');
   md.push(`### ${tag} → section \`${SECTION_BY_TAG[tag]}\` — ${rs.length} lines (${uncovered} uncovered)`);
   md.push('');
-  md.push('| Line | Conf | Metrics | Currently in |');
-  md.push('|---|---|---|---|');
+  md.push('| Line | Conf | Metrics | Substantiating locations (games) | Currently in |');
+  md.push('|---|---|---|---|---|');
   for (const r of rs) md.push(fmtLine(r));
 }
 
