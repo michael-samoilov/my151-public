@@ -6,48 +6,57 @@ import { BarChart3, Camera, Sparkles, Trophy, Lock, type LucideIcon } from 'luci
 
 /**
  * The milestone progress spine — a slim runway with a bead at each milestone
- * (25/50/100/151). Layering (bottom→top), per the intended look:
- *   1. grey runway track (full width, to 151) + grey idle beads
- *   2. red progress fill (to current count) + red beads for reached milestones
- *   3. icons
+ * (25/50/100/151). The look is a red progress shape (fill line + reached beads)
+ * wrapped by a UNIFORM grey border: grey is drawn thicker/bigger than red by
+ * `outlineRem` on every side, so it reads as a consistent outline around the
+ * red — and the runway (grey) always extends the full width to 151.
+ *
+ * Paint order is strict — all grey, then all red, then icons — and every grey
+ * is fully OPAQUE (blended toward the card color, not alpha), so overlapping
+ * grey track + grey beads never compound into visible seams.
+ *
  * The fill tracks the CURRENT count; a bead's unlocked glyph tracks the sticky
  * `milestoneMax`. Placed absolutely-centered in the n/151 header by its parent,
  * so it never shifts as page-specific buttons differ.
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONFIG — every visual knob in one place. Sizes are in rem so they scale with
-// the app's root font-size. Tune freely.
+// CONFIG — every visual knob in one place. Sizes are in rem (scale with the
+// app's root font-size). Grey sizes are DERIVED: red + 2·outlineRem.
 // ─────────────────────────────────────────────────────────────────────────────
 const CONFIG = {
-  // Overall track width (kept fixed so the centered bar never resizes).
   widthMobileRem: 11,
   widthDesktopRem: 15.5,
 
-  // Runway line (grey) + red progress fill.
-  trackThicknessRem: 0.3, // stroke size of the runway
-  trackColor: 'color-mix(in srgb, var(--color-muted-foreground) 24%, transparent)',
+  // Uniform grey border thickness wrapping the red everywhere.
+  outlineRem: 0.14,
+
+  // Red (progress) geometry. Grey = these + 2·outlineRem.
+  trackRedRem: 0.26, // red fill thickness
+  beadRedRem: 0.9, // red bead diameter
+
+  // Colors. Grey is OPAQUE (mixed toward card, no alpha) so overlaps don't seam.
+  greyColor: 'color-mix(in srgb, var(--color-muted-foreground) 32%, var(--color-card))',
   fillColor: 'var(--color-primary)',
-  fillTransitionMs: 550, // how the red fill glides as count changes
+  fillTransitionMs: 550, // red fill glide as count changes
 
-  // Milestone beads.
-  beadSizeRem: 1.15, // diameter
-  beadIdleColor: 'color-mix(in srgb, var(--color-muted-foreground) 30%, transparent)',
-  beadReachedColor: 'var(--color-primary)',
-  reachedFillTransitionMs: 300, // fade/scale of a bead turning red on reach
-
-  // Icons.
-  iconScale: 0.5, // icon size as a fraction of beadSize  (↓ = smaller icon)
+  // Icons (sized relative to the RED bead so they never crowd the circle).
+  iconScale: 0.62,
   iconStroke: 2.5,
   iconIdleColor: 'var(--color-muted-foreground)',
   iconReachedColor: 'var(--color-primary-foreground)',
 
-  // Reach micro-interaction (the one-time "pop" when a bead is first reached).
-  popScale: 1.4, // peak scale of the pop
+  // Reach micro-interaction (one-time "pop" when a bead is first reached).
+  popScale: 1.4,
   popDurationMs: 440,
-  rippleDurationMs: 560, // expanding ring behind the bead
+  rippleDurationMs: 560,
   rippleColor: 'var(--color-primary)',
 } as const;
+
+// Derived grey geometry — grey reads as a uniform border around the red.
+const GREY_TRACK_REM = CONFIG.trackRedRem + 2 * CONFIG.outlineRem;
+const GREY_BEAD_REM = CONFIG.beadRedRem + 2 * CONFIG.outlineRem;
+const ICON_REM = CONFIG.beadRedRem * CONFIG.iconScale;
 
 const FEATURE_ICON: Record<MilestoneFeature, LucideIcon> = {
   analytics: BarChart3,
@@ -73,39 +82,58 @@ export function MilestoneBar() {
   );
   const pct = Math.min(100, (count / DEX_TOTAL) * 100);
 
+  const centerY = 'top-1/2 -translate-y-1/2';
+  const centerXY = 'top-1/2 -translate-x-1/2 -translate-y-1/2';
+
   return (
     <div
       className="milestone-bar select-none"
       style={{
-        // Responsive width via CSS vars (the media query lives in index.css so
-        // CONFIG stays the single source of truth).
         ['--ms-w-mobile' as string]: `${CONFIG.widthMobileRem}rem`,
         ['--ms-w-desktop' as string]: `${CONFIG.widthDesktopRem}rem`,
       }}
     >
-      <div
-        className="milestone-bar-inner relative"
-        style={{ height: `${CONFIG.beadSizeRem}rem` }}
-      >
-        {/* Layer 1a — grey runway track, full width to 151 */}
+      <div className="relative" style={{ height: `${GREY_BEAD_REM}rem` }}>
+        {/* ── Layer 1: grey (opaque) — runway to 151 + idle beads ── */}
         <div
-          className="absolute top-1/2 left-0 right-0 -translate-y-1/2 rounded-full"
-          style={{ height: `${CONFIG.trackThicknessRem}rem`, background: CONFIG.trackColor }}
+          className={`absolute left-0 right-0 rounded-full ${centerY}`}
+          style={{ height: `${GREY_TRACK_REM}rem`, background: CONFIG.greyColor }}
         />
-        {/* Layer 2a — red progress fill, to current count */}
+        {MILESTONE_DEFS.map((m) => (
+          <div
+            key={`g-${m.at}`}
+            className={`absolute rounded-full ${centerXY}`}
+            style={{
+              left: `${(m.at / DEX_TOTAL) * 100}%`,
+              width: `${GREY_BEAD_REM}rem`,
+              height: `${GREY_BEAD_REM}rem`,
+              background: CONFIG.greyColor,
+            }}
+          />
+        ))}
+
+        {/* ── Layer 2: red — progress fill + reached beads ── */}
         <div
-          className="absolute top-1/2 left-0 -translate-y-1/2 rounded-full"
+          className={`absolute left-0 rounded-full ${centerY}`}
           style={{
-            height: `${CONFIG.trackThicknessRem}rem`,
+            height: `${CONFIG.trackRedRem}rem`,
             width: `${pct}%`,
             background: CONFIG.fillColor,
             transition: `width ${CONFIG.fillTransitionMs}ms ease-out`,
           }}
         />
-        {/* Beads (each renders its own grey→red layers + icon on top) */}
         {MILESTONE_DEFS.map((m) => (
-          <MilestoneBead
-            key={m.at}
+          <RedBead
+            key={`r-${m.at}`}
+            leftPct={(m.at / DEX_TOTAL) * 100}
+            reached={count >= m.at}
+          />
+        ))}
+
+        {/* ── Layer 3: icons + tooltip triggers (transparent hit targets) ── */}
+        {MILESTONE_DEFS.map((m) => (
+          <MilestoneTrigger
+            key={`t-${m.at}`}
             at={m.at}
             leftPct={(m.at / DEX_TOTAL) * 100}
             reached={count >= m.at}
@@ -122,7 +150,44 @@ export function MilestoneBar() {
   );
 }
 
-function MilestoneBead({
+/** The red bead for a milestone (only rendered once reached). Pops + ripples the
+ *  first time it flips to reached in-session; centering lives on the wrapper so
+ *  the pop's scale never fights the translate. */
+function RedBead({ leftPct, reached }: { leftPct: number; reached: boolean }) {
+  const prev = useRef(reached);
+  const [popping, setPopping] = useState(false);
+  useEffect(() => {
+    if (reached && !prev.current) {
+      setPopping(true);
+      const t = setTimeout(() => setPopping(false), CONFIG.rippleDurationMs);
+      prev.current = reached;
+      return () => clearTimeout(t);
+    }
+    prev.current = reached;
+  }, [reached]);
+
+  if (!reached) return null;
+
+  return (
+    <div
+      className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
+      style={{ left: `${leftPct}%`, width: `${CONFIG.beadRedRem}rem`, height: `${CONFIG.beadRedRem}rem`, ['--ms-pop-scale' as string]: String(CONFIG.popScale) }}
+    >
+      {popping && (
+        <span
+          className="absolute inset-0 rounded-full"
+          style={{ background: CONFIG.rippleColor, animation: `milestone-ripple ${CONFIG.rippleDurationMs}ms ease-out` }}
+        />
+      )}
+      <span
+        className="absolute inset-0 rounded-full"
+        style={{ background: CONFIG.fillColor, animation: popping ? `milestone-pop ${CONFIG.popDurationMs}ms ease-out` : undefined }}
+      />
+    </div>
+  );
+}
+
+function MilestoneTrigger({
   at,
   leftPct,
   reached,
@@ -144,23 +209,8 @@ function MilestoneBead({
   remaining: number;
 }) {
   const [open, setOpen] = useState(false);
-
-  // One-time "pop" the first time this bead flips to reached in-session.
-  const prevReached = useRef(reached);
-  const [popping, setPopping] = useState(false);
-  useEffect(() => {
-    if (reached && !prevReached.current) {
-      setPopping(true);
-      const t = setTimeout(() => setPopping(false), CONFIG.rippleDurationMs);
-      prevReached.current = reached;
-      return () => clearTimeout(t);
-    }
-    prevReached.current = reached;
-  }, [reached]);
-
   const locked = gated && !unlocked;
   const Glyph = locked ? Lock : Icon;
-  const iconRem = CONFIG.beadSizeRem * CONFIG.iconScale;
 
   return (
     <Tooltip open={open} onOpenChange={setOpen}>
@@ -169,54 +219,17 @@ function MilestoneBead({
           type="button"
           aria-label={`${at}: ${title}`}
           onClick={() => setOpen((v) => !v)}
-          className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full cursor-pointer"
-          style={{
-            left: `${leftPct}%`,
-            width: `${CONFIG.beadSizeRem}rem`,
-            height: `${CONFIG.beadSizeRem}rem`,
-            // expose the pop peak scale to the keyframe
-            ['--ms-pop-scale' as string]: String(CONFIG.popScale),
-          }}
+          className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full cursor-pointer"
+          style={{ left: `${leftPct}%`, width: `${GREY_BEAD_REM}rem`, height: `${GREY_BEAD_REM}rem` }}
         >
-          {/* Ripple ring (behind the bead), only while popping */}
-          {popping && (
-            <span
-              className="milestone-ripple absolute inset-0 rounded-full"
-              style={{
-                background: CONFIG.rippleColor,
-                animation: `milestone-ripple ${CONFIG.rippleDurationMs}ms ease-out`,
-              }}
-            />
-          )}
-          {/* Layer 1b — grey idle bead */}
-          <span
-            className="absolute inset-0 rounded-full"
-            style={{ background: CONFIG.beadIdleColor }}
-          />
-          {/* Layer 2b — red reached bead (fades/scales in on reach) */}
-          <span
-            className={`absolute inset-0 rounded-full ${popping ? 'milestone-pop' : ''}`}
+          <Glyph
             style={{
-              background: CONFIG.beadReachedColor,
-              opacity: reached ? 1 : 0,
-              transform: reached ? 'scale(1)' : 'scale(0.5)',
-              transition: popping
-                ? undefined
-                : `opacity ${CONFIG.reachedFillTransitionMs}ms ease-out, transform ${CONFIG.reachedFillTransitionMs}ms ease-out`,
-              animation: popping ? `milestone-pop ${CONFIG.popDurationMs}ms ease-out` : undefined,
+              width: `${ICON_REM}rem`,
+              height: `${ICON_REM}rem`,
+              color: reached ? CONFIG.iconReachedColor : CONFIG.iconIdleColor,
             }}
+            strokeWidth={CONFIG.iconStroke}
           />
-          {/* Layer 3 — icon */}
-          <span className="absolute inset-0 flex items-center justify-center">
-            <Glyph
-              style={{
-                width: `${iconRem}rem`,
-                height: `${iconRem}rem`,
-                color: reached ? CONFIG.iconReachedColor : CONFIG.iconIdleColor,
-              }}
-              strokeWidth={CONFIG.iconStroke}
-            />
-          </span>
         </button>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="max-w-[13rem] text-center">
