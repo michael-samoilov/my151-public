@@ -68,6 +68,21 @@ const FEATURE_ICON: Record<MilestoneFeature, LucideIcon> = {
   complete: Trophy,
 };
 
+/**
+ * Optical-centering offsets (fraction of icon size) that move each glyph's ink
+ * center-of-mass to the bead center — lucide icons are bounding-box-centered on
+ * their 24-grid, but their visual *weight* isn't, so geometric centering reads
+ * off. Values are measured, not hand-tuned: run `node
+ * scripts/measure-icon-centroids.mjs` to regenerate if an icon changes.
+ */
+const OPTICAL_OFFSET: Record<MilestoneFeature | 'lock', { dx: number; dy: number }> = {
+  analytics: { dx: 0.065, dy: -0.104 },
+  view: { dx: 0.002, dy: -0.034 },
+  stats: { dx: 0.014, dy: -0.01 },
+  complete: { dx: 0.002, dy: 0.014 },
+  lock: { dx: 0.002, dy: -0.051 },
+};
+
 /** Which milestones gate a feature behind a lock (vs. a plain progress beat). */
 const GATED: Record<MilestoneFeature, boolean> = {
   analytics: true,
@@ -154,7 +169,7 @@ export function MilestoneBar() {
             reached={count >= m.at}
             unlocked={milestoneMax >= m.at}
             gated={GATED[m.feature]}
-            Icon={FEATURE_ICON[m.feature]}
+            feature={m.feature}
             title={m.title}
             detail={m.detail}
             remaining={Math.max(0, m.at - count)}
@@ -208,7 +223,7 @@ function MilestoneTrigger({
   reached,
   unlocked,
   gated,
-  Icon,
+  feature,
   title,
   detail,
   remaining,
@@ -218,14 +233,17 @@ function MilestoneTrigger({
   reached: boolean;
   unlocked: boolean;
   gated: boolean;
-  Icon: LucideIcon;
+  feature: MilestoneFeature;
   title: string;
   detail: string;
   remaining: number;
 }) {
   const [open, setOpen] = useState(false);
   const locked = gated && !unlocked;
-  const Glyph = locked ? Lock : Icon;
+  const Glyph = locked ? Lock : FEATURE_ICON[feature];
+  // Shift the glyph so its ink centroid — not its bounding box — sits at the
+  // bead center (offsets are geometry-derived; see OPTICAL_OFFSET).
+  const off = locked ? OPTICAL_OFFSET.lock : OPTICAL_OFFSET[feature];
 
   return (
     <Tooltip open={open} onOpenChange={setOpen}>
@@ -242,6 +260,7 @@ function MilestoneTrigger({
               width: `${ICON_REM}rem`,
               height: `${ICON_REM}rem`,
               color: reached ? CONFIG.iconReachedColor : CONFIG.iconIdleColor,
+              transform: `translate(${(off.dx * ICON_REM).toFixed(4)}rem, ${(off.dy * ICON_REM).toFixed(4)}rem)`,
             }}
             strokeWidth={CONFIG.iconStroke}
           />
