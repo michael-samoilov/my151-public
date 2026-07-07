@@ -19,6 +19,17 @@ import { X } from 'lucide-react';
 
 const INTRO_SEEN_KEY = 'p151-intro-seen';
 
+/** Review override: `?intro` forces the card to show and never persists a
+ *  dismissal. Needed because Vercel preview deployments auto-seed the full
+ *  demo dex, which would otherwise hide the card before it can be reviewed. */
+const FORCE_INTRO = (() => {
+  try {
+    return new URLSearchParams(window.location.search).has('intro');
+  } catch {
+    return false;
+  }
+})();
+
 function introSeen(): boolean {
   try {
     return localStorage.getItem(INTRO_SEEN_KEY) === '1';
@@ -185,6 +196,7 @@ export function IntroCard({
   onChooseStarters: () => void;
 }) {
   const [phase, setPhase] = useState<'shown' | 'collapsing' | 'gone'>(() => {
+    if (FORCE_INTRO) return 'shown';
     if (introSeen()) return 'gone';
     if (totalPlaced > 0) {
       // Existing dex predating the intro card — never show it.
@@ -200,11 +212,11 @@ export function IntroCard({
 
   // First Pokémon placed → the card's job is done; fold away gracefully.
   // State adjustment during render (not an effect) per react.dev guidance.
-  if (phase === 'shown' && totalPlaced > 0) setPhase('collapsing');
+  if (!FORCE_INTRO && phase === 'shown' && totalPlaced > 0) setPhase('collapsing');
 
   useEffect(() => {
     if (phase !== 'collapsing') return;
-    markIntroSeen();
+    if (!FORCE_INTRO) markIntroSeen();
     const t = setTimeout(() => setPhase('gone'), COLLAPSE_MS);
     return () => clearTimeout(t);
   }, [phase]);
