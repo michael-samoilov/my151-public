@@ -30,8 +30,8 @@ const NUDGES: Record<number, Nudge> = {
   },
   100: {
     nav: 'view',
-    title: 'Detailed stats unlocked',
-    body: 'Flip on “Show stats” in View for type, generation, and base-stat charts beside your dex.',
+    title: 'Detailed stats in View page',
+    body: 'Turn on “Show stats” for type, generation, and base-stat charts beside your dex.',
     cta: 'Open View',
   },
   151: {

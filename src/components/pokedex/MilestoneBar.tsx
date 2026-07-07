@@ -133,7 +133,8 @@ const FEATURE_ICON: Record<MilestoneFeature, LucideIcon> = {
  * scripts/measure-icon-centroids.mjs` to regenerate if an icon changes.
  */
 const OPTICAL_OFFSET: Record<MilestoneFeature | 'lock', { dx: number; dy: number }> = {
-  analytics: { dx: 0.065, dy: -0.104 },
+  // analytics: measured centroid, then nudged a hair down + left to taste.
+  analytics: { dx: 0.02, dy: -0.06 },
   view: { dx: 0.002, dy: -0.034 },
   stats: { dx: 0.014, dy: -0.01 },
   complete: { dx: 0.002, dy: 0.014 },

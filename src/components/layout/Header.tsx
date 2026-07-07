@@ -61,7 +61,7 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
                   onClick={() => setLockTip((o) => !o)}
                   className="px-2 sm:px-3 text-muted-foreground/70 hover:text-muted-foreground"
                   data-nav="analytics"
-                  aria-label={`Analytics locked — reach ${ANALYTICS_UNLOCK_AT} Pokémon to unlock`}
+                  aria-label={`Analytics locked. Reach ${ANALYTICS_UNLOCK_AT} Pokémon to unlock`}
                 >
                   <Lock className="w-4 h-4" />
                   <span className="hidden sm:inline sm:ml-1">Analytics</span>
