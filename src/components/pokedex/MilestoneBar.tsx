@@ -4,7 +4,7 @@ import { MILESTONE_DEFS, MILESTONES, DEX_TOTAL, milestonesAtOrBelow, type Milest
 import { BUILD_GROUPS, createEmptySections } from '@/data/slot-template';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
-import { BarChart3, Camera, Sparkles, Trophy, Lock, type LucideIcon } from 'lucide-react';
+import { BarChart3, Camera, Sparkles, Trophy, Lock, ChevronDown, type LucideIcon } from 'lucide-react';
 
 /**
  * The milestone progress spine — a slim runway with a bead at each milestone
@@ -427,7 +427,9 @@ function MilestoneTrigger({
       </TooltipTrigger>
       {/* Portaled + high z so the popup floats above app body elements. */}
       <TooltipPortal>
-        <TooltipContent side="bottom" className="z-[200] max-w-[13rem] text-center">
+        {/* border-0: the content's border would draw a seam across the arrow's
+            base; drop it and lean on the shadow so the arrow reads as one piece. */}
+        <TooltipContent side="bottom" className="z-[200] max-w-[13rem] text-center border-0 shadow-lg">
           <TooltipArrow />
           <div className="font-semibold text-xs">
             {at} · {title}
@@ -491,6 +493,7 @@ export function MilestoneTunePanel() {
   const overrides = useSyncExternalStore(tuneStore.subscribe, tuneStore.overrides, tuneStore.overrides);
   const preview = usePreviewCount();
   const [copied, setCopied] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   if (!TUNE) return null;
 
   const cfg: BarConfig = { ...DEFAULT_CONFIG, ...overrides };
@@ -508,13 +511,23 @@ export function MilestoneTunePanel() {
 
   return (
     <div className="fixed z-[100] left-3 right-3 bottom-3 max-h-[50vh] md:left-auto md:right-3 md:w-64 md:max-h-[80vh] overflow-y-auto rounded-lg border bg-card/95 backdrop-blur shadow-xl p-3 text-xs">
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-semibold">MilestoneBar · tune</span>
+      <div className={`flex items-center justify-between ${collapsed ? '' : 'mb-2'}`}>
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          className="flex items-center gap-1 font-semibold cursor-pointer"
+          aria-expanded={!collapsed}
+        >
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${collapsed ? '-rotate-90' : ''}`} />
+          MilestoneBar · tune
+        </button>
         <button type="button" onClick={() => tuneStore.reset()} className="text-muted-foreground hover:text-foreground underline">
           reset
         </button>
       </div>
 
+      {!collapsed && (
+      <>
       {/* Preview count scrubber */}
       <label className="block mb-3">
         <div className="flex justify-between text-muted-foreground">
@@ -596,6 +609,8 @@ export function MilestoneTunePanel() {
       >
         {copied ? 'copied ✓' : 'copy values'}
       </button>
+      </>
+      )}
     </div>
   );
 }

@@ -68,7 +68,7 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
                 </Button>
               </TooltipTrigger>
               <TooltipPortal>
-                <TooltipContent side="bottom" className="z-[200] text-center">
+                <TooltipContent side="bottom" className="z-[200] text-center border-0 shadow-lg">
                   <TooltipArrow />
                   <div className="text-xs font-medium">Reach {ANALYTICS_UNLOCK_AT} Pokémon to unlock Analytics</div>
                   <div className="text-xs text-muted-foreground mt-0.5 tabular-nums">{Math.min(count, ANALYTICS_UNLOCK_AT)}/{ANALYTICS_UNLOCK_AT}</div>
