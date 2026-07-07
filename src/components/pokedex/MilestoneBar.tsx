@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { MILESTONE_DEFS, DEX_TOTAL, type MilestoneFeature } from '@/lib/milestones';
+import { MILESTONE_DEFS, MILESTONES, DEX_TOTAL, type MilestoneFeature } from '@/lib/milestones';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal } from '@/components/ui/tooltip';
 import { BarChart3, Camera, Sparkles, Trophy, Lock, type LucideIcon } from 'lucide-react';
 
@@ -34,28 +34,28 @@ const DEFAULT_CONFIG = {
   widthDesktopRem: 15.5,
 
   // Uniform grey border thickness wrapping the red everywhere.
-  outlineRem: 0.27,
+  outlineRem: 0.15,
 
-  // Red (progress) geometry. Grey = these + 2·outlineRem.
-  trackRedRem: 0.46, // red fill thickness
-  beadRedRem: 1.22, // red bead diameter
-  startBeadRedRem: 0.68, // origin node (smaller than a milestone bead)
+  // Red (progress) geometry. Grey = these + 2·outlineRem. The origin node is the
+  // same size as a milestone bead.
+  trackRedRem: 0.5, // red fill thickness
+  beadRedRem: 1.12, // red bead diameter (also the origin node)
 
   // Colors. Grey is OPAQUE (mixed toward card, no alpha) so overlaps don't seam.
   greyColor: 'color-mix(in srgb, var(--color-muted-foreground) 32%, var(--color-card))',
   fillColor: 'var(--color-primary)',
-  fillTransitionMs: 700,
+  fillTransitionMs: 100,
 
   // Icons (sized relative to the RED bead so they never crowd the circle).
-  iconScale: 0.59,
-  iconStroke: 2.2,
+  iconScale: 0.65,
+  iconStroke: 2.5,
   iconIdleColor: 'var(--color-primary-foreground)', // white before reached, too
   iconReachedColor: 'var(--color-primary-foreground)',
 
   // Optional hairline dividers flanking the bar, so the counter (left) and
   // page buttons (right) read as intentionally aligned around a framed bar.
-  showDividers: false,
-  dividerGapRem: 0.6,
+  showDividers: true,
+  dividerGapRem: 1,
   dividerColor: 'color-mix(in srgb, var(--color-muted-foreground) 38%, var(--color-card))',
 
   // Reach micro-interaction (one-time "pop" when a bead is first reached).
@@ -74,20 +74,21 @@ function deriveDims(cfg: BarConfig) {
   return {
     greyTrack: cfg.trackRedRem + 2 * cfg.outlineRem,
     greyBead: cfg.beadRedRem + 2 * cfg.outlineRem,
-    greyStart: cfg.startBeadRedRem + 2 * cfg.outlineRem,
     iconRem: cfg.beadRedRem * cfg.iconScale,
   };
 }
 
-// Milestone counts including the two ends (0 and 151), for the fill remap.
-const STOPS = [0, 25, 50, 100, DEX_TOTAL];
+// Fill remap breakpoints: the origin (0), each milestone, and the end (151).
+const STOPS = [0, ...MILESTONES];
 
 /**
- * Fill fraction (0..1) for a given count, with each milestone bead's footprint
- * skipped. `hw` = red-bead half-width as a fraction of the track. Between
- * milestones the fill runs to the NEXT bead's left edge; crossing a milestone
- * jumps it to that bead's right edge — so the first pick after a milestone
- * moves the fill visibly past the bead instead of hiding under it.
+ * Fill fraction (0..1) for a given count. Each red circle's footprint is
+ * skipped so the very next pick after a milestone visibly advances the bar
+ * instead of hiding under the circle: on approach the fill runs INTO the next
+ * circle, reaching its CENTER exactly at the milestone (so there's no gap
+ * between the fill's cap and the circle); crossing then jumps the fill to the
+ * circle's far edge and continues. The origin circle is skipped the same way.
+ * `hw` = red-circle half-width as a fraction of the track.
  */
 function computeFillFraction(count: number, hw: number): number {
   const c = Math.max(0, Math.min(DEX_TOTAL, count));
@@ -96,8 +97,8 @@ function computeFillFraction(count: number, hw: number): number {
   const lastSeg = STOPS.length - 2;
   let i = 0;
   while (i < lastSeg && c > STOPS[i + 1]) i++;
-  const left = i === 0 ? 0 : fc[i] + hw; // resume past the bead just crossed
-  const right = i === lastSeg ? 1 : fc[i + 1] - hw; // stop at next bead's edge
+  const left = i === 0 ? hw : fc[i] + hw; // resume past the circle just crossed
+  const right = fc[i + 1]; // reach the next circle's CENTER at the milestone
   const t = (c - STOPS[i]) / (STOPS[i + 1] - STOPS[i]);
   return Math.min(1, Math.max(0, left + t * (right - left)));
 }
@@ -252,7 +253,7 @@ export function MilestoneBar() {
         />
         <div
           className={`absolute rounded-full ${centerXY}`}
-          style={{ left: '0%', width: `${d.greyStart}rem`, height: `${d.greyStart}rem`, background: cfg.greyColor }}
+          style={{ left: '0%', width: `${d.greyBead}rem`, height: `${d.greyBead}rem`, background: cfg.greyColor }}
         />
         {MILESTONE_DEFS.map((m) => (
           <div
@@ -280,7 +281,7 @@ export function MilestoneBar() {
         {count > 0 && (
           <div
             className={`absolute rounded-full ${centerXY}`}
-            style={{ left: '0%', width: `${cfg.startBeadRedRem}rem`, height: `${cfg.startBeadRedRem}rem`, background: cfg.fillColor }}
+            style={{ left: '0%', width: `${cfg.beadRedRem}rem`, height: `${cfg.beadRedRem}rem`, background: cfg.fillColor }}
           />
         )}
         {MILESTONE_DEFS.map((m) => (
@@ -425,7 +426,6 @@ const TUNABLES: { key: NumericKey; min: number; max: number; step: number; label
   { key: 'outlineRem', min: 0.02, max: 0.4, step: 0.01, label: 'outline (grey border)' },
   { key: 'trackRedRem', min: 0.1, max: 0.6, step: 0.01, label: 'track (red fill)' },
   { key: 'beadRedRem', min: 0.5, max: 1.6, step: 0.02, label: 'bead (red)' },
-  { key: 'startBeadRedRem', min: 0.2, max: 1.0, step: 0.02, label: 'start knob (red)' },
   { key: 'iconScale', min: 0.3, max: 0.9, step: 0.01, label: 'icon scale' },
   { key: 'iconStroke', min: 1, max: 3.5, step: 0.1, label: 'icon stroke' },
   { key: 'dividerGapRem', min: 0.2, max: 1.5, step: 0.05, label: 'divider gap' },
