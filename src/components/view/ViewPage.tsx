@@ -11,6 +11,7 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
+import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
 import { DetailedStatsPanel, STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
 import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
@@ -1183,11 +1184,14 @@ export function ViewPage() {
     <div className="h-full flex relative">
       {/* Main grid column */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <div className="flex items-center justify-between px-3 sm:px-6 py-2 border-b h-11">
+        <div className="relative flex items-center justify-between px-3 sm:px-6 py-2 border-b h-11">
           <h2 className="text-2xl font-extrabold tracking-tight leading-none">
             <span className="text-primary">{count}</span>
             <span className="text-foreground">/151</span>
           </h2>
+          <div className="absolute left-1/2 -translate-x-1/2">
+            <MilestoneBar />
+          </div>
           <div className="flex items-center gap-1">
             <button type="button"
               onClick={handleExport}

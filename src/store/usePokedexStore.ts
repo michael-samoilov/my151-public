@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { createEmptySections, BUILD_GROUP_IDS } from '@/data/slot-template';
+import { MILESTONES, milestonesAtOrBelow } from '@/lib/milestones';
 import { getEvolutionChainIds, getEvolutionLine, getDescendantIds, getPokemonById, computeRemovalCascade, getExclusiveForms } from '@/hooks/usePokemonData';
 import { DEMO_MODE, SPANDREL_DEMO, POKEDEX_STORAGE_KEY } from '@/lib/demoMode';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
@@ -57,6 +58,16 @@ interface PokedexState {
   /** Whether the detailed-stats side panel is shown on the View grid. */
   viewShowStats: boolean;
 
+  /** Highest total-placed count ever reached — drives STICKY milestone
+   *  unlocks (removing Pokémon never re-locks an earned feature). */
+  milestoneMax: number;
+  /** Milestone thresholds whose celebration has already played (persisted so a
+   *  reload doesn't replay it). */
+  milestoneCelebrated: number[];
+  /** Transient (never persisted): the milestone threshold currently being
+   *  celebrated, or null. The celebration overlay reads and dismisses this. */
+  milestoneCelebration: number | null;
+
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
   removeBranch: (sectionId: string, pokemonId: number) => void;
@@ -87,6 +98,11 @@ interface PokedexState {
   setViewCustomOrder: (order: number[] | null) => void;
   setViewShowSections: (value: boolean) => void;
   setViewShowStats: (value: boolean) => void;
+  /** Record the current placed count: bumps milestoneMax and, on the first
+   *  crossing of a milestone, arms its celebration. */
+  recordPlacedCount: (count: number) => void;
+  /** Clear the transient celebration signal (overlay dismissed / played). */
+  dismissMilestoneCelebration: () => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -116,6 +132,9 @@ export const usePokedexStore = create<PokedexState>()(
       viewCustomOrder: null,
       viewShowSections: DEMO_MODE,
       viewShowStats: false,
+      milestoneMax: 0,
+      milestoneCelebrated: [],
+      milestoneCelebration: null,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -300,10 +319,31 @@ export const usePokedexStore = create<PokedexState>()(
       setViewCustomOrder: (order) => set({ viewCustomOrder: order }),
       setViewShowSections: (value) => set({ viewShowSections: value }),
       setViewShowStats: (value) => set({ viewShowStats: value }),
+
+      recordPlacedCount: (count) =>
+        set((state) => {
+          const milestoneMax = Math.max(state.milestoneMax, count);
+          // First-time crossings this session: milestones now reached that
+          // haven't celebrated yet. Celebrate the highest (covers a multi-line
+          // add that vaults several at once) and mark them all played.
+          const fresh = MILESTONES.filter(
+            (m) => count >= m && !state.milestoneCelebrated.includes(m),
+          );
+          if (fresh.length === 0) {
+            return milestoneMax !== state.milestoneMax ? { milestoneMax } : {};
+          }
+          return {
+            milestoneMax,
+            milestoneCelebrated: [...state.milestoneCelebrated, ...fresh],
+            milestoneCelebration: Math.max(...fresh),
+          };
+        }),
+
+      dismissMilestoneCelebration: () => set({ milestoneCelebration: null }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,
-      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections }),
+      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections, milestoneMax: state.milestoneMax, milestoneCelebrated: state.milestoneCelebrated }),
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
           sections?: Record<string, number[]>;
@@ -312,6 +352,8 @@ export const usePokedexStore = create<PokedexState>()(
           viewGroupSpecialAtEnd?: boolean;
           viewCustomOrder?: number[] | null;
           viewShowSections?: boolean;
+          milestoneMax?: number;
+          milestoneCelebrated?: number[];
         };
 
         // Preserve all existing fields, only fix what needs fixing
@@ -362,9 +404,20 @@ export const usePokedexStore = create<PokedexState>()(
         delete r.viewShortenTitles;
         delete r.viewOutlineWidth;
 
+        // v8 → v9: milestone tracking. Seed an EXISTING user's state from their
+        // restored dex so already-earned progress neither re-locks nor replays
+        // celebrations: milestoneMax = current count, and every milestone at or
+        // below it is pre-marked "celebrated". A brand-new user (count 0) starts
+        // at max 0 with nothing celebrated, so their first real crossing plays.
+        if (result.milestoneMax === undefined || result.milestoneCelebrated === undefined) {
+          const count = Object.values(result.sections ?? {}).reduce((s, a) => s + a.length, 0);
+          result.milestoneMax = count;
+          result.milestoneCelebrated = milestonesAtOrBelow(count);
+        }
+
         return result;
       },
-      version: 8,
+      version: 9,
     }
   )
 );

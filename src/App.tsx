@@ -28,6 +28,7 @@ function RouteFallback() {
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { useCompletionBeacon } from '@/hooks/useCompletionBeacon';
+import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
 import { cn } from '@/lib/utils';
 
 declare const __BUILD_TIMESTAMP__: string;
@@ -129,6 +130,7 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
 
 function App() {
   useCompletionBeacon();
+  useMilestoneTracker();
   const [currentView, setCurrentView] = useState<AppView>('builder');
   const viewMounted = useRef(false);
   const analyticsMounted = useRef(false);

@@ -18,6 +18,7 @@ import { RedXIcon } from '@/components/browser/EvoLineCard';
 
 import { PageFooter } from '@/components/shared/PageFooter';
 import { IntroCard } from '@/components/pokedex/IntroCard';
+import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import {
@@ -893,11 +894,14 @@ export function PokedexGrid() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 sm:px-6 py-2 border-b h-11">
+      <div className="relative flex items-center justify-between px-3 sm:px-6 py-2 border-b h-11">
         <h2 className="text-2xl font-extrabold tracking-tight leading-none">
           <span className="text-primary">{totalPlaced}</span>
           <span className="text-foreground">/151</span>
         </h2>
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <MilestoneBar />
+        </div>
         <SettingsMenu onClear={clearAll} />
       </div>
 
