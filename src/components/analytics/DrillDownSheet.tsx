@@ -155,6 +155,7 @@ function CardPanel({
                   cols={6}
                   variant="analytics"
                   showGenBadges={data.showGenBadges}
+                  showShapeBadges={data.showShapeBadges}
                   matchupInfo={data.matchupInfo}
                   matchupType={data.matchupType}
                 />
@@ -718,6 +719,7 @@ export function DrillDownPanel() {
                   cols={6}
                   variant="analytics"
                   showGenBadges={currentData.showGenBadges}
+                  showShapeBadges={currentData.showShapeBadges}
                   matchupInfo={currentData.matchupInfo}
                   matchupType={currentData.matchupType}
                 />

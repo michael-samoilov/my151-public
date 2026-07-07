@@ -56,6 +56,11 @@ interface ButterflyChartProps {
   /** When true, the label-column header is clickable and toggles `sortBy='label'`.
    *  Default false: the label header is display-only. */
   labelSortable?: boolean;
+  /** Base width (in mobile-reference px, scaled by chartScale) reserved for the
+   *  label text column. Defaults to 42, which fits short labels ("GEN 3"). Pass a
+   *  larger value for charts with long labels (e.g. body-shape names like
+   *  "Insect Wings") so the right-anchored text doesn't spill off the left edge. */
+  labelWidthBase?: number;
   /** When true, rows with count === 0 are not clickable */
   disableEmptyRows?: boolean;
   /** Override the denominator used for the per-bar percentage label. Defaults
@@ -72,7 +77,7 @@ interface ButterflyChartProps {
   textClass?: string;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, labelWidthBase = 42, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hoveredSort, setHoveredSort] = useState<'count' | 'deviation' | 'label' | null>(null);
@@ -112,7 +117,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
   const iconSize = hasIcons ? 14 * chartScale : 0;
   // With label text hidden the column collapses to just the icon (flush left); the
   // freed width flows into the chart bodies below via labelColEnd.
-  const labelWidth = hideLabelText ? 0 : 42 * chartScale;
+  const labelWidth = hideLabelText ? 0 : labelWidthBase * chartScale;
   const iconGap = hasIcons && !hideLabelText ? 3 : 0;
   const gap = 6;
   const gutter = 8; // space between chart sections

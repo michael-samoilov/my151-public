@@ -701,7 +701,7 @@ export function AnalyticsDashboard() {
               sortBy={shapeSortBy}
               onSortChange={setShapeSortBy}
               labelHeader="SHAPE"
-              labelSortable
+              labelWidthBase={80}
               onBarClick={(label) => {
                 const shape = LABEL_TO_SHAPE.get(label);
                 if (shape) handleDrillToggle({ kind: 'shape', shape }, shapeSiblings);
