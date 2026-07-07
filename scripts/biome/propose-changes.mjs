@@ -114,48 +114,58 @@ const bySection = (list, key) => {
   return m;
 };
 
+// ---- Unified change table: ordered by proposed section, then confidence.
+const CONF_ORDER = { high: 0, medium: 1, low: 2 };
+const rows = [];
+for (const { r, target, conflict } of news) {
+  rows.push({
+    section: target,
+    line: r.line,
+    conf: r.confidence,
+    origin: conflict ? `new — uncovered ⚠ also curated in ${conflict} archetype (pick one)` : 'new — currently uncovered',
+    basis: r.source === 'encounters' ? `${Math.round((r.scores[0]?.share ?? 0) * 100)}% · ${r.scores[0]?.games}g` : r.source,
+  });
+}
+for (const { r, from, target } of switches) {
+  rows.push({
+    section: target,
+    line: r.line,
+    conf: r.confidence,
+    origin: `switch — from ${from}`,
+    basis: r.source === 'encounters' ? `${Math.round((r.scores[0]?.share ?? 0) * 100)}% · ${r.scores[0]?.games}g` : r.source,
+  });
+}
+for (const { r, keep, drop, judgment, formSplit } of dedups) {
+  if (formSplit) continue; // legitimate regional-form split — no change proposed
+  rows.push({
+    section: keep,
+    line: r.line,
+    conf: r.confidence,
+    origin: `dedup — drop from ${drop.join(', ')}${judgment ? ` (pipeline itself says ${r.recommendedSection})` : ''}`,
+    basis: r.source === 'encounters' ? `${Math.round((r.scores[0]?.share ?? 0) * 100)}% · ${r.scores[0]?.games}g` : r.source,
+  });
+}
+rows.sort((a, b) =>
+  SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section) ||
+  (CONF_ORDER[a.conf] ?? 3) - (CONF_ORDER[b.conf] ?? 3) ||
+  a.line.localeCompare(b.line));
+
 const md = [];
 md.push('# Proposed section changes (MECE-respecting)');
 md.push('');
-md.push(`- **NEW additions:** ${news.length} lines (currently in no build section)`);
-md.push(`- **Switches (high confidence):** ${switches.length} lines (medium-confidence disagreements: ${switchesMediumCount.length} — see validation-report.md curation-disagreements)`);
-md.push(`- **MECE dedups:** ${dedups.length} lines currently in 2+ place sections`);
+md.push('Ordered by proposed build-page section, then confidence. "Change origin" says where the line comes from: **new** (in no build section today), **switch** (currently in a different place section), or **dedup** (currently in multiple place sections; keep this one).');
+md.push('');
+md.push(`- New: ${news.length} · Switches (high conf): ${switches.length} (medium-conf disagreements left to validation-report.md: ${switchesMediumCount.length}) · Dedups: ${dedups.filter((d) => !d.formSplit).length} true overlaps (+${dedups.filter((d) => d.formSplit).length} legitimate form-splits, no action)`);
 md.push(`- Skipped to preserve MECE: ${skippedMece} lines already covered by a non-place section`);
 md.push('');
-md.push('## NEW — add to section');
-md.push('');
-md.push('| Section | Line | Conf | Basis |');
-md.push('|---|---|---|---|');
-const newsBy = bySection(news, 'target');
-for (const s of SECTION_ORDER) {
-  for (const { r, conflict } of newsBy.get(s) ?? []) {
-    const basis = r.source === 'encounters' ? `${Math.round((r.scores[0]?.share ?? 0) * 100)}% · ${r.scores[0]?.games}g` : r.source;
-    const note = conflict ? ` ⚠ already curated in ${conflict} archetype — pick one` : '';
-    md.push(`| ${s} | ${r.line} | ${CONF[r.confidence] ?? '—'} | ${basis}${note} |`);
-  }
-}
-md.push('');
-md.push('## SWITCH — move between place sections (high confidence only)');
-md.push('');
-md.push('| Line | From | To | Basis |');
-md.push('|---|---|---|---|');
-for (const { r, from, target } of switches) {
-  const basis = r.source === 'encounters' ? `${Math.round((r.scores[0]?.share ?? 0) * 100)}% · ${r.scores[0]?.games}g` : r.source;
-  md.push(`| ${r.line} | ${from} | ${target} | ${basis} |`);
-}
-md.push('');
-md.push('## DEDUP — currently in multiple place sections');
-md.push('');
-md.push('Member-aware: **form-split** rows place DIFFERENT members in each section (e.g. base Corsola in ocean, Galarian Cursola in haunted) — that is legitimate, no action needed. Only **true overlap** rows have the same Pokémon in two sections.');
-md.push('');
-md.push('| Line | Type | Keep | Drop | Note |');
+md.push('| Proposed section | Line | Conf | Change origin | Evidence |');
 md.push('|---|---|---|---|---|');
-for (const { r, keep, drop, judgment, formSplit } of dedups.sort((a, b) => (a.formSplit ? 1 : 0) - (b.formSplit ? 1 : 0))) {
-  const type = formSplit ? 'form-split (OK)' : 'true overlap';
-  const action = formSplit ? '—' : keep;
-  const dropCol = formSplit ? '—' : drop.join(', ');
-  md.push(`| ${r.line} | ${type} | ${action} | ${dropCol} | ${judgment && !formSplit ? `pipeline actually says ${r.recommendedSection} (${CONF[r.confidence] ?? '—'})` : formSplit ? `${[keep, ...drop].join(' + ')}` : 'keep = pipeline pick'} |`);
+for (const row of rows) {
+  md.push(`| ${row.section} | ${row.line} | ${CONF[row.conf] ?? '—'} | ${row.origin} | ${row.basis} |`);
 }
+md.push('');
+md.push('Form-splits (different members per section — legitimate, no action): ' +
+  (dedups.filter((d) => d.formSplit).map((d) => `${d.r.line} (${[d.keep, ...d.drop].join(' + ')})`).join('; ') || 'none') + '.');
 md.push('');
 
 writeFileSync(join(OUT_DIR, 'proposed-changes.md'), md.join('\n'));
