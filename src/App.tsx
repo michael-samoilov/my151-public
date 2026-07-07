@@ -29,6 +29,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { useCompletionBeacon } from '@/hooks/useCompletionBeacon';
 import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
+import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
 import { cn } from '@/lib/utils';
 
 declare const __BUILD_TIMESTAMP__: string;
@@ -232,6 +233,9 @@ function App() {
 
       {/* Analytics drill-down sheet — only on analytics view */}
       {currentView === 'analytics' && drillDownSegment && <DrillDownSheet />}
+
+      {/* Dev-only MilestoneBar tuning panel (renders only with ?tune) */}
+      <MilestoneTunePanel />
     </TooltipProvider>
   );
 }
