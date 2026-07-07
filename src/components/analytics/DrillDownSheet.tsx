@@ -107,7 +107,7 @@ function CardPanel({
                   <ChevronLeft className="w-3.5 h-3.5 shrink-0" />
                   <span className="flex flex-col items-center min-w-0 leading-tight">
                     <span className="truncate max-w-full">{prevLabel}</span>
-                    {prevShape && <ShapeIconCircle shape={prevShape} className="w-5 h-5 mt-0.5" />}
+                    {prevShape && <ShapeIconCircle shape={prevShape} className="mt-0.5" />}
                   </span>
                 </button>
               )}
@@ -117,7 +117,7 @@ function CardPanel({
                 <img src={data.icon} alt="" className="w-4 h-4" />
               )}
               {data.shape && (
-                <ShapeIconCircle shape={data.shape} className="w-5 h-5" />
+                <ShapeIconCircle shape={data.shape} />
               )}
               <span className="text-sm font-semibold" style={{ color: data.color }}>
                 {data.title}
@@ -132,7 +132,7 @@ function CardPanel({
                 >
                   <span className="flex flex-col items-center min-w-0 leading-tight">
                     <span className="truncate max-w-full">{nextLabel}</span>
-                    {nextShape && <ShapeIconCircle shape={nextShape} className="w-5 h-5 mt-0.5" />}
+                    {nextShape && <ShapeIconCircle shape={nextShape} className="mt-0.5" />}
                   </span>
                   <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                 </button>
@@ -681,7 +681,7 @@ export function DrillDownPanel() {
               <img src={currentData.icon} alt="" className="w-4 h-4 shrink-0" />
             )}
             {currentData.shape && (
-              <ShapeIconCircle shape={currentData.shape} className="w-5 h-5" />
+              <ShapeIconCircle shape={currentData.shape} />
             )}
             <span className="text-sm font-semibold truncate" style={{ color: currentData.color }}>
               {currentData.title}
@@ -708,7 +708,7 @@ export function DrillDownPanel() {
                 <ChevronLeft className="w-3.5 h-3.5 shrink-0" />
                 <span className="flex flex-col items-center min-w-0 leading-tight">
                   <span className="truncate max-w-[100px]">{getSegmentLabel(prevSibling)}</span>
-                  {getSegmentShape(prevSibling) && <ShapeIconCircle shape={getSegmentShape(prevSibling)!} className="w-5 h-5 mt-0.5" />}
+                  {getSegmentShape(prevSibling) && <ShapeIconCircle shape={getSegmentShape(prevSibling)!} className="mt-0.5" />}
                 </span>
               </button>
             ) : <div />}
@@ -719,7 +719,7 @@ export function DrillDownPanel() {
               >
                 <span className="flex flex-col items-center min-w-0 leading-tight">
                   <span className="truncate max-w-[100px]">{getSegmentLabel(nextSibling)}</span>
-                  {getSegmentShape(nextSibling) && <ShapeIconCircle shape={getSegmentShape(nextSibling)!} className="w-5 h-5 mt-0.5" />}
+                  {getSegmentShape(nextSibling) && <ShapeIconCircle shape={getSegmentShape(nextSibling)!} className="mt-0.5" />}
                 </span>
                 <ChevronRight className="w-3.5 h-3.5 shrink-0" />
               </button>

@@ -80,6 +80,7 @@ export function AnalyticsDashboard() {
 
   const analytics = useAnalytics();
   const sections = usePokedexStore((s) => s.sections);
+  const shapeIconScale = usePokedexStore((s) => s.shapeIconScale);
   const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
   const drillDownDexId = usePokedexStore((s) => s.drillDownDexId);
   const openDrillDown = usePokedexStore((s) => s.openDrillDown);
@@ -702,6 +703,7 @@ export function AnalyticsDashboard() {
               onSortChange={setShapeSortBy}
               labelHeader="SHAPE"
               labelWidthBase={80}
+              iconScale={shapeIconScale}
               onBarClick={(label) => {
                 const shape = LABEL_TO_SHAPE.get(label);
                 if (shape) handleDrillToggle({ kind: 'shape', shape }, shapeSiblings);

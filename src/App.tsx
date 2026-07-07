@@ -4,6 +4,7 @@ import type { AppView } from '@/components/layout/Header';
 import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 import { DrillDownSheet, DrillDownPanel } from '@/components/analytics/DrillDownSheet';
+import { ShapeIconDebugSlider } from '@/components/shared/ShapeIconDebugSlider';
 import { usePokedexStore } from '@/store/usePokedexStore';
 
 const AnalyticsDashboard = lazy(() =>
@@ -230,6 +231,9 @@ function App() {
 
       {/* Analytics drill-down sheet — only on analytics view */}
       {currentView === 'analytics' && drillDownSegment && <DrillDownSheet />}
+
+      {/* Debug: live shape-icon size slider (preview/local only) */}
+      <ShapeIconDebugSlider />
     </TooltipProvider>
   );
 }

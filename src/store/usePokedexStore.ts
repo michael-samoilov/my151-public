@@ -43,6 +43,7 @@ interface PokedexState {
   colorFilter: string[] | null; // multi-select Pokédex colors
   eggGroupFilter: string[] | null; // multi-select egg groups
   evoLineSizeFilter: number[] | null; // [1], [2], [3] where 3 means 3+
+  shapeIconScale: number; // debug: multiplier for silhouette-in-circle shape icons
   mobileBrowserOpen: boolean;
   drillDownSegment: DrillDownSegment | null;
   drillDownPeek: boolean;
@@ -87,6 +88,7 @@ interface PokedexState {
   setEggGroupFilter: (groups: string[] | null) => void;
   toggleEggGroup: (group: string) => void;
   setEvoLineSizeFilter: (sizes: number[] | null) => void;
+  setShapeIconScale: (scale: number) => void;
   openDrillDown: (segment: DrillDownSegment, siblings?: DrillDownSegment[], excludeSpecial?: boolean, dexId?: string | null, newOnly?: boolean) => void;
   expandDrillDown: () => void;
   closeDrillDown: () => void;
@@ -116,6 +118,7 @@ export const usePokedexStore = create<PokedexState>()(
       colorFilter: null,
       eggGroupFilter: null,
       evoLineSizeFilter: null,
+      shapeIconScale: 1.3,
       mobileBrowserOpen: false,
       drillDownSegment: null,
       drillDownPeek: true,
@@ -332,6 +335,7 @@ export const usePokedexStore = create<PokedexState>()(
       }),
 
       setEvoLineSizeFilter: (sizes) => set({ evoLineSizeFilter: sizes }),
+      setShapeIconScale: (scale) => set({ shapeIconScale: scale }),
 
       openDrillDown: (segment, siblings, excludeSpecial, dexId, newOnly) => set({ drillDownSegment: segment, drillDownPeek: true, drillDownSiblings: siblings ?? [], drillDownExcludeSpecial: excludeSpecial ?? false, drillDownDexId: dexId ?? null, drillDownNewOnly: newOnly ?? false }),
       expandDrillDown: () => set({ drillDownPeek: false }),
