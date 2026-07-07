@@ -15,6 +15,7 @@ import { DetailedStatsPanel, STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS } from '@/
 import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
+import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import {
   type SectionRun,
   computeSectionRuns,
@@ -145,11 +146,11 @@ function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
  *  `colFactor` / `rowFactor` are the effective column / row counts in tileSize
  *  units — they fold in inter-cell gaps and section label bands (outline mode)
  *  so the whole grid, outlines included, fits on screen without cropping. */
-function useTileSize(colFactor: number, rowFactor: number) {
+function useTileSize(colFactor: number, rowFactor: number, reserveH: number = 0) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [tileSize, setTileSize] = useState(0);
-  const factorRef = useRef({ colFactor, rowFactor });
-  factorRef.current = { colFactor, rowFactor };
+  const factorRef = useRef({ colFactor, rowFactor, reserveH });
+  factorRef.current = { colFactor, rowFactor, reserveH };
 
   const measure = useCallback(() => {
     const el = containerRef.current;
@@ -163,9 +164,16 @@ function useTileSize(colFactor: number, rowFactor: number) {
     const padX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
     const padY = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
     const w = el.clientWidth - padX;
-    const h = el.clientHeight - padY;
-    const { colFactor: cf, rowFactor: rf } = factorRef.current;
-    const size = Math.floor(Math.min(w / Math.max(cf, 1), h / Math.max(rf, 1)));
+    // reserveH is non-grid content that shares the scroll container's height
+    // (the page footer + its top-margin gap). Subtracting it makes the grid fit
+    // so the WHOLE composition (grid + footer) fills the viewport exactly, rather
+    // than the grid alone filling it and pushing the footer off the bottom edge.
+    const { colFactor: cf, rowFactor: rf, reserveH: rh } = factorRef.current;
+    const h = el.clientHeight - padY - Math.max(0, rh);
+    // No Math.floor: an integer tile leaves up to ~one row of unused height, so
+    // the footer would float above the bottom. A fractional size fills exactly
+    // and scales the grid maximally; sprites stay crisp enough at this size.
+    const size = Math.max(0, Math.min(w / Math.max(cf, 1), h / Math.max(rf, 1)));
     setTileSize(size);
   }, []);
 
@@ -179,13 +187,13 @@ function useTileSize(colFactor: number, rowFactor: number) {
   }, [measure]);
 
   // Re-fit BEFORE paint when the fit factors change (e.g. toggling section
-  // outlines flips colFactor/rowFactor). A plain useEffect runs after paint, so
-  // the grid would paint one frame with the new outline template (gaps + label
-  // bands) at the OLD tile size — a visible jank between the two layouts.
+  // outlines flips colFactor/rowFactor, or the footer height changes). A plain
+  // useEffect runs after paint, so the grid would paint one frame with the new
+  // template at the OLD tile size — a visible jank between the two layouts.
   // useLayoutEffect applies the new tile size in the same commit, before paint.
   useLayoutEffect(() => {
     measure();
-  }, [colFactor, rowFactor, measure]);
+  }, [colFactor, rowFactor, reserveH, measure]);
 
   return { containerRef, tileSize };
 }
@@ -556,7 +564,6 @@ export function ViewPage() {
   // presentation: the grid on a raised card and each chart on its own card with
   // the title inside ('card-title-in'), with type-name badges.
   const showStatsPanel = showStats && count >= STATS_MIN_POKEMON;
-  const statsAsCards = showStatsPanel;
   // Stats data (single source of truth shared with the native export renderer).
   const statsData = useDetailedStatsData();
 
@@ -642,7 +649,63 @@ export function ViewPage() {
   // off), so window resizes — which keep it true — never re-hide / blink it.
   const [statsRevealed, setStatsRevealed] = useState(false);
   const statsContentRef = useRef<HTMLDivElement>(null);
-  const statsBesideGrid = showStatsPanel;
+  const statsOuterRef = useRef<HTMLDivElement>(null);
+  const dexCardRef = useRef<HTMLDivElement>(null);
+  // Viewport rect of the stats box captured the instant a retract begins, so
+  // the exiting box can be pinned (position: fixed) exactly where it was while
+  // the grid reclaims its space and FLIPs simultaneously — see the retract
+  // capture effect and the render freeze below.
+  const frozenBoxRef = useRef<{ top: number; left: number; width: number; height: number; scale: number } | null>(null);
+
+  // Desktop-only slide-in / faster-retract animation for the stats block. Mobile
+  // keeps the instant visibility flip untouched (the deferred mobile-flash work
+  // owns that path). See the outer-box style + inner visibility gate in render.
+  const isDesktop = useViewportAtLeast(1024);
+  // On desktop, keep the block (and thus its beside-grid geometry) mounted after
+  // stats are toggled off so the slide-out can play before React unmounts it.
+  // The actual unmount is driven by the outer box's transitionend (see the
+  // onTransitionEnd handler in render), so the exit always plays to completion
+  // regardless of the exact CSS duration; this timer is only a fallback for when
+  // that event is missed (e.g. the box is off-screen, so no transition runs) and
+  // is set well beyond the 180ms exit. Enter is immediate. On mobile, statsMounted
+  // follows showStatsPanel exactly (statsBesideGrid stays === showStatsPanel), so
+  // mobile is byte-for-byte as before. isDesktop is read from a ref so this effect
+  // depends only on showStatsPanel — a transient isDesktop flicker during the
+  // retract reflow must not re-run it and trip the mobile immediate-unmount branch.
+  const STATS_EXIT_FALLBACK_MS = 400;
+  const isDesktopRef = useRef(isDesktop);
+  isDesktopRef.current = isDesktop;
+  const [statsMounted, setStatsMounted] = useState(showStatsPanel);
+  useEffect(() => {
+    if (showStatsPanel) {
+      setStatsMounted(true);
+      return;
+    }
+    if (!isDesktopRef.current) {
+      setStatsMounted(false);
+      return;
+    }
+    const t = setTimeout(() => setStatsMounted(false), STATS_EXIT_FALLBACK_MS);
+    return () => clearTimeout(t);
+  }, [showStatsPanel]);
+
+  // Beside-grid layout stays active through the desktop retract window so the
+  // geometry (footprint, gap, height-match) doesn't collapse mid-slide-out.
+  const statsBesideGrid = showStatsPanel || statsMounted;
+  // The desktop exit window: toggled off but still animating out. The stats box
+  // is pinned (position: fixed at its captured rect) and slides out while the
+  // grid simultaneously reclaims the space and FLIPs — so retract mirrors the
+  // enter instead of running sequentially (grid-then, stats-first).
+  const statsExiting = isDesktop && statsMounted && !showStatsPanel;
+  // Freeze = the frames where the box is pinned: exiting AND no longer revealed.
+  // (On the very first retract frame it is still revealed so it can be measured
+  // in flow by the capture effect below; freezing begins the next frame.)
+  const statsFreeze = statsExiting && !statsRevealed;
+  // statsAsCards drives only the card-padding geometry below; keying it off
+  // statsBesideGrid (rather than showStatsPanel) holds that geometry steady
+  // through the desktop exit so the footprint doesn't shrink mid-slide-out.
+  // On mobile statsBesideGrid === showStatsPanel, so this is unchanged there.
+  const statsAsCards = statsBesideGrid;
 
   // Height of the dex grid in *tile units* (tileSize-independent), folding in the
   // outline gaps/label bands when overlays are on. Matches the actual rendered row
@@ -683,7 +746,16 @@ export function ViewPage() {
   // converges; when revealed, the reservation applies and the dex shifts left as
   // the stats slide in — one clean transition.
   const reserveStats = statsRevealed ? dexCardCols + statsColFactor : 0;
-  const { containerRef, tileSize } = useTileSize(layout.colFactor + reserveStats, layout.rowFactor);
+  // The grid fills the full viewport height; the page footer is intentionally NOT
+  // reserved, so it sits just under the fold (scroll a hair to see it) and the
+  // dex gets the whole screen to scale into. Only the dex card's own p-3 vertical
+  // padding (cardPadPx = 1.5rem/axis) is reserved when revealed, so the card —
+  // and thus the last grid row — fills to the fold rather than spilling past it.
+  const { containerRef, tileSize } = useTileSize(
+    layout.colFactor + reserveStats,
+    layout.rowFactor,
+    statsRevealed ? cardPadPx : 0,
+  );
 
   // useLayoutEffect (not useEffect): tilePx feeds cardPadCols → statsColFactor →
   // tileSize, a small fixed-point loop. Running it before paint lets the whole
@@ -777,6 +849,87 @@ export function ViewPage() {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [showStatsPanel]);
+
+  // Capture the stats box's viewport rect the instant a retract starts. This
+  // useLayoutEffect fires on the commit where showStatsPanel just went false —
+  // statsRevealed is still true then (it is cleared by the passive settle effect
+  // above, which runs later), so the box is still rendered in flow and this reads
+  // its true on-screen position. The next frame it renders position:fixed at this
+  // rect (see statsFreeze in render) and slides out while the grid FLIPs back.
+  useLayoutEffect(() => {
+    if (showStatsPanel || !isDesktop) return;
+    const el = statsOuterRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    frozenBoxRef.current = { top: r.top, left: r.left, width: r.width, height: r.height, scale: statsScale };
+  }, [showStatsPanel, isDesktop, statsScale]);
+
+  // FLIP the dex card when stats toggle so it eases (slides + scales) between its
+  // full-width and shrunk/carded states instead of snapping — the grid is re-fit
+  // (every tile resizes) rather than moved, so there's no single CSS property to
+  // transition; a First-Last-Invert-Play transform is the way. Split in two: the
+  // grid re-fit (tileSize) lands a render AFTER statsRevealed flips, so we capture
+  // the "before" box the frame the toggle STARTS (showStatsPanel change, pre-fit)
+  // and play once tileSize actually reaches its new value. Offset-based (not
+  // getBoundingClientRect) since the dex sits in a scroll container.
+  type DexBox = { left: number; top: number; width: number; height: number };
+  const measureDex = (): DexBox | null => {
+    const el = dexCardRef.current;
+    return el ? { left: el.offsetLeft, top: el.offsetTop, width: el.offsetWidth, height: el.offsetHeight } : null;
+  };
+  const dexFlipPending = useRef<{ from: DexBox; entering: boolean } | null>(null);
+  useLayoutEffect(() => {
+    if (!isDesktop) {
+      dexFlipPending.current = null;
+      return;
+    }
+    const from = measureDex();
+    if (from) dexFlipPending.current = { from, entering: showStatsPanel };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showStatsPanel, isDesktop]);
+  // Play on statsRevealed flips (which is when the grid re-centers as the stats
+  // box enters/leaves flow — the dominant motion when the grid is height-bound
+  // and tileSize doesn't change). Measure the FINAL box inside a rAF so any
+  // follow-up re-fit render (width-bound case, where tileSize lands a frame
+  // later) has already settled, then invert→play. rAF id is cancelled on rapid
+  // re-toggles so a stale play can't fight a fresh one.
+  const dexFlipRaf = useRef(0);
+  useLayoutEffect(() => {
+    const pending = dexFlipPending.current;
+    if (!pending || !isDesktop) return;
+    dexFlipPending.current = null;
+    cancelAnimationFrame(dexFlipRaf.current);
+    dexFlipRaf.current = requestAnimationFrame(() => {
+      const el = dexCardRef.current;
+      const to = measureDex();
+      if (!el || !to) return;
+      const dx = pending.from.left - to.left;
+      const dy = pending.from.top - to.top;
+      const sx = to.width ? pending.from.width / to.width : 1;
+      const sy = to.height ? pending.from.height / to.height : 1;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.02 && Math.abs(sy - 1) < 0.02) return;
+      el.style.transformOrigin = 'top left';
+      el.style.transition = 'none';
+      el.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+      void el.offsetWidth; // force reflow so the inverted start is committed
+      dexFlipRaf.current = requestAnimationFrame(() => {
+        const e2 = dexCardRef.current;
+        if (!e2) return;
+        e2.style.transition = pending.entering
+          ? 'transform 280ms ease-out'
+          : 'transform 220ms ease-in';
+        e2.style.transform = 'translate(0px, 0px) scale(1, 1)';
+        const clear = (ev: TransitionEvent) => {
+          if (ev.propertyName !== 'transform') return;
+          e2.style.transition = '';
+          e2.style.transform = '';
+          e2.style.transformOrigin = '';
+          e2.removeEventListener('transitionend', clear);
+        };
+        e2.addEventListener('transitionend', clear);
+      });
+    });
+  }, [statsRevealed, isDesktop]);
 
   const [exporting, setExporting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -1061,9 +1214,12 @@ export function ViewPage() {
 
         {/* px-4 (not p-2): overflow-y-auto forces overflow-x to clip, so the extra
             horizontal padding gives the cards' soft shadows room before that clip.
-            pb-8: comfortable breathing room below the footer/cards at the bottom of
-            the scroll (py-2 alone left it jammed against the page edge). */}
-        <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-2 pb-8">
+            pb-2 (small, matches pt-2): the content is fit to fill the viewport, so
+            a large bottom pad would just hold the footer up off the bottom as dead
+            whitespace and shrink the grid — keep it tight so the footer sits flush
+            (its own py-3 still gives the text breathing room). The small buffer also
+            absorbs sub-pixel fit rounding so it can't trip the scrollbar. */}
+        <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 pt-2 pb-2">
           <div className={statsBesideGrid ? 'flex flex-row items-start justify-center' : 'flex flex-col items-center'}>
           {tileSize > 0 && (() => {
             const {
@@ -1117,11 +1273,14 @@ export function ViewPage() {
                 onDragCancel={handleDragCancel}
               >
                 <div
+                  ref={dexCardRef}
                   style={{
                     width: gridWidth,
                     // Gate the dex-card chrome on statsRevealed (not showStatsPanel)
                     // so the card appears in the SAME step as the stats cards, not a
-                    // frame earlier — one transition instead of two.
+                    // frame earlier — one transition instead of two. On retract it
+                    // releases at the start (with reserveStats and the dex FLIP), so
+                    // the grid reclaims space while the pinned stats box slides out.
                     boxSizing: statsRevealed ? 'content-box' : undefined,
                     // Match the stats cards' *visual* corner radius: they use
                     // rounded-lg (var(--radius)) but are scaled by statsScale, so
@@ -1203,40 +1362,71 @@ export function ViewPage() {
           {/* Detailed stats — part of the same canvas: a column to the right of
               the grid on desktop, stacked below it on mobile (no panel chrome,
               so it reads like the export). */}
-          {showStatsPanel && tileSize > 0 && (
-            statsBesideGrid ? (
+          {(showStatsPanel || statsMounted) && tileSize > 0 && (
+            statsBesideGrid ? (() => {
+              // While exiting on desktop, the box is pinned (position: fixed) to
+              // the on-screen rect captured at retract start, so the grid can
+              // reclaim its flow space and FLIP simultaneously without shoving it.
+              // fb null → normal in-flow rendering (settle, enter, revealed).
+              const fb = statsFreeze ? frozenBoxRef.current : null;
+              return (
               // Rendered at natural width, then uniformly scaled to the dex height.
               // The outer box reserves only the scaled footprint; the inner box's
               // layout size (what ResizeObserver reads) is unaffected by the scale.
               <div
+                ref={statsOuterRef}
                 style={{
-                  width: statsDisplayW || undefined,
-                  height: statsTargetHeight || undefined,
-                  marginLeft: statsGapCols * tileSize,
-                  // Until revealed, sit out of flow (absolute) so the hidden panel
-                  // doesn't reserve flex width and shift/re-fit the grid mid-settle.
-                  // Its natural box is still measurable while absolute.
-                  position: statsRevealed ? undefined : 'absolute',
+                  width: fb ? fb.width : statsDisplayW || undefined,
+                  height: fb ? fb.height : statsTargetHeight || undefined,
+                  marginLeft: fb ? 0 : statsGapCols * tileSize,
+                  // Pinned (fixed) at its captured rect while exiting so the grid
+                  // can FLIP back underneath it; absolute (out of flow, no coords)
+                  // during the pre-reveal settle so it doesn't reserve width; in
+                  // flow once revealed.
+                  position: fb ? 'fixed' : statsRevealed ? undefined : 'absolute',
+                  ...(fb ? { top: fb.top, left: fb.left, zIndex: 20 } : null),
+                  // Desktop: fade + slide in from the right once the fit has
+                  // settled (statsRevealed), and slide out faster on retract. The
+                  // opacity-0 pre-reveal state also hides the oversized settle
+                  // transient, so the inner visibility gate is desktop-exempt below.
+                  ...(isDesktop
+                    ? {
+                        opacity: statsRevealed ? 1 : 0,
+                        transform: statsRevealed ? 'translateX(0)' : 'translateX(1rem)',
+                        transition: statsRevealed
+                          ? 'opacity 280ms ease-out, transform 280ms ease-out'
+                          : 'opacity 180ms ease-in, transform 180ms ease-in',
+                      }
+                    : null),
                 }}
                 className="shrink-0 overflow-visible"
+                onTransitionEnd={(e) => {
+                  // Once the retract fade has fully played, unmount. Gated on
+                  // !showStatsPanel so the enter transition doesn't unmount it,
+                  // and on opacity so it fires once (not per animated property).
+                  if (e.propertyName === 'opacity' && !showStatsPanel) setStatsMounted(false);
+                }}
               >
                 <div
                   ref={statsContentRef}
                   style={{
                     width: `${STATS_NATURAL_REM}rem`,
-                    transform: `scale(${statsScale})`,
+                    transform: `scale(${fb ? fb.scale : statsScale})`,
                     transformOrigin: 'top left',
                     // Stay hidden until the fit has settled (statsRevealed), so the
                     // panel never paints at the transient oversized scale while
                     // tileSize converges after the toggle. The layout box is still
                     // present (visibility, not display) so it can be measured.
-                    visibility: statsRevealed ? undefined : 'hidden',
+                    // Desktop hides via the outer box's opacity instead (so the
+                    // slide-out can fade), so the visibility gate is mobile-only.
+                    visibility: isDesktop ? undefined : statsRevealed ? undefined : 'hidden',
                   }}
                 >
                   <DetailedStatsPanel />
                 </div>
               </div>
-            ) : (
+              );
+            })() : (
               <div className="w-full max-w-md mt-5 px-1">
                 <DetailedStatsPanel />
               </div>
@@ -1244,14 +1434,15 @@ export function ViewPage() {
           )}
           </div>
           {/* Footer stays centered on the full page width — it sits outside the
-              dex+stats composition so it doesn't shift left when stats slide in. */}
+              dex+stats composition so it doesn't shift left when stats slide in.
+              Not reserved in the fit, so it rests just under the fold. */}
           <PageFooter />
         </div>
       </div>
 
       {/* Settings pane — docked right on desktop */}
       {settingsOpen && (
-        <div className="hidden md:block md:relative md:w-[min(50vw,380px)] md:h-full md:flex-shrink-0 border-l bg-background">
+        <div className="hidden md:block md:relative md:w-[min(50%,380px)] md:h-full md:flex-shrink-0 border-l bg-background">
           <ViewSettingsPane onClose={() => setSettingsOpen(false)} />
         </div>
       )}

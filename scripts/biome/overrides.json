@@ -1,0 +1,16 @@
+{
+  "_comment": "Curated overrides applied LAST, for lines where the encounter data is systematically misleading and no general rule fixes them without breaking others. Each entry must cite the official grounds. Overrides are transparent: the record's source becomes 'override', the rationale names what the pipeline would have said, and the validation report lists them. Keep this file SHORT — every entry is a confession that the model missed something; prefer fixing rules when a pattern repeats.",
+  "entries": [
+    { "species": "bagon",     "biome": "cave",   "reason": "identity home is Meteor Falls' deepest chamber (RSE/ORAS) — a single location the breadth rules can't reward, while modern route spam (Alola Route 3, Kalos Route 8 cliffs) outweighs it in volume" },
+    { "species": "gible",     "biome": "cave",   "reason": "identity home is Wayward Cave's hidden room (DPPt); SwSh sandstorm slices (Dusty Bowl) outweigh it in volume but aren't what the line is known for" },
+    { "species": "pineco",    "biome": "forest", "reason": "headbutt-tree bug of Johto woods (Azalea/Ilex surrounds); its cave-adjacent Alola rows are berry-pile cameos" },
+    { "species": "vanillite", "biome": "tundra", "reason": "ice-cream Pokémon of icy areas: BW winter routes/Cold Storage, SwSh snow-weather Wild Area spawns; its data is scattered across freshwater/industrial tags because the icy contexts are seasonal/weather slices" },
+    { "species": "trubbish",  "biome": "industrial", "reason": "the garbage-bag Pokémon (already curated in the industrial archetype); its BW route grass spawns say meadow but its identity and city-adjacent spawns (Alola) are trash/urban" },
+    { "species": "klink",     "biome": "industrial", "reason": "man-made gear Pokémon; its Unova home is Chargestone Cave, and SwSh Wild Area route spam says meadow — neither reflects the gear/machinery identity the industrial section exists for" },
+    { "species": "drifloon",  "biome": "haunted", "reason": "ghost balloon whose marquee appearance is the weekly Valley Windworks apparition (DPPt) and cemetery spawns (Alola); coastal Kalos/Alola route slots edge it toward beach on volume" },
+    { "species": "dreepy",    "biome": "lake",    "reason": "the Lake of Outrage's resident phantom dragon (SwSh 1-2% overworld spawns, famous precisely for that lakeside rarity); the zone's land-terrain tag is mountain, which a zone-level tag can't distinguish" },
+    { "species": "eiscue",    "biome": "tundra",  "reason": "ice-face penguin of snowy Route 10 / Crown Tundra waters; its encounter rows sit at the Lake of Outrage in snow weather, which the zone-level terrain tag (mountain) can't express" },
+    { "species": "snom",      "biome": "tundra",  "reason": "ice-bug of Route 10's snowfields; its Wild Area rows are snowstorm-weather spawns in rocky zones whose land tag (mountain) can't express the weather condition" },
+    { "species": "grimer",    "biome": "industrial", "reason": "sludge Pokémon born from pollution (already curated in the industrial archetype); the data's best tags are its poisoned Celadon pond (lake!) and Alola city spawns — data-true but identity-false" }
+  ]
+}

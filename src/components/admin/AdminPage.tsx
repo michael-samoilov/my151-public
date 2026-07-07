@@ -111,6 +111,14 @@ interface ApiResponse {
     'total' | 'first' | 'longest' | 'all',
     { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number }
   >;
+  lineCurves?: Record<
+    'total' | 'first' | 'longest' | 'all',
+    { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number }
+  >;
+  monCurves?: Record<
+    'total' | 'first' | 'longest' | 'all',
+    { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number }
+  >;
   countries: Record<string, number>;
   devices: Record<string, number>;
   os: Record<string, number>;
@@ -651,6 +659,7 @@ function BasisDropoffCard<K extends string>({
   fmtX,
   xLabel,
   hint,
+  extra,
 }: {
   title: string;
   curves?: Partial<Record<K, SurvivalCurve>>;
@@ -659,6 +668,8 @@ function BasisDropoffCard<K extends string>({
   fmtX: (n: number) => string;
   xLabel: string;
   hint?: string;
+  /** Optional extra control row (e.g. a metric toggle) rendered under the title. */
+  extra?: React.ReactNode;
 }) {
   const [basis, setBasis] = useState<K>(tabs[0].key);
   const curve = curves?.[basis] ?? fallback;
@@ -682,6 +693,7 @@ function BasisDropoffCard<K extends string>({
           </div>
         )}
       </div>
+      {extra && <div className="flex items-center gap-1 mb-2 flex-wrap">{extra}</div>}
       <Survival points={curve.survival} fmtX={fmtX} xLabel={xLabel} />
       <ChurnReadout stats={curve.stats} fmt={fmtX} />
       {curves && (
@@ -690,6 +702,46 @@ function BasisDropoffCard<K extends string>({
         </p>
       )}
     </div>
+  );
+}
+
+/** Build drop-off card with a metric toggle (# Pokemon vs # evolution lines)
+ *  layered on top of the session-basis toggle. Defaults to # Pokemon. */
+function BuildDropoffCard({ data }: { data: ApiResponse }) {
+  const [metric, setMetric] = useState<'mon' | 'line'>('mon');
+  const curves = metric === 'mon' ? data.monCurves : data.lineCurves;
+  const unit = metric === 'mon' ? 'Pokémon' : 'lines';
+  const metricToggle = (
+    <>
+      <span className="text-[0.65rem] text-muted-foreground mr-1">Measure:</span>
+      <Button variant={metric === 'mon' ? 'default' : 'ghost'} size="sm" onClick={() => setMetric('mon')}>
+        # Pokémon
+      </Button>
+      <Button variant={metric === 'line' ? 'default' : 'ghost'} size="sm" onClick={() => setMetric('line')}>
+        # Evo lines
+      </Button>
+    </>
+  );
+  return (
+    <BasisDropoffCard
+      title="Build drop-off (how far users get)"
+      curves={curves}
+      tabs={[
+        { key: 'total', label: 'Total', note: `Peak ${unit} ever reached` },
+        { key: 'first', label: 'First', note: `${unit} added in the first session` },
+        { key: 'longest', label: 'Longest', note: `${unit} added in the longest session` },
+        { key: 'all', label: 'All', note: `${unit} added per session, pooled` },
+      ]}
+      fallback={{ survival: data.depthSurvival, stats: data.depthStats, n: 0 }}
+      fmtX={(n) => `${n} ${unit}`}
+      xLabel={unit}
+      extra={metricToggle}
+      hint={
+        data.multiSession === 0
+          ? 'All users are single-session so far, so First/Longest/All match Total — they diverge once a user builds across 2+ visits.'
+          : `${data.multiSession} multi-session user${data.multiSession === 1 ? '' : 's'} differentiate these views.`
+      }
+    />
   );
 }
 
@@ -1479,24 +1531,7 @@ export function AdminPage() {
                 fmtX={fmtSecs}
                 xLabel="session length"
               />
-              <BasisDropoffCard
-                title="Build drop-off (how far users get)"
-                curves={data.depthCurves}
-                tabs={[
-                  { key: 'total', label: 'Total', note: 'Peak evolution lines ever reached' },
-                  { key: 'first', label: 'First', note: 'Lines added in the first session' },
-                  { key: 'longest', label: 'Longest', note: 'Lines added in the longest session' },
-                  { key: 'all', label: 'All', note: 'Lines added per session, pooled' },
-                ]}
-                fallback={{ survival: data.depthSurvival, stats: data.depthStats, n: 0 }}
-                fmtX={(n) => `${n} lines`}
-                xLabel="evolution lines"
-                hint={
-                  data.multiSession === 0
-                    ? 'All users are single-session so far, so First/Longest/All match Total — they diverge once a user builds across 2+ visits.'
-                    : `${data.multiSession} multi-session user${data.multiSession === 1 ? '' : 's'} differentiate these views.`
-                }
-              />
+              <BuildDropoffCard data={data} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

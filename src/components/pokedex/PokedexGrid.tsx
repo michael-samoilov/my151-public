@@ -939,7 +939,7 @@ export function PokedexGrid() {
                     style={{ transform: 'translate(-50%, -50%)' }}
                   >
                     {dragLineIds.map((id) => (
-                      <div key={id} className="w-[calc((100vw-24px-5vw)/6)] md:w-[calc((100%-20px)/6)] max-w-[90px]">
+                      <div key={id} className="w-[calc((100%-24px-5%)/6)] md:w-[calc((100%-20px)/6)] max-w-[90px]">
                         <PokemonTileStatic id={id} />
                       </div>
                     ))}
