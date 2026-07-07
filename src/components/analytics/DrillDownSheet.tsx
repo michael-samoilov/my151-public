@@ -3,6 +3,8 @@ import { flushSync } from 'react-dom';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { computeDrillDownData, type DrillDownData } from '@/hooks/useDrillDownData';
 import { EvoLineGrid } from '@/components/browser/EvoLineCard';
+import { ShapeIconCircle, SHAPE_LABELS } from '@/components/shared/ShapeIcon';
+import type { ShapeName } from '@/types/pokemon';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 const HEADER_HEIGHT = 49; // app header: py-3 + text + border
@@ -11,6 +13,12 @@ const EXPAND_THRESHOLD = 40;
 const DISMISS_THRESHOLD = 80;
 const SWIPE_THRESHOLD = 50;
 
+/** The body shape carried by a segment, if it's a shape drilldown — used to show
+ *  the shape silhouette in the header and prev/next nav (shape drilldowns only). */
+function getSegmentShape(seg: DrillDownSegment): ShapeName | undefined {
+  return seg.kind === 'shape' ? (seg.shape as ShapeName) : undefined;
+}
+
 function getSegmentLabel(seg: DrillDownSegment): string {
   switch (seg.kind) {
     case 'type': return seg.type.charAt(0).toUpperCase() + seg.type.slice(1);
@@ -18,6 +26,7 @@ function getSegmentLabel(seg: DrillDownSegment): string {
     case 'evoLevel': return `Lv ${seg.binStart}–${seg.binEnd - 1}`;
     case 'bst': return `${seg.binStart}–${seg.binEnd - 1}`;
     case 'typeMatchup': return seg.type.charAt(0).toUpperCase() + seg.type.slice(1);
+    case 'shape': return SHAPE_LABELS[seg.shape as ShapeName] ?? seg.shape;
     default: return '';
   }
 }
@@ -32,6 +41,8 @@ function CardPanel({
   assignedIds,
   prevLabel,
   nextLabel,
+  prevShape,
+  nextShape,
   scrollRef,
   spriteOverrides,
   onHandleTouchStart,
@@ -49,6 +60,8 @@ function CardPanel({
   assignedIds: Set<number>;
   prevLabel?: string;
   nextLabel?: string;
+  prevShape?: ShapeName;
+  nextShape?: ShapeName;
   scrollRef?: React.RefObject<HTMLDivElement | null>;
   spriteOverrides?: Record<number, string>;
   onHandleTouchStart?: (e: React.TouchEvent) => void;
@@ -87,18 +100,24 @@ function CardPanel({
             <div className="flex-1 flex items-center min-w-0">
               {prevLabel && (
                 <button type="button"
-                  className="flex items-center gap-0.5 text-xs text-muted-foreground truncate"
+                  className="flex items-center gap-0.5 text-xs text-muted-foreground min-w-0"
                   onTouchStart={(e) => e.stopPropagation()}
                   onClick={(e) => { e.stopPropagation(); onNavPrev?.(); }}
                 >
                   <ChevronLeft className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">{prevLabel}</span>
+                  <span className="flex flex-col items-center min-w-0 leading-tight">
+                    <span className="truncate max-w-full">{prevLabel}</span>
+                    {prevShape && <ShapeIconCircle shape={prevShape} className="mt-0.5" />}
+                  </span>
                 </button>
               )}
             </div>
             <div className="flex items-center gap-1.5 shrink-0 mx-2">
               {data.icon && (
                 <img src={data.icon} alt="" className="w-4 h-4" />
+              )}
+              {data.shape && (
+                <ShapeIconCircle shape={data.shape} />
               )}
               <span className="text-sm font-semibold" style={{ color: data.color }}>
                 {data.title}
@@ -107,11 +126,14 @@ function CardPanel({
             <div className="flex-1 flex items-center justify-end min-w-0">
               {nextLabel && (
                 <button type="button"
-                  className="flex items-center gap-0.5 text-xs text-muted-foreground truncate"
+                  className="flex items-center gap-0.5 text-xs text-muted-foreground min-w-0"
                   onTouchStart={(e) => e.stopPropagation()}
                   onClick={(e) => { e.stopPropagation(); onNavNext?.(); }}
                 >
-                  <span className="truncate">{nextLabel}</span>
+                  <span className="flex flex-col items-center min-w-0 leading-tight">
+                    <span className="truncate max-w-full">{nextLabel}</span>
+                    {nextShape && <ShapeIconCircle shape={nextShape} className="mt-0.5" />}
+                  </span>
                   <ChevronRight className="w-3.5 h-3.5 shrink-0" />
                 </button>
               )}
@@ -152,6 +174,7 @@ function CardPanel({
                   cols={6}
                   variant="analytics"
                   showGenBadges={data.showGenBadges}
+                  showShapeBadges={data.showShapeBadges}
                   matchupInfo={data.matchupInfo}
                   matchupType={data.matchupType}
                 />
@@ -486,6 +509,8 @@ export function DrillDownSheet() {
                   assignedIds={assignedIds}
                   prevLabel={siblings.length >= 3 ? getSegmentLabel(siblings[(currentIdx - 2 + siblings.length) % siblings.length]) : undefined}
                   nextLabel={getSegmentLabel(segment!)}
+                  prevShape={siblings.length >= 3 ? getSegmentShape(siblings[(currentIdx - 2 + siblings.length) % siblings.length]) : undefined}
+                  nextShape={getSegmentShape(segment!)}
                   spriteOverrides={bstOverrides}
                   onHandleTouchStart={touchStart}
                   onHandleTouchMove={handleHeaderTouchMove}
@@ -512,6 +537,8 @@ export function DrillDownSheet() {
                 assignedIds={assignedIds}
                 prevLabel={prevSibling ? getSegmentLabel(prevSibling) : undefined}
                 nextLabel={nextSibling ? getSegmentLabel(nextSibling) : undefined}
+                prevShape={prevSibling ? getSegmentShape(prevSibling) : undefined}
+                nextShape={nextSibling ? getSegmentShape(nextSibling) : undefined}
                 scrollRef={currentScrollRef}
                 spriteOverrides={bstOverrides}
                 onHandleTouchStart={touchStart}
@@ -542,6 +569,8 @@ export function DrillDownSheet() {
                   assignedIds={assignedIds}
                   prevLabel={getSegmentLabel(segment!)}
                   nextLabel={siblings.length >= 3 ? getSegmentLabel(siblings[(currentIdx + 2) % siblings.length]) : undefined}
+                  prevShape={getSegmentShape(segment!)}
+                  nextShape={siblings.length >= 3 ? getSegmentShape(siblings[(currentIdx + 2) % siblings.length]) : undefined}
                   spriteOverrides={bstOverrides}
                   onHandleTouchStart={touchStart}
                   onHandleTouchMove={handleHeaderTouchMove}
@@ -651,6 +680,9 @@ export function DrillDownPanel() {
             {currentData.icon && (
               <img src={currentData.icon} alt="" className="w-4 h-4 shrink-0" />
             )}
+            {currentData.shape && (
+              <ShapeIconCircle shape={currentData.shape} />
+            )}
             <span className="text-sm font-semibold truncate" style={{ color: currentData.color }}>
               {currentData.title}
             </span>
@@ -674,7 +706,10 @@ export function DrillDownPanel() {
                 className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
               >
                 <ChevronLeft className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate max-w-[100px]">{getSegmentLabel(prevSibling)}</span>
+                <span className="flex flex-col items-center min-w-0 leading-tight">
+                  <span className="truncate max-w-[100px]">{getSegmentLabel(prevSibling)}</span>
+                  {getSegmentShape(prevSibling) && <ShapeIconCircle shape={getSegmentShape(prevSibling)!} className="mt-0.5" />}
+                </span>
               </button>
             ) : <div />}
             {nextSibling ? (
@@ -682,7 +717,10 @@ export function DrillDownPanel() {
                 onClick={() => navigateDrillDown(nextSibling)}
                 className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
               >
-                <span className="truncate max-w-[100px]">{getSegmentLabel(nextSibling)}</span>
+                <span className="flex flex-col items-center min-w-0 leading-tight">
+                  <span className="truncate max-w-[100px]">{getSegmentLabel(nextSibling)}</span>
+                  {getSegmentShape(nextSibling) && <ShapeIconCircle shape={getSegmentShape(nextSibling)!} className="mt-0.5" />}
+                </span>
                 <ChevronRight className="w-3.5 h-3.5 shrink-0" />
               </button>
             ) : <div />}
@@ -715,6 +753,7 @@ export function DrillDownPanel() {
                   cols={6}
                   variant="analytics"
                   showGenBadges={currentData.showGenBadges}
+                  showShapeBadges={currentData.showShapeBadges}
                   matchupInfo={currentData.matchupInfo}
                   matchupType={currentData.matchupType}
                 />

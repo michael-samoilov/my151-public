@@ -5,8 +5,9 @@ import { REGIONAL_DEXES } from '@/data/regional-dexes';
 import { STARTER_IDS } from '@/data/categories';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { computePerPokemonMatchup } from '@/hooks/useTypeDominance';
-import type { Pokemon, TypeName } from '@/types/pokemon';
+import type { Pokemon, TypeName, ShapeName } from '@/types/pokemon';
 import { typeIconPath } from '@/data/type-ids';
+import { SHAPE_LABELS } from '@/components/shared/ShapeIcon';
 
 const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
@@ -40,6 +41,13 @@ export interface DrillDownData {
   totalPokemon: number;
   totalLines: number;
   showGenBadges: boolean;
+  /** When true, muted (off-segment) members get a corner badge showing their own
+   *  body shape — used by the shape drilldown so you can see why a chain-mate is
+   *  de-emphasized (e.g. Gyarados in a "Fins" drilldown is Serpent-shaped). */
+  showShapeBadges?: boolean;
+  /** The segment's own body shape (shape drilldowns only) — drives the header /
+   *  nav shape icon. Undefined for every other drilldown kind. */
+  shape?: ShapeName;
   /** Per-Pokemon offense/defense multipliers for typeMatchup drill-downs */
   matchupInfo?: Map<number, { offense: number; defense: number; bestDefenseType: TypeName }>;
   /** The type being matched (typeMatchup drilldowns only) */
@@ -195,6 +203,8 @@ export function computeDrillDownData(
       totalPokemon: countForSubtitle,
       totalLines: linesForSubtitle,
       showGenBadges: segment.kind === 'generation',
+      showShapeBadges: segment.kind === 'shape',
+      shape: segment.kind === 'shape' ? (segment.shape as ShapeName) : undefined,
     };
 }
 
@@ -559,6 +569,8 @@ function matchesSegment(p: Pokemon, id: number, segment: DrillDownSegment): bool
       return p.bst >= segment.binStart && p.bst < segment.binEnd;
     case 'typeMatchup':
       return true; // all pokemon shown, grouped by score tier
+    case 'shape':
+      return p.shape === segment.shape;
   }
 }
 
@@ -614,5 +626,12 @@ function getSegmentMeta(segment: DrillDownSegment): { title: string; color: stri
         icon: typeIconPath(segment.type as TypeName),
       };
     }
+    case 'shape':
+      // No header icon (like the gen drilldown): the HOME silhouettes are black
+      // and would vanish on the dark-mode header. The title carries it.
+      return {
+        title: `${SHAPE_LABELS[segment.shape as ShapeName] ?? segment.shape} Shape`,
+        color: '#ef4444', // app red — shapes carry no per-category color
+      };
   }
 }

@@ -5,6 +5,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import { ChevronRight, Sword } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
+import { ShapeIcon } from '@/components/shared/ShapeIcon';
 import {
   PokemonTileContent,
   TILE_ACTION_BUTTON_CLASS,
@@ -111,6 +112,9 @@ interface EvoLineGridProps {
   cols?: number;
   variant?: EvoLineVariant;
   showGenBadges?: boolean;
+  /** When true, muted members get a corner badge of their own body shape
+   *  (shape drilldown context). */
+  showShapeBadges?: boolean;
   /** Per-Pokemon offense/defense multipliers for matchup drill-downs */
   matchupInfo?: Map<number, { offense: number; defense: number; bestDefenseType: TypeName }>;
   /** The type being matched — required when matchupInfo is present */
@@ -124,7 +128,7 @@ const GRID_CLASSES: Record<number, string> = {
 };
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, matchupInfo, matchupType, showFormVariant }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, showFormVariant }: EvoLineGridProps) {
   // Canonical Pokemon-tile sprite size — shared with the build page so
   // Charizard (etc.) renders identically in the selection pane and in a
   // section tile at the same viewport width. See `PokemonTile.tsx`.
@@ -161,6 +165,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
           spriteOverrides={spriteOverrides}
           variant={variant}
           showGenBadges={showGenBadges}
+          showShapeBadges={showShapeBadges}
           matchupInfo={matchupInfo}
           matchupType={matchupType}
           spritePx={spritePx}
@@ -171,7 +176,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
     }
 
     return result;
-  }, [groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols, variant, showGenBadges, matchupInfo, matchupType, spritePx, showFormVariant]);
+  }, [groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx, showFormVariant]);
 
   return (
     <div className={GRID_CLASSES[cols] ?? `grid gap-x-0 gap-y-1`} style={{ ...(GRID_CLASSES[cols] ? {} : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }), maxWidth: gridMaxW, marginInline: gridMaxW ? 'auto' : undefined }}>
@@ -202,6 +207,7 @@ interface EvoLineCardProps {
   spriteOverrides?: Record<number, string>;
   variant?: EvoLineVariant;
   showGenBadges?: boolean;
+  showShapeBadges?: boolean;
   matchupInfo?: Map<number, { offense: number; defense: number; bestDefenseType: TypeName }>;
   matchupType?: TypeName;
   /** Pixel-perfect sprite size in CSS px */
@@ -231,7 +237,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, matchupInfo, matchupType, spritePx, showFormVariant }: EvoLineCardProps) {
+function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, showFormVariant }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
   // Shared press state so clicking any member shrinks the *whole* evo line
@@ -305,6 +311,9 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
         const isFirst = i === 0;
         const isLast = i === members.length - 1;
         const showGenBadge = showGenBadges && pokemon.generation !== lineGen;
+        // Shape drilldown: badge the muted (off-segment) chain-mates with their
+        // own body shape so it's clear why they're de-emphasized.
+        const showShapeBadge = showShapeBadges && (mutedIds?.has(pokemon.id) ?? false);
 
         return (
           // --tile-sprite exposes the per-tile sprite size as a CSS var so every
@@ -358,6 +367,11 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                 {/* Gen badge + icons — always full opacity, outside the grey wrapper */}
                 {showGenBadge && (
                   <GenBadge gen={pokemon.generation} className={TILE_GEN_BADGE_CLASS} />
+                )}
+                {showShapeBadge && (
+                  <div className="absolute top-[calc(var(--tile-sprite)*0.03)] left-[calc(var(--tile-sprite)*0.03)] w-[calc(var(--tile-sprite)*0.4)] h-[calc(var(--tile-sprite)*0.4)] z-10 flex items-center justify-center rounded-full bg-background/90 border border-border p-[calc(var(--tile-sprite)*0.015)]">
+                    <ShapeIcon shape={pokemon.shape} className="w-full h-full" />
+                  </div>
                 )}
                 {inDex && variant === 'analytics' && markedForRemoval && (
                   <div className={TILE_ACTION_BUTTON_CLASS} style={{ transform: 'translateZ(0)' }}>
