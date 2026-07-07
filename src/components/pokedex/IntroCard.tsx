@@ -14,9 +14,9 @@ import {
   OUTLINE_STROKE_FRAC,
 } from '@/lib/sectionOutlines';
 import { X } from 'lucide-react';
-import shot45 from '@/assets/intro/shot-45.png';
-import shot95 from '@/assets/intro/shot-95-outlines.png';
-import shot151 from '@/assets/intro/shot-151-stats.png';
+import shot45 from '@/assets/intro/shot-45.webp';
+import shot95 from '@/assets/intro/shot-95-outlines.webp';
+import shot151 from '@/assets/intro/shot-151-stats.webp';
 
 /**
  * First-visit intro card — the top of the Build page for a brand-new visitor.
