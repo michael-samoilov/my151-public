@@ -204,6 +204,8 @@ img {
   .milestone-pop, .milestone-ripple { animation: none !important; }
 }
 
-/* Milestone bar responsive width (values fed from MilestoneBar CONFIG). */
-.milestone-bar { width: var(--ms-w-mobile); }
-@media (min-width: 1024px) { .milestone-bar { width: var(--ms-w-desktop); } }
+/* Milestone bar responsive width (values fed from MilestoneBar CONFIG). Scales
+   with the viewport: min on small phones, growing with vw, capped on desktop.
+   The measured pixel width (not this) drives the fill-skip math, so the bar
+   stays correct at any resolved width. */
+.milestone-bar { width: clamp(var(--ms-w-min), var(--ms-w-vw), var(--ms-w-max)); }

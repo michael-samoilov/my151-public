@@ -32,8 +32,12 @@ import { BarChart3, Camera, Sparkles, Trophy, Lock, ChevronDown, type LucideIcon
 // red + 2·outlineRem.
 // ─────────────────────────────────────────────────────────────────────────────
 const DEFAULT_CONFIG = {
-  widthMobileRem: 11,
-  widthDesktopRem: 15.5,
+  // Track width scales with the viewport: clamp(min, vw, max). Small phones sit
+  // at the min; it grows with width and caps on desktop. The measured width
+  // (not these rems) drives the fill-skip math, so any value stays correct.
+  widthMinRem: 11,
+  widthVw: 24,
+  widthMaxRem: 22,
 
   // Uniform grey border thickness wrapping the red everywhere.
   outlineRem: 0.15,
@@ -233,14 +237,53 @@ export function MilestoneBar() {
   const d = deriveDims(cfg);
   const preview = usePreviewCount();
   const isDesktop = useIsDesktop();
+  const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
 
-  const count = TUNE && preview !== null ? preview : realCount;
+  // Defer count-driven visuals on mobile until the selection sheet closes, so
+  // the fill slide + bead pops play where the user can actually see them rather
+  // than under the open sheet. Desktop updates immediately; sheet-open holds the
+  // last value. (?tune preview bypasses this and drives the count directly.)
+  const [deferredCount, setDeferredCount] = useState(realCount);
+  useEffect(() => {
+    if (isDesktop || !mobileBrowserOpen) {
+      // Small delay off the sheet close so the animation reads as arriving.
+      const t = setTimeout(() => setDeferredCount(realCount), isDesktop ? 0 : 320);
+      return () => clearTimeout(t);
+    }
+    // Sheet open on mobile: hold the previous value until it closes.
+  }, [isDesktop, mobileBrowserOpen, realCount]);
+
+  const count = TUNE && preview !== null ? preview : deferredCount;
   const milestoneMax = TUNE && preview !== null ? Math.max(storeMax, preview) : storeMax;
 
-  // Red-bead half-width as a fraction of the track (rootFontSize cancels since
-  // both bead and track are in rem), used to skip bead footprints in the fill.
-  const trackWidthRem = isDesktop ? cfg.widthDesktopRem : cfg.widthMobileRem;
-  const hw = cfg.beadRedRem / 2 / trackWidthRem;
+  // Measure the rendered track width so the bead-footprint skip (hw) tracks the
+  // actual pixel width the clamp() resolves to at this viewport — not a fixed
+  // rem — keeping the fill-skip math correct as the bar grows on wider screens.
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [trackPx, setTrackPx] = useState(0);
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const measure = () => {
+      const w = el.getBoundingClientRect().width;
+      setTrackPx((prev) => (Math.abs(prev - w) < 0.5 ? prev : w));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Red-bead half-width as a fraction of the track. Convert the bead's rem to px
+  // via the root font-size, then divide by the measured track px.
+  const rootPx = (() => {
+    try {
+      return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    } catch {
+      return 16;
+    }
+  })();
+  const hw = trackPx > 0 ? (cfg.beadRedRem / 2) * rootPx / trackPx : 0;
   const fillPct = computeFillFraction(count, hw) * 100;
 
   const centerY = 'top-1/2 -translate-y-1/2';
@@ -250,8 +293,9 @@ export function MilestoneBar() {
     <div
       className="milestone-bar select-none relative"
       style={{
-        ['--ms-w-mobile' as string]: `${cfg.widthMobileRem}rem`,
-        ['--ms-w-desktop' as string]: `${cfg.widthDesktopRem}rem`,
+        ['--ms-w-min' as string]: `${cfg.widthMinRem}rem`,
+        ['--ms-w-vw' as string]: `${cfg.widthVw}vw`,
+        ['--ms-w-max' as string]: `${cfg.widthMaxRem}rem`,
       }}
     >
       {cfg.showDividers && (
@@ -267,7 +311,7 @@ export function MilestoneBar() {
         </>
       )}
 
-      <div className="relative" style={{ height: `${d.greyBead}rem` }}>
+      <div ref={trackRef} className="relative" style={{ height: `${d.greyBead}rem` }}>
         {/* ── Layer 1: grey (opaque) — runway to 151 + idle beads ── */}
         <div
           className={`absolute left-0 right-0 rounded-full ${centerY}`}
@@ -454,8 +498,9 @@ const TUNABLES: { key: NumericKey; min: number; max: number; step: number; label
   { key: 'iconScale', min: 0.3, max: 0.9, step: 0.01, label: 'icon scale' },
   { key: 'iconStroke', min: 1, max: 3.5, step: 0.1, label: 'icon stroke' },
   { key: 'dividerGapRem', min: 0.2, max: 1.5, step: 0.05, label: 'divider gap' },
-  { key: 'widthMobileRem', min: 8, max: 16, step: 0.5, label: 'width (mobile)' },
-  { key: 'widthDesktopRem', min: 10, max: 20, step: 0.5, label: 'width (desktop)' },
+  { key: 'widthMinRem', min: 8, max: 16, step: 0.5, label: 'width min (rem)' },
+  { key: 'widthVw', min: 10, max: 50, step: 1, label: 'width (vw)' },
+  { key: 'widthMaxRem', min: 12, max: 30, step: 0.5, label: 'width max (rem)' },
   { key: 'fillTransitionMs', min: 0, max: 1200, step: 50, label: 'fill glide (ms)' },
   { key: 'popScale', min: 1, max: 2, step: 0.05, label: 'pop scale' },
   { key: 'popDurationMs', min: 100, max: 1000, step: 20, label: 'pop (ms)' },

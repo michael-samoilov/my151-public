@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import confetti from 'canvas-confetti';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
+import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import type { AppView } from '@/components/layout/Header';
 import { X } from 'lucide-react';
 
@@ -70,19 +71,38 @@ function fireConfetti() {
 export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppView) => void }) {
   const celebration = usePokedexStore((s) => s.milestoneCelebration);
   const dismiss = usePokedexStore((s) => s.dismissMilestoneCelebration);
+  const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
+  const isDesktop = useViewportAtLeast(1024);
   const nudge = celebration != null ? NUDGES[celebration] : null;
 
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   const confettiFor = useRef<number | null>(null);
 
-  // Confetti at 151 — once per armed celebration (store guarantees once-ever).
+  // On mobile the milestone is usually crossed from inside the selection sheet.
+  // Hold the whole celebration (popup + confetti) until that sheet closes so it
+  // floats into place where the user can see it, rather than under the sheet.
+  // Desktop shows immediately; a short beat after close lets it read as arriving.
+  const canShow = nudge != null && (isDesktop || !mobileBrowserOpen);
+  const [armed, setArmed] = useState(false);
   useEffect(() => {
-    if (celebration === 151 && confettiFor.current !== 151) {
+    if (!canShow) return; // hidden state resets via the cleanup below
+    const t = setTimeout(() => setArmed(true), isDesktop ? 0 : 340);
+    return () => {
+      clearTimeout(t);
+      setArmed(false);
+    };
+  }, [canShow, isDesktop]);
+  const ready = canShow && armed;
+
+  // Confetti at 151 — once per armed celebration (store guarantees once-ever),
+  // held until the celebration is actually visible (ready).
+  useEffect(() => {
+    if (celebration === 151 && ready && confettiFor.current !== 151) {
       confettiFor.current = 151;
       fireConfetti();
     }
     if (celebration == null) confettiFor.current = null;
-  }, [celebration]);
+  }, [celebration, ready]);
 
   // Funnel: record the milestone crossing (once per browser).
   useEffect(() => {
@@ -105,19 +125,20 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
     };
   }, [nudge]);
 
-  // Auto-dismiss.
+  // Auto-dismiss — timed from when the card actually appears (ready), so a long
+  // mobile sheet session doesn't eat into its on-screen life.
   useEffect(() => {
-    if (!nudge) return;
+    if (!nudge || !ready) return;
     const t = setTimeout(dismiss, AUTO_DISMISS_MS);
     return () => clearTimeout(t);
-  }, [nudge, dismiss]);
+  }, [nudge, ready, dismiss]);
 
   const handleCta = useCallback(() => {
     if (nudge) onNavigate(nudge.nav);
     dismiss();
   }, [nudge, onNavigate, dismiss]);
 
-  if (!nudge || !anchor) return null;
+  if (!nudge || !anchor || !ready) return null;
 
   const centerX = anchor.left + anchor.width / 2;
   const left = Math.max(8, Math.min(centerX - CARD_W / 2, window.innerWidth - CARD_W - 8));
