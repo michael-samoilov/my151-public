@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { TypeName } from '@/types/pokemon';
 import { getPokemonById } from '@/hooks/usePokemonData';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { computeViewSort } from '@/hooks/useViewSort';
 import { computeShowcaseStages, type ShowcaseStage } from '@/lib/introShowcase';
 import {
@@ -402,6 +403,21 @@ export function IntroCard({
     setPhase((p) => (p === 'shown' ? 'collapsing' : p));
   }, []);
 
+  const dismiss = useCallback(() => {
+    sendEventBeacon('intro-dismiss', { once: true });
+    collapse();
+  }, [collapse]);
+
+  const chooseStarters = useCallback(() => {
+    sendEventBeacon('intro-cta', { once: true });
+    onChooseStarters();
+  }, [onChooseStarters]);
+
+  // Funnel: the intro was actually seen (fires once per browser).
+  useEffect(() => {
+    if (phase === 'shown') sendEventBeacon('intro-shown', { once: true });
+  }, [phase]);
+
   // First Pokémon placed → the card's job is done; fold away gracefully.
   // State adjustment during render (not an effect) per react.dev guidance.
   if (!FORCE_INTRO && phase === 'shown' && totalPlaced > 0) setPhase('collapsing');
@@ -429,7 +445,7 @@ export function IntroCard({
           <button
             type="button"
             aria-label="Dismiss intro"
-            onClick={collapse}
+            onClick={dismiss}
             className="absolute right-1 top-1 z-40 p-2.5 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
@@ -447,7 +463,7 @@ export function IntroCard({
               Hand-pick your favorites from all 1,025 Pokémon into a Pokédex
               that&rsquo;s entirely yours.
             </p>
-            <StarterButton onClick={onChooseStarters} />
+            <StarterButton onClick={chooseStarters} />
           </div>
         </div>
       </div>

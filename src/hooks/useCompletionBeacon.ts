@@ -146,3 +146,35 @@ export function sendExportBeacon(ids: number[], settings?: ExportSettings) {
   if (ids.length === 0) return;
   postBeacon(ids, 'export', undefined, settings);
 }
+
+const EVENT_SENT_PREFIX = 'p151-ev-';
+
+/**
+ * Fire a lightweight funnel event (intro shown/cta/dismiss, milestone crossings,
+ * view visit) to /api/event. These count top-of-funnel signals that can happen
+ * with zero Pokémon placed, so they go to their own aggregate counters rather
+ * than the per-user records. `once` de-dupes per browser via localStorage — use
+ * it for signals that should count one distinct user (e.g. "saw the intro").
+ */
+export function sendEventBeacon(event: string, opts?: { once?: boolean }) {
+  if (DEMO_MODE || isOptedOut()) return;
+  const cid = getClientId();
+  if (!cid) return;
+  if (opts?.once) {
+    try {
+      const k = EVENT_SENT_PREFIX + event;
+      if (localStorage.getItem(k)) return;
+      localStorage.setItem(k, '1');
+    } catch {
+      // storage unavailable — fall through and send (may double-count)
+    }
+  }
+  void fetch('/api/event', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ cid, event }),
+    keepalive: true,
+  }).catch(() => {
+    // best-effort analytics
+  });
+}

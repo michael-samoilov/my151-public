@@ -27,7 +27,7 @@ function RouteFallback() {
 }
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BUILD_GROUPS } from '@/data/slot-template';
-import { useCompletionBeacon } from '@/hooks/useCompletionBeacon';
+import { useCompletionBeacon, sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
 import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
 import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
@@ -164,7 +164,7 @@ function App() {
   const handleViewChange = useCallback((view: AppView) => {
     // Analytics is gated until 25 Pokémon (sticky). Guard every path here.
     if (view === 'analytics' && !isAnalyticsUnlocked(usePokedexStore.getState().milestoneMax)) return;
-    if (view === 'view') viewMounted.current = true;
+    if (view === 'view') { viewMounted.current = true; sendEventBeacon('view-visit', { once: true }); }
     if (view === 'analytics') analyticsMounted.current = true;
     setCurrentView(view);
     if (view !== 'builder') {

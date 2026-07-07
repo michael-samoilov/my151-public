@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { createPortal } from 'react-dom';
 import confetti from 'canvas-confetti';
 import { usePokedexStore } from '@/store/usePokedexStore';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import type { AppView } from '@/components/layout/Header';
 import { X } from 'lucide-react';
 
@@ -83,6 +84,11 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
     if (celebration == null) confettiFor.current = null;
   }, [celebration]);
 
+  // Funnel: record the milestone crossing (once per browser).
+  useEffect(() => {
+    if (celebration != null) sendEventBeacon(`milestone-${celebration}`, { once: true });
+  }, [celebration]);
+
   // Track the target nav button's position (stale anchor is harmless — the
   // render guard hides the card whenever there's no active nudge).
   useLayoutEffect(() => {
@@ -121,11 +127,14 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
   return createPortal(
     <div className="fixed z-[220]" style={{ left, top, width: CARD_W }} role="status">
       <div className="relative rounded-lg border bg-popover shadow-xl p-3 animate-in fade-in-0 slide-in-from-top-1">
-        {/* up-arrow — sits above the card so its fill covers the card's top
-            border at this x (no seam); its two edges continue the outline. */}
+        {/* up-arrow — a rotated square whose two bordered edges form the
+            pointer. Sized + positioned in px (not rem) so its left/right
+            corners land exactly on the card's top border line: the element's
+            vertical center sits at the border (top = -border - size/2), and its
+            fill covers the border between the corners so there's no seam. */}
         <div
-          className="absolute z-10 w-3 h-3 rotate-45 bg-popover border-l border-t"
-          style={{ left: arrowLeft - 6, top: -6 }}
+          className="absolute z-10 rotate-45 bg-popover border-l border-t"
+          style={{ width: 12, height: 12, left: arrowLeft - 6, top: -7 }}
         />
         <button
           type="button"
