@@ -46,6 +46,14 @@ const NUDGES: Record<number, Nudge> = {
 const AUTO_DISMISS_MS = 10000;
 const CARD_W = 264;
 
+// The popup drops down over the progress bar, so it must not appear until the
+// bar's own animation has fully played and the user has seen it. On mobile the
+// bar defers its count ~320ms after the selection sheet closes, then runs its
+// fill slide + bead pop/ripple (~560ms) — hold the popup past that whole window.
+// Desktop has no sheet, so it only waits out the bar animation.
+const REVEAL_DELAY_MOBILE_MS = 950;
+const REVEAL_DELAY_DESKTOP_MS = 640;
+
 const prefersReducedMotion = () => {
   try {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -79,14 +87,14 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
   const confettiFor = useRef<number | null>(null);
 
   // On mobile the milestone is usually crossed from inside the selection sheet.
-  // Hold the whole celebration (popup + confetti) until that sheet closes so it
-  // floats into place where the user can see it, rather than under the sheet.
-  // Desktop shows immediately; a short beat after close lets it read as arriving.
+  // Hold the whole celebration (popup + confetti) until that sheet closes AND the
+  // progress bar has finished animating, so the popup floats in over a bar the
+  // user has already watched fill — never on top of the animation itself.
   const canShow = nudge != null && (isDesktop || !mobileBrowserOpen);
   const [armed, setArmed] = useState(false);
   useEffect(() => {
     if (!canShow) return; // hidden state resets via the cleanup below
-    const t = setTimeout(() => setArmed(true), isDesktop ? 0 : 340);
+    const t = setTimeout(() => setArmed(true), isDesktop ? REVEAL_DELAY_DESKTOP_MS : REVEAL_DELAY_MOBILE_MS);
     return () => {
       clearTimeout(t);
       setArmed(false);
