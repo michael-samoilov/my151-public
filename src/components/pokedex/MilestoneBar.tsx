@@ -34,6 +34,8 @@ const CONFIG = {
   // Red (progress) geometry. Grey = these + 2·outlineRem.
   trackRedRem: 0.26, // red fill thickness
   beadRedRem: 0.9, // red bead diameter
+  startBeadRedRem: 0.44, // origin node (smaller than a milestone bead) so the
+  // runway doesn't begin with a naked endcap; turns red once building starts.
 
   // Colors. Grey is OPAQUE (mixed toward card, no alpha) so overlaps don't seam.
   greyColor: 'color-mix(in srgb, var(--color-muted-foreground) 32%, var(--color-card))',
@@ -56,6 +58,7 @@ const CONFIG = {
 // Derived grey geometry — grey reads as a uniform border around the red.
 const GREY_TRACK_REM = CONFIG.trackRedRem + 2 * CONFIG.outlineRem;
 const GREY_BEAD_REM = CONFIG.beadRedRem + 2 * CONFIG.outlineRem;
+const GREY_START_REM = CONFIG.startBeadRedRem + 2 * CONFIG.outlineRem;
 const ICON_REM = CONFIG.beadRedRem * CONFIG.iconScale;
 
 const FEATURE_ICON: Record<MilestoneFeature, LucideIcon> = {
@@ -99,6 +102,11 @@ export function MilestoneBar() {
           className={`absolute left-0 right-0 rounded-full ${centerY}`}
           style={{ height: `${GREY_TRACK_REM}rem`, background: CONFIG.greyColor }}
         />
+        {/* origin knob so the runway doesn't begin with a naked endcap */}
+        <div
+          className={`absolute rounded-full ${centerXY}`}
+          style={{ left: '0%', width: `${GREY_START_REM}rem`, height: `${GREY_START_REM}rem`, background: CONFIG.greyColor }}
+        />
         {MILESTONE_DEFS.map((m) => (
           <div
             key={`g-${m.at}`}
@@ -122,6 +130,13 @@ export function MilestoneBar() {
             transition: `width ${CONFIG.fillTransitionMs}ms ease-out`,
           }}
         />
+        {/* red origin knob, once building has started */}
+        {count > 0 && (
+          <div
+            className={`absolute rounded-full ${centerXY}`}
+            style={{ left: '0%', width: `${CONFIG.startBeadRedRem}rem`, height: `${CONFIG.startBeadRedRem}rem`, background: CONFIG.fillColor }}
+          />
+        )}
         {MILESTONE_DEFS.map((m) => (
           <RedBead
             key={`r-${m.at}`}
