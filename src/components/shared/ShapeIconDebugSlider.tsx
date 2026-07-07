@@ -38,9 +38,9 @@ export function ShapeIconDebugSlider() {
             />
             <button
               type="button"
-              onClick={() => setScale(1.3)}
+              onClick={() => setScale(1.65)}
               className="text-muted-foreground hover:text-foreground cursor-pointer underline"
-              title="Reset to default (1.30)"
+              title="Reset to default (1.65)"
             >
               reset
             </button>

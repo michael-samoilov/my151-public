@@ -118,7 +118,7 @@ export const usePokedexStore = create<PokedexState>()(
       colorFilter: null,
       eggGroupFilter: null,
       evoLineSizeFilter: null,
-      shapeIconScale: 1.3,
+      shapeIconScale: 1.65,
       mobileBrowserOpen: false,
       drillDownSegment: null,
       drillDownPeek: true,

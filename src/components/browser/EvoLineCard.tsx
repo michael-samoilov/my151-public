@@ -6,7 +6,6 @@ import { typeIconPath } from '@/data/type-ids';
 import { ChevronRight, Sword } from 'lucide-react';
 import { GenBadge } from '@/components/shared/GenBadge';
 import { ShapeIcon } from '@/components/shared/ShapeIcon';
-import { usePokedexStore } from '@/store/usePokedexStore';
 import {
   PokemonTileContent,
   TILE_ACTION_BUTTON_CLASS,
@@ -250,8 +249,6 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
   // fully on every platform regardless of how briefly the user actually pressed.
   const [pressed, setPressed] = useState(false);
   const [pressedIdx, setPressedIdx] = useState<number | null>(null);
-  // Debug: global scale for the silhouette-in-circle shape badge (default 1.3).
-  const shapeIconScale = usePokedexStore((s) => s.shapeIconScale);
   const releaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pressStartedAt = useRef(0);
   // Hold the pressed state at least this long so a flash tap still animates.
@@ -372,13 +369,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                   <GenBadge gen={pokemon.generation} className={TILE_GEN_BADGE_CLASS} />
                 )}
                 {showShapeBadge && (
-                  <div
-                    className="absolute top-[calc(var(--tile-sprite)*0.03)] left-[calc(var(--tile-sprite)*0.03)] z-10 flex items-center justify-center rounded-full bg-background/90 border border-border p-[calc(var(--tile-sprite)*0.015)]"
-                    style={{
-                      width: `calc(var(--tile-sprite) * ${0.4 * shapeIconScale})`,
-                      height: `calc(var(--tile-sprite) * ${0.4 * shapeIconScale})`,
-                    }}
-                  >
+                  <div className="absolute top-[calc(var(--tile-sprite)*0.03)] left-[calc(var(--tile-sprite)*0.03)] w-[calc(var(--tile-sprite)*0.4)] h-[calc(var(--tile-sprite)*0.4)] z-10 flex items-center justify-center rounded-full bg-background/90 border border-border p-[calc(var(--tile-sprite)*0.015)]">
                     <ShapeIcon shape={pokemon.shape} className="w-full h-full" />
                   </div>
                 )}
