@@ -187,3 +187,23 @@ img {
 @media (prefers-reduced-motion: reduce) {
   .intro-float-a, .intro-float-b, .intro-float-c { animation: none; }
 }
+
+/* Milestone bead "pop" — plays once when a milestone is first reached. The
+ * positioning wrapper owns the translate centering; this animates only scale on
+ * an inner layer so the two never fight. Tunable via MilestoneBar CONFIG. */
+@keyframes milestone-pop {
+  0%   { transform: scale(0.4); opacity: 0.4; }
+  55%  { transform: scale(var(--ms-pop-scale, 1.35)); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes milestone-ripple {
+  0%   { transform: scale(0.6); opacity: 0.5; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .milestone-pop, .milestone-ripple { animation: none !important; }
+}
+
+/* Milestone bar responsive width (values fed from MilestoneBar CONFIG). */
+.milestone-bar { width: var(--ms-w-mobile); }
+@media (min-width: 1024px) { .milestone-bar { width: var(--ms-w-desktop); } }
