@@ -1,15 +1,32 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { TYPE_COLORS } from '@/data/type-colors';
+import type { TypeName } from '@/types/pokemon';
+import { getPokemonById } from '@/hooks/usePokemonData';
+import { computeViewSort } from '@/hooks/useViewSort';
+import { computeShowcaseStages, type ShowcaseStage } from '@/lib/introShowcase';
+import {
+  buildOutlines,
+  computeSectionRuns,
+  outlineStrokeW,
+  OUTLINE_GAP,
+  OUTLINE_PAD,
+  OUTLINE_STROKE_FRAC,
+} from '@/lib/sectionOutlines';
 import { X } from 'lucide-react';
+import shot45 from '@/assets/intro/shot-45.png';
+import shot95 from '@/assets/intro/shot-95-outlines.png';
+import shot151 from '@/assets/intro/shot-151-stats.png';
 
 /**
  * First-visit intro card — the top of the Build page for a brand-new visitor.
  *
  * Job: in a few seconds, communicate (1) what this is, (2) what the payoff
- * artifact looks like (the showcase fan), and (3) the one obvious first action
- * (choose your starters). Inline, not a modal: it should read as part of the
- * page, an invitation rather than an interstitial.
+ * artifact looks like (the showcase: the seed dex as a rising staircase of
+ * three poster cards — 45 plain → 95 with section outlines → a finished 151
+ * with outlines *and* the detailed-stats panel), and (3) the one obvious
+ * first action (choose your starters). Inline, not a modal: it should read as
+ * part of the page, an invitation rather than an interstitial.
  *
  * Lifecycle: shown only while the dex is empty and the card was never
  * dismissed. The ✕ dismisses it forever; placing the first Pokémon collapses
@@ -19,14 +36,33 @@ import { X } from 'lucide-react';
 
 const INTRO_SEEN_KEY = 'p151-intro-seen';
 
-/** Review override: `?intro` forces the card to show and never persists a
- *  dismissal. Needed because Vercel preview deployments auto-seed the full
- *  demo dex, which would otherwise hide the card before it can be reviewed. */
-const FORCE_INTRO = (() => {
+/** Poster-face design under evaluation: live-rendered colored dots, or
+ *  pre-rendered View-page screenshots. Overridable per visit via ?intro. */
+type FaceVariant = 'dots' | 'shots';
+const DEFAULT_FACE: FaceVariant = 'shots';
+const FACES = new Set<string>(['dots', 'shots']);
+
+/** Starter-CTA button treatment under evaluation (the colored starter dots
+ *  clash with the solid-red default; these are the contrast candidates). */
+type BtnVariant = 'solid' | 'outline' | 'gradient-border' | 'fade';
+const DEFAULT_BTN: BtnVariant = 'outline';
+const BTNS = new Set<string>(['solid', 'outline', 'gradient-border', 'fade']);
+
+/** Review overrides. `?intro[=face]` forces the card to show (Vercel previews
+ *  auto-seed the demo dex, which would otherwise hide it) and picks the face;
+ *  `?btn=<variant>` picks the button treatment. Neither persists a dismissal. */
+const { FORCE_INTRO, FACE, BTN } = (() => {
   try {
-    return new URLSearchParams(window.location.search).has('intro');
+    const q = new URLSearchParams(window.location.search);
+    const intro = q.get('intro');
+    const btn = q.get('btn');
+    return {
+      FORCE_INTRO: intro !== null || btn !== null,
+      FACE: (intro && FACES.has(intro) ? intro : DEFAULT_FACE) as FaceVariant,
+      BTN: (btn && BTNS.has(btn) ? btn : DEFAULT_BTN) as BtnVariant,
+    };
   } catch {
-    return false;
+    return { FORCE_INTRO: false, FACE: DEFAULT_FACE, BTN: DEFAULT_BTN };
   }
 })();
 
@@ -46,50 +82,150 @@ function markIntroSeen() {
   }
 }
 
-// ---------- placeholder poster faces ----------
+// ---------- showcase stages ----------
 
-// A deterministic spread of type colors so the dot grid reads as a varied,
-// personal dex rather than noise (and doesn't reshuffle between renders).
-const DOT_PALETTE = Object.values(TYPE_COLORS);
+const COLS = 10;
+const TOTAL_SLOTS = 151;
 
-/**
- * Stand-in poster face: a stylized miniature of the View-page grid — dot rows
- * standing in for tiles, filled to a given completion stage. Swappable later
- * for pre-rendered images of real sample dexes without touching the fan.
- */
-function PosterFace({ filled }: { filled: number }) {
-  const COLS = 12;
-  const total = 151;
-  const dots = [];
-  for (let i = 0; i < total; i++) {
-    const cx = 7 + (i % COLS) * 4.9;
-    const cy = 16 + Math.floor(i / COLS) * 4.9;
-    if (i < filled) {
-      dots.push(
-        <circle key={i} cx={cx} cy={cy} r={1.7} fill={DOT_PALETTE[(i * 7 + 4) % DOT_PALETTE.length]} opacity={0.85} />,
-      );
-    } else {
-      dots.push(
-        <circle key={i} cx={cx} cy={cy} r={1.4} fill="none" stroke="#d4d4d4" strokeWidth={0.6} />,
-      );
+// Each stage's face design ramps in richness as the dex fills: plain grid →
+// section outlines → outlines + detailed stats. (Stats is genuinely locked
+// under 100 Pokémon, so only the finished 151 can show it — the ramp mirrors
+// what the app actually unlocks.)
+interface StageStyle {
+  outlines: boolean;
+  stats: boolean;
+}
+const STAGE_STYLES: [StageStyle, StageStyle, StageStyle] = [
+  { outlines: false, stats: false },
+  { outlines: true, stats: false },
+  { outlines: true, stats: true },
+];
+
+const SHOT_SRCS = [shot45, shot95, shot151] as const;
+
+// ---------- dots face ----------
+
+/** Live miniature of the View-page poster from the seed dex: one dot per
+ *  Pokémon (its primary-type color) in exact View sort order, 10 columns,
+ *  151st slot centered on the last row, unfilled slots as faint rings. The
+ *  outlined variant reuses the real View outline geometry at dot scale. */
+function DotsGrid({ stage, outlines }: { stage: ShowcaseStage; outlines: boolean }) {
+  const { dots, shapes, viewBox, strokeW } = useMemo(() => {
+    const sorted = computeViewSort(stage.sections, 'build-order', true, null);
+    const tile = 10;
+    const gap = outlines ? OUTLINE_GAP * tile : tile * 0.12;
+    const pad = outlines ? OUTLINE_PAD * tile : 0;
+    const pitch = tile + gap;
+    const rows = Math.ceil(TOTAL_SLOTS / COLS);
+    const lastRowCount = TOTAL_SLOTS % COLS || COLS;
+    const lastRowOffsetCols = (COLS - lastRowCount) / 2;
+    const lastRowIndex = rows - 1;
+
+    const slotCenter = (i: number) => {
+      const row = Math.floor(i / COLS);
+      const col = row === lastRowIndex ? lastRowOffsetCols + (i - lastRowIndex * COLS) : i % COLS;
+      return { x: col * pitch + tile / 2, y: row * pitch + tile / 2 };
+    };
+
+    const dots = Array.from({ length: TOTAL_SLOTS }, (_, i) => {
+      const { x, y } = slotCenter(i);
+      const p = sorted[i];
+      return p
+        ? { key: i, x, y, color: TYPE_COLORS[p.types[0]] ?? '#a8a77a', filled: true }
+        : { key: i, x, y, color: '#d4d4d4', filled: false };
+    });
+
+    let shapes: ReturnType<typeof buildOutlines>['shapes'] = [];
+    if (outlines) {
+      const runs = computeSectionRuns(sorted, stage.sections, COLS);
+      const lastRowGeom =
+        lastRowOffsetCols > 0
+          ? { index: lastRowIndex, count: lastRowCount, offsetCols: lastRowOffsetCols }
+          : null;
+      shapes = buildOutlines(
+        runs, COLS, tile, new Set<number>(), 0, gap, pad, 0.5, lastRowGeom, OUTLINE_STROKE_FRAC,
+      ).shapes;
     }
-  }
+
+    const strokeW = outlineStrokeW(tile, OUTLINE_STROKE_FRAC);
+    const margin = pad + strokeW + 1;
+    const gridW = COLS * tile + (COLS - 1) * gap;
+    const gridH = rows * tile + (rows - 1) * gap;
+    const viewBox = `${-margin} ${-margin} ${gridW + 2 * margin} ${gridH + 2 * margin}`;
+    return { dots, shapes, viewBox, strokeW };
+  }, [stage, outlines]);
+
+  const tile = 10;
   return (
-    <svg viewBox="0 0 68 88" className="w-full h-full" aria-hidden="true">
-      <rect x={0} y={0} width={68} height={88} rx={3} fill="#ffffff" />
-      {/* title bar: pokéball dot + wordmark line, echoing the export header */}
-      <circle cx={9} cy={8.5} r={2.4} fill="none" stroke="#dc2626" strokeWidth={1.1} />
-      <line x1={6.6} y1={8.5} x2={11.4} y2={8.5} stroke="#dc2626" strokeWidth={0.8} />
-      <rect x={14} y={7} width={17} height={3} rx={1.5} fill="#e5e5e5" />
-      <rect x={54} y={7} width={8} height={3} rx={1.5} fill="#fca5a5" />
-      {dots}
-      {/* footer credit line */}
-      <rect x={22} y={82} width={24} height={2} rx={1} fill="#e5e5e5" />
+    <svg viewBox={viewBox} className="h-full w-auto block bg-white" aria-hidden="true">
+      {shapes.map((s) => (
+        <path key={`f-${s.key}`} d={s.fill} fill={`${s.fillColor}2a`}
+          fillOpacity={s.open ? 0.4 : 1} fillRule="evenodd" stroke="none" />
+      ))}
+      {shapes.map((s) => (
+        <path key={`s-${s.key}`} d={s.stroke} fill="none" stroke={s.strokeColor}
+          strokeOpacity={0.5} strokeWidth={strokeW} strokeLinejoin="round" strokeLinecap="round" />
+      ))}
+      {dots.map((d) =>
+        d.filled ? (
+          <circle key={d.key} cx={d.x} cy={d.y} r={tile * 0.33} fill={d.color} opacity={0.9} />
+        ) : (
+          <circle key={d.key} cx={d.x} cy={d.y} r={tile * 0.28} fill="none" stroke={d.color} strokeWidth={0.7} />
+        ),
+      )}
     </svg>
   );
 }
 
-// ---------- showcase fan ----------
+/** Abstract stand-in for the detailed-stats panel on the dots hero: a small
+ *  card of horizontal bars = the real top type counts of the finished dex,
+ *  colored by type. Gives the dots hero the same wide silhouette (and the
+ *  same "you get stats too" read) as the screenshot hero. */
+function DotsStats({ stage }: { stage: ShowcaseStage }) {
+  const bars = useMemo(() => {
+    const counts = new Map<TypeName, number>();
+    for (const id of Object.values(stage.sections).flat()) {
+      const t = getPokemonById(id)?.types[0];
+      if (t) counts.set(t, (counts.get(t) ?? 0) + 1);
+    }
+    const top = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 9);
+    const max = top.length ? top[0][1] : 1;
+    return top.map(([type, n], i) => ({ key: i, frac: n / max, color: TYPE_COLORS[type] ?? '#a8a77a' }));
+  }, [stage]);
+
+  const rowH = 9;
+  const gap = 4;
+  const h = bars.length * rowH + (bars.length - 1) * gap;
+  const labelW = 14;
+  const barMax = 46;
+  return (
+    <svg viewBox={`0 0 ${labelW + barMax + 2} ${h}`} className="h-full w-auto block bg-white" aria-hidden="true">
+      {bars.map((b, i) => {
+        const y = i * (rowH + gap);
+        return (
+          <g key={b.key}>
+            <rect x={0} y={y} width={labelW - 4} height={rowH} rx={2} fill={b.color} opacity={0.85} />
+            <rect x={labelW} y={y + rowH * 0.15} width={Math.max(2, b.frac * barMax)} height={rowH * 0.7} rx={2} fill={b.color} opacity={0.55} />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function DotsHero({ stage, outlines, stats }: { stage: ShowcaseStage; outlines: boolean; stats: boolean }) {
+  if (!stats) return <DotsGrid stage={stage} outlines={outlines} />;
+  return (
+    <div className="flex h-full items-stretch gap-[6%] bg-white px-[3%] py-[3%]">
+      <DotsGrid stage={stage} outlines={outlines} />
+      <div className="flex flex-col justify-center">
+        <DotsStats stage={stage} />
+      </div>
+    </div>
+  );
+}
+
+// ---------- showcase staircase ----------
 
 const REDUCED_MOTION =
   typeof window !== 'undefined' && 'matchMedia' in window
@@ -100,44 +236,18 @@ const FINE_POINTER =
     ? window.matchMedia('(pointer: fine)')
     : null;
 
-interface FanCard {
-  filled: number;
-  /** Base placement transform (applied on the outer wrapper; the idle float
-   *  animates the inner wrapper so the two transforms never fight). */
-  transform: string;
-  z: string;
-  width: string;
-  floatClass: string;
-}
+// Rising staircase: left→right the cards grow taller, lift higher, and stack
+// on top — reading as the dex progressing toward a richer, fuller finish.
+// Heights are in rem; widths follow each face's intrinsic aspect ratio.
+const STAIR = [
+  { height: '7.5rem', lift: '0.9rem', rotate: '-5deg', z: 'z-10', overlap: '-1.6rem', float: 'intro-float-a' },
+  { height: '8.6rem', lift: '0.45rem', rotate: '-2deg', z: 'z-20', overlap: '-1.9rem', float: 'intro-float-c' },
+  { height: '9.9rem', lift: '0rem', rotate: '1.5deg', z: 'z-30', overlap: '0', float: 'intro-float-b' },
+] as const;
 
-// Left→center reads as a dex growing toward completion; the finished poster
-// sits front and center as the promise.
-const FAN_CARDS: FanCard[] = [
-  {
-    filled: 47,
-    transform: 'translate(-50%, -50%) translateX(-3.8rem) rotate(-11deg) rotateY(18deg) translateY(0.4rem)',
-    z: 'z-10',
-    width: 'w-[5.6rem]',
-    floatClass: 'intro-float-a',
-  },
-  {
-    filled: 104,
-    transform: 'translate(-50%, -50%) translateX(3.8rem) rotate(11deg) rotateY(-18deg) translateY(0.4rem)',
-    z: 'z-10',
-    width: 'w-[5.6rem]',
-    floatClass: 'intro-float-c',
-  },
-  {
-    filled: 151,
-    transform: 'translate(-50%, -50%) translateY(-0.1rem)',
-    z: 'z-20',
-    width: 'w-[6.6rem]',
-    floatClass: 'intro-float-b',
-  },
-];
-
-function ShowcaseFan() {
+function ShowcaseStaircase() {
   const planeRef = useRef<HTMLDivElement>(null);
+  const stages = useMemo(() => computeShowcaseStages(), []);
 
   // Desktop-only pointer tilt (poke-holo style, restrained). Direct style
   // writes so mousemove never re-renders React.
@@ -147,34 +257,37 @@ function ShowcaseFan() {
     const r = e.currentTarget.getBoundingClientRect();
     const dx = (e.clientX - r.left) / r.width - 0.5;
     const dy = (e.clientY - r.top) / r.height - 0.5;
-    plane.style.transform = `rotateX(${(-dy * 7).toFixed(2)}deg) rotateY(${(dx * 9).toFixed(2)}deg)`;
+    plane.style.transform = `rotateX(${(-dy * 6).toFixed(2)}deg) rotateY(${(dx * 8).toFixed(2)}deg)`;
   }, []);
-
   const handleMouseLeave = useCallback(() => {
-    const plane = planeRef.current;
-    if (plane) plane.style.transform = '';
+    if (planeRef.current) planeRef.current.style.transform = '';
   }, []);
 
   return (
     <div
-      className="relative h-40 [perspective:900px]"
+      className="relative h-48 flex items-center justify-center [perspective:1000px]"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
       <div
         ref={planeRef}
-        className="absolute inset-0 [transform-style:preserve-3d] transition-transform duration-200 ease-out"
+        className="flex items-end justify-center [transform-style:preserve-3d] transition-transform duration-200 ease-out"
       >
-        {FAN_CARDS.map((card) => (
+        {STAIR.map((s, i) => (
           <div
-            key={card.filled}
-            className={`absolute left-1/2 top-1/2 ${card.z} ${card.width}`}
-            style={{ transform: card.transform }}
+            key={i}
+            className={`relative ${s.z} ${s.float}`}
+            style={{ height: s.height, marginLeft: i === 0 ? 0 : s.overlap, transform: `translateY(-${s.lift})` }}
           >
             <div
-              className={`aspect-[68/88] rounded-md border border-border/80 bg-white shadow-lg overflow-hidden ${card.floatClass}`}
+              className="h-full rounded-md border border-border/70 bg-white shadow-lg overflow-hidden"
+              style={{ transform: `rotate(${s.rotate})` }}
             >
-              <PosterFace filled={card.filled} />
+              {FACE === 'shots' ? (
+                <img src={SHOT_SRCS[i]} alt="" className="h-full w-auto block" draggable={false} />
+              ) : (
+                <DotsHero stage={stages[i]} outlines={STAGE_STYLES[i].outlines} stats={STAGE_STYLES[i].stats} />
+              )}
             </div>
           </div>
         ))}
@@ -183,9 +296,88 @@ function ShowcaseFan() {
   );
 }
 
-// ---------- intro card ----------
+// ---------- starter CTA (contrast variants) ----------
 
 const STARTER_DOTS = ['#7ac74c', '#ee8130', '#6390f0'];
+
+function StarterDots() {
+  return (
+    <span className="flex items-center gap-1" aria-hidden="true">
+      {STARTER_DOTS.map((c) => (
+        <span key={c} className="w-2 h-2 rounded-full" style={{ backgroundColor: c }} />
+      ))}
+    </span>
+  );
+}
+
+function StarterButton({ onClick }: { onClick: () => void }) {
+  const label = 'Choose your starters';
+
+  if (BTN === 'outline') {
+    // White surface, red border + red text: dots keep full saturation on white.
+    return (
+      <Button
+        onClick={onClick}
+        variant="outline"
+        className="mt-3.5 gap-2 border-2 border-primary text-primary hover:bg-primary/5 hover:text-primary"
+      >
+        <StarterDots />
+        {label}
+      </Button>
+    );
+  }
+
+  if (BTN === 'gradient-border') {
+    // White surface inside a 3-stop starter-color gradient border (padding-box
+    // fill + border-box gradient), dark text, saturated dots on white.
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="mt-3.5 inline-flex h-10 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium text-foreground transition-transform duration-150 ease-out active:scale-[0.96] cursor-pointer"
+        style={{
+          border: '2px solid transparent',
+          background:
+            'linear-gradient(var(--color-card), var(--color-card)) padding-box, ' +
+            'linear-gradient(90deg, #7ac74c, #ee8130, #6390f0) border-box',
+        }}
+      >
+        <StarterDots />
+        {label}
+      </button>
+    );
+  }
+
+  if (BTN === 'fade') {
+    // Red field that fades to a white zone on the left, so the dots sit on
+    // white; the label rides the red field in white type.
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="mt-3.5 inline-flex h-10 items-center justify-center gap-2 rounded-md pl-3 pr-4 text-sm font-medium text-white shadow-sm transition-transform duration-150 ease-out active:scale-[0.96] cursor-pointer"
+        style={{
+          background:
+            'linear-gradient(90deg, #ffffff 0%, #ffffff 14%, var(--color-primary) 34%, var(--color-primary) 100%)',
+        }}
+      >
+        <StarterDots />
+        <span className="drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">{label}</span>
+      </button>
+    );
+  }
+
+  // solid (baseline)
+  return (
+    <Button onClick={onClick} className="mt-3.5 gap-2">
+      <StarterDots />
+      {label}
+    </Button>
+  );
+}
+
+// ---------- intro card ----------
+
 const COLLAPSE_MS = 450;
 
 export function IntroCard({
@@ -238,31 +430,24 @@ export function IntroCard({
             type="button"
             aria-label="Dismiss intro"
             onClick={collapse}
-            className="absolute right-1 top-1 z-30 p-2.5 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+            className="absolute right-1 top-1 z-40 p-2.5 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
 
-          <div className="pt-5 bg-gradient-to-b from-muted/60 to-transparent">
-            <ShowcaseFan />
+          <div className="pt-4 bg-gradient-to-b from-muted/60 to-transparent">
+            <ShowcaseStaircase />
           </div>
 
-          <div className="px-5 pb-5 pt-3 text-center">
+          <div className="px-5 pb-5 pt-2 text-center">
             <h2 className="text-xl font-extrabold tracking-tight">
               Build your own <span className="text-primary">151</span>
             </h2>
             <p className="mt-1.5 mx-auto max-w-[26rem] text-sm text-muted-foreground text-pretty">
               Hand-pick your favorites from all 1,025 Pokémon into a Pokédex
-              that&rsquo;s entirely yours — then share it as a poster.
+              that&rsquo;s entirely yours.
             </p>
-            <Button onClick={onChooseStarters} className="mt-3.5 gap-2">
-              <span className="flex items-center gap-1" aria-hidden="true">
-                {STARTER_DOTS.map((c) => (
-                  <span key={c} className="w-2 h-2 rounded-full" style={{ backgroundColor: c }} />
-                ))}
-              </span>
-              Choose your starters
-            </Button>
+            <StarterButton onClick={onChooseStarters} />
           </div>
         </div>
       </div>
