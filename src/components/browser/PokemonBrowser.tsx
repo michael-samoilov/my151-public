@@ -8,8 +8,9 @@ import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms } from '@/
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { ARCHETYPES } from '@/data/archetypes';
 import { CATEGORIES } from '@/data/categories';
-import { TYPE_NAMES, type ShapeName } from '@/types/pokemon';
+import { TYPE_NAMES, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
 import { ShapeIcon, SHAPE_LABELS, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
+import { COLOR_ORDER, COLOR_LABELS, COLOR_SWATCHES, EGG_GROUP_ORDER, EGG_GROUP_LABELS } from '@/data/classifications';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeBadgePath } from '@/data/type-ids';
 import { Search, X, ChevronDown } from 'lucide-react';
@@ -17,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { BUILD_GROUPS } from '@/data/slot-template';
 
-type FilterSheet = 'type' | 'generation' | 'shape' | 'evoStage' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
+type FilterSheet = 'type' | 'generation' | 'evoStage' | 'shape' | 'color' | 'eggGroup' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -35,8 +36,10 @@ function useIsDesktop() {
 const SHEET_TITLES: Record<string, string> = {
   type: 'Type',
   generation: 'Generation',
-  shape: 'Body Shape',
   evoStage: 'Evo Stages',
+  shape: 'Body Shape',
+  color: 'Color',
+  eggGroup: 'Egg Group',
   classification: 'Classification',
   places: 'Places',
   archetypes: 'Archetypes',
@@ -66,6 +69,12 @@ export function PokemonBrowser() {
   const shapeFilter = usePokedexStore((s) => s.shapeFilter);
   const setShapeFilter = usePokedexStore((s) => s.setShapeFilter);
   const toggleShape = usePokedexStore((s) => s.toggleShape);
+  const colorFilter = usePokedexStore((s) => s.colorFilter);
+  const setColorFilter = usePokedexStore((s) => s.setColorFilter);
+  const toggleColor = usePokedexStore((s) => s.toggleColor);
+  const eggGroupFilter = usePokedexStore((s) => s.eggGroupFilter);
+  const setEggGroupFilter = usePokedexStore((s) => s.setEggGroupFilter);
+  const toggleEggGroup = usePokedexStore((s) => s.toggleEggGroup);
   const evoLineSizeFilter = usePokedexStore((s) => s.evoLineSizeFilter);
   const setEvoLineSizeFilter = usePokedexStore((s) => s.setEvoLineSizeFilter);
   const sections = usePokedexStore((s) => s.sections);
@@ -218,6 +227,8 @@ export function PokemonBrowser() {
     typeMode: typeFilterMode,
     generations: generationFilter,
     shapes: shapeFilter,
+    colors: colorFilter,
+    eggGroups: eggGroupFilter,
     evoLineSize: evoLineSizeFilter,
   });
 
@@ -284,7 +295,7 @@ export function PokemonBrowser() {
   const showGenBadges = !hasCustomSubgroups || activeArchetype === 'cross-gen-evo' || activeCategory === 'starter';
 
   const isSearching = searchQuery.trim().length > 0;
-  const hasActivePropertyFilters = !!((typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || (shapeFilter && shapeFilter.length > 0) || evoLineSizeFilter);
+  const hasActivePropertyFilters = !!((typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || (shapeFilter && shapeFilter.length > 0) || (colorFilter && colorFilter.length > 0) || (eggGroupFilter && eggGroupFilter.length > 0) || evoLineSizeFilter);
   const hasActiveBrowseFilters = !!(activeCategory || activeArchetype);
   const hasActiveFilters = hasActivePropertyFilters || hasActiveBrowseFilters;
 
@@ -293,6 +304,8 @@ export function PokemonBrowser() {
     setTypeFilterMode('any');
     setGenerationFilter(null);
     setShapeFilter(null);
+    setColorFilter(null);
+    setEggGroupFilter(null);
     setEvoLineSizeFilter(null);
   };
   const clearBrowseFilters = () => {
@@ -316,6 +329,9 @@ export function PokemonBrowser() {
   }, [isSearching, groups]);
   const typeKey = typeFilter ? `${typeFilterMode}-${typeFilter.join(',')}` : 'none';
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
+  const shapeKey = shapeFilter ? shapeFilter.join(',') : 'none';
+  const colorKey = colorFilter ? colorFilter.join(',') : 'none';
+  const eggKey = eggGroupFilter ? eggGroupFilter.join(',') : 'none';
   const evoSizeKey = evoLineSizeFilter ? evoLineSizeFilter.join(',') : 'none';
 
   // Reset the results scroll position when the active filter set changes.
@@ -325,7 +341,7 @@ export function PokemonBrowser() {
   // from scratch — catastrophic for INP. Scrolling the existing node to
   // the top gives the same UX at ~0 ms cost.
   const resultsScrollRef = useRef<HTMLDivElement>(null);
-  const resultsResetKey = `${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${searchQuery}-${evoSizeKey}`;
+  const resultsResetKey = `${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${shapeKey}-${colorKey}-${eggKey}-${searchQuery}-${evoSizeKey}`;
   useEffect(() => {
     resultsScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [resultsResetKey]);
@@ -435,6 +451,45 @@ export function PokemonBrowser() {
             >
               <ShapeIcon shape={shape} className="w-5 h-5" />
               <span className="text-[0.5625rem] leading-tight truncate max-w-full">{SHAPE_LABELS[shape]}</span>
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {openSheet === 'color' && (
+        <div className="grid grid-cols-4 md:grid-cols-5 gap-1.5">
+          {COLOR_ORDER.map((color) => {
+            const isSelected = colorFilter?.includes(color) ?? false;
+            return (
+              <Button
+                key={color}
+                variant={isSelected ? 'default' : 'secondary'}
+                className="h-12 flex items-center justify-center gap-1.5 px-2"
+                onClick={() => toggleColor(color)}
+                title={COLOR_LABELS[color]}
+              >
+                <span
+                  className="w-4 h-4 rounded-full border border-black/20 shrink-0"
+                  style={{ backgroundColor: COLOR_SWATCHES[color] }}
+                />
+                <span className="text-xs">{COLOR_LABELS[color]}</span>
+              </Button>
+            );
+          })}
+        </div>
+      )}
+
+      {openSheet === 'eggGroup' && (
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-1.5">
+          {EGG_GROUP_ORDER.map((group) => (
+            <Button
+              key={group}
+              variant={eggGroupFilter?.includes(group) ? 'default' : 'secondary'}
+              className="h-10 text-xs px-1"
+              onClick={() => toggleEggGroup(group)}
+              title={EGG_GROUP_LABELS[group]}
+            >
+              {EGG_GROUP_LABELS[group]}
             </Button>
           ))}
         </div>
@@ -576,6 +631,17 @@ export function PokemonBrowser() {
             <EntryChip label="Gen" onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')} active={openSheet === 'generation'} />
           )}
 
+          {evoLineSizeFilter ? (
+            <FilterChip
+              label={`${evoLineSizeFilter.map(s => s === 3 ? '3+' : String(s)).join(',')} stage`}
+              onDismiss={() => setEvoLineSizeFilter(null)}
+              onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')}
+              className="bg-foreground text-background"
+            />
+          ) : (
+            <EntryChip label="Stages" onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
+          )}
+
           {shapeFilter && shapeFilter.length > 0 ? (
             shapeFilter.length <= 2 ? (
               shapeFilter.map(s => (
@@ -599,15 +665,50 @@ export function PokemonBrowser() {
             <EntryChip label="Shape" onClick={() => setOpenSheet(openSheet === 'shape' ? null : 'shape')} active={openSheet === 'shape'} />
           )}
 
-          {evoLineSizeFilter ? (
-            <FilterChip
-              label={`${evoLineSizeFilter.map(s => s === 3 ? '3+' : String(s)).join(',')} stage`}
-              onDismiss={() => setEvoLineSizeFilter(null)}
-              onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')}
-              className="bg-foreground text-background"
-            />
+          {colorFilter && colorFilter.length > 0 ? (
+            colorFilter.length <= 2 ? (
+              colorFilter.map(c => (
+                <FilterChip
+                  key={c}
+                  label={COLOR_LABELS[c as ColorName] ?? c}
+                  onDismiss={() => toggleColor(c)}
+                  onClick={() => setOpenSheet(openSheet === 'color' ? null : 'color')}
+                  className="bg-foreground text-background"
+                />
+              ))
+            ) : (
+              <FilterChip
+                label={`${colorFilter.length} Colors`}
+                onDismiss={() => setColorFilter(null)}
+                onClick={() => setOpenSheet(openSheet === 'color' ? null : 'color')}
+                className="bg-foreground text-background"
+              />
+            )
           ) : (
-            <EntryChip label="Stages" onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
+            <EntryChip label="Color" onClick={() => setOpenSheet(openSheet === 'color' ? null : 'color')} active={openSheet === 'color'} />
+          )}
+
+          {eggGroupFilter && eggGroupFilter.length > 0 ? (
+            eggGroupFilter.length <= 2 ? (
+              eggGroupFilter.map(g => (
+                <FilterChip
+                  key={g}
+                  label={EGG_GROUP_LABELS[g as EggGroupName] ?? g}
+                  onDismiss={() => toggleEggGroup(g)}
+                  onClick={() => setOpenSheet(openSheet === 'eggGroup' ? null : 'eggGroup')}
+                  className="bg-foreground text-background"
+                />
+              ))
+            ) : (
+              <FilterChip
+                label={`${eggGroupFilter.length} Egg Groups`}
+                onDismiss={() => setEggGroupFilter(null)}
+                onClick={() => setOpenSheet(openSheet === 'eggGroup' ? null : 'eggGroup')}
+                className="bg-foreground text-background"
+              />
+            )
+          ) : (
+            <EntryChip label="Egg Group" onClick={() => setOpenSheet(openSheet === 'eggGroup' ? null : 'eggGroup')} active={openSheet === 'eggGroup'} />
           )}
 
           </div>
@@ -911,6 +1012,9 @@ function SheetOverlay({ onClose, openSheet, children, footer, onHeight }: {
             {openSheet === 'type' && 'Type'}
             {openSheet === 'generation' && 'Generation'}
             {openSheet === 'evoStage' && 'Evo Stages'}
+            {openSheet === 'shape' && 'Body Shape'}
+            {openSheet === 'color' && 'Color'}
+            {openSheet === 'eggGroup' && 'Egg Group'}
             {openSheet === 'classification' && 'Classification'}
             {openSheet === 'places' && 'Places'}
             {openSheet === 'archetypes' && 'Archetypes'}

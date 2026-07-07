@@ -40,6 +40,8 @@ interface PokedexState {
   typeFilterMode: TypeFilterMode; // 'any' = OR, 'all' = AND (dual-type)
   generationFilter: number[] | null; // multi-select generations
   shapeFilter: string[] | null; // multi-select body shapes (dex shape groups)
+  colorFilter: string[] | null; // multi-select Pokédex colors
+  eggGroupFilter: string[] | null; // multi-select egg groups
   evoLineSizeFilter: number[] | null; // [1], [2], [3] where 3 means 3+
   mobileBrowserOpen: boolean;
   drillDownSegment: DrillDownSegment | null;
@@ -80,6 +82,10 @@ interface PokedexState {
   toggleGeneration: (gen: number) => void;
   setShapeFilter: (shapes: string[] | null) => void;
   toggleShape: (shape: string) => void;
+  setColorFilter: (colors: string[] | null) => void;
+  toggleColor: (color: string) => void;
+  setEggGroupFilter: (groups: string[] | null) => void;
+  toggleEggGroup: (group: string) => void;
   setEvoLineSizeFilter: (sizes: number[] | null) => void;
   openDrillDown: (segment: DrillDownSegment, siblings?: DrillDownSegment[], excludeSpecial?: boolean, dexId?: string | null, newOnly?: boolean) => void;
   expandDrillDown: () => void;
@@ -107,6 +113,8 @@ export const usePokedexStore = create<PokedexState>()(
       typeFilterMode: 'any' as TypeFilterMode,
       generationFilter: null,
       shapeFilter: null,
+      colorFilter: null,
+      eggGroupFilter: null,
       evoLineSizeFilter: null,
       mobileBrowserOpen: false,
       drillDownSegment: null,
@@ -301,6 +309,26 @@ export const usePokedexStore = create<PokedexState>()(
           ? current.filter(s => s !== shape)
           : [...current, shape];
         return { shapeFilter: next.length > 0 ? next : null };
+      }),
+
+      setColorFilter: (colors) => set({ colorFilter: colors }),
+
+      toggleColor: (color) => set((state) => {
+        const current = state.colorFilter ?? [];
+        const next = current.includes(color)
+          ? current.filter(c => c !== color)
+          : [...current, color];
+        return { colorFilter: next.length > 0 ? next : null };
+      }),
+
+      setEggGroupFilter: (groups) => set({ eggGroupFilter: groups }),
+
+      toggleEggGroup: (group) => set((state) => {
+        const current = state.eggGroupFilter ?? [];
+        const next = current.includes(group)
+          ? current.filter(g => g !== group)
+          : [...current, group];
+        return { eggGroupFilter: next.length > 0 ? next : null };
       }),
 
       setEvoLineSizeFilter: (sizes) => set({ evoLineSizeFilter: sizes }),

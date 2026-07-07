@@ -16,6 +16,24 @@ export const SHAPE_NAMES = [
 
 export type ShapeName = typeof SHAPE_NAMES[number];
 
+/** Official Pokédex color groups (the 10 `pokemon_colors` classifications).
+ *  Populated onto pokemon.json by scripts/add-color-egg.mjs. */
+export const COLOR_NAMES = [
+  'black', 'blue', 'brown', 'gray', 'green', 'pink', 'purple', 'red', 'white', 'yellow',
+] as const;
+
+export type ColorName = typeof COLOR_NAMES[number];
+
+/** Official egg groups (the 15 `egg_groups` classifications, using PokeAPI's
+ *  internal identifiers; display names live in EggGroupFilter). A species has
+ *  one or two. Populated onto pokemon.json by scripts/add-color-egg.mjs. */
+export const EGG_GROUP_NAMES = [
+  'monster', 'water1', 'water2', 'water3', 'bug', 'flying', 'ground', 'fairy',
+  'plant', 'humanshape', 'mineral', 'indeterminate', 'ditto', 'dragon', 'no-eggs',
+] as const;
+
+export type EggGroupName = typeof EGG_GROUP_NAMES[number];
+
 export interface PokemonStats {
   hp: number;
   atk: number;
@@ -44,6 +62,8 @@ export interface Pokemon {
   sprite: string;
   archetypes: string[];
   shape: ShapeName;
+  color: ColorName;
+  eggGroups: EggGroupName[];
 }
 
 export interface DexSlot {

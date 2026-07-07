@@ -333,6 +333,8 @@ interface UseFilteredPokemonOptions {
   typeMode?: 'any' | 'all';
   generations?: number[] | null;
   shapes?: string[] | null; // body-shape groups (Pokemon.shape)
+  colors?: string[] | null; // Pokédex colors (Pokemon.color)
+  eggGroups?: string[] | null; // egg groups (Pokemon.eggGroups — matches if any overlap)
   excludeIds?: Set<number>;
   evoLineSize?: number[] | null; // [1], [2], [3] where 3 means 3+
 }
@@ -345,6 +347,8 @@ function useFilteredPokemon({
   typeMode = 'any',
   generations = null,
   shapes = null,
+  colors = null,
+  eggGroups = null,
   excludeIds,
 }: UseFilteredPokemonOptions): Pokemon[] {
   // Serialize excludeIds to a stable string for memo deps
@@ -356,6 +360,8 @@ function useFilteredPokemon({
   const typesKey = types ? types.join(',') : '';
   const gensKey = generations ? generations.join(',') : '';
   const shapesKey = shapes ? shapes.join(',') : '';
+  const colorsKey = colors ? colors.join(',') : '';
+  const eggGroupsKey = eggGroups ? eggGroups.join(',') : '';
 
   return useMemo(() => {
     let filtered = pokemonList;
@@ -410,6 +416,16 @@ function useFilteredPokemon({
         const shapeSet = new Set(shapes);
         filtered = filtered.filter(p => shapeSet.has(p.shape));
       }
+
+      if (colors && colors.length > 0) {
+        const colorSet = new Set(colors);
+        filtered = filtered.filter(p => colorSet.has(p.color));
+      }
+
+      if (eggGroups && eggGroups.length > 0) {
+        const eggSet = new Set(eggGroups);
+        filtered = filtered.filter(p => p.eggGroups.some(g => eggSet.has(g)));
+      }
     }
 
     if (archetype !== 'evolution-item') {
@@ -421,7 +437,7 @@ function useFilteredPokemon({
     }
 
     return filtered;
-  }, [search, category, archetype, typesKey, typeMode, gensKey, shapesKey, excludeIds, excludeKey]);
+  }, [search, category, archetype, typesKey, typeMode, gensKey, shapesKey, colorsKey, eggGroupsKey, excludeIds, excludeKey]);
 }
 
 export interface EvolutionGroup {
