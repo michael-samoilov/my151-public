@@ -24,7 +24,7 @@ const NUDGES: Record<number, Nudge> = {
   25: {
     nav: 'analytics',
     title: 'Analytics unlocked',
-    body: 'Your dex has enough shape to analyze — see how it stacks up against the national dex.',
+    body: 'Your dex has enough shape to analyze. See how it stacks up against the national dex.',
     cta: 'Open Analytics',
   },
   100: {
@@ -36,7 +36,7 @@ const NUDGES: Record<number, Nudge> = {
   151: {
     nav: 'view',
     title: 'Your 151 is complete! 🎉',
-    body: 'Export your dex as a poster and share it — the Export button is in View.',
+    body: 'Export your dex as a poster and share it. The Export button is in View.',
     cta: 'Open View',
   },
 };
@@ -120,12 +120,13 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
 
   return createPortal(
     <div className="fixed z-[220]" style={{ left, top, width: CARD_W }} role="status">
-      {/* up-arrow */}
-      <div
-        className="absolute -top-2 w-4 h-4 rotate-45 bg-popover border-l border-t"
-        style={{ left: arrowLeft - 8 }}
-      />
       <div className="relative rounded-lg border bg-popover shadow-xl p-3 animate-in fade-in-0 slide-in-from-top-1">
+        {/* up-arrow — sits above the card so its fill covers the card's top
+            border at this x (no seam); its two edges continue the outline. */}
+        <div
+          className="absolute z-10 w-3 h-3 rotate-45 bg-popover border-l border-t"
+          style={{ left: arrowLeft - 6, top: -6 }}
+        />
         <button
           type="button"
           aria-label="Dismiss"

@@ -21,7 +21,7 @@ export interface MilestoneDef {
 }
 
 export const MILESTONE_DEFS: readonly MilestoneDef[] = [
-  { at: 25, feature: 'analytics', title: 'Analytics unlocked', detail: 'Your dex has enough shape to analyze — see how it stacks up.' },
+  { at: 25, feature: 'analytics', title: 'Analytics unlocked', detail: 'Your dex has enough shape to analyze. See how it stacks up.' },
   { at: 100, feature: 'stats', title: 'Detailed stats unlocked', detail: 'Type, generation, and base-stat charts are now available in View.' },
   { at: DEX_TOTAL, feature: 'complete', title: 'Your 151 is complete', detail: 'Share it, or keep refining your picks.' },
 ] as const;

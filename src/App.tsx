@@ -31,6 +31,7 @@ import { useCompletionBeacon } from '@/hooks/useCompletionBeacon';
 import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
 import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
 import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
+import { isAnalyticsUnlocked } from '@/lib/milestones';
 import { cn } from '@/lib/utils';
 
 declare const __BUILD_TIMESTAMP__: string;
@@ -161,6 +162,8 @@ function App() {
   }, []);
 
   const handleViewChange = useCallback((view: AppView) => {
+    // Analytics is gated until 25 Pokémon (sticky). Guard every path here.
+    if (view === 'analytics' && !isAnalyticsUnlocked(usePokedexStore.getState().milestoneMax)) return;
     if (view === 'view') viewMounted.current = true;
     if (view === 'analytics') analyticsMounted.current = true;
     setCurrentView(view);
