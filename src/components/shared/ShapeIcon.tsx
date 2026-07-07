@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { SHAPE_NAMES, type ShapeName } from '@/types/pokemon';
-import { usePokedexStore } from '@/store/usePokedexStore';
+
+/** Size multiplier for the silhouette-in-circle icons (chart column + shape
+ *  drilldown header/nav) — tuned to read well against the labels/sprites. */
+export const SHAPE_ICON_SCALE = 1.65;
 
 /**
  * The official Pokémon HOME body-shape icons (the 14 silhouettes used by the
@@ -45,13 +48,11 @@ export function ShapeIcon({ shape, className }: { shape: ShapeName; className?: 
 }
 
 /** Silhouette-in-circle variant: the shape sits inside a bordered disc (like the
- *  official HOME shape-search icons). `size` is the base diameter in px, scaled
- *  live by the store's `shapeIconScale` debug knob; the silhouette fills ~70% of
- *  it. Used in the shape drilldown header / nav for a consistent badge look with
- *  the chart. */
+ *  official HOME shape-search icons). `size` is the base diameter in px (scaled by
+ *  SHAPE_ICON_SCALE); the silhouette fills ~70% of it. Used in the shape drilldown
+ *  header / nav for a consistent badge look with the chart. */
 export function ShapeIconCircle({ shape, size = 20, className }: { shape: ShapeName; size?: number; className?: string }) {
-  const scale = usePokedexStore((s) => s.shapeIconScale);
-  const px = size * scale;
+  const px = size * SHAPE_ICON_SCALE;
   return (
     <span
       className={cn(

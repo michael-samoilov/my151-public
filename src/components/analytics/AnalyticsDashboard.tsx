@@ -12,7 +12,7 @@ import { STARTER_IDS } from '@/data/categories';
 import { typeIconPath } from '@/data/type-ids';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
-import { SHAPE_ORDER, SHAPE_LABELS, shapeChartIcon } from '@/components/shared/ShapeIcon';
+import { SHAPE_ORDER, SHAPE_LABELS, shapeChartIcon, SHAPE_ICON_SCALE } from '@/components/shared/ShapeIcon';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { StageDistributionChart } from './StageDistributionChart';
@@ -80,7 +80,6 @@ export function AnalyticsDashboard() {
 
   const analytics = useAnalytics();
   const sections = usePokedexStore((s) => s.sections);
-  const shapeIconScale = usePokedexStore((s) => s.shapeIconScale);
   const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
   const drillDownDexId = usePokedexStore((s) => s.drillDownDexId);
   const openDrillDown = usePokedexStore((s) => s.openDrillDown);
@@ -703,7 +702,7 @@ export function AnalyticsDashboard() {
               onSortChange={setShapeSortBy}
               labelHeader="SHAPE"
               labelWidthBase={80}
-              iconScale={shapeIconScale}
+              iconScale={SHAPE_ICON_SCALE}
               onBarClick={(label) => {
                 const shape = LABEL_TO_SHAPE.get(label);
                 if (shape) handleDrillToggle({ kind: 'shape', shape }, shapeSiblings);
