@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { MILESTONE_DEFS, DEX_TOTAL, type MilestoneFeature } from '@/lib/milestones';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal } from '@/components/ui/tooltip';
 import { BarChart3, Camera, Sparkles, Trophy, Lock, type LucideIcon } from 'lucide-react';
 
 /**
@@ -15,41 +15,48 @@ import { BarChart3, Camera, Sparkles, Trophy, Lock, type LucideIcon } from 'luci
  * is fully OPAQUE (blended toward the card color, not alpha), so overlapping
  * grey track + grey beads never compound into visible seams.
  *
- * The fill tracks the CURRENT count; a bead's unlocked glyph tracks the sticky
- * `milestoneMax`. Placed absolutely-centered in the n/151 header by its parent,
- * so it never shifts as page-specific buttons differ.
+ * The fill tracks the CURRENT count but SKIPS each red bead's footprint (see
+ * computeFillFraction), so the very next pick after a milestone visibly jumps
+ * the fill past the bead instead of hiding under it. A bead's unlocked glyph
+ * tracks the sticky `milestoneMax`. Placed absolutely-centered in the n/151
+ * header by its parent, so it never shifts as page buttons differ.
  *
- * Tuning: append `?tune` to the URL for a dev-only slider panel (MilestoneTunePanel,
- * mounted in App) that live-overrides the numeric CONFIG knobs and scrubs a
- * preview count. Copy the panel's values back into DEFAULT_CONFIG when happy.
+ * Tuning: append `?tune` for a dev-only slider panel (MilestoneTunePanel,
+ * mounted in App). Copy its values back into DEFAULT_CONFIG when happy.
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DEFAULT_CONFIG — every visual knob. Sizes are in rem (scale with the app's
-// root font-size). Grey sizes are DERIVED: red + 2·outlineRem.
+// DEFAULT_CONFIG — every visual knob. Sizes are in rem. Grey sizes are DERIVED:
+// red + 2·outlineRem.
 // ─────────────────────────────────────────────────────────────────────────────
 const DEFAULT_CONFIG = {
   widthMobileRem: 11,
   widthDesktopRem: 15.5,
 
   // Uniform grey border thickness wrapping the red everywhere.
-  outlineRem: 0.14,
+  outlineRem: 0.27,
 
   // Red (progress) geometry. Grey = these + 2·outlineRem.
-  trackRedRem: 0.26, // red fill thickness
-  beadRedRem: 0.9, // red bead diameter
-  startBeadRedRem: 0.44, // origin node (smaller than a milestone bead)
+  trackRedRem: 0.46, // red fill thickness
+  beadRedRem: 1.22, // red bead diameter
+  startBeadRedRem: 0.68, // origin node (smaller than a milestone bead)
 
   // Colors. Grey is OPAQUE (mixed toward card, no alpha) so overlaps don't seam.
   greyColor: 'color-mix(in srgb, var(--color-muted-foreground) 32%, var(--color-card))',
   fillColor: 'var(--color-primary)',
-  fillTransitionMs: 550,
+  fillTransitionMs: 700,
 
   // Icons (sized relative to the RED bead so they never crowd the circle).
-  iconScale: 0.62,
-  iconStroke: 2.5,
-  iconIdleColor: 'var(--color-muted-foreground)',
+  iconScale: 0.59,
+  iconStroke: 2.2,
+  iconIdleColor: 'var(--color-primary-foreground)', // white before reached, too
   iconReachedColor: 'var(--color-primary-foreground)',
+
+  // Optional hairline dividers flanking the bar, so the counter (left) and
+  // page buttons (right) read as intentionally aligned around a framed bar.
+  showDividers: false,
+  dividerGapRem: 0.6,
+  dividerColor: 'color-mix(in srgb, var(--color-muted-foreground) 38%, var(--color-card))',
 
   // Reach micro-interaction (one-time "pop" when a bead is first reached).
   popScale: 1.4,
@@ -70,6 +77,29 @@ function deriveDims(cfg: BarConfig) {
     greyStart: cfg.startBeadRedRem + 2 * cfg.outlineRem,
     iconRem: cfg.beadRedRem * cfg.iconScale,
   };
+}
+
+// Milestone counts including the two ends (0 and 151), for the fill remap.
+const STOPS = [0, 25, 50, 100, DEX_TOTAL];
+
+/**
+ * Fill fraction (0..1) for a given count, with each milestone bead's footprint
+ * skipped. `hw` = red-bead half-width as a fraction of the track. Between
+ * milestones the fill runs to the NEXT bead's left edge; crossing a milestone
+ * jumps it to that bead's right edge — so the first pick after a milestone
+ * moves the fill visibly past the bead instead of hiding under it.
+ */
+function computeFillFraction(count: number, hw: number): number {
+  const c = Math.max(0, Math.min(DEX_TOTAL, count));
+  if (c <= 0) return 0;
+  const fc = STOPS.map((s) => s / DEX_TOTAL);
+  const lastSeg = STOPS.length - 2;
+  let i = 0;
+  while (i < lastSeg && c > STOPS[i + 1]) i++;
+  const left = i === 0 ? 0 : fc[i] + hw; // resume past the bead just crossed
+  const right = i === lastSeg ? 1 : fc[i + 1] - hw; // stop at next bead's edge
+  const t = (c - STOPS[i]) / (STOPS[i + 1] - STOPS[i]);
+  return Math.min(1, Math.max(0, left + t * (right - left)));
 }
 
 const FEATURE_ICON: Record<MilestoneFeature, LucideIcon> = {
@@ -114,7 +144,7 @@ const TUNE = (() => {
   }
 })();
 
-let _overrides: Partial<Record<NumericKey, number>> = {};
+let _overrides: Partial<BarConfig> = {};
 let _preview: number | null = null;
 const _subs = new Set<() => void>();
 const _emit = () => _subs.forEach((f) => f());
@@ -125,7 +155,7 @@ const tuneStore = {
   },
   overrides: () => _overrides,
   preview: () => _preview,
-  set(key: NumericKey, val: number) {
+  set<K extends keyof BarConfig>(key: K, val: BarConfig[K]) {
     _overrides = { ..._overrides, [key]: val };
     _emit();
   },
@@ -149,6 +179,23 @@ function usePreviewCount(): number | null {
   return useSyncExternalStore(tuneStore.subscribe, tuneStore.preview, tuneStore.preview);
 }
 
+function useIsDesktop(): boolean {
+  const [d, setD] = useState(() => {
+    try {
+      return window.matchMedia('(min-width: 1024px)').matches;
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const h = (e: MediaQueryListEvent) => setD(e.matches);
+    mq.addEventListener('change', h);
+    return () => mq.removeEventListener('change', h);
+  }, []);
+  return d;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function MilestoneBar() {
@@ -162,21 +209,41 @@ export function MilestoneBar() {
   const cfg = useBarConfig();
   const d = deriveDims(cfg);
   const preview = usePreviewCount();
+  const isDesktop = useIsDesktop();
+
   const count = TUNE && preview !== null ? preview : realCount;
   const milestoneMax = TUNE && preview !== null ? Math.max(storeMax, preview) : storeMax;
-  const pct = Math.min(100, (count / DEX_TOTAL) * 100);
+
+  // Red-bead half-width as a fraction of the track (rootFontSize cancels since
+  // both bead and track are in rem), used to skip bead footprints in the fill.
+  const trackWidthRem = isDesktop ? cfg.widthDesktopRem : cfg.widthMobileRem;
+  const hw = cfg.beadRedRem / 2 / trackWidthRem;
+  const fillPct = computeFillFraction(count, hw) * 100;
 
   const centerY = 'top-1/2 -translate-y-1/2';
   const centerXY = 'top-1/2 -translate-x-1/2 -translate-y-1/2';
 
   return (
     <div
-      className="milestone-bar select-none"
+      className="milestone-bar select-none relative"
       style={{
         ['--ms-w-mobile' as string]: `${cfg.widthMobileRem}rem`,
         ['--ms-w-desktop' as string]: `${cfg.widthDesktopRem}rem`,
       }}
     >
+      {cfg.showDividers && (
+        <>
+          <div
+            className={`absolute ${centerY}`}
+            style={{ left: `${-cfg.dividerGapRem}rem`, width: '1px', height: `${d.greyBead}rem`, background: cfg.dividerColor }}
+          />
+          <div
+            className={`absolute ${centerY}`}
+            style={{ right: `${-cfg.dividerGapRem}rem`, width: '1px', height: `${d.greyBead}rem`, background: cfg.dividerColor }}
+          />
+        </>
+      )}
+
       <div className="relative" style={{ height: `${d.greyBead}rem` }}>
         {/* ── Layer 1: grey (opaque) — runway to 151 + idle beads ── */}
         <div
@@ -200,12 +267,12 @@ export function MilestoneBar() {
           />
         ))}
 
-        {/* ── Layer 2: red — progress fill + reached beads ── */}
+        {/* ── Layer 2: red — progress fill (footprint-skipping) + reached beads ── */}
         <div
           className={`absolute left-0 rounded-full ${centerY}`}
           style={{
             height: `${cfg.trackRedRem}rem`,
-            width: `${pct}%`,
+            width: `${fillPct.toFixed(3)}%`,
             background: cfg.fillColor,
             transition: `width ${cfg.fillTransitionMs}ms ease-out`,
           }}
@@ -335,14 +402,17 @@ function MilestoneTrigger({
           />
         </button>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-[13rem] text-center">
-        <div className="font-semibold text-xs">
-          {at} · {title}
-        </div>
-        <div className="text-xs text-muted-foreground mt-0.5">
-          {reached ? detail : `${remaining} more to ${gated ? 'unlock' : 'reach'}.`}
-        </div>
-      </TooltipContent>
+      {/* Portaled + high z so the popup floats above app body elements. */}
+      <TooltipPortal>
+        <TooltipContent side="bottom" className="z-[200] max-w-[13rem] text-center">
+          <div className="font-semibold text-xs">
+            {at} · {title}
+          </div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            {reached ? detail : `${remaining} more to ${gated ? 'unlock' : 'reach'}.`}
+          </div>
+        </TooltipContent>
+      </TooltipPortal>
     </Tooltip>
   );
 }
@@ -358,6 +428,7 @@ const TUNABLES: { key: NumericKey; min: number; max: number; step: number; label
   { key: 'startBeadRedRem', min: 0.2, max: 1.0, step: 0.02, label: 'start knob (red)' },
   { key: 'iconScale', min: 0.3, max: 0.9, step: 0.01, label: 'icon scale' },
   { key: 'iconStroke', min: 1, max: 3.5, step: 0.1, label: 'icon stroke' },
+  { key: 'dividerGapRem', min: 0.2, max: 1.5, step: 0.05, label: 'divider gap' },
   { key: 'widthMobileRem', min: 8, max: 16, step: 0.5, label: 'width (mobile)' },
   { key: 'widthDesktopRem', min: 10, max: 20, step: 0.5, label: 'width (desktop)' },
   { key: 'fillTransitionMs', min: 0, max: 1200, step: 50, label: 'fill glide (ms)' },
@@ -375,7 +446,10 @@ export function MilestoneTunePanel() {
   const cfg: BarConfig = { ...DEFAULT_CONFIG, ...overrides };
 
   const copy = () => {
-    const lines = TUNABLES.map(({ key }) => `  ${key}: ${cfg[key]},`).join('\n');
+    const lines = [
+      ...TUNABLES.map(({ key }) => `  ${key}: ${cfg[key]},`),
+      `  showDividers: ${cfg.showDividers},`,
+    ].join('\n');
     void navigator.clipboard?.writeText(lines).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
@@ -409,6 +483,17 @@ export function MilestoneTunePanel() {
         <button type="button" onClick={() => tuneStore.setPreview(null)} className="text-muted-foreground hover:text-foreground underline">
           use live count
         </button>
+      </label>
+
+      {/* Dividers toggle */}
+      <label className="flex items-center justify-between mb-3 cursor-pointer">
+        <span>hairline dividers</span>
+        <input
+          type="checkbox"
+          checked={cfg.showDividers}
+          onChange={(e) => tuneStore.set('showDividers', e.target.checked)}
+          className="accent-[var(--color-primary)]"
+        />
       </label>
 
       <div className="space-y-2.5">
