@@ -45,6 +45,9 @@ export interface DrillDownData {
    *  body shape — used by the shape drilldown so you can see why a chain-mate is
    *  de-emphasized (e.g. Gyarados in a "Fins" drilldown is Serpent-shaped). */
   showShapeBadges?: boolean;
+  /** The segment's own body shape (shape drilldowns only) — drives the header /
+   *  nav shape icon. Undefined for every other drilldown kind. */
+  shape?: ShapeName;
   /** Per-Pokemon offense/defense multipliers for typeMatchup drill-downs */
   matchupInfo?: Map<number, { offense: number; defense: number; bestDefenseType: TypeName }>;
   /** The type being matched (typeMatchup drilldowns only) */
@@ -201,6 +204,7 @@ export function computeDrillDownData(
       totalLines: linesForSubtitle,
       showGenBadges: segment.kind === 'generation',
       showShapeBadges: segment.kind === 'shape',
+      shape: segment.kind === 'shape' ? (segment.shape as ShapeName) : undefined,
     };
 }
 
