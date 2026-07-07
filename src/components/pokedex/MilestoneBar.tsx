@@ -383,7 +383,7 @@ export function MilestoneTunePanel() {
   };
 
   return (
-    <div className="fixed bottom-3 right-3 z-[100] w-64 max-h-[80vh] overflow-y-auto rounded-lg border bg-card/95 backdrop-blur shadow-xl p-3 text-xs">
+    <div className="fixed z-[100] left-3 right-3 bottom-3 max-h-[50vh] md:left-auto md:right-3 md:w-64 md:max-h-[80vh] overflow-y-auto rounded-lg border bg-card/95 backdrop-blur shadow-xl p-3 text-xs">
       <div className="flex items-center justify-between mb-2">
         <span className="font-semibold">MilestoneBar · tune</span>
         <button type="button" onClick={() => tuneStore.reset()} className="text-muted-foreground hover:text-foreground underline">
