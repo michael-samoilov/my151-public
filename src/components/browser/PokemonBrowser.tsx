@@ -10,7 +10,7 @@ import { ARCHETYPES } from '@/data/archetypes';
 import { CATEGORIES } from '@/data/categories';
 import { TYPE_NAMES, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
 import { ShapeIcon, SHAPE_LABELS, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
-import { COLOR_ORDER, COLOR_LABELS, COLOR_SWATCHES, EGG_GROUP_ORDER, EGG_GROUP_LABELS } from '@/data/classifications';
+import { COLOR_ORDER, COLOR_LABELS, COLOR_SWATCHES, colorTextOn, colorRingOn, EGG_GROUP_ORDER, EGG_GROUP_LABELS } from '@/data/classifications';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeBadgePath } from '@/data/type-ids';
 import { Search, X, ChevronDown } from 'lucide-react';
@@ -463,15 +463,24 @@ export function PokemonBrowser() {
             return (
               <Button
                 key={color}
-                variant={isSelected ? 'default' : 'secondary'}
+                variant="secondary"
                 className="h-12 flex items-center justify-center gap-1.5 px-2"
+                style={isSelected
+                  ? {
+                      backgroundColor: COLOR_SWATCHES[color],
+                      color: colorTextOn(COLOR_SWATCHES[color]),
+                      boxShadow: `inset 0 0 0 1.5px ${colorRingOn(COLOR_SWATCHES[color])}`,
+                    }
+                  : undefined}
                 onClick={() => toggleColor(color)}
                 title={COLOR_LABELS[color]}
               >
-                <span
-                  className="w-4 h-4 rounded-full border border-black/20 shrink-0"
-                  style={{ backgroundColor: COLOR_SWATCHES[color] }}
-                />
+                {!isSelected && (
+                  <span
+                    className="w-4 h-4 rounded-full border border-black/20 shrink-0"
+                    style={{ backgroundColor: COLOR_SWATCHES[color] }}
+                  />
+                )}
                 <span className="text-xs">{COLOR_LABELS[color]}</span>
               </Button>
             );
@@ -673,7 +682,7 @@ export function PokemonBrowser() {
                   label={COLOR_LABELS[c as ColorName] ?? c}
                   onDismiss={() => toggleColor(c)}
                   onClick={() => setOpenSheet(openSheet === 'color' ? null : 'color')}
-                  className="bg-foreground text-background"
+                  style={{ backgroundColor: COLOR_SWATCHES[c as ColorName], color: colorTextOn(COLOR_SWATCHES[c as ColorName]), boxShadow: `inset 0 0 0 1px ${colorRingOn(COLOR_SWATCHES[c as ColorName])}` }}
                 />
               ))
             ) : (

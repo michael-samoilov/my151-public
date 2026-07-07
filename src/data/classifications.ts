@@ -38,6 +38,24 @@ export const COLOR_SWATCHES: Record<ColorName, string> = {
   yellow: '#f7d94c',
 };
 
+/** Readable text color (near-black or white) to place on top of a swatch,
+ *  chosen by perceived luminance. Used when a selected color filter paints its
+ *  button/chip in its own swatch color. */
+export function colorTextOn(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? '#1a1a1a' : '#ffffff';
+}
+
+/** Inset ring color for a swatch-painted button/chip, so light fills (white,
+ *  yellow) still have a defined edge against the light UI. Dark on light fills,
+ *  faint-white on dark fills. */
+export function colorRingOn(hex: string): string {
+  return colorTextOn(hex) === '#1a1a1a' ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.4)';
+}
+
 export const EGG_GROUP_ORDER: readonly EggGroupName[] = EGG_GROUP_NAMES;
 
 export const EGG_GROUP_LABELS: Record<EggGroupName, string> = {

@@ -369,12 +369,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                   <GenBadge gen={pokemon.generation} className={TILE_GEN_BADGE_CLASS} />
                 )}
                 {showShapeBadge && (
-                  <div
-                    className={cn(
-                      TILE_GEN_BADGE_CLASS,
-                      'flex items-center justify-center rounded-full bg-background/90 border border-border p-[calc(var(--tile-sprite)*0.03)]',
-                    )}
-                  >
+                  <div className="absolute top-[calc(var(--tile-sprite)*0.03)] left-[calc(var(--tile-sprite)*0.03)] w-[calc(var(--tile-sprite)*0.4)] h-[calc(var(--tile-sprite)*0.4)] z-10 flex items-center justify-center rounded-full bg-background/90 border border-border p-[calc(var(--tile-sprite)*0.015)]">
                     <ShapeIcon shape={pokemon.shape} className="w-full h-full" />
                   </div>
                 )}
