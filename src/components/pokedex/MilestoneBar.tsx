@@ -55,7 +55,7 @@ const DEFAULT_CONFIG = {
   // Optional hairline dividers flanking the bar, so the counter (left) and
   // page buttons (right) read as intentionally aligned around a framed bar.
   showDividers: true,
-  dividerGapRem: 1,
+  dividerGapRem: 0.95,
   dividerColor: 'color-mix(in srgb, var(--color-muted-foreground) 38%, var(--color-card))',
 
   // Reach micro-interaction (one-time "pop" when a bead is first reached).
@@ -78,29 +78,42 @@ function deriveDims(cfg: BarConfig) {
   };
 }
 
-// Fill remap breakpoints: the origin (0), each milestone, and the end (151).
-const STOPS = [0, ...MILESTONES];
-
 /**
- * Fill fraction (0..1) for a given count. Each red circle's footprint is
- * skipped so the very next pick after a milestone visibly advances the bar
- * instead of hiding under the circle: on approach the fill runs INTO the next
- * circle, reaching its CENTER exactly at the milestone (so there's no gap
- * between the fill's cap and the circle); crossing then jumps the fill to the
- * circle's far edge and continues. The origin circle is skipped the same way.
- * `hw` = red-circle half-width as a fraction of the track.
+ * Fill fraction (0..1) for a given count, as a piecewise-linear curve through
+ * explicit control points so each red circle's footprint is handled per-pick,
+ * not by a linear breakpoint:
+ *   • milestone − 1 → the circle's LEFT edge   (fill waits at the doorstep)
+ *   • milestone     → the circle's CENTER       (reaching it fills to the middle)
+ *   • milestone + 1 → the circle's RIGHT edge    (next pick clears the circle)
+ * with straight interpolation between circles. The origin circle is cleared the
+ * same way (its right edge by the first pick). `hw` = red-circle half-width as
+ * a fraction of the track.
  */
 function computeFillFraction(count: number, hw: number): number {
   const c = Math.max(0, Math.min(DEX_TOTAL, count));
   if (c <= 0) return 0;
-  const fc = STOPS.map((s) => s / DEX_TOTAL);
-  const lastSeg = STOPS.length - 2;
-  let i = 0;
-  while (i < lastSeg && c > STOPS[i + 1]) i++;
-  const left = i === 0 ? hw : fc[i] + hw; // resume past the circle just crossed
-  const right = fc[i + 1]; // reach the next circle's CENTER at the milestone
-  const t = (c - STOPS[i]) / (STOPS[i + 1] - STOPS[i]);
-  return Math.min(1, Math.max(0, left + t * (right - left)));
+  const pts: [number, number][] = [
+    [0, 0],
+    [1, hw], // clear the origin circle on the first pick
+  ];
+  for (const m of MILESTONES) {
+    const f = m / DEX_TOTAL;
+    if (m === DEX_TOTAL) {
+      pts.push([m - 1, 1 - hw], [m, 1]); // no "+1" past the finish
+    } else {
+      pts.push([m - 1, f - hw], [m, f], [m + 1, f + hw]);
+    }
+  }
+  pts.sort((a, b) => a[0] - b[0]);
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [c0, f0] = pts[i];
+    const [c1, f1] = pts[i + 1];
+    if (c <= c1) {
+      const t = (c - c0) / (c1 - c0);
+      return Math.min(1, Math.max(0, f0 + t * (f1 - f0)));
+    }
+  }
+  return 1;
 }
 
 const FEATURE_ICON: Record<MilestoneFeature, LucideIcon> = {
