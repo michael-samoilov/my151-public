@@ -143,10 +143,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     //  all     = lines net-added per session, pooled (one point per session).
     // Per-session contribution = diff of cumulative end-depths, floored at 0
     // (a session that net-pruned counts as 0 added, not negative).
-    const depths: number[] = []; // total: max lines ever
-    const firstDepth: number[] = [];
-    const longestDepth: number[] = [];
-    const allDepth: number[] = [];
+    // Two metrics, same four bases: evolution lines and raw Pokemon count.
+    const lineVals = { total: [] as number[], first: [] as number[], longest: [] as number[], all: [] as number[] };
+    const monVals = { total: [] as number[], first: [] as number[], longest: [] as number[], all: [] as number[] };
     const picksFinal: Record<string, number> = {}; // one vote per user's final dex
     const droppedCounts: Record<string, number> = {}; // ever placed but not in final dex
     // Same, but split by the section the user actually placed each Pokemon in
@@ -174,8 +173,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     for (const r of records) {
-      depths.push(r.maxDepth); // total = peak lines ever reached
-
       // Session durations. Prefer the per-session list; fall back to the
       // first→last span (as a single session) for legacy records.
       const sessSecs =
@@ -185,27 +182,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       longestSecs.push(Math.max(...sessSecs));
       firstSecs.push(sessSecs[0]);
       for (const s of sessSecs) allSecs.push(s);
-
-      // Per-session lines ADDED = diff of cumulative end-depths (sessionDepth),
-      // floored at 0. Prefer stored per-session end depths; otherwise
-      // BACK-POPULATE from sessionLog (each entry has that session's ids), which
-      // has existed far longer — so existing multi-session users differentiate
-      // immediately. Final fallback: overall maxDepth as one session.
-      const ends =
-        r.sessionDepth && r.sessionDepth.length > 0
-          ? r.sessionDepth
-          : r.sessionLog && r.sessionLog.length > 0
-            ? r.sessionLog.map((s) => countEvoLines(s.ids ?? []))
-            : [r.maxDepth];
-      const added = ends.map((d, i) => Math.max(0, i === 0 ? d : d - ends[i - 1]));
-      firstDepth.push(added[0]);
-      // "Longest" = the session with the longest DURATION (aligns with the time
-      // chart's longest); its line contribution.
+      // Index of this user's longest-DURATION session (aligns with the time
+      // chart's "longest"); used to pick that session's build contribution.
       let li = 0;
-      for (let i = 1; i < sessSecs.length && i < added.length; i++) if (sessSecs[i] > sessSecs[li]) li = i;
-      longestDepth.push(added[Math.min(li, added.length - 1)]);
-      for (const a of added) allDepth.push(a);
-      if (ends.length >= 2) multiSession += 1;
+      for (let i = 1; i < sessSecs.length; i++) if (sessSecs[i] > sessSecs[li]) li = i;
+
+      // Per-session END sizes (cumulative) for each metric. Prefer stored evo-
+      // line end depths; otherwise BACK-POPULATE from sessionLog (each entry has
+      // that session's ids). Pokemon count comes straight from those ids.
+      const logCounts = r.sessionLog?.map((s) => countEvoLines(s.ids ?? []));
+      const lineEnds =
+        r.sessionDepth && r.sessionDepth.length > 0 ? r.sessionDepth : (logCounts ?? [r.maxDepth]);
+      const monEnds = r.sessionLog?.map((s) => (s.ids ?? []).length) ?? [r.latestIds?.length ?? 0];
+
+      // total = peak size ever; first/longest/all = size ADDED per session
+      // (diff of cumulative ends, floored at 0), keyed to the same longest idx.
+      const fill = (target: typeof lineVals, ends: number[]) => {
+        const added = ends.map((d, i) => Math.max(0, i === 0 ? d : d - ends[i - 1]));
+        target.total.push(Math.max(...ends));
+        target.first.push(added[0]);
+        target.longest.push(added[Math.min(li, added.length - 1)]);
+        for (const a of added) target.all.push(a);
+      };
+      fill(lineVals, lineEnds);
+      fill(monVals, monEnds);
+      if (Math.max(lineEnds.length, monEnds.length) >= 2) multiSession += 1;
 
       if (r.country) countries[r.country] = (countries[r.country] ?? 0) + 1;
       if (r.device) devices[r.device] = (devices[r.device] ?? 0) + 1;
@@ -297,16 +298,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         n: v.length,
       };
     };
-    const total = buildDepthCurve(depths); // peak lines ever reached
-    const depthCurves = {
-      total,
-      first: buildDepthCurve(firstDepth),
-      longest: buildDepthCurve(longestDepth),
-      all: buildDepthCurve(allDepth),
-    };
-    // Back-compat flat surface (total = overall peak depth).
-    const depthSurvival = total.survival;
-    const depthStats = total.stats;
+    const curvesFor = (v: typeof lineVals) => ({
+      total: buildDepthCurve(v.total),
+      first: buildDepthCurve(v.first),
+      longest: buildDepthCurve(v.longest),
+      all: buildDepthCurve(v.all),
+    });
+    // Both metrics, four bases each. lineCurves = evolution lines (legacy
+    // depthCurves), monCurves = raw Pokemon count (new default).
+    const lineCurves = curvesFor(lineVals);
+    const monCurves = curvesFor(monVals);
+    const depthCurves = lineCurves; // back-compat name (evolution lines)
+    // Back-compat flat surface (total lines ever reached).
+    const depthSurvival = lineCurves.total.survival;
+    const depthStats = lineCurves.total.stats;
 
     const totalUsers = records.length;
     const page = records.slice(offset, offset + limit);
@@ -332,6 +337,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       depthSurvival,
       depthStats,
       depthCurves,
+      lineCurves,
+      monCurves,
       countries,
       devices,
       os: osCounts,
