@@ -45,7 +45,7 @@ const FACES = new Set<string>(['dots', 'shots']);
 /** Starter-CTA button treatment under evaluation (the colored starter dots
  *  clash with the solid-red default; these are the contrast candidates). */
 type BtnVariant = 'solid' | 'outline' | 'gradient-border' | 'fade';
-const DEFAULT_BTN: BtnVariant = 'outline';
+const DEFAULT_BTN: BtnVariant = 'gradient-border';
 const BTNS = new Set<string>(['solid', 'outline', 'gradient-border', 'fade']);
 
 /** Review overrides. `?intro[=face]` forces the card to show (Vercel previews
