@@ -332,6 +332,7 @@ interface UseFilteredPokemonOptions {
   types?: string[] | null;
   typeMode?: 'any' | 'all';
   generations?: number[] | null;
+  shapes?: string[] | null; // body-shape groups (Pokemon.shape)
   excludeIds?: Set<number>;
   evoLineSize?: number[] | null; // [1], [2], [3] where 3 means 3+
 }
@@ -343,6 +344,7 @@ function useFilteredPokemon({
   types = null,
   typeMode = 'any',
   generations = null,
+  shapes = null,
   excludeIds,
 }: UseFilteredPokemonOptions): Pokemon[] {
   // Serialize excludeIds to a stable string for memo deps
@@ -353,6 +355,7 @@ function useFilteredPokemon({
 
   const typesKey = types ? types.join(',') : '';
   const gensKey = generations ? generations.join(',') : '';
+  const shapesKey = shapes ? shapes.join(',') : '';
 
   return useMemo(() => {
     let filtered = pokemonList;
@@ -402,6 +405,11 @@ function useFilteredPokemon({
         const genSet = new Set(generations);
         filtered = filtered.filter(p => genSet.has(p.generation));
       }
+
+      if (shapes && shapes.length > 0) {
+        const shapeSet = new Set(shapes);
+        filtered = filtered.filter(p => shapeSet.has(p.shape));
+      }
     }
 
     if (archetype !== 'evolution-item') {
@@ -413,7 +421,7 @@ function useFilteredPokemon({
     }
 
     return filtered;
-  }, [search, category, archetype, typesKey, typeMode, gensKey, excludeIds, excludeKey]);
+  }, [search, category, archetype, typesKey, typeMode, gensKey, shapesKey, excludeIds, excludeKey]);
 }
 
 export interface EvolutionGroup {

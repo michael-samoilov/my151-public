@@ -12,11 +12,13 @@ import { STARTER_IDS } from '@/data/categories';
 import { typeIconPath } from '@/data/type-ids';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
+import { SHAPE_ORDER, SHAPE_LABELS, shapeChartIcon } from '@/components/shared/ShapeIcon';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { StageDistributionChart } from './StageDistributionChart';
 
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
+const SHAPE_CHART_COLORS = ['#e74c3c', '#f39c12', '#3498db', '#9b59b6', '#1abc9c', '#2ecc71', '#e67e22', '#8e6e53', '#5dade2', '#af7ac5', '#48c9b0', '#34495e', '#f1948a', '#7f8c8d'];
 
 
 /** Align yours + national histograms to the same bins, merge into single dataset */
@@ -70,6 +72,7 @@ export function AnalyticsDashboard() {
   const [typeView, setTypeView] = useState<'distribution' | 'matchup'>('distribution');
   const [typeSortBy, setTypeSortBy] = useState<'count' | 'deviation' | 'label'>('deviation');
   const [genSortBy, setGenSortBy] = useState<'count' | 'deviation' | 'label'>('label');
+  const [shapeSortBy, setShapeSortBy] = useState<'count' | 'deviation' | 'label'>('count');
 
   const analytics = useAnalytics();
   const sections = usePokedexStore((s) => s.sections);
@@ -159,6 +162,34 @@ export function AnalyticsDashboard() {
     }),
     [analytics.generationDeviation],
   );
+
+  // Body-shape distribution vs the national dex (same over/under-index
+  // treatment as type/gen). Baseline = base-dex species (id ≤ 1025); your
+  // side counts every placed member by its official shape group.
+  const shapeChartData: ButterflyRow[] = useMemo(() => {
+    const yours = getPokemonByIds(Object.values(sections).flat());
+    const yoursFiltered = excludeSpecial ? withoutSpecials(yours) : yours;
+    const nationalAll = getAllPokemon().filter((p) => p.id <= 1025);
+    const national = excludeSpecial ? withoutSpecials(nationalAll) : nationalAll;
+    const natCounts = new Map<string, number>();
+    for (const p of national) natCounts.set(p.shape, (natCounts.get(p.shape) ?? 0) + 1);
+    const yourCounts = new Map<string, number>();
+    for (const p of yoursFiltered) yourCounts.set(p.shape, (yourCounts.get(p.shape) ?? 0) + 1);
+    const yourTotal = yoursFiltered.length || 1;
+    return SHAPE_ORDER.map((shape, i) => {
+      const count = yourCounts.get(shape) ?? 0;
+      const natShare = (natCounts.get(shape) ?? 0) / national.length;
+      const yourShare = count / yourTotal;
+      const color = SHAPE_CHART_COLORS[i % SHAPE_CHART_COLORS.length];
+      return {
+        label: SHAPE_LABELS[shape],
+        count,
+        deviation: natShare > 0 ? (yourShare / natShare - 1) * 100 : 0,
+        color,
+        icon: shapeChartIcon(shape, color),
+      };
+    });
+  }, [sections, excludeSpecial]);
 
   // Compute sibling lists for swipe navigation
   const typeSiblings = useMemo((): DrillDownSegment[] =>
@@ -640,6 +671,29 @@ export function AnalyticsDashboard() {
                 if (!isNaN(gen)) handleDrillToggle({ kind: 'generation', generation: gen }, genSiblings);
               }}
               activeLabel={activeGenLabel}
+            />
+          </div>
+        </section>
+
+        {/* Body Shape Distribution */}
+        <section>
+          <h3 className="text-lg font-semibold mb-1">Body Shape</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Your Pokémon by official dex body-shape group, and deviation from national dex proportions.
+          </p>
+          <div className="bg-card rounded-lg shadow-elevated p-4">
+            <ButterflyChart
+              data={[...shapeChartData].sort((a, b) =>
+                shapeSortBy === 'deviation' ? b.deviation - a.deviation
+                  : shapeSortBy === 'count' ? b.count - a.count
+                  : a.label.localeCompare(b.label)
+              )}
+              rowHeight={22}
+              disableEmptyRows
+              sortBy={shapeSortBy}
+              onSortChange={setShapeSortBy}
+              labelHeader="SHAPE"
+              labelSortable
             />
           </div>
         </section>

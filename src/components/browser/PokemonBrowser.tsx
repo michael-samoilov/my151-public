@@ -8,7 +8,8 @@ import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms } from '@/
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { ARCHETYPES } from '@/data/archetypes';
 import { CATEGORIES } from '@/data/categories';
-import { TYPE_NAMES } from '@/types/pokemon';
+import { TYPE_NAMES, type ShapeName } from '@/types/pokemon';
+import { ShapeIcon, SHAPE_LABELS, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeBadgePath } from '@/data/type-ids';
 import { Search, X, ChevronDown } from 'lucide-react';
@@ -16,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { BUILD_GROUPS } from '@/data/slot-template';
 
-type FilterSheet = 'type' | 'generation' | 'evoStage' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
+type FilterSheet = 'type' | 'generation' | 'shape' | 'evoStage' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -34,6 +35,7 @@ function useIsDesktop() {
 const SHEET_TITLES: Record<string, string> = {
   type: 'Type',
   generation: 'Generation',
+  shape: 'Body Shape',
   evoStage: 'Evo Stages',
   classification: 'Classification',
   places: 'Places',
@@ -61,6 +63,9 @@ export function PokemonBrowser() {
   const generationFilter = usePokedexStore((s) => s.generationFilter);
   const setGenerationFilter = usePokedexStore((s) => s.setGenerationFilter);
   const toggleGeneration = usePokedexStore((s) => s.toggleGeneration);
+  const shapeFilter = usePokedexStore((s) => s.shapeFilter);
+  const setShapeFilter = usePokedexStore((s) => s.setShapeFilter);
+  const toggleShape = usePokedexStore((s) => s.toggleShape);
   const evoLineSizeFilter = usePokedexStore((s) => s.evoLineSizeFilter);
   const setEvoLineSizeFilter = usePokedexStore((s) => s.setEvoLineSizeFilter);
   const sections = usePokedexStore((s) => s.sections);
@@ -212,6 +217,7 @@ export function PokemonBrowser() {
     types: typeFilter,
     typeMode: typeFilterMode,
     generations: generationFilter,
+    shapes: shapeFilter,
     evoLineSize: evoLineSizeFilter,
   });
 
@@ -278,7 +284,7 @@ export function PokemonBrowser() {
   const showGenBadges = !hasCustomSubgroups || activeArchetype === 'cross-gen-evo' || activeCategory === 'starter';
 
   const isSearching = searchQuery.trim().length > 0;
-  const hasActivePropertyFilters = !!((typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || evoLineSizeFilter);
+  const hasActivePropertyFilters = !!((typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || (shapeFilter && shapeFilter.length > 0) || evoLineSizeFilter);
   const hasActiveBrowseFilters = !!(activeCategory || activeArchetype);
   const hasActiveFilters = hasActivePropertyFilters || hasActiveBrowseFilters;
 
@@ -286,6 +292,7 @@ export function PokemonBrowser() {
     setTypeFilter(null);
     setTypeFilterMode('any');
     setGenerationFilter(null);
+    setShapeFilter(null);
     setEvoLineSizeFilter(null);
   };
   const clearBrowseFilters = () => {
@@ -411,6 +418,23 @@ export function PokemonBrowser() {
               onClick={() => toggleGeneration(gen)}
             >
               Gen {gen}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {openSheet === 'shape' && (
+        <div className="grid grid-cols-4 md:grid-cols-7 gap-1.5">
+          {SHAPE_ORDER.map((shape) => (
+            <Button
+              key={shape}
+              variant={shapeFilter?.includes(shape) ? 'default' : 'secondary'}
+              className="h-14 flex flex-col items-center justify-center gap-0.5 px-1"
+              onClick={() => toggleShape(shape)}
+              title={SHAPE_LABELS[shape]}
+            >
+              <ShapeIcon shape={shape} className="w-5 h-5" />
+              <span className="text-[0.5625rem] leading-tight truncate max-w-full">{SHAPE_LABELS[shape]}</span>
             </Button>
           ))}
         </div>
@@ -550,6 +574,29 @@ export function PokemonBrowser() {
             )
           ) : (
             <EntryChip label="Gen" onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')} active={openSheet === 'generation'} />
+          )}
+
+          {shapeFilter && shapeFilter.length > 0 ? (
+            shapeFilter.length <= 2 ? (
+              shapeFilter.map(s => (
+                <FilterChip
+                  key={s}
+                  label={SHAPE_LABELS[s as ShapeName] ?? s}
+                  onDismiss={() => toggleShape(s)}
+                  onClick={() => setOpenSheet(openSheet === 'shape' ? null : 'shape')}
+                  className="bg-foreground text-background"
+                />
+              ))
+            ) : (
+              <FilterChip
+                label={`${shapeFilter.length} Shapes`}
+                onDismiss={() => setShapeFilter(null)}
+                onClick={() => setOpenSheet(openSheet === 'shape' ? null : 'shape')}
+                className="bg-foreground text-background"
+              />
+            )
+          ) : (
+            <EntryChip label="Shape" onClick={() => setOpenSheet(openSheet === 'shape' ? null : 'shape')} active={openSheet === 'shape'} />
           )}
 
           {evoLineSizeFilter ? (
