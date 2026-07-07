@@ -164,3 +164,26 @@ img {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--color-muted-foreground) 45%, transparent) transparent;
 }
+
+/* Intro-card showcase fan — slow asynchronous drift so the three poster cards
+ * feel alive without demanding attention. Applied to the card face (inner
+ * wrapper), never the positioned wrapper, so the idle float and the base
+ * placement/tilt transforms don't fight. */
+@keyframes intro-float-a {
+  from { transform: translateY(2px) rotate(-0.5deg); }
+  to   { transform: translateY(-4px) rotate(0.5deg); }
+}
+@keyframes intro-float-b {
+  from { transform: translateY(-3px); }
+  to   { transform: translateY(3px); }
+}
+@keyframes intro-float-c {
+  from { transform: translateY(3px) rotate(0.5deg); }
+  to   { transform: translateY(-3px) rotate(-0.5deg); }
+}
+.intro-float-a { animation: intro-float-a 6.5s ease-in-out infinite alternate; }
+.intro-float-b { animation: intro-float-b 7.5s ease-in-out infinite alternate; animation-delay: -2.5s; }
+.intro-float-c { animation: intro-float-c 8.5s ease-in-out infinite alternate; animation-delay: -5s; }
+@media (prefers-reduced-motion: reduce) {
+  .intro-float-a, .intro-float-b, .intro-float-c { animation: none; }
+}

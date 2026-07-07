@@ -17,6 +17,7 @@ import { Trash2, Plus, Settings } from 'lucide-react';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 
 import { PageFooter } from '@/components/shared/PageFooter';
+import { IntroCard } from '@/components/pokedex/IntroCard';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import {
@@ -843,7 +844,7 @@ export function PokedexGrid() {
     [dragLineIds, dragFromSection, sections, moveEvoLine, dropSide, resetDrag]
   );
 
-  const handleDragCancel = useCallback(resetDrag, [resetDrag]);
+  const handleDragCancel = useCallback(() => resetDrag(), [resetDrag]);
 
   const insertIndicator = useMemo<{ tileId: string | null; endSection: string | null; side: 'left' | 'right' }>(() => {
     if (!overTileId || !dragLineIds) return { tileId: null, endSection: null, side: 'left' };
@@ -907,6 +908,10 @@ export function PokedexGrid() {
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
           <div className="p-3 pb-0" style={{ maxWidth: containerMaxW, marginInline: containerMaxW ? 'auto' : undefined }}>
+            <IntroCard
+              totalPlaced={totalPlaced}
+              onChooseStarters={() => handleAddClick('starter')}
+            />
             <DndContext
               sensors={sensors}
               collisionDetection={effectiveCursorCollision}
