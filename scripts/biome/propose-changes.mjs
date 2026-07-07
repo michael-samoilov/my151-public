@@ -168,5 +168,50 @@ md.push('Form-splits (different members per section — legitimate, no action): 
   (dedups.filter((d) => d.formSplit).map((d) => `${d.r.line} (${[d.keep, ...d.drop].join(' + ')})`).join('; ') || 'none') + '.');
 md.push('');
 
+// ---- Net flow per section (in Pokémon ids, not lines) --------------------
+// Inflows: NEW/SWITCH lines joining a section (base-dex members; the full
+// line joins). Outflows: SWITCH members leaving their old section, DEDUP
+// removing only the DUPLICATED ids from dropped sections (ids unique to the
+// dropped section are untouched), and ⚠ NEW rows leaving the mountain/lake
+// archetype they were curated in (pick-one resolved toward the proposal).
+const ins = new Map();
+const outs = new Map();
+const bump = (m, s, n) => m.set(s, (m.get(s) ?? 0) + n);
+const baseMembers = (r) => r.members.filter((id) => id < 10000).length;
+const idsIn = (r, section) => r.members.filter((id) => archetypeIds.get(section)?.has(id));
+
+for (const { r, target, conflict } of news) {
+  bump(ins, target, baseMembers(r));
+  if (conflict) bump(outs, conflict, idsIn(r, conflict).length);
+}
+for (const { r, from, target } of switches) {
+  bump(ins, target, baseMembers(r));
+  bump(outs, from, idsIn(r, from).length);
+}
+for (const { r, keep, drop, formSplit } of dedups) {
+  if (formSplit) continue;
+  const keepSet = archetypeIds.get(keep) ?? new Set();
+  for (const d of drop) {
+    const dupIds = idsIn(r, d).filter((id) => keepSet.has(id));
+    bump(outs, d, dupIds.length);
+  }
+}
+
+const LOW_WATER = 15;
+md.push('## Net flow per section (in Pokémon, not lines)');
+md.push('');
+md.push(`Current = raw archetype list size (incl. regional-form ids). Final = current + in − out. ⚠ marks sections that would land under ${LOW_WATER}.`);
+md.push('');
+md.push('| Section | Current | In | Out | Net | Final |');
+md.push('|---|---|---|---|---|---|');
+for (const s of SECTION_ORDER) {
+  const cur = archetypeIds.get(s)?.size ?? 0;
+  const i = ins.get(s) ?? 0;
+  const o = outs.get(s) ?? 0;
+  const fin = cur + i - o;
+  md.push(`| ${s} | ${cur} | +${i} | −${o} | ${i - o >= 0 ? '+' : ''}${i - o} | ${fin}${fin < LOW_WATER ? ' ⚠' : ''} |`);
+}
+md.push('');
+
 writeFileSync(join(OUT_DIR, 'proposed-changes.md'), md.join('\n'));
 console.log(md.join('\n'));
