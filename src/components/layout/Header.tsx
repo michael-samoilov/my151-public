@@ -22,6 +22,7 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
             size="sm"
             onClick={() => onViewChange('builder')}
             className="px-2 sm:px-3"
+            data-nav="builder"
           >
             <Hammer className="w-4 h-4" />
             <span className={`overflow-hidden transition-[max-width,opacity] duration-150 ease-out ${currentView === 'builder' ? 'max-w-[5rem] opacity-100 ml-1' : 'max-w-0 opacity-0'} sm:max-w-[5rem] sm:opacity-100 sm:ml-1`}>Build</span>
@@ -31,6 +32,7 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
             size="sm"
             onClick={() => onViewChange('analytics')}
             className="px-2 sm:px-3"
+            data-nav="analytics"
           >
             <BarChart3 className="w-4 h-4" />
             <span className={`overflow-hidden transition-[max-width,opacity] duration-150 ease-out ${currentView === 'analytics' ? 'max-w-[5rem] opacity-100 ml-1' : 'max-w-0 opacity-0'} sm:max-w-[5rem] sm:opacity-100 sm:ml-1`}>Analytics</span>
@@ -40,6 +42,7 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
             size="sm"
             onClick={() => onViewChange('view')}
             className="px-2 sm:px-3"
+            data-nav="view"
           >
             <Camera className="w-4 h-4" />
             <span className={`overflow-hidden transition-[max-width,opacity] duration-150 ease-out ${currentView === 'view' ? 'max-w-[5rem] opacity-100 ml-1' : 'max-w-0 opacity-0'} sm:max-w-[5rem] sm:opacity-100 sm:ml-1`}>View</span>

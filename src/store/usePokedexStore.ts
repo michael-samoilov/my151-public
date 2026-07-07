@@ -16,6 +16,12 @@ function initialSections(): Record<string, number[]> {
   return base;
 }
 
+// The initial (pre-rehydration) dex. In demo mode this is already the full 151,
+// so milestone state must start "already reached" for that count — otherwise the
+// tracker would fire every milestone (and confetti) on first load.
+const INITIAL_SECTIONS = initialSections();
+const INITIAL_COUNT = Object.values(INITIAL_SECTIONS).reduce((s, a) => s + a.length, 0);
+
 type TypeFilterMode = 'any' | 'all';
 
 export type ViewSortOption = 'regional' | 'national' | 'type' | 'build-order' | 'custom';
@@ -110,7 +116,7 @@ const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
 export const usePokedexStore = create<PokedexState>()(
   persist(
     (set, get) => ({
-      sections: initialSections(),
+      sections: INITIAL_SECTIONS,
       activeSection: null,
       activeCategoryFilter: null,
       activeArchetypeFilter: null,
@@ -132,8 +138,8 @@ export const usePokedexStore = create<PokedexState>()(
       viewCustomOrder: null,
       viewShowSections: DEMO_MODE,
       viewShowStats: false,
-      milestoneMax: 0,
-      milestoneCelebrated: [],
+      milestoneMax: INITIAL_COUNT,
+      milestoneCelebrated: milestonesAtOrBelow(INITIAL_COUNT),
       milestoneCelebration: null,
 
       addToSection: (sectionId, pokemonIds) =>

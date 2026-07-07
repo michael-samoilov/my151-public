@@ -30,6 +30,7 @@ import { BUILD_GROUPS } from '@/data/slot-template';
 import { useCompletionBeacon } from '@/hooks/useCompletionBeacon';
 import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
 import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
+import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
 import { cn } from '@/lib/utils';
 
 declare const __BUILD_TIMESTAMP__: string;
@@ -233,6 +234,9 @@ function App() {
 
       {/* Analytics drill-down sheet — only on analytics view */}
       {currentView === 'analytics' && drillDownSegment && <DrillDownSheet />}
+
+      {/* Milestone celebration nudges (analytics @25, view @100, confetti @151) */}
+      <MilestoneCelebration onNavigate={handleViewChange} />
 
       {/* Dev-only MilestoneBar tuning panel (renders only with ?tune) */}
       <MilestoneTunePanel />

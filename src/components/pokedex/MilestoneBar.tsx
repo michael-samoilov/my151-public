@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
-import { MILESTONE_DEFS, MILESTONES, DEX_TOTAL, type MilestoneFeature } from '@/lib/milestones';
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal } from '@/components/ui/tooltip';
+import { MILESTONE_DEFS, MILESTONES, DEX_TOTAL, milestonesAtOrBelow, type MilestoneFeature } from '@/lib/milestones';
+import { BUILD_GROUPS, createEmptySections } from '@/data/slot-template';
+import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
 import { BarChart3, Camera, Sparkles, Trophy, Lock, type LucideIcon } from 'lucide-react';
 
 /**
@@ -157,6 +159,12 @@ const TUNE = (() => {
     return false;
   }
 })();
+
+// Dev convenience: expose the store for console tinkering / test harnesses when
+// tuning. Never present in production (TUNE is false without ?tune).
+if (TUNE && typeof window !== 'undefined') {
+  (window as unknown as Record<string, unknown>).__pokedexStore = usePokedexStore;
+}
 
 let _overrides: Partial<BarConfig> = {};
 let _preview: number | null = null;
@@ -419,6 +427,7 @@ function MilestoneTrigger({
       {/* Portaled + high z so the popup floats above app body elements. */}
       <TooltipPortal>
         <TooltipContent side="bottom" className="z-[200] max-w-[13rem] text-center">
+          <TooltipArrow />
           <div className="font-semibold text-xs">
             {at} · {title}
           </div>
@@ -449,6 +458,33 @@ const TUNABLES: { key: NumericKey; min: number; max: number; step: number; label
   { key: 'popDurationMs', min: 100, max: 1000, step: 20, label: 'pop (ms)' },
   { key: 'rippleDurationMs', min: 100, max: 1200, step: 20, label: 'ripple (ms)' },
 ];
+
+/** Dev seed: fill the store to `n` Pokémon from the demo dex (whole ids in
+ *  build order) and mark milestones at/below `n` as already-celebrated, so the
+ *  next crossing fires its celebration once — lets you rehearse each milestone
+ *  and the 151 confetti from just below it. */
+function seedDex(n: number) {
+  const sections = createEmptySections();
+  let c = 0;
+  for (const g of BUILD_GROUPS) {
+    const ids = DEMO_DEX_SECTIONS[g.id];
+    if (!ids?.length) continue;
+    const take: number[] = [];
+    for (const id of ids) {
+      if (c >= n) break;
+      take.push(id);
+      c++;
+    }
+    if (take.length) sections[g.id] = take;
+    if (c >= n) break;
+  }
+  usePokedexStore.setState({
+    sections,
+    milestoneMax: n,
+    milestoneCelebrated: milestonesAtOrBelow(n),
+    milestoneCelebration: null,
+  });
+}
 
 export function MilestoneTunePanel() {
   const overrides = useSyncExternalStore(tuneStore.subscribe, tuneStore.overrides, tuneStore.overrides);
@@ -497,6 +533,29 @@ export function MilestoneTunePanel() {
           use live count
         </button>
       </label>
+
+      {/* Milestone rehearsal — seed the dex just below a milestone, then add
+          Pokémon in the app to cross it and see the celebration/confetti. */}
+      <div className="mb-3">
+        <div className="text-muted-foreground mb-1">seed dex (then build up)</div>
+        <div className="grid grid-cols-4 gap-1">
+          {[
+            { n: 24, label: '24' },
+            { n: 99, label: '99' },
+            { n: 140, label: '140' },
+            { n: 0, label: 'clear' },
+          ].map(({ n, label }) => (
+            <button
+              key={label}
+              type="button"
+              onClick={() => seedDex(n)}
+              className="rounded-md border py-1 hover:bg-muted transition-colors"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Dividers toggle */}
       <label className="flex items-center justify-between mb-3 cursor-pointer">
