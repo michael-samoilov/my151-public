@@ -3,6 +3,8 @@ import { flushSync } from 'react-dom';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { computeDrillDownData, type DrillDownData } from '@/hooks/useDrillDownData';
 import { EvoLineGrid } from '@/components/browser/EvoLineCard';
+import { SHAPE_LABELS } from '@/components/shared/ShapeIcon';
+import type { ShapeName } from '@/types/pokemon';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 const HEADER_HEIGHT = 49; // app header: py-3 + text + border
@@ -18,6 +20,7 @@ function getSegmentLabel(seg: DrillDownSegment): string {
     case 'evoLevel': return `Lv ${seg.binStart}–${seg.binEnd - 1}`;
     case 'bst': return `${seg.binStart}–${seg.binEnd - 1}`;
     case 'typeMatchup': return seg.type.charAt(0).toUpperCase() + seg.type.slice(1);
+    case 'shape': return SHAPE_LABELS[seg.shape as ShapeName] ?? seg.shape;
     default: return '';
   }
 }

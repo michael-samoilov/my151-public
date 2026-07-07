@@ -17,8 +17,12 @@ import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered 
 import { PageFooter } from '@/components/shared/PageFooter';
 import { StageDistributionChart } from './StageDistributionChart';
 
-const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
-const SHAPE_CHART_COLORS = ['#e74c3c', '#f39c12', '#3498db', '#9b59b6', '#1abc9c', '#2ecc71', '#e67e22', '#8e6e53', '#5dade2', '#af7ac5', '#48c9b0', '#34495e', '#f1948a', '#7f8c8d'];
+// The gen and shape charts use a single app-red bar (no per-category colors);
+// the gen badge and shape silhouette carry the identity in the icon column.
+const CHART_BAR_RED = '#ef4444';
+// Reverse the display labels back to shape keys for drill-down segments,
+// since the chart hands its onBarClick the label string.
+const LABEL_TO_SHAPE = new Map(SHAPE_ORDER.map((s) => [SHAPE_LABELS[s], s]));
 
 
 /** Align yours + national histograms to the same bins, merge into single dataset */
@@ -88,6 +92,8 @@ export function AnalyticsDashboard() {
     ? drillDownSegment.type.charAt(0).toUpperCase() + drillDownSegment.type.slice(1) : null;
   const activeGenLabel = drillDownSegment?.kind === 'generation'
     ? `Gen ${drillDownSegment.generation}` : null;
+  const activeShapeLabel = drillDownSegment?.kind === 'shape'
+    ? (SHAPE_LABELS[drillDownSegment.shape as keyof typeof SHAPE_LABELS] ?? drillDownSegment.shape) : null;
   const activeEvoBin = drillDownSegment?.kind === 'evoLevel'
     ? drillDownSegment.binStart + (drillDownSegment.binEnd - drillDownSegment.binStart) / 2 : null;
   const activeBstBin = drillDownSegment?.kind === 'bst'
@@ -126,14 +132,14 @@ export function AnalyticsDashboard() {
   const typeChartData = typeChart.rows;
 
   const genChartData: ButterflyRow[] = useMemo(() =>
-    analytics.generationDeviation.map((d, i) => {
+    analytics.generationDeviation.map((d) => {
       const gen = d.generation;
       const stops = GEN_STOPS[gen] ?? [{ offset: '100%', color: '#888' }];
       return {
         label: `Gen ${gen}`,
         count: d.count,
         deviation: d.deviation,
-        color: GEN_COLORS[i % GEN_COLORS.length],
+        color: CHART_BAR_RED,
         icon: (x: number, y: number, size: number) => {
           const gradId = `gen-icon-grad-${gen}`;
           const r = size / 2;
@@ -176,17 +182,16 @@ export function AnalyticsDashboard() {
     const yourCounts = new Map<string, number>();
     for (const p of yoursFiltered) yourCounts.set(p.shape, (yourCounts.get(p.shape) ?? 0) + 1);
     const yourTotal = yoursFiltered.length || 1;
-    return SHAPE_ORDER.map((shape, i) => {
+    return SHAPE_ORDER.map((shape) => {
       const count = yourCounts.get(shape) ?? 0;
       const natShare = (natCounts.get(shape) ?? 0) / national.length;
       const yourShare = count / yourTotal;
-      const color = SHAPE_CHART_COLORS[i % SHAPE_CHART_COLORS.length];
       return {
         label: SHAPE_LABELS[shape],
         count,
         deviation: natShare > 0 ? (yourShare / natShare - 1) * 100 : 0,
-        color,
-        icon: shapeChartIcon(shape, color),
+        color: CHART_BAR_RED,
+        icon: shapeChartIcon(shape),
       };
     });
   }, [sections, excludeSpecial]);
@@ -198,6 +203,9 @@ export function AnalyticsDashboard() {
   const genSiblings = useMemo((): DrillDownSegment[] =>
     genChartData.filter(d => d.count > 0).map(d => ({ kind: 'generation' as const, generation: parseInt(d.label.replace('Gen ', '')) })),
     [genChartData]);
+  const shapeSiblings = useMemo((): DrillDownSegment[] =>
+    shapeChartData.filter(d => d.count > 0).map(d => ({ kind: 'shape' as const, shape: LABEL_TO_SHAPE.get(d.label) ?? d.label })),
+    [shapeChartData]);
 
   // Compute type chart data for a regional/national dex (also returns the
   // pokemon count for the chart's percentage-label denominator).
@@ -694,6 +702,11 @@ export function AnalyticsDashboard() {
               onSortChange={setShapeSortBy}
               labelHeader="SHAPE"
               labelSortable
+              onBarClick={(label) => {
+                const shape = LABEL_TO_SHAPE.get(label);
+                if (shape) handleDrillToggle({ kind: 'shape', shape }, shapeSiblings);
+              }}
+              activeLabel={activeShapeLabel}
             />
           </div>
         </section>

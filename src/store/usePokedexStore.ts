@@ -27,7 +27,8 @@ export type DrillDownSegment =
   | { kind: 'lineLength'; lineLength: number }
   | { kind: 'evoLevel'; binStart: number; binEnd: number }
   | { kind: 'bst'; binStart: number; binEnd: number }
-  | { kind: 'typeMatchup'; type: string };
+  | { kind: 'typeMatchup'; type: string }
+  | { kind: 'shape'; shape: string };
 
 interface PokedexState {
   sections: Record<string, number[]>; // groupId -> ordered pokemon IDs
