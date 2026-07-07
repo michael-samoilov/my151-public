@@ -43,22 +43,52 @@ export function ShapeIcon({ shape, className }: { shape: ShapeName; className?: 
   );
 }
 
-/** Renderer for ButterflyChart's icon slot: an SVG <image> of the sprite,
- *  positioned at (x, y) in a size×size box, dark-mode-inverted like the HTML
- *  variant. No tinting — the shape art stands on its own. */
+/** Silhouette-in-circle variant: the shape sits inside a bordered disc (like the
+ *  official HOME shape-search icons). `className` sizes the outer circle; the
+ *  silhouette fills ~70% of it. Used in the shape drilldown header / nav for a
+ *  consistent badge look with the chart. */
+export function ShapeIconCircle({ shape, className }: { shape: ShapeName; className?: string }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center justify-center rounded-full border border-border bg-background shrink-0',
+        className,
+      )}
+    >
+      <ShapeIcon shape={shape} className="w-[70%] h-[70%]" />
+    </span>
+  );
+}
+
+/** Renderer for ButterflyChart's icon slot: the silhouette-in-circle badge as an
+ *  SVG group — a bordered disc (background fill + border stroke) with the sprite
+ *  centered inside, dark-mode-inverted like the HTML variant. Matches the
+ *  ShapeIconCircle look used in the drilldown. */
 export function shapeChartIcon(shape: ShapeName) {
   return function render(x: number, y: number, size: number): ReactNode {
+    const cx = x + size / 2;
+    const cy = y + size / 2;
+    const pad = size * 0.16; // inner silhouette fills ~68% of the disc
     return (
-      <image
-        key={`shape-icon-${shape}`}
-        href={shapeIconPath(shape)}
-        x={x}
-        y={y}
-        width={size}
-        height={size}
-        preserveAspectRatio="xMidYMid meet"
-        className="dark:invert"
-      />
+      <g key={`shape-icon-${shape}`}>
+        <circle
+          cx={cx}
+          cy={cy}
+          r={size / 2 - 0.5}
+          fill="var(--color-background)"
+          stroke="var(--color-border)"
+          strokeWidth={1}
+        />
+        <image
+          href={shapeIconPath(shape)}
+          x={x + pad}
+          y={y + pad}
+          width={size - 2 * pad}
+          height={size - 2 * pad}
+          preserveAspectRatio="xMidYMid meet"
+          className="dark:invert"
+        />
+      </g>
     );
   };
 }
