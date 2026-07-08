@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, memo as React_memo } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { MILESTONE_DEFS, MILESTONES, DEX_TOTAL, milestonesAtOrBelow, type MilestoneFeature } from '@/lib/milestones';
 import { BUILD_GROUPS, createEmptySections } from '@/data/slot-template';
@@ -225,7 +225,7 @@ function useIsDesktop(): boolean {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function MilestoneBar() {
+function MilestoneBarComponent() {
   const sections = usePokedexStore((s) => s.sections);
   const realCount = useMemo(
     () => Object.values(sections).reduce((sum, ids) => sum + ids.length, 0),
@@ -373,6 +373,11 @@ export function MilestoneBar() {
     </div>
   );
 }
+
+/** Memoized milestone bar to prevent re-animation on page switches.
+ *  Since each page has its own instance, this ensures the bar only re-renders
+ *  when its data (count, track width) actually changes, not on visibility toggles. */
+export const MilestoneBar = React_memo(MilestoneBarComponent);
 
 /** The red bead for a milestone (only rendered once reached). Pops + ripples the
  *  first time it flips to reached in-session; centering lives on the wrapper so
