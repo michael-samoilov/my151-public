@@ -16,6 +16,9 @@ export const redis = new Redis({
 // no separate counters to drift, and a person's repeated saves overwrite their
 // own record (dedup) rather than appending new events.
 export const CLIENTS_KEY = 'clients';
+// Parallel per-record version counter (hash field cid -> integer) for the
+// optimistic-concurrency CAS in /api/submit. Kept in sync with CLIENTS_KEY.
+export const VERSION_KEY = 'clients:ver';
 // A quiet gap longer than this between two beacons ends the current session and
 // starts a new one — so "session" means a continuous sitting, not the whole
 // first-to-last span (which conflates multi-visit/multi-day returns).
