@@ -99,6 +99,22 @@ export function PokemonBrowser() {
     }
   }, [activeSection]);
 
+  // Clear all filters when the browser pane closes (for fresh state on next open)
+  const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
+  const prevMobileBrowserOpen = useRef(mobileBrowserOpen);
+  useEffect(() => {
+    if (prevMobileBrowserOpen.current && !mobileBrowserOpen) {
+      // Browser just closed — reset all filters
+      setSearchQuery('');
+      setTypeFilter(null);
+      setGenerationFilter(null);
+      setEvoLineSizeFilter(null);
+      setCategoryFilter(null);
+      setArchetypeFilter(null);
+    }
+    prevMobileBrowserOpen.current = mobileBrowserOpen;
+  }, [mobileBrowserOpen, setSearchQuery, setTypeFilter, setGenerationFilter, setEvoLineSizeFilter, setCategoryFilter, setArchetypeFilter]);
+
   const handleToggleStage = useCallback((memberIds: number[]) => {
     if (isDesktop && activeSection) {
       // Desktop: instantly add unassigned pokemon (no staging)
