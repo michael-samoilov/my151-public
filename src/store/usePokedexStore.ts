@@ -78,6 +78,9 @@ interface PokedexState {
    *  Settings rather than on the page itself, so a follow-up nudge points the
    *  user at the settings gear once they land on View. */
   statsHintArmed: boolean;
+  /** Transient (never persisted): armed when the 151-milestone celebration's
+   *  "Open View" CTA is clicked, pointing the user at the Export button. */
+  exportHintArmed: boolean;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -118,6 +121,10 @@ interface PokedexState {
   armStatsHint: () => void;
   /** Clear the follow-up nudge (dismissed, or its purpose fulfilled). */
   dismissStatsHint: () => void;
+  /** Arm the follow-up "export is here" nudge for the View page. */
+  armExportHint: () => void;
+  /** Clear the follow-up nudge (dismissed, or its purpose fulfilled). */
+  dismissExportHint: () => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -151,6 +158,7 @@ export const usePokedexStore = create<PokedexState>()(
       milestoneCelebrated: milestonesAtOrBelow(INITIAL_COUNT),
       milestoneCelebration: null,
       statsHintArmed: false,
+      exportHintArmed: false,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -358,6 +366,8 @@ export const usePokedexStore = create<PokedexState>()(
       dismissMilestoneCelebration: () => set({ milestoneCelebration: null }),
       armStatsHint: () => set({ statsHintArmed: true }),
       dismissStatsHint: () => set({ statsHintArmed: false }),
+      armExportHint: () => set({ exportHintArmed: true }),
+      dismissExportHint: () => set({ exportHintArmed: false }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,

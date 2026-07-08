@@ -1,41 +1,45 @@
 import { useEffect, useLayoutEffect, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { usePokedexStore } from '@/store/usePokedexStore';
 import { X } from 'lucide-react';
 
 /**
- * Follow-up to the 100-milestone celebration. "Show detailed stats" lives
- * inside View Settings rather than directly on the page, so the celebration's
- * "Open View" CTA alone would strand the user — this points at the settings
- * gear once they land on View. Armed by MilestoneCelebration's handleCta,
- * cleared the moment the user opens Settings (their own click fulfills it) or
- * dismisses it directly.
+ * A small arrow-popup that floats in pointing at a specific on-page control —
+ * a follow-up to a milestone celebration whose CTA lands the user on a page
+ * where the promised feature is one more tap away (behind a settings panel,
+ * a toolbar icon, etc). Clears itself the moment `fulfilled` flips true — the
+ * user's own interaction with the target IS the hint's purpose — or when
+ * dismissed directly.
  */
 
 const AUTO_DISMISS_MS = 10000;
 const CARD_W = 244;
 const REVEAL_DELAY_MS = 260;
 
-export function StatsSettingsHint({
+export function FollowUpHint({
+  armed,
+  dismiss,
+  fulfilled,
   anchorRef,
-  settingsOpen,
+  title,
+  body,
 }: {
+  armed: boolean;
+  dismiss: () => void;
+  /** Flips true once the user has done the thing the hint points at (opened
+   *  the settings pane, clicked export, ...) — dismisses the hint in response. */
+  fulfilled: boolean;
   anchorRef: RefObject<HTMLElement | null>;
-  settingsOpen: boolean;
+  title: string;
+  body: string;
 }) {
-  const armed = usePokedexStore((s) => s.statsHintArmed);
-  const dismiss = usePokedexStore((s) => s.dismissStatsHint);
-
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
 
-  // Opening Settings fulfills the nudge's purpose — clear it so it doesn't
-  // reappear once the pane closes.
   useEffect(() => {
-    if (settingsOpen) dismiss();
-  }, [settingsOpen, dismiss]);
+    if (fulfilled) dismiss();
+  }, [fulfilled, dismiss]);
 
-  // Small delay so it floats in gracefully once View has actually settled,
-  // rather than popping in the instant the CTA navigates.
+  // Small delay so it floats in gracefully once the page has actually
+  // settled, rather than popping in the instant the CTA navigates.
   const [armedReady, setArmedReady] = useState(false);
   useEffect(() => {
     if (!armed) return; // hidden state resets via the cleanup below
@@ -67,7 +71,7 @@ export function StatsSettingsHint({
     return () => clearTimeout(t);
   }, [armed, ready, dismiss]);
 
-  if (!armed || !ready || !anchor || settingsOpen) return null;
+  if (!armed || !ready || !anchor || fulfilled) return null;
 
   const centerX = anchor.left + anchor.width / 2;
   const left = Math.max(8, Math.min(centerX - CARD_W / 2, window.innerWidth - CARD_W - 8));
@@ -89,10 +93,8 @@ export function StatsSettingsHint({
         >
           <X className="w-3.5 h-3.5" />
         </button>
-        <div className="text-sm font-bold pr-5">Stats live in Settings</div>
-        <p className="mt-1 text-xs text-muted-foreground text-pretty">
-          Tap the gear and turn on “Show detailed stats” for type, generation, and base-stat charts.
-        </p>
+        <div className="text-sm font-bold pr-5">{title}</div>
+        <p className="mt-1 text-xs text-muted-foreground text-pretty">{body}</p>
       </div>
     </div>,
     document.body,

@@ -65,15 +65,19 @@ const prefersReducedMotion = () => {
 function fireConfetti() {
   if (prefersReducedMotion()) return;
   const colors = ['#dc2626', '#7ac74c', '#ee8130', '#6390f0', '#f7d02c'];
-  // Center burst…
-  confetti({ particleCount: 130, spread: 95, startVelocity: 45, origin: { x: 0.5, y: 0.35 }, colors, zIndex: 300 });
-  // …then a short stream from both lower corners.
-  const end = Date.now() + 1100;
-  (function frame() {
-    confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0, y: 0.75 }, colors, zIndex: 300 });
-    confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1, y: 0.75 }, colors, zIndex: 300 });
-    if (Date.now() < end) requestAnimationFrame(frame);
-  })();
+  // A single restrained burst — enough to register as a celebration without
+  // covering the screen (previously a bigger burst plus a 1.1s stream from
+  // both corners).
+  confetti({
+    particleCount: 60,
+    spread: 65,
+    startVelocity: 28,
+    origin: { x: 0.5, y: 0.35 },
+    colors,
+    zIndex: 300,
+    scalar: 0.9,
+    ticks: 160,
+  });
 }
 
 export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppView) => void }) {
@@ -143,10 +147,18 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
 
   const handleCta = useCallback(() => {
     if (nudge) onNavigate(nudge.nav);
-    // The 100-milestone's "Show detailed stats" toggle lives inside View
-    // Settings, not on the page itself — arm the follow-up nudge that points
-    // at the settings gear once the user lands on View.
-    if (celebration === 100) usePokedexStore.getState().armStatsHint();
+    // Both the 100- and 151-milestone CTAs land on View, but the feature they
+    // promised (detailed stats / export) is one more tap away — arm the
+    // matching follow-up nudge that points at where it actually lives.
+    // Defensively clear the other so two nudges never overlap (e.g. the user
+    // never opened Settings at 100 before reaching 151).
+    if (celebration === 100) {
+      usePokedexStore.getState().armStatsHint();
+      usePokedexStore.getState().dismissExportHint();
+    } else if (celebration === 151) {
+      usePokedexStore.getState().armExportHint();
+      usePokedexStore.getState().dismissStatsHint();
+    }
     dismiss();
   }, [nudge, celebration, onNavigate, dismiss]);
 
