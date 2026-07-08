@@ -65,8 +65,10 @@ export interface ClientRecord {
   sessionDepth?: number[];
   /** End-state snapshot of each session (ts + the build at that session's last
    *  beacon), most-recent MAX_SESSIONS_TRACKED. Diffing consecutive entries
-   *  shows what changed visit-to-visit. Absent on legacy records. */
-  sessionLog?: { ts: number; ids: number[]; country?: string }[];
+   *  shows what changed visit-to-visit. Absent on legacy records.
+   *  `events` lists the onboarding/funnel events (intro-shown, milestone-*, …)
+   *  the user saw DURING that session, in order, deduped per session. */
+  sessionLog?: { ts: number; ids: number[]; country?: string; events?: string[] }[];
   /** Deepest build (distinct evolution lines) ever reached. */
   maxDepth: number;
   /** Hour-of-day (0–23) in the user's own local time at their last submit. */
