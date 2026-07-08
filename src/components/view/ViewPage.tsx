@@ -11,6 +11,7 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
+import { StatsSettingsHint } from '@/components/milestone/StatsSettingsHint';
 import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
 import { DetailedStatsPanel, STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
 import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
@@ -934,6 +935,7 @@ export function ViewPage() {
 
   const [exporting, setExporting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsBtnRef = useRef<HTMLButtonElement>(null);
 
   const hasCustom = customOrder !== null;
 
@@ -1201,6 +1203,7 @@ export function ViewPage() {
               {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             </button>
             <button type="button"
+              ref={settingsBtnRef}
               onClick={() => setSettingsOpen(true)}
               className="relative p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
               aria-label="View settings"
@@ -1453,6 +1456,10 @@ export function ViewPage() {
 
       {/* Settings sheet — bottom sheet on mobile (mirrors MobileSheet) */}
       {settingsOpen && <ViewSettingsSheet onClose={() => setSettingsOpen(false)} />}
+
+      {/* Follow-up nudge from the 100-milestone celebration, pointing at the
+          settings gear (where "Show detailed stats" actually lives). */}
+      <StatsSettingsHint anchorRef={settingsBtnRef} settingsOpen={settingsOpen} />
     </div>
   );
 }

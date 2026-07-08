@@ -143,8 +143,12 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
 
   const handleCta = useCallback(() => {
     if (nudge) onNavigate(nudge.nav);
+    // The 100-milestone's "Show detailed stats" toggle lives inside View
+    // Settings, not on the page itself — arm the follow-up nudge that points
+    // at the settings gear once the user lands on View.
+    if (celebration === 100) usePokedexStore.getState().armStatsHint();
     dismiss();
-  }, [nudge, onNavigate, dismiss]);
+  }, [nudge, celebration, onNavigate, dismiss]);
 
   if (!nudge || !anchor || !ready) return null;
 

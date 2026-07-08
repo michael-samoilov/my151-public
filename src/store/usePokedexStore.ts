@@ -73,6 +73,11 @@ interface PokedexState {
   /** Transient (never persisted): the milestone threshold currently being
    *  celebrated, or null. The celebration overlay reads and dismisses this. */
   milestoneCelebration: number | null;
+  /** Transient (never persisted): armed when the 100-milestone celebration's
+   *  "Open View" CTA is clicked. "Show detailed stats" lives inside View
+   *  Settings rather than on the page itself, so a follow-up nudge points the
+   *  user at the settings gear once they land on View. */
+  statsHintArmed: boolean;
 
   // Actions
   addToSection: (sectionId: string, pokemonIds: number[]) => void;
@@ -109,6 +114,10 @@ interface PokedexState {
   recordPlacedCount: (count: number) => void;
   /** Clear the transient celebration signal (overlay dismissed / played). */
   dismissMilestoneCelebration: () => void;
+  /** Arm the follow-up "stats live in Settings" nudge for the View page. */
+  armStatsHint: () => void;
+  /** Clear the follow-up nudge (dismissed, or its purpose fulfilled). */
+  dismissStatsHint: () => void;
 }
 
 const GROUP_ID_SET = new Set(BUILD_GROUP_IDS);
@@ -141,6 +150,7 @@ export const usePokedexStore = create<PokedexState>()(
       milestoneMax: INITIAL_COUNT,
       milestoneCelebrated: milestonesAtOrBelow(INITIAL_COUNT),
       milestoneCelebration: null,
+      statsHintArmed: false,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -346,6 +356,8 @@ export const usePokedexStore = create<PokedexState>()(
         }),
 
       dismissMilestoneCelebration: () => set({ milestoneCelebration: null }),
+      armStatsHint: () => set({ statsHintArmed: true }),
+      dismissStatsHint: () => set({ statsHintArmed: false }),
     }),
     {
       name: POKEDEX_STORAGE_KEY,
