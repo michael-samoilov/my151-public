@@ -27,7 +27,11 @@ function RouteFallback() {
 }
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BUILD_GROUPS } from '@/data/slot-template';
-import { useCompletionBeacon } from '@/hooks/useCompletionBeacon';
+import { useCompletionBeacon, sendEventBeacon } from '@/hooks/useCompletionBeacon';
+import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
+import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
+import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
+import { isAnalyticsUnlocked } from '@/lib/milestones';
 import { cn } from '@/lib/utils';
 
 declare const __BUILD_TIMESTAMP__: string;
@@ -129,6 +133,7 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
 
 function App() {
   useCompletionBeacon();
+  useMilestoneTracker();
   const [currentView, setCurrentView] = useState<AppView>('builder');
   const viewMounted = useRef(false);
   const analyticsMounted = useRef(false);
@@ -157,7 +162,9 @@ function App() {
   }, []);
 
   const handleViewChange = useCallback((view: AppView) => {
-    if (view === 'view') viewMounted.current = true;
+    // Analytics is gated until 25 Pokémon (sticky). Guard every path here.
+    if (view === 'analytics' && !isAnalyticsUnlocked(usePokedexStore.getState().milestoneMax)) return;
+    if (view === 'view') { viewMounted.current = true; sendEventBeacon('view-visit', { once: true }); }
     if (view === 'analytics') analyticsMounted.current = true;
     setCurrentView(view);
     if (view !== 'builder') {
@@ -230,6 +237,12 @@ function App() {
 
       {/* Analytics drill-down sheet — only on analytics view */}
       {currentView === 'analytics' && drillDownSegment && <DrillDownSheet />}
+
+      {/* Milestone celebration nudges (analytics @25, view @100, confetti @151) */}
+      <MilestoneCelebration onNavigate={handleViewChange} />
+
+      {/* Dev-only MilestoneBar tuning panel (renders only with ?tune) */}
+      <MilestoneTunePanel />
     </TooltipProvider>
   );
 }

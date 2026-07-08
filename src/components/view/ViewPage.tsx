@@ -11,6 +11,8 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
+import { FollowUpHint } from '@/components/milestone/FollowUpHint';
+import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
 import { DetailedStatsPanel, STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
 import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
@@ -933,6 +935,12 @@ export function ViewPage() {
 
   const [exporting, setExporting] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsBtnRef = useRef<HTMLButtonElement>(null);
+  const exportBtnRef = useRef<HTMLButtonElement>(null);
+  const statsHintArmed = usePokedexStore((s) => s.statsHintArmed);
+  const dismissStatsHint = usePokedexStore((s) => s.dismissStatsHint);
+  const exportHintArmed = usePokedexStore((s) => s.exportHintArmed);
+  const dismissExportHint = usePokedexStore((s) => s.dismissExportHint);
 
   const hasCustom = customOrder !== null;
 
@@ -1183,13 +1191,17 @@ export function ViewPage() {
     <div className="h-full flex relative">
       {/* Main grid column */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <div className="flex items-center justify-between px-3 sm:px-6 py-2 border-b h-11">
+        <div className="relative flex items-center justify-between px-3 sm:px-6 py-2 border-b h-11">
           <h2 className="text-2xl font-extrabold tracking-tight leading-none">
             <span className="text-primary">{count}</span>
             <span className="text-foreground">/151</span>
           </h2>
+          <div className="absolute left-1/2 -translate-x-1/2">
+            <MilestoneBar />
+          </div>
           <div className="flex items-center gap-1">
             <button type="button"
+              ref={exportBtnRef}
               onClick={handleExport}
               disabled={exporting || count === 0}
               className="p-1.5 rounded-md border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-primary"
@@ -1197,6 +1209,7 @@ export function ViewPage() {
               {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             </button>
             <button type="button"
+              ref={settingsBtnRef}
               onClick={() => setSettingsOpen(true)}
               className="relative p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
               aria-label="View settings"
@@ -1449,6 +1462,25 @@ export function ViewPage() {
 
       {/* Settings sheet — bottom sheet on mobile (mirrors MobileSheet) */}
       {settingsOpen && <ViewSettingsSheet onClose={() => setSettingsOpen(false)} />}
+
+      {/* Follow-up nudges from the milestone celebrations, pointing at where
+          the promised feature actually lives (one tap further than "Open View"). */}
+      <FollowUpHint
+        armed={statsHintArmed}
+        dismiss={dismissStatsHint}
+        fulfilled={settingsOpen}
+        anchorRef={settingsBtnRef}
+        title="Stats live in Settings"
+        body="Tap the gear and turn on “Show detailed stats” for type, generation, and base-stat charts."
+      />
+      <FollowUpHint
+        armed={exportHintArmed}
+        dismiss={dismissExportHint}
+        fulfilled={exporting}
+        anchorRef={exportBtnRef}
+        title="Export is right here"
+        body="Tap the download icon to save your dex as an image and share it."
+      />
     </div>
   );
 }

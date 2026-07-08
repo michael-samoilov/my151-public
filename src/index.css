@@ -164,3 +164,61 @@ img {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--color-muted-foreground) 45%, transparent) transparent;
 }
+
+/* Intro-card showcase fan — slow asynchronous drift so the three poster cards
+ * feel alive without demanding attention. Applied to the card face (inner
+ * wrapper), never the positioned wrapper, so the idle float and the base
+ * placement/tilt transforms don't fight. */
+@keyframes intro-float-a {
+  from { transform: translateY(2px) rotate(-0.5deg); }
+  to   { transform: translateY(-4px) rotate(0.5deg); }
+}
+@keyframes intro-float-b {
+  from { transform: translateY(-3px); }
+  to   { transform: translateY(3px); }
+}
+@keyframes intro-float-c {
+  from { transform: translateY(3px) rotate(0.5deg); }
+  to   { transform: translateY(-3px) rotate(-0.5deg); }
+}
+.intro-float-a { animation: intro-float-a 6.5s ease-in-out infinite alternate; }
+.intro-float-b { animation: intro-float-b 7.5s ease-in-out infinite alternate; animation-delay: -2.5s; }
+.intro-float-c { animation: intro-float-c 8.5s ease-in-out infinite alternate; animation-delay: -5s; }
+@media (prefers-reduced-motion: reduce) {
+  .intro-float-a, .intro-float-b, .intro-float-c { animation: none; }
+}
+
+/* Milestone bead "pop" — plays once when a milestone is first reached. The
+ * positioning wrapper owns the translate centering; this animates only scale on
+ * an inner layer so the two never fight. Tunable via MilestoneBar CONFIG. */
+@keyframes milestone-pop {
+  0%   { transform: scale(0.4); opacity: 0.4; }
+  55%  { transform: scale(var(--ms-pop-scale, 1.35)); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes milestone-ripple {
+  0%   { transform: scale(0.6); opacity: 0.5; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .milestone-pop, .milestone-ripple { animation: none !important; }
+}
+
+/* Milestone celebration popup entrance — a soft float-up into place under the
+ * nav. Deliberately slower and gentler than the default toast slide (which
+ * snapped in ~150ms): it rises from just below with a subtle scale and settles
+ * on a decelerating ease so it reads as arriving, not appearing. */
+@keyframes milestone-nudge-in {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.milestone-nudge-in { animation: milestone-nudge-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .milestone-nudge-in { animation: none; opacity: 1; transform: none; }
+}
+
+/* Milestone bar responsive width (values fed from MilestoneBar CONFIG). Scales
+   with the viewport: min on small phones, growing with vw, capped on desktop.
+   The measured pixel width (not this) drives the fill-skip math, so the bar
+   stays correct at any resolved width. */
+.milestone-bar { width: clamp(var(--ms-w-min), var(--ms-w-vw), var(--ms-w-max)); }

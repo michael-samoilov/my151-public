@@ -122,6 +122,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .map(parseRecord)
       .filter((r): r is ClientRecord => r !== null);
 
+    // Funnel event counters (from api/event.ts) — top-of-funnel signals that
+    // fire with zero placements, so they live outside the per-user records.
+    const funnelRaw = (await redis.hgetall('funnel')) as Record<string, unknown> | null;
+    const funnelEvents: Record<string, number> = {};
+    for (const [k, v] of Object.entries(funnelRaw ?? {})) {
+      const n = typeof v === 'number' ? v : parseInt(String(v), 10);
+      if (Number.isFinite(n)) funnelEvents[k] = n;
+    }
+
     // Newest-active first.
     records.sort((a, b) => b.lastTs - a.lastTs);
 
@@ -328,6 +337,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       offset,
       limit,
       funnel: { users: totalUsers, completed, exported },
+      funnelEvents,
       exportSettings: exportSettingsAgg,
       retention: { returning, activeLast7, newUsers: totalUsers - returning },
       multiSession,

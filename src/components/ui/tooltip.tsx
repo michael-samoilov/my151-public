@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils"
 const TooltipProvider = TooltipPrimitive.Provider
 const Tooltip = TooltipPrimitive.Root
 const TooltipTrigger = TooltipPrimitive.Trigger
+const TooltipPortal = TooltipPrimitive.Portal
 
 function TooltipContent({ className, sideOffset = 4, ref, ...props }: React.ComponentProps<typeof TooltipPrimitive.Content>) {
   return (
@@ -20,4 +21,8 @@ function TooltipContent({ className, sideOffset = 4, ref, ...props }: React.Comp
   )
 }
 
-export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider }
+function TooltipArrow({ className, ...props }: React.ComponentProps<typeof TooltipPrimitive.Arrow>) {
+  return <TooltipPrimitive.Arrow className={cn("fill-popover", className)} {...props} />
+}
+
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider, TooltipPortal, TooltipArrow }

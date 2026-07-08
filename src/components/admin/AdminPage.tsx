@@ -90,6 +90,7 @@ interface ApiResponse {
   offset: number;
   limit: number;
   funnel: { users: number; completed: number; exported: number };
+  funnelEvents?: Record<string, number>;
   exportSettings?: {
     tracked: number;
     outlines: number;
@@ -1488,6 +1489,29 @@ export function AdminPage() {
                 <Stat value={data.retention.activeLast7} label="Active 7d" />
               </div>
             </Card>
+
+            {data.funnelEvents && Object.keys(data.funnelEvents).length > 0 && (() => {
+              const e = data.funnelEvents;
+              const g = (k: string) => e[k] ?? 0;
+              const rows: [string, number][] = [
+                ['Saw intro', g('intro-shown')],
+                ['Chose starters (CTA)', g('intro-cta')],
+                ['Dismissed intro', g('intro-dismiss')],
+                ['Reached 25 (Analytics)', g('milestone-25')],
+                ['Reached 100 (Stats)', g('milestone-100')],
+                ['Reached 151', g('milestone-151')],
+                ['Visited View', g('view-visit')],
+              ];
+              return (
+                <Card title="Engagement funnel (distinct browsers)">
+                  <div className="flex flex-wrap gap-2">
+                    {rows.map(([label, v]) => (
+                      <Stat key={label} value={v} label={label} />
+                    ))}
+                  </div>
+                </Card>
+              );
+            })()}
 
             {data.exportSettings && data.exportSettings.tracked > 0 && (
               <Card title={`Export settings (${data.exportSettings.tracked} export${data.exportSettings.tracked === 1 ? '' : 's'} tracked)`}>
