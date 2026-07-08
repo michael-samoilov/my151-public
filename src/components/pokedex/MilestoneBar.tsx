@@ -4,7 +4,7 @@ import { MILESTONE_DEFS, MILESTONES, DEX_TOTAL, milestonesAtOrBelow, type Milest
 import { BUILD_GROUPS, createEmptySections } from '@/data/slot-template';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
-import { BarChart3, Camera, Sparkles, Trophy, Lock, ChevronDown, type LucideIcon } from 'lucide-react';
+import { BarChart3, Camera, Sparkles, Trophy, ChevronDown, type LucideIcon } from 'lucide-react';
 
 /**
  * The milestone progress spine — a slim runway with a bead at each milestone
@@ -227,7 +227,6 @@ function useIsDesktop(): boolean {
 
 export function MilestoneBar() {
   const sections = usePokedexStore((s) => s.sections);
-  const storeMax = usePokedexStore((s) => s.milestoneMax);
   const realCount = useMemo(
     () => Object.values(sections).reduce((sum, ids) => sum + ids.length, 0),
     [sections],
@@ -254,7 +253,6 @@ export function MilestoneBar() {
   }, [isDesktop, mobileBrowserOpen, realCount]);
 
   const count = TUNE && preview !== null ? preview : deferredCount;
-  const milestoneMax = TUNE && preview !== null ? Math.max(storeMax, preview) : storeMax;
 
   // Measure the rendered track width so the bead-footprint skip (hw) tracks the
   // actual pixel width the clamp() resolves to at this viewport — not a fixed
@@ -361,7 +359,6 @@ export function MilestoneBar() {
             at={m.at}
             leftPct={(m.at / DEX_TOTAL) * 100}
             reached={count >= m.at}
-            unlocked={milestoneMax >= m.at}
             gated={GATED[m.feature]}
             feature={m.feature}
             title={m.title}
@@ -418,7 +415,6 @@ function MilestoneTrigger({
   at,
   leftPct,
   reached,
-  unlocked,
   gated,
   feature,
   title,
@@ -431,7 +427,6 @@ function MilestoneTrigger({
   at: number;
   leftPct: number;
   reached: boolean;
-  unlocked: boolean;
   gated: boolean;
   feature: MilestoneFeature;
   title: string;
@@ -442,11 +437,10 @@ function MilestoneTrigger({
   iconRem: number;
 }) {
   const [open, setOpen] = useState(false);
-  const locked = gated && !unlocked;
-  const Glyph = locked ? Lock : FEATURE_ICON[feature];
+  const Glyph = FEATURE_ICON[feature];
   // Shift the glyph so its ink centroid — not its bounding box — sits at the
   // bead center (offsets are geometry-derived; see OPTICAL_OFFSET).
-  const off = locked ? OPTICAL_OFFSET.lock : OPTICAL_OFFSET[feature];
+  const off = OPTICAL_OFFSET[feature];
 
   return (
     <Tooltip open={open} onOpenChange={setOpen}>
