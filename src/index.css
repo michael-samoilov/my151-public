@@ -217,8 +217,9 @@ img {
   .milestone-nudge-in { animation: none; opacity: 1; transform: none; }
 }
 
-/* Milestone bar responsive width (values fed from MilestoneBar CONFIG). Scales
-   with the viewport: min on small phones, growing with vw, capped on desktop.
-   The measured pixel width (not this) drives the fill-skip math, so the bar
-   stays correct at any resolved width. */
-.milestone-bar { width: clamp(var(--ms-w-min), var(--ms-w-vw), var(--ms-w-max)); }
+/* Milestone bar width. The bar is a flex child that GROWS to fill the space
+   between the counter (left) and the page controls (right): width:100% takes the
+   whole flex cell, so it spans whatever space each page's header actually has.
+   The measured pixel width (not a fixed rem) drives the fill-skip math, so the
+   bar stays correct at any resolved width. */
+.milestone-bar { width: 100%; }

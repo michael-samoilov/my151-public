@@ -1,295 +1,146 @@
 #!/usr/bin/env node
 /**
- * Real-world spacing verification harness.
+ * Header spacing / fill verification harness (REAL browser, REAL navigation).
  *
- * Opens the app in a real browser, measures actual pixel positions of:
- * - Counter (n/151 text)
- * - Left divider (hairline)
- * - MilestoneBar (beads + icons)
- * - Right divider (hairline)
- * - Settings menu (icon buttons)
+ * The milestone bar lives in each PAGE's own header row (the `n/151` row), NOT
+ * the app's top nav <header>. A prior version of this harness measured the wrong
+ * row and navigated by a `?view=` URL param that the app ignores — so it silently
+ * validated the Builder page three times and missed a real counter/bar overlap.
  *
- * Detects overlaps by comparing actual rendered bounding rectangles.
- * Reports findings with pixel-level precision.
+ * This version:
+ *   • seeds the store to 100 Pokémon (via the ?tune-exposed store) so Analytics
+ *     is unlocked and every page renders its header,
+ *   • drives the actual nav buttons (data-nav=…) to switch pages,
+ *   • locates the bar's own header row and measures the counter + controls that
+ *     are truly its row siblings, and asserts:
+ *       1. counter, bar, controls share a row (no cross-row false positives)
+ *       2. counter → bar → controls are ordered with a positive gap (no overlap)
+ *       3. the bar FILLS most of the space between counter and controls
+ *   • also switches pages twice and asserts the bar width doesn't jump, guarding
+ *     the "no re-animation on page switch" fix.
+ *
+ * Run: npm run dev   then   node test-header-spacing.mjs
  */
 
 import { chromium } from 'playwright';
 
-const BASE_URL = 'http://localhost:5173';
-const ROOT_PX = 16; // assume 16px base font size
+const BASE = 'http://localhost:5173/?tune';
+const MIN_FILL = 0.80; // bar must fill ≥80% of the counter→controls gap
 
 const VIEWPORTS = [
-  { width: 390, height: 844, label: 'Mobile (iPhone 12)' },
-  { width: 768, height: 1024, label: 'Tablet (iPad)' },
-  { width: 1024, height: 768, label: 'Desktop (md breakpoint)' },
-  { width: 1440, height: 900, label: 'Desktop (large)' },
-  { width: 1920, height: 1080, label: 'Desktop (4K)' },
+  { width: 390, height: 844, label: 'Mobile (390)' },
+  { width: 768, height: 1024, label: 'Tablet (768)' },
+  { width: 1024, height: 768, label: 'Desktop md (1024)' },
+  { width: 1440, height: 900, label: 'Desktop lg (1440)' },
+  { width: 1920, height: 1080, label: 'Desktop 4K (1920)' },
 ];
+const PAGES = ['builder', 'view', 'analytics'];
 
-const PAGES_TO_TEST = [
-  { path: '/', name: 'Home (Builder)' },
-];
-
-/**
- * Measure header layout elements and detect overlaps.
- * Returns: { success, elements, overlaps, clearances }
- */
-async function measureHeaderLayout(page) {
-  const measurements = await page.evaluate(() => {
-    // Get the header container
-    const header = document.querySelector('header');
-    if (!header) return { error: 'Header not found' };
-
-    // Get the counter (n/151)
-    const counter = header.querySelector('h1 + div'); // Following the flex layout
-    const counterH2 = header.querySelector('h2');
-
-    // Get the settings menu
-    const settingsMenu = header.querySelector('[data-nav="view"]')?.parentElement;
-
-    // Get the MilestoneBar container and its dividers
-    const buildPageSection = document.querySelector('[data-build-scroll]')?.parentElement;
-    const pokedexHeader = buildPageSection?.querySelector('h2 + div'); // Should be the MilestoneBar wrapper
-    const milestoneBar = document.querySelector('.milestone-bar');
-    const dividers = Array.from(document.querySelectorAll('.milestone-bar > div[style*="height"]')).filter(
-      el => el.style.width === '1px'
-    );
-
-    const measurements = {};
-
-    // Measure counter if found
-    if (counterH2) {
-      const rect = counterH2.getBoundingClientRect();
-      measurements.counter = {
-        left: rect.left,
-        right: rect.right,
-        top: rect.top,
-        bottom: rect.bottom,
-        width: rect.width,
-        height: rect.height,
-        label: 'Counter (n/151)',
-      };
-    } else if (counter) {
-      // Fallback: try to find counter in the header nav area
-      const allElements = header.querySelectorAll('*');
-      for (const el of allElements) {
-        const text = el.textContent;
-        if (text && text.includes('/151') && text.length < 20) {
-          const rect = el.getBoundingClientRect();
-          measurements.counter = {
-            left: rect.left,
-            right: rect.right,
-            top: rect.top,
-            bottom: rect.bottom,
-            width: rect.width,
-            height: rect.height,
-            label: 'Counter (n/151)',
-          };
-          break;
-        }
-      }
-    }
-
-    // Measure milestone bar container
-    if (milestoneBar) {
-      const rect = milestoneBar.getBoundingClientRect();
-      measurements.milestoneBar = {
-        left: rect.left,
-        right: rect.right,
-        top: rect.top,
-        bottom: rect.bottom,
-        width: rect.width,
-        height: rect.height,
-        label: 'MilestoneBar',
-      };
-    }
-
-    // Measure dividers
-    if (dividers.length >= 2) {
-      measurements.leftDivider = {
-        left: dividers[0].getBoundingClientRect().left,
-        right: dividers[0].getBoundingClientRect().right,
-        top: dividers[0].getBoundingClientRect().top,
-        bottom: dividers[0].getBoundingClientRect().bottom,
-        width: dividers[0].getBoundingClientRect().width,
-        label: 'Left Divider',
-      };
-      measurements.rightDivider = {
-        left: dividers[1].getBoundingClientRect().left,
-        right: dividers[1].getBoundingClientRect().right,
-        top: dividers[1].getBoundingClientRect().top,
-        bottom: dividers[1].getBoundingClientRect().bottom,
-        width: dividers[1].getBoundingClientRect().width,
-        label: 'Right Divider',
-      };
-    }
-
-    // Measure settings menu
-    if (settingsMenu) {
-      const rect = settingsMenu.getBoundingClientRect();
-      measurements.settingsMenu = {
-        left: rect.left,
-        right: rect.right,
-        top: rect.top,
-        bottom: rect.bottom,
-        width: rect.width,
-        height: rect.height,
-        label: 'Settings Menu',
-      };
-    }
-
-    return measurements;
+async function seed(page) {
+  await page.evaluate(() => {
+    const st = window.__pokedexStore;
+    const cur = st.getState().sections;
+    const ids = Array.from({ length: 100 }, (_, i) => i + 1);
+    st.setState({
+      sections: { ...cur, other: ids },
+      milestoneMax: 100,
+      milestoneCelebrated: [25, 100],
+      milestoneCelebration: null,
+    });
   });
-
-  if (measurements.error) {
-    return { success: false, error: measurements.error };
-  }
-
-  // Detect overlaps
-  const overlaps = [];
-  const clearances = [];
-
-  const { counter, milestoneBar, leftDivider, rightDivider, settingsMenu } = measurements;
-
-  // Check counter vs left divider
-  if (counter && leftDivider) {
-    const gap = leftDivider.left - counter.right;
-    if (gap < 0) {
-      overlaps.push({
-        elements: ['Counter', 'Left Divider'],
-        gap: gap.toFixed(1),
-        severity: 'CRITICAL',
-        detail: `Counter ends at ${counter.right.toFixed(0)}px, divider at ${leftDivider.left.toFixed(0)}px`,
-      });
-    } else {
-      clearances.push({
-        elements: ['Counter', 'Left Divider'],
-        gap: gap.toFixed(1),
-      });
-    }
-  }
-
-  // Check right divider vs settings menu
-  if (rightDivider && settingsMenu) {
-    const gap = settingsMenu.left - rightDivider.right;
-    if (gap < 0) {
-      overlaps.push({
-        elements: ['Right Divider', 'Settings Menu'],
-        gap: gap.toFixed(1),
-        severity: 'CRITICAL',
-        detail: `Settings starts at ${settingsMenu.left.toFixed(0)}px, divider at ${rightDivider.right.toFixed(0)}px`,
-      });
-    } else {
-      clearances.push({
-        elements: ['Right Divider', 'Settings Menu'],
-        gap: gap.toFixed(1),
-      });
-    }
-  }
-
-  // Check left divider vs milestone bar
-  if (leftDivider && milestoneBar) {
-    if (leftDivider.right > milestoneBar.left && leftDivider.left < milestoneBar.left) {
-      overlaps.push({
-        elements: ['Left Divider', 'MilestoneBar'],
-        severity: 'CRITICAL',
-      });
-    }
-  }
-
-  // Check right divider vs milestone bar
-  if (rightDivider && milestoneBar) {
-    if (rightDivider.left < milestoneBar.right && rightDivider.right > milestoneBar.right) {
-      overlaps.push({
-        elements: ['Right Divider', 'MilestoneBar'],
-        severity: 'CRITICAL',
-      });
-    }
-  }
-
-  return {
-    success: true,
-    measurements,
-    overlaps,
-    clearances,
-  };
 }
 
-async function testViewport(browser, viewport) {
-  console.log(`\n📱 Testing ${viewport.label} (${viewport.width}x${viewport.height})`);
+async function measure(page) {
+  return page.evaluate(() => {
+    const R = (el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, right: r.right, top: r.top, width: r.width, height: r.height };
+    };
+    const bar = Array.from(document.querySelectorAll('.milestone-bar')).find(
+      (b) => b.getBoundingClientRect().width > 0,
+    );
+    if (!bar) return { error: 'no visible bar' };
+    const barCell = bar.parentElement;
+    const row = barCell.parentElement;
+    const kids = Array.from(row.children);
+    const counter = kids.find((c) => /\/151/.test(c.textContent)) || null;
+    const control = kids[kids.indexOf(barCell) + 1] || null;
+    return {
+      counter: counter ? R(counter) : null,
+      bar: R(bar),
+      control: control ? R(control) : null,
+      row: R(row),
+    };
+  });
+}
 
-  const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } });
-  const page = await context.newPage();
-
-  try {
-    await page.goto(BASE_URL + '/', { waitUntil: 'networkidle', timeout: 10000 });
-    await page.waitForTimeout(500);
-
-    const result = await measureHeaderLayout(page);
-
-    if (!result.success) {
-      console.log(`   ❌ ${result.error}`);
-      return;
-    }
-
-    const { measurements, overlaps, clearances } = result;
-
-    // Print measurements
-    console.log('\n   📏 Measurements:');
-    for (const [key, m] of Object.entries(measurements)) {
-      if (m.label) {
-        console.log(
-          `      ${m.label}: left=${m.left.toFixed(0)}px, right=${m.right.toFixed(0)}px, width=${m.width.toFixed(0)}px`
-        );
-      }
-    }
-
-    // Print clearances
-    if (clearances.length > 0) {
-      console.log('\n   ✅ Clearances:');
-      for (const c of clearances) {
-        console.log(`      ${c.elements.join(' ↔ ')}: ${c.gap}px gap`);
-      }
-    }
-
-    // Print overlaps (CRITICAL)
-    if (overlaps.length > 0) {
-      console.log('\n   ❌ OVERLAPS DETECTED:');
-      for (const o of overlaps) {
-        console.log(`      ${o.elements.join(' ↔ ')}: ${o.gap}px overlap (${o.severity})`);
-        if (o.detail) console.log(`         → ${o.detail}`);
-      }
-    } else {
-      console.log('\n   ✅ NO OVERLAPS');
-    }
-  } catch (e) {
-    console.log(`   ❌ Error: ${e.message}`);
-  } finally {
-    await context.close();
+function check(m) {
+  const problems = [];
+  const notes = [];
+  if (m.counter && Math.abs(m.counter.top - m.bar.top) > 14)
+    problems.push(`counter/bar on different rows`);
+  if (m.counter) {
+    const g = m.bar.left - m.counter.right;
+    g < 0 ? problems.push(`counter overlaps bar ${(-g).toFixed(1)}px`) : notes.push(`c→bar ${g.toFixed(0)}px`);
   }
+  if (m.control) {
+    const g = m.control.left - m.bar.right;
+    g < 0 ? problems.push(`bar overlaps control ${(-g).toFixed(1)}px`) : notes.push(`bar→c ${g.toFixed(0)}px`);
+  }
+  const availL = m.counter ? m.counter.right : m.row.left;
+  const availR = m.control ? m.control.left : m.row.right;
+  const avail = availR - availL;
+  const fill = avail > 0 ? m.bar.width / avail : 0;
+  notes.push(`${m.bar.width.toFixed(0)}px = ${(fill * 100).toFixed(0)}% fill`);
+  if (fill < MIN_FILL) problems.push(`bar only fills ${(fill * 100).toFixed(0)}% (< ${MIN_FILL * 100}%)`);
+  return { problems, notes };
 }
 
 async function main() {
-  console.log('🧪 Header Spacing Test Harness');
-  console.log('=====================================');
-  console.log(`Base URL: ${BASE_URL}`);
-  console.log('Testing: Counter ↔ Dividers ↔ MilestoneBar ↔ Dividers ↔ Settings');
-
+  console.log('🧪 Header Spacing + Fill Harness (seeded, real nav)\n');
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-
+  let bad = false;
   try {
-    for (const viewport of VIEWPORTS) {
-      await testViewport(browser, viewport);
-    }
+    for (const vp of VIEWPORTS) {
+      console.log(`📱 ${vp.label}`);
+      const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height } });
+      const page = await ctx.newPage();
+      await page.goto(BASE, { waitUntil: 'networkidle', timeout: 15000 });
+      await page.waitForTimeout(400);
+      await seed(page);
+      await page.waitForTimeout(300);
 
-    console.log('\n✅ Test harness complete!\n');
-    console.log('Summary:');
-    console.log('- Measurements are from actual browser rendering');
-    console.log('- Overlaps are detected by comparing bounding rectangles');
-    console.log('- Gaps are negative when overlapping, positive when clear');
+      const widths = {};
+      for (const nav of PAGES) {
+        try {
+          await page.click(`[data-nav="${nav}"]`, { timeout: 3000 });
+        } catch { /* maybe already on it */ }
+        await page.waitForTimeout(500);
+        const m = await measure(page);
+        if (m.error) { console.log(`   ⚠️  ${nav}: ${m.error}`); continue; }
+        widths[nav] = m.bar.width;
+        const { problems, notes } = check(m);
+        console.log(`   ${problems.length ? '❌' : '✅'} ${nav}: ${notes.join(' · ')}`);
+        problems.forEach((p) => { console.log(`        └─ ${p}`); bad = true; });
+      }
+
+      // Re-animation guard: revisit builder, its width must be identical (no jump).
+      await page.click('[data-nav="builder"]').catch(() => {});
+      await page.waitForTimeout(500);
+      const back = await measure(page);
+      if (!back.error && widths.builder != null) {
+        const jump = Math.abs(back.bar.width - widths.builder);
+        if (jump > 0.5) { console.log(`   ❌ builder width jumped ${jump.toFixed(1)}px on revisit`); bad = true; }
+        else console.log(`   ✅ builder width stable on revisit (no re-animate)`);
+      }
+      await ctx.close();
+      console.log('');
+    }
+    console.log(bad ? '❌ Problems found' : '✅ All pages/viewports: ordered, no overlap, bar fills, stable on switch');
   } finally {
     await browser.close();
   }
+  process.exit(bad ? 1 : 0);
 }
 
-main().catch(console.error);
+main().catch((e) => { console.error(e); process.exit(1); });

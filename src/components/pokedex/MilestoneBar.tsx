@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, memo as React_memo } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { MILESTONE_DEFS, MILESTONES, DEX_TOTAL, milestonesAtOrBelow, type MilestoneFeature } from '@/lib/milestones';
 import { BUILD_GROUPS, createEmptySections } from '@/data/slot-template';
@@ -32,12 +32,9 @@ import { BarChart3, Camera, Sparkles, Trophy, ChevronDown, type LucideIcon } fro
 // red + 2·outlineRem.
 // ─────────────────────────────────────────────────────────────────────────────
 const DEFAULT_CONFIG = {
-  // Track width scales with the viewport: clamp(min, vw, max). Small phones sit
-  // at the min; it grows with width and caps on desktop. The measured width
-  // (not these rems) drives the fill-skip math, so any value stays correct.
-  widthMinRem: 10.5,
-  widthVw: 24,
-  widthMaxRem: 22,
+  // The bar fills the available space between the counter and the page controls
+  // (width:100% of its flex cell — see .milestone-bar in index.css). The measured
+  // pixel width drives the fill-skip math, so the bar stays correct at any width.
 
   // Uniform grey border thickness wrapping the red everywhere.
   outlineRem: 0.15,
@@ -59,9 +56,11 @@ const DEFAULT_CONFIG = {
   iconReachedColor: 'var(--color-primary-foreground)',
 
   // Optional hairline dividers flanking the bar, so the counter (left) and
-  // page buttons (right) read as intentionally aligned around a framed bar.
+  // page buttons (right) read as intentionally aligned around a framed bar. The
+  // gap is kept small (< the header flex gap) so the hairlines sit in the gutter
+  // beside the bar and never reach the counter/controls.
   showDividers: true,
-  dividerGapRem: 0.95,
+  dividerGapRem: 0.5,
   dividerColor: 'color-mix(in srgb, var(--color-muted-foreground) 38%, var(--color-card))',
 
   // Reach micro-interaction (one-time "pop" when a bead is first reached).
@@ -264,7 +263,11 @@ function MilestoneBarComponent() {
     if (!el) return;
     const measure = () => {
       const w = el.getBoundingClientRect().width;
-      setTrackPx((prev) => (Math.abs(prev - w) < 0.5 ? prev : w));
+      // Ignore zero-width reads: when this page is hidden (display:none) the bar
+      // measures 0, which would recompute the fill fraction and then visibly
+      // re-animate the width transition when the page is shown again. Keeping the
+      // last real width means switching pages produces no change → no animation.
+      setTrackPx((prev) => (w < 1 || Math.abs(prev - w) < 0.5 ? prev : w));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -288,15 +291,8 @@ function MilestoneBarComponent() {
   const centerXY = 'top-1/2 -translate-x-1/2 -translate-y-1/2';
 
   return (
-    <div
-      className="milestone-bar select-none relative"
-      style={{
-        ['--ms-w-min' as string]: `${cfg.widthMinRem}rem`,
-        ['--ms-w-vw' as string]: `${cfg.widthVw}vw`,
-        ['--ms-w-max' as string]: `${cfg.widthMaxRem}rem`,
-      }}
-    >
-      {cfg.showDividers && isDesktop && (
+    <div className="milestone-bar select-none relative">
+      {cfg.showDividers && (
         <>
           <div
             className={`absolute ${centerY}`}
@@ -377,7 +373,7 @@ function MilestoneBarComponent() {
 /** Memoized milestone bar to prevent re-animation on page switches.
  *  Since each page has its own instance, this ensures the bar only re-renders
  *  when its data (count, track width) actually changes, not on visibility toggles. */
-export const MilestoneBar = React_memo(MilestoneBarComponent);
+export const MilestoneBar = memo(MilestoneBarComponent);
 
 /** The red bead for a milestone (only rendered once reached). Pops + ripples the
  *  first time it flips to reached in-session; centering lives on the wrapper so
@@ -497,9 +493,6 @@ const TUNABLES: { key: NumericKey; min: number; max: number; step: number; label
   { key: 'iconScale', min: 0.3, max: 0.9, step: 0.01, label: 'icon scale' },
   { key: 'iconStroke', min: 1, max: 3.5, step: 0.1, label: 'icon stroke' },
   { key: 'dividerGapRem', min: 0.2, max: 1.5, step: 0.05, label: 'divider gap' },
-  { key: 'widthMinRem', min: 8, max: 16, step: 0.5, label: 'width min (rem)' },
-  { key: 'widthVw', min: 10, max: 50, step: 1, label: 'width (vw)' },
-  { key: 'widthMaxRem', min: 12, max: 30, step: 0.5, label: 'width max (rem)' },
   { key: 'fillTransitionMs', min: 0, max: 1200, step: 50, label: 'fill glide (ms)' },
   { key: 'popScale', min: 1, max: 2, step: 0.05, label: 'pop scale' },
   { key: 'popDurationMs', min: 100, max: 1000, step: 20, label: 'pop (ms)' },
