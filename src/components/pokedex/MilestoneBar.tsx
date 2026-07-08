@@ -296,7 +296,7 @@ export function MilestoneBar() {
         ['--ms-w-max' as string]: `${cfg.widthMaxRem}rem`,
       }}
     >
-      {cfg.showDividers && (
+      {cfg.showDividers && isDesktop && (
         <>
           <div
             className={`absolute ${centerY}`}
