@@ -35,7 +35,7 @@ const DEFAULT_CONFIG = {
   // Track width scales with the viewport: clamp(min, vw, max). Small phones sit
   // at the min; it grows with width and caps on desktop. The measured width
   // (not these rems) drives the fill-skip math, so any value stays correct.
-  widthMinRem: 11,
+  widthMinRem: 10.5,
   widthVw: 24,
   widthMaxRem: 22,
 
