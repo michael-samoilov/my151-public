@@ -186,6 +186,28 @@ function validExportSettings(
   };
 }
 
+// Onboarding/funnel events allowed to attach to a session (mirrors the set in
+// api/event.ts). Anything else is ignored so a hostile client can't store junk.
+const VALID_EVENTS = new Set([
+  'intro-shown',
+  'intro-cta',
+  'intro-dismiss',
+  'milestone-25',
+  'milestone-100',
+  'milestone-151',
+  'view-visit',
+]);
+/** Sanitize the buffered funnel-event list sent with a build beacon. */
+function validEvents(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  const out: string[] = [];
+  for (const e of v) {
+    if (typeof e === 'string' && VALID_EVENTS.has(e) && !out.includes(e)) out.push(e);
+    if (out.length >= 20) break;
+  }
+  return out;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -199,6 +221,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       depth?: unknown;
       sections?: unknown;
       exportSettings?: unknown;
+      events?: unknown;
     };
 
     // Client id: a UUID minted once per browser. Length-bounded to avoid abuse.
@@ -244,6 +267,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const secs = validSections(body.sections);
     const settings = kind === 'export' ? validExportSettings(body.exportSettings) : undefined;
+    const newEvents = validEvents(body.events);
 
     // Merge this beacon into an existing record (or seed a new one). Pure given
     // `existing`, so it can be re-run on retry after a concurrent write.
@@ -304,8 +328,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       else depthList[depthList.length - 1] = depth;
       rec.sessionDepth = depthList.slice(-MAX_SESSIONS_TRACKED);
       const log = rec.sessionLog ?? [];
-      if (newSession || log.length === 0) log.push({ ts: now, ids, country: geo.country });
-      else log[log.length - 1] = { ts: now, ids, country: geo.country };
+      // Carry the current session's events forward: a new session starts fresh;
+      // otherwise keep the events already logged this session, then union in any
+      // newly-buffered ones. This preserves session-tagged onboarding events
+      // across the within-session progress updates that rewrite the entry.
+      const prevEvents = newSession || log.length === 0 ? [] : log[log.length - 1].events ?? [];
+      const mergedEvents = [...prevEvents];
+      for (const e of newEvents) if (!mergedEvents.includes(e)) mergedEvents.push(e);
+      const entry = {
+        ts: now,
+        ids,
+        country: geo.country,
+        ...(mergedEvents.length ? { events: mergedEvents } : {}),
+      };
+      if (newSession || log.length === 0) log.push(entry);
+      else log[log.length - 1] = entry;
       rec.sessionLog = log.slice(-MAX_SESSIONS_TRACKED);
 
       rec.lastTs = now;

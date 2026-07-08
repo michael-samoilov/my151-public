@@ -72,6 +72,33 @@ export interface ExportSettings {
   showStats: boolean;
 }
 
+// Funnel events seen but not yet attached to a session. We buffer them here and
+// flush with the next build beacon (progress/completion), which associates them
+// with whatever session is then in progress — so the admin can see WHICH session
+// a user saw the intro / hit a milestone in. Events that happen before any
+// placement stay buffered until the user places their first Pokemon.
+const PENDING_EVENTS_KEY = 'p151-pending-events';
+function bufferPendingEvent(event: string) {
+  try {
+    const cur = JSON.parse(localStorage.getItem(PENDING_EVENTS_KEY) || '[]') as string[];
+    if (!cur.includes(event)) {
+      cur.push(event);
+      localStorage.setItem(PENDING_EVENTS_KEY, JSON.stringify(cur.slice(-20)));
+    }
+  } catch {
+    // storage unavailable — event just won't be session-associated
+  }
+}
+function takePendingEvents(): string[] {
+  try {
+    const cur = JSON.parse(localStorage.getItem(PENDING_EVENTS_KEY) || '[]') as string[];
+    if (cur.length) localStorage.removeItem(PENDING_EVENTS_KEY);
+    return Array.isArray(cur) ? cur : [];
+  } catch {
+    return [];
+  }
+}
+
 function postBeacon(
   ids: number[],
   kind: BeaconKind,
@@ -82,11 +109,23 @@ function postBeacon(
   if (DEMO_MODE || isOptedOut() || ids.length === 0) return;
   const cid = getClientId();
   if (!cid) return;
+  // Attach any buffered funnel events to this beacon so the server can file them
+  // under the current session. Export beacons don't own a session, so leave
+  // events buffered for the next progress/completion beacon.
+  const events = kind === 'export' ? undefined : takePendingEvents();
   // `sections` (groupId -> placed ids) captures WHERE the user put each Pokemon
   // on the build page — the real placement, including non-default choices. Only
   // sent for build beacons (progress/completion), not the flat export view.
   // `exportSettings` records the View settings used for an export (sort/outlines).
-  const payload = JSON.stringify({ cid, kind, ids, depth: countEvoLines(ids), sections, exportSettings });
+  const payload = JSON.stringify({
+    cid,
+    kind,
+    ids,
+    depth: countEvoLines(ids),
+    sections,
+    exportSettings,
+    events: events && events.length ? events : undefined,
+  });
   // fetch+keepalive (not navigator.sendBeacon): iOS WebKit silently drops
   // sendBeacon in several cases (after the share sheet, non-CORS-safelisted
   // blob types); keepalive still lets the request outlive a page transition.
@@ -169,6 +208,9 @@ export function sendEventBeacon(event: string, opts?: { once?: boolean }) {
       // storage unavailable — fall through and send (may double-count)
     }
   }
+  // Buffer for per-session association (flushed with the next build beacon) in
+  // addition to the aggregate funnel counter below.
+  bufferPendingEvent(event);
   void fetch('/api/event', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

@@ -11,6 +11,17 @@ const SECTION_META: Record<string, { name: string; color: string }> = Object.fro
   BUILD_GROUPS.map((g) => [g.id, { name: g.name, color: g.color }]),
 );
 
+// Human labels for the onboarding/funnel events shown per session.
+const EVENT_LABEL: Record<string, string> = {
+  'intro-shown': 'Intro shown',
+  'intro-cta': 'Intro CTA',
+  'intro-dismiss': 'Intro dismissed',
+  'milestone-25': 'Milestone 25',
+  'milestone-100': 'Milestone 100',
+  'milestone-151': 'Milestone 151',
+  'view-visit': 'Visited View',
+};
+
 // Set of section ids each Pokemon is a DEFAULT option for (its archetype /
 // category memberships). Used only to FLAG when a user placed a Pokemon in a
 // section it isn't a default for — not to reassign or group anything.
@@ -56,7 +67,7 @@ interface ClientRecord {
   sessions?: number;
   maxSessionMs?: number;
   sessionMs?: number[];
-  sessionLog?: { ts: number; ids: number[]; country?: string }[];
+  sessionLog?: { ts: number; ids: number[]; country?: string; events?: string[] }[];
   maxDepth: number;
   localHour: number;
   localDow?: number;
@@ -1075,7 +1086,7 @@ function DroppedPokemon({
 }
 
 function SessionDiffBody({ s, added, removed, rec }: {
-  s: { ts: number; ids: number[]; country?: string };
+  s: { ts: number; ids: number[]; country?: string; events?: string[] };
   added: number[];
   removed: number[];
   rec: ClientRecord;
@@ -1088,11 +1099,31 @@ function SessionDiffBody({ s, added, removed, rec }: {
     </span>
   );
 
+  // Onboarding/funnel events the user saw during THIS session.
+  const events = s.events ?? [];
+  const eventsRow =
+    events.length > 0 ? (
+      <div className="flex flex-wrap items-center gap-1 mt-1">
+        <span className="text-[0.65rem] text-muted-foreground mr-0.5">Saw:</span>
+        {events.map((e) => (
+          <span
+            key={e}
+            className="text-[0.6rem] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary whitespace-nowrap"
+          >
+            {EVENT_LABEL[e] ?? e}
+          </span>
+        ))}
+      </div>
+    ) : null;
+
   if (added.length === 0 && removed.length === 0) {
     return (
       <div className="mt-1">
         {summary}
-        <div className="text-[0.65rem] text-muted-foreground mt-0.5">no changes</div>
+        {eventsRow}
+        {events.length === 0 && (
+          <div className="text-[0.65rem] text-muted-foreground mt-0.5">no changes</div>
+        )}
       </div>
     );
   }
@@ -1122,6 +1153,7 @@ function SessionDiffBody({ s, added, removed, rec }: {
     return (
       <div className="mt-1">
         {summary}
+        {eventsRow}
         {added.length > 0 && (
           <div className="flex flex-wrap items-center gap-0.5 mt-0.5">
             <span className="text-[0.65rem] text-green-600 mr-0.5">+{added.length}</span>
@@ -1156,6 +1188,7 @@ function SessionDiffBody({ s, added, removed, rec }: {
   return (
     <div className="mt-1">
       {summary}
+      {eventsRow}
       <div className="flex flex-col gap-1.5 mt-1">
         {affected.map((sec) => (
           <div key={sec.id}>
@@ -1198,7 +1231,11 @@ function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: numbe
   const log = rec.sessionLog;
   const [activeIdx, setActiveIdx] = useState(() => Math.max(0, (log?.length ?? 1) - 1));
 
-  if (!log || log.length <= 1) return null;
+  // Render for 1+ sessions: multi-session shows visit-to-visit diffs; a single
+  // session still surfaces that session's onboarding events. Only skip when a
+  // lone session has neither a build nor any events to show.
+  if (!log || log.length === 0) return null;
+  if (log.length === 1 && (log[0].events?.length ?? 0) === 0) return null;
 
   const idx = Math.min(activeIdx, log.length - 1);
   const s = log[idx];
