@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { redis, requireAdmin, CLIENTS_KEY } from './_shared.js';
+import { redis, requireAdmin, CLIENTS_KEY, VERSION_KEY } from './_shared.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -10,7 +10,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Wipe all analytics. Single hash, so one DEL clears everything; every
   // aggregate is derived from it, so nothing else needs touching.
   try {
-    await redis.del(CLIENTS_KEY);
+    await redis.del(CLIENTS_KEY, VERSION_KEY);
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({ ok: true });
   } catch (err) {

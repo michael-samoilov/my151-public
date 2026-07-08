@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { redis, requireAdmin, CLIENTS_KEY } from './_shared.js';
+import { redis, requireAdmin, CLIENTS_KEY, VERSION_KEY } from './_shared.js';
 
 // Remove one client's record. Aggregates are computed on read, so a single
 // HDEL is all that's needed — nothing to reconcile.
@@ -16,6 +16,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const removed = await redis.hdel(CLIENTS_KEY, cid);
+    // Clear the parallel version so a future record under this cid starts fresh.
+    await redis.hdel(VERSION_KEY, cid);
     if (removed === 0) {
       return res.status(404).json({ error: 'Client not found (already removed?)' });
     }

@@ -9,6 +9,7 @@ import {
   MAX_CLIENTS,
   SESSION_GAP_MS,
   MAX_SESSIONS_TRACKED,
+  VERSION_KEY,
   type BeaconKind,
   type ClientRecord,
 } from './_shared.js';
@@ -29,6 +30,25 @@ const clientLimiter = new Ratelimit({
   analytics: false,
   prefix: 'rl:client',
 });
+
+// Compare-and-set on a version counter: write `next` to the record only if the
+// record's version still equals the one we read (`expectedVer`); then bump the
+// version. Returns 1 on success, 0 if another beacon wrote first (caller
+// re-reads and retries). This makes the whole read-merge-write atomic across the
+// completion/progress/export beacons a single browser fires within seconds of
+// each other — without it they clobber one another (lost updates: missing
+// export flag, wrong pick count, whole record dropped).
+// KEYS[1]=clients hash  KEYS[2]=version hash
+// ARGV[1]=cid  ARGV[2]=expectedVer  ARGV[3]=record JSON
+const CAS_LUA = `
+local cur = redis.call('HGET', KEYS[2], ARGV[1]) or '0'
+if cur == ARGV[2] then
+  redis.call('HSET', KEYS[1], ARGV[1], ARGV[3])
+  redis.call('HSET', KEYS[2], ARGV[1], tostring(tonumber(cur) + 1))
+  return 1
+end
+return 0
+`;
 
 function header(req: VercelRequest, name: string): string | undefined {
   const v = req.headers[name];
@@ -222,161 +242,156 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const geo = getGeo(req);
     const ua = getClient(req);
 
-    // Read-merge-write this client's record. Concurrent writes from the *same*
-    // browser are effectively impossible, so a transaction isn't needed.
-    const rawExisting = parseRecord(await redis.hget(CLIENTS_KEY, cid));
+    const secs = validSections(body.sections);
+    const settings = kind === 'export' ? validExportSettings(body.exportSettings) : undefined;
 
-    // Detect multi-user CID collision: if the incoming submission is from a
-    // different country AND the Pokemon picks barely overlap the existing build,
-    // this is almost certainly a different person sharing the same browser/CID
-    // (shared device, internet café, etc.). Route to a country-keyed record so
-    // each person gets their own analytics entry.
+    // Merge this beacon into an existing record (or seed a new one). Pure given
+    // `existing`, so it can be re-run on retry after a concurrent write.
+    const mergeRecord = (existing: ClientRecord | null, recCid: string): ClientRecord => {
+      const rec: ClientRecord = existing ?? {
+        cid: recCid,
+        firstTs: now,
+        firstAt: at,
+        lastTs: now,
+        lastAt: at,
+        submits: 0,
+        maxDepth: 0,
+        localHour: 0,
+        everIds: ids,
+        latestIds: ids,
+        completed: false,
+        exported: false,
+      };
+
+      // Sessionize: a gap > SESSION_GAP_MS since the previous beacon starts a new
+      // session; otherwise we're still in the same sitting and extend it.
+      const gap = existing ? now - existing.lastTs : 0;
+      let newSession: boolean;
+      if (!existing) {
+        rec.sessions = 1;
+        rec.curSessionStart = now;
+        rec.sessionMs = [];
+        newSession = true;
+      } else if (rec.sessions === undefined) {
+        const legacySpan = Math.max(0, existing.lastTs - existing.firstTs);
+        rec.sessionMs = [legacySpan];
+        if (gap > SESSION_GAP_MS) {
+          rec.sessions = 2;
+          rec.curSessionStart = now;
+          newSession = true;
+        } else {
+          rec.sessions = 1;
+          rec.curSessionStart = existing.firstTs;
+          newSession = false;
+        }
+      } else if (gap > SESSION_GAP_MS) {
+        rec.sessions += 1;
+        rec.curSessionStart = now;
+        newSession = true;
+      } else {
+        newSession = false;
+      }
+
+      const curSessionMs = Math.max(0, now - (rec.curSessionStart ?? now));
+      rec.maxSessionMs = Math.max(rec.maxSessionMs ?? 0, curSessionMs);
+      const list = rec.sessionMs ?? [];
+      if (newSession) list.push(curSessionMs);
+      else if (list.length > 0) list[list.length - 1] = curSessionMs;
+      else list.push(curSessionMs);
+      rec.sessionMs = list.slice(-MAX_SESSIONS_TRACKED);
+      const depthList = rec.sessionDepth ?? [];
+      if (newSession || depthList.length === 0) depthList.push(depth);
+      else depthList[depthList.length - 1] = depth;
+      rec.sessionDepth = depthList.slice(-MAX_SESSIONS_TRACKED);
+      const log = rec.sessionLog ?? [];
+      if (newSession || log.length === 0) log.push({ ts: now, ids, country: geo.country });
+      else log[log.length - 1] = { ts: now, ids, country: geo.country };
+      rec.sessionLog = log.slice(-MAX_SESSIONS_TRACKED);
+
+      rec.lastTs = now;
+      rec.lastAt = at;
+      rec.submits += 1;
+      rec.maxDepth = Math.max(rec.maxDepth, depth);
+      rec.localHour = localHourIn(geo.tz, now);
+      rec.localDow = localDowIn(geo.tz, now);
+      rec.latestIds = ids;
+      if (secs) {
+        rec.latestSections = secs;
+        const ever = rec.everSections ?? {};
+        for (const [sid, sIds] of Object.entries(secs)) {
+          ever[sid] = Array.from(new Set([...(ever[sid] ?? []), ...sIds])).slice(0, 200);
+        }
+        rec.everSections = ever;
+      }
+      rec.everIds = Array.from(new Set([...(rec.everIds ?? []), ...ids])).sort((a, b) => a - b);
+      rec.country = geo.country;
+      rec.region = geo.region;
+      rec.tz = geo.tz;
+      rec.lang = getLang(req);
+      rec.device = ua.device;
+      rec.os = ua.os;
+      rec.browser = ua.browser;
+
+      // Completion/export flags are sticky: once true they stay true, so a later
+      // progress beacon can never un-set them.
+      if (kind === 'completion') {
+        rec.completed = true;
+        rec.completedAt = at;
+        rec.completedIds = ids;
+      } else if (kind === 'export') {
+        rec.exported = true;
+        rec.exportedAt = at;
+        rec.exportedIds = ids;
+        if (settings) rec.exportSettings = settings;
+      }
+      return rec;
+    };
+
+    // Decide the record key once, based on the original cid's current record.
+    // Multi-user CID collision: a submission from a different country whose picks
+    // barely overlap the existing build is almost certainly a different person on
+    // the same browser/CID (shared device) — route to a country-keyed record.
+    const rawExisting = parseRecord(await redis.hget(CLIENTS_KEY, cid));
     let effectiveCid = cid;
-    let existing = rawExisting;
-    if (
-      rawExisting &&
-      geo.country &&
-      rawExisting.country &&
-      geo.country !== rawExisting.country
-    ) {
+    if (rawExisting && geo.country && rawExisting.country && geo.country !== rawExisting.country) {
       const existingSet = new Set(rawExisting.latestIds);
       const overlap = ids.filter((id) => existingSet.has(id)).length;
       const union = new Set([...rawExisting.latestIds, ...ids]).size;
       const jaccard = union > 0 ? overlap / union : 1;
-      if (jaccard < 0.2) {
-        effectiveCid = `${cid}::${geo.country}`;
-        existing = parseRecord(await redis.hget(CLIENTS_KEY, effectiveCid));
+      if (jaccard < 0.2) effectiveCid = `${cid}::${geo.country}`;
+    }
+
+    // Atomic read-merge-write with optimistic-concurrency retry. Each attempt
+    // reads the record + its version, merges, then CAS-writes only if the
+    // version is unchanged — so concurrent completion/progress/export beacons
+    // from the same browser can't clobber each other.
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const [rawStr, verStr] = await Promise.all([
+        redis.hget(CLIENTS_KEY, effectiveCid) as Promise<unknown>,
+        redis.hget(VERSION_KEY, effectiveCid) as Promise<string | number | null>,
+      ]);
+      const existing = parseRecord(rawStr);
+      const expectedVer = verStr == null ? '0' : String(verStr);
+
+      // Cap distinct clients; new clients past the cap are dropped.
+      if (!existing) {
+        const count = await redis.hlen(CLIENTS_KEY);
+        if (count >= MAX_CLIENTS) return res.status(200).json({ ok: true, capped: true });
       }
+
+      const rec = mergeRecord(existing, effectiveCid);
+      const ok = await redis.eval(
+        CAS_LUA,
+        [CLIENTS_KEY, VERSION_KEY],
+        [effectiveCid, expectedVer, JSON.stringify(rec)],
+      );
+      if (ok === 1) return res.status(200).json({ ok: true });
+      // Lost the race — brief backoff, then re-read and retry.
+      await new Promise((r) => setTimeout(r, 15 + attempt * 20));
     }
-
-    // Cap the number of distinct clients we track. New clients past the cap are
-    // dropped; already-known clients keep updating.
-    if (!existing) {
-      const count = await redis.hlen(CLIENTS_KEY);
-      if (count >= MAX_CLIENTS) return res.status(200).json({ ok: true, capped: true });
-    }
-
-    const rec: ClientRecord = existing ?? {
-      cid: effectiveCid,
-      firstTs: now,
-      firstAt: at,
-      lastTs: now,
-      lastAt: at,
-      submits: 0,
-      maxDepth: 0,
-      localHour: 0,
-      everIds: ids,
-      latestIds: ids,
-      completed: false,
-      exported: false,
-    };
-
-    // Sessionize: a gap > SESSION_GAP_MS since the previous beacon starts a new
-    // session; otherwise we're still in the same sitting and extend it. Legacy
-    // records (no session fields) are seeded from their existing first/last so
-    // their history counts as one prior session.
-    const gap = existing ? now - existing.lastTs : 0;
-    // newSession = this beacon begins a fresh sitting (append a new duration);
-    // otherwise it extends the in-progress one (update the last duration).
-    let newSession: boolean;
-    if (!existing) {
-      // Brand-new client: first session starts now.
-      rec.sessions = 1;
-      rec.curSessionStart = now;
-      rec.sessionMs = [];
-      newSession = true;
-    } else if (rec.sessions === undefined) {
-      // First beacon since sessionization shipped on an older record: treat the
-      // legacy first→last span as one prior session, then continue or start anew.
-      const legacySpan = Math.max(0, existing.lastTs - existing.firstTs);
-      rec.sessionMs = [legacySpan];
-      if (gap > SESSION_GAP_MS) {
-        rec.sessions = 2;
-        rec.curSessionStart = now;
-        newSession = true;
-      } else {
-        rec.sessions = 1;
-        rec.curSessionStart = existing.firstTs;
-        newSession = false;
-      }
-    } else if (gap > SESSION_GAP_MS) {
-      // A long idle gap ends the prior sitting and begins a new one.
-      rec.sessions += 1;
-      rec.curSessionStart = now;
-      newSession = true;
-    } else {
-      newSession = false;
-    }
-
-    const curSessionMs = Math.max(0, now - (rec.curSessionStart ?? now));
-    rec.maxSessionMs = Math.max(rec.maxSessionMs ?? 0, curSessionMs);
-    // Maintain the per-session duration list (cap at the most recent N).
-    const list = rec.sessionMs ?? [];
-    if (newSession) list.push(curSessionMs);
-    else if (list.length > 0) list[list.length - 1] = curSessionMs;
-    else list.push(curSessionMs);
-    rec.sessionMs = list.slice(-MAX_SESSIONS_TRACKED);
-    // Parallel per-session END depth: the cumulative build size (distinct evo
-    // lines) at each session's last beacon. Consecutive diffs give how many
-    // lines each session net-added. (The build persists across sessions, so
-    // these are cumulative, not per-session peaks.)
-    const depthList = rec.sessionDepth ?? [];
-    if (newSession || depthList.length === 0) depthList.push(depth);
-    else depthList[depthList.length - 1] = depth;
-    rec.sessionDepth = depthList.slice(-MAX_SESSIONS_TRACKED);
-    // Parallel per-session end-state snapshot, for visit-to-visit diffs.
-    const log = rec.sessionLog ?? [];
-    if (newSession || log.length === 0) log.push({ ts: now, ids, country: geo.country });
-    else log[log.length - 1] = { ts: now, ids, country: geo.country };
-    rec.sessionLog = log.slice(-MAX_SESSIONS_TRACKED);
-
-    rec.lastTs = now;
-    rec.lastAt = at;
-    rec.submits += 1;
-    rec.maxDepth = Math.max(rec.maxDepth, depth);
-    rec.localHour = localHourIn(geo.tz, now);
-    rec.localDow = localDowIn(geo.tz, now);
-    rec.latestIds = ids;
-    // The user's actual section placement (groupId -> ids), if provided. Lets
-    // the admin see where Pokemon were placed — including non-default choices.
-    // Forward-only: absent on records that predate this.
-    const secs = validSections(body.sections);
-    if (secs) {
-      rec.latestSections = secs;
-      // Accumulate the union of ids ever placed into each section, so the admin
-      // can compute "dropped from section X" = ever-in-X minus currently-in-X.
-      const ever = rec.everSections ?? {};
-      for (const [sid, sIds] of Object.entries(secs)) {
-        ever[sid] = Array.from(new Set([...(ever[sid] ?? []), ...sIds])).slice(0, 200);
-      }
-      rec.everSections = ever;
-    }
-    // Accumulate every Pokemon ever placed (bounded; ids are 1..1025).
-    rec.everIds = Array.from(new Set([...(rec.everIds ?? []), ...ids])).sort((a, b) => a - b);
-    // Refresh request-derived context on every submit (latest wins).
-    rec.country = geo.country;
-    rec.region = geo.region;
-    rec.tz = geo.tz;
-    rec.lang = getLang(req);
-    rec.device = ua.device;
-    rec.os = ua.os;
-    rec.browser = ua.browser;
-
-    if (kind === 'completion') {
-      rec.completed = true;
-      rec.completedAt = at;
-      rec.completedIds = ids;
-    } else if (kind === 'export') {
-      rec.exported = true;
-      rec.exportedAt = at;
-      rec.exportedIds = ids;
-      const settings = validExportSettings(body.exportSettings);
-      if (settings) rec.exportSettings = settings;
-    }
-
-    await redis.hset(CLIENTS_KEY, { [effectiveCid]: JSON.stringify(rec) });
-
-    return res.status(200).json({ ok: true });
+    // Exhausted retries under heavy contention; report success (best-effort
+    // analytics) rather than erroring the client.
+    return res.status(200).json({ ok: true, contended: true });
   } catch (err) {
     console.error('Submit error:', err);
     return res.status(500).json({ error: 'Internal server error' });
