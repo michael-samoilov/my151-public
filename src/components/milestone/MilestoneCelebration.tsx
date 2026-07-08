@@ -155,7 +155,7 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
 
   return createPortal(
     <div className="fixed z-[220]" style={{ left, top, width: CARD_W }} role="status">
-      <div className="relative rounded-lg border bg-popover shadow-xl p-3 animate-in fade-in-0 slide-in-from-top-1">
+      <div className="relative rounded-lg border bg-popover shadow-xl p-3 milestone-nudge-in">
         {/* up-arrow — a rotated square whose two bordered edges form the
             pointer. Sized + positioned in px (not rem) so its left/right
             corners land exactly on the card's top border line: the element's
