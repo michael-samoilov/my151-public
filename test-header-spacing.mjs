@@ -64,12 +64,36 @@ async function measure(page) {
     const row = barCell.parentElement;
     const kids = Array.from(row.children);
     const counter = kids.find((c) => /\/151/.test(c.textContent)) || null;
+    const leftSlot = kids[kids.indexOf(barCell) - 1] || null;
     const control = kids[kids.indexOf(barCell) + 1] || null;
+
+    // Dividers: the two 1px-wide absolute children of .milestone-bar.
+    const dividers = Array.from(bar.children)
+      .filter((el) => el.getBoundingClientRect().width <= 1.5 && el.getBoundingClientRect().height > 4)
+      .map(R)
+      .sort((a, b) => a.left - b.left);
+
+    // Bar's visible extent = min-left / max-right over every non-divider node
+    // inside the bar (the track + all beads/icons). This is what must stay inside
+    // the dividers — the end beads are the widest part.
+    let vl = Infinity, vr = -Infinity;
+    const walk = (el) => {
+      for (const c of el.children) {
+        const r = c.getBoundingClientRect();
+        if (r.width > 0 && r.width > 1.5) { vl = Math.min(vl, r.left); vr = Math.max(vr, r.right); }
+        walk(c);
+      }
+    };
+    walk(bar.querySelector('[style*="margin"]') || bar);
+
     return {
       counter: counter ? R(counter) : null,
+      leftSlot: leftSlot ? R(leftSlot) : null,
       bar: R(bar),
       control: control ? R(control) : null,
       row: R(row),
+      dividers,
+      barVisual: vl === Infinity ? null : { left: vl, right: vr },
     };
   });
 }
@@ -93,6 +117,25 @@ function check(m) {
   const fill = avail > 0 ? m.bar.width / avail : 0;
   notes.push(`${m.bar.width.toFixed(0)}px = ${(fill * 100).toFixed(0)}% fill`);
   if (fill < MIN_FILL) problems.push(`bar only fills ${(fill * 100).toFixed(0)}% (< ${MIN_FILL * 100}%)`);
+
+  // Dividers present, symmetric inset from the row's content edges, and the bar's
+  // visible extent (end beads) sits INSIDE them with a positive gap.
+  if (m.dividers.length !== 2) {
+    problems.push(`expected 2 dividers, found ${m.dividers.length}`);
+  } else {
+    const [dl, dr] = m.dividers;
+    const insetL = dl.left - m.bar.left;               // divider L from bar-cell left
+    const insetR = m.bar.right - dr.right;             // divider R from bar-cell right
+    if (Math.abs(insetL - insetR) > 1.5)
+      problems.push(`dividers asymmetric (L inset ${insetL.toFixed(1)} vs R ${insetR.toFixed(1)})`);
+    if (m.barVisual) {
+      const gapL = m.barVisual.left - dl.right;
+      const gapR = dr.left - m.barVisual.right;
+      if (gapL < 0) problems.push(`bar (bead) overlaps LEFT divider by ${(-gapL).toFixed(1)}px`);
+      if (gapR < 0) problems.push(`bar (bead) overlaps RIGHT divider by ${(-gapR).toFixed(1)}px`);
+      notes.push(`bead↔div L ${gapL.toFixed(1)} / R ${gapR.toFixed(1)}px`);
+    }
+  }
   return { problems, notes };
 }
 

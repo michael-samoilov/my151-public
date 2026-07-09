@@ -438,14 +438,19 @@ export function AnalyticsDashboard() {
   return (
     <div className="h-full flex flex-col">
       {/* Header — outside scroll container, matches build/view pages */}
-      <div className="flex items-center gap-4 px-3 sm:px-6 py-2 border-b h-11 shrink-0">
-        <h2 className="text-2xl font-extrabold tracking-tight leading-none shrink-0">
-          <span className="text-primary">{analytics.total}</span>
-          <span className="text-foreground">/151</span>
-        </h2>
+      <div className="flex items-center px-3 sm:px-6 py-2 border-b h-11 shrink-0">
+        <div className="shrink-0" style={{ width: 'var(--ms-side)' }}>
+          <h2 className="text-2xl font-extrabold tracking-tight leading-none tabular-nums">
+            <span className="text-primary">{analytics.total}</span>
+            <span className="text-foreground">/151</span>
+          </h2>
+        </div>
         <div className="flex-1 min-w-0">
           <MilestoneBar />
         </div>
+        {/* Empty slot mirrors the counter's reserved width so the right divider
+            sits at the same inset as the left, even with no controls here. */}
+        <div className="shrink-0" style={{ width: 'var(--ms-side)' }} aria-hidden />
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain md:overscroll-auto">

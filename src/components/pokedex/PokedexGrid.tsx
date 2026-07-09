@@ -894,15 +894,17 @@ export function PokedexGrid() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-4 px-3 sm:px-6 py-2 border-b h-11">
-        <h2 className="text-2xl font-extrabold tracking-tight leading-none shrink-0">
-          <span className="text-primary">{totalPlaced}</span>
-          <span className="text-foreground">/151</span>
-        </h2>
+      <div className="flex items-center px-3 sm:px-6 py-2 border-b h-11">
+        <div className="shrink-0" style={{ width: 'var(--ms-side)' }}>
+          <h2 className="text-2xl font-extrabold tracking-tight leading-none tabular-nums">
+            <span className="text-primary">{totalPlaced}</span>
+            <span className="text-foreground">/151</span>
+          </h2>
+        </div>
         <div className="flex-1 min-w-0">
           <MilestoneBar />
         </div>
-        <div className="shrink-0">
+        <div className="shrink-0 flex justify-end" style={{ width: 'var(--ms-side)' }}>
           <SettingsMenu onClear={clearAll} />
         </div>
       </div>

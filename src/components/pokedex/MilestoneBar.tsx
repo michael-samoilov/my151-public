@@ -55,12 +55,14 @@ const DEFAULT_CONFIG = {
   iconIdleColor: 'var(--color-primary-foreground)', // white before reached, too
   iconReachedColor: 'var(--color-primary-foreground)',
 
-  // Optional hairline dividers flanking the bar, so the counter (left) and
-  // page buttons (right) read as intentionally aligned around a framed bar. The
-  // gap is kept small (< the header flex gap) so the hairlines sit in the gutter
-  // beside the bar and never reach the counter/controls.
+  // Hairline dividers flanking the bar so the counter (left) and page buttons
+  // (right) read as intentionally aligned around a framed bar. They sit at the
+  // bar's flex-cell edges (left:0 / right:0) — which the header pins at a fixed
+  // --ms-side inset from both edges — so they're symmetric and never move. The
+  // track is inset by barInsetRem so the bar's end beads stay inside the
+  // dividers with a small visible gap (bead radius ≈ 0.71rem + a little space).
   showDividers: true,
-  dividerGapRem: 0.5,
+  barInsetRem: 0.95,
   dividerColor: 'color-mix(in srgb, var(--color-muted-foreground) 38%, var(--color-card))',
 
   // Reach micro-interaction (one-time "pop" when a bead is first reached).
@@ -296,16 +298,18 @@ function MilestoneBarComponent() {
         <>
           <div
             className={`absolute ${centerY}`}
-            style={{ left: `${-cfg.dividerGapRem}rem`, width: '1px', height: `${d.greyBead}rem`, background: cfg.dividerColor }}
+            style={{ left: 0, width: '1px', height: `${d.greyBead}rem`, background: cfg.dividerColor }}
           />
           <div
             className={`absolute ${centerY}`}
-            style={{ right: `${-cfg.dividerGapRem}rem`, width: '1px', height: `${d.greyBead}rem`, background: cfg.dividerColor }}
+            style={{ right: 0, width: '1px', height: `${d.greyBead}rem`, background: cfg.dividerColor }}
           />
         </>
       )}
 
-      <div ref={trackRef} className="relative" style={{ height: `${d.greyBead}rem` }}>
+      {/* Track inset from the divider lines (which sit at the cell edges) so the
+          end beads at 0%/151% stay inside the frame with a small gap. */}
+      <div ref={trackRef} className="relative" style={{ height: `${d.greyBead}rem`, marginInline: `${cfg.barInsetRem}rem` }}>
         {/* ── Layer 1: grey (opaque) — runway to 151 + idle beads ── */}
         <div
           className={`absolute left-0 right-0 rounded-full ${centerY}`}
@@ -492,7 +496,7 @@ const TUNABLES: { key: NumericKey; min: number; max: number; step: number; label
   { key: 'beadRedRem', min: 0.5, max: 1.6, step: 0.02, label: 'bead (red)' },
   { key: 'iconScale', min: 0.3, max: 0.9, step: 0.01, label: 'icon scale' },
   { key: 'iconStroke', min: 1, max: 3.5, step: 0.1, label: 'icon stroke' },
-  { key: 'dividerGapRem', min: 0.2, max: 1.5, step: 0.05, label: 'divider gap' },
+  { key: 'barInsetRem', min: 0.5, max: 1.6, step: 0.05, label: 'bar inset (bead↔divider)' },
   { key: 'fillTransitionMs', min: 0, max: 1200, step: 50, label: 'fill glide (ms)' },
   { key: 'popScale', min: 1, max: 2, step: 0.05, label: 'pop scale' },
   { key: 'popDurationMs', min: 100, max: 1000, step: 20, label: 'pop (ms)' },
