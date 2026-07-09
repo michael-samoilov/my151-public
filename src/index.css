@@ -233,4 +233,4 @@ img {
    count grows, and keep a clear gap from the counter. In rem so it scales with
    the viewport root font exactly as the counter does. (The count is capped at
    151, so the counter is always ≤ 3 digits — 4 digits can't occur.) */
-:root { --ms-side: 6.75rem; }
+:root { --ms-side: 6.55rem; }

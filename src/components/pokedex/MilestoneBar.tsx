@@ -41,8 +41,8 @@ const DEFAULT_CONFIG = {
 
   // Red (progress) geometry. Grey = these + 2·outlineRem. The origin node is the
   // same size as a milestone bead.
-  trackRedRem: 0.5, // red fill thickness
-  beadRedRem: 1.12, // red bead diameter (also the origin node)
+  trackRedRem: 0.36, // red fill thickness
+  beadRedRem: 0.88, // red bead diameter (also the origin node)
 
   // Colors. Grey is OPAQUE (mixed toward card, no alpha) so overlaps don't seam.
   greyColor: 'color-mix(in srgb, var(--color-muted-foreground) 32%, var(--color-card))',
