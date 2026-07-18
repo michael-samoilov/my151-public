@@ -21,6 +21,11 @@ function countEvoLines(ids: number[]): number {
 const DAY = 86_400_000;
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// Date the onboarding suite (intro card + milestone progress bar + funnel
+// beacons) shipped to prod — deploy-branch merge on 2026-07-08 (commit
+// f5f4e55). The pre/post cohort slider defaults here. Update if it's re-dated.
+const ONBOARDING_LAUNCH_TS = Date.UTC(2026, 6, 8); // 2026-07-08 UTC (month is 0-based)
+
 /** Local day-of-week (0=Sun) and hour (0–23) for a record, derived from its
  *  timezone + last-activity timestamp. Prefers stored localDow/localHour when
  *  present, but falls back to deriving from lastTs+tz — which back-populates
@@ -350,6 +355,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       funnel: { users: totalUsers, completed, exported },
       funnelEvents,
       cohort,
+      onboardingLaunchTs: ONBOARDING_LAUNCH_TS,
       exportSettings: exportSettingsAgg,
       retention: { returning, activeLast7, newUsers: totalUsers - returning },
       multiSession,

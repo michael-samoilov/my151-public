@@ -104,6 +104,8 @@ interface ApiResponse {
   funnelEvents?: Record<string, number>;
   /** Per-user cohort samples: [firstTs, peakMon, peakLines, completed, exported]. */
   cohort?: [number, number, number, 0 | 1, 0 | 1][];
+  /** Onboarding launch timestamp — the default cutoff for the pre/post slider. */
+  onboardingLaunchTs?: number;
   exportSettings?: {
     tracked: number;
     outlines: number;
@@ -427,12 +429,24 @@ function FunnelChart({ events }: { events: Record<string, number> }) {
  *  "before" and "on/after" the cutoff, and compares the % who reached each
  *  threshold — an observational before/after read on onboarding, using data
  *  (firstTs, peak count) that predates it. Not a randomized A/B test. */
-function PrePostCohort({ cohort }: { cohort: [number, number, number, 0 | 1, 0 | 1][] }) {
-  // Default cutoff: today, so the slider starts spanning the full history.
+function PrePostCohort({
+  cohort,
+  launchTs,
+}: {
+  cohort: [number, number, number, 0 | 1, 0 | 1][];
+  launchTs?: number;
+}) {
   const minTs = Math.min(...cohort.map((c) => c[0]));
   const maxTs = Math.max(...cohort.map((c) => c[0]));
   const dayMs = 86_400_000;
-  const [cutoffDay, setCutoffDay] = useState(() => Math.floor(maxTs / dayMs));
+  const minDay = Math.floor(minTs / dayMs);
+  const maxDay = Math.floor(maxTs / dayMs) + 1;
+  // Default the cutoff to the onboarding launch date (clamped into range) so it
+  // lands on the real pre/post boundary; fall back to the latest signup.
+  const [cutoffDay, setCutoffDay] = useState(() => {
+    const launchDay = launchTs ? Math.floor(launchTs / dayMs) : maxDay;
+    return Math.min(maxDay, Math.max(minDay, launchDay));
+  });
   const cutoff = cutoffDay * dayMs;
 
   const metrics = [
@@ -447,8 +461,6 @@ function PrePostCohort({ cohort }: { cohort: [number, number, number, 0 | 1, 0 |
     arm.length ? (arm.filter(test).length / arm.length) * 100 : 0;
 
   const cutoffLabel = new Date(cutoff).toLocaleDateString();
-  const minDay = Math.floor(minTs / dayMs);
-  const maxDay = Math.floor(maxTs / dayMs) + 1;
 
   return (
     <div className="flex flex-col gap-3">
@@ -463,10 +475,21 @@ function PrePostCohort({ cohort }: { cohort: [number, number, number, 0 | 1, 0 |
           className="flex-1"
         />
         <span className="tabular-nums font-medium shrink-0">{cutoffLabel}</span>
+        {launchTs && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="shrink-0"
+            onClick={() => setCutoffDay(Math.min(maxDay, Math.max(minDay, Math.floor(launchTs / dayMs))))}
+          >
+            ↺ launch
+          </Button>
+        )}
       </div>
       <div className="text-[0.65rem] text-muted-foreground">
         Before: <span className="text-foreground">{before.length} users</span> · On/after:{' '}
         <span className="text-foreground">{after.length} users</span>
+        {launchTs && cutoff === Math.floor(launchTs / dayMs) * dayMs && ' · onboarding launch'}
       </div>
       <div className="flex flex-col gap-2">
         {metrics.map((m) => {
@@ -1684,7 +1707,7 @@ export function AdminPage() {
 
             {data.cohort && data.cohort.length > 0 && (
               <Card title="Before / after by signup date (pre-post)">
-                <PrePostCohort cohort={data.cohort} />
+                <PrePostCohort cohort={data.cohort} launchTs={data.onboardingLaunchTs} />
               </Card>
             )}
 
