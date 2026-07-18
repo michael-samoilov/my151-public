@@ -171,6 +171,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let returning = 0;
     let activeLast7 = 0;
     let multiSession = 0; // users with 2+ sessions (why the bases can differ)
+    // Compact per-user cohort samples for the pre/post date comparison: one
+    // tuple per user [firstTs, peakMon, peakLines, completed(0/1), exported(0/1)].
+    // firstTs + peakMon predate onboarding, so the whole history is comparable.
+    const cohort: [number, number, number, 0 | 1, 0 | 1][] = [];
     // Tally the View settings exporters actually used (forward-only — only
     // exports captured since settings-tracking shipped contribute).
     const exportSettingsAgg = {
@@ -216,6 +220,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       fill(lineVals, lineEnds);
       fill(monVals, monEnds);
       if (Math.max(lineEnds.length, monEnds.length) >= 2) multiSession += 1;
+
+      // Cohort sample for the pre/post date slider. Peak raw-Pokemon count (the
+      // milestone threshold basis, 25/100/151) and peak evo lines, both derived
+      // from history so pre-onboarding users are included.
+      const peakMon = Math.max(0, ...monEnds);
+      const peakLines = Math.max(0, ...lineEnds);
+      cohort.push([r.firstTs, peakMon, peakLines, r.completed ? 1 : 0, r.exported ? 1 : 0]);
 
       if (r.country) countries[r.country] = (countries[r.country] ?? 0) + 1;
       if (r.device) devices[r.device] = (devices[r.device] ?? 0) + 1;
@@ -338,6 +349,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       limit,
       funnel: { users: totalUsers, completed, exported },
       funnelEvents,
+      cohort,
       exportSettings: exportSettingsAgg,
       retention: { returning, activeLast7, newUsers: totalUsers - returning },
       multiSession,

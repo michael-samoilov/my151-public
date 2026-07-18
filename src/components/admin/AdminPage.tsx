@@ -102,6 +102,8 @@ interface ApiResponse {
   limit: number;
   funnel: { users: number; completed: number; exported: number };
   funnelEvents?: Record<string, number>;
+  /** Per-user cohort samples: [firstTs, peakMon, peakLines, completed, exported]. */
+  cohort?: [number, number, number, 0 | 1, 0 | 1][];
   exportSettings?: {
     tracked: number;
     outlines: number;
@@ -417,6 +419,91 @@ function FunnelChart({ events }: { events: Record<string, number> }) {
           .
         </div>
       )}
+    </div>
+  );
+}
+
+/** Pre/post cohort comparison with a date slider. Splits users by firstTs into
+ *  "before" and "on/after" the cutoff, and compares the % who reached each
+ *  threshold — an observational before/after read on onboarding, using data
+ *  (firstTs, peak count) that predates it. Not a randomized A/B test. */
+function PrePostCohort({ cohort }: { cohort: [number, number, number, 0 | 1, 0 | 1][] }) {
+  // Default cutoff: today, so the slider starts spanning the full history.
+  const minTs = Math.min(...cohort.map((c) => c[0]));
+  const maxTs = Math.max(...cohort.map((c) => c[0]));
+  const dayMs = 86_400_000;
+  const [cutoffDay, setCutoffDay] = useState(() => Math.floor(maxTs / dayMs));
+  const cutoff = cutoffDay * dayMs;
+
+  const metrics = [
+    { label: 'Reached 25', test: (c: (typeof cohort)[number]) => c[1] >= 25 },
+    { label: 'Reached 100', test: (c: (typeof cohort)[number]) => c[1] >= 100 },
+    { label: 'Completed 151', test: (c: (typeof cohort)[number]) => c[3] === 1 || c[1] >= 151 },
+    { label: 'Exported', test: (c: (typeof cohort)[number]) => c[4] === 1 },
+  ];
+  const before = cohort.filter((c) => c[0] < cutoff);
+  const after = cohort.filter((c) => c[0] >= cutoff);
+  const rate = (arm: typeof cohort, test: (c: (typeof cohort)[number]) => boolean) =>
+    arm.length ? (arm.filter(test).length / arm.length) * 100 : 0;
+
+  const cutoffLabel = new Date(cutoff).toLocaleDateString();
+  const minDay = Math.floor(minTs / dayMs);
+  const maxDay = Math.floor(maxTs / dayMs) + 1;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-2 text-xs">
+        <span className="text-muted-foreground shrink-0">Cutoff</span>
+        <input
+          type="range"
+          min={minDay}
+          max={maxDay}
+          value={cutoffDay}
+          onChange={(e) => setCutoffDay(Number(e.target.value))}
+          className="flex-1"
+        />
+        <span className="tabular-nums font-medium shrink-0">{cutoffLabel}</span>
+      </div>
+      <div className="text-[0.65rem] text-muted-foreground">
+        Before: <span className="text-foreground">{before.length} users</span> · On/after:{' '}
+        <span className="text-foreground">{after.length} users</span>
+      </div>
+      <div className="flex flex-col gap-2">
+        {metrics.map((m) => {
+          const rb = rate(before, m.test);
+          const ra = rate(after, m.test);
+          const delta = ra - rb;
+          return (
+            <div key={m.label} className="text-xs">
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-muted-foreground">{m.label}</span>
+                <span className={cn('tabular-nums', delta >= 0 ? 'text-green-600' : 'text-destructive')}>
+                  {delta >= 0 ? '+' : ''}
+                  {Math.round(delta)}pp
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-12 shrink-0 text-right text-muted-foreground">before</span>
+                <div className="flex-1 bg-muted rounded h-3 overflow-hidden">
+                  <div className="h-full bg-foreground/40" style={{ width: `${rb}%` }} />
+                </div>
+                <span className="w-16 shrink-0 tabular-nums">{Math.round(rb)}% ({before.filter(m.test).length})</span>
+              </div>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="w-12 shrink-0 text-right text-muted-foreground">after</span>
+                <div className="flex-1 bg-muted rounded h-3 overflow-hidden">
+                  <div className="h-full bg-primary/70" style={{ width: `${ra}%` }} />
+                </div>
+                <span className="w-16 shrink-0 tabular-nums">{Math.round(ra)}% ({after.filter(m.test).length})</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="text-[0.6rem] text-muted-foreground">
+        Observational before/after (not randomized). Small cohorts are noisy — treat differences as
+        directional until each arm has a few hundred users.
+      </p>
     </div>
   );
 }
@@ -1592,6 +1679,12 @@ export function AdminPage() {
             {data.funnelEvents && Object.keys(data.funnelEvents).length > 0 && (
               <Card title="Engagement funnel (distinct browsers)">
                 <FunnelChart events={data.funnelEvents} />
+              </Card>
+            )}
+
+            {data.cohort && data.cohort.length > 0 && (
+              <Card title="Before / after by signup date (pre-post)">
+                <PrePostCohort cohort={data.cohort} />
               </Card>
             )}
 
