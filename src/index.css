@@ -217,8 +217,20 @@ img {
   .milestone-nudge-in { animation: none; opacity: 1; transform: none; }
 }
 
-/* Milestone bar responsive width (values fed from MilestoneBar CONFIG). Scales
-   with the viewport: min on small phones, growing with vw, capped on desktop.
-   The measured pixel width (not this) drives the fill-skip math, so the bar
-   stays correct at any resolved width. */
-.milestone-bar { width: clamp(var(--ms-w-min), var(--ms-w-vw), var(--ms-w-max)); }
+/* Milestone bar width. The bar is a flex child that GROWS to fill the space
+   between the counter (left) and the page controls (right): width:100% takes the
+   whole flex cell, so it spans whatever space each page's header actually has.
+   The measured pixel width (not a fixed rem) drives the fill-skip math, so the
+   bar stays correct at any resolved width. */
+.milestone-bar { width: 100%; }
+
+/* Fixed reserved width for the header side slots (counter on the left, control
+   buttons on the right). Sized to the widest side element in the worst case —
+   the tabular-nums counter at a triple-digit count ("151/151", whose glyph ink
+   measures ≈6.15rem; the element box under-reports it because tracking-tight
+   pulls the advance box in) — plus ~0.6rem padding, so the flanking divider
+   lines sit at the SAME inset from both edges on every page, never move as the
+   count grows, and keep a clear gap from the counter. In rem so it scales with
+   the viewport root font exactly as the counter does. (The count is capped at
+   151, so the counter is always ≤ 3 digits — 4 digits can't occur.) */
+:root { --ms-side: 6.55rem; }

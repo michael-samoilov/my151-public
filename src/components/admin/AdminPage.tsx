@@ -359,6 +359,68 @@ function Bars({ rows }: { rows: { label: string; count: number }[] }) {
   );
 }
 
+/** Onboarding funnel: descending steps as % of the top step (bar width), with
+ *  each step's raw count and the step-to-step conversion. The intro→CTA/dismiss
+ *  split is shown as a sub-breakdown of the intro step, not funnel steps. */
+function FunnelChart({ events }: { events: Record<string, number> }) {
+  const g = (k: string) => events[k] ?? 0;
+  // Ordered funnel steps (monotonic-ish; each is a strict subset of intent).
+  const steps: { label: string; count: number }[] = [
+    { label: 'Saw intro', count: g('intro-shown') },
+    { label: 'Placed ≥25', count: g('milestone-25') },
+    { label: 'Placed ≥100', count: g('milestone-100') },
+    { label: 'Completed 151', count: g('milestone-151') },
+    { label: 'Visited View', count: g('view-visit') },
+  ];
+  const top = Math.max(1, steps[0].count);
+  const introCta = g('intro-cta');
+  const introDismiss = g('intro-dismiss');
+  const introTotal = g('intro-shown');
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
+        {steps.map((s, i) => {
+          const pctOfTop = (s.count / top) * 100;
+          // Conversion from the previous step (drop-off between stages).
+          const prev = i > 0 ? steps[i - 1].count : s.count;
+          const conv = prev > 0 ? Math.round((s.count / prev) * 100) : 0;
+          return (
+            <div key={s.label} className="flex items-center gap-2 text-xs">
+              <span className="w-24 shrink-0 text-muted-foreground text-right">{s.label}</span>
+              <div className="flex-1 bg-muted rounded h-5 overflow-hidden relative">
+                <div
+                  className="h-full bg-primary/70 rounded"
+                  style={{ width: `${Math.max(pctOfTop, s.count > 0 ? 2 : 0)}%` }}
+                />
+                <span className="absolute inset-y-0 left-1.5 flex items-center text-[0.6rem] tabular-nums text-foreground/80">
+                  {s.count} · {Math.round(pctOfTop)}%
+                </span>
+              </div>
+              <span className="w-16 shrink-0 tabular-nums text-muted-foreground text-right">
+                {i > 0 ? `→ ${conv}%` : 'top'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {introTotal > 0 && (
+        <div className="text-[0.65rem] text-muted-foreground">
+          Of {introTotal} who saw the intro:{' '}
+          <span className="text-foreground">
+            {introCta} chose starters ({Math.round((introCta / introTotal) * 100)}%)
+          </span>
+          ,{' '}
+          <span className="text-foreground">
+            {introDismiss} dismissed ({Math.round((introDismiss / introTotal) * 100)}%)
+          </span>
+          .
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Lightweight modal overlay (no dependency). Click backdrop or ✕ to close. */
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   useEffect(() => {
@@ -1527,28 +1589,11 @@ export function AdminPage() {
               </div>
             </Card>
 
-            {data.funnelEvents && Object.keys(data.funnelEvents).length > 0 && (() => {
-              const e = data.funnelEvents;
-              const g = (k: string) => e[k] ?? 0;
-              const rows: [string, number][] = [
-                ['Saw intro', g('intro-shown')],
-                ['Chose starters (CTA)', g('intro-cta')],
-                ['Dismissed intro', g('intro-dismiss')],
-                ['Reached 25 (Analytics)', g('milestone-25')],
-                ['Reached 100 (Stats)', g('milestone-100')],
-                ['Reached 151', g('milestone-151')],
-                ['Visited View', g('view-visit')],
-              ];
-              return (
-                <Card title="Engagement funnel (distinct browsers)">
-                  <div className="flex flex-wrap gap-2">
-                    {rows.map(([label, v]) => (
-                      <Stat key={label} value={v} label={label} />
-                    ))}
-                  </div>
-                </Card>
-              );
-            })()}
+            {data.funnelEvents && Object.keys(data.funnelEvents).length > 0 && (
+              <Card title="Engagement funnel (distinct browsers)">
+                <FunnelChart events={data.funnelEvents} />
+              </Card>
+            )}
 
             {data.exportSettings && data.exportSettings.tracked > 0 && (
               <Card title={`Export settings (${data.exportSettings.tracked} export${data.exportSettings.tracked === 1 ? '' : 's'} tracked)`}>

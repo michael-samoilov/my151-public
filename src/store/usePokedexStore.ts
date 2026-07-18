@@ -7,6 +7,44 @@ import { DEMO_MODE, SPANDREL_DEMO, POKEDEX_STORAGE_KEY } from '@/lib/demoMode';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
 import { SPANDREL_SEED_SECTIONS } from '@/data/spandrelSeed';
 
+// Helper: get the base form (first in evolution line) of a Pokemon.
+// Used to determine if a line should be treated as a "starter-like" type.
+function getBaseForm(pokemonId: number): number {
+  let current = getPokemonById(pokemonId);
+  while (current?.evolvesFrom) {
+    const ancestor = getPokemonById(current.evolvesFrom);
+    if (!ancestor) break;
+    current = ancestor;
+  }
+  return current?.id ?? pokemonId;
+}
+
+// Helper: determine if a Pokemon's evolution line is "starter-sortable" (has grass/fire/water in
+// primary or secondary type in base form, or in official STARTER_IDS). Returns sort priority:
+// 1=grass, 2=fire, 3=water, 4=other/skip.
+// Handles edge cases: non-official starters (e.g., Fire/Grass treated as Fire), type changes
+// through evo line (checks base form).
+function getStarterSortPriority(pokemonId: number): number {
+  const baseId = getBaseForm(pokemonId);
+  const base = getPokemonById(baseId);
+  if (!base?.types?.length) return 4;
+
+  const types = base.types;
+  const primaryType = types[0];
+  const secondaryType = types[1];
+
+  // Priority: check primary type first, then secondary
+  if (primaryType === 'grass') return 1;
+  if (primaryType === 'fire') return 2;
+  if (primaryType === 'water') return 3;
+
+  if (secondaryType === 'grass') return 1;
+  if (secondaryType === 'fire') return 2;
+  if (secondaryType === 'water') return 3;
+
+  return 4; // No grass/fire/water in either position
+}
+
 /** Initial sections — empty for real users, the sample dex in demo mode, or the
  *  spandrel test fixture when ?demo=spandrels is set. */
 function initialSections(): Record<string, number[]> {
@@ -256,6 +294,27 @@ export const usePokedexStore = create<PokedexState>()(
               ? result.length
               : Math.min(insertAfter + 1, insertBefore);
             result = [...result.slice(0, insertAt), newId, ...result.slice(insertAt)];
+          }
+
+          // Special sorting for starter section: grass → fire → water.
+          // If any newly-added Pokemon are starter-like (official starters or grass/fire/water primary type),
+          // re-sort ALL starter-like Pokemon in the section. Non-sortable Pokemon stay in place.
+          // Handles edge cases: non-official starters, type changes through evo line (sorted by base form).
+          if (sectionId === 'starter' && allIds.some(id => getStarterSortPriority(id) < 4)) {
+            const sortablePriorities: Record<number, number[]> = { 1: [], 2: [], 3: [] };
+            const unsortable: number[] = [];
+
+            for (const id of result) {
+              const priority = getStarterSortPriority(id);
+              if (priority < 4) {
+                sortablePriorities[priority].push(id);
+              } else {
+                unsortable.push(id);
+              }
+            }
+
+            // Reconstruct: unsortable Pokemon, then starter-like Pokemon sorted by type (grass → fire → water)
+            result = [...unsortable, ...sortablePriorities[1], ...sortablePriorities[2], ...sortablePriorities[3]];
           }
 
           newSections[sectionId] = result;

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { MILESTONE_DEFS, MILESTONES, DEX_TOTAL, milestonesAtOrBelow, type MilestoneFeature } from '@/lib/milestones';
 import { BUILD_GROUPS, createEmptySections } from '@/data/slot-template';
@@ -32,20 +32,17 @@ import { BarChart3, Camera, Sparkles, Trophy, ChevronDown, type LucideIcon } fro
 // red + 2·outlineRem.
 // ─────────────────────────────────────────────────────────────────────────────
 const DEFAULT_CONFIG = {
-  // Track width scales with the viewport: clamp(min, vw, max). Small phones sit
-  // at the min; it grows with width and caps on desktop. The measured width
-  // (not these rems) drives the fill-skip math, so any value stays correct.
-  widthMinRem: 10.5,
-  widthVw: 24,
-  widthMaxRem: 22,
+  // The bar fills the available space between the counter and the page controls
+  // (width:100% of its flex cell — see .milestone-bar in index.css). The measured
+  // pixel width drives the fill-skip math, so the bar stays correct at any width.
 
   // Uniform grey border thickness wrapping the red everywhere.
   outlineRem: 0.15,
 
   // Red (progress) geometry. Grey = these + 2·outlineRem. The origin node is the
   // same size as a milestone bead.
-  trackRedRem: 0.5, // red fill thickness
-  beadRedRem: 1.12, // red bead diameter (also the origin node)
+  trackRedRem: 0.36, // red fill thickness
+  beadRedRem: 0.88, // red bead diameter (also the origin node)
 
   // Colors. Grey is OPAQUE (mixed toward card, no alpha) so overlaps don't seam.
   greyColor: 'color-mix(in srgb, var(--color-muted-foreground) 32%, var(--color-card))',
@@ -58,10 +55,14 @@ const DEFAULT_CONFIG = {
   iconIdleColor: 'var(--color-primary-foreground)', // white before reached, too
   iconReachedColor: 'var(--color-primary-foreground)',
 
-  // Optional hairline dividers flanking the bar, so the counter (left) and
-  // page buttons (right) read as intentionally aligned around a framed bar.
+  // Hairline dividers flanking the bar so the counter (left) and page buttons
+  // (right) read as intentionally aligned around a framed bar. They sit at the
+  // bar's flex-cell edges (left:0 / right:0) — which the header pins at a fixed
+  // --ms-side inset from both edges — so they're symmetric and never move. The
+  // track is inset by barInsetRem so the bar's end beads stay inside the
+  // dividers with a small visible gap (bead radius ≈ 0.71rem + a little space).
   showDividers: true,
-  dividerGapRem: 0.95,
+  barInsetRem: 0.95,
   dividerColor: 'color-mix(in srgb, var(--color-muted-foreground) 38%, var(--color-card))',
 
   // Reach micro-interaction (one-time "pop" when a bead is first reached).
@@ -225,7 +226,7 @@ function useIsDesktop(): boolean {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function MilestoneBar() {
+function MilestoneBarComponent() {
   const sections = usePokedexStore((s) => s.sections);
   const realCount = useMemo(
     () => Object.values(sections).reduce((sum, ids) => sum + ids.length, 0),
@@ -264,7 +265,11 @@ export function MilestoneBar() {
     if (!el) return;
     const measure = () => {
       const w = el.getBoundingClientRect().width;
-      setTrackPx((prev) => (Math.abs(prev - w) < 0.5 ? prev : w));
+      // Ignore zero-width reads: when this page is hidden (display:none) the bar
+      // measures 0, which would recompute the fill fraction and then visibly
+      // re-animate the width transition when the page is shown again. Keeping the
+      // last real width means switching pages produces no change → no animation.
+      setTrackPx((prev) => (w < 1 || Math.abs(prev - w) < 0.5 ? prev : w));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -288,28 +293,23 @@ export function MilestoneBar() {
   const centerXY = 'top-1/2 -translate-x-1/2 -translate-y-1/2';
 
   return (
-    <div
-      className="milestone-bar select-none relative"
-      style={{
-        ['--ms-w-min' as string]: `${cfg.widthMinRem}rem`,
-        ['--ms-w-vw' as string]: `${cfg.widthVw}vw`,
-        ['--ms-w-max' as string]: `${cfg.widthMaxRem}rem`,
-      }}
-    >
+    <div className="milestone-bar select-none relative">
       {cfg.showDividers && (
         <>
           <div
             className={`absolute ${centerY}`}
-            style={{ left: `${-cfg.dividerGapRem}rem`, width: '1px', height: `${d.greyBead}rem`, background: cfg.dividerColor }}
+            style={{ left: 0, width: '1px', height: `${d.greyBead}rem`, background: cfg.dividerColor }}
           />
           <div
             className={`absolute ${centerY}`}
-            style={{ right: `${-cfg.dividerGapRem}rem`, width: '1px', height: `${d.greyBead}rem`, background: cfg.dividerColor }}
+            style={{ right: 0, width: '1px', height: `${d.greyBead}rem`, background: cfg.dividerColor }}
           />
         </>
       )}
 
-      <div ref={trackRef} className="relative" style={{ height: `${d.greyBead}rem` }}>
+      {/* Track inset from the divider lines (which sit at the cell edges) so the
+          end beads at 0%/151% stay inside the frame with a small gap. */}
+      <div ref={trackRef} className="relative" style={{ height: `${d.greyBead}rem`, marginInline: `${cfg.barInsetRem}rem` }}>
         {/* ── Layer 1: grey (opaque) — runway to 151 + idle beads ── */}
         <div
           className={`absolute left-0 right-0 rounded-full ${centerY}`}
@@ -373,6 +373,11 @@ export function MilestoneBar() {
     </div>
   );
 }
+
+/** Memoized milestone bar to prevent re-animation on page switches.
+ *  Since each page has its own instance, this ensures the bar only re-renders
+ *  when its data (count, track width) actually changes, not on visibility toggles. */
+export const MilestoneBar = memo(MilestoneBarComponent);
 
 /** The red bead for a milestone (only rendered once reached). Pops + ripples the
  *  first time it flips to reached in-session; centering lives on the wrapper so
@@ -491,10 +496,7 @@ const TUNABLES: { key: NumericKey; min: number; max: number; step: number; label
   { key: 'beadRedRem', min: 0.5, max: 1.6, step: 0.02, label: 'bead (red)' },
   { key: 'iconScale', min: 0.3, max: 0.9, step: 0.01, label: 'icon scale' },
   { key: 'iconStroke', min: 1, max: 3.5, step: 0.1, label: 'icon stroke' },
-  { key: 'dividerGapRem', min: 0.2, max: 1.5, step: 0.05, label: 'divider gap' },
-  { key: 'widthMinRem', min: 8, max: 16, step: 0.5, label: 'width min (rem)' },
-  { key: 'widthVw', min: 10, max: 50, step: 1, label: 'width (vw)' },
-  { key: 'widthMaxRem', min: 12, max: 30, step: 0.5, label: 'width max (rem)' },
+  { key: 'barInsetRem', min: 0.5, max: 1.6, step: 0.05, label: 'bar inset (bead↔divider)' },
   { key: 'fillTransitionMs', min: 0, max: 1200, step: 50, label: 'fill glide (ms)' },
   { key: 'popScale', min: 1, max: 2, step: 0.05, label: 'pop scale' },
   { key: 'popDurationMs', min: 100, max: 1000, step: 20, label: 'pop (ms)' },
