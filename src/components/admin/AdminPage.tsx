@@ -1634,32 +1634,6 @@ export function AdminPage() {
     [token],
   );
 
-  // Reset-all wipes every user record irrecoverably. Gated behind a
-  // type-to-confirm modal (must type RESET) — no single click can trigger it.
-  const [resetOpen, setResetOpen] = useState(false);
-  const [resetText, setResetText] = useState('');
-  const [resetting, setResetting] = useState(false);
-  const resetAll = useCallback(async () => {
-    if (!token || resetText !== 'RESET') return;
-    setResetting(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({}),
-      });
-      if (!res.ok) throw new Error(`Reset failed (${res.status}).`);
-      setResetOpen(false);
-      setResetText('');
-      if (token) await load(token);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Reset failed.');
-    } finally {
-      setResetting(false);
-    }
-  }, [token, resetText, load]);
-
   const signOut = useCallback(() => {
     try {
       localStorage.removeItem(TOKEN_KEY);
@@ -1883,58 +1857,9 @@ export function AdminPage() {
                 onClose={() => setSlotDetail(null)}
               />
             )}
-
-            {/* Danger zone — tucked at the very bottom, away from routine controls. */}
-            <div className="mt-8 pt-4 border-t border-destructive/30">
-              <div className="text-xs font-medium text-destructive mb-1">Danger zone</div>
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs text-muted-foreground">
-                  Permanently delete all {data.totalUsers} user records and every aggregate.
-                </span>
-                <Button variant="outline" size="sm" onClick={() => { setResetText(''); setResetOpen(true); }}>
-                  Reset all analytics…
-                </Button>
-              </div>
-            </div>
           </>
         )}
       </main>
-
-      {resetOpen && (
-        <Modal title="Reset all analytics" onClose={() => !resetting && setResetOpen(false)}>
-          <div className="flex flex-col gap-3">
-            <p className="text-sm">
-              This permanently deletes <span className="font-semibold">every user record</span> and all
-              derived aggregates. This <span className="font-semibold">cannot be undone</span>.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Type <span className="font-mono font-semibold text-foreground">RESET</span> to confirm.
-            </p>
-            <Input
-              autoFocus
-              value={resetText}
-              onChange={(e) => setResetText(e.target.value)}
-              placeholder="RESET"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && resetText === 'RESET') void resetAll();
-              }}
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setResetOpen(false)} disabled={resetting}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={resetText !== 'RESET' || resetting}
-                onClick={() => void resetAll()}
-              >
-                {resetting ? 'Resetting…' : 'Permanently reset'}
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }
