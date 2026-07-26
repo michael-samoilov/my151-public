@@ -986,6 +986,14 @@ function fmtExportSettings(s: NonNullable<ClientRecord['exportSettings']>): stri
 
 function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void; expanded: boolean; onToggle: () => void; zIndex: number; stickyOffset: number }) {
   const [droppedOpen, setDroppedOpen] = useState(false);
+  // Two-step delete: first click arms, second confirms. Auto-disarms after a
+  // few seconds so a forgotten armed button can't be hit later by accident.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  useEffect(() => {
+    if (!confirmingDelete) return;
+    const t = setTimeout(() => setConfirmingDelete(false), 4000);
+    return () => clearTimeout(t);
+  }, [confirmingDelete]);
   const cardRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const [stickyLabelTop, setStickyLabelTop] = useState(0);
@@ -1054,14 +1062,32 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: {
               <Button variant="ghost" size="sm" onClick={handleToggle}>
                 {expanded ? 'Hide' : 'Builds'}
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-destructive hover:text-destructive"
-                onClick={() => onDelete(rec)}
-              >
-                Delete
-              </Button>
+              {confirmingDelete ? (
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      setConfirmingDelete(false);
+                      onDelete(rec);
+                    }}
+                  >
+                    Confirm delete
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  Delete
+                </Button>
+              )}
             </div>
           </div>
           {ctx.length > 0 && (
@@ -1586,8 +1612,8 @@ export function AdminPage() {
 
   const deleteUser = useCallback(
     async (rec: ClientRecord) => {
+      // Guarded by the two-step arm/confirm in UserCard; this just performs it.
       if (!token) return;
-      if (!window.confirm(`Delete this user's record?\n\nRemoves all their data. This cannot be undone.`)) return;
       setError(null);
       try {
         const res = await fetch('/api/delete-entry', {
@@ -1608,6 +1634,31 @@ export function AdminPage() {
     [token],
   );
 
+  // Reset-all wipes every user record irrecoverably. Gated behind a
+  // type-to-confirm modal (must type RESET) — no single click can trigger it.
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetText, setResetText] = useState('');
+  const [resetting, setResetting] = useState(false);
+  const resetAll = useCallback(async () => {
+    if (!token || resetText !== 'RESET') return;
+    setResetting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) throw new Error(`Reset failed (${res.status}).`);
+      setResetOpen(false);
+      setResetText('');
+      if (token) await load(token);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Reset failed.');
+    } finally {
+      setResetting(false);
+    }
+  }, [token, resetText, load]);
 
   const signOut = useCallback(() => {
     try {
@@ -1832,9 +1883,58 @@ export function AdminPage() {
                 onClose={() => setSlotDetail(null)}
               />
             )}
+
+            {/* Danger zone — tucked at the very bottom, away from routine controls. */}
+            <div className="mt-8 pt-4 border-t border-destructive/30">
+              <div className="text-xs font-medium text-destructive mb-1">Danger zone</div>
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="text-xs text-muted-foreground">
+                  Permanently delete all {data.totalUsers} user records and every aggregate.
+                </span>
+                <Button variant="outline" size="sm" onClick={() => { setResetText(''); setResetOpen(true); }}>
+                  Reset all analytics…
+                </Button>
+              </div>
+            </div>
           </>
         )}
       </main>
+
+      {resetOpen && (
+        <Modal title="Reset all analytics" onClose={() => !resetting && setResetOpen(false)}>
+          <div className="flex flex-col gap-3">
+            <p className="text-sm">
+              This permanently deletes <span className="font-semibold">every user record</span> and all
+              derived aggregates. This <span className="font-semibold">cannot be undone</span>.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Type <span className="font-mono font-semibold text-foreground">RESET</span> to confirm.
+            </p>
+            <Input
+              autoFocus
+              value={resetText}
+              onChange={(e) => setResetText(e.target.value)}
+              placeholder="RESET"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && resetText === 'RESET') void resetAll();
+              }}
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setResetOpen(false)} disabled={resetting}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={resetText !== 'RESET' || resetting}
+                onClick={() => void resetAll()}
+              >
+                {resetting ? 'Resetting…' : 'Permanently reset'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
