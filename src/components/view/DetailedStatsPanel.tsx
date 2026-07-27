@@ -7,6 +7,7 @@ import { getPokemonByIds } from '@/hooks/usePokemonData';
 import { countTypes, buildTypeRows } from '@/components/analytics/typeDistribution';
 import { ButterflyChart } from '@/components/analytics/ButterflyChart';
 import { rowKey, type ButterflyRow } from '@/components/analytics/butterflyRow';
+import { t } from '@/i18n';
 import { SuperimposedHistogram } from '@/components/analytics/SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { typeBadgePath } from '@/data/type-ids';
@@ -134,11 +135,11 @@ function HistogramLegend() {
     <div className="flex items-center gap-4 mb-2">
       <div className="flex items-center gap-1.5">
         <div className="w-3 h-3 rounded-sm bg-slate-400 opacity-50" />
-        <span className={`${STATS_TEXT} text-muted-foreground font-medium`}>National Dex</span>
+        <span className={`${STATS_TEXT} text-muted-foreground font-medium`}>{t('stats.legend.national')}</span>
       </div>
       <div className="flex items-center gap-1.5">
         <div className="w-3 h-3 rounded-sm bg-red-500 opacity-85" />
-        <span className={`${STATS_TEXT} text-muted-foreground font-medium`}>Yours</span>
+        <span className={`${STATS_TEXT} text-muted-foreground font-medium`}>{t('stats.legend.yours')}</span>
       </div>
     </div>
   );
@@ -217,11 +218,11 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
 
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
-      <Card variant={variant} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
+      <Card variant={variant} title={t('stats.type.title')} subtitle={t('stats.type.subtitle')}>
         <ButterflyChart data={typeRows} rowHeight={16} hideLabelText labelHeader="TYPE" iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows textClass={STATS_TEXT} />
       </Card>
 
-      <Card variant={variant} title="Generation Origin" subtitle="Which generation your Pokémon come from, vs the national dex.">
+      <Card variant={variant} title={t('stats.gen.title')} subtitle={t('stats.gen.subtitle')}>
         <ButterflyChart
           data={[...genRows].sort((a, b) => Number(rowKey(a)) - Number(rowKey(b)))}
           rowHeight={24}
@@ -235,7 +236,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
         />
       </Card>
 
-      <Card variant={variant} title="Base Stat Total" subtitle={`Yours avg: ${analytics.bstStats.avg}, National avg: ${analytics.nationalAvgBst}.`}>
+      <Card variant={variant} title={t('stats.bst.title')} subtitle={t('analytics.avgCompare', { yours: analytics.bstStats.avg, national: analytics.nationalAvgBst })}>
         <HistogramLegend />
         <SuperimposedHistogram
           data={bstHist.merged}

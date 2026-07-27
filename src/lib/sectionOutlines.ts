@@ -2,7 +2,8 @@
 // PNG export (canvas render). Everything here is pure — no React, no DOM beyond
 // an offscreen canvas for text measurement — so it can run in either context.
 import type { Pokemon, TypeName } from '@/types/pokemon';
-import { sectionName } from '@/i18n';
+import { sectionName, t, type NoArgKey } from '@/i18n';
+import { en } from '@/i18n/catalogs/en';
 import { sectionColor } from '@/lib/sectionColors';
 import { buildIdToSection } from '@/hooks/useViewSort';
 import { SECTION_TYPE } from '@/data/section-types';
@@ -40,38 +41,32 @@ export const outlineStrokeW = (tileSize: number, frac: number) =>
 
 // --- Section names -------------------------------------------------------
 
-const SHORT_NAMES: Record<string, string> = {
-  'early-bug': 'Early Bug',
-  'early-bird': 'Early Bird',
-  'early-rodent': 'Early Mammal',
-  'early-normal': 'Domestic',
-  'other': 'Other Areas',
-  'cave-pokemon': 'Cave',
-  'fishing-pokemon': 'Fishing',
-  'rivalry-pair': 'Rivalry',
-  'evil-team': 'Evil Team',
-  'pikachu-clone': 'Pikaclone',
-  'mimic': 'Mimic',
-  'ruins': 'Temple',
-};
-
-export function getSectionLabel(groupId: string): string {
-  return SHORT_NAMES[groupId] ?? sectionName(groupId);
+/**
+ * Section labels shorten in two rungs as the outline narrows: the full name,
+ * then a short form, then a tiny one. These used to be English abbreviation
+ * tables in code; they are catalog keys now because "the short form of
+ * Pikaclone" is an editorial judgement each language has to make for itself —
+ * there is no mechanical way to abbreviate 阿羅拉.
+ *
+ * A locale that supplies no short form simply falls back to the full name and
+ * lets fitLabel's horizontal squash do the work, which is a reasonable
+ * outcome rather than a broken one.
+ */
+function shortestAvailable(groupId: string, prefix: 'sectionShort' | 'sectionTiny'): string | null {
+  const key = `${prefix}.${groupId}`;
+  return key in en ? t(key as NoArgKey) : null;
 }
 
-// Progressive label fallbacks, longest → shortest. When a section's name is too
-// wide for its outline even after horizontal squashing (see fitLabel), the next
-// shorter form is tried. Sections not listed here only have their single label.
-const SECTION_NAME_CHAINS: Record<string, string[]> = {
-  'pikachu-clone': ['Pikaclone', 'Pika'],
-  'other': ['Other Areas', 'Other'],
-  'early-rodent': ['Early Mammal', 'Mammal'],
-  'industrial': ['Industrial', 'Indust.'],
-  'pseudo-legendary': ['Pseudo-Legendary', 'Pseudo'],
-};
+export function getSectionLabel(groupId: string): string {
+  return shortestAvailable(groupId, 'sectionShort') ?? sectionName(groupId);
+}
 
+/** Progressive label fallbacks, longest → shortest. */
 export function getSectionLabelChain(groupId: string): string[] {
-  return SECTION_NAME_CHAINS[groupId] ?? [getSectionLabel(groupId)];
+  const chain = [getSectionLabel(groupId)];
+  const tiny = shortestAvailable(groupId, 'sectionTiny');
+  if (tiny && tiny !== chain[0]) chain.push(tiny);
+  return chain;
 }
 
 // --- Label fitting -------------------------------------------------------

@@ -2,6 +2,7 @@ import { scaleBand, scaleLinear } from 'd3-scale';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { MAX_LABEL_STRETCH } from '@/lib/sectionOutlines';
 import { typeBadgePath } from '@/data/type-ids';
+import { t } from '@/i18n';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 
 /**
@@ -403,19 +404,19 @@ function renderPanel(
 
   const cards: CardSpec[] = [
     {
-      title: 'Type Distribution',
-      subtitle: 'Your types, and how they deviate from the national dex.',
+      title: t('stats.type.title'),
+      subtitle: t('stats.type.subtitle'),
       chartH: (dr) => butterfly(ctx, 0, 0, typeRows, 16, heights.type, 'TYPE', dr),
       drawChart: (c, x, y) => butterfly(c, x, y, typeRows, 16, heights.type, 'TYPE', true),
     },
     {
-      title: 'Generation Origin',
-      subtitle: 'Which generation your Pokémon come from, vs the national dex.',
+      title: t('stats.gen.title'),
+      subtitle: t('stats.gen.subtitle'),
       chartH: (dr) => butterfly(ctx, 0, 0, genRows, 24, heights.region, 'GEN', dr),
       drawChart: (c, x, y) => butterfly(c, x, y, genRows, 24, heights.region, 'GEN', true),
     },
     {
-      title: 'Base Stat Total',
+      title: t('stats.bst.title'),
       subtitle: `Yours avg: ${data.bst.yoursAvg}, National avg: ${data.bst.nationalAvg}.`,
       legend: true,
       chartH: (dr) => histogram(ctx, 0, 0, data.bst, heights.bst, dr),
@@ -485,8 +486,8 @@ function renderPanel(
 
 function drawLegend(ctx: CanvasRenderingContext2D, x: number, y: number) {
   const items: [string, string, number][] = [
-    ['National Dex', NAT_HIST, 0.5],
-    ['Yours', YOURS, 0.85],
+    [t('stats.legend.national'), NAT_HIST, 0.5],
+    [t('stats.legend.yours'), YOURS, 0.85],
   ];
   let cx = x;
   ctx.textBaseline = 'middle';
