@@ -42,6 +42,14 @@ type PluralKey = Extract<MessageKey, `${string}_${PluralCategory}`>;
 export type Messages = Omit<Record<MessageKey, string>, PluralKey> &
   Partial<Record<PluralKey | `${PluralBase}_${PluralCategory}`, string>>;
 
+/**
+ * Keys that take no placeholder arguments. Data that stores a key for later
+ * lookup should be typed with this rather than `MessageKey`: the full union
+ * includes keys that DO take arguments, so `t()` would demand one at every
+ * call site even for messages that have none.
+ */
+export type NoArgKey = { [K in MessageKey]: ArgsOf<K> extends [] ? K : never }[MessageKey];
+
 export type TFn = <K extends MessageKey>(key: K, ...args: ArgsOf<K>) => string;
 
 export type TnFn = (

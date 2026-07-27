@@ -1,3 +1,4 @@
+import type { NoArgKey } from '@/i18n';
 /**
  * Milestone ladder — the spine of the engagement loop (see
  * docs/ux/engagement-strategy.md). Crossing a count threshold celebrates and,
@@ -15,15 +16,16 @@ export interface MilestoneDef {
   at: number;
   feature: MilestoneFeature;
   /** Short line shown in the unlock celebration. */
-  title: string;
+  /** Catalog key rather than text: milestone copy is user-facing. */
+  titleKey: NoArgKey;
   /** One-liner elaborating the moment. */
-  detail: string;
+  detailKey: NoArgKey;
 }
 
 export const MILESTONE_DEFS: readonly MilestoneDef[] = [
-  { at: 25, feature: 'analytics', title: 'Analytics unlocked', detail: 'Your dex has enough shape to analyze. See how it stacks up.' },
-  { at: 100, feature: 'stats', title: 'Detailed stats in View page', detail: 'Type, generation, and base-stat charts are now available in View.' },
-  { at: DEX_TOTAL, feature: 'complete', title: 'Your 151 is complete', detail: 'Save as an image, or keep refining your picks.' },
+  { at: 25, feature: 'analytics', titleKey: 'milestone.25.title', detailKey: 'milestone.25.detail' },
+  { at: 100, feature: 'stats', titleKey: 'milestone.100.title', detailKey: 'milestone.100.detail' },
+  { at: DEX_TOTAL, feature: 'complete', titleKey: 'milestone.151.title', detailKey: 'milestone.151.detail' },
 ] as const;
 
 /** Just the threshold numbers, ascending — the progress-bar tick positions. */

@@ -1,11 +1,6 @@
 import { translate } from './core';
 import { en } from './catalogs/en';
-import type { ArgsOf, MessageKey } from './types';
-
-/** Keys that take no placeholder arguments — every data label is one. Casting
- *  to the whole MessageKey union instead would drag in keys that DO take
- *  arguments, and `translate` would then demand one at every call site. */
-type NoArgKey = { [K in MessageKey]: ArgsOf<K> extends [] ? K : never }[MessageKey];
+import type { NoArgKey } from './types';
 
 /**
  * Display names for the four data collections — build sections, categories,

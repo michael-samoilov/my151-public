@@ -36,4 +36,4 @@ export {
 
 export { useT, useTn, useLocale, useDocumentLocale } from './provider';
 
-export type { MessageKey, Messages, TFn, TnFn, PluralBase } from './types';
+export type { MessageKey, Messages, NoArgKey, TFn, TnFn, PluralBase } from './types';

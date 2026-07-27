@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { t } from '@/i18n';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { MILESTONE_DEFS, MILESTONES, DEX_TOTAL, milestonesAtOrBelow, type MilestoneFeature } from '@/lib/milestones';
 import { BUILD_GROUPS, createEmptySections } from '@/data/slot-template';
@@ -361,8 +362,8 @@ function MilestoneBarComponent() {
             reached={count >= m.at}
             gated={GATED[m.feature]}
             feature={m.feature}
-            title={m.title}
-            detail={m.detail}
+            title={t(m.titleKey)}
+            detail={t(m.detailKey)}
             remaining={Math.max(0, m.at - count)}
             cfg={cfg}
             greyBeadRem={d.greyBead}
