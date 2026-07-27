@@ -14,7 +14,7 @@ import { typeIconPath } from '@/data/type-ids';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { SHAPE_ORDER, shapeChartIcon, SHAPE_ICON_SCALE } from '@/components/shared/ShapeIcon';
-import { regionName, shapeLabel } from '@/i18n';
+import { regionName, shapeLabel, t, typeLabel } from '@/i18n';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { StageDistributionChart } from './StageDistributionChart';
@@ -279,7 +279,7 @@ export function AnalyticsDashboard() {
 
     return results.map(r => ({
       key: r.type,
-      label: r.type.charAt(0).toUpperCase() + r.type.slice(1),
+      label: typeLabel(r.type as TypeName),
       count: r.score,
       deviation: r.score - (baseline.get(r.type) ?? 0),
       color: TYPE_COLORS[r.type as keyof typeof TYPE_COLORS],
@@ -426,7 +426,7 @@ export function AnalyticsDashboard() {
         <div className="text-center space-y-2">
           <p className="text-xl font-semibold text-muted-foreground">No Pokémon assigned yet</p>
           <p className="text-sm text-muted-foreground">
-            Add Pokémon to your Pokédex to see analytics
+            {t('analytics.empty')}
           </p>
         </div>
       </div>
@@ -460,7 +460,7 @@ export function AnalyticsDashboard() {
 
         {/* Type Analysis — tabbed: Distribution / Matchup */}
         <section>
-          <h3 className="text-lg font-semibold mb-1">Pokémon Type</h3>
+          <h3 className="text-lg font-semibold mb-1">{t('analytics.type.heading')}</h3>
 
           <div className="space-y-1.5 mb-3">
           {/* Region selector tabs — matches build page filter chip styling */}
@@ -578,8 +578,8 @@ export function AnalyticsDashboard() {
             <div className="py-2 md:py-4">
             <p className="text-sm text-muted-foreground mb-3 md:mb-4 px-3 min-h-[4.125rem] md:min-h-[2.75rem]">
               {typeView === 'distribution'
-                ? 'Count of Pokémon with each type, & deviation from national dex proportions.'
-                : 'Avg # of type advantage 2x\u2019s (offensive and defensive) vs. all regional Pokémon, & deviation from national dex.'}
+                ? t('analytics.type.descDistribution')
+                : t('analytics.type.descMatchup')}
             </p>
             <div className="px-6">
             {typeView === 'distribution' ? (
@@ -655,7 +655,7 @@ export function AnalyticsDashboard() {
                 activeKey={drillDownSegment?.kind === 'typeMatchup' ? activeMatchupKey : null}
               />
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">No matchup data available.</p>
+              <p className="text-sm text-muted-foreground text-center py-4">{t('analytics.noMatchup')}</p>
             )}
             </div>
             </div>
@@ -664,9 +664,9 @@ export function AnalyticsDashboard() {
 
         {/* Generation Origin */}
         <section>
-          <h3 className="text-lg font-semibold mb-1">Generation Origin</h3>
+          <h3 className="text-lg font-semibold mb-1">{t('analytics.gen.heading')}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Where your Pokémon come from and deviation from national dex proportions.
+            {t('analytics.gen.desc')}
           </p>
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <ButterflyChart
@@ -692,9 +692,9 @@ export function AnalyticsDashboard() {
 
         {/* Body Shape Distribution */}
         <section>
-          <h3 className="text-lg font-semibold mb-1">Body Shape</h3>
+          <h3 className="text-lg font-semibold mb-1">{t('analytics.shape.heading')}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Your Pokémon by official dex body-shape group, and deviation from national dex proportions.
+            {t('analytics.shape.desc')}
           </p>
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <ButterflyChart
@@ -718,9 +718,9 @@ export function AnalyticsDashboard() {
 
         {/* Evolution Level Histogram */}
         <section>
-          <h3 className="text-lg font-semibold mb-1">Evolution Level Distribution</h3>
+          <h3 className="text-lg font-semibold mb-1">{t('analytics.evoLevel.heading')}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Yours avg: {analytics.evolutionStats.avgLevel || 'N/A'}, National avg: {analytics.evolutionStats.nationalAvgLevel}.
+            {t('analytics.avgCompare', { yours: analytics.evolutionStats.avgLevel || 'N/A', national: analytics.evolutionStats.nationalAvgLevel })}
           </p>
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <div className="flex items-center gap-4 mb-2">
@@ -751,9 +751,9 @@ export function AnalyticsDashboard() {
 
         {/* BST Histogram */}
         <section>
-          <h3 className="text-lg font-semibold mb-1">Base Stat Total Distribution</h3>
+          <h3 className="text-lg font-semibold mb-1">{t('analytics.bst.heading')}</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Yours avg: {analytics.bstStats.avg}, National avg: {analytics.nationalAvgBst}.
+            {t('analytics.avgCompare', { yours: analytics.bstStats.avg, national: analytics.nationalAvgBst })}
           </p>
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <div className="flex items-center gap-4 mb-2">

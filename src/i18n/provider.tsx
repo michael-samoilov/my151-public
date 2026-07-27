@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { direction, htmlLang, type Locale } from './config';
 import { getLocale, getVersion, subscribe, translate, translatePlural } from './core';
 import type { TFn, TnFn, PluralBase } from './types';
@@ -13,22 +13,34 @@ export function useLocale(): Locale {
   return getLocale();
 }
 
-/** `t('nav.build')`, `t('nav.analyticsUnlockTip', { count: 25 })`. */
+/**
+ * `t('nav.build')`, `t('nav.analyticsUnlockTip', { count: 25 })`.
+ *
+ * The returned function's identity deliberately changes with the locale. It
+ * would be cheaper to hand back the stable module-level `translate`, but then
+ * any `useMemo` that builds labels would keep its stale English result after a
+ * locale switch — listing `t` in the dependency array would do nothing, because
+ * `t` never changed. Re-identifying per locale makes the exhaustive-deps rule
+ * point at exactly the right dependency.
+ */
 export function useT(): TFn {
-  useSyncExternalStore(subscribe, getVersion, getVersion);
-  // `translate` already carries the strict argument typing; the hook exists to
-  // re-render on locale change, not to add anything to the call signature.
-  return translate;
+  const version = useSyncExternalStore(subscribe, getVersion, getVersion);
+  return useMemo(() => {
+    // The memo is keyed on `version` deliberately, and the body has to read it
+    // for exhaustive-deps to agree that the dependency is real.
+    void version;
+    return ((key, ...args) => translate(key, ...args)) as TFn;
+  }, [version]);
 }
 
-/** Counted messages: `tn('browser.results', n)`. */
+/** Counted messages: `tn('browser.results', n)`. Same identity rule as useT. */
 export function useTn(): TnFn {
-  useSyncExternalStore(subscribe, getVersion, getVersion);
-  return useCallback(
-    (base: PluralBase, count: number, args?: Record<string, string | number>) =>
-      translatePlural(base, count, args),
-    [],
-  );
+  const version = useSyncExternalStore(subscribe, getVersion, getVersion);
+  return useMemo(() => {
+    void version;
+    return (base: PluralBase, count: number, args?: Record<string, string | number>) =>
+      translatePlural(base, count, args);
+  }, [version]);
 }
 
 /**
