@@ -23,6 +23,9 @@ const FUNNEL_EVENTS = new Set<string>([
   'milestone-100',
   'milestone-151',
   'view-visit',
+  // Uncaught client errors, counted once per browser. No payload — see
+  // src/hooks/useJsErrorCounter.ts for why this is a counter, not a reporter.
+  'js-error',
 ]);
 
 const FUNNEL_KEY = 'funnel';

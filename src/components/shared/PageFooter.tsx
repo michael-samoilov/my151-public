@@ -1,9 +1,11 @@
-import { t } from '@/i18n';
+import { useT } from '@/i18n';
+import { openFeedback } from '@/components/feedback/feedbackChannel';
 declare const __BUILD_TIMESTAMP__: string;
 const BUILD_VERSION = __BUILD_TIMESTAMP__.replace(/[-:T]/g, '').slice(2, 12);
 const YEAR = new Date().getFullYear();
 
 export function PageFooter() {
+  const t = useT();
   return (
     <div className="mt-4 flex flex-col items-center gap-1">
       <div className="w-[85%] border-t" />
@@ -21,6 +23,15 @@ export function PageFooter() {
       <span className="text-[0.5rem] text-muted-foreground/50">
         {t('footer.disclaimer')}
       </span>
+      {/* The secondary path to the report form. The floating button is the one
+          people find by accident; this is the one they go looking for. */}
+      <button
+        type="button"
+        onClick={() => openFeedback()}
+        className="mt-1 text-[0.5625rem] text-muted-foreground/70 underline underline-offset-2 hover:text-foreground cursor-pointer"
+      >
+        {t('footer.report')}
+      </button>
       </div>
     </div>
   );

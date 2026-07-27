@@ -34,6 +34,9 @@ import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebratio
 import { isAnalyticsUnlocked } from '@/lib/milestones';
 import { cn } from '@/lib/utils';
 import { sectionName as sectionLabel, useDocumentLocale } from '@/i18n';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
+import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 
 declare const __BUILD_TIMESTAMP__: string;
 console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
@@ -74,6 +77,7 @@ function App() {
   useDocumentLocale();
   useCompletionBeacon();
   useMilestoneTracker();
+  useJsErrorCounter();
   const [currentView, setCurrentView] = useState<AppView>('builder');
   const viewMounted = useRef(false);
   const analyticsMounted = useRef(false);
@@ -147,9 +151,11 @@ function App() {
         {/* View — lazy, mounted on first visit then kept alive */}
         <div className={cn('flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col', currentView !== 'view' && 'hidden')}>
           {viewMounted.current && (
-            <Suspense fallback={<RouteFallback />}>
-              <ViewPage />
-            </Suspense>
+            <ErrorBoundary where="view">
+              <Suspense fallback={<RouteFallback />}>
+                <ViewPage />
+              </Suspense>
+            </ErrorBoundary>
           )}
         </div>
 
@@ -157,9 +163,11 @@ function App() {
         <div className={cn('flex-1 flex min-h-0', currentView !== 'analytics' && 'hidden')}>
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
             {analyticsMounted.current && (
-              <Suspense fallback={<RouteFallback />}>
-                <AnalyticsDashboard />
-              </Suspense>
+              <ErrorBoundary where="analytics">
+                <Suspense fallback={<RouteFallback />}>
+                  <AnalyticsDashboard />
+                </Suspense>
+              </ErrorBoundary>
             )}
           </div>
           {drillDownSegment && (
@@ -180,6 +188,11 @@ function App() {
 
       {/* Milestone celebration nudges (analytics @25, view @100, confetti @151) */}
       <MilestoneCelebration onNavigate={handleViewChange} />
+
+      {/* Report a problem — one instance for the whole app, hidden behind any
+          full-screen surface. The footer's "Report a problem" link opens the
+          same form. */}
+      <FeedbackButton route={currentView} />
 
       {/* Dev-only MilestoneBar tuning panel (renders only with ?tune) */}
       <MilestoneTunePanel />
