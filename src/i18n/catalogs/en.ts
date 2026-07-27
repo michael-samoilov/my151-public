@@ -21,6 +21,7 @@
  * the corpus for no user-visible benefit.
  */
 export const en = {
+  'browser.addingTo': 'Adding to: ',
   'browser.chip.archetypes': 'Archetypes',
   'browser.chip.classification': 'Classification',
   'browser.chip.color': 'Color',
@@ -72,6 +73,7 @@ export const en = {
   'browser.stage.3': '3+ Stage',
   'browser.stageChip': '{stages} stage',
   'browser.subgroupGeneration': 'Generation {gen}',
+  'drilldown.shapeTitle': '{shape} Shape',
   'nav.analytics': 'Analytics',
   'nav.analyticsLocked': 'Analytics locked. Reach {count} Pokémon to unlock',
   'nav.analyticsUnlockTip': 'Reach {count} Pokémon to unlock Analytics',

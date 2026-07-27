@@ -8,9 +8,10 @@ import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms } from '@/
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { ARCHETYPES } from '@/data/archetypes';
 import { CATEGORIES } from '@/data/categories';
-import { TYPE_NAMES, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
-import { ShapeIcon, SHAPE_LABELS, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
-import { COLOR_ORDER, COLOR_LABELS, COLOR_SWATCHES, colorTextOn, colorRingOn, EGG_GROUP_ORDER, EGG_GROUP_LABELS } from '@/data/classifications';
+import { TYPE_NAMES, type TypeName, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
+import { ShapeIcon, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
+import { COLOR_ORDER, COLOR_SWATCHES, colorTextOn, colorRingOn, EGG_GROUP_ORDER } from '@/data/classifications';
+import { colorLabel, eggGroupLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeBadgePath } from '@/data/type-ids';
 import { Search, X, ChevronDown } from 'lucide-react';
@@ -33,19 +34,24 @@ function useIsDesktop() {
   return isDesktop;
 }
 
-const SHEET_TITLES: Record<string, string> = {
-  type: 'Type',
-  generation: 'Generation',
-  evoStage: 'Evo Stages',
-  shape: 'Body Shape',
-  color: 'Color',
-  eggGroup: 'Egg Group',
-  classification: 'Classification',
-  places: 'Places',
-  archetypes: 'Archetypes',
-  gameMechanics: 'Game Mechanics',
-};
+/** Filter-sheet titles, keyed by sheet id. Previously duplicated: once here and
+ *  once as an inline `&&` chain inside SheetOverlay, so the two could drift. */
+const SHEET_TITLE_KEYS = {
+  type: 'browser.sheet.type',
+  generation: 'browser.sheet.generation',
+  evoStage: 'browser.sheet.evoStage',
+  shape: 'browser.sheet.shape',
+  color: 'browser.sheet.color',
+  eggGroup: 'browser.sheet.eggGroup',
+  classification: 'browser.sheet.classification',
+  places: 'browser.sheet.places',
+  archetypes: 'browser.sheet.archetypes',
+  gameMechanics: 'browser.sheet.gameMechanics',
+} as const satisfies Record<Exclude<FilterSheet, null>, MessageKey>;
 
+function sheetTitle(sheet: Exclude<FilterSheet, null>): string {
+  return t(SHEET_TITLE_KEYS[sheet]);
+}
 const PLACES_ORDER = ['forest', 'meadow', 'cave-pokemon', 'mountain', 'swamp', 'lake', 'dojo', 'haunted', 'ruins', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra', 'industrial'];
 const PLACES_IDS = new Set(PLACES_ORDER);
 const GAME_MECHANICS_ORDER = ['evolution-item', 'branched-evo', 'cross-gen-evo', 'static-encounter', 'gift-pokemon', 'reward-pokemon', 'version-exclusive'];
@@ -89,6 +95,8 @@ export function PokemonBrowser() {
   const sections = usePokedexStore((s) => s.sections);
   const activeSection = usePokedexStore((s) => s.activeSection);
   const addToSection = usePokedexStore((s) => s.addToSection);
+  const t = useT();
+  const tn = useTn();
   const [openSheet, setOpenSheet] = useState<FilterSheet>(null);
   const [sheetH, setSheetH] = useState(0);
   const isDesktop = useIsDesktop();
@@ -296,7 +304,7 @@ export function PokemonBrowser() {
 
     return [...genMap.entries()]
       .sort((a, b) => a[0] - b[0])
-      .map(([gen, ids]) => ({ label: `Generation ${gen}`, pokemonIds: ids }));
+      .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: ids }));
     // activeCategoryDef is read for its `.subgroups`; it's a stable .find() over
     // the static CATEGORIES array, so it only changes when the category does.
   }, [activeArchetypeDef, activeCategoryDef, groups]);
@@ -350,7 +358,7 @@ export function PokemonBrowser() {
     }
     return [...genMap.entries()]
       .sort((a, b) => a[0] - b[0])
-      .map(([gen, ids]) => ({ label: `Generation ${gen}`, pokemonIds: [...new Set(ids)] }));
+      .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: [...new Set(ids)] }));
   }, [isSearching, groups]);
   const typeKey = typeFilter ? `${typeFilterMode}-${typeFilter.join(',')}` : 'none';
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
@@ -402,14 +410,14 @@ export function PokemonBrowser() {
         <div className="space-y-2">
           {typeFilter && typeFilter.length >= 2 && (
             <div className="flex items-center gap-2 pb-1">
-              <span className="text-[0.6875rem] text-muted-foreground">Mode:</span>
+              <span className="text-[0.6875rem] text-muted-foreground">{t('browser.mode.label')}</span>
               <button type="button"
                 onClick={() => setTypeFilterMode('any')}
                 className={cn('px-2 py-0.5 rounded text-[0.6875rem] font-medium cursor-pointer transition-colors',
                   typeFilterMode === 'any' ? 'bg-foreground text-background' : 'bg-secondary text-secondary-foreground'
                 )}
               >
-                Any (OR)
+                {t('browser.mode.any')}
               </button>
               <button type="button"
                 onClick={() => setTypeFilterMode('all')}
@@ -417,7 +425,7 @@ export function PokemonBrowser() {
                   typeFilterMode === 'all' ? 'bg-foreground text-background' : 'bg-secondary text-secondary-foreground'
                 )}
               >
-                All (AND)
+                {t('browser.mode.all')}
               </button>
               <span className="text-[0.625rem] text-muted-foreground ml-auto">
                 {typeFilterMode === 'all' ? 'dual-type search' : 'show any match'}
@@ -458,7 +466,7 @@ export function PokemonBrowser() {
               className="h-9 text-sm"
               onClick={() => toggleGeneration(gen)}
             >
-              Gen {gen}
+              {t('browser.genChip', { gen })}
             </Button>
           ))}
         </div>
@@ -472,10 +480,10 @@ export function PokemonBrowser() {
               variant={shapeFilter?.includes(shape) ? 'default' : 'secondary'}
               className="h-14 flex flex-col items-center justify-center gap-0.5 px-1"
               onClick={() => toggleShape(shape)}
-              title={SHAPE_LABELS[shape]}
+              title={shapeLabel(shape)}
             >
               <ShapeIcon shape={shape} className="w-5 h-5" />
-              <span className="text-[0.5625rem] leading-tight truncate max-w-full">{SHAPE_LABELS[shape]}</span>
+              <span className="text-[0.5625rem] leading-tight truncate max-w-full">{shapeLabel(shape)}</span>
             </Button>
           ))}
         </div>
@@ -498,7 +506,7 @@ export function PokemonBrowser() {
                     }
                   : undefined}
                 onClick={() => toggleColor(color)}
-                title={COLOR_LABELS[color]}
+                title={colorLabel(color)}
               >
                 {!isSelected && (
                   <span
@@ -506,7 +514,7 @@ export function PokemonBrowser() {
                     style={{ backgroundColor: COLOR_SWATCHES[color] }}
                   />
                 )}
-                <span className="text-xs">{COLOR_LABELS[color]}</span>
+                <span className="text-xs">{colorLabel(color)}</span>
               </Button>
             );
           })}
@@ -521,9 +529,9 @@ export function PokemonBrowser() {
               variant={eggGroupFilter?.includes(group) ? 'default' : 'secondary'}
               className="h-10 text-xs px-1"
               onClick={() => toggleEggGroup(group)}
-              title={EGG_GROUP_LABELS[group]}
+              title={eggGroupLabel(group)}
             >
-              {EGG_GROUP_LABELS[group]}
+              {eggGroupLabel(group)}
             </Button>
           ))}
         </div>
@@ -538,9 +546,9 @@ export function PokemonBrowser() {
               className="flex-1 h-10 text-sm"
               onClick={() => toggleEvoSize(size)}
             >
-              {size === 1 && '1 Stage'}
-              {size === 2 && '2 Stage'}
-              {size === 3 && '3+ Stage'}
+              {size === 1 && t('browser.stage.1')}
+              {size === 2 && t('browser.stage.2')}
+              {size === 3 && t('browser.stage.3')}
             </Button>
           ))}
         </div>
@@ -574,7 +582,7 @@ export function PokemonBrowser() {
       {isDesktop && activeSection && (
         <div className="flex items-center justify-between px-3 sm:px-6 py-2 border-b h-11">
           <h2 className="text-2xl font-extrabold tracking-tight leading-none">
-            <span className="text-foreground">Adding to: </span>
+            <span className="text-foreground">{t('browser.addingTo')}</span>
             <span className="text-primary">{sectionName}</span>
           </h2>
           <button type="button"
@@ -594,7 +602,7 @@ export function PokemonBrowser() {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name or number..."
+              placeholder={t('browser.search.placeholder')}
               className="pl-9 pr-9"
             />
             {searchQuery && (
@@ -607,7 +615,7 @@ export function PokemonBrowser() {
             )}
           </div>
           <span className="shrink-0 text-xs text-muted-foreground text-right whitespace-nowrap">
-            {totalCount} found
+            {tn('browser.results', totalCount)}
           </span>
         </div>
       </div>
@@ -624,13 +632,13 @@ export function PokemonBrowser() {
                   onClick={() => setTypeFilterMode(typeFilterMode === 'any' ? 'all' : 'any')}
                   className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-full text-[0.625rem] font-bold bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer transition-colors"
                 >
-                  {typeFilterMode === 'any' ? 'OR' : 'AND'}
+                  {typeFilterMode === 'any' ? t('browser.modeChip.or') : t('browser.modeChip.and')}
                 </button>
               )}
               {typeFilter.map(t => (
                 <FilterChip
                   key={t}
-                  label={t[0].toUpperCase() + t.slice(1)}
+                  label={typeLabel(t as TypeName)}
                   onDismiss={() => toggleType(t)}
                   onClick={() => setOpenSheet(openSheet === 'type' ? null : 'type')}
                   className="capitalize text-white"
@@ -639,7 +647,7 @@ export function PokemonBrowser() {
               ))}
             </>
           ) : (
-            <EntryChip label="Type" onClick={() => setOpenSheet(openSheet === 'type' ? null : 'type')} active={openSheet === 'type'} />
+            <EntryChip label={t('browser.chip.type')} onClick={() => setOpenSheet(openSheet === 'type' ? null : 'type')} active={openSheet === 'type'} />
           )}
 
           {generationFilter && generationFilter.length > 0 ? (
@@ -647,7 +655,7 @@ export function PokemonBrowser() {
               generationFilter.map(g => (
                 <FilterChip
                   key={g}
-                  label={`Gen ${g}`}
+                  label={t('browser.genChip', { gen: g })}
                   onDismiss={() => toggleGeneration(g)}
                   onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')}
                   className="bg-foreground text-background"
@@ -655,25 +663,25 @@ export function PokemonBrowser() {
               ))
             ) : (
               <FilterChip
-                label={`${generationFilter.length} Gens`}
+                label={tn('browser.count.gens', generationFilter.length)}
                 onDismiss={() => setGenerationFilter(null)}
                 onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')}
                 className="bg-foreground text-background"
               />
             )
           ) : (
-            <EntryChip label="Gen" onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')} active={openSheet === 'generation'} />
+            <EntryChip label={t('browser.chip.gen')} onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')} active={openSheet === 'generation'} />
           )}
 
           {evoLineSizeFilter ? (
             <FilterChip
-              label={`${evoLineSizeFilter.map(s => s === 3 ? '3+' : String(s)).join(',')} stage`}
+              label={t('browser.stageChip', { stages: evoLineSizeFilter.map(s => s === 3 ? '3+' : String(s)).join(',') })}
               onDismiss={() => setEvoLineSizeFilter(null)}
               onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')}
               className="bg-foreground text-background"
             />
           ) : (
-            <EntryChip label="Stages" onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
+            <EntryChip label={t('browser.chip.stages')} onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
           )}
 
           {shapeFilter && shapeFilter.length > 0 ? (
@@ -681,7 +689,7 @@ export function PokemonBrowser() {
               shapeFilter.map(s => (
                 <FilterChip
                   key={s}
-                  label={SHAPE_LABELS[s as ShapeName] ?? s}
+                  label={shapeLabel(s as ShapeName)}
                   onDismiss={() => toggleShape(s)}
                   onClick={() => setOpenSheet(openSheet === 'shape' ? null : 'shape')}
                   className="bg-foreground text-background"
@@ -689,14 +697,14 @@ export function PokemonBrowser() {
               ))
             ) : (
               <FilterChip
-                label={`${shapeFilter.length} Shapes`}
+                label={tn('browser.count.shapes', shapeFilter.length)}
                 onDismiss={() => setShapeFilter(null)}
                 onClick={() => setOpenSheet(openSheet === 'shape' ? null : 'shape')}
                 className="bg-foreground text-background"
               />
             )
           ) : (
-            <EntryChip label="Shape" onClick={() => setOpenSheet(openSheet === 'shape' ? null : 'shape')} active={openSheet === 'shape'} />
+            <EntryChip label={t('browser.chip.shape')} onClick={() => setOpenSheet(openSheet === 'shape' ? null : 'shape')} active={openSheet === 'shape'} />
           )}
 
           {colorFilter && colorFilter.length > 0 ? (
@@ -704,7 +712,7 @@ export function PokemonBrowser() {
               colorFilter.map(c => (
                 <FilterChip
                   key={c}
-                  label={COLOR_LABELS[c as ColorName] ?? c}
+                  label={colorLabel(c as ColorName)}
                   onDismiss={() => toggleColor(c)}
                   onClick={() => setOpenSheet(openSheet === 'color' ? null : 'color')}
                   style={{ backgroundColor: COLOR_SWATCHES[c as ColorName], color: colorTextOn(COLOR_SWATCHES[c as ColorName]), boxShadow: `inset 0 0 0 1px ${colorRingOn(COLOR_SWATCHES[c as ColorName])}` }}
@@ -712,14 +720,14 @@ export function PokemonBrowser() {
               ))
             ) : (
               <FilterChip
-                label={`${colorFilter.length} Colors`}
+                label={tn('browser.count.colors', colorFilter.length)}
                 onDismiss={() => setColorFilter(null)}
                 onClick={() => setOpenSheet(openSheet === 'color' ? null : 'color')}
                 className="bg-foreground text-background"
               />
             )
           ) : (
-            <EntryChip label="Color" onClick={() => setOpenSheet(openSheet === 'color' ? null : 'color')} active={openSheet === 'color'} />
+            <EntryChip label={t('browser.chip.color')} onClick={() => setOpenSheet(openSheet === 'color' ? null : 'color')} active={openSheet === 'color'} />
           )}
 
           {eggGroupFilter && eggGroupFilter.length > 0 ? (
@@ -727,7 +735,7 @@ export function PokemonBrowser() {
               eggGroupFilter.map(g => (
                 <FilterChip
                   key={g}
-                  label={EGG_GROUP_LABELS[g as EggGroupName] ?? g}
+                  label={eggGroupLabel(g as EggGroupName)}
                   onDismiss={() => toggleEggGroup(g)}
                   onClick={() => setOpenSheet(openSheet === 'eggGroup' ? null : 'eggGroup')}
                   className="bg-foreground text-background"
@@ -735,14 +743,14 @@ export function PokemonBrowser() {
               ))
             ) : (
               <FilterChip
-                label={`${eggGroupFilter.length} Egg Groups`}
+                label={tn('browser.count.eggGroups', eggGroupFilter.length)}
                 onDismiss={() => setEggGroupFilter(null)}
                 onClick={() => setOpenSheet(openSheet === 'eggGroup' ? null : 'eggGroup')}
                 className="bg-foreground text-background"
               />
             )
           ) : (
-            <EntryChip label="Egg Group" onClick={() => setOpenSheet(openSheet === 'eggGroup' ? null : 'eggGroup')} active={openSheet === 'eggGroup'} />
+            <EntryChip label={t('browser.chip.eggGroup')} onClick={() => setOpenSheet(openSheet === 'eggGroup' ? null : 'eggGroup')} active={openSheet === 'eggGroup'} />
           )}
 
           </div>
@@ -768,7 +776,7 @@ export function PokemonBrowser() {
               style={{ backgroundColor: activeCategoryDef?.color }}
             />
           ) : (
-            <EntryChip label="Classification" onClick={() => setOpenSheet(openSheet === 'classification' ? null : 'classification')} active={openSheet === 'classification'} />
+            <EntryChip label={t('browser.chip.classification')} onClick={() => setOpenSheet(openSheet === 'classification' ? null : 'classification')} active={openSheet === 'classification'} />
           )}
 
           {activeArchetype && PLACES_IDS.has(activeArchetype) ? (
@@ -780,7 +788,7 @@ export function PokemonBrowser() {
               style={{ backgroundColor: activeArchetypeDef?.color }}
             />
           ) : (
-            <EntryChip label="Places" onClick={() => setOpenSheet(openSheet === 'places' ? null : 'places')} active={openSheet === 'places'} />
+            <EntryChip label={t('browser.chip.places')} onClick={() => setOpenSheet(openSheet === 'places' ? null : 'places')} active={openSheet === 'places'} />
           )}
 
           {activeArchetype && !PLACES_IDS.has(activeArchetype) && !GAME_MECHANICS_IDS.has(activeArchetype) ? (
@@ -792,7 +800,7 @@ export function PokemonBrowser() {
               style={{ backgroundColor: activeArchetypeDef?.color }}
             />
           ) : (
-            <EntryChip label="Archetypes" onClick={() => setOpenSheet(openSheet === 'archetypes' ? null : 'archetypes')} active={openSheet === 'archetypes'} />
+            <EntryChip label={t('browser.chip.archetypes')} onClick={() => setOpenSheet(openSheet === 'archetypes' ? null : 'archetypes')} active={openSheet === 'archetypes'} />
           )}
 
           {activeArchetype && GAME_MECHANICS_IDS.has(activeArchetype) ? (
@@ -804,7 +812,7 @@ export function PokemonBrowser() {
               style={{ backgroundColor: activeArchetypeDef?.color }}
             />
           ) : (
-            <EntryChip label="Mechanics" onClick={() => setOpenSheet(openSheet === 'gameMechanics' ? null : 'gameMechanics')} active={openSheet === 'gameMechanics'} />
+            <EntryChip label={t('browser.chip.mechanics')} onClick={() => setOpenSheet(openSheet === 'gameMechanics' ? null : 'gameMechanics')} active={openSheet === 'gameMechanics'} />
           )}
 
           </div>
@@ -824,7 +832,7 @@ export function PokemonBrowser() {
       {openSheet && isDesktop && (
         <div className="border-b px-3 py-2 bg-muted/30 max-h-[40vh] overflow-y-auto">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold">{SHEET_TITLES[openSheet]}</span>
+            <span className="text-sm font-semibold">{sheetTitle(openSheet)}</span>
             <button type="button" onClick={() => setOpenSheet(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
               <X size={16} />
             </button>
@@ -962,8 +970,8 @@ export function PokemonBrowser() {
           })}
           {groups.length === 0 && (
             <div className="py-12 text-center text-muted-foreground">
-              <p>No Pokémon found.</p>
-              <p className="text-sm mt-1">Try adjusting your filters.</p>
+              <p>{t('browser.empty.title')}</p>
+              <p className="text-sm mt-1">{t('browser.empty.hint')}</p>
             </div>
           )}
           <PageFooter />
@@ -982,14 +990,14 @@ export function PokemonBrowser() {
             >
               {newCount > 0 && removeCount > 0 ? (
                 <>
-                  <span>Add {newCount} Pokemon</span>
+                  <span>{tn('browser.fab.add', newCount)}</span>
                   <br />
-                  <span className="text-xs font-normal opacity-90">and remove {removeCount}</span>
+                  <span className="text-xs font-normal opacity-90">{t('browser.fab.andRemove', { count: removeCount })}</span>
                 </>
               ) : newCount > 0 ? (
-                `Add ${newCount} Pokemon`
+                tn('browser.fab.add', newCount)
               ) : (
-                `Remove ${removeCount} Pokemon`
+                tn('browser.fab.remove', removeCount)
               )}
             </button>
           </div>
@@ -1001,7 +1009,7 @@ export function PokemonBrowser() {
         <SheetOverlay onClose={() => setOpenSheet(null)} openSheet={openSheet} onHeight={setSheetH} footer={
           <div className="px-4 py-3 border-t">
             <Button className="w-full" onClick={() => setOpenSheet(null)}>
-              Show {totalCount} results
+              {t('browser.showResults', { count: totalCount })}
             </Button>
           </div>
         }>
@@ -1043,16 +1051,7 @@ function SheetOverlay({ onClose, openSheet, children, footer, onHeight }: {
         {/* Sheet header */}
         <div ref={headerRef} className="flex items-center justify-between px-4 py-3 border-b">
           <span className="text-sm font-semibold">
-            {openSheet === 'type' && 'Type'}
-            {openSheet === 'generation' && 'Generation'}
-            {openSheet === 'evoStage' && 'Evo Stages'}
-            {openSheet === 'shape' && 'Body Shape'}
-            {openSheet === 'color' && 'Color'}
-            {openSheet === 'eggGroup' && 'Egg Group'}
-            {openSheet === 'classification' && 'Classification'}
-            {openSheet === 'places' && 'Places'}
-            {openSheet === 'archetypes' && 'Archetypes'}
-            {openSheet === 'gameMechanics' && 'Game Mechanics'}
+            {sheetTitle(openSheet as Exclude<FilterSheet, null>)}
           </span>
           <button type="button" onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer">
             <X size={16} />

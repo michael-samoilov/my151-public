@@ -10,18 +10,6 @@ import { COLOR_NAMES, EGG_GROUP_NAMES } from '@/types/pokemon';
 
 export const COLOR_ORDER: readonly ColorName[] = COLOR_NAMES;
 
-export const COLOR_LABELS: Record<ColorName, string> = {
-  black: 'Black',
-  blue: 'Blue',
-  brown: 'Brown',
-  gray: 'Gray',
-  green: 'Green',
-  pink: 'Pink',
-  purple: 'Purple',
-  red: 'Red',
-  white: 'White',
-  yellow: 'Yellow',
-};
 
 /** Representative swatch color for each Pokédex color group. These are UI
  *  swatches (a legible mid-tone of each named color), not exact game values. */
@@ -58,20 +46,3 @@ export function colorRingOn(hex: string): string {
 
 export const EGG_GROUP_ORDER: readonly EggGroupName[] = EGG_GROUP_NAMES;
 
-export const EGG_GROUP_LABELS: Record<EggGroupName, string> = {
-  monster: 'Monster',
-  water1: 'Water 1',
-  water2: 'Water 2',
-  water3: 'Water 3',
-  bug: 'Bug',
-  flying: 'Flying',
-  ground: 'Field',
-  fairy: 'Fairy',
-  plant: 'Grass',
-  humanshape: 'Human-Like',
-  mineral: 'Mineral',
-  indeterminate: 'Amorphous',
-  ditto: 'Ditto',
-  dragon: 'Dragon',
-  'no-eggs': 'Undiscovered',
-};

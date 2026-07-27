@@ -13,7 +13,8 @@ import { STARTER_IDS } from '@/data/categories';
 import { typeIconPath } from '@/data/type-ids';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
-import { SHAPE_ORDER, SHAPE_LABELS, shapeChartIcon, SHAPE_ICON_SCALE } from '@/components/shared/ShapeIcon';
+import { SHAPE_ORDER, shapeChartIcon, SHAPE_ICON_SCALE } from '@/components/shared/ShapeIcon';
+import { shapeLabel } from '@/i18n';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { StageDistributionChart } from './StageDistributionChart';
@@ -185,7 +186,7 @@ export function AnalyticsDashboard() {
       const yourShare = count / yourTotal;
       return {
         key: shape,
-        label: SHAPE_LABELS[shape],
+        label: shapeLabel(shape),
         count,
         deviation: natShare > 0 ? (yourShare / natShare - 1) * 100 : 0,
         color: CHART_BAR_RED,

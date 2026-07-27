@@ -21,6 +21,8 @@ export {
 
 export { matchLocale, negotiateLocale, localeFromUrl, resolveLocale } from './detect';
 
+export { typeLabel, colorLabel, eggGroupLabel, shapeLabel } from './terms';
+
 export { useT, useTn, useLocale, useDocumentLocale } from './provider';
 
 export type { MessageKey, Messages, TFn, TnFn, PluralBase } from './types';

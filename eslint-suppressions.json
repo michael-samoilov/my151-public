@@ -36,7 +36,7 @@
   },
   "src/components/shared/ShapeIcon.tsx": {
     "react-refresh/only-export-components": {
-      "count": 3
+      "count": 2
     }
   },
   "src/components/ui/badge.tsx": {

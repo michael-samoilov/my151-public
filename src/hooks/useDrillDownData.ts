@@ -7,7 +7,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { computePerPokemonMatchup } from '@/hooks/useTypeDominance';
 import type { Pokemon, TypeName, ShapeName } from '@/types/pokemon';
 import { typeIconPath } from '@/data/type-ids';
-import { SHAPE_LABELS } from '@/components/shared/ShapeIcon';
+import { shapeLabel, t } from '@/i18n';
 
 const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
@@ -630,7 +630,7 @@ function getSegmentMeta(segment: DrillDownSegment): { title: string; color: stri
       // No header icon (like the gen drilldown): the HOME silhouettes are black
       // and would vanish on the dark-mode header. The title carries it.
       return {
-        title: `${SHAPE_LABELS[segment.shape as ShapeName] ?? segment.shape} Shape`,
+        title: t('drilldown.shapeTitle', { shape: shapeLabel(segment.shape as ShapeName) }),
         color: '#ef4444', // app red — shapes carry no per-category color
       };
   }

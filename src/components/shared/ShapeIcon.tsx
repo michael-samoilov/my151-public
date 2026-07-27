@@ -14,22 +14,6 @@ export const SHAPE_ICON_SCALE = 1.65;
  * the source art in light mode).
  */
 
-export const SHAPE_LABELS: Record<ShapeName, string> = {
-  ball: 'Head',
-  squiggle: 'Serpent',
-  fish: 'Fins',
-  arms: 'Head & Arms',
-  blob: 'Head & Base',
-  upright: 'Biped, Tail',
-  legs: 'Head & Legs',
-  quadruped: 'Quadruped',
-  wings: 'Winged',
-  tentacles: 'Tentacles',
-  heads: 'Multi-Body',
-  humanoid: 'Humanoid',
-  'bug-wings': 'Insect Wings',
-  armor: 'Insectoid',
-};
 
 export const SHAPE_ORDER: readonly ShapeName[] = SHAPE_NAMES;
 
