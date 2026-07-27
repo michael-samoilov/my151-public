@@ -49,18 +49,29 @@ export function resolveActiveLocale(opts: {
   return negotiateLocale(opts.navigatorLanguages ?? []);
 }
 
+/** Official in-game terminology per locale, generated from PokeAPI. */
+const TERM_SOURCES = import.meta.glob<Record<string, string>>('./catalogs/terms/*.json', {
+  import: 'default',
+});
+
 /**
- * Fetch a catalog. English is bundled; the pseudo-locales are generated from it.
+ * Fetch a catalog for a locale.
  *
- * The eight real translated catalogs do not exist yet — they are generated and
- * adjudicated in a later phase — so every other locale currently resolves to
- * English. That is deliberate rather than a gap: the runtime, the store field
- * and the layout harness all need to be in place and proven first, and English
- * is a correct (if untranslated) answer in the meantime.
+ * English is bundled and is always the base: every key resolves against it, so
+ * a locale that supplies only part of the corpus is a *partial* catalog rather
+ * than a broken one. On top of that go the official terms — types, colours, egg
+ * groups, regions — which are sourced from PokeAPI rather than translated.
+ *
+ * The remaining tiers (functional UI, then editorial copy) are layered in as
+ * they are produced. Until then a non-English locale shows official
+ * terminology and Pokémon names in its own language with English chrome, which
+ * is a coherent intermediate state rather than a half-broken one.
  */
 export async function loadCatalog(locale: ActiveLocale): Promise<Messages> {
   if (isPseudoLocale(locale)) return buildPseudoCatalog(locale);
-  return en;
+  const loadTerms = TERM_SOURCES[`./catalogs/terms/${locale}.json`];
+  if (!loadTerms) return en;
+  return { ...en, ...(await loadTerms()) } as Messages;
 }
 
 /** The `Locale` a pseudo-locale stands in for, for `<html lang>` and fonts. */
