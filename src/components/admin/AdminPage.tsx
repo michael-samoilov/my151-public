@@ -104,6 +104,8 @@ interface ApiResponse {
   funnelEvents?: Record<string, number>;
   /** Per-user cohort samples: [firstTs, peakMon, peakLines, completed, exported]. */
   cohort?: [number, number, number, 0 | 1, 0 | 1][];
+  /** Weekly active users: week-start (ms) → distinct users active that week. */
+  wau?: { week: number; count: number }[];
   /** Onboarding launch timestamp — the default cutoff for the pre/post slider. */
   onboardingLaunchTs?: number;
   exportSettings?: {
@@ -527,6 +529,37 @@ function PrePostCohort({
         Observational before/after (not randomized). Small cohorts are noisy — treat differences as
         directional until each arm has a few hundred users.
       </p>
+    </div>
+  );
+}
+
+/** Weekly-active-users bar chart. One bar per week (distinct users active),
+ *  with the count above each bar and the week-start date on hover. */
+function WauChart({ series }: { series: { week: number; count: number }[] }) {
+  if (series.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
+  const max = Math.max(1, ...series.map((w) => w.count));
+  const fmtWeek = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  // Thin the x-axis labels when there are many weeks so they stay readable.
+  const step = Math.max(1, Math.ceil(series.length / 12));
+  return (
+    <div className="overflow-x-auto pb-1">
+      <div className="flex items-end gap-1 min-w-full" style={{ height: 120 }}>
+        {series.map((w, i) => (
+          <div key={w.week} className="flex-1 min-w-[10px] flex flex-col items-center justify-end h-full">
+            <span className="text-[0.55rem] tabular-nums text-muted-foreground leading-none mb-0.5">
+              {w.count || ''}
+            </span>
+            <div
+              className="w-full rounded-t bg-primary/70"
+              style={{ height: `${Math.max(w.count > 0 ? 3 : 0, (w.count / max) * 100)}%` }}
+              title={`Week of ${new Date(w.week).toLocaleDateString()}: ${w.count} active`}
+            />
+            <span className="text-[0.5rem] text-muted-foreground leading-none mt-0.5 h-4 flex items-start">
+              {i % step === 0 || i === series.length - 1 ? fmtWeek(w.week) : ''}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1723,6 +1756,12 @@ export function AdminPage() {
                 <Stat value={data.retention.activeLast7} label="Active 7d" />
               </div>
             </Card>
+
+            {data.wau && data.wau.length > 0 && (
+              <Card title="Weekly active users">
+                <WauChart series={data.wau} />
+              </Card>
+            )}
 
             {data.funnelEvents && Object.keys(data.funnelEvents).length > 0 && (
               <Card title="Engagement funnel (distinct browsers)">
