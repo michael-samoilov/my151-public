@@ -3,6 +3,7 @@ import pokemonData from '@/data/pokemon.json';
 import { en } from './catalogs/en';
 import { setCatalog } from './core';
 import { formLabel, formProvenance, speciesName, __setNamesForTest, type NameProvenance } from './names';
+import { normalizeSearch } from './searchNormalize';
 import type { Locale } from './config';
 
 /**
@@ -28,7 +29,7 @@ interface NameCatalogFile {
   species: string[];
   forms: Record<string, string>;
   formSource: Record<string, NameProvenance>;
-  romaji?: string[];
+  search?: string[];
 }
 
 function load(locale: string) {
@@ -124,10 +125,21 @@ describe('name catalogs', () => {
     expect(formLabel(10100)).toBeNull();
   });
 
-  it('ships romaji for Japanese search and not for other locales', () => {
-    // A Japanese user on a Latin keyboard types "pikachu"; without this the
-    // search box would be unusable for them.
-    expect(load('ja').romaji?.[24]).toBe('pikachu');
-    expect(load('ko').romaji).toBeUndefined();
+  it('gives every locale the affixes its keyboard needs', () => {
+    // A Japanese user on a Latin keyboard types "pikachu", a Korean user types
+    // ㅍㅋㅊ, a Chinese user types pkq. Without these the search box is
+    // unusable in exactly the locales the names were added for.
+    expect(load('ja').search?.[24]).toBe('ピカチュウ pikachu');
+    expect(load('ko').search?.[24]).toBe(normalizeSearch('피카츄 ㅍㅋㅊ'));
+    expect(load('zh-Hans').search?.[24]).toBe('皮卡丘 pikaqiu pkq');
+    // Latin locales need only the folded name — accents never have to be typed.
+    expect(load('fr').search?.[668]).toBe('flabebe');
+  });
+
+  it('folds the accents out of every Latin locale it ships', () => {
+    for (const locale of ['en', 'fr', 'de', 'es', 'it'] as const) {
+      const withAccents = load(locale).search?.filter((text) => /[À-ÿ]/.test(text)) ?? [];
+      expect(withAccents, `${locale} left accented text in the search index`).toEqual([]);
+    }
   });
 });

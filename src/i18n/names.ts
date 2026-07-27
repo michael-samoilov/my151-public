@@ -23,7 +23,8 @@ interface NameCatalog {
   species: string[];
   forms: Record<string, string>;
   formSource: Record<string, NameProvenance>;
-  romaji?: string[];
+  /** Prepared match text per species — see `speciesSearchText`. */
+  search?: string[];
 }
 
 /**
@@ -65,6 +66,7 @@ export function loadNames(locale: Locale): Promise<void> {
 // a second notification channel.
 const listeners = new Set<() => void>();
 function notify() {
+  namesVersion += 1;
   listeners.forEach((cb) => cb());
 }
 export function subscribeNames(cb: () => void): () => void {
@@ -74,6 +76,16 @@ export function subscribeNames(cb: () => void): () => void {
     off();
     listeners.delete(cb);
   };
+}
+
+/**
+ * A value that changes whenever the names a component would render could have
+ * changed — a locale switch or a catalog finishing its download. `useSyncExternalStore`
+ * needs an immutable snapshot, so this is a counter rather than the catalog map.
+ */
+let namesVersion = 0;
+export function getNamesVersion(): number {
+  return namesVersion;
 }
 
 /**
@@ -113,10 +125,19 @@ export function formProvenance(appId: number): NameProvenance | null {
   return catalog?.formSource[appId] ?? null;
 }
 
-/** Hepburn romaji for the search index. Japanese only, empty elsewhere. */
-export function speciesRomaji(appId: number): string | null {
+/**
+ * Everything a query might match for this species in the active locale: the
+ * normalized name, plus Hepburn romaji in Japanese, jamo initials in Korean and
+ * pinyin (with initials) in Chinese.
+ *
+ * Prepared at build time and stored as one string, because the browser checks
+ * it once per Pokémon per keystroke — 1,025 `includes` calls on every character
+ * typed. `null` until the locale's catalog has loaded, which the caller treats
+ * as "match the English slug only", the behaviour the app has always had.
+ */
+export function speciesSearchText(appId: number): string | null {
   const catalog = loaded.get(getLocale());
-  return catalog?.romaji?.[speciesIndex(appId)] || null;
+  return catalog?.search?.[speciesIndex(appId)] || null;
 }
 
 /** Test seam: install a catalog without going through the lazy loader. */

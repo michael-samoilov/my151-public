@@ -39,6 +39,8 @@ export {
 export { tierOf, keysByTier, LAUNCH_TIERS } from './tiers';
 export type { Tier } from './tiers';
 
-export { useT, useTn, useLocale, useDocumentLocale } from './provider';
+export { useT, useTn, useLocale, useNamesVersion, useDocumentLocale } from './provider';
+export { speciesName, formLabel, formProvenance, speciesSearchText } from './names';
+export { normalizeSearch } from './searchNormalize';
 
 export type { MessageKey, Messages, NoArgKey, TFn, TnFn, PluralBase } from './types';

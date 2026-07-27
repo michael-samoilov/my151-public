@@ -608,7 +608,12 @@ export function PokemonBrowser() {
               </button>
             )}
           </div>
-          <span className="shrink-0 text-xs text-muted-foreground text-right whitespace-nowrap">
+          <span
+            className="shrink-0 text-xs text-muted-foreground text-right whitespace-nowrap"
+            // The count as a number, for tests that must not depend on how the
+            // sentence around it is worded in the active language.
+            data-result-count={totalCount}
+          >
             {tn('browser.results', totalCount)}
           </span>
         </div>

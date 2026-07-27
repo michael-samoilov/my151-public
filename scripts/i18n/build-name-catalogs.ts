@@ -18,6 +18,7 @@
 import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { LANGUAGE_IDS, ROMAJI_LANGUAGE_ID, ensureCsvs, readCsv } from './pokeapi';
 import type { IdMapEntry } from './propose-id-map';
+import { searchText } from './searchAffixes';
 
 const OUT_DIR = 'src/i18n/names';
 const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
@@ -36,8 +37,13 @@ interface NameCatalog {
   forms: Record<string, string>;
   /** Provenance for each form descriptor, same keys as `forms`. */
   formSource: Record<string, NameProvenance>;
-  /** Hepburn romaji, ja only — a Japanese user on a Latin keyboard types this. */
-  romaji?: string[];
+  /**
+   * What a query is matched against, one prepared string per species: the
+   * normalized name plus whatever else someone might type for it — Hepburn
+   * romaji in Japanese, jamo initials in Korean, pinyin and its initials in
+   * Chinese. Dense and parallel to `species`.
+   */
+  search: string[];
 }
 
 function regionOf(appName: string): string | null {
@@ -114,6 +120,7 @@ async function main(): Promise<void> {
       species: Array.from({ length: maxSpecies }, (_, i) => speciesNames.get(`${i + 1}:${langId}`) ?? ''),
       forms: {},
       formSource: {},
+      search: [],
     };
 
     let official = 0;
@@ -135,9 +142,9 @@ async function main(): Promise<void> {
       composed += 1;
     }
 
-    if (locale === 'ja') {
-      catalog.romaji = Array.from({ length: maxSpecies }, (_, i) => romaji.get(i + 1) ?? '');
-    }
+    catalog.search = catalog.species.map((name, i) =>
+      name ? searchText(locale, name, romaji.get(i + 1)) : '',
+    );
 
     writeFileSync(`${OUT_DIR}/${locale}.json`, `${JSON.stringify(catalog)}\n`);
     const named = catalog.species.filter(Boolean).length;

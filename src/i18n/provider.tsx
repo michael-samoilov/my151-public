@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { direction, htmlLang, type Locale } from './config';
 import { getLocale, getVersion, subscribe, translate, translatePlural } from './core';
+import { getNamesVersion, subscribeNames } from './names';
 import type { TFn, TnFn, PluralBase } from './types';
 
 /**
@@ -41,6 +42,19 @@ export function useTn(): TnFn {
     return (base: PluralBase, count: number, args?: Record<string, string | number>) =>
       translatePlural(base, count, args);
   }, [version]);
+}
+
+/**
+ * Ticks when the rendered *names* could have changed — a locale switch, or a
+ * name catalog finishing its download some frames after the locale did.
+ *
+ * Separate from `useLocale` because the names are a second, later-arriving
+ * source: a component that reads only `useLocale` re-renders on the switch,
+ * finds the catalog still loading, falls back to the English slug, and then
+ * never hears that the real names arrived.
+ */
+export function useNamesVersion(): number {
+  return useSyncExternalStore(subscribeNames, getNamesVersion, getNamesVersion);
 }
 
 /**
