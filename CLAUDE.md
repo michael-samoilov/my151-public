@@ -4,9 +4,21 @@
 
 When resuming from a context summary (e.g. after running out of context), only act on items explicitly listed under "Pending Tasks." Do not revisit, verify, or re-investigate completed work. Treat the summary's completed items as done — pick up exactly where things left off.
 
-## Build Verification
+## Verification
 
-Always run `npm run build` to verify the build compiles before committing and pushing. Never push code that has not been build-verified. The build includes sprite caching and stricter type checking than `tsc --noEmit` alone.
+Always run `npm run build` before committing and pushing. Never push code that has not been build-verified.
+
+`npm run build` is exactly `tsc -b && vite build`. The `tsc -b` step covers `src`, `api`, `scripts` and `e2e` via the project references in `tsconfig.json` — note that `api/` is Vercel serverless code that Vite never touches, so this typecheck is its only local gate. **Sprite caching is not part of the build**; it is a separate, manual `npm run cache-sprites`.
+
+Other checks, all of which also run in CI (`.github/workflows/ci.yml`):
+
+| Command | Covers |
+|---|---|
+| `npm run lint` | ESLint. Pre-existing violations are recorded in `eslint-suppressions.json`, so this passes today and any *new* violation fails. Regenerate with `npx eslint . --suppress-all` only when deliberately accepting a new one. |
+| `npm test` | Vitest unit tests (`src/**/*.test.ts`, `scripts/**/*.test.ts`). |
+| `npm run test:e2e` | Playwright. Auto-starts `vite preview` on port 4173, so no server needs to be running. Projects: `mobile`, `desktop`, `narrow` (320px). Specs under `e2e/sweeps/` drive their own viewports and run only in `desktop`. |
+
+CI runs on every branch push and PR, but it can only *block* a merge if branch protection is enabled on the deploy branch — that is a repo setting, not something in the tree.
 
 ## Deployment
 
