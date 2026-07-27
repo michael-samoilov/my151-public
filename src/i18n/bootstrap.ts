@@ -3,6 +3,7 @@ import { en } from './catalogs/en';
 import { DEFAULT_LOCALE, isLocale, type Locale } from './config';
 import { setCatalog } from './core';
 import { negotiateLocale } from './detect';
+import { loadNames } from './names';
 import { buildPseudoCatalog, isPseudoLocale, type PseudoLocale } from './pseudo';
 import type { Messages } from './types';
 
@@ -73,6 +74,10 @@ export function baseLocale(locale: ActiveLocale): Locale {
  */
 export async function applyLocale(locale: ActiveLocale): Promise<void> {
   setCatalog(baseLocale(locale), await loadCatalog(locale));
+  // Names are a separate, larger chunk and are deliberately not awaited: the
+  // UI falls back to the English slug until they arrive, which is a frame or
+  // two, whereas blocking the locale switch on ~1,025 names would be visible.
+  void loadNames(baseLocale(locale));
 }
 
 /**
