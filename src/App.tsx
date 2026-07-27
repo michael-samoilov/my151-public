@@ -34,6 +34,7 @@ import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
 import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
 import { isAnalyticsUnlocked } from '@/lib/milestones';
 import { cn } from '@/lib/utils';
+import { useDocumentLocale } from '@/i18n';
 
 declare const __BUILD_TIMESTAMP__: string;
 console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
@@ -69,6 +70,9 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string | null; onC
 }
 
 function App() {
+  // Keeps <html lang>/dir in step with the active locale: it drives the
+  // per-script font stacks, CSS :lang() selectors, and screen-reader voice.
+  useDocumentLocale();
   useCompletionBeacon();
   useMilestoneTracker();
   const [currentView, setCurrentView] = useState<AppView>('builder');

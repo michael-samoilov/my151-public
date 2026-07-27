@@ -1,14 +1,20 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * One authoritative port, started automatically. The previous root-level
- * harnesses each hardcoded a different URL (:5173 and :5199) and required a
- * dev server to already be running, so one of them could never pass.
+ * Two servers, each authoritative for what it can actually prove.
  *
- * Specs run against `vite preview`, i.e. the real production bundle, so they
- * exercise the same output Vercel deploys.
+ * Most specs run against `vite preview` — the real production bundle, the same
+ * output Vercel deploys. The pseudo-locale specs cannot: `PREVIEW_FEATURES` is
+ * deliberately false in a production build, so `?lang=en-XA` is ignored there.
+ * That gate is correct (a real user seeing "[Ɓúíłđ···]" would think the app was
+ * broken), so those specs run against the dev server instead, which is where
+ * the pseudo-locales are actually used.
+ *
+ * The previous root-level harnesses each hardcoded a different URL (:5173 and
+ * :5199) and needed a server started by hand, so one of them could never pass.
  */
-const PORT = 4173;
+const PREVIEW_PORT = 4173;
+const DEV_PORT = 4174;
 
 export default defineConfig({
   testDir: './e2e',
@@ -19,7 +25,7 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
 
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL: `http://localhost:${PREVIEW_PORT}`,
     trace: 'on-first-retry',
     // Chromium is preinstalled in this environment at a fixed path; fall back to
     // Playwright's own resolution anywhere it isn't.
@@ -39,17 +45,50 @@ export default defineConfig({
    * desktop project picks them up.
    */
   projects: [
-    { name: 'mobile', testIgnore: '**/sweeps/**', use: { ...devices['Pixel 7'] } },
-    { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } } },
-    { name: 'narrow', testIgnore: '**/sweeps/**', use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } } },
+    {
+      name: 'mobile',
+      testIgnore: ['**/sweeps/**', '**/i18n-layout.spec.ts'],
+      use: { ...devices['Pixel 7'] },
+    },
+    {
+      name: 'desktop',
+      testIgnore: '**/i18n-layout.spec.ts',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
+    },
+    {
+      name: 'narrow',
+      testIgnore: ['**/sweeps/**', '**/i18n-layout.spec.ts'],
+      use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
+    },
+    // Pseudo-locales, against the dev server. Runs at the narrow width because
+    // that is where expanded text breaks first.
+    {
+      name: 'pseudo',
+      testMatch: '**/i18n-layout.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 360, height: 844 },
+        baseURL: `http://localhost:${DEV_PORT}`,
+      },
+    },
   ],
 
-  webServer: {
-    command: `npm run build && npm run preview -- --port ${PORT} --strictPort`,
-    port: PORT,
-    reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
-    stdout: 'ignore',
-    stderr: 'pipe',
-  },
+  webServer: [
+    {
+      command: `npm run build && npm run preview -- --port ${PREVIEW_PORT} --strictPort`,
+      port: PREVIEW_PORT,
+      reuseExistingServer: !process.env.CI,
+      timeout: 180_000,
+      stdout: 'ignore',
+      stderr: 'pipe',
+    },
+    {
+      command: `npm run dev -- --port ${DEV_PORT} --strictPort`,
+      port: DEV_PORT,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+      stdout: 'ignore',
+      stderr: 'pipe',
+    },
+  ],
 });
