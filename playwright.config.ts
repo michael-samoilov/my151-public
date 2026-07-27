@@ -42,29 +42,32 @@ export default defineConfig({
    *
    * Specs under e2e/sweeps/ drive their own viewport sizes, so running them
    * under every project would just repeat the same work three times; only the
-   * desktop project picks them up.
+   * desktop project picks them up. Specs under e2e/dev/ need the dev server and
+   * run only in the `dev` project.
    */
   projects: [
     {
       name: 'mobile',
-      testIgnore: ['**/sweeps/**', '**/i18n-layout.spec.ts'],
+      testIgnore: ['**/sweeps/**', '**/dev/**'],
       use: { ...devices['Pixel 7'] },
     },
     {
       name: 'desktop',
-      testIgnore: '**/i18n-layout.spec.ts',
+      testIgnore: '**/dev/**',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1280, height: 800 } },
     },
     {
       name: 'narrow',
-      testIgnore: ['**/sweeps/**', '**/i18n-layout.spec.ts'],
+      testIgnore: ['**/sweeps/**', '**/dev/**'],
       use: { ...devices['Desktop Chrome'], viewport: { width: 320, height: 844 } },
     },
-    // Pseudo-locales, against the dev server. Runs at the narrow width because
-    // that is where expanded text breaks first.
+    // Specs that need the dev server rather than the production bundle:
+    // pseudo-locales (PREVIEW_FEATURES is correctly false in a prod build) and
+    // anything importing app source directly. Narrow-ish width, because that is
+    // where expanded text breaks first.
     {
-      name: 'pseudo',
-      testMatch: '**/i18n-layout.spec.ts',
+      name: 'dev',
+      testMatch: '**/dev/**',
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 360, height: 844 },

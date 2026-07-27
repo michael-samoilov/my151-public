@@ -78,6 +78,17 @@ export function translate<K extends MessageKey>(key: K, ...args: ArgsOf<K>): str
   return interpolate(lookup(key), args[0] as Record<string, string | number> | undefined);
 }
 
+/**
+ * The message text with its placeholders left intact.
+ *
+ * For sentences whose slots are filled by something other than a string — an
+ * icon, a coloured run of text — where `splitTemplate` does the substitution.
+ * `translate` would demand the arguments it cannot be given here.
+ */
+export function rawMessage(key: MessageKey): string {
+  return lookup(key);
+}
+
 const pluralRulesCache = new Map<string, Intl.PluralRules>();
 
 function pluralRules(locale: Locale): Intl.PluralRules {
@@ -128,6 +139,19 @@ export function formatList(
   options?: Intl.ListFormatOptions,
 ): string {
   return new Intl.ListFormat(currentLocale, options).format(items);
+}
+
+/**
+ * `Intl.ListFormat` split into element and literal parts, so a caller can
+ * substitute something richer than a string for each element — an icon plus a
+ * coloured label, say — while the locale still supplies the separators and the
+ * conjunction.
+ */
+export function formatListToParts(
+  items: string[],
+  options?: Intl.ListFormatOptions,
+): { type: string; value: string }[] {
+  return new Intl.ListFormat(currentLocale, options).formatToParts(items);
 }
 
 /**

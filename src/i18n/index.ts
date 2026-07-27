@@ -13,8 +13,10 @@ export {
   getLocale,
   setCatalog,
   formatList,
+  formatListToParts,
   formatNumber,
   localeUppercase,
+  rawMessage as raw,
   translate as t,
   translatePlural as tn,
 } from './core';
