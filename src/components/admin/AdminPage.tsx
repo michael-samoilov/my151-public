@@ -104,8 +104,8 @@ interface ApiResponse {
   funnelEvents?: Record<string, number>;
   /** Per-user cohort samples: [firstTs, peakMon, peakLines, completed, exported]. */
   cohort?: [number, number, number, 0 | 1, 0 | 1][];
-  /** Weekly active users: week-start (ms) → distinct users active that week. */
-  wau?: { week: number; count: number }[];
+  /** Daily activity: per-day DAU and trailing-7-day rolling active count. */
+  activity?: { day: number; dau: number; rolling7: number }[];
   /** Onboarding launch timestamp — the default cutoff for the pre/post slider. */
   onboardingLaunchTs?: number;
   exportSettings?: {
@@ -533,32 +533,92 @@ function PrePostCohort({
   );
 }
 
-/** Weekly-active-users bar chart. One bar per week (distinct users active),
- *  with the count above each bar and the week-start date on hover. */
-function WauChart({ series }: { series: { week: number; count: number }[] }) {
-  if (series.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
-  const max = Math.max(1, ...series.map((w) => w.count));
-  const fmtWeek = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  // Thin the x-axis labels when there are many weeks so they stay readable.
-  const step = Math.max(1, Math.ceil(series.length / 12));
+/** Active-users line chart: daily active users (DAU) and a trailing-7-day
+ *  rolling active count (a WAU that updates every day). Press/move over the
+ *  chart to read exact values on a given day. */
+function ActivityChart({ series }: { series: { day: number; dau: number; rolling7: number }[] }) {
+  const [cursor, setCursor] = useState<number | null>(null);
+  const areaRef = useRef<HTMLDivElement>(null);
+  if (series.length < 2) return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
+
+  const W = 340;
+  const H = 130;
+  const padL = 22;
+  const padR = 6;
+  const padT = 8;
+  const padB = 18;
+  const max = Math.max(1, ...series.map((d) => Math.max(d.dau, d.rolling7)));
+  const n = series.length;
+  const px = (i: number) => padL + ((W - padL - padR) * i) / (n - 1);
+  const py = (v: number) => padT + (H - padT - padB) * (1 - v / max);
+  const line = (key: 'dau' | 'rolling7') => series.map((d, i) => `${px(i)},${py(d[key])}`).join(' ');
+
+  const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const step = Math.max(1, Math.ceil(n / 8));
+
+  const updateCursor = (clientX: number) => {
+    const el = areaRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const frac = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    setCursor(Math.round(frac * (n - 1)));
+  };
+  const cur = cursor !== null ? series[Math.min(cursor, n - 1)] : null;
+
   return (
-    <div className="overflow-x-auto pb-1">
-      <div className="flex items-end gap-1 min-w-full" style={{ height: 120 }}>
-        {series.map((w, i) => (
-          <div key={w.week} className="flex-1 min-w-[10px] flex flex-col items-center justify-end h-full">
-            <span className="text-[0.55rem] tabular-nums text-muted-foreground leading-none mb-0.5">
-              {w.count || ''}
-            </span>
-            <div
-              className="w-full rounded-t bg-primary/70"
-              style={{ height: `${Math.max(w.count > 0 ? 3 : 0, (w.count / max) * 100)}%` }}
-              title={`Week of ${new Date(w.week).toLocaleDateString()}: ${w.count} active`}
-            />
-            <span className="text-[0.5rem] text-muted-foreground leading-none mt-0.5 h-4 flex items-start">
-              {i % step === 0 || i === series.length - 1 ? fmtWeek(w.week) : ''}
-            </span>
+    <div className="w-full">
+      {/* Legend — identity is never color-alone */}
+      <div className="flex items-center gap-3 mb-1 text-[0.65rem]">
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-3 h-[2px] bg-primary" /> Rolling 7-day
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-3 h-[2px]" style={{ backgroundColor: 'var(--color-muted-foreground)' }} /> Daily (DAU)
+        </span>
+      </div>
+      <div
+        ref={areaRef}
+        className="relative w-full touch-none select-none"
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          updateCursor(e.clientX);
+        }}
+        onPointerMove={(e) => cursor !== null && updateCursor(e.clientX)}
+        onPointerUp={() => setCursor(null)}
+        onPointerLeave={() => setCursor(null)}
+      >
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" style={{ height: 'auto' }} preserveAspectRatio="none">
+          {[0, 0.5, 1].map((g) => (
+            <g key={g}>
+              <line x1={padL} y1={py(g * max)} x2={W - padR} y2={py(g * max)} stroke="var(--color-muted)" strokeWidth={1} />
+              <text x={2} y={py(g * max) + 3} fontSize={7} fill="var(--color-muted-foreground)">
+                {Math.round(g * max)}
+              </text>
+            </g>
+          ))}
+          <polyline points={line('dau')} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} />
+          <polyline points={line('rolling7')} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} />
+          {cur && cursor !== null && (
+            <line x1={px(cursor)} y1={padT} x2={px(cursor)} y2={H - padB} stroke="var(--color-foreground)" strokeWidth={1} />
+          )}
+        </svg>
+        {cur && cursor !== null && (
+          <div
+            className="absolute -top-1 -translate-x-1/2 pointer-events-none whitespace-nowrap rounded bg-foreground text-background text-[0.6rem] px-1 py-0.5"
+            style={{ left: `${(px(cursor) / W) * 100}%` }}
+          >
+            {fmtDay(cur.day)} · {cur.rolling7}w · {cur.dau}d
           </div>
-        ))}
+        )}
+      </div>
+      {/* x-axis labels */}
+      <div className="flex justify-between text-[0.55rem] text-muted-foreground mt-0.5 px-[6px]">
+        {series
+          .map((d, i) => ({ d, i }))
+          .filter(({ i }) => i % step === 0 || i === n - 1)
+          .map(({ d, i }) => (
+            <span key={i}>{fmtDay(d.day)}</span>
+          ))}
       </div>
     </div>
   );
@@ -1757,9 +1817,9 @@ export function AdminPage() {
               </div>
             </Card>
 
-            {data.wau && data.wau.length > 0 && (
-              <Card title="Weekly active users">
-                <WauChart series={data.wau} />
+            {data.activity && data.activity.length > 0 && (
+              <Card title="Active users (daily + rolling 7-day)">
+                <ActivityChart series={data.activity} />
               </Card>
             )}
 
