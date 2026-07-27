@@ -27,14 +27,13 @@ function RouteFallback() {
 }
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { BUILD_GROUPS } from '@/data/slot-template';
 import { useCompletionBeacon, sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
 import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
 import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
 import { isAnalyticsUnlocked } from '@/lib/milestones';
 import { cn } from '@/lib/utils';
-import { useDocumentLocale } from '@/i18n';
+import { sectionName as sectionLabel, useDocumentLocale } from '@/i18n';
 
 declare const __BUILD_TIMESTAMP__: string;
 console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
@@ -116,9 +115,7 @@ function App() {
 
   // null means "no section chosen yet", i.e. plain browsing. Kept as null
   // rather than a display string so the sheet branches on state, not on text.
-  const sectionName = activeSection
-    ? BUILD_GROUPS.find((g) => g.id === activeSection)?.name ?? 'Section'
-    : null;
+  const sectionName = activeSection ? sectionLabel(activeSection) : null;
 
   return (
     <TooltipProvider>

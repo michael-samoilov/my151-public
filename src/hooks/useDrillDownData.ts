@@ -7,7 +7,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { computePerPokemonMatchup } from '@/hooks/useTypeDominance';
 import type { Pokemon, TypeName, ShapeName } from '@/types/pokemon';
 import { typeIconPath } from '@/data/type-ids';
-import { shapeLabel, t } from '@/i18n';
+import { regionName, sectionName, shapeLabel, t } from '@/i18n';
 
 const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
@@ -183,7 +183,7 @@ export function computeDrillDownData(
       });
       sections.push({
         sectionId: bg.id,
-        sectionName: bg.name,
+        sectionName: sectionName(bg.id),
         sectionColor: bg.color,
         groups,
       });
@@ -350,7 +350,7 @@ function computeRegionalDrillDown(
     }
   }
 
-  const dexLabel = isNational ? 'National Dex' : dex!.name;
+  const dexLabel = isNational ? t('dex.national') : regionName(dex!.id);
   const { title, color, icon } = getSegmentMeta(segment);
 
   return {
@@ -520,7 +520,7 @@ function computeTypeMatchupDrillDown(
 
   const { title, color, icon } = getSegmentMeta(segment);
   const shownPokemon = [...tierMap.values()].reduce((s, ids) => s + ids.size, 0);
-  const dexLabel = isRegional ? (dexId === 'national' ? 'National Dex' : REGIONAL_DEXES.find(d => d.id === dexId)?.name ?? dexId) : null;
+  const dexLabel = isRegional ? (dexId === 'national' ? t('dex.national') : regionName(dexId)) : null;
   const result: DrillDownData = {
     title: dexLabel ? `${title} — ${dexLabel}` : title,
     subtitle: `${shownPokemon} Pokémon with non-neutral matchups`,

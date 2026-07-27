@@ -11,13 +11,12 @@ import { CATEGORIES } from '@/data/categories';
 import { TYPE_NAMES, type TypeName, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
 import { ShapeIcon, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
 import { COLOR_ORDER, COLOR_SWATCHES, colorTextOn, colorRingOn, EGG_GROUP_ORDER } from '@/data/classifications';
-import { colorLabel, eggGroupLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
+import { archetypeName as archetypeLabel, categoryName as categoryLabel, colorLabel, eggGroupLabel, sectionName as sectionLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeBadgePath } from '@/data/type-ids';
 import { Search, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageFooter } from '@/components/shared/PageFooter';
-import { BUILD_GROUPS } from '@/data/slot-template';
 
 type FilterSheet = 'type' | 'generation' | 'evoStage' | 'shape' | 'color' | 'eggGroup' | 'classification' | 'places' | 'archetypes' | 'gameMechanics' | null;
 
@@ -249,7 +248,7 @@ export function PokemonBrowser() {
   }, [setActiveSection]);
 
   const sectionName = activeSection
-    ? BUILD_GROUPS.find((g) => g.id === activeSection)?.name ?? 'Section'
+    ? sectionLabel(activeSection)
     : null;
 
   const groups = useFilteredPokemonGrouped({
@@ -270,11 +269,11 @@ export function PokemonBrowser() {
   const activeCategoryDef = activeCategory
     ? CATEGORIES.find((c) => c.id === activeCategory)
     : null;
-  const categoryName = activeCategoryDef?.name ?? null;
+  const categoryName = activeCategoryDef ? categoryLabel(activeCategoryDef.id) : null;
   const activeArchetypeDef = activeArchetype
     ? ARCHETYPES.find((a) => a.id === activeArchetype)
     : null;
-  const archetypeName = activeArchetypeDef?.name ?? null;
+  const archetypeName = activeArchetypeDef ? archetypeLabel(activeArchetypeDef.id) : null;
   const shinyIds = useMemo(
     () => activeArchetypeDef?.shinyIds ? new Set(activeArchetypeDef.shinyIds) : undefined,
     [activeArchetypeDef]

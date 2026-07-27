@@ -14,7 +14,7 @@ import { typeIconPath } from '@/data/type-ids';
 import { SuperimposedHistogram } from './SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { SHAPE_ORDER, shapeChartIcon, SHAPE_ICON_SCALE } from '@/components/shared/ShapeIcon';
-import { shapeLabel } from '@/i18n';
+import { regionName, shapeLabel } from '@/i18n';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { StageDistributionChart } from './StageDistributionChart';
@@ -500,7 +500,7 @@ export function AnalyticsDashboard() {
                       : 'bg-muted text-muted-foreground hover:bg-muted/80'
                   }`}
                 >
-                  {dex.name}
+                  {regionName(dex.id)}
                 </button>
               ))}
             </div>

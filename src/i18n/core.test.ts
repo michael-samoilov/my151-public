@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { en } from './catalogs/en';
+import { en, enUi } from './catalogs/en';
+import { enData } from './catalogs/en.data';
 import {
   formatList,
   formatNumber,
@@ -126,12 +127,16 @@ describe('localeUppercase', () => {
 });
 
 describe('the catalog itself', () => {
-  it('is sorted and free of duplicate keys', () => {
-    // Guards against a merge conflict quietly duplicating a key, where the
-    // later definition would win with no error anywhere.
-    const keys = Object.keys(en);
-    expect(keys).toEqual([...new Set(keys)]);
-    expect(keys).toEqual([...keys].sort());
+  it('keeps its two sources sorted and disjoint', () => {
+    // `en` is enUi spread over enData, so a key defined in both would be
+    // silently overwritten with no error anywhere. Each source is sorted so a
+    // merge conflict can't quietly duplicate a key within one file either.
+    const ui = Object.keys(enUi);
+    const data = Object.keys(enData);
+    expect(ui).toEqual([...ui].sort());
+    expect(data).toEqual([...data].sort());
+    expect(ui.filter((k) => data.includes(k)), 'defined in both catalogs').toEqual([]);
+    expect(Object.keys(en)).toHaveLength(ui.length + data.length);
   });
 
   it('defines _other for every counted message', () => {

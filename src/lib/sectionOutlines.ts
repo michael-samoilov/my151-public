@@ -2,7 +2,7 @@
 // PNG export (canvas render). Everything here is pure — no React, no DOM beyond
 // an offscreen canvas for text measurement — so it can run in either context.
 import type { Pokemon, TypeName } from '@/types/pokemon';
-import { BUILD_GROUPS } from '@/data/slot-template';
+import { sectionName } from '@/i18n';
 import { sectionColor } from '@/lib/sectionColors';
 import { buildIdToSection } from '@/hooks/useViewSort';
 import { SECTION_TYPE } from '@/data/section-types';
@@ -56,7 +56,7 @@ const SHORT_NAMES: Record<string, string> = {
 };
 
 export function getSectionLabel(groupId: string): string {
-  return SHORT_NAMES[groupId] ?? BUILD_GROUPS.find((g) => g.id === groupId)?.name ?? groupId;
+  return SHORT_NAMES[groupId] ?? sectionName(groupId);
 }
 
 // Progressive label fallbacks, longest → shortest. When a section's name is too

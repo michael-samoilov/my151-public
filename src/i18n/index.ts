@@ -23,6 +23,17 @@ export { matchLocale, negotiateLocale, localeFromUrl, resolveLocale } from './de
 
 export { typeLabel, colorLabel, eggGroupLabel, shapeLabel } from './terms';
 
+export {
+  sectionName,
+  categoryName,
+  categorySubgroupLabel,
+  categoryColumnLabel,
+  archetypeName,
+  archetypeDescription,
+  archetypeSubgroupLabel,
+  regionName,
+} from './dataLabels';
+
 export { useT, useTn, useLocale, useDocumentLocale } from './provider';
 
 export type { MessageKey, Messages, TFn, TnFn, PluralBase } from './types';

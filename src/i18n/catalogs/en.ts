@@ -20,7 +20,10 @@
  * `?admin`, only the owner ever sees it, and translating it would add ~13% to
  * the corpus for no user-visible benefit.
  */
-export const en = {
+import { enData } from './en.data';
+
+/** Hand-authored UI copy. Data-module strings live in the generated en.data.ts. */
+export const enUi = {
   'browser.addingTo': 'Adding to: ',
   'browser.chip.archetypes': 'Archetypes',
   'browser.chip.classification': 'Classification',
@@ -73,6 +76,8 @@ export const en = {
   'browser.stage.3': '3+ Stage',
   'browser.stageChip': '{stages} stage',
   'browser.subgroupGeneration': 'Generation {gen}',
+  'builder.addToSection': 'Add a Pokémon to {section}',
+  'dex.national': 'National Dex',
   'drilldown.shapeTitle': '{shape} Shape',
   'nav.analytics': 'Analytics',
   'nav.analyticsLocked': 'Analytics locked. Reach {count} Pokémon to unlock',
@@ -137,5 +142,12 @@ export const en = {
   'term.type.steel': 'Steel',
   'term.type.water': 'Water',
 } as const;
+
+/**
+ * The full catalog: hand-authored UI copy plus the generated data-module
+ * strings. Spreading two const-asserted objects keeps every value's literal
+ * type, which is what makes `ArgsOf` able to read placeholders off the source.
+ */
+export const en = { ...enUi, ...enData } as const;
 
 export type MessageKey = keyof typeof en;
