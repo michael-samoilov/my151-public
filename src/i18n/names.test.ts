@@ -29,7 +29,7 @@ interface NameCatalogFile {
   species: string[];
   forms: Record<string, string>;
   formSource: Record<string, NameProvenance>;
-  search?: string[];
+  affix?: string[];
 }
 
 function load(locale: string) {
@@ -129,17 +129,24 @@ describe('name catalogs', () => {
     // A Japanese user on a Latin keyboard types "pikachu", a Korean user types
     // ㅍㅋㅊ, a Chinese user types pkq. Without these the search box is
     // unusable in exactly the locales the names were added for.
-    expect(load('ja').search?.[24]).toBe('ピカチュウ pikachu');
-    expect(load('ko').search?.[24]).toBe(normalizeSearch('피카츄 ㅍㅋㅊ'));
-    expect(load('zh-Hans').search?.[24]).toBe('皮卡丘 pikaqiu pkq');
-    // Latin locales need only the folded name — accents never have to be typed.
-    expect(load('fr').search?.[668]).toBe('flabebe');
+    expect(load('ja').affix?.[24]).toBe('pikachu');
+    expect(load('ko').affix?.[24]).toBe(normalizeSearch('ㅍㅋㅊ'));
+    expect(load('zh-Hans').affix?.[24]).toBe('pikaqiu pkq');
   });
 
-  it('folds the accents out of every Latin locale it ships', () => {
+  it('ships no affixes for the Latin locales', () => {
+    // Their names need only the folding the normalizer already does, and the
+    // name itself is never duplicated into the index — 1,025 derived copies per
+    // locale that could drift from the names beside them.
     for (const locale of ['en', 'fr', 'de', 'es', 'it'] as const) {
-      const withAccents = load(locale).search?.filter((text) => /[À-ÿ]/.test(text)) ?? [];
-      expect(withAccents, `${locale} left accented text in the search index`).toEqual([]);
+      expect(load(locale).affix, `${locale} ships affixes it does not need`).toBeUndefined();
+    }
+  });
+
+  it('folds the accents out of every affix it does ship', () => {
+    for (const locale of ['ja', 'ko', 'zh-Hans', 'zh-Hant'] as const) {
+      const accented = load(locale).affix?.filter((text) => /[À-ÿ]/.test(text)) ?? [];
+      expect(accented, `${locale} left accented text in its affixes`).toEqual([]);
     }
   });
 });

@@ -58,23 +58,27 @@ export function pinyinInitials(text: string): string {
 }
 
 /**
- * Everything a query might match for one name, normalized and space-joined.
+ * The extra spellings for one name — everything a query might match *beyond*
+ * the name itself. Empty for the Latin locales, whose names need only the
+ * folding the normalizer already does.
  *
- * One prepared string per species rather than a list, because the browser
- * checks it with a single `includes` per Pokémon per keystroke — 1,025 of those
- * on every character typed, so the cheaper the check the better.
+ * Deliberately not including the name: it is already in the catalog, and a
+ * catalog that stored a derived copy of it beside it would be a copy that can
+ * drift. The runtime folds the name and joins it to this on load, once.
+ *
+ * Every part goes through the same normalizer the query will, including the
+ * jamo: NFKC maps the compatibility letters a Korean keyboard emits (ㅍ,
+ * U+314D) onto the conjoining forms (U+1111), so an index built from the raw
+ * ones would never match a normalized query — they render identically, which
+ * is exactly why it is worth stating.
  */
-export function searchText(locale: string, name: string, romaji?: string): string {
-  const parts = [name];
+export function searchAffix(locale: string, name: string, romaji?: string): string {
+  const parts: string[] = [];
   if (locale === 'ja' && romaji) parts.push(romaji);
   if (locale === 'ko') parts.push(jamoInitials(name));
   if (locale === 'zh-Hans' || locale === 'zh-Hant') {
     parts.push(pinyinFull(name), pinyinInitials(name));
   }
-  // Every part goes through the same normalizer the query will, including the
-  // jamo: NFKC maps the compatibility letters a Korean keyboard emits (ㅍ,
-  // U+314D) onto the conjoining forms (U+1111), so an index built from the raw
-  // ones would never match a normalized query — they render identically, which
-  // is exactly why it is worth stating.
-  return [...new Set(parts.map(normalizeSearch).filter(Boolean))].join(' ');
+  const folded = normalizeSearch(name);
+  return [...new Set(parts.map(normalizeSearch).filter((p) => p && p !== folded))].join(' ');
 }

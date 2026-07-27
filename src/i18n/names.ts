@@ -1,6 +1,7 @@
 import { getLocale, subscribe } from './core';
 import { DEFAULT_LOCALE, type Locale } from './config';
 import altFormSpecies from './alt-form-species.json';
+import { normalizeSearch } from './searchNormalize';
 
 /**
  * Localized Pokémon names.
@@ -23,8 +24,14 @@ interface NameCatalog {
   species: string[];
   forms: Record<string, string>;
   formSource: Record<string, NameProvenance>;
-  /** Prepared match text per species — see `speciesSearchText`. */
-  search?: string[];
+  /**
+   * Extra spellings a query might use, beyond the name itself — romaji, jamo
+   * initials, pinyin. Absent for the Latin locales. Joined to the folded name
+   * once on load; see `buildSearchIndex`.
+   */
+  affix?: string[];
+  /** Built on load from `species` + `affix`. Not present in the JSON. */
+  searchIndex?: string[];
 }
 
 /**
@@ -51,6 +58,7 @@ export function loadNames(locale: Locale): Promise<void> {
     const load = SOURCES[`./names/${locale}.json`];
     pending = load
       ? load().then((catalog) => {
+          buildSearchIndex(catalog);
           loaded.set(locale, catalog);
           inFlight.delete(locale);
           notify();
@@ -126,22 +134,41 @@ export function formProvenance(appId: number): NameProvenance | null {
 }
 
 /**
+ * Fold every name once and join its extra spellings to it.
+ *
+ * Done on load rather than shipped, because the alternative is storing a
+ * derived copy of all 1,025 names beside the names — a copy that can drift, for
+ * ~3.5 kB gzipped per locale. Done on load rather than per keystroke, because
+ * the search filter calls `speciesSearchText` once per Pokémon per character
+ * typed, and normalizing 1,025 names on every keypress is not free.
+ */
+function buildSearchIndex(catalog: NameCatalog): void {
+  catalog.searchIndex = catalog.species.map((name, i) => {
+    if (!name) return '';
+    const folded = normalizeSearch(name);
+    const affix = catalog.affix?.[i];
+    return affix ? `${folded} ${affix}` : folded;
+  });
+}
+
+/**
  * Everything a query might match for this species in the active locale: the
- * normalized name, plus Hepburn romaji in Japanese, jamo initials in Korean and
+ * folded name, plus Hepburn romaji in Japanese, jamo initials in Korean and
  * pinyin (with initials) in Chinese.
  *
- * Prepared at build time and stored as one string, because the browser checks
- * it once per Pokémon per keystroke — 1,025 `includes` calls on every character
- * typed. `null` until the locale's catalog has loaded, which the caller treats
- * as "match the English slug only", the behaviour the app has always had.
+ * `null` until the locale's catalog has loaded, which the caller treats as
+ * "match the English slug only" — the behaviour the app has always had.
  */
 export function speciesSearchText(appId: number): string | null {
   const catalog = loaded.get(getLocale());
-  return catalog?.search?.[speciesIndex(appId)] || null;
+  return catalog?.searchIndex?.[speciesIndex(appId)] || null;
 }
 
 /** Test seam: install a catalog without going through the lazy loader. */
 export function __setNamesForTest(locale: Locale, catalog: NameCatalog | null): void {
-  if (catalog) loaded.set(locale, catalog);
+  if (catalog) {
+    buildSearchIndex(catalog);
+    loaded.set(locale, catalog);
+  }
   else loaded.delete(locale);
 }

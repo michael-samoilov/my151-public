@@ -200,18 +200,23 @@ function main(): void {
   }
 
   mkdirSync('docs/i18n', { recursive: true });
+  // One line per key. Fully indented this file is 6.5k lines for 465 strings,
+  // and a reworded message becomes a fourteen-line hunk; on one line it becomes
+  // one line, with the key at the start of it. Nothing reads this by hand
+  // except in a diff, which is exactly the case that gets better.
   writeFileSync(
     OUT,
-    `${JSON.stringify(
-      {
-        generated: 'npm run i18n:extract',
-        note: 'Source of record for translation. Regenerate rather than editing.',
-        launchTiers: LAUNCH_TIERS,
-        entries,
-      },
-      null,
-      1,
-    )}\n`,
+    [
+      '{',
+      '  "generated": "npm run i18n:extract",',
+      '  "note": "Source of record for translation. One line per key. Regenerate rather than editing.",',
+      `  "launchTiers": ${JSON.stringify(LAUNCH_TIERS)},`,
+      '  "entries": [',
+      entries.map((e) => `    ${JSON.stringify(e)}`).join(',\n'),
+      '  ]',
+      '}',
+      '',
+    ].join('\n'),
   );
 
   const byTier = entries.reduce<Record<string, number>>((acc, e) => {

@@ -33,3 +33,10 @@ __pycache__/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# PokeAPI CSV dumps, fetched on demand by scripts/i18n/pokeapi.ts.
+# Deliberately not committed: nothing in `npm run build` or CI reads them, and
+# the *outputs* generated from them are committed — so upstream drift shows up
+# as a diff in src/i18n/names/ rather than being hidden by a stale cache. They
+# are ~730 kB and 21k lines of pure noise in a review.
+docs/i18n/pokeapi/

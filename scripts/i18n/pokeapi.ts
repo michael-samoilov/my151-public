@@ -1,10 +1,13 @@
 /**
  * Fetch and parse the PokeAPI CSV dumps that carry localized names.
  *
- * Cached under docs/i18n/pokeapi/, matching the existing
- * docs/biome-research/pokeapi/ convention: the data is versioned upstream and
- * changes rarely, so a checked-in copy makes the build reproducible and keeps
- * the generator usable offline.
+ * Cached under docs/i18n/pokeapi/ and deliberately NOT committed. Nothing in
+ * `npm run build` or CI reads the CSVs — only these generators do, by hand —
+ * and the files they produce are committed. So the pin against upstream drift
+ * is the generated output itself: re-run a generator against a changed PokeAPI
+ * and `src/i18n/names/` shows a diff. A checked-in copy of the raw dumps would
+ * add ~21k lines and 730 kB to every review to buy offline regeneration, and
+ * nothing else.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -28,6 +31,13 @@ export const CSVS = [
 
 export type CsvName = (typeof CSVS)[number];
 
+/**
+ * Populate the local cache, fetching anything missing.
+ *
+ * The cache is gitignored, so on a fresh clone this is a network call. That is
+ * the same deal `npm run cache-sprites` makes, and these generators are already
+ * manual, deliberate steps rather than part of the build.
+ */
 export async function ensureCsvs(force = false): Promise<void> {
   mkdirSync(CACHE_DIR, { recursive: true });
   for (const name of CSVS) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { jamoInitials, pinyinFull, pinyinInitials, searchText } from './searchAffixes';
+import { jamoInitials, pinyinFull, pinyinInitials, searchAffix } from './searchAffixes';
 import { normalizeSearch } from '../../src/i18n/searchNormalize';
 
 describe('search affixes', () => {
@@ -20,20 +20,21 @@ describe('search affixes', () => {
   });
 
   it('gives each locale only the affixes its keyboard needs', () => {
-    expect(searchText('ja', 'ピカチュウ', 'Pikachu')).toBe('ピカチュウ pikachu');
+    expect(searchAffix('ja', 'ピカチュウ', 'Pikachu')).toBe('pikachu');
     // Normalized, so the stored jamo are the conjoining forms NFKC produces —
     // which is what a normalized query will be too, however it was typed.
-    expect(searchText('ko', '피카츄')).toBe(normalizeSearch('피카츄 ㅍㅋㅊ'));
-    expect(searchText('zh-Hans', '皮卡丘')).toBe('皮卡丘 pikaqiu pkq');
-    // And the raw compatibility letters a keyboard emits normalize onto it.
-    expect(searchText('ko', '피카츄').split(' ')[1]).toBe(normalizeSearch('ㅍㅋㅊ'));
-    // Latin locales need nothing beyond the folded name.
-    expect(searchText('fr', 'Flabébé')).toBe('flabebe');
+    expect(searchAffix('ko', '피카츄')).toBe(normalizeSearch('ㅍㅋㅊ'));
+    expect(searchAffix('zh-Hans', '皮卡丘')).toBe('pikaqiu pkq');
+    // Latin locales need nothing beyond the folding the normalizer already
+    // does, so they ship no affixes at all.
+    expect(searchAffix('fr', 'Flabébé')).toBe('');
+    expect(searchAffix('de', 'Furnifraß')).toBe('');
   });
 
-  it('does not repeat an affix that equals the name', () => {
-    // French and English share plenty of names; the prepared string is checked
-    // once per Pokémon per keystroke, so duplication is not free.
-    expect(searchText('fr', 'Pikachu')).toBe('pikachu');
+  it('never repeats the name it is an affix for', () => {
+    // The name is already in the catalog; storing a derived copy of it beside
+    // itself is a copy that can drift, and 1,025 of them per locale.
+    expect(searchAffix('ja', 'ピカチュウ', 'ピカチュウ')).toBe('');
+    expect(searchAffix('en', 'Pikachu')).toBe('');
   });
 });

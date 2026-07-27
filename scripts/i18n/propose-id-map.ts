@@ -153,17 +153,23 @@ async function main(): Promise<void> {
   }
 
   entries.sort((a, b) => a.appId - b.appId);
+  // One line per entry rather than indented. 1,089 entries at seven lines each
+  // is 7.6k lines of review noise, and a change to one field then shows up as a
+  // one-line block; on one line it shows up as one line, next to the id it
+  // belongs to. The file is read by a script and a test, neither of which cares.
   writeFileSync(
     OUT,
-    `${JSON.stringify(
-      {
-        _comment:
-          'Proposed by scripts/i18n/propose-id-map.ts, then hand-reviewed. Entries with a note are ones where the app id does not match PokeAPI, which is why this file exists. Regenerate with: npm run i18n:propose-map',
-        entries,
-      },
-      null,
-      2,
-    )}\n`,
+    [
+      '{',
+      `  "_comment": ${JSON.stringify(
+        'Proposed by scripts/i18n/propose-id-map.ts, then hand-reviewed. Entries with a note are ones where the app id does not match PokeAPI, which is why this file exists. One entry per line, deliberately. Regenerate with: npm run i18n:propose-map',
+      )},`,
+      '  "entries": [',
+      entries.map((e) => `    ${JSON.stringify(e)}`).join(',\n'),
+      '  ]',
+      '}',
+      '',
+    ].join('\n'),
   );
 
   const mismatched = entries.filter((e) => e.note && !e.needsReview).length;
