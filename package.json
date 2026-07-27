@@ -14,7 +14,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "i18n:data": "tsx scripts/i18n/build-data-catalog.ts"
+    "i18n:data": "tsx scripts/i18n/build-data-catalog.ts",
+    "i18n:tiers": "tsx scripts/i18n/report-tiers.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

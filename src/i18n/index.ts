@@ -34,6 +34,9 @@ export {
   regionName,
 } from './dataLabels';
 
+export { tierOf, keysByTier, LAUNCH_TIERS } from './tiers';
+export type { Tier } from './tiers';
+
 export { useT, useTn, useLocale, useDocumentLocale } from './provider';
 
 export type { MessageKey, Messages, NoArgKey, TFn, TnFn, PluralBase } from './types';
