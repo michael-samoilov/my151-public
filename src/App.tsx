@@ -45,7 +45,7 @@ console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
 const SHEET_TOP_GAP_PX = 49;
 const DISMISS_THRESHOLD = 120; // px drag distance to dismiss
 
-function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: () => void }) {
+function MobileSheet({ sectionName, onClose }: { sectionName: string | null; onClose: () => void }) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [dragY, setDragY] = useState(0);
   const dragStartY = useRef<number | null>(null);
@@ -111,13 +111,13 @@ function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: (
         >
           <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
           <span className="text-sm font-semibold">
-            {sectionName !== 'Browse Pokémon' ? (
+            {sectionName !== null ? (
               <>
                 <span className="text-foreground">Adding to: </span>
                 <span className="text-primary">{sectionName}</span>
               </>
             ) : (
-              <span className="text-muted-foreground">{sectionName}</span>
+              <span className="text-muted-foreground">Browse Pokémon</span>
             )}
           </span>
         </div>
@@ -172,9 +172,11 @@ function App() {
     }
   }, [setMobileBrowserOpen]);
 
+  // null means "no section chosen yet", i.e. plain browsing. Kept as null
+  // rather than a display string so the sheet branches on state, not on text.
   const sectionName = activeSection
     ? BUILD_GROUPS.find((g) => g.id === activeSection)?.name ?? 'Section'
-    : 'Browse Pokémon';
+    : null;
 
   return (
     <TooltipProvider>

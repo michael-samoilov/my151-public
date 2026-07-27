@@ -3,7 +3,8 @@ import { useAnalytics, fullBaseline, filteredBaseline } from '@/hooks/useAnalyti
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { WhatsAdvisor } from './WhatsAdvisor';
-import { ButterflyChart, type ButterflyRow } from './ButterflyChart';
+import { ButterflyChart } from './ButterflyChart';
+import { rowKey, type ButterflyRow } from './butterflyRow';
 import { REGIONAL_DEXES } from '@/data/regional-dexes';
 import { getPokemonById, getPokemonByIds, getAllPokemon, withoutSpecials } from '@/hooks/usePokemonData';
 import { TYPE_NAMES, type TypeName, type Pokemon } from '@/types/pokemon';
@@ -21,9 +22,6 @@ import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
 // The gen and shape charts use a single app-red bar (no per-category colors);
 // the gen badge and shape silhouette carry the identity in the icon column.
 const CHART_BAR_RED = '#ef4444';
-// Reverse the display labels back to shape keys for drill-down segments,
-// since the chart hands its onBarClick the label string.
-const LABEL_TO_SHAPE = new Map(SHAPE_ORDER.map((s) => [SHAPE_LABELS[s], s]));
 
 
 /** Align yours + national histograms to the same bins, merge into single dataset */
@@ -89,12 +87,9 @@ export function AnalyticsDashboard() {
   // Compute active labels for chart focus states
   // activeTypeLabel only highlights when drilldown dex context matches the displayed chart
   const drillDownIsYours = drillDownDexId === null;
-  const activeTypeLabel = drillDownSegment?.kind === 'type'
-    ? drillDownSegment.type.charAt(0).toUpperCase() + drillDownSegment.type.slice(1) : null;
-  const activeGenLabel = drillDownSegment?.kind === 'generation'
-    ? `Gen ${drillDownSegment.generation}` : null;
-  const activeShapeLabel = drillDownSegment?.kind === 'shape'
-    ? (SHAPE_LABELS[drillDownSegment.shape as keyof typeof SHAPE_LABELS] ?? drillDownSegment.shape) : null;
+  const activeTypeKey = drillDownSegment?.kind === 'type' ? drillDownSegment.type : null;
+  const activeGenKey = drillDownSegment?.kind === 'generation' ? String(drillDownSegment.generation) : null;
+  const activeShapeKey = drillDownSegment?.kind === 'shape' ? drillDownSegment.shape : null;
   const activeEvoBin = drillDownSegment?.kind === 'evoLevel'
     ? drillDownSegment.binStart + (drillDownSegment.binEnd - drillDownSegment.binStart) / 2 : null;
   const activeBstBin = drillDownSegment?.kind === 'bst'
@@ -137,6 +132,7 @@ export function AnalyticsDashboard() {
       const gen = d.generation;
       const stops = GEN_STOPS[gen] ?? [{ offset: '100%', color: '#888' }];
       return {
+        key: String(gen),
         label: `Gen ${gen}`,
         count: d.count,
         deviation: d.deviation,
@@ -188,6 +184,7 @@ export function AnalyticsDashboard() {
       const natShare = (natCounts.get(shape) ?? 0) / national.length;
       const yourShare = count / yourTotal;
       return {
+        key: shape,
         label: SHAPE_LABELS[shape],
         count,
         deviation: natShare > 0 ? (yourShare / natShare - 1) * 100 : 0,
@@ -199,13 +196,13 @@ export function AnalyticsDashboard() {
 
   // Compute sibling lists for swipe navigation
   const typeSiblings = useMemo((): DrillDownSegment[] =>
-    typeChartData.filter(d => d.count > 0).map(d => ({ kind: 'type' as const, type: d.label.toLowerCase() })),
+    typeChartData.filter(d => d.count > 0).map(d => ({ kind: 'type' as const, type: rowKey(d) })),
     [typeChartData]);
   const genSiblings = useMemo((): DrillDownSegment[] =>
-    genChartData.filter(d => d.count > 0).map(d => ({ kind: 'generation' as const, generation: parseInt(d.label.replace('Gen ', '')) })),
+    genChartData.filter(d => d.count > 0).map(d => ({ kind: 'generation' as const, generation: Number(rowKey(d)) })),
     [genChartData]);
   const shapeSiblings = useMemo((): DrillDownSegment[] =>
-    shapeChartData.filter(d => d.count > 0).map(d => ({ kind: 'shape' as const, shape: LABEL_TO_SHAPE.get(d.label) ?? d.label })),
+    shapeChartData.filter(d => d.count > 0).map(d => ({ kind: 'shape' as const, shape: rowKey(d) })),
     [shapeChartData]);
 
   // Compute type chart data for a regional/national dex (also returns the
@@ -238,7 +235,7 @@ export function AnalyticsDashboard() {
   const regionalTypeChartData = regionalTypeChart.rows;
 
   const regionalTypeSiblings = useMemo((): DrillDownSegment[] =>
-    regionalTypeChartData.filter(d => d.count > 0).map(d => ({ kind: 'type' as const, type: d.label.toLowerCase() })),
+    regionalTypeChartData.filter(d => d.count > 0).map(d => ({ kind: 'type' as const, type: rowKey(d) })),
     [regionalTypeChartData]);
 
   const activeTypeChartData = selectedTypeChart === 'yours' ? typeChartData : regionalTypeChartData;
@@ -280,6 +277,7 @@ export function AnalyticsDashboard() {
     const results = computeTypeDominance(pokemon);
 
     return results.map(r => ({
+      key: r.type,
       label: r.type.charAt(0).toUpperCase() + r.type.slice(1),
       count: r.score,
       deviation: r.score - (baseline.get(r.type) ?? 0),
@@ -317,11 +315,10 @@ export function AnalyticsDashboard() {
 
   // Type matchup siblings for drill-down navigation
   const typeMatchupSiblings = useMemo((): DrillDownSegment[] =>
-    typeMatchupData.map(d => ({ kind: 'typeMatchup' as const, type: d.label.toLowerCase() })),
+    typeMatchupData.map(d => ({ kind: 'typeMatchup' as const, type: rowKey(d) })),
     [typeMatchupData]);
 
-  const activeMatchupLabel = drillDownSegment?.kind === 'typeMatchup'
-    ? drillDownSegment.type.charAt(0).toUpperCase() + drillDownSegment.type.slice(1) : null;
+  const activeMatchupKey = drillDownSegment?.kind === 'typeMatchup' ? drillDownSegment.type : null;
 
   // Sync drilldown filters when analytics filter chips change while a drilldown is open
   useEffect(() => {
@@ -604,12 +601,12 @@ export function AnalyticsDashboard() {
                 // every percentage. Pass the pokemon count so each bar reads
                 // as "share of the dex".
                 countDenominator={isNationalSelected ? activeTypeChartTotal : undefined}
-                onBarClick={(label) => {
+                onBarClick={(type) => {
                   if (selectedTypeChart === 'yours') {
-                    handleDrillToggle({ kind: 'type', type: label.toLowerCase() }, typeSiblings, excludeSpecial);
+                    handleDrillToggle({ kind: 'type', type }, typeSiblings, excludeSpecial);
                   } else {
                     handleDrillToggle(
-                      { kind: 'type', type: label.toLowerCase() },
+                      { kind: 'type', type },
                       regionalTypeSiblings,
                       excludeSpecial,
                       selectedTypeChart,
@@ -617,10 +614,10 @@ export function AnalyticsDashboard() {
                     );
                   }
                 }}
-                activeLabel={
+                activeKey={
                   (selectedTypeChart === 'yours' && drillDownIsYours) ||
                   (selectedTypeChart !== 'yours' && drillDownDexId === selectedTypeChart)
-                    ? activeTypeLabel : null
+                    ? activeTypeKey : null
                 }
               />
             ) : typeMatchupData.length > 0 ? (
@@ -637,16 +634,16 @@ export function AnalyticsDashboard() {
                 sortBy={typeSortBy}
                 onSortChange={setTypeSortBy}
                 labelHeader="TYPE"
-                onBarClick={(label) => {
+                onBarClick={(type) => {
                   if (selectedTypeChart === 'yours') {
                     handleDrillToggle(
-                      { kind: 'typeMatchup', type: label.toLowerCase() },
+                      { kind: 'typeMatchup', type },
                       typeMatchupSiblings,
                       excludeSpecial,
                     );
                   } else {
                     handleDrillToggle(
-                      { kind: 'typeMatchup', type: label.toLowerCase() },
+                      { kind: 'typeMatchup', type },
                       typeMatchupSiblings,
                       excludeSpecial,
                       selectedTypeChart,
@@ -654,7 +651,7 @@ export function AnalyticsDashboard() {
                     );
                   }
                 }}
-                activeLabel={drillDownSegment?.kind === 'typeMatchup' ? activeMatchupLabel : null}
+                activeKey={drillDownSegment?.kind === 'typeMatchup' ? activeMatchupKey : null}
               />
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">No matchup data available.</p>
@@ -675,7 +672,7 @@ export function AnalyticsDashboard() {
               data={[...genChartData].sort((a, b) =>
                 genSortBy === 'deviation' ? b.deviation - a.deviation
                   : genSortBy === 'count' ? b.count - a.count
-                  : parseInt(a.label.replace('Gen ', '')) - parseInt(b.label.replace('Gen ', ''))
+                  : Number(rowKey(a)) - Number(rowKey(b))
               )}
               rowHeight={28}
               disableEmptyRows
@@ -683,11 +680,11 @@ export function AnalyticsDashboard() {
               onSortChange={setGenSortBy}
               labelHeader="GEN"
               labelSortable
-              onBarClick={(label) => {
-                const gen = parseInt(label.replace('Gen ', ''));
-                if (!isNaN(gen)) handleDrillToggle({ kind: 'generation', generation: gen }, genSiblings);
+              onBarClick={(key) => {
+                const generation = Number(key);
+                if (!isNaN(generation)) handleDrillToggle({ kind: 'generation', generation }, genSiblings);
               }}
-              activeLabel={activeGenLabel}
+              activeKey={activeGenKey}
             />
           </div>
         </section>
@@ -712,11 +709,8 @@ export function AnalyticsDashboard() {
               labelHeader="SHAPE"
               labelWidthBase={80}
               iconScale={SHAPE_ICON_SCALE}
-              onBarClick={(label) => {
-                const shape = LABEL_TO_SHAPE.get(label);
-                if (shape) handleDrillToggle({ kind: 'shape', shape }, shapeSiblings);
-              }}
-              activeLabel={activeShapeLabel}
+              onBarClick={(shape) => handleDrillToggle({ kind: 'shape', shape }, shapeSiblings)}
+              activeKey={activeShapeKey}
             />
           </div>
         </section>

@@ -5,7 +5,8 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { useAnalytics, fullBaseline } from '@/hooks/useAnalytics';
 import { getPokemonByIds } from '@/hooks/usePokemonData';
 import { countTypes, buildTypeRows } from '@/components/analytics/typeDistribution';
-import { ButterflyChart, type ButterflyRow } from '@/components/analytics/ButterflyChart';
+import { ButterflyChart } from '@/components/analytics/ButterflyChart';
+import { rowKey, type ButterflyRow } from '@/components/analytics/butterflyRow';
 import { SuperimposedHistogram } from '@/components/analytics/SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { typeBadgePath } from '@/data/type-ids';
@@ -161,7 +162,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
       .sort((a, b) => b.deviation - a.deviation);
     // Swap the small type symbol for the full type-name badge image when requested.
     return typeBadges
-      ? rows.map((r) => ({ ...r, icon: typeBadgePath(r.label.toLowerCase() as TypeName) }))
+      ? rows.map((r) => ({ ...r, icon: typeBadgePath(rowKey(r) as TypeName) }))
       : rows;
   }, [sections, typeBadges]);
 
@@ -175,6 +176,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
         const gen = d.generation;
         const stops = GEN_STOPS[gen] ?? [{ offset: '100%', color: '#888' }];
         return {
+          key: String(gen),
           label: `Gen ${gen}`,
           count: d.count,
           deviation: d.deviation,
@@ -221,7 +223,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
 
       <Card variant={variant} title="Generation Origin" subtitle="Which generation your Pokémon come from, vs the national dex.">
         <ButterflyChart
-          data={[...genRows].sort((a, b) => parseInt(a.label.replace('Gen ', '')) - parseInt(b.label.replace('Gen ', '')))}
+          data={[...genRows].sort((a, b) => Number(rowKey(a)) - Number(rowKey(b)))}
           rowHeight={24}
           hideLabelText
           labelHeader="GEN"

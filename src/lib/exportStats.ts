@@ -2,7 +2,6 @@ import { scaleBand, scaleLinear } from 'd3-scale';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { MAX_LABEL_STRETCH } from '@/lib/sectionOutlines';
 import { typeBadgePath } from '@/data/type-ids';
-import type { TypeName } from '@/types/pokemon';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 
 /**
@@ -393,7 +392,7 @@ function renderPanel(
     count: d.count,
     deviation: d.deviation,
     color: d.color,
-    icon: typeBadgeIcon(badges.get(d.label.toLowerCase()) ?? null),
+    icon: typeBadgeIcon(badges.get(d.type) ?? null),
   }));
   const genRows: ButterflyRowInput[] = data.genData.map((d) => ({
     count: d.count,
@@ -521,10 +520,7 @@ function line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number,
 
 /** Type-badge sprite URLs needed by the export (one per type row). */
 export function statsBadgeUrls(data: DetailedStatsData): { type: string; url: string }[] {
-  return data.typeData.map((d) => {
-    const type = d.label.toLowerCase();
-    return { type, url: typeBadgePath(type as TypeName) };
-  });
+  return data.typeData.map((d) => ({ type: d.type, url: typeBadgePath(d.type) }));
 }
 
 /** Natural size + per-card boxes for a dataset (for aspect-ratio sizing and for

@@ -1,7 +1,7 @@
 import { TYPE_NAMES, type TypeName, type Pokemon } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
-import type { ButterflyRow } from './ButterflyChart';
+import type { ButterflyRow } from './butterflyRow';
 
 /**
  * Count how many of `pokemon` have each type. Dual-type Pokémon are counted
@@ -31,6 +31,7 @@ export function buildTypeRows(
     const globalProportion = baselineProp[t];
     const deviation = globalProportion > 0 ? ((yourProportion / globalProportion) - 1) * 100 : 0;
     return {
+      key: t,
       label: t.charAt(0).toUpperCase() + t.slice(1),
       count: typeCounts[t],
       deviation,
