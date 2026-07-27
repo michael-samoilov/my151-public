@@ -271,7 +271,6 @@ export function getEvolutionLine(pokemonId: number, placedIds?: Set<number>): Po
   // Walk forwards from this Pokemon to find descendants
   const descendants: Pokemon[] = [];
   let searchId = pokemon.id;
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const children = chainMembers.filter(p => p.evolvesFrom === searchId);
     if (children.length === 0) break;

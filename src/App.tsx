@@ -35,7 +35,6 @@ import { isAnalyticsUnlocked } from '@/lib/milestones';
 import { cn } from '@/lib/utils';
 
 declare const __BUILD_TIMESTAMP__: string;
-// eslint-disable-next-line no-console
 console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
 
 // Top gap (px) the mobile selection sheet leaves below the viewport top

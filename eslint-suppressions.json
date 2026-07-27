@@ -1,0 +1,71 @@
+{
+  "src/App.tsx": {
+    "react-hooks/refs": {
+      "count": 4
+    }
+  },
+  "src/components/admin/AdminPage.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/analytics/DrillDownSheet.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    }
+  },
+  "src/components/browser/EvoLineCard.tsx": {
+    "react-hooks/purity": {
+      "count": 1
+    }
+  },
+  "src/components/browser/PokemonBrowser.tsx": {
+    "react-hooks/set-state-in-effect": {
+      "count": 1
+    }
+  },
+  "src/components/shared/GenBadge.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 2
+    }
+  },
+  "src/components/shared/PokemonTile.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 2
+    }
+  },
+  "src/components/shared/ShapeIcon.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 3
+    }
+  },
+  "src/components/ui/badge.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
+  "src/components/ui/button.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
+  "src/components/view/DetailedStatsPanel.tsx": {
+    "react-refresh/only-export-components": {
+      "count": 1
+    }
+  },
+  "src/components/view/ViewPage.tsx": {
+    "react-hooks/preserve-manual-memoization": {
+      "count": 1
+    },
+    "react-hooks/refs": {
+      "count": 4
+    },
+    "react-hooks/set-state-in-effect": {
+      "count": 3
+    },
+    "react-hooks/use-memo": {
+      "count": 1
+    }
+  }
+}

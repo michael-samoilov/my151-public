@@ -34,7 +34,7 @@ import { getUnzoomedViewportWidth } from './viewport';
  * comparison handles the common case where the computed value is
  * unchanged (no-op re-render).
  */
-let vpListeners = new Set<() => void>();
+const vpListeners = new Set<() => void>();
 let vpVersion = 0;
 
 if (typeof window !== 'undefined') {
