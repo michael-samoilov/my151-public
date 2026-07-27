@@ -11,6 +11,7 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { FollowUpHint } from '@/components/milestone/FollowUpHint';
 import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
 import { DetailedStatsPanel, STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
@@ -1489,87 +1490,10 @@ export function ViewPage() {
 
 // ---------- Mobile bottom sheet for settings ----------
 
-const DISMISS_THRESHOLD = 120;
-
 function ViewSettingsSheet({ onClose }: { onClose: () => void }) {
-  const [dragY, setDragY] = useState(0);
-  const dragStartY = useRef<number | null>(null);
-  const isDragging = useRef(false);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    dragStartY.current = e.touches[0].clientY;
-    isDragging.current = false;
-  }, []);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (dragStartY.current === null) return;
-    const dy = e.touches[0].clientY - dragStartY.current;
-    if (dy > 0) {
-      isDragging.current = true;
-      setDragY(dy);
-      e.preventDefault();
-    }
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    if (dragY > DISMISS_THRESHOLD) {
-      onClose();
-    } else {
-      setDragY(0);
-    }
-    dragStartY.current = null;
-    isDragging.current = false;
-  }, [dragY, onClose]);
-
-  const handleTabTap = useCallback(() => {
-    if (!isDragging.current) onClose();
-  }, [onClose]);
-
-  // Keyboard dismissal for the dialog (the backdrop tap and the grab-handle
-  // button cover pointer input).
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end md:hidden">
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-        style={{ opacity: Math.max(0, 1 - dragY / (DISMISS_THRESHOLD * 3)) }}
-      />
-      {/* Content-sized, capped to the dynamic viewport (minus a top gap) so the
-          grab handle / "View Settings" header always stays on-screen and the
-          sheet can be dismissed. A fixed 85vh height anchored to the bottom
-          pushed the header up behind the mobile browser chrome. Matches the
-          build-page filter sheet and analytics drilldown, which leave the top
-          app header reachable. */}
-      <div
-        className="relative bg-background rounded-t-2xl shadow-2xl flex flex-col max-h-[calc(100dvh-56px)]"
-        style={{
-          transform: `translateY(${dragY}px)`,
-          transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
-        }}
-      >
-        <button
-          type="button"
-          aria-label="Close settings"
-          className="w-full flex flex-col items-center justify-center py-3 cursor-grab active:cursor-grabbing touch-none"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onClick={handleTabTap}
-        >
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
-          <span className="text-sm font-semibold text-foreground">View Settings</span>
-        </button>
-        <div className="border-b" />
-        <div className="flex-1 min-h-0">
-          <ViewSettingsPane onClose={onClose} mobileSheet />
-        </div>
-      </div>
-    </div>
+    <BottomSheet onClose={onClose} closeLabel="Close settings" title="View Settings">
+      <ViewSettingsPane onClose={onClose} mobileSheet />
+    </BottomSheet>
   );
 }
