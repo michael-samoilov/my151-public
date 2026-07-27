@@ -180,6 +180,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // tuple per user [firstTs, peakMon, peakLines, completed(0/1), exported(0/1)].
     // firstTs + peakMon predate onboarding, so the whole history is comparable.
     const cohort: [number, number, number, 0 | 1, 0 | 1][] = [];
+    // Weekly-active-users series: week-start (UTC Monday, ms) -> distinct users
+    // active that week. A user counts for every week they had any session ts
+    // (or, for legacy records without a session log, their first/last week).
+    const wauSets: Record<number, Set<string>> = {};
+    const WEEK = 7 * DAY;
+    // UTC Monday 00:00 of the week containing `ts`.
+    const weekStart = (ts: number): number => {
+      const d = new Date(ts);
+      const dow = (d.getUTCDay() + 6) % 7; // 0=Mon…6=Sun
+      return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - dow * DAY;
+    };
     // Tally the View settings exporters actually used (forward-only — only
     // exports captured since settings-tracking shipped contribute).
     const exportSettingsAgg = {
@@ -232,6 +243,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const peakMon = Math.max(0, ...monEnds);
       const peakLines = Math.max(0, ...lineEnds);
       cohort.push([r.firstTs, peakMon, peakLines, r.completed ? 1 : 0, r.exported ? 1 : 0]);
+
+      // WAU: mark this user active in every week they had a session (legacy
+      // records without a session log fall back to first/last activity).
+      const activeTs =
+        r.sessionLog && r.sessionLog.length > 0
+          ? r.sessionLog.map((s) => s.ts)
+          : [r.firstTs, r.lastTs];
+      for (const wk of new Set(activeTs.map(weekStart))) {
+        (wauSets[wk] ??= new Set()).add(r.cid);
+      }
 
       if (r.country) countries[r.country] = (countries[r.country] ?? 0) + 1;
       if (r.device) devices[r.device] = (devices[r.device] ?? 0) + 1;
@@ -345,6 +366,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const popularMin = tailThreshold(picksFinal);
     const droppedMin = tailThreshold(droppedCounts);
 
+    // Dense weekly-active-users series: every week from the earliest to the
+    // latest active week, gaps filled with 0 so the line is continuous.
+    const weekKeys = Object.keys(wauSets).map(Number);
+    const wau: { week: number; count: number }[] = [];
+    if (weekKeys.length > 0) {
+      const firstWk = Math.min(...weekKeys);
+      const lastWk = Math.max(...weekKeys);
+      for (let wk = firstWk; wk <= lastWk; wk += WEEK) {
+        wau.push({ week: wk, count: wauSets[wk]?.size ?? 0 });
+      }
+    }
+
     // Private data — never cache.
     res.setHeader('Cache-Control', 'no-store');
 
@@ -355,6 +388,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       funnel: { users: totalUsers, completed, exported },
       funnelEvents,
       cohort,
+      wau,
       onboardingLaunchTs: ONBOARDING_LAUNCH_TS,
       exportSettings: exportSettingsAgg,
       retention: { returning, activeLast7, newUsers: totalUsers - returning },
