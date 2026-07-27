@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { Input } from '@/components/ui/input';
 import { getAllPokemon, getPokemonById } from '@/hooks/usePokemonData';
 import { BUILD_GROUPS } from '@/data/slot-template';
@@ -1744,6 +1745,10 @@ export function AdminPage() {
 
       <main className="flex-1 max-w-5xl mx-auto w-full p-4 flex flex-col gap-4">
         {error && <p className="text-sm text-destructive">{error}</p>}
+
+        {/* Above the dashboard: it is the only thing here that someone else
+            wrote, and the only thing that goes stale if it is not read. */}
+        {token && <FeedbackCard token={token} />}
 
         {data && (
           <>
