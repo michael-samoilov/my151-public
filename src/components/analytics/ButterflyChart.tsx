@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { scaleBand, scaleLinear } from 'd3-scale';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
 import { rowKey, type ButterflyRow } from './butterflyRow';
 
 export type { ButterflyRow };
@@ -321,7 +322,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             onMouseEnter={onSortChange ? () => setHoveredSort('count') : undefined}
             onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
-            {scoreMode ? 'SCORE' : 'COUNT'}
+            {scoreMode ? t('chart.header.score') : t('chart.header.count')}
           </text>
           {!hideDeviation && (<>
           {/* Deviation guide labels — only render sides that have data */}
@@ -339,8 +340,8 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
             onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
-            <tspan x={devSectionStart + zeroX - 5} dy="-1.1em">{scoreMode ? 'WEAKER' : 'UNDER-'}</tspan>
-            <tspan x={devSectionStart + zeroX - 5} dy="1.1em">{scoreMode ? '← HERE' : '← INDEXED'}</tspan>
+            <tspan x={devSectionStart + zeroX - 5} dy="-1.1em">{scoreMode ? t('chart.header.weakerHere1') : t('chart.header.underIndexed1')}</tspan>
+            <tspan x={devSectionStart + zeroX - 5} dy="1.1em">{scoreMode ? t('chart.header.weakerHere2') : t('chart.header.underIndexed2')}</tspan>
           </text>
           )}
           {devHasRight && (
@@ -357,8 +358,8 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
             onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
-            <tspan x={devSectionStart + zeroX + 5} dy="-1.1em">{scoreMode ? 'STRONGER' : 'OVER-'}</tspan>
-            <tspan x={devSectionStart + zeroX + 5} dy="1.1em">{scoreMode ? 'HERE →' : 'INDEXED →'}</tspan>
+            <tspan x={devSectionStart + zeroX + 5} dy="-1.1em">{scoreMode ? t('chart.header.strongerHere1') : t('chart.header.overIndexed1')}</tspan>
+            <tspan x={devSectionStart + zeroX + 5} dy="1.1em">{scoreMode ? t('chart.header.strongerHere2') : t('chart.header.overIndexed2')}</tspan>
           </text>
           )}
 

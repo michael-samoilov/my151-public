@@ -231,7 +231,7 @@ export function WhatsAdvisor() {
             </div>
           ))}
           <p className="pt-2 text-xs text-muted-foreground italic">
-            Tip: Press chart bars to see which Pokémon are driving trends in your dex
+            {t('analytics.tip')}
           </p>
         </div>
       )}

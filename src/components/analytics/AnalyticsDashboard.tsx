@@ -134,7 +134,7 @@ export function AnalyticsDashboard() {
       const stops = GEN_STOPS[gen] ?? [{ offset: '100%', color: '#888' }];
       return {
         key: String(gen),
-        label: `Gen ${gen}`,
+        label: t('browser.genChip', { gen }),
         count: d.count,
         deviation: d.deviation,
         color: CHART_BAR_RED,
@@ -475,7 +475,7 @@ export function AnalyticsDashboard() {
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
-                National
+                {t('analytics.dex.nationalShort')}
               </button>
               <button type="button"
                 onClick={() => setSelectedTypeChart('yours')}
@@ -485,7 +485,7 @@ export function AnalyticsDashboard() {
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
-                Yours
+                {t('analytics.dex.yours')}
               </button>
             </div>
             {/* Scrollable: regional dexes */}
@@ -516,7 +516,7 @@ export function AnalyticsDashboard() {
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
-              No Starters/Legendaries
+              {t('analytics.excludeSpecial')}
             </button>
 
             {selectedDex && !isNationalSelected && selectedDex.generation >= 2 && selectedDex.id !== 'unova' && (
@@ -561,7 +561,7 @@ export function AnalyticsDashboard() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Type distribution
+                {t('analytics.typeView.distribution')}
               </button>
               <button type="button"
                 onClick={() => setTypeView('matchup')}
@@ -571,7 +571,7 @@ export function AnalyticsDashboard() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Type matchups
+                {t('analytics.typeView.matchups')}
               </button>
             </div>
             <div className="h-[3px] bg-primary" />
@@ -595,7 +595,7 @@ export function AnalyticsDashboard() {
                 fixedDevRight={fixedDevRight}
                 sortBy={typeSortBy}
                 onSortChange={setTypeSortBy}
-                labelHeader="TYPE"
+                labelHeader={t('chart.header.type')}
                 disableEmptyRows
                 // Types overlap (dual-types contribute to two bars), so the
                 // default "share of type mentions" denominator would dilute
@@ -634,7 +634,7 @@ export function AnalyticsDashboard() {
                 forceBidirectionalCount={matchupForceBidirectional}
                 sortBy={typeSortBy}
                 onSortChange={setTypeSortBy}
-                labelHeader="TYPE"
+                labelHeader={t('chart.header.type')}
                 onBarClick={(type) => {
                   if (selectedTypeChart === 'yours') {
                     handleDrillToggle(
@@ -679,7 +679,7 @@ export function AnalyticsDashboard() {
               disableEmptyRows
               sortBy={genSortBy}
               onSortChange={setGenSortBy}
-              labelHeader="GEN"
+              labelHeader={t('chart.header.gen')}
               labelSortable
               onBarClick={(key) => {
                 const generation = Number(key);
@@ -707,7 +707,7 @@ export function AnalyticsDashboard() {
               disableEmptyRows
               sortBy={shapeSortBy}
               onSortChange={setShapeSortBy}
-              labelHeader="SHAPE"
+              labelHeader={t('chart.header.shape')}
               labelWidthBase={80}
               iconScale={SHAPE_ICON_SCALE}
               onBarClick={(shape) => handleDrillToggle({ kind: 'shape', shape }, shapeSiblings)}
@@ -726,11 +726,11 @@ export function AnalyticsDashboard() {
             <div className="flex items-center gap-4 mb-2">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm bg-slate-400 opacity-50" />
-                <span className="text-xs text-muted-foreground font-medium">National Dex</span>
+                <span className="text-xs text-muted-foreground font-medium">{t('analytics.dex.national')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm bg-red-500 opacity-85" />
-                <span className="text-xs text-muted-foreground font-medium">Yours</span>
+                <span className="text-xs text-muted-foreground font-medium">{t('analytics.dex.yours')}</span>
               </div>
             </div>
             <SuperimposedHistogram
@@ -759,11 +759,11 @@ export function AnalyticsDashboard() {
             <div className="flex items-center gap-4 mb-2">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm bg-slate-400 opacity-50" />
-                <span className="text-xs text-muted-foreground font-medium">National Dex</span>
+                <span className="text-xs text-muted-foreground font-medium">{t('analytics.dex.national')}</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm bg-red-500 opacity-85" />
-                <span className="text-xs text-muted-foreground font-medium">Yours</span>
+                <span className="text-xs text-muted-foreground font-medium">{t('analytics.dex.yours')}</span>
               </div>
             </div>
             <SuperimposedHistogram

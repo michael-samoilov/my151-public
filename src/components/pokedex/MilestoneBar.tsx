@@ -556,6 +556,9 @@ export function MilestoneTunePanel() {
     // "add pokemon" button stays clickable beneath it; expanded, span the width
     // as a bottom sheet. Desktop keeps it pinned to the right in both states.
     <div
+      // Dev-only tuning panel (?tune). Its labels are never translated, and the
+      // extraction-coverage check keys off this attribute to say so.
+      data-i18n-exempt="dev-tools"
       className={`fixed z-[100] bottom-3 ${
         collapsed ? 'left-3 w-auto max-w-[calc(100vw-1.5rem)]' : 'left-3 right-3 max-h-[50vh]'
       } md:left-auto md:right-3 md:w-64 md:max-h-[80vh] overflow-y-auto rounded-lg border bg-card/95 backdrop-blur shadow-xl p-3 text-xs`}

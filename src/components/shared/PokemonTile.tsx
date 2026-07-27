@@ -202,7 +202,7 @@ export function PokemonTileContent({
           style={{ imageRendering: 'pixelated', maxWidth: 'none' }}
         />
       </div>
-      <span className="text-[calc(var(--tile-sprite)*0.18)] font-medium capitalize truncate text-center leading-tight w-full px-[calc(var(--tile-sprite)*0.045)]">
+      <span data-i18n-exempt="pokemon-name" className="text-[calc(var(--tile-sprite)*0.18)] font-medium capitalize truncate text-center leading-tight w-full px-[calc(var(--tile-sprite)*0.045)]">
         {displayName(pokemon.name, showFormVariant)}
       </span>
       <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.03)] mt-[calc(var(--tile-sprite)*0.045)] w-full">

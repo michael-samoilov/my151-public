@@ -219,7 +219,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
       <Card variant={variant} title={t('stats.type.title')} subtitle={t('stats.type.subtitle')}>
-        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText labelHeader="TYPE" iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows textClass={STATS_TEXT} />
+        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText labelHeader={t('chart.header.type')} iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows textClass={STATS_TEXT} />
       </Card>
 
       <Card variant={variant} title={t('stats.gen.title')} subtitle={t('stats.gen.subtitle')}>
@@ -227,7 +227,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
           data={[...genRows].sort((a, b) => Number(rowKey(a)) - Number(rowKey(b)))}
           rowHeight={24}
           hideLabelText
-          labelHeader="GEN"
+          labelHeader={t('chart.header.gen')}
           iconColAspect={iconColAspect}
           iconFillsRow={typeBadges}
           heightScale={heights.region}

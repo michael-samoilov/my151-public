@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { t } from '@/i18n';
 import { type DrillDownSegment } from '@/store/usePokedexStore';
 import { getPokemonByIds, getEvolutionLine, withoutSpecials } from '@/hooks/usePokemonData';
 
@@ -8,7 +9,10 @@ const STAGE_LINE_COLORS = ['#e88a8a', '#d95050', '#b91c1c'];
 // span uses `whitespace-nowrap` so the label never breaks at the hyphen on
 // narrow columns; worst case the label overhangs its column rather than
 // wrapping to a second line.
-const STAGE_NAMES = ['Single-stage', 'Double-stage', 'Triple-stage'];
+const STAGE_NAME_KEYS = ['stage.lineLength.1', 'stage.lineLength.2', 'stage.lineLength.3'] as const;
+/** Resolved per call, not at module load — a module-level constant would freeze
+ *  whatever locale happened to be active when the chunk was first imported. */
+const stageNames = () => STAGE_NAME_KEYS.map((k) => t(k));
 
 type DrillToggle = (
   segment: DrillDownSegment,
@@ -119,9 +123,9 @@ export function StageDistributionChart({ sections, drillDownSegment, onDrillTogg
 
   return (
     <section>
-      <h3 className="text-lg font-semibold mb-1">Stage Distribution</h3>
+      <h3 className="text-lg font-semibold mb-1">{t('stage.heading')}</h3>
       <p className="text-sm text-muted-foreground mb-2">
-        Pokémon grouped by evolution line length. Each bar shows the stage breakdown within that group.
+        {t('stage.desc')}
       </p>
       <div className="flex items-center gap-1.5 mb-3">
         <button type="button"
@@ -132,7 +136,7 @@ export function StageDistributionChart({ sections, drillDownSegment, onDrillTogg
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
           }`}
         >
-          No Starters/Legendaries
+          {t('analytics.excludeSpecial')}
         </button>
       </div>
       <div ref={mekkoRef} className="bg-card rounded-lg shadow-elevated p-4">
@@ -147,7 +151,7 @@ export function StageDistributionChart({ sections, drillDownSegment, onDrillTogg
               stageTotals[seg.stage] = (stageTotals[seg.stage] || 0) + seg.count;
             }
           }
-          const stageNames = STAGE_NAMES;
+          const names = stageNames();
           const totalPokemon = mekkoData.columns.reduce((sum, col) => sum + col.segments.reduce((s, seg) => s + seg.count, 0), 0);
           // Always render 3 columns for stable layout
           const allColumns = [1, 2, 3].map(len => {
@@ -416,7 +420,7 @@ export function StageDistributionChart({ sections, drillDownSegment, onDrillTogg
                         style={{ height: 38 * mekkoScale, textDecoration: isXActive ? 'underline' : undefined, textDecorationColor: isXActive ? STAGE_LINE_COLORS[col.lineLength - 1] : undefined }}
                         onClick={() => col.chainCount > 0 && onDrillToggle({ kind: 'lineLength', lineLength: col.lineLength }, undefined, excludeSpecialMekko)}
                       >
-                        <span className="whitespace-nowrap" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{stageNames[col.lineLength - 1]}</span>
+                        <span className="whitespace-nowrap" style={{ color: STAGE_LINE_COLORS[col.lineLength - 1] }}>{names[col.lineLength - 1]}</span>
                         <br />
                         {col.chainCount}{idx === 0 && ' lines'} <span className="font-normal">({col.widthPct.toFixed(0)}%)</span>
                       </div>
@@ -463,7 +467,7 @@ export function StageDistributionChart({ sections, drillDownSegment, onDrillTogg
                       onClick={() => onDrillToggle({ kind: 'stageAll', stage: seg.stage }, undefined, excludeSpecialMekko)}
                     >
                       <span className="text-muted-foreground font-bold" style={isLegendActive ? { textDecoration: 'underline', textDecorationColor: STAGE_COLORS[seg.stage - 1] } : undefined}>
-                        <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>Stage {seg.stage}</span>
+                        <span style={{ color: STAGE_COLORS[seg.stage - 1] }}>{t('stage.label', { stage: seg.stage })}</span>
                         {isFirstLegend(seg.stage) && <><br />Pokémon</>}
                         <br />
                         {stageTotals[seg.stage]} <span className="font-normal">({totalPokemon > 0 ? ((stageTotals[seg.stage] / totalPokemon) * 100).toFixed(0) : 0}%)</span>
@@ -475,7 +479,7 @@ export function StageDistributionChart({ sections, drillDownSegment, onDrillTogg
             </div>
           );
         })() : (
-          <p className="text-sm text-muted-foreground text-center py-4">No evolution data yet</p>
+          <p className="text-sm text-muted-foreground text-center py-4">{t('stage.empty')}</p>
         )}
       </div>
     </section>

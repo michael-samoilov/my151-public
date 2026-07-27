@@ -1,3 +1,4 @@
+import { t } from '@/i18n';
 declare const __BUILD_TIMESTAMP__: string;
 const BUILD_VERSION = __BUILD_TIMESTAMP__.replace(/[-:T]/g, '').slice(2, 12);
 const YEAR = new Date().getFullYear();
@@ -18,7 +19,7 @@ export function PageFooter() {
         v{BUILD_VERSION} · Pokémon © 1995–{YEAR} Nintendo / Game Freak / Creatures / TPC
       </span>
       <span className="text-[0.5rem] text-muted-foreground/50">
-        Not affiliated with or endorsed by Nintendo.
+        {t('footer.disclaimer')}
       </span>
       </div>
     </div>
