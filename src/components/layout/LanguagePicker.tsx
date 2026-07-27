@@ -50,7 +50,7 @@ function LocaleList({ onPick, pending }: { onPick: (l: Locale) => void; pending:
             </span>
             {/* `lang` so a screen reader pronounces the endonym in its own
                 language rather than reading it through the page's voice. */}
-            <span lang={htmlLang(locale)}>{meta.endonym}</span>
+            <span lang={htmlLang(locale)} data-i18n-exempt="endonym">{meta.endonym}</span>
           </button>
         );
       })}
@@ -108,7 +108,13 @@ export function LanguagePicker() {
         {/* The current language, from `sm:` up — there is room, and it doubles
             as discoverability. Never on mobile: it would be rendered in the
             language the user is trying to leave. */}
-        <span className="hidden sm:inline text-xs" lang={htmlLang(active)}>
+        <span
+          className="hidden sm:inline text-xs"
+          lang={htmlLang(active)}
+          // An endonym is a language's own name for itself, so it is the one
+          // string in the app that must never be translated or pseudo-localised.
+          data-i18n-exempt="endonym"
+        >
           {LOCALE_META[active].endonym}
         </span>
       </button>

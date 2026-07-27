@@ -96,6 +96,8 @@ export const enUi = {
   'browser.mode.label': 'Mode:',
   'browser.modeChip.and': 'AND',
   'browser.modeChip.or': 'OR',
+  'browser.modeHint.all': 'dual-type search',
+  'browser.modeHint.any': 'show any match',
   'browser.results_one': '{count} found',
   'browser.results_other': '{count} found',
   'browser.search.placeholder': 'Search by name or number...',

@@ -38,9 +38,10 @@ interface ButterflyChartProps {
    *  icon that stands on its own (type symbols, numbered gen badges). */
   hideLabelText?: boolean;
   /** Width-to-height ratio reserved for the icon column (default 1 = square). Use
-   *  >1 for wide identifiers like type-name badges. String icons fill the column at
-   *  this aspect; function icons still render square (left-aligned in the column),
-   *  so two charts can share an aspect to keep their bar columns aligned. */
+   *  >1 for wide identifiers like type-name badges. String icons fill the column
+   *  at this aspect; function icons are given both the square icon size and the
+   *  column width and choose for themselves, so two charts can share an aspect to
+   *  keep their bar columns aligned. */
   iconColAspect?: number;
   /** Multiplier on the per-row height (default 1). Lets a caller make the whole
    *  chart taller/shorter to tune how much vertical space it takes vs. its peers. */
@@ -432,7 +433,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                       height={iconBoxH}
                       preserveAspectRatio="xMidYMid meet"
                     />
-                  ) : d.icon(iconStart + (iconColW - iconBoxH) / 2, y + barHeight / 2 - iconBoxH / 2, iconBoxH)
+                  ) : d.icon(iconStart, y + barHeight / 2 - iconBoxH / 2, iconBoxH, iconColW)
                 )}
 
                 {/* Count bar */}

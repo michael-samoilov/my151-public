@@ -15,8 +15,12 @@ export interface ButterflyRow {
   count: number;
   deviation: number; // percentage, e.g. +100 = double, -50 = half (or raw diff in scoreMode)
   color: string;
-  /** Optional icon path (e.g. "/types/fire.svg") or inline SVG render function */
-  icon?: string | ((x: number, y: number, size: number) => React.ReactNode);
+  /** Optional icon path (e.g. "/types/fire.svg") or an inline SVG render
+   *  function. The function is handed the icon column's left edge, the row's
+   *  vertical position, the square icon size and the column's full width — wide
+   *  identifiers like the type badge use the last one, square ones centre
+   *  themselves in it. */
+  icon?: string | ((x: number, y: number, size: number, colWidth: number) => React.ReactNode);
 }
 
 /** A row's stable identity, falling back to its label when none is supplied. */

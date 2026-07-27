@@ -43,6 +43,38 @@ This needs a layout decision (a second line, a chip, or a tooltip on a
 still-abbreviated name), so it is a design call rather than a translation one.
 Nothing has been changed.
 
+## Phase 3 — type badges are now drawn, not shipped (already applied)
+
+The type-name badge was a PNG with the English word baked into it, and no
+localized set of those exists anywhere — PokeAPI's sprite repo has no
+language-coded assets at any generation, and the request for them has gone
+unanswered since early 2025. So the badge is now drawn: official colour,
+official symbol, and the type name rendered live from the published
+`type_names` string for the active locale.
+
+Three things change in English.
+
+**1. The word is title case, not all caps.** The badge art reads `FIRE`; the
+game's own string table stores `Fire`, and that is what the app now draws. The
+alternative — CSS `text-transform: uppercase` — has to be switched off for
+CJK, where it does nothing to the glyphs but mangles any mixed Latin or digits,
+and letter-spacing has to be Latin-only too or centred text drifts off-centre
+by half the tracking. Title case avoids all of that and matches the publisher's
+own data. Easy to reverse if you prefer the shout.
+
+**2. The word is in the app's font.** Inter rather than the game's typeface, at
+a size that reads better than the baked-in text did — at tile size the PNG's
+lettering was rendering smaller than the Pokémon name above it and was close to
+illegible.
+
+**3. Two type colours are corrected.** Sampled from the badge art: `ground`
+#945121 → #915121 and `dragon` #5261DE → #5061E1. The other sixteen already
+matched exactly. This shows up anywhere the type colour is used, not just on
+the badge.
+
+Nothing else about the badge moves: same 5:1 pill, same size in every layout,
+same symbol.
+
 ## Phase 6 — header nav labels below 380px (already applied, easy to revert)
 
 This one **has** been applied, because leaving it out meant the header pushed

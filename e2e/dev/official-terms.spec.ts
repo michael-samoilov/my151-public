@@ -31,9 +31,11 @@ test.describe('official terminology', () => {
       await seedDex(page);
       await page.locator('[data-nav="analytics"]').click();
 
-      // The type chart labels every row with the type's published name.
-      await expect(page.locator('svg text').filter({ hasText: names.fire }).first()).toBeVisible();
-      await expect(page.locator('svg text').filter({ hasText: names.psychic }).first()).toBeVisible();
+      // The type chart labels every row with the type's published name. Scoped
+      // to visible text because the browser panel is mounted-but-hidden on this
+      // page, and its type filter now renders the same words inside its badges.
+      await expect(page.locator('svg text').filter({ visible: true }).filter({ hasText: names.fire }).first()).toBeVisible();
+      await expect(page.locator('svg text').filter({ visible: true }).filter({ hasText: names.psychic }).first()).toBeVisible();
     });
   }
 
@@ -58,6 +60,6 @@ test.describe('official terminology', () => {
     await page.goto(TUNE_URL);
     await seedDex(page);
     await page.locator('[data-nav="analytics"]').click();
-    await expect(page.locator('svg text').filter({ hasText: 'Fire' }).first()).toBeVisible();
+    await expect(page.locator('svg text').filter({ visible: true }).filter({ hasText: 'Fire' }).first()).toBeVisible();
   });
 });

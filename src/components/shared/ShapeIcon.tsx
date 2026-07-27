@@ -55,7 +55,9 @@ export function ShapeIconCircle({ shape, size = 20, className }: { shape: ShapeN
  *  centered inside, dark-mode-inverted like the HTML variant. Matches the
  *  ShapeIconCircle look used in the drilldown. */
 export function shapeChartIcon(shape: ShapeName) {
-  return function render(x: number, y: number, size: number): ReactNode {
+  return function render(x: number, y: number, size: number, colWidth = size): ReactNode {
+    // Square icon, centred in a column that may be wider than it is.
+    x += (colWidth - size) / 2;
     const cx = x + size / 2;
     const cy = y + size / 2;
     const pad = size * 0.16; // inner silhouette fills ~68% of the disc

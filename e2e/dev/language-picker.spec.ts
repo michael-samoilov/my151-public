@@ -21,7 +21,7 @@ test.describe('language picker', () => {
 
       // Official terminology follows immediately.
       await page.locator('[data-nav="analytics"]').click();
-      await expect(page.locator('svg text').filter({ hasText: 'ほのお' }).first()).toBeVisible();
+      await expect(page.locator('svg text').filter({ visible: true }).filter({ hasText: 'ほのお' }).first()).toBeVisible();
 
       // The document language changes too — it drives the per-script font stacks
       // and tells a screen reader which voice to use.

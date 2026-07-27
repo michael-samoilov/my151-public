@@ -10,11 +10,9 @@ import { rowKey, type ButterflyRow } from '@/components/analytics/butterflyRow';
 import { t } from '@/i18n';
 import { SuperimposedHistogram } from '@/components/analytics/SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
-import { typeBadgePath } from '@/data/type-ids';
+import { typeChartIcon } from '@/components/shared/typeBadgeSvg';
+import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import type { TypeName } from '@/types/pokemon';
-
-/** Aspect ratio (w/h) of the Gen IX type-name badge sprites (128×40). */
-const TYPE_BADGE_ASPECT = 128 / 40;
 
 /** Single font size shared by all stats text — chart headers, axis + value
  *  numbers, and the card subtitles — so they read uniformly. */
@@ -161,9 +159,9 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
     if (total === 0) return [];
     const rows = buildTypeRows(countTypes(pokemon), total, fullBaseline.typeProp)
       .sort((a, b) => b.deviation - a.deviation);
-    // Swap the small type symbol for the full type-name badge image when requested.
+    // Swap the small type symbol for the full type-name badge when requested.
     return typeBadges
-      ? rows.map((r) => ({ ...r, icon: typeBadgePath(rowKey(r) as TypeName) }))
+      ? rows.map((r) => ({ ...r, icon: typeChartIcon(rowKey(r) as TypeName) }))
       : rows;
   }, [sections, typeBadges]);
 

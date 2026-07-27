@@ -207,7 +207,7 @@ export function PokemonTileContent({
       </span>
       <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.03)] mt-[calc(var(--tile-sprite)*0.045)] w-full">
         {pokemon.types.map((t) => (
-          <TypeBadge key={t} type={t as TypeName} className="w-[var(--tile-sprite)]" loading={imgLoading} />
+          <TypeBadge key={t} type={t as TypeName} className="w-[var(--tile-sprite)]" />
         ))}
         {pokemon.types.length === 1 && (
           <div className="w-[var(--tile-sprite)]" style={{ aspectRatio: '200/40' }} aria-hidden />

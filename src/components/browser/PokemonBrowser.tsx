@@ -10,10 +10,10 @@ import { ARCHETYPES } from '@/data/archetypes';
 import { CATEGORIES } from '@/data/categories';
 import { TYPE_NAMES, type TypeName, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
 import { ShapeIcon, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
+import { TypeBadge } from '@/components/shared/TypeBadge';
 import { COLOR_ORDER, COLOR_SWATCHES, colorTextOn, colorRingOn, EGG_GROUP_ORDER } from '@/data/classifications';
 import { archetypeName as archetypeLabel, categoryName as categoryLabel, colorLabel, eggGroupLabel, sectionName as sectionLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { typeBadgePath } from '@/data/type-ids';
 import { Search, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageFooter } from '@/components/shared/PageFooter';
@@ -427,11 +427,11 @@ export function PokemonBrowser() {
                 {t('browser.mode.all')}
               </button>
               <span className="text-[0.625rem] text-muted-foreground ml-auto">
-                {typeFilterMode === 'all' ? 'dual-type search' : 'show any match'}
+                {typeFilterMode === 'all' ? t('browser.modeHint.all') : t('browser.modeHint.any')}
               </span>
             </div>
           )}
-          <div className="grid grid-cols-3 gap-1 max-w-sm md:grid-cols-6 md:max-w-2xl mx-auto">
+          <div data-testid="type-filter" className="grid grid-cols-3 gap-1 max-w-sm md:grid-cols-6 md:max-w-2xl mx-auto">
             {TYPE_NAMES.map((type) => {
               const isSelected = typeFilter?.includes(type) ?? false;
               return (
@@ -443,12 +443,7 @@ export function PokemonBrowser() {
                     opacity: typeFilter && typeFilter.length > 0 && !isSelected ? 0.3 : 1,
                   }}
                 >
-                  <img
-                    src={typeBadgePath(type)}
-                    alt={type}
-                    className="h-[1.125rem] w-auto"
-                    draggable={false}
-                  />
+                  <TypeBadge type={type} className="w-[5.625rem]" />
                 </button>
               );
             })}
@@ -554,22 +549,22 @@ export function PokemonBrowser() {
       )}
 
       {openSheet === 'classification' && (
-        <FilterChipList items={CATEGORIES} activeId={activeCategory}
+        <FilterChipList items={CATEGORIES} activeId={activeCategory} label={(c) => categoryLabel(c.id)}
           onSelect={(id) => { setCategoryFilter(activeCategory === id ? null : id); setOpenSheet(null); }} />
       )}
 
       {openSheet === 'places' && (
-        <FilterChipList items={PLACES_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!)} activeId={activeArchetype}
+        <FilterChipList items={PLACES_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!)} activeId={activeArchetype} label={(a) => archetypeLabel(a.id)}
           onSelect={(id) => { setArchetypeFilter(activeArchetype === id ? null : id); setOpenSheet(null); }} />
       )}
 
       {openSheet === 'archetypes' && (
-        <FilterChipList items={ARCHETYPES.filter(a => !PLACES_IDS.has(a.id) && !GAME_MECHANICS_IDS.has(a.id))} activeId={activeArchetype}
+        <FilterChipList items={ARCHETYPES.filter(a => !PLACES_IDS.has(a.id) && !GAME_MECHANICS_IDS.has(a.id))} activeId={activeArchetype} label={(a) => archetypeLabel(a.id)}
           onSelect={(id) => { setArchetypeFilter(activeArchetype === id ? null : id); setOpenSheet(null); }} />
       )}
 
       {openSheet === 'gameMechanics' && (
-        <FilterChipList items={GAME_MECHANICS_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!)} activeId={activeArchetype}
+        <FilterChipList items={GAME_MECHANICS_ORDER.map(id => ARCHETYPES.find(a => a.id === id)!)} activeId={activeArchetype} label={(a) => archetypeLabel(a.id)}
           onSelect={(id) => { setArchetypeFilter(activeArchetype === id ? null : id); setOpenSheet(null); }} />
       )}
     </>
@@ -646,7 +641,7 @@ export function PokemonBrowser() {
               ))}
             </>
           ) : (
-            <EntryChip label={t('browser.chip.type')} onClick={() => setOpenSheet(openSheet === 'type' ? null : 'type')} active={openSheet === 'type'} />
+            <EntryChip sheet="type" label={t('browser.chip.type')} onClick={() => setOpenSheet(openSheet === 'type' ? null : 'type')} active={openSheet === 'type'} />
           )}
 
           {generationFilter && generationFilter.length > 0 ? (
@@ -669,7 +664,7 @@ export function PokemonBrowser() {
               />
             )
           ) : (
-            <EntryChip label={t('browser.chip.gen')} onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')} active={openSheet === 'generation'} />
+            <EntryChip sheet="generation" label={t('browser.chip.gen')} onClick={() => setOpenSheet(openSheet === 'generation' ? null : 'generation')} active={openSheet === 'generation'} />
           )}
 
           {evoLineSizeFilter ? (
@@ -680,7 +675,7 @@ export function PokemonBrowser() {
               className="bg-foreground text-background"
             />
           ) : (
-            <EntryChip label={t('browser.chip.stages')} onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
+            <EntryChip sheet="evoStage" label={t('browser.chip.stages')} onClick={() => setOpenSheet(openSheet === 'evoStage' ? null : 'evoStage')} active={openSheet === 'evoStage'} />
           )}
 
           {shapeFilter && shapeFilter.length > 0 ? (
@@ -703,7 +698,7 @@ export function PokemonBrowser() {
               />
             )
           ) : (
-            <EntryChip label={t('browser.chip.shape')} onClick={() => setOpenSheet(openSheet === 'shape' ? null : 'shape')} active={openSheet === 'shape'} />
+            <EntryChip sheet="shape" label={t('browser.chip.shape')} onClick={() => setOpenSheet(openSheet === 'shape' ? null : 'shape')} active={openSheet === 'shape'} />
           )}
 
           {colorFilter && colorFilter.length > 0 ? (
@@ -726,7 +721,7 @@ export function PokemonBrowser() {
               />
             )
           ) : (
-            <EntryChip label={t('browser.chip.color')} onClick={() => setOpenSheet(openSheet === 'color' ? null : 'color')} active={openSheet === 'color'} />
+            <EntryChip sheet="color" label={t('browser.chip.color')} onClick={() => setOpenSheet(openSheet === 'color' ? null : 'color')} active={openSheet === 'color'} />
           )}
 
           {eggGroupFilter && eggGroupFilter.length > 0 ? (
@@ -749,7 +744,7 @@ export function PokemonBrowser() {
               />
             )
           ) : (
-            <EntryChip label={t('browser.chip.eggGroup')} onClick={() => setOpenSheet(openSheet === 'eggGroup' ? null : 'eggGroup')} active={openSheet === 'eggGroup'} />
+            <EntryChip sheet="eggGroup" label={t('browser.chip.eggGroup')} onClick={() => setOpenSheet(openSheet === 'eggGroup' ? null : 'eggGroup')} active={openSheet === 'eggGroup'} />
           )}
 
           </div>
@@ -758,7 +753,7 @@ export function PokemonBrowser() {
               onClick={clearPropertyFilters}
               className="shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border"
             >
-              Clear
+              {t('browser.clear')}
             </button>
           )}
         </div>
@@ -775,7 +770,7 @@ export function PokemonBrowser() {
               style={{ backgroundColor: activeCategoryDef?.color }}
             />
           ) : (
-            <EntryChip label={t('browser.chip.classification')} onClick={() => setOpenSheet(openSheet === 'classification' ? null : 'classification')} active={openSheet === 'classification'} />
+            <EntryChip sheet="classification" label={t('browser.chip.classification')} onClick={() => setOpenSheet(openSheet === 'classification' ? null : 'classification')} active={openSheet === 'classification'} />
           )}
 
           {activeArchetype && PLACES_IDS.has(activeArchetype) ? (
@@ -787,7 +782,7 @@ export function PokemonBrowser() {
               style={{ backgroundColor: activeArchetypeDef?.color }}
             />
           ) : (
-            <EntryChip label={t('browser.chip.places')} onClick={() => setOpenSheet(openSheet === 'places' ? null : 'places')} active={openSheet === 'places'} />
+            <EntryChip sheet="places" label={t('browser.chip.places')} onClick={() => setOpenSheet(openSheet === 'places' ? null : 'places')} active={openSheet === 'places'} />
           )}
 
           {activeArchetype && !PLACES_IDS.has(activeArchetype) && !GAME_MECHANICS_IDS.has(activeArchetype) ? (
@@ -799,7 +794,7 @@ export function PokemonBrowser() {
               style={{ backgroundColor: activeArchetypeDef?.color }}
             />
           ) : (
-            <EntryChip label={t('browser.chip.archetypes')} onClick={() => setOpenSheet(openSheet === 'archetypes' ? null : 'archetypes')} active={openSheet === 'archetypes'} />
+            <EntryChip sheet="archetypes" label={t('browser.chip.archetypes')} onClick={() => setOpenSheet(openSheet === 'archetypes' ? null : 'archetypes')} active={openSheet === 'archetypes'} />
           )}
 
           {activeArchetype && GAME_MECHANICS_IDS.has(activeArchetype) ? (
@@ -811,7 +806,7 @@ export function PokemonBrowser() {
               style={{ backgroundColor: activeArchetypeDef?.color }}
             />
           ) : (
-            <EntryChip label={t('browser.chip.mechanics')} onClick={() => setOpenSheet(openSheet === 'gameMechanics' ? null : 'gameMechanics')} active={openSheet === 'gameMechanics'} />
+            <EntryChip sheet="gameMechanics" label={t('browser.chip.mechanics')} onClick={() => setOpenSheet(openSheet === 'gameMechanics' ? null : 'gameMechanics')} active={openSheet === 'gameMechanics'} />
           )}
 
           </div>
@@ -820,7 +815,7 @@ export function PokemonBrowser() {
               onClick={clearBrowseFilters}
               className="shrink-0 self-stretch flex items-center text-[0.625rem] text-muted-foreground hover:text-foreground underline cursor-pointer pr-2 pl-2 bg-background border-l border-border"
             >
-              Clear
+              {t('browser.clear')}
             </button>
           )}
         </div>
@@ -1071,10 +1066,13 @@ function SheetOverlay({ onClose, openSheet, children, footer, onHeight }: {
 }
 
 /** Entry-point chip — opens a filter sheet */
-function EntryChip({ label, onClick, active }: { label: string; onClick: () => void; active: boolean }) {
+function EntryChip({ label, onClick, active, sheet }: { label: string; onClick: () => void; active: boolean; sheet: FilterSheet }) {
   return (
     <button type="button"
       onClick={onClick}
+      // Stable handle for the extraction-coverage spec, which opens every panel
+      // in turn — the label is translated and the pseudo-locale mangles it.
+      data-filter-chip={sheet}
       className={cn(
         'shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors',
         active

@@ -6,12 +6,17 @@ const POKEAPI_TYPE_IDS: Record<TypeName, number> = {
   electric: 13, psychic: 14, ice: 15, dragon: 16, dark: 17, fairy: 18,
 };
 
-/** Full-size Gen IX badge sprites (128x40px, type name baked in) */
-export function typeBadgePath(type: TypeName): string {
-  return `/sprites/types/badges/${POKEAPI_TYPE_IDS[type]}.png`;
-}
-
-/** Small Gen IX icon sprites (60x60px, icon only) */
+/** Small Gen IX icon sprites (60x60px, white symbol on a coloured square) */
 export function typeIconPath(type: TypeName): string {
   return `/sprites/types/small/${POKEAPI_TYPE_IDS[type]}.png`;
+}
+
+/**
+ * The white symbol alone, cropped to its bounding box, generated from the small
+ * icons by `scripts/build-type-glyphs.ts`. Sizes vary per type — draw it into a
+ * square box with `preserveAspectRatio="xMidYMid meet"` (or the canvas
+ * equivalent) rather than stretching it.
+ */
+export function typeGlyphPath(type: TypeName): string {
+  return `/sprites/types/glyph/${POKEAPI_TYPE_IDS[type]}.png`;
 }
