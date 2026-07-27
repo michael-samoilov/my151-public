@@ -1,6 +1,6 @@
 import { getLocale, subscribe } from './core';
 import { DEFAULT_LOCALE, type Locale } from './config';
-import altFormSpecies from './names/alt-form-species.json';
+import altFormSpecies from './alt-form-species.json';
 
 /**
  * Localized Pokémon names.
@@ -30,6 +30,10 @@ interface NameCatalog {
  * Only the 64 alt forms need an appId -> speciesId entry; for the 1,025 base
  * species the two are equal. Importing the full id map instead put ~95 kB of
  * slugs, form ids and notes into the main bundle for nothing.
+ *
+ * It lives outside `names/` so the lazy glob below can't also match it: a file
+ * that is both statically imported and glob-imported is silently pulled into
+ * the main chunk, which Rollup warns about and which would defeat the split.
  */
 const ALT_FORM_SPECIES = altFormSpecies as Record<string, number>;
 

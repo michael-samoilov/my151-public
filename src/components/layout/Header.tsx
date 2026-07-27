@@ -5,6 +5,8 @@ import { BarChart3, Camera, Hammer, Lock } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { isAnalyticsUnlocked, ANALYTICS_UNLOCK_AT } from '@/lib/milestones';
 import { useT } from '@/i18n';
+import { LanguagePicker } from '@/components/layout/LanguagePicker';
+import { PREVIEW_FEATURES } from '@/lib/demoMode';
 
 export type AppView = 'builder' | 'view' | 'analytics';
 
@@ -17,7 +19,20 @@ interface HeaderProps {
 // something to transition to. 7rem rather than 5rem because the longest
 // translated nav label plus normal expansion overflows 5rem — the e2e
 // pseudo-locale run catches it at 360px.
-const LABEL_ANIM = 'overflow-hidden transition-[max-width,opacity] duration-150 ease-out';
+const LABEL_ANIM = 'overflow-hidden transition-[max-width,opacity] duration-150 ease-out max-w-0 opacity-0';
+
+/**
+ * The active tab's label, expanded.
+ *
+ * Gated at 380px rather than shown unconditionally: the wordmark, the language
+ * globe and three tabs need 366px with the longest label expanded (measured
+ * against `en-XA`, which pads English by 40% — worse than any real locale), so
+ * below that the row would push the page sideways. The filled `default` variant
+ * already marks the active tab, so collapsing to icons there loses redundancy
+ * rather than information. Above `sm` every label shows regardless.
+ */
+const LABEL_ACTIVE = 'min-[380px]:max-w-[7rem] min-[380px]:opacity-100 min-[380px]:ml-1';
+const LABEL_WIDE = 'sm:max-w-[7rem] sm:opacity-100 sm:ml-1';
 
 export function Header({ currentView, onViewChange }: HeaderProps) {
   const sections = usePokedexStore((s) => s.sections);
@@ -35,6 +50,10 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
         </h1>
 
         <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Preview-only until the functional-UI tier is translated: today a
+              non-English locale gets official terminology and Pokémon names but
+              English chrome, which is fine to demo and not to ship. */}
+          {PREVIEW_FEATURES && <LanguagePicker />}
           <Button
             variant={currentView === 'builder' ? 'default' : 'ghost'}
             size="sm"
@@ -43,7 +62,7 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
             data-nav="builder"
           >
             <Hammer className="w-4 h-4" />
-            <span className={`${LABEL_ANIM} ${currentView === 'builder' ? 'max-w-[7rem] opacity-100 ml-1' : 'max-w-0 opacity-0'} sm:max-w-[7rem] sm:opacity-100 sm:ml-1`}>{t('nav.build')}</span>
+            <span className={`${LABEL_ANIM} ${currentView === 'builder' ? LABEL_ACTIVE : ''} ${LABEL_WIDE}`}>{t('nav.build')}</span>
           </Button>
 
           {analyticsUnlocked ? (
@@ -55,7 +74,7 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
               data-nav="analytics"
             >
               <BarChart3 className="w-4 h-4" />
-              <span className={`${LABEL_ANIM} ${currentView === 'analytics' ? 'max-w-[7rem] opacity-100 ml-1' : 'max-w-0 opacity-0'} sm:max-w-[7rem] sm:opacity-100 sm:ml-1`}>{t('nav.analytics')}</span>
+              <span className={`${LABEL_ANIM} ${currentView === 'analytics' ? LABEL_ACTIVE : ''} ${LABEL_WIDE}`}>{t('nav.analytics')}</span>
             </Button>
           ) : (
             /* Locked until 25 Pokémon (sticky). Tapping explains rather than navigating. */
@@ -91,7 +110,7 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
             data-nav="view"
           >
             <Camera className="w-4 h-4" />
-            <span className={`${LABEL_ANIM} ${currentView === 'view' ? 'max-w-[7rem] opacity-100 ml-1' : 'max-w-0 opacity-0'} sm:max-w-[7rem] sm:opacity-100 sm:ml-1`}>{t('nav.view')}</span>
+            <span className={`${LABEL_ANIM} ${currentView === 'view' ? LABEL_ACTIVE : ''} ${LABEL_WIDE}`}>{t('nav.view')}</span>
           </Button>
         </div>
       </div>

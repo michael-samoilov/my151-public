@@ -42,3 +42,28 @@ is how the games present them in every language.
 This needs a layout decision (a second line, a chip, or a tooltip on a
 still-abbreviated name), so it is a design call rather than a translation one.
 Nothing has been changed.
+
+## Phase 6 — header nav labels below 380px (already applied, easy to revert)
+
+This one **has** been applied, because leaving it out meant the header pushed
+the page sideways as soon as the language globe appeared. Flagging it here
+because it is visible in English.
+
+The header has to fit the wordmark, a language globe and three tabs. Measured
+at 320px with the globe present: 339px needed against 320px available in
+English, 366px under `en-XA`. The overflow is real, not a pseudo-locale
+artefact — German's *Statistiken* would do it too.
+
+**Change:** the active tab's text label now expands only from 380px up. Below
+that all three tabs are icon-only, and the active tab is marked the way it
+already is — by the filled button. From 640px (`sm:`) up every label shows, as
+before. Nothing changes at any width above 380px.
+
+Practically: a 320px or 360px phone sees three icons instead of two icons and
+one labelled tab. Every mainstream phone (390px iPhone, 393px Pixel, 412px
+Android) is unaffected.
+
+The alternative was shrinking the `my151.app` wordmark on mobile, which buys
+20–30px — not enough on its own — so it would have had to be combined with
+tighter button padding, leaving about 5px of slack. Say the word and I'll
+switch to that instead.

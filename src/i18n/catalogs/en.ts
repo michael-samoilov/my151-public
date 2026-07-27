@@ -151,6 +151,8 @@ export const enUi = {
   'intro.body': 'Hand-pick your favorites from all {total} Pokémon into a Pokédex that’s entirely yours.',
   'intro.cta': 'Choose your starters',
   'intro.headline': 'Build your own {count}',
+  'lang.change': 'Change language',
+  'lang.title': 'Language',
   'milestone.100.detail': 'Type, generation, and base-stat charts are now available in View.',
   'milestone.100.title': 'Detailed stats in View page',
   'milestone.151.detail': 'Save as an image, or keep refining your picks.',

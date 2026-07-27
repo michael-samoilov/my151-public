@@ -20,6 +20,7 @@ import { LANGUAGE_IDS, ROMAJI_LANGUAGE_ID, ensureCsvs, readCsv } from './pokeapi
 import type { IdMapEntry } from './propose-id-map';
 
 const OUT_DIR = 'src/i18n/names';
+const ALT_FORM_OUT = 'src/i18n/alt-form-species.json';
 
 /** How a name was arrived at. Anything but `official` is flagged in the UI. */
 export type NameProvenance = 'official' | 'official-composed';
@@ -154,9 +155,12 @@ async function main(): Promise<void> {
   const altForms = Object.fromEntries(
     entries.filter((e) => e.appId !== e.speciesId).map((e) => [e.appId, e.speciesId]),
   );
-  writeFileSync(`${OUT_DIR}/alt-form-species.json`, `${JSON.stringify(altForms)}\n`);
+  // Outside OUT_DIR: names.ts glob-imports `names/*.json` as lazy per-locale
+  // chunks, and a file that is both statically imported and matched by that
+  // glob gets folded back into the main bundle.
+  writeFileSync(ALT_FORM_OUT, `${JSON.stringify(altForms)}\n`);
 
-  console.log(`${OUT_DIR}/alt-form-species.json: ${Object.keys(altForms).length} alt forms`);
+  console.log(`${ALT_FORM_OUT}: ${Object.keys(altForms).length} alt forms`);
   console.log(`${OUT_DIR}/: ${Object.keys(LANGUAGE_IDS).length} catalogs`);
   for (const line of summary) console.log(line);
 }
