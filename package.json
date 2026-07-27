@@ -19,7 +19,8 @@
     "i18n:tiers": "tsx scripts/i18n/report-tiers.ts",
     "i18n:propose-map": "tsx scripts/i18n/propose-id-map.ts",
     "i18n:names": "tsx scripts/i18n/build-name-catalogs.ts",
-    "i18n:terms": "tsx scripts/i18n/build-term-catalogs.ts"
+    "i18n:terms": "tsx scripts/i18n/build-term-catalogs.ts",
+    "i18n:extract": "tsx scripts/i18n/translate/extract.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
