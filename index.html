@@ -63,9 +63,21 @@
        * sees, and keeping the copy visible to humans too means it is honest
        * content, not crawler-only text. React's createRoot drops these children
        * on first commit. */
-      .p151-boot h1 { margin: 0; font-size: 20px; font-weight: 600; color: #fafafa; letter-spacing: -0.01em; }
+      .p151-boot h1 { margin: 0; font-size: 18px; font-weight: 600; color: #fafafa; letter-spacing: -0.01em; }
       .p151-boot p { margin: 0; max-width: 38ch; font-size: 14px; line-height: 1.5; color: #a3a3a3; }
       .p151-boot span { font-size: 13px; color: #737373; letter-spacing: 0.02em; }
+      /* Desktop is a peer of mobile, not mobile-with-patches (see CLAUDE.md): the
+       * spinner, headline, body and hint all scale together at --breakpoint-md
+       * rather than leaving the boot screen pinned to phone sizing on a 1440px
+       * display. Plain px + one media query because this block renders before
+       * main.tsx installs the rem-based root font-size knob. */
+      @media (min-width: 1024px) {
+        .p151-boot { gap: 20px; }
+        .p151-boot svg { width: 84px; height: 84px; }
+        .p151-boot h1 { font-size: 30px; }
+        .p151-boot p { max-width: 46ch; font-size: 17px; }
+        .p151-boot span { font-size: 14px; }
+      }
       @keyframes p151-spin { to { transform: rotate(360deg); } }
     </style>
   </head>
