@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "cache-sprites": "bash scripts/cache-sprites.sh",
+    "og-image": "node scripts/generate-og-image.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",

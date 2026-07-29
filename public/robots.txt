@@ -1,5 +1,12 @@
+Sitemap: https://my151.app/sitemap.xml
+
 User-agent: *
 Allow: /
+# Admin dashboard and demo/tuning states are query-param views of "/" with no
+# standalone value in search results; canonical still points every one at "/".
+Disallow: /*?admin
+Disallow: /*?tune
+Disallow: /*?demo=
 
 User-agent: GPTBot
 Disallow: /

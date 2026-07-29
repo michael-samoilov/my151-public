@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  my151 is a single-URL app: every view (browse, dex, analytics, share, admin) is
+  reached through query params off "/" rather than a distinct path, so there is
+  exactly one canonical URL to list here. Add entries only if real routed paths
+  are introduced.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://my151.app/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
