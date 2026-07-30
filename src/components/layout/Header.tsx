@@ -6,7 +6,6 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { isAnalyticsUnlocked, ANALYTICS_UNLOCK_AT } from '@/lib/milestones';
 import { useT } from '@/i18n';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
-import { PREVIEW_FEATURES } from '@/lib/demoMode';
 
 export type AppView = 'builder' | 'view' | 'analytics';
 
@@ -50,10 +49,18 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
         </h1>
 
         <div className="flex items-center gap-1 flex-shrink-0">
-          {/* Preview-only until the functional-UI tier is translated: today a
-              non-English locale gets official terminology and Pokémon names but
-              English chrome, which is fine to demo and not to ship. */}
-          {PREVIEW_FEATURES && <LanguagePicker />}
+          {/* Always present, in every environment. The app negotiates a locale
+              from `navigator.languages` at startup, so a visitor can be switched
+              out of English without ever asking — and a switcher that only
+              existed in preview builds would leave them no way back. Whatever
+              picks the language, the control to change it has to be reachable.
+
+              It ships ahead of the translated UI on purpose. Today a non-English
+              locale gets official terminology and Pokémon names with English
+              chrome; someone who lands there and wants English needs this
+              button, and someone who wants their own language should not have
+              to wait for the rest of the corpus to find it. */}
+          <LanguagePicker />
           <Button
             variant={currentView === 'builder' ? 'default' : 'ghost'}
             size="sm"

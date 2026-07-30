@@ -31,6 +31,36 @@ the density.
 Also worth naming: the type symbols are TPC's art, and redrawing one as a UI
 icon is a further derivative step than displaying it as a type badge is.
 
+## The first-run language notice, and whether `?lang=` should persist
+
+Two loose ends from the language work, neither blocking now that the picker
+ships in every environment, both worth a decision.
+
+**The notice was planned and never built.** `localeNoticeSeen` is in the store
+at version 10 and nothing reads or writes it — I went looking for the component
+and there isn't one. The intent was a one-time, *bilingual* line when detection
+moves someone out of English: 「日本語に切り替えました · Switched to Japanese —
+[English]」, bilingual precisely because a visitor whose detection went wrong
+cannot read the language it went wrong into.
+
+It mattered much more when the picker was preview-only, because then it was the
+*only* way back. Now it is a courtesy: it explains a change the visitor did not
+ask for, rather than leaving them to notice their Pokémon names look different
+and go hunting for a globe icon. Worth doing before the UI tier lands, when a
+mis-detected visitor will face a fully translated interface instead of English
+chrome and the stakes go up.
+
+Either build it or drop `localeNoticeSeen` from the store. A persisted field
+that nothing reads is a claim the code does not honour.
+
+**`?lang=` does not persist.** `initLocale` applies the parameter and never
+stores it, so `?lang=de` lasts exactly one page load. The plan called for an
+explicit URL to pin the choice, on the grounds that typing one is explicit
+intent. There is a fair argument the other way — someone opening `?lang=de` out
+of curiosity may not want German pinned forever — and now that the picker is
+always present, either behaviour is recoverable. Left as-is rather than changed
+quietly, because it is a product call and not a bug.
+
 ## Virtualize the browser's result list
 
 The builder page renders **1,980 type badges, none of them in the viewport** —
