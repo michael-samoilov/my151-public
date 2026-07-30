@@ -32,6 +32,7 @@ import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
 import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
 import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
 import { isAnalyticsUnlocked } from '@/lib/milestones';
+import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { cn } from '@/lib/utils';
 
 declare const __BUILD_TIMESTAMP__: string;
@@ -173,6 +174,10 @@ function App() {
     }
   }, [setMobileBrowserOpen]);
 
+  // Gates the desktop-only browser panel. 1024px is --breakpoint-md, matching the
+  // `md:` prefix the panel's own classes use, so mount and visibility agree.
+  const isDesktopPanel = useViewportAtLeast(1024);
+
   const sectionName = activeSection
     ? BUILD_GROUPS.find((g) => g.id === activeSection)?.name ?? 'Section'
     : 'Browse Pokémon';
@@ -191,17 +196,35 @@ function App() {
           )}>
             <PokedexGrid />
           </div>
-          {/* Desktop browser panel — slides in from right as an overlay */}
-          <div className={cn(
-            'hidden md:flex absolute right-0 top-0 bottom-0 z-10',
-            'w-1/2 border-l bg-background',
-            'transition-transform duration-300 ease-out',
-            activeSection ? 'translate-x-0' : 'translate-x-full',
-          )}>
-            <div className="flex-1 min-w-0">
-              <PokemonBrowser />
+          {/* Desktop browser panel — slides in from right as an overlay.
+            *
+            * Gated on viewport width rather than left to `hidden md:flex` alone.
+            * With no section active this panel renders the full unfiltered list,
+            * which measured 16,020 of the page's 16,400 DOM nodes — 97.9% of the
+            * document on a 390px viewport, none of it ever painted. CSS hides it,
+            * but React still builds and reconciles the whole tree, so the first tap
+            * on mobile had to tear ~15,000 nodes down before it could respond.
+            *
+            * Mobile browses through MobileSheet instead, which is already mounted
+            * on demand a few lines below. Desktop keeps the panel permanently
+            * mounted: the slide-in transition needs it present to animate from
+            * translate-x-full, so do NOT extend this gate to on-demand mounting.
+            *
+            * useViewportAtLeast is the existing hook used for sprite sizing. It
+            * reads the *unzoomed* width, so iOS pinch-zoom cannot unmount the
+            * panel mid-gesture the way a raw matchMedia would risk. */}
+          {isDesktopPanel && (
+            <div className={cn(
+              'hidden md:flex absolute right-0 top-0 bottom-0 z-10',
+              'w-1/2 border-l bg-background',
+              'transition-transform duration-300 ease-out',
+              activeSection ? 'translate-x-0' : 'translate-x-full',
+            )}>
+              <div className="flex-1 min-w-0">
+                <PokemonBrowser />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* View — lazy, mounted on first visit then kept alive */}

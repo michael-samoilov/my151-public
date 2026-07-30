@@ -90,16 +90,27 @@ const res = await fetch(ENDPOINT, {
   body: JSON.stringify(body),
 });
 
+const text = await res.text().catch(() => '');
+
+// An egress proxy sitting in front of this script also answers with 4xx, and its
+// 403 means something completely different from IndexNow's 403. Detect that first,
+// or the output blames the key file for a network-policy problem.
+if (/not in allowlist|network egress|proxy/i.test(text)) {
+  console.error(`\n${res.status} — blocked before reaching IndexNow, by a network policy:`);
+  console.error(text.trim());
+  console.error('\nThe request never arrived, so nothing was submitted. Allow the host, then retry.');
+  process.exit(1);
+}
+
 // Documented IndexNow responses, translated into something actionable.
 const meaning = {
   200: 'OK — URLs submitted.',
   202: 'Accepted — submitted, key validation still pending.',
   400: 'Bad request — malformed JSON or invalid URL format.',
-  403: 'Forbidden — the key file did not validate.',
+  403: 'Forbidden — IndexNow could not validate the key file.',
   422: 'Unprocessable — a URL does not belong to the host, or the key does not match.',
   429: 'Too many requests — slow down; this script is meant for occasional use.',
 };
-const text = await res.text().catch(() => '');
 console.log(`\n${res.status} ${meaning[res.status] ?? 'Unexpected response.'}`);
 if (text.trim()) console.log(text.trim());
 
