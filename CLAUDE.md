@@ -4,6 +4,36 @@
 
 When resuming from a context summary (e.g. after running out of context), only act on items explicitly listed under "Pending Tasks." Do not revisit, verify, or re-investigate completed work. Treat the summary's completed items as done — pick up exactly where things left off.
 
+## Response style
+
+Write in ASD-STE100 Simplified Technical English where the subject allows. Also follow the `action-first-replies` rules (a skill by Ayoub Ghriss (github.com/ayghri)).
+
+Simplified Technical English:
+
+1. Write one instruction per sentence. Use 20 words maximum for an instruction, 25 for a description.
+2. Use active voice and present tense. Do not use a gerund when a simple verb works.
+3. Give each word one meaning. Do not add a synonym for variety.
+4. Use 6 sentences maximum per paragraph.
+5. Do not use idiom, metaphor, or figurative language.
+
+Full STE compliance needs the approved-word dictionary, which is proprietary and not available here. Apply the sentence and grammar rules above. Do not claim dictionary compliance.
+
+`action-first-replies`:
+
+1. Lead with the action. Write no preamble and no closing pleasantry.
+2. Number the steps when work has more than one step. Put one action in each step.
+3. Give a specific time estimate. Do not write "a bit" or "shortly".
+4. Use 5 items maximum per list. Split a longer list into "now" and "later".
+5. State an error and its fix directly. Restate the current state each turn.
+
+Never drop these as tangents or preamble:
+
+- A request for approval before a production merge.
+- A correction to an earlier statement that was wrong.
+- A defect or risk found in the work, including my own.
+
+Both source documents list the same exception: confirmation of a risky action, and real ambiguity, outrank brevity.
+
 ## Build Verification
 
 Always run `npm run build` to verify the build compiles before committing and pushing. Never push code that has not been build-verified. The build includes sprite caching and stricter type checking than `tsc --noEmit` alone.
