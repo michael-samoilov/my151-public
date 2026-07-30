@@ -24,6 +24,8 @@ interface NameCatalog {
   species: string[];
   forms: Record<string, string>;
   formSource: Record<string, NameProvenance>;
+  /** One-grapheme form marker; see `formMark` in build-name-catalogs.ts. */
+  formMark: Record<string, string>;
   /**
    * Extra spellings a query might use, beyond the name itself — romaji, jamo
    * initials, pinyin. Absent for the Latin locales. Joined to the folded name
@@ -120,6 +122,39 @@ function speciesIndex(appId: number): number {
 export function formLabel(appId: number): string | null {
   const catalog = loaded.get(getLocale());
   return catalog?.forms[appId] ?? null;
+}
+
+/**
+ * The tile label, split so the parts can be laid out independently.
+ *
+ * `name` is the species name and is the part allowed to truncate. `mark` is the
+ * one-grapheme form marker and must not: putting it inside the truncating
+ * string is what made alt forms indistinguishable on a narrow tile, because the
+ * suffix is exactly the part a text overflow eats first. `full` is the whole
+ * thing spelled out, for the accessible name and the tooltip.
+ *
+ * Falls back to the app's own slug until the name catalog lands — a frame or
+ * two — which is what the tile rendered permanently before this.
+ */
+export interface PokemonLabel {
+  name: string;
+  mark: string | null;
+  full: string;
+}
+
+export function pokemonLabel(appId: number, slug: string): PokemonLabel {
+  const catalog = loaded.get(getLocale());
+  const species = speciesName(appId);
+  if (!catalog || !species) return { name: slug, mark: null, full: slug };
+  const mark = catalog.formMark[appId] ?? null;
+  const descriptor = catalog.forms[appId];
+  return {
+    name: species,
+    mark,
+    // "Raichu — Alolan Form". An em dash rather than a bracket because this is
+    // read aloud as often as it is seen.
+    full: descriptor ? `${species} — ${descriptor}` : species,
+  };
 }
 
 /**

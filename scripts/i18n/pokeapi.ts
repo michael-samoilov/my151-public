@@ -27,6 +27,8 @@ export const CSVS = [
   'pokemon_color_names',
   'egg_group_prose',
   'region_names',
+  'items',
+  'item_names',
 ] as const;
 
 export type CsvName = (typeof CSVS)[number];

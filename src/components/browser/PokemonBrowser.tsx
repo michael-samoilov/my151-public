@@ -961,7 +961,6 @@ export function PokemonBrowser() {
                     shinyIds={isSearching ? undefined : (sub.shinyIds ? new Set(sub.shinyIds) : shinyIds)}
                     spriteOverrides={isSearching ? undefined : spriteOverrides}
                     showGenBadges={showGenBadges}
-                    showFormVariant={activeArchetype === 'evolution-item'}
                   />
                 </div>
               </div>

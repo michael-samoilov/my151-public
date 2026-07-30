@@ -106,7 +106,20 @@ export async function initLocale(opts: {
   timeoutMs?: number;
 }): Promise<void> {
   const locale = resolveActiveLocale(opts);
-  if (locale === DEFAULT_LOCALE) return;
+
+  // English needs its name catalog too, and used to be the one locale that
+  // never got it: the early return below skipped `applyLocale`, which is what
+  // calls `loadNames`. That was invisible while the tile rendered the raw slug
+  // and became a bug the moment it stopped — English is where `Mr. Mime`,
+  // `Farfetch'd` and `Nidoran♀` come from, and without this they stay the
+  // mangled `Mr-Mime` the slug produces.
+  //
+  // Not awaited, here or in `applyLocale`: names are a separate, larger chunk,
+  // and the label falls back to the slug for the frame or two before they land.
+  if (locale === DEFAULT_LOCALE) {
+    void loadNames(DEFAULT_LOCALE);
+    return;
+  }
 
   const timeout = new Promise<void>((resolve) =>
     setTimeout(resolve, opts.timeoutMs ?? 1200),

@@ -29,6 +29,22 @@ export type NameProvenance = 'official' | 'official-composed';
 /** Regions whose forms the app carries, by PokeAPI region id. */
 const REGIONS: Record<string, number> = { alola: 7, galar: 8, hisui: 9, paldea: 10 };
 
+/**
+ * Alcremie's six sweets, which are *items* in the games and so have an official
+ * name in every language — `alcremie-berry` is the Alcremie holding a Berry
+ * Sweet. The form descriptor cannot supply a marker for these (English
+ * "Vanilla Cream Berry Sweet" abbreviates to `V` for all six), but the item
+ * noun can, in the languages that lead with it.
+ */
+const SWEET_ITEMS: Record<string, string> = {
+  'alcremie-berry': 'berry-sweet',
+  'alcremie-love': 'love-sweet',
+  'alcremie-star': 'star-sweet',
+  'alcremie-clover': 'clover-sweet',
+  'alcremie-flower': 'flower-sweet',
+  'alcremie-ribbon': 'ribbon-sweet',
+};
+
 interface NameCatalog {
   locale: string;
   /** Dense, indexed by speciesId - 1. */
@@ -37,6 +53,27 @@ interface NameCatalog {
   forms: Record<string, string>;
   /** Provenance for each form descriptor, same keys as `forms`. */
   formSource: Record<string, NameProvenance>;
+  /**
+   * A one-grapheme marker distinguishing an alt form from its species, for the
+   * tile label — `A` for Alolan, `ア` in Japanese, `阿` in Chinese.
+   *
+   * Only present where it can be *derived from an official noun*, which in
+   * practice means the regional forms: 57 of the app's 64. The reason is worth
+   * recording, because the obvious generalisation does not survive contact with
+   * the data. Abbreviating the composed form *label* works only in languages
+   * that put the distinguishing word first — English `Alolan Form`, Japanese
+   * `アローラのすがた` — and collapses in the ones that lead with a shared word:
+   * French `Forme d'Alola` and `Forme de Galar` both give `F`, and every one of
+   * Alcremie's six sweets gives `Z` in German (`Zucker-…`), `C` in Spanish
+   * (`Confite…`) and `B` in Italian (`Bonbon…`).
+   *
+   * So the marker comes from the region's own name, which is a bare noun in all
+   * nine languages and whose first grapheme is unique across the four regions in
+   * every one of them. Forms with no such noun get no marker rather than an
+   * invented one; their sprite and type badges carry the distinction, which is
+   * how the games distinguish them too.
+   */
+  formMark: Record<string, string>;
   /**
    * Extra spellings a query might use, beyond the name itself: Hepburn romaji
    * in Japanese, jamo initials in Korean, pinyin and its initials in Chinese.
@@ -72,6 +109,13 @@ async function main(): Promise<void> {
   const formNames = new Map<string, string>();
   for (const r of readCsv('pokemon_form_names')) {
     if (r.form_name) formNames.set(`${r.pokemon_form_id}:${r.local_language_id}`, r.form_name);
+  }
+
+  const itemIdBySlug = new Map<string, number>();
+  for (const r of readCsv('items')) itemIdBySlug.set(r.identifier, Number(r.id));
+  const itemNames = new Map<string, string>();
+  for (const r of readCsv('item_names')) {
+    itemNames.set(`${r.item_id}:${r.local_language_id}`, r.name);
   }
 
   const regionNames = new Map<string, string>();
@@ -121,11 +165,57 @@ async function main(): Promise<void> {
       species: Array.from({ length: maxSpecies }, (_, i) => speciesNames.get(`${i + 1}:${langId}`) ?? ''),
       forms: {},
       formSource: {},
+      formMark: {},
     };
+
+    // First grapheme, not first code unit: Korean syllables and any character
+    // outside the BMP would be cut in half by `[0]`.
+    const firstGrapheme = (text: string): string => {
+      const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+      return [...seg.segment(text.normalize('NFC'))][0]?.segment ?? '';
+    };
+
+    /**
+     * Sweet markers, but only where they actually distinguish.
+     *
+     * The first grapheme of the item name separates all six in the languages
+     * that put the distinguishing noun first — English `Berry Sweet`, Japanese
+     * `ベリーアメざいく`, Chinese `野莓糖饰` — and separates none of them in the
+     * ones that lead with the shared word: German `Zucker-Beere` and
+     * `Zucker-Herz` both give `Z`, Spanish `Confite…` gives `C` six times,
+     * Italian `Bonbon…` gives `B`. Rather than show six identical markers,
+     * which claims a distinction it is not making, those languages get none and
+     * fall back to the sprite.
+     */
+    const sweetMarks = new Map<string, string>();
+    {
+      const candidates = Object.entries(SWEET_ITEMS).map(([appName, slug]) => {
+        const id = itemIdBySlug.get(slug);
+        const name = id === undefined ? undefined : itemNames.get(`${id}:${langId}`);
+        return { appName, mark: name ? firstGrapheme(name) : '' };
+      });
+      const marks = candidates.map((c) => c.mark);
+      const usable = marks.every(Boolean) && new Set(marks).size === marks.length;
+      if (usable) for (const c of candidates) sweetMarks.set(c.appName, c.mark);
+    }
 
     let official = 0;
     let composed = 0;
+    let marked = 0;
     for (const entry of entries) {
+      const markRegion = regionOf(entry.appName);
+      const sweet = sweetMarks.get(entry.appName);
+      if (markRegion) {
+        const noun = regionName(markRegion);
+        if (noun) {
+          catalog.formMark[entry.appId] = firstGrapheme(noun);
+          marked += 1;
+        }
+      } else if (sweet) {
+        catalog.formMark[entry.appId] = sweet;
+        marked += 1;
+      }
+
       const descriptor = formNames.get(`${entry.formId}:${langId}`);
       if (descriptor) {
         catalog.forms[entry.appId] = descriptor;
@@ -152,7 +242,7 @@ async function main(): Promise<void> {
     writeFileSync(`${OUT_DIR}/${locale}.json`, `${JSON.stringify(catalog)}\n`);
     const named = catalog.species.filter(Boolean).length;
     summary.push(
-      `  ${locale.padEnd(8)} ${String(named).padStart(4)} species   ${String(official).padStart(3)} official forms   ${String(composed).padStart(3)} composed   ${pattern ?? '(no pattern)'}`,
+      `  ${locale.padEnd(8)} ${String(named).padStart(4)} species   ${String(official).padStart(3)} official forms   ${String(composed).padStart(3)} composed   ${String(marked).padStart(3)} marked   ${pattern ?? '(no pattern)'}`,
     );
   }
 

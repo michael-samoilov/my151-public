@@ -29,6 +29,7 @@ interface NameCatalogFile {
   species: string[];
   forms: Record<string, string>;
   formSource: Record<string, NameProvenance>;
+  formMark: Record<string, string>;
   affix?: string[];
 }
 

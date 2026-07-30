@@ -80,7 +80,6 @@ function LocaleChips({ onPick, pending }: { onPick: (l: Locale) => void; pending
 
 export function LanguagePicker() {
   const t = useT();
-  const active = useLocale();
   const setLocale = usePokedexStore((s) => s.setLocale);
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState<Locale | null>(null);
@@ -124,19 +123,14 @@ export function LanguagePicker() {
         onClick={() => setOpen((o) => !o)}
         className="flex items-center gap-1 h-9 px-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
       >
+        {/* The globe alone, at every width. It briefly carried the current
+            language's endonym from `sm:` up, on the theory that the extra word
+            aided discovery. It does not: a globe is already the near-universal
+            sign for this control, and the word beside it is in the language
+            someone opening the menu is most likely trying to leave. Dropping it
+            also takes a variable-width string out of the header's tightest
+            row. */}
         <Globe className="w-4 h-4" />
-        {/* The current language, from `sm:` up — there is room, and it doubles
-            as discoverability. Never on mobile: it would be rendered in the
-            language the user is trying to leave. */}
-        <span
-          className="hidden sm:inline text-xs"
-          lang={htmlLang(active)}
-          // An endonym is a language's own name for itself, so it is the one
-          // string in the app that must never be translated or pseudo-localised.
-          data-i18n-exempt="endonym"
-        >
-          {LOCALE_META[active].endonym}
-        </span>
       </button>
 
       {/* Desktop: anchored dropdown. */}

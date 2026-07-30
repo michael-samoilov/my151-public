@@ -119,7 +119,6 @@ interface EvoLineGridProps {
   matchupInfo?: Map<number, { offense: number; defense: number; bestDefenseType: TypeName }>;
   /** The type being matched — required when matchupInfo is present */
   matchupType?: TypeName;
-  showFormVariant?: boolean;
 }
 
 const GRID_CLASSES: Record<number, string> = {
@@ -128,7 +127,7 @@ const GRID_CLASSES: Record<number, string> = {
 };
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, showFormVariant }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType }: EvoLineGridProps) {
   // Canonical Pokemon-tile sprite size — shared with the build page so
   // Charizard (etc.) renders identically in the selection pane and in a
   // section tile at the same viewport width. See `PokemonTile.tsx`.
@@ -169,14 +168,13 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
           matchupInfo={matchupInfo}
           matchupType={matchupType}
           spritePx={spritePx}
-          showFormVariant={showFormVariant}
         />
       );
       col = (col + size) % cols;
     }
 
     return result;
-  }, [groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx, showFormVariant]);
+  }, [groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx]);
 
   return (
     <div className={GRID_CLASSES[cols] ?? `grid gap-x-0 gap-y-1`} style={{ ...(GRID_CLASSES[cols] ? {} : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }), maxWidth: gridMaxW, marginInline: gridMaxW ? 'auto' : undefined }}>
@@ -212,7 +210,6 @@ interface EvoLineCardProps {
   matchupType?: TypeName;
   /** Pixel-perfect sprite size in CSS px */
   spritePx: number;
-  showFormVariant?: boolean;
 }
 
 function formatMult(v: number): string {
@@ -237,7 +234,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, showFormVariant }: EvoLineCardProps) {
+function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
   // Shared press state so clicking any member shrinks the *whole* evo line
@@ -403,7 +400,6 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                     ?? (shinyIds?.has(pokemon.id)
                       ? pokemon.sprite.replace('/pokemon/', '/pokemon/shiny/')
                       : pokemon.sprite)}
-                  showFormVariant={showFormVariant}
                   contentClassName={cn(
                     markedForRemoval
                       ? 'opacity-30'

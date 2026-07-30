@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { cn, displayName } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { useFluidSpritePx, useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { Pokemon, TypeName } from '@/types/pokemon';
@@ -145,7 +146,6 @@ interface PokemonTileContentProps {
    *  preload sprites to avoid a blank→load flicker on swipe. */
   imgLoading?: 'lazy' | 'eager';
   /** Show form-variant suffix for base forms with exclusive alternatives. */
-  showFormVariant?: boolean;
 }
 
 /**
@@ -161,13 +161,16 @@ export function PokemonTileContent({
   contentClassName,
   afterTypes,
   imgLoading = 'lazy',
-  showFormVariant = false,
 }: PokemonTileContentProps) {
   // The IMG is larger than its layout footprint (--tile-sprite), so it
   // nearly fills and slightly overflows the grid column, centered. The well
   // is a fixed imagePx square so the bottom-aligned sprite has a stable box
   // regardless of the column width.
   const imagePx = useTileImagePx();
+  // Re-render when the name catalog lands: it is fetched after first paint, so
+  // the first frame legitimately shows the slug.
+  useNamesVersion();
+  const label = pokemonLabel(pokemon.id, pokemon.name);
   return (
     <div className={cn('flex flex-col items-center w-full', contentClassName)}>
       {/*
@@ -202,8 +205,32 @@ export function PokemonTileContent({
           style={{ imageRendering: 'pixelated', maxWidth: 'none' }}
         />
       </div>
-      <span data-i18n-exempt="pokemon-name" className="text-[calc(var(--tile-sprite)*0.18)] font-medium capitalize truncate text-center leading-tight w-full px-[calc(var(--tile-sprite)*0.045)]">
-        {displayName(pokemon.name, showFormVariant)}
+      {/* Species name and form marker are separate boxes, because they have
+          opposite jobs. The name may truncate — it is long, and the tile is
+          narrow. The marker may not: it is the only thing on the label that
+          says which form this is, and when both lived in one string the
+          overflow ate the suffix first, so "Raichu-A" and "Raichu" rendered
+          identically on exactly the tiles where telling them apart matters.
+
+          The marker is `flex-shrink-0`, so it survives whatever the name has
+          to give up. The full form name is on the title and the accessible
+          name, since a single grapheme is a reminder rather than an
+          explanation. */}
+      <span
+        data-i18n-exempt="pokemon-name"
+        className="flex items-baseline justify-center gap-[0.15em] w-full px-[calc(var(--tile-sprite)*0.045)] text-[calc(var(--tile-sprite)*0.18)] font-medium leading-tight"
+        title={label.full}
+        aria-label={label.full}
+      >
+        <span className="truncate">{label.name}</span>
+        {label.mark && (
+          <span
+            aria-hidden
+            className="flex-shrink-0 text-[0.8em] font-semibold opacity-70 tabular-nums"
+          >
+            {label.mark}
+          </span>
+        )}
       </span>
       <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.03)] mt-[calc(var(--tile-sprite)*0.045)] w-full">
         {pokemon.types.map((t) => (
