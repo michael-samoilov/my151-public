@@ -10,7 +10,20 @@ Always run `npm run build` to verify the build compiles before committing and pu
 
 ## Deployment
 
-Vercel auto-deploys from the `claude/pokedex-region-builder-AviYF` branch. After committing to any work branch, always merge into and push `claude/pokedex-region-builder-AviYF` so changes go live. Do not push only to the work branch — the deploy branch must be updated every time.
+**The app has real users. `claude/pokedex-region-builder-AviYF` is production — never push to it without explicit approval in the current conversation.**
+
+Work on a preview branch by default:
+
+1. Commit to the work branch and push it (`git push -u origin <work-branch>`). Vercel builds a **preview deployment** for any pushed branch — that is where changes get verified.
+2. Report the preview to the user and let them look. Nothing reaches production on your own initiative.
+3. Merge into and push `claude/pokedex-region-builder-AviYF` **only after the user says to ship it.** Approval is per-change: shipping one change is not standing permission for the next.
+
+When in doubt, push the preview branch and ask. A change sitting on a preview branch costs nothing; an unapproved production deploy is seen by users.
+
+Two notes on scope, since "it's only SEO/config" is exactly how unapproved changes reach users:
+
+- **Meta tags, `robots.txt`, `sitemap.xml` and other crawler-only files are still production changes.** They are lower-risk, not zero-risk, and still need approval before merging.
+- **Check whether a change is user-visible before calling it invisible.** `theme-color` tints mobile browser chrome; markup inside `#root` renders until React mounts. The app currently runs in **light** mode — the `.dark` block in `index.css` exists but nothing ever applies the class — so dark-themed additions will mismatch the live UI.
 
 ## Responsive sizing
 
