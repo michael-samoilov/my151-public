@@ -1,4 +1,4 @@
-import { TYPE_BADGE, TYPE_BADGE_H, typeBadgeFontSize } from '@/lib/typeBadgeGeometry';
+import { TYPE_BADGE, typeBadgeFontSize } from '@/lib/typeBadgeGeometry';
 
 /**
  * Fitting an official type name into the badge.
@@ -101,7 +101,7 @@ import { TYPE_BADGE, TYPE_BADGE_H, typeBadgeFontSize } from '@/lib/typeBadgeGeom
  * and 72 right before the edge. Twice the tighter of the two, because the text
  * is centre-anchored and grows both ways.
  */
-export const TYPE_BADGE_TEXT_WIDTH = 130;
+const TYPE_BADGE_TEXT_WIDTH = 130;
 
 /**
  * How far the condense may go past the base 0.76 before the remaining overflow
@@ -114,7 +114,7 @@ export const TYPE_BADGE_TEXT_WIDTH = 130;
 const MIN_CONDENSE = 0.82;
 
 /** True if the string contains kana, Hangul or Han. */
-export function isCjkText(text: string): boolean {
+function isCjkText(text: string): boolean {
   return /[぀-ヿ㐀-䶿一-鿿豈-﫿가-힯]/.test(text);
 }
 
@@ -276,13 +276,3 @@ export function typeBadgeFontStack(): string {
   measureContext();
   return fontStack || 'sans-serif';
 }
-
-/** Test seam: forget every measurement, as a font load would. */
-export function resetTypeBadgeFit(): void {
-  cache = new Map();
-  ctx = null;
-  fontStack = '';
-}
-
-/** The pill's own height, re-exported so callers need one import. */
-export { TYPE_BADGE_H };
