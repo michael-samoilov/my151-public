@@ -23,6 +23,11 @@ import type { NoArgKey } from '@/i18n';
  * The chip sends a stable enum key, never its label. A translated label round-
  * tripped through the API would arrive as `Falsche Übersetzung` and match
  * nothing.
+ *
+ * There is deliberately no email field. Asking for one solicits PII for a
+ * channel that has no way to reply anyway, and a form that asks reads as a form
+ * that expects — someone who wants a response can put an address in the
+ * message, which is their initiative rather than our prompt.
  */
 
 // `NoArgKey` rather than `MessageKey`: a plain `MessageKey` annotation widens
@@ -71,7 +76,6 @@ function FeedbackForm({
   const t = useT();
   const [category, setCategory] = useState<FeedbackCategory>(initialCategory);
   const [message, setMessage] = useState('');
-  const [contact, setContact] = useState('');
   const [website, setWebsite] = useState(''); // honeypot
   const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
   // Set on mount rather than during render — the dwell check needs the moment
@@ -117,7 +121,6 @@ function FeedbackForm({
         const ok = await sendFeedback({
           category,
           message: message.trim(),
-          contact: contact.trim() || undefined,
           context,
           website,
           dwellMs: Date.now() - openedAt.current,
@@ -155,19 +158,6 @@ function FeedbackForm({
           onChange={(e) => setMessage(e.target.value)}
           placeholder={t('feedback.message.placeholder')}
           className="w-full rounded-md border bg-background px-2 py-1.5 text-sm resize-y"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium">
-          {t('feedback.contact.label')}{' '}
-          <span className="font-normal text-muted-foreground">{t('feedback.contact.hint')}</span>
-        </span>
-        <input
-          type="email"
-          value={contact}
-          onChange={(e) => setContact(e.target.value)}
-          className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
         />
       </label>
 

@@ -27,7 +27,6 @@ const CATEGORIES = new Set(['bug', 'translation', 'idea', 'data', 'other']);
 
 const MIN_MESSAGE = 4;
 const MAX_MESSAGE = 1000;
-const MAX_CONTACT = 200;
 /** Serialized context cap. Rejected rather than truncated — a silently clipped
  *  context is worse than none, because it reads as complete. */
 const MAX_CONTEXT_BYTES = 4096;
@@ -144,10 +143,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     if (urlCount(message) >= 3) return res.status(400).json({ error: 'invalid message' });
 
-    const contact = str(body.contact, MAX_CONTACT);
-    if (body.contact != null && body.contact !== '' && !contact) {
-      return res.status(400).json({ error: 'invalid contact' });
-    }
+    // No contact field: the form deliberately does not ask for one, so anything
+    // arriving here claiming to be an address is either an old client or a bot.
+    // Dropped rather than stored — an endpoint that quietly accepts PII it never
+    // asked for is the same problem as a form that asks.
 
     const dwellMs = typeof body.dwellMs === 'number' ? body.dwellMs : 0;
     if (dwellMs < MIN_DWELL_MS) return res.status(400).json({ error: 'too fast' });
@@ -198,7 +197,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ts: now,
       category,
       message,
-      ...(contact ? { contact } : {}),
       ...(cid ? { cid } : {}),
       ipHash,
       ...(country ? { country: String(country).slice(0, 4) } : {}),

@@ -158,8 +158,6 @@ export const enUi = {
   'feedback.category.idea': 'Idea',
   'feedback.category.other': 'Other',
   'feedback.category.translation': 'Wrong translation',
-  'feedback.contact.hint': '— only if you want a reply',
-  'feedback.contact.label': 'Email',
   'feedback.context.note': 'Your Pokédex and whatever you typed in the search box are never sent. The server also records your country and a one-way hash of your IP address, so repeat reports can be grouped without storing where you are.',
   'feedback.context.summary': 'What gets sent',
   'feedback.failed': 'That didn\'t send. Try again in a moment.',

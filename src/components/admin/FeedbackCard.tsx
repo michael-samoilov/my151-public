@@ -28,7 +28,6 @@ interface FeedbackItem {
   ts: number;
   category: string;
   message: string;
-  contact?: string;
   cid?: string;
   ipHash?: string;
   country?: string;
@@ -83,7 +82,6 @@ function asIssue(item: FeedbackItem): string {
     '',
     '</details>',
   ];
-  if (item.contact) lines.push('', `Reply to: ${item.contact}`);
   return lines.join('\n');
 }
 
@@ -119,12 +117,6 @@ function Row({ item, seen, onToggle }: { item: FeedbackItem; seen: boolean; onTo
       </div>
 
       <p className="whitespace-pre-wrap break-words">{item.message}</p>
-
-      {item.contact && (
-        <p className="text-muted-foreground">
-          reply to <span className="font-mono">{item.contact}</span>
-        </p>
-      )}
 
       <div className="flex gap-3">
         <button

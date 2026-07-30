@@ -91,7 +91,6 @@ export type FeedbackCategory = 'bug' | 'translation' | 'idea' | 'data' | 'other'
 export interface FeedbackSubmission {
   category: FeedbackCategory;
   message: string;
-  contact?: string;
   context: FeedbackContext;
   /** Honeypot: a field only an automated form-filler will populate. */
   website?: string;

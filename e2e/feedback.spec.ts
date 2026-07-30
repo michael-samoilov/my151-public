@@ -13,7 +13,6 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 interface Captured {
   category?: string;
   message?: string;
-  contact?: string;
   cid?: string;
   dwellMs?: number;
   website?: string;
