@@ -1,8 +1,9 @@
-import type {
-  ColorName,
-  EggGroupName,
-  ShapeName,
-  TypeName,
+import {
+  TYPE_NAMES,
+  type ColorName,
+  type EggGroupName,
+  type ShapeName,
+  type TypeName,
 } from '@/types/pokemon';
 import { translate } from './core';
 import type { MessageKey } from './types';
@@ -94,6 +95,17 @@ const SHAPE_KEYS = {
 
 export function typeLabel(type: TypeName): string {
   return translate(TYPE_KEYS[type]);
+}
+
+/**
+ * All eighteen type names in the active locale.
+ *
+ * The type badge sizes its text from this set rather than from the one word it
+ * is drawing, so every badge in a language shares one cap height instead of
+ * each finding its own — see `src/lib/typeBadgeFit.ts`.
+ */
+export function typeLabels(): string[] {
+  return TYPE_NAMES.map(typeLabel);
 }
 
 export function colorLabel(color: ColorName): string {

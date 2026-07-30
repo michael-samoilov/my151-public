@@ -1,14 +1,13 @@
 import type { TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { typeLabel, localeUppercase } from '@/i18n';
+import { typeLabel, typeLabels, localeUppercase } from '@/i18n';
 import {
   TYPE_BADGE,
   TYPE_BADGE_H,
   TYPE_BADGE_W,
-  typeBadgeBaseline,
-  typeBadgeFontSize,
   typeBadgeGlyphBox,
 } from '@/lib/typeBadgeGeometry';
+import { typeBadgeFit, typeBadgeFontStack } from '@/lib/typeBadgeFit';
 
 /**
  * The canvas twin of `<TypeBadge>`.
@@ -60,19 +59,22 @@ export function drawTypeBadge(
   }
 
   const label = localeUppercase(typeLabel(type));
-  const size = typeBadgeFontSize() * s;
-  ctx.font = `${TYPE_BADGE.fontWeight} ${size}px 'Inter Variable', system-ui, sans-serif`;
+  // The same measured fit the SVG uses, from the same module — so a long
+  // Italian name is condensed identically in the poster and on screen.
+  const fit = typeBadgeFit(label, typeLabels().map(localeUppercase));
+  ctx.font = `${TYPE_BADGE.fontWeight} ${fit.fontSize * s}px ${typeBadgeFontStack()}`;
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
-  // Alphabetic, then shifted — the same cap-height centring the SVG does, and
+  // Alphabetic, then shifted — the same baseline placement the SVG does, and
   // for the same reason: 'middle' is the em-box middle, which is right for CJK
-  // and visibly low for Latin.
+  // and visibly low for Latin. `fit.baseline` already carries the per-script
+  // correction, so this stays a plain alphabetic draw.
   ctx.textBaseline = 'alphabetic';
   // Condensed about the text centre, the same way the SVG does it.
   const cx = x + TYPE_BADGE.textCenterX * s;
   ctx.translate(cx, 0);
-  ctx.scale(TYPE_BADGE.textScaleX, 1);
+  ctx.scale(fit.scaleX, 1);
   ctx.translate(-cx, 0);
-  ctx.fillText(label, cx, y + typeBadgeBaseline() * s);
+  ctx.fillText(label, cx, y + fit.baseline * s);
   ctx.restore();
 }

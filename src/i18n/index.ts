@@ -23,7 +23,7 @@ export {
 
 export { matchLocale, negotiateLocale, localeFromUrl, resolveLocale } from './detect';
 
-export { typeLabel, colorLabel, eggGroupLabel, shapeLabel } from './terms';
+export { typeLabel, typeLabels, colorLabel, eggGroupLabel, shapeLabel } from './terms';
 
 export {
   sectionName,

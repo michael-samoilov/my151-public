@@ -10,21 +10,40 @@ import { expect, test } from '@playwright/test';
  * once, which makes it the natural place to do it — and means this measures the
  * real component in a real page, not a test harness's copy of it.
  *
- * The two extremes to watch are Italian `Coleottero` (the longest Latin name)
- * and Japanese `フェアリー` — five full-width katakana, wider than any Latin
- * name despite half the characters.
+ * The words themselves are not negotiable. They are dumped from Scarlet and
+ * Violet's own `typename` table (`docs/i18n/sources/scarlet-violet-typenames.json`,
+ * asserted by `npm run i18n:verify`), so the badge has to fit whatever the game
+ * says — including Italian `Coleottero`, a third wider than the space the
+ * English-tuned geometry reserves. That is what `src/lib/typeBadgeFit.ts` exists
+ * to solve, and this is what proves it solved it.
+ *
+ * Everything below is asserted for all nine languages. An earlier version of
+ * this spec asserted only English and printed the rest as annotations, because
+ * the rest genuinely did not fit; leaving that in place now would mean the
+ * fitting work had no test.
+ *
+ * The numbers are written out as literals rather than imported from
+ * `typeBadgeGeometry.ts`. A spec that recomputes its expectations from the
+ * module under test passes by construction.
  */
 
 const LOCALES = ['en', 'ja', 'ko', 'zh-Hans', 'zh-Hant', 'fr', 'de', 'es', 'it'] as const;
 
-
-
-/** The badge's own coordinate height, mirrored from typeBadgeGeometry.ts. */
+/** The badge's own coordinate height. */
 const TYPE_BADGE_H = 40;
+/** The target ink band: 24 units tall, centred 1 unit below the pill's middle. */
+const CAP_HEIGHT = 24;
+const INK_CENTER = 21;
+/**
+ * The space the word may occupy. The symbol's box ends at 45 and the pill's
+ * inset is 15, and the word is centre-anchored at 113 — so it may run 65 units
+ * left before touching the symbol and 72 right before the edge.
+ */
+const TEXT_WIDTH = 130;
 
 interface Measurement {
   label: string;
-  /** Text width as a fraction of the reserved text box. >1 overflows the pill. */
+  /** Painted width as a fraction of the reserved box. >1 overflows the pill. */
   fill: number;
   /** Vertical centre of the painted glyphs, in the badge's own 0-40 units. */
   inkCenter: number;
@@ -45,39 +64,38 @@ async function measure(page: import('@playwright/test').Page, locale: string): P
   const grid = page.locator('[data-testid="type-filter"]');
   await expect(grid.locator('svg[role="img"]')).toHaveCount(18);
 
-  return grid.evaluate((root) => {
-    // The space the word may occupy, in the badge's own 200x40 units, written
-    // out rather than imported from typeBadgeGeometry.ts: a spec that
-    // recomputed its expectations from the module under test would pass by
-    // construction. The symbol's box ends at 45 and the pill's own inset is 15,
-    // and the word is anchored at 113 — so it may run 65 units left before it
-    // touches the symbol and 72 right before the edge; 130 is twice the
-    // tighter of the two.
-    const TEXT_WIDTH = 130;
-    const FONT_SIZE = 24 / 0.727;
-    const BASELINE = 21 + 24 / 2;
+  // The badge measures itself against the resolved font and throws those
+  // measurements away once the webfont lands. Reading before that settles would
+  // catch a frame sized for a fallback face.
+  await page.evaluate(() => document.fonts.ready);
 
+  return grid.evaluate((root) => {
     const ctx = document.createElement('canvas').getContext('2d')!;
     return Array.from(root.querySelectorAll('svg[role="img"]')).map((svg) => {
       const text = svg.querySelector('text') as SVGTextElement;
       const label = text.textContent ?? '';
-      const b = text.getBBox();
 
-      // getBBox gives the *layout* box, which is the font's ascent and descent
-      // and so says nothing about where the glyphs actually sit. Canvas's
-      // actualBoundingBox* are true ink extents for these exact characters, in
-      // the same font the SVG resolved — which is the only way to see the
-      // Latin-vs-CJK offset this badge is designed to avoid.
+      // Read what was actually rendered rather than recomputing it: the font
+      // size and baseline are chosen per string, and the condense lives on the
+      // parent <g>'s transform. Taking all three off the DOM is what makes this
+      // a measurement of the component rather than a restatement of it.
       const style = getComputedStyle(text);
-      ctx.font = `700 ${FONT_SIZE}px ${style.fontFamily}`;
+      const fontSize = parseFloat(text.getAttribute('font-size') ?? style.fontSize);
+      const baseline = parseFloat(text.getAttribute('y') ?? '0');
+      const scaleX = (svg.querySelector('g') as SVGGElement).transform.baseVal.consolidate()?.matrix.a ?? 1;
+
+      // Canvas `actualBoundingBox*` are true ink extents for these exact
+      // characters in the same font the SVG resolved — the only way to see the
+      // Latin-vs-CJK offset this badge is designed to remove. `getBBox` would
+      // give the layout box, which is the font's ascent and descent and so says
+      // nothing about where the glyphs actually sit.
+      ctx.font = `${style.fontWeight} ${fontSize}px ${style.fontFamily}`;
       const m = ctx.measureText(label);
-      const inkCenter = BASELINE - (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
 
       return {
         label,
-        // The rendered advance, condensed the way the badge condenses it.
-        fill: (b.width * 0.76) / TEXT_WIDTH,
-        inkCenter,
+        fill: (m.width * scaleX) / 130,
+        inkCenter: baseline - (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2,
         inkHeight: m.actualBoundingBoxAscent + m.actualBoundingBoxDescent,
         height: svg.getBoundingClientRect().height,
       };
@@ -87,85 +105,62 @@ async function measure(page: import('@playwright/test').Page, locale: string): P
 
 test.describe('type badge', () => {
   for (const locale of LOCALES) {
-    test(`${locale}: every type name fits its badge`, async ({ page }) => {
+    test(`${locale}: every official type name fits its badge`, async ({ page }) => {
       const rows = await measure(page, locale);
 
       // A missing catalog entry would render a blank pill, which reads as
       // deliberate rather than broken.
       expect(rows.filter((r) => !r.label.trim())).toEqual([]);
 
-      // English is the tuned case: the badge's geometry was measured off the
-      // official English art, so English must fit with room to spare.
-      //
-      // At that size several other languages do not, and that is a real finding
-      // rather than something to loosen the bound over — the games hit the same
-      // wall and answered it by abbreviating (Italian shortens Bug on its own
-      // badge). Per-locale fitting is the next piece of work; until it lands
-      // every run prints how far over each language is, rather than asserting a
-      // hard-coded list that would go stale and, for CJK, be measured against
-      // whichever fallback font happened to have loaded.
-      const tight = rows
-        .filter((r) => r.fill > 0.95)
+      // No word may be wider than the space reserved for it. 1.01 rather than
+      // 1.0 because the fit is computed from the same measurement this repeats,
+      // and float rounding through an SVG transform matrix lands a hair either
+      // side.
+      const overflowing = rows
+        .filter((r) => r.fill > 1.01)
         .map((r) => `${r.label} ${(r.fill * 100).toFixed(0)}%`);
-      if (locale === 'en') {
-        expect(tight, 'English is the tuned case and must fit').toEqual([]);
-      } else if (tight.length) {
-        test.info().annotations.push({ type: 'needs fitting', description: tight.join(', ') });
-      }
+      expect(overflowing, 'these words are wider than the pill reserves').toEqual([]);
 
       // Height comes from the viewBox, so differing heights would mean some
       // badge's content had escaped and stretched its box.
       const heights = new Set(rows.map((r) => Math.round(r.height)));
       expect([...heights], 'pills rendered at different heights').toHaveLength(1);
 
-      // The painted glyphs must sit on the pill's centre. This is the assertion
-      // the badge's SVG-instead-of-flexbox design exists to satisfy: a flex box
-      // centres the *line box*, whose height is the font's ascent and descent,
-      // and Latin and CJK fonts disagree about those by ~20% — so one rule
-      // lands the two scripts at visibly different heights. The badge puts its
-      // baseline a fixed fraction of the font size below centre instead, which
-      // reads no font metrics at all.
+      // The painted glyphs must sit on the pill's optical centre — which the
+      // art puts a whole unit below the pill's geometric centre, a deliberate
+      // offset that only shows up in a measurement.
+      //
+      // This is the assertion the badge's SVG-instead-of-flexbox design exists
+      // to satisfy, and the one that used to be English-only: a flex box centres
+      // the *line box*, whose height is the font's ascent and descent, and Latin
+      // and CJK fonts disagree about those by ~20%, so one rule lands the two
+      // scripts at visibly different heights.
       //
       // Averaged across the eighteen names, because a single word's ink centre
-      // legitimately moves with its letters: `Bug` has a descender and `Normal`
-      // does not, and typography centres on the cap band, not on each word's
-      // own extents. A systematic per-script offset is what this catches.
-      const ys = rows.map((r) => r.inkCenter);
-      const mean = ys.reduce((a, y) => a + y, 0) / ys.length;
-      const offset = mean - TYPE_BADGE_H / 2;
-      if (locale === 'en') {
-        // The art puts its text's ink centre a whole unit below the badge's own
-        // centre — a deliberate optical offset that only shows up in a
-        // measurement — and the badge is built to land there.
-        expect(
-          Math.abs(offset - 1),
-          `English paints its words at ${mean.toFixed(2)}; the art paints them at 21`,
-        ).toBeLessThan(1.5);
-      } else {
-        // CJK sits lower against the same baseline than Latin capitals do, so a
-        // baseline tuned to the English art paints it ~3 units low. Reported
-        // rather than asserted: a per-script vertical target is part of the same
-        // per-locale fitting the width overflow needs.
-        test.info().annotations.push({
-          type: 'vertical',
-          description: `ink centre ${mean.toFixed(2)} vs 21 for the tuned case`,
-        });
-      }
+      // legitimately moves with its letters and typography centres on the band,
+      // not on each word's own extents. A systematic per-script offset — the
+      // thing that put Japanese three units low — is what this catches.
+      const mean = rows.reduce((a, r) => a + r.inkCenter, 0) / rows.length;
+      expect(
+        Math.abs(mean - INK_CENTER),
+        `${locale} paints its words at ${mean.toFixed(2)}; the art paints them at ${INK_CENTER}`,
+      ).toBeLessThan(1.5);
 
-      // And no word may be painted outside the pill it sits in. Asserted for
-      // the tuned case; for the others it is the same Latin-tuned baseline
-      // pushing CJK down, so it is reported with the rest of the fitting work.
+      // And both scripts must paint the same size band, which is what makes a
+      // Japanese badge and an Italian one read as one design rather than two.
+      // Generous, because a long word that had to shrink to fit legitimately
+      // paints a shorter band than a short one.
+      const meanInk = rows.reduce((a, r) => a + r.inkHeight, 0) / rows.length;
+      expect(
+        Math.abs(meanInk - CAP_HEIGHT),
+        `${locale} paints a ${meanInk.toFixed(1)}-unit band; the art paints ${CAP_HEIGHT}`,
+      ).toBeLessThan(4);
+
+      // No word may be painted outside the pill it sits in.
       const clipped = rows.filter(
         (r) => r.inkCenter - r.inkHeight / 2 < 0 || r.inkCenter + r.inkHeight / 2 > TYPE_BADGE_H,
       );
-      if (locale === 'en') {
-        expect(clipped.map((r) => r.label), 'these words overflow the pill vertically').toEqual([]);
-      } else if (clipped.length) {
-        test.info().annotations.push({
-          type: 'vertical overflow',
-          description: clipped.map((r) => r.label).join(', '),
-        });
-      }
+      expect(clipped.map((r) => r.label), 'these words overflow the pill vertically').toEqual([]);
 
       // Recorded so a regression report carries the actual number, and so the
       // widest name in each language stays visible in the run log.
@@ -173,8 +168,8 @@ test.describe('type badge', () => {
       test.info().annotations.push({
         type: 'widest',
         description:
-          `${worst.label} fills ${(worst.fill * 100).toFixed(0)}% · ` +
-          `ink centre ${mean.toFixed(2)} of ${TYPE_BADGE_H / 2}`,
+          `${worst.label} fills ${(worst.fill * 100).toFixed(0)}% of ${TEXT_WIDTH} · ` +
+          `ink centre ${mean.toFixed(2)} · band ${meanInk.toFixed(1)}`,
       });
     });
   }

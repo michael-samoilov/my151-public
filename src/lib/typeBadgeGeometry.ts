@@ -94,19 +94,26 @@ export function typeBadgeFontSize(): number {
 }
 
 /**
- * Baseline y for the label.
+ * Where the baseline went.
  *
- * Cap-height centring, and this is the whole reason the badge is an SVG rather
- * than a flex box. A flex box centres the *line box*, whose height comes from
- * the font's ascent and descent — and Noto CJK's are ~20% taller than Inter's
- * and disagree with its own `typo` metrics, so the same rule lands CJK and
- * Latin text at visibly different heights inside a fixed pill. Placing the
- * baseline half a cap height below the target ink centre reads no font metrics
- * at render time at all.
+ * This module used to export a `typeBadgeBaseline()` of
+ * `textCenterY + capHeight / 2` — cap-height centring, and the whole reason the
+ * badge is an SVG rather than a flex box. A flex box centres the *line box*,
+ * whose height comes from the font's ascent and descent, and Noto CJK's are
+ * ~20% taller than Inter's and disagree with its own `typo` metrics, so one
+ * rule lands the two scripts at visibly different heights inside a fixed pill.
+ *
+ * That formula is still what Latin uses, and it still reads no font metrics.
+ * It just isn't the whole answer any more: CJK has no cap height to centre on,
+ * and the official Italian and Spanish names are wider than the space this
+ * geometry reserves. Both are now handled in `src/lib/typeBadgeFit.ts`, which
+ * owns the baseline, the size and the condense together — they interact, so
+ * splitting them across two modules meant callers had to recombine them and
+ * could get it subtly wrong.
+ *
+ * The constants above are unchanged and remain the measured record of the
+ * official art. `typeBadgeFit` starts from them.
  */
-export function typeBadgeBaseline(): number {
-  return TYPE_BADGE.textCenterY + TYPE_BADGE.capHeight / 2;
-}
 
 /** The symbol's box, in 200x40 units. */
 export function typeBadgeGlyphBox() {

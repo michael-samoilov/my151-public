@@ -2,15 +2,14 @@ import type { ReactNode } from 'react';
 import type { TypeName } from '@/types/pokemon';
 import { typeGlyphPath } from '@/data/type-ids';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { typeLabel, localeUppercase } from '@/i18n';
+import { typeLabel, typeLabels, localeUppercase } from '@/i18n';
 import {
   TYPE_BADGE,
   TYPE_BADGE_H,
   TYPE_BADGE_W,
-  typeBadgeBaseline,
-  typeBadgeFontSize,
   typeBadgeGlyphBox,
 } from '@/lib/typeBadgeGeometry';
+import { typeBadgeFit } from '@/lib/typeBadgeFit';
 
 /**
  * The badge's SVG innards, and the chart-icon wrapper around them.
@@ -19,10 +18,23 @@ import {
  * nothing else — react-refresh cannot hot-reload a module that mixes the two.
  */
 
+/**
+ * Every type name in the active locale, uppercased the way a badge shows them.
+ *
+ * The badge sizes its text from the whole set rather than from the single word
+ * it is drawing, so all eighteen share one cap height — see `typeBadgeFit.ts`.
+ */
+function localeTypeLabels(): string[] {
+  return typeLabels().map(localeUppercase);
+}
+
 /** Contents of a badge drawn in its own 200x40 space. */
 export function typeBadgeSvg(type: TypeName, label: string): ReactNode {
   const glyph = typeBadgeGlyphBox();
-  const fontSize = typeBadgeFontSize();
+  // Size, baseline and condense all come from measuring this exact word in the
+  // font that actually resolved — the official names are not ours to shorten,
+  // so the layout is what gives. See `typeBadgeFit.ts`.
+  const fit = typeBadgeFit(label, localeTypeLabels());
   return (
     <>
       <rect
@@ -42,15 +54,15 @@ export function typeBadgeSvg(type: TypeName, label: string): ReactNode {
       {/* Condensed about the text's own centre, so the anchor stays put. */}
       <g
         transform={
-          `translate(${TYPE_BADGE.textCenterX} 0) scale(${TYPE_BADGE.textScaleX} 1) ` +
+          `translate(${TYPE_BADGE.textCenterX} 0) scale(${fit.scaleX} 1) ` +
           `translate(${-TYPE_BADGE.textCenterX} 0)`
         }
       >
         <text
           x={TYPE_BADGE.textCenterX}
-          y={typeBadgeBaseline()}
+          y={fit.baseline}
           textAnchor="middle"
-          fontSize={fontSize}
+          fontSize={fit.fontSize}
           fontWeight={TYPE_BADGE.fontWeight}
           fill="#ffffff"
         >
