@@ -109,16 +109,22 @@ const SHOT_SRCS = [shot45, shot95, shot151] as const;
  *  meaning and need real alt text rather than alt="". Bing Webmaster Tools
  *  reported all three as missing alt attributes.
  *
- *  Each string carries one target search phrase — "custom Pokédex", "custom
- *  Pokémon region", "Pokédex builder" — but only because each phrase accurately
+ *  Each string carries one target search phrase — "custom Pokédex", "region
+ *  template", "generated Pokédex image" — but only because each phrase accurately
  *  describes that image. Do not add phrases the screenshot does not show, and do
  *  not list phrases: Google treats keyword-filled alt attributes as keyword
- *  stuffing. Intents the app does not serve ("pokedex generator", "pokedex
- *  template") belong on a real content page, not here. */
+ *  stuffing.
+ *
+ *  "Template" is accurate: BUILD_GROUPS in src/data/slot-template.ts is a
+ *  pre-structured set of region sections that each pre-filter the browser.
+ *  "Generated image" is accurate: shot-151 is itself an export produced by
+ *  generateExportImage, and carries the "made with my151.app" footer. Prefer
+ *  "generate your Pokédex image" over a bare "generator" — the app has no
+ *  randomiser, so the bare term invites visitors expecting one. */
 const SHOT_ALTS = [
   'A custom Pokédex in progress — 45 of the 151 slots filled, the rest still empty.',
-  'A custom Pokémon region taking shape: 95 of 151 slots filled and grouped into labelled areas such as Starters, Forest and Ocean.',
-  'A finished 151 Pokédex built in the my151 Pokédex builder, beside its type-distribution, generation-origin and base-stat charts.',
+  'A Pokémon region template at 95 of 151, its slots grouped into labelled areas such as Starters, Forest and Ocean.',
+  'A generated Pokédex image: a finished 151 dex beside its type-distribution, generation-origin and base-stat charts.',
 ] as const;
 
 // ---------- dots face ----------
