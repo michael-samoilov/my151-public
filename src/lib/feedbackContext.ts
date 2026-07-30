@@ -19,10 +19,12 @@ declare const __BUILD_TIMESTAMP__: string;
  *
  *   - the dex itself. It is the user's, and a bug report is not consent to
  *     copy it.
- *   - anything locating the person beyond the country the edge already sees.
  *   - the search query. A search string can be identifying or embarrassing;
  *     whether the person had *a* search active is the part that matters for
  *     reproducing a bug, so only that boolean is sent.
+ *   - anything locating the person. The country the edge already sees is
+ *     recorded server-side, and the sheet's disclosure says so — a privacy
+ *     note that overclaims is worse than one that admits the boring truth.
  */
 export interface FeedbackContext {
   route: string;
