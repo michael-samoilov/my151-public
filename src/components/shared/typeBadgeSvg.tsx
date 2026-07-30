@@ -2,13 +2,14 @@ import type { ReactNode } from 'react';
 import type { TypeName } from '@/types/pokemon';
 import { typeGlyphPath } from '@/data/type-ids';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { typeLabel } from '@/i18n';
+import { typeLabel, localeUppercase } from '@/i18n';
 import {
   TYPE_BADGE,
   TYPE_BADGE_H,
   TYPE_BADGE_W,
   typeBadgeBaseline,
-  typeBadgeTextBox,
+  typeBadgeFontSize,
+  typeBadgeGlyphBox,
 } from '@/lib/typeBadgeGeometry';
 
 /**
@@ -20,7 +21,8 @@ import {
 
 /** Contents of a badge drawn in its own 200x40 space. */
 export function typeBadgeSvg(type: TypeName, label: string): ReactNode {
-  const box = typeBadgeTextBox();
+  const glyph = typeBadgeGlyphBox();
+  const fontSize = typeBadgeFontSize();
   return (
     <>
       <rect
@@ -31,22 +33,30 @@ export function typeBadgeSvg(type: TypeName, label: string): ReactNode {
       />
       <image
         href={typeGlyphPath(type)}
-        x={TYPE_BADGE.padX}
-        y={(TYPE_BADGE_H - TYPE_BADGE.glyph) / 2}
-        width={TYPE_BADGE.glyph}
-        height={TYPE_BADGE.glyph}
+        x={glyph.x}
+        y={glyph.y}
+        width={glyph.size}
+        height={glyph.size}
         preserveAspectRatio="xMidYMid meet"
       />
-      <text
-        x={box.center}
-        y={typeBadgeBaseline()}
-        textAnchor="middle"
-        fontSize={TYPE_BADGE.fontSize}
-        fontWeight={TYPE_BADGE.fontWeight}
-        fill="#ffffff"
+      {/* Condensed about the text's own centre, so the anchor stays put. */}
+      <g
+        transform={
+          `translate(${TYPE_BADGE.textCenterX} 0) scale(${TYPE_BADGE.textScaleX} 1) ` +
+          `translate(${-TYPE_BADGE.textCenterX} 0)`
+        }
       >
-        {label}
-      </text>
+        <text
+          x={TYPE_BADGE.textCenterX}
+          y={typeBadgeBaseline()}
+          textAnchor="middle"
+          fontSize={fontSize}
+          fontWeight={TYPE_BADGE.fontWeight}
+          fill="#ffffff"
+        >
+          {label}
+        </text>
+      </g>
     </>
   );
 }
@@ -67,7 +77,7 @@ export function typeChartIcon(type: TypeName) {
         key={`type-badge-${type}`}
         transform={`translate(${x + (colWidth - w) / 2} ${y + (size - h) / 2}) scale(${scale})`}
       >
-        {typeBadgeSvg(type, typeLabel(type))}
+        {typeBadgeSvg(type, localeUppercase(typeLabel(type)))}
       </g>
     );
   };

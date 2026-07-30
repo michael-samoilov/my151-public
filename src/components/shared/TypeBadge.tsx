@@ -1,5 +1,5 @@
 import type { TypeName } from '@/types/pokemon';
-import { typeLabel, useLocale } from '@/i18n';
+import { typeLabel, localeUppercase, useLocale } from '@/i18n';
 import { TYPE_BADGE_H, TYPE_BADGE_W } from '@/lib/typeBadgeGeometry';
 import { typeBadgeSvg } from '@/components/shared/typeBadgeSvg';
 
@@ -30,13 +30,20 @@ export function TypeBadge({ type, className }: {
   // Subscribes to the locale so the word changes with it. `typeLabel` itself is
   // a plain read, which is what the canvas exporter needs.
   useLocale();
-  const label = typeLabel(type);
+  // Uppercase, as the official art is — but through `localeUppercase`, which is
+  // a no-op for CJK, where casing does nothing to the glyphs and mangles any
+  // mixed Latin or digits.
+  const label = localeUppercase(typeLabel(type));
+  const spoken = typeLabel(type);
   return (
     <svg
       viewBox={`0 0 ${TYPE_BADGE_W} ${TYPE_BADGE_H}`}
       className={`h-auto ${className ?? ''}`}
       role="img"
-      aria-label={label}
+      data-type={type}
+      // The published casing for the accessible name: a screen reader should
+      // not spell out N-O-R-M-A-L, which some do for all-caps text.
+      aria-label={spoken}
     >
       {typeBadgeSvg(type, label)}
     </svg>

@@ -1,12 +1,13 @@
 import type { TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { typeLabel } from '@/i18n';
+import { typeLabel, localeUppercase } from '@/i18n';
 import {
   TYPE_BADGE,
   TYPE_BADGE_H,
   TYPE_BADGE_W,
   typeBadgeBaseline,
-  typeBadgeTextBox,
+  typeBadgeFontSize,
+  typeBadgeGlyphBox,
 } from '@/lib/typeBadgeGeometry';
 
 /**
@@ -25,7 +26,7 @@ import {
 export function drawTypeBadge(
   ctx: CanvasRenderingContext2D,
   type: TypeName,
-  glyph: HTMLImageElement | null,
+  glyphImage: HTMLImageElement | null,
   x: number,
   y: number,
   height: number,
@@ -39,26 +40,27 @@ export function drawTypeBadge(
   ctx.roundRect(x, y, w, height, TYPE_BADGE.radius * s);
   ctx.fill();
 
-  if (glyph) {
-    // Contain-fit into the square glyph box, matching the SVG's
+  if (glyphImage) {
+    // Contain-fit into the symbol box, matching the SVG's
     // preserveAspectRatio="xMidYMid meet" — the crops are not square.
-    const box = TYPE_BADGE.glyph * s;
-    const iw = glyph.naturalWidth || 1;
-    const ih = glyph.naturalHeight || 1;
-    const fit = Math.min(box / iw, box / ih);
+    const box = typeBadgeGlyphBox();
+    const side = box.size * s;
+    const iw = glyphImage.naturalWidth || 1;
+    const ih = glyphImage.naturalHeight || 1;
+    const fit = Math.min(side / iw, side / ih);
     const dw = iw * fit;
     const dh = ih * fit;
     ctx.drawImage(
-      glyph,
-      x + TYPE_BADGE.padX * s + (box - dw) / 2,
-      y + (height - dh) / 2,
+      glyphImage,
+      x + box.x * s + (side - dw) / 2,
+      y + box.y * s + (side - dh) / 2,
       dw,
       dh,
     );
   }
 
-  const label = typeLabel(type);
-  const size = TYPE_BADGE.fontSize * s;
+  const label = localeUppercase(typeLabel(type));
+  const size = typeBadgeFontSize() * s;
   ctx.font = `${TYPE_BADGE.fontWeight} ${size}px 'Inter Variable', system-ui, sans-serif`;
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
@@ -66,6 +68,11 @@ export function drawTypeBadge(
   // for the same reason: 'middle' is the em-box middle, which is right for CJK
   // and visibly low for Latin.
   ctx.textBaseline = 'alphabetic';
-  ctx.fillText(label, x + typeBadgeTextBox().center * s, y + typeBadgeBaseline() * s);
+  // Condensed about the text centre, the same way the SVG does it.
+  const cx = x + TYPE_BADGE.textCenterX * s;
+  ctx.translate(cx, 0);
+  ctx.scale(TYPE_BADGE.textScaleX, 1);
+  ctx.translate(-cx, 0);
+  ctx.fillText(label, cx, y + typeBadgeBaseline() * s);
   ctx.restore();
 }

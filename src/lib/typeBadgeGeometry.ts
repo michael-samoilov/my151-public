@@ -2,13 +2,19 @@
  * The type badge's proportions, in the 200x40 space the official Gen IX badge
  * art uses.
  *
+ * Every number here was measured off that art rather than judged by eye —
+ * `scripts/measure-badge-art.ts` reads the pixels and reports corner radius,
+ * symbol box, cap height, ink centres and letter gaps, and
+ * `scripts/compare-badge-render.ts` measures our rendering the same way so the
+ * two can be diffed. An earlier pass of this file was eyeballed against a
+ * screenshot and got the radius less than half right and the text two-thirds
+ * of its proper size, which is exactly the kind of thing a screenshot hides
+ * and a pixel histogram does not.
+ *
  * Imported by both the React component and the canvas exporter so the two
  * cannot drift: the poster is a picture of the app, and a badge whose glyph
  * sits 2px differently in the export than on screen reads as a bug even though
  * nobody could say what changed.
- *
- * Everything is expressed in those 200x40 units. The SVG scales them via its
- * viewBox; the canvas multiplies by `height / TYPE_BADGE_H`.
  */
 
 export const TYPE_BADGE_W = 200;
@@ -16,55 +22,90 @@ export const TYPE_BADGE_H = 40;
 export const TYPE_BADGE_ASPECT = TYPE_BADGE_W / TYPE_BADGE_H;
 
 export const TYPE_BADGE = {
-  radius: 7,
-  /** Left inset of the symbol, and the right inset of the text box. */
-  padX: 11,
-  /** The symbol is fitted into this square, preserving its aspect. */
-  glyph: 28,
-  /** Between the symbol's box and the text box. */
-  gap: 5,
   /**
-   * One size for all nine languages.
+   * The art measures 17-18 — close enough to a stadium (20 would be a full
+   * half-height round) that the shape reads as a lozenge rather than a rounded
+   * rectangle. This was 7 before anyone measured it, which is most of why the
+   * drawn badge looked wrong next to the art.
    *
-   * The two extremes are Italian `Coleottero` (the longest Latin name) and
-   * Japanese `フェアリー` (five full-width katakana, which is wider than any
-   * Latin name despite having half the characters). Both fit the text box at
-   * this size, so there is no per-locale scale to keep in sync — which matches
-   * how the games do it: one fixed-width badge, with Korean simply leaving it
-   * nearly half empty.
+   * 19 rather than 17 because `rx` is not what a pixel measurement returns: the
+   * curve is tangent to the top edge, so the first column with real coverage
+   * appears about two units in. Calibrated by rendering 18, 19 and 20 and
+   * measuring each the same way the art is measured — 19 lands on the art's
+   * numbers, 20 reads as a full stadium.
    */
-  fontSize: 22,
-  fontWeight: 700,
+  radius: 19,
+  /** The symbol occupies a 30x30 box whose centre is measured at (30, 20). */
+  glyph: 30,
+  glyphCenterX: 30,
   /**
-   * Baseline offset below the badge's vertical centre, in ems.
-   *
-   * Cap-height centring rather than line-box centring, and this is the whole
-   * reason the badge is an SVG. A flex box centres the *line box*, whose height
-   * comes from the font's ascent and descent — and Noto CJK's are ~20% taller
-   * than Inter's and disagree with its own `typo` metrics, so the same rule
-   * lands CJK and Latin text at visibly different heights inside a fixed pill.
-   *
-   * Capitals span 0 to ~0.727em above the baseline (Inter's cap height), so
-   * their optical centre is half that up; CJK glyphs span roughly -0.12em to
-   * 0.88em, centring at ~0.38em. Those are close enough that one offset serves
-   * both, and it reads no font metrics at all.
-   *
-   * The value is tuned to land Latin capitals exactly on centre.
-   * `e2e/dev/type-badge.spec.ts` measures where the ink actually falls in all
-   * nine languages: Latin lands on the centre and CJK about 1.4 of 40 units
-   * below it — a 3.5% difference, against the ~20% a line-box rule produces.
+   * Cap height, measured at 24 of 40 on every sampled badge. Expressed as the
+   * target rather than as a font size, because the font size that produces it
+   * depends on the font's own cap-height ratio — `capHeightRatio` below carries
+   * that, measured from the rendering rather than read off a spec sheet.
    */
-  baselineShift: 0.364,
+  capHeight: 24,
+  /**
+   * Inter's cap height as a fraction of em, measured by rendering. Kept beside
+   * the target so `fontSize` is derived rather than hand-tuned, and so swapping
+   * the font is a one-number change.
+   */
+  capHeightRatio: 0.727,
+  fontWeight: 800,
+  /**
+   * Horizontal scale applied to the word.
+   *
+   * The game sets these badges in a condensed face. Measured against the art at
+   * matched cap height, Inter runs consistently wider: the reference-to-Inter
+   * width ratio across NORMAL, BUG, FIRE, GRASS, ELECTRIC and DRAGON is 0.779,
+   * 0.773, 0.803, 0.773, 0.808, 0.775 — a tight enough band that one factor
+   * serves, rather than a per-word fudge. Trimmed from that mean to 0.76 after
+   * re-measuring the condensed render, which left the longer words a few units
+   * wide; every sampled word now lands within 2 units of the art.
+   *
+   * Inter Variable carries `wght` and `opsz` but no width axis, so this is a
+   * geometric condense. It thins vertical stems without touching horizontals,
+   * which is why the weight below is 800 rather than the 700 the uncondensed
+   * text wanted — it puts back what the squeeze takes out.
+   */
+  textScaleX: 0.76,
+  letterSpacing: 0,
+  /**
+   * The centre of the text's *ink*, measured at 21.0 on every badge — a whole
+   * unit below the badge's own centre, which is the kind of deliberate optical
+   * offset that only shows up in a measurement.
+   */
+  textCenterY: 21,
+  /** Mean of the sampled badges' measured text centres. */
+  textCenterX: 113,
 } as const;
 
-/** Left edge and width of the text box, in 200x40 units. */
-export function typeBadgeTextBox() {
-  const left = TYPE_BADGE.padX + TYPE_BADGE.glyph + TYPE_BADGE.gap;
-  const right = TYPE_BADGE_W - TYPE_BADGE.padX;
-  return { left, right, width: right - left, center: (left + right) / 2 };
+/** Font size that renders the measured cap height in the measured font. */
+export function typeBadgeFontSize(): number {
+  return TYPE_BADGE.capHeight / TYPE_BADGE.capHeightRatio;
 }
 
-/** Baseline y for the label, in 200x40 units. */
+/**
+ * Baseline y for the label.
+ *
+ * Cap-height centring, and this is the whole reason the badge is an SVG rather
+ * than a flex box. A flex box centres the *line box*, whose height comes from
+ * the font's ascent and descent — and Noto CJK's are ~20% taller than Inter's
+ * and disagree with its own `typo` metrics, so the same rule lands CJK and
+ * Latin text at visibly different heights inside a fixed pill. Placing the
+ * baseline half a cap height below the target ink centre reads no font metrics
+ * at render time at all.
+ */
 export function typeBadgeBaseline(): number {
-  return TYPE_BADGE_H / 2 + TYPE_BADGE.fontSize * TYPE_BADGE.baselineShift;
+  return TYPE_BADGE.textCenterY + TYPE_BADGE.capHeight / 2;
+}
+
+/** The symbol's box, in 200x40 units. */
+export function typeBadgeGlyphBox() {
+  const size = TYPE_BADGE.glyph;
+  return {
+    x: TYPE_BADGE.glyphCenterX - size / 2,
+    y: (TYPE_BADGE_H - size) / 2,
+    size,
+  };
 }
