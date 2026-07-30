@@ -71,6 +71,37 @@
        * Keeping the copy visible to humans as well means it is honest content, not
        * crawler-only text. React's createRoot drops these children on first commit,
        * so it never coexists with the app's own <h1>. */
+      /* The copy sits OUT of the flex flow, so the spinner and "Loading…" keep the
+       * exact centring they had before this text existed.
+       *
+       * It also reveals after a delay. On a fast connection the app mounts in a few
+       * hundred ms, so text shown immediately would only flash and vanish — visible
+       * but never readable, which is worse than no text at all. Holding it back ~1s
+       * means a quick load never paints it, while a slow load gets something useful
+       * instead of a bare spinner.
+       *
+       * This is not hidden text: it paints whenever loading outlasts the delay, with
+       * no display:none, no off-screen positioning and no zero height. Crawlers read
+       * the DOM regardless of animation state, so indexing is unaffected. */
+      .p151-copy {
+        position: absolute;
+        top: calc(50% + 76px);
+        left: 24px;
+        right: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        opacity: 0;
+        animation: p151-reveal 320ms ease-out 1s forwards;
+      }
+      @keyframes p151-reveal { to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) {
+        /* Keep the delay, drop the fade. Elsewhere in index.css reduced motion uses
+         * `animation: none`, but here the animation is a timing mechanism rather than
+         * decoration — removing it would restore the flash it exists to prevent. */
+        .p151-copy { animation-duration: 1ms; }
+      }
       .p151-boot h1 { margin: 0; font-size: 18px; font-weight: 600; color: #0a0a0a; letter-spacing: -0.01em; }
       .p151-boot p { margin: 0; max-width: 38ch; font-size: 14px; line-height: 1.5; color: #525252; }
       /* Was #a3a3a3, which predated this block rendering on a light background and
@@ -89,6 +120,8 @@
         .p151-boot h1 { font-size: 30px; }
         .p151-boot p { max-width: 46ch; font-size: 17px; }
         .p151-boot span { font-size: 14px; }
+        /* Clears the taller centred spinner group at this breakpoint. */
+        .p151-copy { top: calc(50% + 96px); gap: 14px; }
       }
       @keyframes p151-spin { to { transform: rotate(360deg); } }
     </style>
@@ -102,19 +135,21 @@
           <line x1="2" y1="16" x2="30" y2="16" stroke="#fafafa" stroke-width="2"/>
           <circle cx="16" cy="16" r="4.5" fill="#fafafa" stroke="#dc2626" stroke-width="2"/>
         </svg>
-        <h1>Make Your Own Custom Pokédex</h1>
-        <!-- Front-load the noun phrases people actually search: "custom Pokédex
-             builder", "Pokémon region template". A searcher scanning this needs the
-             first few words to confirm they found the right kind of tool, so no
-             modifier earns a place ahead of them. "Creator" and "generator" are left
-             out on purpose: they are synonyms of builder and generate, and stacking
-             synonyms reads as keyword stuffing. -->
-        <p>
-          my151 is a custom Pokédex builder and Pokémon region template. Pick
-          your favorite 151 from all 1,025 Pokémon into labelled sections.
-          Compare your type coverage to the National Dex, then generate a
-          shareable image of your dex.
-        </p>
+        <div class="p151-copy">
+          <h1>Make Your Own Custom Pokédex</h1>
+          <!-- Front-load the noun phrases people actually search: "custom Pokédex
+               builder", "Pokémon region template". A searcher scanning this needs the
+               first few words to confirm they found the right kind of tool, so no
+               modifier earns a place ahead of them. "Creator" and "generator" are left
+               out on purpose: they are synonyms of builder and generate, and stacking
+               synonyms reads as keyword stuffing. -->
+          <p>
+            my151 is a custom Pokédex builder and Pokémon region template. Pick
+            your favorite 151 from all 1,025 Pokémon into labelled sections.
+            Compare your type coverage to the National Dex, then generate a
+            shareable image of your dex.
+          </p>
+        </div>
         <span>Loading…</span>
       </div>
     </div>
