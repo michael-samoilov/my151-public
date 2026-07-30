@@ -47,6 +47,7 @@ Work on a preview branch by default:
 1. Commit to the work branch and push it (`git push -u origin <work-branch>`). Vercel builds a **preview deployment** for any pushed branch — that is where changes get verified.
 2. Report the preview to the user and let them look. Nothing reaches production on your own initiative.
 3. Merge into and push `claude/pokedex-region-builder-AviYF` **only after the user says to ship it.** Approval is per-change: shipping one change is not standing permission for the next.
+4. **Check out the work branch again immediately after that push.** A merge leaves you on the production branch, so the next commit lands there silently — one `git push` away from an unapproved deploy. Run `git rev-parse --abbrev-ref HEAD` before any commit that follows a merge.
 
 When in doubt, push the preview branch and ask. A change sitting on a preview branch costs nothing; an unapproved production deploy is seen by users.
 
