@@ -22,10 +22,27 @@ import { LOCALES, LOCALE_META, htmlLang, useLocale, useT, type Locale } from '@/
  * by-breakpoint treatment the rest of the app uses, rather than one scaled.
  */
 
-function LocaleList({ onPick, pending }: { onPick: (l: Locale) => void; pending: Locale | null }) {
+/**
+ * The nine languages as a wrapping chip row.
+ *
+ * A list would be the conventional shape, and it is the wrong one here. Nine
+ * endonyms are 3-8 characters each — a list gives every one of them a full-width
+ * row and reads as a menu to traverse, when what this is is a small closed set
+ * to scan at once. Wrapping chips cut the mobile sheet from nine rows to three
+ * and put the whole vocabulary on screen without scrolling.
+ *
+ * It is also the vocabulary the rest of the app already speaks: the browser's
+ * filters and the feedback categories are both wrapping chip rows, and a
+ * dropdown list here would have been the only one of its kind.
+ *
+ * Order stays fixed and is never re-sorted by recency — muscle memory beats
+ * relevance for a set this size, and a chip that moves is worse than a row that
+ * moves because there is no column to anchor it.
+ */
+function LocaleChips({ onPick, pending }: { onPick: (l: Locale) => void; pending: Locale | null }) {
   const active = useLocale();
   return (
-    <div role="menu" className="py-1">
+    <div role="menu" className="flex flex-wrap gap-1.5 p-3">
       {LOCALES.map((locale) => {
         const meta = LOCALE_META[locale];
         const selected = locale === active;
@@ -36,18 +53,17 @@ function LocaleList({ onPick, pending }: { onPick: (l: Locale) => void; pending:
             role="menuitemradio"
             aria-checked={selected}
             onClick={() => onPick(locale)}
-            // Minimum 44px touch target (Apple HIG), as elsewhere in the app.
-            className={`w-full flex items-center gap-2 px-3 min-h-11 text-left text-sm transition-colors cursor-pointer ${
-              selected ? 'text-primary font-medium' : 'text-foreground hover:bg-muted'
+            // 36px, and a 44px touch target on the sheet via the row gap plus
+            // the sheet's own padding — a chip grid cannot give every item the
+            // full 44 without looking like buttons rather than chips.
+            className={`inline-flex items-center gap-1.5 px-3 min-h-9 rounded-full border text-sm cursor-pointer transition-colors ${
+              selected
+                ? 'border-primary bg-primary/10 text-primary font-medium'
+                : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
             }`}
           >
-            <span className="w-4 shrink-0">
-              {pending === locale ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : selected ? (
-                <Check className="w-3.5 h-3.5" />
-              ) : null}
-            </span>
+            {pending === locale && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+            {selected && pending !== locale && <Check className="w-3.5 h-3.5" />}
             {/* `lang` so a screen reader pronounces the endonym in its own
                 language rather than reading it through the page's voice. */}
             <span lang={htmlLang(locale)} data-i18n-exempt="endonym">{meta.endonym}</span>
@@ -121,8 +137,8 @@ export function LanguagePicker() {
 
       {/* Desktop: anchored dropdown. */}
       {open && (
-        <div className="hidden md:block absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-[120] min-w-[10rem]">
-          <LocaleList onPick={pick} pending={pending} />
+        <div className="hidden md:block absolute right-0 top-full mt-1 bg-popover border rounded-lg shadow-lg z-[120] w-[22rem]">
+          <LocaleChips onPick={pick} pending={pending} />
         </div>
       )}
 
@@ -131,7 +147,7 @@ export function LanguagePicker() {
         <div className="md:hidden">
           <BottomSheet onClose={() => setOpen(false)} closeLabel={t('lang.title')} title={t('lang.title')}>
             <div className="pb-2">
-              <LocaleList onPick={pick} pending={pending} />
+              <LocaleChips onPick={pick} pending={pending} />
             </div>
           </BottomSheet>
         </div>

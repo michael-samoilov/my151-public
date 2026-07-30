@@ -113,7 +113,9 @@ function FeedbackForm({
 
   return (
     <form
-      className="px-4 pb-4 flex flex-col gap-3"
+      // pt-3, not 0: the chips carry an outline, and with the form flush to the
+      // header above it the two strokes met and read as one broken rule.
+      className="px-4 pt-3 pb-4 flex flex-col gap-3"
       onSubmit={async (e) => {
         e.preventDefault();
         if (tooShort || state === 'sending') return;
@@ -248,7 +250,7 @@ export function FeedbackSheet({
         aria-label={t('feedback.title')}
         className="fixed bottom-16 end-3 z-[150] w-80 max-h-[80vh] overflow-y-auto flex flex-col rounded-lg border bg-card shadow-xl"
       >
-        <div className="px-4 pt-3 pb-2 text-sm font-semibold">{t('feedback.title')}</div>
+        <div className="px-4 pt-3 text-sm font-semibold">{t('feedback.title')}</div>
         {form}
       </div>
     </>
