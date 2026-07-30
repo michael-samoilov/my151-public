@@ -112,13 +112,19 @@ test.describe('type badge', () => {
       // deliberate rather than broken.
       expect(rows.filter((r) => !r.label.trim())).toEqual([]);
 
-      // No word may be wider than the space reserved for it. 1.01 rather than
-      // 1.0 because the fit is computed from the same measurement this repeats,
-      // and float rounding through an SVG transform matrix lands a hair either
-      // side.
+      // No word may be wider than the space reserved for it.
+      //
+      // 1.002 is deliberately tight. It was 1.01, which was too loose to be
+      // worth having: Italian `COLEOTTERO` came out at 1.005 on one machine and
+      // 1.01 on CI, because the badge was predicting its width after a font-size
+      // change rather than measuring it, and how far that prediction misses
+      // depends on the platform's rasterizer. The badge now re-measures and
+      // clamps, so every word that needs fitting lands on 1.00000 exactly on
+      // whatever engine is running, and the only slack still needed is float
+      // rounding through the SVG transform matrix.
       const overflowing = rows
-        .filter((r) => r.fill > 1.01)
-        .map((r) => `${r.label} ${(r.fill * 100).toFixed(0)}%`);
+        .filter((r) => r.fill > 1.002)
+        .map((r) => `${r.label} ${(r.fill * 100).toFixed(1)}%`);
       expect(overflowing, 'these words are wider than the pill reserves').toEqual([]);
 
       // Height comes from the viewBox, so differing heights would mean some

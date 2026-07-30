@@ -260,6 +260,22 @@ export function typeBadgeFit(label: string, cohort: readonly string[] = [label])
       fontSize *= shrink;
       baseline = TYPE_BADGE.textCenterY + (baseline - TYPE_BADGE.textCenterY) * shrink;
     }
+
+    // Re-measure at the size actually chosen, and clamp.
+    //
+    // The step above assumes advance width scales linearly with font size. It
+    // very nearly does, and the residual is not noise to be shrugged at: text
+    // is laid out in whole units at a given px size, so a word measured at 33px
+    // and scaled to 30.7px is not exactly what the same word measures at 30.7px.
+    // How far off depends on the platform's rasterizer, which is why Italian
+    // `COLEOTTERO` fitted on one machine and came out at 101% on CI — a real
+    // overflow that only one of the two Chromiums showed.
+    //
+    // So the width is not predicted, it is checked. One extra `measureText`
+    // makes the fit exact on whatever engine is actually running.
+    c.font = `${TYPE_BADGE.fontWeight} ${fontSize}px ${fontStack}`;
+    const painted = c.measureText(label).width;
+    if (painted * scaleX > TYPE_BADGE_TEXT_WIDTH) scaleX = TYPE_BADGE_TEXT_WIDTH / painted;
   }
 
   const fit: TypeBadgeFit = { fontSize, baseline, scaleX };
