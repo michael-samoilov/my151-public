@@ -1807,7 +1807,7 @@ export function AdminPage() {
 
         {data && (
           <>
-            <Card title="Overview (all-time)">
+            <Card title="Overview (since June 15)">
               <div className="flex flex-wrap gap-2">
                 <Stat value={data.funnel.users} label="Users" />
                 <Stat value={data.funnel.completed} label="Completed (151)" />
