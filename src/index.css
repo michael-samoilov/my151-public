@@ -99,6 +99,31 @@ h1, h2, h3, h4, h5, h6 {
   text-wrap: balance;
 }
 
+/* Small-caps headings — `uppercase tracking-wide` — are an English typographic
+ * idiom, and both halves of it are wrong in CJK.
+ *
+ * `text-transform` is a no-op on kana, Hangul and Han, so it looks harmless
+ * until a label mixes in Latin or a Pokémon name and only that fragment
+ * shouts. `letter-spacing` is the worse half: CJK is already set on a fixed
+ * em grid, so tracking inserts a gap between every single character and the
+ * text reads as though it has been spaced out on purpose.
+ *
+ * Scoped by `:lang()` rather than removed, because the idiom is right in the
+ * six Latin locales and this is the one place that can say so for all of them
+ * at once. `:lang()` matches the inherited language, so the `<html lang>` the
+ * provider sets covers the whole tree, and an element with its own `lang` —
+ * a Japanese name inside an English page — is corrected individually.
+ *
+ * Deliberately outside `@layer`, so it beats Tailwind's `uppercase` and
+ * `tracking-*` utilities, which are layered and would otherwise win on source
+ * order at equal specificity. `i18n:verify` asserts this block still exists;
+ * without it the CJK-safety gate has nothing to lean on.
+ */
+:lang(ja), :lang(ko), :lang(zh), :lang(zh-Hans), :lang(zh-Hant) {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
 /* Elevated card surfaces — layered transparent shadow instead of a 1px border
  * (make-interfaces-feel-better #3). Used by the analytics chart cards and the
  * admin cards. The main layer's blur radius exceeds its y-offset, so the shadow

@@ -7,7 +7,7 @@
     "dev": "vite",
     "cache-sprites": "bash scripts/cache-sprites.sh",
     "build-type-glyphs": "tsx scripts/build-type-glyphs.ts",
-    "build": "tsc -b && vite build",
+    "build": "npm run i18n:verify && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "doctor": "npx react-doctor@latest",
@@ -20,6 +20,8 @@
     "i18n:propose-map": "tsx scripts/i18n/propose-id-map.ts",
     "i18n:names": "tsx scripts/i18n/build-name-catalogs.ts",
     "i18n:terms": "tsx scripts/i18n/build-term-catalogs.ts",
+    "i18n:game-text": "tsx scripts/i18n/fetch-game-text.ts",
+    "i18n:verify": "tsx scripts/i18n/verify.ts",
     "i18n:extract": "tsx scripts/i18n/translate/extract.ts"
   },
   "dependencies": {
