@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { readCsv } from './pokeapi';
+import { ID_MAP_FIXTURE_PATH, type IdMapFixture } from './build-id-map-fixture';
 import type { IdMapEntry } from './propose-id-map';
 
 /**
@@ -13,6 +13,14 @@ import type { IdMapEntry } from './propose-id-map';
  * come from the app's own slug.
  *
  * These checks are what make that impossible to reintroduce.
+ *
+ * The upstream side comes from `id-map-fixture.json`, not from the PokeAPI
+ * cache. The cache is gitignored — the pin against upstream drift is the
+ * committed output, not 21k lines of raw dump in every review — so reading it
+ * here meant the test passed on any machine that had run a generator and failed
+ * on every clean checkout, which is to say it failed in CI continuously while
+ * looking green locally. `npm run i18n:fixture` regenerates the fixture from
+ * live upstream, and that is when these assertions are re-checked against it.
  */
 
 interface AppPokemon { id: number; name: string }
@@ -23,14 +31,18 @@ const { entries } = JSON.parse(readFileSync('scripts/i18n/pokemon-id-map.json', 
 };
 const byAppId = new Map(entries.map((e) => [e.appId, e]));
 
-const upstreamPokemon = new Map(readCsv('pokemon').map((r) => [Number(r.id), r]));
-const upstreamForms = new Map(readCsv('pokemon_forms').map((r) => [Number(r.id), r]));
-const upstreamSpecies = new Map(readCsv('pokemon_species').map((r) => [Number(r.id), r.identifier]));
+const fixture: IdMapFixture = JSON.parse(readFileSync(ID_MAP_FIXTURE_PATH, 'utf8'));
 
-const speciesNames = new Map<number, string>();
-for (const r of readCsv('pokemon_species_names')) {
-  if (r.local_language_id === '9') speciesNames.set(Number(r.pokemon_species_id), r.name);
-}
+const upstreamPokemon = new Map(
+  Object.entries(fixture.pokemon).map(([id, r]) => [Number(id), r]),
+);
+const upstreamForms = new Set(fixture.forms);
+const upstreamSpecies = new Map(
+  Object.entries(fixture.species).map(([id, s]) => [Number(id), s.identifier]),
+);
+const speciesNames = new Map(
+  Object.entries(fixture.species).map(([id, s]) => [Number(id), s.en]),
+);
 
 /**
  * Compare slugs and display names without punctuation getting in the way:
@@ -103,7 +115,7 @@ describe('pokemon id map', () => {
     const shouldHaveNote = entries.filter(
       (e) => upstreamPokemon.get(e.appId)?.identifier !== undefined
         && upstreamPokemon.get(e.appId)!.identifier !== e.appName
-        && upstreamSpecies.get(Number(upstreamPokemon.get(e.appId)!.species_id)) !== e.appName,
+        && upstreamSpecies.get(upstreamPokemon.get(e.appId)!.speciesId) !== e.appName,
     );
     const undocumented = shouldHaveNote.filter((e) => !e.note).map((e) => `${e.appId} ${e.appName}`);
     expect(undocumented, 'id collides upstream but the map does not say so').toEqual([]);
