@@ -31,6 +31,23 @@ the density.
 Also worth naming: the type symbols are TPC's art, and redrawing one as a UI
 icon is a further derivative step than displaying it as a type badge is.
 
+## Virtualize the browser's result list
+
+The builder page renders **1,980 type badges, none of them in the viewport** —
+measured on `?demo` at 1280x900. They are the browser sheet's rows, all ~1025
+Pokémon built eagerly. At three DOM nodes per badge that is 9,900 nodes, 41% of
+the page's 24,335, for content nobody is looking at.
+
+This surfaced while weighing whether to pre-bake badges as images: rasterizing
+would cut those 9,900 nodes to 1,980 and *look* like a big win, which is exactly
+why it is the wrong fix. The nodes are not the problem, the eagerness is. Any
+badge implementation is cheap when it renders ~300 badges instead of 1,980, and
+rasterizing first would bank the win while leaving the cause in place.
+
+Windowing the list is the fix. Worth measuring the actual interaction cost first
+— node count is a proxy, not a symptom, and nobody has reported the sheet
+feeling slow.
+
 ## Ship our own CJK subsets rather than falling back to the platform
 
 `src/index.css` sets one stack — `'Inter Variable', system-ui, …` — and Inter
