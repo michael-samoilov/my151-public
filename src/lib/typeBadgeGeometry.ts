@@ -51,7 +51,17 @@ export const TYPE_BADGE = {
    * the font is a one-number change.
    */
   capHeightRatio: 0.727,
-  fontWeight: 800,
+  /**
+   * 700, measured rather than reasoned about. The condense thins vertical stems
+   * without touching horizontals, so this was briefly 800 on the theory that it
+   * needed to put back what the squeeze took out. Comparing ink coverage — the
+   * fraction of the word's bounding box that is actually inked, which is how
+   * much weight two renderings of the same word differ by — says otherwise:
+   * 700 lands at 0.494 against the art's 0.489, and 800 at 0.551, which is 13%
+   * too heavy. The squeeze narrows the box as well as the stems, and the two
+   * largely cancel.
+   */
+  fontWeight: 700,
   /**
    * Horizontal scale applied to the word.
    *
@@ -64,9 +74,7 @@ export const TYPE_BADGE = {
    * wide; every sampled word now lands within 2 units of the art.
    *
    * Inter Variable carries `wght` and `opsz` but no width axis, so this is a
-   * geometric condense. It thins vertical stems without touching horizontals,
-   * which is why the weight below is 800 rather than the 700 the uncondensed
-   * text wanted — it puts back what the squeeze takes out.
+   * geometric condense.
    */
   textScaleX: 0.76,
   letterSpacing: 0,

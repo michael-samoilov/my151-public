@@ -69,7 +69,7 @@ async function measure(page: import('@playwright/test').Page, locale: string): P
       // the same font the SVG resolved — which is the only way to see the
       // Latin-vs-CJK offset this badge is designed to avoid.
       const style = getComputedStyle(text);
-      ctx.font = `800 ${FONT_SIZE}px ${style.fontFamily}`;
+      ctx.font = `700 ${FONT_SIZE}px ${style.fontFamily}`;
       const m = ctx.measureText(label);
       const inkCenter = BASELINE - (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
 

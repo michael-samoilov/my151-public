@@ -155,7 +155,7 @@ const DIR = process.argv[2] ?? '/tmp/badgeref';
 function main() {
   console.log(`${DIR}`);
   console.log('badge  size     radius  bg        glyph box            text box             capH  gaps');
-  const summary: { id: number; glyph: Box; text: Box; capH: number; letters: number[] }[] = [];
+  const summary: { id: number; glyph: Box; text: Box; capH: number; letters: number[]; coverage: number }[] = [];
 
   for (const id of Object.keys(CAPS_NO_DESCENDER).map(Number)) {
     const r = decode(readFileSync(`${DIR}/${id}.png`));
@@ -169,6 +169,14 @@ function main() {
     const glyph = inkBox(r, 0, GLYPH_TEXT_SPLIT - 1);
     const text = inkBox(r, GLYPH_TEXT_SPLIT, r.width - 1);
     const letters = inkRuns(r, 2).filter((run) => run.x0 >= GLYPH_TEXT_SPLIT);
+    // Apparent weight: what fraction of the word's bounding box is actually
+    // inked. Thicker strokes fill more of the same box, so this compares the
+    // weight of two renderings of the same word without needing to find stems.
+    let inked = 0;
+    for (let x = text.x0; x <= text.x1; x++) {
+      for (let y = text.y0; y <= text.y1; y++) if (isInk(r, x, y)) inked++;
+    }
+    const coverage = inked / ((text.x1 - text.x0 + 1) * (text.y1 - text.y0 + 1));
     const capH = text.y1 - text.y0 + 1;
     const gaps = letters.slice(1).map((l, i) => l.x0 - letters[i].x1 - 1);
     // Text reaching the split means the word has grown into the symbol's space,
@@ -182,7 +190,7 @@ function main() {
       `x ${String(text.x0).padStart(3)}-${String(text.x1).padEnd(3)} y ${String(text.y0).padStart(2)}-${String(text.y1).padEnd(2)}  ` +
       `${String(capH).padStart(4)}  ${gaps.join(',')}`,
     );
-    summary.push({ id, glyph, text, capH, letters: gaps });
+    summary.push({ id, glyph, text, capH, letters: gaps, coverage });
   }
 
   const capHs = summary.map((s) => s.capH);
@@ -206,6 +214,7 @@ function main() {
   console.log(`  glyph centre:    x ${summary.map((s) => ((s.glyph.x0 + s.glyph.x1 + 1) / 2).toFixed(1)).join(', ')}`);
   console.log(`                   y ${summary.map((s) => ((s.glyph.y0 + s.glyph.y1 + 1) / 2).toFixed(1)).join(', ')}`);
   console.log(`  text width:      ${summary.map((s) => s.text.x1 - s.text.x0 + 1).join(', ')}`);
+  console.log(`  ink coverage:    ${summary.map((s) => s.coverage.toFixed(3)).join(', ')}  mean ${(summary.reduce((a, b) => a + b.coverage, 0) / summary.length).toFixed(3)}`);
 }
 
 main();
