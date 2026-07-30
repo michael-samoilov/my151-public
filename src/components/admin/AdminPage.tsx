@@ -551,7 +551,28 @@ function ActivityChart({ series }: { series: { day: number; dau: number; rolling
   const n = series.length;
   const px = (i: number) => padL + ((W - padL - padR) * i) / (n - 1);
   const py = (v: number) => padT + (H - padT - padB) * (1 - v / max);
-  const line = (key: 'dau' | 'rolling7') => series.map((d, i) => `${px(i)},${py(d[key])}`).join(' ');
+
+  // Provisional segments are drawn dotted: the first RAMP days (tracking was
+  // being turned on — users existed before it) and the final segment into
+  // "today" (which is still accumulating). A segment i joins points i, i+1.
+  const RAMP = 7;
+  const isProvisional = (i: number) => i <= RAMP - 2 || i === n - 2;
+  const segPath = (key: 'dau' | 'rolling7', wantProvisional: boolean) => {
+    let d = '';
+    for (let i = 0; i < n - 1; i++) {
+      if (isProvisional(i) !== wantProvisional) continue;
+      d += `M ${px(i)},${py(series[i][key])} L ${px(i + 1)},${py(series[i + 1][key])} `;
+    }
+    return d.trim();
+  };
+
+  // Shade the area under the DAU line for the trailing 7 days — the days that
+  // roll into today's rolling-7 count, so the earliest of them is the value
+  // dropping out next (the "target to beat" today).
+  const shadeStart = Math.max(0, n - 7);
+  let dauArea = `M ${px(shadeStart)},${py(0)}`;
+  for (let i = shadeStart; i < n; i++) dauArea += ` L ${px(i)},${py(series[i].dau)}`;
+  dauArea += ` L ${px(n - 1)},${py(0)} Z`;
 
   const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   const step = Math.max(1, Math.ceil(n / 8));
@@ -575,6 +596,9 @@ function ActivityChart({ series }: { series: { day: number; dau: number; rolling
         <span className="flex items-center gap-1">
           <span className="inline-block w-3 h-[2px]" style={{ backgroundColor: 'var(--color-muted-foreground)' }} /> Daily (DAU)
         </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-3 border-b border-dashed" style={{ borderColor: 'var(--color-muted-foreground)' }} /> Provisional
+        </span>
       </div>
       <div
         ref={areaRef}
@@ -596,8 +620,14 @@ function ActivityChart({ series }: { series: { day: number; dau: number; rolling
               </text>
             </g>
           ))}
-          <polyline points={line('dau')} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} />
-          <polyline points={line('rolling7')} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} />
+          {/* Trailing-7-day window feeding today's rolling count */}
+          <path d={dauArea} fill="var(--color-muted-foreground)" opacity={0.1} stroke="none" />
+          {/* DAU — dotted over ramp-up + today, solid in between */}
+          <path d={segPath('dau', false)} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} />
+          <path d={segPath('dau', true)} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} strokeDasharray="2 2" />
+          {/* Rolling 7-day (WAU) — dotted over ramp-up + today, solid in between */}
+          <path d={segPath('rolling7', false)} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} />
+          <path d={segPath('rolling7', true)} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} strokeDasharray="3 2" />
           {cur && cursor !== null && (
             <line x1={px(cursor)} y1={padT} x2={px(cursor)} y2={H - padB} stroke="var(--color-foreground)" strokeWidth={1} />
           )}
