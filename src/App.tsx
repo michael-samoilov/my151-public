@@ -35,7 +35,6 @@ import { isAnalyticsUnlocked } from '@/lib/milestones';
 import { cn } from '@/lib/utils';
 import { sectionName as sectionLabel, useDocumentLocale } from '@/i18n';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 
 declare const __BUILD_TIMESTAMP__: string;
@@ -188,11 +187,6 @@ function App() {
 
       {/* Milestone celebration nudges (analytics @25, view @100, confetti @151) */}
       <MilestoneCelebration onNavigate={handleViewChange} />
-
-      {/* Report a problem — one instance for the whole app, hidden behind any
-          full-screen surface. The footer's "Report a problem" link opens the
-          same form. */}
-      <FeedbackButton route={currentView} />
 
       {/* Dev-only MilestoneBar tuning panel (renders only with ?tune) */}
       <MilestoneTunePanel />

@@ -18,6 +18,7 @@ import { Trash2, Plus, Settings } from 'lucide-react';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 
 import { PageFooter } from '@/components/shared/PageFooter';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { IntroCard } from '@/components/pokedex/IntroCard';
 import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
@@ -912,7 +913,8 @@ export function PokedexGrid() {
         <div className="flex-1 min-w-0">
           <MilestoneBar />
         </div>
-        <div className="shrink-0 flex justify-end" style={{ width: 'var(--ms-side)' }}>
+        <div className="shrink-0 flex items-center gap-1 justify-end" style={{ width: 'var(--ms-side)' }}>
+          <FeedbackButton route="builder" />
           <SettingsMenu onClear={clearAll} />
         </div>
       </div>

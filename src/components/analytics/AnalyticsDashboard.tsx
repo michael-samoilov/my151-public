@@ -19,6 +19,7 @@ import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered 
 import { PageFooter } from '@/components/shared/PageFooter';
 import { StageDistributionChart } from './StageDistributionChart';
 import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 
 // The gen and shape charts use a single app-red bar (no per-category colors);
 // the gen badge and shape silhouette carry the identity in the icon column.
@@ -446,9 +447,12 @@ export function AnalyticsDashboard() {
         <div className="flex-1 min-w-0">
           <MilestoneBar />
         </div>
-        {/* Empty slot mirrors the counter's reserved width so the right divider
-            sits at the same inset as the left, even with no controls here. */}
-        <div className="shrink-0" style={{ width: 'var(--ms-side)' }} aria-hidden />
+        {/* Mirrors the counter's reserved width so the right divider sits at
+            the same inset as the left. This page has no controls of its own, so
+            the report button is the only thing in it. */}
+        <div className="shrink-0 flex items-center justify-end" style={{ width: 'var(--ms-side)' }}>
+          <FeedbackButton route="analytics" />
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain md:overscroll-auto">

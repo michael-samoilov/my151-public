@@ -1,37 +1,33 @@
 import { useEffect, useState } from 'react';
-import { Bug } from 'lucide-react';
-import { usePokedexStore } from '@/store/usePokedexStore';
 import { useT } from '@/i18n';
+import { Bug } from 'lucide-react';
 import { FeedbackSheet } from '@/components/feedback/FeedbackSheet';
 import { registerFeedbackOpener, takePendingCrash } from '@/components/feedback/feedbackChannel';
 import type { FeedbackCategory, FeedbackContext } from '@/lib/feedbackContext';
 
 /**
- * The always-available way to report something.
+ * The report control, and the sheet it opens.
  *
- * A floating button rather than a header icon: the header already carries the
- * wordmark, the language globe and the three-way nav that *is* the app's
- * information architecture, and a fourth glyph there would compete with it. A
- * low-key FAB is findable without being loud — it sits at 60% opacity until
- * hovered or focused, so it reads as available rather than as a call to action.
+ * It lives in the `n/151` row beside each page's own controls rather than
+ * floating over the page. A floating button was findable but it sat on top of
+ * whatever you had scrolled to — on the builder that meant hovering over a
+ * section card, which is exactly the content someone is looking at when they
+ * decide something is wrong with it. The `n/151` row is chrome, is on every
+ * page, and already holds this kind of control, so the button is equally
+ * reachable and covers nothing.
  *
- * The footer carries a text link to the same form, because "report a problem"
- * is something people go looking for at the bottom of a page.
+ * It renders first in its cluster, so nothing that was already there moves —
+ * the settings gear keeps the right edge it has always had, and on the View
+ * page the export button keeps its place next to it.
  *
- * It hides whenever a full-screen surface is up. All three of those render at
- * z-50 and the button at z-40, so it would sit behind them anyway — but a
- * button peeking out from under a sheet looks broken even when it is
- * unclickable.
+ * The footer keeps its "Report a problem" link, which is the path people go
+ * looking for rather than the one they notice.
  */
-
 export function FeedbackButton({ route }: { route: string }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<FeedbackCategory>('bug');
   const [crash, setCrash] = useState<FeedbackContext['error']>(undefined);
-  const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
-  const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
-  const celebration = usePokedexStore((s) => s.milestoneCelebration);
 
   useEffect(
     () =>
@@ -46,27 +42,20 @@ export function FeedbackButton({ route }: { route: string }) {
     [],
   );
 
-  const covered = Boolean(mobileBrowserOpen || drillDownSegment || celebration);
-
   return (
     <>
-      {!covered && !open && (
-        <button
-          type="button"
-          onClick={() => {
-            setCategory('bug');
-            setCrash(undefined);
-            setOpen(true);
-          }}
-          aria-label={t('feedback.title')}
-          className="fixed end-3 z-40 h-10 w-10 rounded-full border bg-card/80 backdrop-blur shadow-sm flex items-center justify-center text-muted-foreground opacity-60 hover:opacity-100 focus-visible:opacity-100 hover:text-foreground transition-opacity cursor-pointer"
-          // Above the home indicator on iOS, where a bottom-anchored control
-          // otherwise lands under the system gesture area.
-          style={{ bottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
-        >
-          <Bug className="w-4 h-4" />
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => {
+          setCategory('bug');
+          setCrash(undefined);
+          setOpen(true);
+        }}
+        aria-label={t('feedback.title')}
+        className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+      >
+        <Bug className="w-4 h-4" />
+      </button>
 
       {open && (
         <FeedbackSheet

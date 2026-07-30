@@ -5,6 +5,7 @@ import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewS
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
@@ -1203,6 +1204,7 @@ export function ViewPage() {
             <MilestoneBar />
           </div>
           <div className="flex items-center gap-1 shrink-0 justify-end" style={{ width: 'var(--ms-side)' }}>
+            <FeedbackButton route="view" />
             <button type="button"
               ref={exportBtnRef}
               onClick={handleExport}

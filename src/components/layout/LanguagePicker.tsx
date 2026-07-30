@@ -42,7 +42,7 @@ import { LOCALES, LOCALE_META, htmlLang, useLocale, useT, type Locale } from '@/
 function LocaleChips({ onPick, pending }: { onPick: (l: Locale) => void; pending: Locale | null }) {
   const active = useLocale();
   return (
-    <div role="menu" className="flex flex-wrap gap-1.5 p-3">
+    <div role="menu" className="grid grid-cols-3 gap-1.5 p-3">
       {LOCALES.map((locale) => {
         const meta = LOCALE_META[locale];
         const selected = locale === active;
@@ -56,7 +56,11 @@ function LocaleChips({ onPick, pending }: { onPick: (l: Locale) => void; pending
             // 36px, and a 44px touch target on the sheet via the row gap plus
             // the sheet's own padding — a chip grid cannot give every item the
             // full 44 without looking like buttons rather than chips.
-            className={`inline-flex items-center gap-1.5 px-3 min-h-9 rounded-full border text-sm cursor-pointer transition-colors ${
+            // `justify-center` and a grid column rather than a wrapping row:
+            // uniform chips read as one set of nine, where ragged ones read as
+            // three unrelated rows. The check sits inside the chip rather than
+            // in a gutter, so a chip's width does not change when it is picked.
+            className={`inline-flex items-center justify-center gap-1 px-2 min-h-9 rounded-full border text-sm cursor-pointer transition-colors ${
               selected
                 ? 'border-primary bg-primary/10 text-primary font-medium'
                 : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
