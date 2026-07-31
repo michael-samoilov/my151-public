@@ -95,6 +95,14 @@ function App() {
     if (!el) return;
     const handler = (e: WheelEvent) => {
       if (activeSectionRef.current) return; // panel open — let normal layout handle it
+      // An open sheet or dialog is a layer above the page, so a wheel over it
+      // is not "whitespace beside the build page" — forwarding it scrolls the
+      // app underneath the sheet, which is the one thing an overlay must not
+      // do. The overlay is `position: fixed` and so looks detached, but it is
+      // still a DOM descendant of this element, which is why it reaches here at
+      // all. Measured: without this, a wheel over the feedback sheet moved the
+      // build page by the full deltaY.
+      if ((e.target as Element | null)?.closest?.('[data-overlay], [role="dialog"]')) return;
       const scrollEl = el.querySelector('[data-build-scroll]') as HTMLElement | null;
       if (!scrollEl || scrollEl.contains(e.target as Node)) return; // already inside scroller
       scrollEl.scrollTop += e.deltaY;

@@ -159,7 +159,12 @@ function FeedbackForm({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder={t('feedback.message.placeholder')}
-          className="w-full rounded-md border bg-background px-2 py-1.5 text-sm resize-y"
+          // `text-base` below `md`, not `text-sm`: iOS Safari zooms the whole
+          // page in when a field smaller than 16px takes focus, and the root
+          // font size floors at 16px, so `text-sm` lands at 14. The field is
+          // also autofocused, so the zoom fires on open rather than on tap.
+          // Same rule the shared `Input` component already follows.
+          className="w-full rounded-md border bg-background px-2 py-1.5 text-base md:text-sm resize-y"
         />
       </label>
 
@@ -248,7 +253,7 @@ export function FeedbackSheet({
       <div
         role="dialog"
         aria-label={t('feedback.title')}
-        className="fixed bottom-16 end-3 z-[150] w-80 max-h-[80vh] overflow-y-auto flex flex-col rounded-lg border bg-card shadow-xl"
+        className="fixed bottom-16 end-3 z-[150] w-80 max-h-[80vh] overflow-y-auto overscroll-contain flex flex-col rounded-lg border bg-card shadow-xl"
       >
         <div className="px-4 pt-3 text-sm font-semibold">{t('feedback.title')}</div>
         {form}
