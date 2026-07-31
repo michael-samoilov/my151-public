@@ -552,15 +552,18 @@ function ActivityChart({ series }: { series: { day: number; dau: number; rolling
   const px = (i: number) => padL + ((W - padL - padR) * i) / (n - 1);
   const py = (v: number) => padT + (H - padT - padB) * (1 - v / max);
 
-  // Provisional segments are drawn dotted: the first RAMP days (tracking was
-  // being turned on — users existed before it) and the final segment into
-  // "today" (which is still accumulating). A segment i joins points i, i+1.
+  // Segments drawn dotted mark provisional data. The final segment into
+  // "today" is provisional for both lines (today is still accumulating). The
+  // first RAMP days are provisional for the rolling-7 line only — its window
+  // is not yet full — while each day's DAU is already a complete count.
   const RAMP = 7;
-  const isProvisional = (i: number) => i <= RAMP - 2 || i === n - 2;
-  const segPath = (key: 'dau' | 'rolling7', wantProvisional: boolean) => {
+  const isToday = (i: number) => i === n - 2;
+  const dauProvisional = (i: number) => isToday(i);
+  const r7Provisional = (i: number) => i <= RAMP - 2 || isToday(i);
+  const segPath = (key: 'dau' | 'rolling7', prov: (i: number) => boolean, wantProvisional: boolean) => {
     let d = '';
     for (let i = 0; i < n - 1; i++) {
-      if (isProvisional(i) !== wantProvisional) continue;
+      if (prov(i) !== wantProvisional) continue;
       d += `M ${px(i)},${py(series[i][key])} L ${px(i + 1)},${py(series[i + 1][key])} `;
     }
     return d.trim();
@@ -622,12 +625,12 @@ function ActivityChart({ series }: { series: { day: number; dau: number; rolling
           ))}
           {/* Trailing-7-day window feeding today's rolling count */}
           <path d={dauArea} fill="var(--color-muted-foreground)" opacity={0.1} stroke="none" />
-          {/* DAU — dotted over ramp-up + today, solid in between */}
-          <path d={segPath('dau', false)} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} />
-          <path d={segPath('dau', true)} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} strokeDasharray="2 2" />
-          {/* Rolling 7-day (WAU) — dotted over ramp-up + today, solid in between */}
-          <path d={segPath('rolling7', false)} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} />
-          <path d={segPath('rolling7', true)} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} strokeDasharray="3 2" />
+          {/* DAU — solid; only today (still accumulating) is dotted */}
+          <path d={segPath('dau', dauProvisional, false)} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} />
+          <path d={segPath('dau', dauProvisional, true)} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} strokeDasharray="2 2" />
+          {/* Rolling 7-day (WAU) — dotted over ramp-up (window not yet full) + today */}
+          <path d={segPath('rolling7', r7Provisional, false)} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} />
+          <path d={segPath('rolling7', r7Provisional, true)} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} strokeDasharray="3 2" />
           {cur && cursor !== null && (
             <line x1={px(cursor)} y1={padT} x2={px(cursor)} y2={H - padB} stroke="var(--color-foreground)" strokeWidth={1} />
           )}
