@@ -26,7 +26,7 @@ function RouteFallback() {
   );
 }
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { BUILD_GROUPS } from '@/data/slot-template';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useCompletionBeacon, sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
 import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
@@ -34,9 +34,11 @@ import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebratio
 import { isAnalyticsUnlocked } from '@/lib/milestones';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { cn } from '@/lib/utils';
+import { sectionName as sectionLabel, useDocumentLocale } from '@/i18n';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 
 declare const __BUILD_TIMESTAMP__: string;
-// eslint-disable-next-line no-console
 console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
 
 // Top gap (px) the mobile selection sheet leaves below the viewport top
@@ -45,96 +47,37 @@ console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
 // Uses dvh (not vh) so the dynamic mobile URL bar can't push the top
 // off-screen.
 const SHEET_TOP_GAP_PX = 49;
-const DISMISS_THRESHOLD = 120; // px drag distance to dismiss
 
-function MobileSheet({ sectionName, onClose }: { sectionName: string; onClose: () => void }) {
-  const sheetRef = useRef<HTMLDivElement>(null);
-  const [dragY, setDragY] = useState(0);
-  const dragStartY = useRef<number | null>(null);
-  const isDragging = useRef(false);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    dragStartY.current = e.touches[0].clientY;
-    isDragging.current = false;
-  }, []);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (dragStartY.current === null) return;
-    const dy = e.touches[0].clientY - dragStartY.current;
-    // Only allow dragging downward
-    if (dy > 0) {
-      isDragging.current = true;
-      setDragY(dy);
-      // Prevent pull-to-refresh
-      e.preventDefault();
-    }
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    if (dragY > DISMISS_THRESHOLD) {
-      onClose();
-    } else {
-      setDragY(0);
-    }
-    dragStartY.current = null;
-    isDragging.current = false;
-  }, [dragY, onClose]);
-
-  const handleTabTap = useCallback(() => {
-    // Only close on tap, not after a drag gesture
-    if (!isDragging.current) {
-      onClose();
-    }
-  }, [onClose]);
-
+function MobileSheet({ sectionName, onClose }: { sectionName: string | null; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 md:hidden">
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-        style={{ opacity: Math.max(0, 1 - dragY / (DISMISS_THRESHOLD * 3)) }}
-      />
-      <div
-        ref={sheetRef}
-        className="absolute bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl flex flex-col"
-        style={{
-          height: `calc(100dvh - ${SHEET_TOP_GAP_PX}px)`,
-          transform: `translateY(${dragY}px)`,
-          transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
-        }}
-      >
-        {/* Pull tab / drag handle — tap or drag down to close (44px min touch target per Apple HIG) */}
-        <div
-          className="flex flex-col items-center justify-center py-3 cursor-grab active:cursor-grabbing touch-none"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onClick={handleTabTap}
-        >
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30 mb-1" />
-          <span className="text-sm font-semibold">
-            {sectionName !== 'Browse Pokémon' ? (
-              <>
-                <span className="text-foreground">Adding to: </span>
-                <span className="text-primary">{sectionName}</span>
-              </>
-            ) : (
-              <span className="text-muted-foreground">{sectionName}</span>
-            )}
-          </span>
-        </div>
-        <div className="border-b" />
-        <div className="flex-1 min-h-0">
-          <PokemonBrowser />
-        </div>
-      </div>
-    </div>
+    <BottomSheet
+      onClose={onClose}
+      size="full"
+      topGap={SHEET_TOP_GAP_PX}
+      closeLabel={sectionName ? `Adding to ${sectionName}` : 'Browse Pokémon'}
+      title={
+        sectionName !== null ? (
+          <>
+            <span className="text-foreground">Adding to: </span>
+            <span className="text-primary">{sectionName}</span>
+          </>
+        ) : (
+          <span className="text-muted-foreground">Browse Pokémon</span>
+        )
+      }
+    >
+      <PokemonBrowser />
+    </BottomSheet>
   );
 }
 
 function App() {
+  // Keeps <html lang>/dir in step with the active locale: it drives the
+  // per-script font stacks, CSS :lang() selectors, and screen-reader voice.
+  useDocumentLocale();
   useCompletionBeacon();
   useMilestoneTracker();
+  useJsErrorCounter();
   const [currentView, setCurrentView] = useState<AppView>('builder');
   const viewMounted = useRef(false);
   const analyticsMounted = useRef(false);
@@ -153,6 +96,14 @@ function App() {
     if (!el) return;
     const handler = (e: WheelEvent) => {
       if (activeSectionRef.current) return; // panel open — let normal layout handle it
+      // An open sheet or dialog is a layer above the page, so a wheel over it
+      // is not "whitespace beside the build page" — forwarding it scrolls the
+      // app underneath the sheet, which is the one thing an overlay must not
+      // do. The overlay is `position: fixed` and so looks detached, but it is
+      // still a DOM descendant of this element, which is why it reaches here at
+      // all. Measured: without this, a wheel over the feedback sheet moved the
+      // build page by the full deltaY.
+      if ((e.target as Element | null)?.closest?.('[data-overlay], [role="dialog"]')) return;
       const scrollEl = el.querySelector('[data-build-scroll]') as HTMLElement | null;
       if (!scrollEl || scrollEl.contains(e.target as Node)) return; // already inside scroller
       scrollEl.scrollTop += e.deltaY;
@@ -178,9 +129,9 @@ function App() {
   // `md:` prefix the panel's own classes use, so mount and visibility agree.
   const isDesktopPanel = useViewportAtLeast(1024);
 
-  const sectionName = activeSection
-    ? BUILD_GROUPS.find((g) => g.id === activeSection)?.name ?? 'Section'
-    : 'Browse Pokémon';
+  // null means "no section chosen yet", i.e. plain browsing. Kept as null
+  // rather than a display string so the sheet branches on state, not on text.
+  const sectionName = activeSection ? sectionLabel(activeSection) : null;
 
   return (
     <TooltipProvider>
@@ -230,9 +181,11 @@ function App() {
         {/* View — lazy, mounted on first visit then kept alive */}
         <div className={cn('flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col', currentView !== 'view' && 'hidden')}>
           {viewMounted.current && (
-            <Suspense fallback={<RouteFallback />}>
-              <ViewPage />
-            </Suspense>
+            <ErrorBoundary where="view">
+              <Suspense fallback={<RouteFallback />}>
+                <ViewPage />
+              </Suspense>
+            </ErrorBoundary>
           )}
         </div>
 
@@ -240,9 +193,11 @@ function App() {
         <div className={cn('flex-1 flex min-h-0', currentView !== 'analytics' && 'hidden')}>
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
             {analyticsMounted.current && (
-              <Suspense fallback={<RouteFallback />}>
-                <AnalyticsDashboard />
-              </Suspense>
+              <ErrorBoundary where="analytics">
+                <Suspense fallback={<RouteFallback />}>
+                  <AnalyticsDashboard />
+                </Suspense>
+              </ErrorBoundary>
             )}
           </div>
           {drillDownSegment && (

@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { Input } from '@/components/ui/input';
 import { getAllPokemon, getPokemonById } from '@/hooks/usePokemonData';
 import { BUILD_GROUPS } from '@/data/slot-template';
@@ -533,6 +534,36 @@ function PrePostCohort({
   );
 }
 
+/** Round a number up to a "nice" 1/2/5 × 10^k value (e.g. 7.6 → 10, 23 → 50). */
+function niceNum(x: number): number {
+  if (x <= 0) return 1;
+  const exp = Math.floor(Math.log10(x));
+  const pow = Math.pow(10, exp);
+  const f = x / pow; // 1..10
+  const nf = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
+  return nf * pow;
+}
+
+/** Build a y-axis of round tick values covering [0, rawMax] with ~`target`
+ *  intervals. Returns the axis ceiling (used to scale the chart) and the
+ *  ascending tick list, so labels are always 0, step, 2·step, … not raw maxima. */
+function niceAxis(rawMax: number, target = 3): { axisMax: number; ticks: number[] } {
+  const step = Math.max(1, niceNum(rawMax / target)); // integer counts: never sub-1 ticks
+  const axisMax = Math.ceil(rawMax / step) * step;
+  const ticks: number[] = [];
+  for (let v = 0; v <= axisMax + step / 2; v += step) ticks.push(v);
+  return { axisMax, ticks };
+}
+
+/** Compact tick label: 1500 → "1.5k", 2000 → "2k", 30 → "30". */
+function fmtTick(v: number): string {
+  if (v >= 1000) {
+    const k = v / 1000;
+    return `${Number.isInteger(k) ? k : k.toFixed(1)}k`;
+  }
+  return `${v}`;
+}
+
 /** Active-users line chart: daily active users (DAU) and a trailing-7-day
  *  rolling active count (a WAU that updates every day). Press/move over the
  *  chart to read exact values on a given day. */
@@ -547,11 +578,36 @@ function ActivityChart({ series }: { series: { day: number; dau: number; rolling
   const padR = 6;
   const padT = 8;
   const padB = 18;
-  const max = Math.max(1, ...series.map((d) => Math.max(d.dau, d.rolling7)));
+  const rawMax = Math.max(1, ...series.map((d) => Math.max(d.dau, d.rolling7)));
+  const { axisMax, ticks } = niceAxis(rawMax);
   const n = series.length;
   const px = (i: number) => padL + ((W - padL - padR) * i) / (n - 1);
-  const py = (v: number) => padT + (H - padT - padB) * (1 - v / max);
-  const line = (key: 'dau' | 'rolling7') => series.map((d, i) => `${px(i)},${py(d[key])}`).join(' ');
+  const py = (v: number) => padT + (H - padT - padB) * (1 - v / axisMax);
+
+  // Segments drawn dotted mark provisional data. The final segment into
+  // "today" is provisional for both lines (today is still accumulating). The
+  // first RAMP days are provisional for the rolling-7 line only — its window
+  // is not yet full — while each day's DAU is already a complete count.
+  const RAMP = 7;
+  const isToday = (i: number) => i === n - 2;
+  const dauProvisional = (i: number) => isToday(i);
+  const r7Provisional = (i: number) => i <= RAMP - 2 || isToday(i);
+  const segPath = (key: 'dau' | 'rolling7', prov: (i: number) => boolean, wantProvisional: boolean) => {
+    let d = '';
+    for (let i = 0; i < n - 1; i++) {
+      if (prov(i) !== wantProvisional) continue;
+      d += `M ${px(i)},${py(series[i][key])} L ${px(i + 1)},${py(series[i + 1][key])} `;
+    }
+    return d.trim();
+  };
+
+  // Shade the area under the DAU line for the trailing 7 days — the days that
+  // roll into today's rolling-7 count, so the earliest of them is the value
+  // dropping out next (the "target to beat" today).
+  const shadeStart = Math.max(0, n - 7);
+  let dauArea = `M ${px(shadeStart)},${py(0)}`;
+  for (let i = shadeStart; i < n; i++) dauArea += ` L ${px(i)},${py(series[i].dau)}`;
+  dauArea += ` L ${px(n - 1)},${py(0)} Z`;
 
   const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   const step = Math.max(1, Math.ceil(n / 8));
@@ -575,6 +631,9 @@ function ActivityChart({ series }: { series: { day: number; dau: number; rolling
         <span className="flex items-center gap-1">
           <span className="inline-block w-3 h-[2px]" style={{ backgroundColor: 'var(--color-muted-foreground)' }} /> Daily (DAU)
         </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-3 border-b border-dashed" style={{ borderColor: 'var(--color-muted-foreground)' }} /> Provisional
+        </span>
       </div>
       <div
         ref={areaRef}
@@ -588,16 +647,22 @@ function ActivityChart({ series }: { series: { day: number; dau: number; rolling
         onPointerLeave={() => setCursor(null)}
       >
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" style={{ height: 'auto' }} preserveAspectRatio="none">
-          {[0, 0.5, 1].map((g) => (
-            <g key={g}>
-              <line x1={padL} y1={py(g * max)} x2={W - padR} y2={py(g * max)} stroke="var(--color-muted)" strokeWidth={1} />
-              <text x={2} y={py(g * max) + 3} fontSize={7} fill="var(--color-muted-foreground)">
-                {Math.round(g * max)}
+          {ticks.map((t) => (
+            <g key={t}>
+              <line x1={padL} y1={py(t)} x2={W - padR} y2={py(t)} stroke="var(--color-muted)" strokeWidth={1} />
+              <text x={2} y={py(t) + 3} fontSize={7} fill="var(--color-muted-foreground)">
+                {fmtTick(t)}
               </text>
             </g>
           ))}
-          <polyline points={line('dau')} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} />
-          <polyline points={line('rolling7')} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} />
+          {/* Trailing-7-day window feeding today's rolling count */}
+          <path d={dauArea} fill="var(--color-muted-foreground)" opacity={0.1} stroke="none" />
+          {/* DAU — solid; only today (still accumulating) is dotted */}
+          <path d={segPath('dau', dauProvisional, false)} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} />
+          <path d={segPath('dau', dauProvisional, true)} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} strokeDasharray="2 2" />
+          {/* Rolling 7-day (WAU) — dotted over ramp-up (window not yet full) + today */}
+          <path d={segPath('rolling7', r7Provisional, false)} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} />
+          <path d={segPath('rolling7', r7Provisional, true)} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} strokeDasharray="3 2" />
           {cur && cursor !== null && (
             <line x1={px(cursor)} y1={padT} x2={px(cursor)} y2={H - padB} stroke="var(--color-foreground)" strokeWidth={1} />
           )}
@@ -1804,6 +1869,10 @@ export function AdminPage() {
 
       <main className="flex-1 max-w-5xl mx-auto w-full p-4 flex flex-col gap-4">
         {error && <p className="text-sm text-destructive">{error}</p>}
+
+        {/* Above the dashboard: it is the only thing here that someone else
+            wrote, and the only thing that goes stale if it is not read. */}
+        {token && <FeedbackCard token={token} />}
 
         {data && (
           <>

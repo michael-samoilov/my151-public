@@ -15,10 +15,15 @@ export function FilterChipList({
   items,
   activeId,
   onSelect,
+  label,
 }: {
   items: FilterChipItem[];
   activeId: string | null;
   onSelect: (id: string) => void;
+  /** The chip's display name. Supplied by the caller because the same list
+   *  component serves categories and archetypes, which live in different
+   *  message namespaces — `item.name` is the untranslated dataset value. */
+  label: (item: FilterChipItem) => string;
 }) {
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -37,7 +42,7 @@ export function FilterChipList({
             )}
             style={isActive ? { backgroundColor: item.color } : undefined}
           >
-            {item.name}
+            {label(item)}
           </button>
         );
       })}

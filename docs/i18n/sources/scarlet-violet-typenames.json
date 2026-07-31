@@ -1,0 +1,222 @@
+{
+  "source": {
+    "repo": "https://github.com/abcboy101/poke-corpus",
+    "commit": "d74a89ba69cbabc491b65c3e88af8722bb34a927",
+    "collection": "ScarletViolet",
+    "file": "common",
+    "table": "sv.typename",
+    "retrieved": "2026-07-30",
+    "sha256": {
+      "qid": "cbd68c658591b7938f6e17007085d57d4bd63912f5353348f0f8d7a480661793",
+      "en": "e124161806f2d16ebc1821522aac12c8745b615ba770b56b407524c046368ad5",
+      "ja": "a789a8e24bbc3210d7328b137840436900a9f74cdc59224e6360aeed3434096e",
+      "ko": "0b972225ea00fe1caf309f5b0e0bdbd316f8d63b40c3b76bd700e7d3ccfca827",
+      "zh-Hans": "75675f86872a317144e2566ff6c810b2e9b670125067c73272d3760abf82e40d",
+      "zh-Hant": "54afd18d4a73fdc85d5881834bd0fb57605b991fad7e2e64259996fb5e11586a",
+      "fr": "48a3a6704e700c866b37f8c9316a75626f6f7364815ad6285846e432530ca289",
+      "de": "c9a1d1702a12e2e814bfa9d83065f374cbb59dc8500eaa5819a5dca9c12e315b",
+      "es": "3ca911e8b10eed63d713e2bb16335acc58b40d119f1329ac75394f8e17b52524",
+      "it": "125b315261ecdbed9d68cb200febbb304aeee89b1bb1c8e2fac72d6a176f7c82"
+    }
+  },
+  "types": {
+    "term.type.normal": {
+      "en": "Normal",
+      "ja": "ノーマル",
+      "ko": "노말",
+      "zh-Hans": "一般",
+      "zh-Hant": "一般",
+      "fr": "Normal",
+      "de": "Normal",
+      "es": "Normal",
+      "it": "Normale"
+    },
+    "term.type.fighting": {
+      "en": "Fighting",
+      "ja": "かくとう",
+      "ko": "격투",
+      "zh-Hans": "格斗",
+      "zh-Hant": "格鬥",
+      "fr": "Combat",
+      "de": "Kampf",
+      "es": "Lucha",
+      "it": "Lotta"
+    },
+    "term.type.flying": {
+      "en": "Flying",
+      "ja": "ひこう",
+      "ko": "비행",
+      "zh-Hans": "飞行",
+      "zh-Hant": "飛行",
+      "fr": "Vol",
+      "de": "Flug",
+      "es": "Volador",
+      "it": "Volante"
+    },
+    "term.type.poison": {
+      "en": "Poison",
+      "ja": "どく",
+      "ko": "독",
+      "zh-Hans": "毒",
+      "zh-Hant": "毒",
+      "fr": "Poison",
+      "de": "Gift",
+      "es": "Veneno",
+      "it": "Veleno"
+    },
+    "term.type.ground": {
+      "en": "Ground",
+      "ja": "じめん",
+      "ko": "땅",
+      "zh-Hans": "地面",
+      "zh-Hant": "地面",
+      "fr": "Sol",
+      "de": "Boden",
+      "es": "Tierra",
+      "it": "Terra"
+    },
+    "term.type.rock": {
+      "en": "Rock",
+      "ja": "いわ",
+      "ko": "바위",
+      "zh-Hans": "岩石",
+      "zh-Hant": "岩石",
+      "fr": "Roche",
+      "de": "Gestein",
+      "es": "Roca",
+      "it": "Roccia"
+    },
+    "term.type.bug": {
+      "en": "Bug",
+      "ja": "むし",
+      "ko": "벌레",
+      "zh-Hans": "虫",
+      "zh-Hant": "蟲",
+      "fr": "Insecte",
+      "de": "Käfer",
+      "es": "Bicho",
+      "it": "Coleottero"
+    },
+    "term.type.ghost": {
+      "en": "Ghost",
+      "ja": "ゴースト",
+      "ko": "고스트",
+      "zh-Hans": "幽灵",
+      "zh-Hant": "幽靈",
+      "fr": "Spectre",
+      "de": "Geist",
+      "es": "Fantasma",
+      "it": "Spettro"
+    },
+    "term.type.steel": {
+      "en": "Steel",
+      "ja": "はがね",
+      "ko": "강철",
+      "zh-Hans": "钢",
+      "zh-Hant": "鋼",
+      "fr": "Acier",
+      "de": "Stahl",
+      "es": "Acero",
+      "it": "Acciaio"
+    },
+    "term.type.fire": {
+      "en": "Fire",
+      "ja": "ほのお",
+      "ko": "불꽃",
+      "zh-Hans": "火",
+      "zh-Hant": "火",
+      "fr": "Feu",
+      "de": "Feuer",
+      "es": "Fuego",
+      "it": "Fuoco"
+    },
+    "term.type.water": {
+      "en": "Water",
+      "ja": "みず",
+      "ko": "물",
+      "zh-Hans": "水",
+      "zh-Hant": "水",
+      "fr": "Eau",
+      "de": "Wasser",
+      "es": "Agua",
+      "it": "Acqua"
+    },
+    "term.type.grass": {
+      "en": "Grass",
+      "ja": "くさ",
+      "ko": "풀",
+      "zh-Hans": "草",
+      "zh-Hant": "草",
+      "fr": "Plante",
+      "de": "Pflanze",
+      "es": "Planta",
+      "it": "Erba"
+    },
+    "term.type.electric": {
+      "en": "Electric",
+      "ja": "でんき",
+      "ko": "전기",
+      "zh-Hans": "电",
+      "zh-Hant": "電",
+      "fr": "Électrik",
+      "de": "Elektro",
+      "es": "Eléctrico",
+      "it": "Elettro"
+    },
+    "term.type.psychic": {
+      "en": "Psychic",
+      "ja": "エスパー",
+      "ko": "에스퍼",
+      "zh-Hans": "超能力",
+      "zh-Hant": "超能力",
+      "fr": "Psy",
+      "de": "Psycho",
+      "es": "Psíquico",
+      "it": "Psico"
+    },
+    "term.type.ice": {
+      "en": "Ice",
+      "ja": "こおり",
+      "ko": "얼음",
+      "zh-Hans": "冰",
+      "zh-Hant": "冰",
+      "fr": "Glace",
+      "de": "Eis",
+      "es": "Hielo",
+      "it": "Ghiaccio"
+    },
+    "term.type.dragon": {
+      "en": "Dragon",
+      "ja": "ドラゴン",
+      "ko": "드래곤",
+      "zh-Hans": "龙",
+      "zh-Hant": "龍",
+      "fr": "Dragon",
+      "de": "Drache",
+      "es": "Dragón",
+      "it": "Drago"
+    },
+    "term.type.dark": {
+      "en": "Dark",
+      "ja": "あく",
+      "ko": "악",
+      "zh-Hans": "恶",
+      "zh-Hant": "惡",
+      "fr": "Ténèbres",
+      "de": "Unlicht",
+      "es": "Siniestro",
+      "it": "Buio"
+    },
+    "term.type.fairy": {
+      "en": "Fairy",
+      "ja": "フェアリー",
+      "ko": "페어리",
+      "zh-Hans": "妖精",
+      "zh-Hant": "妖精",
+      "fr": "Fée",
+      "de": "Fee",
+      "es": "Hada",
+      "it": "Folletto"
+    }
+  }
+}

@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { categoryName, formatList, t, tn, typeLabel } from '@/i18n';
+import type { TypeName } from '@/types/pokemon';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById, getAllPokemon, getEvolutionChainIds, withoutSpecials } from '@/hooks/usePokemonData';
 import { CATEGORIES } from '@/data/categories';
@@ -54,13 +56,13 @@ export function WhatsAdvisor() {
     // Check total fill
     const totalPlaced = Object.values(sections).reduce((s, a) => s + a.length, 0);
     if (totalPlaced === 0) {
-      items.push({ type: 'missing', text: 'Pokedex is empty' });
+      items.push({ type: 'missing', text: t('advisor.empty') });
     } else if (totalPlaced < 151) {
-      items.push({ type: 'suggestion', text: `${totalPlaced}/151 filled` });
+      items.push({ type: 'suggestion', text: t('advisor.filled', { count: totalPlaced }) });
     } else if (totalPlaced === 151) {
-      items.push({ type: 'complete', text: '151/151 filled!' });
+      items.push({ type: 'complete', text: t('advisor.complete') });
     } else {
-      items.push({ type: 'missing', text: `${totalPlaced}/151 — over by ${totalPlaced - 151}. Remove some Pokémon to reach 151.` });
+      items.push({ type: 'missing', text: t('advisor.over', { count: totalPlaced, over: totalPlaced - 151 }) });
     }
 
     // Check archetype coverage
@@ -75,11 +77,11 @@ export function WhatsAdvisor() {
         if (p) starterChains.add(p.evolutionChainId);
       }
       if (starterChains.size >= 3) {
-        items.push({ type: 'complete', text: `${starterChains.size} Starter lines represented` });
+        items.push({ type: 'complete', text: tn('advisor.starterLines', starterChains.size) });
       } else if (starterChains.size > 0) {
-        items.push({ type: 'suggestion', text: `${starterChains.size}/3 Starter lines (need 3)` });
+        items.push({ type: 'suggestion', text: t('advisor.starterProgress', { count: starterChains.size }) });
       } else {
-        items.push({ type: 'missing', text: 'No Starter assigned yet' });
+        items.push({ type: 'missing', text: t('advisor.noStarter') });
       }
     }
 
@@ -90,9 +92,9 @@ export function WhatsAdvisor() {
       if (!cat) continue;
       const hasAny = pokemonList.some((p) => cat.filter(p) && allIds.has(p.id));
       if (hasAny) {
-        items.push({ type: 'complete', text: `${cat.name} represented` });
+        items.push({ type: 'complete', text: t('advisor.categoryPresent', { category: categoryName(cat.id) }) });
       } else {
-        items.push({ type: 'missing', text: `No ${cat.name} assigned yet` });
+        items.push({ type: 'missing', text: t('advisor.categoryMissing', { category: categoryName(cat.id) }) });
       }
     }
 
@@ -107,9 +109,9 @@ export function WhatsAdvisor() {
     const allTypes = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
     const missingTypes = allTypes.filter((t) => !typeCoverage.has(t));
     if (missingTypes.length > 0) {
-      items.push({ type: 'missing', text: `Missing types: ${missingTypes.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ')}` });
+      items.push({ type: 'missing', text: t('advisor.missingTypes', { types: formatList(missingTypes.map((mt) => typeLabel(mt as TypeName))) }) });
     } else {
-      items.push({ type: 'complete', text: 'All 18 types covered' });
+      items.push({ type: 'complete', text: t('advisor.allTypes') });
     }
 
     // Type over-representation warning (>2x vs national, in BOTH full and filtered pools)
@@ -140,13 +142,13 @@ export function WhatsAdvisor() {
       for (const [t, ratioAll] of ratiosAll) {
         const ratioFilt = ratiosFiltered.get(t) ?? 0;
         if (ratioAll > 2 && ratioFilt > 2) {
-          overRepTypes.push(t.charAt(0).toUpperCase() + t.slice(1));
+          overRepTypes.push(typeLabel(t as TypeName));
         }
       }
       if (overRepTypes.length > 0) {
         items.push({
           type: 'missing',
-          text: `Over-represented type${overRepTypes.length > 1 ? 's' : ''}: ${overRepTypes.join(', ')} (>2× national dex proportion)`,
+          text: tn('advisor.overRepresented', overRepTypes.length, { types: formatList(overRepTypes) }),
         });
       }
     }
@@ -175,7 +177,7 @@ export function WhatsAdvisor() {
             member.evolutionLevel >= 40
           ) {
             const name = member.name.charAt(0).toUpperCase() + member.name.slice(1);
-            lateEvoWarnings.push(`${name} (Lvl. ${member.evolutionLevel})`);
+            lateEvoWarnings.push(t('advisor.lateEvoEntry', { name, level: member.evolutionLevel }));
             break; // one warning per chain
           }
         }
@@ -183,7 +185,7 @@ export function WhatsAdvisor() {
       if (lateEvoWarnings.length > 0) {
         items.push({
           type: 'missing',
-          text: `Early route Pokémon with late evolutions: ${lateEvoWarnings.join(', ')}`,
+          text: t('advisor.lateEvo', { names: formatList(lateEvoWarnings) }),
         });
       }
     }
@@ -201,12 +203,12 @@ export function WhatsAdvisor() {
         className="flex items-center gap-2 w-full text-left px-6 pt-3 pb-2"
       >
         <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expanded ? '' : '-rotate-90'}`} />
-        <h3 className="text-lg font-semibold">What's Missing?</h3>
+        <h3 className="text-lg font-semibold">{t('advisor.heading')}</h3>
         {gapCount > 0 && (
-          <Badge className="text-xs bg-yellow-500 text-white">{gapCount} {gapCount === 1 ? 'gap' : 'gaps'}</Badge>
+          <Badge className="text-xs bg-yellow-500 text-white">{tn('advisor.gaps', gapCount)}</Badge>
         )}
         {gapCount === 0 && completeCount > 0 && (
-          <Badge className="text-xs bg-green-600">Looking good!</Badge>
+          <Badge className="text-xs bg-green-600">{t('advisor.lookingGood')}</Badge>
         )}
       </button>
 
@@ -229,7 +231,7 @@ export function WhatsAdvisor() {
             </div>
           ))}
           <p className="pt-2 text-xs text-muted-foreground italic">
-            Tip: Press chart bars to see which Pokémon are driving trends in your dex
+            {t('analytics.tip')}
           </p>
         </div>
       )}

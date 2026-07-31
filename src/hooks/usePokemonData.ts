@@ -3,6 +3,7 @@ import type { Pokemon } from '@/types/pokemon';
 import pokemonData from '@/data/pokemon.json';
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
+import { normalizeSearch, speciesSearchText, useNamesVersion } from '@/i18n';
 
 const pokemonList = pokemonData as Pokemon[];
 
@@ -271,7 +272,6 @@ export function getEvolutionLine(pokemonId: number, placedIds?: Set<number>): Po
   // Walk forwards from this Pokemon to find descendants
   const descendants: Pokemon[] = [];
   let searchId = pokemon.id;
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const children = chainMembers.filter(p => p.evolvesFrom === searchId);
     if (children.length === 0) break;
@@ -362,17 +362,29 @@ function useFilteredPokemon({
   const shapesKey = shapes ? shapes.join(',') : '';
   const colorsKey = colors ? colors.join(',') : '';
   const eggGroupsKey = eggGroups ? eggGroups.join(',') : '';
+  // Names arrive asynchronously and change with the locale, so the filter has
+  // to recompute when either does — `useNamesVersion` ticks on both.
+  const namesVersion = useNamesVersion();
 
   return useMemo(() => {
+    // Read so the dependency is real rather than decorative: the memo's output
+    // depends on the name catalog, which this counter stands in for.
+    void namesVersion;
     let filtered = pokemonList;
 
     // When searching by name/number, ignore all other filters — the user
     // knows what they want and filters would only get in the way.
     if (search) {
-      const q = search.toLowerCase();
-      filtered = filtered.filter(p =>
-        p.name.includes(q) || p.id.toString() === q
-      );
+      const q = normalizeSearch(search);
+      filtered = filtered.filter(p => {
+        // The English slug stays searchable in every locale. A Japanese user on
+        // a Latin keyboard typing `pikachu` is the common case, not the
+        // exception — and it is the only thing that works before the locale's
+        // name catalog has finished loading.
+        if (p.name.includes(q) || p.id.toString() === q) return true;
+        const localized = speciesSearchText(p.id);
+        return localized ? localized.includes(q) : false;
+      });
     } else {
       if (category) {
         const categoryDef = getCategoryById(category);
@@ -437,7 +449,7 @@ function useFilteredPokemon({
     }
 
     return filtered;
-  }, [search, category, archetype, typesKey, typeMode, gensKey, shapesKey, colorsKey, eggGroupsKey, excludeIds, excludeKey]);
+  }, [search, category, archetype, typesKey, typeMode, gensKey, shapesKey, colorsKey, eggGroupsKey, excludeIds, excludeKey, namesVersion]);
 }
 
 export interface EvolutionGroup {

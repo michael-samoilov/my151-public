@@ -114,8 +114,6 @@ async function main() {
   console.log('Building Pokemon data...');
 
   const result = [];
-  let chainCounter = 0;
-  const chainMap = new Map();
 
   for (const [id, sp] of speciesMap) {
     if (id > 1025) continue; // Only up to Gen 9

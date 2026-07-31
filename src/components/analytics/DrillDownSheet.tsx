@@ -3,8 +3,9 @@ import { flushSync } from 'react-dom';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { computeDrillDownData, type DrillDownData } from '@/hooks/useDrillDownData';
 import { EvoLineGrid } from '@/components/browser/EvoLineCard';
-import { ShapeIconCircle, SHAPE_LABELS } from '@/components/shared/ShapeIcon';
-import type { ShapeName } from '@/types/pokemon';
+import { ShapeIconCircle } from '@/components/shared/ShapeIcon';
+import { shapeLabel, typeLabel } from '@/i18n';
+import type { ShapeName, TypeName } from '@/types/pokemon';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 const HEADER_HEIGHT = 49; // app header: py-3 + text + border
@@ -21,12 +22,12 @@ function getSegmentShape(seg: DrillDownSegment): ShapeName | undefined {
 
 function getSegmentLabel(seg: DrillDownSegment): string {
   switch (seg.kind) {
-    case 'type': return seg.type.charAt(0).toUpperCase() + seg.type.slice(1);
+    case 'type': return typeLabel(seg.type as TypeName);
     case 'generation': return `Gen ${seg.generation}`;
     case 'evoLevel': return `Lv ${seg.binStart}–${seg.binEnd - 1}`;
     case 'bst': return `${seg.binStart}–${seg.binEnd - 1}`;
-    case 'typeMatchup': return seg.type.charAt(0).toUpperCase() + seg.type.slice(1);
-    case 'shape': return SHAPE_LABELS[seg.shape as ShapeName] ?? seg.shape;
+    case 'typeMatchup': return typeLabel(seg.type as TypeName);
+    case 'shape': return shapeLabel(seg.shape as ShapeName);
     default: return '';
   }
 }

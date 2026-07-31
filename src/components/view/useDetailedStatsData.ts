@@ -3,11 +3,13 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { useAnalytics, fullBaseline } from '@/hooks/useAnalytics';
 import { getPokemonByIds } from '@/hooks/usePokemonData';
 import { countTypes, buildTypeRows } from '@/components/analytics/typeDistribution';
+import { rowKey } from '@/components/analytics/butterflyRow';
+import type { TypeName } from '@/types/pokemon';
 
 /** Per-generation bar colours (mirrors the panel's palette). */
 export const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
 
-export interface StatsTypeDatum { label: string; count: number; deviation: number; color: string }
+export interface StatsTypeDatum { type: TypeName; label: string; count: number; deviation: number; color: string }
 export interface StatsGenDatum { gen: number; count: number; deviation: number; color: string }
 export interface StatsBstBin { x: number; nationalPct: number; yoursPct: number }
 export interface StatsBst {
@@ -77,7 +79,7 @@ export function useDetailedStatsData(): DetailedStatsData {
     if (total === 0) return [];
     return buildTypeRows(countTypes(pokemon), total, fullBaseline.typeProp)
       .sort((a, b) => b.deviation - a.deviation)
-      .map((r) => ({ label: r.label, count: r.count, deviation: r.deviation, color: r.color }));
+      .map((r) => ({ type: rowKey(r) as TypeName, label: r.label, count: r.count, deviation: r.deviation, color: r.color }));
   }, [sections]);
 
   const genData = useMemo<StatsGenDatum[]>(

@@ -7,7 +7,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { computePerPokemonMatchup } from '@/hooks/useTypeDominance';
 import type { Pokemon, TypeName, ShapeName } from '@/types/pokemon';
 import { typeIconPath } from '@/data/type-ids';
-import { SHAPE_LABELS } from '@/components/shared/ShapeIcon';
+import { regionName, sectionName, shapeLabel, t, tn, typeLabel } from '@/i18n';
 
 const STAGE_COLORS = ['#f5a3a3', '#e56060', '#dc2626'];
 const GEN_COLORS = ['#e74c3c', '#f39c12', '#2ecc71', '#3498db', '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#c0392b'];
@@ -183,7 +183,7 @@ export function computeDrillDownData(
       });
       sections.push({
         sectionId: bg.id,
-        sectionName: bg.name,
+        sectionName: sectionName(bg.id),
         sectionColor: bg.color,
         groups,
       });
@@ -196,7 +196,7 @@ export function computeDrillDownData(
 
     return {
       title,
-      subtitle: `${countForSubtitle} Pokémon across ${linesForSubtitle} line${linesForSubtitle !== 1 ? 's' : ''}`,
+      subtitle: tn('drilldown.subtitle', linesForSubtitle, { pokemon: countForSubtitle }),
       color,
       icon,
       sections,
@@ -350,12 +350,12 @@ function computeRegionalDrillDown(
     }
   }
 
-  const dexLabel = isNational ? 'National Dex' : dex!.name;
+  const dexLabel = isNational ? t('dex.national') : regionName(dex!.id);
   const { title, color, icon } = getSegmentMeta(segment);
 
   return {
-    title: `${title} — ${dexLabel}`,
-    subtitle: `${matchingNonExcludedIds.size} Pokémon across ${chainIds.size} line${chainIds.size !== 1 ? 's' : ''}`,
+    title: t('drilldown.titleWithDex', { title, dex: dexLabel }),
+    subtitle: tn('drilldown.subtitle', chainIds.size, { pokemon: matchingNonExcludedIds.size }),
     color,
     icon,
     sections,
@@ -520,10 +520,10 @@ function computeTypeMatchupDrillDown(
 
   const { title, color, icon } = getSegmentMeta(segment);
   const shownPokemon = [...tierMap.values()].reduce((s, ids) => s + ids.size, 0);
-  const dexLabel = isRegional ? (dexId === 'national' ? 'National Dex' : REGIONAL_DEXES.find(d => d.id === dexId)?.name ?? dexId) : null;
+  const dexLabel = isRegional ? (dexId === 'national' ? t('dex.national') : regionName(dexId)) : null;
   const result: DrillDownData = {
     title: dexLabel ? `${title} — ${dexLabel}` : title,
-    subtitle: `${shownPokemon} Pokémon with non-neutral matchups`,
+    subtitle: t('drilldown.matchupSubtitle', { count: shownPokemon }),
     color,
     icon,
     sections,
@@ -574,54 +574,56 @@ function matchesSegment(p: Pokemon, id: number, segment: DrillDownSegment): bool
   }
 }
 
+/** "Single" / "Double" / "Triple" as a translatable word, not an array index. */
+function lineLengthWord(length: number): string {
+  const key = length === 1 ? 'drilldown.lineLength.1' : length === 2 ? 'drilldown.lineLength.2' : 'drilldown.lineLength.3';
+  return t(key);
+}
+
 function getSegmentMeta(segment: DrillDownSegment): { title: string; color: string; icon?: string } {
   switch (segment.kind) {
     case 'type': {
-      const cap = segment.type.charAt(0).toUpperCase() + segment.type.slice(1);
       return {
-        title: `${cap} Type`,
+        title: t('drilldown.typeTitle', { type: typeLabel(segment.type as TypeName) }),
         color: TYPE_COLORS[segment.type as keyof typeof TYPE_COLORS] ?? '#888',
         icon: typeIconPath(segment.type as TypeName),
       };
     }
     case 'generation':
       return {
-        title: `Generation ${segment.generation}`,
+        title: t('drilldown.generationTitle', { gen: segment.generation }),
         color: GEN_COLORS[(segment.generation - 1) % GEN_COLORS.length],
       };
     case 'stage': {
-      const names = ['Single', 'Double', 'Triple'];
       return {
-        title: `${names[segment.lineLength - 1]}-Stage / Stage ${segment.stage}`,
+        title: t('drilldown.stageTitle', { length: lineLengthWord(segment.lineLength), stage: segment.stage }),
         color: STAGE_COLORS[segment.stage - 1],
       };
     }
     case 'stageAll':
       return {
-        title: `All Stage ${segment.stage} Pokémon`,
+        title: t('drilldown.stageAllTitle', { stage: segment.stage }),
         color: STAGE_COLORS[segment.stage - 1],
       };
     case 'lineLength': {
-      const names = ['Single', 'Double', 'Triple'];
       return {
-        title: `${names[segment.lineLength - 1]}-Stage Lines`,
+        title: t('drilldown.lineLengthTitle', { length: lineLengthWord(segment.lineLength) }),
         color: STAGE_COLORS[segment.lineLength - 1],
       };
     }
     case 'evoLevel':
       return {
-        title: `Evolves at Lv ${segment.binStart}–${segment.binEnd - 1}`,
+        title: t('drilldown.evoLevelTitle', { from: segment.binStart, to: segment.binEnd - 1 }),
         color: '#ef4444',
       };
     case 'bst':
       return {
-        title: `BST ${segment.binStart}–${segment.binEnd - 1}`,
+        title: t('drilldown.bstTitle', { from: segment.binStart, to: segment.binEnd - 1 }),
         color: '#ef4444',
       };
     case 'typeMatchup': {
-      const cap = segment.type.charAt(0).toUpperCase() + segment.type.slice(1);
       return {
-        title: `${cap} Matchup`,
+        title: t('drilldown.matchupTitle', { type: typeLabel(segment.type as TypeName) }),
         color: TYPE_COLORS[segment.type as keyof typeof TYPE_COLORS] ?? '#888',
         icon: typeIconPath(segment.type as TypeName),
       };
@@ -630,7 +632,7 @@ function getSegmentMeta(segment: DrillDownSegment): { title: string; color: stri
       // No header icon (like the gen drilldown): the HOME silhouettes are black
       // and would vanish on the dark-mode header. The title carries it.
       return {
-        title: `${SHAPE_LABELS[segment.shape as ShapeName] ?? segment.shape} Shape`,
+        title: t('drilldown.shapeTitle', { shape: shapeLabel(segment.shape as ShapeName) }),
         color: '#ef4444', // app red — shapes carry no per-category color
       };
   }

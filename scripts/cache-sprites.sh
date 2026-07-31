@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 BASE="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites"
 DEST="public/sprites"
 
-mkdir -p "$DEST/pokemon/shiny" "$DEST/types/badges" "$DEST/types/small"
+mkdir -p "$DEST/pokemon/shiny" "$DEST/types/small"
 
 # Download helper with retry and validation
 download() {
@@ -59,13 +59,12 @@ download "$BASE/pokemon/10256.png" "$DEST/pokemon/10256.png"   # Palafin hero fo
 download "$BASE/pokemon/10276.png" "$DEST/pokemon/10276.png"   # Terapagos terastal form
 
 # 5. Type icons - Gen IX Scarlet/Violet (18 types)
-echo "Downloading type badge sprites..."
-for id in $(seq 1 18); do
-  download "$BASE/types/generation-ix/scarlet-violet/${id}.png" "$DEST/types/badges/${id}.png" &
-done
-wait
-echo "  Type badge sprites done"
-
+#
+# The full 200x40 badges are deliberately NOT fetched. The app draws its own
+# badge now (src/components/shared/TypeBadge.tsx) because the official art has
+# the English type name baked into it and no localized set of it exists
+# anywhere. That art was the reference for the palette in
+# src/data/type-colors.ts and is one `git show` away if it is needed again.
 echo "Downloading type small icons..."
 for id in $(seq 1 18); do
   download "$BASE/types/generation-ix/scarlet-violet/small/${id}.png" "$DEST/types/small/${id}.png" &

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
+import { sectionName, t } from '@/i18n';
 import { computeRemovalCascade, getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
@@ -17,6 +18,7 @@ import { Trash2, Plus, Settings } from 'lucide-react';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 
 import { PageFooter } from '@/components/shared/PageFooter';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { IntroCard } from '@/components/pokedex/IntroCard';
 import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
@@ -334,6 +336,7 @@ function StarterContent({
       {!dragLineIds && (
         <button type="button"
           onClick={onAddClick}
+          aria-label="Add a Pokémon to Starters"
           className="aspect-square md:aspect-auto rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
         >
           <Plus className="w-[27%] h-[27%]" />
@@ -484,7 +487,7 @@ function GroupBox({
           paddingBottom: showEmptyState ? '0px' : '2px',
         }}
       >
-        {group.name}{pokemonIds.length > 0 && ` (${pokemonIds.length})`}
+        {sectionName(group.id)}{pokemonIds.length > 0 && ` (${pokemonIds.length})`}
       </div>
 
       {showEmptyState ? (
@@ -501,6 +504,10 @@ function GroupBox({
           ) : (
             <button type="button"
               onClick={() => onAddClick(group.id)}
+              aria-label={t('builder.addToSection', { section: sectionName(group.id) })}
+              // Stable handle for e2e: the accessible name is translated, and
+              // the pseudo-locales rewrite it beyond matching.
+              data-add-slot
               className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,opacity,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer hover:opacity-80"
               style={{
                 borderColor: `${sectionStroke}55`,
@@ -564,6 +571,8 @@ function GroupBox({
               {!dragLineIds && (
                 <button type="button"
                   onClick={() => onAddClick(group.id)}
+                  aria-label={t('builder.addToSection', { section: sectionName(group.id) })}
+                  data-add-slot
                   className="aspect-square md:aspect-auto rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
                 >
                   <Plus className="w-[27%] h-[27%]" />
@@ -904,7 +913,8 @@ export function PokedexGrid() {
         <div className="flex-1 min-w-0">
           <MilestoneBar />
         </div>
-        <div className="shrink-0 flex justify-end" style={{ width: 'var(--ms-side)' }}>
+        <div className="shrink-0 flex items-center gap-1 justify-end" style={{ width: 'var(--ms-side)' }}>
+          <FeedbackButton route="builder" />
           <SettingsMenu onClear={clearAll} />
         </div>
       </div>

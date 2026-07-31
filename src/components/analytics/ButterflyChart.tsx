@@ -1,21 +1,16 @@
 import { useRef, useEffect, useState } from 'react';
 import { scaleBand, scaleLinear } from 'd3-scale';
 import { cn } from '@/lib/utils';
+import { t } from '@/i18n';
+import { rowKey, type ButterflyRow } from './butterflyRow';
 
-export interface ButterflyRow {
-  label: string;
-  count: number;
-  deviation: number; // percentage, e.g. +100 = double, -50 = half (or raw diff in scoreMode)
-  color: string;
-  /** Optional icon path (e.g. "/types/fire.svg") or inline SVG render function */
-  icon?: string | ((x: number, y: number, size: number) => React.ReactNode);
-}
+export type { ButterflyRow };
 
 interface ButterflyChartProps {
   data: ButterflyRow[];
   /** Row height in px. Default 22 */
   rowHeight?: number;
-  /** Optional reference deviations keyed by label (shown as outline markers) */
+  /** Optional reference deviations keyed by row key (shown as outline markers) */
   referenceDeviations?: Record<string, number>;
   /** Hide the deviation section — count bars use full width */
   hideDeviation?: boolean;
@@ -25,10 +20,10 @@ interface ButterflyChartProps {
   fixedMaxCount?: number;
   /** Force count section to use bidirectional layout (2x weight) even if current data is unidirectional */
   forceBidirectionalCount?: boolean;
-  /** Callback when a row is tapped/clicked */
-  onBarClick?: (label: string) => void;
-  /** Currently selected/active label for focus highlight */
-  activeLabel?: string | null;
+  /** Callback when a row is tapped/clicked, given the row's stable key */
+  onBarClick?: (key: string) => void;
+  /** Currently selected/active row key for focus highlight */
+  activeKey?: string | null;
   /** Score mode: count is a float score (can be negative), deviation is raw difference */
   scoreMode?: boolean;
   /** Which column is actively sorted */
@@ -43,9 +38,10 @@ interface ButterflyChartProps {
    *  icon that stands on its own (type symbols, numbered gen badges). */
   hideLabelText?: boolean;
   /** Width-to-height ratio reserved for the icon column (default 1 = square). Use
-   *  >1 for wide identifiers like type-name badges. String icons fill the column at
-   *  this aspect; function icons still render square (left-aligned in the column),
-   *  so two charts can share an aspect to keep their bar columns aligned. */
+   *  >1 for wide identifiers like type-name badges. String icons fill the column
+   *  at this aspect; function icons are given both the square icon size and the
+   *  column width and choose for themselves, so two charts can share an aspect to
+   *  keep their bar columns aligned. */
   iconColAspect?: number;
   /** Multiplier on the per-row height (default 1). Lets a caller make the whole
    *  chart taller/shorter to tune how much vertical space it takes vs. its peers. */
@@ -81,7 +77,7 @@ interface ButterflyChartProps {
   textClass?: string;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeLabel, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
+export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hoveredSort, setHoveredSort] = useState<'count' | 'deviation' | 'label' | null>(null);
@@ -327,7 +323,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             onMouseEnter={onSortChange ? () => setHoveredSort('count') : undefined}
             onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
-            {scoreMode ? 'SCORE' : 'COUNT'}
+            {scoreMode ? t('chart.header.score') : t('chart.header.count')}
           </text>
           {!hideDeviation && (<>
           {/* Deviation guide labels — only render sides that have data */}
@@ -345,8 +341,8 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
             onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
-            <tspan x={devSectionStart + zeroX - 5} dy="-1.1em">{scoreMode ? 'WEAKER' : 'UNDER-'}</tspan>
-            <tspan x={devSectionStart + zeroX - 5} dy="1.1em">{scoreMode ? '← HERE' : '← INDEXED'}</tspan>
+            <tspan x={devSectionStart + zeroX - 5} dy="-1.1em">{scoreMode ? t('chart.header.weakerHere1') : t('chart.header.underIndexed1')}</tspan>
+            <tspan x={devSectionStart + zeroX - 5} dy="1.1em">{scoreMode ? t('chart.header.weakerHere2') : t('chart.header.underIndexed2')}</tspan>
           </text>
           )}
           {devHasRight && (
@@ -363,8 +359,8 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
             onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
-            <tspan x={devSectionStart + zeroX + 5} dy="-1.1em">{scoreMode ? 'STRONGER' : 'OVER-'}</tspan>
-            <tspan x={devSectionStart + zeroX + 5} dy="1.1em">{scoreMode ? 'HERE →' : 'INDEXED →'}</tspan>
+            <tspan x={devSectionStart + zeroX + 5} dy="-1.1em">{scoreMode ? t('chart.header.strongerHere1') : t('chart.header.overIndexed1')}</tspan>
+            <tspan x={devSectionStart + zeroX + 5} dy="1.1em">{scoreMode ? t('chart.header.strongerHere2') : t('chart.header.overIndexed2')}</tspan>
           </text>
           )}
 
@@ -392,7 +388,8 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             const clippedBarX = clampedDev >= 0 ? zeroX : devScale(clampedDev);
             const clippedBarW = Math.abs(devScale(clampedDev) - zeroX);
 
-            const isActive = activeLabel === d.label;
+            const key = rowKey(d);
+            const isActive = activeKey === key;
 
             // Highlight extends to midpoints between this row and neighbors
             const prevBottom = rowIdx > 0 ? yScale(data[rowIdx - 1].label)! + barHeight : topOffset;
@@ -403,7 +400,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             const hasData = !disableEmptyRows || d.count > 0;
 
             return (
-              <g key={d.label} className={onBarClick && hasData ? 'cursor-pointer' : ''} onClick={onBarClick && hasData ? () => onBarClick(d.label) : undefined}>
+              <g key={key} className={onBarClick && hasData ? 'cursor-pointer' : ''} onClick={onBarClick && hasData ? () => onBarClick(key) : undefined}>
                 {/* Full-row hit target + active highlight */}
                 <rect
                   x={0} y={highlightY} width={width} height={highlightH}
@@ -436,7 +433,7 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
                       height={iconBoxH}
                       preserveAspectRatio="xMidYMid meet"
                     />
-                  ) : d.icon(iconStart + (iconColW - iconBoxH) / 2, y + barHeight / 2 - iconBoxH / 2, iconBoxH)
+                  ) : d.icon(iconStart, y + barHeight / 2 - iconBoxH / 2, iconBoxH, iconColW)
                 )}
 
                 {/* Count bar */}
@@ -471,8 +468,8 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
 
                 {!hideDeviation && (<>
                 {/* Reference deviation marker (behind user's bar) */}
-                {referenceDeviations && d.label in referenceDeviations && (() => {
-                  const refDev = referenceDeviations[d.label];
+                {referenceDeviations && key in referenceDeviations && (() => {
+                  const refDev = referenceDeviations[key];
                   const refClamped = Math.max(devLeft, Math.min(devRight_, refDev));
                   const refX = refClamped >= 0
                     ? devSectionStart + zeroX

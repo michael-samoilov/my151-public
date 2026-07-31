@@ -30,7 +30,6 @@ const { records } = JSON.parse(readFileSync(join(OUT_DIR, 'biome-assignments.jso
 // Place sections: the 14 on the build page + the two promotion candidates.
 const PLACE_BUILD_SECTIONS = ['forest', 'meadow', 'cave-pokemon', 'swamp', 'dojo', 'haunted', 'ruins', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra', 'industrial'];
 const PROMOTION_SECTIONS = ['mountain', 'lake'];
-const ALL_PLACE_SECTIONS = [...PLACE_BUILD_SECTIONS.slice(0, 2), 'cave-pokemon', ...PLACE_BUILD_SECTIONS.slice(3)]; // order irrelevant; kept simple
 
 // Archetype memberships (to know who is ALREADY in a place archetype,
 // including the not-yet-promoted mountain/lake lists).
@@ -104,16 +103,6 @@ for (const r of records) {
 }
 
 const SECTION_ORDER = ['forest', 'meadow', 'cave-pokemon', 'mountain', 'swamp', 'lake', 'dojo', 'haunted', 'ruins', 'beach', 'fishing-pokemon', 'ocean', 'desert', 'volcanic', 'tundra', 'industrial'];
-const bySection = (list, key) => {
-  const m = new Map();
-  for (const e of list) {
-    const s = e[key];
-    if (!m.has(s)) m.set(s, []);
-    m.get(s).push(e);
-  }
-  return m;
-};
-
 // ---- Unified change table: ordered by proposed section, then confidence.
 const CONF_ORDER = { high: 0, medium: 1, low: 2 };
 const rows = [];

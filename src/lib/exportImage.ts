@@ -6,6 +6,8 @@ import { typeIconPath } from '@/data/type-ids';
 import { GEN_BADGE_URIS } from '@/components/shared/GenBadge';
 import { STARTER_IDS } from '@/data/categories';
 import { ensureTypeMask } from '@/lib/typeSymbol';
+import { expandTemplate } from '@/lib/richTemplate';
+import { formatListToParts, raw, t, typeLabel } from '@/i18n';
 import { measureStatsPanel, drawStatsPanel, statsBadgeUrls, STATS_NAT_W, CARD_PADX as STATS_CARD_PADX, CARD_GAP as STATS_CARD_GAP, type StatsHeights } from './exportStats';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
 import {
@@ -576,83 +578,87 @@ export async function generateExportImage(
   const typeImgs = [leanType1Img, leanType2Img];
   const genImgs  = [leanGen1Img,  leanGen2Img];
 
+  /** One lean subject — a type or a generation — as icon + coloured label. */
+  const leanItem = (i: number): Seg[] => {
+    if (i < leanTypes.length) {
+      const type = leanTypes[i];
+      const img = typeImgs[i];
+      return [
+        ...(img ? [{ kind: 'icon' as const, img, sz: TYPE_ICON_SZ }] : []),
+        { kind: 'text' as const, text: typeLabel(type), color: TYPE_COLORS[type] },
+      ];
+    }
+    const g = leanGens[i - leanTypes.length];
+    const img = genImgs[i - leanTypes.length];
+    return [
+      ...(img ? [{ kind: 'icon' as const, img, sz: GEN_ICON_SZ }] : []),
+      { kind: 'text' as const, text: t('browser.genChip', { gen: g }), color: zinc },
+    ];
+  };
+
+  /** The lean subjects joined the way the active locale joins a list. */
+  const leanSubjects = (): Seg[] => {
+    const count = leanTypes.length + leanGens.length;
+    // formatToParts gives the separators and conjunction as their own parts, so
+    // the rendered items (icon + coloured label) can be dropped in between them
+    // without sentinel-substituting into a formatted string.
+    return formatListToParts(Array.from({ length: count }, (_, i) => String(i))).flatMap((part) =>
+      part.type === 'element'
+        ? leanItem(Number(part.value))
+        : [{ kind: 'text' as const, text: part.value, color: zinc }],
+    );
+  };
+
+  const attackSubject = (): Seg[] => {
+    const type = insights.bestAttackType!;
+    return [
+      ...(attackTypeImg ? [{ kind: 'icon' as const, img: attackTypeImg, sz: TYPE_ICON_SZ }] : []),
+      { kind: 'text' as const, text: typeLabel(type), color: TYPE_COLORS[type] },
+    ];
+  };
+
+  const plain = (text: string): Seg => ({ kind: 'text', text, color: zinc });
+  const sep = () => insightSegs.push(plain(t('poster.separator')));
+
+  // Each clause is one translatable sentence with slots, not a pile of
+  // fragments — so a translation can put the subject wherever its grammar
+  // wants it and still get the icon in the right place.
   if (isKanto151) {
-    insightSegs.push({ kind: 'text', text: 'The very best. Like no one ever was.', color: zinc });
-    // Still show type lean (skip gen — obvious for Kanto) + attack insights
+    insightSegs.push(plain(t('poster.kanto151')));
     if (leanTypes.length > 0 || insights.bestAttackType) {
-      insightSegs.push({ kind: 'text', text: ' · ', color: zinc });
+      sep();
       if (leanTypes.length > 0) {
-        for (let i = 0; i < leanTypes.length; i++) {
-          if (i > 0) insightSegs.push({ kind: 'text', text: ' & ', color: zinc });
-          const t = leanTypes[i];
-          const img = typeImgs[i];
-          if (img) insightSegs.push({ kind: 'icon', img, sz: TYPE_ICON_SZ });
-          insightSegs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
-        }
-        insightSegs.push({ kind: 'text', text: '-forward', color: zinc });
-        if (insights.bestAttackType) insightSegs.push({ kind: 'text', text: ' · ', color: zinc });
+        insightSegs.push(...expandTemplate(raw('poster.leanForward'), plain, { types: leanSubjects }));
+        if (insights.bestAttackType) sep();
       }
       if (insights.bestAttackType) {
-        const t = insights.bestAttackType;
-        if (attackTypeImg) insightSegs.push({ kind: 'icon', img: attackTypeImg, sz: TYPE_ICON_SZ });
-        insightSegs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
-        insightSegs.push({ kind: 'text', text: ' over-performs', color: zinc });
+        insightSegs.push(...expandTemplate(raw('poster.overPerforms'), plain, { type: attackSubject }));
       }
     }
   } else if (noLean && !insights.bestAttackType) {
-    insightSegs.push({ kind: 'text', text: 'perfectly balanced dex', color: zinc });
+    insightSegs.push(plain(t('poster.balanced')));
   } else {
-    // --- Lean section (types + gens) ---
     if (noLean) {
-      insightSegs.push({ kind: 'text', text: 'no types or gens strongly over-index', color: zinc });
+      insightSegs.push(plain(t('poster.noLean')));
     } else {
-      const leanItems: Seg[][] = [];
-      for (let i = 0; i < leanTypes.length; i++) {
-        const t = leanTypes[i];
-        const item: Seg[] = [];
-        const img = typeImgs[i];
-        if (img) item.push({ kind: 'icon', img, sz: TYPE_ICON_SZ });
-        item.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
-        leanItems.push(item);
-      }
-      for (let i = 0; i < leanGens.length; i++) {
-        const g = leanGens[i];
-        const item: Seg[] = [];
-        const img = genImgs[i];
-        if (img) item.push({ kind: 'icon', img, sz: GEN_ICON_SZ });
-        item.push({ kind: 'text', text: `Gen ${g}`, color: zinc });
-        leanItems.push(item);
-      }
-      for (let i = 0; i < leanItems.length; i++) {
-        if (i > 0) {
-          if (leanItems.length === 2) {
-            insightSegs.push({ kind: 'text', text: ' & ', color: zinc });
-          } else {
-            insightSegs.push({ kind: 'text', text: i === leanItems.length - 1 ? ', & ' : ', ', color: zinc });
-          }
-        }
-        insightSegs.push(...leanItems[i]);
-      }
-      insightSegs.push({ kind: 'text', text: '-forward', color: zinc });
+      insightSegs.push(...expandTemplate(raw('poster.leanForward'), plain, { types: leanSubjects }));
     }
-
-    // --- Attack section ---
-    insightSegs.push({ kind: 'text', text: ' · ', color: zinc });
+    sep();
     if (insights.bestAttackType) {
-      const t = insights.bestAttackType;
-      if (attackTypeImg) insightSegs.push({ kind: 'icon', img: attackTypeImg, sz: TYPE_ICON_SZ });
-      insightSegs.push({ kind: 'text', text: t.charAt(0).toUpperCase() + t.slice(1), color: TYPE_COLORS[t] });
-      insightSegs.push({ kind: 'text', text: ' over-performs', color: zinc });
+      insightSegs.push(...expandTemplate(raw('poster.overPerforms'), plain, { type: attackSubject }));
     } else {
-      insightSegs.push({ kind: 'text', text: 'no types strongly over-perform', color: zinc });
+      insightSegs.push(plain(t('poster.noOverPerform')));
     }
   }
 
-  const creditSegs: Seg[] = [
-    { kind: 'text', text: 'made with ', color: zinc },
-    { kind: 'text', text: 'my151', color: '#DC2626' },
-    { kind: 'text', text: '.app', color: '#0a0a0a' },
-  ];
+  const creditSegs: Seg[] = expandTemplate(raw('poster.credit'), plain, {
+    // The wordmark is a brand asset, not copy: it stays my151.app in every
+    // locale, and only its position in the sentence is the translator's.
+    app: () => [
+      { kind: 'text', text: 'my151', color: '#DC2626' },
+      { kind: 'text', text: '.app', color: '#0a0a0a' },
+    ],
+  });
 
   const drawLine = (segs: Seg[], y: number, font: string) => {
     ctx.font = font;

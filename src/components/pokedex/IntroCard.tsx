@@ -1,4 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { expandTemplate } from '@/lib/richTemplate';
+import { formatNumber, raw, t } from '@/i18n';
+import { DEX_TOTAL } from '@/lib/milestones';
+
+/** Species in the National Dex the user picks from. */
+const SPECIES_TOTAL = 1025;
 import { Button } from '@/components/ui/button';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { TypeName } from '@/types/pokemon';
@@ -335,7 +341,7 @@ function StarterDots() {
 }
 
 function StarterButton({ onClick }: { onClick: () => void }) {
-  const label = 'Choose your starters';
+  const label = t('intro.cta');
 
   if (BTN === 'outline') {
     // White surface, red border + red text: dots keep full saturation on white.
@@ -480,11 +486,15 @@ export function IntroCard({
 
           <div className="px-5 pb-5 pt-2 text-center">
             <h2 className="text-xl font-extrabold tracking-tight">
-              Build your own <span className="text-primary">151</span>
+              {/* One sentence with a highlighted slot, rather than a prefix
+                  concatenated with a styled number — the emphasis lands in a
+                  different place in other languages. */}
+              {expandTemplate<React.ReactNode>(raw('intro.headline'), (text) => text, {
+                count: () => [<span key="n" className="text-primary">{DEX_TOTAL}</span>],
+              })}
             </h2>
             <p className="mt-1.5 mx-auto max-w-[26rem] text-sm text-muted-foreground text-pretty">
-              Hand-pick your favorites from all 1,025 Pokémon into a Pokédex
-              that&rsquo;s entirely yours.
+              {t('intro.body', { total: formatNumber(SPECIES_TOTAL) })}
             </p>
             <StarterButton onClick={chooseStarters} />
           </div>

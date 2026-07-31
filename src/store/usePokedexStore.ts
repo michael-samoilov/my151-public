@@ -4,6 +4,7 @@ import { createEmptySections, BUILD_GROUP_IDS } from '@/data/slot-template';
 import { MILESTONES, milestonesAtOrBelow } from '@/lib/milestones';
 import { getEvolutionChainIds, getEvolutionLine, getDescendantIds, getPokemonById, computeRemovalCascade, getExclusiveForms } from '@/hooks/usePokemonData';
 import { DEMO_MODE, SPANDREL_DEMO, POKEDEX_STORAGE_KEY } from '@/lib/demoMode';
+import type { Locale } from '@/i18n';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
 import { SPANDREL_SEED_SECTIONS } from '@/data/spandrelSeed';
 
@@ -115,6 +116,14 @@ interface PokedexState {
   /** Transient (never persisted): the milestone threshold currently being
    *  celebrated, or null. The celebration overlay reads and dismisses this. */
   milestoneCelebration: number | null;
+  /** Chosen display language, or null for "follow the browser". The distinction
+   *  matters: a user who has never opened the picker keeps tracking
+   *  navigator.languages, rather than being pinned forever to whatever it
+   *  happened to be on their first visit. */
+  locale: Locale | null;
+  /** Whether the one-time "we switched you to X — English?" notice has been
+   *  shown. Only relevant when auto-detection picked a non-English locale. */
+  localeNoticeSeen: boolean;
   /** Transient (never persisted): armed when the 100-milestone celebration's
    *  "Open View" CTA is clicked. "Show detailed stats" lives inside View
    *  Settings rather than on the page itself, so a follow-up nudge points the
@@ -155,6 +164,8 @@ interface PokedexState {
   closeDrillDown: () => void;
   navigateDrillDown: (segment: DrillDownSegment) => void;
   setWhatsAdvisorExpanded: (expanded: boolean) => void;
+  setLocale: (locale: Locale | null) => void;
+  setLocaleNoticeSeen: (seen: boolean) => void;
   setViewSortOption: (option: ViewSortOption) => void;
   setViewGroupSpecialAtEnd: (value: boolean) => void;
   setViewCustomOrder: (order: number[] | null) => void;
@@ -210,6 +221,8 @@ export const usePokedexStore = create<PokedexState>()(
       milestoneCelebration: null,
       statsHintArmed: false,
       exportHintArmed: false,
+      locale: null,
+      localeNoticeSeen: false,
 
       addToSection: (sectionId, pokemonIds) =>
         set((state) => {
@@ -440,6 +453,8 @@ export const usePokedexStore = create<PokedexState>()(
       closeDrillDown: () => set({ drillDownSegment: null, drillDownPeek: true, drillDownSiblings: [], drillDownExcludeSpecial: false, drillDownDexId: null, drillDownNewOnly: false }),
       navigateDrillDown: (segment) => set({ drillDownSegment: segment }),
       setWhatsAdvisorExpanded: (expanded) => set({ whatsAdvisorExpanded: expanded }),
+      setLocale: (locale) => set({ locale }),
+      setLocaleNoticeSeen: (seen) => set({ localeNoticeSeen: seen }),
       setViewSortOption: (option) => set({ viewSortOption: option }),
       setViewGroupSpecialAtEnd: (value) => set({ viewGroupSpecialAtEnd: value }),
       setViewCustomOrder: (order) => set({ viewCustomOrder: order }),
@@ -473,7 +488,7 @@ export const usePokedexStore = create<PokedexState>()(
     }),
     {
       name: POKEDEX_STORAGE_KEY,
-      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections, milestoneMax: state.milestoneMax, milestoneCelebrated: state.milestoneCelebrated }),
+      partialize: (state) => ({ sections: state.sections, whatsAdvisorExpanded: state.whatsAdvisorExpanded, viewSortOption: state.viewSortOption, viewGroupSpecialAtEnd: state.viewGroupSpecialAtEnd, viewCustomOrder: state.viewCustomOrder, viewShowSections: state.viewShowSections, milestoneMax: state.milestoneMax, milestoneCelebrated: state.milestoneCelebrated, locale: state.locale, localeNoticeSeen: state.localeNoticeSeen }),
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as {
           sections?: Record<string, number[]>;
@@ -484,6 +499,8 @@ export const usePokedexStore = create<PokedexState>()(
           viewShowSections?: boolean;
           milestoneMax?: number;
           milestoneCelebrated?: number[];
+          locale?: Locale | null;
+          localeNoticeSeen?: boolean;
         };
 
         // Preserve all existing fields, only fix what needs fixing
@@ -545,9 +562,15 @@ export const usePokedexStore = create<PokedexState>()(
           result.milestoneCelebrated = milestonesAtOrBelow(count);
         }
 
+        // v9 -> v10: display language. Defaults to null rather than 'en' so an
+        // existing user still follows their browser; only an explicit choice in
+        // the picker pins a locale.
+        if (result.locale === undefined) result.locale = null;
+        if (result.localeNoticeSeen === undefined) result.localeNoticeSeen = false;
+
         return result;
       },
-      version: 9,
+      version: 10,
     }
   )
 );

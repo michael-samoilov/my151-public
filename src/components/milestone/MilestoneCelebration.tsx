@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useT, type NoArgKey } from '@/i18n';
 import { createPortal } from 'react-dom';
 import confetti from 'canvas-confetti';
 import { usePokedexStore } from '@/store/usePokedexStore';
@@ -17,30 +18,16 @@ import { X } from 'lucide-react';
 
 interface Nudge {
   nav: Extract<AppView, 'analytics' | 'view'>;
-  title: string;
-  body: string;
-  cta: string;
+  titleKey: NoArgKey;
+  bodyKey: NoArgKey;
+  ctaKey: NoArgKey;
 }
 
+/** Per-milestone nudge copy, by catalog key. */
 const NUDGES: Record<number, Nudge> = {
-  25: {
-    nav: 'analytics',
-    title: 'Analytics unlocked',
-    body: 'Your dex has enough shape to analyze. See how it stacks up against the national dex.',
-    cta: 'Open Analytics',
-  },
-  100: {
-    nav: 'view',
-    title: 'Detailed stats in View page',
-    body: 'Turn on “Show stats” for type, generation, and base-stat charts beside your dex.',
-    cta: 'Open View',
-  },
-  151: {
-    nav: 'view',
-    title: 'Your 151 is complete! 🎉',
-    body: 'Export your dex as a poster and share it. The Export button is in View.',
-    cta: 'Open View',
-  },
+  25: { nav: 'analytics', titleKey: 'nudge.25.title', bodyKey: 'nudge.25.body', ctaKey: 'nudge.25.cta' },
+  100: { nav: 'view', titleKey: 'nudge.100.title', bodyKey: 'nudge.100.body', ctaKey: 'nudge.100.cta' },
+  151: { nav: 'view', titleKey: 'nudge.151.title', bodyKey: 'nudge.151.body', ctaKey: 'nudge.151.cta' },
 };
 
 const AUTO_DISMISS_MS = 10000;
@@ -81,6 +68,7 @@ function fireConfetti() {
 }
 
 export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppView) => void }) {
+  const t = useT();
   const celebration = usePokedexStore((s) => s.milestoneCelebration);
   const dismiss = usePokedexStore((s) => s.dismissMilestoneCelebration);
   const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
@@ -183,20 +171,20 @@ export function MilestoneCelebration({ onNavigate }: { onNavigate: (view: AppVie
         />
         <button
           type="button"
-          aria-label="Dismiss"
+          aria-label={t('common.dismiss')}
           onClick={dismiss}
           className="absolute right-1.5 top-1.5 p-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
         >
           <X className="w-3.5 h-3.5" />
         </button>
-        <div className="text-sm font-bold pr-5">{nudge.title}</div>
-        <p className="mt-1 text-xs text-muted-foreground text-pretty">{nudge.body}</p>
+        <div className="text-sm font-bold pr-5">{t(nudge.titleKey)}</div>
+        <p className="mt-1 text-xs text-muted-foreground text-pretty">{t(nudge.bodyKey)}</p>
         <button
           type="button"
           onClick={handleCta}
           className="mt-2.5 w-full rounded-md bg-primary text-primary-foreground text-xs font-semibold py-1.5 hover:bg-primary/90 transition-colors cursor-pointer"
         >
-          {nudge.cta}
+          {t(nudge.ctaKey)}
         </button>
       </div>
     </div>,

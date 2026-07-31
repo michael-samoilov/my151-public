@@ -5,14 +5,14 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { useAnalytics, fullBaseline } from '@/hooks/useAnalytics';
 import { getPokemonByIds } from '@/hooks/usePokemonData';
 import { countTypes, buildTypeRows } from '@/components/analytics/typeDistribution';
-import { ButterflyChart, type ButterflyRow } from '@/components/analytics/ButterflyChart';
+import { ButterflyChart } from '@/components/analytics/ButterflyChart';
+import { rowKey, type ButterflyRow } from '@/components/analytics/butterflyRow';
+import { t } from '@/i18n';
 import { SuperimposedHistogram } from '@/components/analytics/SuperimposedHistogram';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
-import { typeBadgePath } from '@/data/type-ids';
+import { typeChartIcon } from '@/components/shared/typeBadgeSvg';
+import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import type { TypeName } from '@/types/pokemon';
-
-/** Aspect ratio (w/h) of the Gen IX type-name badge sprites (128×40). */
-const TYPE_BADGE_ASPECT = 128 / 40;
 
 /** Single font size shared by all stats text — chart headers, axis + value
  *  numbers, and the card subtitles — so they read uniformly. */
@@ -133,11 +133,11 @@ function HistogramLegend() {
     <div className="flex items-center gap-4 mb-2">
       <div className="flex items-center gap-1.5">
         <div className="w-3 h-3 rounded-sm bg-slate-400 opacity-50" />
-        <span className={`${STATS_TEXT} text-muted-foreground font-medium`}>National Dex</span>
+        <span className={`${STATS_TEXT} text-muted-foreground font-medium`}>{t('stats.legend.national')}</span>
       </div>
       <div className="flex items-center gap-1.5">
         <div className="w-3 h-3 rounded-sm bg-red-500 opacity-85" />
-        <span className={`${STATS_TEXT} text-muted-foreground font-medium`}>Yours</span>
+        <span className={`${STATS_TEXT} text-muted-foreground font-medium`}>{t('stats.legend.yours')}</span>
       </div>
     </div>
   );
@@ -159,9 +159,9 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
     if (total === 0) return [];
     const rows = buildTypeRows(countTypes(pokemon), total, fullBaseline.typeProp)
       .sort((a, b) => b.deviation - a.deviation);
-    // Swap the small type symbol for the full type-name badge image when requested.
+    // Swap the small type symbol for the full type-name badge when requested.
     return typeBadges
-      ? rows.map((r) => ({ ...r, icon: typeBadgePath(r.label.toLowerCase() as TypeName) }))
+      ? rows.map((r) => ({ ...r, icon: typeChartIcon(rowKey(r) as TypeName) }))
       : rows;
   }, [sections, typeBadges]);
 
@@ -175,6 +175,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
         const gen = d.generation;
         const stops = GEN_STOPS[gen] ?? [{ offset: '100%', color: '#888' }];
         return {
+          key: String(gen),
           label: `Gen ${gen}`,
           count: d.count,
           deviation: d.deviation,
@@ -215,16 +216,16 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
 
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
-      <Card variant={variant} title="Type Distribution" subtitle="Your types, and how they deviate from the national dex.">
-        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText labelHeader="TYPE" iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows textClass={STATS_TEXT} />
+      <Card variant={variant} title={t('stats.type.title')} subtitle={t('stats.type.subtitle')}>
+        <ButterflyChart data={typeRows} rowHeight={16} hideLabelText labelHeader={t('chart.header.type')} iconColAspect={iconColAspect} iconFillsRow={typeBadges} heightScale={heights.type} disableEmptyRows textClass={STATS_TEXT} />
       </Card>
 
-      <Card variant={variant} title="Generation Origin" subtitle="Which generation your Pokémon come from, vs the national dex.">
+      <Card variant={variant} title={t('stats.gen.title')} subtitle={t('stats.gen.subtitle')}>
         <ButterflyChart
-          data={[...genRows].sort((a, b) => parseInt(a.label.replace('Gen ', '')) - parseInt(b.label.replace('Gen ', '')))}
+          data={[...genRows].sort((a, b) => Number(rowKey(a)) - Number(rowKey(b)))}
           rowHeight={24}
           hideLabelText
-          labelHeader="GEN"
+          labelHeader={t('chart.header.gen')}
           iconColAspect={iconColAspect}
           iconFillsRow={typeBadges}
           heightScale={heights.region}
@@ -233,7 +234,7 @@ export function DetailedStatsPanel({ className = '', variant = 'card-title-in', 
         />
       </Card>
 
-      <Card variant={variant} title="Base Stat Total" subtitle={`Yours avg: ${analytics.bstStats.avg}, National avg: ${analytics.nationalAvgBst}.`}>
+      <Card variant={variant} title={t('stats.bst.title')} subtitle={t('analytics.avgCompare', { yours: analytics.bstStats.avg, national: analytics.nationalAvgBst })}>
         <HistogramLegend />
         <SuperimposedHistogram
           data={bstHist.merged}

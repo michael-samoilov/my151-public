@@ -1,9 +1,12 @@
 import { scaleBand, scaleLinear } from 'd3-scale';
 import { GEN_STOPS } from '@/components/shared/GenBadge';
 import { MAX_LABEL_STRETCH } from '@/lib/sectionOutlines';
-import { typeBadgePath } from '@/data/type-ids';
-import type { TypeName } from '@/types/pokemon';
+import { typeGlyphPath } from '@/data/type-ids';
+import { drawTypeBadge } from '@/lib/drawTypeBadge';
+import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
+import { t } from '@/i18n';
 import type { DetailedStatsData } from '@/components/view/useDetailedStatsData';
+import type { TypeName } from '@/types/pokemon';
 
 /**
  * Native-canvas renderer for the View "detailed stats" panel, used by the PNG
@@ -349,19 +352,13 @@ function genIcon(gen: number): IconDrawer {
   };
 }
 
-/** Build the per-row icon drawer for a type-name badge image. Contain-fit and
- *  centre within the column (mirrors the on-screen SVG's
- *  preserveAspectRatio="xMidYMid meet"); the badge sprite's aspect (5:1) differs
- *  from the column's, so stretching to fill would distort it vertically. */
-function typeBadgeIcon(img: HTMLImageElement | null): IconDrawer {
+/** Build the per-row icon drawer for a type badge. Contain-fit and centre within
+ *  the column (mirrors the on-screen SVG); the badge's 5:1 aspect differs from
+ *  the column's, so filling it would distort the pill. */
+function typeBadgeIcon(type: TypeName, glyph: HTMLImageElement | null): IconDrawer {
   return (ctx, x, y, w, h) => {
-    if (!img) return;
-    const iw = img.naturalWidth || 1;
-    const ih = img.naturalHeight || 1;
-    const s = Math.min(w / iw, h / ih);
-    const dw = iw * s;
-    const dh = ih * s;
-    ctx.drawImage(img, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+    const height = Math.min(h, w / TYPE_BADGE_ASPECT);
+    drawTypeBadge(ctx, type, glyph, x + (w - height * TYPE_BADGE_ASPECT) / 2, y + (h - height) / 2, height);
   };
 }
 
@@ -393,7 +390,7 @@ function renderPanel(
     count: d.count,
     deviation: d.deviation,
     color: d.color,
-    icon: typeBadgeIcon(badges.get(d.label.toLowerCase()) ?? null),
+    icon: typeBadgeIcon(d.type as TypeName, badges.get(d.type) ?? null),
   }));
   const genRows: ButterflyRowInput[] = data.genData.map((d) => ({
     count: d.count,
@@ -404,19 +401,19 @@ function renderPanel(
 
   const cards: CardSpec[] = [
     {
-      title: 'Type Distribution',
-      subtitle: 'Your types, and how they deviate from the national dex.',
+      title: t('stats.type.title'),
+      subtitle: t('stats.type.subtitle'),
       chartH: (dr) => butterfly(ctx, 0, 0, typeRows, 16, heights.type, 'TYPE', dr),
       drawChart: (c, x, y) => butterfly(c, x, y, typeRows, 16, heights.type, 'TYPE', true),
     },
     {
-      title: 'Generation Origin',
-      subtitle: 'Which generation your Pokémon come from, vs the national dex.',
+      title: t('stats.gen.title'),
+      subtitle: t('stats.gen.subtitle'),
       chartH: (dr) => butterfly(ctx, 0, 0, genRows, 24, heights.region, 'GEN', dr),
       drawChart: (c, x, y) => butterfly(c, x, y, genRows, 24, heights.region, 'GEN', true),
     },
     {
-      title: 'Base Stat Total',
+      title: t('stats.bst.title'),
       subtitle: `Yours avg: ${data.bst.yoursAvg}, National avg: ${data.bst.nationalAvg}.`,
       legend: true,
       chartH: (dr) => histogram(ctx, 0, 0, data.bst, heights.bst, dr),
@@ -486,8 +483,8 @@ function renderPanel(
 
 function drawLegend(ctx: CanvasRenderingContext2D, x: number, y: number) {
   const items: [string, string, number][] = [
-    ['National Dex', NAT_HIST, 0.5],
-    ['Yours', YOURS, 0.85],
+    [t('stats.legend.national'), NAT_HIST, 0.5],
+    [t('stats.legend.yours'), YOURS, 0.85],
   ];
   let cx = x;
   ctx.textBaseline = 'middle';
@@ -519,12 +516,10 @@ function line(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number,
   ctx.stroke();
 }
 
-/** Type-badge sprite URLs needed by the export (one per type row). */
+/** Type-symbol URLs needed by the export (one per type row). Canvas does not
+ *  trigger image loading, so the caller resolves these before drawing. */
 export function statsBadgeUrls(data: DetailedStatsData): { type: string; url: string }[] {
-  return data.typeData.map((d) => {
-    const type = d.label.toLowerCase();
-    return { type, url: typeBadgePath(type as TypeName) };
-  });
+  return data.typeData.map((d) => ({ type: d.type, url: typeGlyphPath(d.type as TypeName) }));
 }
 
 /** Natural size + per-card boxes for a dataset (for aspect-ratio sizing and for
