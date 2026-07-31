@@ -141,15 +141,33 @@ export function BottomSheet({
     const sync = () => {
       // A pinch is not a keyboard. Leaving the sheet alone during one also
       // keeps this off the per-frame path those other modules warn about.
-      if (vv.scale !== 1) return;
+      //
+      // Compared with a tolerance, not with `!== 1`. Chromium reports exactly 1
+      // and iOS Safari does not: it routinely hands back 0.9999999 and similar,
+      // so an exact test bails on every sync and the sheet never learns the
+      // keyboard is there. That is precisely the bug this block was written to
+      // fix, and it survived because the test runs on the engine that reports
+      // the tidy number.
+      if (Math.abs(vv.scale - 1) > 0.05) return;
       setViewport({ height: vv.height, top: vv.offsetTop });
     };
     sync();
     vv.addEventListener('resize', sync);
     vv.addEventListener('scroll', sync);
+    // iOS does not always fire a visualViewport event for a keyboard raised by
+    // an autofocus, so the focus itself is a second trigger. Deferred a frame
+    // because the keyboard animates in and the height is wrong until it lands.
+    const onFocus = () => {
+      requestAnimationFrame(sync);
+      setTimeout(sync, 300);
+    };
+    window.addEventListener('focusin', onFocus);
+    window.addEventListener('resize', sync);
     return () => {
       vv.removeEventListener('resize', sync);
       vv.removeEventListener('scroll', sync);
+      window.removeEventListener('focusin', onFocus);
+      window.removeEventListener('resize', sync);
     };
   }, []);
   useEffect(() => {
@@ -176,14 +194,18 @@ export function BottomSheet({
     <div
       ref={overlayRef}
       data-overlay
-      className="fixed inset-x-0 top-0 z-50 flex flex-col justify-end md:hidden"
+      className="fixed inset-x-0 z-50 flex flex-col justify-end md:hidden"
       // Bounded to the visible area rather than `inset-0`, so "the bottom" is
       // the top of the keyboard when one is open and the bottom of the screen
       // when it is not.
       style={
         viewport
-          ? { height: `${viewport.height}px`, transform: `translateY(${viewport.top}px)` }
-          : { bottom: 0 }
+          ? // `top`, not a transform. A transform on a `position: fixed`
+            // element is a long-standing iOS Safari minefield — it can promote
+            // the element to a layer positioned against the document rather
+            // than the viewport, which is the opposite of what is wanted here.
+            { top: `${viewport.top}px`, height: `${viewport.height}px` }
+          : { top: 0, bottom: 0 }
       }
     >
       <div
