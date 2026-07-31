@@ -16,6 +16,11 @@
  * ヒカチュウ and フシギダネ into フシキタネ — names no Japanese user would
  * ever type, silently unfindable. This function was written with the wrong
  * class first and the generated catalogs showed it immediately.
+ *
+ * Kana case last. The catalogs hold katakana, because that is how the games
+ * write species names — but an IME hands you hiragana first, and committing it
+ * without converting is an ordinary thing to do. Before this fold, ぴかちゅう
+ * and ふしぎだね matched nothing at all.
  */
 export function normalizeSearch(text: string): string {
   return text
@@ -28,5 +33,11 @@ export function normalizeSearch(text: string): string {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .normalize('NFC')
+    // Hiragana → katakana: the kana equivalent of case-folding. The +0x60 shift
+    // is exact across U+3041–U+3096, and the range stops at ゖ so it never
+    // touches ゛ ゜ ゝ ゞ or the prolonged-sound mark ー, which katakana shares
+    // unchanged. Runs after NFKC has already turned half-width ﾋﾟｶﾁｭｳ into
+    // katakana, so every form converges on one key by a different route.
+    .replace(/[ぁ-ゖ]/g, (ch) => String.fromCodePoint(ch.codePointAt(0)! + 0x60))
     .trim();
 }

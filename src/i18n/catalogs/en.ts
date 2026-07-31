@@ -117,6 +117,11 @@ export const enUi = {
   'browser.stage.3': '3+ Stage',
   'browser.stageChip': '{stages} stage',
   'browser.subgroupGeneration': 'Generation {gen}',
+  // Shown instead of the results when a query matches more than the browser will
+  // draw at once. Phrased around the query rather than a character count: in
+  // Chinese a single character can already be a perfectly narrow search.
+  'browser.tooMany.hint': 'Add another character, or search by Pokédex number.',
+  'browser.tooMany.title': '{count} matches — too many to show.',
   'builder.addToSection': 'Add a Pokémon to {section}',
   'chart.header.count': 'COUNT',
   'chart.header.gen': 'GEN',
