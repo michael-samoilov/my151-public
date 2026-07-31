@@ -44,8 +44,15 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
   return (
     <header className="border-b bg-card">
       <div className="flex items-center justify-between px-3 sm:px-6 py-2">
+        {/* The visible wordmark is the page's only <h1>, so on its own it gives
+         * crawlers that DO execute JS (Google) a keyword-free heading — see
+         * SEO-HANDOFF.md §0. The appended text completes the heading without
+         * changing a pixel, and it is a genuine accessibility win too: screen
+         * readers currently announce just "my151.app", which says nothing about
+         * what the page is. */}
         <h1 className="text-2xl font-extrabold tracking-tight whitespace-nowrap">
           <span className="text-primary">my151</span><span className="text-foreground">.app</span>
+          <span className="sr-only"> — make your own custom Pokédex</span>
         </h1>
 
         <div className="flex items-center gap-1 flex-shrink-0">

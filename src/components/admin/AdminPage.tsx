@@ -105,8 +105,8 @@ interface ApiResponse {
   funnelEvents?: Record<string, number>;
   /** Per-user cohort samples: [firstTs, peakMon, peakLines, completed, exported]. */
   cohort?: [number, number, number, 0 | 1, 0 | 1][];
-  /** Weekly active users: week-start (ms) → distinct users active that week. */
-  wau?: { week: number; count: number }[];
+  /** Daily activity: per-day DAU and trailing-7-day rolling active count. */
+  activity?: { day: number; dau: number; rolling7: number }[];
   /** Onboarding launch timestamp — the default cutoff for the pre/post slider. */
   onboardingLaunchTs?: number;
   exportSettings?: {
@@ -534,32 +534,156 @@ function PrePostCohort({
   );
 }
 
-/** Weekly-active-users bar chart. One bar per week (distinct users active),
- *  with the count above each bar and the week-start date on hover. */
-function WauChart({ series }: { series: { week: number; count: number }[] }) {
-  if (series.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
-  const max = Math.max(1, ...series.map((w) => w.count));
-  const fmtWeek = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-  // Thin the x-axis labels when there are many weeks so they stay readable.
-  const step = Math.max(1, Math.ceil(series.length / 12));
+/** Round a number up to a "nice" 1/2/5 × 10^k value (e.g. 7.6 → 10, 23 → 50). */
+function niceNum(x: number): number {
+  if (x <= 0) return 1;
+  const exp = Math.floor(Math.log10(x));
+  const pow = Math.pow(10, exp);
+  const f = x / pow; // 1..10
+  const nf = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
+  return nf * pow;
+}
+
+/** Build a y-axis of round tick values covering [0, rawMax] with ~`target`
+ *  intervals. Returns the axis ceiling (used to scale the chart) and the
+ *  ascending tick list, so labels are always 0, step, 2·step, … not raw maxima. */
+function niceAxis(rawMax: number, target = 3): { axisMax: number; ticks: number[] } {
+  const step = Math.max(1, niceNum(rawMax / target)); // integer counts: never sub-1 ticks
+  const axisMax = Math.ceil(rawMax / step) * step;
+  const ticks: number[] = [];
+  for (let v = 0; v <= axisMax + step / 2; v += step) ticks.push(v);
+  return { axisMax, ticks };
+}
+
+/** Compact tick label: 1500 → "1.5k", 2000 → "2k", 30 → "30". */
+function fmtTick(v: number): string {
+  if (v >= 1000) {
+    const k = v / 1000;
+    return `${Number.isInteger(k) ? k : k.toFixed(1)}k`;
+  }
+  return `${v}`;
+}
+
+/** Active-users line chart: daily active users (DAU) and a trailing-7-day
+ *  rolling active count (a WAU that updates every day). Press/move over the
+ *  chart to read exact values on a given day. */
+function ActivityChart({ series }: { series: { day: number; dau: number; rolling7: number }[] }) {
+  const [cursor, setCursor] = useState<number | null>(null);
+  const areaRef = useRef<HTMLDivElement>(null);
+  if (series.length < 2) return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
+
+  const W = 340;
+  const H = 130;
+  const padL = 22;
+  const padR = 6;
+  const padT = 8;
+  const padB = 18;
+  const rawMax = Math.max(1, ...series.map((d) => Math.max(d.dau, d.rolling7)));
+  const { axisMax, ticks } = niceAxis(rawMax);
+  const n = series.length;
+  const px = (i: number) => padL + ((W - padL - padR) * i) / (n - 1);
+  const py = (v: number) => padT + (H - padT - padB) * (1 - v / axisMax);
+
+  // Segments drawn dotted mark provisional data. The final segment into
+  // "today" is provisional for both lines (today is still accumulating). The
+  // first RAMP days are provisional for the rolling-7 line only — its window
+  // is not yet full — while each day's DAU is already a complete count.
+  const RAMP = 7;
+  const isToday = (i: number) => i === n - 2;
+  const dauProvisional = (i: number) => isToday(i);
+  const r7Provisional = (i: number) => i <= RAMP - 2 || isToday(i);
+  const segPath = (key: 'dau' | 'rolling7', prov: (i: number) => boolean, wantProvisional: boolean) => {
+    let d = '';
+    for (let i = 0; i < n - 1; i++) {
+      if (prov(i) !== wantProvisional) continue;
+      d += `M ${px(i)},${py(series[i][key])} L ${px(i + 1)},${py(series[i + 1][key])} `;
+    }
+    return d.trim();
+  };
+
+  // Shade the area under the DAU line for the trailing 7 days — the days that
+  // roll into today's rolling-7 count, so the earliest of them is the value
+  // dropping out next (the "target to beat" today).
+  const shadeStart = Math.max(0, n - 7);
+  let dauArea = `M ${px(shadeStart)},${py(0)}`;
+  for (let i = shadeStart; i < n; i++) dauArea += ` L ${px(i)},${py(series[i].dau)}`;
+  dauArea += ` L ${px(n - 1)},${py(0)} Z`;
+
+  const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  const step = Math.max(1, Math.ceil(n / 8));
+
+  const updateCursor = (clientX: number) => {
+    const el = areaRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const frac = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    setCursor(Math.round(frac * (n - 1)));
+  };
+  const cur = cursor !== null ? series[Math.min(cursor, n - 1)] : null;
+
   return (
-    <div className="overflow-x-auto pb-1">
-      <div className="flex items-end gap-1 min-w-full" style={{ height: 120 }}>
-        {series.map((w, i) => (
-          <div key={w.week} className="flex-1 min-w-[10px] flex flex-col items-center justify-end h-full">
-            <span className="text-[0.55rem] tabular-nums text-muted-foreground leading-none mb-0.5">
-              {w.count || ''}
-            </span>
-            <div
-              className="w-full rounded-t bg-primary/70"
-              style={{ height: `${Math.max(w.count > 0 ? 3 : 0, (w.count / max) * 100)}%` }}
-              title={`Week of ${new Date(w.week).toLocaleDateString()}: ${w.count} active`}
-            />
-            <span className="text-[0.5rem] text-muted-foreground leading-none mt-0.5 h-4 flex items-start">
-              {i % step === 0 || i === series.length - 1 ? fmtWeek(w.week) : ''}
-            </span>
+    <div className="w-full">
+      {/* Legend — identity is never color-alone */}
+      <div className="flex items-center gap-3 mb-1 text-[0.65rem]">
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-3 h-[2px] bg-primary" /> Rolling 7-day
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-3 h-[2px]" style={{ backgroundColor: 'var(--color-muted-foreground)' }} /> Daily (DAU)
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="inline-block w-3 border-b border-dashed" style={{ borderColor: 'var(--color-muted-foreground)' }} /> Provisional
+        </span>
+      </div>
+      <div
+        ref={areaRef}
+        className="relative w-full touch-none select-none"
+        onPointerDown={(e) => {
+          e.currentTarget.setPointerCapture(e.pointerId);
+          updateCursor(e.clientX);
+        }}
+        onPointerMove={(e) => cursor !== null && updateCursor(e.clientX)}
+        onPointerUp={() => setCursor(null)}
+        onPointerLeave={() => setCursor(null)}
+      >
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" style={{ height: 'auto' }} preserveAspectRatio="none">
+          {ticks.map((t) => (
+            <g key={t}>
+              <line x1={padL} y1={py(t)} x2={W - padR} y2={py(t)} stroke="var(--color-muted)" strokeWidth={1} />
+              <text x={2} y={py(t) + 3} fontSize={7} fill="var(--color-muted-foreground)">
+                {fmtTick(t)}
+              </text>
+            </g>
+          ))}
+          {/* Trailing-7-day window feeding today's rolling count */}
+          <path d={dauArea} fill="var(--color-muted-foreground)" opacity={0.1} stroke="none" />
+          {/* DAU — solid; only today (still accumulating) is dotted */}
+          <path d={segPath('dau', dauProvisional, false)} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} />
+          <path d={segPath('dau', dauProvisional, true)} fill="none" stroke="var(--color-muted-foreground)" strokeWidth={1} opacity={0.7} strokeDasharray="2 2" />
+          {/* Rolling 7-day (WAU) — dotted over ramp-up (window not yet full) + today */}
+          <path d={segPath('rolling7', r7Provisional, false)} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} />
+          <path d={segPath('rolling7', r7Provisional, true)} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} strokeDasharray="3 2" />
+          {cur && cursor !== null && (
+            <line x1={px(cursor)} y1={padT} x2={px(cursor)} y2={H - padB} stroke="var(--color-foreground)" strokeWidth={1} />
+          )}
+        </svg>
+        {cur && cursor !== null && (
+          <div
+            className="absolute -top-1 -translate-x-1/2 pointer-events-none whitespace-nowrap rounded bg-foreground text-background text-[0.6rem] px-1 py-0.5"
+            style={{ left: `${(px(cursor) / W) * 100}%` }}
+          >
+            {fmtDay(cur.day)} · {cur.rolling7}w · {cur.dau}d
           </div>
-        ))}
+        )}
+      </div>
+      {/* x-axis labels */}
+      <div className="flex justify-between text-[0.55rem] text-muted-foreground mt-0.5 px-[6px]">
+        {series
+          .map((d, i) => ({ d, i }))
+          .filter(({ i }) => i % step === 0 || i === n - 1)
+          .map(({ d, i }) => (
+            <span key={i}>{fmtDay(d.day)}</span>
+          ))}
       </div>
     </div>
   );
@@ -1752,7 +1876,7 @@ export function AdminPage() {
 
         {data && (
           <>
-            <Card title="Overview (all-time)">
+            <Card title="Overview (since June 15)">
               <div className="flex flex-wrap gap-2">
                 <Stat value={data.funnel.users} label="Users" />
                 <Stat value={data.funnel.completed} label="Completed (151)" />
@@ -1762,9 +1886,9 @@ export function AdminPage() {
               </div>
             </Card>
 
-            {data.wau && data.wau.length > 0 && (
-              <Card title="Weekly active users">
-                <WauChart series={data.wau} />
+            {data.activity && data.activity.length > 0 && (
+              <Card title="Active users (daily + rolling 7-day)">
+                <ActivityChart series={data.activity} />
               </Card>
             )}
 

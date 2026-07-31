@@ -4,7 +4,37 @@
 
 When resuming from a context summary (e.g. after running out of context), only act on items explicitly listed under "Pending Tasks." Do not revisit, verify, or re-investigate completed work. Treat the summary's completed items as done — pick up exactly where things left off.
 
-## Verification
+## Response style
+
+Write in ASD-STE100 Simplified Technical English where the subject allows. Also follow the `action-first-replies` rules (a skill by Ayoub Ghriss (github.com/ayghri)).
+
+Simplified Technical English:
+
+1. Write one instruction per sentence. Use 20 words maximum for an instruction, 25 for a description.
+2. Use active voice and present tense. Do not use a gerund when a simple verb works.
+3. Give each word one meaning. Do not add a synonym for variety.
+4. Use 6 sentences maximum per paragraph.
+5. Do not use idiom, metaphor, or figurative language.
+
+Full STE compliance needs the approved-word dictionary, which is proprietary and not available here. Apply the sentence and grammar rules above. Do not claim dictionary compliance.
+
+`action-first-replies`:
+
+1. Lead with the action. Write no preamble and no closing pleasantry.
+2. Number the steps when work has more than one step. Put one action in each step.
+3. Give a specific time estimate. Do not write "a bit" or "shortly".
+4. Use 5 items maximum per list. Split a longer list into "now" and "later".
+5. State an error and its fix directly. Restate the current state each turn.
+
+Never drop these as tangents or preamble:
+
+- A request for approval before a production merge.
+- A correction to an earlier statement that was wrong.
+- A defect or risk found in the work, including my own.
+
+Both source documents list the same exception: confirmation of a risky action, and real ambiguity, outrank brevity.
+
+## Build Verification
 
 Always run `npm run build` before committing and pushing. Never push code that has not been build-verified.
 
@@ -24,7 +54,21 @@ CI runs on every branch push and PR, but it can only *block* a merge if branch p
 
 ## Deployment
 
-Vercel auto-deploys from the `claude/pokedex-region-builder-AviYF` branch. After committing to any work branch, always merge into and push `claude/pokedex-region-builder-AviYF` so changes go live. Do not push only to the work branch — the deploy branch must be updated every time.
+**The app has real users. `claude/pokedex-region-builder-AviYF` is production — never push to it without explicit approval in the current conversation.**
+
+Work on a preview branch by default:
+
+1. Commit to the work branch and push it (`git push -u origin <work-branch>`). Vercel builds a **preview deployment** for any pushed branch — that is where changes get verified.
+2. Report the preview to the user and let them look. Nothing reaches production on your own initiative.
+3. Merge into and push `claude/pokedex-region-builder-AviYF` **only after the user says to ship it.** Approval is per-change: shipping one change is not standing permission for the next.
+4. **Check out the work branch again immediately after that push.** A merge leaves you on the production branch, so the next commit lands there silently — one `git push` away from an unapproved deploy. Run `git rev-parse --abbrev-ref HEAD` before any commit that follows a merge.
+
+When in doubt, push the preview branch and ask. A change sitting on a preview branch costs nothing; an unapproved production deploy is seen by users.
+
+Two notes on scope, since "it's only SEO/config" is exactly how unapproved changes reach users:
+
+- **Meta tags, `robots.txt`, `sitemap.xml` and other crawler-only files are still production changes.** They are lower-risk, not zero-risk, and still need approval before merging.
+- **Check whether a change is user-visible before calling it invisible.** `theme-color` tints mobile browser chrome; markup inside `#root` renders until React mounts. The app currently runs in **light** mode — the `.dark` block in `index.css` exists but nothing ever applies the class — so dark-themed additions will mismatch the live UI.
 
 ## Responsive sizing
 

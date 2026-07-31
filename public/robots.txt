@@ -1,4 +1,19 @@
+Sitemap: https://my151.app/sitemap.xml
+
 User-agent: *
+# Admin dashboard and demo/tuning states are query-param views of "/" with no
+# standalone value in search results; canonical still points every one at "/".
+#
+# Two deliberate choices here, both for cross-parser correctness:
+#  - Plain prefixes, not "/*?admin". These views are always entered at exactly
+#    "/?admin", "/?tune", "/?demo=…", and prefix rules are honored everywhere,
+#    whereas "*" wildcards are a Google/Bing extension.
+#  - Disallow listed *before* "Allow: /". Google resolves conflicts by longest
+#    match, but older first-match-wins parsers would otherwise stop at
+#    "Allow: /" and never reach these lines. This order is correct under both.
+Disallow: /?admin
+Disallow: /?tune
+Disallow: /?demo=
 Allow: /
 
 User-agent: GPTBot

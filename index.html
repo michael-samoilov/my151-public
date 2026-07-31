@@ -6,8 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>my151 - Custom Pokédex Builder</title>
     <meta name="description" content="Build your own personal Pokédex of 151 favorites, then see how your type coverage compares to the national dex." />
+    <link rel="canonical" href="https://my151.app/" />
+
+    <!-- Search-console ownership proofs. Both are plain ownership tokens, not
+         trackers, and must stay in the served HTML for the properties to
+         remain verified — do not strip them when editing head tags. -->
+    <meta name="google-site-verification" content="hxa7MrDyw0rZHoHFww0GKiJpERvm5I0Vi7GuA7segkI" />
+    <meta name="msvalidate.01" content="6EAC46368E8AEEC4C08A01171D758093" />
 
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="my151" />
     <meta property="og:title" content="my151 - Custom Pokédex Builder" />
     <meta property="og:description" content="Build your own personal Pokédex of 151 favorites, then see how your type coverage compares to the national dex." />
@@ -15,30 +23,133 @@
     <meta property="og:image" content="https://my151.app/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="my151 — a six-by-four grid of Pokémon sprites beside the heading “Build your own Pokédex”." />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="my151 - Custom Pokédex Builder" />
     <meta name="twitter:description" content="Build your own personal Pokédex of 151 favorites, then see how your type coverage compares to the national dex." />
     <meta name="twitter:image" content="https://my151.app/og-image.png" />
+    <meta name="twitter:image:alt" content="my151 — a six-by-four grid of Pokémon sprites beside the heading “Build your own Pokédex”." />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "my151",
+        "alternateName": "my151 - Custom Pokédex Builder",
+        "url": "https://my151.app/",
+        "description": "Build your own personal Pokédex of 151 favorites, then see how your type coverage compares to the national dex.",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript.",
+        "inLanguage": "en",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
 
     <style>
-      html, body { margin: 0; padding: 0; background: #0a0a0a; color: #fafafa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      /* These must match the LIGHT palette in src/index.css, not a dark one. That
+       * file's `body` rule (background-color: var(--color-background) = #f7f7f8)
+       * lives in the built stylesheet, which is linked *after* this block and
+       * therefore wins — and because stylesheets are render-blocking, the values
+       * here only ever paint if that stylesheet fails to load. A dark background
+       * declared here is invisible in normal operation while making the boot
+       * screen look dark in any test that bypasses the stylesheet. The app has no
+       * dark mode: nothing applies the `.dark` class. */
+      html, body { margin: 0; padding: 0; background: #f7f7f8; color: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
       #root { min-height: 100dvh; }
-      .p151-boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+      .p151-boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; box-sizing: border-box; text-align: center; }
       .p151-boot svg { width: 64px; height: 64px; animation: p151-spin 1.1s linear infinite; }
-      .p151-boot span { font-size: 14px; color: #a3a3a3; letter-spacing: 0.02em; }
+      /* SEO-HANDOFF.md P1. This markup is the only content a crawler that does not
+       * execute JS ever receives — everything else is injected by React after load,
+       * and Bing (the app's #1 search referrer, ~42%) renders JS partially at best.
+       * Keeping the copy visible to humans as well means it is honest content, not
+       * crawler-only text. React's createRoot drops these children on first commit,
+       * so it never coexists with the app's own <h1>. */
+      /* The copy sits OUT of the flex flow, so the spinner and "Loading…" keep the
+       * exact centring they had before this text existed.
+       *
+       * It also reveals after a delay. On a fast connection the app mounts in a few
+       * hundred ms, so text shown immediately would only flash and vanish — visible
+       * but never readable, which is worse than no text at all. Holding it back ~1s
+       * means a quick load never paints it, while a slow load gets something useful
+       * instead of a bare spinner.
+       *
+       * This is not hidden text: it paints whenever loading outlasts the delay, with
+       * no display:none, no off-screen positioning and no zero height. Crawlers read
+       * the DOM regardless of animation state, so indexing is unaffected. */
+      .p151-copy {
+        position: absolute;
+        top: calc(50% + 76px);
+        left: 24px;
+        right: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        opacity: 0;
+        animation: p151-reveal 320ms ease-out 1s forwards;
+      }
+      @keyframes p151-reveal { to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) {
+        /* Keep the delay, drop the fade. Elsewhere in index.css reduced motion uses
+         * `animation: none`, but here the animation is a timing mechanism rather than
+         * decoration — removing it would restore the flash it exists to prevent. */
+        .p151-copy { animation-duration: 1ms; }
+      }
+      .p151-boot h1 { margin: 0; font-size: 18px; font-weight: 600; color: #0a0a0a; letter-spacing: -0.01em; }
+      .p151-boot p { margin: 0; max-width: 38ch; font-size: 14px; line-height: 1.5; color: #525252; }
+      /* Was #a3a3a3, which predated this block rendering on a light background and
+       * gave "Loading…" only ~2.3:1 contrast. #6e6e6e is a shade darker than the
+       * app's --color-muted-foreground (#737373) because that value measures
+       * 4.43:1 on #f7f7f8 — just under AA for 13px text. */
+      .p151-boot span { font-size: 13px; color: #6e6e6e; letter-spacing: 0.02em; }
+      /* Desktop is a peer of mobile, not mobile-with-patches (see CLAUDE.md): the
+       * spinner, headline, body and hint scale together at --breakpoint-md instead
+       * of staying pinned to phone sizing on a 1440px display. Plain px + one media
+       * query because this block renders before main.tsx installs the rem-based
+       * root font-size knob. */
+      @media (min-width: 1024px) {
+        .p151-boot { gap: 20px; }
+        .p151-boot svg { width: 84px; height: 84px; }
+        .p151-boot h1 { font-size: 30px; }
+        .p151-boot p { max-width: 46ch; font-size: 17px; }
+        .p151-boot span { font-size: 14px; }
+        /* Clears the taller centred spinner group at this breakpoint. */
+        .p151-copy { top: calc(50% + 96px); gap: 14px; }
+      }
       @keyframes p151-spin { to { transform: rotate(360deg); } }
     </style>
   </head>
   <body>
     <div id="root">
-      <div class="p151-boot" aria-hidden="true">
-        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+      <div class="p151-boot">
+        <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <circle cx="16" cy="16" r="15" fill="#fafafa" stroke="#dc2626" stroke-width="1.5"/>
           <path d="M2 16 A14 14 0 0 1 30 16" fill="#dc2626"/>
           <line x1="2" y1="16" x2="30" y2="16" stroke="#fafafa" stroke-width="2"/>
           <circle cx="16" cy="16" r="4.5" fill="#fafafa" stroke="#dc2626" stroke-width="2"/>
         </svg>
+        <div class="p151-copy">
+          <h1>Make Your Own Custom Pokédex</h1>
+          <!-- Front-load the noun phrases people actually search: "custom Pokédex
+               builder", "Pokémon region template". A searcher scanning this needs the
+               first few words to confirm they found the right kind of tool, so no
+               modifier earns a place ahead of them. "Creator" and "generator" are left
+               out on purpose: they are synonyms of builder and generate, and stacking
+               synonyms reads as keyword stuffing. -->
+          <p>
+            my151 is a custom Pokédex builder and Pokémon region template. Pick
+            your favorite 151 from all 1,025 Pokémon into labelled sections.
+            Compare your type coverage to the National Dex, then generate a
+            shareable image of your dex.
+          </p>
+        </div>
         <span>Loading…</span>
       </div>
     </div>

@@ -110,6 +110,29 @@ const STAGE_STYLES: [StageStyle, StageStyle, StageStyle] = [
 
 const SHOT_SRCS = [shot45, shot95, shot151] as const;
 
+/** Parallel to SHOT_SRCS. These three screenshots show the product's progression
+ *  (partial dex, sectioned dex, complete dex plus analytics), so they carry
+ *  meaning and need real alt text rather than alt="". Bing Webmaster Tools
+ *  reported all three as missing alt attributes.
+ *
+ *  Each string carries one target search phrase — "custom Pokédex", "region
+ *  template", "generated Pokédex image" — but only because each phrase accurately
+ *  describes that image. Do not add phrases the screenshot does not show, and do
+ *  not list phrases: Google treats keyword-filled alt attributes as keyword
+ *  stuffing.
+ *
+ *  "Template" is accurate: BUILD_GROUPS in src/data/slot-template.ts is a
+ *  pre-structured set of region sections that each pre-filter the browser.
+ *  "Generated image" is accurate: shot-151 is itself an export produced by
+ *  generateExportImage, and carries the "made with my151.app" footer. Prefer
+ *  "generate your Pokédex image" over a bare "generator" — the app has no
+ *  randomiser, so the bare term invites visitors expecting one. */
+const SHOT_ALTS = [
+  'A custom Pokédex in progress — 45 of the 151 slots filled, the rest still empty.',
+  'A Pokémon region template at 95 of 151, its slots grouped into labelled areas such as Starters, Forest and Ocean.',
+  'A generated Pokédex image: a finished 151 dex beside its type-distribution, generation-origin and base-stat charts.',
+] as const;
+
 // ---------- dots face ----------
 
 /** Live miniature of the View-page poster from the seed dex: one dot per
@@ -291,7 +314,7 @@ function ShowcaseStaircase() {
               style={{ transform: `rotate(${s.rotate})` }}
             >
               {FACE === 'shots' ? (
-                <img src={SHOT_SRCS[i]} alt="" className="h-full w-auto block" draggable={false} />
+                <img src={SHOT_SRCS[i]} alt={SHOT_ALTS[i]} className="h-full w-auto block" draggable={false} />
               ) : (
                 <DotsHero stage={stages[i]} outlines={STAGE_STYLES[i].outlines} stats={STAGE_STYLES[i].stats} />
               )}

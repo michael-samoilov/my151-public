@@ -7,6 +7,8 @@
     "dev": "vite",
     "cache-sprites": "bash scripts/cache-sprites.sh",
     "build-type-glyphs": "tsx scripts/build-type-glyphs.ts",
+    "og-image": "node scripts/generate-og-image.mjs",
+    "indexnow": "node scripts/indexnow.mjs",
     "build": "npm run i18n:verify && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
