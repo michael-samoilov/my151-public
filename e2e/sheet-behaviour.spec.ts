@@ -96,7 +96,19 @@ test.describe('mobile sheet', () => {
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
 
-    const KEYBOARD_LEAVES = 480;
+    // What an iPhone 15 Pro actually leaves with the keyboard up: 852 CSS px of
+    // screen, less the browser chrome, less a keyboard whose accessory bar
+    // counts toward the inset. The first version of this test used 480, which
+    // is roomy enough that the form fitted without trying — so it went green
+    // while the real phone hid the disclosure and the button under the fold.
+    const KEYBOARD_LEAVES = 338;
+    // The gap the sheet holds above itself once a keyboard is open. Measured,
+    // not chosen: the form compresses to 178px and no further, so at the
+    // default 56 the whole thing stops fitting below a 234px viewport, and at 8
+    // it survives to 186. The headroom is the lesser half of why it matters —
+    // the same 48px is textarea at every keyboard height, not just the tight
+    // ones.
+    const KEYBOARD_TOP_GAP = 8;
     await page.evaluate((visible) => {
       const vv = window.visualViewport!;
       Object.defineProperty(vv, 'height', { value: visible, configurable: true });
@@ -112,25 +124,46 @@ test.describe('mobile sheet', () => {
 
     const box = await page.evaluate(() => {
       const d = document.querySelector<HTMLElement>('[role="dialog"]')!;
-      const submit = d.querySelector<HTMLElement>('button[type="submit"]');
-      const textarea = d.querySelector<HTMLElement>('textarea');
+      const bottom = (sel: string) => {
+        const el = d.querySelector<HTMLElement>(sel);
+        return el ? el.getBoundingClientRect().bottom : null;
+      };
       return {
+        sheetTop: d.getBoundingClientRect().top,
         sheetBottom: d.getBoundingClientRect().bottom,
-        submitBottom: submit?.getBoundingClientRect().bottom ?? null,
-        textareaBottom: textarea?.getBoundingClientRect().bottom ?? null,
+        textarea: bottom('textarea'),
+        // The "what gets sent" disclosure, which is what the report was about:
+        // being able to read the field *and* the thing under it.
+        disclosure: bottom('details summary'),
+        submit: bottom('button[type="submit"]'),
       };
     });
 
-    expect(box.submitBottom, 'no submit button found').not.toBeNull();
+    for (const part of ['textarea', 'disclosure', 'submit'] as const) {
+      expect(box[part], `no ${part} found`).not.toBeNull();
+    }
+
     expect(box.sheetBottom, 'the sheet extends behind the keyboard').toBeLessThanOrEqual(
       KEYBOARD_LEAVES + 1,
     );
-    expect(box.textareaBottom!, 'the textarea is clipped by the keyboard').toBeLessThanOrEqual(
-      KEYBOARD_LEAVES + 1,
+    // The gap above the sheet keeps the grab handle clear of the browser
+    // chrome, which is worth 56px when there is a screen to spend it from and
+    // nothing at all when a keyboard has taken two thirds of one. Holding it
+    // open is what kept the form scrolling after the sheet itself had stopped
+    // hiding behind the keyboard.
+    expect(box.sheetTop, 'the sheet holds space empty above itself').toBeLessThanOrEqual(
+      KEYBOARD_TOP_GAP + 1,
     );
-    expect(box.submitBottom!, 'the submit button is behind the keyboard').toBeLessThanOrEqual(
-      KEYBOARD_LEAVES + 1,
-    );
+    // Against the sheet's own bottom, not the keyboard's. Fitting the sheet
+    // above the keyboard was the first half of this bug; the second half was
+    // the form overflowing the sheet it now fits in, which a check against the
+    // keyboard line cannot see — a scrolled-away element reports a bottom past
+    // the sheet, and the fix is that it no longer has to scroll.
+    for (const part of ['textarea', 'disclosure', 'submit'] as const) {
+      expect(box[part]!, `the ${part} is below the fold of the sheet`).toBeLessThanOrEqual(
+        box.sheetBottom + 1,
+      );
+    }
   });
 
   test('the focused field is at least 16px, so iOS does not zoom', async ({ page }) => {

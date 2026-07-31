@@ -66,11 +66,19 @@ function FeedbackForm({
   route,
   initialCategory,
   error,
+  fill,
   onDone,
 }: {
   route: string;
   initialCategory: FeedbackCategory;
   error?: FeedbackContext['error'];
+  /**
+   * Lay the form out to its container's height rather than to its content, so
+   * the textarea absorbs whatever is left over. Set by the sheet, where the
+   * container height is the space above the keyboard; left off on desktop,
+   * where the card is content-sized and there is nothing to absorb.
+   */
+  fill?: boolean;
   onDone: () => void;
 }) {
   const t = useT();
@@ -115,7 +123,11 @@ function FeedbackForm({
     <form
       // pt-3, not 0: the chips carry an outline, and with the form flush to the
       // header above it the two strokes met and read as one broken rule.
-      className="px-4 pt-3 pb-4 flex flex-col gap-3"
+      //
+      // `h-full` only resolves when the sheet has a definite height, which it
+      // takes on exactly when a keyboard is open. Any other time this is a no-op
+      // and the form sizes to its content as before.
+      className={`px-4 pt-3 pb-4 flex flex-col gap-3${fill ? ' h-full min-h-0' : ''}`}
       onSubmit={async (e) => {
         e.preventDefault();
         if (tooShort || state === 'sending') return;
@@ -149,11 +161,18 @@ function FeedbackForm({
         ))}
       </div>
 
-      <label className="flex flex-col gap-1">
+      {/* The one element allowed to give. Everything else in this column is a
+          fixed size, so when the keyboard eats two thirds of the screen the
+          textarea shrinks and the disclosure and the button keep their places
+          instead of being pushed below the fold. */}
+      <label className="flex flex-col gap-1 min-h-0 shrink">
         <span className="text-xs font-medium">{t('feedback.message.label')}</span>
         <textarea
           autoFocus
           required
+          // `rows` is the height with room to spare; `min-h`/`max-h` bound it
+          // once the flex column starts negotiating. Two lines is the floor —
+          // below that the field stops looking like somewhere to write.
           rows={4}
           maxLength={MAX_MESSAGE}
           value={message}
@@ -164,7 +183,7 @@ function FeedbackForm({
           // font size floors at 16px, so `text-sm` lands at 14. The field is
           // also autofocused, so the zoom fires on open rather than on tap.
           // Same rule the shared `Input` component already follows.
-          className="w-full rounded-md border bg-background px-2 py-1.5 text-base md:text-sm resize-y"
+          className="w-full min-h-14 max-h-40 shrink rounded-md border bg-background px-2 py-1.5 text-base md:text-sm resize-y"
         />
       </label>
 
@@ -231,15 +250,21 @@ export function FeedbackSheet({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const form = (
-    <FeedbackForm route={route} initialCategory={initialCategory} error={error} onDone={onClose} />
+  const form = (fill?: boolean) => (
+    <FeedbackForm
+      route={route}
+      initialCategory={initialCategory}
+      error={error}
+      fill={fill}
+      onDone={onClose}
+    />
   );
 
   // Mobile: the app's bottom sheet, same as every other mobile surface.
   if (!isDesktop) {
     return (
       <BottomSheet onClose={onClose} title={t('feedback.title')} closeLabel={t('feedback.title')}>
-        {form}
+        {form(true)}
       </BottomSheet>
     );
   }
@@ -256,7 +281,7 @@ export function FeedbackSheet({
         className="fixed bottom-16 end-3 z-[150] w-80 max-h-[80vh] overflow-y-auto overscroll-contain flex flex-col rounded-lg border bg-card shadow-xl"
       >
         <div className="px-4 pt-3 text-sm font-semibold">{t('feedback.title')}</div>
-        {form}
+        {form()}
       </div>
     </>
   );

@@ -190,6 +190,20 @@ export function BottomSheet({
     };
   }, []);
 
+  /**
+   * The gap above the sheet exists so the grab handle stays clear of the
+   * browser chrome. With a keyboard open there is nothing to spend it on: every
+   * pixel between the chrome and the keyboard is form, and holding 56 of them
+   * empty is what pushed the disclosure and the submit button below the fold
+   * even after the sheet itself stopped hiding behind the keyboard.
+   *
+   * `innerHeight` is the layout viewport, which iOS does not shrink for the
+   * keyboard, so the difference between the two *is* the keyboard. 80px of
+   * slack keeps browser-chrome collapse from reading as one.
+   */
+  const keyboardOpen = viewport !== null && viewport.height < window.innerHeight - 80;
+  const gap = keyboardOpen ? Math.min(topGap, 8) : topGap;
+
   return (
     <div
       ref={overlayRef}
@@ -220,8 +234,14 @@ export function BottomSheet({
         style={{
           // `100dvh` accounts for browser chrome but not the keyboard, so the
           // visible height wins whenever the visual viewport has reported one.
-          height: size === 'full' ? `calc(100% - ${topGap}px)` : undefined,
-          maxHeight: viewport ? `${Math.max(0, viewport.height - topGap)}px` : `calc(100dvh - ${topGap}px)`,
+          //
+          // A keyboard also switches a 'content'-sized sheet to a definite
+          // height. That is what lets a form inside it lay itself out to the
+          // space available — a percentage height needs a definite ancestor, and
+          // with `maxHeight` alone the chain stays `auto` and the form can only
+          // overflow and scroll, which is the fold the tail was hiding behind.
+          height: size === 'full' || keyboardOpen ? `calc(100% - ${gap}px)` : undefined,
+          maxHeight: viewport ? `${Math.max(0, viewport.height - gap)}px` : `calc(100dvh - ${gap}px)`,
           transform: `translateY(${dragY}px)`,
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
