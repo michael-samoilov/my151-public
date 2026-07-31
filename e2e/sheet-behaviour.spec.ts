@@ -100,9 +100,15 @@ test.describe('mobile sheet', () => {
     await page.evaluate((visible) => {
       const vv = window.visualViewport!;
       Object.defineProperty(vv, 'height', { value: visible, configurable: true });
+      // Report a *fractional* scale, the way iOS Safari does. Chromium hands
+      // back exactly 1, and the first version of this fix compared with
+      // `!== 1` — so it worked in the test and did nothing on a real phone,
+      // where the sheet stayed behind the keyboard. Simulating the tidy number
+      // is simulating the engine that never had the bug.
+      Object.defineProperty(vv, 'scale', { value: 0.9999999403953552, configurable: true });
       vv.dispatchEvent(new Event('resize'));
     }, KEYBOARD_LEAVES);
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(400);
 
     const box = await page.evaluate(() => {
       const d = document.querySelector<HTMLElement>('[role="dialog"]')!;
