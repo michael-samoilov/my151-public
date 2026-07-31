@@ -16,13 +16,14 @@
  *
  * Run: npm run i18n:verify
  */
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { en } from '../../src/i18n/catalogs/en';
 import { LOCALES, type Locale } from '../../src/i18n/config';
 import { GAME_TEXT_PATH, type GameTextSource } from './fetch-game-text';
 
 const TERMS_DIR = 'src/i18n/catalogs/terms';
+const UI_DIR = 'src/i18n/catalogs/ui';
 
 interface Failure {
   gate: string;
@@ -39,6 +40,17 @@ const readJson = <T,>(path: string): T => JSON.parse(readFileSync(path, 'utf8'))
 
 const termCatalogs = new Map<Locale, Record<string, string>>(
   LOCALES.map((l) => [l, readJson<Record<string, string>>(join(TERMS_DIR, `${l}.json`))]),
+);
+
+/**
+ * The translated — not sourced — UI strings. English has no file here: it is
+ * the source these are translated from, and lives in `catalogs/en.ts`.
+ */
+const uiCatalogs = new Map<Locale, Record<string, string>>(
+  LOCALES.filter((l) => l !== 'en' && existsSync(join(UI_DIR, `${l}.json`))).map((l) => [
+    l,
+    readJson<Record<string, string>>(join(UI_DIR, `${l}.json`)),
+  ]),
 );
 
 //#region 1. Official game text
@@ -294,7 +306,83 @@ function cjkSafety(): void {
 }
 
 //#endregion
-//#region 6. Length budgets
+//#region 6. Translated UI strings
+
+/**
+ * Values that are legitimately identical to their English source.
+ *
+ * Listed one by one rather than waved through by a rule, because "it matches
+ * English" is exactly what an untranslated string looks like. Each of these is
+ * genuinely the same word in that language, and saying so explicitly is what
+ * makes the check meaningful for every other key.
+ */
+const SAME_AS_ENGLISH_OK = new Set([
+  'es:feedback.category.idea', // "Idea" is the Spanish word too.
+  'it:feedback.category.idea', // And the Italian one.
+  'fr:feedback.category.bug', // French tech writing uses "Bug".
+]);
+
+/**
+ * How wide a chip label may be. These sit in a wrapping row that has to survive
+ * a 320px screen, so a long value pushes the layout rather than wrapping
+ * neatly. CJK gets a smaller budget because its characters are about twice as
+ * wide as Latin ones at the same size.
+ */
+const UI_LENGTH_BUDGETS: { prefix: string; maxLatin: number; maxCjk: number }[] = [
+  { prefix: 'feedback.category.', maxLatin: 22, maxCjk: 8 },
+];
+
+/**
+ * The translated layer, held to what a machine can actually check: that the
+ * keys exist and are real, that nothing is silently English, that it fits, and
+ * that it is clean Unicode. Whether the wording is any *good* is not in here
+ * and cannot be — that needs a speaker.
+ */
+function translatedUi(): void {
+  const english = en as Record<string, string>;
+  for (const [locale, catalog] of uiCatalogs) {
+    const keys = Object.keys(catalog);
+    if (!keys.length) fail('ui', 'file exists but is empty', locale);
+
+    for (const [key, value] of Object.entries(catalog)) {
+      // A key English does not have is a typo or a leftover; it would sit in
+      // the catalog forever, translated, and never render.
+      if (!(key in english)) {
+        fail('ui', 'not a key in the English catalog', locale, key);
+        continue;
+      }
+      if (!value.trim()) {
+        fail('ui', 'empty translation — omit the key instead, so it falls back to English', locale, key);
+        continue;
+      }
+      if (value === english[key] && !SAME_AS_ENGLISH_OK.has(`${locale}:${key}`)) {
+        fail(
+          'ui',
+          `identical to English (${JSON.stringify(value)}) — translate it, or add it to SAME_AS_ENGLISH_OK if that is genuinely the word`,
+          locale,
+          key,
+        );
+      }
+      const budget = UI_LENGTH_BUDGETS.find((b) => key.startsWith(b.prefix));
+      if (budget) {
+        const max = isCjk(locale) ? budget.maxCjk : budget.maxLatin;
+        if ([...value].length > max) {
+          fail('ui', `${JSON.stringify(value)} is ${[...value].length} chars, budget ${max}`, locale, key);
+        }
+      }
+    }
+
+    // Every locale must cover the same set, or a language is quietly half-done.
+    const reference = [...uiCatalogs.values()][0];
+    const missing = Object.keys(reference).filter((k) => !(k in catalog));
+    if (missing.length) {
+      fail('ui', `missing ${missing.length} key(s) other locales have: ${missing.join(', ')}`, locale);
+    }
+  }
+}
+
+//#endregion
+//#region 7. Length budgets
 
 /**
  * The handful of slots whose width is fixed by layout rather than by content,
@@ -341,6 +429,7 @@ function main(): void {
     ['untranslated leftovers', untranslatedLeftovers],
     ['unicode hygiene', unicodeHygiene],
     ['CJK safety', cjkSafety],
+    ['translated UI strings', translatedUi],
     ['length budgets', lengthBudgets],
   ];
 

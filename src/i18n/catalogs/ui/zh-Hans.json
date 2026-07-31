@@ -1,0 +1,7 @@
+{
+  "feedback.category.bug": "程序错误",
+  "feedback.category.data": "数据错误",
+  "feedback.category.idea": "建议",
+  "feedback.category.other": "其他",
+  "feedback.category.translation": "翻译错误"
+}

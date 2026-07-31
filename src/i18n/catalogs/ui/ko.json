@@ -1,0 +1,7 @@
+{
+  "feedback.category.bug": "버그",
+  "feedback.category.data": "데이터 오류",
+  "feedback.category.idea": "제안",
+  "feedback.category.other": "기타",
+  "feedback.category.translation": "번역 오류"
+}

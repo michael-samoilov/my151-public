@@ -82,6 +82,51 @@ test.describe('mobile sheet', () => {
     expect(await appScrollTop(page), 'the app should scroll again once the sheet is gone').toBeGreaterThan(before);
   });
 
+  test('the whole form stays above the on-screen keyboard', async ({ page }) => {
+    // `position: fixed` anchors to the layout viewport, which does not shrink
+    // when the keyboard opens — so a bottom-anchored sheet keeps its bottom
+    // edge underneath it, hiding the tail of the textarea, the disclosure and
+    // the submit button. On the one surface whose entire purpose is typing.
+    //
+    // Chromium has no keyboard to raise, so the keyboard is simulated the way
+    // iOS reports one: the visual viewport gets shorter while the layout
+    // viewport does not. That is exactly the signal the fix reads.
+    await page.goto('/?demo');
+    await page.getByRole('button', { name: /report|feedback|problem/i }).first().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    const KEYBOARD_LEAVES = 480;
+    await page.evaluate((visible) => {
+      const vv = window.visualViewport!;
+      Object.defineProperty(vv, 'height', { value: visible, configurable: true });
+      vv.dispatchEvent(new Event('resize'));
+    }, KEYBOARD_LEAVES);
+    await page.waitForTimeout(300);
+
+    const box = await page.evaluate(() => {
+      const d = document.querySelector<HTMLElement>('[role="dialog"]')!;
+      const submit = d.querySelector<HTMLElement>('button[type="submit"]');
+      const textarea = d.querySelector<HTMLElement>('textarea');
+      return {
+        sheetBottom: d.getBoundingClientRect().bottom,
+        submitBottom: submit?.getBoundingClientRect().bottom ?? null,
+        textareaBottom: textarea?.getBoundingClientRect().bottom ?? null,
+      };
+    });
+
+    expect(box.submitBottom, 'no submit button found').not.toBeNull();
+    expect(box.sheetBottom, 'the sheet extends behind the keyboard').toBeLessThanOrEqual(
+      KEYBOARD_LEAVES + 1,
+    );
+    expect(box.textareaBottom!, 'the textarea is clipped by the keyboard').toBeLessThanOrEqual(
+      KEYBOARD_LEAVES + 1,
+    );
+    expect(box.submitBottom!, 'the submit button is behind the keyboard').toBeLessThanOrEqual(
+      KEYBOARD_LEAVES + 1,
+    );
+  });
+
   test('the focused field is at least 16px, so iOS does not zoom', async ({ page }) => {
     await page.goto('/?demo');
     await page.getByRole('button', { name: /report|feedback|problem/i }).first().click();

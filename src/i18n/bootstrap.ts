@@ -55,6 +55,16 @@ const TERM_SOURCES = import.meta.glob<Record<string, string>>('./catalogs/terms/
 });
 
 /**
+ * Translated UI strings — the ones with no official source, written for this
+ * app. Kept in their own directory rather than merged into the terms so the
+ * difference between "this is what the games say" and "this is our wording"
+ * survives in the file layout. See `catalogs/ui/README.md`.
+ */
+const UI_SOURCES = import.meta.glob<Record<string, string>>('./catalogs/ui/*.json', {
+  import: 'default',
+});
+
+/**
  * Fetch a catalog for a locale.
  *
  * English is bundled and is always the base: every key resolves against it, so
@@ -71,7 +81,15 @@ export async function loadCatalog(locale: ActiveLocale): Promise<Messages> {
   if (isPseudoLocale(locale)) return buildPseudoCatalog(locale);
   const loadTerms = TERM_SOURCES[`./catalogs/terms/${locale}.json`];
   if (!loadTerms) return en;
-  return { ...en, ...(await loadTerms()) } as Messages;
+  const loadUi = UI_SOURCES[`./catalogs/ui/${locale}.json`];
+  // English first, then the sourced terms, then our own wording — so a locale
+  // that has translated only part of the corpus is partial rather than broken,
+  // and anything untranslated is English rather than missing.
+  return {
+    ...en,
+    ...(await loadTerms()),
+    ...(loadUi ? await loadUi() : {}),
+  } as Messages;
 }
 
 /** The `Locale` a pseudo-locale stands in for, for `<html lang>` and fonts. */
@@ -80,15 +98,23 @@ export function baseLocale(locale: ActiveLocale): Locale {
 }
 
 /**
- * Install a locale. Awaits the catalog before committing so no render can
- * observe the new locale against the old strings.
+ * Install a locale. Awaits both the catalog and the names before committing, so
+ * no render can observe the new locale against the old strings.
+ *
+ * The names used to be fetched without awaiting, on the reasoning that the UI
+ * falls back to the app's slug for the frame or two before they land. In
+ * practice that frame is long enough to see, and what it shows is every
+ * Pokémon's name in lowercase English — `raichu`, `mr-mime` — snapping into the
+ * real name a moment later. Against a 151-tile grid that is not a subtle flash.
+ *
+ * Two chunks in parallel rather than in series: the catalog is small and the
+ * names are the larger of the two, so awaiting both together costs about what
+ * awaiting the names alone does.
  */
 export async function applyLocale(locale: ActiveLocale): Promise<void> {
-  setCatalog(baseLocale(locale), await loadCatalog(locale));
-  // Names are a separate, larger chunk and are deliberately not awaited: the
-  // UI falls back to the English slug until they arrive, which is a frame or
-  // two, whereas blocking the locale switch on ~1,025 names would be visible.
-  void loadNames(baseLocale(locale));
+  const base = baseLocale(locale);
+  const [catalog] = await Promise.all([loadCatalog(locale), loadNames(base)]);
+  setCatalog(base, catalog);
 }
 
 /**
@@ -107,22 +133,19 @@ export async function initLocale(opts: {
 }): Promise<void> {
   const locale = resolveActiveLocale(opts);
 
-  // English needs its name catalog too, and used to be the one locale that
-  // never got it: the early return below skipped `applyLocale`, which is what
-  // calls `loadNames`. That was invisible while the tile rendered the raw slug
-  // and became a bug the moment it stopped — English is where `Mr. Mime`,
-  // `Farfetch'd` and `Nidoran♀` come from, and without this they stay the
-  // mangled `Mr-Mime` the slug produces.
-  //
-  // Not awaited, here or in `applyLocale`: names are a separate, larger chunk,
-  // and the label falls back to the slug for the frame or two before they land.
-  if (locale === DEFAULT_LOCALE) {
-    void loadNames(DEFAULT_LOCALE);
-    return;
-  }
-
   const timeout = new Promise<void>((resolve) =>
     setTimeout(resolve, opts.timeoutMs ?? 1200),
   );
-  await Promise.race([applyLocale(locale), timeout]);
+
+  // English's UI catalog is bundled, but its *names* are not, and it needs them
+  // as much as any other locale: `Mr. Mime`, `Farfetch'd` and `Nidoran♀` all
+  // come from there, and the slug renders them as `mr-mime`, `farfetchd` and
+  // `nidoran-f`. This used to return early and skip `applyLocale`, which is
+  // what loads them.
+  const ready = locale === DEFAULT_LOCALE ? loadNames(DEFAULT_LOCALE) : applyLocale(locale);
+
+  // Raced, not simply awaited: a stalled fetch on a flaky connection must
+  // degrade to the slug rather than hold the first paint open indefinitely. The
+  // boot spinner in index.html already covers this window.
+  await Promise.race([ready, timeout]);
 }

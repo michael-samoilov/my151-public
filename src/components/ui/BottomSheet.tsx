@@ -115,6 +115,43 @@ export function BottomSheet({
    * form still scrolls.
    */
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Keep the sheet above the on-screen keyboard.
+   *
+   * `position: fixed` anchors to the *layout* viewport, which does not shrink
+   * when the keyboard opens, so a bottom-anchored sheet keeps its bottom edge
+   * underneath it. With the feedback form that hid the tail of the textarea,
+   * the "what gets sent" disclosure and the submit button — on the one surface
+   * whose whole purpose is typing into it. `100dvh` does not help: it accounts
+   * for browser chrome, not for the keyboard.
+   *
+   * The visual viewport is the only thing that reports the keyboard, so this is
+   * a deliberate exception to the rule in `layoutFontSize.ts` and
+   * `usePixelPerfectSprite.ts` that this app does not listen to it. Both of
+   * those avoid it because it fires on every frame of a pinch-zoom, and that
+   * reason is respected rather than overridden: updates are ignored while
+   * `scale` is not 1, so a pinch changes nothing here, and the listener only
+   * exists while a sheet is open rather than for the life of the page.
+   */
+  const [viewport, setViewport] = useState<{ height: number; top: number } | null>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const sync = () => {
+      // A pinch is not a keyboard. Leaving the sheet alone during one also
+      // keeps this off the per-frame path those other modules warn about.
+      if (vv.scale !== 1) return;
+      setViewport({ height: vv.height, top: vv.offsetTop });
+    };
+    sync();
+    vv.addEventListener('resize', sync);
+    vv.addEventListener('scroll', sync);
+    return () => {
+      vv.removeEventListener('resize', sync);
+      vv.removeEventListener('scroll', sync);
+    };
+  }, []);
   useEffect(() => {
     const swallow = (e: Event) => {
       const overlay = overlayRef.current;
@@ -136,7 +173,19 @@ export function BottomSheet({
   }, []);
 
   return (
-    <div ref={overlayRef} data-overlay className="fixed inset-0 z-50 flex flex-col justify-end md:hidden">
+    <div
+      ref={overlayRef}
+      data-overlay
+      className="fixed inset-x-0 top-0 z-50 flex flex-col justify-end md:hidden"
+      // Bounded to the visible area rather than `inset-0`, so "the bottom" is
+      // the top of the keyboard when one is open and the bottom of the screen
+      // when it is not.
+      style={
+        viewport
+          ? { height: `${viewport.height}px`, transform: `translateY(${viewport.top}px)` }
+          : { bottom: 0 }
+      }
+    >
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
@@ -147,8 +196,10 @@ export function BottomSheet({
         aria-label={closeLabel}
         className="relative bg-background rounded-t-2xl shadow-2xl flex flex-col"
         style={{
-          height: size === 'full' ? `calc(100dvh - ${topGap}px)` : undefined,
-          maxHeight: `calc(100dvh - ${topGap}px)`,
+          // `100dvh` accounts for browser chrome but not the keyboard, so the
+          // visible height wins whenever the visual viewport has reported one.
+          height: size === 'full' ? `calc(100% - ${topGap}px)` : undefined,
+          maxHeight: viewport ? `${Math.max(0, viewport.height - topGap)}px` : `calc(100dvh - ${topGap}px)`,
           transform: `translateY(${dragY}px)`,
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
