@@ -63,7 +63,15 @@ test.describe('name flash', () => {
 
       await page.addInitScript(RECORDER);
       await page.goto(`/?lang=${locale}&demo`);
-      await expect.poll(async () => (await labels(page)).length).toBeGreaterThan(0);
+      // A generous readiness wait, not a statement about speed. Boot legitimately
+      // takes a while here: it waits for the catalog and the names, the demo dex
+      // is seeded, and 151 tiles render — and the suite runs two workers against
+      // one dev server, so the default 5s times out under load while the same
+      // test passes alone. What is being asserted is the *sequence* below, which
+      // this only has to arrive at.
+      await expect
+        .poll(async () => (await labels(page)).length, { timeout: 20_000 })
+        .toBeGreaterThan(0);
       await page.waitForTimeout(1500);
 
       const seen = await labels(page);
@@ -80,7 +88,9 @@ test.describe('name flash', () => {
 
     await page.getByRole('button', { name: /language/i }).click();
     await page.getByRole('menuitemradio', { name: /日本語/ }).click();
-    await expect.poll(async () => (await labels(page)).length).toBeGreaterThan(1);
+    await expect
+      .poll(async () => (await labels(page)).length, { timeout: 20_000 })
+      .toBeGreaterThan(1);
     await page.waitForTimeout(1000);
 
     const seen = await labels(page);
