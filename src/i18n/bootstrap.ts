@@ -113,8 +113,22 @@ export function baseLocale(locale: ActiveLocale): Locale {
  */
 export async function applyLocale(locale: ActiveLocale): Promise<void> {
   const base = baseLocale(locale);
-  const [catalog] = await Promise.all([loadCatalog(locale), loadNames(base)]);
-  setCatalog(base, catalog);
+  // Both chunks start together, but the language is committed the moment the
+  // *catalog* lands and never waits on the names.
+  //
+  // Awaiting the two as a pair is the obvious way to write this and it is
+  // wrong. `initLocale` races this against a timeout so a bad connection
+  // cannot hold the first paint open, and the names are the larger chunk — so
+  // pairing them means a slow names fetch loses that race and throws away the
+  // *language* along with it. The symptom is brutal and silent: a visitor with
+  // Japanese stored reloads and gets an entirely English app, `<html lang>` and
+  // all. That is far worse than the flash this function exists to prevent.
+  const names = loadNames(base);
+  setCatalog(base, await loadCatalog(locale));
+  // Then wait for the names, so a caller that awaits this — the picker, and
+  // boot — does not paint the slug. If they are slow enough to lose the race,
+  // the worst case degrades to the old flash rather than to the wrong language.
+  await names;
 }
 
 /**

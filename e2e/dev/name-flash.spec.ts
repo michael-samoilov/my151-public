@@ -51,6 +51,16 @@ test.describe('name flash', () => {
 
   for (const locale of ['en', 'ja', 'it'] as const) {
     test(`${locale}: no slug is shown on the way to the real names`, async ({ page }) => {
+      // Warm the locale chunk first. This runs against the dev server, which
+      // compiles each locale's names on first request — several seconds for
+      // Japanese. That compile is not what is being measured, and counting it
+      // makes a passing app look like a failing one: boot races the names
+      // against a timeout precisely so a slow fetch cannot hold the first paint,
+      // so a cold chunk legitimately degrades to the slug. This measures the
+      // normal path, which is the one that must never flash.
+      await page.goto(`/?lang=${locale}&demo`);
+      await expect(page.locator('[data-i18n-exempt="pokemon-name"]').first()).toBeAttached();
+
       await page.addInitScript(RECORDER);
       await page.goto(`/?lang=${locale}&demo`);
       await expect.poll(async () => (await labels(page)).length).toBeGreaterThan(0);
