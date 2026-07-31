@@ -62,7 +62,14 @@ test.describe('pseudo-locale layout', () => {
             const text = (el.textContent ?? '').trim();
             if (!text.startsWith('[')) continue;
             const r = el.getBoundingClientRect();
-            if (r.width === 0 || r.height === 0) continue;
+            // Skip anything with no meaningful box. Zero is the obvious case;
+            // 1px is the `sr-only` pattern, which hides text from sight by
+            // clipping it to a single pixel on purpose. Asking whether that
+            // text overflows is asking the wrong question — it is *all*
+            // overflow, by design, and it is never read with the eyes. The
+            // header's SEO tagline is one, and it turned this check red the
+            // moment it was routed through the catalog and picked up brackets.
+            if (r.width <= 1 || r.height <= 1) continue;
             if (el.scrollWidth > el.clientWidth + 1) bad.push(text.slice(0, 40));
           }
           return bad;
