@@ -152,14 +152,23 @@ test.describe('type badge', () => {
         `${locale} paints its words at ${mean.toFixed(2)}; the art paints them at ${INK_CENTER}`,
       ).toBeLessThan(1.5);
 
-      // And both scripts must paint the same size band, which is what makes a
+      // Each script must paint a consistent band — that is what makes a
       // Japanese badge and an Italian one read as one design rather than two.
-      // Generous, because a long word that had to shrink to fit legitimately
-      // paints a shorter band than a short one.
+      //
+      // The two targets differ on purpose, and matching them is what looked
+      // wrong. A Han character packs up to a dozen strokes into a square where
+      // a Latin capital has two or three, so at equal measured height the Han
+      // reads visibly smaller; ten of the eighteen Chinese type names are a
+      // single character, with nothing else on the badge to help. CJK is
+      // therefore set 1.28x the Latin cap height, which is where the two match
+      // optically. Written out rather than imported, like every other number
+      // here.
+      const CJK_LOCALES = ['ja', 'ko', 'zh-Hans', 'zh-Hant'];
+      const targetBand = CJK_LOCALES.includes(locale) ? CAP_HEIGHT * 1.28 : CAP_HEIGHT;
       const meanInk = rows.reduce((a, r) => a + r.inkHeight, 0) / rows.length;
       expect(
-        Math.abs(meanInk - CAP_HEIGHT),
-        `${locale} paints a ${meanInk.toFixed(1)}-unit band; the art paints ${CAP_HEIGHT}`,
+        Math.abs(meanInk - targetBand),
+        `${locale} paints a ${meanInk.toFixed(1)}-unit band; the target is ${targetBand.toFixed(1)}`,
       ).toBeLessThan(4);
 
       // No word may be painted outside the pill it sits in.

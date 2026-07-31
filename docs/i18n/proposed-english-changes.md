@@ -96,6 +96,26 @@ rendered live from Scarlet/Violet's own `typename` table.
 - **Two colours corrected**, sampled from the art: `ground` #945121 → #915121
   and `dragon` #5261DE → #5061E1. The other sixteen already matched.
 
+### 4b. CJK type labels are set larger than Latin
+
+Ten of the eighteen Chinese type names are a *single* character — 毒 虫 钢 火 水
+草 电 冰 龙 恶 — and that is what Scarlet/Violet itself paints, not an
+abbreviation of ours. Korean has five. At a 69px tile badge a lone Han character
+carrying a dozen strokes has to survive in about eight pixels.
+
+The badge originally normalised every script to the same 24-unit ink band, which
+sounds right and looks wrong: a Han character packs far more stroke into the same
+square than a Latin capital, so at equal *measured* height it reads visibly
+smaller. CJK is now set at **1.28×** the Latin cap height, where the two match
+optically.
+
+Chosen by rendering 1.0, 1.15, 1.28 and 1.4 at the badge's real tile width and
+comparing. At 1.0 the Han is clearly the smaller of the two scripts; at 1.4 it
+crowds the pill and the three-character names grow wide. The room was already
+there — the widest Chinese name fills only ~40% of the box the badge reserves.
+
+Latin is unchanged. `e2e/dev/type-badge.spec.ts` asserts the per-script targets.
+
 ### 5. Header nav labels below 380px
 
 The header has to fit the wordmark, the language globe and three tabs. Measured

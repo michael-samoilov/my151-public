@@ -113,6 +113,28 @@ const TYPE_BADGE_TEXT_WIDTH = 130;
  */
 const MIN_CONDENSE = 0.82;
 
+/**
+ * The CJK band, as a multiple of the Latin cap height.
+ *
+ * Latin and CJK do not read as the same size at the same size. A Han character
+ * packs up to a dozen strokes into a square where a Latin capital has two or
+ * three, so matching their heights makes the Han visibly harder to read — and
+ * ten of the eighteen Chinese type names are a *single* character, where there
+ * is nothing else on the badge to help.
+ *
+ * Setting CJK larger than Latin is the standard typographic answer, and here it
+ * is free: the widest Chinese name fills only ~40% of the box the badge
+ * reserves, so the room already exists.
+ *
+ * 1.28 was chosen by rendering 1.0, 1.15, 1.28 and 1.4 at the badge's real
+ * 69px tile width and comparing. At 1.0 the Han reads visibly smaller than the
+ * Latin capitals beside it; at 1.4 it starts to crowd the pill and the
+ * three-character names grow wide. At 1.28 the two scripts read at the same
+ * optical size, which is the actual goal — matching their *measured* heights
+ * is what made them look mismatched in the first place.
+ */
+const CJK_BAND_SCALE = 1.28;
+
 /** True if the string contains kana, Hangul or Han. */
 function isCjkText(text: string): boolean {
   return /[぀-ヿ㐀-䶿一-鿿豈-﫿가-힯]/.test(text);
@@ -207,11 +229,11 @@ function scriptBand(c: CanvasRenderingContext2D, cohort: readonly string[]): Scr
   const ink = ascent + descent;
   if (!(ink > 0)) return latin;
 
-  // Scale the probe so the envelope is exactly the art's 24-unit band, then
+  // Scale the probe so the envelope is the target band, then
   // put the baseline where that band centres on the art's optical centre.
   // `ascent` measures up from the baseline, so the baseline sits half the
   // band's own asymmetry below the target.
-  const k = TYPE_BADGE.capHeight / ink;
+  const k = (TYPE_BADGE.capHeight * CJK_BAND_SCALE) / ink;
   const band: ScriptBand = {
     fontSize: probe * k,
     baseline: TYPE_BADGE.textCenterY + ((ascent - descent) / 2) * k,
