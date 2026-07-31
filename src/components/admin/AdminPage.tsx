@@ -533,6 +533,36 @@ function PrePostCohort({
   );
 }
 
+/** Round a number up to a "nice" 1/2/5 × 10^k value (e.g. 7.6 → 10, 23 → 50). */
+function niceNum(x: number): number {
+  if (x <= 0) return 1;
+  const exp = Math.floor(Math.log10(x));
+  const pow = Math.pow(10, exp);
+  const f = x / pow; // 1..10
+  const nf = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
+  return nf * pow;
+}
+
+/** Build a y-axis of round tick values covering [0, rawMax] with ~`target`
+ *  intervals. Returns the axis ceiling (used to scale the chart) and the
+ *  ascending tick list, so labels are always 0, step, 2·step, … not raw maxima. */
+function niceAxis(rawMax: number, target = 3): { axisMax: number; ticks: number[] } {
+  const step = Math.max(1, niceNum(rawMax / target)); // integer counts: never sub-1 ticks
+  const axisMax = Math.ceil(rawMax / step) * step;
+  const ticks: number[] = [];
+  for (let v = 0; v <= axisMax + step / 2; v += step) ticks.push(v);
+  return { axisMax, ticks };
+}
+
+/** Compact tick label: 1500 → "1.5k", 2000 → "2k", 30 → "30". */
+function fmtTick(v: number): string {
+  if (v >= 1000) {
+    const k = v / 1000;
+    return `${Number.isInteger(k) ? k : k.toFixed(1)}k`;
+  }
+  return `${v}`;
+}
+
 /** Active-users line chart: daily active users (DAU) and a trailing-7-day
  *  rolling active count (a WAU that updates every day). Press/move over the
  *  chart to read exact values on a given day. */
@@ -547,10 +577,11 @@ function ActivityChart({ series }: { series: { day: number; dau: number; rolling
   const padR = 6;
   const padT = 8;
   const padB = 18;
-  const max = Math.max(1, ...series.map((d) => Math.max(d.dau, d.rolling7)));
+  const rawMax = Math.max(1, ...series.map((d) => Math.max(d.dau, d.rolling7)));
+  const { axisMax, ticks } = niceAxis(rawMax);
   const n = series.length;
   const px = (i: number) => padL + ((W - padL - padR) * i) / (n - 1);
-  const py = (v: number) => padT + (H - padT - padB) * (1 - v / max);
+  const py = (v: number) => padT + (H - padT - padB) * (1 - v / axisMax);
 
   // Segments drawn dotted mark provisional data. The final segment into
   // "today" is provisional for both lines (today is still accumulating). The
@@ -615,11 +646,11 @@ function ActivityChart({ series }: { series: { day: number; dau: number; rolling
         onPointerLeave={() => setCursor(null)}
       >
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" style={{ height: 'auto' }} preserveAspectRatio="none">
-          {[0, 0.5, 1].map((g) => (
-            <g key={g}>
-              <line x1={padL} y1={py(g * max)} x2={W - padR} y2={py(g * max)} stroke="var(--color-muted)" strokeWidth={1} />
-              <text x={2} y={py(g * max) + 3} fontSize={7} fill="var(--color-muted-foreground)">
-                {Math.round(g * max)}
+          {ticks.map((t) => (
+            <g key={t}>
+              <line x1={padL} y1={py(t)} x2={W - padR} y2={py(t)} stroke="var(--color-muted)" strokeWidth={1} />
+              <text x={2} y={py(t) + 3} fontSize={7} fill="var(--color-muted-foreground)">
+                {fmtTick(t)}
               </text>
             </g>
           ))}
