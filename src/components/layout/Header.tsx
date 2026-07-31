@@ -52,7 +52,12 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
          * what the page is. */}
         <h1 className="text-2xl font-extrabold tracking-tight whitespace-nowrap">
           <span className="text-primary">my151</span><span className="text-foreground">.app</span>
-          <span className="sr-only"> — make your own custom Pokédex</span>
+          {/* Through the catalog like every other visible string. It is
+              screen-reader-only, but "invisible" is not "untranslated": a
+              Japanese visitor's screen reader should not read them an English
+              tagline. The extraction spec catches it either way — that is how
+              this was found. */}
+          <span className="sr-only">{t('header.tagline')}</span>
         </h1>
 
         <div className="flex items-center gap-1 flex-shrink-0">

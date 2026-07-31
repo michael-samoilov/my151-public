@@ -169,6 +169,7 @@ export const enUi = {
   'feedback.title': 'Report a problem',
   'footer.disclaimer': 'Not affiliated with or endorsed by Nintendo.',
   'footer.report': 'Report a problem',
+  'header.tagline': ' — make your own custom Pokédex',
   'intro.body': 'Hand-pick your favorites from all {total} Pokémon into a Pokédex that’s entirely yours.',
   'intro.cta': 'Choose your starters',
   'intro.headline': 'Build your own {count}',
