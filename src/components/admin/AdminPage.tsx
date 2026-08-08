@@ -308,6 +308,30 @@ function flag(country?: string): string {
   return String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
 }
 
+/** Human-readable language for a BCP-47 tag: "es-ES" → "Spanish (es-ES)".
+ *  This is the browser's Accept-Language preference — i.e. the language the
+ *  app would auto-detect for this user — not an in-app selection. Falls back
+ *  to the raw tag when Intl can't resolve the subtag. */
+let langNames: Intl.DisplayNames | null | undefined;
+function langLabel(tag?: string): string | undefined {
+  if (!tag) return undefined;
+  if (langNames === undefined) {
+    try {
+      langNames = new Intl.DisplayNames(['en'], { type: 'language' });
+    } catch {
+      langNames = null;
+    }
+  }
+  const base = tag.split('-')[0];
+  try {
+    const name = langNames?.of(base);
+    if (name && name.toLowerCase() !== base.toLowerCase()) return `${name} (${tag})`;
+  } catch {
+    /* unresolvable subtag — fall through to the raw tag */
+  }
+  return tag;
+}
+
 function localTime(when: number, tz?: string): string | null {
   if (!tz) return null;
   try {
@@ -1159,7 +1183,7 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: {
   const ctx = [
     rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
     [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
-    rec.lang,
+    rec.lang && `🗣 ${langLabel(rec.lang)}`,
   ].filter(Boolean);
 
   useLayoutEffect(() => {
