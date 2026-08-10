@@ -222,6 +222,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       sections?: unknown;
       exportSettings?: unknown;
       events?: unknown;
+      locale?: unknown;
     };
 
     // Client id: a UUID minted once per browser. Length-bounded to avoid abuse.
@@ -268,6 +269,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const secs = validSections(body.sections);
     const settings = kind === 'export' ? validExportSettings(body.exportSettings) : undefined;
     const newEvents = validEvents(body.events);
+    // The locale the client actually rendered in. Shape-checked rather than
+    // matched against a locale list, so this endpoint doesn't have to track
+    // which locales the app currently ships.
+    const locale =
+      typeof body.locale === 'string' && /^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$/i.test(body.locale)
+        ? body.locale
+        : undefined;
 
     // Merge this beacon into an existing record (or seed a new one). Pure given
     // `existing`, so it can be re-run on retry after a concurrent write.
@@ -365,6 +373,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       rec.region = geo.region;
       rec.tz = geo.tz;
       rec.lang = getLang(req);
+      // Only overwrite when the client sent one, so a beacon from a client that
+      // predates locale reporting doesn't blank an already-recorded locale.
+      if (locale) rec.locale = locale;
       rec.device = ua.device;
       rec.os = ua.os;
       rec.browser = ua.browser;

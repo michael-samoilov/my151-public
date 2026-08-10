@@ -76,6 +76,7 @@ interface ClientRecord {
   region?: string;
   tz?: string;
   lang?: string;
+  locale?: string;
   device?: string;
   os?: string;
   browser?: string;
@@ -330,6 +331,12 @@ function langLabel(tag?: string): string | undefined {
     /* unresolvable subtag — fall through to the raw tag */
   }
   return tag;
+}
+
+/** Same primary language subtag, ignoring script/region — so a served
+ *  "zh-Hans" is not reported as disagreeing with a browser's "zh-CN". */
+function sameBaseLang(a: string, b: string): boolean {
+  return a.split('-')[0].toLowerCase() === b.split('-')[0].toLowerCase();
 }
 
 function localTime(when: number, tz?: string): string | null {
@@ -1183,7 +1190,15 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: {
   const ctx = [
     rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
     [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
-    rec.lang && `🗣 ${langLabel(rec.lang)}`,
+    // What the app actually rendered in. Records predating locale reporting
+    // have only the Accept-Language header, which is labelled as such so a
+    // browser preference is never misread as the language we served.
+    rec.locale ? `🗣 ${langLabel(rec.locale)}` : rec.lang && `🗣 ${langLabel(rec.lang)} · browser`,
+    // When the browser asked for something else, the difference is the user's
+    // own choice — a picker selection or a ?lang= link.
+    rec.locale && rec.lang && !sameBaseLang(rec.locale, rec.lang)
+      ? `browser: ${langLabel(rec.lang)}`
+      : undefined,
   ].filter(Boolean);
 
   useLayoutEffect(() => {
