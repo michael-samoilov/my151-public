@@ -127,7 +127,14 @@ function FeedbackForm({
       // `h-full` only resolves when the sheet has a definite height, which it
       // takes on exactly when a keyboard is open. Any other time this is a no-op
       // and the form sizes to its content as before.
-      className={`px-4 pt-3 pb-4 flex flex-col gap-3${fill ? ' h-full min-h-0' : ''}`}
+      //
+      // Not `min-h-full`, which looks like the safer version of the same idea
+      // and is not the same idea at all. A minimum lets the form grow to its
+      // content, so the column never runs out of room, so nothing ever shrinks
+      // — the field keeps its four rows and pushes the button off the end,
+      // which is the whole bug. Compression is the point, and `h-full` is what
+      // asks for it.
+      className={`px-4 pt-3 pb-4 flex flex-col gap-3${fill ? ' h-full' : ''}`}
       onSubmit={async (e) => {
         e.preventDefault();
         if (tooShort || state === 'sending') return;
@@ -161,31 +168,52 @@ function FeedbackForm({
         ))}
       </div>
 
-      {/* The one element allowed to give. Everything else in this column is a
-          fixed size, so when the keyboard eats two thirds of the screen the
-          textarea shrinks and the disclosure and the button keep their places
-          instead of being pushed below the fold. */}
-      <label className="flex flex-col gap-1 min-h-0 shrink">
-        <span className="text-xs font-medium">{t('feedback.message.label')}</span>
-        <textarea
-          autoFocus
-          required
-          // `rows` is the height with room to spare; `min-h`/`max-h` bound it
-          // once the flex column starts negotiating. Two lines is the floor —
-          // below that the field stops looking like somewhere to write.
-          rows={4}
-          maxLength={MAX_MESSAGE}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder={t('feedback.message.placeholder')}
-          // `text-base` below `md`, not `text-sm`: iOS Safari zooms the whole
-          // page in when a field smaller than 16px takes focus, and the root
-          // font size floors at 16px, so `text-sm` lands at 14. The field is
-          // also autofocused, so the zoom fires on open rather than on tap.
-          // Same rule the shared `Input` component already follows.
-          className="w-full min-h-14 max-h-40 shrink rounded-md border bg-background px-2 py-1.5 text-base md:text-sm resize-y"
-        />
+      {/* The field is the one element allowed to give. Everything else in this
+          column is a fixed size, so when a keyboard takes two thirds of the
+          screen the field shrinks and the disclosure and the button keep their
+          places instead of being pushed below the fold.
+
+          Label and field are siblings of the chips and the button rather than a
+          wrapped pair, and that is load-bearing rather than tidying. Wrapped,
+          the field is a flex item of a flex item, and the outer box's automatic
+          minimum height is its *content's* minimum — where a textarea
+          contributes its `rows` height, not its `min-height`. So the wrapper
+          refuses to shrink to the field's real floor and pushes the button off
+          the end. Add `min-h-0` to unstick it and it shrinks straight past the
+          floor instead, the field spills out of a parent that no longer
+          contains it, and it paints over the disclosure and the button. Those
+          are the only two settings the wrapper has, and both are wrong.
+
+          Flattened, the field is a flex item carrying an explicit `min-height`,
+          which replaces the automatic minimum outright. It compresses to
+          exactly its floor and no further, and there is no second box left to
+          disagree with it. */}
+      <label htmlFor="feedback-message" className="text-xs font-medium">
+        {t('feedback.message.label')}
       </label>
+      <textarea
+        id="feedback-message"
+        autoFocus
+        required
+        // `rows` is the height with room to spare, `flex-1` grows it into
+        // whatever the column has left over, and `min-h-14` is the floor it
+        // compresses to when a keyboard takes that room away — two lines, below
+        // which the field stops reading as somewhere to write.
+        rows={4}
+        maxLength={MAX_MESSAGE}
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder={t('feedback.message.placeholder')}
+        // `-mt-2` walks back the form's `gap-3`, so the field sits close under
+        // the label it belongs to rather than at the column's own rhythm.
+        //
+        // `text-base` below `md`, not `text-sm`: iOS Safari zooms the whole
+        // page in when a field smaller than 16px takes focus, and the root
+        // font size floors at 16px, so `text-sm` lands at 14. The field is
+        // also autofocused, so the zoom fires on open rather than on tap.
+        // Same rule the shared `Input` component already follows.
+        className="w-full min-h-14 flex-1 -mt-2 rounded-md border bg-background px-2 py-1.5 text-base md:text-sm resize-y"
+      />
 
       {/* Honeypot. Off-screen rather than display:none (which some bots skip),
           hidden from assistive tech, and unreachable by keyboard — so only an
