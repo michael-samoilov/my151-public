@@ -475,10 +475,6 @@ function GroupedBars({ groups }: { groups: BarGroup[] }) {
     <div className="flex flex-col gap-1">
       {groups.map((g) => {
         const isOpen = open.has(g.label);
-        // Members scale against the biggest member of their own group, not the
-        // global max — otherwise every row of a small group renders as a stub.
-        // The printed count stays the authoritative value.
-        const childMax = Math.max(1, ...g.children.map((c) => c.count));
         return (
           <div key={g.label}>
             {/* The bar is 16px tall; the row it sits in is not. The negative
@@ -517,10 +513,17 @@ function GroupedBars({ groups }: { groups: BarGroup[] }) {
                       <span className="self-center truncate">{c.label}</span>
                     </span>
                     <div className="flex-1 bg-muted rounded h-3 overflow-hidden">
+                      {/* Members share the regions' scale, not one of their
+                          own. Scaled within a group, the largest member filled
+                          the track and so drew longer than the region it
+                          belongs to. On one scale a member can never outrun its
+                          parent, and members of different regions stay
+                          comparable. */}
                       <div
                         className="h-full rounded-r"
                         style={{
-                          width: `${(c.count / childMax) * 100}%`,
+                          width: `${(c.count / max) * 100}%`,
+                          minWidth: c.count > 0 ? 2 : 0,
                           backgroundColor: g.color ?? 'var(--color-primary)',
                           // Members read as a lighter echo of their region.
                           opacity: 0.55,

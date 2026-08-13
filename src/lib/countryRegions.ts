@@ -11,12 +11,17 @@
  * proxy for it — an Italian user browsing in en-US is ordinary, not an anomaly.
  */
 
+/**
+ * Regions, in the order stacked fills must be laid out. This is not an
+ * alphabetical or geographic ordering — it is the sequence the palette below
+ * was validated in. See `REGION_COLORS`.
+ */
 export const REGIONS = [
-  'North America',
   'Latin America',
+  'North America',
   'Europe',
-  'Asia-Pacific',
   'Middle East & Africa',
+  'Asia-Pacific',
 ] as const;
 
 export type Region = (typeof REGIONS)[number] | 'Unknown';
@@ -62,22 +67,23 @@ export const REGION_MEMBERS: Record<(typeof REGIONS)[number], string[]> = {
  * Keyed by region, never by rank: a region keeps its colour when the ordering
  * shifts, so a chart re-read after new data does not silently repaint.
  *
- * **The order of `REGIONS` above is load-bearing.** Green and orange are all
- * but identical to a red-blind reader (ΔE 0.4), and so are green and pink to a
- * green-blind one — this sequence keeps green away from both, and every
- * touching pair then clears the colour-vision floor. Anything that stacks these
- * fills must therefore lay them out in `REGIONS` order rather than by size.
- * Re-ordering the list, or swapping a hue, needs the palette re-validated.
+ * **The order of `REGIONS` above is load-bearing.** Three of these five hues are
+ * warm, and warm pairs are what colour-blind readers lose: orange and green are
+ * all but identical to a red-blind one (ΔE 0.4), as are orange and red. The
+ * sequence therefore alternates, so no two warm fills ever touch, and every
+ * adjacent pair clears the colour-vision floor. Anything stacking these fills
+ * must lay them out in `REGIONS` order rather than by size. Re-ordering the
+ * list, or swapping a hue, needs the palette re-validated.
  *
  * One caveat survives: the orange falls under 3:1 against the card. Every
  * region is drawn with its name and count beside it, so identity never rests on
  * colour alone.
  */
 export const REGION_COLORS: Record<Region, string> = {
-  'North America': '#3FA129', // grass
-  'Latin America': '#2980EF', // water
+  'North America': '#2980EF', // water
+  'Latin America': '#3FA129', // grass
   Europe: '#FF8000', // fighting
-  'Asia-Pacific': '#EF4179', // psychic
+  'Asia-Pacific': '#E62829', // fire
   'Middle East & Africa': '#9040CC', // poison
   // A residual bucket rather than a peer category, so it stays neutral.
   Unknown: '#9FA19F', // normal

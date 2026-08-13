@@ -37,22 +37,23 @@ describe('regionOf', () => {
   });
 
   // The stacked share bar lays these fills out in REGIONS order, and that exact
-  // sequence is what was checked for colour-vision separation: green sits away
-  // from both orange and pink, which it is otherwise indistinguishable from.
-  // Re-order the regions or swap a hue and the check has to be run again — so
-  // pin the validated sequence rather than let it drift silently.
+  // sequence is what was checked for colour-vision separation: it alternates
+  // warm and cool so no two warm fills touch, since orange reads the same as
+  // both green and red to a red-blind viewer. Re-order the regions or swap a
+  // hue and the check has to be run again — so pin the validated sequence
+  // rather than let it drift silently.
   it('keeps the validated colour sequence', () => {
     expect(REGIONS.map((r) => REGION_COLORS[r])).toEqual([
-      '#3FA129', // North America — grass
-      '#2980EF', // Latin America — water
+      '#3FA129', // Latin America — grass
+      '#2980EF', // North America — water
       '#FF8000', // Europe — fighting
-      '#EF4179', // Asia-Pacific — psychic
       '#9040CC', // Middle East & Africa — poison
+      '#E62829', // Asia-Pacific — fire
     ]);
   });
 
   it('orders Unknown after every real region', () => {
-    expect(regionOrder('Unknown')).toBeGreaterThan(regionOrder('Middle East & Africa'));
+    expect(regionOrder('Unknown')).toBeGreaterThan(regionOrder('Asia-Pacific'));
   });
 
   // The live tally at the time of writing. If a real country falls through to
