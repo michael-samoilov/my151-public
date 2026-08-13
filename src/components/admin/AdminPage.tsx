@@ -7,7 +7,7 @@ import { BUILD_GROUPS } from '@/data/slot-template';
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
 import { cn, displayName } from '@/lib/utils';
-import { regionOf, regionOrder, REGION_COLORS, type Region } from '@/lib/countryRegions';
+import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { matchLocale } from '@/i18n/detect';
 
 const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
@@ -477,14 +477,17 @@ function GroupedBars({ groups }: { groups: BarGroup[] }) {
         const isOpen = open.has(g.label);
         return (
           <div key={g.label}>
-            {/* The bar is 16px tall; the row it sits in is not. The negative
-                margin lets the pressed state span the card's full width without
-                shifting the bar's left edge out of line with its members. */}
+            {/* The bar is 16px tall; the row it sits in is not. No horizontal
+                padding here: a negative margin cannot widen a `w-full` element,
+                so padding would shrink this row's content by 8px against the
+                member rows below — misaligning the tracks' right edge and
+                drawing regions on a slightly smaller scale than their own
+                members. */}
             <button
               type="button"
               onClick={() => toggle(g.label)}
               aria-expanded={isOpen}
-              className="w-full min-h-11 -mx-1 px-1 rounded flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
+              className="w-full min-h-11 rounded flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
             >
               <span className="w-32 shrink-0 text-muted-foreground text-left truncate">
                 <span className="inline-block w-2">{isOpen ? '▾' : '▸'}</span> {g.label}
@@ -2244,15 +2247,9 @@ export function AdminPage() {
                   (() => {
                     const groups = regionGroups(data.countries);
                     const total = groups.reduce((sum, g) => sum + g.count, 0);
-                    // Rows rank by size; the stacked bar does not. Its fills
-                    // touch, and only the canonical order keeps the two hues
-                    // that a colour-blind reader cannot separate apart.
-                    const stacked = [...groups].sort(
-                      (a, b) => regionOrder(a.label as Region) - regionOrder(b.label as Region),
-                    );
                     return (
                       <>
-                        <ShareBar rows={stacked} total={total} />
+                        <ShareBar rows={groups} total={total} />
                         <GroupedBars groups={groups} />
                         <p className="text-[0.6rem] text-muted-foreground mt-1">
                           Tap a region for its countries.

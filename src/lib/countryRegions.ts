@@ -11,17 +11,12 @@
  * proxy for it — an Italian user browsing in en-US is ordinary, not an anomaly.
  */
 
-/**
- * Regions, in the order stacked fills must be laid out. This is not an
- * alphabetical or geographic ordering — it is the sequence the palette below
- * was validated in. See `REGION_COLORS`.
- */
 export const REGIONS = [
-  'Latin America',
   'North America',
+  'Latin America',
   'Europe',
-  'Middle East & Africa',
   'Asia-Pacific',
+  'Middle East & Africa',
 ] as const;
 
 export type Region = (typeof REGIONS)[number] | 'Unknown';
@@ -67,17 +62,14 @@ export const REGION_MEMBERS: Record<(typeof REGIONS)[number], string[]> = {
  * Keyed by region, never by rank: a region keeps its colour when the ordering
  * shifts, so a chart re-read after new data does not silently repaint.
  *
- * **The order of `REGIONS` above is load-bearing.** Three of these five hues are
- * warm, and warm pairs are what colour-blind readers lose: orange and green are
- * all but identical to a red-blind one (ΔE 0.4), as are orange and red. The
- * sequence therefore alternates, so no two warm fills ever touch, and every
- * adjacent pair clears the colour-vision floor. Anything stacking these fills
- * must lay them out in `REGIONS` order rather than by size. Re-ordering the
- * list, or swapping a hue, needs the palette re-validated.
- *
- * One caveat survives: the orange falls under 3:1 against the card. Every
- * region is drawn with its name and count beside it, so identity never rests on
- * colour alone.
+ * Two known limits, both accepted deliberately. Three of the five hues are
+ * warm, and warm pairs are what colour-blind readers lose: to a red-blind
+ * viewer orange is all but identical to green (ΔE 0.4) and close to red. Fills
+ * are stacked largest-first, so which hues end up touching depends on the data
+ * and cannot be arranged around. The stacked bar therefore separates its
+ * segments with a cut of the card colour, and every region is drawn with its
+ * name and count beside it, so identity never rests on colour alone. The orange
+ * also falls under 3:1 against the card, which those same labels cover.
  */
 export const REGION_COLORS: Record<Region, string> = {
   'North America': '#2980EF', // water
@@ -88,13 +80,6 @@ export const REGION_COLORS: Record<Region, string> = {
   // A residual bucket rather than a peer category, so it stays neutral.
   Unknown: '#9FA19F', // normal
 };
-
-/** Position in the canonical order, for laying out stacked fills. Unknown is a
- *  residual and always trails the real regions. */
-export function regionOrder(region: Region): number {
-  const i = (REGIONS as readonly string[]).indexOf(region);
-  return i === -1 ? REGIONS.length : i;
-}
 
 const LOOKUP = new Map<string, Region>();
 for (const region of REGIONS) {

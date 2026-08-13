@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { regionOf, regionOrder, REGIONS, REGION_COLORS, REGION_MEMBERS } from './countryRegions';
+import { regionOf, REGIONS, REGION_COLORS, REGION_MEMBERS } from './countryRegions';
 
 describe('regionOf', () => {
   it('places countries in their market region', () => {
@@ -36,24 +36,23 @@ describe('regionOf', () => {
     expect(dupes).toEqual([]);
   });
 
-  // The stacked share bar lays these fills out in REGIONS order, and that exact
-  // sequence is what was checked for colour-vision separation: it alternates
-  // warm and cool so no two warm fills touch, since orange reads the same as
-  // both green and red to a red-blind viewer. Re-order the regions or swap a
-  // hue and the check has to be run again — so pin the validated sequence
-  // rather than let it drift silently.
-  it('keeps the validated colour sequence', () => {
-    expect(REGIONS.map((r) => REGION_COLORS[r])).toEqual([
-      '#3FA129', // Latin America — grass
-      '#2980EF', // North America — water
-      '#FF8000', // Europe — fighting
-      '#9040CC', // Middle East & Africa — poison
-      '#E62829', // Asia-Pacific — fire
-    ]);
+  // Colour is keyed to the region, never to its rank, so a region keeps its
+  // colour as the ordering shifts. Pin the mapping so a hue cannot be swapped
+  // without the change being deliberate — the set was checked for colour-vision
+  // separation as a whole.
+  it('keeps a stable colour per region', () => {
+    expect(REGION_COLORS).toEqual({
+      'North America': '#2980EF', // water
+      'Latin America': '#3FA129', // grass
+      Europe: '#FF8000', // fighting
+      'Asia-Pacific': '#E62829', // fire
+      'Middle East & Africa': '#9040CC', // poison
+      Unknown: '#9FA19F', // normal
+    });
   });
 
-  it('orders Unknown after every real region', () => {
-    expect(regionOrder('Unknown')).toBeGreaterThan(regionOrder('Asia-Pacific'));
+  it('gives every region a colour', () => {
+    for (const region of REGIONS) expect(REGION_COLORS[region]).toMatch(/^#[0-9A-F]{6}$/i);
   });
 
   // The live tally at the time of writing. If a real country falls through to
