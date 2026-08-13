@@ -34,9 +34,24 @@ const KEYBOARD_HEIGHTS = [null, 338, 300, 260, 220] as const;
  */
 const LOCALES = ['en', 'de', 'ja'] as const;
 
+/** Every locale the app ships, for the checks that have to hold in all of them. */
+const ALL_LOCALES = [
+  'en',
+  'ja',
+  'ko',
+  'zh-Hans',
+  'zh-Hant',
+  'fr',
+  'de',
+  'es',
+  'it',
+] as const;
+
 async function openSheet(page: Page, locale: string) {
   await page.goto(`/?demo&tune&lang=${locale}`);
-  await page.getByRole('button', { name: /report|feedback|problem|melden|問題/i }).first().click();
+  // By attribute, not by accessible name: the name is translated, and a regex
+  // of nine translations stops matching the first time one is reworded.
+  await page.locator('[data-feedback-open]').first().click();
   await expect(page.getByRole('dialog')).toBeVisible();
 }
 
@@ -81,10 +96,10 @@ test.describe('feedback sheet layout', () => {
     // own a flex column will happily compress it to nothing and report that
     // everything fits. It does fit. There is just nowhere left to type.
     //
-    // Measured on the built layout: 110px at rest, 109 at an iPhone 15 Pro's
-    // keyboard, 71 at 300, and pinned to its 56px floor below about 280 —
-    // where the sheet starts scrolling instead, which the matrix above proves
-    // it does without overlapping anything.
+    // Measured on the built layout: 110px at rest, 149 at an iPhone 15 Pro's
+    // keyboard, 111 at 300, 71 at 260, and pinned to its 56px floor below about
+    // 240 — where the sheet starts scrolling instead, which the matrix above
+    // proves it does without overlapping anything.
     const FLOOR = 56;
     await openSheet(page, 'en');
 
@@ -102,13 +117,13 @@ test.describe('feedback sheet layout', () => {
     }
 
     // The floor is survival, not the target. On the phone this was reported
-    // from, the field has to be worth typing into — four lines, not two — and
-    // fitting alone was satisfied at two.
+    // from, the field has to be worth typing into — five or six lines, not two
+    // — and fitting alone was satisfied at two.
     await raiseKeyboard(page, 338);
     expect(
       await fieldHeight(),
       'the field is too cramped to read a message back on a 15 Pro',
-    ).toBeGreaterThanOrEqual(100);
+    ).toBeGreaterThanOrEqual(140);
 
     // And it takes the room when there is room to take, rather than staying at
     // its four rows and leaving the space blank.
@@ -133,6 +148,35 @@ test.describe('feedback sheet layout', () => {
       .locator('textarea')
       .evaluate((el) => getComputedStyle(el).overscrollBehaviorY);
     expect(behaviour, 'the field chains its scroll into the page').toBe('contain');
+  });
+
+  test('the category chips stay on one row at phone width', async ({ page }) => {
+    // A second row of chips costs the field 38px, which is most of a line of
+    // typing. Holding the row to one line is why there are four categories
+    // rather than five and why the labels are nouns rather than sentences —
+    // "Wrong translation" was "Erreur de traduction" in French and
+    // "Übersetzungsfehler" in German, and both wrapped at every width.
+    //
+    // 390px is the check because that is a modern phone. It does not hold at
+    // 320: nothing short of dropping the icons fits four chips there, and the
+    // wrap is harmless — the field still clears its floor, and the matrix above
+    // covers 320 for the faults that are not harmless. German is the tightest
+    // pass and clears 390 by 10px, so a longer German label is the thing most
+    // likely to break this.
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    for (const locale of ALL_LOCALES) {
+      await openSheet(page, locale);
+      const rows = await page.evaluate(() => {
+        const row = document.querySelector<HTMLElement>('[role="dialog"] form > div');
+        if (!row) throw new Error('no chip row found');
+        const tops = Array.from(row.children).map((c) =>
+          Math.round(c.getBoundingClientRect().top),
+        );
+        return new Set(tops).size;
+      });
+      expect(rows, `the ${locale} chips wrap onto ${rows} rows at 390px`).toBe(1);
+    }
   });
 
   test('every category chip keeps the form clean', async ({ page }) => {

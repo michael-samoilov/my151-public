@@ -12,23 +12,23 @@ import { expect, test } from '@playwright/test';
  * and are not. They catch a key that never reaches the DOM, a string that is
  * still English, and a label too wide for the row it sits in. They say nothing
  * about whether the wording is natural — that needs a person, and the chip
- * labelled "Wrong translation" is how one tells us.
+ * labelled "Translation" is how one tells us.
  *
  * The expected strings are written out rather than imported from the catalog.
  * A spec that reads its expectations from the file under test would pass on an
  * empty catalog, which is precisely the failure worth catching here.
  */
 
-const CHIPS: Record<string, { bug: string; translation: string; idea: string; data: string; other: string }> = {
-  en: { bug: 'Bug', translation: 'Wrong translation', idea: 'Idea', data: 'Data looks wrong', other: 'Other' },
-  ja: { bug: '不具合', translation: '誤訳', idea: '提案', data: 'データの誤り', other: 'その他' },
-  ko: { bug: '버그', translation: '번역 오류', idea: '제안', data: '데이터 오류', other: '기타' },
-  'zh-Hans': { bug: '程序错误', translation: '翻译错误', idea: '建议', data: '数据错误', other: '其他' },
-  'zh-Hant': { bug: '程式錯誤', translation: '翻譯錯誤', idea: '建議', data: '資料錯誤', other: '其他' },
-  fr: { bug: 'Bug', translation: 'Erreur de traduction', idea: 'Idée', data: 'Données incorrectes', other: 'Autre' },
-  de: { bug: 'Fehler', translation: 'Übersetzungsfehler', idea: 'Idee', data: 'Falsche Daten', other: 'Sonstiges' },
-  es: { bug: 'Error', translation: 'Error de traducción', idea: 'Idea', data: 'Datos incorrectos', other: 'Otro' },
-  it: { bug: 'Errore', translation: 'Errore di traduzione', idea: 'Idea', data: 'Dati errati', other: 'Altro' },
+const CHIPS: Record<string, { bug: string; translation: string; idea: string; other: string }> = {
+  en: { bug: 'Bug', translation: 'Translation', idea: 'Idea', other: 'Other' },
+  ja: { bug: '不具合', translation: '誤訳', idea: '提案', other: 'その他' },
+  ko: { bug: '버그', translation: '번역', idea: '제안', other: '기타' },
+  'zh-Hans': { bug: '程序错误', translation: '翻译', idea: '建议', other: '其他' },
+  'zh-Hant': { bug: '程式錯誤', translation: '翻譯', idea: '建議', other: '其他' },
+  fr: { bug: 'Bug', translation: 'Traduction', idea: 'Idée', other: 'Autre' },
+  de: { bug: 'Fehler', translation: 'Übersetzung', idea: 'Idee', other: 'Anderes' },
+  es: { bug: 'Error', translation: 'Traducción', idea: 'Idea', other: 'Otro' },
+  it: { bug: 'Errore', translation: 'Traduzione', idea: 'Idea', other: 'Altro' },
 };
 
 // 320px: the narrowest width the app supports, and where a long chip shows.
@@ -38,9 +38,7 @@ test.describe('feedback chips', () => {
   for (const [locale, expected] of Object.entries(CHIPS)) {
     test(`${locale}: the chips are translated, and they fit`, async ({ page }) => {
       await page.goto(`/?lang=${locale}`);
-      await page.getByRole('button', { name: /report|feedback|problem|問題|문제|问题|問題|signaler|melden|informar|segnala/i })
-        .first()
-        .click();
+      await page.locator('[data-feedback-open]').first().click();
 
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();
@@ -58,7 +56,7 @@ test.describe('feedback chips', () => {
         }));
       });
 
-      expect(measured.length, 'expected the five category chips').toBe(5);
+      expect(measured.length, 'expected the four category chips').toBe(4);
 
       const texts = measured.map((m) => m.text);
       for (const want of Object.values(expected)) {
@@ -87,7 +85,7 @@ test.describe('feedback chips', () => {
     const openers = page.getByRole('button', { name: /.+/ });
     await expect(openers.first()).toBeVisible();
     await page.goto('/?lang=ja');
-    await page.getByRole('button', { name: /報告|問題|report|feedback|problem/i }).first().click();
+    await page.locator('[data-feedback-open]').first().click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     // The submit button has no Japanese entry yet, so it must read in English.

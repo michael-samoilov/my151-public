@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bug, Check, Languages, Lightbulb, MessageCircle, Table2 } from 'lucide-react';
+import { Bug, Check, Languages, Lightbulb, MessageCircle } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useSheetKeyboard } from '@/components/ui/sheetKeyboard';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import type { NoArgKey } from '@/i18n';
 /**
  * The report form.
  *
- * Categories are chips, not a `<select>`: five options is below the width where
+ * Categories are chips, not a `<select>`: four options is below the width where
  * a dropdown earns its collapse, and a chip row shows the whole vocabulary at a
  * glance — which matters here, because seeing "Wrong translation" listed is
  * what tells a user that reporting one is wanted.
@@ -31,6 +31,16 @@ import type { NoArgKey } from '@/i18n';
  * message, which is their initiative rather than our prompt.
  */
 
+// Four, so the row fits on one line and the space the second line was taking
+// goes to the field instead. "Data looks wrong" is the one dropped: it is the
+// hardest of the five to tell apart from "Bug" from the outside — a wrong type
+// on a Pokémon is honestly both — and anything it would have caught arrives
+// under Bug or Other with the same message attached.
+//
+// `'data'` stays in `FeedbackCategory` and in the API's accepted set. Reports
+// already filed under it are in Redis and still have to read back in the admin
+// view; narrowing the type would only make old rows unrepresentable.
+//
 // `NoArgKey` rather than `MessageKey`: a plain `MessageKey` annotation widens
 // each entry to the whole key union, including keys that take placeholders, and
 // then `t(key)` rightly demands arguments none of these have.
@@ -38,7 +48,6 @@ const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: typeof Bug }[] = 
   { id: 'bug', key: 'feedback.category.bug', Icon: Bug },
   { id: 'translation', key: 'feedback.category.translation', Icon: Languages },
   { id: 'idea', key: 'feedback.category.idea', Icon: Lightbulb },
-  { id: 'data', key: 'feedback.category.data', Icon: Table2 },
   { id: 'other', key: 'feedback.category.other', Icon: MessageCircle },
 ];
 
@@ -169,7 +178,13 @@ function FeedbackForm({
             type="button"
             onClick={() => setCategory(id)}
             aria-pressed={category === id}
-            className={`inline-flex items-center gap-1.5 px-2.5 min-h-9 rounded-full border text-xs font-medium cursor-pointer transition-colors ${
+            // `px-2` and `min-h-8` rather than `px-2.5`/`min-h-9`: four chips
+            // have to clear 390px on one line, and the vertical trim buys the
+            // field another 4px. 32px is under Apple's 44px target, but the row
+            // is a set of adjacent chips with 6px between them rather than an
+            // isolated control, and losing a whole second row to reach 36 costs
+            // the field more than it buys the thumb.
+            className={`inline-flex items-center gap-1.5 px-2 min-h-8 rounded-full border text-xs font-medium cursor-pointer transition-colors ${
               category === id
                 ? 'border-primary bg-primary/10 text-primary'
                 : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'

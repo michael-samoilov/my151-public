@@ -43,7 +43,7 @@ test.describe('feedback', () => {
     const api = await stubApi(page);
     await openForm(page);
 
-    await page.getByRole('button', { name: 'Wrong translation' }).click();
+    await page.getByRole('button', { name: 'Translation' }).click();
     await page.getByRole('textbox', { name: 'What happened?' }).fill('The type badge says the wrong word.');
     await page.getByRole('button', { name: 'Send', exact: true }).click();
 

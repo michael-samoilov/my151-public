@@ -1,7 +1,6 @@
 {
   "feedback.category.bug": "程式錯誤",
-  "feedback.category.data": "資料錯誤",
   "feedback.category.idea": "建議",
   "feedback.category.other": "其他",
-  "feedback.category.translation": "翻譯錯誤"
+  "feedback.category.translation": "翻譯"
 }
