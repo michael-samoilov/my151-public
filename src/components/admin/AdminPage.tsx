@@ -481,11 +481,14 @@ function GroupedBars({ groups }: { groups: BarGroup[] }) {
         const childMax = Math.max(1, ...g.children.map((c) => c.count));
         return (
           <div key={g.label}>
+            {/* The bar is 16px tall; the row it sits in is not. The negative
+                margin lets the pressed state span the card's full width without
+                shifting the bar's left edge out of line with its members. */}
             <button
               type="button"
               onClick={() => toggle(g.label)}
               aria-expanded={isOpen}
-              className="w-full flex items-center gap-2 text-xs cursor-pointer"
+              className="w-full min-h-11 -mx-1 px-1 rounded flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
             >
               <span className="w-32 shrink-0 text-muted-foreground text-left truncate">
                 <span className="inline-block w-2">{isOpen ? '▾' : '▸'}</span> {g.label}
@@ -502,10 +505,17 @@ function GroupedBars({ groups }: { groups: BarGroup[] }) {
               <span className="w-8 shrink-0 tabular-nums text-right">{g.count}</span>
             </button>
             {isOpen && (
-              <div className="ml-4 my-1 flex flex-col gap-1 border-l border-border/60 pl-2">
+              <div className="mb-1 flex flex-col">
                 {g.children.map((c) => (
-                  <div key={c.label} className="flex items-center gap-2 text-[0.7rem]">
-                    <span className="w-24 shrink-0 text-muted-foreground truncate">{c.label}</span>
+                  <div key={c.label} className="flex items-center gap-2 text-[0.7rem] min-h-6">
+                    {/* The same 8rem column the region label occupies, so both
+                        tracks share a left edge. The indent rule lives inside it
+                        as a fixed gutter, and stretches the full row height so
+                        consecutive rows join into one continuous line. */}
+                    <span className="w-32 shrink-0 self-stretch flex items-stretch gap-2 text-muted-foreground">
+                      <span className="w-3 border-l border-border/60" aria-hidden="true" />
+                      <span className="self-center truncate">{c.label}</span>
+                    </span>
                     <div className="flex-1 bg-muted rounded h-3 overflow-hidden">
                       <div
                         className="h-full rounded-r"
