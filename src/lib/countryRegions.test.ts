@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { regionOf, REGIONS, REGION_MEMBERS } from './countryRegions';
+import { regionOf, regionOrder, REGIONS, REGION_COLORS, REGION_MEMBERS } from './countryRegions';
 
 describe('regionOf', () => {
   it('places countries in their market region', () => {
@@ -34,6 +34,25 @@ describe('regionOf', () => {
       }
     }
     expect(dupes).toEqual([]);
+  });
+
+  // The stacked share bar lays these fills out in REGIONS order, and that exact
+  // sequence is what was checked for colour-vision separation: green sits away
+  // from both orange and pink, which it is otherwise indistinguishable from.
+  // Re-order the regions or swap a hue and the check has to be run again — so
+  // pin the validated sequence rather than let it drift silently.
+  it('keeps the validated colour sequence', () => {
+    expect(REGIONS.map((r) => REGION_COLORS[r])).toEqual([
+      '#3FA129', // North America — grass
+      '#2980EF', // Latin America — water
+      '#FF8000', // Europe — fighting
+      '#EF4179', // Asia-Pacific — psychic
+      '#9040CC', // Middle East & Africa — poison
+    ]);
+  });
+
+  it('orders Unknown after every real region', () => {
+    expect(regionOrder('Unknown')).toBeGreaterThan(regionOrder('Middle East & Africa'));
   });
 
   // The live tally at the time of writing. If a real country falls through to

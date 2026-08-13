@@ -7,7 +7,7 @@ import { BUILD_GROUPS } from '@/data/slot-template';
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
 import { cn, displayName } from '@/lib/utils';
-import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
+import { regionOf, regionOrder, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { matchLocale } from '@/i18n/detect';
 
 const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
@@ -2241,9 +2241,15 @@ export function AdminPage() {
                   (() => {
                     const groups = regionGroups(data.countries);
                     const total = groups.reduce((sum, g) => sum + g.count, 0);
+                    // Rows rank by size; the stacked bar does not. Its fills
+                    // touch, and only the canonical order keeps the two hues
+                    // that a colour-blind reader cannot separate apart.
+                    const stacked = [...groups].sort(
+                      (a, b) => regionOrder(a.label as Region) - regionOrder(b.label as Region),
+                    );
                     return (
                       <>
-                        <ShareBar rows={groups} total={total} />
+                        <ShareBar rows={stacked} total={total} />
                         <GroupedBars groups={groups} />
                         <p className="text-[0.6rem] text-muted-foreground mt-1">
                           Tap a region for its countries.

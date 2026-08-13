@@ -62,22 +62,33 @@ export const REGION_MEMBERS: Record<(typeof REGIONS)[number], string[]> = {
  * Keyed by region, never by rank: a region keeps its colour when the ordering
  * shifts, so a chart re-read after new data does not silently repaint.
  *
- * The five hues were checked as a categorical set on a light surface — every
- * pair clears the colour-vision and normal-vision separation floors. Two
- * caveats ride along, and both are discharged by the charts that use this:
- * the blue/purple pair sits in the lower colour-vision band, and the orange
- * falls under 3:1 against the card. Each region is therefore always drawn with
- * its name and count beside it, never colour alone.
+ * **The order of `REGIONS` above is load-bearing.** Green and orange are all
+ * but identical to a red-blind reader (ΔE 0.4), and so are green and pink to a
+ * green-blind one — this sequence keeps green away from both, and every
+ * touching pair then clears the colour-vision floor. Anything that stacks these
+ * fills must therefore lay them out in `REGIONS` order rather than by size.
+ * Re-ordering the list, or swapping a hue, needs the palette re-validated.
+ *
+ * One caveat survives: the orange falls under 3:1 against the card. Every
+ * region is drawn with its name and count beside it, so identity never rests on
+ * colour alone.
  */
 export const REGION_COLORS: Record<Region, string> = {
-  'North America': '#2980EF', // water
+  'North America': '#3FA129', // grass
+  'Latin America': '#2980EF', // water
   Europe: '#FF8000', // fighting
-  'Asia-Pacific': '#9040CC', // poison
-  'Latin America': '#915121', // ground
-  'Middle East & Africa': '#EF4179', // psychic
+  'Asia-Pacific': '#EF4179', // psychic
+  'Middle East & Africa': '#9040CC', // poison
   // A residual bucket rather than a peer category, so it stays neutral.
   Unknown: '#9FA19F', // normal
 };
+
+/** Position in the canonical order, for laying out stacked fills. Unknown is a
+ *  residual and always trails the real regions. */
+export function regionOrder(region: Region): number {
+  const i = (REGIONS as readonly string[]).indexOf(region);
+  return i === -1 ? REGIONS.length : i;
+}
 
 const LOOKUP = new Map<string, Region>();
 for (const region of REGIONS) {
