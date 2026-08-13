@@ -7,6 +7,8 @@ import { BUILD_GROUPS } from '@/data/slot-template';
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
 import { cn, displayName } from '@/lib/utils';
+import { regionOf } from '@/lib/countryRegions';
+import { matchLocale } from '@/i18n/detect';
 
 const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
   BUILD_GROUPS.map((g) => [g.id, { name: g.name, color: g.color }]),
@@ -140,6 +142,9 @@ interface ApiResponse {
     { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number }
   >;
   countries: Record<string, number>;
+  /** Raw Accept-Language tags (`en-US`, `pt-BR`, …) → user count. Folded into
+   *  shipped locales client-side, using the app's own negotiation rules. */
+  languages?: Record<string, number>;
   devices: Record<string, number>;
   os: Record<string, number>;
   hours: number[];
@@ -393,6 +398,115 @@ function Bars({ rows }: { rows: { label: string; count: number }[] }) {
           <span className="w-8 shrink-0 tabular-nums">{r.count}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Shade for the Nth-largest group. An intensity ramp rather than a set of
+ *  unrelated hues: the groups are *ranked*, and the ramp says so. It also ties
+ *  each segment of the share bar to its row in the list below without needing a
+ *  separate legend. */
+function rampOpacity(i: number): number {
+  return Math.max(0.18, 1 - i * 0.16);
+}
+
+/** One-row part-to-whole bar. This is the pie chart's job done in a row: the
+ *  same share-of-total read, a fraction of the height, and no sliver labels —
+ *  segments too narrow to hold a number simply don't get one. */
+function ShareBar({ rows, total }: { rows: { label: string; count: number }[]; total: number }) {
+  if (!total) return null;
+  const pct = (n: number) => (n / total) * 100;
+  return (
+    <div
+      className="flex w-full h-5 rounded overflow-hidden bg-muted mb-2"
+      role="img"
+      aria-label={rows.map((r) => `${r.label} ${Math.round(pct(r.count))}%`).join(', ')}
+    >
+      {rows.map((r, i) => (
+        <div
+          key={r.label}
+          className="h-full bg-primary flex items-center justify-center"
+          style={{ width: `${pct(r.count)}%`, opacity: rampOpacity(i) }}
+          title={`${r.label} · ${r.count} (${Math.round(pct(r.count))}%)`}
+        >
+          {/* Only the darkest segments carry inline text; on the paler ones
+              white would not have the contrast to be read. */}
+          {pct(r.count) >= 12 && i <= 1 && (
+            <span className="text-[0.55rem] text-primary-foreground tabular-nums">
+              {Math.round(pct(r.count))}%
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+interface BarGroup {
+  label: string;
+  count: number;
+  children: { label: string; count: number }[];
+}
+
+/** Ranked bar list whose rows open to reveal their members. The long tail is
+ *  what costs the space, so it starts folded away: the groups answer "roughly
+ *  where", and a tap answers "exactly where". */
+function GroupedBars({ groups }: { groups: BarGroup[] }) {
+  const [open, setOpen] = useState<Set<string>>(new Set());
+  const max = Math.max(1, ...groups.map((g) => g.count));
+  const toggle = (label: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(label)) next.add(label);
+      return next;
+    });
+
+  return (
+    <div className="flex flex-col gap-1">
+      {groups.map((g, i) => {
+        const isOpen = open.has(g.label);
+        // Members scale against the biggest member of their own group, not the
+        // global max — otherwise every row of a small group renders as a stub.
+        // The printed count stays the authoritative value.
+        const childMax = Math.max(1, ...g.children.map((c) => c.count));
+        return (
+          <div key={g.label}>
+            <button
+              type="button"
+              onClick={() => toggle(g.label)}
+              aria-expanded={isOpen}
+              className="w-full flex items-center gap-2 text-xs cursor-pointer"
+            >
+              <span className="w-28 shrink-0 text-muted-foreground text-left truncate">
+                <span className="inline-block w-2">{isOpen ? '▾' : '▸'}</span> {g.label}
+              </span>
+              <div className="flex-1 bg-muted rounded h-4 overflow-hidden">
+                <div
+                  className="h-full bg-primary"
+                  style={{ width: `${(g.count / max) * 100}%`, opacity: rampOpacity(i) }}
+                />
+              </div>
+              <span className="w-8 shrink-0 tabular-nums text-right">{g.count}</span>
+            </button>
+            {isOpen && (
+              <div className="ml-4 my-1 flex flex-col gap-1 border-l border-border/60 pl-2">
+                {g.children.map((c) => (
+                  <div key={c.label} className="flex items-center gap-2 text-[0.7rem]">
+                    <span className="w-24 shrink-0 text-muted-foreground truncate">{c.label}</span>
+                    <div className="flex-1 bg-muted rounded h-3 overflow-hidden">
+                      <div
+                        className="h-full bg-primary/60"
+                        style={{ width: `${(c.count / childMax) * 100}%` }}
+                      />
+                    </div>
+                    <span className="w-8 shrink-0 tabular-nums text-right">{c.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1153,6 +1267,87 @@ function tallyRows(counts: Record<string, number>, withFlag = false) {
   return Object.entries(counts)
     .sort((a, b) => b[1] - a[1])
     .map(([k, n]) => ({ label: withFlag ? `${flag(k)} ${k}` : k, count: n }));
+}
+
+/** Fold the country tally into regions, largest first, each keeping its own
+ *  countries as members. */
+function regionGroups(countries: Record<string, number>): BarGroup[] {
+  const byRegion = new Map<string, { label: string; count: number }[]>();
+  for (const [cc, n] of Object.entries(countries)) {
+    const list = byRegion.get(regionOf(cc)) ?? [];
+    list.push({ label: `${flag(cc)} ${cc}`, count: n });
+    byRegion.set(regionOf(cc), list);
+  }
+  return [...byRegion.entries()]
+    .map(([label, children]) => ({
+      label,
+      count: children.reduce((sum, c) => sum + c.count, 0),
+      children: children.sort((a, b) => b.count - a.count),
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * Fold raw Accept-Language tags into one row per language.
+ *
+ * Tags run through the app's own negotiation, so `en-GB`, `en-CA` and `en-US`
+ * land on the single locale they would actually be served, and `zh-CN` lands on
+ * `zh-Hans` rather than being lumped with `zh-Hant`. A tag that matches nothing
+ * we ship folds to its primary subtag instead and is marked — those rows are
+ * the localisation backlog, ranked by how many users are waiting in it.
+ */
+function languageRows(languages: Record<string, number>) {
+  const shipped = new Map<string, number>();
+  const missing = new Map<string, number>();
+  for (const [tag, n] of Object.entries(languages)) {
+    const match = matchLocale(tag);
+    if (match) {
+      shipped.set(match, (shipped.get(match) ?? 0) + n);
+    } else {
+      const base = tag.split('-')[0].toLowerCase();
+      missing.set(base, (missing.get(base) ?? 0) + n);
+    }
+  }
+  return [
+    ...[...shipped].map(([code, count]) => ({ code, count, isShipped: true })),
+    ...[...missing].map(([code, count]) => ({ code, count, isShipped: false })),
+  ].sort((a, b) => b.count - a.count);
+}
+
+/** Users per language, flagging the ones the app does not yet ship. */
+function LanguageBars({ languages }: { languages: Record<string, number> }) {
+  const rows = languageRows(languages);
+  if (!rows.length) return <p className="text-xs text-muted-foreground">No data yet.</p>;
+  const max = Math.max(1, ...rows.map((r) => r.count));
+  const unshipped = rows.filter((r) => !r.isShipped).reduce((sum, r) => sum + r.count, 0);
+  return (
+    <div className="flex flex-col gap-1">
+      {rows.map((r) => (
+        <div key={r.code} className="flex items-center gap-2 text-xs">
+          <span className="w-32 shrink-0 text-muted-foreground truncate">{langLabel(r.code)}</span>
+          <div className="flex-1 bg-muted rounded h-4 overflow-hidden">
+            <div
+              className="h-full"
+              style={{
+                width: `${(r.count / max) * 100}%`,
+                backgroundColor: r.isShipped ? 'var(--color-primary)' : 'rgb(217,119,6)',
+                opacity: 0.75,
+              }}
+            />
+          </div>
+          <span className="w-8 shrink-0 tabular-nums text-right">{r.count}</span>
+        </div>
+      ))}
+      <p className="text-[0.6rem] text-muted-foreground mt-1 leading-snug">
+        <span
+          className="inline-block w-2 h-2 rounded-[2px] align-middle mr-1"
+          style={{ backgroundColor: 'rgb(217,119,6)', opacity: 0.75 }}
+        />
+        Not shipped — {unshipped} {unshipped === 1 ? 'user' : 'users'}. From the browser's
+        Accept-Language header, which is a preference, not proof of what we served.
+      </p>
+    </div>
+  );
 }
 
 const SORT_LABELS: Record<string, string> = {
@@ -2011,13 +2206,28 @@ export function AdminPage() {
               />
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card title="By country">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card title="By region">
                 {Object.keys(data.countries).length ? (
-                  <Bars rows={tallyRows(data.countries, true)} />
+                  (() => {
+                    const groups = regionGroups(data.countries);
+                    const total = groups.reduce((sum, g) => sum + g.count, 0);
+                    return (
+                      <>
+                        <ShareBar rows={groups} total={total} />
+                        <GroupedBars groups={groups} />
+                        <p className="text-[0.6rem] text-muted-foreground mt-1">
+                          Tap a region for its countries.
+                        </p>
+                      </>
+                    );
+                  })()
                 ) : (
                   <p className="text-xs text-muted-foreground">No data yet.</p>
                 )}
+              </Card>
+              <Card title="By language">
+                <LanguageBars languages={data.languages ?? {}} />
               </Card>
               <Card title="By device">
                 <Bars rows={tallyRows(data.devices)} />

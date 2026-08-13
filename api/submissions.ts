@@ -141,6 +141,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const now = Date.now();
     const countries: Record<string, number> = {};
+    const languages: Record<string, number> = {};
     const devices: Record<string, number> = {};
     const osCounts: Record<string, number> = {};
     const hours = new Array<number>(24).fill(0);
@@ -254,6 +255,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       if (r.country) countries[r.country] = (countries[r.country] ?? 0) + 1;
+      // Raw Accept-Language tags. Left unnormalized here so the admin can apply
+      // the app's own locale negotiation to them — the server has no business
+      // knowing which locales the app ships.
+      if (r.lang) languages[r.lang] = (languages[r.lang] ?? 0) + 1;
       if (r.device) devices[r.device] = (devices[r.device] ?? 0) + 1;
       if (r.os) osCounts[r.os] = (osCounts[r.os] ?? 0) + 1;
       // Derive local day+hour from tz+lastTs (back-populates legacy records).
@@ -408,6 +413,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       lineCurves,
       monCurves,
       countries,
+      languages,
       devices,
       os: osCounts,
       hours,
