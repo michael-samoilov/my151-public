@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bug, Check, Languages, Lightbulb, MessageCircle, Table2 } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { useSheetKeyboard } from '@/components/ui/sheetKeyboard';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/i18n';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
@@ -82,6 +83,9 @@ function FeedbackForm({
   onDone: () => void;
 }) {
   const t = useT();
+  // Whether the sheet is currently sharing the screen with a keyboard. Drives
+  // the compact spacing below — see the comment on the form's className.
+  const tight = useSheetKeyboard();
   const [category, setCategory] = useState<FeedbackCategory>(initialCategory);
   const [message, setMessage] = useState('');
   const [website, setWebsite] = useState(''); // honeypot
@@ -134,7 +138,16 @@ function FeedbackForm({
       // — the field keeps its four rows and pushes the button off the end,
       // which is the whole bug. Compression is the point, and `h-full` is what
       // asks for it.
-      className={`px-4 pt-3 pb-4 flex flex-col gap-3${fill ? ' h-full' : ''}`}
+      //
+      // The padding and the gaps halve while a keyboard is up. Compression
+      // alone leaves the field at about two lines on a 15 Pro, because every
+      // pixel it gives up is the only pixel anything gives up — and whitespace
+      // between five fixed rows is worth less than a message you can read back.
+      // Spacing is the first thing to spend and it is spent only while the
+      // screen is a third of itself.
+      className={`px-4 flex flex-col ${tight ? 'pt-1.5 pb-2 gap-1.5' : 'pt-3 pb-4 gap-3'}${
+        fill ? ' h-full' : ''
+      }`}
       onSubmit={async (e) => {
         e.preventDefault();
         if (tooShort || state === 'sending') return;
@@ -204,15 +217,31 @@ function FeedbackForm({
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         placeholder={t('feedback.message.placeholder')}
-        // `-mt-2` walks back the form's `gap-3`, so the field sits close under
-        // the label it belongs to rather than at the column's own rhythm.
+        // `overscroll-contain` is what keeps a drag inside the field from
+        // becoming a drag on the page. A textarea is a scroll container, so
+        // once its own scroll reaches an end iOS hands the rest of the gesture
+        // to the nearest ancestor that can take it — which, with a keyboard up,
+        // is the document, and the sheet is positioned against the viewport the
+        // document is now moving under. Reading back what you typed pulled the
+        // sheet off the bottom of the screen.
+        //
+        // The negative top margin walks back the gap the form puts between its
+        // rows, so the field sits close under the label it belongs to rather
+        // than at the column's own rhythm. It has to track that gap rather than
+        // be a constant: a fixed `-mt-2` is larger than the compact `gap-1.5`,
+        // which pulls the field 2px *over* its label. The audit caught exactly
+        // that, which is the shape of every bug on this surface so far — a
+        // number that was right beside the number it was paired with, and wrong
+        // beside the one that replaced it.
         //
         // `text-base` below `md`, not `text-sm`: iOS Safari zooms the whole
         // page in when a field smaller than 16px takes focus, and the root
         // font size floors at 16px, so `text-sm` lands at 14. The field is
         // also autofocused, so the zoom fires on open rather than on tap.
         // Same rule the shared `Input` component already follows.
-        className="w-full min-h-14 flex-1 -mt-2 rounded-md border bg-background px-2 py-1.5 text-base md:text-sm resize-y"
+        className={`w-full min-h-14 flex-1 overscroll-contain rounded-md border bg-background px-2 py-1.5 text-base md:text-sm resize-y ${
+          tight ? '-mt-0.5' : '-mt-2'
+        }`}
       />
 
       {/* Honeypot. Off-screen rather than display:none (which some bots skip),

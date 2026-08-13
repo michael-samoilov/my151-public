@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { SheetKeyboardContext } from './sheetKeyboard';
 
 /** px drag distance past which the release dismisses the sheet. */
 const DISMISS_THRESHOLD = 120;
@@ -246,11 +247,16 @@ export function BottomSheet({
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
       >
-        {/* Grab handle — drag down or tap to close. Min 44px touch target per Apple HIG. */}
+        {/* Grab handle — drag down or tap to close. Min 44px touch target per
+            Apple HIG, which is why the padding tightens rather than collapses
+            when a keyboard is open: the header is still something to aim at,
+            just not something to spend 24px of a third of a screen on. */}
         <button
           type="button"
           aria-label={closeLabel}
-          className="w-full flex flex-col items-center justify-center py-3 cursor-grab active:cursor-grabbing touch-none"
+          className={`w-full flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none ${
+            keyboardOpen ? 'py-1.5' : 'py-3'
+          }`}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -263,7 +269,9 @@ export function BottomSheet({
         {/* Its own scroll container: a long form scrolls here, and
             `overscroll-contain` stops that scroll continuing into the app once
             it reaches an end. */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+          <SheetKeyboardContext.Provider value={keyboardOpen}>{children}</SheetKeyboardContext.Provider>
+        </div>
       </div>
     </div>
   );

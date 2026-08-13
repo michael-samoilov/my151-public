@@ -81,10 +81,10 @@ test.describe('feedback sheet layout', () => {
     // own a flex column will happily compress it to nothing and report that
     // everything fits. It does fit. There is just nowhere left to type.
     //
-    // Measured on the built layout: 110px at rest, 59 at an iPhone 15 Pro's
-    // keyboard, and pinned to its 56px floor below roughly 310 — where the
-    // sheet starts scrolling instead, which the matrix above proves it does
-    // without overlapping anything.
+    // Measured on the built layout: 110px at rest, 109 at an iPhone 15 Pro's
+    // keyboard, 71 at 300, and pinned to its 56px floor below about 280 —
+    // where the sheet starts scrolling instead, which the matrix above proves
+    // it does without overlapping anything.
     const FLOOR = 56;
     await openSheet(page, 'en');
 
@@ -101,10 +101,38 @@ test.describe('feedback sheet layout', () => {
       ).toBeGreaterThanOrEqual(FLOOR - 1);
     }
 
+    // The floor is survival, not the target. On the phone this was reported
+    // from, the field has to be worth typing into — four lines, not two — and
+    // fitting alone was satisfied at two.
+    await raiseKeyboard(page, 338);
+    expect(
+      await fieldHeight(),
+      'the field is too cramped to read a message back on a 15 Pro',
+    ).toBeGreaterThanOrEqual(100);
+
     // And it takes the room when there is room to take, rather than staying at
     // its four rows and leaving the space blank.
     await raiseKeyboard(page, 500);
     expect(await fieldHeight(), 'the field does not grow into spare space').toBeGreaterThan(150);
+  });
+
+  test('scrolling the field does not drag the page under the sheet', async ({ page }) => {
+    // Reported from a real phone: dragging inside the field to read back what
+    // you had typed scrolled nothing, then pulled the whole sheet off the
+    // bottom of the screen. A textarea is a scroll container, so once its own
+    // scroll ends iOS hands the rest of the gesture to the nearest ancestor
+    // that can take it — the document, which the sheet is positioned against.
+    //
+    // Chromium will not reproduce the chaining, but the property that stops it
+    // is exactly testable, the same way the 16px font-size check stands in for
+    // a zoom this engine never performs.
+    await openSheet(page, 'en');
+    await raiseKeyboard(page, 338);
+    const behaviour = await page
+      .getByRole('dialog')
+      .locator('textarea')
+      .evaluate((el) => getComputedStyle(el).overscrollBehaviorY);
+    expect(behaviour, 'the field chains its scroll into the page').toBe('contain');
   });
 
   test('every category chip keeps the form clean', async ({ page }) => {
