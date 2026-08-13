@@ -110,6 +110,19 @@ const STAGE_STYLES: [StageStyle, StageStyle, StageStyle] = [
 
 const SHOT_SRCS = [shot45, shot95, shot151] as const;
 
+/** Intrinsic pixel sizes of SHOT_SRCS, in the same order. The staircase sizes
+ *  each card by height and leaves width to `w-auto`, so without these the
+ *  browser has no aspect ratio until the WebP decodes and every card resolves
+ *  to ~2px wide — the hero renders as three slivers, then snaps to its real
+ *  332px. Width/height attributes give the ratio up front, so the cards hold
+ *  their final size from first paint. Keep in sync with the files in
+ *  src/assets/intro/ if they are ever re-exported. */
+const SHOT_DIMS = [
+  { width: 390, height: 620 },
+  { width: 348, height: 620 },
+  { width: 555, height: 620 },
+] as const;
+
 /** Parallel to SHOT_SRCS. These three screenshots show the product's progression
  *  (partial dex, sectioned dex, complete dex plus analytics), so they carry
  *  meaning and need real alt text rather than alt="". Bing Webmaster Tools
@@ -314,7 +327,17 @@ function ShowcaseStaircase() {
               style={{ transform: `rotate(${s.rotate})` }}
             >
               {FACE === 'shots' ? (
-                <img src={SHOT_SRCS[i]} alt={SHOT_ALTS[i]} className="h-full w-auto block" draggable={false} />
+                <img
+                  src={SHOT_SRCS[i]}
+                  alt={SHOT_ALTS[i]}
+                  width={SHOT_DIMS[i].width}
+                  height={SHOT_DIMS[i].height}
+                  // The card is the first thing a new visitor sees, so these
+                  // three beat the sprite sheets and data fetches to the wire.
+                  fetchPriority="high"
+                  className="h-full w-auto block"
+                  draggable={false}
+                />
               ) : (
                 <DotsHero stage={stages[i]} outlines={STAGE_STYLES[i].outlines} stats={STAGE_STYLES[i].stats} />
               )}
