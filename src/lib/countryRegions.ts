@@ -54,6 +54,31 @@ export const REGION_MEMBERS: Record<(typeof REGIONS)[number], string[]> = {
   ],
 };
 
+/**
+ * One fixed colour per region, drawn from the Gen IX type badges the app
+ * already ships (`TYPE_COLORS`) so the admin charts stay in the product's own
+ * palette rather than importing a second one.
+ *
+ * Keyed by region, never by rank: a region keeps its colour when the ordering
+ * shifts, so a chart re-read after new data does not silently repaint.
+ *
+ * The five hues were checked as a categorical set on a light surface — every
+ * pair clears the colour-vision and normal-vision separation floors. Two
+ * caveats ride along, and both are discharged by the charts that use this:
+ * the blue/purple pair sits in the lower colour-vision band, and the orange
+ * falls under 3:1 against the card. Each region is therefore always drawn with
+ * its name and count beside it, never colour alone.
+ */
+export const REGION_COLORS: Record<Region, string> = {
+  'North America': '#2980EF', // water
+  Europe: '#FF8000', // fighting
+  'Asia-Pacific': '#9040CC', // poison
+  'Latin America': '#915121', // ground
+  'Middle East & Africa': '#EF4179', // psychic
+  // A residual bucket rather than a peer category, so it stays neutral.
+  Unknown: '#9FA19F', // normal
+};
+
 const LOOKUP = new Map<string, Region>();
 for (const region of REGIONS) {
   for (const code of REGION_MEMBERS[region]) LOOKUP.set(code, region);

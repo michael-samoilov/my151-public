@@ -7,7 +7,7 @@ import { BUILD_GROUPS } from '@/data/slot-template';
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
 import { cn, displayName } from '@/lib/utils';
-import { regionOf } from '@/lib/countryRegions';
+import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { matchLocale } from '@/i18n/detect';
 
 const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
@@ -402,42 +402,51 @@ function Bars({ rows }: { rows: { label: string; count: number }[] }) {
   );
 }
 
-/** Shade for the Nth-largest group. An intensity ramp rather than a set of
- *  unrelated hues: the groups are *ranked*, and the ramp says so. It also ties
- *  each segment of the share bar to its row in the list below without needing a
- *  separate legend. */
-function rampOpacity(i: number): number {
-  return Math.max(0.18, 1 - i * 0.16);
-}
-
 /** One-row part-to-whole bar. This is the pie chart's job done in a row: the
  *  same share-of-total read, a fraction of the height, and no sliver labels —
  *  segments too narrow to hold a number simply don't get one. */
-function ShareBar({ rows, total }: { rows: { label: string; count: number }[]; total: number }) {
+function ShareBar({
+  rows,
+  total,
+}: {
+  rows: { label: string; count: number; color?: string }[];
+  total: number;
+}) {
   if (!total) return null;
   const pct = (n: number) => (n / total) * 100;
+  const last = rows.length - 1;
   return (
     <div
       className="flex w-full h-5 rounded overflow-hidden bg-muted mb-2"
       role="img"
       aria-label={rows.map((r) => `${r.label} ${Math.round(pct(r.count))}%`).join(', ')}
     >
-      {rows.map((r, i) => (
-        <div
-          key={r.label}
-          className="h-full bg-primary flex items-center justify-center"
-          style={{ width: `${pct(r.count)}%`, opacity: rampOpacity(i) }}
-          title={`${r.label} · ${r.count} (${Math.round(pct(r.count))}%)`}
-        >
-          {/* Only the darkest segments carry inline text; on the paler ones
-              white would not have the contrast to be read. */}
-          {pct(r.count) >= 12 && i <= 1 && (
-            <span className="text-[0.55rem] text-primary-foreground tabular-nums">
-              {Math.round(pct(r.count))}%
-            </span>
-          )}
-        </div>
-      ))}
+      {rows.map((r, i) => {
+        const share = pct(r.count);
+        return (
+          <div
+            key={r.label}
+            className="h-full flex items-center justify-center"
+            style={{
+              width: `${share}%`,
+              // Never let a real region round away to nothing.
+              minWidth: r.count > 0 ? 2 : 0,
+              backgroundColor: r.color ?? 'var(--color-primary)',
+              // A 2px cut of the card colour separates neighbouring fills. Only
+              // on segments wide enough to spare it — on a sliver the border
+              // would be the whole segment.
+              borderRight: i < last && share >= 2 ? '2px solid var(--color-card)' : undefined,
+            }}
+            title={`${r.label} · ${r.count} (${Math.round(share)}%)`}
+          >
+            {share >= 10 && (
+              <span className="text-[0.55rem] text-white tabular-nums drop-shadow-[0_0_2px_rgba(0,0,0,0.5)]">
+                {Math.round(share)}%
+              </span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -445,6 +454,7 @@ function ShareBar({ rows, total }: { rows: { label: string; count: number }[]; t
 interface BarGroup {
   label: string;
   count: number;
+  color?: string;
   children: { label: string; count: number }[];
 }
 
@@ -463,7 +473,7 @@ function GroupedBars({ groups }: { groups: BarGroup[] }) {
 
   return (
     <div className="flex flex-col gap-1">
-      {groups.map((g, i) => {
+      {groups.map((g) => {
         const isOpen = open.has(g.label);
         // Members scale against the biggest member of their own group, not the
         // global max — otherwise every row of a small group renders as a stub.
@@ -477,13 +487,16 @@ function GroupedBars({ groups }: { groups: BarGroup[] }) {
               aria-expanded={isOpen}
               className="w-full flex items-center gap-2 text-xs cursor-pointer"
             >
-              <span className="w-28 shrink-0 text-muted-foreground text-left truncate">
+              <span className="w-32 shrink-0 text-muted-foreground text-left truncate">
                 <span className="inline-block w-2">{isOpen ? '▾' : '▸'}</span> {g.label}
               </span>
               <div className="flex-1 bg-muted rounded h-4 overflow-hidden">
                 <div
-                  className="h-full bg-primary"
-                  style={{ width: `${(g.count / max) * 100}%`, opacity: rampOpacity(i) }}
+                  className="h-full rounded-r"
+                  style={{
+                    width: `${(g.count / max) * 100}%`,
+                    backgroundColor: g.color ?? 'var(--color-primary)',
+                  }}
                 />
               </div>
               <span className="w-8 shrink-0 tabular-nums text-right">{g.count}</span>
@@ -495,8 +508,13 @@ function GroupedBars({ groups }: { groups: BarGroup[] }) {
                     <span className="w-24 shrink-0 text-muted-foreground truncate">{c.label}</span>
                     <div className="flex-1 bg-muted rounded h-3 overflow-hidden">
                       <div
-                        className="h-full bg-primary/60"
-                        style={{ width: `${(c.count / childMax) * 100}%` }}
+                        className="h-full rounded-r"
+                        style={{
+                          width: `${(c.count / childMax) * 100}%`,
+                          backgroundColor: g.color ?? 'var(--color-primary)',
+                          // Members read as a lighter echo of their region.
+                          opacity: 0.55,
+                        }}
                       />
                     </div>
                     <span className="w-8 shrink-0 tabular-nums text-right">{c.count}</span>
@@ -1282,6 +1300,7 @@ function regionGroups(countries: Record<string, number>): BarGroup[] {
     .map(([label, children]) => ({
       label,
       count: children.reduce((sum, c) => sum + c.count, 0),
+      color: REGION_COLORS[label as Region],
       children: children.sort((a, b) => b.count - a.count),
     }))
     .sort((a, b) => b.count - a.count);
