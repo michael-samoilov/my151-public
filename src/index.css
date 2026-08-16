@@ -124,6 +124,27 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: normal;
 }
 
+/* The tile name placeholder, shown while the name catalog is in flight.
+ *
+ * `currentColor` at a low alpha rather than a fixed grey, so it reads as an
+ * absence of text on whatever surface the tile is sitting on — a placed tile,
+ * an empty slot and the browser sheet all have different grounds.
+ *
+ * The pulse is what separates "loading" from "this Pokémon has no name". It is
+ * slow on purpose: 151 of these breathe together on first paint, and anything
+ * quicker turns the grid into a strobe. */
+@keyframes tile-name-pulse {
+  0%, 100% { opacity: 0.10; }
+  50% { opacity: 0.22; }
+}
+.tile-name-skeleton {
+  opacity: 0.14;
+  animation: tile-name-pulse 1.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tile-name-skeleton { animation: none; }
+}
+
 /* Elevated card surfaces — layered transparent shadow instead of a 1px border
  * (make-interfaces-feel-better #3). Used by the analytics chart cards and the
  * admin cards. The main layer's blur radius exceeds its y-offset, so the shadow
