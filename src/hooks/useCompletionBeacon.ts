@@ -3,6 +3,7 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
+import { getLocale } from '@/i18n/core';
 
 type BeaconKind = 'progress' | 'completion' | 'export';
 
@@ -77,6 +78,10 @@ function postBeacon(
   // on the build page — the real placement, including non-default choices. Only
   // sent for build beacons (progress/completion), not the flat export view.
   // `exportSettings` records the View settings used for an export (sort/outlines).
+  // The locale the app is actually rendering in — which is not the same as the
+  // Accept-Language header the server sees. A `?lang=` or a manual pick in the
+  // language picker both outrank the browser preference, and only the client
+  // knows the outcome.
   const payload = JSON.stringify({
     cid,
     kind,
@@ -84,6 +89,7 @@ function postBeacon(
     depth: countEvoLines(ids),
     sections,
     exportSettings,
+    locale: getLocale(),
     events: events && events.length ? events : undefined,
   });
   // fetch+keepalive (not navigator.sendBeacon): iOS WebKit silently drops

@@ -80,6 +80,10 @@ export interface ClientRecord {
   region?: string;
   tz?: string;
   lang?: string;
+  /** The locale the app actually rendered in at the last beacon, as resolved
+   *  client-side (`?lang=` > manual pick > browser). Distinct from `lang`,
+   *  which is only the Accept-Language header. Absent on legacy records. */
+  locale?: string;
   device?: string;
   os?: string;
   browser?: string;
