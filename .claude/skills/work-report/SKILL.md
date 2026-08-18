@@ -22,7 +22,11 @@ instead of restating it.
 
 ## The template
 
-- **Changed**: What changed, in one or two lines, with commit and branch.
+- **Changed**: What behaves differently now, in plain language, with commit
+  and branch. Name the effect a user or a reader notices, not the files you
+  touched. Write "the browser keeps the filter when you go back", not
+  "edited PokemonBrowser.tsx". The diff already lists the files. When a
+  change alters no behavior, say what it makes possible instead.
 - **Merge**: "Merged" for a tier 1 change you already shipped, "Ready for
   production" for a tier 2 change awaiting approval, or "Blocked: <the
   blocker>". CLAUDE.md's Deployment section names the production branch and
