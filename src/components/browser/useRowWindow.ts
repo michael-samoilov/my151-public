@@ -61,11 +61,18 @@ function findScroller(el: HTMLElement | null): HTMLElement | null {
  */
 export function useRowWindow(
   gridRef: React.RefObject<HTMLDivElement | null>,
-  rowCount: number,
+  /** The rows to window. Passed as the array, not its length: a grid's
+   *  position in the list can move without its row count changing — applying
+   *  a generation filter lifts that generation's grid from far down the list
+   *  to the top with the same rows — and the window has to be recomputed for
+   *  the new position. The array identity changes whenever the result set
+   *  does, so it is the signal that the old window may no longer hold. */
+  rows: readonly unknown[],
   enabled: boolean,
   /** Identifies grids that share a row height, for the pitch cache. */
   pitchKey: string,
 ): RowWindow {
+  const rowCount = rows.length;
   const [win, setWin] = useState<WindowState>(() => {
     const known = pitchCache.get(pitchKey);
     return {
@@ -121,7 +128,7 @@ export function useRowWindow(
   useLayoutEffect(() => {
     if (!enabled) return;
     recompute();
-  }, [enabled, recompute]);
+  }, [enabled, recompute, rows]);
 
   useEffect(() => {
     if (!enabled) return;

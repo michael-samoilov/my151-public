@@ -165,7 +165,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
     return out;
   }, [groups, cols]);
 
-  const { start, end, topPad, bottomPad } = useRowWindow(gridRef, rows.length, windowed, `${cols}:${spritePx}`);
+  const { start, end, topPad, bottomPad } = useRowWindow(gridRef, rows, windowed, `${cols}:${spritePx}`);
 
   const cells = useMemo(() => {
     const result: React.ReactNode[] = [];
