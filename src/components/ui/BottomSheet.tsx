@@ -172,20 +172,57 @@ export function BottomSheet({
     };
   }, []);
   useEffect(() => {
+    // Where the current touch began, so a touchmove can be classified as a
+    // horizontal or a vertical gesture. A wheel event carries its own deltas
+    // and needs no history.
+    let startX = 0;
+    let startY = 0;
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (!t) return;
+      startX = t.clientX;
+      startY = t.clientY;
+    };
+
+    /** Can this element scroll along the axis the gesture is moving? */
+    const scrollsOnAxis = (n: HTMLElement, horizontal: boolean) => {
+      const cs = getComputedStyle(n);
+      return horizontal
+        ? (cs.overflowX === 'auto' || cs.overflowX === 'scroll') && n.scrollWidth > n.clientWidth
+        : (cs.overflowY === 'auto' || cs.overflowY === 'scroll') && n.scrollHeight > n.clientHeight;
+    };
+
+    // Keeps the page behind the sheet still: a gesture that no scroller inside
+    // the sheet can consume would otherwise chain through to the document.
+    // The axis matters. Testing overflowY alone blocked sideways panning of
+    // the filter chip rows, which scroll on X and have nothing to scroll on Y,
+    // so the walk found no taker and swallowed the gesture.
     const swallow = (e: Event) => {
       const overlay = overlayRef.current;
       if (!overlay) return;
+
+      let horizontal: boolean;
+      if (e.type === 'wheel') {
+        const we = e as WheelEvent;
+        horizontal = Math.abs(we.deltaX) > Math.abs(we.deltaY);
+      } else {
+        const t = (e as TouchEvent).touches[0];
+        if (!t) return;
+        horizontal = Math.abs(t.clientX - startX) > Math.abs(t.clientY - startY);
+      }
+
       for (let n = e.target as Node | null; n && n !== overlay; n = n.parentElement) {
         if (!(n instanceof HTMLElement)) continue;
-        const oy = getComputedStyle(n).overflowY;
-        if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight) return;
+        if (scrollsOnAxis(n, horizontal)) return;
       }
       e.preventDefault();
     };
     const opts = { passive: false, capture: true } as const;
+    document.addEventListener('touchstart', onStart, { passive: true, capture: true });
     document.addEventListener('wheel', swallow, opts);
     document.addEventListener('touchmove', swallow, opts);
     return () => {
+      document.removeEventListener('touchstart', onStart, { capture: true });
       document.removeEventListener('wheel', swallow, opts);
       document.removeEventListener('touchmove', swallow, opts);
     };
