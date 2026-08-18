@@ -219,17 +219,39 @@ export function PokemonTileContent({
       <span
         data-i18n-exempt="pokemon-name"
         className="flex items-baseline justify-center gap-[0.15em] w-full px-[calc(var(--tile-sprite)*0.045)] text-[calc(var(--tile-sprite)*0.18)] font-medium leading-tight"
-        title={label.full}
-        aria-label={label.full}
+        // While the catalog is in flight there is no name to announce or put in
+        // a tooltip. The slug is not one: it is English, lowercase and
+        // hyphenated in every locale, so offering it as the accessible name
+        // would tell a screen reader "mr-mime" and then quietly change its mind.
+        {...(label.pending
+          ? { 'aria-busy': true, 'aria-label': undefined }
+          : { title: label.full, 'aria-label': label.full })}
       >
-        <span className="truncate">{label.name}</span>
-        {label.mark && (
+        {label.pending ? (
+          /* A placeholder the exact height of the line it replaces, so the tile
+             does not resize when the real name lands — a grid of 151 tiles all
+             reflowing at once is a worse artefact than the flash this removes.
+             `aria-hidden` because a decorative bar has nothing to say; the
+             `aria-busy` above is what reports the state. */
           <span
             aria-hidden
-            className="flex-shrink-0 text-[0.8em] font-semibold opacity-70 tabular-nums"
+            data-name-skeleton
+            className="flex h-[1.25em] w-[62%] items-center"
           >
-            {label.mark}
+            <span className="tile-name-skeleton block h-[0.68em] w-full rounded-full bg-current" />
           </span>
+        ) : (
+          <>
+            <span className="truncate">{label.name}</span>
+            {label.mark && (
+              <span
+                aria-hidden
+                className="flex-shrink-0 text-[0.8em] font-semibold opacity-70 tabular-nums"
+              >
+                {label.mark}
+              </span>
+            )}
+          </>
         )}
       </span>
       <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.03)] mt-[calc(var(--tile-sprite)*0.045)] w-full">
