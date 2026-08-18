@@ -949,6 +949,7 @@ export function PokemonBrowser() {
                       onToggleRemoval={handleToggleRemoval}
                       cols={3}
                       showGenBadges={showGenBadges}
+                      windowed
                     />
                     <EvoLineGrid
                       groups={model.rightGroups!}
@@ -959,6 +960,7 @@ export function PokemonBrowser() {
                       onToggleRemoval={handleToggleRemoval}
                       cols={3}
                       showGenBadges={showGenBadges}
+                      windowed
                     />
                   </div>
                 </div>
@@ -983,6 +985,7 @@ export function PokemonBrowser() {
                     shinyIds={model.shinyIds}
                     spriteOverrides={model.spriteOverrides}
                     showGenBadges={showGenBadges}
+                    windowed
                   />
                 </div>
               </div>

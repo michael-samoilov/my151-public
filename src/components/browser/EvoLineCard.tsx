@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useRowWindow } from './useRowWindow';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
@@ -119,6 +120,9 @@ interface EvoLineGridProps {
   matchupInfo?: Map<number, { offense: number; defense: number; bestDefenseType: TypeName }>;
   /** The type being matched — required when matchupInfo is present */
   matchupType?: TypeName;
+  /** Render only the rows near the viewport. Opt-in: the browser's result
+   *  grid needs it, the much smaller drilldown grids do not. */
+  windowed?: boolean;
 }
 
 const GRID_CLASSES: Record<number, string> = {
@@ -127,58 +131,94 @@ const GRID_CLASSES: Record<number, string> = {
 };
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, windowed = false }: EvoLineGridProps) {
   // Canonical Pokemon-tile sprite size — shared with the build page so
   // Charizard (etc.) renders identically in the selection pane and in a
   // section tile at the same viewport width. See `PokemonTile.tsx`.
   const spritePx = useTileSpritePx();
   const gridMaxW = useTileGridMaxWidth(cols, 0, 0);
+  const gridRef = useRef<HTMLDivElement>(null);
 
-  const elements = useMemo(() => {
-    const result: React.ReactNode[] = [];
-    let col = 0; // 0-based current column position
-
+  // Pack the lines into rows. A line never straddles a row: when one will not
+  // fit in the columns left, the row is padded out first. That invariant is
+  // what lets the grid be windowed by row.
+  const rows = useMemo(() => {
+    const out: { groups: EvoLineGroup[]; trailingSpacers: number }[] = [];
+    let current: EvoLineGroup[] = [];
+    let col = 0;
     for (const group of groups) {
       const size = group.members.length;
-      // If this line won't fit in the remaining columns, pad and wrap
-      if (col > 0 && (col + size > cols)) {
-        const spacers = cols - col;
-        for (let s = 0; s < spacers; s++) {
-          result.push(<div key={`spacer-${result.length}`} />);
-        }
+      if (col > 0 && col + size > cols) {
+        out.push({ groups: current, trailingSpacers: cols - col });
+        current = [];
         col = 0;
       }
-      result.push(
-        <EvoLineCard
-          key={group.key}
-          members={group.members}
-          matchedIds={group.matchedIds}
-          mutedIds={group.mutedIds}
-          anchorGen={group.anchorGen}
-          assignedIds={assignedIds}
-          stagedIds={stagedIds}
-          onToggleStage={onToggleStage}
-          removalStagedIds={removalStagedIds}
-          onToggleRemoval={onToggleRemoval}
-          shinyIds={shinyIds}
-          spriteOverrides={spriteOverrides}
-          variant={variant}
-          showGenBadges={showGenBadges}
-          showShapeBadges={showShapeBadges}
-          matchupInfo={matchupInfo}
-          matchupType={matchupType}
-          spritePx={spritePx}
-        />
-      );
-      col = (col + size) % cols;
+      current.push(group);
+      col += size;
+      if (col === cols) {
+        out.push({ groups: current, trailingSpacers: 0 });
+        current = [];
+        col = 0;
+      }
     }
+    if (current.length > 0) out.push({ groups: current, trailingSpacers: cols - col });
+    return out;
+  }, [groups, cols]);
 
+  const { start, end, topPad, bottomPad } = useRowWindow(gridRef, rows.length, windowed, `${cols}:${spritePx}`);
+
+  const cells = useMemo(() => {
+    const result: React.ReactNode[] = [];
+    for (let r = start; r < end; r++) {
+      const row = rows[r];
+      if (!row) continue;
+      for (const group of row.groups) {
+        result.push(
+          <EvoLineCard
+            key={group.key}
+            members={group.members}
+            matchedIds={group.matchedIds}
+            mutedIds={group.mutedIds}
+            anchorGen={group.anchorGen}
+            assignedIds={assignedIds}
+            stagedIds={stagedIds}
+            onToggleStage={onToggleStage}
+            removalStagedIds={removalStagedIds}
+            onToggleRemoval={onToggleRemoval}
+            shinyIds={shinyIds}
+            spriteOverrides={spriteOverrides}
+            variant={variant}
+            showGenBadges={showGenBadges}
+            showShapeBadges={showShapeBadges}
+            matchupInfo={matchupInfo}
+            matchupType={matchupType}
+            spritePx={spritePx}
+          />
+        );
+      }
+      for (let sp = 0; sp < row.trailingSpacers; sp++) {
+        result.push(<div key={`spacer-${r}-${sp}`} />);
+      }
+    }
     return result;
-  }, [groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx]);
+  }, [rows, start, end, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx]);
+
+  // The fillers stand in for the rows outside the window so the scrollbar
+  // still describes the whole list. They span every column, so each occupies
+  // a grid row of its own.
+  const filler = (key: string, height: number) => (
+    <div key={key} aria-hidden="true" style={{ gridColumn: '1 / -1', height }} />
+  );
 
   return (
-    <div className={GRID_CLASSES[cols] ?? `grid gap-x-0 gap-y-1`} style={{ ...(GRID_CLASSES[cols] ? {} : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }), maxWidth: gridMaxW, marginInline: gridMaxW ? 'auto' : undefined }}>
-      {elements}
+    <div
+      ref={gridRef}
+      className={GRID_CLASSES[cols] ?? `grid gap-x-0 gap-y-1`}
+      style={{ ...(GRID_CLASSES[cols] ? {} : { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }), maxWidth: gridMaxW, marginInline: gridMaxW ? 'auto' : undefined }}
+    >
+      {topPad > 0 && filler('pad-top', topPad)}
+      {cells}
+      {bottomPad > 0 && filler('pad-bottom', bottomPad)}
     </div>
   );
 }
@@ -320,6 +360,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
           // at canonical ratios — see `src/components/shared/PokemonTile.tsx`.
           <div
             key={pokemon.id}
+            data-row-cell=""
             className="relative px-[3px] overflow-visible"
             style={{ ['--tile-sprite' as string]: `${spritePx}px` }}
           >
