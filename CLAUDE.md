@@ -34,6 +34,15 @@ Never drop these as tangents or preamble:
 
 Both source documents list the same exception: confirmation of a risky action, and real ambiguity, outrank brevity.
 
+## Style guide
+
+Write all prose in [Google developer documentation style](https://developers.google.com/style). This covers responses, visible thinking, commit messages, PR text, code comments, and docs. The distilled rules are in `.claude/skills/google-style/SKILL.md`. A SessionStart hook in `.claude/settings.json` injects them into context each session. If the hook output is absent, read that file before your first response. For word-level questions, read `word-list.md` in the same directory.
+
+Two boundaries:
+
+- The Response style section wins when the two guides conflict.
+- App UI strings and i18n content are out of scope. Game terminology and the `docs/i18n` fixtures stay authoritative there.
+
 ## Build Verification
 
 Always run `npm run build` before committing and pushing. Never push code that has not been build-verified.

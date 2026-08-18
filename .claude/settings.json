@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[google-style] Repo style guide. Apply it to all prose and visible thinking in this session:'; cat \"${CLAUDE_PROJECT_DIR:-.}/.claude/skills/google-style/SKILL.md\"",
+            "timeout": 15,
+            "statusMessage": "Loading Google style guide"
+          }
+        ]
+      }
+    ]
+  }
+}
