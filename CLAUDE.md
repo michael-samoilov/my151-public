@@ -45,6 +45,10 @@ Two boundaries:
 - The Response style section wins when the two guides conflict.
 - App UI strings and i18n content are out of scope. Game terminology and the `docs/i18n` fixtures stay authoritative there.
 
+## Work reports
+
+End every turn that changes anything with the five-part report in `.claude/skills/work-report/SKILL.md`: Changed, Merge, Verified, Tradeoffs, You test. The SessionStart hook injects the template each session. "Verified" means measured — root-cause tests, or screenshots from the running app — never inferred from code alone. For UI changes, send a before-and-after side by side so review needs no preview deploy.
+
 ## Build Verification
 
 Always run `npm run build` before committing and pushing. Never push code that has not been build-verified.
