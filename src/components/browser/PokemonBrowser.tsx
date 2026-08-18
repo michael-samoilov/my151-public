@@ -53,16 +53,6 @@ interface BrowserSubgroup {
   shinyIds?: number[];
 }
 
-/** Off-screen subgroup blocks skip layout and paint. The results list runs to
- *  ~1,100 tiles with no virtualization, so this is what keeps a re-render from
- *  laying out every one of them. `auto` for the intrinsic size means the
- *  browser reuses each block's last rendered height, so the scrollbar stays
- *  stable after the first pass. */
-const SUBGROUP_BLOCK_STYLE: React.CSSProperties = {
-  contentVisibility: 'auto',
-  containIntrinsicSize: 'auto 600px',
-};
-
 /** One evo-line entry of a subgroup's render model, shaped for EvoLineGrid. */
 interface SubgroupGridGroup {
   key: string;
@@ -941,7 +931,7 @@ export function PokemonBrowser() {
           {subgroupModels.map((model) => {
             if (model.dualCols) {
               return (
-                <div key={model.label} style={SUBGROUP_BLOCK_STYLE}>
+                <div key={model.label}>
                   <div className="sticky top-[22px] z-20 bg-background mt-1 border-b">
                     <div className="grid grid-cols-2 gap-x-1">
                       <div className="w-full text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1" style={{ maxWidth: gridMaxW3, marginInline: gridMaxW3 ? 'auto' : undefined }}>
@@ -976,7 +966,7 @@ export function PokemonBrowser() {
             }
 
             return (
-              <div key={model.label} style={SUBGROUP_BLOCK_STYLE}>
+              <div key={model.label}>
                 <div className="sticky top-0 z-20 bg-background mt-1 border-b">
                   <div className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide py-[3px] px-1" style={{ maxWidth: gridMaxW, marginInline: gridMaxW ? 'auto' : undefined }}>
                     {model.label}
