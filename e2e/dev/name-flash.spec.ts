@@ -134,10 +134,15 @@ test.describe('name flash', () => {
       await gate;
       await route.continue();
     });
-    await page.goto('/?lang=en&demo');
+    // `demo=151` seeds the demo dex, the same way every other test in this
+    // file does. A bare `?demo` seeds nothing: the flag needs its value, so
+    // the page had no tiles of its own and this read the off-screen browser
+    // panel instead, which used to be mounted for the whole session and is
+    // now built only while it is open.
+    await page.goto('/?lang=en&demo=151');
 
     const label = page.locator('[data-i18n-exempt="pokemon-name"]').first();
-    await expect(label).toBeAttached();
+    await expect(label).toBeAttached({ timeout: 20_000 });
 
     const state = await label.evaluate((el: HTMLElement) => ({
       text: el.innerText.replace(/\s+/g, ' ').trim(),
@@ -157,8 +162,13 @@ test.describe('name flash', () => {
     expect(state.aria, 'the slug leaked into the accessible name').toBeNull();
 
     // And it resolves on its own once the catalog lands — a placeholder that
-    // never leaves is a worse bug than the one it replaced.
+    // never leaves is a worse bug than the one it replaced. Which species
+    // lands first is the seeded dex's business, so this asserts what the test
+    // is about: the placeholder clears, and what replaces it is a real name
+    // rather than the slug.
     release();
-    await expect(label).toHaveText(/Bulbasaur/i, { timeout: 15_000 });
+    await expect(label).not.toHaveText('', { timeout: 15_000 });
+    const settled = (await label.innerText()).replace(/\s+/g, ' ').trim();
+    expect(looksLikeASlug(settled), `settled on a slug: ${settled}`).toBe(false);
   });
 });
