@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo, useEffect, useLayoutEffect } from 'react';
+import { startTransition, useState, useRef, useCallback, useMemo, useEffect, useLayoutEffect } from 'react';
 import { flushSync } from 'react-dom';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { computeDrillDownData, type DrillDownData } from '@/hooks/useDrillDownData';
@@ -293,11 +293,19 @@ export function DrillDownSheet() {
   const [nextData, setNextData] = useState<ReturnType<typeof computeDrillDownData>>(null);
 
   useEffect(() => {
-    // Try synchronous first — if cached this is essentially free
-    const prev = prevSibling ? computeDrillDownData(prevSibling, storeSections, excludeSpecial, dexId, newOnly) : null;
-    const next = nextSibling ? computeDrillDownData(nextSibling, storeSections, excludeSpecial, dexId, newOnly) : null;
-    setPrevData(prev);
-    setNextData(next);
+    // Run after the current panel paints, not inside the interaction that
+    // opened it — the neighbours are off-screen until the user swipes. The
+    // effect body itself runs before paint, so the work is scheduled on the
+    // next frame and its state update is marked non-urgent.
+    const id = requestAnimationFrame(() => {
+      const prev = prevSibling ? computeDrillDownData(prevSibling, storeSections, excludeSpecial, dexId, newOnly) : null;
+      const next = nextSibling ? computeDrillDownData(nextSibling, storeSections, excludeSpecial, dexId, newOnly) : null;
+      startTransition(() => {
+        setPrevData(prev);
+        setNextData(next);
+      });
+    });
+    return () => cancelAnimationFrame(id);
   }, [prevSibling, nextSibling, storeSections, excludeSpecial, dexId, newOnly]);
 
   const bstOverrides = segment?.kind === 'bst' ? BST_SPRITE_OVERRIDES : undefined;

@@ -6,6 +6,7 @@ import { BUILD_GROUPS, createEmptySections } from '@/data/slot-template';
 import { DEMO_DEX_SECTIONS } from '@/data/demoDex';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
 import { BarChart3, Camera, Sparkles, Trophy, ChevronDown, type LucideIcon } from 'lucide-react';
+import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
 
 /**
  * The milestone progress spine — a slim runway with a bead at each milestone
@@ -280,13 +281,7 @@ function MilestoneBarComponent() {
 
   // Red-bead half-width as a fraction of the track. Convert the bead's rem to px
   // via the root font-size, then divide by the measured track px.
-  const rootPx = (() => {
-    try {
-      return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-    } catch {
-      return 16;
-    }
-  })();
+  const rootPx = getAppliedRootFontSizePx();
   const hw = trackPx > 0 ? (cfg.beadRedRem / 2) * rootPx / trackPx : 0;
   const fillPct = computeFillFraction(count, hw) * 100;
 

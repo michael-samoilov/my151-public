@@ -36,6 +36,7 @@ import { cn } from '@/lib/utils';
 import { sectionName as sectionLabel, useDocumentLocale } from '@/i18n';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 
 declare const __BUILD_TIMESTAMP__: string;
 console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
@@ -84,6 +85,41 @@ function App() {
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const activeSection = usePokedexStore((s) => s.activeSection);
   const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
+  const isDesktop = useIsDesktop();
+
+  // Mount the desktop browser panel's content only while a section is active,
+  // holding it through the 300ms slide-out so the closing animation keeps its
+  // content. The off-canvas panel used to stay mounted with the full
+  // unfiltered grid (~20k DOM nodes), re-rendering on every store change —
+  // the main INP cost on the builder view. Browser filter state lives in the
+  // zustand store, so unmounting loses nothing.
+  const [browserPanelMounted, setBrowserPanelMounted] = useState(false);
+  // Mount during render, not in an effect, so the panel's content is present
+  // in the same commit that starts the slide-in.
+  if (activeSection && !browserPanelMounted) setBrowserPanelMounted(true);
+  useEffect(() => {
+    if (activeSection) return;
+    const id = window.setTimeout(() => setBrowserPanelMounted(false), 300);
+    return () => window.clearTimeout(id);
+  }, [activeSection]);
+
+  // Clear all filters when the mobile browser sheet closes (fresh state on
+  // next open). Lives here, not in PokemonBrowser: the sheet unmounts its
+  // browser instance on close, and the desktop panel instance that used to
+  // catch this transition no longer stays mounted.
+  const prevMobileBrowserOpen = useRef(mobileBrowserOpen);
+  useEffect(() => {
+    if (prevMobileBrowserOpen.current && !mobileBrowserOpen) {
+      const s = usePokedexStore.getState();
+      s.setSearchQuery('');
+      s.setTypeFilter(null);
+      s.setGenerationFilter(null);
+      s.setEvoLineSizeFilter(null);
+      s.setCategoryFilter(null);
+      s.setArchetypeFilter(null);
+    }
+    prevMobileBrowserOpen.current = mobileBrowserOpen;
+  }, [mobileBrowserOpen]);
 
   // Forward wheel events from the whitespace flanking the centered build page
   // to its internal scroll container when the browser panel is closed.
@@ -142,16 +178,20 @@ function App() {
           )}>
             <PokedexGrid />
           </div>
-          {/* Desktop browser panel — slides in from right as an overlay */}
+          {/* Desktop browser panel — slides in from right as an overlay.
+              The wrapper stays mounted to own the transform transition; the
+              browser itself mounts only while open (plus the slide-out). */}
           <div className={cn(
             'hidden md:flex absolute right-0 top-0 bottom-0 z-10',
             'w-1/2 border-l bg-background',
             'transition-transform duration-300 ease-out',
             activeSection ? 'translate-x-0' : 'translate-x-full',
           )}>
-            <div className="flex-1 min-w-0">
-              <PokemonBrowser />
-            </div>
+            {isDesktop && browserPanelMounted && (
+              <div className="flex-1 min-w-0">
+                <PokemonBrowser />
+              </div>
+            )}
           </div>
         </div>
 
@@ -177,7 +217,7 @@ function App() {
               </ErrorBoundary>
             )}
           </div>
-          {drillDownSegment && (
+          {drillDownSegment && isDesktop && (
             <div className="hidden md:flex w-1/2 flex-shrink-0 border-l">
               <DrillDownPanel />
             </div>
@@ -190,8 +230,10 @@ function App() {
         <MobileSheet sectionName={sectionName} onClose={() => { setMobileBrowserOpen(false); usePokedexStore.getState().setActiveSection(null); }} />
       )}
 
-      {/* Analytics drill-down sheet — only on analytics view */}
-      {currentView === 'analytics' && drillDownSegment && <DrillDownSheet />}
+      {/* Analytics drill-down sheet — only on analytics view, mobile only.
+          The desktop pane above covers >=1024px; mounting both built three
+          hidden carousel panels per desktop chart tap. */}
+      {currentView === 'analytics' && drillDownSegment && !isDesktop && <DrillDownSheet />}
 
       {/* Milestone celebration nudges (analytics @25, view @100, confetti @151) */}
       <MilestoneCelebration onNavigate={handleViewChange} />

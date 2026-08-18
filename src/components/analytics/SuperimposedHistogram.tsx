@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { memo, useRef, useEffect, useState } from 'react';
 import { scaleLinear } from 'd3-scale';
 
 interface HistogramBin {
@@ -23,7 +23,7 @@ interface SuperimposedHistogramProps {
   textClass?: string;
 }
 
-export function SuperimposedHistogram({
+function SuperimposedHistogramImpl({
   data,
   binSize,
   xDomain,
@@ -43,7 +43,9 @@ export function SuperimposedHistogram({
     if (!containerRef.current) return;
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width ?? 0;
-      if (w > 0) setWidth(w);
+      // Ignore sub-0.5px jitter so observer echoes don't re-render the
+      // whole chart during an interaction (same guard as MilestoneBar).
+      if (w > 0) setWidth((prev) => (Math.abs(prev - w) < 0.5 ? prev : w));
     });
     ro.observe(containerRef.current);
     return () => ro.disconnect();
@@ -183,3 +185,6 @@ export function SuperimposedHistogram({
     </div>
   );
 }
+
+/** Memoized for the same reason as ButterflyChart — see that file. */
+export const SuperimposedHistogram = memo(SuperimposedHistogramImpl);

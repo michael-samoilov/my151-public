@@ -432,7 +432,13 @@ function GroupBox({
     }
 
     prevHeightRef.current = newHeight;
-  });
+    // Scoped to the only React-driven cause of a height change. Without a
+    // dependency list this ran after every commit, so each of the ~29 group
+    // boxes did a scrollHeight read (and sometimes a style write) on every
+    // builder interaction — forced-reflow thrash inside the layout phase.
+    // The ResizeObserver below keeps prevHeightRef honest for layout shifts
+    // that React does not drive.
+  }, [pokemonIds]);
 
   // Keep prevHeightRef current with the element's actual rendered height,
   // independent of React re-renders. Without this, the useLayoutEffect above

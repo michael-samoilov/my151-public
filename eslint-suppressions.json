@@ -11,7 +11,7 @@
   },
   "src/components/analytics/DrillDownSheet.tsx": {
     "react-hooks/set-state-in-effect": {
-      "count": 3
+      "count": 2
     }
   },
   "src/components/browser/EvoLineCard.tsx": {

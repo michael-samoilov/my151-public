@@ -58,11 +58,11 @@ test.describe('name flash', () => {
       // against a timeout precisely so a slow fetch cannot hold the first paint,
       // so a cold chunk legitimately degrades to the slug. This measures the
       // normal path, which is the one that must never flash.
-      await page.goto(`/?lang=${locale}&demo`);
+      await page.goto(`/?lang=${locale}&demo=151`);
       await expect(page.locator('[data-i18n-exempt="pokemon-name"]').first()).toBeAttached();
 
       await page.addInitScript(RECORDER);
-      await page.goto(`/?lang=${locale}&demo`);
+      await page.goto(`/?lang=${locale}&demo=151`);
       // A generous readiness wait, not a statement about speed. Boot legitimately
       // takes a while here: it waits for the catalog and the names, the demo dex
       // is seeded, and 151 tiles render — and the suite runs two workers against
@@ -82,7 +82,7 @@ test.describe('name flash', () => {
   }
 
   test('switching language goes straight to the new names', async ({ page }) => {
-    await page.goto('/?lang=en&demo');
+    await page.goto('/?lang=en&demo=151');
     await expect(page.locator('[data-i18n-exempt="pokemon-name"]').first()).toBeAttached();
     await page.evaluate(RECORDER);
 

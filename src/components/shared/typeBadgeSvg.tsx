@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { TypeName } from '@/types/pokemon';
 import { typeGlyphPath } from '@/data/type-ids';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { typeLabel, typeLabels, localeUppercase } from '@/i18n';
+import { typeLabel, typeLabels, localeUppercase, getVersion } from '@/i18n';
 import {
   TYPE_BADGE,
   TYPE_BADGE_H,
@@ -24,8 +24,17 @@ import { typeBadgeFit } from '@/lib/typeBadgeFit';
  * The badge sizes its text from the whole set rather than from the single word
  * it is drawing, so all eighteen share one cap height — see `typeBadgeFit.ts`.
  */
+let labelCache: { version: number; labels: string[] } | null = null;
+
 function localeTypeLabels(): string[] {
-  return typeLabels().map(localeUppercase);
+  // Cached per catalog version. A full browser grid draws ~2,250 badges, and
+  // each one used to translate and uppercase all eighteen names again. The
+  // version key invalidates the cache on a locale change.
+  const version = getVersion();
+  if (!labelCache || labelCache.version !== version) {
+    labelCache = { version, labels: typeLabels().map(localeUppercase) };
+  }
+  return labelCache.labels;
 }
 
 /** Contents of a badge drawn in its own 200x40 space. */
