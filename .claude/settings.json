@@ -5,9 +5,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "echo '[google-style] Repo style guide. Apply it to all prose and visible thinking in this session:'; cat \"${CLAUDE_PROJECT_DIR:-.}/.claude/skills/google-style/SKILL.md\"",
+            "command": "echo '[repo-style] Style rules. Apply them to all prose and visible thinking in this session:'; cat \"${CLAUDE_PROJECT_DIR:-.}/.claude/skills/google-style/SKILL.md\"; printf '\\n---\\n\\n'; cat \"${CLAUDE_PROJECT_DIR:-.}/.claude/skills/action-first-replies/SKILL.md\"",
             "timeout": 15,
-            "statusMessage": "Loading Google style guide"
+            "statusMessage": "Loading repo style rules"
           }
         ]
       }

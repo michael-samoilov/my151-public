@@ -23,8 +23,9 @@ For word-level questions, read [word-list.md](word-list.md) in this directory.
   `docs/i18n` fixtures are authoritative there, and `npm run i18n:verify`
   enforces them.
 - Do not rename existing code identifiers to match this guide.
-- The "Response style" section of `CLAUDE.md` wins when the two conflict. The
-  two mostly agree.
+- The "Response style" section of `CLAUDE.md`, including the vendored
+  `action-first-replies` skill it adopts, wins when the two conflict. The guides mostly
+  agree.
 
 ## Voice and tone
 
