@@ -67,8 +67,11 @@ export interface ClientRecord {
    *  beacon), most-recent MAX_SESSIONS_TRACKED. Diffing consecutive entries
    *  shows what changed visit-to-visit. Absent on legacy records.
    *  `events` lists the onboarding/funnel events (intro-shown, milestone-*, …)
-   *  the user saw DURING that session, in order, deduped per session. */
-  sessionLog?: { ts: number; ids: number[]; country?: string; events?: string[] }[];
+   *  the user saw DURING that session, in order, deduped per session.
+   *  `dev` is the client (device · OS · browser) that sent the session — one
+   *  cid is one browser, so sessions that alternate clients expose a shared
+   *  cid (two people on one record). Absent on legacy records. */
+  sessionLog?: { ts: number; ids: number[]; country?: string; dev?: string; events?: string[] }[];
   /** Deepest build (distinct evolution lines) ever reached. */
   maxDepth: number;
   /** Hour-of-day (0–23) in the user's own local time at their last submit. */

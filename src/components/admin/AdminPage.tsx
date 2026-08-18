@@ -70,7 +70,7 @@ interface ClientRecord {
   sessions?: number;
   maxSessionMs?: number;
   sessionMs?: number[];
-  sessionLog?: { ts: number; ids: number[]; country?: string; events?: string[] }[];
+  sessionLog?: { ts: number; ids: number[]; country?: string; dev?: string; events?: string[] }[];
   maxDepth: number;
   localHour: number;
   localDow?: number;
@@ -176,6 +176,23 @@ function fmtSecs(s: number): string {
   if (m < 60) return s % 60 ? `${m}m ${s % 60}s` : `${m}m`;
   const h = Math.floor(m / 60);
   return m % 60 ? `${h}h ${m % 60}m` : `${h}h`;
+}
+
+/**
+ * Distinct local calendar days this record was active on.
+ *
+ * Read from the session log, which timestamps each session; falls back to the
+ * first/last pair for records predating it. Capped by MAX_SESSIONS_TRACKED
+ * upstream, so for a very heavy user this is a floor, not an exact count.
+ */
+function activeDayCount(rec: ClientRecord): number {
+  const days = new Set<string>();
+  for (const s of rec.sessionLog ?? []) days.add(new Date(s.ts).toDateString());
+  if (days.size === 0) {
+    days.add(new Date(rec.firstTs).toDateString());
+    days.add(new Date(rec.lastTs).toDateString());
+  }
+  return days.size;
 }
 
 function fmtDuration(ms: number): string {
@@ -1468,6 +1485,16 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: {
                 <span className="block text-xs text-muted-foreground">
                   {rec.sessions ?? rec.sessionMs?.length} session
                   {(rec.sessions ?? rec.sessionMs?.length) === 1 ? '' : 's'}
+                  {/* Distinct calendar days this record was active on. Vercel
+                      counts a *daily* unique visitor, so one person returning
+                      over N days is roughly N visitors there and exactly one
+                      user here — the single most confusing gap between the two
+                      dashboards. Printing the day count makes the two numbers
+                      reconcilable instead of contradictory. */}
+                  {(() => {
+                    const days = activeDayCount(rec);
+                    return days > 1 ? ` across ${days} days` : '';
+                  })()}
                   {rec.sessionMs?.length ? `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}` : ''}
                 </span>
               )}
@@ -1711,14 +1738,23 @@ function DroppedPokemon({
 }
 
 function SessionDiffBody({ s, added, removed, rec }: {
-  s: { ts: number; ids: number[]; country?: string; events?: string[] };
+  s: { ts: number; ids: number[]; country?: string; dev?: string; events?: string[] };
   added: number[];
   removed: number[];
   rec: ClientRecord;
 }) {
+  // One cid is one browser, so a session whose client differs from the
+  // record's current one is the shared-cid red flag — shown highlighted, not
+  // hidden in a tooltip, because it means "these sessions are not all the same
+  // person".
+  const recDev = [rec.device, rec.os, rec.browser].filter((p) => p && p !== 'Unknown').join(' · ');
+  const devMismatch = Boolean(s.dev && recDev && s.dev !== recDev);
   const summary = (
     <span className="text-xs text-muted-foreground">
       {new Date(s.ts).toLocaleDateString()}{s.country ? ` · ${flag(s.country)} ${s.country}` : ''} · {s.ids.length} total
+      {s.dev && (
+        <span className={devMismatch ? 'text-amber-600 font-medium' : ''}> · {s.dev}{devMismatch ? ' ⚠' : ''}</span>
+      )}
       {added.length > 0 && <span className="text-green-600"> · +{added.length}</span>}
       {removed.length > 0 && <span className="text-destructive"> · −{removed.length}</span>}
     </span>
@@ -2153,6 +2189,24 @@ export function AdminPage() {
                 <Stat value={data.retention.returning} label="Returning" />
                 <Stat value={data.retention.activeLast7} label="Active 7d" />
               </div>
+              {(() => {
+                // Beacons the server received but could not record — the only
+                // losses it can see, counted in api/submit.ts. Silence here
+                // means missing users were lost before reaching the server.
+                const drops = Object.entries(data.funnelEvents ?? {}).filter(([k]) =>
+                  k.startsWith('submit-drop:'),
+                );
+                const total = drops.reduce((sum, [, n]) => sum + n, 0);
+                if (total === 0) return null;
+                const detail = drops
+                  .map(([k, n]) => `${k.slice('submit-drop:'.length)} ${n}`)
+                  .join(' · ');
+                return (
+                  <p className="text-[0.65rem] text-amber-600 mt-2">
+                    ⚠ {total} beacons dropped server-side ({detail})
+                  </p>
+                );
+              })()}
             </Card>
 
             {data.activity && data.activity.length > 0 && (

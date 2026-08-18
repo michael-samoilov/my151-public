@@ -30,24 +30,73 @@ export function isOptedOut(): boolean {
   }
 }
 
+type CidStore = Pick<Storage, 'getItem' | 'setItem'>;
+
+function mintCid(): string {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
 /**
- * Stable anonymous id for this browser, minted once and reused. Enables dedup
- * (a person's repeated saves update one record) and retention. `null` when
- * storage is unavailable, which for beacons means "don't send" — feedback still
- * sends, just without a cid.
+ * Resolve a cid from the first storage that actually works.
+ *
+ * Each candidate is proven by reading the write back: some restricted modes
+ * accept `setItem` and silently drop it, and trusting the write would hand out
+ * a fresh cid on every call while claiming it was persisted. A storage that
+ * throws is skipped. When none works the id is minted unpersisted, and the
+ * caller decides how long to keep it.
+ *
+ * Pure given its inputs, so the fallback chain is unit-testable with stub
+ * storages.
  */
-export function getClientId(): string | null {
-  try {
-    let cid = localStorage.getItem(CID_KEY);
-    if (!cid) {
-      cid =
-        typeof crypto !== 'undefined' && 'randomUUID' in crypto
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
-      localStorage.setItem(CID_KEY, cid);
+export function resolveCidFrom(
+  stores: Array<CidStore | null>,
+  mint: () => string = mintCid,
+): { cid: string; persisted: boolean } {
+  for (const store of stores) {
+    if (!store) continue;
+    try {
+      const existing = store.getItem(CID_KEY);
+      if (existing) return { cid: existing, persisted: true };
+      const cid = mint();
+      store.setItem(CID_KEY, cid);
+      if (store.getItem(CID_KEY) === cid) return { cid, persisted: true };
+    } catch {
+      // storage unavailable — try the next one
     }
-    return cid;
-  } catch {
-    return null; // storage unavailable → can't dedup
   }
+  return { cid: mint(), persisted: false };
+}
+
+function safeStorage(get: () => Storage): CidStore | null {
+  try {
+    return get();
+  } catch {
+    return null;
+  }
+}
+
+// Resolved once per page load. Also the last-resort id itself: when no storage
+// works (locked-down private modes), the visitor keeps one id for this page
+// load instead of being invisible. They may reappear as a new user next visit —
+// an over-count of users, which is the honest direction; the old behaviour
+// (return null, send nothing) silently erased them.
+let resolvedCid: string | null = null;
+
+/**
+ * Stable anonymous id for this browser. localStorage when it works (stable
+ * across visits — the id that enables dedup and retention), else sessionStorage
+ * (stable for the tab), else an in-memory id (stable for the page load). Never
+ * null: a beacon with a short-lived cid still records the session; no cid at
+ * all loses it.
+ */
+export function getClientId(): string {
+  if (resolvedCid) return resolvedCid;
+  const { cid } = resolveCidFrom([
+    safeStorage(() => localStorage),
+    safeStorage(() => sessionStorage),
+  ]);
+  resolvedCid = cid;
+  return cid;
 }
