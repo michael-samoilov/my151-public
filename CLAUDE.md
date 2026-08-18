@@ -30,7 +30,7 @@ The five rules are the summary. The full rule set is vendored at `.claude/skills
 
 Never drop these as tangents or preamble:
 
-- A request for approval before a production merge.
+- A request for approval before a tier 2 production merge (see Deployment).
 - A correction to an earlier statement that was wrong.
 - A defect or risk found in the work, including my own.
 
@@ -69,21 +69,40 @@ CI runs on every branch push and PR, but it can only *block* a merge if branch p
 
 ## Deployment
 
-**The app has real users. `claude/pokedex-region-builder-AviYF` is production — never push to it without explicit approval in the current conversation.**
+**The app has real users. `claude/pokedex-region-builder-AviYF` is production.** The approval rule keeps untested, user-visible changes out of the live app. It is not a rule about paperwork. Two tiers decide whether a merge needs approval.
 
-Work on a preview branch by default:
+### Tier 1: merge without asking
+
+A change is tier 1 when **every file in the diff** sits outside what a browser receives. Those paths are:
+
+- `.claude/` and `.github/`
+- `docs/`, `e2e/`, `scripts/`, and `*.test.ts` files
+- `CLAUDE.md`, `README.md`, and other root Markdown
+
+Run `npm run build` first. Then merge, push production, and check out the work branch again. Report the merge in the work report. Do not ask for it.
+
+### Tier 2: ask first
+
+Everything else needs the user's explicit approval in the current conversation. One file outside the tier 1 list puts the whole change in tier 2. Tier 2 covers:
+
+- `src/`, `api/`, `public/`, and `index.html`
+- `vite.config.ts`, `vercel.json`, `package.json`, and the other build config
+- **Meta tags, `robots.txt`, `sitemap.xml` and other crawler-only files.** They are lower-risk, not zero-risk, since "it's only SEO/config" is exactly how unapproved changes reach users.
+
+Approval is per-change: shipping one change is not standing permission for the next.
+
+Work a tier 2 change like this:
 
 1. Commit to the work branch and push it (`git push -u origin <work-branch>`). Vercel builds a **preview deployment** for any pushed branch — that is where changes get verified.
 2. Report the preview to the user and let them look. Nothing reaches production on your own initiative.
-3. Merge into and push `claude/pokedex-region-builder-AviYF` **only after the user says to ship it.** Approval is per-change: shipping one change is not standing permission for the next.
+3. Merge into and push `claude/pokedex-region-builder-AviYF` **only after the user says to ship it.**
 4. **Check out the work branch again immediately after that push.** A merge leaves you on the production branch, so the next commit lands there silently — one `git push` away from an unapproved deploy. Run `git rev-parse --abbrev-ref HEAD` before any commit that follows a merge.
 
-When in doubt, push the preview branch and ask. A change sitting on a preview branch costs nothing; an unapproved production deploy is seen by users.
+Step 4 applies to a tier 1 merge too. The branch you end on does not depend on the tier.
 
-Two notes on scope, since "it's only SEO/config" is exactly how unapproved changes reach users:
+When the tier is unclear, treat the change as tier 2 and ask. A change sitting on a preview branch costs nothing; an unapproved production deploy is seen by users.
 
-- **Meta tags, `robots.txt`, `sitemap.xml` and other crawler-only files are still production changes.** They are lower-risk, not zero-risk, and still need approval before merging.
-- **Check whether a change is user-visible before calling it invisible.** `theme-color` tints mobile browser chrome; markup inside `#root` renders until React mounts. The app currently runs in **light** mode — the `.dark` block in `index.css` exists but nothing ever applies the class — so dark-themed additions will mismatch the live UI.
+**Check whether a change is user-visible before calling it invisible.** `theme-color` tints mobile browser chrome; markup inside `#root` renders until React mounts. The app currently runs in **light** mode — the `.dark` block in `index.css` exists but nothing ever applies the class — so dark-themed additions will mismatch the live UI.
 
 ## Responsive sizing
 
