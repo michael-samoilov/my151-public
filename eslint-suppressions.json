@@ -1,9 +1,4 @@
 {
-  "src/App.tsx": {
-    "react-hooks/refs": {
-      "count": 4
-    }
-  },
   "src/components/admin/AdminPage.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
+import { useState, useRef, useCallback, useEffect, lazy, startTransition, Suspense } from 'react';
 import { Header } from '@/components/layout/Header';
 import type { AppView } from '@/components/layout/Header';
 import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
@@ -6,11 +6,19 @@ import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 import { DrillDownSheet, DrillDownPanel } from '@/components/analytics/DrillDownSheet';
 import { usePokedexStore } from '@/store/usePokedexStore';
 
+// Route chunks stay lazy so boot ships small, and are prefetched when the
+// main thread first goes idle (see the effect in App) so a tab switch pays
+// only for rendering. `lazy` and the prefetch share one thunk each: the
+// module registry dedupes, so whichever runs first does the work and the
+// other reuses it.
+const importAnalyticsDashboard = () => import('@/components/analytics/AnalyticsDashboard');
+const importViewPage = () => import('@/components/view/ViewPage');
+
 const AnalyticsDashboard = lazy(() =>
-  import('@/components/analytics/AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })),
+  importAnalyticsDashboard().then((m) => ({ default: m.AnalyticsDashboard })),
 );
 const ViewPage = lazy(() =>
-  import('@/components/view/ViewPage').then((m) => ({ default: m.ViewPage })),
+  importViewPage().then((m) => ({ default: m.ViewPage })),
 );
 
 function RouteFallback() {
@@ -37,6 +45,7 @@ import { sectionName as sectionLabel, useDocumentLocale } from '@/i18n';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { whenIdle } from '@/lib/whenIdle';
 
 declare const __BUILD_TIMESTAMP__: string;
 console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
@@ -79,13 +88,73 @@ function App() {
   useMilestoneTracker();
   useJsErrorCounter();
   const [currentView, setCurrentView] = useState<AppView>('builder');
-  const viewMounted = useRef(false);
-  const analyticsMounted = useRef(false);
+  // State rather than refs so the idle pre-mount below can flip them without
+  // a navigation. Once true they stay true: routes mount once and live on.
+  const [viewMounted, setViewMounted] = useState(false);
+  const [analyticsMounted, setAnalyticsMounted] = useState(false);
   const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const activeSection = usePokedexStore((s) => s.activeSection);
   const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
   const isDesktop = useIsDesktop();
+
+  // Prefetch the route chunks once boot has settled, so the first visit to
+  // Analytics or View doesn't wait on a network fetch and the chunk's module
+  // evaluation — the analytics chunk computes its national baselines at
+  // module scope, which is exactly the work that made the first tab switch
+  // slow. Analytics goes first because its evaluation is the expensive one;
+  // the view chunk takes a second idle slot so the two never form one long
+  // block. A failed prefetch is ignored: `lazy` retries the import on the
+  // actual visit. Readers who asked the browser to save data keep the old
+  // fetch-on-first-visit behavior.
+  const analyticsUnlocked = isAnalyticsUnlocked(usePokedexStore((s) => s.milestoneMax));
+  useEffect(() => {
+    const conn = (navigator as { connection?: { saveData?: boolean } }).connection;
+    if (conn?.saveData) return;
+    let cancelled = false;
+    whenIdle(() => {
+      if (cancelled) return;
+      importAnalyticsDashboard()
+        .catch(() => {})
+        .finally(() => {
+          whenIdle(() => {
+            if (cancelled) return;
+            void importViewPage()
+              .catch(() => {})
+              .finally(() => {
+                // With the chunks in hand, mount both routes into their hidden
+                // containers. The transition keeps the hidden render at low
+                // priority, so a tap on the builder interrupts it instead of
+                // waiting behind it. Analytics only pre-mounts once its tab is
+                // reachable; until then there is nothing to warm.
+                whenIdle(() => {
+                  if (cancelled) return;
+                  startTransition(() => {
+                    setViewMounted(true);
+                    if (isAnalyticsUnlocked(usePokedexStore.getState().milestoneMax)) {
+                      setAnalyticsMounted(true);
+                    }
+                  });
+                });
+              });
+          });
+        });
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Analytics can unlock after boot (the reader places their 25th Pokémon).
+  // Pre-mount it in the next idle slot after that, so the newly enabled tab
+  // is warm by the time it is tapped.
+  useEffect(() => {
+    if (!analyticsUnlocked || analyticsMounted) return;
+    let cancelled = false;
+    whenIdle(() => {
+      if (cancelled) return;
+      startTransition(() => setAnalyticsMounted(true));
+    });
+    return () => { cancelled = true; };
+  }, [analyticsUnlocked, analyticsMounted]);
 
   // Mount the desktop browser panel's content only while a section is active,
   // holding it through the 300ms slide-out so the closing animation keeps its
@@ -151,8 +220,8 @@ function App() {
   const handleViewChange = useCallback((view: AppView) => {
     // Analytics is gated until 25 Pokémon (sticky). Guard every path here.
     if (view === 'analytics' && !isAnalyticsUnlocked(usePokedexStore.getState().milestoneMax)) return;
-    if (view === 'view') { viewMounted.current = true; sendEventBeacon('view-visit', { once: true }); }
-    if (view === 'analytics') analyticsMounted.current = true;
+    if (view === 'view') { setViewMounted(true); sendEventBeacon('view-visit', { once: true }); }
+    if (view === 'analytics') setAnalyticsMounted(true);
     setCurrentView(view);
     if (view !== 'builder') {
       setMobileBrowserOpen(false);
@@ -197,7 +266,7 @@ function App() {
 
         {/* View — lazy, mounted on first visit then kept alive */}
         <div className={cn('flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col', currentView !== 'view' && 'hidden')}>
-          {viewMounted.current && (
+          {viewMounted && (
             <ErrorBoundary where="view">
               <Suspense fallback={<RouteFallback />}>
                 <ViewPage />
@@ -209,7 +278,7 @@ function App() {
         {/* Analytics — lazy, mounted on first visit then kept alive */}
         <div className={cn('flex-1 flex min-h-0', currentView !== 'analytics' && 'hidden')}>
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
-            {analyticsMounted.current && (
+            {analyticsMounted && (
               <ErrorBoundary where="analytics">
                 <Suspense fallback={<RouteFallback />}>
                   <AnalyticsDashboard />
