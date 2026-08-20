@@ -22,6 +22,18 @@
  * ones.
  */
 
+// The progress-beacon cadence. Exported (rather than private to the hook)
+// because the pair defines the client's maximum send rate — 3.6e6 / maxWait
+// per hour — and a unit test holds that rate inside the server's per-client
+// daily allowance (api/_limits.ts). The two were once tuned separately: a 15s
+// max wait against a 120/day cap cut off every session longer than ~30
+// minutes of building, and the most engaged users lost the rest of their day.
+export const PROGRESS_DEBOUNCE_MS = 4000;
+// One beacon per minute during nonstop editing is plenty for analytics whose
+// finest-grained question is "which sessions happened and how deep did they
+// get" — the debounce already delivers promptly whenever the user pauses.
+export const PROGRESS_MAX_WAIT_MS = 60_000;
+
 export interface BeaconDebouncer {
   /** Note new work. The latest `fire` wins; earlier pending ones are dropped. */
   schedule(fire: () => void): void;

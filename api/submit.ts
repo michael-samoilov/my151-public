@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
+import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import {
   redis,
   getClientIp,
@@ -23,10 +24,14 @@ const burstLimiter = new Ratelimit({
   analytics: false,
   prefix: 'rl:burst',
 });
-// Per-client write cap so one browser can't spam updates.
+// Per-client write cap so one browser can't spam updates. Sized in
+// _limits.ts from the client's own maximum send rate — a cap below that
+// ceiling silences the most engaged users mid-session, which is a data-loss
+// bug, not protection. (The old 120/day cut off anyone building for more than
+// half an hour; a unit test now pins cadence × cap so they can't drift apart.)
 const clientLimiter = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(120, '1 d'),
+  limiter: Ratelimit.slidingWindow(SUBMIT_CLIENT_DAILY_CAP, '1 d'),
   analytics: false,
   prefix: 'rl:client',
 });
@@ -254,7 +259,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // see, so they must be the drops the server records. Counted only after a
     // rate-limit check has been paid for, so the counter itself is not a free
     // write for a hostile client.
-    const countDrop = async (reason: 'rate-limit' | 'cap' | 'contention') => {
+    // The two limiters are separate keys, learned the hard way: a single
+    // 'rate-limit' bucket showed 31 drops with no way to tell whether an IP
+    // was bursting or real users were exhausting the per-client allowance.
+    const countDrop = async (
+      reason: 'rate-limit-ip' | 'rate-limit-client' | 'cap' | 'contention',
+    ) => {
       try {
         await redis.hincrby('funnel', `submit-drop:${reason}`, 1);
       } catch {
@@ -266,13 +276,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ip = getClientIp(req);
     const burst = await burstLimiter.limit(ip);
     if (!burst.success) {
-      await countDrop('rate-limit');
+      await countDrop('rate-limit-ip');
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
     const perClient = await clientLimiter.limit(cid);
     if (!perClient.success) {
-      await countDrop('rate-limit');
+      await countDrop('rate-limit-client');
       res.setHeader('Retry-After', Math.ceil((perClient.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }

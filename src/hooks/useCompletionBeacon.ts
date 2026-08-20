@@ -4,20 +4,20 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
 import { getLocale } from '@/i18n/core';
-import { createBeaconDebouncer, type BeaconDebouncer } from '@/lib/beaconScheduler';
+import {
+  createBeaconDebouncer,
+  PROGRESS_DEBOUNCE_MS,
+  PROGRESS_MAX_WAIT_MS,
+  type BeaconDebouncer,
+} from '@/lib/beaconScheduler';
 
 type BeaconKind = 'progress' | 'completion' | 'export';
 
 // Don't send a 'progress' beacon for trivial/empty builds — wait until the user
 // has actually placed a few Pokemon so bots and idle loads don't create users.
 const MIN_PROGRESS_IDS = 1;
-// Debounce progress beacons so rapid edits collapse into one write.
-const PROGRESS_DEBOUNCE_MS = 4000;
-// Hard cap on beacon latency: however continuously the user edits, a progress
-// beacon goes out at most this long after the first unreported edit. Without
-// it, an editing burst with no 4s pause reported nothing until the user
-// stopped — and if they then closed the tab, nothing at all.
-const PROGRESS_MAX_WAIT_MS = 15000;
+// The debounce/max-wait cadence lives in beaconScheduler.ts, exported, so the
+// budget test can hold the send rate inside the server's per-client allowance.
 
 /** Distinct evolution lines (chains) represented by a set of ids — a better
  *  measure of building effort than raw count (a 3-stage line is one decision). */

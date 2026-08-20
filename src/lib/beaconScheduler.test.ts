@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createBeaconDebouncer } from './beaconScheduler';
+import {
+  createBeaconDebouncer,
+  PROGRESS_DEBOUNCE_MS,
+  PROGRESS_MAX_WAIT_MS,
+} from './beaconScheduler';
+import { SUBMIT_CLIENT_DAILY_CAP } from '../../api/_limits';
 
 /** Deterministic clock + timer registry, so the tests drive time explicitly. */
 function harness(opts: { delayMs: number; maxWaitMs: number }) {
@@ -99,6 +104,22 @@ describe('createBeaconDebouncer', () => {
     expect(fired).toEqual([1]);
     advance(1);
     expect(fired).toEqual([1, 2]);
+  });
+
+  // The client's send cadence and the server's per-client allowance are tuned
+  // in different files, and the first time they drifted apart it was a
+  // production data-loss bug: a 15s max wait against a 120/day cap dropped
+  // beacons from every user who built for more than ~30 minutes, and the
+  // admin dashboard showed their sessions truncated or missing. This test is
+  // the coupling: change either number and the arithmetic is re-checked here.
+  it('the maximum client send rate fits inside the server daily allowance', () => {
+    const perHour = 3_600_000 / PROGRESS_MAX_WAIT_MS;
+    // One tab editing nonstop for 24 hours — the policy's absolute ceiling.
+    expect(perHour * 24).toBeLessThanOrEqual(SUBMIT_CLIENT_DAILY_CAP);
+    // Two tabs sharing one cid all day still fit: same person, double cadence.
+    expect(perHour * 24 * 2).toBeLessThanOrEqual(SUBMIT_CLIENT_DAILY_CAP);
+    // The debounce stays shorter than the cap window it collapses into.
+    expect(PROGRESS_DEBOUNCE_MS).toBeLessThan(PROGRESS_MAX_WAIT_MS);
   });
 
   it('a fire that throws does not wedge the debouncer', () => {
