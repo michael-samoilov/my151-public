@@ -104,6 +104,38 @@ When the tier is unclear, treat the change as tier 2 and ask. A change sitting o
 
 **Check whether a change is user-visible before calling it invisible.** `theme-color` tints mobile browser chrome; markup inside `#root` renders until React mounts. The app currently runs in **light** mode — the `.dark` block in `index.css` exists but nothing ever applies the class — so dark-themed additions will mismatch the live UI.
 
+## pstack
+
+This repo vendors [open-pstack](https://github.com/ericlitman/open-pstack), a
+port of Lauren Tan's pstack to Claude Code. The skills live in
+`.claude/skills/`; the subagents live in `.claude/agents/`. Provenance, license,
+and resync steps are in `.claude/vendor/open-pstack/README.md`.
+
+Run `/poteto-mode` before a non-trivial code change. It reads the task, picks a
+playbook, and routes to the leaf skills. Enter a specific skill directly when
+you already know the shape of the work:
+
+| Skill | Use it when |
+| --- | --- |
+| `/how` | You need to know how a subsystem works before you change it. |
+| `/architect` | The change crosses a module boundary and the types come first. |
+| `/interrogate` | You want other models to attack a design or a diff. |
+| `/tdd` | The bug has a cheap, obvious failing test. |
+| `/deslop` | You are about to commit and want the AI tells removed. |
+
+The 21 `principle-*` skills are model-invocable only. They do not appear as
+slash commands. `/setup-pstack` configures the multi-model panel, which needs
+the Codex and Grok command-line tools plus Bun.
+
+Three notes on how pstack sits next to the rest of this file:
+
+1. This file wins. pstack's own precedence rule says user instructions beat the
+   pstack mandate.
+2. pstack's `prove it works` principle and the Work reports section agree:
+   measure the result, do not infer it from the code.
+3. pstack does not change the Deployment tiers. A tier 2 change still needs
+   your approval, whatever skill produced it.
+
 ## Responsive sizing
 
 The app targets mobile (≤1023px) and desktop (≥1024px, the `md:` breakpoint) as **peers, not mobile-with-desktop-patches**. When auditing or adding responsive code, design for both from the start rather than starting from mobile and bolting on `md:` overrides. Two things follow:
