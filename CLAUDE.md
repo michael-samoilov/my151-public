@@ -69,9 +69,9 @@ CI runs on every branch push and PR, but it can only *block* a merge if branch p
 
 ## Deployment
 
-**The app has real users. `claude/pokedex-region-builder-AviYF` is production.** The approval rule keeps untested, user-visible changes out of the live app. It is not a rule about paperwork. Two tiers decide whether a merge needs approval.
+**The app has real users. `claude/pokedex-region-builder-AviYF` is production.** The approval rule has one purpose: keep an untested, user-visible change out of the live app before it is ready to show users. It guards the browser, not the repo. A change a browser never receives carries no such risk, so it ships automatically. Two tiers decide whether a merge needs approval.
 
-### Tier 1: merge without asking
+### Tier 1: merge to production automatically
 
 A change is tier 1 when **every file in the diff** sits outside what a browser receives. Those paths are:
 
@@ -79,7 +79,7 @@ A change is tier 1 when **every file in the diff** sits outside what a browser r
 - `docs/`, `e2e/`, `scripts/`, and `*.test.ts` files
 - `CLAUDE.md`, `README.md`, and other root Markdown
 
-Run `npm run build` first. Then merge, push production, and check out the work branch again. Report the merge in the work report. Do not ask for it.
+A tier 1 change is not finished on the work branch. Finishing it means it reaches production. Run `npm run build`, then merge into `claude/pokedex-region-builder-AviYF`, push it, and check out the work branch again. Do this as the normal last step of the work. Do not ask, do not stop at the work branch, and do not call the production merge optional. Report the merge in the work report.
 
 ### Tier 2: ask first
 
