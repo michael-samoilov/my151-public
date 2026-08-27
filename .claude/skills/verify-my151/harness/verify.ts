@@ -121,4 +121,10 @@ async function main() {
   }
 }
 
-void main();
+// Engine drivers and preview children can leave handles open that keep the event
+// loop alive after the report is written (a synchronous write, so exiting here is
+// safe). Exit explicitly on the verdict code.
+main().then(
+  () => process.exit(process.exitCode ?? 0),
+  (e) => { console.error(e); process.exit(1); },
+);

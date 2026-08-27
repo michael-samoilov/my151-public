@@ -52,30 +52,75 @@ async function waitForStoreKey(s: Session, tries = 40): Promise<boolean> {
   return false;
 }
 
-// Write the seed after the app's own initial persist write, then reload so it
-// rehydrates from the seed.
-export async function seedDex(s: Session, base: string): Promise<void> {
-  await s.navigate(base);
-  await waitForApp(s);
-  await waitForStoreKey(s);
-  await s.evalJson(`localStorage.setItem(${JSON.stringify(STORE_KEY)}, ${JSON.stringify(seedValue(SEED_SECTIONS))}); return true;`);
-  await s.navigate(base);
-  await waitForApp(s);
-  await waitForStoreKey(s);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// Count placed Pokémon in the persisted store; 0 if absent or unparseable.
+async function readSeedCount(s: Session): Promise<number> {
+  return s
+    .evalJson<number>(`const raw=localStorage.getItem(${JSON.stringify(STORE_KEY)}); if(!raw) return 0; try { const d=JSON.parse(raw); return Object.values(d.state?.sections||{}).reduce((n,a)=>n+a.length,0); } catch { return 0; }`)
+    .catch(() => 0);
 }
 
-// Which view is active, read from the nav button's variant class. The active tab
-// uses the "default" Button variant, whose class carries the token "bg-primary"
-// (src/components/ui/button.tsx); ghosts do not. Engine-portable, free of
-// localized text, and free of regex backslashes (a template literal drops them).
+// The store persists several times during boot (locale, milestone, intro effects).
+// A single pre-reload write races those: a late boot write clobbers our seed with
+// an empty dex. Write, then confirm it holds across two reads (~0.5s) so our value
+// is the last one before reload; rewrite if a boot write overwrote it.
+async function writeSeedUntilStable(s: Session): Promise<boolean> {
+  const value = seedValue(SEED_SECTIONS);
+  for (let i = 0; i < 15; i++) {
+    await s.evalJson(`localStorage.setItem(${JSON.stringify(STORE_KEY)}, ${JSON.stringify(value)}); return true;`);
+    await sleep(250);
+    if ((await readSeedCount(s)) !== SEED_COUNT) continue;
+    await sleep(300);
+    if ((await readSeedCount(s)) === SEED_COUNT) return true;
+  }
+  return false;
+}
+
+// Seed a known dex, engine-agnostic (localStorage, no preview-only flags), then
+// reload so the app rehydrates from it. Retry the whole cycle if a reload lands
+// empty.
+export async function seedDex(s: Session, base: string): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await s.navigate(base);
+    await waitForApp(s);
+    await waitForStoreKey(s);
+    await writeSeedUntilStable(s);
+    await s.navigate(base);
+    await waitForApp(s);
+    await waitForStoreKey(s);
+    if ((await readSeedCount(s)) === SEED_COUNT) return;
+  }
+}
+
+// Which view is active, read from the nav buttons' computed background. The active
+// tab uses the "default" Button variant with a non-transparent fill; ghosts
+// compute to transparent. The fill serializes as rgb(), rgba(), or oklab()
+// depending on the engine and state, so test for "not transparent" rather than
+// parse a color format. Engine-portable and free of localized text.
 const ACTIVE_VIEW = `
+const TRANSPARENT = new Set(['rgba(0, 0, 0, 0)', 'transparent', '']);
 const btns = [...document.querySelectorAll('[data-nav]')];
-const active = btns.filter(b => b.className.split(' ').indexOf('bg-primary') >= 0).map(b => b.getAttribute('data-nav'));
+const active = btns.filter(b => !TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim())).map(b => b.getAttribute('data-nav'));
 return { active, navs: btns.map(b => b.getAttribute('data-nav')) };
 `;
 
 async function activeView(s: Session): Promise<{ active: string[]; navs: string[] }> {
   return s.evalJson(ACTIVE_VIEW);
+}
+
+// Nav buttons animate background-color, so just after a click both the old and new
+// tab read non-transparent for a beat. Poll until the active set settles to exactly
+// the target, or time out and return the last reading.
+async function waitForActiveView(s: Session, nav: string, timeoutMs = 2500): Promise<{ active: string[]; navs: string[] }> {
+  const deadline = Date.now() + timeoutMs;
+  let last = await activeView(s);
+  while (Date.now() < deadline) {
+    if (last.active.length === 1 && last.active[0] === nav) return last;
+    await sleep(150);
+    last = await activeView(s);
+  }
+  return last;
 }
 
 // No horizontal page scroll, and the document painted a non-trivial area.
@@ -121,8 +166,7 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
   // Navigate each tab and confirm exactly it becomes active.
   for (const nav of ['view', 'analytics', 'builder'] as const) {
     await s.click(`[data-nav="${nav}"]`);
-    await new Promise((r) => setTimeout(r, 400));
-    const view = await activeView(s);
+    const view = await waitForActiveView(s, nav);
     checks.push(ok(`nav:${nav}-active`, view.active.length === 1 && view.active[0] === nav, `active=[${view.active.join(',')}]`));
     await s.screenshot(ctx.shot(`nav-${nav}`));
   }
