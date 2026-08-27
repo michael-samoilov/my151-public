@@ -1,0 +1,115 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&amp;display=swap">
+  <style>
+    body { margin: 0; font-family: 'Inter', 'Inter Variable', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #dc2626; } a:hover { color: #b91c1c; }
+    img.sprite { image-rendering: pixelated; }
+    .seg { flex: 1 1 0; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 13px; font-weight: 600; color: #737373; }
+    .tile { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .tile .tname { font-size: 12px; font-weight: 500; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #f7f7f8; color: #0a0a0a; overflow: hidden; display: flex; flex-direction: column;">
+
+  <!-- Compact app header -->
+  <div style="background: #ffffff; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; flex-shrink: 0;">
+    <div style="font-size: 20px; font-weight: 800; letter-spacing: -0.025em;"><span style="color: #dc2626;">my151</span><span style="color: #0a0a0a;">.app</span></div>
+    <div style="height: 36px; display: flex; align-items: center; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; background: #dc2626; color: #ffffff;">League</div>
+  </div>
+
+  <!-- Trainer strip -->
+  <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px 12px;">
+    <div style="width: 28px; height: 28px; border-radius: 999px; background: #6390f0; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">M</div>
+    <span style="font-size: 15px; font-weight: 600;">Marina</span>
+    <svg viewBox="0 0 200 40" style="width: 70px; height: 14px;"><rect width="200" height="40" rx="19" fill="#6390f0"></rect><image href="11.png" x="15" y="5" width="30" height="30"></image><g transform="translate(113 0) scale(0.76 1) translate(-113 0)"><text x="113" y="33" text-anchor="middle" font-size="33" font-weight="700" fill="#ffffff" font-family="Inter, system-ui, sans-serif">WATER</text></g></svg>
+    <span style="margin-left: auto; font-size: 12px; color: #737373;">5/6 lines</span>
+  </div>
+
+  <!-- Stage scrubber -->
+  <div style="display: flex; gap: 3px; padding: 4px 12px 10px 12px;">
+    <div class="seg">0</div>
+    <div class="seg">1</div>
+    <div class="seg">2</div>
+    <div class="seg">3</div>
+    <div class="seg" style="background: #dc2626; color: #ffffff;">4</div>
+    <div class="seg">5</div>
+    <div class="seg">6</div>
+    <div class="seg">7</div>
+    <div class="seg" style="font-size: 11px;">E4</div>
+    <div class="seg"><svg viewBox="0 0 20 14" style="width: 15px; height: 10px;"><path d="M1 13 L2.6 4 L7 8.4 L10 1.5 L13 8.4 L17.4 4 L19 13 Z" fill="#eab308"></path></svg></div>
+  </div>
+
+  <!-- Focused stage -->
+  <div style="margin: 0 12px; background: #ffffff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06); padding: 12px;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px;">
+      <span style="font-size: 15px; font-weight: 700;">4 badges</span>
+      <span style="font-size: 12px; color: #737373;">around Lv 31 &middot; 5 Pok&eacute;mon</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+      <div class="tile">
+        <img src="349.png" alt="Feebas" class="sprite" style="width: 84px; height: 84px;">
+        <span class="tname">Feebas</span>
+      </div>
+      <div class="tile">
+        <img src="130.png" alt="Gyarados" class="sprite" style="width: 84px; height: 84px;">
+        <span class="tname">Gyarados</span>
+      </div>
+      <div class="tile">
+        <img src="272.png" alt="Ludicolo" class="sprite" style="width: 84px; height: 84px;">
+        <span class="tname">Ludicolo</span>
+      </div>
+      <div class="tile">
+        <img src="195.png" alt="Quagsire" class="sprite" style="width: 84px; height: 84px;">
+        <span class="tname">Quagsire</span>
+      </div>
+      <div class="tile" style="background: #fef2f2; border-radius: 8px; padding: 4px 0;">
+        <img src="171.png" alt="Lanturn" class="sprite" style="width: 84px; height: 84px;">
+        <span class="tname" style="font-weight: 600;">Lanturn <span style="font-size: 9px; font-weight: 700; color: #dc2626;">ACE</span></span>
+      </div>
+      <div class="tile" style="border: 1.5px dashed #d4d4d4; border-radius: 8px; justify-content: center; min-height: 104px;">
+        <svg viewBox="0 0 16 16" style="width: 22px; height: 22px;"><circle cx="8" cy="8" r="7.5" fill="#dc2626"></circle><line x1="4.5" y1="8" x2="11.5" y2="8" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"></line><line x1="8" y1="4.5" x2="8" y2="11.5" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"></line></svg>
+        <span style="font-size: 11px; color: #737373;">Add</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Changes at this stage -->
+  <div style="margin: 10px 12px 0 12px; background: #ffffff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;">
+    <div style="font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #737373;">NEW AT THIS STAGE</div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <img src="271.png" alt="Lombre" class="sprite" style="width: 30px; height: 30px;">
+      <svg viewBox="0 0 16 16" style="width: 12px; height: 12px;"><path d="M5 3 L11 8 L5 13" fill="none" stroke="#737373" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      <img src="272.png" alt="Ludicolo" class="sprite" style="width: 30px; height: 30px;">
+      <span style="font-size: 12px; font-weight: 600;">Ludicolo</span>
+      <span style="font-size: 10px; color: #737373;">Water Stone &middot; default Lv 30</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <img src="170.png" alt="Chinchou" class="sprite" style="width: 30px; height: 30px;">
+      <svg viewBox="0 0 16 16" style="width: 12px; height: 12px;"><path d="M5 3 L11 8 L5 13" fill="none" stroke="#737373" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      <img src="171.png" alt="Lanturn" class="sprite" style="width: 30px; height: 30px;">
+      <span style="font-size: 12px; font-weight: 600;">Lanturn</span>
+      <span style="font-size: 10px; color: #737373;">Lv 27</span>
+    </div>
+  </div>
+
+  <!-- Primary action -->
+  <div style="margin-top: auto; padding: 12px 12px 24px 12px; display: flex; flex-direction: column; gap: 8px;">
+    <div style="font-size: 11px; color: #a3a3a3; text-align: center;">Drop a Pok&eacute;mon once &mdash; its evolution line fills every stage.</div>
+    <div style="height: 44px; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 8px; background: #dc2626; color: #ffffff; font-size: 15px; font-weight: 600;">
+      <svg viewBox="0 0 16 16" style="width: 16px; height: 16px;"><path d="M1 8 A7 7 0 0 1 15 8" fill="#ffffff" stroke="#ffffff" stroke-width="1.5"></path><path d="M1 8 A7 7 0 0 0 15 8" fill="none" stroke="#ffffff" stroke-width="1.5"></path><line x1="1" y1="8" x2="15" y2="8" stroke="#ffffff" stroke-width="1.5"></line><circle cx="8" cy="8" r="2.5" fill="#dc2626" stroke="#ffffff" stroke-width="1.5"></circle></svg>
+      Add Pok&eacute;mon
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&amp;display=swap">
+  <style>
+    body { margin: 0; font-family: 'Inter', 'Inter Variable', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #dc2626; } a:hover { color: #b91c1c; }
+    img.sprite { image-rendering: pixelated; }
+    .lrow { display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 12px; border-top: 1px solid #f0f0f1; }
+    .pos { width: 24px; height: 24px; border-radius: 6px; background: #f5f5f5; color: #171717; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .avatar { width: 30px; height: 30px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+    .avatar-empty { width: 30px; height: 30px; border-radius: 999px; border: 1.5px dashed #d4d4d4; flex-shrink: 0; }
+    .tname { font-size: 13px; font-weight: 600; width: 150px; }
+    .tempty { font-size: 13px; color: #a3a3a3; width: 150px; }
+    .team { display: flex; align-items: center; gap: 3px; }
+    .team img { width: 28px; height: 28px; }
+    .stage { margin-left: auto; font-size: 11px; color: #737373; white-space: nowrap; }
+    .band { display: flex; align-items: center; gap: 8px; height: 26px; padding-left: 12px; background: #f5f5f5; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #737373; }
+  </style>
+</helmet>
+<div style="width: 1440px; height: 1000px; background: #f7f7f8; color: #0a0a0a; overflow: hidden; display: flex; flex-direction: column;">
+
+  <!-- App header -->
+  <div style="background: #ffffff; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: space-between; padding: 8px 24px; flex-shrink: 0;">
+    <div style="font-size: 24px; font-weight: 800; letter-spacing: -0.025em; white-space: nowrap;"><span style="color: #dc2626;">my151</span><span style="color: #0a0a0a;">.app</span></div>
+    <div style="display: flex; align-items: center; gap: 4px;">
+      <div style="height: 36px; display: flex; align-items: center; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; color: #0a0a0a;">Build</div>
+      <div style="height: 36px; display: flex; align-items: center; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; color: #0a0a0a;">View</div>
+      <div style="height: 36px; display: flex; align-items: center; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; background: #dc2626; color: #ffffff;">League</div>
+    </div>
+  </div>
+
+  <!-- Page title row -->
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 24px 8px 24px; flex-shrink: 0;">
+    <div style="display: flex; align-items: baseline; gap: 12px;">
+      <h1 style="margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.02em;">Indigo Remix League</h1>
+      <span style="font-size: 13px; color: #737373;">14 slots &middot; 2 trainers placed &middot; drag rows to reorder &mdash; each trainer shows the team for their slot.</span>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <div style="height: 36px; display: flex; align-items: center; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; background: #f5f5f5; color: #171717;">Back to card</div>
+      <div style="height: 36px; display: flex; align-items: center; padding: 0 12px; border-radius: 6px; font-size: 14px; font-weight: 500; background: #dc2626; color: #ffffff;">Export PNG</div>
+    </div>
+  </div>
+
+  <div style="margin: 0 24px 16px 24px; background: #ffffff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06); padding: 10px 8px; flex-grow: 1; display: flex; flex-direction: column; min-height: 0;">
+
+    <div class="band" style="background: transparent;">GYM CHALLENGE <span style="font-weight: 500; letter-spacing: 0;">gym N shows its "N&minus;1 badges" team</span></div>
+
+    <div class="lrow" style="border-top: none;">
+      <span class="pos">1</span><span class="avatar-empty"></span><span class="tempty">Add a trainer card</span>
+      <span class="stage">shows: No badges &middot; Lv 12</span>
+    </div>
+    <div class="lrow">
+      <span class="pos">2</span><span class="avatar-empty"></span><span class="tempty">Add a trainer card</span>
+      <span class="stage">shows: 1 badge &middot; Lv 16</span>
+    </div>
+    <div class="lrow">
+      <span class="pos">3</span><span class="avatar-empty"></span><span class="tempty">Add a trainer card</span>
+      <span class="stage">shows: 2 badges &middot; Lv 21</span>
+    </div>
+    <div class="lrow" style="background: #fafafa; border-radius: 8px;">
+      <span class="pos" style="background: #dc2626; color: #ffffff;">4</span>
+      <span class="avatar" style="background: #6390f0; color: #ffffff;">M</span>
+      <span class="tname">Marina</span>
+      <svg viewBox="0 0 200 40" style="width: 70px; height: 14px; flex-shrink: 0;"><rect width="200" height="40" rx="19" fill="#6390f0"></rect><image href="11.png" x="15" y="5" width="30" height="30"></image><g transform="translate(113 0) scale(0.76 1) translate(-113 0)"><text x="113" y="33" text-anchor="middle" font-size="33" font-weight="700" fill="#ffffff" font-family="Inter, system-ui, sans-serif">WATER</text></g></svg>
+      <div class="team"><img src="349.png" alt="Feebas" class="sprite"><img src="130.png" alt="Gyarados" class="sprite"><img src="271.png" alt="Lombre" class="sprite"><img src="195.png" alt="Quagsire" class="sprite"><img src="170.png" alt="Chinchou" class="sprite"></div>
+      <span class="stage">shows: 3 badges &middot; Lv 26</span>
+    </div>
+    <div class="lrow">
+      <span class="pos">5</span><span class="avatar-empty"></span><span class="tempty">Add a trainer card</span>
+      <span class="stage">shows: 4 badges &middot; Lv 31</span>
+    </div>
+    <div class="lrow">
+      <span class="pos">6</span><span class="avatar-empty"></span><span class="tempty">Add a trainer card</span>
+      <span class="stage">shows: 5 badges &middot; Lv 36</span>
+    </div>
+    <div class="lrow" style="background: #fafafa; border-radius: 8px;">
+      <span class="pos" style="background: #dc2626; color: #ffffff;">7</span>
+      <span class="avatar" style="background: #b7b7ce; color: #171717;">F</span>
+      <span class="tname">Ferrum</span>
+      <svg viewBox="0 0 200 40" style="width: 70px; height: 14px; flex-shrink: 0;"><rect width="200" height="40" rx="19" fill="#b7b7ce"></rect><image href="9.png" x="15" y="5" width="30" height="30"></image><g transform="translate(113 0) scale(0.76 1) translate(-113 0)"><text x="113" y="33" text-anchor="middle" font-size="33" font-weight="700" fill="#ffffff" font-family="Inter, system-ui, sans-serif">STEEL</text></g></svg>
+      <div class="team"><img src="305.png" alt="Lairon" class="sprite"><img src="462.png" alt="Magnezone" class="sprite"><img src="777.png" alt="Togedemaru" class="sprite"><img src="303.png" alt="Mawile" class="sprite"></div>
+      <span class="stage">shows: 6 badges &middot; Lv 41</span>
+    </div>
+    <div class="lrow">
+      <span class="pos">8</span><span class="avatar-empty"></span><span class="tempty">Add a trainer card</span>
+      <span class="stage">shows: 7 badges &middot; Lv 46</span>
+    </div>
+
+    <div class="band">ELITE FOUR <span style="font-weight: 500; letter-spacing: 0;">all four show the Elite 4 row &middot; may include one Mega</span></div>
+    <div class="lrow" style="border-top: none;">
+      <span class="pos">E1</span><span class="avatar-empty"></span><span class="tempty">Add a trainer card</span>
+      <span class="stage">shows: Elite 4 &middot; Lv 54</span>
+    </div>
+    <div class="lrow">
+      <span class="pos">E2</span><span class="avatar-empty"></span><span class="tempty">Add a trainer card</span>
+      <span class="stage">shows: Elite 4 &middot; Lv 54</span>
+    </div>
+    <div class="lrow">
+      <span class="pos">E3</span><span class="avatar-empty"></span><span class="tempty">Add a trainer card</span>
+      <span class="stage">shows: Elite 4 &middot; Lv 54</span>
+    </div>
+    <div class="lrow">
+      <span class="pos">E4</span><span class="avatar-empty"></span><span class="tempty">Add a trainer card</span>
+      <span class="stage">shows: Elite 4 &middot; Lv 54</span>
+    </div>
+
+    <div class="band">CHAMPION &amp; BOSS <span style="font-weight: 500; letter-spacing: 0;">full team &middot; may include one minor Legendary</span></div>
+    <div class="lrow" style="border-top: none;">
+      <span class="pos" style="background: transparent;"><svg viewBox="0 0 20 14" style="width: 16px; height: 11px;"><path d="M1 13 L2.6 4 L7 8.4 L10 1.5 L13 8.4 L17.4 4 L19 13 Z" fill="#eab308"></path></svg></span>
+      <span class="avatar-empty"></span><span class="tempty">Add a champion</span>
+      <span class="stage">shows: Full team &middot; Lv 62</span>
+    </div>
+    <div class="lrow">
+      <span class="pos" style="background: #0a0a0a; color: #ffffff; font-size: 10px;">VS</span>
+      <span class="avatar-empty"></span><span class="tempty">Add the boss trainer</span>
+      <span class="stage" style="display: flex; align-items: center; gap: 6px;">shows: <span style="display: flex; align-items: center; gap: 4px; background: #f5f5f5; border-radius: 6px; padding: 3px 8px; color: #171717; font-weight: 600;">7 badges<svg viewBox="0 0 12 8" style="width: 8px; height: 6px;"><path d="M1 1.5 L6 6.5 L11 1.5" fill="none" stroke="#737373" stroke-width="1.8" stroke-linecap="round"></path></svg></span></span>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
