@@ -229,7 +229,6 @@ function App() {
     }
   }, [setMobileBrowserOpen]);
 
-
   // null means "no section chosen yet", i.e. plain browsing. Kept as null
   // rather than a display string so the sheet branches on state, not on text.
   const sectionName = activeSection ? sectionLabel(activeSection) : null;
