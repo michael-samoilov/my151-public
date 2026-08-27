@@ -7,6 +7,8 @@ import { BUILD_GROUPS } from '@/data/slot-template';
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
 import { cn, displayName } from '@/lib/utils';
+import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
+import { matchLocale } from '@/i18n/detect';
 
 const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
   BUILD_GROUPS.map((g) => [g.id, { name: g.name, color: g.color }]),
@@ -68,7 +70,7 @@ interface ClientRecord {
   sessions?: number;
   maxSessionMs?: number;
   sessionMs?: number[];
-  sessionLog?: { ts: number; ids: number[]; country?: string; events?: string[] }[];
+  sessionLog?: { ts: number; ids: number[]; country?: string; dev?: string; events?: string[] }[];
   maxDepth: number;
   localHour: number;
   localDow?: number;
@@ -76,6 +78,7 @@ interface ClientRecord {
   region?: string;
   tz?: string;
   lang?: string;
+  locale?: string;
   device?: string;
   os?: string;
   browser?: string;
@@ -139,6 +142,9 @@ interface ApiResponse {
     { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number }
   >;
   countries: Record<string, number>;
+  /** Raw Accept-Language tags (`en-US`, `pt-BR`, …) → user count. Folded into
+   *  shipped locales client-side, using the app's own negotiation rules. */
+  languages?: Record<string, number>;
   devices: Record<string, number>;
   os: Record<string, number>;
   hours: number[];
@@ -170,6 +176,23 @@ function fmtSecs(s: number): string {
   if (m < 60) return s % 60 ? `${m}m ${s % 60}s` : `${m}m`;
   const h = Math.floor(m / 60);
   return m % 60 ? `${h}h ${m % 60}m` : `${h}h`;
+}
+
+/**
+ * Distinct local calendar days this record was active on.
+ *
+ * Read from the session log, which timestamps each session; falls back to the
+ * first/last pair for records predating it. Capped by MAX_SESSIONS_TRACKED
+ * upstream, so for a very heavy user this is a floor, not an exact count.
+ */
+function activeDayCount(rec: ClientRecord): number {
+  const days = new Set<string>();
+  for (const s of rec.sessionLog ?? []) days.add(new Date(s.ts).toDateString());
+  if (days.size === 0) {
+    days.add(new Date(rec.firstTs).toDateString());
+    days.add(new Date(rec.lastTs).toDateString());
+  }
+  return days.size;
 }
 
 function fmtDuration(ms: number): string {
@@ -308,6 +331,36 @@ function flag(country?: string): string {
   return String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
 }
 
+/** Human-readable language for a BCP-47 tag: "es-ES" → "Spanish (es-ES)".
+ *  This is the browser's Accept-Language preference — i.e. the language the
+ *  app would auto-detect for this user — not an in-app selection. Falls back
+ *  to the raw tag when Intl can't resolve the subtag. */
+let langNames: Intl.DisplayNames | null | undefined;
+function langLabel(tag?: string): string | undefined {
+  if (!tag) return undefined;
+  if (langNames === undefined) {
+    try {
+      langNames = new Intl.DisplayNames(['en'], { type: 'language' });
+    } catch {
+      langNames = null;
+    }
+  }
+  const base = tag.split('-')[0];
+  try {
+    const name = langNames?.of(base);
+    if (name && name.toLowerCase() !== base.toLowerCase()) return `${name} (${tag})`;
+  } catch {
+    /* unresolvable subtag — fall through to the raw tag */
+  }
+  return tag;
+}
+
+/** Same primary language subtag, ignoring script/region — so a served
+ *  "zh-Hans" is not reported as disagreeing with a browser's "zh-CN". */
+function sameBaseLang(a: string, b: string): boolean {
+  return a.split('-')[0].toLowerCase() === b.split('-')[0].toLowerCase();
+}
+
 function localTime(when: number, tz?: string): string | null {
   if (!tz) return null;
   try {
@@ -362,6 +415,149 @@ function Bars({ rows }: { rows: { label: string; count: number }[] }) {
           <span className="w-8 shrink-0 tabular-nums">{r.count}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** One-row part-to-whole bar. This is the pie chart's job done in a row: the
+ *  same share-of-total read, a fraction of the height, and no sliver labels —
+ *  segments too narrow to hold a number simply don't get one. */
+function ShareBar({
+  rows,
+  total,
+}: {
+  rows: { label: string; count: number; color?: string }[];
+  total: number;
+}) {
+  if (!total) return null;
+  const pct = (n: number) => (n / total) * 100;
+  const last = rows.length - 1;
+  return (
+    <div
+      className="flex w-full h-5 rounded overflow-hidden bg-muted mb-2"
+      role="img"
+      aria-label={rows.map((r) => `${r.label} ${Math.round(pct(r.count))}%`).join(', ')}
+    >
+      {rows.map((r, i) => {
+        const share = pct(r.count);
+        return (
+          <div
+            key={r.label}
+            className="h-full flex items-center justify-center"
+            style={{
+              width: `${share}%`,
+              // Never let a real region round away to nothing.
+              minWidth: r.count > 0 ? 2 : 0,
+              backgroundColor: r.color ?? 'var(--color-primary)',
+              // A 2px cut of the card colour separates neighbouring fills. Only
+              // on segments wide enough to spare it — on a sliver the border
+              // would be the whole segment.
+              borderRight: i < last && share >= 2 ? '2px solid var(--color-card)' : undefined,
+            }}
+            title={`${r.label} · ${r.count} (${Math.round(share)}%)`}
+          >
+            {share >= 10 && (
+              <span className="text-[0.55rem] text-white tabular-nums drop-shadow-[0_0_2px_rgba(0,0,0,0.5)]">
+                {Math.round(share)}%
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+interface BarGroup {
+  label: string;
+  count: number;
+  color?: string;
+  children: { label: string; count: number }[];
+}
+
+/** Ranked bar list whose rows open to reveal their members. The long tail is
+ *  what costs the space, so it starts folded away: the groups answer "roughly
+ *  where", and a tap answers "exactly where". */
+function GroupedBars({ groups }: { groups: BarGroup[] }) {
+  const [open, setOpen] = useState<Set<string>>(new Set());
+  const max = Math.max(1, ...groups.map((g) => g.count));
+  const toggle = (label: string) =>
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(label)) next.add(label);
+      return next;
+    });
+
+  return (
+    <div className="flex flex-col gap-1">
+      {groups.map((g) => {
+        const isOpen = open.has(g.label);
+        return (
+          <div key={g.label}>
+            {/* The bar is 16px tall; the row it sits in is not. No horizontal
+                padding here: a negative margin cannot widen a `w-full` element,
+                so padding would shrink this row's content by 8px against the
+                member rows below — misaligning the tracks' right edge and
+                drawing regions on a slightly smaller scale than their own
+                members. */}
+            <button
+              type="button"
+              onClick={() => toggle(g.label)}
+              aria-expanded={isOpen}
+              className="w-full min-h-11 rounded flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
+            >
+              <span className="w-32 shrink-0 text-muted-foreground text-left truncate">
+                <span className="inline-block w-2">{isOpen ? '▾' : '▸'}</span> {g.label}
+              </span>
+              <div className="flex-1 bg-muted rounded h-4 overflow-hidden">
+                <div
+                  className="h-full rounded-r"
+                  style={{
+                    width: `${(g.count / max) * 100}%`,
+                    backgroundColor: g.color ?? 'var(--color-primary)',
+                  }}
+                />
+              </div>
+              <span className="w-8 shrink-0 tabular-nums text-right">{g.count}</span>
+            </button>
+            {isOpen && (
+              <div className="mb-1 flex flex-col">
+                {g.children.map((c) => (
+                  <div key={c.label} className="flex items-center gap-2 text-[0.7rem] min-h-6">
+                    {/* The same 8rem column the region label occupies, so both
+                        tracks share a left edge. The indent rule lives inside it
+                        as a fixed gutter, and stretches the full row height so
+                        consecutive rows join into one continuous line. */}
+                    <span className="w-32 shrink-0 self-stretch flex items-stretch gap-2 text-muted-foreground">
+                      <span className="w-3 border-l border-border/60" aria-hidden="true" />
+                      <span className="self-center truncate">{c.label}</span>
+                    </span>
+                    <div className="flex-1 bg-muted rounded h-3 overflow-hidden">
+                      {/* Members share the regions' scale, not one of their
+                          own. Scaled within a group, the largest member filled
+                          the track and so drew longer than the region it
+                          belongs to. On one scale a member can never outrun its
+                          parent, and members of different regions stay
+                          comparable. */}
+                      <div
+                        className="h-full rounded-r"
+                        style={{
+                          width: `${(c.count / max) * 100}%`,
+                          minWidth: c.count > 0 ? 2 : 0,
+                          backgroundColor: g.color ?? 'var(--color-primary)',
+                          // Members read as a lighter echo of their region.
+                          opacity: 0.55,
+                        }}
+                      />
+                    </div>
+                    <span className="w-8 shrink-0 tabular-nums text-right">{c.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1124,6 +1320,88 @@ function tallyRows(counts: Record<string, number>, withFlag = false) {
     .map(([k, n]) => ({ label: withFlag ? `${flag(k)} ${k}` : k, count: n }));
 }
 
+/** Fold the country tally into regions, largest first, each keeping its own
+ *  countries as members. */
+function regionGroups(countries: Record<string, number>): BarGroup[] {
+  const byRegion = new Map<string, { label: string; count: number }[]>();
+  for (const [cc, n] of Object.entries(countries)) {
+    const list = byRegion.get(regionOf(cc)) ?? [];
+    list.push({ label: `${flag(cc)} ${cc}`, count: n });
+    byRegion.set(regionOf(cc), list);
+  }
+  return [...byRegion.entries()]
+    .map(([label, children]) => ({
+      label,
+      count: children.reduce((sum, c) => sum + c.count, 0),
+      color: REGION_COLORS[label as Region],
+      children: children.sort((a, b) => b.count - a.count),
+    }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/**
+ * Fold raw Accept-Language tags into one row per language.
+ *
+ * Tags run through the app's own negotiation, so `en-GB`, `en-CA` and `en-US`
+ * land on the single locale they would actually be served, and `zh-CN` lands on
+ * `zh-Hans` rather than being lumped with `zh-Hant`. A tag that matches nothing
+ * we ship folds to its primary subtag instead and is marked — those rows are
+ * the localisation backlog, ranked by how many users are waiting in it.
+ */
+function languageRows(languages: Record<string, number>) {
+  const shipped = new Map<string, number>();
+  const missing = new Map<string, number>();
+  for (const [tag, n] of Object.entries(languages)) {
+    const match = matchLocale(tag);
+    if (match) {
+      shipped.set(match, (shipped.get(match) ?? 0) + n);
+    } else {
+      const base = tag.split('-')[0].toLowerCase();
+      missing.set(base, (missing.get(base) ?? 0) + n);
+    }
+  }
+  return [
+    ...[...shipped].map(([code, count]) => ({ code, count, isShipped: true })),
+    ...[...missing].map(([code, count]) => ({ code, count, isShipped: false })),
+  ].sort((a, b) => b.count - a.count);
+}
+
+/** Users per language, flagging the ones the app does not yet ship. */
+function LanguageBars({ languages }: { languages: Record<string, number> }) {
+  const rows = languageRows(languages);
+  if (!rows.length) return <p className="text-xs text-muted-foreground">No data yet.</p>;
+  const max = Math.max(1, ...rows.map((r) => r.count));
+  const unshipped = rows.filter((r) => !r.isShipped).reduce((sum, r) => sum + r.count, 0);
+  return (
+    <div className="flex flex-col gap-1">
+      {rows.map((r) => (
+        <div key={r.code} className="flex items-center gap-2 text-xs">
+          <span className="w-32 shrink-0 text-muted-foreground truncate">{langLabel(r.code)}</span>
+          <div className="flex-1 bg-muted rounded h-4 overflow-hidden">
+            <div
+              className="h-full"
+              style={{
+                width: `${(r.count / max) * 100}%`,
+                backgroundColor: r.isShipped ? 'var(--color-primary)' : 'rgb(217,119,6)',
+                opacity: 0.75,
+              }}
+            />
+          </div>
+          <span className="w-8 shrink-0 tabular-nums text-right">{r.count}</span>
+        </div>
+      ))}
+      <p className="text-[0.6rem] text-muted-foreground mt-1 leading-snug">
+        <span
+          className="inline-block w-2 h-2 rounded-[2px] align-middle mr-1"
+          style={{ backgroundColor: 'rgb(217,119,6)', opacity: 0.75 }}
+        />
+        Not shipped — {unshipped} {unshipped === 1 ? 'user' : 'users'}. From the browser's
+        Accept-Language header, which is a preference, not proof of what we served.
+      </p>
+    </div>
+  );
+}
+
 const SORT_LABELS: Record<string, string> = {
   'build-order': 'Build Order',
   regional: 'Regional',
@@ -1159,7 +1437,15 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: {
   const ctx = [
     rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
     [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
-    rec.lang,
+    // What the app actually rendered in. Records predating locale reporting
+    // have only the Accept-Language header, which is labelled as such so a
+    // browser preference is never misread as the language we served.
+    rec.locale ? `🗣 ${langLabel(rec.locale)}` : rec.lang && `🗣 ${langLabel(rec.lang)} · browser`,
+    // When the browser asked for something else, the difference is the user's
+    // own choice — a picker selection or a ?lang= link.
+    rec.locale && rec.lang && !sameBaseLang(rec.locale, rec.lang)
+      ? `browser: ${langLabel(rec.lang)}`
+      : undefined,
   ].filter(Boolean);
 
   useLayoutEffect(() => {
@@ -1199,6 +1485,16 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: {
                 <span className="block text-xs text-muted-foreground">
                   {rec.sessions ?? rec.sessionMs?.length} session
                   {(rec.sessions ?? rec.sessionMs?.length) === 1 ? '' : 's'}
+                  {/* Distinct calendar days this record was active on. Vercel
+                      counts a *daily* unique visitor, so one person returning
+                      over N days is roughly N visitors there and exactly one
+                      user here — the single most confusing gap between the two
+                      dashboards. Printing the day count makes the two numbers
+                      reconcilable instead of contradictory. */}
+                  {(() => {
+                    const days = activeDayCount(rec);
+                    return days > 1 ? ` across ${days} days` : '';
+                  })()}
                   {rec.sessionMs?.length ? `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}` : ''}
                 </span>
               )}
@@ -1442,14 +1738,23 @@ function DroppedPokemon({
 }
 
 function SessionDiffBody({ s, added, removed, rec }: {
-  s: { ts: number; ids: number[]; country?: string; events?: string[] };
+  s: { ts: number; ids: number[]; country?: string; dev?: string; events?: string[] };
   added: number[];
   removed: number[];
   rec: ClientRecord;
 }) {
+  // One cid is one browser, so a session whose client differs from the
+  // record's current one is the shared-cid red flag — shown highlighted, not
+  // hidden in a tooltip, because it means "these sessions are not all the same
+  // person".
+  const recDev = [rec.device, rec.os, rec.browser].filter((p) => p && p !== 'Unknown').join(' · ');
+  const devMismatch = Boolean(s.dev && recDev && s.dev !== recDev);
   const summary = (
     <span className="text-xs text-muted-foreground">
       {new Date(s.ts).toLocaleDateString()}{s.country ? ` · ${flag(s.country)} ${s.country}` : ''} · {s.ids.length} total
+      {s.dev && (
+        <span className={devMismatch ? 'text-amber-600 font-medium' : ''}> · {s.dev}{devMismatch ? ' ⚠' : ''}</span>
+      )}
       {added.length > 0 && <span className="text-green-600"> · +{added.length}</span>}
       {removed.length > 0 && <span className="text-destructive"> · −{removed.length}</span>}
     </span>
@@ -1884,6 +2189,24 @@ export function AdminPage() {
                 <Stat value={data.retention.returning} label="Returning" />
                 <Stat value={data.retention.activeLast7} label="Active 7d" />
               </div>
+              {(() => {
+                // Beacons the server received but could not record — the only
+                // losses it can see, counted in api/submit.ts. Silence here
+                // means missing users were lost before reaching the server.
+                const drops = Object.entries(data.funnelEvents ?? {}).filter(([k]) =>
+                  k.startsWith('submit-drop:'),
+                );
+                const total = drops.reduce((sum, [, n]) => sum + n, 0);
+                if (total === 0) return null;
+                const detail = drops
+                  .map(([k, n]) => `${k.slice('submit-drop:'.length)} ${n}`)
+                  .join(' · ');
+                return (
+                  <p className="text-[0.65rem] text-amber-600 mt-2">
+                    ⚠ {total} beacons dropped server-side ({detail})
+                  </p>
+                );
+              })()}
             </Card>
 
             {data.activity && data.activity.length > 0 && (
@@ -1972,13 +2295,28 @@ export function AdminPage() {
               />
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card title="By country">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card title="By region">
                 {Object.keys(data.countries).length ? (
-                  <Bars rows={tallyRows(data.countries, true)} />
+                  (() => {
+                    const groups = regionGroups(data.countries);
+                    const total = groups.reduce((sum, g) => sum + g.count, 0);
+                    return (
+                      <>
+                        <ShareBar rows={groups} total={total} />
+                        <GroupedBars groups={groups} />
+                        <p className="text-[0.6rem] text-muted-foreground mt-1">
+                          Tap a region for its countries.
+                        </p>
+                      </>
+                    );
+                  })()
                 ) : (
                   <p className="text-xs text-muted-foreground">No data yet.</p>
                 )}
+              </Card>
+              <Card title="By language">
+                <LanguageBars languages={data.languages ?? {}} />
               </Card>
               <Card title="By device">
                 <Bars rows={tallyRows(data.devices)} />

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { t } from '@/i18n';
 import { type DrillDownSegment } from '@/store/usePokedexStore';
 import { getPokemonByIds, getEvolutionLine, withoutSpecials } from '@/hooks/usePokemonData';
@@ -34,7 +34,7 @@ interface StageDistributionChartProps {
  * each group. Owns its own "exclude specials" toggle, container-width sizing,
  * and data derivation so the analytics dashboard doesn't carry mekko concerns.
  */
-export function StageDistributionChart({ sections, drillDownSegment, onDrillToggle }: StageDistributionChartProps) {
+function StageDistributionChartImpl({ sections, drillDownSegment, onDrillToggle }: StageDistributionChartProps) {
   const [excludeSpecialMekko, setExcludeSpecialMekko] = useState(false);
 
   // Container width, used to scale chart geometry (bar heights, legend label
@@ -47,7 +47,9 @@ export function StageDistributionChart({ sections, drillDownSegment, onDrillTogg
     if (!mekkoRef.current) return;
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width ?? 0;
-      if (w > 0) setMekkoWidth(w);
+      // Ignore sub-0.5px jitter so observer echoes don't re-render the
+      // whole chart during an interaction (same guard as MilestoneBar).
+      if (w > 0) setMekkoWidth((prev) => (Math.abs(prev - w) < 0.5 ? prev : w));
     });
     ro.observe(mekkoRef.current);
     return () => ro.disconnect();
@@ -485,3 +487,6 @@ export function StageDistributionChart({ sections, drillDownSegment, onDrillTogg
     </section>
   );
 }
+
+/** Memoized for the same reason as ButterflyChart — see that file. */
+export const StageDistributionChart = memo(StageDistributionChartImpl);

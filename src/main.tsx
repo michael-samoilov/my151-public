@@ -5,6 +5,7 @@ import '@fontsource-variable/inter/index.css'
 import './index.css'
 import App from './App.tsx'
 import { installLayoutFontSize } from './lib/layoutFontSize'
+import { whenIdle } from './lib/whenIdle';
 import { initLocale } from './i18n/bootstrap'
 import { usePokedexStore } from './store/usePokedexStore'
 
@@ -24,17 +25,6 @@ document.head.prepend(preload);
 installLayoutFontSize();
 
 // Defer Vercel Analytics + Speed Insights so they don't block first paint or INP.
-type IdleWindow = Window & {
-  requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-};
-function whenIdle(cb: () => void) {
-  const w = window as IdleWindow;
-  if (typeof w.requestIdleCallback === 'function') {
-    w.requestIdleCallback(cb, { timeout: 3000 });
-  } else {
-    setTimeout(cb, 1500);
-  }
-}
 whenIdle(() => {
   void import('@vercel/analytics').then((m) => m.inject());
   void import('@vercel/speed-insights').then((m) => m.injectSpeedInsights());

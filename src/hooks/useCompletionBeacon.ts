@@ -1,16 +1,23 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
+import { getLocale } from '@/i18n/core';
+import {
+  createBeaconDebouncer,
+  PROGRESS_DEBOUNCE_MS,
+  PROGRESS_MAX_WAIT_MS,
+  type BeaconDebouncer,
+} from '@/lib/beaconScheduler';
 
 type BeaconKind = 'progress' | 'completion' | 'export';
 
 // Don't send a 'progress' beacon for trivial/empty builds — wait until the user
 // has actually placed a few Pokemon so bots and idle loads don't create users.
 const MIN_PROGRESS_IDS = 1;
-// Debounce progress beacons so rapid edits collapse into one write.
-const PROGRESS_DEBOUNCE_MS = 4000;
+// The debounce/max-wait cadence lives in beaconScheduler.ts, exported, so the
+// budget test can hold the send rate inside the server's per-client allowance.
 
 /** Distinct evolution lines (chains) represented by a set of ids — a better
  *  measure of building effort than raw count (a 3-stage line is one decision). */
@@ -67,8 +74,9 @@ function postBeacon(
 ) {
   // Demo mode never reports to analytics — keep the sample dex out of admin stats.
   if (DEMO_MODE || isOptedOut() || ids.length === 0) return;
+  // Never null: getClientId falls back through sessionStorage to an in-memory
+  // id, so restricted-storage browsers still report instead of vanishing.
   const cid = getClientId();
-  if (!cid) return;
   // Attach any buffered funnel events to this beacon so the server can file them
   // under the current session. Export beacons don't own a session, so leave
   // events buffered for the next progress/completion beacon.
@@ -77,6 +85,10 @@ function postBeacon(
   // on the build page — the real placement, including non-default choices. Only
   // sent for build beacons (progress/completion), not the flat export view.
   // `exportSettings` records the View settings used for an export (sort/outlines).
+  // The locale the app is actually rendering in — which is not the same as the
+  // Accept-Language header the server sees. A `?lang=` or a manual pick in the
+  // language picker both outrank the browser preference, and only the client
+  // knows the outcome.
   const payload = JSON.stringify({
     cid,
     kind,
@@ -84,6 +96,7 @@ function postBeacon(
     depth: countEvoLines(ids),
     sections,
     exportSettings,
+    locale: getLocale(),
     events: events && events.length ? events : undefined,
   });
   // fetch+keepalive (not navigator.sendBeacon): iOS WebKit silently drops
@@ -109,7 +122,18 @@ function postBeacon(
 export function useCompletionBeacon() {
   const sections = usePokedexStore((s) => s.sections);
   const completedRef = useRef<string | null>(null);
-  const progressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // The debouncer owns its timer, so a re-render never cancels pending work —
+  // the old per-effect setTimeout was cleared by the effect cleanup on every
+  // sections change AND on unmount, which silently discarded the last beacon
+  // of a session (navigate away, or close within the debounce window).
+  // Built once via a lazy initialiser: stable identity for the effects below,
+  // with no ref read during render.
+  const [debouncer] = useState<BeaconDebouncer>(() =>
+    createBeaconDebouncer({
+      delayMs: PROGRESS_DEBOUNCE_MS,
+      maxWaitMs: PROGRESS_MAX_WAIT_MS,
+    }),
+  );
 
   useEffect(() => {
     const allIds = Object.values(sections).flat();
@@ -123,20 +147,34 @@ export function useCompletionBeacon() {
       }
     }
 
-    // Progress is debounced so a flurry of edits collapses into one write.
+    // Progress is debounced so a flurry of edits collapses into one write, with
+    // a latency cap: continuous editing (never a quiet gap) still reports at
+    // least every PROGRESS_MAX_WAIT_MS instead of starving until the user
+    // stops. No cleanup here — pending work survives re-renders by design.
     if (allIds.length >= MIN_PROGRESS_IDS) {
-      if (progressTimer.current) clearTimeout(progressTimer.current);
-      const idsSnapshot = allIds;
-      const sectionsSnapshot = sections;
-      progressTimer.current = setTimeout(() => {
-        postBeacon(idsSnapshot, 'progress', sectionsSnapshot);
-      }, PROGRESS_DEBOUNCE_MS);
+      debouncer.schedule(() => postBeacon(allIds, 'progress', sections));
     }
+  }, [sections, debouncer]);
 
-    return () => {
-      if (progressTimer.current) clearTimeout(progressTimer.current);
+  // Deliver the pending beacon at the moments a page can vanish. On iOS,
+  // unload/beforeunload are unreliable or never fire; visibilitychange→hidden
+  // plus pagehide is the supported pair, and fetch keepalive (already used by
+  // postBeacon) lets the request outlive the page. This is what makes a short
+  // mobile session — edit, admire, swipe away — actually reach the server.
+  useEffect(() => {
+    const flushIfHidden = () => {
+      if (document.visibilityState === 'hidden') debouncer.flush();
     };
-  }, [sections]);
+    const flush = () => debouncer.flush();
+    document.addEventListener('visibilitychange', flushIfHidden);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      document.removeEventListener('visibilitychange', flushIfHidden);
+      window.removeEventListener('pagehide', flush);
+      // Unmount delivers pending work rather than discarding it.
+      debouncer.flush();
+    };
+  }, [debouncer]);
 }
 
 /** Fire a one-shot export beacon with the current list and the View settings
@@ -158,7 +196,6 @@ const EVENT_SENT_PREFIX = 'p151-ev-';
 export function sendEventBeacon(event: string, opts?: { once?: boolean }) {
   if (DEMO_MODE || isOptedOut()) return;
   const cid = getClientId();
-  if (!cid) return;
   if (opts?.once) {
     try {
       const k = EVENT_SENT_PREFIX + event;

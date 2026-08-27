@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, lazy, Suspense } from 'react';
+import { useState, useRef, useCallback, useEffect, lazy, startTransition, Suspense } from 'react';
 import { Header } from '@/components/layout/Header';
 import type { AppView } from '@/components/layout/Header';
 import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
@@ -6,11 +6,19 @@ import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 import { DrillDownSheet, DrillDownPanel } from '@/components/analytics/DrillDownSheet';
 import { usePokedexStore } from '@/store/usePokedexStore';
 
+// Route chunks stay lazy so boot ships small, and are prefetched when the
+// main thread first goes idle (see the effect in App) so a tab switch pays
+// only for rendering. `lazy` and the prefetch share one thunk each: the
+// module registry dedupes, so whichever runs first does the work and the
+// other reuses it.
+const importAnalyticsDashboard = () => import('@/components/analytics/AnalyticsDashboard');
+const importViewPage = () => import('@/components/view/ViewPage');
+
 const AnalyticsDashboard = lazy(() =>
-  import('@/components/analytics/AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })),
+  importAnalyticsDashboard().then((m) => ({ default: m.AnalyticsDashboard })),
 );
 const ViewPage = lazy(() =>
-  import('@/components/view/ViewPage').then((m) => ({ default: m.ViewPage })),
+  importViewPage().then((m) => ({ default: m.ViewPage })),
 );
 
 function RouteFallback() {
@@ -32,11 +40,12 @@ import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
 import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
 import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
 import { isAnalyticsUnlocked } from '@/lib/milestones';
-import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { cn } from '@/lib/utils';
 import { sectionName as sectionLabel, useDocumentLocale } from '@/i18n';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { whenIdle } from '@/lib/whenIdle';
 
 declare const __BUILD_TIMESTAMP__: string;
 console.log(`[P151] build: ${__BUILD_TIMESTAMP__}`);
@@ -79,12 +88,107 @@ function App() {
   useMilestoneTracker();
   useJsErrorCounter();
   const [currentView, setCurrentView] = useState<AppView>('builder');
-  const viewMounted = useRef(false);
-  const analyticsMounted = useRef(false);
+  // State rather than refs so the idle pre-mount below can flip them without
+  // a navigation. Once true they stay true: routes mount once and live on.
+  const [viewMounted, setViewMounted] = useState(false);
+  const [analyticsMounted, setAnalyticsMounted] = useState(false);
   const mobileBrowserOpen = usePokedexStore((s) => s.mobileBrowserOpen);
   const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
   const activeSection = usePokedexStore((s) => s.activeSection);
   const drillDownSegment = usePokedexStore((s) => s.drillDownSegment);
+  const isDesktop = useIsDesktop();
+
+  // Prefetch the route chunks once boot has settled, so the first visit to
+  // Analytics or View doesn't wait on a network fetch and the chunk's module
+  // evaluation — the analytics chunk computes its national baselines at
+  // module scope, which is exactly the work that made the first tab switch
+  // slow. Analytics goes first because its evaluation is the expensive one;
+  // the view chunk takes a second idle slot so the two never form one long
+  // block. A failed prefetch is ignored: `lazy` retries the import on the
+  // actual visit. Readers who asked the browser to save data keep the old
+  // fetch-on-first-visit behavior.
+  const analyticsUnlocked = isAnalyticsUnlocked(usePokedexStore((s) => s.milestoneMax));
+  useEffect(() => {
+    const conn = (navigator as { connection?: { saveData?: boolean } }).connection;
+    if (conn?.saveData) return;
+    let cancelled = false;
+    whenIdle(() => {
+      if (cancelled) return;
+      importAnalyticsDashboard()
+        .catch(() => {})
+        .finally(() => {
+          whenIdle(() => {
+            if (cancelled) return;
+            void importViewPage()
+              .catch(() => {})
+              .finally(() => {
+                // With the chunks in hand, mount both routes into their hidden
+                // containers. The transition keeps the hidden render at low
+                // priority, so a tap on the builder interrupts it instead of
+                // waiting behind it. Analytics only pre-mounts once its tab is
+                // reachable; until then there is nothing to warm.
+                whenIdle(() => {
+                  if (cancelled) return;
+                  startTransition(() => {
+                    setViewMounted(true);
+                    if (isAnalyticsUnlocked(usePokedexStore.getState().milestoneMax)) {
+                      setAnalyticsMounted(true);
+                    }
+                  });
+                });
+              });
+          });
+        });
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Analytics can unlock after boot (the reader places their 25th Pokémon).
+  // Pre-mount it in the next idle slot after that, so the newly enabled tab
+  // is warm by the time it is tapped.
+  useEffect(() => {
+    if (!analyticsUnlocked || analyticsMounted) return;
+    let cancelled = false;
+    whenIdle(() => {
+      if (cancelled) return;
+      startTransition(() => setAnalyticsMounted(true));
+    });
+    return () => { cancelled = true; };
+  }, [analyticsUnlocked, analyticsMounted]);
+
+  // Mount the desktop browser panel's content only while a section is active,
+  // holding it through the 300ms slide-out so the closing animation keeps its
+  // content. The off-canvas panel used to stay mounted with the full
+  // unfiltered grid (~20k DOM nodes), re-rendering on every store change —
+  // the main INP cost on the builder view. Browser filter state lives in the
+  // zustand store, so unmounting loses nothing.
+  const [browserPanelMounted, setBrowserPanelMounted] = useState(false);
+  // Mount during render, not in an effect, so the panel's content is present
+  // in the same commit that starts the slide-in.
+  if (activeSection && !browserPanelMounted) setBrowserPanelMounted(true);
+  useEffect(() => {
+    if (activeSection) return;
+    const id = window.setTimeout(() => setBrowserPanelMounted(false), 300);
+    return () => window.clearTimeout(id);
+  }, [activeSection]);
+
+  // Clear all filters when the mobile browser sheet closes (fresh state on
+  // next open). Lives here, not in PokemonBrowser: the sheet unmounts its
+  // browser instance on close, and the desktop panel instance that used to
+  // catch this transition no longer stays mounted.
+  const prevMobileBrowserOpen = useRef(mobileBrowserOpen);
+  useEffect(() => {
+    if (prevMobileBrowserOpen.current && !mobileBrowserOpen) {
+      const s = usePokedexStore.getState();
+      s.setSearchQuery('');
+      s.setTypeFilter(null);
+      s.setGenerationFilter(null);
+      s.setEvoLineSizeFilter(null);
+      s.setCategoryFilter(null);
+      s.setArchetypeFilter(null);
+    }
+    prevMobileBrowserOpen.current = mobileBrowserOpen;
+  }, [mobileBrowserOpen]);
 
   // Forward wheel events from the whitespace flanking the centered build page
   // to its internal scroll container when the browser panel is closed.
@@ -116,8 +220,8 @@ function App() {
   const handleViewChange = useCallback((view: AppView) => {
     // Analytics is gated until 25 Pokémon (sticky). Guard every path here.
     if (view === 'analytics' && !isAnalyticsUnlocked(usePokedexStore.getState().milestoneMax)) return;
-    if (view === 'view') { viewMounted.current = true; sendEventBeacon('view-visit', { once: true }); }
-    if (view === 'analytics') analyticsMounted.current = true;
+    if (view === 'view') { setViewMounted(true); sendEventBeacon('view-visit', { once: true }); }
+    if (view === 'analytics') setAnalyticsMounted(true);
     setCurrentView(view);
     if (view !== 'builder') {
       setMobileBrowserOpen(false);
@@ -125,9 +229,6 @@ function App() {
     }
   }, [setMobileBrowserOpen]);
 
-  // Gates the desktop-only browser panel. 1024px is --breakpoint-md, matching the
-  // `md:` prefix the panel's own classes use, so mount and visibility agree.
-  const isDesktopPanel = useViewportAtLeast(1024);
 
   // null means "no section chosen yet", i.e. plain browsing. Kept as null
   // rather than a display string so the sheet branches on state, not on text.
@@ -148,39 +249,25 @@ function App() {
             <PokedexGrid />
           </div>
           {/* Desktop browser panel — slides in from right as an overlay.
-            *
-            * Gated on viewport width rather than left to `hidden md:flex` alone.
-            * With no section active this panel renders the full unfiltered list,
-            * which measured 16,020 of the page's 16,400 DOM nodes — 97.9% of the
-            * document on a 390px viewport, none of it ever painted. CSS hides it,
-            * but React still builds and reconciles the whole tree, so the first tap
-            * on mobile had to tear ~15,000 nodes down before it could respond.
-            *
-            * Mobile browses through MobileSheet instead, which is already mounted
-            * on demand a few lines below. Desktop keeps the panel permanently
-            * mounted: the slide-in transition needs it present to animate from
-            * translate-x-full, so do NOT extend this gate to on-demand mounting.
-            *
-            * useViewportAtLeast is the existing hook used for sprite sizing. It
-            * reads the *unzoomed* width, so iOS pinch-zoom cannot unmount the
-            * panel mid-gesture the way a raw matchMedia would risk. */}
-          {isDesktopPanel && (
-            <div className={cn(
-              'hidden md:flex absolute right-0 top-0 bottom-0 z-10',
-              'w-1/2 border-l bg-background',
-              'transition-transform duration-300 ease-out',
-              activeSection ? 'translate-x-0' : 'translate-x-full',
-            )}>
+              The wrapper stays mounted to own the transform transition; the
+              browser itself mounts only while open (plus the slide-out). */}
+          <div className={cn(
+            'hidden md:flex absolute right-0 top-0 bottom-0 z-10',
+            'w-1/2 border-l bg-background',
+            'transition-transform duration-300 ease-out',
+            activeSection ? 'translate-x-0' : 'translate-x-full',
+          )}>
+            {isDesktop && browserPanelMounted && (
               <div className="flex-1 min-w-0">
                 <PokemonBrowser />
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* View — lazy, mounted on first visit then kept alive */}
         <div className={cn('flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col', currentView !== 'view' && 'hidden')}>
-          {viewMounted.current && (
+          {viewMounted && (
             <ErrorBoundary where="view">
               <Suspense fallback={<RouteFallback />}>
                 <ViewPage />
@@ -192,7 +279,7 @@ function App() {
         {/* Analytics — lazy, mounted on first visit then kept alive */}
         <div className={cn('flex-1 flex min-h-0', currentView !== 'analytics' && 'hidden')}>
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
-            {analyticsMounted.current && (
+            {analyticsMounted && (
               <ErrorBoundary where="analytics">
                 <Suspense fallback={<RouteFallback />}>
                   <AnalyticsDashboard />
@@ -200,7 +287,7 @@ function App() {
               </ErrorBoundary>
             )}
           </div>
-          {drillDownSegment && (
+          {drillDownSegment && isDesktop && (
             <div className="hidden md:flex w-1/2 flex-shrink-0 border-l">
               <DrillDownPanel />
             </div>
@@ -213,8 +300,10 @@ function App() {
         <MobileSheet sectionName={sectionName} onClose={() => { setMobileBrowserOpen(false); usePokedexStore.getState().setActiveSection(null); }} />
       )}
 
-      {/* Analytics drill-down sheet — only on analytics view */}
-      {currentView === 'analytics' && drillDownSegment && <DrillDownSheet />}
+      {/* Analytics drill-down sheet — only on analytics view, mobile only.
+          The desktop pane above covers >=1024px; mounting both built three
+          hidden carousel panels per desktop chart tap. */}
+      {currentView === 'analytics' && drillDownSegment && !isDesktop && <DrillDownSheet />}
 
       {/* Milestone celebration nudges (analytics @25, view @100, confetti @151) */}
       <MilestoneCelebration onNavigate={handleViewChange} />

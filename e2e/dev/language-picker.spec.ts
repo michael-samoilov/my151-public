@@ -25,11 +25,19 @@ test.describe('language picker', () => {
 
       // The document language changes too — it drives the per-script font stacks
       // and tells a screen reader which voice to use.
-      await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
+      //
+      // The generous timeouts are a readiness wait, not a claim about speed.
+      // Switching waits for the locale's catalog and its names, and this runs
+      // against the dev server, which compiles the Japanese chunk on first
+      // request — seconds, before anything ships. Under two workers sharing one
+      // server that overruns the 5s default while the same test passes alone.
+      // What is asserted is that the attribute arrives and survives a reload.
+      const patient = { timeout: 20_000 };
+      await expect(page.locator('html')).toHaveAttribute('lang', 'ja', patient);
 
       // Chosen locales are pinned, so a reload keeps them.
       await page.reload();
-      await expect(page.locator('html')).toHaveAttribute('lang', 'ja');
+      await expect(page.locator('html')).toHaveAttribute('lang', 'ja', patient);
     });
   });
 

@@ -1,7 +1,6 @@
 {
   "feedback.category.bug": "Error",
-  "feedback.category.data": "Datos incorrectos",
   "feedback.category.idea": "Idea",
   "feedback.category.other": "Otro",
-  "feedback.category.translation": "Error de traducción"
+  "feedback.category.translation": "Traducción"
 }

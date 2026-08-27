@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "D=\"${CLAUDE_PROJECT_DIR:-.}\"; echo '[repo-style] Style and report rules. Apply them to all prose, visible thinking, and end-of-turn reports in this session:'; for s in google-style action-first-replies work-report; do printf '\\n---\\n\\n'; cat \"$D/.claude/skills/$s/SKILL.md\"; done",
+            "timeout": 15,
+            "statusMessage": "Loading repo style rules"
+          }
+        ]
+      }
+    ]
+  }
+}

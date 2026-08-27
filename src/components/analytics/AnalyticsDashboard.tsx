@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAnalytics, fullBaseline, filteredBaseline } from '@/hooks/useAnalytics';
 import { usePokedexStore, type DrillDownSegment } from '@/store/usePokedexStore';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -97,7 +97,7 @@ export function AnalyticsDashboard() {
   const activeBstBin = drillDownSegment?.kind === 'bst'
     ? drillDownSegment.binStart + (drillDownSegment.binEnd - drillDownSegment.binStart) / 2 : null;
 
-  const handleDrillToggle = (segment: DrillDownSegment, siblings?: DrillDownSegment[], excludeFlag?: boolean, dexId?: string | null, newOnly?: boolean) => {
+  const handleDrillToggle = useCallback((segment: DrillDownSegment, siblings?: DrillDownSegment[], excludeFlag?: boolean, dexId?: string | null, newOnly?: boolean) => {
     // If tapping same segment with same dex context, close; otherwise open new
     const sameDex = (dexId ?? null) === drillDownDexId;
     if (sameDex && drillDownSegment && drillDownSegment.kind === segment.kind &&
@@ -106,7 +106,7 @@ export function AnalyticsDashboard() {
     } else {
       openDrillDown(segment, siblings, excludeFlag, dexId, newOnly);
     }
-  };
+  }, [drillDownDexId, drillDownSegment, closeDrillDown, openDrillDown]);
 
   // "Yours" type chart — computed locally so excludeSpecial only affects this chart.
   // Returns the row data plus the pokemon count, which the chart needs as the
@@ -245,8 +245,15 @@ export function AnalyticsDashboard() {
   const isNationalSelected = selectedTypeChart === 'national';
   const selectedDex = REGIONAL_DEXES.find(d => d.id === selectedTypeChart);
 
+  // The matchup sweeps below run computeTypeDominance over the whole dex
+  // (18 types x N pokemon, two to four times). Skip them entirely unless
+  // the matchup chart or a matchup drilldown is on screen — otherwise every
+  // region-tab tap paid for a chart the user could not see.
+  const matchupVisible = typeView === 'matchup' || drillDownSegment?.kind === 'typeMatchup';
+
   // Type matchup strength: per-type average advantage score + deviation from national
   const typeMatchupData: ButterflyRow[] = useMemo(() => {
+    if (!matchupVisible) return [];
     let pokemon;
     if (selectedTypeChart === 'yours') {
       const allIds = Object.values(sections).flat();
@@ -286,11 +293,12 @@ export function AnalyticsDashboard() {
       color: TYPE_COLORS[r.type as keyof typeof TYPE_COLORS],
       icon: typeIconPath(r.type as TypeName),
     })).sort((a, b) => isNationalSelected ? b.count - a.count : b.deviation - a.deviation);
-  }, [sections, selectedTypeChart, excludeSpecial, newPokemonOnly, isNationalSelected]);
+  }, [matchupVisible, sections, selectedTypeChart, excludeSpecial, newPokemonOnly, isNationalSelected]);
 
   // Check if any permutation of the matchup chart has both neg AND pos scores (bidirectional)
   // so layout stays stable when toggling filters
   const matchupForceBidirectional = useMemo(() => {
+    if (!matchupVisible) return false;
     const checkBidi = (pokemon: NonNullable<ReturnType<typeof getPokemonById>>[]) => {
       if (pokemon.length === 0) return false;
       const results = computeTypeDominance(pokemon);
@@ -313,7 +321,7 @@ export function AnalyticsDashboard() {
     const allInDex = getPokemonByIds(dex.pokemonIds);
     const genOnly = allInDex.filter(p => p.generation === dex.generation);
     return permutations([allInDex, genOnly]);
-  }, [selectedTypeChart, isNationalSelected, sections]);
+  }, [matchupVisible, selectedTypeChart, isNationalSelected, sections]);
 
   // Type matchup siblings for drill-down navigation
   const typeMatchupSiblings = useMemo((): DrillDownSegment[] =>
@@ -321,6 +329,60 @@ export function AnalyticsDashboard() {
     [typeMatchupData]);
 
   const activeMatchupKey = drillDownSegment?.kind === 'typeMatchup' ? drillDownSegment.type : null;
+
+  // Sorted copies for each chart. These used to be inline `[...data].sort()`
+  // in JSX, which handed every chart a new array identity on every dashboard
+  // render and defeated the React.memo boundaries below.
+  const sortedTypeChartData = useMemo(() => [...activeTypeChartData].sort((a, b) =>
+    typeSortBy === 'deviation' ? b.deviation - a.deviation
+      : typeSortBy === 'label' ? a.label.localeCompare(b.label)
+      : b.count - a.count
+  ), [activeTypeChartData, typeSortBy]);
+
+  const sortedMatchupData = useMemo(() => [...typeMatchupData].sort((a, b) =>
+    typeSortBy === 'deviation' ? b.deviation - a.deviation
+      : typeSortBy === 'label' ? a.label.localeCompare(b.label)
+      : b.count - a.count
+  ), [typeMatchupData, typeSortBy]);
+
+  const sortedGenChartData = useMemo(() => [...genChartData].sort((a, b) =>
+    genSortBy === 'deviation' ? b.deviation - a.deviation
+      : genSortBy === 'count' ? b.count - a.count
+      : Number(rowKey(a)) - Number(rowKey(b))
+  ), [genChartData, genSortBy]);
+
+  const sortedShapeChartData = useMemo(() => [...shapeChartData].sort((a, b) =>
+    shapeSortBy === 'deviation' ? b.deviation - a.deviation
+      : shapeSortBy === 'count' ? b.count - a.count
+      : a.label.localeCompare(b.label)
+  ), [shapeChartData, shapeSortBy]);
+
+  // Stable bar-click handlers — inline arrows would give each memoized chart
+  // a new prop identity on every dashboard render.
+  const handleTypeBarClick = useCallback((type: string) => {
+    if (selectedTypeChart === 'yours') {
+      handleDrillToggle({ kind: 'type', type }, typeSiblings, excludeSpecial);
+    } else {
+      handleDrillToggle({ kind: 'type', type }, regionalTypeSiblings, excludeSpecial, selectedTypeChart, newPokemonOnly);
+    }
+  }, [selectedTypeChart, handleDrillToggle, typeSiblings, regionalTypeSiblings, excludeSpecial, newPokemonOnly]);
+
+  const handleMatchupBarClick = useCallback((type: string) => {
+    if (selectedTypeChart === 'yours') {
+      handleDrillToggle({ kind: 'typeMatchup', type }, typeMatchupSiblings, excludeSpecial);
+    } else {
+      handleDrillToggle({ kind: 'typeMatchup', type }, typeMatchupSiblings, excludeSpecial, selectedTypeChart, newPokemonOnly);
+    }
+  }, [selectedTypeChart, handleDrillToggle, typeMatchupSiblings, excludeSpecial, newPokemonOnly]);
+
+  const handleGenBarClick = useCallback((key: string) => {
+    const generation = Number(key);
+    if (!isNaN(generation)) handleDrillToggle({ kind: 'generation', generation }, genSiblings);
+  }, [handleDrillToggle, genSiblings]);
+
+  const handleShapeBarClick = useCallback((shape: string) => {
+    handleDrillToggle({ kind: 'shape', shape }, shapeSiblings);
+  }, [handleDrillToggle, shapeSiblings]);
 
   // Sync drilldown filters when analytics filter chips change while a drilldown is open
   useEffect(() => {
@@ -588,11 +650,7 @@ export function AnalyticsDashboard() {
             <div className="px-6">
             {typeView === 'distribution' ? (
               <ButterflyChart
-                data={[...activeTypeChartData].sort((a, b) =>
-                  typeSortBy === 'deviation' ? b.deviation - a.deviation
-                    : typeSortBy === 'label' ? a.label.localeCompare(b.label)
-                    : b.count - a.count
-                )}
+                data={sortedTypeChartData}
                 rowHeight={16}
                 hideDeviation={isNationalSelected}
                 fixedMaxCount={unfilteredMaxCount}
@@ -606,19 +664,7 @@ export function AnalyticsDashboard() {
                 // every percentage. Pass the pokemon count so each bar reads
                 // as "share of the dex".
                 countDenominator={isNationalSelected ? activeTypeChartTotal : undefined}
-                onBarClick={(type) => {
-                  if (selectedTypeChart === 'yours') {
-                    handleDrillToggle({ kind: 'type', type }, typeSiblings, excludeSpecial);
-                  } else {
-                    handleDrillToggle(
-                      { kind: 'type', type },
-                      regionalTypeSiblings,
-                      excludeSpecial,
-                      selectedTypeChart,
-                      newPokemonOnly,
-                    );
-                  }
-                }}
+                onBarClick={handleTypeBarClick}
                 activeKey={
                   (selectedTypeChart === 'yours' && drillDownIsYours) ||
                   (selectedTypeChart !== 'yours' && drillDownDexId === selectedTypeChart)
@@ -627,11 +673,7 @@ export function AnalyticsDashboard() {
               />
             ) : typeMatchupData.length > 0 ? (
               <ButterflyChart
-                data={[...typeMatchupData].sort((a, b) =>
-                  typeSortBy === 'deviation' ? b.deviation - a.deviation
-                    : typeSortBy === 'label' ? a.label.localeCompare(b.label)
-                    : b.count - a.count
-                )}
+                data={sortedMatchupData}
                 rowHeight={16}
                 scoreMode
                 hideDeviation={isNationalSelected}
@@ -639,23 +681,7 @@ export function AnalyticsDashboard() {
                 sortBy={typeSortBy}
                 onSortChange={setTypeSortBy}
                 labelHeader={t('chart.header.type')}
-                onBarClick={(type) => {
-                  if (selectedTypeChart === 'yours') {
-                    handleDrillToggle(
-                      { kind: 'typeMatchup', type },
-                      typeMatchupSiblings,
-                      excludeSpecial,
-                    );
-                  } else {
-                    handleDrillToggle(
-                      { kind: 'typeMatchup', type },
-                      typeMatchupSiblings,
-                      excludeSpecial,
-                      selectedTypeChart,
-                      newPokemonOnly,
-                    );
-                  }
-                }}
+                onBarClick={handleMatchupBarClick}
                 activeKey={drillDownSegment?.kind === 'typeMatchup' ? activeMatchupKey : null}
               />
             ) : (
@@ -674,21 +700,14 @@ export function AnalyticsDashboard() {
           </p>
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <ButterflyChart
-              data={[...genChartData].sort((a, b) =>
-                genSortBy === 'deviation' ? b.deviation - a.deviation
-                  : genSortBy === 'count' ? b.count - a.count
-                  : Number(rowKey(a)) - Number(rowKey(b))
-              )}
+              data={sortedGenChartData}
               rowHeight={28}
               disableEmptyRows
               sortBy={genSortBy}
               onSortChange={setGenSortBy}
               labelHeader={t('chart.header.gen')}
               labelSortable
-              onBarClick={(key) => {
-                const generation = Number(key);
-                if (!isNaN(generation)) handleDrillToggle({ kind: 'generation', generation }, genSiblings);
-              }}
+              onBarClick={handleGenBarClick}
               activeKey={activeGenKey}
             />
           </div>
@@ -702,11 +721,7 @@ export function AnalyticsDashboard() {
           </p>
           <div className="bg-card rounded-lg shadow-elevated p-4">
             <ButterflyChart
-              data={[...shapeChartData].sort((a, b) =>
-                shapeSortBy === 'deviation' ? b.deviation - a.deviation
-                  : shapeSortBy === 'count' ? b.count - a.count
-                  : a.label.localeCompare(b.label)
-              )}
+              data={sortedShapeChartData}
               rowHeight={22}
               disableEmptyRows
               sortBy={shapeSortBy}
@@ -714,7 +729,7 @@ export function AnalyticsDashboard() {
               labelHeader={t('chart.header.shape')}
               labelWidthBase={80}
               iconScale={SHAPE_ICON_SCALE}
-              onBarClick={(shape) => handleDrillToggle({ kind: 'shape', shape }, shapeSiblings)}
+              onBarClick={handleShapeBarClick}
               activeKey={activeShapeKey}
             />
           </div>

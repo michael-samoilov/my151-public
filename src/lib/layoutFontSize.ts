@@ -40,6 +40,24 @@ function apply() {
 }
 
 /**
+ * The root font-size this module last applied, in px.
+ *
+ * Read this instead of `getComputedStyle(document.documentElement)` when a
+ * component needs to convert rem to px during render — the computed-style
+ * read forces a style recalculation on the interaction that triggered the
+ * render. Falls back to a computed read only before the first `apply()`.
+ */
+export function getAppliedRootFontSizePx(): number {
+  if (lastFontSize) return parseFloat(lastFontSize) || 16;
+  if (typeof document === 'undefined') return 16;
+  try {
+    return parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  } catch {
+    return 16;
+  }
+}
+
+/**
  * Install listeners and set initial root font-size. Idempotent — safe to
  * call once at app bootstrap. Also safe no-op during SSR.
  */

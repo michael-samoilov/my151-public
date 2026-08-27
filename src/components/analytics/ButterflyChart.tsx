@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { memo, useRef, useEffect, useState } from 'react';
 import { scaleBand, scaleLinear } from 'd3-scale';
 import { cn } from '@/lib/utils';
 import { t } from '@/i18n';
@@ -77,16 +77,17 @@ interface ButterflyChartProps {
   textClass?: string;
 }
 
-export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
+function ButterflyChartImpl({ data, rowHeight: rowHeightProp, referenceDeviations, hideDeviation, fixedMaxCount, fixedDevRight, onBarClick, activeKey, scoreMode, forceBidirectionalCount, sortBy, onSortChange, disableEmptyRows, countDenominator, labelHeader, labelSortable, labelWidthBase = 42, iconScale = 1, hideLabelText, iconColAspect = 1, heightScale = 1, iconFillsRow = false, textClass }: ButterflyChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
-  const [hoveredSort, setHoveredSort] = useState<'count' | 'deviation' | 'label' | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width ?? 0;
-      if (w > 0) setWidth(w);
+      // Ignore sub-0.5px jitter so observer echoes don't re-render the
+      // whole chart during an interaction (same guard as MilestoneBar).
+      if (w > 0) setWidth((prev) => (Math.abs(prev - w) < 0.5 ? prev : w));
     });
     ro.observe(containerRef.current);
     return () => ro.disconnect();
@@ -296,11 +297,9 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
               fontWeight={600}
               fill={labelSortable && sortBy === 'label' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
               letterSpacing="0.05em"
-              className={cn(textClass ?? 'text-xs', labelSortable && onSortChange && 'cursor-pointer')}
-              textDecoration={labelSortable && (sortBy === 'label' || hoveredSort === 'label') ? 'underline' : 'none'}
+              className={cn(textClass ?? 'text-xs', labelSortable && onSortChange && 'cursor-pointer hover:underline')}
+              textDecoration={labelSortable && sortBy === 'label' ? 'underline' : 'none'}
               onClick={labelSortable && onSortChange ? () => onSortChange('label') : undefined}
-              onMouseEnter={labelSortable && onSortChange ? () => setHoveredSort('label') : undefined}
-              onMouseLeave={labelSortable && onSortChange ? () => setHoveredSort(null) : undefined}
             >
               {labelHeader}
             </text>
@@ -317,11 +316,9 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             fontWeight={600}
             fill={sortBy === 'count' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
-            className={cn(textClass ?? 'text-xs', onSortChange && 'cursor-pointer')}
-            textDecoration={sortBy === 'count' || hoveredSort === 'count' ? 'underline' : 'none'}
+            className={cn(textClass ?? 'text-xs', onSortChange && 'cursor-pointer hover:underline')}
+            textDecoration={sortBy === 'count' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('count') : undefined}
-            onMouseEnter={onSortChange ? () => setHoveredSort('count') : undefined}
-            onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
             {scoreMode ? t('chart.header.score') : t('chart.header.count')}
           </text>
@@ -335,11 +332,9 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             fontWeight={600}
             fill={sortBy === 'deviation' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
-            className={cn(textClass ?? 'text-[0.6875rem]', onSortChange && 'cursor-pointer')}
-            textDecoration={sortBy === 'deviation' || hoveredSort === 'deviation' ? 'underline' : 'none'}
+            className={cn(textClass ?? 'text-[0.6875rem]', onSortChange && 'cursor-pointer hover:underline')}
+            textDecoration={sortBy === 'deviation' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('deviation') : undefined}
-            onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
-            onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
             <tspan x={devSectionStart + zeroX - 5} dy="-1.1em">{scoreMode ? t('chart.header.weakerHere1') : t('chart.header.underIndexed1')}</tspan>
             <tspan x={devSectionStart + zeroX - 5} dy="1.1em">{scoreMode ? t('chart.header.weakerHere2') : t('chart.header.underIndexed2')}</tspan>
@@ -353,11 +348,9 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
             fontWeight={600}
             fill={sortBy === 'deviation' ? 'var(--color-destructive)' : 'var(--color-muted-foreground)'}
             letterSpacing="0.05em"
-            className={cn(textClass ?? 'text-[0.6875rem]', onSortChange && 'cursor-pointer')}
-            textDecoration={sortBy === 'deviation' || hoveredSort === 'deviation' ? 'underline' : 'none'}
+            className={cn(textClass ?? 'text-[0.6875rem]', onSortChange && 'cursor-pointer hover:underline')}
+            textDecoration={sortBy === 'deviation' ? 'underline' : 'none'}
             onClick={onSortChange ? () => onSortChange('deviation') : undefined}
-            onMouseEnter={onSortChange ? () => setHoveredSort('deviation') : undefined}
-            onMouseLeave={onSortChange ? () => setHoveredSort(null) : undefined}
           >
             <tspan x={devSectionStart + zeroX + 5} dy="-1.1em">{scoreMode ? t('chart.header.strongerHere1') : t('chart.header.overIndexed1')}</tspan>
             <tspan x={devSectionStart + zeroX + 5} dy="1.1em">{scoreMode ? t('chart.header.strongerHere2') : t('chart.header.overIndexed2')}</tspan>
@@ -577,3 +570,8 @@ export function ButterflyChart({ data, rowHeight: rowHeightProp, referenceDeviat
     </div>
   );
 }
+
+/** Memoized: the dashboard re-renders on every chip tap, and rebuilding this
+ *  chart's ~155 SVG nodes each time was a large part of its interaction cost.
+ *  Callers pass memoized data and stable callbacks so the boundary holds. */
+export const ButterflyChart = memo(ButterflyChartImpl);

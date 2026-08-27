@@ -52,6 +52,12 @@ export function FeedbackButton({ route }: { route: string }) {
           setOpen(true);
         }}
         aria-label={t('feedback.title')}
+        // A locale-independent handle for the tests. Its accessible name is
+        // translated, which is right for a screen reader and useless for a spec
+        // that opens this in nine languages — the alternative is a regex of
+        // every translation of "report a problem", which silently stops
+        // matching the first time one of them is reworded.
+        data-feedback-open
         className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
       >
         <Bug className="w-4 h-4" />

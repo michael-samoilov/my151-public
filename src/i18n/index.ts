@@ -11,6 +11,7 @@ export type { Locale } from './config';
 
 export {
   getLocale,
+  getVersion,
   setCatalog,
   formatList,
   formatListToParts,

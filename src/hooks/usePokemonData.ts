@@ -7,14 +7,29 @@ import { normalizeSearch, speciesSearchText, useNamesVersion } from '@/i18n';
 
 const pokemonList = pokemonData as Pokemon[];
 
+// Reverse index of archetype membership, built by walking each archetype's
+// own id list once. The previous shape — a `.filter()` over every archetype
+// with an `.includes()` per pokemon — was ~2.2M array scans at import time,
+// on the eager chunk that gates the first interaction. Iterating ARCHETYPES
+// in the outer loop keeps each pokemon's archetype order unchanged.
+// A few archetypes list the same id twice, so each list is de-duplicated
+// against its own last entry — the old `.filter()` also yielded one entry
+// per archetype.
+const archetypesByPokemonId = new Map<number, string[]>();
+for (const archetype of ARCHETYPES) {
+  for (const id of archetype.pokemonIds) {
+    const list = archetypesByPokemonId.get(id);
+    if (!list) archetypesByPokemonId.set(id, [archetype.id]);
+    else if (list[list.length - 1] !== archetype.id) list.push(archetype.id);
+  }
+}
+
 // Build lookup maps
 const pokemonById = new Map<number, Pokemon>();
 const pokemonByChain = new Map<number, Pokemon[]>();
 for (const p of pokemonList) {
   // Attach archetypes
-  p.archetypes = ARCHETYPES
-    .filter(a => a.pokemonIds.includes(p.id))
-    .map(a => a.id);
+  p.archetypes = archetypesByPokemonId.get(p.id) ?? [];
   pokemonById.set(p.id, p);
 
   // Group by evolution chain

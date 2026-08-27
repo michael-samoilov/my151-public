@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bug, Check, Languages, Lightbulb, MessageCircle, Table2 } from 'lucide-react';
+import { Bug, Check, Languages, Lightbulb, MessageCircle } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { useSheetKeyboard } from '@/components/ui/sheetKeyboard';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/i18n';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
@@ -15,7 +16,7 @@ import type { NoArgKey } from '@/i18n';
 /**
  * The report form.
  *
- * Categories are chips, not a `<select>`: five options is below the width where
+ * Categories are chips, not a `<select>`: four options is below the width where
  * a dropdown earns its collapse, and a chip row shows the whole vocabulary at a
  * glance — which matters here, because seeing "Wrong translation" listed is
  * what tells a user that reporting one is wanted.
@@ -30,6 +31,16 @@ import type { NoArgKey } from '@/i18n';
  * message, which is their initiative rather than our prompt.
  */
 
+// Four, so the row fits on one line and the space the second line was taking
+// goes to the field instead. "Data looks wrong" is the one dropped: it is the
+// hardest of the five to tell apart from "Bug" from the outside — a wrong type
+// on a Pokémon is honestly both — and anything it would have caught arrives
+// under Bug or Other with the same message attached.
+//
+// `'data'` stays in `FeedbackCategory` and in the API's accepted set. Reports
+// already filed under it are in Redis and still have to read back in the admin
+// view; narrowing the type would only make old rows unrepresentable.
+//
 // `NoArgKey` rather than `MessageKey`: a plain `MessageKey` annotation widens
 // each entry to the whole key union, including keys that take placeholders, and
 // then `t(key)` rightly demands arguments none of these have.
@@ -37,7 +48,6 @@ const CATEGORIES: { id: FeedbackCategory; key: NoArgKey; Icon: typeof Bug }[] = 
   { id: 'bug', key: 'feedback.category.bug', Icon: Bug },
   { id: 'translation', key: 'feedback.category.translation', Icon: Languages },
   { id: 'idea', key: 'feedback.category.idea', Icon: Lightbulb },
-  { id: 'data', key: 'feedback.category.data', Icon: Table2 },
   { id: 'other', key: 'feedback.category.other', Icon: MessageCircle },
 ];
 
@@ -66,14 +76,25 @@ function FeedbackForm({
   route,
   initialCategory,
   error,
+  fill,
   onDone,
 }: {
   route: string;
   initialCategory: FeedbackCategory;
   error?: FeedbackContext['error'];
+  /**
+   * Lay the form out to its container's height rather than to its content, so
+   * the textarea absorbs whatever is left over. Set by the sheet, where the
+   * container height is the space above the keyboard; left off on desktop,
+   * where the card is content-sized and there is nothing to absorb.
+   */
+  fill?: boolean;
   onDone: () => void;
 }) {
   const t = useT();
+  // Whether the sheet is currently sharing the screen with a keyboard. Drives
+  // the compact spacing below — see the comment on the form's className.
+  const tight = useSheetKeyboard();
   const [category, setCategory] = useState<FeedbackCategory>(initialCategory);
   const [message, setMessage] = useState('');
   const [website, setWebsite] = useState(''); // honeypot
@@ -115,7 +136,27 @@ function FeedbackForm({
     <form
       // pt-3, not 0: the chips carry an outline, and with the form flush to the
       // header above it the two strokes met and read as one broken rule.
-      className="px-4 pt-3 pb-4 flex flex-col gap-3"
+      //
+      // `h-full` only resolves when the sheet has a definite height, which it
+      // takes on exactly when a keyboard is open. Any other time this is a no-op
+      // and the form sizes to its content as before.
+      //
+      // Not `min-h-full`, which looks like the safer version of the same idea
+      // and is not the same idea at all. A minimum lets the form grow to its
+      // content, so the column never runs out of room, so nothing ever shrinks
+      // — the field keeps its four rows and pushes the button off the end,
+      // which is the whole bug. Compression is the point, and `h-full` is what
+      // asks for it.
+      //
+      // The padding and the gaps halve while a keyboard is up. Compression
+      // alone leaves the field at about two lines on a 15 Pro, because every
+      // pixel it gives up is the only pixel anything gives up — and whitespace
+      // between five fixed rows is worth less than a message you can read back.
+      // Spacing is the first thing to spend and it is spent only while the
+      // screen is a third of itself.
+      className={`px-4 flex flex-col ${tight ? 'pt-1.5 pb-2 gap-1.5' : 'pt-3 pb-4 gap-3'}${
+        fill ? ' h-full' : ''
+      }`}
       onSubmit={async (e) => {
         e.preventDefault();
         if (tooShort || state === 'sending') return;
@@ -137,7 +178,13 @@ function FeedbackForm({
             type="button"
             onClick={() => setCategory(id)}
             aria-pressed={category === id}
-            className={`inline-flex items-center gap-1.5 px-2.5 min-h-9 rounded-full border text-xs font-medium cursor-pointer transition-colors ${
+            // `px-2` and `min-h-8` rather than `px-2.5`/`min-h-9`: four chips
+            // have to clear 390px on one line, and the vertical trim buys the
+            // field another 4px. 32px is under Apple's 44px target, but the row
+            // is a set of adjacent chips with 6px between them rather than an
+            // isolated control, and losing a whole second row to reach 36 costs
+            // the field more than it buys the thumb.
+            className={`inline-flex items-center gap-1.5 px-2 min-h-8 rounded-full border text-xs font-medium cursor-pointer transition-colors ${
               category === id
                 ? 'border-primary bg-primary/10 text-primary'
                 : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/30'
@@ -149,24 +196,68 @@ function FeedbackForm({
         ))}
       </div>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-xs font-medium">{t('feedback.message.label')}</span>
-        <textarea
-          autoFocus
-          required
-          rows={4}
-          maxLength={MAX_MESSAGE}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder={t('feedback.message.placeholder')}
-          // `text-base` below `md`, not `text-sm`: iOS Safari zooms the whole
-          // page in when a field smaller than 16px takes focus, and the root
-          // font size floors at 16px, so `text-sm` lands at 14. The field is
-          // also autofocused, so the zoom fires on open rather than on tap.
-          // Same rule the shared `Input` component already follows.
-          className="w-full rounded-md border bg-background px-2 py-1.5 text-base md:text-sm resize-y"
-        />
+      {/* The field is the one element allowed to give. Everything else in this
+          column is a fixed size, so when a keyboard takes two thirds of the
+          screen the field shrinks and the disclosure and the button keep their
+          places instead of being pushed below the fold.
+
+          Label and field are siblings of the chips and the button rather than a
+          wrapped pair, and that is load-bearing rather than tidying. Wrapped,
+          the field is a flex item of a flex item, and the outer box's automatic
+          minimum height is its *content's* minimum — where a textarea
+          contributes its `rows` height, not its `min-height`. So the wrapper
+          refuses to shrink to the field's real floor and pushes the button off
+          the end. Add `min-h-0` to unstick it and it shrinks straight past the
+          floor instead, the field spills out of a parent that no longer
+          contains it, and it paints over the disclosure and the button. Those
+          are the only two settings the wrapper has, and both are wrong.
+
+          Flattened, the field is a flex item carrying an explicit `min-height`,
+          which replaces the automatic minimum outright. It compresses to
+          exactly its floor and no further, and there is no second box left to
+          disagree with it. */}
+      <label htmlFor="feedback-message" className="text-xs font-medium">
+        {t('feedback.message.label')}
       </label>
+      <textarea
+        id="feedback-message"
+        autoFocus
+        required
+        // `rows` is the height with room to spare, `flex-1` grows it into
+        // whatever the column has left over, and `min-h-14` is the floor it
+        // compresses to when a keyboard takes that room away — two lines, below
+        // which the field stops reading as somewhere to write.
+        rows={4}
+        maxLength={MAX_MESSAGE}
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder={t('feedback.message.placeholder')}
+        // `overscroll-contain` is what keeps a drag inside the field from
+        // becoming a drag on the page. A textarea is a scroll container, so
+        // once its own scroll reaches an end iOS hands the rest of the gesture
+        // to the nearest ancestor that can take it — which, with a keyboard up,
+        // is the document, and the sheet is positioned against the viewport the
+        // document is now moving under. Reading back what you typed pulled the
+        // sheet off the bottom of the screen.
+        //
+        // The negative top margin walks back the gap the form puts between its
+        // rows, so the field sits close under the label it belongs to rather
+        // than at the column's own rhythm. It has to track that gap rather than
+        // be a constant: a fixed `-mt-2` is larger than the compact `gap-1.5`,
+        // which pulls the field 2px *over* its label. The audit caught exactly
+        // that, which is the shape of every bug on this surface so far — a
+        // number that was right beside the number it was paired with, and wrong
+        // beside the one that replaced it.
+        //
+        // `text-base` below `md`, not `text-sm`: iOS Safari zooms the whole
+        // page in when a field smaller than 16px takes focus, and the root
+        // font size floors at 16px, so `text-sm` lands at 14. The field is
+        // also autofocused, so the zoom fires on open rather than on tap.
+        // Same rule the shared `Input` component already follows.
+        className={`w-full min-h-14 flex-1 overscroll-contain rounded-md border bg-background px-2 py-1.5 text-base md:text-sm resize-y ${
+          tight ? '-mt-0.5' : '-mt-2'
+        }`}
+      />
 
       {/* Honeypot. Off-screen rather than display:none (which some bots skip),
           hidden from assistive tech, and unreachable by keyboard — so only an
@@ -231,15 +322,21 @@ export function FeedbackSheet({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const form = (
-    <FeedbackForm route={route} initialCategory={initialCategory} error={error} onDone={onClose} />
+  const form = (fill?: boolean) => (
+    <FeedbackForm
+      route={route}
+      initialCategory={initialCategory}
+      error={error}
+      fill={fill}
+      onDone={onClose}
+    />
   );
 
   // Mobile: the app's bottom sheet, same as every other mobile surface.
   if (!isDesktop) {
     return (
       <BottomSheet onClose={onClose} title={t('feedback.title')} closeLabel={t('feedback.title')}>
-        {form}
+        {form(true)}
       </BottomSheet>
     );
   }
@@ -256,7 +353,7 @@ export function FeedbackSheet({
         className="fixed bottom-16 end-3 z-[150] w-80 max-h-[80vh] overflow-y-auto overscroll-contain flex flex-col rounded-lg border bg-card shadow-xl"
       >
         <div className="px-4 pt-3 text-sm font-semibold">{t('feedback.title')}</div>
-        {form}
+        {form()}
       </div>
     </>
   );

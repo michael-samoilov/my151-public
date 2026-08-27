@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { SheetKeyboardContext } from './sheetKeyboard';
 
 /** px drag distance past which the release dismisses the sheet. */
 const DISMISS_THRESHOLD = 120;
@@ -171,24 +172,75 @@ export function BottomSheet({
     };
   }, []);
   useEffect(() => {
+    // Where the current touch began, so a touchmove can be classified as a
+    // horizontal or a vertical gesture. A wheel event carries its own deltas
+    // and needs no history.
+    let startX = 0;
+    let startY = 0;
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (!t) return;
+      startX = t.clientX;
+      startY = t.clientY;
+    };
+
+    /** Can this element scroll along the axis the gesture is moving? */
+    const scrollsOnAxis = (n: HTMLElement, horizontal: boolean) => {
+      const cs = getComputedStyle(n);
+      return horizontal
+        ? (cs.overflowX === 'auto' || cs.overflowX === 'scroll') && n.scrollWidth > n.clientWidth
+        : (cs.overflowY === 'auto' || cs.overflowY === 'scroll') && n.scrollHeight > n.clientHeight;
+    };
+
+    // Keeps the page behind the sheet still: a gesture that no scroller inside
+    // the sheet can consume would otherwise chain through to the document.
+    // The axis matters. Testing overflowY alone blocked sideways panning of
+    // the filter chip rows, which scroll on X and have nothing to scroll on Y,
+    // so the walk found no taker and swallowed the gesture.
     const swallow = (e: Event) => {
       const overlay = overlayRef.current;
       if (!overlay) return;
+
+      let horizontal: boolean;
+      if (e.type === 'wheel') {
+        const we = e as WheelEvent;
+        horizontal = Math.abs(we.deltaX) > Math.abs(we.deltaY);
+      } else {
+        const t = (e as TouchEvent).touches[0];
+        if (!t) return;
+        horizontal = Math.abs(t.clientX - startX) > Math.abs(t.clientY - startY);
+      }
+
       for (let n = e.target as Node | null; n && n !== overlay; n = n.parentElement) {
         if (!(n instanceof HTMLElement)) continue;
-        const oy = getComputedStyle(n).overflowY;
-        if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight) return;
+        if (scrollsOnAxis(n, horizontal)) return;
       }
       e.preventDefault();
     };
     const opts = { passive: false, capture: true } as const;
+    document.addEventListener('touchstart', onStart, { passive: true, capture: true });
     document.addEventListener('wheel', swallow, opts);
     document.addEventListener('touchmove', swallow, opts);
     return () => {
+      document.removeEventListener('touchstart', onStart, { capture: true });
       document.removeEventListener('wheel', swallow, opts);
       document.removeEventListener('touchmove', swallow, opts);
     };
   }, []);
+
+  /**
+   * The gap above the sheet exists so the grab handle stays clear of the
+   * browser chrome. With a keyboard open there is nothing to spend it on: every
+   * pixel between the chrome and the keyboard is form, and holding 56 of them
+   * empty is what pushed the disclosure and the submit button below the fold
+   * even after the sheet itself stopped hiding behind the keyboard.
+   *
+   * `innerHeight` is the layout viewport, which iOS does not shrink for the
+   * keyboard, so the difference between the two *is* the keyboard. 80px of
+   * slack keeps browser-chrome collapse from reading as one.
+   */
+  const keyboardOpen = viewport !== null && viewport.height < window.innerHeight - 80;
+  const gap = keyboardOpen ? Math.min(topGap, 8) : topGap;
 
   return (
     <div
@@ -220,17 +272,28 @@ export function BottomSheet({
         style={{
           // `100dvh` accounts for browser chrome but not the keyboard, so the
           // visible height wins whenever the visual viewport has reported one.
-          height: size === 'full' ? `calc(100% - ${topGap}px)` : undefined,
-          maxHeight: viewport ? `${Math.max(0, viewport.height - topGap)}px` : `calc(100dvh - ${topGap}px)`,
+          //
+          // A keyboard also switches a 'content'-sized sheet to a definite
+          // height. That is what lets a form inside it lay itself out to the
+          // space available — a percentage height needs a definite ancestor, and
+          // with `maxHeight` alone the chain stays `auto` and the form can only
+          // overflow and scroll, which is the fold the tail was hiding behind.
+          height: size === 'full' || keyboardOpen ? `calc(100% - ${gap}px)` : undefined,
+          maxHeight: viewport ? `${Math.max(0, viewport.height - gap)}px` : `calc(100dvh - ${gap}px)`,
           transform: `translateY(${dragY}px)`,
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
       >
-        {/* Grab handle — drag down or tap to close. Min 44px touch target per Apple HIG. */}
+        {/* Grab handle — drag down or tap to close. Min 44px touch target per
+            Apple HIG, which is why the padding tightens rather than collapses
+            when a keyboard is open: the header is still something to aim at,
+            just not something to spend 24px of a third of a screen on. */}
         <button
           type="button"
           aria-label={closeLabel}
-          className="w-full flex flex-col items-center justify-center py-3 cursor-grab active:cursor-grabbing touch-none"
+          className={`w-full flex flex-col items-center justify-center cursor-grab active:cursor-grabbing touch-none ${
+            keyboardOpen ? 'py-1.5' : 'py-3'
+          }`}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -243,7 +306,9 @@ export function BottomSheet({
         {/* Its own scroll container: a long form scrolls here, and
             `overscroll-contain` stops that scroll continuing into the app once
             it reaches an end. */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+          <SheetKeyboardContext.Provider value={keyboardOpen}>{children}</SheetKeyboardContext.Provider>
+        </div>
       </div>
     </div>
   );

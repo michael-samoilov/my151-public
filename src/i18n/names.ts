@@ -133,19 +133,29 @@ export function formLabel(appId: number): string | null {
  * suffix is exactly the part a text overflow eats first. `full` is the whole
  * thing spelled out, for the accessible name and the tooltip.
  *
- * Falls back to the app's own slug until the name catalog lands — a frame or
- * two — which is what the tile rendered permanently before this.
+ * `pending` says the catalog has not landed yet. It is reported rather than
+ * papered over because the slug this falls back to is not a translation of
+ * anything — it is `mr-mime` and `bulbasaur`, in English, whatever language was
+ * asked for. Rendering it is how a Japanese user saw Latin text turn into
+ * Japanese a beat later, which reads as the app correcting a mistake.
+ *
+ * The window is usually a frame or two and is not always: the catalog is
+ * fetched after first paint, so a slow connection stretches it to however long
+ * the fetch takes. Callers show a placeholder for the duration; `name` stays
+ * populated so nothing crashes on it, but it is not for display.
  */
 export interface PokemonLabel {
   name: string;
   mark: string | null;
   full: string;
+  /** The catalog has not arrived. `name` holds the slug and must not be shown. */
+  pending: boolean;
 }
 
 export function pokemonLabel(appId: number, slug: string): PokemonLabel {
   const catalog = loaded.get(getLocale());
   const species = speciesName(appId);
-  if (!catalog || !species) return { name: slug, mark: null, full: slug };
+  if (!catalog || !species) return { name: slug, mark: null, full: slug, pending: true };
   const mark = catalog.formMark[appId] ?? null;
   const descriptor = catalog.forms[appId];
   return {
@@ -154,6 +164,7 @@ export function pokemonLabel(appId: number, slug: string): PokemonLabel {
     // "Raichu — Alolan Form". An em dash rather than a bracket because this is
     // read aloud as often as it is seen.
     full: descriptor ? `${species} — ${descriptor}` : species,
+    pending: false,
   };
 }
 

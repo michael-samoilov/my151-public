@@ -26,13 +26,28 @@ Full STE compliance needs the approved-word dictionary, which is proprietary and
 4. Use 5 items maximum per list. Split a longer list into "now" and "later".
 5. State an error and its fix directly. Restate the current state each turn.
 
+The five rules are the summary. The full rule set is vendored at `.claude/skills/action-first-replies/SKILL.md` (MIT, by Ayoub Ghriss). The SessionStart hook injects it each session.
+
 Never drop these as tangents or preamble:
 
-- A request for approval before a production merge.
+- A request for approval before a tier 2 production merge (see Deployment).
 - A correction to an earlier statement that was wrong.
 - A defect or risk found in the work, including my own.
 
 Both source documents list the same exception: confirmation of a risky action, and real ambiguity, outrank brevity.
+
+## Style guide
+
+Write all prose in [Google developer documentation style](https://developers.google.com/style). This covers responses, visible thinking, commit messages, PR text, code comments, and docs. The distilled rules are in `.claude/skills/google-style/SKILL.md`. A SessionStart hook in `.claude/settings.json` injects them into context each session. If the hook output is absent, read that file before your first response. For word-level questions, read `word-list.md` in the same directory.
+
+Two boundaries:
+
+- The Response style section wins when the two guides conflict.
+- App UI strings and i18n content are out of scope. Game terminology and the `docs/i18n` fixtures stay authoritative there.
+
+## Work reports
+
+End every turn that changes anything with the five-part report in `.claude/skills/work-report/SKILL.md`: Changed, Merge, Verified, Tradeoffs, You test. The SessionStart hook injects the template each session. "Verified" means measured — root-cause tests, or screenshots from the running app — never inferred from code alone. For UI changes, send a before-and-after side by side so review needs no preview deploy.
 
 ## Build Verification
 
@@ -54,21 +69,72 @@ CI runs on every branch push and PR, but it can only *block* a merge if branch p
 
 ## Deployment
 
-**The app has real users. `claude/pokedex-region-builder-AviYF` is production — never push to it without explicit approval in the current conversation.**
+**The app has real users. `claude/pokedex-region-builder-AviYF` is production.** The approval rule has one purpose: keep an untested, user-visible change out of the live app before it is ready to show users. It guards the browser, not the repo. A change a browser never receives carries no such risk, so it ships automatically. Two tiers decide whether a merge needs approval.
 
-Work on a preview branch by default:
+### Tier 1: merge to production automatically
+
+A change is tier 1 when **every file in the diff** sits outside what a browser receives. Those paths are:
+
+- `.claude/` and `.github/`
+- `docs/`, `e2e/`, `scripts/`, and `*.test.ts` files
+- `CLAUDE.md`, `README.md`, and other root Markdown
+
+A tier 1 change is not finished on the work branch. Finishing it means it reaches production. Run `npm run build`, then merge into `claude/pokedex-region-builder-AviYF`, push it, and check out the work branch again. Do this as the normal last step of the work. Do not ask, do not stop at the work branch, and do not call the production merge optional. Report the merge in the work report.
+
+### Tier 2: ask first
+
+Everything else needs the user's explicit approval in the current conversation. One file outside the tier 1 list puts the whole change in tier 2. Tier 2 covers:
+
+- `src/`, `api/`, `public/`, and `index.html`
+- `vite.config.ts`, `vercel.json`, `package.json`, and the other build config
+- **Meta tags, `robots.txt`, `sitemap.xml` and other crawler-only files.** They are lower-risk, not zero-risk, since "it's only SEO/config" is exactly how unapproved changes reach users.
+
+Approval is per-change: shipping one change is not standing permission for the next.
+
+Work a tier 2 change like this:
 
 1. Commit to the work branch and push it (`git push -u origin <work-branch>`). Vercel builds a **preview deployment** for any pushed branch — that is where changes get verified.
 2. Report the preview to the user and let them look. Nothing reaches production on your own initiative.
-3. Merge into and push `claude/pokedex-region-builder-AviYF` **only after the user says to ship it.** Approval is per-change: shipping one change is not standing permission for the next.
+3. Merge into and push `claude/pokedex-region-builder-AviYF` **only after the user says to ship it.**
 4. **Check out the work branch again immediately after that push.** A merge leaves you on the production branch, so the next commit lands there silently — one `git push` away from an unapproved deploy. Run `git rev-parse --abbrev-ref HEAD` before any commit that follows a merge.
 
-When in doubt, push the preview branch and ask. A change sitting on a preview branch costs nothing; an unapproved production deploy is seen by users.
+Step 4 applies to a tier 1 merge too. The branch you end on does not depend on the tier.
 
-Two notes on scope, since "it's only SEO/config" is exactly how unapproved changes reach users:
+When the tier is unclear, treat the change as tier 2 and ask. A change sitting on a preview branch costs nothing; an unapproved production deploy is seen by users.
 
-- **Meta tags, `robots.txt`, `sitemap.xml` and other crawler-only files are still production changes.** They are lower-risk, not zero-risk, and still need approval before merging.
-- **Check whether a change is user-visible before calling it invisible.** `theme-color` tints mobile browser chrome; markup inside `#root` renders until React mounts. The app currently runs in **light** mode — the `.dark` block in `index.css` exists but nothing ever applies the class — so dark-themed additions will mismatch the live UI.
+**Check whether a change is user-visible before calling it invisible.** `theme-color` tints mobile browser chrome; markup inside `#root` renders until React mounts. The app currently runs in **light** mode — the `.dark` block in `index.css` exists but nothing ever applies the class — so dark-themed additions will mismatch the live UI.
+
+## pstack
+
+This repo vendors [open-pstack](https://github.com/ericlitman/open-pstack), a
+port of Lauren Tan's pstack to Claude Code. The skills live in
+`.claude/skills/`; the subagents live in `.claude/agents/`. Provenance, license,
+and resync steps are in `.claude/vendor/open-pstack/README.md`.
+
+Run `/poteto-mode` before a non-trivial code change. It reads the task, picks a
+playbook, and routes to the leaf skills. Enter a specific skill directly when
+you already know the shape of the work:
+
+| Skill | Use it when |
+| --- | --- |
+| `/how` | You need to know how a subsystem works before you change it. |
+| `/architect` | The change crosses a module boundary and the types come first. |
+| `/interrogate` | You want other models to attack a design or a diff. |
+| `/tdd` | The bug has a cheap, obvious failing test. |
+| `/deslop` | You are about to commit and want the AI tells removed. |
+
+The 21 `principle-*` skills are model-invocable only. They do not appear as
+slash commands. `/setup-pstack` configures the multi-model panel, which needs
+the Codex and Grok command-line tools plus Bun.
+
+Three notes on how pstack sits next to the rest of this file:
+
+1. This file wins. pstack's own precedence rule says user instructions beat the
+   pstack mandate.
+2. pstack's `prove it works` principle and the Work reports section agree:
+   measure the result, do not infer it from the code.
+3. pstack does not change the Deployment tiers. A tier 2 change still needs
+   your approval, whatever skill produced it.
 
 ## Responsive sizing
 

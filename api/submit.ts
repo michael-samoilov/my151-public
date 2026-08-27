@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
+import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import {
   redis,
   getClientIp,
@@ -23,10 +24,14 @@ const burstLimiter = new Ratelimit({
   analytics: false,
   prefix: 'rl:burst',
 });
-// Per-client write cap so one browser can't spam updates.
+// Per-client write cap so one browser can't spam updates. Sized in
+// _limits.ts from the client's own maximum send rate — a cap below that
+// ceiling silences the most engaged users mid-session, which is a data-loss
+// bug, not protection. (The old 120/day cut off anyone building for more than
+// half an hour; a unit test now pins cadence × cap so they can't drift apart.)
 const clientLimiter = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(120, '1 d'),
+  limiter: Ratelimit.slidingWindow(SUBMIT_CLIENT_DAILY_CAP, '1 d'),
   analytics: false,
   prefix: 'rl:client',
 });
@@ -222,6 +227,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       sections?: unknown;
       exportSettings?: unknown;
       events?: unknown;
+      locale?: unknown;
     };
 
     // Client id: a UUID minted once per browser. Length-bounded to avoid abuse.
@@ -247,15 +253,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? Math.max(0, Math.min(151, Math.round(body.depth)))
         : ids.length;
 
+    // Count the paths where a genuine beacon is dropped server-side, into the
+    // funnel hash the admin already reads. "My friend's session never showed
+    // up" is otherwise undiagnosable: these are the only drops the server can
+    // see, so they must be the drops the server records. Counted only after a
+    // rate-limit check has been paid for, so the counter itself is not a free
+    // write for a hostile client.
+    // The two limiters are separate keys, learned the hard way: a single
+    // 'rate-limit' bucket showed 31 drops with no way to tell whether an IP
+    // was bursting or real users were exhausting the per-client allowance.
+    const countDrop = async (
+      reason: 'rate-limit-ip' | 'rate-limit-client' | 'cap' | 'contention',
+    ) => {
+      try {
+        await redis.hincrby('funnel', `submit-drop:${reason}`, 1);
+      } catch {
+        // the drop still happens; only its bookkeeping failed
+      }
+    };
+
     // Rate limit per IP + per client before touching state.
     const ip = getClientIp(req);
     const burst = await burstLimiter.limit(ip);
     if (!burst.success) {
+      await countDrop('rate-limit-ip');
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
     const perClient = await clientLimiter.limit(cid);
     if (!perClient.success) {
+      await countDrop('rate-limit-client');
       res.setHeader('Retry-After', Math.ceil((perClient.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
@@ -268,6 +295,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const secs = validSections(body.sections);
     const settings = kind === 'export' ? validExportSettings(body.exportSettings) : undefined;
     const newEvents = validEvents(body.events);
+    // The locale the client actually rendered in. Shape-checked rather than
+    // matched against a locale list, so this endpoint doesn't have to track
+    // which locales the app currently ships.
+    const locale =
+      typeof body.locale === 'string' && /^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$/i.test(body.locale)
+        ? body.locale
+        : undefined;
 
     // Merge this beacon into an existing record (or seed a new one). Pure given
     // `existing`, so it can be re-run on retry after a concurrent write.
@@ -335,10 +369,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const prevEvents = newSession || log.length === 0 ? [] : log[log.length - 1].events ?? [];
       const mergedEvents = [...prevEvents];
       for (const e of newEvents) if (!mergedEvents.includes(e)) mergedEvents.push(e);
+      // Stamp each session with the client that sent it. One cid is normally
+      // one browser, so this never varies — which is exactly why it earns its
+      // bytes: a record whose sessions alternate between, say, Windows·Edge and
+      // iOS·Safari is two people behind one cid (shared or synced browser), and
+      // this makes that visible in the dashboard instead of unfalsifiable.
+      const devStamp = [ua.device, ua.os, ua.browser].filter((p) => p && p !== 'Unknown').join(' · ');
       const entry = {
         ts: now,
         ids,
         country: geo.country,
+        ...(devStamp ? { dev: devStamp } : {}),
         ...(mergedEvents.length ? { events: mergedEvents } : {}),
       };
       if (newSession || log.length === 0) log.push(entry);
@@ -365,6 +406,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       rec.region = geo.region;
       rec.tz = geo.tz;
       rec.lang = getLang(req);
+      // Only overwrite when the client sent one, so a beacon from a client that
+      // predates locale reporting doesn't blank an already-recorded locale.
+      if (locale) rec.locale = locale;
       rec.device = ua.device;
       rec.os = ua.os;
       rec.browser = ua.browser;
@@ -413,7 +457,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Cap distinct clients; new clients past the cap are dropped.
       if (!existing) {
         const count = await redis.hlen(CLIENTS_KEY);
-        if (count >= MAX_CLIENTS) return res.status(200).json({ ok: true, capped: true });
+        if (count >= MAX_CLIENTS) {
+          await countDrop('cap');
+          return res.status(200).json({ ok: true, capped: true });
+        }
       }
 
       const rec = mergeRecord(existing, effectiveCid);
@@ -428,6 +475,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     // Exhausted retries under heavy contention; report success (best-effort
     // analytics) rather than erroring the client.
+    await countDrop('contention');
     return res.status(200).json({ ok: true, contended: true });
   } catch (err) {
     console.error('Submit error:', err);
