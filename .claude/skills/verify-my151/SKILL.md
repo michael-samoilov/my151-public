@@ -33,11 +33,15 @@ string.
 | desktop Firefox | Gecko | Mozilla-tarball Firefox over Marionette |
 
 Two jobs, kept separate. **Personas** (Blink + init-script stubs for iOS Safari,
-iOS Chrome, Android) prove the app's platform-sniff code branches; they are Blink,
-so they never prove engine rendering. The **real-engine lanes** (WebKit, Gecko)
-prove rendering, layout, and scroll on the actual engine. Every proof asserts its
-persona/engine first (`READ_PERSONA` + `assertPersona`), so a run can never
-silently verify the wrong surface.
+iOS Chrome, Android) assert a platform identity and a mobile viewport, so they can
+prove platform-sniff code branches; they are Blink, so they never prove engine
+rendering. Today this app has no platform-conditional code (only
+`feedbackContext.ts` reads the UA, for telemetry), so the personas currently prove
+identity and viewport, not a branch. Their payoff is forward-looking, for the
+multi-tool buildout. The **real-engine lanes** (WebKit, Gecko) prove rendering,
+layout, and scroll on the actual engine. Every proof asserts its persona/engine
+first (`READ_PERSONA` + `assertPersona`), so a run can never silently verify the
+wrong surface.
 
 ## Launch
 
@@ -89,7 +93,24 @@ Flags: `--base <ref>` (diff), `--surfaces a,b`, `--no-build` (reuse an existing
 `dist/`). The standard suite per surface is boot (React mounts), no horizontal
 overflow, the localStorage seed oracle round-trips, the seeded grid renders
 sprites, each nav tab activates (read from the nav button's computed background),
-and the builder container scrolls.
+the builder container scrolls, and a zero-tolerance JS-error tripwire
+(`runtime:no-js-errors`). A blanket overlap audit is deliberately not a standard
+check, because the dense sprite grid has intentional micro-overlaps; port
+`e2e/support/layoutAudit.ts` for a scoped audit of one container in a future tool. The tripwire is authoritative on Blink, where host-side
+`pageerror` and the ErrorBoundary's `[P151] crash` console log are captured, and
+best-effort on WebKit and Gecko via a post-load page trap. A real-placement check
+(`placement:real-add-grows-store`) drives a live add on desktop Blink and skips
+until a `data-testid="verify-evo-card"` lands on the browser card.
+
+**Prove the verifier itself.** `harness/discriminate.ts` is a mutation test: it
+injects a known regression (boot throw, async throw, wide element, broken persist)
+into a worktree, builds, runs the Blink suite, and asserts the matching check
+fails, with the clean tree passing. Run it after changing the harness. A verifier
+that always says PASS is worse than none.
+
+```
+node_modules/.bin/tsx .claude/skills/verify-my151/harness/discriminate.ts
+```
 
 **Find what actually changed first.** Before trusting a run, diff the served tree
 against the base (`git status`, `git diff HEAD -- src`) and add checks for the
@@ -119,10 +140,14 @@ network). State plainly what is device-only.
 ## Cleanup
 
 `verify.ts` stops both preview servers and removes the base worktree in a
-`finally`, and each engine session kills only the driver and browser it started
-(never by process name) and keeps evidence. If a run is killed mid-flight, clear
-strays with `pkill -9 -f WebKitWebDriver; pkill -9 -f MiniBrowser; pkill -9 -f
-'firefox.*marionette'`, then `git worktree prune`. Evidence under `evidence/`
+`finally`. Each engine session kills its own process group by pid (the Blink
+browser, the Gecko Firefox, and the WebKit driver spawned detached so its group
+includes the internally launched MiniBrowser), never a name match. The one
+exception is a documented recovery: `openWebKit` clears a stray driver left by a
+crashed prior run with a name-based `pkill`, because WebKit is single-session and a
+leaked process blocks the port. Evidence is kept. If a run is killed mid-flight,
+clear strays with `pkill -9 -f WebKitWebDriver; pkill -9 -f MiniBrowser; pkill -9
+-f 'firefox.*marionette'`, then `git worktree prune`. Evidence under `evidence/`
 survives every cleanup.
 
 ## Helpers
@@ -130,6 +155,7 @@ survives every cleanup.
 - `harness/setup-engines.sh` installs WebKit + Firefox (shown above).
 - `harness/doctor.ts` reports the engine matrix (shown above).
 - `harness/verify.ts` is the driver CLI (shown above).
+- `harness/discriminate.ts` is the mutation test for the verifier (shown above).
 - `harness/lib/engines.ts` is the three-engine Session layer; `personas.ts` the
   Blink identities; `flows.ts` the standard suite; `servers.ts` build+preview and
   worktree isolation; `evidence.ts` the report writer.

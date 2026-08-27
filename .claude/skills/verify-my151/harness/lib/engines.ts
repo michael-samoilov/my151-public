@@ -17,6 +17,21 @@ import { PERSONAS, type PersonaName } from './personas.ts';
 export type EngineName = 'blink' | 'webkit' | 'gecko';
 export const W3C_ELEMENT = 'element-6066-11e4-a52e-4f735466cecf';
 
+// Page-side error trap for the engines with no host-side error events (WebKit,
+// Gecko). Injected after each navigate; best-effort, since it runs post-load and
+// misses errors thrown before injection. Blink uses host-side events instead and
+// is authoritative. `[P151] crash` is the ErrorBoundary's stable crash log.
+const ERROR_TRAP = `
+window.__verifyErrors = window.__verifyErrors || [];
+if (!window.__verifyTrap) {
+  window.__verifyTrap = true;
+  addEventListener('error', (e) => window.__verifyErrors.push('error: ' + (e.message || e.error)));
+  addEventListener('unhandledrejection', (e) => window.__verifyErrors.push('rejection: ' + e.reason));
+  const orig = console.error;
+  console.error = function () { try { window.__verifyErrors.push('console.error: ' + Array.prototype.join.call(arguments, ' ')); } catch (_) {} return orig.apply(console, arguments); };
+}
+return true;`;
+
 export const ENGINE_PATHS = {
   webkitDriver: 'WebKitWebDriver',
   webkitBrowser: '/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1/MiniBrowser',
@@ -34,6 +49,7 @@ export interface Session {
   evalJson<T = unknown>(body: string): Promise<T>;
   click(selector: string): Promise<void>;
   screenshot(file: string): Promise<void>;
+  errors(): Promise<string[]>;
   close(): Promise<void>;
 }
 
@@ -48,6 +64,7 @@ class BlinkSession implements Session {
     private browser: Browser,
     private ctx: BrowserContext,
     private page: Page,
+    private collected: string[],
   ) {}
   async navigate(url: string) { await this.page.goto(url, { waitUntil: 'load', timeout: 30000 }); }
   async evalJson<T>(body: string): Promise<T> {
@@ -56,6 +73,7 @@ class BlinkSession implements Session {
   }
   async click(selector: string) { await this.page.click(selector, { timeout: 10000 }); }
   async screenshot(file: string) { await this.page.screenshot({ path: file }); }
+  async errors() { return [...this.collected]; }
   async close() { await this.ctx.close().catch(() => {}); await this.browser.close().catch(() => {}); }
 }
 
@@ -83,7 +101,10 @@ export async function openBlink(persona: PersonaName | null): Promise<Session> {
   );
   if (p) await ctx.addInitScript(p.initScript);
   const page = await ctx.newPage();
-  return new BlinkSession(persona, browser, ctx, page);
+  const collected: string[] = [];
+  page.on('pageerror', (e) => collected.push(`pageerror: ${e.message}`));
+  page.on('console', (m) => { if (m.type() === 'error' && m.text().includes('[P151] crash')) collected.push(`crash: ${m.text()}`); });
+  return new BlinkSession(persona, browser, ctx, page, collected);
 }
 
 // ---------- WebKit (WebKitGTK, raw W3C WebDriver) ----------
@@ -108,7 +129,15 @@ function w3c(method: string, port: number, urlPath: string, body?: unknown): Pro
   });
 }
 
-async function killWebKit() {
+function killGroup(driver: ChildProcess) {
+  if (driver.pid) { try { process.kill(-driver.pid, 'SIGKILL'); return; } catch { /* fall back */ } }
+  driver.kill('SIGKILL');
+}
+
+// Startup recovery only: clear a stray driver or browser left by a crashed prior
+// run. WebKit is single-session, so a leaked process blocks the port. Normal
+// teardown kills the session's own process group by pid (killGroup), never by name.
+async function clearStrayWebKit() {
   await new Promise((r) => { spawn('pkill', ['-9', '-f', 'WebKitWebDriver']).on('exit', r); });
   await new Promise((r) => { spawn('pkill', ['-9', '-f', 'MiniBrowser']).on('exit', r); });
 }
@@ -117,7 +146,8 @@ class WebKitSession implements Session {
   readonly engine = 'webkit' as const;
   readonly persona = null;
   constructor(private driver: ChildProcess, private sid: string) {}
-  async navigate(url: string) { await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/url`, { url }); }
+  private async injectTrap() { await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/execute/sync`, { script: ERROR_TRAP, args: [] }).catch(() => {}); }
+  async navigate(url: string) { await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/url`, { url }); await this.injectTrap(); }
   async evalJson<T>(body: string): Promise<T> {
     const r = await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/execute/sync`, { script: `return JSON.stringify((function(){ ${body} })());`, args: [] });
     return JSON.parse(r.value as string) as T;
@@ -132,18 +162,19 @@ class WebKitSession implements Session {
     const r = await w3c('GET', ENGINE_PATHS.webkitPort, `/session/${this.sid}/screenshot`);
     fs.writeFileSync(file, Buffer.from(r.value as string, 'base64'));
   }
-  async close() { await w3c('DELETE', ENGINE_PATHS.webkitPort, `/session/${this.sid}`).catch(() => {}); this.driver.kill('SIGKILL'); await killWebKit(); }
+  async errors() { return this.evalJson<string[]>(`return window.__verifyErrors || [];`).catch(() => [] as string[]); }
+  async close() { await w3c('DELETE', ENGINE_PATHS.webkitPort, `/session/${this.sid}`).catch(() => {}); killGroup(this.driver); }
 }
 
 export async function openWebKit(): Promise<Session> {
-  await killWebKit(); // one session at a time; clear any stragglers first
-  const driver = spawn('xvfb-run', ['-a', ENGINE_PATHS.webkitDriver, `--port=${ENGINE_PATHS.webkitPort}`], { stdio: ['ignore', 'pipe', 'pipe'] });
+  await clearStrayWebKit();
+  const driver = spawn('xvfb-run', ['-a', ENGINE_PATHS.webkitDriver, `--port=${ENGINE_PATHS.webkitPort}`], { stdio: ['ignore', 'pipe', 'pipe'], detached: true });
   let ready = false;
   for (let i = 0; i < 40 && !ready; i++) {
     await sleep(250);
     try { const s = await w3c('GET', ENGINE_PATHS.webkitPort, '/status'); if (s.status === 200) ready = true; } catch { /* not up yet */ }
   }
-  if (!ready) { driver.kill('SIGKILL'); throw new Error('WebKitWebDriver never became ready'); }
+  if (!ready) { killGroup(driver); throw new Error('WebKitWebDriver never became ready'); }
   const caps = { capabilities: { alwaysMatch: { browserName: 'MiniBrowser', 'webkitgtk:browserOptions': { binary: ENGINE_PATHS.webkitBrowser, args: ['--automation'] } } } };
   const sess = await w3c('POST', ENGINE_PATHS.webkitPort, '/session', caps);
   const sid = (sess.value as { sessionId: string }).sessionId;
@@ -185,11 +216,13 @@ class GeckoSession implements Session {
     if (resp[2]) throw new Error(`${name}: ${JSON.stringify(resp[2])}`);
     return resp[3] as T;
   }
-  async navigate(url: string) { await this.cmd('WebDriver:Navigate', { url }); }
+  private async injectTrap() { await this.cmd('WebDriver:ExecuteScript', { script: ERROR_TRAP, args: [] }).catch(() => {}); }
+  async navigate(url: string) { await this.cmd('WebDriver:Navigate', { url }); await this.injectTrap(); }
   async evalJson<T>(body: string): Promise<T> {
     const r = await this.cmd<{ value: string }>('WebDriver:ExecuteScript', { script: `return JSON.stringify((function(){ ${body} })());`, args: [] });
     return JSON.parse(r.value) as T;
   }
+  async errors() { return this.evalJson<string[]>(`return window.__verifyErrors || [];`).catch(() => [] as string[]); }
   async click(selector: string) {
     const found = await this.cmd<{ value: Record<string, string> }>('WebDriver:FindElement', { using: 'css selector', value: selector });
     const id = found.value[W3C_ELEMENT];

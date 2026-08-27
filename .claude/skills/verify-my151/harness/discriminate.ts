@@ -1,0 +1,98 @@
+// Mutation test for the verifier itself. Inject a known regression into a
+// worktree, build, and run the Blink suite; the named check must fail. A verifier
+// that always says PASS is worse than none, so this proves discrimination. Run
+// from the repo root:
+//   npx tsx .claude/skills/verify-my151/harness/discriminate.ts
+import fs from 'node:fs';
+import path from 'node:path';
+import { openBlink } from './lib/engines.ts';
+import { runStandardSuite } from './lib/flows.ts';
+import { addWorktree, buildIn, startPreview } from './lib/servers.ts';
+import { Evidence, type Check } from './lib/evidence.ts';
+
+const PORT = 4182;
+
+function patch(dir: string, rel: string, find: string, replace: string) {
+  const file = path.join(dir, rel);
+  const src = fs.readFileSync(file, 'utf8');
+  if (!src.includes(find)) throw new Error(`anchor not found in ${rel}: ${find.slice(0, 40)}`);
+  fs.writeFileSync(file, src.replace(find, replace));
+}
+
+const IMPORT = `import { StrictMode }`; // stable anchor near the top of src/main.tsx
+
+interface Mutation { name: string; expectFail: string; expectPassStill?: string; apply: (dir: string) => void; }
+
+const MUTATIONS: Mutation[] = [
+  {
+    name: 'boot-throw',
+    expectFail: 'boot:react-mounted',
+    apply: (dir) => patch(dir, 'src/main.tsx', IMPORT, `throw new Error('verify-injected-boot');\n${IMPORT}`),
+  },
+  {
+    name: 'async-throw',
+    expectFail: 'runtime:no-js-errors',
+    expectPassStill: 'boot:react-mounted',
+    apply: (dir) => patch(dir, 'src/main.tsx', IMPORT, `queueMicrotask(() => { throw new Error('verify-injected-async'); });\n${IMPORT}`),
+  },
+  {
+    name: 'wide-element',
+    expectFail: 'layout:no-horizontal-overflow',
+    apply: (dir) => patch(dir, 'src/main.tsx', IMPORT, `queueMicrotask(() => { const d = document.createElement('div'); d.style.cssText = 'position:relative;width:5000px;height:1px'; document.body.appendChild(d); });\n${IMPORT}`),
+  },
+  {
+    name: 'break-persist',
+    expectFail: 'oracle:seed-persisted',
+    apply: (dir) => patch(dir, 'src/store/usePokedexStore.ts', 'sections: state.sections,', 'sections: {},'),
+  },
+];
+
+async function suiteAt(url: string, ev: Evidence, label: string): Promise<Check[]> {
+  const s = await openBlink(null);
+  try { return await runStandardSuite(s, null, { base: url, surface: `discriminate-${label}`, shot: (l) => ev.shotPath(label, l) }); }
+  finally { await s.close(); }
+}
+
+async function runVariant(ev: Evidence, label: string, mutate: ((dir: string) => void) | null): Promise<Check[]> {
+  const wt = addWorktree('HEAD');
+  let preview: { stop: () => void } | null = null;
+  try {
+    if (mutate) mutate(wt.dir);
+    await buildIn(wt.dir);
+    preview = await startPreview(wt.dir, PORT);
+    return await suiteAt((preview as { url: string }).url, ev, label);
+  } finally {
+    preview?.stop();
+    wt.cleanup();
+  }
+}
+
+async function main() {
+  const ev = new Evidence(`${new Date().toISOString().replace(/[:.]/g, '-')}-discriminate`);
+  const rows: { variant: string; verdict: string; detail: string }[] = [];
+
+  const control = await runVariant(ev, 'control', null);
+  const controlFails = control.filter((c) => c.status === 'fail').map((c) => c.name);
+  const controlOk = controlFails.length === 0;
+  rows.push({ variant: 'control (clean)', verdict: controlOk ? 'PASS as expected' : 'BROKEN', detail: controlOk ? 'all checks pass' : `unexpected fails: ${controlFails.join(', ')}` });
+  console.log(`control: ${controlOk ? 'PASS (clean tree is green)' : 'BROKEN: ' + controlFails.join(', ')}`);
+
+  for (const m of MUTATIONS) {
+    const checks = await runVariant(ev, m.name, m.apply);
+    const target = checks.find((c) => c.name === m.expectFail);
+    const caught = target?.status === 'fail';
+    const granular = !m.expectPassStill || checks.find((c) => c.name === m.expectPassStill)?.status === 'pass';
+    const good = caught && granular;
+    rows.push({ variant: m.name, verdict: good ? 'CAUGHT' : 'MISSED', detail: `${m.expectFail}=${target?.status ?? 'absent'}${m.expectPassStill ? `, ${m.expectPassStill}=${checks.find((c) => c.name === m.expectPassStill)?.status}` : ''}` });
+    console.log(`${m.name.padEnd(16)} ${good ? 'CAUGHT' : 'MISSED'}  (${m.expectFail} => ${target?.status ?? 'absent'})`);
+  }
+
+  const allGood = controlOk && rows.filter((r) => r.variant !== 'control (clean)').every((r) => r.verdict === 'CAUGHT');
+  const report = { verdict: allGood ? 'DISCRIMINATES' : 'FAILED', rows };
+  fs.writeFileSync(path.join(ev.dir, 'discriminate.json'), JSON.stringify(report, null, 2));
+  console.log(`\n${allGood ? 'DISCRIMINATES: clean passes, every injected regression is caught by its check.' : 'FAILED: a mutation slipped through or the clean tree is not green.'}`);
+  console.log(`evidence: ${ev.dir}`);
+  process.exit(allGood ? 0 : 1);
+}
+
+main().then(undefined, (e) => { console.error(e); process.exit(1); });

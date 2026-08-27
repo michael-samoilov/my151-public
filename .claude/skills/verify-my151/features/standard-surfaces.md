@@ -6,12 +6,14 @@ build is broken for that surface regardless of what the change intended.
 ## Sub-features
 
 - Boot: the SPA mounts React into `#root` on every engine.
-- No horizontal page scroll: `documentElement.scrollWidth <= innerWidth` (the repo
-  forbids body horizontal scroll).
+- No horizontal page scroll (`scrollWidth <= innerWidth`) and a non-trivial
+  painted area.
 - The persistence oracle round-trips: a dex written to localStorage rehydrates.
 - The seeded grid renders sprites.
-- Tab navigation: each of builder / analytics / view activates when clicked.
-- The builder list scrolls.
+- Tab navigation: each of builder / analytics / view activates when clicked; the
+  builder list scrolls.
+- No JS errors: no uncaught error or ErrorBoundary crash over the run.
+- A real add mutates the store (desktop Blink; skips until a card test-id exists).
 
 ## How to get to it (user POV)
 

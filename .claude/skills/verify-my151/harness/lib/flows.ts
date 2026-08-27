@@ -129,6 +129,39 @@ const de = document.documentElement;
 return { scrollWidth: de.scrollWidth, innerWidth: window.innerWidth, bodyH: document.body.getBoundingClientRect().height };
 `;
 
+// A blanket overlap audit over the whole body false-positives on the dense sprite
+// grid, whose type badges and labels intentionally overlap their tiles, so it is
+// not a standard check. For a scoped overlap/escapes-parent audit of a specific
+// container in a future tool, port e2e/support/layoutAudit.ts, which is built to
+// run over one subtree, not the whole app.
+
+async function totalPlaced(s: Session): Promise<number> {
+  return readSeedCount(s);
+}
+
+// A real user action that mutates the persisted store, not a seed round-trip: open
+// the browser for a seed-free section and click an evo-line card, which on desktop
+// instantly adds the line (PokemonBrowser.tsx handleToggleStage). The browser cards
+// carry no stable handle today, so this activates once a `data-testid="verify-evo-
+// card"` lands on the card (a one-line change); until then it skips, loudly. Runs
+// on desktop-width Blink, where the instant-add path applies.
+const PLACE_CARD = '[data-testid="verify-evo-card"]';
+
+async function driveRealPlacement(s: Session): Promise<Check> {
+  const name = 'placement:real-add-grows-store';
+  const cardPresent = await s.evalJson<boolean>(`return !!document.querySelector(${JSON.stringify(PLACE_CARD)});`).catch(() => false);
+  if (!cardPresent) return { name, status: 'skip', detail: `add ${PLACE_CARD} to the browser evo-line card to enable (tier-2 one-liner)` };
+  const addBtn = await s.evalJson<boolean>(`return !!document.querySelector('[aria-label="Add a Pokémon to Meadow"]');`).catch(() => false);
+  if (!addBtn) return { name, status: 'skip', detail: 'Meadow add button not found (locale or layout changed)' };
+  const before = await totalPlaced(s);
+  await s.click('[aria-label="Add a Pokémon to Meadow"]');
+  await sleep(700);
+  await s.click(PLACE_CARD);
+  await sleep(800);
+  const after = await totalPlaced(s);
+  return ok(name, after > before, `total ${before} -> ${after}`);
+}
+
 export interface FlowContext { base: string; surface: string; shot: (label: string) => string; }
 
 // The full standard suite for one surface. Persona is asserted first when set.
@@ -178,6 +211,20 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
     `const el=document.querySelector('[data-build-scroll]'); if(!el) return {before:0,after:0,found:false}; const before=el.scrollTop; el.scrollTop=before+300; return {before, after:el.scrollTop, found:true};`,
   );
   checks.push(ok('scroll:builder-container', scrolled.found && scrolled.after > scrolled.before, `top ${scrolled.before}->${scrolled.after}`));
+
+  // Prove a real user action mutates the persisted store, on desktop-width Blink
+  // where the instant-add path applies. Other surfaces prove rendering, not this.
+  if (s.engine === 'blink' && persona === null) {
+    checks.push(await driveRealPlacement(s));
+  } else {
+    checks.push({ name: 'placement:real-add-grows-store', status: 'skip', detail: 'desktop-width Blink only (picker staging differs by surface)' });
+  }
+
+  // Zero-tolerance regression tripwire: no uncaught error or ErrorBoundary crash
+  // over the whole run. Authoritative on Blink (host-side events); best-effort on
+  // WebKit and Gecko (post-load page trap), backed by the render checks above.
+  const errs = await s.errors();
+  checks.push(ok('runtime:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
 
   return checks;
 }
