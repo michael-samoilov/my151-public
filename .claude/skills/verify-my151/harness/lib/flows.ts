@@ -149,13 +149,14 @@ const PLACE_CARD = '[data-testid="verify-evo-card"]';
 
 async function driveRealPlacement(s: Session): Promise<Check> {
   const name = 'placement:real-add-grows-store';
-  const cardPresent = await s.evalJson<boolean>(`return !!document.querySelector(${JSON.stringify(PLACE_CARD)});`).catch(() => false);
-  if (!cardPresent) return { name, status: 'skip', detail: `add ${PLACE_CARD} to the browser evo-line card to enable (tier-2 one-liner)` };
   const addBtn = await s.evalJson<boolean>(`return !!document.querySelector('[aria-label="Add a Pokémon to Meadow"]');`).catch(() => false);
   if (!addBtn) return { name, status: 'skip', detail: 'Meadow add button not found (locale or layout changed)' };
   const before = await totalPlaced(s);
   await s.click('[aria-label="Add a Pokémon to Meadow"]');
-  await sleep(700);
+  await sleep(800);
+  // The browser renders its cards only once opened, so check the handle now.
+  const cardPresent = await s.evalJson<boolean>(`return !!document.querySelector(${JSON.stringify(PLACE_CARD)});`).catch(() => false);
+  if (!cardPresent) return { name, status: 'skip', detail: `add ${PLACE_CARD} to the browser evo-line card to enable (tier-2 one-liner)` };
   await s.click(PLACE_CARD);
   await sleep(800);
   const after = await totalPlaced(s);
