@@ -53,6 +53,23 @@ interface BrowserSubgroup {
   shinyIds?: number[];
 }
 
+/**
+ * Most evolution lines this will render for a search before it stops and asks the
+ * user to narrow it instead.
+ *
+ * A budget on *results*, deliberately not on characters typed. Selectivity per
+ * character is a property of the script, not of search: one Chinese character
+ * matches 5 species, one Japanese kana 52, one Korean syllable 104, and one Latin
+ * letter between 667 and 846. A two-character minimum — the obvious rule if you
+ * only look at English — would refuse 妙 while still admitting queries that render
+ * twelve thousand DOM nodes. Counting what we are about to draw works the same way
+ * in all nine locales, and needs no per-language tuning.
+ *
+ * Worth knowing: a Latin letter is *worse* in the CJK locales than in English (962
+ * in Chinese, 869 in Japanese) because the romaji and pinyin affixes are Latin too.
+ */
+const SEARCH_RENDER_LIMIT = 150;
+
 /** One evo-line entry of a subgroup's render model, shaped for EvoLineGrid. */
 interface SubgroupGridGroup {
   key: string;
@@ -62,6 +79,23 @@ interface SubgroupGridGroup {
 
 export function PokemonBrowser() {
   const searchQuery = usePokedexStore((s) => s.searchQuery);
+  /**
+   * The text as it stood when an IME began composing, or null when nothing is
+   * being composed.
+   *
+   * An IME fires an `input` event for every intermediate state, so composing
+   * フシギダネ ran eleven searches — `f`, `ふ`, `ふs`, `ふし`, `ふしg`, `ふしぎ`,
+   * and so on. Only the first and the last match anything, so a Japanese user
+   * watched "no results" for nine keystrokes while typing a name that exists.
+   * That reads as a broken search rather than a slow one.
+   *
+   * Holding the pre-composition text keeps the previous results on screen until
+   * the word is committed, and searches once instead of eleven times.
+   */
+  const [composingFrom, setComposingFrom] = useState<string | null>(null);
+  const searchInput = composingFrom ?? searchQuery;
+  // searchInput feeds filterOptions below, which is what gets deferred — so the
+  // whole grid pipeline reads the composition-held value at deferred priority.
   const setSearchQuery = usePokedexStore((s) => s.setSearchQuery);
   const activeCategory = usePokedexStore((s) => s.activeCategoryFilter);
   const setCategoryFilter = usePokedexStore((s) => s.setCategoryFilter);
@@ -236,8 +270,12 @@ export function PokemonBrowser() {
   // grid work runs in an interruptible deferred render, and fast typing
   // cancels the intermediate ones. The object must be memoized before it is
   // deferred — an inline literal would never compare equal.
+  //
+  // `search` is `searchInput`, not `searchQuery`: while an IME is composing,
+  // searchInput holds at the pre-composition text so the grid does not churn
+  // through the intermediate states (see composingFrom above).
   const filterOptions = useMemo(() => ({
-    search: searchQuery,
+    search: searchInput,
     category: activeCategory,
     archetype: activeArchetype,
     types: typeFilter,
@@ -247,7 +285,7 @@ export function PokemonBrowser() {
     colors: colorFilter,
     eggGroups: eggGroupFilter,
     evoLineSize: evoLineSizeFilter,
-  }), [searchQuery, activeCategory, activeArchetype, typeFilter, typeFilterMode, generationFilter, shapeFilter, colorFilter, eggGroupFilter, evoLineSizeFilter]);
+  }), [searchInput, activeCategory, activeArchetype, typeFilter, typeFilterMode, generationFilter, shapeFilter, colorFilter, eggGroupFilter, evoLineSizeFilter]);
   const deferredOptions = useDeferredValue(filterOptions);
   const groups = useFilteredPokemonGrouped(deferredOptions);
 
@@ -346,8 +384,18 @@ export function PokemonBrowser() {
   };
 
   // When searching, generate subgroups from actual results (ignoring filters)
+  /**
+   * A search wide enough to be useless to read and expensive to draw. Counted in
+   * evolution lines, because that is the unit the grid renders.
+   *
+   * Only searches are capped. A filter combination that returns everything is a
+   * deliberate act with a visible chip to undo it; a broad search is usually a
+   * half-typed word.
+   */
+  const tooManyResults = isSearching && groups.length > SEARCH_RENDER_LIMIT;
+
   const searchSubgroups = useMemo((): BrowserSubgroup[] => {
-    if (!isSearching) return [];
+    if (!isSearching || tooManyResults) return [];
     const genMap = new Map<number, number[]>();
     for (const g of groups) {
       for (const m of g.members) {
@@ -358,7 +406,7 @@ export function PokemonBrowser() {
     return [...genMap.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: [...new Set(ids)] }));
-  }, [isSearching, groups, t]);
+  }, [isSearching, tooManyResults, groups, t]);
 
   // Per-subgroup render model. This filter/sort/map used to run inline in
   // JSX on every render — the main per-interaction JS cost of this
@@ -442,7 +490,7 @@ export function PokemonBrowser() {
   // from scratch — catastrophic for INP. Scrolling the existing node to
   // the top gives the same UX at ~0 ms cost.
   const resultsScrollRef = useRef<HTMLDivElement>(null);
-  const resultsResetKey = `${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${shapeKey}-${colorKey}-${eggKey}-${searchQuery}-${evoSizeKey}`;
+  const resultsResetKey = `${activeCategory ?? 'x'}-${activeArchetype ?? 'none'}-${typeKey}-${genKey}-${shapeKey}-${colorKey}-${eggKey}-${deferredOptions.search}-${evoSizeKey}`;
   useEffect(() => {
     resultsScrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'auto' });
   }, [resultsResetKey]);
@@ -662,8 +710,15 @@ export function PokemonBrowser() {
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            {/* `value` stays bound to `searchQuery` and keeps updating through
+              * composition. Suppressing the state update instead would leave the
+              * controlled value stale, and the next unrelated re-render would
+              * overwrite the IME's buffer mid-word. Only `composingFrom` decides
+              * what gets *searched*. */}
             <Input
               value={searchQuery}
+              onCompositionStart={() => setComposingFrom(searchQuery)}
+              onCompositionEnd={() => setComposingFrom(null)}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('browser.search.placeholder')}
               className="pl-9 pr-9"
@@ -991,6 +1046,12 @@ export function PokemonBrowser() {
               </div>
             );
           })}
+          {tooManyResults && (
+            <div className="py-12 text-center text-muted-foreground">
+              <p>{t('browser.tooMany.title', { count: totalCount })}</p>
+              <p className="text-sm mt-1">{t('browser.tooMany.hint')}</p>
+            </div>
+          )}
           {groups.length === 0 && (
             <div className="py-12 text-center text-muted-foreground">
               <p>{t('browser.empty.title')}</p>
