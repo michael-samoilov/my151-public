@@ -385,6 +385,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
             <div
               role="button"
               tabIndex={0}
+              data-testid="verify-evo-card"
               onClick={handleClick}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startPress(i); handleClick(); } }}
               onKeyUp={endPress}
