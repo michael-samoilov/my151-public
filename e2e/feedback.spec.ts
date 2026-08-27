@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { seedDex } from './support/milestoneHeader';
 
 /**
  * The report form, driven end to end with the API stubbed.
@@ -112,6 +113,33 @@ test.describe('feedback', () => {
   test('the footer link opens the same form', async ({ page }) => {
     await stubApi(page);
     await page.goto('/');
+    const footerLink = page.getByRole('button', { name: 'Report a problem' }).last();
+    await footerLink.scrollIntoViewIfNeeded();
+    await footerLink.click();
+    await expect(page.getByRole('textbox', { name: 'What happened?' })).toBeVisible();
+  });
+
+  test('the footer link still opens the form after visiting another tab', async ({ page }) => {
+    // The reported bug. Each page mounted its own copy of the report host, and
+    // they shared one module-level opener slot, last writer wins. Visiting
+    // Analytics made its copy the registered opener; that page then stayed
+    // mounted but hidden. Back on Builder, the footer link opened the sheet
+    // inside the hidden Analytics subtree, so nothing appeared on screen.
+    await stubApi(page);
+    // A seeded dex, so Analytics renders its full dashboard. Its report host
+    // only mounts once there is data; the empty state returns before it. `?tune`
+    // exposes the store the helper writes to.
+    await page.goto('/?tune');
+    await seedDex(page);
+
+    // Visit Analytics and let it finish mounting, which is when its copy of the
+    // host claimed the shared opener. The dashboard is lazy-loaded, so wait for
+    // its own content to appear: that guarantees its registration effect ran
+    // before we navigate back, which clicking straight back would race.
+    await page.locator('[data-nav="analytics"]').first().click();
+    await expect(page.getByRole('heading', { name: 'Pokémon Type' })).toBeVisible();
+    await page.locator('[data-nav="builder"]').first().click();
+
     const footerLink = page.getByRole('button', { name: 'Report a problem' }).last();
     await footerLink.scrollIntoViewIfNeeded();
     await footerLink.click();

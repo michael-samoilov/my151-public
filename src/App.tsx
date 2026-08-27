@@ -39,6 +39,7 @@ import { useCompletionBeacon, sendEventBeacon } from '@/hooks/useCompletionBeaco
 import { useMilestoneTracker } from '@/hooks/useMilestoneTracker';
 import { MilestoneTunePanel } from '@/components/pokedex/MilestoneBar';
 import { MilestoneCelebration } from '@/components/milestone/MilestoneCelebration';
+import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { isAnalyticsUnlocked } from '@/lib/milestones';
 import { cn } from '@/lib/utils';
 import { sectionName as sectionLabel, useDocumentLocale } from '@/i18n';
@@ -303,6 +304,12 @@ function App() {
           The desktop pane above covers >=1024px; mounting both built three
           hidden carousel panels per desktop chart tap. */}
       {currentView === 'analytics' && drillDownSegment && !isDesktop && <DrillDownSheet />}
+
+      {/* The report form's single mount point, outside every page's hidden
+          subtree and error boundary, so the footer link and the crash fallback
+          both open a sheet that is actually on screen. The route is the visible
+          page, which the footer link cannot carry on its own. */}
+      <FeedbackHost route={currentView} />
 
       {/* Milestone celebration nudges (analytics @25, view @100, confetti @151) */}
       <MilestoneCelebration onNavigate={handleViewChange} />

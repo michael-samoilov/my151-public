@@ -513,7 +513,7 @@ export function AnalyticsDashboard() {
             the same inset as the left. This page has no controls of its own, so
             the report button is the only thing in it. */}
         <div className="shrink-0 flex items-center justify-end" style={{ width: 'var(--ms-side)' }}>
-          <FeedbackButton route="analytics" />
+          <FeedbackButton />
         </div>
       </div>
 
