@@ -11,7 +11,7 @@
     { "id": "note-a", "x": 0, "y": -175, "w": 440, "text": "A — Card Table. Faithful to the /vp/ template: the full 10-row × 6-line grid, always on screen.\n+ Instant whole-card read; densest.\n− Sprites repeat a lot; cells stay small; least room per Pokémon." },
     { "id": "note-b", "x": 1560, "y": -175, "w": 440, "text": "B — Evolution Lanes (leading candidate). Each line is a lane; a form spans the stages it covers; the span boundary IS the future drag handle.\n+ Shows the auto-fill model directly; calm; no repeated sprites.\n− Reading one stage's exact team takes a horizontal scan." },
     { "id": "note-c", "x": 3120, "y": -175, "w": 440, "text": "C — Stage Focus. Pick a stage, see that team large; the rail keeps the whole progression in miniature.\n+ Best per-Pokémon detail; doubles as the mobile shape.\n− The full card is never visible at full size — softest reading of the fits-on-screen goal." },
-    { "id": "note-row2", "x": 0, "y": 950, "w": 900, "text": "Below: the league overview (gym N derives its team from the N−1 badges row; Elite 4 / Champion / Boss follow Q8–Q9) and the mobile shape, which reuses Direction C whatever wins on desktop." }
+    { "id": "note-row2", "x": 0, "y": 950, "w": 900, "text": "Below: the league overview (gym N derives its team from the N−1 badges row; Elite 4 members share the Elite 4 row, the champion shows Full team, the boss picks a stage) and the mobile shape, which reuses Direction C whatever wins on desktop." }
   ],
   "launch": { "view": "canvas" }
 }
