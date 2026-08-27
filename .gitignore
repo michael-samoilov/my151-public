@@ -40,3 +40,6 @@ __pycache__/
 # as a diff in src/i18n/names/ rather than being hidden by a stale cache. They
 # are ~730 kB and 21k lines of pure noise in a review.
 docs/i18n/pokeapi/
+
+# verify-my151 run artifacts
+.claude/skills/verify-my151/evidence/
