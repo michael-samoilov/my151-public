@@ -36,11 +36,17 @@ function waitForPort(port: number, timeoutMs: number): Promise<void> {
 
 export interface Preview { url: string; stop: () => void; }
 
-// Serve an already-built dir with `vite preview` on an isolated port.
+// Serve an already-built dir with `vite preview` on an isolated port. Spawn
+// detached so `npm` leads a process group that includes the `vite` child, and
+// stop() kills the group by pid; killing `npm` alone leaves `vite` holding the
+// port, which collides with the next preview on the same port.
 export async function startPreview(dir: string, port: number): Promise<Preview> {
-  const proc = spawn('npm', ['run', 'preview', '--', '--port', String(port), '--strictPort'], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+  const proc = spawn('npm', ['run', 'preview', '--', '--port', String(port), '--strictPort'], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
   await waitForPort(port, 60000);
-  return { url: `http://127.0.0.1:${port}`, stop: () => proc.kill('SIGKILL') };
+  return {
+    url: `http://127.0.0.1:${port}`,
+    stop: () => { if (proc.pid) { try { process.kill(-proc.pid, 'SIGKILL'); return; } catch { /* fall back */ } } proc.kill('SIGKILL'); },
+  };
 }
 
 export interface Worktree { dir: string; cleanup: () => void; }

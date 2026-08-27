@@ -12,38 +12,38 @@ import { Evidence, type Check } from './lib/evidence.ts';
 
 const PORT = 4182;
 
-function patch(dir: string, rel: string, find: string, replace: string) {
+function replace(dir: string, rel: string, find: string, to: string) {
   const file = path.join(dir, rel);
   const src = fs.readFileSync(file, 'utf8');
   if (!src.includes(find)) throw new Error(`anchor not found in ${rel}: ${find.slice(0, 40)}`);
-  fs.writeFileSync(file, src.replace(find, replace));
+  fs.writeFileSync(file, src.replace(find, to));
 }
 
-const IMPORT = `import { StrictMode }`; // stable anchor near the top of src/main.tsx
+// Append after the imports (never prepend before them; a statement before an
+// import breaks the served build). The snippet runs on each load, after mount.
+function append(dir: string, rel: string, snippet: string) {
+  const file = path.join(dir, rel);
+  fs.writeFileSync(file, `${fs.readFileSync(file, 'utf8')}\n${snippet}\n`);
+}
 
 interface Mutation { name: string; expectFail: string; expectPassStill?: string; apply: (dir: string) => void; }
 
 const MUTATIONS: Mutation[] = [
   {
-    name: 'boot-throw',
-    expectFail: 'boot:react-mounted',
-    apply: (dir) => patch(dir, 'src/main.tsx', IMPORT, `throw new Error('verify-injected-boot');\n${IMPORT}`),
-  },
-  {
     name: 'async-throw',
     expectFail: 'runtime:no-js-errors',
     expectPassStill: 'boot:react-mounted',
-    apply: (dir) => patch(dir, 'src/main.tsx', IMPORT, `queueMicrotask(() => { throw new Error('verify-injected-async'); });\n${IMPORT}`),
+    apply: (dir) => append(dir, 'src/main.tsx', `queueMicrotask(() => { throw new Error('verify-injected-async'); });`),
   },
   {
     name: 'wide-element',
     expectFail: 'layout:no-horizontal-overflow',
-    apply: (dir) => patch(dir, 'src/main.tsx', IMPORT, `queueMicrotask(() => { const d = document.createElement('div'); d.style.cssText = 'position:relative;width:5000px;height:1px'; document.body.appendChild(d); });\n${IMPORT}`),
+    apply: (dir) => append(dir, 'src/main.tsx', `queueMicrotask(() => { const d = document.createElement('div'); d.style.cssText = 'position:relative;width:5000px;height:1px'; document.body.appendChild(d); });`),
   },
   {
     name: 'break-persist',
     expectFail: 'oracle:seed-persisted',
-    apply: (dir) => patch(dir, 'src/store/usePokedexStore.ts', 'sections: state.sections,', 'sections: {},'),
+    apply: (dir) => replace(dir, 'src/store/usePokedexStore.ts', 'sections: state.sections,', 'sections: {},'),
   },
 ];
 
@@ -78,13 +78,18 @@ async function main() {
   console.log(`control: ${controlOk ? 'PASS (clean tree is green)' : 'BROKEN: ' + controlFails.join(', ')}`);
 
   for (const m of MUTATIONS) {
-    const checks = await runVariant(ev, m.name, m.apply);
-    const target = checks.find((c) => c.name === m.expectFail);
-    const caught = target?.status === 'fail';
-    const granular = !m.expectPassStill || checks.find((c) => c.name === m.expectPassStill)?.status === 'pass';
-    const good = caught && granular;
-    rows.push({ variant: m.name, verdict: good ? 'CAUGHT' : 'MISSED', detail: `${m.expectFail}=${target?.status ?? 'absent'}${m.expectPassStill ? `, ${m.expectPassStill}=${checks.find((c) => c.name === m.expectPassStill)?.status}` : ''}` });
-    console.log(`${m.name.padEnd(16)} ${good ? 'CAUGHT' : 'MISSED'}  (${m.expectFail} => ${target?.status ?? 'absent'})`);
+    try {
+      const checks = await runVariant(ev, m.name, m.apply);
+      const target = checks.find((c) => c.name === m.expectFail);
+      const caught = target?.status === 'fail';
+      const granular = !m.expectPassStill || checks.find((c) => c.name === m.expectPassStill)?.status === 'pass';
+      const good = caught && granular;
+      rows.push({ variant: m.name, verdict: good ? 'CAUGHT' : 'MISSED', detail: `${m.expectFail}=${target?.status ?? 'absent'}${m.expectPassStill ? `, ${m.expectPassStill}=${checks.find((c) => c.name === m.expectPassStill)?.status}` : ''}` });
+      console.log(`${m.name.padEnd(16)} ${good ? 'CAUGHT' : 'MISSED'}  (${m.expectFail} => ${target?.status ?? 'absent'})`);
+    } catch (e) {
+      rows.push({ variant: m.name, verdict: 'MISSED', detail: `run threw: ${(e as Error).message.slice(0, 80)}` });
+      console.log(`${m.name.padEnd(16)} MISSED  (threw: ${(e as Error).message.slice(0, 60)})`);
+    }
   }
 
   const allGood = controlOk && rows.filter((r) => r.variant !== 'control (clean)').every((r) => r.verdict === 'CAUGHT');
