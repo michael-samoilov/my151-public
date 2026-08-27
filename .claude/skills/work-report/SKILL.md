@@ -3,9 +3,11 @@ name: work-report
 description: >-
   End-of-turn report template for this repo. After every turn that changes
   anything (code, config, docs, a deploy), close with the five-part report:
-  Changed, Merge, Verified, Tradeoffs, You test. Also sets the verification
-  standard the report depends on: measure changes, do not infer them from
-  code. Always on in this repo.
+  Changed, Merge, Verified, Tradeoffs, You test. "You test" lists only what
+  needs the user's own hands or judgment; anything you can run yourself goes
+  under Verified with before/after evidence, never handed to the user. Also
+  sets the verification standard the report depends on: measure changes, do
+  not infer them from code. Always on in this repo.
 ---
 
 # Work reports
@@ -37,9 +39,17 @@ instead of restating it.
 - **Tradeoffs**: What this approach costs against the before state or the
   approach not taken. One or two lines. "None worth noting" is a valid
   entry.
-- **You test**: Numbered steps for anything that needs the user's hands,
-  device, or judgment. Each step names the exact action and the expected
-  result, with nothing left to guess. Otherwise "Nothing".
+- **You test**: Numbered steps for anything that genuinely needs the user's
+  hands, device, or judgment — a physical device, an account only they hold,
+  a taste call only they can make. Each step names the exact action and the
+  expected result, with nothing left to guess. Otherwise "Nothing".
+  **Never list a step you could run yourself.** If you can build the commit
+  and drive it with Playwright or the `run` skill, that is not a "you test"
+  step — it is a "Verified" step, and the before/after evidence belongs up
+  there. Asking the user to check what you could have checked is the failure
+  this section exists to prevent. When something blocked you from measuring
+  (an auth-gated URL, an unreachable host), name it under Verified as the
+  gap, not here as a chore for the user.
 
 ## Verification standard
 
