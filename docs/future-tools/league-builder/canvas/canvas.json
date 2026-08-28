@@ -1,24 +1,136 @@
 {
   "artboards": [
-    { "file": "MobileLeague.dc.html", "title": "Mobile — League home", "x": 0, "y": 0, "w": 390, "h": 844 },
-    { "file": "Main.dc.html", "title": "Mobile — Gym leader card", "x": 510, "y": 0, "w": 390, "h": 844 },
-    { "file": "MobileSelector.dc.html", "title": "Mobile — Evo line picker", "x": 1020, "y": 0, "w": 390, "h": 844 },
-    { "file": "MobileMovePicker.dc.html", "title": "Mobile — TM picker", "x": 1530, "y": 0, "w": 390, "h": 844 },
-    { "file": "States.dc.html", "title": "Card states", "x": 2040, "y": 0, "w": 1680, "h": 880 },
-    { "file": "Interaction.dc.html", "title": "Pointer states", "x": 3840, "y": 0, "w": 852, "h": 880 },
-    { "file": "Desktop.dc.html", "title": "Desktop — Two pane", "x": 4812, "y": 0, "w": 1440, "h": 900 },
-    { "file": "DesktopThree.dc.html", "title": "Desktop — Picker open", "x": 6372, "y": 0, "w": 1440, "h": 900 }
+    {
+      "file": "MobileLeague.dc.html",
+      "title": "Mobile — League home",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844
+    },
+    {
+      "file": "Main.dc.html",
+      "title": "Mobile — Gym leader card",
+      "x": 510,
+      "y": 0,
+      "w": 390,
+      "h": 844
+    },
+    {
+      "file": "MobileSelector.dc.html",
+      "title": "Mobile — Evo line picker",
+      "x": 1020,
+      "y": 0,
+      "w": 390,
+      "h": 844
+    },
+    {
+      "file": "MobileMovePicker.dc.html",
+      "title": "Mobile — TM picker",
+      "x": 1530,
+      "y": 0,
+      "w": 390,
+      "h": 844
+    },
+    {
+      "file": "States.dc.html",
+      "title": "Card states",
+      "x": 2040,
+      "y": 0,
+      "w": 1680,
+      "h": 880
+    },
+    {
+      "file": "Interaction.dc.html",
+      "title": "Pointer states",
+      "x": 3840,
+      "y": 0,
+      "w": 1096,
+      "h": 880
+    },
+    {
+      "file": "Desktop.dc.html",
+      "title": "Desktop — Two pane",
+      "x": 5056,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    },
+    {
+      "file": "DesktopThree.dc.html",
+      "title": "Desktop — Picker open",
+      "x": 6616,
+      "y": 0,
+      "w": 1440,
+      "h": 900
+    }
   ],
   "annotations": [
-    { "id": "brief", "x": 0, "y": -400, "w": 1300, "text": "League builder — fourth revision. The card's dark shade is the app's own alt shade: the stroke half of deriveSectionColor, which the view page already uses for section outlines. The step from there to the spacer band is the /vp/ template's own, measured off three of its cards: hue never moves, saturation barely moves, and lightness falls -6 to -10.6 points, mean -8.9. So one step is -9 points of HSL lightness. The card body stays the build page's section fill. Spacers run the full width of the card and are clipped by its corners; every slot in the top-left void is measured against the glyph cells." },
-    { "id": "note-league", "x": 0, "y": -205, "w": 440, "text": "League home. Glyph column, then type column, then the teams. Four plain spacers: Gym Leaders, Elite Four, Champion, Endgame Boss. The open slot's fill runs the full width of the card, through its gutters and with no outline, so the desktop flow can leave it seamlessly. Elite Four slot 4 stacks its stars 2x2." },
-    { "id": "note-card", "x": 510, "y": -205, "w": 440, "text": "The card. Elite Four and Champion share one band. Badge glyphs wrap after four and left-align from four up. The signature tile, the TM slot and the badge slot each stop exactly at the glyph cells beside them. The TM mark is a pokeball with its band removed and the shape sheared, so it reads as a disc." },
-    { "id": "note-selector", "x": 1020, "y": -205, "w": 440, "text": "The dex builder's PokemonBrowser, reused as the component it is. Two differences only: a My dex filter, and a tap that places the line and closes the sheet with no confirm step. The card's type arrives pre-selected." },
-    { "id": "note-tm", "x": 1530, "y": -205, "w": 440, "text": "The TM picker. The category chip runs through the same badge pipeline as a type badge — one 200x40 art space, a white glyph, the name condensed to 0.76 — with Bulbapedia's palette, its Scarlet/Violet icon art, and a border of our own. Power is data, not a filter." },
-    { "id": "note-states", "x": 2040, "y": -205, "w": 700, "text": "How the card reads as it fills up, and across types. No type is the default and runs through the badge pipeline like any other, borrowing the view page's spandrel star. Each type brings its own demo roster, so an electric card is not staffed by water lines." },
-    { "id": "note-interaction", "x": 3840, "y": -205, "w": 560, "text": "Desktop pointer states. Hover darkens the row and the column under the pointer. Holding a column shows the board as it will be after the drop: the lines it passed have already moved up, a dashed hole marks where it lands, and the held column floats above. Moving a line to a later seat makes it join later, which is why its early rows empty out." },
-    { "id": "note-desktop", "x": 4812, "y": -205, "w": 560, "text": "Desktop, at rest. Each pane has its own header, as the dex builder's panes do, and centres a phone-width column. The card pane carries the card's type badge and theme. The flow out of the open row is translucent, so the pane seam reads through it." },
-    { "id": "note-desktop3", "x": 6372, "y": -205, "w": 560, "text": "Desktop, picker open. The selection pane comes in from the right and the layout becomes three panes, each still centring a phone-width column." }
+    {
+      "id": "brief",
+      "x": 0,
+      "y": -400,
+      "w": 1300,
+      "text": "League builder — fifth revision. Glyph cells take the app's own alt shade (deriveSectionColor's stroke), lifted to a fixed relative luminance so they read against a near-white card, and each spacer band sits one /vp/ step below: -9 points of HSL lightness, hue and saturation untouched. That step is measured off three /vp/ cards, whose own steps run -6 to -10.6, mean -8.9. Every cell that can hold a Pokemon draws its white square whether or not one is there, and the glyph cell sits where a full team would put it, so a half-filled card keeps the template's shape."
+    },
+    {
+      "id": "note-league",
+      "x": 0,
+      "y": -205,
+      "w": 440,
+      "text": "League home. Glyph column, then type column, then the teams. Four plain spacers: Gym Leaders, Elite Four, Champion, Endgame Boss. The open slot's fill runs the full width of the card, through its gutters and with no outline, so the desktop flow can leave it seamlessly. Elite Four slot 4 stacks its stars 2x2."
+    },
+    {
+      "id": "note-card",
+      "x": 510,
+      "y": -205,
+      "w": 440,
+      "text": "The card. Spacers are inset to the same edges as the signature, TM and badge slots, and the card's corner radius is the spacer's plus that inset, so the two curves are concentric. The TM mark is a pokeball without its band, sheared. A short badge name puts Badge on its own line; a long one lets Badge simply follow. Mega and Dynamax corner buttons carry the real symbols."
+    },
+    {
+      "id": "note-selector",
+      "x": 1020,
+      "y": -205,
+      "w": 440,
+      "text": "The dex builder's PokemonBrowser, reused as the component it is. Two differences only: a My dex filter, and a tap that places the line and closes the sheet with no confirm step. The card's type arrives pre-selected."
+    },
+    {
+      "id": "note-tm",
+      "x": 1530,
+      "y": -205,
+      "w": 440,
+      "text": "The TM picker. Fields run Type, Category, Move, PP, Att., Acc.; Move, PP, Att. and Acc. sort, and a move that always hits carries no accuracy and sorts above 100%. Filters add contest condition and signature move. The category chip runs through the type badge's own pipeline, with Bulbapedia's palette and its Scarlet/Violet icon art."
+    },
+    {
+      "id": "note-states",
+      "x": 2040,
+      "y": -205,
+      "w": 700,
+      "text": "How the card reads as it fills up, and across types. No type is the default and runs through the badge pipeline like any other, borrowing the view page's spandrel star. Each type brings its own demo roster, so an electric card is not staffed by water lines."
+    },
+    {
+      "id": "note-interaction",
+      "x": 3840,
+      "y": -205,
+      "w": 560,
+      "text": "Pointer states. Hover shades the row and the column once each — the cell they cross is not doubled. Holding a column shows the board as it will be after the drop: the lines it passed have already moved up, a dashed hole marks where it lands, and the held column floats above. No insertion line: the line lands in a column, not between two. On the right, the two ways to give the champion and boss glyphs the same weight."
+    },
+    {
+      "id": "note-desktop",
+      "x": 5056,
+      "y": -205,
+      "w": 560,
+      "text": "Desktop, at rest. Each pane has its own header, as the dex builder's panes do, and centres a phone-width column. The card pane carries the card's type badge and theme. The flow out of the open row is translucent, so the pane seam reads through it."
+    },
+    {
+      "id": "note-desktop3",
+      "x": 6616,
+      "y": -205,
+      "w": 560,
+      "text": "Desktop, picker open. The selection pane comes in from the right and the layout becomes three panes, each still centring a phone-width column."
+    }
   ],
-  "launch": { "view": "canvas" }
+  "launch": {
+    "view": "canvas"
+  }
 }

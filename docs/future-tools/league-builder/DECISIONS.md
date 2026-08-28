@@ -65,6 +65,10 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
     n/a uses the 4-pointed curved-star spandrel from the view page outlines.
     Choosing a type recolours the whole card — see Card theme. No trainer
     names, no avatars.
+11b. **Slot chrome.** A filled signature, TM or badge slot is white with no
+    outline, exactly like the squares behind the Pokemon. An empty one adds
+    a dashed border in the same light tint, at the same weight for all three.
+
 12. **Signature.** A data field pointing at a line (optionally a specific
     form — which also caps that column's autofill at that form). Picking a
     signature while under 6 lines inserts its line rightmost, shifting
@@ -79,10 +83,18 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
 12b. **TM slot.** 2 columns × 1 row, directly under the signature, and no
     taller than the glyph cell beside it. Its mark is a pokeball with the
     band taken out — a small circle inside a big one — sheared, so it reads
-    as a disc lying at an angle. Tapping it
+    as a disc lying at an angle. The mark sits at the left edge so the move
+    name has room, and the name wraps to two lines when it needs to. Tapping it
     opens a move picker built on the selection pane: type badge, move name,
     and the category icon, with a filter for type and one for category, and
-    a search that sorts on move name. Power is data, not a filter. The pane
+    a search that sorts on move name. Its fields run Type, Category, Move,
+    PP, Att., Acc.; Move, PP, Att. and Acc. sort, and a move that always hits
+    carries no accuracy and sorts above 100%. Two more filters: contest
+    condition (beautiful `#1e93c0`, clever `#15a13f`, cool `#d42c04`, cute
+    `#d2458d`, tough `#cca100`) and signature move, matched against a static
+    list extracted from Bulbapedia. Later: a count of how many of the team's
+    lines can learn the move, and an ace-move filter. Power is data, not a
+    filter. The pane
     keeps the browser's own gutters and its rows are dense. The category
     chip runs through the same badge pipeline as a type badge — one 200×40
     art space, a white glyph at the left, the name condensed to 0.76, so it
@@ -95,7 +107,9 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
     and row windowing (`useRowWindow`).
 12c. **Badge slot.** 2 columns × 2 rows, under the TM, spanning exactly the
     two glyph cells beside it. It holds the badge the gym awards. Text entry
-    for v1. Later enhancement: check whether the PokeAPI sprite repo already
+    for v1, and the field supplies the word "Badge": a short name puts Badge
+    on its own second line, and a name long enough to wrap on its own lets
+    Badge simply follow as the last word. Nobody types it twice. Later enhancement: check whether the PokeAPI sprite repo already
     carries official badge art and offer those as image options.
 
 ## Card theme
@@ -110,9 +124,14 @@ surfaces from them:
 - **Glyph cells** — the app's existing alt shade: the `stroke` half of
   `deriveSectionColor` in `src/lib/sectionColors.ts`, which the view page
   already uses for section outlines and names. Reusing it comes first;
-  nothing here invents a second dark palette.
+  nothing here invents a second dark palette. Its hue and saturation are
+  kept and its lightness is lifted to a relative luminance of 0.26, because
+  the raw stroke is solved against its own pale fill and lands too dark
+  beside a near-white card.
 - **Spacer bands** — one /vp/ step down from the cells: −9 points of HSL
   lightness, hue and saturation untouched.
+- **Pokemon slots** — white. Every cell that can ever hold a Pokemon draws
+  its square, filled or not.
 
 **The −9 is measured, not chosen.** Three /vp/ cards, in HSL:
 
@@ -129,9 +148,10 @@ small — which is why anchoring on the app's alt shade reproduces it.
 
 The app body background and both app headers are unaffected.
 
-Spacer bands run the full width of the card and are clipped by its corner
-radius; the top band sits flush against the card's top edge. Their text is
-vertically centred.
+Spacer bands are rounded rectangles, inset to the same left and right edges
+as the signature, TM and badge slots. The card's own corner radius is the
+band's radius plus that inset, so the two curves are concentric. Their text
+is vertically centred.
 
 ## League
 
@@ -147,15 +167,17 @@ vertically centred.
 15b. **League home shape.** The league home is a zoomed-out card, not a
     separate design: the same 7-column right-aligned grid, 14 rows, the same
     glyph conventions. Two columns lead each row — the glyph cell, then the
-    type chip — rather than the glyphs hugging each team. Its spacers are
-    plain section labels: Gym Leaders, Elite Four, Champion, Endgame Boss,
-    with no notes. Each row carries its own card's type shades; an empty
+    type chip. The chip uses the 1×1 type icon the analytics type chart uses
+    (`typeIconPath`), never the cropped glyph stretched into a circle. Its
+    spacers are plain section labels: Gym Leaders, Elite Four, Champion,
+    Endgame Boss, with no notes. Each row carries its own card's type shades; an empty
     slot keeps the white material.
 16. **Stage glyphs** (used on the card AND the league):
-    - Glyphs live INSIDE the grid, in the rightmost empty cell of each row,
-      hugging the team — never in a separate label column. On the league
-      home they take one column of their own, right of the teams and left of
-      the type chip.
+    - Glyphs live INSIDE the grid, in the rightmost empty cell of each row —
+      never in a separate label column. The cell is pinned to where a FULL
+      team would put it, so a half-filled card keeps the template's shape
+      instead of collapsing rightward. On the league home the glyphs take
+      one column of their own, first in the row, with the type chip next.
     - Gym N: N−1 filled square diamonds plus one border-only diamond. The
       cluster always wraps after four; at four or more, every line
       left-aligns, so the marks stack as a block.
@@ -165,9 +187,12 @@ vertically centred.
     - Elite 4 on the card: 4 stars, sized to carry the same visual weight as
       a gym's diamonds. In the league: slot k shows k stars, and slot 4
       stacks them 2×2 so the cluster keeps clear of the cell edges.
-    - Champion: FILLED crown. Endgame boss: the pokeball, outline only, so
-      its top half matches its bottom. Both take the same colour as the gym
-      and Elite 4 glyphs — white on the glyph cell.
+    - Champion and endgame boss have to carry the same weight. Two ways,
+      both drawn on the Pointer states board: **A**, the crown loses its fill
+      to match an outline pokeball; **B** (preferred, and what the boards
+      use), the pokeball becomes solid — the ball is the white, and the cell
+      colour is its negative space, two half donuts and a button.
+    - Every glyph is white on the glyph cell.
     - The endgame-boss legend gets no border of its own.
     - Three spacer bands, text vertically centred: "GYM LEADER TEAM" above
       the whole card, "ELITE FOUR & CHAMPION — Champion may have one
@@ -197,11 +222,12 @@ vertically centred.
 - **Line count**: 0, 3, 5 and 6 evolution lines, which changes which rows
   have anything in them.
 - **Hover** (desktop only): the row and the column under the pointer darken
-  by the type at 9%.
-- **Holding a column**: the grid already shows the order after the drop, a
-  dashed hole marks where the line lands, and the held column floats above
-  it. A line moved to a later seat joins later, so its early rows empty out
-  and the lines it passed move up.
+  by the type at 9%, each once — the cell where they cross is not doubled.
+- **Holding a column** (both platforms): the grid already shows the order
+  after the drop, a dashed hole marks where the line lands, and the held
+  column floats above it. No insertion line — a line lands in a column, not
+  between two. A line moved to a later seat joins later, so its early rows
+  empty out and the lines it passed move up.
 
 ## Guardrails and outputs
 
@@ -264,6 +290,10 @@ Veto any of these; they ship as stated otherwise.
 
 ## Build plan (own tasks, not part of the page)
 
+- **Powerup symbols:** harvested — Bulbapedia's Mega Evolution and Dynamax
+  symbols drive the corner buttons, and the two Primal Reversion icons
+  (Kyogre, Groudon) are checked in beside them for the form cycle. All four
+  live next to the canvas as `powerup-*.png`.
 - **Sprite harvest:** all forms of all Pokémon — gender, alt forms, shiny,
   Mega, Gigantamax — cached like the current set, plus data entries for the
   form Pokémon and a base→forms mapping.
