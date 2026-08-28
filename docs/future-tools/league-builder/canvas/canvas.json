@@ -1,17 +1,16 @@
 {
   "artboards": [
-    { "file": "DirectionA.dc.html", "title": "Direction A — Card Table", "x": 0, "y": 0, "w": 1440, "h": 900 },
-    { "file": "Main.dc.html", "title": "Direction B — Evolution Lanes", "x": 1560, "y": 0, "w": 1440, "h": 900 },
-    { "file": "DirectionC.dc.html", "title": "Direction C — Stage Focus", "x": 3120, "y": 0, "w": 1440, "h": 900 },
-    { "file": "LeagueSummary.dc.html", "title": "League Overview", "x": 0, "y": 1080, "w": 1440, "h": 1000 },
-    { "file": "Mobile.dc.html", "title": "Mobile — Stage Focus shape", "x": 1560, "y": 1080, "w": 390, "h": 844 }
+    { "file": "MobileLeague.dc.html", "title": "Mobile — League home", "x": 0, "y": 0, "w": 390, "h": 844 },
+    { "file": "Main.dc.html", "title": "Mobile — Gym leader card", "x": 510, "y": 0, "w": 390, "h": 844 },
+    { "file": "MobileSelector.dc.html", "title": "Mobile — Evo line picker", "x": 1020, "y": 0, "w": 390, "h": 844 },
+    { "file": "Desktop.dc.html", "title": "Desktop — Two-pane", "x": 1530, "y": 0, "w": 1440, "h": 900 }
   ],
   "annotations": [
-    { "id": "brief", "x": 0, "y": -330, "w": 980, "text": "League builder — three directions, one engine. Everywhere the same settled model: drop a Pokémon once and its evolution line fills the column, driven by the league level curve (12 / 16 / 21 / 26 / 31 / 36 / 41 / 46 / 54 / 62). Sample card: Marina, Water specialist. Pick a direction and I build it into the real /pokemon-league-builder page next." },
-    { "id": "note-a", "x": 0, "y": -175, "w": 440, "text": "A — Card Table. Faithful to the /vp/ template: the full 10-row × 6-line grid, always on screen.\n+ Instant whole-card read; densest.\n− Sprites repeat a lot; cells stay small; least room per Pokémon." },
-    { "id": "note-b", "x": 1560, "y": -175, "w": 440, "text": "B — Evolution Lanes (leading candidate). Each line is a lane; a form spans the stages it covers; the span boundary IS the future drag handle.\n+ Shows the auto-fill model directly; calm; no repeated sprites.\n− Reading one stage's exact team takes a horizontal scan." },
-    { "id": "note-c", "x": 3120, "y": -175, "w": 440, "text": "C — Stage Focus. Pick a stage, see that team large; the rail keeps the whole progression in miniature.\n+ Best per-Pokémon detail; doubles as the mobile shape.\n− The full card is never visible at full size — softest reading of the fits-on-screen goal." },
-    { "id": "note-row2", "x": 0, "y": 950, "w": 900, "text": "Below: the league overview (gym N derives its team from the N−1 badges row; Elite 4 members share the Elite 4 row, the champion shows Full team, the boss picks a stage) and the mobile shape, which reuses Direction C whatever wins on desktop." }
+    { "id": "brief", "x": 0, "y": -330, "w": 980, "text": "League builder — Direction A, mobile-first, rounds 2–3 applied. 11 fixed rows (8 gyms, Elite 4, Champion, Endgame boss), team sizes 2/3/3/3/4/4/4/5/5/6/6, columns right-aligned with the always-present line on the right. Levels are invisible everywhere — the glyphs carry stage: N−1 filled diamonds + 1 outlined, 4 stars for Elite 4, outlined crown for Champion, filled crown for the boss. Flow reads left to right: League home → tap a row → its card → add a line → picker sheet." },
+    { "id": "note-league", "x": 0, "y": -175, "w": 440, "text": "League home (mobile start screen). 14 slots: 8 gyms, E4 with 1–4 stars, outlined-crown champion, filled-crown boss. Two placed: Water at gym 4, Steel at E2. Rows drag to reorder; a moved card re-derives its shown team." },
+    { "id": "note-card", "x": 510, "y": -175, "w": 440, "text": "The card. Fixed schedule fills columns; sprites sit at 44px. Champion row: Gyarados carries the Mega corner button (M), Lapras the Dynamax button (D) — form change, not a swap. Boss row: Suicune (crown badge) swapped into Gyarados's seat — the one legend cell swap." },
+    { "id": "note-selector", "x": 1020, "y": -175, "w": 440, "text": "Evo line picker — the dex builder's selection pane as a bottom sheet. Lines are grouped by branch: searching eevee returns one card per branch, so picking IS the branch choice. My 151 filter ships in v1." },
+    { "id": "note-desktop", "x": 1530, "y": -175, "w": 440, "text": "Desktop port: league right, open card left, the active row fans out into the card pane. The picker overlays the league pane when open, so card and picker stay visible together." }
   ],
   "launch": { "view": "canvas" }
 }
