@@ -10,158 +10,79 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&amp;display=swap">
   <style>
     body { margin: 0; font-family: 'Inter', 'Inter Variable', system-ui, -apple-system, sans-serif; -webkit-font-smoothing: antialiased; }
-    a { color: #dc2626; } a:hover { color: #b91c1c; }
     img.sprite { image-rendering: pixelated; }
-    .trow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: center; height: 54px; border-top: 1px solid #f0f0f1; }
+    .card { background: var(--mat); border-radius: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06); padding: 4px 8px; position: relative; }
+    .trow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: center; height: 54px; box-shadow: inset 0 1px 0 var(--line); }
     .c { display: flex; align-items: center; justify-content: center; height: 100%; position: relative; }
     .c img { width: 44px; height: 44px; }
-    .g { display: flex; flex-wrap: wrap; gap: 2px; align-items: center; justify-content: center; height: 100%; align-content: center; }
-    .pbtn { position: absolute; bottom: 2px; width: 15px; height: 15px; border-radius: 999px; background: #ffffff; border: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; }
-    .band { display: flex; align-items: center; height: 20px; padding-left: 4px; font-size: 9.5px; color: #737373; border-top: 1px solid #e5e5e5; }
-    .band b { font-weight: 700; letter-spacing: 0.07em; color: #525252; margin-right: 4px; }
+    .g { align-self: center; height: 42px; margin: 0 3px; border-radius: 6px; background: var(--cell); display: flex; align-items: center; justify-content: center; }
+    .band { display: flex; align-items: center; gap: 5px; height: 20px; padding: 0 8px; background: var(--band); border-radius: 5px; color: #ffffff; }
+    .band b { font-size: 9px; font-weight: 800; letter-spacing: 0.07em; white-space: nowrap; }
+    .band span { font-size: 8.5px; opacity: 0.85; white-space: nowrap; overflow: hidden; }
+    .pbtn { position: absolute; bottom: 3px; width: 15px; height: 15px; border-radius: 999px; background: #ffffff; border: 1px solid var(--dash); display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; color: var(--band); }
+    .slot { position: absolute; z-index: 5; border-radius: 8px; }
   </style>
 </helmet>
-<div style="width: 390px; height: 844px; background: #f7f7f8; color: #0a0a0a; overflow: hidden; display: flex; flex-direction: column;">
-
-  <!-- Header 1: global app header, cross-tool nav lives here -->
-  <div style="background: #ffffff; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; flex-shrink: 0;">
+<div style="width: 390px; height: 844px; background: #f7f7f8; color: #0a0a0a; overflow: hidden; position: relative;">
+  <!-- Header 1: global app header. Cross-tool navigation lives behind Tools. -->
+  <div style="background: #ffffff; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;">
     <div style="font-size: 20px; font-weight: 800; letter-spacing: -0.025em;"><span style="color: #dc2626;">my151</span><span style="color: #0a0a0a;">.app</span></div>
-    <div style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 6px; font-size: 13px; font-weight: 500; color: #0a0a0a;">
+    <div style="display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 6px; font-size: 13px; font-weight: 500;">
       <svg viewBox="0 0 16 16" style="width: 15px; height: 15px;"><rect x="1.5" y="1.5" width="5" height="5" rx="1.2" fill="none" stroke="#0a0a0a" stroke-width="1.5"></rect><rect x="9.5" y="1.5" width="5" height="5" rx="1.2" fill="none" stroke="#0a0a0a" stroke-width="1.5"></rect><rect x="1.5" y="9.5" width="5" height="5" rx="1.2" fill="none" stroke="#0a0a0a" stroke-width="1.5"></rect><rect x="9.5" y="9.5" width="5" height="5" rx="1.2" fill="none" stroke="#0a0a0a" stroke-width="1.5"></rect></svg>
       Tools
     </div>
   </div>
-
-  <!-- Header 2: tool header for the open card -->
-  <div style="background: #ffffff; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; gap: 8px; padding: 6px 12px; flex-shrink: 0;">
+  <div style="background: #ffffff; border-bottom: 1px solid #e5e5e5; display: flex; align-items: center; gap: 8px; padding: 7px 12px;">
     <svg viewBox="0 0 16 16" style="width: 18px; height: 18px;"><path d="M10 3 L5 8 L10 13" fill="none" stroke="#737373" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-    <span style="width: 24px; height: 24px; border-radius: 999px; background: #6390f0; display: flex; align-items: center; justify-content: center;"><img src="11.png" alt="Water" style="width: 15px; height: 15px;"></span>
-    <span style="font-size: 14px; font-weight: 700;">Water</span>
-    <span style="font-size: 11px; color: #737373;">Weird dual-typing</span>
-    <span style="margin-left: auto; display: flex; align-items: center; gap: 10px;">
-      <svg viewBox="0 0 16 16" style="width: 16px; height: 16px;"><circle cx="8" cy="8" r="7" fill="none" stroke="#737373" stroke-width="1.4"></circle><circle cx="8" cy="4.8" r="0.9" fill="#737373"></circle><rect x="7.2" y="6.8" width="1.6" height="4.6" rx="0.8" fill="#737373"></rect></svg>
-      <svg viewBox="0 0 24 24" style="width: 17px; height: 17px;"><path d="M4 8 L7 8 L9 5 L15 5 L17 8 L20 8 L20 19 L4 19 Z" fill="none" stroke="#737373" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="12" cy="13" r="3.2" fill="none" stroke="#737373" stroke-width="1.8"></circle></svg>
-    </span>
+    <svg viewBox="0 0 200 40" style="width: 76px; height: 15.2px;"><rect x="0" y="0" width="200" height="40" rx="19" fill="#2980EF"></rect><image href="11.png" x="15" y="5" width="30" height="30"></image><text x="113" y="33" font-size="33" font-weight="700" fill="#ffffff" text-anchor="middle" transform="translate(113,0) scale(0.76 1) translate(-113,0)">WATER</text></svg>
+    <span style="font-size: 11px; color: #a3a3a3;">What is this gym&#39;s theme?</span>
+    <span style="margin-left: auto; display: flex; align-items: center; gap: 10px;"><svg viewBox="0 0 16 16" style="width: 16px; height: 16px;"><circle cx="8" cy="8" r="7" fill="none" stroke="#737373" stroke-width="1.4"></circle><circle cx="8" cy="4.8" r="0.9" fill="#737373"></circle><rect x="7.2" y="6.8" width="1.6" height="4.6" rx="0.8" fill="#737373"></rect></svg><svg viewBox="0 0 24 24" style="width: 17px; height: 17px;"><path d="M4 8 L7 8 L9 5 L15 5 L17 8 L20 8 L20 19 L4 19 Z" fill="none" stroke="#737373" stroke-width="1.8" stroke-linejoin="round"></path><circle cx="12" cy="13" r="3.2" fill="none" stroke="#737373" stroke-width="1.8"></circle></svg></span>
   </div>
-
-  <!-- The 11-row card: glyphs sit in the rightmost empty cell, template style -->
-  <div style="margin: 10px 12px 0 12px; background: #ffffff; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06); padding: 4px 8px; position: relative;">
-
-    <!-- Signature panel: 3 columns x 4 rows, from cell A1 -->
-    <div style="position: absolute; left: 10px; top: 7px; width: 146px; height: 212px; background: #fafafa; border: 1px solid #f0f0f1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; z-index: 5;">
-      <span style="display: flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; color: #737373;"><svg viewBox="0 0 12 12" style="width: 10px; height: 10px;"><path d="M6 0.5 L7.5 4.4 L11.6 4.4 L8.3 6.9 L9.6 10.9 L6 8.5 L2.4 10.9 L3.7 6.9 L0.4 4.4 L4.5 4.4 Z" fill="#dc2626"></path></svg>SIGNATURE</span>
-      <img src="171.png" alt="Lanturn" class="sprite" style="width: 88px; height: 88px;">
-      <span style="font-size: 13px; font-weight: 600;">Lanturn</span>
+  <div class="card" style="margin: 10px 12px 0 12px; --mat: #f2f7fe; --cell: #427dc8; --band: #265fa8; --line: #e1edfd; --dash: #aac4e6; --hint: #719ed6;">
+    <!-- Signature slot: 3 columns x 4 rows from A1. The tile is the dex builder's standalone tile. -->
+    <div class="slot" style="left: 10px; top: 30px; width: 146px; height: 204px; background: #ffffff; border: 1px solid #e5e5e5; display: flex; flex-direction: column; align-items: center; padding: 6px 0 8px 0;">
+      <span style="font-size: 8.5px; font-weight: 800; letter-spacing: 0.08em; color: #265fa8;">SIGNATURE POK&#201;MON</span>
+      <span style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <img src="171.png" alt="Lanturn" class="sprite" style="width: 96px; height: 96px;">
+        <span style="font-size: 14px; font-weight: 500; line-height: 1.2;">Lanturn</span>
+        <span style="display: flex; flex-direction: column; align-items: center; gap: 2px; margin-top: 5px;">
+          <svg viewBox="0 0 200 40" style="width: 84px; height: 16.8px;"><rect x="0" y="0" width="200" height="40" rx="19" fill="#2980EF"></rect><image href="11.png" x="15" y="5" width="30" height="30"></image><text x="113" y="33" font-size="33" font-weight="700" fill="#ffffff" text-anchor="middle" transform="translate(113,0) scale(0.76 1) translate(-113,0)">WATER</text></svg>
+          <svg viewBox="0 0 200 40" style="width: 84px; height: 16.8px;"><rect x="0" y="0" width="200" height="40" rx="19" fill="#FAC000"></rect><image href="13.png" x="15" y="5" width="30" height="30"></image><text x="113" y="33" font-size="33" font-weight="700" fill="#ffffff" text-anchor="middle" textLength="124" lengthAdjust="spacingAndGlyphs" transform="translate(113,0) scale(0.76 1) translate(-113,0)">ELECTRIC</text></svg>
+        </span>
+      </span>
     </div>
 
-    <!-- Gym 1 -->
-    <div class="trow" style="border-top: none;">
-      <div class="c"></div><div class="c"></div><div class="c"></div>
-      <div class="c"><span style="font-size: 9.5px; color: #737373; text-align: right; line-height: 1.2;">No<br>badges</span></div>
-      <div class="g"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#737373" stroke-width="1.6"></path></svg></div>
-      <div class="c"><img src="194.png" alt="Wooper" class="sprite"></div>
-      <div class="c"><img src="170.png" alt="Chinchou" class="sprite"></div>
-    </div>
-    <!-- Gym 2 -->
-    <div class="trow">
-      <div class="c"></div><div class="c"></div><div class="c"></div>
-      <div class="g"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#737373" stroke-width="1.6"></path></svg></div>
-      <div class="c"><img src="271.png" alt="Lombre" class="sprite"></div>
-      <div class="c"><img src="194.png" alt="Wooper" class="sprite"></div>
-      <div class="c"><img src="170.png" alt="Chinchou" class="sprite"></div>
-    </div>
-    <!-- Gym 3 -->
-    <div class="trow">
-      <div class="c"></div><div class="c"></div><div class="c"></div>
-      <div class="g"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#737373" stroke-width="1.6"></path></svg></div>
-      <div class="c"><img src="271.png" alt="Lombre" class="sprite"></div>
-      <div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div>
-      <div class="c"><img src="170.png" alt="Chinchou" class="sprite"></div>
-    </div>
-    <!-- Gym 4 -->
-    <div class="trow">
-      <div class="c"></div><div class="c"></div><div class="c"></div>
-      <div class="g"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#737373" stroke-width="1.6"></path></svg></div>
-      <div class="c"><img src="271.png" alt="Lombre" class="sprite"></div>
-      <div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div>
-      <div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div>
-    </div>
-    <!-- Gym 5 -->
-    <div class="trow">
-      <div class="c"></div><div class="c"></div>
-      <div class="g"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#737373" stroke-width="1.6"></path></svg></div>
-      <div class="c"><img src="130.png" alt="Gyarados" class="sprite"></div>
-      <div class="c"><img src="271.png" alt="Lombre" class="sprite"></div>
-      <div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div>
-      <div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div>
-    </div>
-    <!-- Gym 6 -->
-    <div class="trow">
-      <div class="c"></div><div class="c"></div>
-      <div class="g"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#737373" stroke-width="1.6"></path></svg></div>
-      <div class="c"><img src="130.png" alt="Gyarados" class="sprite"></div>
-      <div class="c"><img src="272.png" alt="Ludicolo" class="sprite"></div>
-      <div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div>
-      <div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div>
-    </div>
-    <!-- Gym 7 -->
-    <div class="trow">
-      <div class="c"></div><div class="c"></div>
-      <div class="g"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#737373" stroke-width="1.6"></path></svg></div>
-      <div class="c"><img src="130.png" alt="Gyarados" class="sprite"></div>
-      <div class="c"><img src="272.png" alt="Ludicolo" class="sprite"></div>
-      <div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div>
-      <div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div>
-    </div>
-    <!-- Gym 8 -->
-    <div class="trow">
-      <div class="c"></div>
-      <div class="g" style="max-width: 44px; margin: 0 auto;"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#737373" stroke-width="1.6"></path></svg></div>
-      <div class="c"><img src="131.png" alt="Lapras" class="sprite"></div>
-      <div class="c"><img src="130.png" alt="Gyarados" class="sprite"></div>
-      <div class="c"><img src="272.png" alt="Ludicolo" class="sprite"></div>
-      <div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div>
-      <div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div>
-    </div>
-    <!-- Elite 4 -->
-    <div class="trow" style="border-top: 2px solid #e5e5e5;">
-      <div class="c"></div>
-      <div class="g" style="flex-wrap: nowrap;"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0.5 L7.5 4.4 L11.6 4.4 L8.3 6.9 L9.6 10.9 L6 8.5 L2.4 10.9 L3.7 6.9 L0.4 4.4 L4.5 4.4 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0.5 L7.5 4.4 L11.6 4.4 L8.3 6.9 L9.6 10.9 L6 8.5 L2.4 10.9 L3.7 6.9 L0.4 4.4 L4.5 4.4 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0.5 L7.5 4.4 L11.6 4.4 L8.3 6.9 L9.6 10.9 L6 8.5 L2.4 10.9 L3.7 6.9 L0.4 4.4 L4.5 4.4 Z" fill="#737373"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0.5 L7.5 4.4 L11.6 4.4 L8.3 6.9 L9.6 10.9 L6 8.5 L2.4 10.9 L3.7 6.9 L0.4 4.4 L4.5 4.4 Z" fill="#737373"></path></svg></div>
-      <div class="c"><img src="131.png" alt="Lapras" class="sprite"></div>
-      <div class="c"><img src="130.png" alt="Gyarados" class="sprite"></div>
-      <div class="c"><img src="272.png" alt="Ludicolo" class="sprite"></div>
-      <div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div>
-      <div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div>
+    <!-- TM slot: 2 columns x 1 row, matching the height of the glyph cell beside it -->
+    <div class="slot" style="left: 10px; top: 246px; width: 96px; height: 42px; background: rgba(255,255,255,0.65); border: 1px dashed var(--dash); display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;"><circle cx="12" cy="12" r="10.2" fill="#427dc8"></circle><circle cx="12" cy="12" r="10.2" fill="none" stroke="#265fa8" stroke-width="1.2"></circle><path d="M12 3.5 A8.5 8.5 0 0 1 20.5 12" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity="0.75"></path><circle cx="12" cy="12" r="3.4" fill="#f2f7fe"></circle><circle cx="12" cy="12" r="3.4" fill="none" stroke="#265fa8" stroke-width="1.1"></circle></svg>
+      <span style="display: flex; flex-direction: column; line-height: 1.25;">
+        <b style="font-size: 10px; font-weight: 800; color: var(--band); letter-spacing: 0.05em;">TM</b>
+        <span style="font-size: 9px; color: var(--hint);">Pick a move</span>
+      </span>
     </div>
 
-    <div class="band"><b>CHAMPION TEAM</b> may include one Mega/Gigantamax</div>
-    <div class="trow" style="border-top: none;">
-      <div class="g"><svg viewBox="0 0 20 14" width="16" height="12"><path d="M1 13 L2.6 4 L7 8.4 L10 1.5 L13 8.4 L17.4 4 L19 13 Z" fill="#eab308"></path></svg></div>
-      <div class="c"><img src="350.png" alt="Milotic" class="sprite"></div>
-      <div class="c"><img src="131.png" alt="Lapras" class="sprite"><span class="pbtn" style="right: 1px; color: #db2777;">D</span></div>
-      <div class="c"><img src="130.png" alt="Gyarados" class="sprite"><span class="pbtn" style="left: 1px; color: #f97316;">M</span></div>
-      <div class="c"><img src="272.png" alt="Ludicolo" class="sprite"></div>
-      <div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div>
-      <div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div>
+    <!-- Badge slot: 2 columns x 2 rows, spanning the two glyph cells beside it -->
+    <div class="slot" style="left: 10px; top: 300px; width: 96px; height: 96px; background: rgba(255,255,255,0.65); border: 1px dashed var(--dash); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
+      <svg viewBox="0 0 32 32" style="width: 38px; height: 38px;"><path d="M16 3 L27 9.5 L27 22.5 L16 29 L5 22.5 L5 9.5 Z" fill="none" stroke="var(--dash)" stroke-width="1.6" stroke-dasharray="3 2.4"></path><circle cx="16" cy="16" r="4.4" fill="none" stroke="var(--dash)" stroke-width="1.6"></circle></svg>
+      <span style="width: 76px; border-bottom: 1px solid var(--dash); text-align: center; padding-bottom: 2px; font-size: 9.5px; color: var(--hint);">Badge name</span>
     </div>
 
-    <div class="band"><b>ENDGAME BOSS TEAM</b> may also include one minor Legendary</div>
-    <div class="trow" style="border-top: none;">
-      <div class="g"><svg viewBox="0 0 16 16" width="17" height="17" fill="none"><path d="M1 8 A7 7 0 0 1 15 8" fill="#ef4444" stroke="#ef4444" stroke-width="1.5"></path><path d="M1 8 A7 7 0 0 0 15 8" fill="none" stroke="#ef4444" stroke-width="1.5"></path><line x1="1" y1="8" x2="15" y2="8" stroke="#ef4444" stroke-width="1.5"></line><circle cx="8" cy="8" r="2.5" fill="#ffffff" stroke="#ef4444" stroke-width="1.5"></circle></svg></div>
-      <div class="c"><img src="350.png" alt="Milotic" class="sprite"></div>
-      <div class="c"><img src="131.png" alt="Lapras" class="sprite"><span class="pbtn" style="right: 1px; color: #db2777;">D</span></div>
-      <div class="c"><img src="245.png" alt="Suicune" class="sprite"><svg viewBox="0 0 20 14" style="position: absolute; top: 2px; left: 2px; width: 12px; height: 9px;"><path d="M1 13 L2.6 4 L7 8.4 L10 1.5 L13 8.4 L17.4 4 L19 13 Z" fill="#eab308"></path></svg></div>
-      <div class="c"><img src="272.png" alt="Ludicolo" class="sprite"></div>
-      <div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div>
-      <div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div>
-    </div>
+    <div class="band"><b>GYM LEADER TEAM</b></div>
+    <div class="trow" style="box-shadow: none;"><div class="c"></div><div class="c"></div><div class="c"></div><div class="g" style="grid-column: span 2;"><span style="display: flex; flex-direction: column; align-items: center; gap: 3px;"><span style="font-size: 9.5px; font-weight: 600; color: #ffffff;">No badges</span><span style="display: flex; gap: 2px; align-items: center;"><svg viewBox="0 0 12 12" width="8" height="8"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" stroke-width="1.8"></path></svg></span></span></div><div class="c"><img src="194.png" alt="Wooper" class="sprite"></div><div class="c"><img src="170.png" alt="Chinchou" class="sprite"></div></div>
+    <div class="trow"><div class="c"></div><div class="c"></div><div class="c"></div><div class="g"><span style="display: flex; gap: 2px; align-items: center;"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" stroke-width="1.8"></path></svg></span></div><div class="c"><img src="271.png" alt="Lombre" class="sprite"></div><div class="c"><img src="194.png" alt="Wooper" class="sprite"></div><div class="c"><img src="170.png" alt="Chinchou" class="sprite"></div></div>
+    <div class="trow"><div class="c"></div><div class="c"></div><div class="c"></div><div class="g"><span style="display: flex; gap: 2px; align-items: center;"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" stroke-width="1.8"></path></svg></span></div><div class="c"><img src="271.png" alt="Lombre" class="sprite"></div><div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div><div class="c"><img src="170.png" alt="Chinchou" class="sprite"></div></div>
+    <div class="trow"><div class="c"></div><div class="c"></div><div class="c"></div><div class="g"><span style="display: flex; gap: 2px; align-items: center;"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" stroke-width="1.8"></path></svg></span></div><div class="c"><img src="271.png" alt="Lombre" class="sprite"></div><div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div><div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div></div>
+    <div class="trow"><div class="c"></div><div class="c"></div><div class="g"><span style="display: flex; flex-wrap: wrap; gap: 2px; justify-content: flex-start; align-content: center; width: 34px;"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" stroke-width="1.8"></path></svg></span></div><div class="c"><img src="130.png" alt="Gyarados" class="sprite"></div><div class="c"><img src="271.png" alt="Lombre" class="sprite"></div><div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div><div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div></div>
+    <div class="trow"><div class="c"></div><div class="c"></div><div class="g"><span style="display: flex; flex-wrap: wrap; gap: 2px; justify-content: flex-start; align-content: center; width: 34px;"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" stroke-width="1.8"></path></svg></span></div><div class="c"><img src="130.png" alt="Gyarados" class="sprite"></div><div class="c"><img src="272.png" alt="Ludicolo" class="sprite"></div><div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div><div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div></div>
+    <div class="trow"><div class="c"></div><div class="c"></div><div class="g"><span style="display: flex; flex-wrap: wrap; gap: 2px; justify-content: flex-start; align-content: center; width: 34px;"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" stroke-width="1.8"></path></svg></span></div><div class="c"><img src="130.png" alt="Gyarados" class="sprite"></div><div class="c"><img src="272.png" alt="Ludicolo" class="sprite"></div><div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div><div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div></div>
+    <div class="trow"><div class="g" style="grid-column: span 2;"><span style="display: flex; flex-wrap: wrap; gap: 2px; justify-content: flex-start; align-content: center; width: 34px;"><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="7" height="7"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" stroke-width="1.8"></path></svg></span></div><div class="c"><img src="131.png" alt="Lapras" class="sprite"></div><div class="c"><img src="130.png" alt="Gyarados" class="sprite"></div><div class="c"><img src="272.png" alt="Ludicolo" class="sprite"></div><div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div><div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div></div>
+    <div class="band" style="margin-top: 1px;"><b>ELITE FOUR &amp; CHAMPION</b><span>Champion may have one Mega/Gigantamax</span></div>
+    <div class="trow" style="box-shadow: none;"><div class="g" style="grid-column: span 2;"><span style="display: flex; gap: 2px; align-items: center;"><svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 0.5 L7.5 4.4 L11.6 4.4 L8.3 6.9 L9.6 10.9 L6 8.5 L2.4 10.9 L3.7 6.9 L0.4 4.4 L4.5 4.4 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 0.5 L7.5 4.4 L11.6 4.4 L8.3 6.9 L9.6 10.9 L6 8.5 L2.4 10.9 L3.7 6.9 L0.4 4.4 L4.5 4.4 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 0.5 L7.5 4.4 L11.6 4.4 L8.3 6.9 L9.6 10.9 L6 8.5 L2.4 10.9 L3.7 6.9 L0.4 4.4 L4.5 4.4 Z" fill="#ffffff"></path></svg><svg viewBox="0 0 12 12" width="10" height="10"><path d="M6 0.5 L7.5 4.4 L11.6 4.4 L8.3 6.9 L9.6 10.9 L6 8.5 L2.4 10.9 L3.7 6.9 L0.4 4.4 L4.5 4.4 Z" fill="#ffffff"></path></svg></span></div><div class="c"><img src="131.png" alt="Lapras" class="sprite"></div><div class="c"><img src="130.png" alt="Gyarados" class="sprite"></div><div class="c"><img src="272.png" alt="Ludicolo" class="sprite"></div><div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div><div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div></div>
+    <div class="trow"><div class="g"><svg viewBox="0 0 16 16" style="width: 15px; height: 15px;"><path d="M2 12.5 L1 3.6 L5.2 7.2 L8 2.2 L10.8 7.2 L15 3.6 L14 12.5 Z" fill="#ffffff"></path><rect x="2" y="13" width="12" height="1.6" rx="0.8" fill="#ffffff"></rect></svg></div><div class="c"><img src="350.png" alt="Milotic" class="sprite"></div><div class="c"><img src="131.png" alt="Lapras" class="sprite"><span class="pbtn" style="right: 5px;">D</span></div><div class="c"><img src="130.png" alt="Gyarados" class="sprite"><span class="pbtn" style="left: 5px;">M</span></div><div class="c"><img src="272.png" alt="Ludicolo" class="sprite"></div><div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div><div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div></div>
+    <div class="band" style="margin-top: 1px;"><b>ENDGAME BOSS TEAM</b><span>may also include one minor Legendary</span></div>
+    <div class="trow" style="box-shadow: none;"><div class="g"><svg viewBox="0 0 16 16" style="width: 16px; height: 16px;" fill="none"><circle cx="8" cy="8" r="6.9" fill="none" stroke="#ffffff" stroke-width="1.4"></circle><line x1="1.1" y1="8" x2="14.9" y2="8" stroke="#ffffff" stroke-width="1.4"></line><circle cx="8" cy="8" r="2.6" fill="#427dc8" stroke="#ffffff" stroke-width="1.4"></circle></svg></div><div class="c"><img src="350.png" alt="Milotic" class="sprite"></div><div class="c"><img src="131.png" alt="Lapras" class="sprite"></div><div class="c"><img src="245.png" alt="Suicune" class="sprite"><span style="position: absolute; bottom: 1px; font-size: 8px; font-weight: 700; color: var(--band);">&#8596;</span></div><div class="c"><img src="272.png" alt="Ludicolo" class="sprite"></div><div class="c"><img src="195.png" alt="Quagsire" class="sprite"></div><div class="c"><img src="171.png" alt="Lanturn" class="sprite"></div></div>
   </div>
-
-  <!-- Gesture hint -->
-  <div style="margin: 10px 16px 0 16px; display: flex; align-items: center; gap: 8px;">
-    <svg viewBox="0 0 16 16" style="width: 13px; height: 13px; flex-shrink: 0;"><path d="M2 8 L14 8 M4.5 5 L2 8 L4.5 11 M11.5 5 L14 8 L11.5 11" fill="none" stroke="#a3a3a3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-    <span style="font-size: 11px; color: #a3a3a3;">Drag a column to reorder &middot; drag a sprite up or down to shift its evolution</span>
-  </div>
+  <div style="padding: 8px 14px 0 14px; display: flex; flex-direction: column; gap: 3px;"><span style="font-size: 10px; color: #737373; line-height: 1.35;">&#8597; Drag a pokemon across rows to shift when it evolves</span><span style="font-size: 10px; color: #737373; line-height: 1.35;">&#8596; Drag a column to reorder</span><span style="font-size: 10px; color: #737373; line-height: 1.35;">&#8596; Drag the Endgame Boss legend to change which pokemon it replaces</span></div>
 
 </div>
 </x-dc>
