@@ -77,14 +77,22 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
     control, `PokemonTileContent`. Never a bespoke panel.
 
 12b. **TM slot.** 2 columns × 1 row, directly under the signature, and no
-    taller than the glyph cell beside it. Its icon is a TM disc. Tapping it
+    taller than the glyph cell beside it. Its mark is a pokeball with the
+    band taken out — a small circle inside a big one — sheared, so it reads
+    as a disc lying at an angle. Tapping it
     opens a move picker built on the selection pane: type badge, move name,
     and the category icon, with a filter for type and one for category, and
     a search that sorts on move name. Power is data, not a filter. The pane
-    keeps the browser's own gutters. It needs the same paint guards as the
-    Pokemon pane: deferred filter options (`useDeferredValue`), a render
-    budget on results (`SEARCH_RENDER_LIMIT`), and row windowing
-    (`useRowWindow`).
+    keeps the browser's own gutters and its rows are dense. The category
+    chip runs through the same badge pipeline as a type badge — one 200×40
+    art space, a white glyph at the left, the name condensed to 0.76, so it
+    localises like a type name — with Bulbapedia's palette (physical
+    `#EB5628`, special `#375AB2`, status `#828282`), its Scarlet/Violet icon
+    art, and a border of our own that Bulbapedia's chips do not have. Type
+    badge, move name and category chip all centre on one line. It needs the
+    same paint guards as the Pokemon pane: deferred filter options
+    (`useDeferredValue`), a render budget on results (`SEARCH_RENDER_LIMIT`),
+    and row windowing (`useRowWindow`).
 12c. **Badge slot.** 2 columns × 2 rows, under the TM, spanning exactly the
     two glyph cells beside it. It holds the badge the gym awards. Text entry
     for v1. Later enhancement: check whether the PokeAPI sprite repo already
@@ -92,29 +100,38 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
 
 ## Card theme
 
-Three shades of the card's own type, and nothing else. Type colours come
-from `src/data/type-colors.ts` — the repo's Gen IX badge palette (water is
-`#2980EF`), not the Bulbapedia set.
+Type colours come from `src/data/type-colors.ts` — the repo's Gen IX badge
+palette (water is `#2980EF`), not the Bulbapedia set. The card paints three
+surfaces from them:
 
 - **Material** — the build page's own section fill: the type at 6.3% over
   white (`${color}10`), so a card and a dex section read as the same family.
   White when the card has no type.
-- **Glyph cells** — the type at 55% saturation, darkened until its relative
-  luminance is 0.20. Rounded rectangles, white glyphs.
-- **Spacer bands** — saturation +8, luminance 0.115. Rounded rectangles,
-  white text, vertically centred.
+- **Glyph cells** — the app's existing alt shade: the `stroke` half of
+  `deriveSectionColor` in `src/lib/sectionColors.ts`, which the view page
+  already uses for section outlines and names. Reusing it comes first;
+  nothing here invents a second dark palette.
+- **Spacer bands** — one /vp/ step down from the cells: −9 points of HSL
+  lightness, hue and saturation untouched.
 
-Two notes on why the steps are defined this way. The /vp/ template's own
-cards are muted and their two dark steps sit close together; an earlier
-draft jumped from a pale body to a fully saturated cell and then to near
-navy, which read as a different, harsher system. And fixed HSL lightness
-does not hold brightness across hues — L 55% green is far brighter than
-L 55% blue, and white glyphs vanish on it — so each shade is solved for a
-target luminance instead. That keeps white at 4.2:1 on every type's cells
-and 6.4:1 on every type's bands, which is also what the /vp/ sheet does when
-it prints the electric card's band as a muted mustard rather than yellow.
+**The −9 is measured, not chosen.** Three /vp/ cards, in HSL:
+
+| card | lightness | saturation |
+|---|---|---|
+| water `#228abb → #1b6e96 → #155370` | 43.3 → 34.7 → 26.1 | 69.2 / 69.5 / 68.4 |
+| electric `#eec717 → #d3a913 → #a97f0d` | 51.2 → 45.1 → 35.7 | 86.3 / 83.5 / 85.7 |
+| dark `#455160 → #2e3743 → #151d26` | 32.4 → 22.2 → 11.6 | 16.4 / 18.6 / 28.8 |
+
+Hue never moves, saturation barely moves, and lightness falls in even steps
+of −6 to −10.6 points, mean −8.9. The template's progression looks gentle
+because it starts from an already-dark base, not because its steps are
+small — which is why anchoring on the app's alt shade reproduces it.
 
 The app body background and both app headers are unaffected.
+
+Spacer bands run the full width of the card and are clipped by its corner
+radius; the top band sits flush against the card's top edge. Their text is
+vertically centred.
 
 ## League
 
@@ -128,11 +145,12 @@ The app body background and both app headers are unaffected.
 15. **Reorder.** Rows drag vertically; a moved card re-derives its shown
     team from the destination slot.
 15b. **League home shape.** The league home is a zoomed-out card, not a
-    separate design: the same 7-column right-aligned grid plus one extra
-    type column, 14 rows, the same bands and glyph conventions. One
-    difference: the glyph cells are left-aligned into a single column
-    beside the type column, rather than hugging each team. Each row carries
-    its own card's type shades; an empty slot keeps the white material.
+    separate design: the same 7-column right-aligned grid, 14 rows, the same
+    glyph conventions. Two columns lead each row — the glyph cell, then the
+    type chip — rather than the glyphs hugging each team. Its spacers are
+    plain section labels: Gym Leaders, Elite Four, Champion, Endgame Boss,
+    with no notes. Each row carries its own card's type shades; an empty
+    slot keeps the white material.
 16. **Stage glyphs** (used on the card AND the league):
     - Glyphs live INSIDE the grid, in the rightmost empty cell of each row,
       hugging the team — never in a separate label column. On the league
@@ -147,9 +165,9 @@ The app body background and both app headers are unaffected.
     - Elite 4 on the card: 4 stars, sized to carry the same visual weight as
       a gym's diamonds. In the league: slot k shows k stars, and slot 4
       stacks them 2×2 so the cluster keeps clear of the cell edges.
-    - Champion: FILLED crown. Endgame boss: the pokeball, drawn as outline
-      only so its top half matches its bottom. Both take the same colour as
-      the gym and Elite 4 glyphs — white on the glyph cell.
+    - Champion: FILLED crown. Endgame boss: the pokeball, outline only, so
+      its top half matches its bottom. Both take the same colour as the gym
+      and Elite 4 glyphs — white on the glyph cell.
     - The endgame-boss legend gets no border of its own.
     - Three spacer bands, text vertically centred: "GYM LEADER TEAM" above
       the whole card, "ELITE FOUR & CHAMPION — Champion may have one
@@ -169,6 +187,22 @@ The app body background and both app headers are unaffected.
   title in the body. Controls sit at its right.
 - Spacing and idiom get planned together with the owner during the build.
 
+## States the wireframes cover
+
+- **Type**: no type (the default), water, electric, dark. No type runs
+  through the badge pipeline like any other and borrows the view page's
+  spandrel star for its glyph.
+- **Completion**: empty; signature only; TM and badge without a signature;
+  everything filled.
+- **Line count**: 0, 3, 5 and 6 evolution lines, which changes which rows
+  have anything in them.
+- **Hover** (desktop only): the row and the column under the pointer darken
+  by the type at 9%.
+- **Holding a column**: the grid already shows the order after the drop, a
+  dashed hole marks where the line lands, and the held column floats above
+  it. A line moved to a later seat joins later, so its early rows empty out
+  and the lines it passed move up.
+
 ## Guardrails and outputs
 
 17. **No warnings** for type incoherence. The legend rule (item 9) is the
@@ -177,11 +211,16 @@ The app body background and both app headers are unaffected.
     Planned: side-by-side export — one leader beside the league, fanned out.
 19. **Desktop shape.** Real panes with the seam showing, as the dex builder
     has it — not cards floating on a blank canvas. Each pane centres a
-    phone-width column rather than stretching its content. At rest: league
-    left, open card right, joined by a smooth sankey flow out of the open
-    league row. That row's fill runs the full width of the league card,
-    through its gutters, with no outline, and the flow uses exactly that
-    colour, so the two meet without an edge. Both cards carry the same
+    phone-width column rather than stretching its content. Each pane has its
+    own header, as the dex builder's do: "Custom Pokémon League" with info
+    and export, "Pokémon Trainer Card" with export, and "Adding to: <slot>"
+    with a close control. There is no page-wide title bar; the league pane's
+    header is the page h1. The card pane also carries the card's own type
+    badge and theme. At rest: league left, open card right, joined by a
+    smooth flow out of the open league row. That row's fill runs the full
+    width of the league card, through its gutters and with no outline, and
+    the flow is the same colour and translucent, so the pane seam reads
+    through it and the two meet without an edge. Both cards carry the same
     shadow. Opening the picker slides a third pane in from the RIGHT:
     league, card, picker, each still centring a phone-width column.
 20. **Mobile shape.** League home → tap a row → card full-screen → back.
@@ -233,10 +272,9 @@ Veto any of these; they ship as stated otherwise.
 - **Onboarding:** a first-run popup explaining the gestures, re-openable
   from an info button.
 - **Move data:** a moves dataset (name, type, category, power) for the TM
-  picker, plus the physical/special/status icons. Neither PokeAPI's sprite
-  repo nor any reachable mirror ships those icons, so the build has to
-  harvest them; the boards draw stand-ins at their real shapes and palette
-  (#C92112 / #4F5870 / #8C888C).
+  picker. The category icons are already harvested — Bulbapedia's
+  Scarlet/Violet art, white on transparent, checked in beside the canvas as
+  `physical.png`, `special.png` and `status.png`.
 - **Page infra:** second Vite entry with static head/h1/body copy,
   sitemap entry, cross-links with the dex builder.
 
