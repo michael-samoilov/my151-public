@@ -67,7 +67,9 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
     signature while under 6 lines inserts its line rightmost, shifting
     others left; with 6 lines placed, it only marks an existing line.
     Column drag never changes signature status. Removing the line removes
-    the signature.
+    the signature. On the card, the signature renders as a large panel in
+    the top-left void — roughly 3 columns × 4 rows from cell A1, like the
+    /vp/ template's Signature PKMN box.
 
 ## League
 
@@ -80,10 +82,31 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
     the Endgame-boss row. Champion and boss teams are distinct rows.
 15. **Reorder.** Rows drag vertically; a moved card re-derives its shown
     team from the destination slot.
-16. **Stage glyphs** (used on the card AND the league):
+15b. **League home shape.** The league home is a zoomed-out card, not a
+    separate design: the same 7-column right-aligned grid plus one extra
+    type column, 14 rows, the same bands and glyph conventions.
+16. **Stage glyphs** (used on the card AND the league; revised 2026-08-28):
+    - Glyphs live INSIDE the grid, in the rightmost empty cell of each row,
+      hugging the team — never in a separate label column.
     - Gym N: N−1 filled square diamonds plus one border-only diamond.
+      Gym 1 also fills the cell left of its diamond with a "No badges" label.
     - Elite 4 on the card: 4 stars. In the league: slot k shows k stars.
-    - Champion: border-only crown. Endgame boss: filled crown.
+    - Champion: FILLED crown. Endgame boss: the red pokeball (the app
+      favicon / dex builder "already selected" icon, `PokeballIcon`).
+    - Spacer bands, template-style: "CHAMPION TEAM — may include one
+      Mega/Gigantamax" before the champion row, "ENDGAME BOSS TEAM — may
+      also include one minor Legendary" before the boss row.
+
+## App chrome (added 2026-08-28)
+
+- **Two headers, matching the build page.** Header 1 is the global
+  my151.app header; cross-tool navigation (dex builder, league builder,
+  favorite picker, …) lives there, behind a Tools menu or side-pane
+  trigger. Header 2 is the tool banner — for the league: counter,
+  progress runway, and controls, milestone-bar style.
+- **Scrollable h1.** The tool name renders as an h1 below the headers for
+  SEO; it can scroll past.
+- Spacing and idiom get planned together with the owner during the build.
 
 ## Guardrails and outputs
 
@@ -98,10 +121,11 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
 20. **Mobile shape.** League home → tap a row → card full-screen → back.
     Selection pane is a bottom sheet. The whole 11-row card fits on one
     screen on both platforms.
-21. **Selector.** The evo-line pane groups by branch: each branch is its
-    own pickable line card (three cards for Eevee's first three branches,
-    for example), so picking a card IS the branch choice. "My 151" filter
-    ships in v1.
+21. **Selector.** Reuse the dex builder's `PokemonBrowser` selection pane
+    COMPONENT as-is — never a similar rebuild. Only the filter set differs:
+    add a "my dex" filter, and pre-select the type filter from the card's
+    chosen type. Lines appear once per branch, so picking a card IS the
+    branch choice. "My 151" filter ships in v1.
 22. **Persistence.** One league in localStorage, own zustand store and key,
     versioned like the dex store.
 23. **Visual identity.** my151-native styling; the /vp/ template governs
