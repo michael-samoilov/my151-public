@@ -6,7 +6,7 @@
 //     [--surfaces a,b] [--no-build]
 import { openSession, type EngineName } from './lib/engines.ts';
 import type { PersonaName } from './lib/personas.ts';
-import { runStandardSuite } from './lib/flows.ts';
+import { runLeagueSuite, runStandardSuite } from './lib/flows.ts';
 import { probeEngines } from './doctor.ts';
 import { buildIn, startPreview, addWorktree, REPO_ROOT, type Preview, type Worktree } from './lib/servers.ts';
 import { Evidence, rollup, type SurfaceResult, type RunReport, type Check } from './lib/evidence.ts';
@@ -38,11 +38,14 @@ function parseArgs(argv: string[]) {
 async function driveSurface(def: SurfaceDef, base: string, ev: Evidence, tag: string): Promise<Check[]> {
   const s = await openSession(def.engine, def.persona);
   try {
-    return await runStandardSuite(s, def.persona, {
+    const ctx = {
       base,
       surface: `${def.surface}--${tag}`,
-      shot: (label) => ev.shotPath(`${def.surface}-${tag}`, label),
-    });
+      shot: (label: string) => ev.shotPath(`${def.surface}-${tag}`, label),
+    };
+    const checks = await runStandardSuite(s, def.persona, ctx);
+    checks.push(...(await runLeagueSuite(s, def.persona, ctx)));
+    return checks;
   } finally { await s.close(); }
 }
 

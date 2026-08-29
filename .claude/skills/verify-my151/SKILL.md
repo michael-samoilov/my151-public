@@ -103,7 +103,7 @@ best-effort on WebKit and Gecko via a post-load page trap. A real-placement chec
 until a `data-testid="verify-evo-card"` lands on the browser card.
 
 **Prove the verifier itself.** `harness/discriminate.ts` is a mutation test: it
-injects a known regression (boot throw, async throw, wide element, broken persist)
+injects a known regression (async throw, wide element, broken persist)
 into a worktree, builds, runs the Blink suite, and asserts the matching check
 fails, with the clean tree passing. Run it after changing the harness. A verifier
 that always says PASS is worse than none.
