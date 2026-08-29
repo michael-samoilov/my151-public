@@ -357,20 +357,13 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         value={name}
         onChange={(e) => setBadgeName(cardIndex, e.target.value)}
         placeholder="Badge Name"
-        // 16px once the card's fit zoom is divided back out, so iOS Safari
-        // does not auto-zoom the page on focus (the heuristic reads the
-        // input's font-size, not the placeholder's — the placeholder renders
-        // smaller so "Badge Name" fits the slot). Left-aligned while empty so
-        // the caret sits at the start of the placeholder, centred once typed.
-        className="w-full bg-transparent px-[2px] text-center leading-tight outline-none [&:placeholder-shown]:text-left placeholder:text-[0.8125rem] placeholder:text-[var(--lg-hint)]"
-        style={{ fontSize: 'calc(1rem / var(--lg-fit, 1))' }}
+        // Left-aligned while empty so the caret sits at the start of the
+        // placeholder, centred once typed. iOS focus zoom is handled at the
+        // page level (the league entry caps maximum-scale on iOS).
+        className="w-[5.25rem] bg-transparent text-center text-[0.65625rem] leading-tight outline-none [&:placeholder-shown]:text-left placeholder:text-[var(--lg-hint)]"
         aria-label="Badge name"
       />
-      {name && (
-        <span className="-mt-[0.3125rem] leading-tight" style={{ fontSize: 'calc(1rem / var(--lg-fit, 1))' }}>
-          Badge
-        </span>
-      )}
+      {name && <span className="-mt-[0.3125rem] text-[0.65625rem] leading-tight">Badge</span>}
     </div>
   );
 }

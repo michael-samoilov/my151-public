@@ -58,9 +58,9 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
         onChange={(e) => setName(e.target.value)}
         placeholder="Name your league"
         aria-label="League name"
-        // 1rem ≥ 16px, the iOS focus-zoom threshold — same fix as the theme
-        // and badge inputs.
-        className="min-w-0 bg-transparent text-[1rem] font-bold outline-none placeholder:font-semibold placeholder:text-muted-foreground/60"
+        // Small on purpose; the league entry caps maximum-scale on iOS so
+        // focusing a sub-16px input no longer zooms the page.
+        className="min-w-0 bg-transparent text-[0.9375rem] font-bold outline-none placeholder:font-semibold placeholder:text-muted-foreground/60"
       />
     </div>
   );

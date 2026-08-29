@@ -192,16 +192,12 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
           onChange={(e) => setCardTheme(cardIndex, e.target.value)}
           placeholder="What is this gym's theme?"
           aria-label="Gym theme"
-          // 1rem is at least 16px (layoutFontSize clamps there), which is the
-          // threshold below which iOS Safari zooms the page on focus.
-          className="min-w-0 flex-1 bg-transparent text-[1rem] font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/70"
+          className="min-w-0 flex-1 bg-transparent text-[0.6875rem] font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/70"
         />
         <span className="shrink-0 text-[0.6875rem] font-medium text-muted-foreground">{slotLabel(cardIndex)}</span>
       </div>
       <div className="px-3 pt-2.5">
-        {/* --lg-fit lets in-card text divide the zoom back out where a real
-            pixel floor matters (the badge input's 16px iOS threshold). */}
-        <div ref={fitRef} style={{ zoom: fit, '--lg-fit': fit } as React.CSSProperties}>
+        <div ref={fitRef} style={{ zoom: fit }}>
           <CardGrid cardIndex={cardIndex} view={view} />
         </div>
       </div>

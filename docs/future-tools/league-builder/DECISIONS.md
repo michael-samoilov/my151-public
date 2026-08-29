@@ -322,10 +322,13 @@ Veto any of these; they ship as stated otherwise.
    evolution-boundary rows and legendary retargeting.
 6. **Hint arrows render as text** (`↕` carries U+FE0E so iOS does not
    substitute the emoji), matching the left-right arrow.
-7. **Inputs never trigger iOS focus zoom**: league name, theme and badge
-   name are 16px computed (the badge input divides the fit zoom back out;
-   its placeholder renders smaller so "Badge Name" fits, and it left-aligns
-   while empty so the caret sits at the placeholder's start).
+7. **Inputs never trigger iOS focus zoom — at their design sizes.** 16px
+   text was tried and rejected as too big. Instead the league entry caps
+   the viewport's maximum-scale on iOS only, which suppresses the focus
+   auto-zoom while Safari still allows user pinch zoom (it ignores the cap
+   for gestures since iOS 10). Android is untouched: it honours the cap
+   for pinch and never auto-zooms inputs. The badge input left-aligns
+   while empty so the caret sits at the placeholder's start.
 8. **Signature picker is restricted to the card's placed lines** — a
    signature is chosen among the team.
 9. **TM picker sits on the selection pane's architecture**: BottomSheet on
