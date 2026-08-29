@@ -197,11 +197,29 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
   checks.push(ok('builder:sprites-rendered', sprites >= 10, `img count ${sprites}`));
   await s.screenshot(ctx.shot('builder-seeded'));
 
-  // Navigate each tab and confirm exactly it becomes active.
+  // Navigate each tab and confirm exactly it becomes active — and that the
+  // tool bar's three cells (title/count, centred nav, page controls) hold
+  // their lanes: title content must end before the nav starts, and the nav
+  // must end before the right cell's first control. Structural rects only.
   for (const nav of ['view', 'analytics', 'builder'] as const) {
     await s.click(`[data-nav="${nav}"]`);
     const view = await waitForActiveView(s, nav);
     checks.push(ok(`nav:${nav}-active`, view.active.length === 1 && view.active[0] === nav, `active=[${view.active.join(',')}]`));
+    const lanes = await s.evalJson<{ ok: boolean; found: boolean; detail: string }>(
+      `const title=document.querySelector('[data-testid="tool-title"]');
+       const actions=document.querySelector('[data-testid="tool-actions"]');
+       const navs=[...document.querySelectorAll('[data-nav]')];
+       if(!title||!actions||navs.length===0) return {ok:false,found:false,detail:'handles missing'};
+       const navLeft=Math.min(...navs.map(b=>b.getBoundingClientRect().left));
+       const navRight=Math.max(...navs.map(b=>b.getBoundingClientRect().right));
+       const inner=title.firstElementChild;
+       const titleRight=inner?inner.getBoundingClientRect().right:title.getBoundingClientRect().left;
+       const kids=[...actions.children].map(k=>k.getBoundingClientRect().left);
+       const actionsLeft=kids.length?Math.min(...kids):actions.getBoundingClientRect().right;
+       const ok=titleRight<=navLeft+0.5&&navRight<=actionsLeft+0.5;
+       return {ok,found:true,detail:'title.r='+Math.round(titleRight)+' nav=['+Math.round(navLeft)+','+Math.round(navRight)+'] actions.l='+Math.round(actionsLeft)};`,
+    );
+    checks.push(ok(`header:${nav}-no-overlap`, lanes.found && lanes.ok, lanes.detail));
     await s.screenshot(ctx.shot(`nav-${nav}`));
   }
 
@@ -296,6 +314,25 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
 
   const layout = await s.evalJson<{ scrollWidth: number; innerWidth: number; bodyH: number }>(LAYOUT);
   checks.push(ok('league:no-horizontal-overflow', layout.scrollWidth <= layout.innerWidth + 2, `scrollWidth ${layout.scrollWidth} vs innerWidth ${layout.innerWidth}`));
+
+  // The league's tool bar holds the dex bar's 44px, home and (where the
+  // desktop pane shows it) card page alike.
+  // h-11 = 2.75rem; the expected pixels follow the root font-size knob.
+  const bars = await s.evalJson<{ home: number; card: number; expected: number }>(
+    `const h=document.querySelector('[aria-label="League name"]');
+     const c=document.querySelector('[aria-label="Gym type"]');
+     const height=(el)=>{const row=el&&el.closest('.h-11');return row?row.getBoundingClientRect().height:-1};
+     const root=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
+     return {home:height(h),card:height(c),expected:2.75*root};`,
+  );
+  const barOk = (v: number) => v === -1 || Math.abs(v - bars.expected) < 1.5;
+  checks.push(
+    ok(
+      'league:tool-bar-height',
+      Math.abs(bars.home - bars.expected) < 1.5 && barOk(bars.card),
+      `home ${bars.home}px, card ${bars.card === -1 ? 'n/a' : `${bars.card}px`}, expected ${bars.expected.toFixed(1)}px`,
+    ),
+  );
 
   // The real drive: open a card, set its type, seat a line, pick a TM. The
   // pickers and instant-add flow are desktop-shaped; personas and other

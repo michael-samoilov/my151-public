@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { sectionName, t } from '@/i18n';
@@ -6,6 +7,7 @@ import { computeRemovalCascade, getEvolutionChainIds, getEvolutionLine, getPokem
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
 import { sectionColor } from '@/lib/sectionColors';
+import { useToolbarSlot } from '@/components/layout/toolbarSlot';
 import {
   PokemonTileContent,
   TILE_ACTION_BUTTON_CLASS,
@@ -20,7 +22,6 @@ import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { IntroCard } from '@/components/pokedex/IntroCard';
-import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import {
@@ -671,6 +672,7 @@ export function PokedexGrid() {
   const setEvoLineSizeFilter = usePokedexStore((s) => s.setEvoLineSizeFilter);
   const setCategoryFilter = usePokedexStore((s) => s.setCategoryFilter);
   const clearAll = usePokedexStore((s) => s.clearAll);
+  const toolbarSlot = useToolbarSlot('builder');
   const moveEvoLine = usePokedexStore((s) => s.moveEvoLine);
 
   const totalPlaced = Object.values(sections).reduce((s, a) => s + a.length, 0);
@@ -909,21 +911,15 @@ export function PokedexGrid() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center px-3 sm:px-6 py-2 border-b h-11">
-        <div className="shrink-0" style={{ width: 'var(--ms-side)' }}>
-          <h2 className="text-2xl font-extrabold tracking-tight leading-none tabular-nums">
-            <span className="text-primary">{totalPlaced}</span>
-            <span className="text-foreground">/151</span>
-          </h2>
-        </div>
-        <div className="flex-1 min-w-0">
-          <MilestoneBar />
-        </div>
-        <div className="shrink-0 flex items-center gap-1 justify-end" style={{ width: 'var(--ms-side)' }}>
+      {/* This page's controls live in the shared tool bar, not a row of its
+          own — the count and nav are the header's job now. */}
+      {toolbarSlot && createPortal(
+        <>
           <FeedbackButton />
           <SettingsMenu onClear={clearAll} />
-        </div>
-      </div>
+        </>,
+        toolbarSlot,
+      )}
 
       <div
         ref={scrollContainerRef}

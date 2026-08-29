@@ -160,7 +160,8 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
 
   return (
     <div className="w-full">
-      <div className={cn('flex items-center gap-2 px-3 py-[0.4375rem]', showBack && 'border-b bg-card')}>
+      {/* The tool bar — same 44px as the dex builder's. */}
+      <div className={cn('flex h-11 items-center gap-2 px-3', showBack && 'border-b bg-card')}>
         {showBack && (
           <button
             type="button"

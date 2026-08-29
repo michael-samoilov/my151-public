@@ -1,4 +1,6 @@
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import { useToolbarSlot } from '@/components/layout/toolbarSlot';
 import { Settings, Download, Loader2 } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewSort';
@@ -14,7 +16,6 @@ import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { FollowUpHint } from '@/components/milestone/FollowUpHint';
-import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
 import { DetailedStatsPanel, STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
 import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
@@ -559,6 +560,7 @@ export function ViewPage() {
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
+  const toolbarSlot = useToolbarSlot('view');
   const totalSlots = Math.max(count, 151);
 
   // Build-section outlines overlay: shown when the user enables it, in build order.
@@ -1193,17 +1195,10 @@ export function ViewPage() {
     <div className="h-full flex relative">
       {/* Main grid column */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <div className="flex items-center px-3 sm:px-6 py-2 border-b h-11">
-          <div className="shrink-0" style={{ width: 'var(--ms-side)' }}>
-            <h2 className="text-2xl font-extrabold tracking-tight leading-none tabular-nums">
-              <span className="text-primary">{count}</span>
-              <span className="text-foreground">/151</span>
-            </h2>
-          </div>
-          <div className="flex-1 min-w-0">
-            <MilestoneBar />
-          </div>
-          <div className="flex items-center gap-1 shrink-0 justify-end" style={{ width: 'var(--ms-side)' }}>
+        {/* This page's controls ride the shared tool bar; the count and nav
+            are the header's job now. */}
+        {toolbarSlot && createPortal(
+          <>
             <FeedbackButton />
             <button type="button"
               ref={exportBtnRef}
@@ -1227,8 +1222,9 @@ export function ViewPage() {
                 />
               )}
             </button>
-          </div>
-        </div>
+          </>,
+          toolbarSlot,
+        )}
 
         {/* px-4 (not p-2): overflow-y-auto forces overflow-x to clip, so the extra
             horizontal padding gives the cards' soft shadows room before that clip.

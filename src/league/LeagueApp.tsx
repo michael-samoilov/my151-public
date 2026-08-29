@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { Info } from 'lucide-react';
+import { LanguagePicker } from '@/components/layout/LanguagePicker';
+import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
@@ -25,42 +27,39 @@ import { CardPage } from './components/CardPage';
 
 function GlobalHeader() {
   return (
-    <header className="flex items-center justify-between border-b bg-card px-3 py-2 md:px-6">
-      <a href="/pokemon-league-builder" className="text-xl font-extrabold tracking-tight">
+    <header className="flex items-center justify-between border-b bg-card px-3 py-2 sm:px-6">
+      <a href="/pokemon-league-builder" className="text-2xl font-extrabold tracking-tight">
         <span className="text-primary">my151</span>
         <span className="text-foreground">.app</span>
       </a>
-      <nav className="flex items-center gap-3 text-sm font-medium">
-        <a href="/" className="text-muted-foreground transition-colors hover:text-foreground">
-          Dex Builder
-        </a>
-      </nav>
+      <div className="flex flex-shrink-0 items-center gap-1">
+        <LanguagePicker />
+        <ToolsMenu current="league" />
+      </div>
     </header>
   );
 }
 
+/**
+ * The tool bar's identity: the tool's name until the user names their
+ * league, then the name. The name is the input itself — its placeholder
+ * shows the tool name — and an sr-only h1 keeps the heading in the
+ * hydrated DOM (the static shell carries the crawlable one).
+ */
 function LeagueNameRow({ h1 }: { h1: boolean }) {
   const name = useLeagueStore((s) => s.name);
   const setName = useLeagueStore((s) => s.setName);
   return (
-    <div className="flex min-w-0 flex-col gap-px">
-      {h1 ? (
-        <h1 className="text-[0.6875rem] font-semibold tracking-[0.02em] text-muted-foreground">
-          Pokémon League Builder
-        </h1>
-      ) : (
-        <span className="text-[0.6875rem] font-semibold tracking-[0.02em] text-muted-foreground">
-          Pokémon League Builder
-        </span>
-      )}
+    <div className="flex min-w-0 flex-1 items-center">
+      {h1 && <h1 className="sr-only">Pokémon League Builder</h1>}
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Name your league"
+        placeholder="Pokémon League Builder"
         aria-label="League name"
         // Small on purpose; the league entry caps maximum-scale on iOS so
         // focusing a sub-16px input no longer zooms the page.
-        className="min-w-0 bg-transparent text-[0.9375rem] font-bold outline-none placeholder:font-semibold placeholder:text-muted-foreground/60"
+        className="min-w-0 flex-1 bg-transparent text-[0.9375rem] font-bold leading-none outline-none placeholder:font-bold placeholder:text-foreground/80"
       />
     </div>
   );
@@ -98,7 +97,8 @@ export function LeagueApp() {
         <div data-lg-viewport className="flex-1 overflow-y-auto pb-6 md:hidden">
           {openCard === null ? (
             <>
-              <div className="flex items-center gap-2 border-b bg-card px-3 py-[0.4375rem]">
+              {/* The tool bar — same 44px as the dex builder's. */}
+              <div className="flex h-11 items-center gap-2 border-b bg-card px-3">
                 <LeagueNameRow h1 />
                 <span className="ml-auto flex items-center gap-2.5 text-muted-foreground">
                   <Info size={16} aria-hidden />

@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, lazy, startTransition, Suspense } from 'react';
 import { Header } from '@/components/layout/Header';
 import type { AppView } from '@/components/layout/Header';
+import { ToolbarSlotContext } from '@/components/layout/toolbarSlot';
 import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 import { DrillDownSheet, DrillDownPanel } from '@/components/analytics/DrillDownSheet';
@@ -89,6 +90,8 @@ function App() {
   useMilestoneTracker();
   useJsErrorCounter();
   const [currentView, setCurrentView] = useState<AppView>('builder');
+  // The second header's right cell; pages portal their controls into it.
+  const [toolbarEl, setToolbarEl] = useState<HTMLElement | null>(null);
   // State rather than refs so the idle pre-mount below can flip them without
   // a navigation. Once true they stay true: routes mount once and live on.
   const [viewMounted, setViewMounted] = useState(false);
@@ -237,8 +240,9 @@ function App() {
   return (
     <TooltipProvider>
       <div className="h-dvh flex flex-col">
-        <Header currentView={currentView} onViewChange={handleViewChange} />
+        <Header currentView={currentView} onViewChange={handleViewChange} toolbarRef={setToolbarEl} />
 
+        <ToolbarSlotContext.Provider value={{ el: toolbarEl, view: currentView }}>
         {/* Builder — always mounted to avoid remount cost on tab switch */}
         <div ref={builderAreaRef} className={cn('flex-1 min-h-0 relative overflow-hidden', currentView !== 'builder' && 'hidden')}>
           <div className={cn(
@@ -293,6 +297,7 @@ function App() {
             </div>
           )}
         </div>
+        </ToolbarSlotContext.Provider>
       </div>
 
       {/* Mobile browser sheet */}
