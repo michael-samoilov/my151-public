@@ -13,6 +13,14 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      input: {
+        // The dex builder, and the league builder's own crawlable page —
+        // see docs/future-tools/HANDOFF.md for the multi-page SEO rationale.
+        main: path.resolve(__dirname, 'index.html'),
+        league: path.resolve(__dirname, 'pokemon-league-builder.html'),
+      },
+    },
   },
   resolve: {
     alias: {

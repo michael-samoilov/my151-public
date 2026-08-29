@@ -351,6 +351,9 @@ interface UseFilteredPokemonOptions {
   colors?: string[] | null; // Pokédex colors (Pokemon.color)
   eggGroups?: string[] | null; // egg groups (Pokemon.eggGroups — matches if any overlap)
   excludeIds?: Set<number>;
+  /** When set, only these ids can appear (the league's "My dex" filter).
+   *  Symmetric with excludeIds; both are keyed into the memo. */
+  restrictToIds?: Set<number>;
   evoLineSize?: number[] | null; // [1], [2], [3] where 3 means 3+
 }
 
@@ -365,11 +368,16 @@ function useFilteredPokemon({
   colors = null,
   eggGroups = null,
   excludeIds,
+  restrictToIds,
 }: UseFilteredPokemonOptions): Pokemon[] {
   // Serialize excludeIds to a stable string for memo deps
   const excludeKey = useMemo(
     () => (excludeIds ? [...excludeIds].sort((a, b) => a - b).join(',') : ''),
     [excludeIds]
+  );
+  const restrictKey = useMemo(
+    () => (restrictToIds ? [...restrictToIds].sort((a, b) => a - b).join(',') : ''),
+    [restrictToIds]
   );
 
   const typesKey = types ? types.join(',') : '';
@@ -463,8 +471,13 @@ function useFilteredPokemon({
       filtered = filtered.filter(p => !excludeIds.has(p.id));
     }
 
+    if (restrictToIds) {
+      filtered = filtered.filter(p => restrictToIds.has(p.id));
+    }
+
     return filtered;
-  }, [search, category, archetype, typesKey, typeMode, gensKey, shapesKey, colorsKey, eggGroupsKey, excludeIds, excludeKey, namesVersion]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- excludeKey/restrictKey stand in for their Sets
+  }, [search, category, archetype, typesKey, typeMode, gensKey, shapesKey, colorsKey, eggGroupsKey, excludeKey, restrictKey, namesVersion]);
 }
 
 export interface EvolutionGroup {

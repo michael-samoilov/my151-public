@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pokémon League Builder - Design Gym Leaders & Elite Four | my151</title>
+    <meta name="description" content="Build a full Pokémon League: eight gym leaders, the Elite Four, a champion and an endgame boss. Pick an evolution line once and every stage of the challenge fills itself in." />
+    <link rel="canonical" href="https://my151.app/pokemon-league-builder" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="my151" />
+    <meta property="og:title" content="Pokémon League Builder" />
+    <meta property="og:description" content="Build a full Pokémon League: eight gym leaders, the Elite Four, a champion and an endgame boss." />
+    <meta property="og:url" content="https://my151.app/pokemon-league-builder" />
+
+    <style>
+      /* Pre-hydration shell colours; must match the LIGHT palette in
+       * src/index.css, same as the dex builder entry's head block. */
+      html { background-color: #f7f7f8; }
+      body { margin: 0; background-color: #f7f7f8; color: #0a0a0a;
+             font-family: system-ui, -apple-system, sans-serif; }
+    </style>
+  </head>
+  <body>
+    <!-- Static, crawlable content. React replaces it on mount, so keep the
+         shape close to the app's own first paint: header, h1, one honest
+         paragraph. See docs/future-tools/HANDOFF.md for why this must be
+         real served HTML, not a client-side route. -->
+    <div id="root">
+      <header style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#ffffff;border-bottom:1px solid #e5e5e5;">
+        <span style="font-size:20px;font-weight:800;letter-spacing:-0.025em;"><span style="color:#dc2626;">my151</span>.app</span>
+        <a href="/" style="font-size:14px;color:#737373;text-decoration:none;">Dex Builder</a>
+      </header>
+      <main style="padding:16px 14px;max-width:26rem;margin:0 auto;">
+        <h1 style="font-size:22px;font-weight:800;letter-spacing:-0.02em;margin:0 0 8px;">Pokémon League Builder</h1>
+        <p style="font-size:14px;line-height:1.5;color:#525252;margin:0 0 8px;">
+          Design your own Pokémon League: eight gym leaders, the Elite Four, a
+          champion and an endgame boss. Give each leader a type and a theme,
+          seat an evolution line once, and the whole gym challenge derives
+          itself — early gyms face the young forms, the champion faces the
+          final ones.
+        </p>
+        <p style="font-size:14px;line-height:1.5;color:#525252;margin:0;">
+          Loading the builder…
+        </p>
+      </main>
+    </div>
+    <script type="module" src="/src/league/main.tsx"></script>
+  </body>
+</html>

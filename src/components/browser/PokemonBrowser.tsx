@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
 import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
 import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup } from '@/hooks/usePokemonData';
-import { usePokedexStore } from '@/store/usePokedexStore';
+import { useBrowserStore } from './browserStore';
 import { ARCHETYPES } from '@/data/archetypes';
 import { CATEGORIES, type PokemonCategory } from '@/data/categories';
 import { TYPE_NAMES, type Pokemon, type TypeName, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
@@ -77,8 +77,14 @@ interface SubgroupGridGroup {
   matchedIds: Set<number>;
 }
 
-export function PokemonBrowser() {
-  const searchQuery = usePokedexStore((s) => s.searchQuery);
+export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
+  /** 'stage' is the dex builder's flow (mobile taps stage, the FAB commits).
+   *  'instant' is the league's: a tap places the line and closes the sheet. */
+  pickMode?: 'stage' | 'instant';
+  /** Section-title resolver for hosts whose ids are not build groups. */
+  labelForSection?: (sectionId: string) => string;
+} = {}) {
+  const searchQuery = useBrowserStore((s) => s.searchQuery);
   /**
    * The text as it stood when an IME began composing, or null when nothing is
    * being composed.
@@ -96,33 +102,37 @@ export function PokemonBrowser() {
   const searchInput = composingFrom ?? searchQuery;
   // searchInput feeds filterOptions below, which is what gets deferred — so the
   // whole grid pipeline reads the composition-held value at deferred priority.
-  const setSearchQuery = usePokedexStore((s) => s.setSearchQuery);
-  const activeCategory = usePokedexStore((s) => s.activeCategoryFilter);
-  const setCategoryFilter = usePokedexStore((s) => s.setCategoryFilter);
-  const activeArchetype = usePokedexStore((s) => s.activeArchetypeFilter);
-  const setArchetypeFilter = usePokedexStore((s) => s.setArchetypeFilter);
-  const typeFilter = usePokedexStore((s) => s.typeFilter);
-  const setTypeFilter = usePokedexStore((s) => s.setTypeFilter);
-  const typeFilterMode = usePokedexStore((s) => s.typeFilterMode);
-  const setTypeFilterMode = usePokedexStore((s) => s.setTypeFilterMode);
-  const toggleType = usePokedexStore((s) => s.toggleType);
-  const generationFilter = usePokedexStore((s) => s.generationFilter);
-  const setGenerationFilter = usePokedexStore((s) => s.setGenerationFilter);
-  const toggleGeneration = usePokedexStore((s) => s.toggleGeneration);
-  const shapeFilter = usePokedexStore((s) => s.shapeFilter);
-  const setShapeFilter = usePokedexStore((s) => s.setShapeFilter);
-  const toggleShape = usePokedexStore((s) => s.toggleShape);
-  const colorFilter = usePokedexStore((s) => s.colorFilter);
-  const setColorFilter = usePokedexStore((s) => s.setColorFilter);
-  const toggleColor = usePokedexStore((s) => s.toggleColor);
-  const eggGroupFilter = usePokedexStore((s) => s.eggGroupFilter);
-  const setEggGroupFilter = usePokedexStore((s) => s.setEggGroupFilter);
-  const toggleEggGroup = usePokedexStore((s) => s.toggleEggGroup);
-  const evoLineSizeFilter = usePokedexStore((s) => s.evoLineSizeFilter);
-  const setEvoLineSizeFilter = usePokedexStore((s) => s.setEvoLineSizeFilter);
-  const sections = usePokedexStore((s) => s.sections);
-  const activeSection = usePokedexStore((s) => s.activeSection);
-  const addToSection = usePokedexStore((s) => s.addToSection);
+  const setSearchQuery = useBrowserStore((s) => s.setSearchQuery);
+  const activeCategory = useBrowserStore((s) => s.activeCategoryFilter);
+  const setCategoryFilter = useBrowserStore((s) => s.setCategoryFilter);
+  const activeArchetype = useBrowserStore((s) => s.activeArchetypeFilter);
+  const setArchetypeFilter = useBrowserStore((s) => s.setArchetypeFilter);
+  const typeFilter = useBrowserStore((s) => s.typeFilter);
+  const setTypeFilter = useBrowserStore((s) => s.setTypeFilter);
+  const typeFilterMode = useBrowserStore((s) => s.typeFilterMode);
+  const setTypeFilterMode = useBrowserStore((s) => s.setTypeFilterMode);
+  const toggleType = useBrowserStore((s) => s.toggleType);
+  const generationFilter = useBrowserStore((s) => s.generationFilter);
+  const setGenerationFilter = useBrowserStore((s) => s.setGenerationFilter);
+  const toggleGeneration = useBrowserStore((s) => s.toggleGeneration);
+  const shapeFilter = useBrowserStore((s) => s.shapeFilter);
+  const setShapeFilter = useBrowserStore((s) => s.setShapeFilter);
+  const toggleShape = useBrowserStore((s) => s.toggleShape);
+  const colorFilter = useBrowserStore((s) => s.colorFilter);
+  const setColorFilter = useBrowserStore((s) => s.setColorFilter);
+  const toggleColor = useBrowserStore((s) => s.toggleColor);
+  const eggGroupFilter = useBrowserStore((s) => s.eggGroupFilter);
+  const setEggGroupFilter = useBrowserStore((s) => s.setEggGroupFilter);
+  const toggleEggGroup = useBrowserStore((s) => s.toggleEggGroup);
+  const evoLineSizeFilter = useBrowserStore((s) => s.evoLineSizeFilter);
+  const setEvoLineSizeFilter = useBrowserStore((s) => s.setEvoLineSizeFilter);
+  const sections = useBrowserStore((s) => s.sections);
+  const activeSection = useBrowserStore((s) => s.activeSection);
+  const addToSection = useBrowserStore((s) => s.addToSection);
+  const myDexFilter = useBrowserStore((s) => s.myDexFilter);
+  const myDexIds = useBrowserStore((s) => s.myDexIds);
+  const setMyDexFilter = useBrowserStore((s) => s.setMyDexFilter);
+  const restrictIds = useBrowserStore((s) => s.restrictIds);
   const t = useT();
   const tn = useTn();
   const [openSheet, setOpenSheet] = useState<FilterSheet>(null);
@@ -138,10 +148,10 @@ export function PokemonBrowser() {
   const [removalStagedIds, setRemovalStagedIds] = useState<number[]>([]);
   const removalStagedSet = useMemo(() => new Set(removalStagedIds), [removalStagedIds]);
   const prevSectionRef = useRef(activeSection);
-  const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
+  const removeEvoLine = useBrowserStore((s) => s.removeEvoLine);
 
-  const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
-  const setActiveSection = usePokedexStore((s) => s.setActiveSection);
+  const setMobileBrowserOpen = useBrowserStore((s) => s.setMobileBrowserOpen);
+  const setActiveSection = useBrowserStore((s) => s.setActiveSection);
 
   const assignedIds = useMemo(
     () => new Set(Object.values(sections).flat()),
@@ -159,14 +169,15 @@ export function PokemonBrowser() {
   }, [activeSection]);
 
   const handleToggleStage = useCallback((memberIds: number[]) => {
-    if (isDesktop && activeSection) {
-      // Desktop: instantly add unassigned pokemon (no staging)
+    if ((isDesktop || pickMode === 'instant') && activeSection) {
+      // Desktop (and the league's instant mode): add with no staging.
       const newIds = memberIds.filter(id => !assignedIds.has(id));
       if (newIds.length > 0) {
         addToSection(activeSection, newIds);
         // Scroll the build page to the target section
-        window.dispatchEvent(new CustomEvent('scroll-to-section', { detail: activeSection }));
+        if (isDesktop) window.dispatchEvent(new CustomEvent('scroll-to-section', { detail: activeSection }));
       }
+      if (pickMode === 'instant' && !isDesktop) setMobileBrowserOpen(false);
       return;
     }
     setStagedIds(prev => {
@@ -196,9 +207,21 @@ export function PokemonBrowser() {
         return [...cleaned, ...toAdd];
       }
     });
-  }, [isDesktop, activeSection, assignedIds, addToSection]);
+  }, [isDesktop, pickMode, activeSection, assignedIds, addToSection, setMobileBrowserOpen]);
 
   const handleToggleRemoval = useCallback((memberIds: number[]) => {
+    if (pickMode === 'instant') {
+      const placed = memberIds.find(id => assignedIds.has(id));
+      if (placed !== undefined) {
+        for (const [sectionId, ids] of Object.entries(sections)) {
+          if (ids.includes(placed)) {
+            removeEvoLine(sectionId, placed);
+            break;
+          }
+        }
+      }
+      return;
+    }
     setRemovalStagedIds(prev => {
       const prevSet = new Set(prev);
       const allStaged = memberIds.every(id => prevSet.has(id));
@@ -210,7 +233,7 @@ export function PokemonBrowser() {
         return [...prev, ...toAdd];
       }
     });
-  }, []);
+  }, [pickMode, assignedIds, sections, removeEvoLine]);
 
   const handleSubmitStaged = useCallback(() => {
     if (isDesktop) {
@@ -261,7 +284,7 @@ export function PokemonBrowser() {
   }, [setActiveSection]);
 
   const sectionName = activeSection
-    ? sectionLabel(activeSection)
+    ? (labelForSection ? labelForSection(activeSection) : sectionLabel(activeSection))
     : null;
 
   // All inputs to the results grid go through one memoized options object
@@ -274,6 +297,14 @@ export function PokemonBrowser() {
   // `search` is `searchInput`, not `searchQuery`: while an IME is composing,
   // searchInput holds at the pre-composition text so the grid does not churn
   // through the intermediate states (see composingFrom above).
+  // Two restriction channels compose: the host's structural one (legend
+  // picker) and the user's "My dex" toggle.
+  const restrictToIds = useMemo(() => {
+    const mine = myDexFilter ? myDexIds : undefined;
+    if (restrictIds && mine) return new Set([...restrictIds].filter((id) => mine.has(id)));
+    return restrictIds ?? mine;
+  }, [restrictIds, myDexFilter, myDexIds]);
+
   const filterOptions = useMemo(() => ({
     search: searchInput,
     category: activeCategory,
@@ -285,7 +316,8 @@ export function PokemonBrowser() {
     colors: colorFilter,
     eggGroups: eggGroupFilter,
     evoLineSize: evoLineSizeFilter,
-  }), [searchInput, activeCategory, activeArchetype, typeFilter, typeFilterMode, generationFilter, shapeFilter, colorFilter, eggGroupFilter, evoLineSizeFilter]);
+    restrictToIds: restrictToIds,
+  }), [searchInput, activeCategory, activeArchetype, typeFilter, typeFilterMode, generationFilter, shapeFilter, colorFilter, eggGroupFilter, evoLineSizeFilter, restrictToIds]);
   const deferredOptions = useDeferredValue(filterOptions);
   const groups = useFilteredPokemonGrouped(deferredOptions);
 
@@ -365,11 +397,12 @@ export function PokemonBrowser() {
   // Deferred like the grid: the search view and its subgroups must switch
   // together with the `groups` they render.
   const isSearching = deferredOptions.search.trim().length > 0;
-  const hasActivePropertyFilters = !!((typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || (shapeFilter && shapeFilter.length > 0) || (colorFilter && colorFilter.length > 0) || (eggGroupFilter && eggGroupFilter.length > 0) || evoLineSizeFilter);
+  const hasActivePropertyFilters = !!(myDexFilter || (typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || (shapeFilter && shapeFilter.length > 0) || (colorFilter && colorFilter.length > 0) || (eggGroupFilter && eggGroupFilter.length > 0) || evoLineSizeFilter);
   const hasActiveBrowseFilters = !!(activeCategory || activeArchetype);
   const hasActiveFilters = hasActivePropertyFilters || hasActiveBrowseFilters;
 
   const clearPropertyFilters = () => {
+    setMyDexFilter?.(false);
     setTypeFilter(null);
     setTypeFilterMode('any');
     setGenerationFilter(null);
@@ -748,6 +781,24 @@ export function PokemonBrowser() {
         {/* Row 1: Property filters (Type, Gen, Stages) */}
         <div className={cn("flex items-stretch border-x border-border transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 px-2 py-1">
+          {setMyDexFilter && (
+            myDexFilter ? (
+              <FilterChip
+                label="My dex"
+                onDismiss={() => setMyDexFilter(false)}
+                onClick={() => setMyDexFilter(false)}
+                className="bg-foreground text-background"
+              />
+            ) : (
+              <button type="button"
+                onClick={() => setMyDexFilter(true)}
+                data-filter-chip="my-dex"
+                className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+              >
+                My dex
+              </button>
+            )
+          )}
           {typeFilter && typeFilter.length > 0 ? (
             <>
               {typeFilter.length > 1 && (
