@@ -237,6 +237,15 @@ class GeckoSession implements Session {
     await this.cmd('WebDriver:DeleteSession', {}).catch(() => {});
     this.conn.end();
     this.ff.kill('SIGKILL');
+    // SIGKILL is asynchronous. Marionette's port is fixed, so the next
+    // session's Firefox races this one for it unless the exit is awaited
+    // (diff mode opens gecko twice back to back).
+    if (this.ff.exitCode === null && this.ff.signalCode === null) {
+      await new Promise<void>((resolve) => {
+        const t = setTimeout(resolve, 5000);
+        this.ff.once('exit', () => { clearTimeout(t); resolve(); });
+      });
+    }
     try { fs.rmSync(this.profile, { recursive: true, force: true }); } catch { /* best effort */ }
   }
 }
@@ -253,11 +262,26 @@ export async function openGecko(): Promise<Session> {
     attempt();
   });
   const conn = new MarionetteConn(sock);
-  await conn.next(); // server handshake frame
-  conn.send([0, 1, 'WebDriver:NewSession', { capabilities: {} }]);
-  const resp = await conn.next(); // [1, id, error, result]
-  if (resp[2]) { ff.kill('SIGKILL'); throw new Error(`gecko NewSession: ${JSON.stringify(resp[2])}`); }
-  return new GeckoSession(ff, conn, profile, 2);
+  // A connection that lands on a dying prior listener never sends the
+  // handshake, so the setup round-trips carry a deadline: fail the surface,
+  // never hang the run.
+  let timer: NodeJS.Timeout | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('gecko: no Marionette handshake within 20s')), 20000);
+  });
+  deadline.catch(() => {}); // the raced loser must not become an unhandled rejection
+  try {
+    await Promise.race([conn.next(), deadline]); // server handshake frame
+    conn.send([0, 1, 'WebDriver:NewSession', { capabilities: {} }]);
+    const resp = await Promise.race([conn.next(), deadline]); // [1, id, error, result]
+    if (resp[2]) throw new Error(`gecko NewSession: ${JSON.stringify(resp[2])}`);
+    return new GeckoSession(ff, conn, profile, 2);
+  } catch (e) {
+    ff.kill('SIGKILL');
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ---------- dispatch ----------
