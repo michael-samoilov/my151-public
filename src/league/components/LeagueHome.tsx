@@ -159,7 +159,7 @@ export function LeagueHome() {
         ))}
       </div>
       <div className="px-[0.375rem] pt-2 text-[0.625rem] text-muted-foreground">
-        ↕ Drag a row to reorder the league · tap a row to open its card
+        {'↕︎'} Drag a row to reorder the league · tap a row to open its card
       </div>
     </DndContext>
   );

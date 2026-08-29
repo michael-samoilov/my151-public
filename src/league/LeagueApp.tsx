@@ -58,7 +58,9 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
         onChange={(e) => setName(e.target.value)}
         placeholder="Name your league"
         aria-label="League name"
-        className="min-w-0 bg-transparent text-[0.9375rem] font-bold outline-none placeholder:font-semibold placeholder:text-muted-foreground/60"
+        // 1rem ≥ 16px, the iOS focus-zoom threshold — same fix as the theme
+        // and badge inputs.
+        className="min-w-0 bg-transparent text-[1rem] font-bold outline-none placeholder:font-semibold placeholder:text-muted-foreground/60"
       />
     </div>
   );
@@ -93,7 +95,7 @@ export function LeagueApp() {
 
         {/* ---------------- mobile: one column, home ⇄ card ---------------- */}
         {!isDesktop && (
-        <div className="flex-1 overflow-y-auto pb-6 md:hidden">
+        <div data-lg-viewport className="flex-1 overflow-y-auto pb-6 md:hidden">
           {openCard === null ? (
             <>
               <div className="flex items-center gap-2 border-b bg-card px-3 py-[0.4375rem]">
@@ -137,7 +139,7 @@ export function LeagueApp() {
                 Pokémon Trainer Card
               </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto py-1">
+            <div data-lg-viewport className="min-h-0 flex-1 overflow-y-auto py-1">
               <div className="mx-auto w-full max-w-[26rem]">
                 <CardPage cardIndex={openCard ?? 0} showBack={false} />
               </div>

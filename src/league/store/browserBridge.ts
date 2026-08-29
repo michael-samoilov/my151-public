@@ -106,7 +106,15 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // "My dex" filters to the dex builder's own placed set, read from its
         // store (both stores share the page); snapshot at open is enough.
         myDexIds: new Set(Object.values(usePokedexStore.getState().sections).flat()),
-        restrictIds: purpose === 'legend' ? LEGEND_ELIGIBLE : undefined,
+        // The legendary picker restricts structurally; the signature picker
+        // restricts to the card's own placed lines — a signature is chosen
+        // among the team, not fetched from outside it.
+        restrictIds:
+          purpose === 'legend'
+            ? LEGEND_ELIGIBLE
+            : purpose === 'signature'
+              ? new Set(placedIds(league().cards[card]?.lines ?? []))
+              : undefined,
       });
     },
 

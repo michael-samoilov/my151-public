@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -7,9 +7,12 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { pokemonLabel } from '@/i18n';
+import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { TypeName } from '@/types/pokemon';
 import { cn } from '@/lib/utils';
@@ -106,13 +109,41 @@ interface CellDatum {
   filled: boolean;
 }
 
-function PokemonCell({ cardIndex, datum, pokemonId }: {
+/** A drag in flight: the grabbed cell's column, and the column under it. */
+interface DragPreview {
+  seat: number;
+  over: CellDatum | null;
+  legend: boolean;
+}
+
+/**
+ * Live reorder preview, in grid columns (seat 1 is the rightmost column, so
+ * screen position moves opposite to seat number). The grabbed column snaps to
+ * the hovered seat; the columns between step one seat toward the hole. The
+ * legendary never shifts — it owns a seat, and columns move under it.
+ */
+function colShift(preview: DragPreview | null, datum: CellDatum): number {
+  if (!preview || preview.legend || datum.isLegend) return 0;
+  const over = preview.over;
+  if (!over || over.isLegend || over.seat === preview.seat) return 0;
+  const s = preview.seat;
+  const o = over.seat;
+  if (datum.seat === s) return s - o;
+  if (o < s && datum.seat >= o && datum.seat < s) return -1;
+  if (o > s && datum.seat > s && datum.seat <= o) return 1;
+  return 0;
+}
+
+function PokemonCell({ cardIndex, datum, pokemonId, preview, onRemove }: {
   cardIndex: number;
   datum: CellDatum;
   pokemonId: number | null;
+  preview: DragPreview | null;
+  /** Set on the column's topmost pokemon: remove this evo line. */
+  onRemove?: () => void;
 }) {
   const id = `cell-${datum.row}-${datum.seat}`;
-  const { setNodeRef: setDragRef, listeners, attributes, isDragging } = useDraggable({
+  const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
     id,
     data: datum as unknown as Record<string, unknown>,
     disabled: !datum.filled,
@@ -132,8 +163,30 @@ function PokemonCell({ cardIndex, datum, pokemonId }: {
     }
   };
 
+  // The whole grabbed column lifts as one entity; between-columns slide over.
+  const dx = colShift(preview, datum);
+  const lifted =
+    preview !== null &&
+    ((!preview.legend && !datum.isLegend && datum.seat === preview.seat) ||
+      (preview.legend && datum.isLegend));
+  // A ring marks a drop target only where the drop is not a column reorder:
+  // a boss-row cell during a legendary drag, or a row within the same column
+  // (an evolution-boundary move). Reorders are previewed by the slide itself.
+  const ringed =
+    isOver &&
+    preview !== null &&
+    (preview.legend ? datum.row === BOSS_ROW : datum.seat === preview.seat);
+
   return (
-    <div ref={setDropRef} className="relative flex h-full items-center justify-center">
+    <div
+      ref={setDropRef}
+      className="relative flex h-full items-center justify-center"
+      style={{
+        transform: dx !== 0 ? `translateX(${dx * 100}%)` : undefined,
+        transition: preview ? 'transform 150ms ease' : undefined,
+        zIndex: lifted ? 10 : undefined,
+      }}
+    >
       <button
         type="button"
         ref={setDragRef}
@@ -147,8 +200,8 @@ function PokemonCell({ cardIndex, datum, pokemonId }: {
         className={cn(
           'relative flex items-center justify-center rounded-md',
           datum.filled && 'cursor-grab active:cursor-grabbing',
-          isDragging && 'opacity-30',
-          isOver && 'ring-2 ring-[var(--lg-cell)]',
+          lifted && 'scale-[1.04] shadow-lg ring-1 ring-black/10',
+          ringed && 'ring-2 ring-[var(--lg-cell)]',
         )}
         style={{
           width: `calc(100% - ${2 * INSET_X}rem)`,
@@ -173,6 +226,19 @@ function PokemonCell({ cardIndex, datum, pokemonId }: {
           </span>
         )}
       </button>
+      {onRemove && pokemon && (
+        <button
+          type="button"
+          aria-label={`Remove ${pokemon.name}'s line`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          className="absolute right-0 top-[0.175rem] z-[15] h-[0.95rem] w-[0.95rem] cursor-pointer"
+        >
+          <RedXIcon className="h-full w-full" />
+        </button>
+      )}
     </div>
   );
 }
@@ -248,7 +314,8 @@ function TmSlot({ view }: { view: CardView }) {
       style={{ ...pos, borderColor: move ? undefined : 'var(--lg-dash)', background: move ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)' }}
     >
       <span className="flex shrink-0 flex-col items-center gap-[1px]">
-        <TmDisc colour="var(--lg-cell)" />
+        {/* Empty state matches the badge hexagon's stroke, not the cell fill. */}
+        <TmDisc colour={move ? 'var(--lg-cell)' : 'var(--lg-dash)'} />
         <span className="text-[0.5rem] font-extrabold tracking-[0.06em]" style={{ color: 'var(--lg-hint)' }}>
           TM
         </span>
@@ -290,10 +357,20 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         value={name}
         onChange={(e) => setBadgeName(cardIndex, e.target.value)}
         placeholder="Badge Name"
-        className="w-[5.25rem] bg-transparent text-center text-[0.65625rem] leading-tight outline-none placeholder:text-[var(--lg-hint)]"
+        // 16px once the card's fit zoom is divided back out, so iOS Safari
+        // does not auto-zoom the page on focus (the heuristic reads the
+        // input's font-size, not the placeholder's — the placeholder renders
+        // smaller so "Badge Name" fits the slot). Left-aligned while empty so
+        // the caret sits at the start of the placeholder, centred once typed.
+        className="w-full bg-transparent px-[2px] text-center leading-tight outline-none [&:placeholder-shown]:text-left placeholder:text-[0.8125rem] placeholder:text-[var(--lg-hint)]"
+        style={{ fontSize: 'calc(1rem / var(--lg-fit, 1))' }}
         aria-label="Badge name"
       />
-      {name && <span className="-mt-[0.3125rem] text-[0.65625rem] leading-tight">Badge</span>}
+      {name && (
+        <span className="-mt-[0.3125rem] leading-tight" style={{ fontSize: 'calc(1rem / var(--lg-fit, 1))' }}>
+          Badge
+        </span>
+      )}
     </div>
   );
 }
@@ -302,12 +379,25 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const moveSeat = useLeagueStore((s) => s.moveSeat);
   const shiftBoundary = useLeagueStore((s) => s.shiftBoundary);
   const setLegend = useLeagueStore((s) => s.setLegend);
+  const removeLineWith = useLeagueStore((s) => s.removeLineWith);
   const { card, shades, rows } = view;
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
+  const [preview, setPreview] = useState<DragPreview | null>(null);
+  const onDragStart = useCallback((e: DragStartEvent) => {
+    const d = e.active.data.current as CellDatum | undefined;
+    if (d) setPreview({ seat: d.seat, over: null, legend: d.isLegend });
+  }, []);
+  const onDragOver = useCallback((e: DragOverEvent) => {
+    const over = (e.over?.data.current as CellDatum | undefined) ?? null;
+    setPreview((p) => (p ? { ...p, over } : p));
+  }, []);
+  const onDragCancel = useCallback(() => setPreview(null), []);
+
   const onDragEnd = useCallback(
     (e: DragEndEvent) => {
+      setPreview(null);
       const from = e.active.data.current as CellDatum | undefined;
       const to = e.over?.data.current as CellDatum | undefined;
       if (!from || !to) return;
@@ -344,8 +434,25 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     '--lg-slot': '#ffffff',
   } as React.CSSProperties;
 
+  // The column's topmost pokemon carries the remove control for its line.
+  // The legendary overlay is skipped: it is not the line, it covers it.
+  const topRowBySeat = new Map<number, number>();
+  rows.forEach((cells, i) => {
+    for (const cell of cells) {
+      if (cell.pokemonId !== null && !cell.isLegend && !topRowBySeat.has(cell.seat)) {
+        topRowBySeat.set(cell.seat, i + 1);
+      }
+    }
+  });
+
   return (
-    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
+      onDragCancel={onDragCancel}
+    >
       <div
         className="relative overflow-hidden rounded-2xl shadow-elevated"
         style={{ ...vars, background: shades.base, padding: `${PAD_Y}rem ${PAD_X}rem` }}
@@ -387,12 +494,15 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                     isLegend: cell.isLegend,
                     filled: cell.pokemonId !== null,
                   };
+                  const topId = topRowBySeat.get(cell.seat) === row ? cell.pokemonId : null;
                   return (
                     <PokemonCell
                       key={`${row}-${cell.seat}`}
                       cardIndex={cardIndex}
                       datum={datum}
                       pokemonId={cell.pokemonId}
+                      preview={preview}
+                      onRemove={topId !== null ? () => removeLineWith(cardIndex, topId) : undefined}
                     />
                   );
                 })}
@@ -402,7 +512,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         })}
       </div>
       <div className="flex flex-col gap-[3px] px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground">
-        <span>↕ Drag a pokemon across rows to shift when it evolves</span>
+        <span>{'↕︎'} Drag a pokemon across rows to shift when it evolves</span>
         <span>↔ Drag a column to reorder</span>
         <span>
           {card.legend

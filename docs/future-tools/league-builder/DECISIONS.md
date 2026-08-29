@@ -300,8 +300,41 @@ Veto any of these; they ship as stated otherwise.
   reverts the other. Base form is the shared reset point.
 - The concrete curve numbers in item 3.
 - Column removal: an X control per column, dex-builder style; remaining
-  columns compact toward the rightmost seat.
+  columns compact toward the rightmost seat. *(Owner-confirmed 2026-08-29
+  and built: the X sits on the column's topmost Pokemon.)*
 - League reorder works across sections (gym ↔ E4 ↔ champion ↔ boss).
+
+## App feedback round 1 (2026-08-29, decided on the live preview)
+
+1. **Fit-to-viewport card.** The whole template (card + hint lines) fits the
+   viewport with no scroll. A JS-measured CSS `zoom` on the card wrapper
+   scales everything proportionally; floor 0.55, then scrolling returns.
+2. **TM slot empty state** uses the badge hexagon's stroke shade (`dash`),
+   not the cell shade.
+3. **"No type" is a real option**: the type badge pipeline (geometry, text
+   fit, casing) over the no-type grey, with the 4-point star spandrel as its
+   symbol. In the picker it spans the grid's full bottom row.
+4. **Unset type chip** reads "Select a type": red dotted border, exactly a
+   type badge's height, so picking a type shifts no layout.
+5. **Column drag previews the reorder**: the grabbed column lifts (shadow,
+   slight scale) and snaps to the hovered seat; columns between slide one
+   seat over, live. No target ring for reorders — the ring stays only for
+   evolution-boundary rows and legendary retargeting.
+6. **Hint arrows render as text** (`↕` carries U+FE0E so iOS does not
+   substitute the emoji), matching the left-right arrow.
+7. **Inputs never trigger iOS focus zoom**: league name, theme and badge
+   name are 16px computed (the badge input divides the fit zoom back out;
+   its placeholder renders smaller so "Badge Name" fits, and it left-aligns
+   while empty so the caret sits at the placeholder's start).
+8. **Signature picker is restricted to the card's placed lines** — a
+   signature is chosen among the team.
+9. **TM picker sits on the selection pane's architecture**: BottomSheet on
+   mobile (its drag-to-dismiss), centred dialog on desktop, and the pane's
+   filter idiom — entry chips opening panels, multi-select values as
+   dismissible coloured chips, or/and mode for types, category and contest
+   as multi-select with the decided colours. (With single-typed moves,
+   "all" across 2+ types is naturally empty.)
+10. **Per-column removal shipped** on the topmost Pokemon, dex `RedXIcon`.
 
 ## Build plan (own tasks, not part of the page)
 
