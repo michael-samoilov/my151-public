@@ -94,9 +94,11 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
     condition (beautiful `#1e93c0`, clever `#15a13f`, cool `#d42c04`, cute
     `#d2458d`, tough `#cca100`). Signature move is deferred to an advanced
     filter set, along with a count of how many of the team's lines can learn
-    the move and an ace-move filter. The category chip has three candidate
-    forms on the TM picker variants board — icon and word, icon in a rounded
-    square, icon in a circle. The word costs the move column about 40px. Power is data, not a
+    the move and an ace-move filter. DECIDED: the category chip is the icon
+    in a rounded square (variant B), under a header abbreviated to "Cat." so
+    it never crowds "Move". The numeric headers (PP, Att., Acc.) right-align
+    with their columns, sort caret leading, so the label's right edge lines
+    up with the numbers. Power is data, not a
     filter. The pane
     keeps the browser's own gutters and its rows are dense. The category
     chip runs through the same badge pipeline as a type badge — one 200×40
@@ -132,8 +134,9 @@ surfaces from them:
   kept and its lightness is lifted to a relative luminance of 0.26, because
   the raw stroke is solved against its own pale fill and lands too dark
   beside a near-white card.
-- **Spacer bands** — one /vp/ step down from the cells: −9 points of HSL
-  lightness, hue and saturation untouched.
+- **Spacer bands** — the alt shade's hue and saturation at a relative
+  luminance of 0.12, roughly two /vp/ steps under the lifted cells. One −9
+  step read as too close to the cells once the cells were lifted.
 - **Pokemon slots** — white. Every cell that can ever hold a Pokemon draws
   its square, filled or not. The sprite is larger than its square and
   overflows it, as the dex builder's tiles do.
@@ -175,8 +178,8 @@ is vertically centred.
     type chip. The chip uses the 1×1 type icon the analytics type chart uses
     (`typeIconPath`), never the cropped glyph stretched into a circle. Its
     spacers are plain section labels: Gym Leaders, Elite Four, Champion,
-    Endgame Boss, with no notes; grey, black and red are all drawn on the
-    League states board. The league carries a name of its own, entered under
+    Endgame Boss, with no notes. DECIDED: red (`#dc2626`, the app primary);
+    grey and black stay on the League states board as the rejected options. The league carries a name of its own, entered under
     the tool title the way a gym enters its theme, and bold once filled.
     Dragging a row lifts it, closes the rest up, and leaves a dashed hole
     where it will land. Each row carries its own card's type shades; an empty
@@ -250,8 +253,9 @@ is vertically centred.
     own header, as the dex builder's do: "Custom Pokémon League" with info
     and export, "Pokémon Trainer Card" with export, and "Adding to: <slot>"
     with a close control. There is no page-wide title bar; the league pane's
-    header is the page h1. The card pane also carries the card's own type
-    badge and theme. At rest: league left, open card right, joined by a
+    header is the page h1. The card pane carries the card's own type badge
+    and theme above the card; the league pane carries the league's name above
+    the league card the same way. At rest: league left, open card right, joined by a
     smooth flow out of the open league row. That row's fill runs the full
     width of the league card, through its gutters and with no outline, and
     the flow is the same colour and translucent, so the pane seam reads
