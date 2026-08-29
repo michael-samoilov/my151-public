@@ -15,7 +15,7 @@
     .trow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: center; height: 54px; position: relative; }
     .c { display: flex; align-items: center; justify-content: center; height: 100%; position: relative; }
     .pk { width: 44px; height: 42px; border-radius: 6px; background: var(--slot); display: flex; align-items: center; justify-content: center; }
-    .pk img { width: 44px; height: 44px; }
+    .pk img { width: 52px; height: 52px; max-width: none; }
     .g { align-self: center; height: 42px; margin: 0 3px; border-radius: 6px; background: var(--cell); display: flex; align-items: center; justify-content: center; }
     .band { display: flex; align-items: center; gap: 5px; height: 20px; margin: 0 3px; padding: 0 8px; background: var(--band); border-radius: 5px; color: #ffffff; }
     .band b { font-size: 9px; font-weight: 800; letter-spacing: 0.07em; white-space: nowrap; }
@@ -37,16 +37,16 @@
       <svg viewBox="0 0 16 16" style="width: 22px; height: 22px;"><line x1="3" y1="8" x2="13" y2="8" stroke="var(--dash)" stroke-width="1.8" stroke-linecap="round"></line><line x1="8" y1="3" x2="8" y2="13" stroke="var(--dash)" stroke-width="1.8" stroke-linecap="round"></line></svg>
       <span style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; color: var(--hint);">SIGNATURE POK&#201;MON</span>
     </div>
-    <div class="slot" style="left: 11px; top: 253px; width: 94px; height: 42px; border: 1px dashed var(--dash); display: flex; align-items: center; gap: 5px; padding-left: 5px;">
-      <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;"><g transform="translate(12,12) skewX(-16) translate(-12,-12)"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--cell)" stroke-width="2"></circle><circle cx="12" cy="12" r="3.2" fill="none" stroke="var(--cell)" stroke-width="2"></circle></g></svg>
-      <span style="display: flex; flex-direction: column; line-height: 1.1; min-width: 0;">
+    <div class="slot" style="left: 11px; top: 253px; width: 94px; height: 42px; border: 1px dashed var(--dash); display: flex; align-items: center; gap: 6px; padding-left: 6px;">
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 1px; flex-shrink: 0;">
+        <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;"><g transform="translate(12,12) skewX(-16) translate(-12,-12)"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--cell)" stroke-width="2"></circle><circle cx="12" cy="12" r="3.2" fill="none" stroke="var(--cell)" stroke-width="2"></circle></g></svg>
         <span style="font-size: 8px; font-weight: 800; letter-spacing: 0.06em; color: var(--hint);">TM</span>
-        <span style="font-size: 11px; font-weight: 600; color: var(--hint);">Pick a move</span>
       </span>
+      <span style="font-size: 11px; line-height: 1.15; min-width: 0; color: var(--hint);">Pick a move</span>
     </div>
     <div class="slot" style="left: 11px; top: 307px; width: 94px; height: 96px; border: 1px dashed var(--dash); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
       <svg viewBox="0 0 32 32" style="width: 38px; height: 38px;"><path d="M16 3 L27 9.5 L27 22.5 L16 29 L5 22.5 L5 9.5 Z" fill="none" stroke="var(--dash)" stroke-width="1.6" stroke-dasharray="3 2.4"></path><circle cx="16" cy="16" r="4.4" fill="none" stroke="var(--dash)" stroke-width="1.6"></circle></svg>
-      <span style="width: 84px; text-align: center; font-size: 10.5px; font-weight: 600; line-height: 1.2;"><span style="color: var(--hint);">Name</span><br><span style="color: var(--hint);">Badge</span></span>
+      <span style="width: 84px; text-align: center; font-size: 11px; line-height: 1.2;"><span style="color: var(--hint);">Badge Name</span></span>
     </div>
     <div class="band"><b>GYM LEADER TEAM</b></div>
     <div class="trow"><div class="c"></div><div class="c"></div><div class="c"></div><div class="g" style="grid-column: span 2;"><span style="display: flex; flex-direction: column; align-items: center; gap: 3px;"><span style="font-size: 9.5px; font-weight: 600; color: #ffffff;">No badges</span><span style="display: flex; gap: 2px; align-items: center;"><svg viewBox="0 0 12 12" width="8" height="8"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" stroke-width="1.8"></path></svg></span></span></div><div class="c"><span class="pk"><svg viewBox="0 0 24 24" style="width: 26px; height: 26px; transform: rotate(-30deg);" fill="none"><circle cx="12" cy="12" r="11" stroke="rgba(10,10,10,0.14)" stroke-width="1.5"></circle><line x1="1" y1="12" x2="8.5" y2="12" stroke="rgba(10,10,10,0.14)" stroke-width="1.5"></line><line x1="15.5" y1="12" x2="23" y2="12" stroke="rgba(10,10,10,0.14)" stroke-width="1.5"></line><circle cx="12" cy="12" r="3.5" stroke="rgba(10,10,10,0.14)" stroke-width="1.5"></circle><circle cx="12" cy="12" r="1.5" fill="rgba(10,10,10,0.14)"></circle></svg></span></div><div class="c"><span class="pk"><svg viewBox="0 0 24 24" style="width: 26px; height: 26px; transform: rotate(-30deg);" fill="none"><circle cx="12" cy="12" r="11" stroke="rgba(10,10,10,0.14)" stroke-width="1.5"></circle><line x1="1" y1="12" x2="8.5" y2="12" stroke="rgba(10,10,10,0.14)" stroke-width="1.5"></line><line x1="15.5" y1="12" x2="23" y2="12" stroke="rgba(10,10,10,0.14)" stroke-width="1.5"></line><circle cx="12" cy="12" r="3.5" stroke="rgba(10,10,10,0.14)" stroke-width="1.5"></circle><circle cx="12" cy="12" r="1.5" fill="rgba(10,10,10,0.14)"></circle></svg></span></div></div>
@@ -69,7 +69,7 @@
     <div style="padding: 0 12px 6px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #737373;">Water &#183; six lines, all slots filled</div>
   <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px;">
     <svg viewBox="0 0 200 40" style="display: block; width: 76px; height: 15.2px;"><rect x="1.5" y="1.5" width="197" height="37" rx="18" fill="#2980EF"></rect><image href="11.png" x="15" y="5" width="30" height="30"></image><text x="113" y="33" font-size="33" font-weight="700" fill="#ffffff" text-anchor="middle" transform="translate(113,0) scale(0.76 1) translate(-113,0)">WATER</text></svg>
-    <span style="font-size: 11px; color: #0a0a0a;">Deep sea divers</span>
+    <span style="font-size: 11px; font-weight: 600; color: #0a0a0a;">Deep sea divers</span>
   </div>
   <div class="card" style="margin: 0 12px; --mat: #f2f7fe; --cell: #4c8de0; --band: #2674d9; --line: #e1edfd; --dash: #cddff6; --hint: #9dc0ee; --hover: rgba(41, 128, 239, 0.09); --slot: #ffffff;">
     <div class="slot" style="left: 11px; top: 37px; width: 144px; height: 204px; display: flex; flex-direction: column; align-items: center; padding: 6px 0 8px 0;">
@@ -82,16 +82,16 @@
         </span>
       </span>
     </div>
-    <div class="slot" style="left: 11px; top: 253px; width: 94px; height: 42px;  display: flex; align-items: center; gap: 5px; padding-left: 5px;">
-      <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;"><g transform="translate(12,12) skewX(-16) translate(-12,-12)"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--cell)" stroke-width="2"></circle><circle cx="12" cy="12" r="3.2" fill="none" stroke="var(--cell)" stroke-width="2"></circle></g></svg>
-      <span style="display: flex; flex-direction: column; line-height: 1.1; min-width: 0;">
+    <div class="slot" style="left: 11px; top: 253px; width: 94px; height: 42px;  display: flex; align-items: center; gap: 6px; padding-left: 6px;">
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 1px; flex-shrink: 0;">
+        <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;"><g transform="translate(12,12) skewX(-16) translate(-12,-12)"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--cell)" stroke-width="2"></circle><circle cx="12" cy="12" r="3.2" fill="none" stroke="var(--cell)" stroke-width="2"></circle></g></svg>
         <span style="font-size: 8px; font-weight: 800; letter-spacing: 0.06em; color: var(--hint);">TM</span>
-        <span style="font-size: 11px; font-weight: 600; color: #0a0a0a;">Hydro Pump</span>
       </span>
+      <span style="font-size: 11px; line-height: 1.15; min-width: 0; color: #0a0a0a;">Hydro Pump</span>
     </div>
     <div class="slot" style="left: 11px; top: 307px; width: 94px; height: 96px;  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
       <svg viewBox="0 0 32 32" style="width: 38px; height: 38px;"><path d="M16 3 L27 9.5 L27 22.5 L16 29 L5 22.5 L5 9.5 Z" fill="var(--cell)" stroke="none" stroke-width="1.6" stroke-dasharray="0"></path><circle cx="16" cy="16" r="4.4" fill="#ffffff" stroke="none" stroke-width="1.6"></circle></svg>
-      <span style="width: 84px; text-align: center; font-size: 10.5px; font-weight: 600; line-height: 1.2;">Cascade<br>Badge</span>
+      <span style="width: 84px; text-align: center; font-size: 11px; line-height: 1.2;">Cascade<br>Badge</span>
     </div>
     <div class="band"><b>GYM LEADER TEAM</b></div>
     <div class="trow"><div class="c"></div><div class="c"></div><div class="c"></div><div class="g" style="grid-column: span 2;"><span style="display: flex; flex-direction: column; align-items: center; gap: 3px;"><span style="font-size: 9.5px; font-weight: 600; color: #ffffff;">No badges</span><span style="display: flex; gap: 2px; align-items: center;"><svg viewBox="0 0 12 12" width="8" height="8"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" stroke-width="1.8"></path></svg></span></span></div><div class="c"><span class="pk"><img src="194.png" alt="Wooper" class="sprite"></span></div><div class="c"><span class="pk"><img src="170.png" alt="Chinchou" class="sprite"></span></div></div>
@@ -114,7 +114,7 @@
     <div style="padding: 0 12px 6px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #737373;">Electric &#183; three lines, signature only</div>
   <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px;">
     <svg viewBox="0 0 200 40" style="display: block; width: 76px; height: 15.2px;"><rect x="1.5" y="1.5" width="197" height="37" rx="18" fill="#FAC000"></rect><image href="13.png" x="15" y="5" width="30" height="30"></image><text x="113" y="33" font-size="33" font-weight="700" fill="#ffffff" text-anchor="middle" textLength="124" lengthAdjust="spacingAndGlyphs" transform="translate(113,0) scale(0.76 1) translate(-113,0)">ELECTRIC</text></svg>
-    <span style="font-size: 11px; color: #0a0a0a;">Lighthouse keepers</span>
+    <span style="font-size: 11px; font-weight: 600; color: #0a0a0a;">Lighthouse keepers</span>
   </div>
   <div class="card" style="margin: 0 12px; --mat: #fffbef; --cell: #ae8600; --band: #806300; --line: #fef6db; --dash: #e8ddb8; --hint: #d2bc73; --hover: rgba(250, 192, 0, 0.09); --slot: #ffffff;">
     <div class="slot" style="left: 11px; top: 37px; width: 144px; height: 204px; display: flex; flex-direction: column; align-items: center; padding: 6px 0 8px 0;">
@@ -127,16 +127,16 @@
         </span>
       </span>
     </div>
-    <div class="slot" style="left: 11px; top: 253px; width: 94px; height: 42px; border: 1px dashed var(--dash); display: flex; align-items: center; gap: 5px; padding-left: 5px;">
-      <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;"><g transform="translate(12,12) skewX(-16) translate(-12,-12)"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--cell)" stroke-width="2"></circle><circle cx="12" cy="12" r="3.2" fill="none" stroke="var(--cell)" stroke-width="2"></circle></g></svg>
-      <span style="display: flex; flex-direction: column; line-height: 1.1; min-width: 0;">
+    <div class="slot" style="left: 11px; top: 253px; width: 94px; height: 42px; border: 1px dashed var(--dash); display: flex; align-items: center; gap: 6px; padding-left: 6px;">
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 1px; flex-shrink: 0;">
+        <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;"><g transform="translate(12,12) skewX(-16) translate(-12,-12)"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--cell)" stroke-width="2"></circle><circle cx="12" cy="12" r="3.2" fill="none" stroke="var(--cell)" stroke-width="2"></circle></g></svg>
         <span style="font-size: 8px; font-weight: 800; letter-spacing: 0.06em; color: var(--hint);">TM</span>
-        <span style="font-size: 11px; font-weight: 600; color: var(--hint);">Pick a move</span>
       </span>
+      <span style="font-size: 11px; line-height: 1.15; min-width: 0; color: var(--hint);">Pick a move</span>
     </div>
     <div class="slot" style="left: 11px; top: 307px; width: 94px; height: 96px; border: 1px dashed var(--dash); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
       <svg viewBox="0 0 32 32" style="width: 38px; height: 38px;"><path d="M16 3 L27 9.5 L27 22.5 L16 29 L5 22.5 L5 9.5 Z" fill="none" stroke="var(--dash)" stroke-width="1.6" stroke-dasharray="3 2.4"></path><circle cx="16" cy="16" r="4.4" fill="none" stroke="var(--dash)" stroke-width="1.6"></circle></svg>
-      <span style="width: 84px; text-align: center; font-size: 10.5px; font-weight: 600; line-height: 1.2;"><span style="color: var(--hint);">Name</span><br><span style="color: var(--hint);">Badge</span></span>
+      <span style="width: 84px; text-align: center; font-size: 11px; line-height: 1.2;"><span style="color: var(--hint);">Badge Name</span></span>
     </div>
     <div class="band"><b>GYM LEADER TEAM</b></div>
     <div class="trow"><div class="c"></div><div class="c"></div><div class="c"></div><div class="g" style="grid-column: span 2;"><span style="display: flex; flex-direction: column; align-items: center; gap: 3px;"><span style="font-size: 9.5px; font-weight: 600; color: #ffffff;">No badges</span><span style="display: flex; gap: 2px; align-items: center;"><svg viewBox="0 0 12 12" width="8" height="8"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" stroke-width="1.8"></path></svg></span></span></div><div class="c"><span class="pk"><img src="179.png" alt="Mareep" class="sprite"></span></div><div class="c"><span class="pk"><img src="172.png" alt="Pichu" class="sprite"></span></div></div>
@@ -159,23 +159,23 @@
     <div style="padding: 0 12px 6px 12px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #737373;">Dark &#183; five lines, TM and badge, no signature</div>
   <div style="display: flex; align-items: center; gap: 8px; padding: 7px 12px;">
     <svg viewBox="0 0 200 40" style="display: block; width: 76px; height: 15.2px;"><rect x="1.5" y="1.5" width="197" height="37" rx="18" fill="#50413F"></rect><image href="17.png" x="15" y="5" width="30" height="30"></image><text x="113" y="33" font-size="33" font-weight="700" fill="#ffffff" text-anchor="middle" transform="translate(113,0) scale(0.76 1) translate(-113,0)">DARK</text></svg>
-    <span style="font-size: 11px; color: #0a0a0a;">Night shift</span>
+    <span style="font-size: 11px; font-weight: 600; color: #0a0a0a;">Night shift</span>
   </div>
   <div class="card" style="margin: 0 12px; --mat: #f4f3f3; --cell: #9d8783; --band: #876f6b; --line: #e6e4e4; --dash: #e4dddc; --hint: #c9bdbb; --hover: rgba(80, 65, 63, 0.09); --slot: #ffffff;">
     <div class="slot" style="left: 11px; top: 37px; width: 144px; height: 204px; border: 1px dashed var(--dash); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
       <svg viewBox="0 0 16 16" style="width: 22px; height: 22px;"><line x1="3" y1="8" x2="13" y2="8" stroke="var(--dash)" stroke-width="1.8" stroke-linecap="round"></line><line x1="8" y1="3" x2="8" y2="13" stroke="var(--dash)" stroke-width="1.8" stroke-linecap="round"></line></svg>
       <span style="font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; color: var(--hint);">SIGNATURE POK&#201;MON</span>
     </div>
-    <div class="slot" style="left: 11px; top: 253px; width: 94px; height: 42px;  display: flex; align-items: center; gap: 5px; padding-left: 5px;">
-      <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;"><g transform="translate(12,12) skewX(-16) translate(-12,-12)"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--cell)" stroke-width="2"></circle><circle cx="12" cy="12" r="3.2" fill="none" stroke="var(--cell)" stroke-width="2"></circle></g></svg>
-      <span style="display: flex; flex-direction: column; line-height: 1.1; min-width: 0;">
+    <div class="slot" style="left: 11px; top: 253px; width: 94px; height: 42px;  display: flex; align-items: center; gap: 6px; padding-left: 6px;">
+      <span style="display: flex; flex-direction: column; align-items: center; gap: 1px; flex-shrink: 0;">
+        <svg viewBox="0 0 24 24" style="width: 22px; height: 22px;"><g transform="translate(12,12) skewX(-16) translate(-12,-12)"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--cell)" stroke-width="2"></circle><circle cx="12" cy="12" r="3.2" fill="none" stroke="var(--cell)" stroke-width="2"></circle></g></svg>
         <span style="font-size: 8px; font-weight: 800; letter-spacing: 0.06em; color: var(--hint);">TM</span>
-        <span style="font-size: 11px; font-weight: 600; color: #0a0a0a;">Crunch</span>
       </span>
+      <span style="font-size: 11px; line-height: 1.15; min-width: 0; color: #0a0a0a;">Crunch</span>
     </div>
     <div class="slot" style="left: 11px; top: 307px; width: 94px; height: 96px;  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;">
       <svg viewBox="0 0 32 32" style="width: 38px; height: 38px;"><path d="M16 3 L27 9.5 L27 22.5 L16 29 L5 22.5 L5 9.5 Z" fill="var(--cell)" stroke="none" stroke-width="1.6" stroke-dasharray="0"></path><circle cx="16" cy="16" r="4.4" fill="#ffffff" stroke="none" stroke-width="1.6"></circle></svg>
-      <span style="width: 84px; text-align: center; font-size: 10.5px; font-weight: 600; line-height: 1.2;">Everstone Ridge Badge</span>
+      <span style="width: 84px; text-align: center; font-size: 11px; line-height: 1.2;">Everstone Ridge Badge</span>
     </div>
     <div class="band"><b>GYM LEADER TEAM</b></div>
     <div class="trow"><div class="c"></div><div class="c"></div><div class="c"></div><div class="g" style="grid-column: span 2;"><span style="display: flex; flex-direction: column; align-items: center; gap: 3px;"><span style="font-size: 9.5px; font-weight: 600; color: #ffffff;">No badges</span><span style="display: flex; gap: 2px; align-items: center;"><svg viewBox="0 0 12 12" width="8" height="8"><path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" stroke-width="1.8"></path></svg></span></span></div><div class="c"><span class="pk"><img src="570.png" alt="Zorua" class="sprite"></span></div><div class="c"><span class="pk"><img src="261.png" alt="Poochyena" class="sprite"></span></div></div>

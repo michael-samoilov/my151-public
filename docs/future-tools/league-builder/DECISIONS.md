@@ -83,17 +83,20 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
 12b. **TM slot.** 2 columns × 1 row, directly under the signature, and no
     taller than the glyph cell beside it. Its mark is a pokeball with the
     band taken out — a small circle inside a big one — sheared, so it reads
-    as a disc lying at an angle. The mark sits at the left edge so the move
-    name has room, and the name wraps to two lines when it needs to. Tapping it
+    as a disc lying at an angle. The mark sits at the left edge with the "TM"
+    label under it, so the move name gets the rest of the row and wraps to two
+    lines when it needs to. The move name is not bold; the gym's theme is. Tapping it
     opens a move picker built on the selection pane: type badge, move name,
     and the category icon, with a filter for type and one for category, and
     a search that sorts on move name. Its fields run Type, Category, Move,
     PP, Att., Acc.; Move, PP, Att. and Acc. sort, and a move that always hits
     carries no accuracy and sorts above 100%. Two more filters: contest
     condition (beautiful `#1e93c0`, clever `#15a13f`, cool `#d42c04`, cute
-    `#d2458d`, tough `#cca100`) and signature move, matched against a static
-    list extracted from Bulbapedia. Later: a count of how many of the team's
-    lines can learn the move, and an ace-move filter. Power is data, not a
+    `#d2458d`, tough `#cca100`). Signature move is deferred to an advanced
+    filter set, along with a count of how many of the team's lines can learn
+    the move and an ace-move filter. The category chip has three candidate
+    forms on the TM picker variants board — icon and word, icon in a rounded
+    square, icon in a circle. The word costs the move column about 40px. Power is data, not a
     filter. The pane
     keeps the browser's own gutters and its rows are dense. The category
     chip runs through the same badge pipeline as a type badge — one 200×40
@@ -107,9 +110,10 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
     and row windowing (`useRowWindow`).
 12c. **Badge slot.** 2 columns × 2 rows, under the TM, spanning exactly the
     two glyph cells beside it. It holds the badge the gym awards. Text entry
-    for v1, and the field supplies the word "Badge": a short name puts Badge
-    on its own second line, and a name long enough to wrap on its own lets
-    Badge simply follow as the last word. Nobody types it twice. Later enhancement: check whether the PokeAPI sprite repo already
+    for v1. Empty, it reads "Badge Name". Filled, the field supplies the word
+    itself: a short name puts Badge on its own second line, and a name long
+    enough to wrap lets Badge simply follow as the last word. Nobody types it
+    twice. The name is not bold. Later enhancement: check whether the PokeAPI sprite repo already
     carries official badge art and offer those as image options.
 
 ## Card theme
@@ -131,7 +135,8 @@ surfaces from them:
 - **Spacer bands** — one /vp/ step down from the cells: −9 points of HSL
   lightness, hue and saturation untouched.
 - **Pokemon slots** — white. Every cell that can ever hold a Pokemon draws
-  its square, filled or not.
+  its square, filled or not. The sprite is larger than its square and
+  overflows it, as the dex builder's tiles do.
 
 **The −9 is measured, not chosen.** Three /vp/ cards, in HSL:
 
@@ -170,7 +175,11 @@ is vertically centred.
     type chip. The chip uses the 1×1 type icon the analytics type chart uses
     (`typeIconPath`), never the cropped glyph stretched into a circle. Its
     spacers are plain section labels: Gym Leaders, Elite Four, Champion,
-    Endgame Boss, with no notes. Each row carries its own card's type shades; an empty
+    Endgame Boss, with no notes; grey, black and red are all drawn on the
+    League states board. The league carries a name of its own, entered under
+    the tool title the way a gym enters its theme, and bold once filled.
+    Dragging a row lifts it, closes the rest up, and leaves a dashed hole
+    where it will land. Each row carries its own card's type shades; an empty
     slot keeps the white material.
 16. **Stage glyphs** (used on the card AND the league):
     - Glyphs live INSIDE the grid, in the rightmost empty cell of each row —
@@ -255,7 +264,9 @@ is vertically centred.
     verbatim:
     - "↕ Drag a pokemon across rows to shift when it evolves"
     - "↔ Drag a column to reorder"
-    - "↔ Drag the Endgame Boss legend to change which pokemon it replaces"
+    - The third depends on the boss row. With a legendary placed: "↔ Drag the
+      Endgame Boss legendary to change which pokemon it replaces". Without
+      one: "Tap a pokemon in the Endgame Boss row to swap in a legendary".
 21. **Selector.** Reuse the dex builder's `PokemonBrowser` COMPONENT
     as-is — never a similar rebuild. The sheet chrome, search field, result
     count, chip vocabulary, generation sections and 6-column evo-line grid

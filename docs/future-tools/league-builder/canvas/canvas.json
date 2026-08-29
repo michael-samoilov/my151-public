@@ -49,9 +49,25 @@
       "h": 880
     },
     {
+      "file": "LeagueStates.dc.html",
+      "title": "League states",
+      "w": 1680,
+      "h": 900,
+      "x": 5056,
+      "y": 0
+    },
+    {
+      "file": "TMVariants.dc.html",
+      "title": "TM picker — category variants",
+      "w": 1266,
+      "h": 900,
+      "x": 6856,
+      "y": 0
+    },
+    {
       "file": "Desktop.dc.html",
       "title": "Desktop — Two pane",
-      "x": 5056,
+      "x": 8242,
       "y": 0,
       "w": 1440,
       "h": 900
@@ -59,7 +75,7 @@
     {
       "file": "DesktopThree.dc.html",
       "title": "Desktop — Picker open",
-      "x": 6616,
+      "x": 9802,
       "y": 0,
       "w": 1440,
       "h": 900
@@ -117,17 +133,31 @@
     },
     {
       "id": "note-desktop",
-      "x": 5056,
+      "x": 8242,
       "y": -205,
       "w": 560,
       "text": "Desktop, at rest. Each pane has its own header, as the dex builder's panes do, and centres a phone-width column. The card pane carries the card's type badge and theme. The flow out of the open row is translucent, so the pane seam reads through it."
     },
     {
       "id": "note-desktop3",
-      "x": 6616,
+      "x": 9802,
       "y": -205,
       "w": 560,
       "text": "Desktop, picker open. The selection pane comes in from the right and the layout becomes three panes, each still centring a phone-width column."
+    },
+    {
+      "id": "note-league-states",
+      "x": 5056,
+      "y": -205,
+      "w": 560,
+      "text": "The league home once it is full: every slot has a type, a team and its glyph, and the league carries a name of its own under the tool title. Three spacer treatments to choose between, and the row drag — the row lifts, the rest close up, and a dashed hole marks where it lands."
+    },
+    {
+      "id": "note-tm-variants",
+      "x": 6856,
+      "y": -205,
+      "w": 440,
+      "text": "The category chip, three ways. The word costs the move column about forty pixels; the icon alone gives them back. Same pipeline in all three — Bulbapedia's palette, its Scarlet/Violet art, our border."
     }
   ],
   "launch": {
