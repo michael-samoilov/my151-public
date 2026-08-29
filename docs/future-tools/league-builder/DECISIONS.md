@@ -339,6 +339,29 @@ Veto any of these; they ship as stated otherwise.
    "all" across 2+ types is naturally empty.)
 10. **Per-column removal shipped** on the topmost Pokemon, dex `RedXIcon`.
 
+## Site chrome (decided 2026-08-29, built the same day)
+
+Two bars, both tools. Top bar, identical everywhere: wordmark left; the
+language globe and a **Tools dropdown** right — a dropdown, not spelled-out
+links, because more tools are coming. Second bar is the tool's own, one
+2.75rem height across tools:
+
+- **Dex builder:** "Dex Builder" left as real text until anything is
+  placed, then the n/151 count; the Build/Analytics/View nav centred; the
+  page's own controls (report, settings, export) right-aligned with no
+  vertical divider and no shading. The milestone progress bar is retired —
+  the admin dashboard shows it did not lift conversion — and the milestone
+  popups stay (they mount in App, independent of the chrome).
+- **League builder:** the name input reads "Pokémon League Builder" until
+  the user names their league; an sr-only h1 keeps the heading in the
+  hydrated DOM and the static shell keeps the crawlable one. Home and card
+  bars hold the same height as the dex bar.
+
+Enforced, not hoped: `e2e/header-chrome.spec.ts` proves the three cells
+never overlap at 320/390/desktop in both left-cell states, and the verify
+harness asserts the same lanes per view on every surface plus the league
+bar height.
+
 ## Build plan (own tasks, not part of the page)
 
 - **Powerup symbols:** harvested — Bulbapedia's Mega Evolution and Dynamax

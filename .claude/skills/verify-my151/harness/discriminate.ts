@@ -42,7 +42,13 @@ const MUTATIONS: Mutation[] = [
   },
   {
     name: 'break-persist',
-    expectFail: 'oracle:seed-persisted',
+    // Not oracle:seed-persisted: that reads localStorage back after a reload,
+    // which only exposes a broken partialize if something *writes* first. The
+    // old chrome's boot write provided that flush by accident; the two-bar
+    // chrome does not. The real-placement check performs an actual user write,
+    // so the emptied `sections` hits storage deterministically.
+    expectFail: 'placement:real-add-grows-store',
+    expectPassStill: 'boot:react-mounted',
     apply: (dir) => replace(dir, 'src/store/usePokedexStore.ts', 'sections: state.sections,', 'sections: {},'),
   },
 ];
