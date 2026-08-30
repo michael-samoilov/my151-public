@@ -147,7 +147,29 @@ INTRO = (
     'stop reading in the same order. These three keep a seam and give each half a rectangle that fits '
     'entirely inside it, so <b>nothing is clipped</b>.</p></section>'
 )
-running = parts[:3] + [INTRO] + dparts + parts[3:]
+# Where the seam ends: the corner seams this variant started with, beside the
+# edge seam that replaced them.
+spec_mv = importlib.util.spec_from_file_location(
+    'majorvars', '/tmp/claude-0/-home-user-my151/d74790d9-bbfd-5538-8993-a07d19412b2a/scratchpad/majorvars.py')
+mv = importlib.util.module_from_spec(spec_mv)
+spec_mv.loader.exec_module(mv)
+SEAM_END = (
+    '<section id="s3d"><h2><span class="idx">3d</span>Where the seam ends</h2>'
+    '<p class="verdict">3c began with a seam that ran to the <b>bottom-left corner</b>. It was replaced by '
+    'one that crosses to the left edge instead, and the difference is worth seeing rather than asserting: '
+    'here are three corner seams at three angles, beside the edge seam, with both halves solved rather '
+    'than guessed &mdash; each box is the placement that leaves its half the largest sprite.</p>'
+    + mv.section() +
+    '<p class="note">A corner seam has to squeeze the partner into a triangle that is thin exactly where the '
+    'partner needs width, so the partner\'s box gets pushed right and short. The edge seam gives the partner '
+    '<b>54px</b> against the corner seam\'s best of 48px, and it gets there while leaving the signature the '
+    'same 77px. <i>Corner, low is drawn to show the floor</i>: at that angle the partner solves to a 14px '
+    'sprite, which is not a Pokemon any more.<br><br>'
+    'The solver also answers a question the hand-drawn 3c did not. Left to maximise its sprite it puts the '
+    'signature in the top-left at 84&ndash;118px wide rather than centring it across the full 132 &mdash; a '
+    'narrower box sits higher above the seam, and the height buys more than the width costs.</p></section>'
+)
+running = parts[:3] + [INTRO] + dparts + [SEAM_END] + parts[3:]
 html = TEMPLATE.replace('__SECTIONS__', '\n\n  '.join(running))
 html = html.replace('__SP95__', sp[95]).replace('__SP25__', sp[25])
 open('/tmp/claude-0/-home-user-my151/d74790d9-bbfd-5538-8993-a07d19412b2a/scratchpad/partner-slot.html', 'w').write(html)

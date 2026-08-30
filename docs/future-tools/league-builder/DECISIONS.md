@@ -998,6 +998,37 @@ proves it rather than reading the declaration: it asks the engine to select
 each draggable's contents and requires nothing back. The callout itself is
 device-only and is named as such.
 
+### Round 17, mocked up but not built
+
+**Where the seam ends decides which half is the lesser one.** The first
+"Major and minor" ran its seam to the bottom-left *corner*; a later revision
+crossed it to the left *edge* instead, which drops the low corner out of the
+study. Section 3d of `partner-slot/study.html` puts all four side by side —
+three corner seams at three angles, and the edge seam — with both halves
+solved rather than guessed. `majorvars.py` walks the free corner of each half
+and keeps the placement that leaves the larger sprite, so each panel is the
+best that seam can do rather than one drawing of it.
+
+| Seam | Signature | Partner |
+| --- | --- | --- |
+| Corner, high | 78px | 48px |
+| Corner, mid (3c as it first stood) | 92px | 36px |
+| Corner, low | 112px | 14px |
+| Edge seam (3c today) | 77px | 54px |
+
+Three readings.
+
+- **A corner seam is a single trade, priced by its angle.** Every pixel the
+  signature gains, the partner loses; the three corner rows are one line, not
+  three designs. The low corner is past the floor — 14px is not a Pokemon.
+- **The edge seam is not on that line.** It buys the partner 6px more than
+  the most even corner does, for 1px off the signature. Crossing to the edge
+  rather than the corner leaves the minor half a rectangle instead of a
+  wedge, and a rectangle holds a sprite better at the same area.
+- **So the corner is the choice to make deliberately.** It is the more
+  graphic cut and the one that says which Pokemon is the ace; it costs the
+  partner about a sixth of its sprite to say it.
+
 ### Round 3, follow-ups from the preview
 
 1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;
