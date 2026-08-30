@@ -64,6 +64,32 @@ const buttons = (page: Page, row: number, seatNo: number) =>
   );
 
 test.describe('powerups', () => {
+  test('the buttons stay circular', async ({ page }) => {
+    await openCard(page, 12);
+    await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
+
+    // The card scales itself with CSS `zoom`, so a 1rem box is a fractional
+    // number of CSS pixels and the painted rect snaps its edges
+    // independently. The right-anchored button measured 15px wide by 16px
+    // tall, and `rounded-full` drew that as an ellipse. Paint containment
+    // rasterises the element at subpixel precision instead.
+    const discs = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-powerup]')].map((btn) => {
+        const r = btn.getBoundingClientRect();
+        return {
+          kind: btn.getAttribute('data-powerup'),
+          ratio: +(r.width / r.height).toFixed(3),
+          contain: getComputedStyle(btn).contain,
+        };
+      }),
+    );
+    expect(discs.length).toBeGreaterThan(0);
+    for (const disc of discs) {
+      expect(disc.ratio, `${disc.kind} box is square`).toBe(1);
+      expect(disc.contain, `${disc.kind} keeps its own paint context`).toContain('paint');
+    }
+  });
+
   test('only the champion and boss rows offer them, and only where a form exists', async ({ page }) => {
     await openCard(page, 12);
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');

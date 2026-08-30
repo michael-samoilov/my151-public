@@ -524,11 +524,10 @@ Two bugs came out of building those.
 3. **The powerup discs are smaller and their symbols larger.** 1rem instead
    of 1.15rem, inset far enough that the disc AND an active one's 2px ring
    stay inside the cell — 11.6px now separates neighbouring seats' buttons,
-   where 3.8px did and the ring ate most of it. The symbols carry their own
-   scale, measured from the art: `dynamax.png` is square but its ink fills
-   only 77% of the height, so one shared percentage drew the Gigantamax
-   symbol a fifth smaller than the Mega one.
-4. **A preview build seeds a Kanto league.** Below.
+   where 3.8px did and the ring ate most of it.
+4. **The discs are circles again**, and the symbols are sized to the circle
+   rather than to their own image box. Two separate causes, below.
+5. **A preview build seeds a Kanto league.** Below.
 
 Three defects came out of building those, all in what shipped last round.
 
@@ -546,6 +545,45 @@ Three defects came out of building those, all in what shipped last round.
 - **The league summary drew the base sprite where the card drew the form.**
   The champion row read Charizard while its own card read Mega Charizard X.
   The summary is a small copy of the card's row, so it takes the form too.
+
+### Why the Dynamax disc was not a circle
+
+Two things made one 1rem button read as squashed sideways, and only one of
+them was visible in the layout box.
+
+**The box snapped to an ellipse.** The card scales itself with CSS `zoom`
+(`useFitScale`), so a 1rem square is a fractional number of CSS pixels, and
+paint snaps an element's edges to whole pixels independently on each axis.
+The right-anchored button landed on a fraction that snapped to 15px wide by
+16px tall, and `rounded-full` faithfully drew that box: an ellipse.
+`getBoundingClientRect` reports the *unsnapped* 15.52 x 15.52 and cannot see
+it, which is why the first look at this said the button was fine.
+
+Measuring the painted pixels instead settled it. Filling the disc with a
+colour nothing else on the page uses, at a 16x device pixel ratio, the Mega
+disc measured 256x256 and the Dynamax one 240x256 — symmetric on both sides,
+so an ellipse rather than something clipped. Of the fixes tried, only two
+gave a true circle: promoting the button to its own compositing layer
+(`will-change: transform`) and paint containment (`contain: paint`). Left
+anchoring, `translateZ(0)`, `backface-visibility`, `opacity`, `isolation`, a
+no-op filter and `aspect-ratio` all still measured 240x256. `contain: paint`
+wins on cost: it gives the element its own paint context with no layer per
+button, and the outset ring still draws (measured 318x318, both kinds).
+
+**The symbol pushed on the rim.** Both symbols are `object-contain` in a
+square box, and the two arts are shaped very differently: `mega.png` is 56x74
+with ink to every edge, so its height binds, while `dynamax.png` is square
+but its ink fills 96% of the width and 77% of the height, so its width binds.
+One shared percentage cannot serve both — too small and the Dynamax symbol
+reads a fifth smaller than the Mega one, too large and its ink runs to the
+left and right rims with clear space above and below. Each symbol is now
+sized so its *widest* side takes the same share of the disc
+(`SYMBOL_EXTENT`, 80%), which works out to 80.0% for Mega and 83.2% for
+Dynamax and leaves both the same margin all round.
+
+`e2e/league-powerups.spec.ts` holds the box square and paint containment on,
+so removing either brings the ellipse back with a failing test rather than
+silently.
 
 ### The seeded Kanto league
 

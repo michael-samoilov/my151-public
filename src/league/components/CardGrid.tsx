@@ -326,13 +326,28 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
 /**
  * How much of the disc each symbol takes.
  *
- * Measured from the art rather than guessed. `mega.png` is 56x74 and its ink
- * reaches every edge; `dynamax.png` is 103x103 but its ink fills only 77% of
- * that height. One shared percentage therefore drew the Dynamax symbol a
- * fifth smaller than the Mega one. These two land both inks at about 72% of
- * the disc.
+ * Both are `object-contain` in a square box, so what reaches the eye is the
+ * art's own ink, and the two arts are shaped very differently. Measured:
+ * `mega.png` is 56x74 and its ink reaches every edge, so its height binds.
+ * `dynamax.png` is square but its ink fills 96% of the width and 77% of the
+ * height, so its width binds.
+ *
+ * One shared percentage cannot serve both. Too small and the Dynamax symbol
+ * reads a fifth smaller than the Mega one; too large and its ink runs to the
+ * left and right rims with clear space above and below, which reads as a
+ * circle squashed sideways. Sizing each symbol so its *widest* side takes
+ * the same share of the disc gives both the same margin all round.
  */
-const SYMBOL_SCALE: Record<PowerupKind, string> = { mega: '80%', dynamax: '94%' };
+
+/** The widest side of a symbol's ink, as a share of its own image box. */
+const SYMBOL_INK: Record<PowerupKind, number> = { mega: 1, dynamax: 0.961 };
+
+/** How much of the disc that widest side may take. */
+const SYMBOL_EXTENT = 0.8;
+
+function symbolScale(kind: PowerupKind): string {
+  return `${((SYMBOL_EXTENT / SYMBOL_INK[kind]) * 100).toFixed(1)}%`;
+}
 
 /** One corner button, sized like the cell's other overlays. */
 function PowerupButton({ kind, active, onPress, className }: {
@@ -357,8 +372,16 @@ function PowerupButton({ kind, active, onPress, className }: {
       // at 15px on top of a sprite. The disc gives them a ground, and the
       // ring — not the opacity — carries the on state, so an available
       // powerup stays legible while an active one is unmistakable.
+      //
+      // `contain:paint` is what keeps the disc round. The card scales itself
+      // with CSS `zoom`, so a 1rem box is a fractional number of CSS pixels
+      // and the painted rect snaps its edges independently: this button
+      // measured 15px wide by 16px tall and `rounded-full` drew that as an
+      // ellipse. Paint containment gives the element its own paint context,
+      // which rasterises at subpixel precision. Measured, both ways: 240x256
+      // without it, 256x256 with it.
       className={cn(
-        'absolute bottom-[0.125rem] z-[15] flex h-[1rem] w-[1rem] cursor-pointer items-center justify-center rounded-full bg-white transition-shadow',
+        'absolute bottom-[0.125rem] z-[15] flex h-[1rem] w-[1rem] cursor-pointer items-center justify-center rounded-full bg-white transition-shadow [contain:paint]',
         active ? 'ring-2 ring-[var(--lg-band)] shadow' : 'ring-1 ring-black/15',
         className,
       )}
@@ -369,7 +392,7 @@ function PowerupButton({ kind, active, onPress, className }: {
         src={`/powerups/${kind}.png`}
         alt=""
         className={cn('object-contain transition-opacity', !active && 'opacity-55')}
-        style={{ width: SYMBOL_SCALE[kind], height: SYMBOL_SCALE[kind] }}
+        style={{ width: symbolScale(kind), height: symbolScale(kind) }}
       />
     </button>
   );
