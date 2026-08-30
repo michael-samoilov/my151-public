@@ -148,26 +148,40 @@ INTRO = (
     'entirely inside it, so <b>nothing is clipped</b>.</p></section>'
 )
 # Where the seam ends: the corner seams this variant started with, beside the
-# edge seam that replaced them.
+# edge seam that replaced them -- both sprites at the card's own full size.
 spec_mv = importlib.util.spec_from_file_location(
-    'majorvars', '/tmp/claude-0/-home-user-my151/d74790d9-bbfd-5538-8993-a07d19412b2a/scratchpad/majorvars.py')
+    'seamends', '/tmp/claude-0/-home-user-my151/d74790d9-bbfd-5538-8993-a07d19412b2a/scratchpad/seamends.py')
 mv = importlib.util.module_from_spec(spec_mv)
 spec_mv.loader.exec_module(mv)
 SEAM_END = (
     '<section id="s3d"><h2><span class="idx">3d</span>Where the seam ends</h2>'
     '<p class="verdict">3c began with a seam that ran to the <b>bottom-left corner</b>. It was replaced by '
-    'one that crosses to the left edge instead, and the difference is worth seeing rather than asserting: '
-    'here are three corner seams at three angles, beside the edge seam, with both halves solved rather '
-    'than guessed &mdash; each box is the placement that leaves its half the largest sprite.</p>'
+    'one that crosses to the left edge instead. Here both are drawn at <b>full size</b> &mdash; each sprite '
+    'at 52px, the size every other Pok&eacute;mon on the card gets &mdash; so the seam no longer decides who '
+    'is the lesser one by shrinking them. It decides only whether the pair fits, and where each one can sit.'
+    '</p>'
+    '<p class="note">Each sprite wants its centre on the <b>optical centre of its own partition</b>: the area '
+    'centroid of the shape the seam cuts out of the slot. The solver puts it there when it can, and otherwise '
+    'as near to it as the seam and the slot edges allow &mdash; so a half that has to give way gives way by '
+    'the smallest amount, rather than by a guess. The table below reports that displacement.</p>'
     + mv.section() +
-    '<p class="note">A corner seam has to squeeze the partner into a triangle that is thin exactly where the '
-    'partner needs width, so the partner\'s box gets pushed right and short. The edge seam gives the partner '
-    '<b>54px</b> against the corner seam\'s best of 48px, and it gets there while leaving the signature the '
-    'same 77px. <i>Corner, low is drawn to show the floor</i>: at that angle the partner solves to a 14px '
-    'sprite, which is not a Pokemon any more.<br><br>'
-    'The solver also answers a question the hand-drawn 3c did not. Left to maximise its sprite it puts the '
-    'signature in the top-left at 84&ndash;118px wide rather than centring it across the full 132 &mdash; a '
-    'narrower box sits higher above the seam, and the height buys more than the width costs.</p></section>'
+    '<p class="note">Two things the full-size drawing settles that the shrink-to-fit one hid.<br><br>'
+    '<b>The corner is affordable, up to a point.</b> Corner to corner, both halves are the same shape and '
+    'both sprites land within 8px of their own centre. Tilting the seam down buys the signature nothing it '
+    'can use &mdash; it is already centred &mdash; and spends the partner\'s slack: at the 56px corner the '
+    'partner sits 15px off centre, and by the 96px corner it does not fit at all. <i>The last corner seam '
+    'that holds two full-size Pok&eacute;mon ends at 62px</i> down the right edge.<br><br>'
+    '<b>The edge seam is not the safer choice it looked like.</b> It holds the pair, but it puts the partner '
+    '14px off its own centre to do it &mdash; barely better than the 56px corner, and worse than corner to '
+    'corner. What it buys is headroom: its ceiling for an equal pair is 57px against the steep corner\'s '
+    '54px. The ceiling for any seam is <b>68px</b>, on the corner-to-corner diagonal, against the 92px the '
+    'signature has to itself today.</p>'
+    + mv.coda() +
+    '<p class="note">52px is the floor for &ldquo;full size&rdquo;, not the ceiling: it is what a Pok&eacute;mon '
+    'gets in a cell, so nothing on the card looks shrunken beside it. Corner to corner the pair reaches '
+    '<b>64px</b> each before either one has to leave its own centre by more than a quarter of a sprite '
+    '&mdash; 14px for the signature, 7px for the partner. That is the version to build if the pair is worth '
+    'more than the room around it.</p></section>'
 )
 running = parts[:3] + [INTRO] + dparts + [SEAM_END] + parts[3:]
 html = TEMPLATE.replace('__SECTIONS__', '\n\n  '.join(running))
