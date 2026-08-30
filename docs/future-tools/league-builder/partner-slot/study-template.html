@@ -111,7 +111,29 @@
     font-variant-numeric: tabular-nums;
   }
 
-  section { display: flex; flex-direction: column; gap: 16px; }
+  .toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    margin-top: 4px;
+  }
+  .toc a {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--line);
+    border-radius: 9999px;
+    background: var(--surface);
+    color: var(--muted);
+    font-size: 12px;
+    text-decoration: none;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .toc a:hover, .toc a:focus-visible { color: var(--ink); border-color: var(--band); }
+  .toc a b { font-family: var(--mono); font-size: 10px; color: var(--band); }
+
+  section { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 16px; }
   h2 {
     font-family: var(--serif);
     font-weight: 600;
@@ -269,21 +291,21 @@
       <div><dt>Ratio</dt><dd>0.73 : 1</dd></div>
       <div><dt>Holds today</dt><dd>1</dd></div>
     </dl>
+    <nav class="toc" aria-label="Contents">
+      <a href="#s1"><b>01</b> Two full-width halves</a>
+      <a href="#s2"><b>02</b> Two half-width columns</a>
+      <a href="#s3"><b>03</b> One box, one seam</a>
+      <a href="#s3a"><b>3a</b> Corner quarters</a>
+      <a href="#s3b"><b>3b</b> Shallow bands</a>
+      <a href="#s3c"><b>3c</b> Major and minor</a>
+      <a href="#s4"><b>04</b> One primary, one inset</a>
+      <a href="#rules">What the pair has to obey</a>
+    </nav>
   </header>
 
   __SECTIONS__
 
-  <section class="intro">
-    <h2>The diagonal, revisited</h2>
-    <p class="verdict">The first seam cut its own halves: the lower one lost its heading and the two stopped
-      reading in the same order. These three keep the seam and give each half a rectangle that fits entirely
-      inside it, so <b>nothing is clipped</b> and both halves read heading, sprite, name &mdash; and, in the
-      second row of each, the Pok&eacute;mon's types.</p>
-  </section>
-
-  __DIAGONALS__
-
-  <section>
+  <section id="rules">
     <h2>What the pair has to obey</h2>
     <div class="rules">
       <p><span class="k">The partner is not on the team</span>
