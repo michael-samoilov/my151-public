@@ -6,7 +6,8 @@
       "x": 0,
       "y": 0,
       "w": 390,
-      "h": 1130
+      "h": 1130,
+      "page": "page-1"
     },
     {
       "file": "SketchTablet.dc.html",
@@ -14,7 +15,8 @@
       "x": 490,
       "y": 0,
       "w": 834,
-      "h": 1320
+      "h": 1320,
+      "page": "page-1"
     },
     {
       "file": "Main.dc.html",
@@ -22,7 +24,8 @@
       "x": 1420,
       "y": 0,
       "w": 1440,
-      "h": 1660
+      "h": 1660,
+      "page": "page-1"
     },
     {
       "file": "MarqueeMobile.dc.html",
@@ -30,7 +33,8 @@
       "x": 0,
       "y": 1920,
       "w": 390,
-      "h": 1680
+      "h": 1680,
+      "page": "page-1"
     },
     {
       "file": "MarqueeTablet.dc.html",
@@ -38,7 +42,8 @@
       "x": 490,
       "y": 1920,
       "w": 834,
-      "h": 1290
+      "h": 1290,
+      "page": "page-1"
     },
     {
       "file": "MarqueeDesktop.dc.html",
@@ -46,7 +51,8 @@
       "x": 1420,
       "y": 1920,
       "w": 1440,
-      "h": 1120
+      "h": 1120,
+      "page": "page-1"
     },
     {
       "file": "FeaturedMobile.dc.html",
@@ -54,7 +60,8 @@
       "x": 0,
       "y": 3860,
       "w": 390,
-      "h": 1790
+      "h": 1790,
+      "page": "page-1"
     },
     {
       "file": "FeaturedTablet.dc.html",
@@ -62,7 +69,8 @@
       "x": 490,
       "y": 3860,
       "w": 834,
-      "h": 1360
+      "h": 1360,
+      "page": "page-1"
     },
     {
       "file": "FeaturedDesktop.dc.html",
@@ -70,12 +78,50 @@
       "x": 1420,
       "y": 3860,
       "w": 1440,
-      "h": 1280
+      "h": 1280,
+      "page": "page-1"
+    },
+    {
+      "file": "PosterMobile.dc.html",
+      "title": "D · Poster — Mobile 390, gradient",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "page-2"
+    },
+    {
+      "file": "PosterMobileBand.dc.html",
+      "title": "D · Poster — Mobile 390, solid band",
+      "x": 490,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "page-2"
+    },
+    {
+      "file": "PosterTablet.dc.html",
+      "title": "D · Poster — Tablet 834",
+      "x": 980,
+      "y": 0,
+      "w": 834,
+      "h": 1112,
+      "page": "page-2"
+    },
+    {
+      "file": "PosterDesktop.dc.html",
+      "title": "D · Poster — Desktop 1440",
+      "x": 1914,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "page": "page-2"
     }
   ],
   "annotations": [
     {
       "id": "a-note",
+      "page": "page-1",
       "x": 0,
       "y": -190,
       "w": 900,
@@ -83,6 +129,7 @@
     },
     {
       "id": "b-note",
+      "page": "page-1",
       "x": 0,
       "y": 1730,
       "w": 900,
@@ -90,6 +137,7 @@
     },
     {
       "id": "c-note",
+      "page": "page-1",
       "x": 0,
       "y": 3670,
       "w": 900,
@@ -97,13 +145,57 @@
     },
     {
       "id": "seo-note",
+      "page": "page-1",
       "x": 1000,
       "y": -190,
       "w": 860,
       "text": "SEO structure, same in all three:\n· h1 carries \"make your own Pokédex\" plus region and league.\n· Each card is an <h2> that exactly matches its slug: /custom-pokedex-builder, /pokemon-league-builder, /favorite-pokemon-picker.\n· The footer repeats the four links as anchor text.\nWatch out: making / a router moves the dex builder off the URL that ranks today (~pos 7.8 for \"pokedex builder\")."
+    },
+    {
+      "id": "d-note",
+      "page": "page-2",
+      "x": 0,
+      "y": -230,
+      "w": 940,
+      "text": "D · Poster cards — the artwork is anchored to the card's BOTTOM edge, where it is clipped flush, and runs up past the TOP edge. Every frame here is a real device viewport, so nothing scrolls: 390×844, 834×1112, 1440×900.\nThe two mobile frames are the same layout with two ways of keeping the copy readable. Pick one."
+    },
+    {
+      "id": "d-scrim-note",
+      "page": "page-2",
+      "x": 0,
+      "y": 880,
+      "w": 420,
+      "text": "Gradient. The screenshot reaches the card's bottom edge and a white scrim rises over its lower third; the h2 and the line under it sit on the scrim.\nMore screenshot stays visible, and the card reads as one object rather than a picture with a caption.\nCost: the copy sits on a busy sprite grid, so it needs the scrim to stay opaque near the bottom — which is most of what the gradient is doing."
+    },
+    {
+      "id": "d-band-note",
+      "page": "page-2",
+      "x": 490,
+      "y": 880,
+      "w": 420,
+      "text": "Solid band. The screenshot stops at a white strip that holds the same copy. Nothing overlaps.\nHighest text contrast, and it survives any screenshot, including a light one.\nCost: it gives up 62px of artwork per card and reads as a caption under a picture — the effect you asked for is weaker."
+    },
+    {
+      "id": "d-seo-note",
+      "page": "page-2",
+      "x": 1000,
+      "y": -230,
+      "w": 900,
+      "text": "What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold."
+    }
+  ],
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Directions A–C"
+    },
+    {
+      "id": "page-2",
+      "name": "D · Poster cards"
     }
   ],
   "launch": {
-    "view": "canvas"
+    "view": "canvas",
+    "page": "page-2"
   }
 }
