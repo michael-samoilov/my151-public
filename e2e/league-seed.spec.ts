@@ -56,6 +56,26 @@ test.describe('seeded league', () => {
     expect(await summary(13)).toContain('Gigantamax Charizard');
   });
 
+  test('a leader who fields a mid-line stage gets there by a drag', async ({ page }) => {
+    // Brock's team is Onix, and the line a picker hands over is Onix into
+    // Steelix. The seed reaches his state the way a person would — one
+    // boundary push — so the line reads as edited, reset button and all.
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="card-cell-1-1"]');
+    await page.waitForTimeout(400);
+    const alt = (row: number) =>
+      page.evaluate(
+        (r) => document.querySelector(`[data-testid="card-cell-${r}-1"] img`)?.getAttribute('alt') ?? null,
+        row,
+      );
+    expect(await alt(1), 'Onix from the top row').toBe('onix');
+    expect(await alt(11), 'and still Onix at the bottom — Steelix is pushed off').toBe('onix');
+    await expect(
+      page.locator('[aria-label="Reset onix\'s evolution rows"]'),
+      'an edited line offers its reset',
+    ).toHaveCount(1);
+  });
+
   test('the boss legendary covers its seat on the boss row only', async ({ page }) => {
     await page.click('[data-testid="league-slot-13"]');
     await page.waitForSelector('[data-testid="card-cell-11-1"]');

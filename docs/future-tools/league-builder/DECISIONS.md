@@ -601,13 +601,26 @@ written by hand. Serebii, which is where the request pointed, is blocked by
 this environment's egress proxy; the decompilation is the same data closer to
 the source.
 
-Two liberties. **Seat order is by level, highest first**, so each leader's ace
-takes seat 1 — the rightmost column — and carries the signature. **Baby stages
-are stripped**, so Raichu arrives without Pichu; the picker still seats the
-baby, and that question is still open above. Bruno is where it shows: without
-Tyrogue his three Hitmons are three one-member lines rather than three copies
-of one branch. Mewtwo on the boss row is the one thing not from the game —
-Red has no legendary, and the slot needs exercising.
+**Nothing in the seed is a state the app cannot reach on its own.** That rule
+replaced an earlier shortcut: the first version stripped baby stages, so
+Raichu arrived without Pichu. That was special logic in the generator, not
+anything the level curve does — the picker walks `evolvesFrom` to the root and
+always seats the baby — so it is gone. A seeded line is now the whole line,
+root to leaf, exactly as a picker hands it over.
+
+Which raises the case the rule exists for: a leader who fields a stage that is
+not the leaf. Brock's team is Onix, and the line a picker gives you is Onix
+into Steelix. The seed does not invent a one-member Onix line; it seats the
+real line and then reaches Brock's state the way a person would, with one
+`setBoundary` call — the same operation a downward drag performs — pushing
+Steelix off the bottom of the card. The line then reads as edited, blue reset
+button and all, because it is edited. Only two lines need it: Brock's Onix and
+Red's Pikachu.
+
+**Seat order is by level, highest first**, so each leader's ace takes seat 1 —
+the rightmost column — and carries the signature. Mewtwo on the boss row is
+the one thing not from the game: Red has no legendary, and the slot needs
+exercising.
 
 It is a fixture, not content, and three guards keep it that way
 (`src/league/store/seedLeague.ts`):

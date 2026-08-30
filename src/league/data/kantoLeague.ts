@@ -1,38 +1,51 @@
 import type { TypeName } from '@/types/pokemon';
 import { emptyCard, type GymCard } from '../store/useLeagueStore';
-import { makePlacedLine } from '../model/engine';
+import { makePlacedLine, setBoundary } from '../model/engine';
 import type { Powerup } from '../model/powerups';
-import { SLOT_COUNT } from '../model/constants';
+import { ROW_COUNT, SLOT_COUNT } from '../model/constants';
 
 /**
  * A Kanto league, seeded so preview builds open on a full template.
  *
  * All fourteen slots, six lines each: the eight Kanto gym leaders, the Elite
- * Four, the champion, and Red on Mt. Silver. It is a fixture, not content —
+ * Four, the champion, and Red on Mt. Silver. It is a fixture, not content -
  * `seedLeague.ts` writes it only on a preview build's first visit, and never
  * on production.
  *
- * The teams are the HeartGold/SoulSilver ones, taken from the game's own
+ * The teams are the HeartGold/SoulSilver ones, read from the game's own
  * trainer table (`files/poketool/trainer/trainers.json` in the pret
- * decompilation) rather than typed out: the gym leaders' REMATCH parties, the
- * Elite Four's second-round parties, Lance, and Red. Every species was
- * resolved against `src/data/pokemon.json` and every branch computed by
- * walking `evolvesFrom`, so no id here was written by hand.
+ * decompilation): the gym leaders' REMATCH parties, the Elite Four's
+ * second-round parties, Lance, and Red. A script resolved every species
+ * against `src/data/pokemon.json` and built every branch by walking
+ * `evolvesFrom`, so no id here was written by hand.
  *
- * Two liberties, both deliberate:
+ * **Nothing here is a state the app cannot reach on its own.** Two rules keep
+ * it that way:
  *
- * 1. **Seat order is by level, highest first.** Seat 1 is the rightmost
- *    column — the ace — so each leader's strongest Pokémon leads. Ties keep
- *    the game's own party order.
- * 2. **Baby stages are stripped**, so Raichu arrives without Pichu and Jynx
- *    without Smoochum. The picker still seats the baby; that question is open
- *    in DECISIONS.md. Bruno's three Hitmons are the visible effect: without
- *    Tyrogue they are three one-member lines rather than three copies of the
- *    same branch.
+ * 1. A line is the WHOLE line, root to leaf, exactly as the picker seats it -
+ *    `branchEndingAt` walks to the root, so a baby stage comes along. Brock's
+ *    team is Onix, but the line a picker hands you is Onix into Steelix.
+ * 2. When the leader fields a stage that is not the leaf, `pin` names it and
+ *    the seed reaches that state the way a person would: one `setBoundary`
+ *    call, the same operation a downward drag performs, pushing the stage
+ *    below off the bottom of the card. The line then reads as edited, blue
+ *    reset button and all, because it IS edited.
  *
- * Mewtwo on the boss row is the one thing not from the game. Red has no
- * legendary, and the slot needs exercising.
+ * Only two lines need that today: Brock's Onix and Red's Pikachu. Everything
+ * else is the leaf of its own chain and takes the level curve's own rows.
+ *
+ * Seat order is by level, highest first, so each leader's ace takes seat 1 -
+ * the rightmost column - and carries the signature. Mewtwo on the boss row is
+ * the one thing not from the game: Red has no legendary, and the slot needs
+ * exercising.
  */
+
+interface SeedLine {
+  /** The whole line, root to leaf, as the picker seats it. */
+  branch: number[];
+  /** The stage the leader fields, when it is not the leaf. */
+  pin?: number;
+}
 
 interface SeedCard {
   slot: number;
@@ -40,7 +53,7 @@ interface SeedCard {
   theme: string;
   badgeName?: string;
   /** Seat 1 first: seat 1 is the rightmost column, the leader's ace. */
-  branches: number[][];
+  lines: SeedLine[];
   tmMoveId: number;
   powerup?: Powerup;
   /** `[pokemonId, seat]` for the endgame boss's legendary. */
@@ -53,13 +66,13 @@ const SEED: SeedCard[] = [
     type: 'rock',
     theme: 'Brock\'s unyielding rock',
     badgeName: 'Boulder',
-    branches: [
-      [95],   // onix lv61
-      [408, 409],   // rampardos lv57
-      [138, 139],   // omastar lv56
-      [74, 75, 76],   // golem lv55
-      [140, 141],   // kabutops lv55
-      [369],   // relicanth lv54
+    lines: [
+      { branch: [95, 208], pin: 95 },   // onix > steelix, lv61
+      { branch: [408, 409] },   // cranidos > rampardos, lv57
+      { branch: [138, 139] },   // omanyte > omastar, lv56
+      { branch: [74, 75, 76] },   // geodude > graveler > golem, lv55
+      { branch: [140, 141] },   // kabuto > kabutops, lv55
+      { branch: [369] },   // relicanth, lv54
     ],
     tmMoveId: 157,
   },
@@ -68,13 +81,13 @@ const SEED: SeedCard[] = [
     type: 'water',
     theme: 'Misty\'s tidal power',
     badgeName: 'Cascade',
-    branches: [
-      [120, 121],   // starmie lv60
-      [349, 350],   // milotic lv60
-      [194, 195],   // quagsire lv56
-      [131],   // lapras lv56
-      [170, 171],   // lanturn lv54
-      [418, 419],   // floatzel lv54
+    lines: [
+      { branch: [120, 121] },   // staryu > starmie, lv60
+      { branch: [349, 350] },   // feebas > milotic, lv60
+      { branch: [194, 195] },   // wooper > quagsire, lv56
+      { branch: [131] },   // lapras, lv56
+      { branch: [170, 171] },   // chinchou > lanturn, lv54
+      { branch: [418, 419] },   // buizel > floatzel, lv54
     ],
     tmMoveId: 57,
   },
@@ -83,13 +96,13 @@ const SEED: SeedCard[] = [
     type: 'electric',
     theme: 'Lt. Surge\'s lightning',
     badgeName: 'Thunder',
-    branches: [
-      [25, 26],   // raichu lv60
-      [417],   // pachirisu lv58
-      [125, 466],   // electivire lv56
-      [309, 310],   // manectric lv52
-      [81, 82, 462],   // magnezone lv52
-      [100, 101],   // electrode lv52
+    lines: [
+      { branch: [172, 25, 26] },   // pichu > pikachu > raichu, lv60
+      { branch: [417] },   // pachirisu, lv58
+      { branch: [239, 125, 466] },   // elekid > electabuzz > electivire, lv56
+      { branch: [309, 310] },   // electrike > manectric, lv52
+      { branch: [81, 82, 462] },   // magnemite > magneton > magnezone, lv52
+      { branch: [100, 101] },   // voltorb > electrode, lv52
     ],
     tmMoveId: 85,
   },
@@ -98,13 +111,13 @@ const SEED: SeedCard[] = [
     type: 'grass',
     theme: 'Erika\'s fragrant garden',
     badgeName: 'Rainbow',
-    branches: [
-      [114, 465],   // tangrowth lv60
-      [69, 70, 71],   // victreebel lv56
-      [43, 44, 182],   // bellossom lv56
-      [315, 407],   // roserade lv55
-      [273, 274, 275],   // shiftry lv54
-      [187, 188, 189],   // jumpluff lv53
+    lines: [
+      { branch: [114, 465] },   // tangela > tangrowth, lv60
+      { branch: [69, 70, 71] },   // bellsprout > weepinbell > victreebel, lv56
+      { branch: [43, 44, 182] },   // oddish > gloom > bellossom, lv56
+      { branch: [406, 315, 407] },   // budew > roselia > roserade, lv55
+      { branch: [273, 274, 275] },   // seedot > nuzleaf > shiftry, lv54
+      { branch: [187, 188, 189] },   // hoppip > skiploom > jumpluff, lv53
     ],
     tmMoveId: 202,
   },
@@ -113,13 +126,13 @@ const SEED: SeedCard[] = [
     type: 'poison',
     theme: 'Janine\'s ninja poisons',
     badgeName: 'Soul',
-    branches: [
-      [48, 49],   // venomoth lv59
-      [167, 168],   // ariados lv58
-      [109, 110],   // weezing lv56
-      [451, 452],   // drapion lv55
-      [41, 42, 169],   // crobat lv52
-      [453, 454],   // toxicroak lv52
+    lines: [
+      { branch: [48, 49] },   // venonat > venomoth, lv59
+      { branch: [167, 168] },   // spinarak > ariados, lv58
+      { branch: [109, 110] },   // koffing > weezing, lv56
+      { branch: [451, 452] },   // skorupi > drapion, lv55
+      { branch: [41, 42, 169] },   // zubat > golbat > crobat, lv52
+      { branch: [453, 454] },   // croagunk > toxicroak, lv52
     ],
     tmMoveId: 188,
   },
@@ -128,13 +141,13 @@ const SEED: SeedCard[] = [
     type: 'psychic',
     theme: 'Sabrina\'s psychic will',
     badgeName: 'Marsh',
-    branches: [
-      [63, 64, 65],   // alakazam lv60
-      [133, 196],   // espeon lv58
-      [122],   // mr-mime lv56
-      [124],   // jynx lv54
-      [202],   // wobbuffet lv53
-      [280, 281, 475],   // gallade lv53
+    lines: [
+      { branch: [63, 64, 65] },   // abra > kadabra > alakazam, lv60
+      { branch: [133, 196] },   // eevee > espeon, lv58
+      { branch: [439, 122] },   // mime-jr > mr-mime, lv56
+      { branch: [238, 124] },   // smoochum > jynx, lv54
+      { branch: [360, 202] },   // wynaut > wobbuffet, lv53
+      { branch: [280, 281, 475] },   // ralts > kirlia > gallade, lv53
     ],
     tmMoveId: 94,
   },
@@ -143,13 +156,13 @@ const SEED: SeedCard[] = [
     type: 'fire',
     theme: 'Blaine\'s burning quiz',
     badgeName: 'Volcano',
-    branches: [
-      [126, 467],   // magmortar lv62
-      [77, 78],   // rapidash lv60
-      [218, 219],   // magcargo lv58
-      [322, 323],   // camerupt lv57
-      [324],   // torkoal lv54
-      [228, 229],   // houndoom lv54
+    lines: [
+      { branch: [240, 126, 467] },   // magby > magmar > magmortar, lv62
+      { branch: [77, 78] },   // ponyta > rapidash, lv60
+      { branch: [218, 219] },   // slugma > magcargo, lv58
+      { branch: [322, 323] },   // numel > camerupt, lv57
+      { branch: [324] },   // torkoal, lv54
+      { branch: [228, 229] },   // houndour > houndoom, lv54
     ],
     tmMoveId: 53,
   },
@@ -158,13 +171,13 @@ const SEED: SeedCard[] = [
     type: 'none',
     theme: 'Blue\'s Viridian challenge',
     badgeName: 'Earth',
-    branches: [
-      [16, 17, 18],   // pidgeot lv72
-      [111, 112, 464],   // rhyperior lv70
-      [246, 247, 248],   // tyranitar lv70
-      [66, 67, 68],   // machamp lv69
-      [58, 59],   // arcanine lv68
-      [102, 103],   // exeggutor lv67
+    lines: [
+      { branch: [16, 17, 18] },   // pidgey > pidgeotto > pidgeot, lv72
+      { branch: [111, 112, 464] },   // rhyhorn > rhydon > rhyperior, lv70
+      { branch: [246, 247, 248] },   // larvitar > pupitar > tyranitar, lv70
+      { branch: [66, 67, 68] },   // machop > machoke > machamp, lv69
+      { branch: [58, 59] },   // growlithe > arcanine, lv68
+      { branch: [102, 103] },   // exeggcute > exeggutor, lv67
     ],
     tmMoveId: 63,
   },
@@ -172,13 +185,13 @@ const SEED: SeedCard[] = [
     slot: 8,
     type: 'psychic',
     theme: 'Will\'s practised mind',
-    branches: [
-      [177, 178],   // xatu lv62
-      [280, 281, 282],   // gardevoir lv61
-      [124],   // jynx lv60
-      [79, 80],   // slowbro lv60
-      [325, 326],   // grumpig lv59
-      [436, 437],   // bronzong lv58
+    lines: [
+      { branch: [177, 178] },   // natu > xatu, lv62
+      { branch: [280, 281, 282] },   // ralts > kirlia > gardevoir, lv61
+      { branch: [238, 124] },   // smoochum > jynx, lv60
+      { branch: [79, 80] },   // slowpoke > slowbro, lv60
+      { branch: [325, 326] },   // spoink > grumpig, lv59
+      { branch: [436, 437] },   // bronzor > bronzong, lv58
     ],
     tmMoveId: 248,
   },
@@ -186,13 +199,13 @@ const SEED: SeedCard[] = [
     slot: 9,
     type: 'poison',
     theme: 'Koga\'s ninja arts',
-    branches: [
-      [41, 42, 169],   // crobat lv64
-      [48, 49],   // venomoth lv63
-      [88, 89],   // muk lv62
-      [316, 317],   // swalot lv62
-      [434, 435],   // skuntank lv61
-      [453, 454],   // toxicroak lv60
+    lines: [
+      { branch: [41, 42, 169] },   // zubat > golbat > crobat, lv64
+      { branch: [48, 49] },   // venonat > venomoth, lv63
+      { branch: [88, 89] },   // grimer > muk, lv62
+      { branch: [316, 317] },   // gulpin > swalot, lv62
+      { branch: [434, 435] },   // stunky > skuntank, lv61
+      { branch: [453, 454] },   // croagunk > toxicroak, lv60
     ],
     tmMoveId: 92,
   },
@@ -200,13 +213,13 @@ const SEED: SeedCard[] = [
     slot: 10,
     type: 'fighting',
     theme: 'Bruno\'s iron body',
-    branches: [
-      [66, 67, 68],   // machamp lv64
-      [448],   // lucario lv64
-      [237],   // hitmontop lv62
-      [296, 297],   // hariyama lv62
-      [106],   // hitmonlee lv61
-      [107],   // hitmonchan lv61
+    lines: [
+      { branch: [66, 67, 68] },   // machop > machoke > machamp, lv64
+      { branch: [447, 448] },   // riolu > lucario, lv64
+      { branch: [236, 237] },   // tyrogue > hitmontop, lv62
+      { branch: [296, 297] },   // makuhita > hariyama, lv62
+      { branch: [236, 106] },   // tyrogue > hitmonlee, lv61
+      { branch: [236, 107] },   // tyrogue > hitmonchan, lv61
     ],
     tmMoveId: 280,
   },
@@ -214,13 +227,13 @@ const SEED: SeedCard[] = [
     slot: 11,
     type: 'dark',
     theme: 'Karen\'s strong and beautiful',
-    branches: [
-      [198, 430],   // honchkrow lv64
-      [133, 197],   // umbreon lv64
-      [228, 229],   // houndoom lv63
-      [215, 461],   // weavile lv62
-      [442],   // spiritomb lv62
-      [359],   // absol lv62
+    lines: [
+      { branch: [198, 430] },   // murkrow > honchkrow, lv64
+      { branch: [133, 197] },   // eevee > umbreon, lv64
+      { branch: [228, 229] },   // houndour > houndoom, lv63
+      { branch: [215, 461] },   // sneasel > weavile, lv62
+      { branch: [442] },   // spiritomb, lv62
+      { branch: [359] },   // absol, lv62
     ],
     tmMoveId: 399,
   },
@@ -228,13 +241,13 @@ const SEED: SeedCard[] = [
     slot: 12,
     type: 'dragon',
     theme: 'Lance\'s dragon mastery',
-    branches: [
-      [147, 148, 149],   // dragonite lv75
-      [333, 334],   // altaria lv73
-      [371, 372, 373],   // salamence lv72
-      [443, 444, 445],   // garchomp lv72
-      [129, 130],   // gyarados lv68
-      [4, 5, 6],   // charizard lv68
+    lines: [
+      { branch: [147, 148, 149] },   // dratini > dragonair > dragonite, lv75
+      { branch: [333, 334] },   // swablu > altaria, lv73
+      { branch: [371, 372, 373] },   // bagon > shelgon > salamence, lv72
+      { branch: [443, 444, 445] },   // gible > gabite > garchomp, lv72
+      { branch: [129, 130] },   // magikarp > gyarados, lv68
+      { branch: [4, 5, 6] },   // charmander > charmeleon > charizard, lv68
     ],
     tmMoveId: 434,
     powerup: { seat: 3, kind: 'mega', index: 0 },
@@ -243,13 +256,13 @@ const SEED: SeedCard[] = [
     slot: 13,
     type: 'none',
     theme: 'Red\'s silent challenge',
-    branches: [
-      [25],   // pikachu lv88
-      [1, 2, 3],   // venusaur lv84
-      [4, 5, 6],   // charizard lv84
-      [7, 8, 9],   // blastoise lv84
-      [143],   // snorlax lv82
-      [131],   // lapras lv80
+    lines: [
+      { branch: [172, 25, 26], pin: 25 },   // pichu > pikachu > raichu, lv88
+      { branch: [1, 2, 3] },   // bulbasaur > ivysaur > venusaur, lv84
+      { branch: [4, 5, 6] },   // charmander > charmeleon > charizard, lv84
+      { branch: [7, 8, 9] },   // squirtle > wartortle > blastoise, lv84
+      { branch: [446, 143] },   // munchlax > snorlax, lv82
+      { branch: [131] },   // lapras, lv80
     ],
     tmMoveId: 34,
     powerup: { seat: 3, kind: 'dynamax', index: 0 },
@@ -259,6 +272,21 @@ const SEED: SeedCard[] = [
 
 export const KANTO_LEAGUE_NAME = 'Kanto League';
 
+/**
+ * One seeded line, with any pin applied.
+ *
+ * Pushing the stage below the pin past the last row is one `setBoundary`
+ * call, which is what a downward drag on that stage does. Nothing else is
+ * touched, so the rest of the line keeps the level curve's own rows.
+ */
+function seededLine(seed: SeedLine) {
+  const line = makePlacedLine(seed.branch);
+  if (seed.pin === undefined) return line;
+  const stage = seed.branch.indexOf(seed.pin);
+  if (stage < 0 || stage === seed.branch.length - 1) return line;
+  return { ...line, boundaries: setBoundary(line, stage + 1, ROW_COUNT + 1) };
+}
+
 /** The seeded cards, in slot order. */
 export function kantoCards(): GymCard[] {
   const cards = Array.from({ length: SLOT_COUNT }, emptyCard);
@@ -266,7 +294,7 @@ export function kantoCards(): GymCard[] {
     cards[seed.slot] = {
       type: seed.type,
       theme: seed.theme,
-      lines: seed.branches.map(makePlacedLine),
+      lines: seed.lines.map(seededLine),
       // The ace carries the signature on every seeded card.
       signatureSeat: 1,
       tmMoveId: seed.tmMoveId,
