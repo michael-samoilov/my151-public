@@ -244,10 +244,28 @@
     line-height: 1.6;
   }
   .slot.dg .ball { position: relative; border-radius: 50%; border: 1.5px dashed var(--dash); }
+  /* The empty state keeps the sprite's square, so the heading and the name do
+     not slide up against the ring. A placeholder that only draws the ring is a
+     different layout wearing the same name. */
+  .ph { display: flex; align-items: center; justify-content: center; }
+  /* The half a seam cannot hold. It keeps full size and shows where that
+     puts it, because drawing it small would hide the finding. */
+  .hb.off { outline: 1px dashed var(--flag); outline-offset: 2px; border-radius: 4px; }
+  .miss {
+    align-self: flex-start;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--flag);
+  }
 
   .facts {
     display: grid;
     grid-template-columns: max-content max-content max-content 1fr;
+  }
+  .facts.f5 {
+    grid-template-columns: max-content max-content max-content max-content 1fr;
     gap: 0 18px;
     align-items: baseline;
     margin-top: 4px;

@@ -1000,34 +1000,59 @@ device-only and is named as such.
 
 ### Round 17, mocked up but not built
 
-**Where the seam ends decides which half is the lesser one.** The first
-"Major and minor" ran its seam to the bottom-left *corner*; a later revision
-crossed it to the left *edge* instead, which drops the low corner out of the
-study. Section 3d of `partner-slot/study.html` puts all four side by side —
-three corner seams at three angles, and the edge seam — with both halves
-solved rather than guessed. `majorvars.py` walks the free corner of each half
-and keeps the placement that leaves the larger sprite, so each panel is the
-best that seam can do rather than one drawing of it.
+**Both halves get a full-size Pokemon; the seam decides where, not how big.**
+The first pass of 3d solved each half for the largest sprite it could hold,
+which made the seam's angle a size dial: the partner ran 48px, 36px, 14px as
+the seam tilted down, and at 14px it is not a Pokemon any more. Sizing the
+minor half by whatever the geometry left over is what made it the minor half.
 
-| Seam | Signature | Partner |
-| --- | --- | --- |
-| Corner, high | 78px | 48px |
-| Corner, mid (3c as it first stood) | 92px | 36px |
-| Corner, low | 112px | 14px |
-| Edge seam (3c today) | 77px | 54px |
+So the size is fixed now and the placement is solved. Full size is **52px**,
+`SPRITE_REM` — the sprite every other Pokemon on the card gets, so nothing in
+the slot looks shrunken beside a team cell. Both halves get it.
 
-Three readings.
+Each sprite then wants its centre on the **area centroid of its own
+partition**, the shape the seam cuts out of the slot. `seamends.py` clips the
+slot rect against the seam, takes the centroid, and searches the placements
+where the whole block — heading, sprite and name — clears the seam and the
+slot edges, keeping the one whose *sprite* centre lands nearest. It solves for
+the sprite rather than the block because the heading sits above it on one half
+and below it on the other, so the same block puts its sprite in two different
+places.
 
-- **A corner seam is a single trade, priced by its angle.** Every pixel the
-  signature gains, the partner loses; the three corner rows are one line, not
-  three designs. The low corner is past the floor — 14px is not a Pokemon.
-- **The edge seam is not on that line.** It buys the partner 6px more than
-  the most even corner does, for 1px off the signature. Crossing to the edge
-  rather than the corner leaves the minor half a rectangle instead of a
-  wedge, and a rectangle holds a sprite better at the same area.
-- **So the corner is the choice to make deliberately.** It is the more
-  graphic cut and the one that says which Pokemon is the ace; it costs the
-  partner about a sixth of its sprite to say it.
+| Seam | Signature | Partner | Ceiling |
+| --- | --- | --- | --- |
+| Corner, full (corner to corner) | centred | centred | 68px |
+| Corner, high (56px down the right edge) | centred | 15px off | 54px |
+| Corner, mid (96px) | centred | does not fit | 36px |
+| Edge seam (3c today) | centred | 14px off | 57px |
+
+Three readings, and they reverse the round-16 verdict.
+
+- **Corner to corner is the best seam, not the most extreme one.** It is the
+  only one whose halves are the same shape, and the only one where both
+  sprites sit on their own centre. Tilting the seam down buys the signature
+  nothing — it is already centred — and spends the partner's slack.
+- **A corner seam runs out.** The last one that holds two full-size Pokemon
+  ends 62px down the right edge. Past that the partner cannot clear the seam,
+  and 3d draws that failure at full size with the block flagged, rather than
+  shrinking it and hiding the finding.
+- **The edge seam is not the safer choice it looked like.** It holds the pair,
+  but puts the partner 14px off centre to do it — worse than corner to corner.
+  What it buys is headroom, 57px against the steep corner's 54px.
+
+The ceiling for an equal pair is **68px**, on the corner-to-corner diagonal,
+against the 92px the signature has to itself today. 3d ends on a coda at
+**64px**: the most the pair can have with both still within a quarter-sprite
+of their own centre.
+
+**An empty half has to hold the filled half's layout, not just its ring.** The
+partner's heading sat directly under the placeholder circle when empty and
+under the name when filled, so the word moved between the two states. The
+empty state now keeps the sprite's square and a blank name line, and only
+swaps the sprite for a ring. `check-seamends.mjs` measures it: it reads the
+heading and name offsets in both states and fails on more than 0.5px of
+movement. Removing the reserved line fails all four panels, which is how the
+check was proved to discriminate.
 
 ### Round 3, follow-ups from the preview
 
