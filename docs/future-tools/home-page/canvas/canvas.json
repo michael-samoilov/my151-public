@@ -1,0 +1,109 @@
+{
+  "artboards": [
+    {
+      "file": "SketchMobile.dc.html",
+      "title": "A · Sketch grid — Mobile 390",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 1130
+    },
+    {
+      "file": "SketchTablet.dc.html",
+      "title": "A · Sketch grid — Tablet 834",
+      "x": 490,
+      "y": 0,
+      "w": 834,
+      "h": 1320
+    },
+    {
+      "file": "Main.dc.html",
+      "title": "A · Sketch grid — Desktop 1440",
+      "x": 1420,
+      "y": 0,
+      "w": 1440,
+      "h": 1660
+    },
+    {
+      "file": "MarqueeMobile.dc.html",
+      "title": "B · Marquee row — Mobile 390",
+      "x": 0,
+      "y": 1920,
+      "w": 390,
+      "h": 1680
+    },
+    {
+      "file": "MarqueeTablet.dc.html",
+      "title": "B · Marquee row — Tablet 834",
+      "x": 490,
+      "y": 1920,
+      "w": 834,
+      "h": 1290
+    },
+    {
+      "file": "MarqueeDesktop.dc.html",
+      "title": "B · Marquee row — Desktop 1440",
+      "x": 1420,
+      "y": 1920,
+      "w": 1440,
+      "h": 1120
+    },
+    {
+      "file": "FeaturedMobile.dc.html",
+      "title": "C · Featured — Mobile 390",
+      "x": 0,
+      "y": 3860,
+      "w": 390,
+      "h": 1790
+    },
+    {
+      "file": "FeaturedTablet.dc.html",
+      "title": "C · Featured — Tablet 834",
+      "x": 490,
+      "y": 3860,
+      "w": 834,
+      "h": 1360
+    },
+    {
+      "file": "FeaturedDesktop.dc.html",
+      "title": "C · Featured — Desktop 1440",
+      "x": 1420,
+      "y": 3860,
+      "w": 1440,
+      "h": 1280
+    }
+  ],
+  "annotations": [
+    {
+      "id": "a-note",
+      "x": 0,
+      "y": -190,
+      "w": 900,
+      "text": "A · Sketch grid — the attached sketch, literally.\nTwo by two at every width, screenshots tilted and broken out of the card top. Reads as a toy shelf.\nTradeoff: at 390px the two-up cards leave ~150px of text width, so the blurbs have to be short — that is the least SEO copy of the three."
+    },
+    {
+      "id": "b-note",
+      "x": 0,
+      "y": 1730,
+      "w": 900,
+      "text": "B · Marquee row — four abreast, editorial hero.\nLeft-aligned hero so the h1 and the paragraph read as one block; cards straight-on and equal weight.\nTradeoff: four equal cards say all four tools are equally real. Three of them are not."
+    },
+    {
+      "id": "c-note",
+      "x": 0,
+      "y": 3670,
+      "w": 900,
+      "text": "C · Featured — the shipped tool leads.\nThe dex builder gets a split hero card with a real screenshot and a solid CTA; the other three sit in a supporting row.\nTradeoff: it buries the league builder, which is the tool with a settled spec and the next page to rank."
+    },
+    {
+      "id": "seo-note",
+      "x": 1000,
+      "y": -190,
+      "w": 860,
+      "text": "SEO structure, same in all three:\n· h1 carries \"make your own Pokédex\" plus region and league.\n· Each card is an <h2> that exactly matches its slug: /custom-pokedex-builder, /pokemon-league-builder, /favorite-pokemon-picker.\n· The footer repeats the four links as anchor text.\nWatch out: making / a router moves the dex builder off the URL that ranks today (~pos 7.8 for \"pokedex builder\")."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}
