@@ -318,12 +318,13 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
   // The league's tool bar holds the dex bar's 44px, home and (where the
   // desktop pane shows it) card page alike.
   // h-11 = 2.75rem; the expected pixels follow the root font-size knob.
+  // Both bars carry a stable handle. Reading up the tree from a control
+  // inside them broke the moment the name field grew its own border.
   const bars = await s.evalJson<{ home: number; card: number; expected: number }>(
-    `const h=document.querySelector('[aria-label="League name"]');
-     const c=document.querySelector('[aria-label="Gym type"]');
-     const height=(el)=>{const row=el&&el.closest('.h-11');return row?row.getBoundingClientRect().height:-1};
+    `const b=[...document.querySelectorAll('[data-testid="league-tool-bar"]')];
+     const height=(el)=>el?el.getBoundingClientRect().height:-1;
      const root=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
-     return {home:height(h),card:height(c),expected:2.75*root};`,
+     return {home:height(b[0]),card:height(b.length>1?b[b.length-1]:null),expected:2.75*root};`,
   );
   const barOk = (v: number) => v === -1 || Math.abs(v - bars.expected) < 1.5;
   checks.push(

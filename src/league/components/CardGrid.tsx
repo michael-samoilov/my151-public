@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   useDraggable,
   useDroppable,
@@ -10,6 +12,7 @@ import {
   type DragOverEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
+import { ArrowLeftRight, ArrowUpDown, RotateCcw } from 'lucide-react';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { pokemonLabel } from '@/i18n';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
@@ -17,7 +20,7 @@ import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { TypeName } from '@/types/pokemon';
 import { cn } from '@/lib/utils';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
-import { deriveRows, moveSeat as reorderLines, stageAt } from '../model/engine';
+import { defaultBoundaries, deriveRows, moveSeat as reorderLines, stageAt } from '../model/engine';
 import { getMoveById } from '../moves';
 import { CategoryChip } from './CategoryChip';
 import { useLeagueStore } from '../store/useLeagueStore';
@@ -25,6 +28,7 @@ import { useLeagueUi } from '../store/useLeagueUi';
 import { openLeagueBrowser } from '../store/browserBridge';
 import type { CardView } from '../useCardView';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyphs';
+import { LaurelIcon } from './LaurelIcon';
 
 /**
  * The 11-row gym leader card. Geometry mirrors the design canvas
@@ -41,6 +45,8 @@ const PAD_X = 0.5; // 8px
 const PAD_Y = 0.6875; // 11px
 const INSET_Y = 0.375; // 6px
 const INSET_X = 0.1875; // 3px
+/** Cell sprite size; larger than the cell on purpose, as on the boards. */
+const SPRITE_REM = 3.25;
 
 /** Rows whose glyph cell is double width, reaching the card's left edge. */
 const GLYPH_SPAN: Record<number, number> = { 1: 2, 8: 2, 9: 2 };
@@ -74,7 +80,9 @@ function Band({ label, note }: { label: string; note?: string }) {
       style={{ height: `${BAND_H}rem`, background: 'var(--lg-band)' }}
     >
       <b className="whitespace-nowrap text-[0.5625rem] font-extrabold tracking-[0.07em]">{label}</b>
-      {note && <span className="overflow-hidden whitespace-nowrap text-[0.53125rem] opacity-85">{note}</span>}
+      {/* Same size and leading as the label, so the two sit on one baseline
+          inside the centred band. */}
+      {note && <span className="overflow-hidden whitespace-nowrap text-[0.5625rem] opacity-85">{note}</span>}
     </div>
   );
 }
@@ -135,7 +143,7 @@ interface PaintDrag {
   painted: boolean;
 }
 
-function PokemonCell({ cardIndex, datum, pokemonId, lifted, ringWhenOver, onRemove }: {
+function PokemonCell({ cardIndex, datum, pokemonId, lifted, ringWhenOver, onRemove, onReset }: {
   cardIndex: number;
   datum: CellDatum;
   pokemonId: number | null;
@@ -145,6 +153,8 @@ function PokemonCell({ cardIndex, datum, pokemonId, lifted, ringWhenOver, onRemo
   ringWhenOver: boolean;
   /** Set on the column's topmost pokemon: remove this evo line. */
   onRemove?: () => void;
+  /** Set on the topmost pokemon of a line whose evolution rows were dragged. */
+  onReset?: () => void;
 }) {
   const id = `cell-${datum.row}-${datum.seat}`;
   const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
@@ -205,7 +215,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, lifted, ringWhenOver, onRemo
             src={pokemon.sprite}
             alt={pokemon.name}
             className="pointer-events-none max-w-none"
-            style={{ width: '3.25rem', height: '3.25rem', imageRendering: 'pixelated' }}
+            style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: 'pixelated' }}
           />
         ) : (
           <EmptySlotBall />
@@ -216,6 +226,21 @@ function PokemonCell({ cardIndex, datum, pokemonId, lifted, ringWhenOver, onRemo
           </span>
         )}
       </button>
+      {onReset && pokemon && (
+        <button
+          type="button"
+          aria-label={`Reset ${pokemon.name}'s evolution rows`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onReset();
+          }}
+          // The opposite corner from the remove X, so the destructive control
+          // and the undo one never sit under the same thumb.
+          className="absolute left-0 top-[0.175rem] z-[15] flex h-[0.95rem] w-[0.95rem] cursor-pointer items-center justify-center rounded-full bg-[#2563eb]"
+        >
+          <RotateCcw className="h-[0.6rem] w-[0.6rem] text-white" strokeWidth={3} />
+        </button>
+      )}
       {onRemove && pokemon && (
         <button
           type="button"
@@ -381,7 +406,10 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
 
   const paintRef = useRef<PaintDrag | null>(null);
   const [previewMove, setPreviewMove] = useState<{ from: number; to: number } | null>(null);
-  const [legendDrag, setLegendDrag] = useState(false);
+  // The legendary drag carries a copy under the pointer. Its size comes from
+  // the cell it was lifted from, measured in client pixels, because the card
+  // sits under a CSS `zoom` and the overlay is portalled out of it.
+  const [legendDrag, setLegendDrag] = useState<{ sprite: number } | null>(null);
 
   const onDragStart = useCallback(
     (e: DragStartEvent) => {
@@ -393,7 +421,9 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
           runTop: d.row, runBottom: d.row, canTop: false, canBottom: false,
           initial: [], painted: false,
         };
-        setLegendDrag(true);
+        const cell = e.active.rect.current.initial;
+        const cellRem = ROW_H - 2 * INSET_Y;
+        setLegendDrag({ sprite: cell ? (cell.height * SPRITE_REM) / cellRem : 52 });
         return;
       }
       const line = card.lines[d.seat - 1];
@@ -472,7 +502,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     paintRef.current = null;
     if (p && !p.legend && p.painted) setLineBoundaries(cardIndex, p.seat, p.initial);
     setPreviewMove(null);
-    setLegendDrag(false);
+    setLegendDrag(null);
   }, [cardIndex, setLineBoundaries]);
 
   const onDragEnd = useCallback(
@@ -480,7 +510,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       const p = paintRef.current;
       paintRef.current = null;
       setPreviewMove(null);
-      setLegendDrag(false);
+      setLegendDrag(null);
       const to = e.over?.data.current as CellDatum | undefined;
       if (!p) return;
       if (p.legend) {
@@ -515,7 +545,13 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const renderLines = previewMove
     ? reorderLines(card.lines, previewMove.from, previewMove.to)
     : card.lines;
-  const renderRows = previewMove ? deriveRows(renderLines, card.legend) : rows;
+  // A legendary in hand is off the board: the boss row shows the pokemon it
+  // covers, so the outline under the pointer says what it would replace.
+  const renderRows =
+    previewMove || legendDrag
+      ? deriveRows(renderLines, legendDrag ? null : card.legend)
+      : rows;
+  const legendPokemon = card.legend ? getPokemonById(card.legend.pokemonId) : undefined;
 
   // The column's topmost pokemon carries the remove control for its line.
   // The legendary overlay is skipped: it is not the line, it covers it.
@@ -570,14 +606,22 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                 <GlyphCell row={row} span={span} cell={shades.cell} />
                 {cells.map((cell) => {
                   const line = renderLines[cell.seat - 1];
+                  // The lifted legendary's own cell stays draggable even when
+                  // nothing sits under it: dnd-kit ends a drag whose source
+                  // draggable turns disabled mid-gesture.
+                  const legendSource =
+                    legendDrag !== null && row === BOSS_ROW && card.legend?.seat === cell.seat;
                   const datum: CellDatum = {
                     row,
                     seat: cell.seat,
                     stage: line ? stageAt(line, row) : 0,
                     isLegend: cell.isLegend,
-                    filled: cell.pokemonId !== null,
+                    filled: cell.pokemonId !== null || legendSource,
                   };
                   const topId = topRowBySeat.get(cell.seat) === row ? cell.pokemonId : null;
+                  const custom =
+                    topId !== null && line !== undefined
+                    && line.boundaries.join() !== defaultBoundaries(line.branch).join();
                   return (
                     <PokemonCell
                       key={`${row}-${cell.seat}`}
@@ -585,8 +629,13 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       datum={datum}
                       pokemonId={cell.pokemonId}
                       lifted={previewMove !== null && cell.seat === previewMove.to && cell.pokemonId !== null && !cell.isLegend}
-                      ringWhenOver={legendDrag}
+                      ringWhenOver={legendDrag !== null}
                       onRemove={topId !== null ? () => removeLineWith(cardIndex, topId) : undefined}
+                      onReset={
+                        custom && line
+                          ? () => setLineBoundaries(cardIndex, cell.seat, defaultBoundaries(line.branch))
+                          : undefined
+                      }
                     />
                   );
                 })}
@@ -595,15 +644,43 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
           );
         })}
       </div>
-      <div className="flex flex-col gap-[3px] px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground">
-        <span>{'↕︎'} Drag a pokemon across rows to shift when it evolves</span>
-        <span>↔ Drag a column to reorder</span>
+      {/* Hanging icon bullets: one column for the mark, one for the words, so
+          every hint's text starts at the same indent and a wrapped line keeps
+          it. The marks are icons rather than arrow characters, which the
+          font sets at whatever weight it likes. */}
+      <div className="grid grid-cols-[0.75rem_1fr] gap-x-[0.375rem] gap-y-[3px] px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground">
+        <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
+        <span>Drag a pokemon across rows to shift when it evolves</span>
+        <ArrowLeftRight className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
+        <span>Drag a column to reorder</span>
+        <LaurelIcon className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" />
         <span>
           {card.legend
-            ? '↔ Drag the Endgame Boss legendary to change which pokemon it replaces'
+            ? 'Drag the Endgame Boss legendary to change which pokemon it replaces'
             : 'Tap a pokemon in the Endgame Boss row to swap in a legendary'}
         </span>
       </div>
+      {/* Portalled out of the card's `zoom` so its pixel size is the one
+          measured from the cell, not that size zoomed a second time. */}
+      {createPortal(
+        <DragOverlay dropAnimation={null}>
+          {legendDrag && legendPokemon ? (
+            <div className="flex h-full w-full items-center justify-center">
+              <img
+                src={legendPokemon.sprite}
+                alt=""
+                className="max-w-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]"
+                style={{
+                  width: legendDrag.sprite,
+                  height: legendDrag.sprite,
+                  imageRendering: 'pixelated',
+                }}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>,
+        document.body,
+      )}
     </DndContext>
   );
 }

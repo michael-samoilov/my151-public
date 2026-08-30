@@ -97,7 +97,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
           ) : (
             // The tool's name, as real text: the default a crawler executing
             // JS reads on a fresh visit. The count replaces it, not joins it.
-            <h2 className="truncate text-lg font-extrabold leading-none tracking-tight">Dex Builder</h2>
+            <h2 className="truncate text-lg font-extrabold leading-none tracking-tight">{t('header.toolName')}</h2>
           )}
         </div>
 

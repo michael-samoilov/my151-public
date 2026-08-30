@@ -9,6 +9,7 @@ import {
   slotRow,
 } from './constants';
 import {
+  defaultBoundaries,
   deriveRow,
   deriveRows,
   makePlacedLine,
@@ -25,6 +26,8 @@ const LOTAD = [270, 271, 272]; // 14, then Ludicolo by water stone (implied)
 const WOOPER = [194, 195]; // Quagsire at 20
 const MAGIKARP = [129, 130]; // Gyarados at 20
 const LAPRAS = [131];
+const CATERPIE = [10, 11, 12]; // all three evolve at or under level 12
+const RHYHORN = [111, 112, 464]; // Rhydon at 42, Rhyperior traded (implied 38)
 
 describe('constants', () => {
   it('joins each seat at the first row big enough for it', () => {
@@ -66,6 +69,29 @@ describe('arrivalLevel', () => {
     const implied = arrivalLevel(ludicolo);
     expect(implied).toBeGreaterThan(20);
     expect(implied).toBeLessThan(60);
+  });
+});
+
+describe('defaultBoundaries', () => {
+  it('gives every member of an early line a row of its own', () => {
+    // Caterpie 7, Metapod 7, Butterfree 10 all sit under the first
+    // threshold (12), so the curve alone puts all three on row 1 and only
+    // Butterfree draws.
+    expect(defaultBoundaries(CATERPIE)).toEqual([1, 2, 3]);
+    const line = { branch: CATERPIE, boundaries: defaultBoundaries(CATERPIE) };
+    expect([1, 2, 3].map((row) => line.branch[stageAt(line, row)])).toEqual(CATERPIE);
+  });
+
+  it('keeps a stage below an evolution whose implied level inverts it', () => {
+    // Rhydon's real level is 42; Rhyperior has none, and BST implies 38.
+    const rows = defaultBoundaries(RHYHORN);
+    expect(rows[2]).toBeGreaterThan(rows[1]);
+    const line = { branch: RHYHORN, boundaries: rows };
+    expect(stageAt(line, rows[1])).toBe(1); // Rhydon has its own row
+  });
+
+  it('leaves a well-spaced line alone', () => {
+    expect(defaultBoundaries(CHINCHOU)).toEqual([1, 4]);
   });
 });
 

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -7,14 +7,17 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
 } from '@dnd-kit/core';
+import { ArrowUpDown, ChevronRight, Plus } from 'lucide-react';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
 import { cn } from '@/lib/utils';
 import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
-import { deriveRow } from '../model/engine';
+import { deriveRow, moveSeat } from '../model/engine';
 import { cardShades } from '../theme';
+import { useFitScale } from '../useFitScale';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
@@ -23,12 +26,19 @@ import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
  * The league home: the card, zoomed out. One row per slot, led by the glyph
  * cell and the type chip, teams right-aligned; four red spacers; rows drag
  * to reorder and tap to open their card.
+ *
+ * Columns: glyph, type, six team seats, then the action column. The team
+ * block is six wide because that is the largest team the template holds, so
+ * the column the old right-aligned layout always left empty on the left now
+ * sits on the right and carries the row's own affordance.
  */
 
 const ROW_H = 2.75; // 44px
 const BAND_H = 1.25;
 const GREY = '#a3a3a3';
 const BAND_RED = '#dc2626';
+/** The widest team any row holds — the team block's column count. */
+const TEAM_COLS = 6;
 
 const SECTION_BEFORE: Record<number, string> = {
   0: 'GYM LEADERS',
@@ -45,40 +55,52 @@ function SlotGlyph({ index, cell }: { index: number; cell: string }) {
   return <BossBall cell={cell} size={15} />;
 }
 
-function SlotRow({ index }: { index: number }) {
-  const card = useLeagueStore((s) => s.cards[index]);
+/**
+ * One league row.
+ *
+ * `position` is where the row sits on screen — it decides the glyph, the row
+ * of the card that shows, and the drop target. `cardIndex` is whose card is
+ * drawn there, which differs from `position` only while a drag previews a
+ * reorder. Splitting the two is what lets a dragged row re-derive its team at
+ * the size its would-be position allows.
+ */
+function SlotRow({ position, cardIndex, lifted }: {
+  position: number;
+  cardIndex: number;
+  lifted: boolean;
+}) {
+  const card = useLeagueStore((s) => s.cards[cardIndex]);
   const openCardPage = useLeagueUi((s) => s.openCardPage);
-  const { setNodeRef: setDragRef, listeners, attributes, isDragging } = useDraggable({
-    id: `slot-${index}`,
-    data: { index },
+  const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
+    id: `slot-${position}`,
+    data: { index: position },
   });
-  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `slotdrop-${index}`, data: { index } });
+  const { setNodeRef: setDropRef } = useDroppable({ id: `slotdrop-${position}`, data: { index: position } });
 
   const shades = card.type ? cardShades(card.type) : null;
   const cellColour = shades ? shades.cell : GREY;
-  const row = slotRow(index);
-  const cells = deriveRow(card.lines, row, slotRow(index) === BOSS_ROW ? card.legend : null);
+  const row = slotRow(position);
+  const cells = deriveRow(card.lines, row, row === BOSS_ROW ? card.legend : null);
   const filled = card.lines.length > 0;
 
   return (
-    <div ref={setDropRef}>
+    <div ref={setDropRef} className="relative" style={{ zIndex: lifted ? 10 : undefined }}>
       <button
         type="button"
         ref={setDragRef}
         {...listeners}
         {...attributes}
-        data-testid={`league-slot-${index}`}
-        onClick={() => openCardPage(index)}
+        data-testid={`league-slot-${position}`}
+        onClick={() => openCardPage(cardIndex)}
         className={cn(
-          'grid w-full cursor-pointer items-center text-left',
-          isDragging && 'opacity-30',
-          isOver && 'ring-2 ring-primary/50',
+          'grid w-full cursor-pointer items-center rounded-[0.3125rem] text-left',
+          lifted && 'shadow-lg ring-1 ring-black/10',
         )}
         style={{
-          gridTemplateColumns: '2.75rem 2rem repeat(7, minmax(0, 1fr))',
+          gridTemplateColumns: `2.75rem 2rem repeat(${TEAM_COLS + 1}, minmax(0, 1fr))`,
           height: `${ROW_H}rem`,
           background: shades ? shades.base : undefined,
-          boxShadow: 'inset 0 1px 0 #f0f0f1',
+          boxShadow: lifted ? undefined : 'inset 0 1px 0 #f0f0f1',
           touchAction: 'none',
         }}
       >
@@ -86,7 +108,7 @@ function SlotRow({ index }: { index: number }) {
           className="mx-[0.1875rem] flex items-center justify-center self-center rounded-[0.3125rem]"
           style={{ height: `${ROW_H - 0.625}rem`, background: cellColour }}
         >
-          <SlotGlyph index={index} cell={cellColour} />
+          <SlotGlyph index={position} cell={cellColour} />
         </span>
         <span className="flex items-center justify-center">
           {card.type === 'none' ? (
@@ -100,12 +122,11 @@ function SlotRow({ index }: { index: number }) {
             <span className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem] border-[1.4px] border-dashed border-[#d4d4d4]" />
           )}
         </span>
-        {Array.from({ length: 7 - cells.length }, (_, k) => (
+        {Array.from({ length: TEAM_COLS - cells.length }, (_, k) => (
           <span key={`sp-${k}`} />
         ))}
         {cells.map((cell) => {
           const p = cell.pokemonId !== null ? getPokemonById(cell.pokemonId) : undefined;
-          const addTile = !filled && cell.seat === 1;
           return (
             <span key={cell.seat} className="flex items-center justify-center">
               {p ? (
@@ -115,19 +136,28 @@ function SlotRow({ index }: { index: number }) {
                   className="max-w-none"
                   style={{ width: '2.125rem', height: '2.125rem', imageRendering: 'pixelated' }}
                 />
-              ) : addTile ? (
-                <span className="flex h-[1.875rem] w-[1.875rem] items-center justify-center rounded-md border-[1.4px] border-dashed border-[#d4d4d4]">
-                  <svg viewBox="0 0 16 16" className="h-[0.6875rem] w-[0.6875rem]">
-                    <line x1="3" y1="8" x2="13" y2="8" stroke="#a3a3a3" strokeWidth="1.8" strokeLinecap="round" />
-                    <line x1="8" y1="3" x2="8" y2="13" stroke="#a3a3a3" strokeWidth="1.8" strokeLinecap="round" />
-                  </svg>
-                </span>
               ) : filled ? (
                 <EmptySlotBall size={18} />
               ) : null}
             </span>
           );
         })}
+        {/* The row's own affordance. The whole row opens the card, so this
+            says which of the two things the row is for: start it, or open
+            what is already there. */}
+        <span
+          aria-hidden
+          data-testid={`league-action-${position}`}
+          data-action={filled ? 'open' : 'add'}
+          className={cn(
+            'flex items-center justify-center justify-self-center rounded-md',
+            filled
+              ? 'text-muted-foreground'
+              : 'h-[1.875rem] w-[1.875rem] border-[1.4px] border-dashed border-[#d4d4d4] text-[#a3a3a3]',
+          )}
+        >
+          {filled ? <ChevronRight size={16} strokeWidth={2.4} /> : <Plus size={12} strokeWidth={2.4} />}
+        </span>
       </button>
     </div>
   );
@@ -136,9 +166,20 @@ function SlotRow({ index }: { index: number }) {
 export function LeagueHome() {
   const moveSlot = useLeagueStore((s) => s.moveSlot);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const fitRef = useRef<HTMLDivElement>(null);
+  const fit = useFitScale(fitRef);
+  const [preview, setPreview] = useState<{ from: number; to: number } | null>(null);
+
+  const onDragOver = useCallback((e: DragOverEvent) => {
+    const from = (e.active.data.current as { index: number } | undefined)?.index;
+    const to = (e.over?.data.current as { index: number } | undefined)?.index;
+    if (from === undefined || to === undefined) return;
+    setPreview((cur) => (cur && cur.to === to && cur.from === from ? cur : { from, to }));
+  }, []);
 
   const onDragEnd = useCallback(
     (e: DragEndEvent) => {
+      setPreview(null);
       const from = (e.active.data.current as { index: number } | undefined)?.index;
       const to = (e.over?.data.current as { index: number } | undefined)?.index;
       if (from === undefined || to === undefined || from === to) return;
@@ -147,25 +188,48 @@ export function LeagueHome() {
     [moveSlot],
   );
 
+  // The arrangement as it would land: each position draws the card that would
+  // sit there, at the team size that position allows. Same contract as the
+  // card grid's column preview — what you see mid-drag is what you get.
+  const order = preview
+    ? moveSeat(
+        Array.from({ length: SLOT_COUNT }, (_, i) => i),
+        preview.from + 1,
+        preview.to + 1,
+      )
+    : Array.from({ length: SLOT_COUNT }, (_, i) => i);
+
   return (
-    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
-      <div className="rounded-xl bg-card p-1 px-2 shadow-elevated">
-        {Array.from({ length: SLOT_COUNT }, (_, i) => (
-          <div key={i}>
-            {SECTION_BEFORE[i] && (
-              <div
-                className={cn('flex items-center rounded-[0.3125rem] px-2 text-white', i > 0 && 'mt-px')}
-                style={{ height: `${BAND_H}rem`, background: BAND_RED }}
-              >
-                <b className="text-[0.5625rem] font-extrabold tracking-[0.07em]">{SECTION_BEFORE[i]}</b>
-              </div>
-            )}
-            <SlotRow index={i} />
-          </div>
-        ))}
-      </div>
-      <div className="px-[0.375rem] pt-2 text-[0.625rem] text-muted-foreground">
-        {'↕︎'} Drag a row to reorder the league · tap a row to open its card
+    <DndContext
+      sensors={sensors}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => setPreview(null)}
+    >
+      <div ref={fitRef} style={{ zoom: fit }}>
+        <div className="rounded-xl bg-card p-1 px-2 shadow-elevated">
+          {order.map((cardIndex, position) => (
+            <div key={position}>
+              {SECTION_BEFORE[position] && (
+                <div
+                  className={cn('flex items-center rounded-[0.3125rem] px-2 text-white', position > 0 && 'mt-px')}
+                  style={{ height: `${BAND_H}rem`, background: BAND_RED }}
+                >
+                  <b className="text-[0.5625rem] font-extrabold tracking-[0.07em]">{SECTION_BEFORE[position]}</b>
+                </div>
+              )}
+              <SlotRow
+                position={position}
+                cardIndex={cardIndex}
+                lifted={preview !== null && position === preview.to}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex items-start gap-[0.3125rem] px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground">
+          <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
+          <span>Drag a row to reorder the league · tap a row to open its card</span>
+        </div>
       </div>
     </DndContext>
   );

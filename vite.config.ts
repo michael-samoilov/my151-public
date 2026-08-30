@@ -19,6 +19,10 @@ export default defineConfig({
         // see docs/future-tools/HANDOFF.md for the multi-page SEO rationale.
         main: path.resolve(__dirname, 'index.html'),
         league: path.resolve(__dirname, 'pokemon-league-builder.html'),
+        // A preview-only diagnostic for the league builder's level model.
+        // The entry refuses to mount on the production deploy, and the page
+        // is noindex wherever it is reachable.
+        levels: path.resolve(__dirname, 'evolution-levels.html'),
       },
     },
   },

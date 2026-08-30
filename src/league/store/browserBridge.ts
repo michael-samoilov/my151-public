@@ -83,6 +83,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
     evoLineSizeFilter: null,
     myDexFilter: false,
     myDexIds: new Set<number>(),
+    myDexSections: undefined,
     restrictIds: undefined,
     scopeFilter: false,
     scopeFilterIds: undefined,
@@ -110,8 +111,11 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         evoLineSizeFilter: null,
         myDexFilter: false,
         // "My dex" filters to the dex builder's own placed set, read from its
-        // store (both stores share the page); snapshot at open is enough.
+        // store (both stores share the page); snapshot at open is enough. The
+        // sections come along so the chip can group results the way the user
+        // built them.
         myDexIds: new Set(Object.values(usePokedexStore.getState().sections).flat()),
+        myDexSections: usePokedexStore.getState().sections,
         // The legendary picker restricts structurally. The signature picker
         // starts unfiltered with a "Card lines" chip to opt into the card's
         // own placed lines — and once the template is full, the restriction

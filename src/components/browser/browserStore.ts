@@ -62,6 +62,14 @@ export interface BrowserStoreState {
   myDexIds?: Set<number>;
   setMyDexFilter?: (on: boolean) => void;
   /**
+   * The same dex, still divided into the build page's sections. With the
+   * chip on, the results group and order by those sections instead of by
+   * generation — a dex the user built section by section reads back the way
+   * they built it. A flat `myDexIds` cannot express that, so the host passes
+   * the division as well as the membership.
+   */
+  myDexSections?: Record<string, number[]>;
+  /**
    * Optional capability: a structural restriction with no chip — the league's
    * legend picker offers only legendaries, whatever the other filters say.
    */

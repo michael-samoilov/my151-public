@@ -368,6 +368,102 @@ Veto any of these; they ship as stated otherwise.
 7. **Dex nav switches fade in** (180ms) and heavy pages mount inside a
    transition so the tab animation stops freezing.
 
+## App feedback round 3 (2026-08-30, decided on the live preview)
+
+1. **Type chips.** "Select a type" takes a solid red outline, not a dashed
+   one. "NO TYPE" runs through the badge's condense like every real badge —
+   it was set at full width and overhung the pill on both sides.
+2. **League home fits the screen.** The same fit zoom the gym card uses,
+   extracted to `useFitScale`. The desktop league pane is now a fit viewport
+   too.
+3. **Nine columns, action on the right.** The team block is six wide — the
+   largest team the template holds — so the column that was always empty
+   moved from the left of the block to the right and became the row's own
+   affordance: a plus while the gym is empty, a chevron once it holds
+   anything. Both open the card, as the whole row already did.
+4. **Mobile is one two-pane track.** Home and the open card sit side by side
+   and the track translates, so opening a card pans the camera rather than
+   swapping the DOM. `transform` only, 280ms on a decelerating curve, and
+   nothing at all under `prefers-reduced-motion`. Both panes stay mounted;
+   the off-screen one is `inert`.
+5. **Reset a custom evolution order.** When a line's rows no longer match its
+   defaults, a blue reset appears on the topmost cell — the opposite corner
+   from the red remove X, so the destructive control and the undo one are
+   never under the same thumb. (The ask said "top right, opposite the red
+   X"; the X is itself top right, so opposite won.)
+6. **Card colours separate.** Every cell used to solve for one fixed
+   luminance, which threw away the one thing fighting and ground, or ice and
+   steel, differ by. Measured: all eighteen cells sat within 0.04 of each
+   other in contrast, and the closest pair was ΔE2000 3.95. The target now
+   follows each type's own brightness through a saturating curve into a band
+   whose ends are set by what the surface has to carry. Closest pair 6.58;
+   fighting/ground 4.16 → 12.95, ghost/fairy 3.95 → 15.20.
+   `npm run shade-report` prints the ramp; `theme.test.ts` holds the floor.
+7. **The league name looks typable.** Sized to its own text by an invisible
+   copy in the same grid cell, with a dotted rule under it and a pencil at
+   the end of the words.
+8. **League rows preview live.** The card grid's column preview, applied to
+   the home: while a row is dragged every position draws the card that would
+   sit there, at the team size that position allows.
+9. **Spacer notes share the label's size and baseline.**
+10. **Hints are hanging icon bullets.** One column for the mark, one for the
+    words, so wrapped lines keep the indent. Lucide has no laurel — the
+    current release ships 2048 icons and none is a wreath — so Tabler's
+    `laurel-wreath` (MIT) is vendored as a single component rather than
+    adding a second icon library for one glyph.
+11. **The legendary is carried in hand.** A floating copy follows the
+    pointer, the target still outlines, and its home cell shows the pokemon
+    it currently covers instead of the legendary — so the outline says what
+    would be replaced.
+12. **The My dex chip carries the count**, "My dex n/151", the count in the
+    app red and the total in the chip's own ink, in both states.
+13. **My dex groups by build section.** With the chip on, results group and
+    order by the build page's own sections rather than by generation, so a
+    dex built section by section reads back that way.
+
+### Level model, and what it was hiding
+
+The round-3 pass also asked for the evolution-level regression to be made
+inspectable. `/evolution-levels` is a preview-only page (the entry refuses to
+mount on the production deploy) that draws the fit, the cloud it was fitted
+to, and every level-less evolver where the model put it.
+`npm run level-report` prints the same numbers.
+
+Building it turned up a defect worth recording. The curve alone stripped a
+member from **fifteen** lines, for two reasons:
+
+- Whole lines finish under the first threshold. Caterpie, Metapod and
+  Butterfree all arrive at or below level 12, so all three claimed row 1 and
+  only Butterfree ever drew.
+- Six evolutions have no stated level and the implied one lands at or under
+  the real level of the stage below — Rhydon evolves at 42, Rhyperior is a
+  trade whose implied level is 38 — squeezing the middle stage out.
+
+`defaultBoundaries` now gives each stage at least the row after its
+pre-evolution's. Levels still decide wherever they are consistent; the rule
+only ever moves a boundary that would have erased a member. All fifteen lines
+show every member again.
+
+Open, for the owner:
+
+- **Baby forms.** Seating any member of 21 lines seats the baby too, because
+  the branch walks to the root of the chain. Picking Pikachu puts Pichu in
+  gym 1. Keep, or start the line at the first non-baby stage?
+- **Seat capacity.** Seat 6 joins at row 10, so it offers two rows for a
+  three-stage line. Structural; the drag can still reveal the third.
+- **Fit error.** R² 0.52, RMSE 7.3 levels against rows about six levels
+  apart, so an implied stage is often one row out either way. A better model
+  would need the evolution *method* (stone, trade, friendship), which the
+  dataset does not carry.
+
+### Not built, contrary to the card's own promise
+
+The spacer reads "Champion may have one Mega/Gigantamax", and nothing renders
+those buttons: powerups are still on the build plan below, and the blocker is
+data, not UI. `pokemon.json` carries no Mega or Gigantamax flag and no form
+sprites, so eligibility cannot be derived from what is checked in. It needs
+the sprite-and-form harvest already scheduled below.
+
 ## Site chrome (decided 2026-08-29, built the same day)
 
 Two bars, both tools. Top bar, identical everywhere: wordmark left; the

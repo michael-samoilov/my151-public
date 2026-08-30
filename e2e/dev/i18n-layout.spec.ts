@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { NAV_PAGES, seedDex } from '../support/milestoneHeader';
+import { NAV_PAGES, seedDex } from '../support/dexSeed';
 
 /**
  * Layout verification against the pseudo-locales, run before any real

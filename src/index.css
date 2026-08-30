@@ -290,3 +290,18 @@ img {
 .p151-view-enter {
   animation: p151-view-fade 180ms ease-out;
 }
+
+/* The league builder's mobile shell is one two-pane track that the camera pans
+   across: the home and the open gym card sit side by side and the track
+   translates, so opening a card is a move through one space rather than a
+   swap of two. Only `transform` animates, which the compositor owns, so the
+   pan holds its frame rate while the incoming pane's sprites decode.
+
+   280ms on a decelerating curve is the iOS push: long enough to read as
+   travel, short enough that a rapid back-and-forth never feels held up. */
+.p151-pane-track {
+  transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .p151-pane-track { transition: none; }
+}

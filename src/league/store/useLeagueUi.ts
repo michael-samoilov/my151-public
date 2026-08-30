@@ -10,6 +10,12 @@ export type BrowserPurpose = 'lines' | 'signature' | 'legend';
 interface LeagueUiState {
   /** null = league home; a number = that card is open full-screen. */
   openCard: number | null;
+  /**
+   * The card the pane last held. Mobile keeps both panes on one sliding
+   * track, so the card must stay drawn while it slides back out — closing
+   * pans away from what was there rather than from a blank.
+   */
+  lastCard: number;
   browserOpen: boolean;
   browserPurpose: BrowserPurpose;
   /** Boss-row seat a legend pick will overlay. */
@@ -27,13 +33,14 @@ interface LeagueUiState {
 
 export const useLeagueUi = create<LeagueUiState>()((set) => ({
   openCard: null,
+  lastCard: 0,
   browserOpen: false,
   browserPurpose: 'lines',
   legendSeat: 1,
   movePickerOpen: false,
   typePickerOpen: false,
 
-  openCardPage: (card) => set({ openCard: card }),
+  openCardPage: (card) => set({ openCard: card, lastCard: card }),
   closeCardPage: () =>
     set({ openCard: null, browserOpen: false, movePickerOpen: false, typePickerOpen: false }),
   openBrowser: (purpose, legendSeat = 1) =>

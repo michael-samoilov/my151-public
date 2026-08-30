@@ -103,16 +103,19 @@ test.describe('two-bar chrome', () => {
     await page.goto('/pokemon-league-builder');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     const rootPx = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16);
-    const homeBar = await page.evaluate(
-      () => document.querySelector('[aria-label="League name"]')!.closest('.border-b')!.getBoundingClientRect().height,
-    );
-    expect(Math.abs(homeBar - 2.75 * rootPx)).toBeLessThan(1.5);
+    // Both bars carry the same handle: reading up the tree from a control
+    // inside them breaks the moment one of those controls grows a border.
+    const barHeight = (index: number) =>
+      page.evaluate(
+        (i) => document.querySelectorAll('[data-testid="league-tool-bar"]')[i].getBoundingClientRect().height,
+        index,
+      );
+    expect(Math.abs((await barHeight(0)) - 2.75 * rootPx)).toBeLessThan(1.5);
 
     await page.click('[data-testid="league-slot-3"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
-    const cardBar = await page.evaluate(
-      () => document.querySelector('[aria-label="Gym type"]')!.closest('.h-11')!.getBoundingClientRect().height,
-    );
-    expect(Math.abs(cardBar - 2.75 * rootPx)).toBeLessThan(1.5);
+    // Mobile keeps both panes mounted, so the card's bar is the second one.
+    const bars = await page.locator('[data-testid="league-tool-bar"]').count();
+    expect(Math.abs((await barHeight(bars - 1)) - 2.75 * rootPx)).toBeLessThan(1.5);
   });
 });

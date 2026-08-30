@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Info } from 'lucide-react';
+import { Info, Pencil } from 'lucide-react';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -46,27 +46,47 @@ function GlobalHeader() {
  * shows the tool name — and an sr-only h1 keeps the heading in the
  * hydrated DOM (the static shell carries the crawlable one).
  */
+const LEAGUE_NAME_PLACEHOLDER = 'Pokémon League Builder';
+
 function LeagueNameRow({ h1 }: { h1: boolean }) {
   const name = useLeagueStore((s) => s.name);
   const setName = useLeagueStore((s) => s.setName);
   return (
     <div className="flex min-w-0 flex-1 items-center">
-      {h1 && <h1 className="sr-only">Pokémon League Builder</h1>}
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Pokémon League Builder"
-        aria-label="League name"
-        // Small on purpose; the league entry caps maximum-scale on iOS so
-        // focusing a sub-16px input no longer zooms the page.
-        className="min-w-0 flex-1 bg-transparent text-[0.9375rem] font-bold leading-none outline-none placeholder:font-bold placeholder:text-foreground/80"
-      />
+      {h1 && <h1 className="sr-only">{LEAGUE_NAME_PLACEHOLDER}</h1>}
+      {/* A bold heading that happens to be an input reads as a heading, so it
+          gets a field's marks: a dotted rule under it and a pencil right at
+          the end of the text. The input is sized to its own content by an
+          invisible copy stacked in the same grid cell — a flex-1 input would
+          push the pencil to the far edge, where it stops looking attached to
+          the words. */}
+      <label className="group flex min-w-0 max-w-full cursor-text items-center gap-1 overflow-hidden border-b border-dashed border-foreground/25 pb-px transition-colors hover:border-foreground/50 focus-within:border-foreground/60">
+        <span className="grid min-w-0 items-center">
+          <span
+            aria-hidden
+            className="invisible col-start-1 row-start-1 whitespace-pre text-[0.9375rem] font-bold leading-none"
+          >
+            {name || LEAGUE_NAME_PLACEHOLDER}
+          </span>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={LEAGUE_NAME_PLACEHOLDER}
+            aria-label="League name"
+            // Small on purpose; the league entry caps maximum-scale on iOS so
+            // focusing a sub-16px input no longer zooms the page.
+            className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.9375rem] font-bold leading-none outline-none placeholder:font-bold placeholder:text-foreground/80"
+          />
+        </span>
+        <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
+      </label>
     </div>
   );
 }
 
 export function LeagueApp() {
   const openCard = useLeagueUi((s) => s.openCard);
+  const shownCard = useLeagueUi((s) => s.openCard ?? s.lastCard);
   const browserOpen = useLeagueUi((s) => s.browserOpen);
   const closeBrowser = useLeagueUi((s) => s.closeBrowser);
   const isDesktop = useIsDesktop();
@@ -92,13 +112,23 @@ export function LeagueApp() {
       <div className="flex h-dvh flex-col bg-background">
         <GlobalHeader />
 
-        {/* ---------------- mobile: one column, home ⇄ card ---------------- */}
+        {/* ------- mobile: two panes on one track, the camera pans ------- */}
         {!isDesktop && (
-        <div data-lg-viewport className="flex-1 overflow-y-auto pb-6 md:hidden">
-          {openCard === null ? (
-            <>
+        <div className="min-h-0 flex-1 overflow-hidden md:hidden">
+          <div
+            className="p151-pane-track flex h-full w-[200%]"
+            style={{ transform: `translate3d(${openCard === null ? '0' : '-50%'}, 0, 0)` }}
+          >
+            <div
+              data-lg-viewport
+              // Both panes stay mounted so the card is measured and fitted
+              // before it arrives. `inert` keeps the one off screen out of
+              // the tab order and off the screen reader.
+              inert={openCard !== null}
+              className="h-full w-1/2 overflow-y-auto pb-6"
+            >
               {/* The tool bar — same 44px as the dex builder's. */}
-              <div className="flex h-11 items-center gap-2 border-b bg-card px-3">
+              <div data-testid="league-tool-bar" className="flex h-11 items-center gap-2 border-b bg-card px-3">
                 <LeagueNameRow h1 />
                 <span className="ml-auto flex items-center gap-2.5 text-muted-foreground">
                   <Info size={16} aria-hidden />
@@ -107,12 +137,17 @@ export function LeagueApp() {
               <div className="mx-auto w-full max-w-[26rem] px-3 pt-2.5">
                 <LeagueHome />
               </div>
-            </>
-          ) : (
-            <div className="mx-auto w-full max-w-[26rem]">
-              <CardPage cardIndex={openCard} showBack />
             </div>
-          )}
+            <div
+              data-lg-viewport
+              inert={openCard === null}
+              className="h-full w-1/2 overflow-y-auto pb-6"
+            >
+              <div className="mx-auto w-full max-w-[26rem]">
+                <CardPage cardIndex={shownCard} showBack />
+              </div>
+            </div>
+          </div>
         </div>
         )}
 
@@ -120,13 +155,13 @@ export function LeagueApp() {
         {isDesktop && (
         <div className="hidden min-h-0 flex-1 md:flex">
           <section className={cn('flex min-w-0 flex-col border-r', browserOpen ? 'w-1/3' : 'w-1/2')}>
-            <div className="flex h-11 items-center border-b px-4">
+            <div data-testid="league-tool-bar" className="flex h-11 items-center border-b px-4">
               <div className="mx-auto flex w-full max-w-[26rem] items-center">
                 <LeagueNameRow h1 />
                 <Info size={16} className="ml-auto text-muted-foreground" aria-hidden />
               </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto py-3">
+            <div data-lg-viewport className="min-h-0 flex-1 overflow-y-auto py-3">
               <div className="mx-auto w-full max-w-[26rem] px-3">
                 <LeagueHome />
               </div>

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { seedDex } from '../support/milestoneHeader';
+import { seedDex } from '../support/dexSeed';
 
 /**
  * The picker is preview-only for now, so it runs against the dev server like

@@ -1,5 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
-import { seedDex } from './support/milestoneHeader';
+import { seedDex } from './support/dexSeed';
 
 /**
  * The report form, driven end to end with the API stubbed.

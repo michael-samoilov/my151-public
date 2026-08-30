@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { seedDex, TUNE_URL } from './support/milestoneHeader';
+import { seedDex, TUNE_URL } from './support/dexSeed';
 
 /**
  * The builder's selection sheet and the View settings sheet were two

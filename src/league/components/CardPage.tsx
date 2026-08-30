@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { ChevronLeft, X } from 'lucide-react';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_NAMES } from '@/types/pokemon';
@@ -11,6 +11,7 @@ import { slotLabel } from '../model/constants';
 import { useLeagueStore, type CardType } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { useCardView } from '../useCardView';
+import { useFitScale } from '../useFitScale';
 import { CardGrid } from './CardGrid';
 import { MovePicker } from './MovePicker';
 
@@ -34,6 +35,7 @@ function NoTypeBadge({ wide = false, className }: { wide?: boolean; className?: 
   const fit = typeBadgeFit(label, typeLabels().map(localeUppercase));
   const glyph = typeBadgeGlyphBox();
   const w = wide ? NO_TYPE_BADGE_WIDE_W : TYPE_BADGE_W;
+  const cx = wide ? w / 2 : TYPE_BADGE.textCenterX;
   return (
     <svg
       viewBox={`0 0 ${w} ${TYPE_BADGE_H}`}
@@ -46,24 +48,29 @@ function NoTypeBadge({ wide = false, className }: { wide?: boolean; className?: 
         d={starPath(glyph.x + glyph.size / 2, glyph.y + glyph.size / 2, glyph.size / 2)}
         fill="#ffffff"
       />
-      <text
-        x={wide ? w / 2 : TYPE_BADGE.textCenterX}
-        y={fit.baseline}
-        textAnchor="middle"
-        fontSize={fit.fontSize}
-        fontWeight={TYPE_BADGE.fontWeight}
-        fill="#ffffff"
-      >
-        {label}
-      </text>
+      {/* The condense is part of the fit, not decoration: without it the word
+          is set a third wider than every real type badge and overhangs the
+          space the geometry reserves on both sides. */}
+      <g transform={`translate(${cx} 0) scale(${fit.scaleX} 1) translate(${-cx} 0)`}>
+        <text
+          x={cx}
+          y={fit.baseline}
+          textAnchor="middle"
+          fontSize={fit.fontSize}
+          fontWeight={TYPE_BADGE.fontWeight}
+          fill="#ffffff"
+        >
+          {label}
+        </text>
+      </g>
     </svg>
   );
 }
 
 /**
  * The unset-type chip, through the same pipeline: badge geometry and text
- * fit, a dashed red outline, and a plus where the type symbol sits — so
- * choosing a type replaces it with an identically proportioned badge.
+ * fit, a red outline, and a plus where the type symbol sits — so choosing a
+ * type replaces it with an identically proportioned badge.
  */
 function SelectTypeBadge({ className }: { className?: string }) {
   const label = 'SELECT A TYPE';
@@ -88,7 +95,6 @@ function SelectTypeBadge({ className }: { className?: string }) {
         fill="#ffffff"
         stroke="#dc2626"
         strokeWidth="3"
-        strokeDasharray="8 6"
       />
       <line x1={cx - arm} y1={cy} x2={cx + arm} y2={cy} stroke="#dc2626" strokeWidth="4" strokeLinecap="round" />
       <line x1={cx} y1={cy - arm} x2={cx} y2={cy + arm} stroke="#dc2626" strokeWidth="4" strokeLinecap="round" />
@@ -111,56 +117,6 @@ function SelectTypeBadge({ className }: { className?: string }) {
       </g>
     </svg>
   );
-}
-
-/**
- * Fit zoom: the whole template must sit inside the viewport, so the card and
- * its hint lines shrink as one unit when the screen is short. CSS `zoom`
- * participates in layout and scales px, rem, text and SVG together — the
- * proportional shrink the responsive-sizing rules ask for. The applied scale
- * is divided out of `natural` so the loop is a fixed point, not a spiral.
- */
-function useFitScale(ref: React.RefObject<HTMLDivElement | null>): number {
-  const [scale, setScale] = useState(1);
-  const scaleRef = useRef(1);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const viewport = el.closest('[data-lg-viewport]');
-    const compute = () => {
-      const rect = el.getBoundingClientRect();
-      const natural = rect.height / scaleRef.current;
-      if (natural <= 0) return;
-      let avail: number;
-      if (viewport instanceof HTMLElement) {
-        const vp = viewport.getBoundingClientRect();
-        // clientHeight includes the container's own padding, so its bottom
-        // padding must come out of the budget or the fit overflows by it.
-        const padBottom = parseFloat(getComputedStyle(viewport).paddingBottom) || 0;
-        avail = viewport.clientHeight - (rect.top - vp.top + viewport.scrollTop) - padBottom - 2;
-      } else {
-        avail = window.innerHeight - rect.top - 8;
-      }
-      // Floor at 0.55: below that the card stops being readable, and a short
-      // scroll beats an unreadable fit.
-      const next = Math.min(1, Math.max(0.55, avail / natural));
-      // 0.003 ≈ 2–3px at card height: tight enough to actually fit, loose
-      // enough not to churn on subpixel measurements.
-      if (Math.abs(next - scaleRef.current) > 0.003) {
-        scaleRef.current = next;
-        setScale(next);
-      }
-    };
-    compute();
-    const ro = new ResizeObserver(compute);
-    ro.observe(el);
-    window.addEventListener('resize', compute);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', compute);
-    };
-  }, [ref]);
-  return scale;
 }
 
 function TypePicker({ cardIndex }: { cardIndex: number }) {
@@ -216,7 +172,7 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
   return (
     <div className="w-full">
       {/* The tool bar — same 44px as the dex builder's. */}
-      <div className={cn('flex h-11 items-center gap-2 px-3', showBack && 'border-b bg-card')}>
+      <div data-testid="league-tool-bar" className={cn('flex h-11 items-center gap-2 px-3', showBack && 'border-b bg-card')}>
         {showBack && (
           <button
             type="button"

@@ -7,6 +7,8 @@ import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
 import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup } from '@/hooks/usePokemonData';
 import { useBrowserStore } from './browserStore';
 import { ARCHETYPES } from '@/data/archetypes';
+import { BUILD_GROUPS } from '@/data/slot-template';
+import { DEX_TOTAL } from '@/lib/milestones';
 import { CATEGORIES, type PokemonCategory } from '@/data/categories';
 import { TYPE_NAMES, type Pokemon, type TypeName, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
 import { ShapeIcon, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
@@ -131,6 +133,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   const addToSection = useBrowserStore((s) => s.addToSection);
   const myDexFilter = useBrowserStore((s) => s.myDexFilter);
   const myDexIds = useBrowserStore((s) => s.myDexIds);
+  const myDexSections = useBrowserStore((s) => s.myDexSections);
   const setMyDexFilter = useBrowserStore((s) => s.setMyDexFilter);
   const restrictIds = useBrowserStore((s) => s.restrictIds);
   const scopeFilter = useBrowserStore((s) => s.scopeFilter);
@@ -355,6 +358,23 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   );
   const spriteOverrides = gridArchetypeDef?.spriteOverrides;
 
+  /**
+   * The dex, in the order the user built it: one subgroup per build section,
+   * in the build page's own order, holding whichever of that section's ids
+   * survived the current filters. Returns null when the My dex chip is off or
+   * the host supplies no sections, so the caller falls back to generations.
+   */
+  const sectionSubgroups = useCallback((ids: Iterable<number>): BrowserSubgroup[] | null => {
+    if (!myDexFilter || !myDexSections) return null;
+    const inResults = new Set(ids);
+    return BUILD_GROUPS
+      .map((g) => ({
+        label: sectionLabel(g.id),
+        pokemonIds: (myDexSections[g.id] ?? []).filter((id) => inResults.has(id)),
+      }))
+      .filter((sub) => sub.pokemonIds.length > 0);
+  }, [myDexFilter, myDexSections]);
+
   // Subgroups: custom if archetype/category defines them, otherwise auto-generate by generation
   const effectiveSubgroups = useMemo((): BrowserSubgroup[] => {
     if (gridArchetypeDef?.subgroups) return gridArchetypeDef.subgroups;
@@ -367,6 +387,9 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
     const sourceIds = gridArchetypeDef
       ? gridArchetypeDef.pokemonIds
       : groups.flatMap(g => [...g.matchedIds]);
+
+    const bySection = sectionSubgroups(sourceIds);
+    if (bySection) return bySection;
 
     const genMap = new Map<number, number[]>();
     for (const id of sourceIds) {
@@ -381,7 +404,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
       .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: ids }));
     // gridCategoryDef is read for its `.subgroups`; it's a stable .find() over
     // the static CATEGORIES array, so it only changes when the category does.
-  }, [gridArchetypeDef, gridCategoryDef, groups, t]);
+  }, [gridArchetypeDef, gridCategoryDef, groups, sectionSubgroups, t]);
 
   const toggleEvoSize = (size: number) => {
     if (!evoLineSizeFilter) {
@@ -399,7 +422,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   // "volcanic", "gym ace") are not. Cross-gen-evo is an exception: its custom subgroups
   // are labeled by generation, so badges correctly flag members from a different gen.
   const hasCustomSubgroups = !!(gridArchetypeDef?.subgroups || gridCategoryDef?.subgroups);
-  const showGenBadges = !hasCustomSubgroups || deferredOptions.archetype === 'cross-gen-evo' || deferredOptions.category === 'starter';
+  const groupedBySection = !!(myDexFilter && myDexSections);
+  const showGenBadges = !groupedBySection && (!hasCustomSubgroups || deferredOptions.archetype === 'cross-gen-evo' || deferredOptions.category === 'starter');
 
   // Deferred like the grid: the search view and its subgroups must switch
   // together with the `groups` they render.
@@ -437,6 +461,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
 
   const searchSubgroups = useMemo((): BrowserSubgroup[] => {
     if (!isSearching || tooManyResults) return [];
+    const bySection = sectionSubgroups(groups.flatMap((g) => g.members.map((m) => m.id)));
+    if (bySection) return bySection;
     const genMap = new Map<number, number[]>();
     for (const g of groups) {
       for (const m of g.members) {
@@ -447,7 +473,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
     return [...genMap.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: [...new Set(ids)] }));
-  }, [isSearching, tooManyResults, groups, t]);
+  }, [isSearching, tooManyResults, groups, sectionSubgroups, t]);
 
   // Per-subgroup render model. This filter/sort/map used to run inline in
   // JSX on every render — the main per-interaction JS cost of this
@@ -792,7 +818,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
           {setMyDexFilter && (
             myDexFilter ? (
               <FilterChip
-                label="My dex"
+                label={<MyDexLabel count={myDexIds?.size ?? 0} />}
                 onDismiss={() => setMyDexFilter(false)}
                 onClick={() => setMyDexFilter(false)}
                 className="bg-foreground text-background"
@@ -803,7 +829,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
                 data-filter-chip="my-dex"
                 className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
               >
-                My dex
+                <MyDexLabel count={myDexIds?.size ?? 0} />
               </button>
             )
           )}
@@ -1254,10 +1280,25 @@ function EntryChip({ label, onClick, active, sheet }: { label: string; onClick: 
 }
 
 /** Active filter chip — shows value with dismiss */
+/**
+ * "My dex 37/151" — the count in the app red, the total in whatever the chip
+ * itself is set in, so the pair reads the same on the outlined chip and on
+ * the filled one. Same shape as the dex builder's own header counter.
+ */
+function MyDexLabel({ count }: { count: number }) {
+  return (
+    <span className="whitespace-nowrap">
+      My dex{' '}
+      <span className="tabular-nums text-primary">{count}</span>
+      <span className="tabular-nums">/{DEX_TOTAL}</span>
+    </span>
+  );
+}
+
 function FilterChip({
   label, onDismiss, onClick, className, style,
 }: {
-  label: string; onDismiss: () => void; onClick: () => void; className?: string; style?: React.CSSProperties;
+  label: React.ReactNode; onDismiss: () => void; onClick: () => void; className?: string; style?: React.CSSProperties;
 }) {
   return (
     <span

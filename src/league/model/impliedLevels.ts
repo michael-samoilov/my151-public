@@ -1,5 +1,6 @@
 import type { Pokemon } from '@/types/pokemon';
 import { getAllPokemon } from '@/hooks/usePokemonData';
+import { arrivalLevelWith, fitLevelOnBst, type LevelFit } from './levelFit';
 
 /**
  * Implied evolution levels for level-less evolvers.
@@ -12,44 +13,20 @@ import { getAllPokemon } from '@/hooks/usePokemonData';
  * dataset (about a thousand rows), so there is nothing to precompute or
  * regenerate when new Pokémon land — the fit is always current.
  *
+ * The regression itself lives in `levelFit.ts`, free of the data layer. This
+ * module is the app's door to it: read the dataset, fit once, cache.
+ *
  * Split evolutions and other oddballs get case-by-case treatment during the
  * build (DECISIONS.md item 6); this module only answers "roughly when would
- * a form of this strength evolve".
+ * a form of this strength evolve". `npm run level-report` prints where the
+ * model strains, and the preview-only page at /evolution-levels draws it.
  */
 
-interface Fit {
-  slope: number;
-  intercept: number;
-}
+let fitCache: LevelFit | null = null;
 
-let fitCache: Fit | null = null;
-
-/** Ordinary least squares of evolution level on BST, over level-evolvers. */
-export function fitLevelOnBst(all: Pokemon[]): Fit {
-  const points = all.filter(
-    (p) => p.evolvesFrom !== null && p.evolutionLevel !== null,
-  );
-  const n = points.length;
-  if (n < 2) return { slope: 0, intercept: 30 };
-  let sx = 0, sy = 0, sxx = 0, sxy = 0;
-  for (const p of points) {
-    const x = p.bst;
-    const y = p.evolutionLevel as number;
-    sx += x; sy += y; sxx += x * x; sxy += x * y;
-  }
-  const slope = (n * sxy - sx * sy) / (n * sxx - sx * sx);
-  const intercept = (sy - slope * sx) / n;
-  return { slope, intercept };
-}
-
-function fit(): Fit {
+function fit(): LevelFit {
   if (!fitCache) fitCache = fitLevelOnBst(getAllPokemon());
   return fitCache;
-}
-
-/** Clamp keeps a prediction inside the range real evolution levels occupy. */
-function clampLevel(level: number): number {
-  return Math.max(1, Math.min(70, Math.round(level)));
 }
 
 /**
@@ -58,10 +35,7 @@ function clampLevel(level: number): number {
  * (base forms are always eligible).
  */
 export function arrivalLevel(p: Pokemon): number {
-  if (p.evolvesFrom === null) return 0;
-  if (p.evolutionLevel !== null) return p.evolutionLevel;
-  const { slope, intercept } = fit();
-  return clampLevel(slope * p.bst + intercept);
+  return arrivalLevelWith(p, fit());
 }
 
 /** Test seam: drop the memoized fit. */

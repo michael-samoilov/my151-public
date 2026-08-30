@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { NAV_PAGES, seedDex } from '../support/milestoneHeader';
+import { NAV_PAGES, seedDex } from '../support/dexSeed';
 
 /**
  * Finds strings that were never routed through `t()`.
