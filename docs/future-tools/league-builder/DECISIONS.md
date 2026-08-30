@@ -855,6 +855,49 @@ the running app rather than reading the code.
    bar, because the league's gear is league-wide (the view mode, round 10) and
    this is not. Two gears, two scopes, each next to what it governs.
 
+### Round 12, from the preview
+
+1. **The team scope and the gym's type stop asking the same question.** Every
+   line on a Rock gym is Rock, so the type chip under the team scope narrows
+   the team to a subset of itself and on a mono-type card can narrow it to
+   nothing. Turning the scope on now puts the type filter aside; turning it
+   off gives it back, unless the user picked a different type meanwhile, in
+   which case their newer answer stands.
+
+2. **A full card shows the scope chip, locked.** The restriction was already
+   structural — there is no seventh seat for a line from outside the team —
+   but it was also invisible: the pane simply offered six Pokemon and said
+   nothing. The chip now shows and shows as on, wears a lock where the
+   dismiss sits, and answers a press with "Choose a pokemon from your team"
+   for a couple of seconds. A control that reads as broken earns a second and
+   a third press; one that says why earns none.
+
+### Round 13, mocked up but not built
+
+**Signature + partner.** Four geometries for splitting the card's top-left
+slot between two Pokemon, each drawn at the slot's real 148 x 204 and in all
+four states (empty, signature only, partner only, both):
+`partner-slot/` holds the artboards, the study page and the scripts that
+generate both.
+
+Two rules the mockups are built on, and they are the interesting part:
+
+- **The partner is not on the team.** The signature picker locks to the
+  card's own lines once the template is full; the partner picker never does.
+  A partner is the leader's companion rather than their sixth Pokemon, so the
+  pair can be off-type.
+- **It is still seated when there is room.** Choosing a partner while an
+  evolution line is free places it in that line: on a five-line card the
+  partner becomes the sixth line *and* the partner. Only on a full card does
+  it live in the slot alone — so the same tap means two different things, and
+  the picker has to say which before the tap rather than after.
+
+What the drawing settled, which the argument had not: the slot is portrait by
+a third, so halving it along the long side leaves two columns nearly three
+times taller than their contents; and a diagonal seam cannot hold the lower
+half's heading above its sprite, which costs the two halves a shared reading
+order. Nothing is decided.
+
 ### Round 3, follow-ups from the preview
 
 1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;
