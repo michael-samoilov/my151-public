@@ -287,6 +287,12 @@ function seededLine(seed: SeedLine) {
   return { ...line, boundaries: setBoundary(line, stage + 1, ROW_COUNT + 1) };
 }
 
+/** The member of a seeded line the leader fields: the pin, or the leaf. */
+function aceId(seed: SeedLine | undefined): number | null {
+  if (!seed) return null;
+  return seed.pin ?? seed.branch[seed.branch.length - 1] ?? null;
+}
+
 /** The seeded cards, in slot order. */
 export function kantoCards(): GymCard[] {
   const cards = Array.from({ length: SLOT_COUNT }, emptyCard);
@@ -295,8 +301,11 @@ export function kantoCards(): GymCard[] {
       type: seed.type,
       theme: seed.theme,
       lines: seed.lines.map(seededLine),
-      // The ace carries the signature on every seeded card.
+      // The ace carries the signature on every seeded card, marked on the
+      // member the leader fields rather than on its line's leaf - the same
+      // thing a tap on that Pokemon's tile in the picker records.
       signatureSeat: 1,
+      signatureId: aceId(seed.lines[0]),
       tmMoveId: seed.tmMoveId,
       badgeName: seed.badgeName ?? '',
       legend: seed.legend ? { pokemonId: seed.legend[0], seat: seed.legend[1] } : null,

@@ -86,6 +86,26 @@ export function stageAt(line: PlacedLine, row: number): number {
 }
 
 /**
+ * The member a signature mark shows.
+ *
+ * The picker offers one tile per Pokemon, so the pick names a Pokemon. Brock's
+ * ace is Onix and his line runs Onix into Steelix, so deriving the member from
+ * the boss row would show Steelix and contradict the tap.
+ *
+ * `picked` is null on a card marked before the pick was recorded, and stale
+ * once the seat's line is replaced. Both fall back to the member the boss row
+ * fields, which is the best answer available without a pick.
+ */
+export function signatureMember(
+  line: PlacedLine | undefined,
+  picked: number | null,
+): number | null {
+  if (!line) return null;
+  if (picked !== null && line.branch.includes(picked)) return picked;
+  return line.branch[stageAt(line, BOSS_ROW)] ?? null;
+}
+
+/**
  * Set one stage's first row, pushing neighbours instead of clamping into
  * them: earlier boundaries cap at the new row, later ones floor at it, so
  * the non-decreasing invariant holds while a shelf may fully cover its

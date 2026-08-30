@@ -29,6 +29,16 @@ export interface GymCard {
   lines: PlacedLine[];
   /** Seat carrying the signature mark, or null. */
   signatureSeat: number | null;
+  /**
+   * The member of that seat's line the user picked, or null for "whatever the
+   * boss row fields".
+   *
+   * The picker offers one tile per Pokemon, so the pick is a Pokemon and not a
+   * line, and a line's leaf is rarely the one a leader is famous for. Optional
+   * because cards persisted before the field existed have none; a card that
+   * no longer holds the id falls back, so nothing has to migrate.
+   */
+  signatureId?: number | null;
   tmMoveId: number | null;
   badgeName: string;
   legend: LegendPick | null;
@@ -63,7 +73,8 @@ export interface LeagueState {
   setStageBoundary: (card: number, seat: number, stage: number, row: number) => void;
   /** Restore a line's boundaries wholesale (a cancelled paint gesture). */
   setLineBoundaries: (card: number, seat: number, boundaries: number[]) => void;
-  setSignatureSeat: (card: number, seat: number | null) => void;
+  /** Mark a seat, and the member of its line the user actually picked. */
+  setSignatureSeat: (card: number, seat: number | null, pokemonId?: number | null) => void;
   setTm: (card: number, moveId: number | null) => void;
   setBadgeName: (card: number, name: string) => void;
   setLegend: (card: number, legend: LegendPick | null) => void;
@@ -76,6 +87,7 @@ export function emptyCard(): GymCard {
     theme: '',
     lines: [],
     signatureSeat: null,
+    signatureId: null,
     tmMoveId: null,
     badgeName: '',
     legend: null,
@@ -160,11 +172,14 @@ export const useLeagueStore = create<LeagueState>()(
             // The signature travels with its line (and dies with it) —
             // DECISIONS.md item 12.
             let signatureSeat = c.signatureSeat;
-            if (signatureSeat === seat) signatureSeat = null;
-            else if (signatureSeat !== null && signatureSeat > seat) signatureSeat -= 1;
+            let signatureId = c.signatureId ?? null;
+            if (signatureSeat === seat) {
+              signatureSeat = null;
+              signatureId = null;
+            } else if (signatureSeat !== null && signatureSeat > seat) signatureSeat -= 1;
             let legend = c.legend;
             if (legend && legend.seat > lines.length) legend = null;
-            return { ...c, lines, signatureSeat, legend };
+            return { ...c, lines, signatureSeat, signatureId, legend };
           }),
         })),
 
@@ -211,9 +226,13 @@ export const useLeagueStore = create<LeagueState>()(
           }),
         })),
 
-      setSignatureSeat: (card, seat) =>
+      setSignatureSeat: (card, seat, pokemonId = null) =>
         set((s) => ({
-          cards: withCard(s.cards, card, (c) => ({ ...c, signatureSeat: seat })),
+          cards: withCard(s.cards, card, (c) => ({
+            ...c,
+            signatureSeat: seat,
+            signatureId: seat === null ? null : pokemonId,
+          })),
         })),
 
       setTm: (card, moveId) =>

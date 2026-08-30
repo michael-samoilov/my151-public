@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   DndContext,
@@ -23,8 +23,15 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import type { TypeName } from '@/types/pokemon';
 import { HeldItems } from '@/components/shared/dragHold';
 import { cn } from '@/lib/utils';
+import { warmImages } from '@/lib/warmImages';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
-import { defaultBoundaries, deriveRows, moveSeat as reorderLines, stageAt } from '../model/engine';
+import {
+  defaultBoundaries,
+  deriveRows,
+  moveSeat as reorderLines,
+  signatureMember,
+  stageAt,
+} from '../model/engine';
 import { getMoveById } from '../moves';
 import { CategoryChip } from './CategoryChip';
 import { useLeagueStore } from '../store/useLeagueStore';
@@ -183,6 +190,11 @@ const bossRowByColumn: CollisionDetection = (args) => {
   return best ? [{ id: best.id, data: { droppableContainer: best, value: bestDistance } }] : [];
 };
 
+/** A powerup form's sprite: the form's own id is its filename. */
+function formSprite(form: PowerupForm): string {
+  return `/sprites/pokemon/${form.id}.png`;
+}
+
 function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup, held, ringWhenOver, onRemove, onReset }: {
   cardIndex: number;
   datum: CellDatum;
@@ -285,7 +297,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
       >
         {pokemon ? (
           <img
-            src={form ? `/sprites/pokemon/${form.id}.png` : pokemon.sprite}
+            src={form ? formSprite(form) : pokemon.sprite}
             alt={form ? form.label : pokemon.name}
             className="pointer-events-none max-w-none"
             style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: 'pixelated' }}
@@ -433,7 +445,7 @@ function PowerupButton({ kind, active, onPress, className }: {
 function SignatureSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const { card } = view;
   const line = card.signatureSeat !== null ? card.lines[card.signatureSeat - 1] : undefined;
-  const shown = line ? line.branch[stageAt(line, BOSS_ROW)] : null;
+  const shown = signatureMember(line, card.signatureId ?? null);
   const pokemon = shown !== null ? getPokemonById(shown) : undefined;
   const pos = {
     ...slotX(1, 3),
@@ -665,6 +677,30 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const { card, shades, rows } = view;
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  // Every sprite this card can put in a cell, warmed while the card is idle.
+  //
+  // A drag swaps `src` on cells that are already on screen, and a cell whose
+  // new sprite is not in the browser yet keeps painting the old one — so the
+  // column under the pointer reads as its previous tenant for as long as the
+  // fetch takes. Measured on the built preview: a reorder revealed up to six
+  // sprites the card had never shown, each one a cold cell.
+  //
+  // The set is every member of every line, not the ones the rows show today:
+  // moving a line to a deeper seat, or dragging an evolution boundary, brings
+  // in stages no row showed before. Powerup forms come too, because the
+  // powerup rides its seat and a reorder hands it to another line.
+  const warmable = card.lines
+    .flatMap((line) => line.branch)
+    .flatMap((id) => {
+      const sprite = getPokemonById(id)?.sprite;
+      const forms = [...formsFor(id, 'mega'), ...formsFor(id, 'dynamax')];
+      return [...(sprite ? [sprite] : []), ...forms.map(formSprite)];
+    })
+    .join('|');
+  useEffect(() => {
+    warmImages(warmable.split('|').filter(Boolean));
+  }, [warmable]);
 
   const paintRef = useRef<PaintDrag | null>(null);
   const [previewMove, setPreviewMove] = useState<{ from: number; to: number } | null>(null);

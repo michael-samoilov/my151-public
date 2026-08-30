@@ -173,9 +173,10 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         ui().closeBrowser();
       } else if (purpose === 'signature') {
         // Under six lines the signature line seats itself rightmost,
-        // shifting the rest left (DECISIONS.md item 12).
+        // shifting the rest left (DECISIONS.md item 12). The tapped Pokemon
+        // ends the branch, and it is also the one the slot must show.
         league().placeBranch(card, branch, 'front');
-        league().setSignatureSeat(card, 1);
+        league().setSignatureSeat(card, 1, branch[branch.length - 1]);
         ui().closeBrowser();
       } else {
         league().placeBranch(card, branch);
@@ -198,9 +199,12 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         ui().closeBrowser();
       } else if (purpose === 'signature') {
         // Tapping an already-placed line marks it, rather than removing it.
+        // The mark carries the tapped Pokemon as well as its seat: the tiles
+        // are one Pokemon each, so a tap on Geodude means Geodude and not
+        // whichever member of its line the boss row would field.
         const seat =
           useLeagueStore.getState().cards[card]?.lines.findIndex((l) => l.branch.includes(pokemonId)) ?? -1;
-        if (seat >= 0) useLeagueStore.getState().setSignatureSeat(card, seat + 1);
+        if (seat >= 0) useLeagueStore.getState().setSignatureSeat(card, seat + 1, pokemonId);
         ui().closeBrowser();
       } else {
         useLeagueStore.getState().removeLineWith(card, pokemonId);

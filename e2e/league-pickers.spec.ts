@@ -45,6 +45,34 @@ const chevrons = (page: Page) =>
 const reported = (page: Page) =>
   page.locator('[data-result-count]').first().getAttribute('data-result-count');
 
+/** What the signature slot draws, or '(empty)' when it is still a placeholder. */
+const signatureAlt = (page: Page) =>
+  page.evaluate(() => {
+    const btn = [...document.querySelectorAll('button')].find((b) =>
+      /SIGNATURE POK/.test(b.textContent ?? ''),
+    );
+    return btn?.querySelector('img')?.getAttribute('alt') ?? '(empty)';
+  });
+
+/** Open the signature picker, search, and tap one Pokémon's tile by name. */
+const pickSignature = async (page: Page, query: string, name: string) => {
+  await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('button')].find((b) =>
+      /SIGNATURE POK/.test(b.textContent ?? ''),
+    );
+    (btn as HTMLButtonElement).click();
+  });
+  await page.waitForTimeout(800);
+  await search(page, query);
+  const index = (await drawn(page)).indexOf(name);
+  expect(index, `a tile for ${name}`).toBeGreaterThanOrEqual(0);
+  await page.evaluate(
+    (i) => (document.querySelectorAll('[data-testid="verify-evo-card"]')[i] as HTMLElement).click(),
+    index,
+  );
+  await page.waitForTimeout(700);
+};
+
 const openCard = async (page: Page, slot: number) => {
   await blankLeague(page);
   await page.goto('/pokemon-league-builder');
@@ -98,6 +126,23 @@ test.describe('one-Pokémon pickers', () => {
     await search(page, 'cosmog');
     expect(await drawn(page)).toEqual(['cosmog', 'cosmoem', 'solgaleo', 'lunala']);
     expect(await chevrons(page)).toBe(0);
+  });
+
+  test('the signature slot shows the Pokémon that was tapped', async ({ page }) => {
+    await openCard(page, 0);
+    await seatOne(page, 'geodude'); // Geodude into Graveler into Golem
+
+    // The slot used to re-derive its member from the boss row, which fields
+    // the line's leaf: a tap on Geodude answered with Golem.
+    await pickSignature(page, 'geodude', 'geodude');
+    expect(await signatureAlt(page)).toBe('geodude');
+
+    await pickSignature(page, 'geodude', 'graveler');
+    expect(await signatureAlt(page)).toBe('graveler');
+
+    // The leaf is a pick like any other, not a fallback.
+    await pickSignature(page, 'geodude', 'golem');
+    expect(await signatureAlt(page)).toBe('golem');
   });
 
   test('the line picker keeps its chevrons and its branches', async ({ page }) => {

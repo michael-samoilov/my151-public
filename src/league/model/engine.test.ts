@@ -15,6 +15,7 @@ import {
   makePlacedLine,
   moveSeat,
   setBoundary,
+  signatureMember,
   stageAt,
 } from './engine';
 import { arrivalLevel } from './impliedLevels';
@@ -166,5 +167,33 @@ describe('moveSeat', () => {
   it('removes and reinserts, closing the rest up', () => {
     expect(moveSeat(['a', 'b', 'c', 'd'], 1, 3)).toEqual(['b', 'c', 'a', 'd']);
     expect(moveSeat(['a', 'b', 'c', 'd'], 4, 1)).toEqual(['d', 'a', 'b', 'c']);
+  });
+});
+
+describe('signatureMember', () => {
+  const onix = makePlacedLine([95, 208]); // Onix into Steelix
+  const geodude = makePlacedLine([74, 75, 76]);
+
+  it('shows the pokemon the user picked', () => {
+    expect(signatureMember(geodude, 74)).toBe(74);
+    expect(signatureMember(geodude, 75)).toBe(75);
+  });
+
+  it('shows the picked pre-evolution over the line leaf', () => {
+    expect(stageAt(onix, BOSS_ROW)).toBe(1); // the boss row fields Steelix
+    expect(signatureMember(onix, 95)).toBe(95);
+  });
+
+  it('falls back to the boss row with no pick', () => {
+    expect(signatureMember(onix, null)).toBe(208);
+    expect(signatureMember(geodude, null)).toBe(76);
+  });
+
+  it('falls back once the pick leaves the line', () => {
+    expect(signatureMember(onix, 74)).toBe(208);
+  });
+
+  it('has nothing to show without a line', () => {
+    expect(signatureMember(undefined, 74)).toBeNull();
   });
 });

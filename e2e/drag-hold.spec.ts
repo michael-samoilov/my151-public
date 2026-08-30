@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { seedDex, TUNE_URL } from './support/dexSeed';
-import { blankLeague } from './support/leagueSeed';
+import { blankLeague, seededLeague } from './support/leagueSeed';
 
 /**
  * Where a drag puts things, on four surfaces.
@@ -159,6 +159,56 @@ test.describe('drag hold', () => {
     expect(state.copies, 'a column carries no overlay').toBe(0);
     expect(state.openSeats, 'the seat under the column opens').toBeGreaterThan(0);
     expect(state.lifted, 'every cell of the column lifts').toBe(state.openSeats);
+  });
+
+  test('a column reorder paints the line it carries, not the seat it lands on', async ({ page }) => {
+    // A reorder swaps `src` on cells that are already on screen, and a
+    // browser that does not have the new bitmap keeps painting the old one.
+    // Moving a line to a deeper seat reveals stages no row showed before, so
+    // the column under the pointer read as its previous tenant until each
+    // sprite arrived. Measured on the built preview, seven cards showed 19
+    // such cells before the card started warming every member it can draw.
+    await seededLeague(page);
+    await page.goto('/pokemon-league-builder');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.waitForTimeout(400);
+    await page.click('[data-testid="league-slot-12"]');
+    await page.waitForSelector('[data-testid="card-cell-10-1"]');
+    await page.waitForTimeout(1200);
+
+    await page.evaluate(() => {
+      (window as unknown as { __cold: string[] }).__cold = [];
+      const observer = new MutationObserver((records) => {
+        for (const record of records) {
+          const img = record.target;
+          if (!(img instanceof HTMLImageElement)) continue;
+          if (img.complete && img.naturalWidth > 0) continue;
+          const cell = img.closest('[data-testid^="card-cell-"]');
+          (window as unknown as { __cold: string[] }).__cold.push(
+            `${cell?.getAttribute('data-testid') ?? '?'} <- ${img.getAttribute('src')}`,
+          );
+        }
+      });
+      observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['src'] });
+      (window as unknown as { __obs: MutationObserver }).__obs = observer;
+    });
+
+    // Seat 6 reaches only the last two rows; seat 1 reaches all eleven.
+    const from = (await page.locator('[data-testid="card-cell-10-6"]').boundingBox())!;
+    const to = (await page.locator('[data-testid="card-cell-10-1"]').boundingBox())!;
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(350);
+    await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 12 });
+    await page.waitForTimeout(400);
+    const cold = await page.evaluate(() => {
+      (window as unknown as { __obs: MutationObserver }).__obs.disconnect();
+      return (window as unknown as { __cold: string[] }).__cold;
+    });
+    await page.mouse.up();
+    await page.waitForTimeout(200);
+
+    expect(cold, 'every sprite the drag reveals is already decoded').toEqual([]);
   });
 
   test('shifting an evolution boundary carries nothing', async ({ page }) => {
