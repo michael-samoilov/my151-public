@@ -181,6 +181,48 @@
   .seam { position: absolute; inset: 0; pointer-events: none; }
   .seam line { stroke: var(--line); stroke-width: 2; }
 
+  .sub2 {
+    margin: 4px 0 -6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--band);
+  }
+  .slot.dg .hb { position: absolute; display: flex; flex-direction: column; align-items: center; }
+  .hd2 {
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    color: var(--band);
+    line-height: 1.4;
+  }
+  .sp2 { image-rendering: pixelated; display: block; margin: auto 0; }
+  .nm2 { font-size: 10px; line-height: 1.3; }
+  /* A row, not a column. The card stacks its two type badges because it has
+     the width for them; a half of that box does not, and two stacked pills
+     cost 24px of the ~74 a half gets. */
+  .pills {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 2px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 3px;
+  }
+  .pill {
+    display: block;
+    padding: 0 6px;
+    border-radius: 9999px;
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    color: #fff;
+    line-height: 1.6;
+  }
+  .slot.dg .ball { position: relative; border-radius: 50%; border: 1.5px dashed var(--dash); }
+
   .note { margin: 0; max-width: 72ch; font-size: 13.5px; color: var(--muted); }
   .note b { color: var(--ink); font-weight: 600; }
   .note i { font-style: normal; color: var(--flag); font-weight: 600; }
@@ -230,6 +272,16 @@
   </header>
 
   __SECTIONS__
+
+  <section class="intro">
+    <h2>The diagonal, revisited</h2>
+    <p class="verdict">The first seam cut its own halves: the lower one lost its heading and the two stopped
+      reading in the same order. These three keep the seam and give each half a rectangle that fits entirely
+      inside it, so <b>nothing is clipped</b> and both halves read heading, sprite, name &mdash; and, in the
+      second row of each, the Pok&eacute;mon's types.</p>
+  </section>
+
+  __DIAGONALS__
 
   <section>
     <h2>What the pair has to obey</h2>
