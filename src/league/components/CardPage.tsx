@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeft, X } from 'lucide-react';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_NAMES } from '@/types/pokemon';
@@ -211,8 +212,14 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
           <CardGrid cardIndex={cardIndex} view={view} />
         </div>
       </div>
-      {typePickerOpen && <TypePicker cardIndex={cardIndex} />}
-      {movePickerOpen && <MovePicker cardIndex={cardIndex} />}
+      {/* Both pickers are `position: fixed`, and a transformed ancestor
+          becomes the containing block for fixed descendants. Mobile puts the
+          card inside a translated two-pane track, which anchored them to the
+          200%-wide track instead of the viewport — the type picker spanned
+          both panes. A portal takes them out of the tree entirely, so no
+          ancestor can move them again. React context still reaches them. */}
+      {typePickerOpen && createPortal(<TypePicker cardIndex={cardIndex} />, document.body)}
+      {movePickerOpen && createPortal(<MovePicker cardIndex={cardIndex} />, document.body)}
     </div>
   );
 }

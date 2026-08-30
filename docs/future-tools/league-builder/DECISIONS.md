@@ -421,6 +421,24 @@ Veto any of these; they ship as stated otherwise.
     order by the build page's own sections rather than by generation, so a
     dex built section by section reads back that way.
 
+### What the pane track broke, and the rule that came out of it
+
+The two-pane track pays for its smoothness with a `transform`, and a
+transformed ancestor becomes the containing block for `position: fixed`
+descendants. So the card's own overlays — the type picker and the TM picker —
+stopped anchoring to the viewport and anchored to the 200%-wide track: the
+type picker spanned both panes, half of it off screen to the left.
+
+Both are portalled to `document.body` now, which takes them out of the tree
+entirely so no ancestor can move them again. The selection sheet was already
+safe, being a sibling of the track rather than a child.
+
+The rule this leaves: **an overlay is viewport furniture, so it renders at the
+document root, not wherever its owner happens to sit.** `e2e/league-overlays.spec.ts`
+holds it — it opens each picker and measures the outermost fixed box against
+the window, at 320, 390 and desktop widths. Put the picker back inside the
+track and it fails at `left: -412`.
+
 ### Level model, and what it was hiding
 
 The round-3 pass also asked for the evolution-level regression to be made
