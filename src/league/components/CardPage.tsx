@@ -1,14 +1,14 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { ChevronLeft, X } from 'lucide-react';
 import { TypeBadge } from '@/components/shared/TypeBadge';
-import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
+import { TYPE_NAMES } from '@/types/pokemon';
 import { localeUppercase, typeLabels } from '@/i18n';
 import { starPath } from '@/lib/sectionOutlines';
-import { TYPE_BADGE, TYPE_BADGE_H, typeBadgeGlyphBox } from '@/lib/typeBadgeGeometry';
+import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W, typeBadgeGlyphBox } from '@/lib/typeBadgeGeometry';
 import { typeBadgeFit } from '@/lib/typeBadgeFit';
 import { cn } from '@/lib/utils';
 import { slotLabel } from '../model/constants';
-import { useLeagueStore } from '../store/useLeagueStore';
+import { useLeagueStore, type CardType } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { useCardView } from '../useCardView';
 import { CardGrid } from './CardGrid';
@@ -23,29 +23,31 @@ import { MovePicker } from './MovePicker';
 /**
  * "No type" as a real option: the type badge pipeline's geometry, fit and
  * casing over the no-type grey, with the app's 4-point star spandrel where
- * the type symbol sits. Wide — it spans the picker grid's full bottom row —
- * so the viewBox widens while the 40-unit height keeps badge-height parity.
+ * the type symbol sits. `wide` spans the picker grid's full bottom row —
+ * the viewBox widens while the 40-unit height keeps badge-height parity;
+ * the standard width is the chip a card with an explicit "no type" wears.
  */
-const NO_TYPE_BADGE_W = 621;
+const NO_TYPE_BADGE_WIDE_W = 621;
 
-function NoTypeBadge() {
+function NoTypeBadge({ wide = false, className }: { wide?: boolean; className?: string }) {
   const label = 'NO TYPE';
   const fit = typeBadgeFit(label, typeLabels().map(localeUppercase));
   const glyph = typeBadgeGlyphBox();
+  const w = wide ? NO_TYPE_BADGE_WIDE_W : TYPE_BADGE_W;
   return (
     <svg
-      viewBox={`0 0 ${NO_TYPE_BADGE_W} ${TYPE_BADGE_H}`}
-      className="h-auto w-full"
+      viewBox={`0 0 ${w} ${TYPE_BADGE_H}`}
+      className={cn('h-auto', wide ? 'w-full' : undefined, className)}
       role="img"
       aria-label="No type"
     >
-      <rect width={NO_TYPE_BADGE_W} height={TYPE_BADGE_H} rx={TYPE_BADGE.radius} fill="#9CA3AF" />
+      <rect width={w} height={TYPE_BADGE_H} rx={TYPE_BADGE.radius} fill="#9CA3AF" />
       <path
         d={starPath(glyph.x + glyph.size / 2, glyph.y + glyph.size / 2, glyph.size / 2)}
         fill="#ffffff"
       />
       <text
-        x={NO_TYPE_BADGE_W / 2}
+        x={wide ? w / 2 : TYPE_BADGE.textCenterX}
         y={fit.baseline}
         textAnchor="middle"
         fontSize={fit.fontSize}
@@ -54,6 +56,59 @@ function NoTypeBadge() {
       >
         {label}
       </text>
+    </svg>
+  );
+}
+
+/**
+ * The unset-type chip, through the same pipeline: badge geometry and text
+ * fit, a dashed red outline, and a plus where the type symbol sits — so
+ * choosing a type replaces it with an identically proportioned badge.
+ */
+function SelectTypeBadge({ className }: { className?: string }) {
+  const label = 'SELECT A TYPE';
+  const fit = typeBadgeFit(label, typeLabels().map(localeUppercase));
+  const glyph = typeBadgeGlyphBox();
+  const cx = glyph.x + glyph.size / 2;
+  const cy = glyph.y + glyph.size / 2;
+  const arm = glyph.size * 0.32;
+  return (
+    <svg
+      viewBox={`0 0 ${TYPE_BADGE_W} ${TYPE_BADGE_H}`}
+      className={cn('h-auto', className)}
+      role="img"
+      aria-label="Select a type"
+    >
+      <rect
+        x="1.5"
+        y="1.5"
+        width={TYPE_BADGE_W - 3}
+        height={TYPE_BADGE_H - 3}
+        rx={TYPE_BADGE.radius - 1.5}
+        fill="#ffffff"
+        stroke="#dc2626"
+        strokeWidth="3"
+        strokeDasharray="8 6"
+      />
+      <line x1={cx - arm} y1={cy} x2={cx + arm} y2={cy} stroke="#dc2626" strokeWidth="4" strokeLinecap="round" />
+      <line x1={cx} y1={cy - arm} x2={cx} y2={cy + arm} stroke="#dc2626" strokeWidth="4" strokeLinecap="round" />
+      <g
+        transform={
+          `translate(${TYPE_BADGE.textCenterX} 0) scale(${fit.scaleX} 1) ` +
+          `translate(${-TYPE_BADGE.textCenterX} 0)`
+        }
+      >
+        <text
+          x={TYPE_BADGE.textCenterX}
+          y={fit.baseline}
+          textAnchor="middle"
+          fontSize={fit.fontSize}
+          fontWeight={TYPE_BADGE.fontWeight}
+          fill="#dc2626"
+        >
+          {label}
+        </text>
+      </g>
     </svg>
   );
 }
@@ -111,7 +166,7 @@ function useFitScale(ref: React.RefObject<HTMLDivElement | null>): number {
 function TypePicker({ cardIndex }: { cardIndex: number }) {
   const setCardType = useLeagueStore((s) => s.setCardType);
   const setTypePickerOpen = useLeagueUi((s) => s.setTypePickerOpen);
-  const pick = (t: TypeName | null) => {
+  const pick = (t: CardType) => {
     setCardType(cardIndex, t);
     setTypePickerOpen(false);
   };
@@ -137,10 +192,10 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
           ))}
           <button
             type="button"
-            onClick={() => pick(null)}
+            onClick={() => pick('none')}
             className="col-span-3 cursor-pointer transition-transform hover:scale-[1.02]"
           >
-            <NoTypeBadge />
+            <NoTypeBadge wide />
           </button>
         </div>
       </div>
@@ -178,14 +233,12 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
           aria-label="Gym type"
           className="cursor-pointer transition-transform hover:scale-105"
         >
-          {view.card.type ? (
-            <TypeBadge type={view.card.type} className="w-[4.75rem]" />
+          {view.card.type === null ? (
+            <SelectTypeBadge className="w-[4.75rem]" />
+          ) : view.card.type === 'none' ? (
+            <NoTypeBadge className="w-[4.75rem]" />
           ) : (
-            // Same height as the badge that replaces it (w-[4.75rem] at the
-            // 5:1 badge aspect), so choosing a type shifts no layout.
-            <span className="inline-flex h-[0.95rem] items-center whitespace-nowrap rounded-full border-[1.5px] border-dotted border-primary px-2.5 text-[0.625rem] font-semibold text-primary">
-              Select a type
-            </span>
+            <TypeBadge type={view.card.type} className="w-[4.75rem]" />
           )}
         </button>
         <input

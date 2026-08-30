@@ -280,3 +280,13 @@ img {
    the viewport root font exactly as the counter does. (The count is capped at
    151, so the counter is always ≤ 3 digits — 4 digits can't occur.) */
 :root { --ms-side: 6.55rem; }
+
+/* Tab switches fade the incoming page in — the class lands when a view
+   container loses `hidden`, so the animation restarts on each activation. */
+@keyframes p151-view-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.p151-view-enter {
+  animation: p151-view-fade 180ms ease-out;
+}

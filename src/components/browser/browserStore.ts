@@ -66,6 +66,15 @@ export interface BrowserStoreState {
    * legend picker offers only legendaries, whatever the other filters say.
    */
   restrictIds?: Set<number>;
+  /**
+   * Optional toggleable scope chip (league signature: "Card lines"). When
+   * the chip is on, results restrict to `scopeFilterIds`. Absent fields
+   * hide the chip; `restrictIds` stays the structural, chipless variant.
+   */
+  scopeFilter?: boolean;
+  scopeFilterIds?: Set<number>;
+  scopeFilterLabel?: string;
+  setScopeFilter?: (on: boolean) => void;
 }
 
 type BrowserStoreHook = UseBoundStore<StoreApi<BrowserStoreState>>;

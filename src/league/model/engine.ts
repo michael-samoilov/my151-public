@@ -66,16 +66,20 @@ export function stageAt(line: PlacedLine, row: number): number {
 }
 
 /**
- * Move one stage's boundary to `row`, clamping so the boundaries stay
- * non-decreasing (a stage can never appear before its pre-evolution).
- * Stage 0 is pinned to row 1. Returns new boundaries.
+ * Set one stage's first row, pushing neighbours instead of clamping into
+ * them: earlier boundaries cap at the new row, later ones floor at it, so
+ * the non-decreasing invariant holds while a shelf may fully cover its
+ * neighbours. A covered stage keeps its slot (boundaries equal) and either
+ * adjacent run's edge handle can reveal it again — the old clamp-only form
+ * made a squeezed-out middle stage unrecoverable. Stage 0 is pinned to row 1.
  */
-export function shiftBoundary(line: PlacedLine, stage: number, row: number): number[] {
+export function setBoundary(line: PlacedLine, stage: number, row: number): number[] {
   const next = [...line.boundaries];
   if (stage <= 0 || stage >= next.length) return next;
-  const lo = next[stage - 1];
-  const hi = stage + 1 < next.length ? next[stage + 1] : ROW_COUNT + 1;
-  next[stage] = Math.max(lo, Math.min(hi, row));
+  const r = Math.max(1, Math.min(ROW_COUNT + 1, row));
+  next[stage] = r;
+  for (let j = stage - 1; j >= 1; j--) next[j] = Math.min(next[j], r);
+  for (let j = stage + 1; j < next.length; j++) next[j] = Math.max(next[j], r);
   return next;
 }
 

@@ -125,11 +125,12 @@ function rgba(hex: string, alpha: number): string {
 
 const cache = new Map<string, CardShades>();
 
-export function cardShades(type: TypeName | null): CardShades {
+export function cardShades(type: TypeName | 'none' | null): CardShades {
   const key = type ?? 'none';
   const hit = cache.get(key);
   if (hit) return hit;
-  const colour = type ? TYPE_COLORS[type] : NO_TYPE;
+  // An explicit "no type" and an unset type share the neutral ramp.
+  const colour = type && type !== 'none' ? TYPE_COLORS[type] : NO_TYPE;
   const cell = atLuminance(deriveSectionColor(colour).stroke, CELL_LUMINANCE);
   const shades: CardShades = {
     type: colour,

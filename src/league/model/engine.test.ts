@@ -13,7 +13,7 @@ import {
   deriveRows,
   makePlacedLine,
   moveSeat,
-  shiftBoundary,
+  setBoundary,
   stageAt,
 } from './engine';
 import { arrivalLevel } from './impliedLevels';
@@ -78,19 +78,32 @@ describe('boundaries and stages', () => {
     expect(stageAt(line, 4)).toBe(1);
   });
 
-  it('clamps a manual shift between neighbouring stages', () => {
+  it('sets a boundary and pushes neighbours instead of clamping into them', () => {
     // Hand-built boundaries so the assertions don't depend on the regression.
     const line = { branch: LOTAD, boundaries: [1, 2, 6] };
-    const shifted = shiftBoundary(line, 1, 4);
-    expect(shifted[1]).toBe(4);
-    // A stage can never move above its pre-evolution's boundary…
-    const tooHigh = shiftBoundary({ ...line, boundaries: shifted }, 2, 1);
-    expect(tooHigh[2]).toBe(4);
-    // …or below its evolution's.
-    const tooLow = shiftBoundary({ ...line, boundaries: shifted }, 1, 9);
-    expect(tooLow[1]).toBe(6);
+    // A plain move inside the neighbours changes only its own stage.
+    expect(setBoundary(line, 1, 4)).toEqual([1, 4, 6]);
+    // Moving a stage down through its evolution pushes that boundary along —
+    // the shelf covers the later stage rather than stopping at it.
+    expect(setBoundary(line, 1, 8)).toEqual([1, 8, 8]);
+    // Moving a stage up through its pre-evolution pulls that boundary up.
+    expect(setBoundary(line, 2, 1)).toEqual([1, 1, 1]);
     // Stage 0 is pinned.
-    expect(shiftBoundary(line, 0, 9)).toEqual(line.boundaries);
+    expect(setBoundary(line, 0, 9)).toEqual(line.boundaries);
+  });
+
+  it('keeps covered stages recoverable from the visible run', () => {
+    // Ludicolo dragged to the top squeezed both earlier stages out.
+    const covered = { branch: LOTAD, boundaries: [1, 1, 1] };
+    expect(stageAt(covered, 1)).toBe(2);
+    // Its top handle dragged down reveals Lombre above it…
+    const step1 = setBoundary(covered, 2, 5);
+    expect(step1).toEqual([1, 1, 5]);
+    expect(stageAt({ ...covered, boundaries: step1 }, 3)).toBe(1);
+    // …and Lombre's top handle dragged down reveals Lotad.
+    const step2 = setBoundary({ ...covered, boundaries: step1 }, 1, 3);
+    expect(step2).toEqual([1, 3, 5]);
+    expect(stageAt({ ...covered, boundaries: step2 }, 2)).toBe(0);
   });
 });
 

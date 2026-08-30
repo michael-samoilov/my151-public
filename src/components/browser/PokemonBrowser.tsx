@@ -133,6 +133,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   const myDexIds = useBrowserStore((s) => s.myDexIds);
   const setMyDexFilter = useBrowserStore((s) => s.setMyDexFilter);
   const restrictIds = useBrowserStore((s) => s.restrictIds);
+  const scopeFilter = useBrowserStore((s) => s.scopeFilter);
+  const scopeFilterIds = useBrowserStore((s) => s.scopeFilterIds);
+  const scopeFilterLabel = useBrowserStore((s) => s.scopeFilterLabel);
+  const setScopeFilter = useBrowserStore((s) => s.setScopeFilter);
   const t = useT();
   const tn = useTn();
   const [openSheet, setOpenSheet] = useState<FilterSheet>(null);
@@ -300,10 +304,13 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   // Two restriction channels compose: the host's structural one (legend
   // picker) and the user's "My dex" toggle.
   const restrictToIds = useMemo(() => {
-    const mine = myDexFilter ? myDexIds : undefined;
-    if (restrictIds && mine) return new Set([...restrictIds].filter((id) => mine.has(id)));
-    return restrictIds ?? mine;
-  }, [restrictIds, myDexFilter, myDexIds]);
+    const active: Set<number>[] = [];
+    if (restrictIds) active.push(restrictIds);
+    if (myDexFilter && myDexIds) active.push(myDexIds);
+    if (scopeFilter && scopeFilterIds) active.push(scopeFilterIds);
+    if (active.length === 0) return undefined;
+    return active.reduce((acc, set) => new Set([...acc].filter((id) => set.has(id))));
+  }, [restrictIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds]);
 
   const filterOptions = useMemo(() => ({
     search: searchInput,
@@ -397,12 +404,13 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   // Deferred like the grid: the search view and its subgroups must switch
   // together with the `groups` they render.
   const isSearching = deferredOptions.search.trim().length > 0;
-  const hasActivePropertyFilters = !!(myDexFilter || (typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || (shapeFilter && shapeFilter.length > 0) || (colorFilter && colorFilter.length > 0) || (eggGroupFilter && eggGroupFilter.length > 0) || evoLineSizeFilter);
+  const hasActivePropertyFilters = !!(myDexFilter || scopeFilter || (typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || (shapeFilter && shapeFilter.length > 0) || (colorFilter && colorFilter.length > 0) || (eggGroupFilter && eggGroupFilter.length > 0) || evoLineSizeFilter);
   const hasActiveBrowseFilters = !!(activeCategory || activeArchetype);
   const hasActiveFilters = hasActivePropertyFilters || hasActiveBrowseFilters;
 
   const clearPropertyFilters = () => {
     setMyDexFilter?.(false);
+    setScopeFilter?.(false);
     setTypeFilter(null);
     setTypeFilterMode('any');
     setGenerationFilter(null);
@@ -796,6 +804,24 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
                 className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
               >
                 My dex
+              </button>
+            )
+          )}
+          {setScopeFilter && scopeFilterIds && (
+            scopeFilter ? (
+              <FilterChip
+                label={scopeFilterLabel ?? 'Scope'}
+                onDismiss={() => setScopeFilter(false)}
+                onClick={() => setScopeFilter(false)}
+                className="bg-foreground text-background"
+              />
+            ) : (
+              <button type="button"
+                onClick={() => setScopeFilter(true)}
+                data-filter-chip="scope"
+                className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+              >
+                {scopeFilterLabel ?? 'Scope'}
               </button>
             )
           )}

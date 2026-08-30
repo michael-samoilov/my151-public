@@ -5,7 +5,7 @@ import { SLOT_COUNT, TEAM_SIZES, BOSS_ROW } from '../model/constants';
 import {
   makePlacedLine,
   moveSeat as reorderSeats,
-  shiftBoundary as clampShift,
+  setBoundary,
   type LegendPick,
   type PlacedLine,
 } from '../model/engine';
@@ -17,8 +17,11 @@ import {
  * persisted, so the derivation rules can evolve without a migration.
  */
 
+/** The card's chosen type: a real type, an explicit "no type", or unset. */
+export type CardType = TypeName | 'none' | null;
+
 export interface GymCard {
-  type: TypeName | null;
+  type: CardType;
   theme: string;
   /** Index 0 = seat 1 = the rightmost, always-present column. Max 6. */
   lines: PlacedLine[];
@@ -35,14 +38,17 @@ export interface LeagueState {
   cards: GymCard[];
 
   setName: (name: string) => void;
-  setCardType: (card: number, type: TypeName | null) => void;
+  setCardType: (card: number, type: CardType) => void;
   setCardTheme: (card: number, theme: string) => void;
   /** Seat a branch. 'front' = seat 1 (signature insertion), 'end' = next free. */
   placeBranch: (card: number, branch: number[], at?: 'end' | 'front') => void;
   /** Remove whichever line contains the id; later seats close up. */
   removeLineWith: (card: number, pokemonId: number) => void;
   moveSeat: (card: number, fromSeat: number, toSeat: number) => void;
-  shiftBoundary: (card: number, seat: number, stage: number, row: number) => void;
+  /** Set one stage's first row, pushing neighbouring boundaries (engine.setBoundary). */
+  setStageBoundary: (card: number, seat: number, stage: number, row: number) => void;
+  /** Restore a line's boundaries wholesale (a cancelled paint gesture). */
+  setLineBoundaries: (card: number, seat: number, boundaries: number[]) => void;
   setSignatureSeat: (card: number, seat: number | null) => void;
   setTm: (card: number, moveId: number | null) => void;
   setBadgeName: (card: number, name: string) => void;
@@ -140,14 +146,26 @@ export const useLeagueStore = create<LeagueState>()(
           }),
         })),
 
-      shiftBoundary: (card, seat, stage, row) =>
+      setStageBoundary: (card, seat, stage, row) =>
         set((s) => ({
           cards: withCard(s.cards, card, (c) => {
             const line = c.lines[seat - 1];
             if (!line) return c;
-            const boundaries = clampShift(line, stage, row);
+            const boundaries = setBoundary(line, stage, row);
             const lines = c.lines.map((l, i) =>
               i === seat - 1 ? { ...l, boundaries } : l,
+            );
+            return { ...c, lines };
+          }),
+        })),
+
+      setLineBoundaries: (card, seat, boundaries) =>
+        set((s) => ({
+          cards: withCard(s.cards, card, (c) => {
+            const line = c.lines[seat - 1];
+            if (!line || boundaries.length !== line.branch.length) return c;
+            const lines = c.lines.map((l, i) =>
+              i === seat - 1 ? { ...l, boundaries: [...boundaries] } : l,
             );
             return { ...c, lines };
           }),

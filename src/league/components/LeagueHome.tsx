@@ -10,6 +10,7 @@ import {
 } from '@dnd-kit/core';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { typeIconPath } from '@/data/type-ids';
+import { starPath } from '@/lib/sectionOutlines';
 import { cn } from '@/lib/utils';
 import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { deriveRow } from '../model/engine';
@@ -88,7 +89,12 @@ function SlotRow({ index }: { index: number }) {
           <SlotGlyph index={index} cell={cellColour} />
         </span>
         <span className="flex items-center justify-center">
-          {card.type ? (
+          {card.type === 'none' ? (
+            <svg viewBox="0 0 22 22" className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem]" aria-label="No type" role="img">
+              <rect width="22" height="22" rx="5" fill="#9CA3AF" />
+              <path d={starPath(11, 11, 7)} fill="#ffffff" />
+            </svg>
+          ) : card.type ? (
             <img src={typeIconPath(card.type)} alt={card.type} className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem]" />
           ) : (
             <span className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem] border-[1.4px] border-dashed border-[#d4d4d4]" />

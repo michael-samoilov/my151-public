@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -16,9 +16,10 @@ import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import type { TypeName } from '@/types/pokemon';
 import { cn } from '@/lib/utils';
-import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES } from '../model/constants';
-import { stageAt } from '../model/engine';
+import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
+import { deriveRows, moveSeat as reorderLines, stageAt } from '../model/engine';
 import { getMoveById } from '../moves';
+import { CategoryChip } from './CategoryChip';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { openLeagueBrowser } from '../store/browserBridge';
@@ -109,36 +110,39 @@ interface CellDatum {
   filled: boolean;
 }
 
-/** A drag in flight: the grabbed cell's column, and the column under it. */
-interface DragPreview {
-  seat: number;
-  over: CellDatum | null;
-  legend: boolean;
-}
-
 /**
- * Live reorder preview, in grid columns (seat 1 is the rightmost column, so
- * screen position moves opposite to seat number). The grabbed column snaps to
- * the hovered seat; the columns between step one seat toward the hole. The
- * legendary never shifts — it owns a seat, and columns move under it.
+ * A vertical drag is a shelf-handle paint over one column's stage runs.
+ * Grabbing a run's top edge moves that stage's own boundary; the bottom
+ * edge moves the next stage's. A mid-run grab is inert until the pointer
+ * crosses the run's original edge, then continues as that edge's handle —
+ * so releasing mid-run changes nothing. Every move applies to the store
+ * immediately; a snapshot restores the line if the gesture turns into a
+ * column reorder instead.
  */
-function colShift(preview: DragPreview | null, datum: CellDatum): number {
-  if (!preview || preview.legend || datum.isLegend) return 0;
-  const over = preview.over;
-  if (!over || over.isLegend || over.seat === preview.seat) return 0;
-  const s = preview.seat;
-  const o = over.seat;
-  if (datum.seat === s) return s - o;
-  if (o < s && datum.seat >= o && datum.seat < s) return -1;
-  if (o > s && datum.seat > s && datum.seat <= o) return 1;
-  return 0;
+type PaintRole = 'top' | 'bottom' | 'mid' | 'edge';
+
+interface PaintDrag {
+  legend: boolean;
+  seat: number;
+  stage: number;
+  startRow: number;
+  role: PaintRole;
+  runTop: number;
+  runBottom: number;
+  canTop: boolean;
+  canBottom: boolean;
+  initial: number[];
+  painted: boolean;
 }
 
-function PokemonCell({ cardIndex, datum, pokemonId, preview, onRemove }: {
+function PokemonCell({ cardIndex, datum, pokemonId, lifted, ringWhenOver, onRemove }: {
   cardIndex: number;
   datum: CellDatum;
   pokemonId: number | null;
-  preview: DragPreview | null;
+  /** The column previewed at its drop seat during a reorder drag. */
+  lifted: boolean;
+  /** A legendary drag is in flight; boss-row cells ring under the pointer. */
+  ringWhenOver: boolean;
   /** Set on the column's topmost pokemon: remove this evo line. */
   onRemove?: () => void;
 }) {
@@ -163,29 +167,15 @@ function PokemonCell({ cardIndex, datum, pokemonId, preview, onRemove }: {
     }
   };
 
-  // The whole grabbed column lifts as one entity; between-columns slide over.
-  const dx = colShift(preview, datum);
-  const lifted =
-    preview !== null &&
-    ((!preview.legend && !datum.isLegend && datum.seat === preview.seat) ||
-      (preview.legend && datum.isLegend));
-  // A ring marks a drop target only where the drop is not a column reorder:
-  // a boss-row cell during a legendary drag, or a row within the same column
-  // (an evolution-boundary move). Reorders are previewed by the slide itself.
-  const ringed =
-    isOver &&
-    preview !== null &&
-    (preview.legend ? datum.row === BOSS_ROW : datum.seat === preview.seat);
+  // Boundary paints repaint cells in place; a ring marks a target only for
+  // the legendary retarget, whose drop is not previewable.
+  const ringed = isOver && ringWhenOver && datum.row === BOSS_ROW;
 
   return (
     <div
       ref={setDropRef}
       className="relative flex h-full items-center justify-center"
-      style={{
-        transform: dx !== 0 ? `translateX(${dx * 100}%)` : undefined,
-        transition: preview ? 'transform 150ms ease' : undefined,
-        zIndex: lifted ? 10 : undefined,
-      }}
+      style={{ zIndex: lifted ? 10 : undefined }}
     >
       <button
         type="button"
@@ -320,18 +310,26 @@ function TmSlot({ view }: { view: CardView }) {
           TM
         </span>
       </span>
-      <span
-        className="min-w-0 text-left text-[0.6875rem] leading-[1.15]"
-        style={{ color: move ? undefined : 'var(--lg-hint)' }}
-      >
-        {move ? move.name : 'Pick a move'}
-      </span>
+      {move ? (
+        <span className="flex min-w-0 flex-col items-start gap-[2px]">
+          <span className="flex items-center gap-[3px]">
+            <TypeBadge type={move.type} className="w-[2.75rem]" />
+            <CategoryChip category={move.category} className="h-[0.6875rem] w-[0.9375rem] rounded-[4px] border" />
+          </span>
+          <span className="min-w-0 text-left text-[0.6875rem] leading-[1.15]">{move.name}</span>
+        </span>
+      ) : (
+        <span className="min-w-0 text-left text-[0.6875rem] leading-[1.15]" style={{ color: 'var(--lg-hint)' }}>
+          Pick a move
+        </span>
+      )}
     </button>
   );
 }
 
 function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setBadgeName = useLeagueStore((s) => s.setBadgeName);
+  const inputRef = useRef<HTMLInputElement>(null);
   const name = view.card.badgeName;
   const pos = {
     ...slotX(1, 2),
@@ -340,7 +338,10 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   };
   return (
     <div
-      className={cn('absolute z-[5] flex flex-col items-center justify-center gap-[0.375rem] rounded-lg', !name && 'border border-dashed')}
+      // The whole slot starts text entry — the hexagon is as tappable as
+      // the field itself.
+      onClick={() => inputRef.current?.focus()}
+      className={cn('absolute z-[5] flex cursor-text flex-col items-center justify-center gap-[0.375rem] rounded-lg', !name && 'border border-dashed')}
       style={{ ...pos, borderColor: name ? undefined : 'var(--lg-dash)', background: name ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)' }}
     >
       <svg viewBox="0 0 32 32" className="h-[2.375rem] w-[2.375rem]">
@@ -354,13 +355,13 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         <circle cx="16" cy="16" r="4.4" fill={name ? '#ffffff' : 'none'} stroke={name ? 'none' : 'var(--lg-dash)'} strokeWidth="1.6" />
       </svg>
       <input
+        ref={inputRef}
         value={name}
         onChange={(e) => setBadgeName(cardIndex, e.target.value)}
         placeholder="Badge Name"
-        // Left-aligned while empty so the caret sits at the start of the
-        // placeholder, centred once typed. iOS focus zoom is handled at the
+        // Centred like the filled state; iOS focus zoom is handled at the
         // page level (the league entry caps maximum-scale on iOS).
-        className="w-[5.25rem] bg-transparent text-center text-[0.65625rem] leading-tight outline-none [&:placeholder-shown]:text-left placeholder:text-[var(--lg-hint)]"
+        className="w-[5.25rem] bg-transparent text-center text-[0.65625rem] leading-tight outline-none placeholder:text-[var(--lg-hint)]"
         aria-label="Badge name"
       />
       {name && <span className="-mt-[0.3125rem] text-[0.65625rem] leading-tight">Badge</span>}
@@ -370,53 +371,132 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
 
 export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const moveSeat = useLeagueStore((s) => s.moveSeat);
-  const shiftBoundary = useLeagueStore((s) => s.shiftBoundary);
+  const setStageBoundary = useLeagueStore((s) => s.setStageBoundary);
+  const setLineBoundaries = useLeagueStore((s) => s.setLineBoundaries);
   const setLegend = useLeagueStore((s) => s.setLegend);
   const removeLineWith = useLeagueStore((s) => s.removeLineWith);
   const { card, shades, rows } = view;
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
-  const [preview, setPreview] = useState<DragPreview | null>(null);
-  const onDragStart = useCallback((e: DragStartEvent) => {
-    const d = e.active.data.current as CellDatum | undefined;
-    if (d) setPreview({ seat: d.seat, over: null, legend: d.isLegend });
-  }, []);
-  const onDragOver = useCallback((e: DragOverEvent) => {
-    const over = (e.over?.data.current as CellDatum | undefined) ?? null;
-    setPreview((p) => (p ? { ...p, over } : p));
-  }, []);
-  const onDragCancel = useCallback(() => setPreview(null), []);
+  const paintRef = useRef<PaintDrag | null>(null);
+  const [previewMove, setPreviewMove] = useState<{ from: number; to: number } | null>(null);
+  const [legendDrag, setLegendDrag] = useState(false);
+
+  const onDragStart = useCallback(
+    (e: DragStartEvent) => {
+      const d = e.active.data.current as CellDatum | undefined;
+      if (!d) return;
+      if (d.isLegend) {
+        paintRef.current = {
+          legend: true, seat: d.seat, stage: 0, startRow: d.row, role: 'mid',
+          runTop: d.row, runBottom: d.row, canTop: false, canBottom: false,
+          initial: [], painted: false,
+        };
+        setLegendDrag(true);
+        return;
+      }
+      const line = card.lines[d.seat - 1];
+      if (!line) return;
+      const stage = stageAt(line, d.row);
+      // The run's original extent, scanned over visible rows — robust when
+      // squeezed-out stages leave equal boundaries.
+      const jr = joinRow(d.seat);
+      let runTop = d.row;
+      let runBottom = d.row;
+      for (let r = d.row - 1; r >= jr; r--) {
+        if (stageAt(line, r) === stage) runTop = r;
+        else break;
+      }
+      for (let r = d.row + 1; r <= ROW_COUNT; r++) {
+        if (stageAt(line, r) === stage) runBottom = r;
+        else break;
+      }
+      const canTop = stage >= 1;
+      const canBottom = stage <= line.branch.length - 2;
+      let role: PaintRole = 'mid';
+      if (d.row === runTop && d.row === runBottom) role = 'edge';
+      else if (d.row === runTop && canTop) role = 'top';
+      else if (d.row === runBottom && canBottom) role = 'bottom';
+      paintRef.current = {
+        legend: false, seat: d.seat, stage, startRow: d.row, role,
+        runTop, runBottom, canTop, canBottom,
+        initial: [...line.boundaries], painted: false,
+      };
+    },
+    [card],
+  );
+
+  const onDragOver = useCallback(
+    (e: DragOverEvent) => {
+      const p = paintRef.current;
+      const over = e.over?.data.current as CellDatum | undefined;
+      if (!p || p.legend || !over) return;
+      if (over.seat !== p.seat) {
+        // The gesture is a reorder: undo any paint, preview the target seats.
+        if (p.painted) {
+          setLineBoundaries(cardIndex, p.seat, p.initial);
+          p.painted = false;
+        }
+        setPreviewMove((cur) =>
+          cur && cur.to === over.seat ? cur : { from: p.seat, to: over.seat },
+        );
+        return;
+      }
+      setPreviewMove(null);
+      let role = p.role;
+      if (role === 'edge' && over.row !== p.startRow) {
+        role = over.row < p.startRow
+          ? (p.canTop ? 'top' : p.canBottom ? 'bottom' : 'mid')
+          : (p.canBottom ? 'bottom' : p.canTop ? 'top' : 'mid');
+        p.role = role;
+      }
+      if (role === 'mid') {
+        // Inert until the pointer crosses the run's original edge.
+        if (over.row <= p.runTop && p.canTop) p.role = role = 'top';
+        else if (over.row >= p.runBottom && p.canBottom) p.role = role = 'bottom';
+      }
+      if (role === 'top') {
+        setStageBoundary(cardIndex, p.seat, p.stage, over.row);
+        p.painted = true;
+      } else if (role === 'bottom') {
+        setStageBoundary(cardIndex, p.seat, p.stage + 1, over.row + 1);
+        p.painted = true;
+      }
+    },
+    [cardIndex, setLineBoundaries, setStageBoundary],
+  );
+
+  const onDragCancel = useCallback(() => {
+    const p = paintRef.current;
+    paintRef.current = null;
+    if (p && !p.legend && p.painted) setLineBoundaries(cardIndex, p.seat, p.initial);
+    setPreviewMove(null);
+    setLegendDrag(false);
+  }, [cardIndex, setLineBoundaries]);
 
   const onDragEnd = useCallback(
     (e: DragEndEvent) => {
-      setPreview(null);
-      const from = e.active.data.current as CellDatum | undefined;
+      const p = paintRef.current;
+      paintRef.current = null;
+      setPreviewMove(null);
+      setLegendDrag(false);
       const to = e.over?.data.current as CellDatum | undefined;
-      if (!from || !to) return;
-      if (from.isLegend) {
-        if (to.row === BOSS_ROW && card.legend) {
+      if (!p) return;
+      if (p.legend) {
+        if (to && to.row === BOSS_ROW && card.legend) {
           setLegend(cardIndex, { ...card.legend, seat: to.seat });
         }
         return;
       }
-      if (to.seat !== from.seat) {
-        moveSeat(cardIndex, from.seat, to.seat);
-        return;
+      if (to && to.seat !== p.seat) {
+        if (p.painted) setLineBoundaries(cardIndex, p.seat, p.initial);
+        moveSeat(cardIndex, p.seat, to.seat);
       }
-      if (to.row !== from.row) {
-        const line = card.lines[from.seat - 1];
-        if (!line) return;
-        if (to.row < from.row) {
-          // Dragging up: this stage appears earlier.
-          shiftBoundary(cardIndex, from.seat, from.stage, to.row);
-        } else if (from.stage + 1 < line.branch.length) {
-          // Dragging down: this stage persists, so the next one waits.
-          shiftBoundary(cardIndex, from.seat, from.stage + 1, to.row + 1);
-        }
-      }
+      // Same seat: every paint already applied live, and an unpromoted
+      // mid-run release touched nothing.
     },
-    [card, cardIndex, moveSeat, setLegend, shiftBoundary],
+    [card, cardIndex, moveSeat, setLegend, setLineBoundaries],
   );
 
   const vars = {
@@ -427,10 +507,20 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     '--lg-slot': '#ffffff',
   } as React.CSSProperties;
 
+  // During a reorder drag the grid renders the arrangement as it would land:
+  // every column re-derives at its previewed seat, so a shifted line shows
+  // exactly the members that seat's join row admits — never cells outside
+  // the template — and boundaries ride the line object, so custom evolution
+  // rows survive a trip through a shorter column.
+  const renderLines = previewMove
+    ? reorderLines(card.lines, previewMove.from, previewMove.to)
+    : card.lines;
+  const renderRows = previewMove ? deriveRows(renderLines, card.legend) : rows;
+
   // The column's topmost pokemon carries the remove control for its line.
   // The legendary overlay is skipped: it is not the line, it covers it.
   const topRowBySeat = new Map<number, number>();
-  rows.forEach((cells, i) => {
+  renderRows.forEach((cells, i) => {
     for (const cell of cells) {
       if (cell.pokemonId !== null && !cell.isLegend && !topRowBySeat.has(cell.seat)) {
         topRowBySeat.set(cell.seat, i + 1);
@@ -454,7 +544,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         <TmSlot view={view} />
         <BadgeSlot cardIndex={cardIndex} view={view} />
         <Band label="GYM LEADER TEAM" />
-        {rows.map((cells, i) => {
+        {renderRows.map((cells, i) => {
           const row = i + 1;
           const size = TEAM_SIZES[row - 1];
           const span = GLYPH_SPAN[row] ?? 1;
@@ -479,7 +569,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                 ))}
                 <GlyphCell row={row} span={span} cell={shades.cell} />
                 {cells.map((cell) => {
-                  const line = card.lines[cell.seat - 1];
+                  const line = renderLines[cell.seat - 1];
                   const datum: CellDatum = {
                     row,
                     seat: cell.seat,
@@ -494,7 +584,8 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       cardIndex={cardIndex}
                       datum={datum}
                       pokemonId={cell.pokemonId}
-                      preview={preview}
+                      lifted={previewMove !== null && cell.seat === previewMove.to && cell.pokemonId !== null && !cell.isLegend}
+                      ringWhenOver={legendDrag}
                       onRemove={topId !== null ? () => removeLineWith(cardIndex, topId) : undefined}
                     />
                   );

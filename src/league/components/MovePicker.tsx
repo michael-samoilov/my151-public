@@ -17,6 +17,7 @@ import {
   type ContestType,
   type Move,
 } from '../moves';
+import { CategoryChip } from './CategoryChip';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 
@@ -25,7 +26,7 @@ import { useLeagueUi } from '../store/useLeagueUi';
  * mobile (the pane's own drag-to-dismiss), a centred dialog on desktop, and
  * the pane's filter idiom — entry chips that open an inline panel,
  * multi-select values as dismissible coloured chips, an or/and mode for
- * types. Fields run Type, Cat., Move, PP, Att., Acc.; Move and the numeric
+ * types. Fields run Type, Cat., Move, Att., Acc., PP; Move and the numeric
  * columns sort, and a move that always hits carries no accuracy and sorts
  * above 100%.
  */
@@ -36,18 +37,6 @@ type FilterSheet = 'type' | 'category' | 'contest' | null;
 const CATEGORIES: Move['category'][] = ['physical', 'special', 'status'];
 
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
-
-function CategoryChip({ category }: { category: Move['category'] }) {
-  return (
-    <span
-      className="flex h-[1.4rem] w-[1.875rem] shrink-0 items-center justify-center rounded-md border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.06)]"
-      style={{ background: CATEGORY_COLORS[category] }}
-      title={category}
-    >
-      <img src={`/sprites/moves/${category}.png`} alt={category} className="h-[0.75rem] w-[0.9375rem]" />
-    </span>
-  );
-}
 
 function SortCaret({ dir }: { dir: 'asc' | 'desc' | null }) {
   return (
@@ -149,7 +138,9 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
   const [search, setSearch] = useState('');
   // The leader's own type arrives pre-selected, exactly as the selection
   // pane pre-selects it for line picks.
-  const [typeFilter, setTypeFilter] = useState<TypeName[] | null>(cardType ? [cardType] : null);
+  const [typeFilter, setTypeFilter] = useState<TypeName[] | null>(
+    cardType && cardType !== 'none' ? [cardType] : null,
+  );
   const [typeMode, setTypeMode] = useState<'any' | 'all'>('any');
   const [categories, setCategories] = useState<Move['category'][]>([]);
   const [contests, setContests] = useState<ContestType[]>([]);
@@ -221,7 +212,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
   const toggleSheet = (sheet: Exclude<FilterSheet, null>) =>
     setOpenSheet((cur) => (cur === sheet ? null : sheet));
 
-  const grid = { gridTemplateColumns: '4.5rem 2.125rem 1fr 1.5rem 1.875rem 2.375rem', columnGap: '0.375rem' };
+  const grid = { gridTemplateColumns: '4.5rem 2.125rem 1fr 1.875rem 2.375rem 1.5rem', columnGap: '0.375rem' };
 
   return (
     // h-full fills the sheet's definite-height scroll container on mobile;
@@ -409,9 +400,9 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
         <span className="text-[0.625rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground">Type</span>
         <span className="text-[0.625rem] font-semibold uppercase tracking-[0.05em] text-muted-foreground">Cat.</span>
         {header('name', 'Move')}
-        {header('pp', 'PP', true)}
         {header('power', 'Att.', true)}
         {header('accuracy', 'Acc.', true)}
+        {header('pp', 'PP', true)}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-3">
         {results.map((m) => (
@@ -428,9 +419,9 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
             <TypeBadge type={m.type} className="w-[4.375rem]" />
             <CategoryChip category={m.category} />
             <span className="truncate text-[0.8125rem] font-medium">{m.name}</span>
-            <span className="text-right text-[0.65625rem] tabular-nums">{m.pp}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.power ?? '—'}</span>
             <span className="text-right text-[0.65625rem] tabular-nums">{m.accuracy !== null ? `${m.accuracy}%` : '—'}</span>
+            <span className="text-right text-[0.65625rem] tabular-nums">{m.pp}</span>
           </button>
         ))}
         {results.length === 0 && <div className="py-10 text-center text-sm text-muted-foreground">No moves match.</div>}

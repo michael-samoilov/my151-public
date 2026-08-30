@@ -4,7 +4,7 @@ import { getAllPokemon, getPokemonById } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { CATEGORIES } from '@/data/categories';
 import { placedIds } from '../model/engine';
-import { slotLabel } from '../model/constants';
+import { BOSS_ROW, TEAM_SIZES, slotLabel } from '../model/constants';
 import { useLeagueStore } from './useLeagueStore';
 import { useLeagueUi, type BrowserPurpose } from './useLeagueUi';
 
@@ -84,10 +84,16 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
     myDexFilter: false,
     myDexIds: new Set<number>(),
     restrictIds: undefined,
+    scopeFilter: false,
+    scopeFilterIds: undefined,
+    scopeFilterLabel: undefined,
 
     openFor: (card) => {
       const purpose = ui().browserPurpose;
       const type = league().cards[card]?.type ?? null;
+      const lines = league().cards[card]?.lines ?? [];
+      const placed = new Set(placedIds(lines));
+      const cardFull = lines.length >= TEAM_SIZES[BOSS_ROW - 1];
       set({
         activeSection: sectionKey(card),
         sections: { [sectionKey(card)]: placedIds(league().cards[card]?.lines ?? []) },
@@ -95,7 +101,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         activeCategoryFilter: null,
         activeArchetypeFilter: null,
         // The leader's own type arrives pre-selected when picking lines.
-        typeFilter: purpose === 'lines' && type ? [type] : null,
+        typeFilter: purpose === 'lines' && type && type !== 'none' ? [type] : null,
         typeFilterMode: 'any',
         generationFilter: null,
         shapeFilter: null,
@@ -106,15 +112,19 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // "My dex" filters to the dex builder's own placed set, read from its
         // store (both stores share the page); snapshot at open is enough.
         myDexIds: new Set(Object.values(usePokedexStore.getState().sections).flat()),
-        // The legendary picker restricts structurally; the signature picker
-        // restricts to the card's own placed lines — a signature is chosen
-        // among the team, not fetched from outside it.
+        // The legendary picker restricts structurally. The signature picker
+        // starts unfiltered with a "Card lines" chip to opt into the card's
+        // own placed lines — and once the template is full, the restriction
+        // is structural: a seventh line has nowhere to sit.
         restrictIds:
           purpose === 'legend'
             ? LEGEND_ELIGIBLE
-            : purpose === 'signature'
-              ? new Set(placedIds(league().cards[card]?.lines ?? []))
+            : purpose === 'signature' && cardFull
+              ? placed
               : undefined,
+        scopeFilter: false,
+        scopeFilterIds: purpose === 'signature' && !cardFull ? placed : undefined,
+        scopeFilterLabel: purpose === 'signature' && !cardFull ? 'Card lines' : undefined,
       });
     },
 
@@ -213,6 +223,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       }),
     setEvoLineSizeFilter: (evoLineSizeFilter) => set({ evoLineSizeFilter }),
     setMyDexFilter: (on) => set({ myDexFilter: on }),
+    setScopeFilter: (on) => set({ scopeFilter: on }),
   };
 });
 

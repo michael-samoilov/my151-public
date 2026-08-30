@@ -339,6 +339,35 @@ Veto any of these; they ship as stated otherwise.
    "all" across 2+ types is naturally empty.)
 10. **Per-column removal shipped** on the topmost Pokemon, dex `RedXIcon`.
 
+## App feedback round 2 (2026-08-30, decided on the live preview)
+
+1. **Boundary drags are shelf handles, applied live.** A run's top edge
+   moves that stage's own boundary; its bottom edge moves the next
+   stage's; boundaries push their neighbours instead of clamping into
+   them, so a shelf can cover stages entirely and either visible handle
+   recovers them (`engine.setBoundary`). A mid-run grab is inert until
+   the pointer crosses the run's original edge, then continues as that
+   handle — releasing mid-run changes nothing. Every move paints the
+   store immediately; nothing waits for the release.
+2. **Reorder drags preview the real result.** The grid re-derives every
+   column at its previewed seat while the drag is held, so a line moved
+   toward a later seat shows exactly the members that seat's join row
+   admits, and boundaries ride the line object — custom evolution rows
+   survive a trip through a shorter column.
+3. **Type is a tri-state.** Unset shows "SELECT A TYPE" through the badge
+   pipeline (dashed red, plus icon); an explicit "NO TYPE" is its own
+   stored value (`'none'`) wearing the grey star badge at identical
+   proportions; both differ from a chosen type.
+4. **Signature picker defaults unfiltered**, with a "Card lines" chip to
+   scope to the card's placed lines; a full template forces the scope
+   structurally.
+5. **TM picker numeric columns run Att., Acc., PP**; the card's TM slot
+   shows the move's type badge and category chip above its name.
+6. **Badge slot**: the whole tile (hexagon included) starts text entry;
+   the placeholder is centred.
+7. **Dex nav switches fade in** (180ms) and heavy pages mount inside a
+   transition so the tab animation stops freezing.
+
 ## Site chrome (decided 2026-08-29, built the same day)
 
 Two bars, both tools. Top bar, identical everywhere: wordmark left; the
