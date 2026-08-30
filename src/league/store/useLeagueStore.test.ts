@@ -120,3 +120,36 @@ describe('the league view', () => {
     expect(useLeagueStore.getState().view).toBe('rematch');
   });
 });
+
+/**
+ * Starting one card over. The dex builder's build page has the same control
+ * for the whole dex; here the blast radius is one card, so the test that
+ * matters most is what it does NOT touch.
+ */
+describe('clearCard', () => {
+  it('empties every field of its own card and no other', () => {
+    useLeagueStore.setState({
+      cards: [
+        {
+          ...cardWith([GEODUDE, ONIX]),
+          type: 'rock',
+          theme: "Brock's unyielding rock",
+          signatureSeat: 1,
+          signatureId: 74,
+          tmMoveId: 157,
+          badgeName: 'Boulder',
+          legend: { pokemonId: 150, seat: 2 },
+          powerup: { seat: 1, kind: 'mega', index: 0 },
+        },
+        { ...cardWith([OMANYTE]), type: 'water', badgeName: 'Cascade' },
+      ],
+    });
+    useLeagueStore.getState().clearCard(0);
+
+    expect(card()).toEqual(emptyCard());
+    const untouched = useLeagueStore.getState().cards[1];
+    expect(untouched.type).toBe('water');
+    expect(untouched.badgeName).toBe('Cascade');
+    expect(untouched.lines).toHaveLength(1);
+  });
+});

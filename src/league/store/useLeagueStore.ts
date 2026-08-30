@@ -87,6 +87,8 @@ export interface LeagueState {
   /** Restore a line's boundaries wholesale (a cancelled paint gesture). */
   setLineBoundaries: (card: number, seat: number, boundaries: number[]) => void;
   /** Mark a seat, and the member of its line the user actually picked. */
+  /** Reset one card to an empty one. Every other card is untouched. */
+  clearCard: (card: number) => void;
   setSignatureSeat: (card: number, seat: number | null, pokemonId?: number | null) => void;
   setTm: (card: number, moveId: number | null) => void;
   setBadgeName: (card: number, name: string) => void;
@@ -269,6 +271,9 @@ export const useLeagueStore = create<LeagueState>()(
             return { ...c, lines };
           }),
         })),
+
+      clearCard: (card) =>
+        set((s) => ({ cards: withCard(s.cards, card, () => emptyCard()) })),
 
       setSignatureSeat: (card, seat, pokemonId = null) =>
         set((s) => ({

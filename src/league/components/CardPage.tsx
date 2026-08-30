@@ -14,6 +14,7 @@ import { useLeagueUi } from '../store/useLeagueUi';
 import { useCardView } from '../useCardView';
 import { useFitScale } from '../useFitScale';
 import { CardGrid } from './CardGrid';
+import { CardSettingsMenu } from './LeagueSettings';
 import { MovePicker } from './MovePicker';
 
 /**
@@ -206,6 +207,7 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
           className="min-w-0 flex-1 bg-transparent text-[0.6875rem] font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/70"
         />
         <span className="shrink-0 text-[0.6875rem] font-medium text-muted-foreground">{slotLabel(cardIndex)}</span>
+        <CardSettingsMenu cardIndex={cardIndex} />
       </div>
       <div className="px-3 pt-2.5">
         <div ref={fitRef} style={{ zoom: fit }}>
