@@ -86,6 +86,18 @@ const HERO = {
   h1: 'Make your own Pokédex, region and league',
   p: 'my151 is a set of free Pokémon builder tools. Build a custom Pokédex of 151 favorites from all 1,025 species, lay out a region of routes and biomes, design a gym leader league, and pick a favorite for every type.',
   note: 'No account. Your picks save in this browser and export as a shareable image.',
+  // Used where the whole page has to fit one viewport and the long
+  // paragraph would push the cards off the bottom.
+  pShort:
+    'Free tools to build a custom Pokédex from all 1,025 Pokémon, lay out a region of routes and biomes, and design a gym leader league.',
+};
+
+/** Card blurbs for the poster cards, which sit over a gradient and get 2 lines. */
+const POSTER_BLURB = {
+  dex: 'Your 151 from all 1,025, in region sections.',
+  league: 'Gym leaders, an Elite Four and a champion.',
+  fav: 'One favorite per type, per generation.',
+  next: 'Team planner? Box tracker? Nuzlocke? Tell us.',
 };
 
 const STATUS = {
@@ -442,6 +454,185 @@ ${foot(width < 500 ? '20px 16px' : '24px 32px')}`,
   });
 }
 
+// ------------------------------------------------------- D · Poster cards
+
+/**
+ * The stand-in artwork for the fourth card, sized to fill the poster frame
+ * the way a screenshot does.
+ */
+function suggestFill({ pad, ctl, reserve }) {
+  // Bottom-aligned, not centred: the card is as tall as a screenshot, and a
+  // small form floating in the middle of it reads as an unfinished tile.
+  return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: ${pad}px; width: 100%; height: 100%; padding: ${pad}px ${pad}px ${reserve}px; box-sizing: border-box; background: #fafafa;">
+        ${spark(Math.round(ctl * 0.72))}
+        <div style="display: flex; align-items: center; gap: 6px; width: 100%; max-width: 240px;">
+          <span style="flex-grow: 1; height: ${ctl}px; border: 1px solid ${
+            C.bd
+          }; border-radius: 10px; background: ${C.card};"></span>
+          <span style="display: flex; align-items: center; justify-content: center; height: ${ctl}px; padding: 0 12px; border-radius: 10px; background: ${
+            C.pri
+          }; color: #ffffff; font-size: 12px; font-weight: 700;">Send</span>
+        </div>
+      </div>`;
+}
+
+/**
+ * A poster card. The artwork is anchored to the card's BOTTOM edge, where it
+ * is clipped flush, and runs up past the card's TOP edge by `pop`. Two ways to
+ * keep the copy readable over it:
+ *
+ * - scrim: the artwork reaches the bottom edge and a white gradient rises over
+ *   it, with the text on the gradient. Most of the screenshot stays visible.
+ * - band: the artwork stops at a solid white band that holds the text. Nothing
+ *   overlaps, at the cost of that strip of screenshot.
+ */
+function posterCard({ tool, pop, mode, scrim, titleSize, blurbSize, pad, ctl, chipScale, cta, radius }) {
+  const scrimMode = mode === 'scrim';
+  const art = tool.shot
+    ? `<img src="${tool.shot}" alt="${tool.h2} screenshot" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center;">`
+    : suggestFill({ pad, ctl, reserve: scrimMode ? Math.round(scrim * 0.8) : pad });
+
+  const scrimLayer = scrimMode
+    ? `<div style="position: absolute; left: 0; right: 0; bottom: 0; height: ${scrim}px; background: linear-gradient(to top, ${
+        C.card
+      } 22%, rgba(255, 255, 255, 0.97) 44%, rgba(255, 255, 255, 0.72) 68%, rgba(255, 255, 255, 0) 100%);"></div>`
+    : '';
+
+  const copy = `<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+    ${chip(tool.status, chipScale)}
+    <h2 style="margin: 0; font-size: ${titleSize}px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; color: ${
+      C.fg
+    };">${tool.h2}</h2>
+    <p style="margin: 0; font-size: ${blurbSize}px; line-height: 1.35; color: ${
+      C.mut
+    }; text-wrap: pretty;">${POSTER_BLURB[tool.key]}</p>
+    ${
+      cta
+        ? `<span style="display: flex; align-items: center; gap: 5px; margin-top: 3px; font-size: ${blurbSize}px; font-weight: 600; color: ${
+            C.pri
+          };">${tool.cta}${arrow(Math.round(blurbSize * 1.05), C.pri)}</span>`
+        : ''
+    }
+  </div>`;
+
+  // Square bottom corners are what makes the artwork read as CUT at the clip
+  // line, rather than as a rounded tile floating on top of the card.
+  const artFrame = (position) =>
+    `<div style="position: absolute; left: ${radius}px; right: ${radius}px; top: -${pop}px; ${position}; border-radius: ${
+      radius - 3
+    }px ${radius - 3}px 0 0; overflow: hidden; background: ${C.bg}; border: 1px solid ${
+      C.bd
+    }; border-bottom: none; box-shadow: 0 10px 24px rgba(10, 10, 10, 0.14), 0 2px 6px rgba(10, 10, 10, 0.08);">
+    ${art}
+    ${scrimLayer}
+  </div>`;
+
+  const shell = (inner) =>
+    `<a href="${tool.slug}" style="position: relative; height: 100%; border-radius: ${radius}px; background: ${
+      C.card
+    }; border: 1px solid ${C.bd}; box-shadow: 0 1px 2px rgba(10, 10, 10, 0.04); color: ${
+      C.fg
+    }; text-decoration: none; ${
+      scrimMode ? 'display: block;' : 'display: flex; flex-direction: column;'
+    }">
+${inner}
+</a>`;
+
+  if (scrimMode) {
+    return shell(`  ${artFrame('bottom: 0')}
+  <div style="position: absolute; left: ${pad}px; right: ${pad}px; bottom: ${pad}px;">${copy}</div>`);
+  }
+
+  // The band sizes itself from the copy, so the clip line lands exactly on the
+  // text block's top edge whatever the heading wraps to.
+  return shell(`  <div style="position: relative; flex-grow: 1; min-height: 0;">
+    ${artFrame('bottom: 0')}
+  </div>
+  <div style="flex-shrink: 0; padding: ${pad}px;">${copy}</div>`);
+}
+
+/**
+ * One-viewport page: a fixed-height flex column whose card grid takes the
+ * remaining space. The rows are `1fr`, so the cards resize to whatever the
+ * header and hero leave rather than being measured by hand.
+ */
+function poster({ width, height, cols, rows, mode, pop, scrim, gap, gridPad, titleSize, blurbSize, pad, ctl, chipScale, cta, radius, heroPad, h1Size, pSize, maxW, links, splitHero }) {
+  const heroBody = splitHero
+    ? `<section style="display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; padding: ${heroPad};">
+    <div style="display: flex; flex-direction: column; gap: 10px; max-width: ${maxW}px;">
+      <span style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: ${
+        C.mut
+      };">${ball(14)}${HERO.eyebrow}</span>
+      <h1 style="margin: 0; font-size: ${h1Size}px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; color: ${
+        C.fg
+      };">${HERO.h1}</h1>
+    </div>
+    <p style="margin: 0 0 4px; max-width: 470px; font-size: ${pSize}px; line-height: 1.5; color: ${
+      C.sub
+    }; text-wrap: pretty;">${HERO.p}</p>
+  </section>`
+    : `<section style="display: flex; flex-direction: column; gap: 8px; padding: ${heroPad};">
+    <span style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: ${
+      C.mut
+    };">${ball(14)}${HERO.eyebrow}</span>
+    <h1 style="margin: 0; max-width: ${maxW}px; font-size: ${h1Size}px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.08; color: ${
+      C.fg
+    }; text-wrap: balance;">${HERO.h1}</h1>
+    <p style="margin: 0; max-width: ${maxW}px; font-size: ${pSize}px; line-height: 1.45; color: ${
+      C.sub
+    }; text-wrap: pretty;">${HERO.pShort}</p>
+  </section>`;
+
+  const cards = TOOLS.map((t) =>
+    posterCard({
+      tool: t,
+      pop,
+      mode,
+      scrim,
+      titleSize,
+      blurbSize,
+      pad,
+      ctl,
+      chipScale,
+      cta,
+      radius,
+    }),
+  ).join('\n');
+
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&amp;display=swap">
+  <style>
+    body { margin: 0; font-family: ${FONT}; -webkit-font-smoothing: antialiased; }
+    a { color: ${C.pri}; text-decoration: none; }
+    a:hover { color: #b91c1c; }
+    h1, h2 { text-wrap: balance; }
+  </style>
+</helmet>
+<div style="width: ${width}px; height: ${height}px; box-sizing: border-box; background: ${
+    C.bg
+  }; color: ${C.fg}; display: flex; flex-direction: column; overflow: hidden;">
+${header({ width, links })}
+${heroBody}
+<div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, minmax(0, 1fr)); column-gap: ${gap}px; row-gap: ${
+    pop + gap
+  }px; padding: ${gridPad}; box-sizing: border-box;">
+${cards}
+</div>
+</div>
+</x-dc>
+</body>
+</html>
+`;
+}
+
 // ------------------------------------------------------------ artboards
 
 /** Frame height per artboard, in canvas px. Also each root's min-height. */
@@ -455,6 +646,13 @@ const H = {
   'FeaturedMobile.dc.html': 1790,
   'FeaturedTablet.dc.html': 1360,
   'FeaturedDesktop.dc.html': 1280,
+
+  // D · Poster cards. These are real device viewports, not page heights: the
+  // whole router has to fit without scrolling, so the frame IS the constraint.
+  'PosterMobile.dc.html': 844,
+  'PosterMobileBand.dc.html': 844,
+  'PosterTablet.dc.html': 1112,
+  'PosterDesktop.dc.html': 900,
 };
 
 const FILES = {
@@ -517,6 +715,33 @@ const FILES = {
     featShotH: 280, featPop: 96, restCols: 1, restGap: 14,
     restShotH: 130, restPop: 54, gridPad: '0 16px', links: false,
   }),
+
+  // D · Poster cards — one viewport, artwork clipped at the card's bottom edge.
+  'PosterMobile.dc.html': poster({
+    width: 390, height: H['PosterMobile.dc.html'], cols: 2, rows: 2,
+    mode: 'scrim', pop: 34, scrim: 132, gap: 10, gridPad: '42px 14px 14px', radius: 14,
+    titleSize: 13, blurbSize: 10.5, pad: 11, ctl: 44, chipScale: 0.95, cta: false,
+    heroPad: '14px 20px 10px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
+  }),
+  'PosterMobileBand.dc.html': poster({
+    width: 390, height: H['PosterMobileBand.dc.html'], cols: 2, rows: 2,
+    mode: 'band', pop: 34, gap: 10, gridPad: '42px 14px 14px', radius: 14,
+    titleSize: 13, blurbSize: 10.5, pad: 11, ctl: 44, chipScale: 0.95, cta: false,
+    heroPad: '14px 20px 10px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
+  }),
+  'PosterTablet.dc.html': poster({
+    width: 834, height: H['PosterTablet.dc.html'], cols: 2, rows: 2,
+    mode: 'scrim', pop: 48, scrim: 176, gap: 20, gridPad: '58px 32px 32px', radius: 18,
+    titleSize: 21, blurbSize: 14, pad: 18, ctl: 44, chipScale: 1.15, cta: true,
+    heroPad: '26px 32px 18px', h1Size: 42, pSize: 16, maxW: 640, links: true,
+  }),
+  'PosterDesktop.dc.html': poster({
+    width: 1440, height: H['PosterDesktop.dc.html'], cols: 4, rows: 1,
+    mode: 'scrim', pop: 54, scrim: 190, gap: 24, gridPad: '66px 80px 40px', radius: 18,
+    titleSize: 20, blurbSize: 13.5, pad: 18, ctl: 44, chipScale: 1.1, cta: true,
+    heroPad: '30px 80px 22px', h1Size: 48, pSize: 16, maxW: 620, links: true,
+    splitHero: true,
+  }),
 };
 
 for (const [name, html] of Object.entries(FILES)) {
@@ -560,31 +785,81 @@ const artboards = ROWS.flatMap((row, r) =>
     y: rowY[r],
     w: WS[i],
     h: H[file],
+    page: 'page-1',
+  })),
+);
+
+// Page 2 keeps the two mobile takes side by side, because the whole point of
+// the second one is comparing the gradient against a solid band.
+const POSTER = [
+  ['PosterMobile.dc.html', 390, 0, 'D · Poster — Mobile 390, gradient'],
+  ['PosterMobileBand.dc.html', 390, 490, 'D · Poster — Mobile 390, solid band'],
+  ['PosterTablet.dc.html', 834, 980, 'D · Poster — Tablet 834'],
+  ['PosterDesktop.dc.html', 1440, 1914, 'D · Poster — Desktop 1440'],
+];
+
+artboards.push(
+  ...POSTER.map(([file, w, x, title]) => ({
+    file,
+    title,
+    x,
+    y: 0,
+    w,
+    h: H[file],
+    page: 'page-2',
   })),
 );
 
 const annotations = [
   {
-    id: 'a-note', x: 0, y: -190, w: 900,
+    id: 'a-note', page: 'page-1', x: 0, y: -190, w: 900,
     text: 'A · Sketch grid — the attached sketch, literally.\nTwo by two at every width, screenshots tilted and broken out of the card top. Reads as a toy shelf.\nTradeoff: at 390px the two-up cards leave ~150px of text width, so the blurbs have to be short — that is the least SEO copy of the three.',
   },
   {
-    id: 'b-note', x: 0, y: rowY[1] - 190, w: 900,
+    id: 'b-note', page: 'page-1', x: 0, y: rowY[1] - 190, w: 900,
     text: 'B · Marquee row — four abreast, editorial hero.\nLeft-aligned hero so the h1 and the paragraph read as one block; cards straight-on and equal weight.\nTradeoff: four equal cards say all four tools are equally real. Three of them are not.',
   },
   {
-    id: 'c-note', x: 0, y: rowY[2] - 190, w: 900,
+    id: 'c-note', page: 'page-1', x: 0, y: rowY[2] - 190, w: 900,
     text: 'C · Featured — the shipped tool leads.\nThe dex builder gets a split hero card with a real screenshot and a solid CTA; the other three sit in a supporting row.\nTradeoff: it buries the league builder, which is the tool with a settled spec and the next page to rank.',
   },
   {
-    id: 'seo-note', x: 1000, y: -190, w: 860,
+    id: 'seo-note', page: 'page-1', x: 1000, y: -190, w: 860,
     text: 'SEO structure, same in all three:\n· h1 carries "make your own Pokédex" plus region and league.\n· Each card is an <h2> that exactly matches its slug: /custom-pokedex-builder, /pokemon-league-builder, /favorite-pokemon-picker.\n· The footer repeats the four links as anchor text.\nWatch out: making / a router moves the dex builder off the URL that ranks today (~pos 7.8 for "pokedex builder").',
+  },
+  {
+    id: 'd-note', page: 'page-2', x: 0, y: -230, w: 940,
+    text: 'D · Poster cards — the artwork is anchored to the card\'s BOTTOM edge, where it is clipped flush, and runs up past the TOP edge. Every frame here is a real device viewport, so nothing scrolls: 390×844, 834×1112, 1440×900.\nThe two mobile frames are the same layout with two ways of keeping the copy readable. Pick one.',
+  },
+  {
+    id: 'd-scrim-note', page: 'page-2', x: 0, y: 880, w: 420,
+    text: 'Gradient. The screenshot reaches the card\'s bottom edge and a white scrim rises over its lower third; the h2 and the line under it sit on the scrim.\nMore screenshot stays visible, and the card reads as one object rather than a picture with a caption.\nCost: the copy sits on a busy sprite grid, so it needs the scrim to stay opaque near the bottom — which is most of what the gradient is doing.',
+  },
+  {
+    id: 'd-band-note', page: 'page-2', x: 490, y: 880, w: 420,
+    text: 'Solid band. The screenshot stops at a white strip that holds the same copy. Nothing overlaps.\nHighest text contrast, and it survives any screenshot, including a light one.\nCost: it gives up 62px of artwork per card and reads as a caption under a picture — the effect you asked for is weaker.',
+  },
+  {
+    id: 'd-seo-note', page: 'page-2', x: 1000, y: -230, w: 900,
+    text: 'What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold.',
   },
 ];
 
 writeFileSync(
   join(OUT, 'canvas.json'),
-  JSON.stringify({ artboards, annotations, launch: { view: 'canvas' } }, null, 2) + '\n',
+  JSON.stringify(
+    {
+      artboards,
+      annotations,
+      pages: [
+        { id: 'page-1', name: 'Directions A–C' },
+        { id: 'page-2', name: 'D · Poster cards' },
+      ],
+      launch: { view: 'canvas', page: 'page-2' },
+    },
+    null,
+    2,
+  ) + '\n',
 );
 
 console.log(`wrote ${Object.keys(FILES).length} artboards + canvas.json to ${OUT}`);
