@@ -46,7 +46,7 @@
       "x": 0,
       "y": 1990,
       "w": 620,
-      "h": 520
+      "h": 540
     },
     {
       "file": "Legendary.dc.html",
@@ -54,7 +54,7 @@
       "x": 700,
       "y": 1990,
       "w": 620,
-      "h": 580
+      "h": 600
     }
   ],
   "annotations": [
@@ -77,7 +77,7 @@
       "x": 1400,
       "y": 1990,
       "w": 260,
-      "text": "Column drags are the easy case.\n\nBoth card surfaces already match on x alone, so the finger never has to sit on a sprite. Putting the thumb below the card is what keeps the copy off it too."
+      "text": "Both card surfaces already match on x alone, so the finger never has to sit on the card.\n\nWhat changes is the copy: it moves above the finger, and on the column it takes the shape the seat it is over would give it, so it can be the preview outright."
     }
   ],
   "launch": {
