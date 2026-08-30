@@ -1,0 +1,263 @@
+<title>Signature and Partner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --ground: #eceef1;
+    --surface: #ffffff;
+    --panel: #f9f9fa;
+    --ink: #1b1f24;
+    --muted: #57606b;
+    --line: #dde1e6;
+    --band: #6c684f;
+    --dash: #c0bdab;
+    --flag: #b45309;
+    --serif: "Newsreader", Georgia, "Times New Roman", serif;
+    --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #15171b;
+      --surface: #1d2025;
+      --panel: #23272d;
+      --ink: #e6e8ec;
+      --muted: #9aa3ae;
+      --line: #333941;
+      --band: #b9b291;
+      --dash: #5d5a4a;
+      --flag: #d99b3f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #15171b;
+    --surface: #1d2025;
+    --panel: #23272d;
+    --ink: #e6e8ec;
+    --muted: #9aa3ae;
+    --line: #333941;
+    --band: #b9b291;
+    --dash: #5d5a4a;
+    --flag: #d99b3f;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .wrap {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 40px 24px 72px;
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+  }
+
+  header { display: flex; flex-direction: column; gap: 14px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--band);
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+    margin: 0;
+    text-wrap: balance;
+  }
+  .lede { margin: 0; max-width: 62ch; color: var(--muted); font-size: 16px; }
+  .lede b { color: var(--ink); font-weight: 600; }
+
+  .spec {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 6px 0 0;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .spec > div {
+    flex: 1 1 140px;
+    padding: 12px 16px;
+    border-right: 1px solid var(--line);
+  }
+  .spec > div:last-child { border-right: 0; }
+  .spec dt {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 3px;
+  }
+  .spec dd {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  section { display: flex; flex-direction: column; gap: 16px; }
+  h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 24px;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  h2 .idx {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--band);
+    margin-right: 10px;
+    vertical-align: 2px;
+  }
+  .verdict { margin: 0; max-width: 68ch; color: var(--muted); }
+  .verdict b { color: var(--ink); font-weight: 600; }
+  .verdict i { font-style: normal; color: var(--flag); font-weight: 600; }
+
+  .rail { overflow-x: auto; padding-bottom: 4px; }
+  .states {
+    display: grid;
+    grid-template-columns: repeat(4, 148px);
+    gap: 26px;
+    min-width: min-content;
+  }
+  .state { display: flex; flex-direction: column; gap: 8px; }
+  .state > .cap {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* The slot, at the size the card gives it: 148 x 204 at a 390px frame. */
+  .slot {
+    position: relative;
+    width: 148px;
+    height: 204px;
+    background: var(--panel);
+    border-radius: 9px;
+  }
+  .face {
+    position: absolute;
+    background: var(--surface);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .face.open { background: transparent; border: 1px dashed var(--dash); }
+  .cut { position: absolute; background: var(--panel); border-radius: 11px; }
+  .hd {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    color: var(--band);
+  }
+  .nm { position: absolute; left: 0; right: 0; text-align: center; font-size: 11px; }
+  .nm.s { font-size: 9.5px; }
+  .sp { position: absolute; image-rendering: pixelated; display: block; }
+  .ball { position: absolute; border-radius: 50%; border: 1.5px dashed var(--dash); }
+  .seam { position: absolute; inset: 0; pointer-events: none; }
+  .seam line { stroke: var(--line); stroke-width: 2; }
+
+  .note { margin: 0; max-width: 72ch; font-size: 13.5px; color: var(--muted); }
+  .note b { color: var(--ink); font-weight: 600; }
+  .note i { font-style: normal; color: var(--flag); font-weight: 600; }
+
+  .rules {
+    border-left: 3px solid var(--band);
+    padding: 2px 0 2px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .rules p { margin: 0; max-width: 66ch; color: var(--muted); }
+  .rules em { font-style: italic; color: var(--ink); }
+  .rules .k {
+    display: block;
+    margin-bottom: 2px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--band);
+  }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding-top: 20px;
+    max-width: 72ch;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  footer b { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">League builder &middot; slot study</span>
+    <h1>Two Pok&eacute;mon in one slot</h1>
+    <p class="lede">The gym card's top-left void holds one Pok&eacute;mon today. These are four ways it could
+      hold two &mdash; a <b>signature</b> and a <b>partner</b> &mdash; drawn at the size the card actually
+      gives it, in every state the pair can be in.</p>
+    <dl class="spec">
+      <div><dt>Slot</dt><dd>148 &times; 204</dd></div>
+      <div><dt>Grid</dt><dd>3 col &times; 4 row</dd></div>
+      <div><dt>Ratio</dt><dd>0.73 : 1</dd></div>
+      <div><dt>Holds today</dt><dd>1</dd></div>
+    </dl>
+  </header>
+
+  <section><h2><span class="idx">01</span>Two full-width halves</h2><p class="verdict">Halving the box across its <b>short</b> side leaves two faces wider than they are tall, which is the shape a sprite with a name under it wants.</p><div class="rail"><div class="states"><div class="state"><span class="cap">Empty</span><div class="slot"><div class="face open" style="left:0.0px;top:0.0px;width:148.0px;height:100.0px;border-radius:8px"><span class="hd" style="top:5px">SIGNATURE</span><span class="ball" style="left:59.0px;top:35.0px;width:30.0px;height:30.0px"></span></div><div class="face open" style="left:0.0px;top:104.0px;width:148.0px;height:100.0px;border-radius:8px"><span class="hd" style="top:5px">PARTNER</span><span class="ball" style="left:59.0px;top:35.0px;width:30.0px;height:30.0px"></span></div></div></div><div class="state"><span class="cap">Signature only</span><div class="slot"><div class="face" style="left:0.0px;top:0.0px;width:148.0px;height:100.0px;border-radius:8px"><span class="hd" style="top:5px">SIGNATURE</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAGFBMVEUAAAAQEBBSSkqDe3u9tLTe1dX27u7////mZt3+AAAAAXRSTlMAQObYZgAAA8tJREFUWMPtlj2T4jgQho29PwBZkI8+fPFIMpvbai5frK7Nb6oun2Dr/v51y4adOYSB7IJRkdj0o/7UK1fV1/pad9c3/yxwehJo/ofA9CyQXp8FXj49aq3NM0A3IaJfc/rtE1AjHokYXm4DB1j+DLSqPSJgAhjXgNfZnDZG1yFOAQCGNSByJjiv0z70APTbrgDsPiwA/qDtIfb3gDqnysvumAi9WgEo3g7TEhIMDIxB33RxBPlKxTnloCY7A6BvAk0aoxYWLHgCKFvIMfkVIIKDUUsK3Bq2lTDaVaAngKIm4zFHM1jj4+0cfLJzEK4/A5p77kWZaP5KduQyQiu5XzPgQ3C6XNjvpzRYiBSOl8F+AopBNX9MHBD5MEH5bA9OG3MT6A+YzUyksNvsIbbaSHrQpZgaPCAPM3WWljOjpnRarSjnMnCY8jywCyZaE3TkvU0QxpeAbpmgxB48mYZgGNCKNigBlmaOxxRk6MmU0g2GstVa8gYFoKaYDpi8CD6nwS6c0JwEp3Fdpvo04imanydqgTkDlRA7BlShrv6Xxajwn3c9p+0IIKvdALlO1zG59w7D/v1XfyksOaiqfdrFIEp1tbpLQbU81cMCbLM2DULoEtDhYQoyD5DLeQZBbzfcTBrwwnAcCHBH1i0TuJKC7WuRux99AfieMJJ0YTRO8oTmcZEuN586dwU0f7+hp8ZNNAoiKMn/Nx06FgMO8Br48y35xZ6a6+YocdxP/VgE6ult6nDqqbtCq3wmG45/30MsA3A4kT1EIdo4/1szMHAGxWGyR/R0asiBjOMZ6BkwZaDmkoISQtg4VBdglAx4VTijO5Iwthd2zClzDyagVy0NX+lM1+KFzUULOaJaho7Gl3pM724pWTsDbh6VQHeW0Zc52ogbgIWlppNErue5yTt/7cdwDn3czhmj54KeHaiSxG5olM0cEV90ecwXxfBRFoAaaNKG7dIWHGUmcoRQPKaUKf7IrzddRNRKshBkWaTSipK+njtku3RInvuSn5tYVJqPV8s+2fD72Niyln38zBhp0M0FaMPtm3EuF+JHhWxCu+6AAaQZOrfKRqdWHeS2ccbLowx37Elo6Xa/RKHFnYCylv8+NHXU7fYuwHo5W/ndnR4sQwKzclQB3CNARccoN7kG0u5HAMNq0+itDN4rfTcFmm6W4JY1PKji2P03hwR98HxHh4cyYCCOrOJ8/T4CUEiQZV8VL5MCcCSAQvJK6wdSZuVOUSs6+Kp9yAF/GHidvwM24iEH1YZ21o+Gswjdlm5PUT21xJP2X+trPbX+BZSdEYF7OhTZAAAAAElFTkSuQmCC" alt="" style="left:46.5px;top:20.5px;width:55.0px;height:55.0px"><span class="nm s" style="bottom:6px">Onix</span></div><div class="face open" style="left:0.0px;top:104.0px;width:148.0px;height:100.0px;border-radius:8px"><span class="hd" style="top:5px">PARTNER</span><span class="ball" style="left:59.0px;top:35.0px;width:30.0px;height:30.0px"></span></div></div></div><div class="state"><span class="cap">Partner only</span><div class="slot"><div class="face open" style="left:0.0px;top:0.0px;width:148.0px;height:100.0px;border-radius:8px"><span class="hd" style="top:5px">SIGNATURE</span><span class="ball" style="left:59.0px;top:35.0px;width:30.0px;height:30.0px"></span></div><div class="face" style="left:0.0px;top:104.0px;width:148.0px;height:100.0px;border-radius:8px"><span class="hd" style="top:5px">PARTNER</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAKlBMVEUAAAAAAAApKSlBQUpiMQhzc4OcUgDFIBjelADmWkH2vSD25lL/9qT////Vai+KAAAAAXRSTlMAQObYZgAAAdlJREFUWMPtlsFqwkAQhjclhB6ztRRReqiHXnoSbz0piLX2JcwliD6A0JsgEuoDlNJTQKzsnkJpSDN9A3PpG3U2ST12J4dCKftjNML/MTObndkwZmRkZPTX5Vb0Wxe/DrQq5nRSHehWBK4PQKtFAWpiU9wctTodygI0SsCZQqfTJgK+P3ZmgAClfltsJ9k+Qf8bKQACQZZlgHptqwC+lhh+ZNleAVz5HRjrAEwGUi4Tr/wX61JaSMzm8wrygo9BD5wjENVKYI3hNDnZbRiqlHJfAHrAuVQmeH9eqooJwB3AABN5egyL+rVF3MrldDtJ5/OwDKADbkSuHJAVgJf7kE1FTmg2lCNKheoOCa7froU2OSo5owLSHeG33s+aJQCuTfKzJhQBsNjRlpEAJHZSrY4tKBNkHeNSqk3XZXUKYEFSApH18D1BfgYAmwZ7CKJhsOsRgHUB7CAMgj5lGM9AIfgJ6wtGA2Ko45UK7lPmUjPGmRThlQr3zCMAM/BxhXz1MLhPAKyiBwCkEH2PkJIlCn+apiKklGDlPQBCYoSQdKBMxUG0o6hx8O9oh53VEAHnqndIj42x/kotpjWYrGgB7Djp5c6R8GgR+Gn5G0cVXwl41bcUIyMjo/+qLw92FGczGN4XAAAAAElFTkSuQmCC" alt="" style="left:46.5px;top:20.5px;width:55.0px;height:55.0px"><span class="nm s" style="bottom:6px">Pikachu</span></div></div></div><div class="state"><span class="cap">Both</span><div class="slot"><div class="face" style="left:0.0px;top:0.0px;width:148.0px;height:100.0px;border-radius:8px"><span class="hd" style="top:5px">SIGNATURE</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAGFBMVEUAAAAQEBBSSkqDe3u9tLTe1dX27u7////mZt3+AAAAAXRSTlMAQObYZgAAA8tJREFUWMPtlj2T4jgQho29PwBZkI8+fPFIMpvbai5frK7Nb6oun2Dr/v51y4adOYSB7IJRkdj0o/7UK1fV1/pad9c3/yxwehJo/ofA9CyQXp8FXj49aq3NM0A3IaJfc/rtE1AjHokYXm4DB1j+DLSqPSJgAhjXgNfZnDZG1yFOAQCGNSByJjiv0z70APTbrgDsPiwA/qDtIfb3gDqnysvumAi9WgEo3g7TEhIMDIxB33RxBPlKxTnloCY7A6BvAk0aoxYWLHgCKFvIMfkVIIKDUUsK3Bq2lTDaVaAngKIm4zFHM1jj4+0cfLJzEK4/A5p77kWZaP5KduQyQiu5XzPgQ3C6XNjvpzRYiBSOl8F+AopBNX9MHBD5MEH5bA9OG3MT6A+YzUyksNvsIbbaSHrQpZgaPCAPM3WWljOjpnRarSjnMnCY8jywCyZaE3TkvU0QxpeAbpmgxB48mYZgGNCKNigBlmaOxxRk6MmU0g2GstVa8gYFoKaYDpi8CD6nwS6c0JwEp3Fdpvo04imanydqgTkDlRA7BlShrv6Xxajwn3c9p+0IIKvdALlO1zG59w7D/v1XfyksOaiqfdrFIEp1tbpLQbU81cMCbLM2DULoEtDhYQoyD5DLeQZBbzfcTBrwwnAcCHBH1i0TuJKC7WuRux99AfieMJJ0YTRO8oTmcZEuN586dwU0f7+hp8ZNNAoiKMn/Nx06FgMO8Br48y35xZ6a6+YocdxP/VgE6ult6nDqqbtCq3wmG45/30MsA3A4kT1EIdo4/1szMHAGxWGyR/R0asiBjOMZ6BkwZaDmkoISQtg4VBdglAx4VTijO5Iwthd2zClzDyagVy0NX+lM1+KFzUULOaJaho7Gl3pM724pWTsDbh6VQHeW0Zc52ogbgIWlppNErue5yTt/7cdwDn3czhmj54KeHaiSxG5olM0cEV90ecwXxfBRFoAaaNKG7dIWHGUmcoRQPKaUKf7IrzddRNRKshBkWaTSipK+njtku3RInvuSn5tYVJqPV8s+2fD72Niyln38zBhp0M0FaMPtm3EuF+JHhWxCu+6AAaQZOrfKRqdWHeS2ccbLowx37Elo6Xa/RKHFnYCylv8+NHXU7fYuwHo5W/ndnR4sQwKzclQB3CNARccoN7kG0u5HAMNq0+itDN4rfTcFmm6W4JY1PKji2P03hwR98HxHh4cyYCCOrOJ8/T4CUEiQZV8VL5MCcCSAQvJK6wdSZuVOUSs6+Kp9yAF/GHidvwM24iEH1YZ21o+Gswjdlm5PUT21xJP2X+trPbX+BZSdEYF7OhTZAAAAAElFTkSuQmCC" alt="" style="left:46.5px;top:20.5px;width:55.0px;height:55.0px"><span class="nm s" style="bottom:6px">Onix</span></div><div class="face" style="left:0.0px;top:104.0px;width:148.0px;height:100.0px;border-radius:8px"><span class="hd" style="top:5px">PARTNER</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAKlBMVEUAAAAAAAApKSlBQUpiMQhzc4OcUgDFIBjelADmWkH2vSD25lL/9qT////Vai+KAAAAAXRSTlMAQObYZgAAAdlJREFUWMPtlsFqwkAQhjclhB6ztRRReqiHXnoSbz0piLX2JcwliD6A0JsgEuoDlNJTQKzsnkJpSDN9A3PpG3U2ST12J4dCKftjNML/MTObndkwZmRkZPTX5Vb0Wxe/DrQq5nRSHehWBK4PQKtFAWpiU9wctTodygI0SsCZQqfTJgK+P3ZmgAClfltsJ9k+Qf8bKQACQZZlgHptqwC+lhh+ZNleAVz5HRjrAEwGUi4Tr/wX61JaSMzm8wrygo9BD5wjENVKYI3hNDnZbRiqlHJfAHrAuVQmeH9eqooJwB3AABN5egyL+rVF3MrldDtJ5/OwDKADbkSuHJAVgJf7kE1FTmg2lCNKheoOCa7froU2OSo5owLSHeG33s+aJQCuTfKzJhQBsNjRlpEAJHZSrY4tKBNkHeNSqk3XZXUKYEFSApH18D1BfgYAmwZ7CKJhsOsRgHUB7CAMgj5lGM9AIfgJ6wtGA2Ko45UK7lPmUjPGmRThlQr3zCMAM/BxhXz1MLhPAKyiBwCkEH2PkJIlCn+apiKklGDlPQBCYoSQdKBMxUG0o6hx8O9oh53VEAHnqndIj42x/kotpjWYrGgB7Djp5c6R8GgR+Gn5G0cVXwl41bcUIyMjo/+qLw92FGczGN4XAAAAAElFTkSuQmCC" alt="" style="left:46.5px;top:20.5px;width:55.0px;height:55.0px"><span class="nm s" style="bottom:6px">Pikachu</span></div></div></div></div></div><p class="note">Each half is 148 &times; 100. The sprite gets 96px of width and the name a line of its own, so a long name still fits on one. The cost is that neither half looks more important than the other &mdash; <b>nothing here says which of the two is the ace</b>.</p></section>
+
+  <section><h2><span class="idx">02</span>Two half-width columns</h2><p class="verdict">Halving the <b>long</b> side is the obvious mirror of the first, and it is the one the box’s own proportions argue against.</p><div class="rail"><div class="states"><div class="state"><span class="cap">Empty</span><div class="slot"><div class="face open" style="left:0.0px;top:0.0px;width:72.0px;height:204.0px;border-radius:8px"><span class="hd" style="top:5px">SIG.</span><span class="ball" style="left:25.2px;top:91.2px;width:21.6px;height:21.6px"></span></div><div class="face open" style="left:76.0px;top:0.0px;width:72.0px;height:204.0px;border-radius:8px"><span class="hd" style="top:5px">PARTNER</span><span class="ball" style="left:25.2px;top:91.2px;width:21.6px;height:21.6px"></span></div></div></div><div class="state"><span class="cap">Signature only</span><div class="slot"><div class="face" style="left:0.0px;top:0.0px;width:72.0px;height:204.0px;border-radius:8px"><span class="hd" style="top:5px">SIGNATURE</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAGFBMVEUAAAAQEBBSSkqDe3u9tLTe1dX27u7////mZt3+AAAAAXRSTlMAQObYZgAAA8tJREFUWMPtlj2T4jgQho29PwBZkI8+fPFIMpvbai5frK7Nb6oun2Dr/v51y4adOYSB7IJRkdj0o/7UK1fV1/pad9c3/yxwehJo/ofA9CyQXp8FXj49aq3NM0A3IaJfc/rtE1AjHokYXm4DB1j+DLSqPSJgAhjXgNfZnDZG1yFOAQCGNSByJjiv0z70APTbrgDsPiwA/qDtIfb3gDqnysvumAi9WgEo3g7TEhIMDIxB33RxBPlKxTnloCY7A6BvAk0aoxYWLHgCKFvIMfkVIIKDUUsK3Bq2lTDaVaAngKIm4zFHM1jj4+0cfLJzEK4/A5p77kWZaP5KduQyQiu5XzPgQ3C6XNjvpzRYiBSOl8F+AopBNX9MHBD5MEH5bA9OG3MT6A+YzUyksNvsIbbaSHrQpZgaPCAPM3WWljOjpnRarSjnMnCY8jywCyZaE3TkvU0QxpeAbpmgxB48mYZgGNCKNigBlmaOxxRk6MmU0g2GstVa8gYFoKaYDpi8CD6nwS6c0JwEp3Fdpvo04imanydqgTkDlRA7BlShrv6Xxajwn3c9p+0IIKvdALlO1zG59w7D/v1XfyksOaiqfdrFIEp1tbpLQbU81cMCbLM2DULoEtDhYQoyD5DLeQZBbzfcTBrwwnAcCHBH1i0TuJKC7WuRux99AfieMJJ0YTRO8oTmcZEuN586dwU0f7+hp8ZNNAoiKMn/Nx06FgMO8Br48y35xZ6a6+YocdxP/VgE6ult6nDqqbtCq3wmG45/30MsA3A4kT1EIdo4/1szMHAGxWGyR/R0asiBjOMZ6BkwZaDmkoISQtg4VBdglAx4VTijO5Iwthd2zClzDyagVy0NX+lM1+KFzUULOaJaho7Gl3pM724pWTsDbh6VQHeW0Zc52ogbgIWlppNErue5yTt/7cdwDn3czhmj54KeHaiSxG5olM0cEV90ecwXxfBRFoAaaNKG7dIWHGUmcoRQPKaUKf7IrzddRNRKshBkWaTSipK+njtku3RInvuSn5tYVJqPV8s+2fD72Niyln38zBhp0M0FaMPtm3EuF+JHhWxCu+6AAaQZOrfKRqdWHeS2ccbLowx37Elo6Xa/RKHFnYCylv8+NHXU7fYuwHo5W/ndnR4sQwKzclQB3CNARccoN7kG0u5HAMNq0+itDN4rfTcFmm6W4JY1PKji2P03hwR98HxHh4cyYCCOrOJ8/T4CUEiQZV8VL5MCcCSAQvJK6wdSZuVOUSs6+Kp9yAF/GHidvwM24iEH1YZ21o+Gswjdlm5PUT21xJP2X+trPbX+BZSdEYF7OhTZAAAAAElFTkSuQmCC" alt="" style="left:5.0px;top:69.0px;width:61.9px;height:61.9px"><span class="nm s" style="bottom:6px">Onix</span></div><div class="face open" style="left:76.0px;top:0.0px;width:72.0px;height:204.0px;border-radius:8px"><span class="hd" style="top:5px">PARTNER</span><span class="ball" style="left:25.2px;top:91.2px;width:21.6px;height:21.6px"></span></div></div></div><div class="state"><span class="cap">Partner only</span><div class="slot"><div class="face open" style="left:0.0px;top:0.0px;width:72.0px;height:204.0px;border-radius:8px"><span class="hd" style="top:5px">SIG.</span><span class="ball" style="left:25.2px;top:91.2px;width:21.6px;height:21.6px"></span></div><div class="face" style="left:76.0px;top:0.0px;width:72.0px;height:204.0px;border-radius:8px"><span class="hd" style="top:5px">PARTNER</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAKlBMVEUAAAAAAAApKSlBQUpiMQhzc4OcUgDFIBjelADmWkH2vSD25lL/9qT////Vai+KAAAAAXRSTlMAQObYZgAAAdlJREFUWMPtlsFqwkAQhjclhB6ztRRReqiHXnoSbz0piLX2JcwliD6A0JsgEuoDlNJTQKzsnkJpSDN9A3PpG3U2ST12J4dCKftjNML/MTObndkwZmRkZPTX5Vb0Wxe/DrQq5nRSHehWBK4PQKtFAWpiU9wctTodygI0SsCZQqfTJgK+P3ZmgAClfltsJ9k+Qf8bKQACQZZlgHptqwC+lhh+ZNleAVz5HRjrAEwGUi4Tr/wX61JaSMzm8wrygo9BD5wjENVKYI3hNDnZbRiqlHJfAHrAuVQmeH9eqooJwB3AABN5egyL+rVF3MrldDtJ5/OwDKADbkSuHJAVgJf7kE1FTmg2lCNKheoOCa7froU2OSo5owLSHeG33s+aJQCuTfKzJhQBsNjRlpEAJHZSrY4tKBNkHeNSqk3XZXUKYEFSApH18D1BfgYAmwZ7CKJhsOsRgHUB7CAMgj5lGM9AIfgJ6wtGA2Ko45UK7lPmUjPGmRThlQr3zCMAM/BxhXz1MLhPAKyiBwCkEH2PkJIlCn+apiKklGDlPQBCYoSQdKBMxUG0o6hx8O9oh53VEAHnqndIj42x/kotpjWYrGgB7Djp5c6R8GgR+Gn5G0cVXwl41bcUIyMjo/+qLw92FGczGN4XAAAAAElFTkSuQmCC" alt="" style="left:5.0px;top:69.0px;width:61.9px;height:61.9px"><span class="nm s" style="bottom:6px">Pikachu</span></div></div></div><div class="state"><span class="cap">Both</span><div class="slot"><div class="face" style="left:0.0px;top:0.0px;width:72.0px;height:204.0px;border-radius:8px"><span class="hd" style="top:5px">SIGNATURE</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAGFBMVEUAAAAQEBBSSkqDe3u9tLTe1dX27u7////mZt3+AAAAAXRSTlMAQObYZgAAA8tJREFUWMPtlj2T4jgQho29PwBZkI8+fPFIMpvbai5frK7Nb6oun2Dr/v51y4adOYSB7IJRkdj0o/7UK1fV1/pad9c3/yxwehJo/ofA9CyQXp8FXj49aq3NM0A3IaJfc/rtE1AjHokYXm4DB1j+DLSqPSJgAhjXgNfZnDZG1yFOAQCGNSByJjiv0z70APTbrgDsPiwA/qDtIfb3gDqnysvumAi9WgEo3g7TEhIMDIxB33RxBPlKxTnloCY7A6BvAk0aoxYWLHgCKFvIMfkVIIKDUUsK3Bq2lTDaVaAngKIm4zFHM1jj4+0cfLJzEK4/A5p77kWZaP5KduQyQiu5XzPgQ3C6XNjvpzRYiBSOl8F+AopBNX9MHBD5MEH5bA9OG3MT6A+YzUyksNvsIbbaSHrQpZgaPCAPM3WWljOjpnRarSjnMnCY8jywCyZaE3TkvU0QxpeAbpmgxB48mYZgGNCKNigBlmaOxxRk6MmU0g2GstVa8gYFoKaYDpi8CD6nwS6c0JwEp3Fdpvo04imanydqgTkDlRA7BlShrv6Xxajwn3c9p+0IIKvdALlO1zG59w7D/v1XfyksOaiqfdrFIEp1tbpLQbU81cMCbLM2DULoEtDhYQoyD5DLeQZBbzfcTBrwwnAcCHBH1i0TuJKC7WuRux99AfieMJJ0YTRO8oTmcZEuN586dwU0f7+hp8ZNNAoiKMn/Nx06FgMO8Br48y35xZ6a6+YocdxP/VgE6ult6nDqqbtCq3wmG45/30MsA3A4kT1EIdo4/1szMHAGxWGyR/R0asiBjOMZ6BkwZaDmkoISQtg4VBdglAx4VTijO5Iwthd2zClzDyagVy0NX+lM1+KFzUULOaJaho7Gl3pM724pWTsDbh6VQHeW0Zc52ogbgIWlppNErue5yTt/7cdwDn3czhmj54KeHaiSxG5olM0cEV90ecwXxfBRFoAaaNKG7dIWHGUmcoRQPKaUKf7IrzddRNRKshBkWaTSipK+njtku3RInvuSn5tYVJqPV8s+2fD72Niyln38zBhp0M0FaMPtm3EuF+JHhWxCu+6AAaQZOrfKRqdWHeS2ccbLowx37Elo6Xa/RKHFnYCylv8+NHXU7fYuwHo5W/ndnR4sQwKzclQB3CNARccoN7kG0u5HAMNq0+itDN4rfTcFmm6W4JY1PKji2P03hwR98HxHh4cyYCCOrOJ8/T4CUEiQZV8VL5MCcCSAQvJK6wdSZuVOUSs6+Kp9yAF/GHidvwM24iEH1YZ21o+Gswjdlm5PUT21xJP2X+trPbX+BZSdEYF7OhTZAAAAAElFTkSuQmCC" alt="" style="left:5.0px;top:69.0px;width:61.9px;height:61.9px"><span class="nm s" style="bottom:6px">Onix</span></div><div class="face" style="left:76.0px;top:0.0px;width:72.0px;height:204.0px;border-radius:8px"><span class="hd" style="top:5px">PARTNER</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAKlBMVEUAAAAAAAApKSlBQUpiMQhzc4OcUgDFIBjelADmWkH2vSD25lL/9qT////Vai+KAAAAAXRSTlMAQObYZgAAAdlJREFUWMPtlsFqwkAQhjclhB6ztRRReqiHXnoSbz0piLX2JcwliD6A0JsgEuoDlNJTQKzsnkJpSDN9A3PpG3U2ST12J4dCKftjNML/MTObndkwZmRkZPTX5Vb0Wxe/DrQq5nRSHehWBK4PQKtFAWpiU9wctTodygI0SsCZQqfTJgK+P3ZmgAClfltsJ9k+Qf8bKQACQZZlgHptqwC+lhh+ZNleAVz5HRjrAEwGUi4Tr/wX61JaSMzm8wrygo9BD5wjENVKYI3hNDnZbRiqlHJfAHrAuVQmeH9eqooJwB3AABN5egyL+rVF3MrldDtJ5/OwDKADbkSuHJAVgJf7kE1FTmg2lCNKheoOCa7froU2OSo5owLSHeG33s+aJQCuTfKzJhQBsNjRlpEAJHZSrY4tKBNkHeNSqk3XZXUKYEFSApH18D1BfgYAmwZ7CKJhsOsRgHUB7CAMgj5lGM9AIfgJ6wtGA2Ko45UK7lPmUjPGmRThlQr3zCMAM/BxhXz1MLhPAKyiBwCkEH2PkJIlCn+apiKklGDlPQBCYoSQdKBMxUG0o6hx8O9oh53VEAHnqndIj42x/kotpjWYrGgB7Djp5c6R8GgR+Gn5G0cVXwl41bcUIyMjo/+qLw92FGczGN4XAAAAAElFTkSuQmCC" alt="" style="left:5.0px;top:69.0px;width:61.9px;height:61.9px"><span class="nm s" style="bottom:6px">Pikachu</span></div></div></div></div></div><p class="note">Each column is 72 &times; 204. The sprite comes down to about 62px and the name to 9.5px, and anything longer than “Pikachu” wraps. <i>Most of the height goes unused</i>: the faces are nearly three times taller than the content they hold.</p></section>
+
+  <section><h2><span class="idx">03</span>One box, one seam</h2><p class="verdict">A single face cut corner to corner. Both halves keep the <b>full width</b> of the box, so both sprites stay large.</p><div class="rail"><div class="states"><div class="state"><span class="cap">Empty</span><div class="slot"><div class="face open" style="left:0;top:0;width:148.0px;height:204.0px;border-radius:8px;clip-path:polygon(0 0, 100% 0, 0 100%)"><span class="hd" style="left:-1.7px;width:104px;right:auto;top:23.2px">SIGNATURE</span><span class="ball" style="left:28.3px;top:39.2px;width:44.0px;height:44.0px"></span></div><div class="face open" style="left:0;top:0;width:148.0px;height:204.0px;border-radius:8px;clip-path:polygon(100% 0, 100% 100%, 0 100%)"><span class="hd" style="right:10px;left:auto;text-align:right;top:189.0px">PARTNER</span><span class="ball" style="left:78.6px;top:104.5px;width:44.0px;height:44.0px"></span></div><svg class="seam" viewBox="0 0 148 204" aria-hidden="true"><line x1="148" y1="0" x2="0" y2="204"/></svg></div></div><div class="state"><span class="cap">Signature only</span><div class="slot"><div class="face" style="left:0;top:0;width:148.0px;height:204.0px;border-radius:8px;clip-path:polygon(0 0, 100% 0, 0 100%)"><span class="hd" style="left:-1.7px;width:104px;right:auto;top:9.2px">SIGNATURE</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAGFBMVEUAAAAQEBBSSkqDe3u9tLTe1dX27u7////mZt3+AAAAAXRSTlMAQObYZgAAA8tJREFUWMPtlj2T4jgQho29PwBZkI8+fPFIMpvbai5frK7Nb6oun2Dr/v51y4adOYSB7IJRkdj0o/7UK1fV1/pad9c3/yxwehJo/ofA9CyQXp8FXj49aq3NM0A3IaJfc/rtE1AjHokYXm4DB1j+DLSqPSJgAhjXgNfZnDZG1yFOAQCGNSByJjiv0z70APTbrgDsPiwA/qDtIfb3gDqnysvumAi9WgEo3g7TEhIMDIxB33RxBPlKxTnloCY7A6BvAk0aoxYWLHgCKFvIMfkVIIKDUUsK3Bq2lTDaVaAngKIm4zFHM1jj4+0cfLJzEK4/A5p77kWZaP5KduQyQiu5XzPgQ3C6XNjvpzRYiBSOl8F+AopBNX9MHBD5MEH5bA9OG3MT6A+YzUyksNvsIbbaSHrQpZgaPCAPM3WWljOjpnRarSjnMnCY8jywCyZaE3TkvU0QxpeAbpmgxB48mYZgGNCKNigBlmaOxxRk6MmU0g2GstVa8gYFoKaYDpi8CD6nwS6c0JwEp3Fdpvo04imanydqgTkDlRA7BlShrv6Xxajwn3c9p+0IIKvdALlO1zG59w7D/v1XfyksOaiqfdrFIEp1tbpLQbU81cMCbLM2DULoEtDhYQoyD5DLeQZBbzfcTBrwwnAcCHBH1i0TuJKC7WuRux99AfieMJJ0YTRO8oTmcZEuN586dwU0f7+hp8ZNNAoiKMn/Nx06FgMO8Br48y35xZ6a6+YocdxP/VgE6ult6nDqqbtCq3wmG45/30MsA3A4kT1EIdo4/1szMHAGxWGyR/R0asiBjOMZ6BkwZaDmkoISQtg4VBdglAx4VTijO5Iwthd2zClzDyagVy0NX+lM1+KFzUULOaJaho7Gl3pM724pWTsDbh6VQHeW0Zc52ogbgIWlppNErue5yTt/7cdwDn3czhmj54KeHaiSxG5olM0cEV90ecwXxfBRFoAaaNKG7dIWHGUmcoRQPKaUKf7IrzddRNRKshBkWaTSipK+njtku3RInvuSn5tYVJqPV8s+2fD72Niyln38zBhp0M0FaMPtm3EuF+JHhWxCu+6AAaQZOrfKRqdWHeS2ccbLowx37Elo6Xa/RKHFnYCylv8+NHXU7fYuwHo5W/ndnR4sQwKzclQB3CNARccoN7kG0u5HAMNq0+itDN4rfTcFmm6W4JY1PKji2P03hwR98HxHh4cyYCCOrOJ8/T4CUEiQZV8VL5MCcCSAQvJK6wdSZuVOUSs6+Kp9yAF/GHidvwM24iEH1YZ21o+Gswjdlm5PUT21xJP2X+trPbX+BZSdEYF7OhTZAAAAAElFTkSuQmCC" alt="" style="left:17.3px;top:32.2px;width:66.0px;height:66.0px"><span class="nm s" style="left:-1.7px;width:104px;right:auto;top:99.2px">Onix</span></div><div class="face open" style="left:0;top:0;width:148.0px;height:204.0px;border-radius:8px;clip-path:polygon(100% 0, 100% 100%, 0 100%)"><span class="hd" style="right:10px;left:auto;text-align:right;top:189.0px">PARTNER</span><span class="ball" style="left:78.6px;top:104.5px;width:44.0px;height:44.0px"></span></div><svg class="seam" viewBox="0 0 148 204" aria-hidden="true"><line x1="148" y1="0" x2="0" y2="204"/></svg></div></div><div class="state"><span class="cap">Partner only</span><div class="slot"><div class="face open" style="left:0;top:0;width:148.0px;height:204.0px;border-radius:8px;clip-path:polygon(0 0, 100% 0, 0 100%)"><span class="hd" style="left:-1.7px;width:104px;right:auto;top:23.2px">SIGNATURE</span><span class="ball" style="left:28.3px;top:39.2px;width:44.0px;height:44.0px"></span></div><div class="face" style="left:0;top:0;width:148.0px;height:204.0px;border-radius:8px;clip-path:polygon(100% 0, 100% 100%, 0 100%)"><span class="hd" style="right:10px;left:auto;text-align:right;top:189.0px">PARTNER</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAKlBMVEUAAAAAAAApKSlBQUpiMQhzc4OcUgDFIBjelADmWkH2vSD25lL/9qT////Vai+KAAAAAXRSTlMAQObYZgAAAdlJREFUWMPtlsFqwkAQhjclhB6ztRRReqiHXnoSbz0piLX2JcwliD6A0JsgEuoDlNJTQKzsnkJpSDN9A3PpG3U2ST12J4dCKftjNML/MTObndkwZmRkZPTX5Vb0Wxe/DrQq5nRSHehWBK4PQKtFAWpiU9wctTodygI0SsCZQqfTJgK+P3ZmgAClfltsJ9k+Qf8bKQACQZZlgHptqwC+lhh+ZNleAVz5HRjrAEwGUi4Tr/wX61JaSMzm8wrygo9BD5wjENVKYI3hNDnZbRiqlHJfAHrAuVQmeH9eqooJwB3AABN5egyL+rVF3MrldDtJ5/OwDKADbkSuHJAVgJf7kE1FTmg2lCNKheoOCa7froU2OSo5owLSHeG33s+aJQCuTfKzJhQBsNjRlpEAJHZSrY4tKBNkHeNSqk3XZXUKYEFSApH18D1BfgYAmwZ7CKJhsOsRgHUB7CAMgj5lGM9AIfgJ6wtGA2Ko45UK7lPmUjPGmRThlQr3zCMAM/BxhXz1MLhPAKyiBwCkEH2PkJIlCn+apiKklGDlPQBCYoSQdKBMxUG0o6hx8O9oh53VEAHnqndIj42x/kotpjWYrGgB7Djp5c6R8GgR+Gn5G0cVXwl41bcUIyMjo/+qLw92FGczGN4XAAAAAElFTkSuQmCC" alt="" style="left:67.6px;top:97.5px;width:66.0px;height:66.0px"><span class="nm s" style="left:48.6px;width:104px;right:auto;top:164.5px">Pikachu</span></div><svg class="seam" viewBox="0 0 148 204" aria-hidden="true"><line x1="148" y1="0" x2="0" y2="204"/></svg></div></div><div class="state"><span class="cap">Both</span><div class="slot"><div class="face" style="left:0;top:0;width:148.0px;height:204.0px;border-radius:8px;clip-path:polygon(0 0, 100% 0, 0 100%)"><span class="hd" style="left:-1.7px;width:104px;right:auto;top:9.2px">SIGNATURE</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAGFBMVEUAAAAQEBBSSkqDe3u9tLTe1dX27u7////mZt3+AAAAAXRSTlMAQObYZgAAA8tJREFUWMPtlj2T4jgQho29PwBZkI8+fPFIMpvbai5frK7Nb6oun2Dr/v51y4adOYSB7IJRkdj0o/7UK1fV1/pad9c3/yxwehJo/ofA9CyQXp8FXj49aq3NM0A3IaJfc/rtE1AjHokYXm4DB1j+DLSqPSJgAhjXgNfZnDZG1yFOAQCGNSByJjiv0z70APTbrgDsPiwA/qDtIfb3gDqnysvumAi9WgEo3g7TEhIMDIxB33RxBPlKxTnloCY7A6BvAk0aoxYWLHgCKFvIMfkVIIKDUUsK3Bq2lTDaVaAngKIm4zFHM1jj4+0cfLJzEK4/A5p77kWZaP5KduQyQiu5XzPgQ3C6XNjvpzRYiBSOl8F+AopBNX9MHBD5MEH5bA9OG3MT6A+YzUyksNvsIbbaSHrQpZgaPCAPM3WWljOjpnRarSjnMnCY8jywCyZaE3TkvU0QxpeAbpmgxB48mYZgGNCKNigBlmaOxxRk6MmU0g2GstVa8gYFoKaYDpi8CD6nwS6c0JwEp3Fdpvo04imanydqgTkDlRA7BlShrv6Xxajwn3c9p+0IIKvdALlO1zG59w7D/v1XfyksOaiqfdrFIEp1tbpLQbU81cMCbLM2DULoEtDhYQoyD5DLeQZBbzfcTBrwwnAcCHBH1i0TuJKC7WuRux99AfieMJJ0YTRO8oTmcZEuN586dwU0f7+hp8ZNNAoiKMn/Nx06FgMO8Br48y35xZ6a6+YocdxP/VgE6ult6nDqqbtCq3wmG45/30MsA3A4kT1EIdo4/1szMHAGxWGyR/R0asiBjOMZ6BkwZaDmkoISQtg4VBdglAx4VTijO5Iwthd2zClzDyagVy0NX+lM1+KFzUULOaJaho7Gl3pM724pWTsDbh6VQHeW0Zc52ogbgIWlppNErue5yTt/7cdwDn3czhmj54KeHaiSxG5olM0cEV90ecwXxfBRFoAaaNKG7dIWHGUmcoRQPKaUKf7IrzddRNRKshBkWaTSipK+njtku3RInvuSn5tYVJqPV8s+2fD72Niyln38zBhp0M0FaMPtm3EuF+JHhWxCu+6AAaQZOrfKRqdWHeS2ccbLowx37Elo6Xa/RKHFnYCylv8+NHXU7fYuwHo5W/ndnR4sQwKzclQB3CNARccoN7kG0u5HAMNq0+itDN4rfTcFmm6W4JY1PKji2P03hwR98HxHh4cyYCCOrOJ8/T4CUEiQZV8VL5MCcCSAQvJK6wdSZuVOUSs6+Kp9yAF/GHidvwM24iEH1YZ21o+Gswjdlm5PUT21xJP2X+trPbX+BZSdEYF7OhTZAAAAAElFTkSuQmCC" alt="" style="left:17.3px;top:32.2px;width:66.0px;height:66.0px"><span class="nm s" style="left:-1.7px;width:104px;right:auto;top:99.2px">Onix</span></div><div class="face" style="left:0;top:0;width:148.0px;height:204.0px;border-radius:8px;clip-path:polygon(100% 0, 100% 100%, 0 100%)"><span class="hd" style="right:10px;left:auto;text-align:right;top:189.0px">PARTNER</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAKlBMVEUAAAAAAAApKSlBQUpiMQhzc4OcUgDFIBjelADmWkH2vSD25lL/9qT////Vai+KAAAAAXRSTlMAQObYZgAAAdlJREFUWMPtlsFqwkAQhjclhB6ztRRReqiHXnoSbz0piLX2JcwliD6A0JsgEuoDlNJTQKzsnkJpSDN9A3PpG3U2ST12J4dCKftjNML/MTObndkwZmRkZPTX5Vb0Wxe/DrQq5nRSHehWBK4PQKtFAWpiU9wctTodygI0SsCZQqfTJgK+P3ZmgAClfltsJ9k+Qf8bKQACQZZlgHptqwC+lhh+ZNleAVz5HRjrAEwGUi4Tr/wX61JaSMzm8wrygo9BD5wjENVKYI3hNDnZbRiqlHJfAHrAuVQmeH9eqooJwB3AABN5egyL+rVF3MrldDtJ5/OwDKADbkSuHJAVgJf7kE1FTmg2lCNKheoOCa7froU2OSo5owLSHeG33s+aJQCuTfKzJhQBsNjRlpEAJHZSrY4tKBNkHeNSqk3XZXUKYEFSApH18D1BfgYAmwZ7CKJhsOsRgHUB7CAMgj5lGM9AIfgJ6wtGA2Ko45UK7lPmUjPGmRThlQr3zCMAM/BxhXz1MLhPAKyiBwCkEH2PkJIlCn+apiKklGDlPQBCYoSQdKBMxUG0o6hx8O9oh53VEAHnqndIj42x/kotpjWYrGgB7Djp5c6R8GgR+Gn5G0cVXwl41bcUIyMjo/+qLw92FGczGN4XAAAAAElFTkSuQmCC" alt="" style="left:67.6px;top:97.5px;width:66.0px;height:66.0px"><span class="nm s" style="left:48.6px;width:104px;right:auto;top:164.5px">Pikachu</span></div><svg class="seam" viewBox="0 0 148 204" aria-hidden="true"><line x1="148" y1="0" x2="0" y2="204"/></svg></div></div></div></div><p class="note">What they lose is their corners. The lower wedge cannot hold its heading above its sprite &mdash; at that height the seam has already eaten the left half of the line &mdash; so the heading drops to the bottom edge and <i>the two halves stop reading in the same order</i>. It is the most distinctive of the four and the least legible.</p></section>
+
+  <section><h2><span class="idx">04</span>One primary, one inset</h2><p class="verdict">The signature keeps the slot it has today; the partner overlaps its bottom-right corner, the way a powerup disc overlaps a cell.</p><div class="rail"><div class="states"><div class="state"><span class="cap">Empty</span><div class="slot"><div class="face open" style="left:0.0px;top:0.0px;width:148.0px;height:204.0px;border-radius:8px"><span class="hd" style="top:7px">SIGNATURE</span><span class="ball" style="left:51.8px;top:79.8px;width:44.4px;height:44.4px"></span></div><div class="cut" style="left:74.0px;top:133.6px;width:83.0px;height:79.4px"></div><div class="face open" style="left:77.0px;top:136.6px;width:77.0px;height:73.4px;border-radius:8px"><span class="hd" style="top:5px">PARTNER</span><span class="ball" style="left:27.5px;top:25.7px;width:22.0px;height:22.0px"></span></div></div></div><div class="state"><span class="cap">Signature only</span><div class="slot"><div class="face" style="left:0.0px;top:0.0px;width:148.0px;height:130.6px;border-radius:8px"><span class="hd" style="top:7px">SIGNATURE</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAGFBMVEUAAAAQEBBSSkqDe3u9tLTe1dX27u7////mZt3+AAAAAXRSTlMAQObYZgAAA8tJREFUWMPtlj2T4jgQho29PwBZkI8+fPFIMpvbai5frK7Nb6oun2Dr/v51y4adOYSB7IJRkdj0o/7UK1fV1/pad9c3/yxwehJo/ofA9CyQXp8FXj49aq3NM0A3IaJfc/rtE1AjHokYXm4DB1j+DLSqPSJgAhjXgNfZnDZG1yFOAQCGNSByJjiv0z70APTbrgDsPiwA/qDtIfb3gDqnysvumAi9WgEo3g7TEhIMDIxB33RxBPlKxTnloCY7A6BvAk0aoxYWLHgCKFvIMfkVIIKDUUsK3Bq2lTDaVaAngKIm4zFHM1jj4+0cfLJzEK4/A5p77kWZaP5KduQyQiu5XzPgQ3C6XNjvpzRYiBSOl8F+AopBNX9MHBD5MEH5bA9OG3MT6A+YzUyksNvsIbbaSHrQpZgaPCAPM3WWljOjpnRarSjnMnCY8jywCyZaE3TkvU0QxpeAbpmgxB48mYZgGNCKNigBlmaOxxRk6MmU0g2GstVa8gYFoKaYDpi8CD6nwS6c0JwEp3Fdpvo04imanydqgTkDlRA7BlShrv6Xxajwn3c9p+0IIKvdALlO1zG59w7D/v1XfyksOaiqfdrFIEp1tbpLQbU81cMCbLM2DULoEtDhYQoyD5DLeQZBbzfcTBrwwnAcCHBH1i0TuJKC7WuRux99AfieMJJ0YTRO8oTmcZEuN586dwU0f7+hp8ZNNAoiKMn/Nx06FgMO8Br48y35xZ6a6+YocdxP/VgE6ult6nDqqbtCq3wmG45/30MsA3A4kT1EIdo4/1szMHAGxWGyR/R0asiBjOMZ6BkwZaDmkoISQtg4VBdglAx4VTijO5Iwthd2zClzDyagVy0NX+lM1+KFzUULOaJaho7Gl3pM724pWTsDbh6VQHeW0Zc52ogbgIWlppNErue5yTt/7cdwDn3czhmj54KeHaiSxG5olM0cEV90ecwXxfBRFoAaaNKG7dIWHGUmcoRQPKaUKf7IrzddRNRKshBkWaTSipK+njtku3RInvuSn5tYVJqPV8s+2fD72Niyln38zBhp0M0FaMPtm3EuF+JHhWxCu+6AAaQZOrfKRqdWHeS2ccbLowx37Elo6Xa/RKHFnYCylv8+NHXU7fYuwHo5W/ndnR4sQwKzclQB3CNARccoN7kG0u5HAMNq0+itDN4rfTcFmm6W4JY1PKji2P03hwR98HxHh4cyYCCOrOJ8/T4CUEiQZV8VL5MCcCSAQvJK6wdSZuVOUSs6+Kp9yAF/GHidvwM24iEH1YZ21o+Gswjdlm5PUT21xJP2X+trPbX+BZSdEYF7OhTZAAAAAElFTkSuQmCC" alt="" style="left:34.0px;top:21.3px;width:80.0px;height:80.0px"><span class="nm" style="bottom:9px">Onix</span></div><div class="cut" style="left:74.0px;top:133.6px;width:83.0px;height:79.4px"></div><div class="face open" style="left:77.0px;top:136.6px;width:77.0px;height:73.4px;border-radius:8px"><span class="hd" style="top:5px">PARTNER</span><span class="ball" style="left:27.5px;top:25.7px;width:22.0px;height:22.0px"></span></div></div></div><div class="state"><span class="cap">Partner only</span><div class="slot"><div class="face open" style="left:0.0px;top:0.0px;width:148.0px;height:204.0px;border-radius:8px"><span class="hd" style="top:7px">SIGNATURE</span><span class="ball" style="left:51.8px;top:79.8px;width:44.4px;height:44.4px"></span></div><div class="cut" style="left:74.0px;top:133.6px;width:83.0px;height:79.4px"></div><div class="face" style="left:77.0px;top:136.6px;width:77.0px;height:73.4px;border-radius:8px"><span class="hd" style="top:5px">PARTNER</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAKlBMVEUAAAAAAAApKSlBQUpiMQhzc4OcUgDFIBjelADmWkH2vSD25lL/9qT////Vai+KAAAAAXRSTlMAQObYZgAAAdlJREFUWMPtlsFqwkAQhjclhB6ztRRReqiHXnoSbz0piLX2JcwliD6A0JsgEuoDlNJTQKzsnkJpSDN9A3PpG3U2ST12J4dCKftjNML/MTObndkwZmRkZPTX5Vb0Wxe/DrQq5nRSHehWBK4PQKtFAWpiU9wctTodygI0SsCZQqfTJgK+P3ZmgAClfltsJ9k+Qf8bKQACQZZlgHptqwC+lhh+ZNleAVz5HRjrAEwGUi4Tr/wX61JaSMzm8wrygo9BD5wjENVKYI3hNDnZbRiqlHJfAHrAuVQmeH9eqooJwB3AABN5egyL+rVF3MrldDtJ5/OwDKADbkSuHJAVgJf7kE1FTmg2lCNKheoOCa7froU2OSo5owLSHeG33s+aJQCuTfKzJhQBsNjRlpEAJHZSrY4tKBNkHeNSqk3XZXUKYEFSApH18D1BfgYAmwZ7CKJhsOsRgHUB7CAMgj5lGM9AIfgJ6wtGA2Ko45UK7lPmUjPGmRThlQr3zCMAM/BxhXz1MLhPAKyiBwCkEH2PkJIlCn+apiKklGDlPQBCYoSQdKBMxUG0o6hx8O9oh53VEAHnqndIj42x/kotpjWYrGgB7Djp5c6R8GgR+Gn5G0cVXwl41bcUIyMjo/+qLw92FGczGN4XAAAAAElFTkSuQmCC" alt="" style="left:19.4px;top:15.6px;width:38.2px;height:38.2px"><span class="nm s" style="bottom:6px">Pikachu</span></div></div></div><div class="state"><span class="cap">Both</span><div class="slot"><div class="face" style="left:0.0px;top:0.0px;width:148.0px;height:130.6px;border-radius:8px"><span class="hd" style="top:7px">SIGNATURE</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAGFBMVEUAAAAQEBBSSkqDe3u9tLTe1dX27u7////mZt3+AAAAAXRSTlMAQObYZgAAA8tJREFUWMPtlj2T4jgQho29PwBZkI8+fPFIMpvbai5frK7Nb6oun2Dr/v51y4adOYSB7IJRkdj0o/7UK1fV1/pad9c3/yxwehJo/ofA9CyQXp8FXj49aq3NM0A3IaJfc/rtE1AjHokYXm4DB1j+DLSqPSJgAhjXgNfZnDZG1yFOAQCGNSByJjiv0z70APTbrgDsPiwA/qDtIfb3gDqnysvumAi9WgEo3g7TEhIMDIxB33RxBPlKxTnloCY7A6BvAk0aoxYWLHgCKFvIMfkVIIKDUUsK3Bq2lTDaVaAngKIm4zFHM1jj4+0cfLJzEK4/A5p77kWZaP5KduQyQiu5XzPgQ3C6XNjvpzRYiBSOl8F+AopBNX9MHBD5MEH5bA9OG3MT6A+YzUyksNvsIbbaSHrQpZgaPCAPM3WWljOjpnRarSjnMnCY8jywCyZaE3TkvU0QxpeAbpmgxB48mYZgGNCKNigBlmaOxxRk6MmU0g2GstVa8gYFoKaYDpi8CD6nwS6c0JwEp3Fdpvo04imanydqgTkDlRA7BlShrv6Xxajwn3c9p+0IIKvdALlO1zG59w7D/v1XfyksOaiqfdrFIEp1tbpLQbU81cMCbLM2DULoEtDhYQoyD5DLeQZBbzfcTBrwwnAcCHBH1i0TuJKC7WuRux99AfieMJJ0YTRO8oTmcZEuN586dwU0f7+hp8ZNNAoiKMn/Nx06FgMO8Br48y35xZ6a6+YocdxP/VgE6ult6nDqqbtCq3wmG45/30MsA3A4kT1EIdo4/1szMHAGxWGyR/R0asiBjOMZ6BkwZaDmkoISQtg4VBdglAx4VTijO5Iwthd2zClzDyagVy0NX+lM1+KFzUULOaJaho7Gl3pM724pWTsDbh6VQHeW0Zc52ogbgIWlppNErue5yTt/7cdwDn3czhmj54KeHaiSxG5olM0cEV90ecwXxfBRFoAaaNKG7dIWHGUmcoRQPKaUKf7IrzddRNRKshBkWaTSipK+njtku3RInvuSn5tYVJqPV8s+2fD72Niyln38zBhp0M0FaMPtm3EuF+JHhWxCu+6AAaQZOrfKRqdWHeS2ccbLowx37Elo6Xa/RKHFnYCylv8+NHXU7fYuwHo5W/ndnR4sQwKzclQB3CNARccoN7kG0u5HAMNq0+itDN4rfTcFmm6W4JY1PKji2P03hwR98HxHh4cyYCCOrOJ8/T4CUEiQZV8VL5MCcCSAQvJK6wdSZuVOUSs6+Kp9yAF/GHidvwM24iEH1YZ21o+Gswjdlm5PUT21xJP2X+trPbX+BZSdEYF7OhTZAAAAAElFTkSuQmCC" alt="" style="left:34.0px;top:21.3px;width:80.0px;height:80.0px"><span class="nm" style="bottom:9px">Onix</span></div><div class="cut" style="left:74.0px;top:133.6px;width:83.0px;height:79.4px"></div><div class="face" style="left:77.0px;top:136.6px;width:77.0px;height:73.4px;border-radius:8px"><span class="hd" style="top:5px">PARTNER</span><img class="sp" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAABgBAMAAAAQtmoLAAAAKlBMVEUAAAAAAAApKSlBQUpiMQhzc4OcUgDFIBjelADmWkH2vSD25lL/9qT////Vai+KAAAAAXRSTlMAQObYZgAAAdlJREFUWMPtlsFqwkAQhjclhB6ztRRReqiHXnoSbz0piLX2JcwliD6A0JsgEuoDlNJTQKzsnkJpSDN9A3PpG3U2ST12J4dCKftjNML/MTObndkwZmRkZPTX5Vb0Wxe/DrQq5nRSHehWBK4PQKtFAWpiU9wctTodygI0SsCZQqfTJgK+P3ZmgAClfltsJ9k+Qf8bKQACQZZlgHptqwC+lhh+ZNleAVz5HRjrAEwGUi4Tr/wX61JaSMzm8wrygo9BD5wjENVKYI3hNDnZbRiqlHJfAHrAuVQmeH9eqooJwB3AABN5egyL+rVF3MrldDtJ5/OwDKADbkSuHJAVgJf7kE1FTmg2lCNKheoOCa7froU2OSo5owLSHeG33s+aJQCuTfKzJhQBsNjRlpEAJHZSrY4tKBNkHeNSqk3XZXUKYEFSApH18D1BfgYAmwZ7CKJhsOsRgHUB7CAMgj5lGM9AIfgJ6wtGA2Ko45UK7lPmUjPGmRThlQr3zCMAM/BxhXz1MLhPAKyiBwCkEH2PkJIlCn+apiKklGDlPQBCYoSQdKBMxUG0o6hx8O9oh53VEAHnqndIj42x/kotpjWYrGgB7Djp5c6R8GgR+Gn5G0cVXwl41bcUIyMjo/+qLw92FGczGN4XAAAAAElFTkSuQmCC" alt="" style="left:19.4px;top:15.6px;width:38.2px;height:38.2px"><span class="nm s" style="bottom:6px">Pikachu</span></div></div></div></div></div><p class="note">It is the only one of the four that <b>says which is the ace without a word</b>, and the only one that costs the signature nothing but the room under its own name. The partner face is 77 &times; 73 &mdash; smaller than any other option gives it, which is either the point or the objection.</p></section>
+
+  <section>
+    <h2>What the pair has to obey</h2>
+    <div class="rules">
+      <p><span class="k">The partner is not on the team</span>
+        The signature picker locks to the card's own lines once the template is full &mdash; there is no
+        seventh seat for a line from outside it. The partner picker never locks: a partner is the leader's
+        companion, not their sixth Pok&eacute;mon, so it stays open and the pair can be off-type.</p>
+      <p><span class="k">It is still seated when there is room</span>
+        Choosing a partner while an evolution line is free places it in that line. On a five-line card the
+        partner becomes the sixth line <em>and</em> the partner; only on a full card does it live in the slot
+        alone. The same pick means two different things depending on how full the card is, and the picker has
+        to say which before the tap.</p>
+      <p><span class="k">Four states, not two</span>
+        Either half can be empty, so every geometry has to read at a glance in all four &mdash; and an empty
+        half has to invite a tap without competing with the filled one beside it.</p>
+    </div>
+  </section>
+
+  <footer>
+    Every panel is drawn at the card's own geometry &mdash; <b>148 &times; 204 at a 390px frame</b>, the three
+    columns and four rows the signature slot occupies today &mdash; with the app's own sprites at the app's own
+    pixel scale. A sprite that looks cramped here is cramped on the card.
+  </footer>
+</div>
