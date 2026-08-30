@@ -52,6 +52,18 @@ interface BridgeState extends BrowserStoreState {
   openFor: (card: number) => void;
   /** Recompute the sections mirror after any league mutation. */
   refresh: () => void;
+  /**
+   * The type filter the team scope displaced, kept so turning the scope off
+   * puts it back.
+   *
+   * Scoping to the card's own team and filtering by the gym's type are the
+   * same question asked twice: every line on a Rock gym is already Rock, so
+   * the type chip only narrows the team to a subset of itself, and on a
+   * mono-type card it can narrow it to nothing. The scope therefore clears
+   * the type filter — and remembers it, because turning the scope back off
+   * restores a pane the user recognises.
+   */
+  typeBeforeScope?: string[] | null;
 }
 
 export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
@@ -89,6 +101,9 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
     scopeFilterIds: undefined,
     scopeFilterLabel: undefined,
     scopeFilterLines: undefined,
+    scopeFilterLocked: false,
+    scopeFilterLockedHint: undefined,
+    typeBeforeScope: null,
     standaloneTiles: false,
 
     openFor: (card) => {
@@ -97,6 +112,14 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       const lines = league().cards[card]?.lines ?? [];
       const placed = new Set(placedIds(lines));
       const cardFull = lines.length >= TEAM_SIZES[BOSS_ROW - 1];
+      // The signature comes from the team once the template is full: there is
+      // no seventh seat for a line from outside it. That is a lock rather
+      // than a hidden rule, so the chip shows, shows as on, and says why.
+      const scopeLocked = purpose === 'signature' && cardFull;
+      const scopeOn = purpose === 'signature' && lines.length > 0
+        ? (scopeLocked || (get().scopeFilter ?? false))
+        : false;
+      const gymType: string[] | null = type && type !== 'none' ? [type] : null;
       set({
         activeSection: sectionKey(card),
         sections: { [sectionKey(card)]: placedIds(league().cards[card]?.lines ?? []) },
@@ -107,7 +130,13 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // picking — a line, a replacement, the signature, or the endgame
         // boss's legendary. The chip is there to remove when the gym wants
         // something off-type.
-        typeFilter: type && type !== 'none' ? [type] : null,
+        //
+        // Except under the team scope, which asks the same question already:
+        // every line on a Rock gym is Rock, so the type chip narrows the team
+        // to a subset of itself and can narrow it to nothing. It is put aside
+        // rather than dropped, and comes back when the scope goes off.
+        typeFilter: scopeOn ? null : gymType,
+        typeBeforeScope: scopeOn ? gymType : null,
         typeFilterMode: 'any',
         generationFilter: null,
         shapeFilter: null,
@@ -138,12 +167,14 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // pane, like "My dex". It cannot outlive what it scopes to, though:
         // with no lines seated it would filter to nothing, so an empty card
         // clears it rather than handing back a dead end.
-        scopeFilter: purpose === 'signature' && lines.length > 0 ? (get().scopeFilter ?? false) : false,
+        scopeFilter: scopeOn,
         // No chip at all on an empty card: there is no team to narrow to, and
-        // a chip whose only effect is an empty result is a dead end.
-        scopeFilterIds: purpose === 'signature' && !cardFull && lines.length > 0 ? placed : undefined,
-        scopeFilterLabel:
-          purpose === 'signature' && !cardFull && lines.length > 0 ? 'Current Team' : undefined,
+        // a chip whose only effect is an empty result is a dead end. A full
+        // card does get one, locked — see `scopeLocked` above.
+        scopeFilterIds: purpose === 'signature' && lines.length > 0 ? placed : undefined,
+        scopeFilterLabel: purpose === 'signature' && lines.length > 0 ? 'Current Team' : undefined,
+        scopeFilterLocked: scopeLocked,
+        scopeFilterLockedHint: scopeLocked ? 'Choose a pokemon from your team' : undefined,
         // The branches themselves, so the scoped view can draw the lines the
         // user seated rather than the chains they belong to.
         scopeFilterLines: purpose === 'signature' ? lines.map((l) => l.branch) : undefined,
@@ -261,7 +292,16 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       }),
     setEvoLineSizeFilter: (evoLineSizeFilter) => set({ evoLineSizeFilter }),
     setMyDexFilter: (on) => set({ myDexFilter: on }),
-    setScopeFilter: (on) => set({ scopeFilter: on }),
+    setScopeFilter: (on) =>
+      set((s) => {
+        if (on) {
+          return { scopeFilter: true, typeFilter: null, typeBeforeScope: s.typeFilter };
+        }
+        // Only the filter the scope itself displaced comes back. A type the
+        // user picked while scoped is their newer answer and outranks it.
+        const restore = (s.typeFilter?.length ?? 0) > 0 ? s.typeFilter : (s.typeBeforeScope ?? null);
+        return { scopeFilter: false, typeFilter: restore, typeBeforeScope: null };
+      }),
   };
 });
 

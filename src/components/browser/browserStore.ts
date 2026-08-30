@@ -82,6 +82,17 @@ export interface BrowserStoreState {
   scopeFilter?: boolean;
   scopeFilterIds?: Set<number>;
   scopeFilterLabel?: string;
+  /**
+   * The scope is on and cannot be turned off, because the host has nowhere
+   * to put a pick from outside it — a full gym card has no seventh seat.
+   *
+   * The chip still shows, and shows as on, because the alternative is a pane
+   * that silently offers six Pokemon with no said reason. It wears a lock
+   * instead of a dismiss, and says why when pressed.
+   */
+  scopeFilterLocked?: boolean;
+  /** Why the scope cannot be turned off. Shown when a locked chip is pressed. */
+  scopeFilterLockedHint?: string;
   setScopeFilter?: (on: boolean) => void;
   /**
    * The scope as the lines it was built from, not just their members.

@@ -17,7 +17,7 @@ import { TypeBadge } from '@/components/shared/TypeBadge';
 import { COLOR_ORDER, COLOR_SWATCHES, colorTextOn, colorRingOn, EGG_GROUP_ORDER } from '@/data/classifications';
 import { archetypeName as archetypeLabel, categoryName as categoryLabel, colorLabel, eggGroupLabel, sectionName as sectionLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { Search, X, ChevronDown } from 'lucide-react';
+import { Search, X, ChevronDown, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -155,6 +155,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   const scopeFilterIds = useBrowserStore((s) => s.scopeFilterIds);
   const scopeFilterLabel = useBrowserStore((s) => s.scopeFilterLabel);
   const scopeFilterLines = useBrowserStore((s) => s.scopeFilterLines);
+  const scopeFilterLocked = useBrowserStore((s) => s.scopeFilterLocked);
+  const scopeFilterLockedHint = useBrowserStore((s) => s.scopeFilterLockedHint);
   const standaloneTiles = useBrowserStore((s) => s.standaloneTiles);
   const setScopeFilter = useBrowserStore((s) => s.setScopeFilter);
   const t = useT();
@@ -965,12 +967,20 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
           )}
           {setScopeFilter && scopeFilterIds && (
             scopeFilter ? (
-              <FilterChip
-                label={scopeFilterLabel ?? 'Scope'}
-                onDismiss={() => setScopeFilter(false)}
-                onClick={() => setScopeFilter(false)}
-                className="bg-foreground text-background"
-              />
+              scopeFilterLocked ? (
+                <LockedFilterChip
+                  label={scopeFilterLabel ?? 'Scope'}
+                  hint={scopeFilterLockedHint ?? ''}
+                  className="bg-foreground text-background"
+                />
+              ) : (
+                <FilterChip
+                  label={scopeFilterLabel ?? 'Scope'}
+                  onDismiss={() => setScopeFilter(false)}
+                  onClick={() => setScopeFilter(false)}
+                  className="bg-foreground text-background"
+                />
+              )
             ) : (
               <button type="button"
                 onClick={() => setScopeFilter(true)}
@@ -1427,6 +1437,57 @@ function MyDexLabel({ count }: { count: number }) {
       My dex{' '}
       <span className="font-bold tabular-nums text-primary">{count}</span>
       <span className="tabular-nums">/{DEX_TOTAL}</span>
+    </span>
+  );
+}
+
+/**
+ * A chip that is on and cannot be turned off.
+ *
+ * Same shape as `FilterChip`, with a lock where the dismiss sits: the chip
+ * has to read as active, because it is, and the lock is what says the state
+ * is not the user's to change. Pressing it says why for a moment rather than
+ * doing nothing, which is how a disabled control earns a second and third
+ * press.
+ */
+const LOCK_HINT_MS = 2400;
+
+function LockedFilterChip({
+  label, hint, className,
+}: {
+  label: React.ReactNode; hint: string; className?: string;
+}) {
+  const [showing, setShowing] = useState(false);
+  useEffect(() => {
+    if (!showing) return;
+    const timer = setTimeout(() => setShowing(false), LOCK_HINT_MS);
+    return () => clearTimeout(timer);
+  }, [showing]);
+  return (
+    <span className="relative shrink-0">
+      <button
+        type="button"
+        data-filter-chip="scope-locked"
+        aria-describedby={showing ? 'scope-lock-hint' : undefined}
+        onClick={() => setShowing(true)}
+        className={cn(
+          'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer',
+          className,
+        )}
+      >
+        {label}
+        <Lock size={10} aria-hidden />
+      </button>
+      {showing && (
+        <span
+          id="scope-lock-hint"
+          role="status"
+          data-scope-lock-hint
+          className="absolute left-1/2 top-full z-20 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-[0.6875rem] font-medium text-background shadow-lg"
+        >
+          {hint}
+        </span>
+      )}
     </span>
   );
 }
