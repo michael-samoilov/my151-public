@@ -180,13 +180,32 @@ test.describe('powerups', () => {
     await press(page, 10, 1, 'mega');
     expect(await drawn(page, 10, 1), 'the cycle returns to base').toBe('charizard');
 
-    // The boss row shows the same seat, so it shows the same form.
+    // Cycling is the champion row's own: the boss row kept what the first
+    // press gave it.
+    expect(await drawn(page, 11, 1), 'the boss row still has the first form').toBe('Mega Charizard X');
     await press(page, 10, 1, 'dynamax');
     expect(await drawn(page, 10, 1)).toBe('Gigantamax Charizard');
-    expect(await drawn(page, 11, 1)).toBe('Gigantamax Charizard');
   });
 
-  test('a card holds one powerup at a time', async ({ page }) => {
+  test('the first press sets both rows, and every press after that sets one', async ({ page }) => {
+    await openCard(page, 12);
+    await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
+    await seat(page, '[data-testid="card-cell-1-2"]', 'lapras');
+
+    // A leader's champion team and their endgame team are the same six
+    // Pokémon at different strengths, so one press means both.
+    await press(page, 10, 1, 'mega');
+    expect(await drawn(page, 10, 1)).toBe('Mega Charizard X');
+    expect(await drawn(page, 11, 1), 'the endgame team got it too').toBe('Mega Charizard X');
+
+    // From here the two rows are the user's to differ.
+    await press(page, 11, 2, 'dynamax');
+    expect(await drawn(page, 11, 2)).toBe('Gigantamax Lapras');
+    expect(await drawn(page, 11, 1), 'the boss row moved its own powerup').toBe('charizard');
+    expect(await drawn(page, 10, 1), 'the champion kept hers').toBe('Mega Charizard X');
+  });
+
+  test('a row holds one powerup at a time', async ({ page }) => {
     await openCard(page, 12);
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
     await seat(page, '[data-testid="card-cell-1-2"]', 'lapras');
@@ -199,7 +218,7 @@ test.describe('powerups', () => {
     await press(page, 10, 1, 'dynamax');
     expect(await buttons(page, 10, 1)).toEqual(['mega:false', 'dynamax:true']);
 
-    // And another seat takes the card's single powerup with it.
+    // And another seat takes that row's single powerup with it.
     await press(page, 10, 2, 'dynamax');
     expect(await buttons(page, 10, 1)).toEqual(['mega:false', 'dynamax:false']);
     expect(await buttons(page, 10, 2)).toEqual(['dynamax:true']);

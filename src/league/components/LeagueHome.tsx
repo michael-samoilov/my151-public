@@ -23,7 +23,7 @@ import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { deriveRow, moveSeat } from '../model/engine';
 import { cardShades } from '../theme';
 import { useFitScale } from '../useFitScale';
-import { useLeagueStore, type GymCard } from '../store/useLeagueStore';
+import { powerupAt, useLeagueStore, type GymCard } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
 
@@ -143,7 +143,7 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
           // wearing a Mega or Gigantamax wears it here too. Without this the
           // champion row showed Charizard while its card showed Mega
           // Charizard X.
-          const form = formAt(card.powerup ?? null, row, cell.seat, cell.pokemonId);
+          const form = formAt(powerupAt(card, row), row, cell.seat, cell.pokemonId);
           return (
             <span key={cell.seat} className="flex items-center justify-center">
               {p ? (

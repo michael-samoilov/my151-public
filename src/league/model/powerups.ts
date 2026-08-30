@@ -39,10 +39,23 @@ export interface Powerup {
   index: number;
 }
 
+/** The rows a powerup may be used on, in card order. */
+export const POWERUP_ROWS = [CHAMPION_ROW, BOSS_ROW] as const;
+
 /** The rows a powerup may be used on. */
 export function isPowerupRow(row: number): boolean {
   return row === CHAMPION_ROW || row === BOSS_ROW;
 }
+
+/**
+ * A card's powerups, one per row that allows one.
+ *
+ * Two rows and one powerup each, because a leader's champion team and their
+ * endgame team are the same six Pokemon at different strengths — the same
+ * Mega on both is the common case, and a different one on each is a real
+ * one.
+ */
+export type CardPowerups = Partial<Record<number, Powerup | null>>;
 
 /** The forms a species can take under one powerup; empty when it has none. */
 export function formsFor(pokemonId: number, kind: PowerupKind): PowerupForm[] {

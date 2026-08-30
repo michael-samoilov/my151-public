@@ -52,8 +52,15 @@ test.describe('round 10', () => {
 
   test('a powerup travels with its line, not its seat', async ({ page }) => {
     await openCard(page, 12);
+    // A seeded card carries the pre-split field, which meant both rows; a
+    // card the app has touched carries `powerups`, keyed by row. The spec
+    // reads whichever it finds, because both are states the app produces.
+    const CHAMPION_ROW = 10;
+    const rowPowerup = (card: { powerup?: { seat: number } | null; powerups?: Record<string, { seat: number } | null> }) =>
+      card.powerups?.[String(CHAMPION_ROW)] ?? card.powerup ?? null;
+
     const before = await stored(page, 12);
-    const seat = before.powerup.seat as number;
+    const seat = rowPowerup(before)!.seat;
     const line = before.lines[seat - 1].branch as number[];
     expect(seat, 'the seeded champion carries a Mega').toBeGreaterThan(0);
 
@@ -69,9 +76,10 @@ test.describe('round 10', () => {
     await page.waitForTimeout(700);
 
     const after = await stored(page, 12);
-    expect(after.powerup, 'the powerup is still on the card').not.toBeNull();
+    const moved = rowPowerup(after);
+    expect(moved, 'the powerup is still on the card').not.toBeNull();
     expect(
-      after.lines[after.powerup.seat - 1].branch,
+      after.lines[moved!.seat - 1].branch,
       'and still on the line it was pressed for',
     ).toEqual(line);
   });

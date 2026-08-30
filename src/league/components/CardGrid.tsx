@@ -34,7 +34,7 @@ import {
 } from '../model/engine';
 import { getMoveById } from '../moves';
 import { CategoryChip } from './CategoryChip';
-import { useLeagueStore } from '../store/useLeagueStore';
+import { powerupAt, useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { openLeagueBrowser } from '../store/browserBridge';
 import type { CardView } from '../useCardView';
@@ -1064,15 +1064,15 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       cardIndex={cardIndex}
                       datum={datum}
                       pokemonId={cell.pokemonId}
-                      form={formAt(card.powerup ?? null, row, cell.seat, cell.pokemonId)}
+                      form={formAt(powerupAt(card, row), row, cell.seat, cell.pokemonId)}
                       powerupKind={
-                        (card.powerup ?? null)?.seat === cell.seat && isPowerupRow(row)
-                          ? card.powerup!.kind
+                        isPowerupRow(row) && powerupAt(card, row)?.seat === cell.seat
+                          ? powerupAt(card, row)!.kind
                           : null
                       }
                       onPowerup={
                         isPowerupRow(row) && cell.pokemonId !== null && !cell.isLegend
-                          ? (kind) => cyclePowerupOnCard(cardIndex, cell.seat, kind, cell.pokemonId as number)
+                          ? (kind) => cyclePowerupOnCard(cardIndex, row, cell.seat, kind, cell.pokemonId as number)
                           : undefined
                       }
                       held={previewMove !== null && cell.seat === previewMove.to && cell.pokemonId !== null && !cell.isLegend}

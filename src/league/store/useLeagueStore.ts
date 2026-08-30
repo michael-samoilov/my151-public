@@ -3,7 +3,13 @@ import { persist } from 'zustand/middleware';
 import { LEAGUE_STORAGE_KEY, seedLeagueOnFirstVisit } from './seedLeague';
 import type { TypeName } from '@/types/pokemon';
 import { SLOT_COUNT, TEAM_SIZES, BOSS_ROW } from '../model/constants';
-import { cyclePowerup, type Powerup, type PowerupKind } from '../model/powerups';
+import {
+  POWERUP_ROWS,
+  cyclePowerup,
+  type CardPowerups,
+  type Powerup,
+  type PowerupKind,
+} from '../model/powerups';
 import {
   makePlacedLine,
   moveSeat as reorderSeats,
@@ -43,10 +49,23 @@ export interface GymCard {
   badgeName: string;
   legend: LegendPick | null;
   /**
-   * The card's one Mega or Gigantamax, and the seat holding it.
+   * One Mega or Gigantamax per powerup row, by row.
    *
-   * Optional because cards persisted before powerups existed have no field;
-   * read it as `card.powerup ?? null`.
+   * The champion and endgame boss rows are the same six Pokemon at different
+   * strengths, so the first press sets both — and every press after that sets
+   * only the row it was pressed on, because a leader who Megas one Pokemon as
+   * champion and another at full strength is a real card.
+   *
+   * Read it through `powerupAt`, never directly: a card saved before the two
+   * rows could differ carries `powerup` instead, and `powerupAt` reads that
+   * on both rows, which is exactly what it meant.
+   */
+  powerups?: CardPowerups;
+  /**
+   * The single shared powerup, from before the rows could differ.
+   *
+   * Kept for cards already on disk. Nothing writes it any more; the first
+   * press on such a card replaces it with `powerups`.
    */
   powerup?: Powerup | null;
 }
@@ -78,9 +97,9 @@ export interface LeagueState {
   removeLineWith: (card: number, pokemonId: number) => void;
   /** Swap the line at a seat for another, keeping the seat's place. */
   replaceLine: (card: number, seat: number, branch: number[]) => void;
-  /** Press a powerup button: cycle that seat's forms, or move the card's
-   *  single powerup to it. */
-  cyclePowerup: (card: number, seat: number, kind: PowerupKind, pokemonId: number) => void;
+  /** Press a powerup button on one row: cycle that seat's forms, or move
+   *  that row's powerup to it. The first press on a card sets every row. */
+  cyclePowerup: (card: number, row: number, seat: number, kind: PowerupKind, pokemonId: number) => void;
   moveSeat: (card: number, fromSeat: number, toSeat: number) => void;
   /** Set one stage's first row, pushing neighbouring boundaries (engine.setBoundary). */
   setStageBoundary: (card: number, seat: number, stage: number, row: number) => void;
@@ -106,8 +125,34 @@ export function emptyCard(): GymCard {
     tmMoveId: null,
     badgeName: '',
     legend: null,
+    powerups: {},
     powerup: null,
   };
+}
+
+/**
+ * The powerup a row is wearing.
+ *
+ * The only way to read one. A card saved before the rows could differ has no
+ * `powerups` map and one `powerup` instead, which applied to both rows — so
+ * that is what it answers with, and the card keeps drawing what it drew.
+ */
+export function powerupAt(card: GymCard, row: number): Powerup | null {
+  if (card.powerups) return card.powerups[row] ?? null;
+  return card.powerup ?? null;
+}
+
+/** Every row's powerup, as a map, whichever shape the card is stored in. */
+function powerupMap(card: GymCard): CardPowerups {
+  return Object.fromEntries(POWERUP_ROWS.map((row) => [row, powerupAt(card, row)]));
+}
+
+/** Rewrite every row's powerup, dropping the pre-split field as it goes. */
+function withPowerups(card: GymCard, fn: (p: Powerup) => Powerup | null): GymCard {
+  const powerups = Object.fromEntries(
+    Object.entries(powerupMap(card)).map(([row, p]) => [row, p ? fn(p) : null]),
+  );
+  return { ...card, powerups, powerup: null };
 }
 
 const MAX_SEATS = TEAM_SIZES[BOSS_ROW - 1];
@@ -184,12 +229,21 @@ export const useLeagueStore = create<LeagueState>()(
           }),
         })),
 
-      cyclePowerup: (card, seat, kind, pokemonId) =>
+      cyclePowerup: (card, row, seat, kind, pokemonId) =>
         set((s) => ({
-          cards: withCard(s.cards, card, (c) => ({
-            ...c,
-            powerup: cyclePowerup(c.powerup ?? null, seat, kind, pokemonId),
-          })),
+          cards: withCard(s.cards, card, (c) => {
+            const next = cyclePowerup(powerupAt(c, row), seat, kind, pokemonId);
+            // The first press on a card sets every powerup row: a leader's
+            // champion team and their endgame team are the same six Pokemon,
+            // so pressing Mega once and finding it on only one of them reads
+            // as the press not having worked. Every press after that sets
+            // only its own row, which is what lets the two differ.
+            const bare = POWERUP_ROWS.every((r) => powerupAt(c, r) === null);
+            const powerups = bare
+              ? Object.fromEntries(POWERUP_ROWS.map((r) => [r, next]))
+              : { ...powerupMap(c), [row]: next };
+            return { ...c, powerups, powerup: null };
+          }),
         })),
 
       replaceLine: (card, seat, branch) =>
@@ -202,9 +256,8 @@ export const useLeagueStore = create<LeagueState>()(
             // new line arrives with its own defaults.
             const lines = c.lines.map((line, i) => (i === seat - 1 ? makePlacedLine(branch) : line));
             // A powerup is a form of the line that held it, so it does not
-            // transfer to whatever replaces that line.
-            const powerup = (c.powerup ?? null)?.seat === seat ? null : (c.powerup ?? null);
-            return { ...c, lines, powerup };
+            // transfer to whatever replaces that line — on either row.
+            return { ...withPowerups(c, (p) => (p.seat === seat ? null : p)), lines };
           }),
         })),
 
@@ -215,8 +268,8 @@ export const useLeagueStore = create<LeagueState>()(
             if (seat === 0) return c;
             const lines = c.lines.filter((_, i) => i !== seat - 1);
             // The powerup belongs to the line, so it goes when the line goes
-            // and follows the seats that close up behind it.
-            const powerup = shiftPowerupAfterRemoval(c.powerup ?? null, seat);
+            // and follows the seats that close up behind it, on every row.
+            const { powerups } = withPowerups(c, (p) => shiftPowerupAfterRemoval(p, seat));
             // The signature travels with its line (and dies with it) —
             // DECISIONS.md item 12.
             let signatureSeat = c.signatureSeat;
@@ -227,7 +280,7 @@ export const useLeagueStore = create<LeagueState>()(
             } else if (signatureSeat !== null && signatureSeat > seat) signatureSeat -= 1;
             let legend = c.legend;
             if (legend && legend.seat > lines.length) legend = null;
-            return { ...c, lines, signatureSeat, signatureId, legend, powerup };
+            return { ...c, lines, signatureSeat, signatureId, legend, powerups, powerup: null };
           }),
         })),
 
@@ -240,10 +293,11 @@ export const useLeagueStore = create<LeagueState>()(
             // the powerup. Both name a seat, so both are re-aimed at the seat
             // their own line landed in.
             const signatureSeat = seatAfterMove(c.signatureSeat, fromSeat, toSeat);
-            const powerupSeat = seatAfterMove(c.powerup?.seat ?? null, fromSeat, toSeat);
-            const powerup =
-              c.powerup && powerupSeat !== null ? { ...c.powerup, seat: powerupSeat } : (c.powerup ?? null);
-            return { ...c, lines, signatureSeat, powerup };
+            const { powerups } = withPowerups(c, (p) => ({
+              ...p,
+              seat: seatAfterMove(p.seat, fromSeat, toSeat) ?? p.seat,
+            }));
+            return { ...c, lines, signatureSeat, powerups, powerup: null };
           }),
         })),
 

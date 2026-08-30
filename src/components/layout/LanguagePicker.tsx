@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Globe, Loader2 } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { pressedOutside } from '@/lib/outsidePress';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { applyLocale } from '@/i18n/bootstrap';
 import { LOCALES, LOCALE_META, htmlLang, useLocale, useT, type Locale } from '@/i18n';
@@ -102,7 +103,7 @@ export function LanguagePicker() {
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      if (pressedOutside(rootRef.current, e.target)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', onDown);
