@@ -521,13 +521,26 @@ function suggestFill({ pad, ctl, topInset, leftInset, maxRow }) {
  * `tilt` is negative (counter-clockwise), matching the -5°/-2°/+1.5° fan the
  * dex builder's onboarding staircase uses in `IntroCard.tsx`.
  */
-function posterCard({ tool, tilt, cardW, popTop, popLeft, rightStrip, leftInset, radius, tone, titleSize, blurbSize, pad, ctl, chipScale, cta }) {
+function posterCard({ tool, tilt, cardW, clipH, popTop, rightStrip, leftInset, radius, tone, copyBand, fade, titleSize, blurbSize, pad, ctl, chipScale, cta }) {
   const onRed = tone === 'red';
+  const ink = onRed ? R.fg : C.fg;
+  const inkSub = onRed ? R.sub : C.mut;
+  const wash = onRed ? '220, 38, 38' : '255, 255, 255';
+
+  const rad = (Math.abs(tilt) * Math.PI) / 180;
 
   // Rotating about the top-left lifts the far top corner by width·sin(tilt).
   // Start the artwork that far down inside the clip and the corner never
   // crosses the top edge.
-  const topInset = Math.ceil(cardW * 1.3 * Math.sin((Math.abs(tilt) * Math.PI) / 180)) + 6;
+  const topInset = Math.ceil(cardW * 1.3 * Math.sin(rad)) + 6;
+
+  // The same rotation walks the artwork's LEFT edge rightwards as it descends,
+  // by clipH·sin(tilt) over the full height. Set the overhang so that edge
+  // crosses back inside the card around 62% down — above the gradient, which
+  // only spans the card's own width and so cannot cover an overhang lower than
+  // that. A steeper tilt therefore earns a wider overhang, which is also what
+  // makes the four cards read as a fan rather than as four identical tiles.
+  const popLeft = leftInset + Math.round(0.62 * clipH * Math.sin(rad));
 
   const art = tool.shot
     ? `<img src="${tool.shot}" alt="${tool.h2} screenshot" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left;">`
@@ -542,47 +555,59 @@ function posterCard({ tool, tilt, cardW, popTop, popLeft, rightStrip, leftInset,
         maxRow: cardW - leftInset - pad - 30,
       });
 
-  const copy = `<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
-    ${chipOnRed(tool.status, chipScale)}
-    <h2 style="margin: 0; font-size: ${titleSize}px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; color: ${
-      R.fg
-    };">${tool.h2}</h2>
-    <p style="margin: 0; font-size: ${blurbSize}px; line-height: 1.35; color: ${
-      R.sub
-    }; text-wrap: pretty;">${POSTER_BLURB[tool.key]}</p>
-    ${
-      cta
-        ? `<span style="display: flex; align-items: center; gap: 5px; margin-top: 3px; font-size: ${blurbSize}px; font-weight: 700; color: ${
-            R.fg
-          };">${tool.cta}${arrow(Math.round(blurbSize * 1.05), '#ffffff')}</span>`
-        : ''
-    }
-  </div>`;
-
-  return `<a href="${tool.slug}" style="position: relative; display: flex; flex-direction: column; height: 100%; border-radius: ${radius}px; background: ${
+  return `<a href="${tool.slug}" style="position: relative; display: block; height: 100%; border-radius: ${radius}px; background: ${
     onRed ? R.card : C.card
   }; border: 1px solid ${
     onRed ? R.card : C.bd
   }; box-shadow: 0 1px 2px rgba(10, 10, 10, 0.06); text-decoration: none;">
-  <div style="position: relative; flex-grow: 1; min-height: 0;">
-    <div style="position: absolute; top: -${popTop}px; left: -${popLeft}px; right: ${rightStrip}px; bottom: 0; overflow: hidden;">
-      <div style="position: absolute; left: ${leftInset}px; top: ${topInset}px; width: calc(100% + ${leftInset + 14}px); ${
-        tool.shot
-          ? `aspect-ratio: 17 / 28; min-height: calc(100% + ${topInset + 24}px);`
-          : `height: calc(100% + ${topInset + 24}px);`
-      } transform: rotate(${tilt}deg); transform-origin: 0 0; border-radius: 8px; overflow: hidden; background: ${
-        C.card
-      }; border: 1px solid ${
-        C.bd
-      }; box-shadow: 0 12px 28px rgba(10, 10, 10, 0.22), 0 3px 8px rgba(10, 10, 10, 0.12);">
-        ${art}
-      </div>
+  <div style="position: absolute; top: -${popTop}px; left: -${popLeft}px; right: ${rightStrip}px; bottom: 0; overflow: hidden;">
+    <div style="position: absolute; left: ${leftInset}px; top: ${topInset}px; width: calc(100% + ${
+      leftInset + 14
+    }px); ${
+      tool.shot
+        ? `aspect-ratio: 17 / 28; min-height: calc(100% + ${topInset + 24}px);`
+        : `height: calc(100% + ${topInset + 24}px);`
+    } transform: rotate(${tilt}deg); transform-origin: 0 0; border-radius: 8px; overflow: hidden; background: ${
+      C.card
+    }; border: 1px solid ${
+      C.bd
+    }; box-shadow: 0 12px 28px rgba(10, 10, 10, 0.22), 0 3px 8px rgba(10, 10, 10, 0.12);">
+      ${art}
     </div>
   </div>
-  <div style="flex-shrink: 0; padding: ${pad}px; background: ${
-    onRed ? 'transparent' : R.card
-  }; border-radius: 0 0 ${radius - 1}px ${radius - 1}px;">${copy}</div>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; height: ${
+    copyBand + fade
+  }px; border-radius: 0 0 ${radius - 1}px ${
+    radius - 1
+  }px; background: linear-gradient(to top, rgb(${wash}) 0, rgb(${wash}) ${Math.round(
+    copyBand * 0.6,
+  )}px, rgba(${wash}, 0.92) ${copyBand}px, rgba(${wash}, 0) ${copyBand + fade}px);"></div>
+  <div style="position: absolute; left: ${pad}px; right: ${pad}px; bottom: ${pad}px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
+    ${onRed ? chipOnRed(tool.status, chipScale) : chip(tool.status, chipScale)}
+    <h2 style="margin: 0; font-size: ${titleSize}px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; color: ${ink};">${
+      tool.h2
+    }</h2>
+    <p style="margin: 0; font-size: ${blurbSize}px; line-height: 1.35; color: ${inkSub}; text-wrap: pretty;">${
+      POSTER_BLURB[tool.key]
+    }</p>
+    ${
+      cta
+        ? `<span style="display: flex; align-items: center; gap: 5px; margin-top: 3px; font-size: ${blurbSize}px; font-weight: 700; color: ${
+            onRed ? R.fg : C.pri
+          };">${tool.cta}${arrow(Math.round(blurbSize * 1.05), onRed ? '#ffffff' : C.pri)}</span>`
+        : ''
+    }
+  </div>
 </a>`;
+}
+
+/** Widest overhang in a set of tilts — the column gap has to clear it. */
+function maxPopLeft(tilts, clipH, leftInset) {
+  return Math.max(
+    ...tilts.map(
+      (t) => leftInset + Math.round(0.62 * clipH * Math.sin((Math.abs(t) * Math.PI) / 180)),
+    ),
+  );
 }
 
 /**
@@ -594,7 +619,7 @@ function posterCard({ tool, tilt, cardW, popTop, popLeft, rightStrip, leftInset,
  * column gap and `popTop` into the row gap, so a plain gap would let it land on
  * the neighbouring tile.
  */
-function poster({ width, height, cols, rows, tilts, cardW, popTop, popLeft, rightStrip, leftInset, radius, tone, gap, gridPad, titleSize, blurbSize, pad, ctl, chipScale, cta, heroPad, h1Size, pSize, maxW, links, splitHero }) {
+function poster({ width, height, cols, rows, tilts, cardW, cardH, popTop, rightStrip, leftInset, radius, tone, copyBand, fade, gap, gridPad, titleSize, blurbSize, pad, ctl, chipScale, cta, heroPad, h1Size, pSize, maxW, links, splitHero }) {
   const heroBody = splitHero
     ? `<section style="display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; padding: ${heroPad};">
     <div style="display: flex; flex-direction: column; gap: 10px; max-width: ${maxW}px;">
@@ -621,17 +646,21 @@ function poster({ width, height, cols, rows, tilts, cardW, popTop, popLeft, righ
     }; text-wrap: pretty;">${HERO.pShort}</p>
   </section>`;
 
+  const clipH = cardH + popTop;
+
   const cards = TOOLS.map((t, i) =>
     posterCard({
       tool: t,
       tilt: tilts[i],
       cardW,
+      clipH,
       popTop,
-      popLeft,
       rightStrip,
       leftInset,
       radius,
       tone,
+      copyBand,
+      fade,
       titleSize,
       blurbSize,
       pad,
@@ -664,7 +693,7 @@ function poster({ width, height, cols, rows, tilts, cardW, popTop, popLeft, righ
 ${header({ width, links })}
 ${heroBody}
 <div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, minmax(0, 1fr)); column-gap: ${
-    popLeft + gap
+    maxPopLeft(tilts, clipH, leftInset) + gap
   }px; row-gap: ${popTop + gap}px; padding: ${gridPad}; box-sizing: border-box;">
 ${cards}
 </div>
@@ -763,32 +792,32 @@ const FILES = {
   // IntroCard.tsx's onboarding staircase.
   'PosterMobile.dc.html': poster({
     width: 390, height: H['PosterMobile.dc.html'], cols: 2, rows: 2,
-    tilts: [-5, -2.5, -4, -2], cardW: 158, tone: 'red',
-    popTop: 30, popLeft: 24, rightStrip: 18, leftInset: 9, radius: 16,
+    tilts: [-5, -2.5, -4, -2], cardW: 152, cardH: 262, tone: 'red',
+    popTop: 30, rightStrip: 18, leftInset: 9, radius: 16, copyBand: 100, fade: 48,
     gap: 12, gridPad: '38px 16px 16px',
     titleSize: 13, blurbSize: 10.5, pad: 11, ctl: 44, chipScale: 0.95, cta: false,
     heroPad: '14px 20px 10px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
   }),
   'PosterMobileBand.dc.html': poster({
     width: 390, height: H['PosterMobileBand.dc.html'], cols: 2, rows: 2,
-    tilts: [-5, -2.5, -4, -2], cardW: 158, tone: 'band',
-    popTop: 30, popLeft: 24, rightStrip: 18, leftInset: 9, radius: 16,
+    tilts: [-5, -2.5, -4, -2], cardW: 152, cardH: 262, tone: 'band',
+    popTop: 30, rightStrip: 18, leftInset: 9, radius: 16, copyBand: 100, fade: 48,
     gap: 12, gridPad: '38px 16px 16px',
     titleSize: 13, blurbSize: 10.5, pad: 11, ctl: 44, chipScale: 0.95, cta: false,
     heroPad: '14px 20px 10px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
   }),
   'PosterTablet.dc.html': poster({
     width: 834, height: H['PosterTablet.dc.html'], cols: 2, rows: 2,
-    tilts: [-5, -2.5, -4, -2], cardW: 355, tone: 'red',
-    popTop: 40, popLeft: 32, rightStrip: 26, leftInset: 12, radius: 18,
+    tilts: [-5, -2.5, -4, -2], cardW: 342, cardH: 384, tone: 'red',
+    popTop: 40, rightStrip: 26, leftInset: 12, radius: 18, copyBand: 168, fade: 72,
     gap: 20, gridPad: '52px 32px 32px',
     titleSize: 21, blurbSize: 14, pad: 18, ctl: 44, chipScale: 1.15, cta: true,
     heroPad: '26px 32px 18px', h1Size: 42, pSize: 16, maxW: 640, links: true,
   }),
   'PosterDesktop.dc.html': poster({
     width: 1440, height: H['PosterDesktop.dc.html'], cols: 4, rows: 1,
-    tilts: [-5, -2.5, -4, -2], cardW: 288, tone: 'red',
-    popTop: 44, popLeft: 34, rightStrip: 24, leftInset: 12, radius: 18,
+    tilts: [-5, -2.5, -4, -2], cardW: 268, cardH: 565, tone: 'red',
+    popTop: 44, rightStrip: 24, leftInset: 12, radius: 18, copyBand: 162, fade: 72,
     gap: 24, gridPad: '58px 80px 40px',
     titleSize: 20, blurbSize: 13.5, pad: 18, ctl: 44, chipScale: 1.1, cta: true,
     heroPad: '30px 80px 22px', h1Size: 48, pSize: 16, maxW: 620, links: true,
@@ -845,7 +874,7 @@ const artboards = ROWS.flatMap((row, r) =>
 // the second one is comparing the gradient against a solid band.
 const POSTER = [
   ['PosterMobile.dc.html', 390, 0, 'D · Poster — Mobile 390, red card'],
-  ['PosterMobileBand.dc.html', 390, 490, 'D · Poster — Mobile 390, white card + red band'],
+  ['PosterMobileBand.dc.html', 390, 490, 'D · Poster — Mobile 390, white card'],
   ['PosterTablet.dc.html', 834, 980, 'D · Poster — Tablet 834'],
   ['PosterDesktop.dc.html', 1440, 1914, 'D · Poster — Desktop 1440'],
 ];
@@ -881,19 +910,19 @@ const annotations = [
   },
   {
     id: 'd-note', page: 'page-2', x: 0, y: -250, w: 940,
-    text: 'D · Poster cards — each screenshot OVERHANGS its red tile on the top and left, and is cut off on the right and bottom, so it reads as a photo laid on the tile rather than a picture in a frame.\nThe fan is the -5°/-2°/+1.5° lean the dex builder\'s own onboarding staircase uses (STAIR in IntroCard.tsx), applied left to right across the four cards: -5, -2.5, -4, -2.\nEvery frame here is a real device viewport, so nothing scrolls: 390×844, 834×1112, 1440×900.',
+    text: 'D · Poster cards — each screenshot runs all the way to the card\'s BOTTOM edge, which is the only edge that cuts it. It overhangs the top and left, and stops short of the right edge so the tile always shows there.\nA red gradient rises from the bottom over the artwork, and the copy sits on it.\nThe fan is the -5°/-2°/+1.5° lean the dex builder\'s own onboarding staircase uses (STAIR in IntroCard.tsx), applied left to right across the four cards: -5, -2.5, -4, -2.\nEvery frame here is a real device viewport, so nothing scrolls: 390×844, 834×1112, 1440×900.',
   },
   {
     id: 'd-scrim-note', page: 'page-2', x: 0, y: 880, w: 420,
-    text: 'Red card. The whole tile is #dc2626, the app\'s primary, and the copy is white on it.\nStrongest version, and the one the tablet and desktop frames use.\nWorth knowing: at 390 the artwork covers most of the tile, so the red mostly reads in the caption area and the right strip. The colour choice does far more work at 834 and 1440, where the tiles are large.',
+    text: 'Red card, red gradient, white copy. The tile is #dc2626, the app\'s primary. This is the version the tablet and desktop frames use.\nOne thing to weigh at 390: the gradient needs about 100px of solid colour to carry the chip, heading and line of copy, and the card is only ~260px tall — so the gradient takes the lower half. On the tablet and desktop tiles the same copy block costs a third of the height, which is why the effect reads much better there.',
   },
   {
     id: 'd-band-note', page: 'page-2', x: 490, y: 880, w: 420,
-    text: 'White card, red band. Identical geometry — only the tile colour changes — so this isolates the one variable.\nQuieter, and it keeps the page\'s neutral ground; red stays a signal rather than a surface.\nCost: with four cards, the row loses the block of colour that makes the set read as one shelf.',
+    text: 'White card, white gradient, dark copy. Identical geometry — only the tile and gradient colour change — so this isolates the one variable.\nQuieter, and it keeps the page\'s neutral ground; red stays a signal rather than a surface. The screenshots also sit on their own colour instead of on red.\nCost: with four cards, the row loses the block of colour that makes the set read as one shelf.',
   },
   {
     id: 'd-seo-note', page: 'page-2', x: 1000, y: -250, w: 900,
-    text: 'What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold.\nOne build note: the overhang means a card cannot use overflow:hidden, so the artwork needs its own clipping box — offset outward on top and left, inward on right and bottom.',
+    text: 'What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold.\nTwo build notes: the overhang means a card cannot use overflow:hidden, so the artwork needs its own clipping box — offset outward on top and left, inward on the right, flush with the card at the bottom. And the gradient spans the card only, so each card\'s overhang is sized to fall back inside the card before the gradient starts.',
   },
 ];
 
