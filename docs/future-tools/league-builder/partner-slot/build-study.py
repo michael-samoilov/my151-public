@@ -128,11 +128,13 @@ spec.loader.exec_module(dg)
 
 dparts = []
 for i, (kind, title, verdict, note) in enumerate(dg.VARIANTS, 1):
+    # Major and minor drops the type pills entirely, so it has one row.
+    rows = (f'{dg.row(kind, False)}' if kind == 'major'
+            else f'<p class="sub2">Without types</p>{dg.row(kind, False)}'
+                 f'<p class="sub2">With types</p>{dg.row(kind, True)}')
     dparts.append(
         f'<section><h2><span class="idx">3{chr(96+i)}</span>{title}</h2>'
-        f'<p class="verdict">{verdict}</p>'
-        f'<p class="sub2">Without types</p>{dg.row(kind, False)}'
-        f'<p class="sub2">With types</p>{dg.row(kind, True)}'
+        f'<p class="verdict">{verdict}</p>{rows}'
         f'<p class="note">{note}</p></section>')
 
 TEMPLATE = open('/tmp/claude-0/-home-user-my151/d74790d9-bbfd-5538-8993-a07d19412b2a/scratchpad/partner-template.html').read()
