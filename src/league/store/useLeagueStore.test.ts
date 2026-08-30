@@ -65,3 +65,58 @@ describe('the signature mark', () => {
     expect(card().lines[2].branch).toEqual(GEODUDE);
   });
 });
+
+/**
+ * The card's one powerup names a seat, and a seat is a position rather than a
+ * line. A column drag used to leave Mega Salamence behind on whatever line
+ * landed in seat 3.
+ */
+describe('the powerup', () => {
+  beforeEach(() => {
+    useLeagueStore.setState({
+      cards: [
+        {
+          ...cardWith([GEODUDE, ONIX, OMANYTE]),
+          powerup: { seat: 1, kind: 'mega', index: 0 },
+        },
+        emptyCard(),
+      ],
+    });
+  });
+
+  it('follows its line across a column drag', () => {
+    useLeagueStore.getState().moveSeat(0, 1, 3);
+    expect(card().powerup).toEqual({ seat: 3, kind: 'mega', index: 0 });
+    expect(card().lines[2].branch).toEqual(GEODUDE);
+  });
+
+  it('shifts when an earlier line is removed', () => {
+    useLeagueStore.getState().setSignatureSeat(0, 3, 138);
+    useLeagueStore.setState({
+      cards: useLeagueStore.getState().cards.map((c, i) =>
+        i === 0 ? { ...c, powerup: { seat: 3, kind: 'mega', index: 0 } } : c,
+      ),
+    });
+    useLeagueStore.getState().removeLineWith(0, 95); // seat 2
+    expect(card().powerup).toEqual({ seat: 2, kind: 'mega', index: 0 });
+  });
+
+  it('goes when its own line goes', () => {
+    useLeagueStore.getState().removeLineWith(0, 75); // seat 1, which holds it
+    expect(card().powerup).toBeNull();
+  });
+
+  it('does not transfer to a line that replaces its own', () => {
+    useLeagueStore.getState().replaceLine(0, 1, [4, 5, 6]);
+    expect(card().powerup).toBeNull();
+  });
+});
+
+describe('the league view', () => {
+  it('starts on the gym challenge and switches', () => {
+    useLeagueStore.setState({ view: 'challenge' });
+    expect(useLeagueStore.getState().view).toBe('challenge');
+    useLeagueStore.getState().setView('rematch');
+    expect(useLeagueStore.getState().view).toBe('rematch');
+  });
+});

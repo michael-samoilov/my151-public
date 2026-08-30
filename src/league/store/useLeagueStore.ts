@@ -51,12 +51,25 @@ export interface GymCard {
   powerup?: Powerup | null;
 }
 
+/**
+ * Which team the league home draws for each trainer.
+ *
+ * `challenge` is the run through the league: gym 1 shows a two-Pokemon team,
+ * the champion shows six. `rematch` shows every trainer's endgame boss team,
+ * which is the same card read at its last row — the HeartGold/SoulSilver gym
+ * rematch, for the whole league at once.
+ */
+export type LeagueView = 'challenge' | 'rematch';
+
 export interface LeagueState {
   name: string;
   /** Exactly 14, in league order; the index decides the slot kind. */
   cards: GymCard[];
+  /** Which row of each card the league home draws. Not part of a card. */
+  view: LeagueView;
 
   setName: (name: string) => void;
+  setView: (view: LeagueView) => void;
   setCardType: (card: number, type: CardType) => void;
   setCardTheme: (card: number, theme: string) => void;
   /** Seat a branch. 'front' = seat 1 (signature insertion), 'end' = next free. */
@@ -97,6 +110,30 @@ export function emptyCard(): GymCard {
 
 const MAX_SEATS = TEAM_SIZES[BOSS_ROW - 1];
 
+/**
+ * Where a seat number lands after a column moves from one seat to another.
+ *
+ * Anything that names a seat — the signature mark, the card's powerup —
+ * names a line through it, so it has to follow that line rather than stay on
+ * the number. The dragged seat becomes the target; every other seat shifts by
+ * the one that left and the one that arrived.
+ */
+function seatAfterMove(seat: number | null, fromSeat: number, toSeat: number): number | null {
+  if (seat === null) return null;
+  if (seat === fromSeat) return toSeat;
+  let next = seat;
+  if (next > fromSeat) next -= 1;
+  if (next >= toSeat) next += 1;
+  return next;
+}
+
+/** The card's powerup after the line at `seat` is removed: gone, or shifted. */
+function shiftPowerupAfterRemoval(powerup: Powerup | null, seat: number): Powerup | null {
+  if (!powerup) return null;
+  if (powerup.seat === seat) return null;
+  return powerup.seat > seat ? { ...powerup, seat: powerup.seat - 1 } : powerup;
+}
+
 /** Immutably update one card. */
 function withCard(
   cards: GymCard[],
@@ -115,8 +152,11 @@ export const useLeagueStore = create<LeagueState>()(
     (set) => ({
       name: '',
       cards: Array.from({ length: SLOT_COUNT }, emptyCard),
+      view: 'challenge',
 
       setName: (name) => set({ name }),
+
+      setView: (view) => set({ view }),
 
       setCardType: (card, type) =>
         set((s) => ({ cards: withCard(s.cards, card, (c) => ({ ...c, type })) })),
@@ -159,7 +199,10 @@ export const useLeagueStore = create<LeagueState>()(
             // it carried one. The evolution rows are the line's own, so the
             // new line arrives with its own defaults.
             const lines = c.lines.map((line, i) => (i === seat - 1 ? makePlacedLine(branch) : line));
-            return { ...c, lines };
+            // A powerup is a form of the line that held it, so it does not
+            // transfer to whatever replaces that line.
+            const powerup = (c.powerup ?? null)?.seat === seat ? null : (c.powerup ?? null);
+            return { ...c, lines, powerup };
           }),
         })),
 
@@ -169,6 +212,9 @@ export const useLeagueStore = create<LeagueState>()(
             const seat = c.lines.findIndex((l) => l.branch.includes(pokemonId)) + 1;
             if (seat === 0) return c;
             const lines = c.lines.filter((_, i) => i !== seat - 1);
+            // The powerup belongs to the line, so it goes when the line goes
+            // and follows the seats that close up behind it.
+            const powerup = shiftPowerupAfterRemoval(c.powerup ?? null, seat);
             // The signature travels with its line (and dies with it) —
             // DECISIONS.md item 12.
             let signatureSeat = c.signatureSeat;
@@ -179,7 +225,7 @@ export const useLeagueStore = create<LeagueState>()(
             } else if (signatureSeat !== null && signatureSeat > seat) signatureSeat -= 1;
             let legend = c.legend;
             if (legend && legend.seat > lines.length) legend = null;
-            return { ...c, lines, signatureSeat, signatureId, legend };
+            return { ...c, lines, signatureSeat, signatureId, legend, powerup };
           }),
         })),
 
@@ -188,16 +234,14 @@ export const useLeagueStore = create<LeagueState>()(
           cards: withCard(s.cards, card, (c) => {
             if (fromSeat === toSeat) return c;
             const lines = reorderSeats(c.lines, fromSeat, toSeat);
-            // Column drag never changes which LINE is the signature.
-            let signatureSeat = c.signatureSeat;
-            if (signatureSeat !== null) {
-              if (signatureSeat === fromSeat) signatureSeat = toSeat;
-              else {
-                if (signatureSeat > fromSeat) signatureSeat -= 1;
-                if (signatureSeat >= toSeat) signatureSeat += 1;
-              }
-            }
-            return { ...c, lines, signatureSeat };
+            // A column drag never changes which LINE carries the signature or
+            // the powerup. Both name a seat, so both are re-aimed at the seat
+            // their own line landed in.
+            const signatureSeat = seatAfterMove(c.signatureSeat, fromSeat, toSeat);
+            const powerupSeat = seatAfterMove(c.powerup?.seat ?? null, fromSeat, toSeat);
+            const powerup =
+              c.powerup && powerupSeat !== null ? { ...c.powerup, seat: powerupSeat } : (c.powerup ?? null);
+            return { ...c, lines, signatureSeat, powerup };
           }),
         })),
 

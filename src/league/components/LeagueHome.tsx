@@ -97,9 +97,12 @@ function SlotGlyph({ index, cell }: { index: number; cell: string }) {
  * so the held copy cannot drift from the thing it is a copy of.
  */
 function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
+  const view = useLeagueStore((s) => s.view);
   const shades = card.type ? cardShades(card.type) : null;
   const cellColour = shades ? shades.cell : GREY;
-  const row = slotRow(position);
+  // The gym challenge reads each trainer at the row you meet them; the
+  // rematch view reads every trainer at their last row instead.
+  const row = view === 'rematch' ? BOSS_ROW : slotRow(position);
   const cells = deriveRow(card.lines, row, row === BOSS_ROW ? card.legend : null);
   const filled = card.lines.length > 0;
 

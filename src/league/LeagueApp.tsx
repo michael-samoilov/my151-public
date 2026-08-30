@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Info, Pencil } from 'lucide-react';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
@@ -8,7 +8,7 @@ import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 import { BrowserStoreContext } from '@/components/browser/browserStore';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { getPokemonById } from '@/hooks/usePokemonData';
-import { pokemonLabel } from '@/i18n';
+import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { slotLabel } from './model/constants';
 import {
@@ -19,6 +19,7 @@ import { useLeagueStore } from './store/useLeagueStore';
 import { useLeagueUi } from './store/useLeagueUi';
 import { LeagueHome } from './components/LeagueHome';
 import { CardPage } from './components/CardPage';
+import { LeagueSettingsButton } from './components/LeagueSettings';
 
 /**
  * The league builder's shell. Mobile: league home ⇄ full-screen card, with
@@ -99,6 +100,10 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
 }
 
 export function LeagueApp() {
+  // The sheet heading names a Pokémon, and `pokemonLabel` reads the name
+  // store without subscribing to it.
+  useNamesVersion();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const openCard = useLeagueUi((s) => s.openCard);
   const shownCard = useLeagueUi((s) => s.openCard ?? s.lastCard);
   const browserPurpose = useLeagueUi((s) => s.browserPurpose);
@@ -166,8 +171,9 @@ export function LeagueApp() {
               {/* The tool bar — same 44px as the dex builder's. */}
               <div data-testid="league-tool-bar" className="flex h-11 items-center gap-2 border-b bg-card px-3">
                 <LeagueNameRow h1 />
-                <span className="ml-auto flex items-center gap-2.5 text-muted-foreground">
+                <span className="ml-auto flex items-center gap-1.5 text-muted-foreground">
                   <Info size={16} aria-hidden />
+                  <LeagueSettingsButton open={settingsOpen} onOpenChange={setSettingsOpen} />
                 </span>
               </div>
               <div className="mx-auto w-full max-w-[26rem] px-3 pt-2.5">
@@ -194,7 +200,10 @@ export function LeagueApp() {
             <div data-testid="league-tool-bar" className="flex h-11 items-center border-b px-4">
               <div className="mx-auto flex w-full max-w-[26rem] items-center">
                 <LeagueNameRow h1 />
-                <Info size={16} className="ml-auto text-muted-foreground" aria-hidden />
+                <span className="ml-auto flex items-center gap-1.5 text-muted-foreground">
+                  <Info size={16} aria-hidden />
+                  <LeagueSettingsButton open={settingsOpen} onOpenChange={setSettingsOpen} />
+                </span>
               </div>
             </div>
             <div data-lg-viewport className="min-h-0 flex-1 overflow-y-auto py-3">

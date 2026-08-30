@@ -1,4 +1,4 @@
-import { getLocale, subscribe } from './core';
+import { getLocale, getVersion, subscribe } from './core';
 import { DEFAULT_LOCALE, type Locale } from './config';
 import altFormSpecies from './alt-form-species.json';
 import { normalizeSearch } from './searchNormalize';
@@ -90,12 +90,27 @@ export function subscribeNames(cb: () => void): () => void {
 
 /**
  * A value that changes whenever the names a component would render could have
- * changed — a locale switch or a catalog finishing its download. `useSyncExternalStore`
- * needs an immutable snapshot, so this is a counter rather than the catalog map.
+ * changed: a catalog finishing its download, or the locale switching.
+ * `useSyncExternalStore` needs an immutable snapshot, so this is a counter
+ * rather than the catalog map.
+ *
+ * Both halves are needed, and the locale half is the one that was missing.
+ * The two events are independent: a switch to a locale whose names are
+ * already loaded starts no download at all, and a download can land *before*
+ * the switch that started it — `applyLocale` begins the names fetch, then
+ * awaits the UI catalog, so whichever chunk is smaller arrives first. In that
+ * order the download bumped this counter while the locale was still the old
+ * one, the switch that followed left the counter alone, and React saw an
+ * unchanged snapshot and skipped the re-render. The symptom was a card whose
+ * type badges spoke Japanese under a name still reading `Onix`, until
+ * something unrelated remounted it.
+ *
+ * Summing works because neither counter ever goes down, so the total changes
+ * exactly when at least one of them does, in whichever order they arrive.
  */
 let namesVersion = 0;
 export function getNamesVersion(): number {
-  return namesVersion;
+  return namesVersion + getVersion();
 }
 
 /**

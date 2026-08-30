@@ -16,7 +16,7 @@ import {
 } from '@dnd-kit/core';
 import { ArrowLeftRight, ArrowUpDown, RotateCcw } from 'lucide-react';
 import { getPokemonById } from '@/hooks/usePokemonData';
-import { pokemonLabel } from '@/i18n';
+import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -230,7 +230,7 @@ function formSprite(form: PowerupForm): string {
   return `/sprites/pokemon/${form.id}.png`;
 }
 
-function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup, held, ringWhenOver, onRemove, onReset }: {
+function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup, held, ringWhenOver, onRemove, removeLabel, onReset }: {
   cardIndex: number;
   datum: CellDatum;
   pokemonId: number | null;
@@ -246,6 +246,8 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
   ringWhenOver: boolean;
   /** Set on the column's topmost pokemon: remove this evo line. */
   onRemove?: () => void;
+  /** What that control says it removes. */
+  removeLabel?: string;
   /** Set on the topmost pokemon of a line whose evolution rows were dragged. */
   onReset?: () => void;
 }) {
@@ -376,20 +378,36 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           }}
           // The opposite corner from the remove X, so the destructive control
           // and the undo one never sit under the same thumb.
-          className="absolute left-0 top-[0.175rem] z-[15] flex h-[0.95rem] w-[0.95rem] cursor-pointer items-center justify-center rounded-full bg-[#2563eb]"
+          //
+          // `contain:paint` for the same reason the powerup discs have it:
+          // the card scales itself with CSS `zoom`, so this box is a
+          // fractional number of pixels and its painted edges snap
+          // independently. The disc came out an ellipse and the arrow inside
+          // it sat up and to the left, even though both are centred to the
+          // pixel in layout.
+          className="absolute left-0 top-[0.175rem] z-[15] flex h-[0.95rem] w-[0.95rem] cursor-pointer items-center justify-center rounded-full bg-[#2563eb] [contain:paint]"
         >
-          <RotateCcw className="h-[0.6rem] w-[0.6rem] text-white" strokeWidth={3} />
+          {/* Sized to leave the rim alone. `RotateCcw` is a ring with an
+              arrowhead bolted to its top-left, so its bounding box is 2%
+              wider than its ring on that side; at 0.6rem with a 3-unit
+              stroke the head touched the disc's edge while the opposite
+              side kept a clear margin, and the whole mark read as pushed
+              up and left. Measured on the built preview at dpr 8: the disc
+              is a true circle (120x120) and the ink's centre of mass is
+              0.2% off its centre, so what was wrong was the clearance, not
+              the centring. */}
+          <RotateCcw className="h-[0.55rem] w-[0.55rem] text-white" strokeWidth={2.5} />
         </button>
       )}
       {onRemove && pokemon && (
         <button
           type="button"
-          aria-label={`Remove ${pokemon.name}'s line`}
+          aria-label={removeLabel ?? `Remove ${pokemon.name}'s line`}
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute right-0 top-[0.175rem] z-[15] h-[0.95rem] w-[0.95rem] cursor-pointer"
+          className="absolute right-0 top-[0.175rem] z-[15] h-[0.95rem] w-[0.95rem] cursor-pointer [contain:paint]"
         >
           <RedXIcon className="h-full w-full" />
         </button>
@@ -522,6 +540,10 @@ function PowerupButton({ kind, active, onPress, side }: {
 }
 
 function SignatureSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
+  // `pokemonLabel` reads the name store without subscribing to it, so the
+  // slot has to subscribe itself. Without this the types under the sprite
+  // switched language and the name above them did not.
+  useNamesVersion();
   const { card } = view;
   const line = card.signatureSeat !== null ? card.lines[card.signatureSeat - 1] : undefined;
   const shown = signatureMember(line, card.signatureId ?? null);
@@ -598,9 +620,11 @@ function TmSlot({ view }: { view: CardView }) {
         <TmDisc colour={move ? TYPE_COLORS[move.type] : 'var(--lg-dash)'} />
         {/* The disc's viewBox carries its own padding, so the label is pulled
             back up against it. */}
+        {/* The word wears the move's type too. A TM is the move, and the
+            card's own colour is already everywhere else on the card. */}
         <span
           className="-mt-[0.0625rem] text-[0.5rem] font-extrabold tracking-[0.06em]"
-          style={{ color: 'var(--lg-hint)' }}
+          style={{ color: move ? TYPE_COLORS[move.type] : 'var(--lg-hint)' }}
         >
           TM
         </span>
@@ -1053,7 +1077,17 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       }
                       held={previewMove !== null && cell.seat === previewMove.to && cell.pokemonId !== null && !cell.isLegend}
                       ringWhenOver={legendDrag}
-                      onRemove={topId !== null ? () => removeLineWith(cardIndex, topId) : undefined}
+                      // The legendary carries its own control: it covers a
+                      // seat rather than filling one, so removing it puts
+                      // that seat's own line back and touches nothing else.
+                      onRemove={
+                        cell.isLegend
+                          ? () => setLegend(cardIndex, null)
+                          : topId !== null
+                            ? () => removeLineWith(cardIndex, topId)
+                            : undefined
+                      }
+                      removeLabel={cell.isLegend ? 'Remove the endgame boss legendary' : undefined}
                       onReset={
                         custom && line
                           ? () => setLineBoundaries(cardIndex, cell.seat, defaultBoundaries(line.branch))
