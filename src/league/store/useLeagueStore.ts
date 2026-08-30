@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { TypeName } from '@/types/pokemon';
 import { SLOT_COUNT, TEAM_SIZES, BOSS_ROW } from '../model/constants';
+import { cyclePowerup, type Powerup, type PowerupKind } from '../model/powerups';
 import {
   makePlacedLine,
   moveSeat as reorderSeats,
@@ -30,6 +31,13 @@ export interface GymCard {
   tmMoveId: number | null;
   badgeName: string;
   legend: LegendPick | null;
+  /**
+   * The card's one Mega or Gigantamax, and the seat holding it.
+   *
+   * Optional because cards persisted before powerups existed have no field;
+   * read it as `card.powerup ?? null`.
+   */
+  powerup?: Powerup | null;
 }
 
 export interface LeagueState {
@@ -46,6 +54,9 @@ export interface LeagueState {
   removeLineWith: (card: number, pokemonId: number) => void;
   /** Swap the line at a seat for another, keeping the seat's place. */
   replaceLine: (card: number, seat: number, branch: number[]) => void;
+  /** Press a powerup button: cycle that seat's forms, or move the card's
+   *  single powerup to it. */
+  cyclePowerup: (card: number, seat: number, kind: PowerupKind, pokemonId: number) => void;
   moveSeat: (card: number, fromSeat: number, toSeat: number) => void;
   /** Set one stage's first row, pushing neighbouring boundaries (engine.setBoundary). */
   setStageBoundary: (card: number, seat: number, stage: number, row: number) => void;
@@ -67,6 +78,7 @@ export function emptyCard(): GymCard {
     tmMoveId: null,
     badgeName: '',
     legend: null,
+    powerup: null,
   };
 }
 
@@ -111,6 +123,14 @@ export const useLeagueStore = create<LeagueState>()(
                 : c.signatureSeat;
             return { ...c, lines, signatureSeat };
           }),
+        })),
+
+      cyclePowerup: (card, seat, kind, pokemonId) =>
+        set((s) => ({
+          cards: withCard(s.cards, card, (c) => ({
+            ...c,
+            powerup: cyclePowerup(c.powerup ?? null, seat, kind, pokemonId),
+          })),
         })),
 
       replaceLine: (card, seat, branch) =>

@@ -7,6 +7,7 @@
     "dev": "vite",
     "cache-sprites": "bash scripts/cache-sprites.sh",
     "build-type-glyphs": "tsx scripts/build-type-glyphs.ts",
+    "league:powerups": "tsx --tsconfig tsconfig.node.json scripts/league/fetch-powerup-forms.ts",
     "shade-report": "tsx --tsconfig tsconfig.node.json scripts/shade-report.ts",
     "og-image": "node scripts/generate-og-image.mjs",
     "indexnow": "NODE_USE_ENV_PROXY=1 node scripts/indexnow.mjs",

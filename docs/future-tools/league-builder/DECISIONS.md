@@ -478,31 +478,78 @@ Two bugs came out of building those.
   dex is still empty tapped "My dex 0/151" and got all 1126 back. The key is
   prefixed now, and the empty dex shows the empty state.
 
-### One drag treatment, four surfaces
+### Round 6, from the preview
+
+1. **The league surfaces got their own hold behaviour.** One treatment for
+   four surfaces was wrong: see the section below.
+2. **The held tile is the size of the tile that was grabbed.** The dex
+   builder sizes its tiles against their grid
+   (`w-[calc((100%-24px-5%)/6)]`), and inside the drag overlay that
+   percentage resolved against the overlay's own box — 27.7px held for a
+   56px tile. The overlay measures the grabbed element now and holds that
+   width.
+3. **A horizontal drag on the gym card picks up the column.** The column is
+   what moves, so the column is what the hand holds: every member of the
+   line, stacked as the card draws them, not the top sprite alone.
+4. **The TM picker drops AND/OR.** A move carries one type, so the two modes
+   select the same moves, and offering the choice implies a filter that
+   cannot exist. The type chips there are a plain OR.
+5. **The "Att" sort caret matches the others.** It had inherited a smaller
+   box from the header cell around it.
+6. **The legendary drop targets a column, not a cell.** dnd-kit's default
+   collision wants the pointer inside the droppable, which on the boss row
+   means dropping the legendary on the Pokémon it replaces and hiding it. A
+   custom `CollisionDetection` (`bossRowByColumn`) matches on x alone, so a
+   column takes the drop from anywhere along its length.
+7. **The ↔ hint leaves the legendary cell.** The legendary does not move
+   sideways, and the arrow promised a gesture that does nothing.
+8. **The "already on the card" pokeball hides under Current Team.** With the
+   list scoped to the team every result carries the mark, so it marks
+   nothing and costs a corner of every tile.
+9. **Tapping a placed line replaces it.** The pane opens on that seat under
+   "Replacing: *Gyarados*" rather than "Adding to: Gym 3", and the seat
+   keeps its place in the team and its signature mark. The boss row's
+   legendary slot overrides this: it opens the legendary picker, and that
+   picker now opens on the gym's own type like every other purpose.
+10. **"TM" and the disc back apart by 1px.** Round 3 closed the gap and
+    closed it too far; the two read as one glyph.
+
+### Two drag treatments, four surfaces
 
 The dex builder, the view page, the league summary and the gym card each had
 their own idea of what holding something looks like: a source faded to 25%
 here, a target scaled and ringed there, a shadowed copy somewhere else. Four
 treatments for one idea reads as four half-finished features.
 
-The idea now lives in `src/components/shared/dragHold.tsx` and every surface
-imports it rather than restating it:
+One treatment for all four was the first fix, and the preview showed why it
+was wrong: the two kinds of drag ask different questions. The dex builder asks
+*which gap* — between which two lines does this land. The league summary and
+the gym card ask *which slot*, and they answer by redrawing the page as if the
+slot already held the thing. A copy centred on the pointer covers exactly the
+cell that carries the answer.
 
-1. **The source recedes** to `DRAG_SOURCE_OPACITY` (0.25) where it sits, so
-   the layout keeps its shape and the eye stops reading that copy as live.
-   Where a surface previews the drop — the league summary and the gym card
-   both re-derive mid-drag — the receding copy is the previewed one, which is
-   where the carried thing is actually drawn.
-2. **A copy is held**, centred on the pointer inside dnd-kit's
-   `<DragOverlay>`, at the size of the thing that was grabbed, and it is the
-   only thing at full strength during a drag.
+So `src/components/shared/dragHold.tsx` holds two treatments, and every
+surface imports one rather than restating its own:
+
+1. **Between** (dex builder, view page): the copy rides on the pointer and an
+   insert bar marks the gap, because the gap is a place the pointer can be.
+2. **Into** (league summary, gym card): the copy hangs below the grab point,
+   clear of the thumb, and the target reads above it — the row or column the
+   drop would take, redrawn with the carried thing seated in it.
+
+Both share what makes a drag legible either way. The source recedes to
+`DRAG_SOURCE_OPACITY` (0.25) where it sits, so the layout keeps its shape and
+the eye stops reading that copy as live, and exactly one copy stands at full
+strength. Where a surface previews the drop, the receding copy is the
+previewed one, which is where the carried thing is actually drawn.
 
 What each surface shows about the *destination* still differs, and is meant
 to: an insert bar in the dex builder, a re-derived arrangement in the league,
 a ring on the boss row for a legendary. Those answer different questions.
 
 A vertical drag on the gym card carries nothing, because it carries nothing:
-it shifts an evolution boundary in place.
+it shifts an evolution boundary in place. A horizontal one carries the whole
+column, the line's members stacked as the card draws them.
 
 `e2e/drag-hold.spec.ts` measures both properties on all four surfaces
 mid-drag, and that the held row is the width of the row. The dex half runs on
@@ -601,13 +648,71 @@ Open, for the owner:
   would need the evolution *method* (stone, trade, friendship), which the
   dataset does not carry.
 
-### Not built, contrary to the card's own promise
+### Mega and Gigantamax (built 2026-08-30)
 
-The spacer reads "Champion may have one Mega/Gigantamax", and nothing renders
-those buttons: powerups are still on the build plan below, and the blocker is
-data, not UI. `pokemon.json` carries no Mega or Gigantamax flag and no form
-sprites, so eligibility cannot be derived from what is checked in. It needs
-the sprite-and-form harvest already scheduled below.
+The card spacer has always read "Champion may have one Mega/Gigantamax", and
+nothing rendered the buttons. The blocker was data, not UI: `pokemon.json`
+carries one row per species, with no Mega or Gigantamax flag and no form
+sprites, so eligibility could not be derived from anything checked in.
+
+`npm run league:powerups` (`scripts/league/fetch-powerup-forms.ts`) harvests
+it and commits the result, so the app itself needs no network. It reads
+PokeAPI's `pokemon.csv`, keeps the `-mega`, `-mega-x`, `-mega-y`, `-mega-z`,
+`-primal` and `-gmax` forms, and writes `src/league/data/powerupForms.json`
+plus one sprite per form. **116 species — 88 with a Mega or Primal, 32 with a
+Gigantamax, four with both — and 126 form sprites.** Six Pokémon carry two
+Megas: Charizard, Raichu and Mewtwo their X and Y, and Absol, Garchomp and
+Lucario their Z.
+
+Three things the raw table needed:
+
+- **Deduplication by label.** The CSV carries per-gender and per-appearance
+  rows, so Meowstic listed two identical Gigantamax entries and Tatsugiri
+  three. Keying on `species:label` collapses them and still keeps Charizard's
+  Mega X and Mega Y apart, because those are different labels.
+- **A sprite that exists.** `zygarde-mega` sits in the table and has no
+  sprite anywhere. A form whose sprite fails to download is dropped, so the
+  card can never render a hole.
+- **Every lettered suffix spelled out.** The first harvest matched
+  `-mega-x`, `-mega-y` and `-mega`, and `absol-mega-z` ends with none of
+  them, so three Pokémon silently lost their second Mega. `-eternamax` stays
+  out on purpose: Eternamax Eternatus is a raid boss rather than a form a
+  trainer takes, and Eternatus reaches a card only through the legendary
+  slot, which carries no buttons.
+
+How the card behaves:
+
+1. **The buttons live on the champion and endgame boss rows only**, and only
+   under a Pokémon that has that form. Mega bottom-left, Dynamax
+   bottom-right, opposite corners so neither sits under the remove X.
+2. **One powerup per card.** Pressing Mega on another seat moves it there,
+   as does pressing Dynamax on the same seat: the two are exclusive on one
+   Pokémon, and the card allows one.
+3. **Pressing cycles, then returns to base** — Mega Charizard X, Mega
+   Charizard Y, Charizard. That is what lets one button carry a Pokémon with
+   two Megas, and what gives every button an off state without a second
+   control.
+4. **A powerup is a form change, never a swap** (item 8). The seat keeps its
+   line, its place, and its evolution rows; the sprite and the alt text
+   change on the rows that allow it.
+5. **The state stores a seat, a kind and an index**, not a form id. The
+   seat's Pokémon can change under it — the line is replaced, a boundary
+   moves — and an index still means "this Pokémon's first Mega" wherever it
+   lands. When the new occupant has no such form, `formAt` returns null and
+   the base sprite draws.
+
+Always a white disc behind the symbol, whatever the card's colour: the
+Bulbapedia symbols are poster art and mush at 18px on top of a sprite. The
+*ring* carries the on state, not the opacity, so an available powerup stays
+readable while an active one is unmistakable.
+
+`e2e/league-powerups.spec.ts` proves the row restriction, the Charizard
+cycle, and that a card holds one powerup at a time, on all three projects.
+
+Still open: DECISIONS' own rule that **a legendary covering the Mega or
+Gigantamax frees that powerup for another Pokémon** is not implemented — the
+legendary and the powerup are independent today. The form *names* also appear
+only in the sprite's alt text; nothing on the card says "Mega Charizard X".
 
 ## Site chrome (decided 2026-08-29, built the same day)
 
@@ -634,13 +739,15 @@ bar height.
 
 ## Build plan (own tasks, not part of the page)
 
-- **Powerup symbols:** harvested — Bulbapedia's Mega Evolution and Dynamax
-  symbols drive the corner buttons, and the two Primal Reversion icons
-  (Kyogre, Groudon) are checked in beside them for the form cycle. All four
-  live next to the canvas as `powerup-*.png`.
-- **Sprite harvest:** all forms of all Pokémon — gender, alt forms, shiny,
-  Mega, Gigantamax — cached like the current set, plus data entries for the
-  form Pokémon and a base→forms mapping.
+- **Powerup symbols:** done. Bulbapedia's Mega Evolution and Dynamax symbols
+  drive the corner buttons, checked in as `public/powerups/mega.png` and
+  `dynamax.png`. The two Primal Reversion icons (Kyogre, Groudon) stay beside
+  the canvas, unused: a Primal is a Mega-slot form here, under the Mega
+  button.
+- **Sprite harvest:** the Mega and Gigantamax half is done — 123 form sprites
+  and a species→forms map, from `npm run league:powerups`. Gender, alt-form
+  and shiny sprites are still open, as are data entries for the form Pokémon
+  themselves (the card reads a label and a sprite id, nothing more).
 - **Implied-level module:** the regression from item 6, dev-only,
   rerunnable.
 - **Onboarding:** a first-run popup explaining the gestures, re-openable

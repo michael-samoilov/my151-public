@@ -32,6 +32,7 @@ import { useLeagueUi } from '../store/useLeagueUi';
 import { openLeagueBrowser } from '../store/browserBridge';
 import type { CardView } from '../useCardView';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyphs';
+import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
 
 /**
@@ -174,10 +175,16 @@ const bossRowByColumn: CollisionDetection = (args) => {
   return best ? [{ id: best.id, data: { droppableContainer: best, value: bestDistance } }] : [];
 };
 
-function PokemonCell({ cardIndex, datum, pokemonId, held, ringWhenOver, onRemove, onReset }: {
+function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup, held, ringWhenOver, onRemove, onReset }: {
   cardIndex: number;
   datum: CellDatum;
   pokemonId: number | null;
+  /** The Mega or Gigantamax this cell is currently wearing, if any. */
+  form: PowerupForm | null;
+  /** Which powerup this cell's Pokémon is currently using. */
+  powerupKind: PowerupKind | null;
+  /** Press a powerup button. Absent on rows that do not allow them. */
+  onPowerup?: (kind: PowerupKind) => void;
   /** Part of the column being carried; it recedes where it is drawn. */
   held: boolean;
   /** A legendary drag is in flight; boss-row cells ring under the pointer. */
@@ -246,8 +253,8 @@ function PokemonCell({ cardIndex, datum, pokemonId, held, ringWhenOver, onRemove
       >
         {pokemon ? (
           <img
-            src={pokemon.sprite}
-            alt={pokemon.name}
+            src={form ? `/sprites/pokemon/${form.id}.png` : pokemon.sprite}
+            alt={form ? form.label : pokemon.name}
             className="pointer-events-none max-w-none"
             style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: 'pixelated' }}
           />
@@ -255,6 +262,34 @@ function PokemonCell({ cardIndex, datum, pokemonId, held, ringWhenOver, onRemove
           <EmptySlotBall />
         )}
       </button>
+      {/* Mega bottom-left, Dynamax bottom-right, on the rows that allow a
+          powerup and only for Pokémon that have one. Pressing cycles that
+          Pokémon's forms and then returns to base, which is what lets one
+          button carry Charizard's two Megas.
+
+          Inset rather than flush to the corner: these discs are wider than
+          the remove X, and at the corner one seat's Dynamax button met the
+          next seat's Mega button with no gap at all. */}
+      {onPowerup && pokemon && (
+        <>
+          {formsFor(pokemon.id, 'mega').length > 0 && (
+            <PowerupButton
+              kind="mega"
+              active={powerupKind === 'mega'}
+              onPress={() => onPowerup('mega')}
+              className="left-[0.125rem]"
+            />
+          )}
+          {formsFor(pokemon.id, 'dynamax').length > 0 && (
+            <PowerupButton
+              kind="dynamax"
+              active={powerupKind === 'dynamax'}
+              onPress={() => onPowerup('dynamax')}
+              className="right-[0.125rem]"
+            />
+          )}
+        </>
+      )}
       {onReset && pokemon && (
         <button
           type="button"
@@ -284,6 +319,46 @@ function PokemonCell({ cardIndex, datum, pokemonId, held, ringWhenOver, onRemove
         </button>
       )}
     </div>
+  );
+}
+
+/** One corner button, sized like the cell's other overlays. */
+function PowerupButton({ kind, active, onPress, className }: {
+  kind: PowerupKind;
+  active: boolean;
+  onPress: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={kind === 'mega' ? 'Mega Evolution' : 'Dynamax'}
+      aria-pressed={active}
+      data-powerup={kind}
+      data-active={active ? 'true' : 'false'}
+      onClick={(e) => {
+        e.stopPropagation();
+        onPress();
+      }}
+      onPointerDown={(e) => e.stopPropagation()}
+      // Always a white disc: the symbols are fine art at poster size and mush
+      // at 15px on top of a sprite. The disc gives them a ground, and the
+      // ring — not the opacity — carries the on state, so an available
+      // powerup stays legible while an active one is unmistakable.
+      className={cn(
+        'absolute bottom-[0.125rem] z-[15] flex h-[1.15rem] w-[1.15rem] cursor-pointer items-center justify-center rounded-full bg-white transition-shadow',
+        active ? 'ring-2 ring-[var(--lg-band)] shadow' : 'ring-1 ring-black/15',
+        className,
+      )}
+    >
+      {/* The disc stays opaque so the symbol always has a ground; the symbol
+          itself dims when the powerup is merely available. */}
+      <img
+        src={`/powerups/${kind}.png`}
+        alt=""
+        className={cn('h-[78%] w-[78%] object-contain transition-opacity', !active && 'opacity-55')}
+      />
+    </button>
   );
 }
 
@@ -518,6 +593,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const setLineBoundaries = useLeagueStore((s) => s.setLineBoundaries);
   const setLegend = useLeagueStore((s) => s.setLegend);
   const removeLineWith = useLeagueStore((s) => s.removeLineWith);
+  const cyclePowerupOnCard = useLeagueStore((s) => s.cyclePowerup);
   const { card, shades, rows } = view;
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
@@ -765,6 +841,17 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       cardIndex={cardIndex}
                       datum={datum}
                       pokemonId={cell.pokemonId}
+                      form={formAt(card.powerup ?? null, row, cell.seat, cell.pokemonId)}
+                      powerupKind={
+                        (card.powerup ?? null)?.seat === cell.seat && isPowerupRow(row)
+                          ? card.powerup!.kind
+                          : null
+                      }
+                      onPowerup={
+                        isPowerupRow(row) && cell.pokemonId !== null && !cell.isLegend
+                          ? (kind) => cyclePowerupOnCard(cardIndex, cell.seat, kind, cell.pokemonId as number)
+                          : undefined
+                      }
                       held={previewMove !== null && cell.seat === previewMove.to && cell.pokemonId !== null && !cell.isLegend}
                       ringWhenOver={legendDrag}
                       onRemove={topId !== null ? () => removeLineWith(cardIndex, topId) : undefined}
