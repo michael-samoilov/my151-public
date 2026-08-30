@@ -245,6 +245,26 @@
   }
   .slot.dg .ball { position: relative; border-radius: 50%; border: 1.5px dashed var(--dash); }
 
+  .facts {
+    display: grid;
+    grid-template-columns: max-content max-content max-content 1fr;
+    gap: 0 18px;
+    align-items: baseline;
+    margin-top: 4px;
+    font-size: 13px;
+  }
+  .facts > div { padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .fh {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .fn { font-weight: 600; }
+  .fv { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .fc { color: var(--muted); }
+
   .note { margin: 0; max-width: 72ch; font-size: 13.5px; color: var(--muted); }
   .note b { color: var(--ink); font-weight: 600; }
   .note i { font-style: normal; color: var(--flag); font-weight: 600; }
@@ -298,6 +318,7 @@
       <a href="#s3a"><b>3a</b> Corner quarters</a>
       <a href="#s3b"><b>3b</b> Shallow bands</a>
       <a href="#s3c"><b>3c</b> Major and minor</a>
+      <a href="#s3d"><b>3d</b> Where the seam ends</a>
       <a href="#s4"><b>04</b> One primary, one inset</a>
       <a href="#rules">What the pair has to obey</a>
     </nav>
