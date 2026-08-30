@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   DndContext,
@@ -17,6 +17,7 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { pokemonLabel } from '@/i18n';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
+import { TYPE_COLORS } from '@/data/type-colors';
 import type { TypeName } from '@/types/pokemon';
 import { cn } from '@/lib/utils';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
@@ -328,10 +329,17 @@ function TmSlot({ view }: { view: CardView }) {
       className={cn('absolute z-[5] flex items-center gap-[0.375rem] rounded-lg pl-[0.375rem]', !move && 'border border-dashed')}
       style={{ ...pos, borderColor: move ? undefined : 'var(--lg-dash)', background: move ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)' }}
     >
-      <span className="flex shrink-0 flex-col items-center gap-[1px]">
-        {/* Empty state matches the badge hexagon's stroke, not the cell fill. */}
-        <TmDisc colour={move ? 'var(--lg-cell)' : 'var(--lg-dash)'} />
-        <span className="text-[0.5rem] font-extrabold tracking-[0.06em]" style={{ color: 'var(--lg-hint)' }}>
+      <span className="flex shrink-0 flex-col items-center">
+        {/* The disc wears the move's own type, not the gym's — a TM is the
+            move, and the gym's colour is already the whole card. Empty, it
+            matches the badge hexagon's stroke rather than the cell fill. */}
+        <TmDisc colour={move ? TYPE_COLORS[move.type] : 'var(--lg-dash)'} />
+        {/* The disc's viewBox carries its own padding, so the label is pulled
+            back up against it. */}
+        <span
+          className="-mt-[0.1875rem] text-[0.5rem] font-extrabold tracking-[0.06em]"
+          style={{ color: 'var(--lg-hint)' }}
+        >
           TM
         </span>
       </span>
@@ -352,20 +360,89 @@ function TmSlot({ view }: { view: CardView }) {
   );
 }
 
+/**
+ * The badge slot: a hexagon and the badge's name.
+ *
+ * "Badge" is part of the text, not a caption under it, so a name reads as the
+ * phrase it is — "Thunder Badge" — and the word follows the name onto the
+ * second line when the name is long. That rules an `<input>` out: an input is
+ * a replaced element, so its text neither wraps nor flows with a sibling
+ * word. A contenteditable span does both, in one text flow, which is also why
+ * there is nothing here to keep in sync with a mirror.
+ *
+ * The length limit is the box, not a guessed number of characters: 40 wide
+ * letters and 40 narrow ones do not occupy the same space, so a single cap is
+ * either too tight for one or lets the other overflow. Every edit is measured
+ * against the room the slot has and rejected if it does not fit, with a hard
+ * ceiling behind it so a paste cannot put a novel in the store.
+ */
+const BADGE_NAME_CEILING = 60;
+
 function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setBadgeName = useLeagueStore((s) => s.setBadgeName);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const fieldRef = useRef<HTMLSpanElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const accepted = useRef(view.card.badgeName);
   const name = view.card.badgeName;
   const pos = {
     ...slotX(1, 2),
     top: `${rowTop(6) + INSET_Y}rem`,
     height: `${2 * ROW_H - 2 * INSET_Y}rem`,
   };
+
+  // The field owns its own text, so React never re-renders it — that would
+  // drop the caret on every keystroke. Writing to it while it has focus is
+  // the same bug by another route, so this only ever catches the field up to
+  // a change made elsewhere: opening a different card, or a reset.
+  useLayoutEffect(() => {
+    const el = fieldRef.current;
+    if (!el || document.activeElement === el) return;
+    if (el.textContent !== name) el.textContent = name;
+    accepted.current = name;
+  }, [name]);
+
+  const putCaretAtEnd = () => {
+    const el = fieldRef.current;
+    if (!el) return;
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+  };
+
+  const onInput = () => {
+    const el = fieldRef.current;
+    const box = textRef.current;
+    if (!el || !box) return;
+    // Stored exactly as the field holds it. Normalizing here — collapsing
+    // runs of space, say — makes the store and the DOM disagree on the very
+    // next render, and the only way to reconcile that is to rewrite the
+    // field, which throws the caret back to the start. A browser inserts a
+    // non-breaking space for a trailing one, so a normalizing field
+    // scrambles its own text the moment you type two words.
+    const next = el.textContent ?? '';
+    // The suffix is already in the box by the second character, so the box
+    // measures the phrase the reader will see, not just the name.
+    const fits = next.length <= BADGE_NAME_CEILING && box.scrollHeight <= box.clientHeight + 1;
+    if (!fits) {
+      el.textContent = accepted.current;
+      putCaretAtEnd();
+      return;
+    }
+    accepted.current = next;
+    setBadgeName(cardIndex, next);
+  };
+
   return (
     <div
       // The whole slot starts text entry — the hexagon is as tappable as
       // the field itself.
-      onClick={() => inputRef.current?.focus()}
+      onClick={() => {
+        fieldRef.current?.focus();
+        putCaretAtEnd();
+      }}
       className={cn('absolute z-[5] flex cursor-text flex-col items-center justify-center gap-[0.375rem] rounded-lg', !name && 'border border-dashed')}
       style={{ ...pos, borderColor: name ? undefined : 'var(--lg-dash)', background: name ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)' }}
     >
@@ -379,17 +456,30 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         />
         <circle cx="16" cy="16" r="4.4" fill={name ? '#ffffff' : 'none'} stroke={name ? 'none' : 'var(--lg-dash)'} strokeWidth="1.6" />
       </svg>
-      <input
-        ref={inputRef}
-        value={name}
-        onChange={(e) => setBadgeName(cardIndex, e.target.value)}
-        placeholder="Badge Name"
-        // Centred like the filled state; iOS focus zoom is handled at the
-        // page level (the league entry caps maximum-scale on iOS).
-        className="w-[5.25rem] bg-transparent text-center text-[0.65625rem] leading-tight outline-none placeholder:text-[var(--lg-hint)]"
-        aria-label="Badge name"
-      />
-      {name && <span className="-mt-[0.3125rem] text-[0.65625rem] leading-tight">Badge</span>}
+      <div
+        ref={textRef}
+        // Three lines is what the slot has under the hexagon. The height is
+        // fixed rather than free so `scrollHeight` has something to exceed.
+        className="w-[5.25rem] overflow-hidden text-center text-[0.65625rem] leading-tight"
+        style={{ maxHeight: `${3 * 0.65625 * 1.25}rem` }}
+      >
+        <span
+          ref={fieldRef}
+          contentEditable
+          suppressContentEditableWarning
+          role="textbox"
+          aria-label="Badge name"
+          spellCheck={false}
+          onInput={onInput}
+          // The placeholder is the field's own `::before` rather than a
+          // sibling: an empty inline span is zero-wide, which leaves nothing
+          // to tap and nowhere obvious for the caret to sit.
+          data-badge-field
+          data-placeholder="Badge Name"
+          className="outline-none"
+        />
+        {name ? <span> Badge</span> : null}
+      </div>
     </div>
   );
 }

@@ -305,3 +305,12 @@ img {
 @media (prefers-reduced-motion: reduce) {
   .p151-pane-track { transition: none; }
 }
+
+/* The gym badge's name is a contenteditable span so "Badge" can flow after it
+   and wrap with it — an input is a replaced element and would do neither. An
+   empty one is zero-wide, so its placeholder is its own `::before`: that gives
+   the field a box to tap and a place for the caret to sit. */
+[data-badge-field]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--lg-hint);
+}

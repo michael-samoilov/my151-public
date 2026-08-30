@@ -1289,7 +1289,7 @@ function MyDexLabel({ count }: { count: number }) {
   return (
     <span className="whitespace-nowrap">
       My dex{' '}
-      <span className="tabular-nums text-primary">{count}</span>
+      <span className="font-bold tabular-nums text-primary">{count}</span>
       <span className="tabular-nums">/{DEX_TOTAL}</span>
     </span>
   );

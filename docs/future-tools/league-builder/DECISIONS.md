@@ -421,6 +421,39 @@ Veto any of these; they ship as stated otherwise.
     order by the build page's own sections rather than by generation, so a
     dex built section by section reads back that way.
 
+### Round 3, follow-ups from the preview
+
+1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;
+   the gym's colour is already the whole card. The label sits tight under
+   the disc — its viewBox carries its own padding, so the gap was double.
+2. **The badge name is one phrase.** "Badge" flows after the entered text and
+   wraps with it, so a long name puts the word at the end of the last line.
+   That rules an `<input>` out — a replaced element neither wraps nor flows
+   with a sibling word — so the field is a contenteditable span, one text
+   flow, nothing to keep in sync with a mirror. Its placeholder is the
+   field's own `::before`, because an empty inline span is zero-wide and
+   leaves nothing to tap.
+
+   The limit is the box, not a character count: 40 wide letters and 40 narrow
+   ones do not occupy the same space, so any single cap is either too tight
+   for one or lets the other spill. Each edit is measured against the room
+   the slot has and rejected if it does not fit, with a hard ceiling of 60
+   behind it so a paste cannot put a novel in the store.
+
+   Two traps, both real, both found by driving it: normalizing the text on
+   input makes the store and the DOM disagree on the next render (a browser
+   inserts a non-breaking space for a trailing one), and the only way to
+   reconcile that is to rewrite the field, which throws the caret to the
+   start — typing "Thunder Cascade" came back as "Cascade SThunder". And
+   writing to the field at all while it has focus is the same bug by another
+   route. So the field stores exactly what it holds, and React only ever
+   catches it up while it is unfocused.
+3. **The My dex chip's count is bold**, in the app red, against the total in
+   the chip's own ink.
+
+`e2e/league-card-slots.spec.ts` holds the disc colour, the phrase, and the
+fit — at 320, 390 and desktop widths.
+
 ### What the pane track broke, and the rule that came out of it
 
 The two-pane track pays for its smoothness with a `transform`, and a
