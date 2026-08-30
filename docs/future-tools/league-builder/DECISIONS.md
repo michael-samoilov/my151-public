@@ -782,6 +782,60 @@ the running app rather than reading the code.
    its own question, is that seat 1's reset and seat 2's remove meet **across
    the column boundary** with a 0.0px gap.
 
+### Round 10, from the preview
+
+1. **A name follows the language.** The fix is in the shared i18n layer, not
+   in the league. `useNamesVersion` handed React a snapshot that counted name
+   catalog downloads and ignored the locale, and the two are independent: a
+   switch to a locale whose names are loaded starts no download, and
+   `applyLocale` starts the names fetch *before* it awaits the UI catalog, so
+   the download can land while the locale is still the old one. In that order
+   React was called back with an unchanged snapshot and skipped the
+   re-render. The symptom, measured: a gym card reading `Onix` under type
+   badges that already said いわ / じめん, until something unrelated remounted
+   it. `getNamesVersion` now sums the two counters, which changes exactly when
+   either does, in whichever order they arrive.
+
+   The league surfaces that draw a name also have to subscribe at all, so
+   `SignatureSlot` and the pane heading call `useNamesVersion` themselves.
+
+2. **A settings gear, and two ways to read the league.** *Gym Challenge* is
+   the run through: each trainer at the row you meet them, two Pokemon up to
+   six. *Endgame Rematches* reads every trainer at their last row, at full
+   size, legendary and all — the HeartGold/SoulSilver rematch for the whole
+   league at once. The choice persists with the league.
+
+   The dex builder's view settings are a docked pane beside the grid. The
+   league already spends its desktop width on three panes, so the same
+   content arrives as an anchored dropdown there and as the same bottom sheet
+   on mobile. The option rows are the dex builder's.
+
+3. **A powerup belongs to its line, not its seat.** `Powerup` names a seat,
+   and a column drag renumbers seats, so dragging Salamence's column left
+   handed Mega Salamence to whatever line landed in seat 3. The signature
+   mark already had this rule; both now go through one `seatAfterMove`. The
+   powerup also leaves with its own line and shifts when an earlier line is
+   removed, and it does not transfer to a line that replaces its own.
+
+4. **The TM label wears the move's type.** The disc above it already did. A
+   TM is the move, and the card's own colour is everywhere else on the card.
+
+5. **The legendary carries its own remove control.** It covers a seat rather
+   than filling one, so removing it puts that seat's line back and touches
+   nothing else — measured: the lines are byte-for-byte unchanged.
+
+6. **The reset control has clearance.** `RotateCcw` is a ring with an
+   arrowhead bolted to its top-left, so its bounding box is wider than its
+   ring on that side; at 0.6rem with a 3-unit stroke the head touched the
+   disc's rim while the opposite side kept a clear margin. 0.55rem and a
+   2.5-unit stroke balance it: measured at dpr 8, the blue margins went from
+   29/24 to 29/31 across and 29/24 to 30/31 down.
+
+   What was *not* wrong is worth recording, because it was the obvious
+   suspect: the disc is a true circle (120x120 device pixels, before and
+   after), and the ink's centre of mass sits 0.2% from the disc's centre. The
+   defect was clearance, not centring.
+
 ### Round 3, follow-ups from the preview
 
 1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;
@@ -986,6 +1040,11 @@ bar height.
   `e2e/dev/unextracted.spec.ts` already fails any visible text that bypasses
   the catalog on the builder, view and analytics pages. Adding the league
   page to it is the check that keeps this done once it is done.
+
+  Round 10 closed the one part of this that was a defect rather than missing
+  work: Pokemon names already had translations and were not being redrawn
+  when the language changed. Everything listed above is still English-only by
+  omission, which is the part that waits.
 
 - **Powerup symbols:** done. Bulbapedia's Mega Evolution and Dynamax symbols
   drive the corner buttons, checked in as `public/powerups/mega.png` and
