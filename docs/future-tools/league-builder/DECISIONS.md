@@ -836,6 +836,25 @@ the running app rather than reading the code.
    after), and the ink's centre of mass sits 0.2% from the disc's centre. The
    defect was clearance, not centring.
 
+### Round 11, from the preview
+
+1. **A card can be cleared from its own gear.** One destructive row, behind
+   the dex builder's confirm: the first press turns *Clear Card* into *Are you
+   sure?*, the second empties the card and closes the menu, and the armed
+   state lapses after three seconds or on a press outside. That is the
+   `SettingsMenu` in `PokedexGrid.tsx`, moved to the card's tool bar; the
+   wording differs only because the scope does — the dex builder clears a dex
+   and this clears one card.
+
+   `clearCard` resets the card to `emptyCard()`, so it takes the type, theme,
+   lines, signature, TM, badge, legendary and powerup together. What it must
+   not take is anything else, and that is the assertion the tests lead with:
+   the next card comes back byte-for-byte.
+
+   It sits beside the card's own type and theme rather than in the league tool
+   bar, because the league's gear is league-wide (the view mode, round 10) and
+   this is not. Two gears, two scopes, each next to what it governs.
+
 ### Round 3, follow-ups from the preview
 
 1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;
