@@ -53,6 +53,14 @@ interface BrowserSubgroup {
   label: string;
   pokemonIds: number[];
   shinyIds?: number[];
+  /**
+   * How the evolution lines inside the subgroup are ordered. The default is
+   * by the lowest *matching* member's dex number. `evoLine` orders by the
+   * whole line instead — earliest generation any member belongs to, then
+   * earliest dex number in it — which is what a set of already-chosen lines
+   * wants: they are read as lines, not as the members that matched.
+   */
+  order?: 'evoLine';
 }
 
 /**
@@ -359,6 +367,20 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   const spriteOverrides = gridArchetypeDef?.spriteOverrides;
 
   /**
+   * The scoped set as one group, not cut up.
+   *
+   * When the pane is narrowed to the card's own team there are a handful of
+   * lines, and slicing them across generation headings buries the thing the
+   * user came to pick from. Returns null when no scope chip is on.
+   */
+  const scopeSubgroup = useCallback((ids: Iterable<number>): BrowserSubgroup[] | null => {
+    if (!scopeFilter || !scopeFilterIds) return null;
+    const inScope = [...ids].filter((id) => scopeFilterIds.has(id));
+    if (inScope.length === 0) return [];
+    return [{ label: scopeFilterLabel ?? 'Scope', pokemonIds: inScope, order: 'evoLine' }];
+  }, [scopeFilter, scopeFilterIds, scopeFilterLabel]);
+
+  /**
    * The dex, in the order the user built it: one subgroup per build section,
    * in the build page's own order, holding whichever of that section's ids
    * survived the current filters. Returns null when the My dex chip is off or
@@ -388,6 +410,9 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
       ? gridArchetypeDef.pokemonIds
       : groups.flatMap(g => [...g.matchedIds]);
 
+    const scoped = scopeSubgroup(sourceIds);
+    if (scoped) return scoped;
+
     const bySection = sectionSubgroups(sourceIds);
     if (bySection) return bySection;
 
@@ -404,7 +429,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
       .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: ids }));
     // gridCategoryDef is read for its `.subgroups`; it's a stable .find() over
     // the static CATEGORIES array, so it only changes when the category does.
-  }, [gridArchetypeDef, gridCategoryDef, groups, sectionSubgroups, t]);
+  }, [gridArchetypeDef, gridCategoryDef, groups, scopeSubgroup, sectionSubgroups, t]);
 
   const toggleEvoSize = (size: number) => {
     if (!evoLineSizeFilter) {
@@ -422,7 +447,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   // "volcanic", "gym ace") are not. Cross-gen-evo is an exception: its custom subgroups
   // are labeled by generation, so badges correctly flag members from a different gen.
   const hasCustomSubgroups = !!(gridArchetypeDef?.subgroups || gridCategoryDef?.subgroups);
-  const groupedBySection = !!(myDexFilter && myDexSections);
+  const groupedBySection = !!(myDexFilter && myDexSections) || !!(scopeFilter && scopeFilterIds);
   const showGenBadges = !groupedBySection && (!hasCustomSubgroups || deferredOptions.archetype === 'cross-gen-evo' || deferredOptions.category === 'starter');
 
   // Deferred like the grid: the search view and its subgroups must switch
@@ -461,7 +486,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
 
   const searchSubgroups = useMemo((): BrowserSubgroup[] => {
     if (!isSearching || tooManyResults) return [];
-    const bySection = sectionSubgroups(groups.flatMap((g) => g.members.map((m) => m.id)));
+    const memberIds = groups.flatMap((g) => g.members.map((m) => m.id));
+    const scoped = scopeSubgroup(memberIds);
+    if (scoped) return scoped;
+    const bySection = sectionSubgroups(memberIds);
     if (bySection) return bySection;
     const genMap = new Map<number, number[]>();
     for (const g of groups) {
@@ -473,7 +501,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
     return [...genMap.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: [...new Set(ids)] }));
-  }, [isSearching, tooManyResults, groups, sectionSubgroups, t]);
+  }, [isSearching, tooManyResults, groups, scopeSubgroup, sectionSubgroups, t]);
 
   // Per-subgroup render model. This filter/sort/map used to run inline in
   // JSX on every render — the main per-interaction JS cost of this
@@ -504,6 +532,22 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
           orderIdx.set(g, sub.pokemonIds.findIndex(id => g.members.some(m => m.id === id)));
         }
         matching.sort((a, b) => orderIdx.get(a)! - orderIdx.get(b)!);
+      } else if (sub.order === 'evoLine') {
+        // Whole-line order: earliest generation in the line, then earliest
+        // dex number in it. A line's identity is its base form, so a Gen 1
+        // line stays with the Gen 1 lines even when the member that matched
+        // is a later cross-generation evolution.
+        const key = new Map<EvolutionGroup, [number, number]>();
+        for (const g of matching) {
+          let gen = Infinity;
+          let id = Infinity;
+          for (const m of g.members) {
+            if (m.generation < gen) gen = m.generation;
+            if (m.id < id) id = m.id;
+          }
+          key.set(g, [gen, id]);
+        }
+        matching.sort((a, b) => key.get(a)![0] - key.get(b)![0] || key.get(a)![1] - key.get(b)![1]);
       } else {
         // Default view: sort by lowest matching member's dex number.
         const minId = new Map<EvolutionGroup, number>();

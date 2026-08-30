@@ -131,11 +131,6 @@ for (const root of roots) {
   }
   if (chain.length < 2) continue;
   const boundaries = chain.map((p, i) => (i === 0 ? 1 : rowFor(arrivalLevel(p))));
-  // Same correction the engine applies: a stage takes at least the row after
-  // its pre-evolution's, so no member is erased by a tie or an inversion.
-  if (!process.env.LEVEL_REPORT_RAW) {
-    for (let i = 1; i < boundaries.length; i++) boundaries[i] = Math.max(boundaries[i], boundaries[i - 1] + 1);
-  }
   const shown = new Set<number>();
   for (let row = 1; row <= ROW_COUNT; row++) {
     let stage = 0;
@@ -147,7 +142,7 @@ for (const root of roots) {
     collapsed.push(`${chain.map((c) => c.name).join(' → ')}  rows ${boundaries.join(',')}  never shown: ${missing.join(', ')}`);
   }
 }
-report('lines where a member never appears at seat 1', collapsed);
+report('lines the curve skips a member of at seat 1 (the handle reveals them)', collapsed);
 
 // 8. The biggest misses the fit makes on data it was fitted to.
 const worst = known

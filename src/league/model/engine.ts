@@ -40,39 +40,36 @@ export interface CardCell {
 /**
  * First row each stage may appear in, from the hidden level curve.
  *
- * Then one correction, and it is the difference between a line reading as a
- * progression and a line losing a member. Levels alone put fifteen lines'
- * members on rows they can never be seen in, for two reasons:
+ * A stage whose level does not earn it a row of its own does not get one, and
+ * that is the intended behaviour rather than a gap to paper over. Caterpie,
+ * Metapod and Butterfree all arrive at or under level 12, so all three claim
+ * row 1 and the card shows Butterfree — the highest stage claiming it. Six
+ * evolutions go further and arrive *before* their own pre-evolution, because
+ * the later stage has no stated level and the implied one lands under the
+ * real one below it (Rhydon evolves at 42; Rhyperior is a trade, and its
+ * implied level is 38), so the middle stage is squeezed out entirely.
  *
- *  - Whole lines finish below the first threshold. Caterpie, Metapod and
- *    Butterfree all arrive at or under level 12, so all three claim row 1
- *    and only Butterfree — the highest stage claiming it — ever draws. A
- *    league builder that cannot show Caterpie in gym 1 has the wrong answer.
- *  - Six evolutions arrive *before* their own pre-evolution, because the
- *    later stage has no level of its own and the implied one lands under the
- *    real one below it (Rhydon evolves at 42; Rhyperior is a trade, and its
- *    implied level is 38). The middle stage is squeezed out entirely.
+ * Both cases are recoverable by hand: the shelf handle pulls the covered
+ * stage back into view, and `setBoundary` restores the ordering as it goes.
+ * `/evolution-levels` lists every line this happens to.
  *
- * So each stage takes at least the row after its pre-evolution's. Levels
- * still decide wherever they are consistent — this only ever moves a
- * boundary that would have erased a member. A stage pushed past the last row
- * still cannot show, and a manual drag can still pull it in.
+ * An earlier pass forced each stage to take at least the row after its
+ * pre-evolution's, so that no member could ever be skipped. It was reverted:
+ * levels decide, and a skipped member is a fair reading of the levels rather
+ * than a defect.
  */
 export function defaultBoundaries(branch: number[]): number[] {
-  const rows = branch.map((id, stage) => {
+  return branch.map((id, stage) => {
     if (stage === 0) return 1;
     const p = getPokemonById(id);
     const level = p ? arrivalLevel(p) : 0;
     for (let row = 1; row <= ROW_COUNT; row++) {
       if (LEVEL_CURVE[row - 1] >= level) return row;
     }
-    // Above every threshold: the stage never shows on its own.
+    // Above every threshold: the stage never shows on its own. Park it past
+    // the last row; a manual drag can still pull it in.
     return ROW_COUNT + 1;
   });
-  for (let stage = 1; stage < rows.length; stage++) {
-    rows[stage] = Math.max(rows[stage], rows[stage - 1] + 1);
-  }
-  return rows;
 }
 
 export function makePlacedLine(branch: number[]): PlacedLine {

@@ -39,6 +39,13 @@ import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
 const ROW_H = 2.75; // 44px
 const BAND_H = 1.25;
 const GREY = '#a3a3a3';
+/**
+ * Sprite size, as a share of the row. The gym card draws its sprites at 96%
+ * of its row height and lets them overhang the cell — that overhang is what
+ * makes a sprite read as a creature rather than an icon — so the summary
+ * takes the same proportion instead of the timid 77% it had.
+ */
+const SPRITE_REM = 2.625;
 const BAND_RED = '#dc2626';
 /** The widest team any row holds — the team block's column count. */
 const TEAM_COLS = 6;
@@ -119,7 +126,7 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
                   src={p.sprite}
                   alt={p.name}
                   className="max-w-none"
-                  style={{ width: '2.125rem', height: '2.125rem', imageRendering: 'pixelated' }}
+                  style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: 'pixelated' }}
                 />
               ) : filled ? (
                 <EmptySlotBall size={18} />

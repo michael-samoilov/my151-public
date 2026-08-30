@@ -73,21 +73,19 @@ describe('arrivalLevel', () => {
 });
 
 describe('defaultBoundaries', () => {
-  it('gives every member of an early line a row of its own', () => {
-    // Caterpie 7, Metapod 7, Butterfree 10 all sit under the first
-    // threshold (12), so the curve alone puts all three on row 1 and only
-    // Butterfree draws.
-    expect(defaultBoundaries(CATERPIE)).toEqual([1, 2, 3]);
+  it('lets the curve skip a member rather than making room for it', () => {
+    // Caterpie 7, Metapod 7, Butterfree 10 all sit under the first threshold
+    // (12), so all three claim row 1 and the highest stage is the one drawn.
+    // The shelf handle is what recovers the other two.
+    expect(defaultBoundaries(CATERPIE)).toEqual([1, 1, 1]);
     const line = { branch: CATERPIE, boundaries: defaultBoundaries(CATERPIE) };
-    expect([1, 2, 3].map((row) => line.branch[stageAt(line, row)])).toEqual(CATERPIE);
+    expect(line.branch[stageAt(line, 1)]).toBe(12); // Butterfree
   });
 
-  it('keeps a stage below an evolution whose implied level inverts it', () => {
+  it('lets an implied level land under the stage below it', () => {
     // Rhydon's real level is 42; Rhyperior has none, and BST implies 38.
     const rows = defaultBoundaries(RHYHORN);
-    expect(rows[2]).toBeGreaterThan(rows[1]);
-    const line = { branch: RHYHORN, boundaries: rows };
-    expect(stageAt(line, rows[1])).toBe(1); // Rhydon has its own row
+    expect(rows[2]).toBeLessThan(rows[1]);
   });
 
   it('leaves a well-spaced line alone', () => {

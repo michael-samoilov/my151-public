@@ -44,8 +44,8 @@ export interface LevelModel {
   bstRange: [number, number];
   /** Stages whose implied arrival lands at or before their pre-evolution's. */
   inversions: { pre: LevelPoint; post: LevelPoint }[];
-  /** Lines the level curve alone would strip a member from. */
-  wouldLoseAMember: { names: string[]; raw: number[]; corrected: number[]; missing: string[] }[];
+  /** Lines whose default rows skip a member; the shelf handle reveals it. */
+  skipsAMember: { names: string[]; rows: number[]; skipped: string[] }[];
   /** The fit's own worst misses, on the data it was fitted to. */
   residuals: { point: LevelPoint; predicted: number; error: number }[];
   /** Lines that begin on a baby form, which the picker always includes. */
@@ -108,22 +108,20 @@ export function levelModel(): LevelModel {
     }
   }
 
-  // What the curve alone would do, against what the engine actually does.
-  const wouldLoseAMember: LevelModel['wouldLoseAMember'] = [];
+  const skipsAMember: LevelModel['skipsAMember'] = [];
   for (const chain of chains(all)) {
-    const raw = chain.map((p, i) => (i === 0 ? 1 : rowForLevel(arrivalLevelWith(p, fit))));
+    const rows = defaultBoundaries(chain.map((p) => p.id));
     const shown = new Set<number>();
     for (let row = 1; row <= ROW_COUNT; row++) {
       let stage = 0;
-      for (let i = 1; i < raw.length; i++) if (raw[i] <= row) stage = i;
+      for (let i = 1; i < rows.length; i++) if (rows[i] <= row) stage = i;
       shown.add(stage);
     }
     if (shown.size < chain.length) {
-      wouldLoseAMember.push({
+      skipsAMember.push({
         names: chain.map(label),
-        raw,
-        corrected: defaultBoundaries(chain.map((p) => p.id)),
-        missing: chain.filter((_, i) => !shown.has(i)).map(label),
+        rows,
+        skipped: chain.filter((_, i) => !shown.has(i)).map(label),
       });
     }
   }
@@ -170,7 +168,7 @@ export function levelModel(): LevelModel {
     implied,
     bstRange: [Math.min(...bsts), Math.max(...bsts)],
     inversions,
-    wouldLoseAMember,
+    skipsAMember,
     residuals,
     babyLines,
     branches,

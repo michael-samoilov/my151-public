@@ -421,6 +421,29 @@ Veto any of these; they ship as stated otherwise.
     order by the build page's own sections rather than by generation, so a
     dex built section by section reads back that way.
 
+### Round 4, from the preview
+
+1. **A skipped evolution stage is not a defect.** The correction that forced
+   each stage to take at least the row after its pre-evolution's is reverted.
+   Levels decide: Caterpie, Metapod and Butterfree all arrive under the first
+   threshold, so the card opens on Butterfree, and the shelf handle is what
+   pulls the other two in. Same for the six evolutions whose implied level
+   lands under the real one below them. `/evolution-levels` still lists every
+   line this happens to — as information, not as a fault.
+2. **The signature pane, scoped to the team**, is one group rather than a
+   generation split: a handful of lines cut across six headings buries the
+   thing the user came to pick from. The lines order by the whole line —
+   earliest generation any member belongs to, then earliest dex number in it
+   — so a Magnezone sits with the generation 1 lines, because its line starts
+   at Magnemite.
+3. **The summary's sprites take 95% of the row**, the proportion the gym card
+   already uses. They were at 77%, which read as icons rather than creatures.
+4. **The tool name and the league name are two lines, not one field.** The
+   tool name used to *be* the input's placeholder, so typing appeared to
+   rename the page. Now the heading names the page and never changes (still
+   the crawlable h1), and the field under it — placeholder "Name your league",
+   grey and unbolded — is the user's, bold and black once used.
+
 ### One drag treatment, four surfaces
 
 The dex builder, the view page, the league summary and the gym card each had

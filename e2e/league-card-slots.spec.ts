@@ -18,7 +18,53 @@ const openCard = async (page: Page) => {
   await page.waitForTimeout(500);
 };
 
+/** Seat a line by searching the selection pane for it. */
+const seat = async (page: Page, cell: string, query: string) => {
+  await page.click(cell);
+  await page.waitForTimeout(600);
+  await page.evaluate((q) => {
+    const inputs = [...document.querySelectorAll('input')];
+    const el = inputs[inputs.length - 1];
+    const setValue = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+    setValue.call(el, q);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }, query);
+  await page.waitForTimeout(700);
+  await page.click('[data-testid="verify-evo-card"]');
+  await page.waitForTimeout(400);
+};
+
 test.describe('gym card slots', () => {
+  test('the signature pane reads the team as lines, in league order', async ({ page }) => {
+    await openCard(page);
+    // Seeded out of order on purpose. Magnezone is a generation 4 Pokémon
+    // whose line starts at Magnemite in generation 1 — the line's own
+    // earliest generation is what orders it, not the member that matched.
+    await seat(page, '[data-testid="card-cell-1-1"]', 'lotad');      // gen 3, #270
+    await seat(page, '[data-testid="card-cell-1-2"]', 'magnezone');  // line: gen 1, #81
+    await seat(page, '[data-testid="card-cell-2-3"]', 'chinchou');   // gen 2, #170
+    await seat(page, '[data-testid="card-cell-5-4"]', 'caterpie');   // gen 1, #10
+
+    await page.click('text=SIGNATURE POKÉMON');
+    await page.waitForSelector('[data-filter-chip="scope"]');
+    await page.click('[data-filter-chip="scope"]');
+    await page.waitForTimeout(700);
+
+    const view = await page.evaluate(() => ({
+      headings: [...document.querySelectorAll('.uppercase.tracking-wide')].map((h) => h.textContent?.trim()),
+      members: [...document.querySelectorAll('[data-testid="verify-evo-card"] img[alt]')].map((i) => (i as HTMLImageElement).alt),
+    }));
+
+    // One group, not a generation heading in sight.
+    expect(view.headings).toEqual(['Current Team']);
+    expect(view.members).toEqual([
+      'caterpie', 'metapod', 'butterfree',
+      'magnemite', 'magneton', 'magnezone',
+      'chinchou', 'lanturn',
+      'lotad', 'lombre', 'ludicolo',
+    ]);
+  });
+
   test('the TM disc takes the move\'s type, not the gym\'s', async ({ page }) => {
     await openCard(page);
     await page.click('text=Pick a move');

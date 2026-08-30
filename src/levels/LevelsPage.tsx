@@ -279,21 +279,20 @@ export function LevelsPage() {
       </div>
 
       <Section
-        title="Lines the curve alone would strip a member from"
+        title="Lines the curve skips a member of"
         blurb={
-          `${model.wouldLoseAMember.length} lines put two or more stages in the same row, so only the ` +
-          'highest of them ever draws. The engine now gives each stage at least the row after its ' +
-          "pre-evolution's, which is what the corrected column shows. Nothing here is outstanding — " +
-          'it is the list the correction exists for.'
+          `${model.skipsAMember.length} lines put two or more stages in the same row, so only the ` +
+          'highest of them is drawn by default. That is the levels being read honestly, not a gap: ' +
+          "Caterpie, Metapod and Butterfree all arrive at or under the first row's threshold, so the " +
+          'card opens on Butterfree. The shelf handle pulls the others back into view.'
         }
       >
         <Table
-          head={['Line', 'From the curve', 'Would never draw', 'Corrected']}
-          rows={model.wouldLoseAMember.map((l) => [
+          head={['Line', 'Rows from the curve', 'Not drawn by default']}
+          rows={model.skipsAMember.map((l) => [
             <span>{l.names.join(' → ')}</span>,
-            <span className="tabular-nums text-muted-foreground">{l.raw.join(', ')}</span>,
-            <span className="text-amber-700">{l.missing.join(', ')}</span>,
-            <span className="tabular-nums">{l.corrected.join(', ')}</span>,
+            <span className="tabular-nums text-muted-foreground">{l.rows.join(', ')}</span>,
+            <span className="text-amber-700">{l.skipped.join(', ')}</span>,
           ])}
         />
       </Section>

@@ -46,25 +46,37 @@ function GlobalHeader() {
  * shows the tool name — and an sr-only h1 keeps the heading in the
  * hydrated DOM (the static shell carries the crawlable one).
  */
-const LEAGUE_NAME_PLACEHOLDER = 'Pokémon League Builder';
+const TOOL_NAME = 'Pokémon League Builder';
+const LEAGUE_NAME_PLACEHOLDER = 'Name your league';
 
+/**
+ * The tool bar's identity, in two lines: the tool's name, and the league's.
+ *
+ * These used to be one line — the tool name *was* the input's placeholder, so
+ * typing appeared to rename the page. Splitting them says which is which: the
+ * heading names the page and never changes (it is also the crawlable h1), and
+ * the field under it is the user's, bold and black once they use it.
+ */
 function LeagueNameRow({ h1 }: { h1: boolean }) {
   const name = useLeagueStore((s) => s.name);
   const setName = useLeagueStore((s) => s.setName);
+  const Heading = h1 ? 'h1' : 'span';
   return (
-    <div className="flex min-w-0 flex-1 items-center">
-      {h1 && <h1 className="sr-only">{LEAGUE_NAME_PLACEHOLDER}</h1>}
-      {/* A bold heading that happens to be an input reads as a heading, so it
-          gets a field's marks: a dotted rule under it and a pencil right at
-          the end of the text. The input is sized to its own content by an
-          invisible copy stacked in the same grid cell — a flex-1 input would
-          push the pencil to the far edge, where it stops looking attached to
-          the words. */}
-      <label className="group flex min-w-0 max-w-full cursor-text items-center gap-1 overflow-hidden border-b border-dashed border-foreground/25 pb-px transition-colors hover:border-foreground/50 focus-within:border-foreground/60">
-        <span className="grid min-w-0 items-center">
+    <div className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
+      <Heading className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
+        {TOOL_NAME}
+      </Heading>
+      {/* The field is sized to its own text by an invisible copy stacked in
+          the same grid cell, so the pencil sits at the end of the words
+          rather than at the far edge of the bar. */}
+      <label className="group flex min-w-0 max-w-full cursor-text items-center gap-1 overflow-hidden">
+        <span className="grid min-w-0 items-center border-b border-dashed border-foreground/25 transition-colors group-hover:border-foreground/50 group-focus-within:border-foreground/60">
           <span
             aria-hidden
-            className="invisible col-start-1 row-start-1 whitespace-pre text-[0.9375rem] font-bold leading-none"
+            className={cn(
+              'invisible col-start-1 row-start-1 whitespace-pre text-[0.875rem] leading-tight',
+              name ? 'font-bold' : 'font-normal',
+            )}
           >
             {name || LEAGUE_NAME_PLACEHOLDER}
           </span>
@@ -75,7 +87,7 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
             aria-label="League name"
             // Small on purpose; the league entry caps maximum-scale on iOS so
             // focusing a sub-16px input no longer zooms the page.
-            className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.9375rem] font-bold leading-none outline-none placeholder:font-bold placeholder:text-foreground/80"
+            className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.875rem] font-bold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground"
           />
         </span>
         <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
