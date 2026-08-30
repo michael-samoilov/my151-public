@@ -92,7 +92,7 @@
     },
     {
       "file": "PosterMobileBand.dc.html",
-      "title": "D · Poster — Mobile 390, white card + red band",
+      "title": "D · Poster — Mobile 390, white card",
       "x": 490,
       "y": 0,
       "w": 390,
@@ -157,7 +157,7 @@
       "x": 0,
       "y": -250,
       "w": 940,
-      "text": "D · Poster cards — each screenshot OVERHANGS its red tile on the top and left, and is cut off on the right and bottom, so it reads as a photo laid on the tile rather than a picture in a frame.\nThe fan is the -5°/-2°/+1.5° lean the dex builder's own onboarding staircase uses (STAIR in IntroCard.tsx), applied left to right across the four cards: -5, -2.5, -4, -2.\nEvery frame here is a real device viewport, so nothing scrolls: 390×844, 834×1112, 1440×900."
+      "text": "D · Poster cards — each screenshot runs all the way to the card's BOTTOM edge, which is the only edge that cuts it. It overhangs the top and left, and stops short of the right edge so the tile always shows there.\nA red gradient rises from the bottom over the artwork, and the copy sits on it.\nThe fan is the -5°/-2°/+1.5° lean the dex builder's own onboarding staircase uses (STAIR in IntroCard.tsx), applied left to right across the four cards: -5, -2.5, -4, -2.\nEvery frame here is a real device viewport, so nothing scrolls: 390×844, 834×1112, 1440×900."
     },
     {
       "id": "d-scrim-note",
@@ -165,7 +165,7 @@
       "x": 0,
       "y": 880,
       "w": 420,
-      "text": "Red card. The whole tile is #dc2626, the app's primary, and the copy is white on it.\nStrongest version, and the one the tablet and desktop frames use.\nWorth knowing: at 390 the artwork covers most of the tile, so the red mostly reads in the caption area and the right strip. The colour choice does far more work at 834 and 1440, where the tiles are large."
+      "text": "Red card, red gradient, white copy. The tile is #dc2626, the app's primary. This is the version the tablet and desktop frames use.\nOne thing to weigh at 390: the gradient needs about 100px of solid colour to carry the chip, heading and line of copy, and the card is only ~260px tall — so the gradient takes the lower half. On the tablet and desktop tiles the same copy block costs a third of the height, which is why the effect reads much better there."
     },
     {
       "id": "d-band-note",
@@ -173,7 +173,7 @@
       "x": 490,
       "y": 880,
       "w": 420,
-      "text": "White card, red band. Identical geometry — only the tile colour changes — so this isolates the one variable.\nQuieter, and it keeps the page's neutral ground; red stays a signal rather than a surface.\nCost: with four cards, the row loses the block of colour that makes the set read as one shelf."
+      "text": "White card, white gradient, dark copy. Identical geometry — only the tile and gradient colour change — so this isolates the one variable.\nQuieter, and it keeps the page's neutral ground; red stays a signal rather than a surface. The screenshots also sit on their own colour instead of on red.\nCost: with four cards, the row loses the block of colour that makes the set read as one shelf."
     },
     {
       "id": "d-seo-note",
@@ -181,7 +181,7 @@
       "x": 1000,
       "y": -250,
       "w": 900,
-      "text": "What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold.\nOne build note: the overhang means a card cannot use overflow:hidden, so the artwork needs its own clipping box — offset outward on top and left, inward on right and bottom."
+      "text": "What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold.\nTwo build notes: the overhang means a card cannot use overflow:hidden, so the artwork needs its own clipping box — offset outward on top and left, inward on the right, flush with the card at the bottom. And the gradient spans the card only, so each card's overhang is sized to fall back inside the card before the gradient starts."
     }
   ],
   "pages": [
