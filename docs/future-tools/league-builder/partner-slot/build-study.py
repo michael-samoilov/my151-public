@@ -118,8 +118,26 @@ for i, (kind, title, verdict, note) in enumerate(SECTIONS, 1):
                  f'<p class="verdict">{verdict}</p>{panels(kind)}'
                  f'<p class="note">{note}</p></section>')
 
+# The diagonal, revisited: three seams that clip nothing, each with and
+# without the Pokemon's types.
+import importlib.util
+spec = importlib.util.spec_from_file_location(
+    'diagonals', '/tmp/claude-0/-home-user-my151/d74790d9-bbfd-5538-8993-a07d19412b2a/scratchpad/diagonals.py')
+dg = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(dg)
+
+dparts = []
+for i, (kind, title, verdict, note) in enumerate(dg.VARIANTS, 1):
+    dparts.append(
+        f'<section><h2><span class="idx">3{chr(96+i)}</span>{title}</h2>'
+        f'<p class="verdict">{verdict}</p>'
+        f'<p class="sub2">Without types</p>{dg.row(kind, False)}'
+        f'<p class="sub2">With types</p>{dg.row(kind, True)}'
+        f'<p class="note">{note}</p></section>')
+
 TEMPLATE = open('/tmp/claude-0/-home-user-my151/d74790d9-bbfd-5538-8993-a07d19412b2a/scratchpad/partner-template.html').read()
 html = TEMPLATE.replace('__SECTIONS__', '\n\n  '.join(parts))
+html = html.replace('__DIAGONALS__', '\n\n  '.join(dparts))
 html = html.replace('__SP95__', sp[95]).replace('__SP25__', sp[25])
 open('/tmp/claude-0/-home-user-my151/d74790d9-bbfd-5538-8993-a07d19412b2a/scratchpad/partner-slot.html', 'w').write(html)
 print('written', len(html), 'bytes')
