@@ -83,7 +83,7 @@
     },
     {
       "file": "PosterMobile.dc.html",
-      "title": "D · Poster — Mobile 390, gradient",
+      "title": "D · Poster — Mobile 390, red card",
       "x": 0,
       "y": 0,
       "w": 390,
@@ -92,7 +92,7 @@
     },
     {
       "file": "PosterMobileBand.dc.html",
-      "title": "D · Poster — Mobile 390, solid band",
+      "title": "D · Poster — Mobile 390, white card + red band",
       "x": 490,
       "y": 0,
       "w": 390,
@@ -155,9 +155,9 @@
       "id": "d-note",
       "page": "page-2",
       "x": 0,
-      "y": -230,
+      "y": -250,
       "w": 940,
-      "text": "D · Poster cards — the artwork is anchored to the card's BOTTOM edge, where it is clipped flush, and runs up past the TOP edge. Every frame here is a real device viewport, so nothing scrolls: 390×844, 834×1112, 1440×900.\nThe two mobile frames are the same layout with two ways of keeping the copy readable. Pick one."
+      "text": "D · Poster cards — each screenshot OVERHANGS its red tile on the top and left, and is cut off on the right and bottom, so it reads as a photo laid on the tile rather than a picture in a frame.\nThe fan is the -5°/-2°/+1.5° lean the dex builder's own onboarding staircase uses (STAIR in IntroCard.tsx), applied left to right across the four cards: -5, -2.5, -4, -2.\nEvery frame here is a real device viewport, so nothing scrolls: 390×844, 834×1112, 1440×900."
     },
     {
       "id": "d-scrim-note",
@@ -165,7 +165,7 @@
       "x": 0,
       "y": 880,
       "w": 420,
-      "text": "Gradient. The screenshot reaches the card's bottom edge and a white scrim rises over its lower third; the h2 and the line under it sit on the scrim.\nMore screenshot stays visible, and the card reads as one object rather than a picture with a caption.\nCost: the copy sits on a busy sprite grid, so it needs the scrim to stay opaque near the bottom — which is most of what the gradient is doing."
+      "text": "Red card. The whole tile is #dc2626, the app's primary, and the copy is white on it.\nStrongest version, and the one the tablet and desktop frames use.\nWorth knowing: at 390 the artwork covers most of the tile, so the red mostly reads in the caption area and the right strip. The colour choice does far more work at 834 and 1440, where the tiles are large."
     },
     {
       "id": "d-band-note",
@@ -173,15 +173,15 @@
       "x": 490,
       "y": 880,
       "w": 420,
-      "text": "Solid band. The screenshot stops at a white strip that holds the same copy. Nothing overlaps.\nHighest text contrast, and it survives any screenshot, including a light one.\nCost: it gives up 62px of artwork per card and reads as a caption under a picture — the effect you asked for is weaker."
+      "text": "White card, red band. Identical geometry — only the tile colour changes — so this isolates the one variable.\nQuieter, and it keeps the page's neutral ground; red stays a signal rather than a surface.\nCost: with four cards, the row loses the block of colour that makes the set read as one shelf."
     },
     {
       "id": "d-seo-note",
       "page": "page-2",
       "x": 1000,
-      "y": -230,
+      "y": -250,
       "w": 900,
-      "text": "What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold."
+      "text": "What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold.\nOne build note: the overhang means a card cannot use overflow:hidden, so the artwork needs its own clipping box — offset outward on top and left, inward on right and bottom."
     }
   ],
   "pages": [

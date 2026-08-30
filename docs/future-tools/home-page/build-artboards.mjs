@@ -456,16 +456,42 @@ ${foot(width < 500 ? '20px 16px' : '24px 32px')}`,
 
 // ------------------------------------------------------- D · Poster cards
 
+/** Red-card palette. The copy sits on #dc2626, so it needs its own ramp. */
+const R = {
+  card: C.pri,
+  fg: '#ffffff',
+  sub: 'rgba(255, 255, 255, 0.82)',
+  hairline: 'rgba(255, 255, 255, 0.22)',
+};
+
+/** Status chips on a red ground: the live one is solid, the rest are outlines. */
+function chipOnRed(status, scale = 1) {
+  const solid = status === 'live';
+  return `<span style="display: inline-flex; align-items: center; flex-shrink: 0; padding: ${
+    2 * scale
+  }px ${8 * scale}px; border-radius: 999px; border: 1px solid ${
+    solid ? '#ffffff' : 'rgba(255, 255, 255, 0.5)'
+  }; background: ${solid ? '#ffffff' : 'transparent'}; color: ${
+    solid ? C.pri : '#ffffff'
+  }; font-size: ${Math.round(
+    10 * scale,
+  )}px; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap;">${
+    STATUS[status].label
+  }</span>`;
+}
+
 /**
  * The stand-in artwork for the fourth card, sized to fill the poster frame
  * the way a screenshot does.
  */
-function suggestFill({ pad, ctl, reserve }) {
-  // Bottom-aligned, not centred: the card is as tall as a screenshot, and a
-  // small form floating in the middle of it reads as an unfinished tile.
-  return `<div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: ${pad}px; width: 100%; height: 100%; padding: ${pad}px ${pad}px ${reserve}px; box-sizing: border-box; background: #fafafa;">
+function suggestFill({ pad, ctl, topInset, leftInset, maxRow }) {
+  // Anchored to the tile's top-left, because that is the corner the clipping
+  // box actually shows: the rest of this tile is cut off like a screenshot.
+  return `<div style="display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: ${pad}px; width: 100%; height: 100%; padding: ${
+    topInset + pad * 2
+  }px ${pad}px ${pad}px ${leftInset + pad}px; box-sizing: border-box; background: #fafafa;">
         ${spark(Math.round(ctl * 0.72))}
-        <div style="display: flex; align-items: center; gap: 6px; width: 100%; max-width: 240px;">
+        <div style="display: flex; align-items: center; gap: 6px; width: 100%; max-width: ${maxRow}px;">
           <span style="flex-grow: 1; height: ${ctl}px; border: 1px solid ${
             C.bd
           }; border-radius: 10px; background: ${C.card};"></span>
@@ -477,86 +503,98 @@ function suggestFill({ pad, ctl, reserve }) {
 }
 
 /**
- * A poster card. The artwork is anchored to the card's BOTTOM edge, where it
- * is clipped flush, and runs up past the card's TOP edge by `pop`. Two ways to
- * keep the copy readable over it:
+ * A poster card: a red tile with a screenshot fanned across it.
  *
- * - scrim: the artwork reaches the bottom edge and a white gradient rises over
- *   it, with the text on the gradient. Most of the screenshot stays visible.
- * - band: the artwork stops at a solid white band that holds the text. Nothing
- *   overlaps, at the cost of that strip of screenshot.
+ * The screenshot OVERHANGS the card on the top and left, and is cut off on the
+ * right and bottom, so it reads as a photo laid on the tile rather than a
+ * picture inside a frame. The mechanism is one clipping box, offset outward on
+ * two edges and inward on the other two:
+ *
+ *     top: -popTop      left: -popLeft      right: rightStrip      bottom: 0
+ *
+ * Inside it the artwork is oversized and rotated about its OWN top-left corner.
+ * That origin is the whole trick: the corner it pivots on is the corner that
+ * has to stay visible, and everything the rotation pushes out of frame goes out
+ * on the two edges that are supposed to be cut. Rotating about the centre moves
+ * that corner instead, and it drifts out of the clip.
+ *
+ * `tilt` is negative (counter-clockwise), matching the -5°/-2°/+1.5° fan the
+ * dex builder's onboarding staircase uses in `IntroCard.tsx`.
  */
-function posterCard({ tool, pop, mode, scrim, titleSize, blurbSize, pad, ctl, chipScale, cta, radius }) {
-  const scrimMode = mode === 'scrim';
-  const art = tool.shot
-    ? `<img src="${tool.shot}" alt="${tool.h2} screenshot" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center;">`
-    : suggestFill({ pad, ctl, reserve: scrimMode ? Math.round(scrim * 0.8) : pad });
+function posterCard({ tool, tilt, cardW, popTop, popLeft, rightStrip, leftInset, radius, tone, titleSize, blurbSize, pad, ctl, chipScale, cta }) {
+  const onRed = tone === 'red';
 
-  const scrimLayer = scrimMode
-    ? `<div style="position: absolute; left: 0; right: 0; bottom: 0; height: ${scrim}px; background: linear-gradient(to top, ${
-        C.card
-      } 22%, rgba(255, 255, 255, 0.97) 44%, rgba(255, 255, 255, 0.72) 68%, rgba(255, 255, 255, 0) 100%);"></div>`
-    : '';
+  // Rotating about the top-left lifts the far top corner by width·sin(tilt).
+  // Start the artwork that far down inside the clip and the corner never
+  // crosses the top edge.
+  const topInset = Math.ceil(cardW * 1.3 * Math.sin((Math.abs(tilt) * Math.PI) / 180)) + 6;
+
+  const art = tool.shot
+    ? `<img src="${tool.shot}" alt="${tool.h2} screenshot" style="display: block; width: 100%; height: 100%; object-fit: cover; object-position: top left;">`
+    : suggestFill({
+        pad,
+        ctl,
+        topInset,
+        leftInset,
+        // Keep the form inside the window the clip actually shows. The other
+        // three cards are cut off mid-screenshot; a control cut off mid-word
+        // reads as a bug rather than as the same effect.
+        maxRow: cardW - leftInset - pad - 30,
+      });
 
   const copy = `<div style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px;">
-    ${chip(tool.status, chipScale)}
+    ${chipOnRed(tool.status, chipScale)}
     <h2 style="margin: 0; font-size: ${titleSize}px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; color: ${
-      C.fg
+      R.fg
     };">${tool.h2}</h2>
     <p style="margin: 0; font-size: ${blurbSize}px; line-height: 1.35; color: ${
-      C.mut
+      R.sub
     }; text-wrap: pretty;">${POSTER_BLURB[tool.key]}</p>
     ${
       cta
-        ? `<span style="display: flex; align-items: center; gap: 5px; margin-top: 3px; font-size: ${blurbSize}px; font-weight: 600; color: ${
-            C.pri
-          };">${tool.cta}${arrow(Math.round(blurbSize * 1.05), C.pri)}</span>`
+        ? `<span style="display: flex; align-items: center; gap: 5px; margin-top: 3px; font-size: ${blurbSize}px; font-weight: 700; color: ${
+            R.fg
+          };">${tool.cta}${arrow(Math.round(blurbSize * 1.05), '#ffffff')}</span>`
         : ''
     }
   </div>`;
 
-  // Square bottom corners are what makes the artwork read as CUT at the clip
-  // line, rather than as a rounded tile floating on top of the card.
-  const artFrame = (position) =>
-    `<div style="position: absolute; left: ${radius}px; right: ${radius}px; top: -${pop}px; ${position}; border-radius: ${
-      radius - 3
-    }px ${radius - 3}px 0 0; overflow: hidden; background: ${C.bg}; border: 1px solid ${
-      C.bd
-    }; border-bottom: none; box-shadow: 0 10px 24px rgba(10, 10, 10, 0.14), 0 2px 6px rgba(10, 10, 10, 0.08);">
-    ${art}
-    ${scrimLayer}
-  </div>`;
-
-  const shell = (inner) =>
-    `<a href="${tool.slug}" style="position: relative; height: 100%; border-radius: ${radius}px; background: ${
-      C.card
-    }; border: 1px solid ${C.bd}; box-shadow: 0 1px 2px rgba(10, 10, 10, 0.04); color: ${
-      C.fg
-    }; text-decoration: none; ${
-      scrimMode ? 'display: block;' : 'display: flex; flex-direction: column;'
-    }">
-${inner}
-</a>`;
-
-  if (scrimMode) {
-    return shell(`  ${artFrame('bottom: 0')}
-  <div style="position: absolute; left: ${pad}px; right: ${pad}px; bottom: ${pad}px;">${copy}</div>`);
-  }
-
-  // The band sizes itself from the copy, so the clip line lands exactly on the
-  // text block's top edge whatever the heading wraps to.
-  return shell(`  <div style="position: relative; flex-grow: 1; min-height: 0;">
-    ${artFrame('bottom: 0')}
+  return `<a href="${tool.slug}" style="position: relative; display: flex; flex-direction: column; height: 100%; border-radius: ${radius}px; background: ${
+    onRed ? R.card : C.card
+  }; border: 1px solid ${
+    onRed ? R.card : C.bd
+  }; box-shadow: 0 1px 2px rgba(10, 10, 10, 0.06); text-decoration: none;">
+  <div style="position: relative; flex-grow: 1; min-height: 0;">
+    <div style="position: absolute; top: -${popTop}px; left: -${popLeft}px; right: ${rightStrip}px; bottom: 0; overflow: hidden;">
+      <div style="position: absolute; left: ${leftInset}px; top: ${topInset}px; width: calc(100% + ${leftInset + 14}px); ${
+        tool.shot
+          ? `aspect-ratio: 17 / 28; min-height: calc(100% + ${topInset + 24}px);`
+          : `height: calc(100% + ${topInset + 24}px);`
+      } transform: rotate(${tilt}deg); transform-origin: 0 0; border-radius: 8px; overflow: hidden; background: ${
+        C.card
+      }; border: 1px solid ${
+        C.bd
+      }; box-shadow: 0 12px 28px rgba(10, 10, 10, 0.22), 0 3px 8px rgba(10, 10, 10, 0.12);">
+        ${art}
+      </div>
+    </div>
   </div>
-  <div style="flex-shrink: 0; padding: ${pad}px;">${copy}</div>`);
+  <div style="flex-shrink: 0; padding: ${pad}px; background: ${
+    onRed ? 'transparent' : R.card
+  }; border-radius: 0 0 ${radius - 1}px ${radius - 1}px;">${copy}</div>
+</a>`;
 }
 
 /**
  * One-viewport page: a fixed-height flex column whose card grid takes the
  * remaining space. The rows are `1fr`, so the cards resize to whatever the
  * header and hero leave rather than being measured by hand.
+ *
+ * Both gaps carry the overhang: a card's artwork reaches `popLeft` into the
+ * column gap and `popTop` into the row gap, so a plain gap would let it land on
+ * the neighbouring tile.
  */
-function poster({ width, height, cols, rows, mode, pop, scrim, gap, gridPad, titleSize, blurbSize, pad, ctl, chipScale, cta, radius, heroPad, h1Size, pSize, maxW, links, splitHero }) {
+function poster({ width, height, cols, rows, tilts, cardW, popTop, popLeft, rightStrip, leftInset, radius, tone, gap, gridPad, titleSize, blurbSize, pad, ctl, chipScale, cta, heroPad, h1Size, pSize, maxW, links, splitHero }) {
   const heroBody = splitHero
     ? `<section style="display: flex; align-items: flex-end; justify-content: space-between; gap: 48px; padding: ${heroPad};">
     <div style="display: flex; flex-direction: column; gap: 10px; max-width: ${maxW}px;">
@@ -583,19 +621,23 @@ function poster({ width, height, cols, rows, mode, pop, scrim, gap, gridPad, tit
     }; text-wrap: pretty;">${HERO.pShort}</p>
   </section>`;
 
-  const cards = TOOLS.map((t) =>
+  const cards = TOOLS.map((t, i) =>
     posterCard({
       tool: t,
-      pop,
-      mode,
-      scrim,
+      tilt: tilts[i],
+      cardW,
+      popTop,
+      popLeft,
+      rightStrip,
+      leftInset,
+      radius,
+      tone,
       titleSize,
       blurbSize,
       pad,
       ctl,
       chipScale,
       cta,
-      radius,
     }),
   ).join('\n');
 
@@ -621,9 +663,9 @@ function poster({ width, height, cols, rows, mode, pop, scrim, gap, gridPad, tit
   }; color: ${C.fg}; display: flex; flex-direction: column; overflow: hidden;">
 ${header({ width, links })}
 ${heroBody}
-<div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, minmax(0, 1fr)); column-gap: ${gap}px; row-gap: ${
-    pop + gap
-  }px; padding: ${gridPad}; box-sizing: border-box;">
+<div style="flex-grow: 1; min-height: 0; display: grid; grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, minmax(0, 1fr)); column-gap: ${
+    popLeft + gap
+  }px; row-gap: ${popTop + gap}px; padding: ${gridPad}; box-sizing: border-box;">
 ${cards}
 </div>
 </div>
@@ -716,28 +758,38 @@ const FILES = {
     restShotH: 130, restPop: 54, gridPad: '0 16px', links: false,
   }),
 
-  // D · Poster cards — one viewport, artwork clipped at the card's bottom edge.
+  // D · Poster cards — one viewport, artwork fanned over a red tile and
+  // overhanging it on the top and left. Tilts mirror the -5/-2/+1.5 fan in
+  // IntroCard.tsx's onboarding staircase.
   'PosterMobile.dc.html': poster({
     width: 390, height: H['PosterMobile.dc.html'], cols: 2, rows: 2,
-    mode: 'scrim', pop: 34, scrim: 132, gap: 10, gridPad: '42px 14px 14px', radius: 14,
+    tilts: [-5, -2.5, -4, -2], cardW: 158, tone: 'red',
+    popTop: 30, popLeft: 24, rightStrip: 18, leftInset: 9, radius: 16,
+    gap: 12, gridPad: '38px 16px 16px',
     titleSize: 13, blurbSize: 10.5, pad: 11, ctl: 44, chipScale: 0.95, cta: false,
     heroPad: '14px 20px 10px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
   }),
   'PosterMobileBand.dc.html': poster({
     width: 390, height: H['PosterMobileBand.dc.html'], cols: 2, rows: 2,
-    mode: 'band', pop: 34, gap: 10, gridPad: '42px 14px 14px', radius: 14,
+    tilts: [-5, -2.5, -4, -2], cardW: 158, tone: 'band',
+    popTop: 30, popLeft: 24, rightStrip: 18, leftInset: 9, radius: 16,
+    gap: 12, gridPad: '38px 16px 16px',
     titleSize: 13, blurbSize: 10.5, pad: 11, ctl: 44, chipScale: 0.95, cta: false,
     heroPad: '14px 20px 10px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
   }),
   'PosterTablet.dc.html': poster({
     width: 834, height: H['PosterTablet.dc.html'], cols: 2, rows: 2,
-    mode: 'scrim', pop: 48, scrim: 176, gap: 20, gridPad: '58px 32px 32px', radius: 18,
+    tilts: [-5, -2.5, -4, -2], cardW: 355, tone: 'red',
+    popTop: 40, popLeft: 32, rightStrip: 26, leftInset: 12, radius: 18,
+    gap: 20, gridPad: '52px 32px 32px',
     titleSize: 21, blurbSize: 14, pad: 18, ctl: 44, chipScale: 1.15, cta: true,
     heroPad: '26px 32px 18px', h1Size: 42, pSize: 16, maxW: 640, links: true,
   }),
   'PosterDesktop.dc.html': poster({
     width: 1440, height: H['PosterDesktop.dc.html'], cols: 4, rows: 1,
-    mode: 'scrim', pop: 54, scrim: 190, gap: 24, gridPad: '66px 80px 40px', radius: 18,
+    tilts: [-5, -2.5, -4, -2], cardW: 288, tone: 'red',
+    popTop: 44, popLeft: 34, rightStrip: 24, leftInset: 12, radius: 18,
+    gap: 24, gridPad: '58px 80px 40px',
     titleSize: 20, blurbSize: 13.5, pad: 18, ctl: 44, chipScale: 1.1, cta: true,
     heroPad: '30px 80px 22px', h1Size: 48, pSize: 16, maxW: 620, links: true,
     splitHero: true,
@@ -792,8 +844,8 @@ const artboards = ROWS.flatMap((row, r) =>
 // Page 2 keeps the two mobile takes side by side, because the whole point of
 // the second one is comparing the gradient against a solid band.
 const POSTER = [
-  ['PosterMobile.dc.html', 390, 0, 'D · Poster — Mobile 390, gradient'],
-  ['PosterMobileBand.dc.html', 390, 490, 'D · Poster — Mobile 390, solid band'],
+  ['PosterMobile.dc.html', 390, 0, 'D · Poster — Mobile 390, red card'],
+  ['PosterMobileBand.dc.html', 390, 490, 'D · Poster — Mobile 390, white card + red band'],
   ['PosterTablet.dc.html', 834, 980, 'D · Poster — Tablet 834'],
   ['PosterDesktop.dc.html', 1440, 1914, 'D · Poster — Desktop 1440'],
 ];
@@ -828,20 +880,20 @@ const annotations = [
     text: 'SEO structure, same in all three:\n· h1 carries "make your own Pokédex" plus region and league.\n· Each card is an <h2> that exactly matches its slug: /custom-pokedex-builder, /pokemon-league-builder, /favorite-pokemon-picker.\n· The footer repeats the four links as anchor text.\nWatch out: making / a router moves the dex builder off the URL that ranks today (~pos 7.8 for "pokedex builder").',
   },
   {
-    id: 'd-note', page: 'page-2', x: 0, y: -230, w: 940,
-    text: 'D · Poster cards — the artwork is anchored to the card\'s BOTTOM edge, where it is clipped flush, and runs up past the TOP edge. Every frame here is a real device viewport, so nothing scrolls: 390×844, 834×1112, 1440×900.\nThe two mobile frames are the same layout with two ways of keeping the copy readable. Pick one.',
+    id: 'd-note', page: 'page-2', x: 0, y: -250, w: 940,
+    text: 'D · Poster cards — each screenshot OVERHANGS its red tile on the top and left, and is cut off on the right and bottom, so it reads as a photo laid on the tile rather than a picture in a frame.\nThe fan is the -5°/-2°/+1.5° lean the dex builder\'s own onboarding staircase uses (STAIR in IntroCard.tsx), applied left to right across the four cards: -5, -2.5, -4, -2.\nEvery frame here is a real device viewport, so nothing scrolls: 390×844, 834×1112, 1440×900.',
   },
   {
     id: 'd-scrim-note', page: 'page-2', x: 0, y: 880, w: 420,
-    text: 'Gradient. The screenshot reaches the card\'s bottom edge and a white scrim rises over its lower third; the h2 and the line under it sit on the scrim.\nMore screenshot stays visible, and the card reads as one object rather than a picture with a caption.\nCost: the copy sits on a busy sprite grid, so it needs the scrim to stay opaque near the bottom — which is most of what the gradient is doing.',
+    text: 'Red card. The whole tile is #dc2626, the app\'s primary, and the copy is white on it.\nStrongest version, and the one the tablet and desktop frames use.\nWorth knowing: at 390 the artwork covers most of the tile, so the red mostly reads in the caption area and the right strip. The colour choice does far more work at 834 and 1440, where the tiles are large.',
   },
   {
     id: 'd-band-note', page: 'page-2', x: 490, y: 880, w: 420,
-    text: 'Solid band. The screenshot stops at a white strip that holds the same copy. Nothing overlaps.\nHighest text contrast, and it survives any screenshot, including a light one.\nCost: it gives up 62px of artwork per card and reads as a caption under a picture — the effect you asked for is weaker.',
+    text: 'White card, red band. Identical geometry — only the tile colour changes — so this isolates the one variable.\nQuieter, and it keeps the page\'s neutral ground; red stays a signal rather than a surface.\nCost: with four cards, the row loses the block of colour that makes the set read as one shelf.',
   },
   {
-    id: 'd-seo-note', page: 'page-2', x: 1000, y: -230, w: 900,
-    text: 'What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold.',
+    id: 'd-seo-note', page: 'page-2', x: 1000, y: -250, w: 900,
+    text: 'What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold.\nOne build note: the overhang means a card cannot use overflow:hidden, so the artwork needs its own clipping box — offset outward on top and left, inward on right and bottom.',
   },
 ];
 
