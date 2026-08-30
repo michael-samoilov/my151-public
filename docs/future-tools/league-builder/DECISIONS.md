@@ -747,6 +747,41 @@ the running app rather than reading the code.
    sprite had always taken the 52px fallback beside a card that paints
    50.47px. It now matches the card exactly.
 
+### Round 9, from the preview
+
+1. **The powerup buttons press wider than they paint.** The disc stays 1rem;
+   the button around it is the disc plus half the room beside it, and reaches
+   0.5rem above and 0.125rem below. Measured on the built preview, the press
+   box is 1.9x the disc's area at 320px and 2.8x at 1280px, and a press 11px
+   above the disc now toggles the powerup where it used to open the line
+   picker.
+
+   The room is split rather than spent: a disc has two neighbours, the cell's
+   other button and the next seat's across the column boundary, and each
+   press box takes half of what is free on its own side. No two boxes meet at
+   any width — the tightest is 2.4px, at 320px.
+
+2. **The disc sits midway between its neighbours, not at a fixed inset.** The
+   column is a share of the viewport while the disc is rem, so the two drift
+   apart as the window changes. A fixed 0.375rem inset was tuned at 390px and
+   left 11.1px of clearance at 430px, but at 320x844 the two discs in one
+   cell **overlapped by 1.8px** — the very thing round 7 set out to prevent,
+   on a width round 7 never measured. `calc((100% - 2rem) / 4)` splits the
+   slack four ways, which puts each disc exactly between its neighbours at
+   every width: 4.8px of clearance at 320px, 19.9px at 1280px.
+
+   The overlap moves with the viewport's height as well as its width, because
+   the card scales itself to fit: the same card at 320x800 cleared by 0.9px
+   and at 320x844 overlapped. A rule that splits the room needs neither
+   number.
+
+3. **The remove and reset controls do not overlap, and never did.** Round 8's
+   report said they did on Brock's Onix. That was wrong: reset is `left-0`,
+   remove is `right-0`, so they sit at opposite corners of their own column.
+   Measured on the seeded league, the overlap is 0px². What is true, and is
+   its own question, is that seat 1's reset and seat 2's remove meet **across
+   the column boundary** with a 0.0px gap.
+
 ### Round 3, follow-ups from the preview
 
 1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;
@@ -923,6 +958,34 @@ harness asserts the same lanes per view on every surface plus the league
 bar height.
 
 ## Build plan (own tasks, not part of the page)
+
+- **Localise the league surface.** The tool is English-only apart from
+  Pokémon names (`pokemonLabel`) and type names (`typeLabel`), which already
+  follow the language. Deferred until the English copy settles, then done in
+  one pass. What is currently hard-coded, from a sweep of `src/league`:
+  - **Move names**, the largest piece: `src/data/moves.json` carries one
+    English `name` per move, so the TM picker and the card's TM slot cannot
+    follow the language. Needs a localised name per move from the same
+    PokeAPI harvest the type names came from (`npm run i18n:game-text`), and
+    a `moveLabel` beside `pokemonLabel`.
+  - **The word "Badge"**, which the badge field appends to the user's own
+    name ("Thunder Badge"), plus the "Badge Name" placeholder and the
+    "No badges" empty state.
+  - **The band labels**: GYM LEADER TEAM, ELITE FOUR & CHAMPION, ENDGAME
+    BOSS TEAM, and the note "Champion may have one Mega/Gigantamax".
+  - **The slot labels** on the league home: GYM LEADERS, ELITE FOUR,
+    CHAMPION, ENDGAME BOSS.
+  - **The card's hints and fields**: the three drag hints, SIGNATURE
+    POKÉMON, "Gym type", "Gym theme", "No type", "Select a type", and the
+    pane's "Adding to:" and "Replacing:" headers.
+  - **The TM picker's own chrome**: "Search moves", Type, Category, Contest,
+    and the result table's Move, Att., Acc. headings.
+  - **The powerup labels** "Mega Evolution" and "Dynamax", which are the
+    buttons' only accessible names.
+
+  `e2e/dev/unextracted.spec.ts` already fails any visible text that bypasses
+  the catalog on the builder, view and analytics pages. Adding the league
+  page to it is the check that keeps this done once it is done.
 
 - **Powerup symbols:** done. Bulbapedia's Mega Evolution and Dynamax symbols
   drive the corner buttons, checked in as `public/powerups/mega.png` and
