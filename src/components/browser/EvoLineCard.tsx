@@ -128,6 +128,9 @@ interface EvoLineGridProps {
    *  tile that picks a whole line. Positions are untouched — a line still
    *  occupies its own columns and never straddles a row. */
   standaloneTiles?: boolean;
+  /** Drop the "already placed" pokeball. When the pane is showing only what
+   *  is already on the card, marking every tile as placed says nothing. */
+  hideAssignedMark?: boolean;
 }
 
 const GRID_CLASSES: Record<number, string> = {
@@ -136,7 +139,7 @@ const GRID_CLASSES: Record<number, string> = {
 };
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, windowed = false, standaloneTiles = false }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, windowed = false, standaloneTiles = false, hideAssignedMark = false }: EvoLineGridProps) {
   // Canonical Pokemon-tile sprite size — shared with the build page so
   // Charizard (etc.) renders identically in the selection pane and in a
   // section tile at the same viewport width. See `PokemonTile.tsx`.
@@ -198,6 +201,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
             matchupInfo={matchupInfo}
             matchupType={matchupType}
             standaloneTiles={standaloneTiles}
+            hideAssignedMark={hideAssignedMark}
             spritePx={spritePx}
           />
         );
@@ -207,7 +211,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
       }
     }
     return result;
-  }, [rows, start, end, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx, standaloneTiles]);
+  }, [rows, start, end, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx, standaloneTiles, hideAssignedMark]);
 
   // The fillers stand in for the rows outside the window so the scrollbar
   // still describes the whole list. They span every column, so each occupies
@@ -258,6 +262,8 @@ interface EvoLineCardProps {
   spritePx: number;
   /** Each member is its own tile and its own pick. */
   standaloneTiles?: boolean;
+  /** Drop the "already placed" pokeball. */
+  hideAssignedMark?: boolean;
 }
 
 function formatMult(v: number): string {
@@ -282,7 +288,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false }: EvoLineCardProps) {
+function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false, hideAssignedMark = false }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
   // Shared press state so clicking any member shrinks the *whole* evo line
@@ -430,7 +436,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                     <RedXIcon className="w-full h-full" />
                   </div>
                 )}
-                {inDex && variant === 'browser' && (
+                {inDex && variant === 'browser' && !hideAssignedMark && (
                   markedForRemoval ? (
                     <div className={TILE_ACTION_BUTTON_CLASS} style={{ transform: 'translateZ(0)' }}>
                       <RedXIcon className="w-full h-full" />

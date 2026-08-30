@@ -40,7 +40,7 @@ const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 function SortCaret({ dir }: { dir: 'asc' | 'desc' | null }) {
   return (
-    <svg viewBox="0 0 12 12" className={cn('mr-[2px] h-[9px] w-[9px]', dir === 'desc' && 'rotate-180')}>
+    <svg data-sort-caret viewBox="0 0 12 12" className={cn('mr-[2px] h-[9px] w-[9px] shrink-0', dir === 'desc' && 'rotate-180')}>
       <path
         d="M3 7.5 L6 4 L9 7.5"
         fill="none"
@@ -141,7 +141,6 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
   const [typeFilter, setTypeFilter] = useState<TypeName[] | null>(
     cardType && cardType !== 'none' ? [cardType] : null,
   );
-  const [typeMode, setTypeMode] = useState<'any' | 'all'>('any');
   const [categories, setCategories] = useState<Move['category'][]>([]);
   const [contests, setContests] = useState<ContestType[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>('name');
@@ -162,7 +161,6 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
   const hasActiveFilters = !!typeFilter || categories.length > 0 || contests.length > 0;
   const clearFilters = () => {
     setTypeFilter(null);
-    setTypeMode('any');
     setCategories([]);
     setContests([]);
   };
@@ -172,7 +170,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
     const filtered = MOVES.filter((m) => {
       const typeOk =
         !typeFilter ||
-        (typeMode === 'all' ? typeFilter.every((t) => t === m.type) : typeFilter.includes(m.type));
+        typeFilter.includes(m.type);
       const catOk = categories.length === 0 || categories.includes(m.category);
       const contestOk = contests.length === 0 || (m.contest !== null && contests.includes(m.contest));
       return typeOk && catOk && contestOk && (!q || m.name.toLowerCase().includes(q));
@@ -186,7 +184,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
       return dir * (num(a.accuracy) - num(b.accuracy)) || a.name.localeCompare(b.name);
     });
     return filtered;
-  }, [search, typeFilter, typeMode, categories, contests, sortKey, sortDir]);
+  }, [search, typeFilter, categories, contests, sortKey, sortDir]);
 
   const header = (key: SortKey, label: string, right = false) => (
     <button
@@ -228,17 +226,11 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
 
       {/* Filter chip row — the selection pane's idiom. */}
       <div className="flex items-center gap-1.5 overflow-x-auto px-3 pb-2 no-scrollbar">
+        {/* No match-mode control: a move has exactly one type, so "all of
+            these types" can only ever be empty. Several types selected always
+            means any of them. */}
         {typeFilter && typeFilter.length > 0 ? (
           <>
-            {typeFilter.length > 1 && (
-              <button
-                type="button"
-                onClick={() => setTypeMode(typeMode === 'any' ? 'all' : 'any')}
-                className="inline-flex shrink-0 cursor-pointer items-center rounded-full bg-muted px-1.5 py-0.5 text-[0.625rem] font-bold text-muted-foreground transition-colors hover:bg-muted/80"
-              >
-                {typeMode === 'any' ? 'OR' : 'AND'}
-              </button>
-            )}
             {typeFilter.map((t) => (
               <FilterChip
                 key={t}
@@ -324,31 +316,6 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
           </div>
           {openSheet === 'type' && (
             <div className="space-y-2">
-              {typeFilter && typeFilter.length >= 2 && (
-                <div className="flex items-center gap-2 pb-1">
-                  <span className="text-[0.6875rem] text-muted-foreground">Match</span>
-                  <button
-                    type="button"
-                    onClick={() => setTypeMode('any')}
-                    className={cn(
-                      'cursor-pointer rounded px-2 py-0.5 text-[0.6875rem] font-medium transition-colors',
-                      typeMode === 'any' ? 'bg-foreground text-background' : 'bg-secondary text-secondary-foreground',
-                    )}
-                  >
-                    Any
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTypeMode('all')}
-                    className={cn(
-                      'cursor-pointer rounded px-2 py-0.5 text-[0.6875rem] font-medium transition-colors',
-                      typeMode === 'all' ? 'bg-foreground text-background' : 'bg-secondary text-secondary-foreground',
-                    )}
-                  >
-                    All
-                  </button>
-                </div>
-              )}
               <div data-testid="tm-type-filter" className="mx-auto grid max-w-sm grid-cols-3 gap-1">
                 {TYPE_NAMES.map((type) => {
                   const isSelected = typeFilter?.includes(type) ?? false;

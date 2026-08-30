@@ -375,6 +375,15 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   const spriteOverrides = gridArchetypeDef?.spriteOverrides;
 
   /**
+   * The pane is showing the card's own lines, drawn as lines.
+   *
+   * True when the scope chip is on, and also when the results are
+   * structurally confined to the same set — a full template forces the scope
+   * and shows no chip to turn it off.
+   */
+  const scopedToLines = !!(scopeFilterLines && (scopeFilter || restrictIds));
+
+  /**
    * The scoped set as one group, not cut up.
    *
    * When the pane is narrowed to the card's own team there are a handful of
@@ -384,7 +393,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   const scopeSubgroup = useCallback((ids: Iterable<number>): BrowserSubgroup[] | null => {
     // Also when the results are structurally confined to the same set — a
     // full template forces the scope and shows no chip to turn it off.
-    if (!scopeFilterLines || !(scopeFilter || restrictIds)) return null;
+    if (!scopedToLines) return null;
     const inScope = [...ids].filter((id) => scopeFilterLines.some((line) => line.includes(id)));
     if (inScope.length === 0) return [];
     return [{
@@ -393,7 +402,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
       order: 'evoLine',
       lines: scopeFilterLines,
     }];
-  }, [scopeFilter, scopeFilterLines, scopeFilterLabel, restrictIds]);
+  }, [scopedToLines, scopeFilterLines, scopeFilterLabel]);
 
   /**
    * The dex, in the order the user built it: one subgroup per build section,
@@ -638,7 +647,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
    * instead — no alternative branches, no Pokémon twice — so it counts those.
    */
   const shownCount = useMemo(() => {
-    if (!scopeFilterLines || !(scopeFilter || restrictIds)) return totalCount;
+    if (!scopedToLines) return totalCount;
     const ids = new Set<number>();
     for (const model of subgroupModels) {
       for (const group of model.groups ?? []) {
@@ -646,7 +655,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
       }
     }
     return ids.size;
-  }, [scopeFilterLines, scopeFilter, restrictIds, subgroupModels, totalCount]);
+  }, [scopedToLines, subgroupModels, totalCount]);
 
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
   const shapeKey = shapeFilter ? shapeFilter.join(',') : 'none';
@@ -1204,6 +1213,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
                   <div className="grid grid-cols-2 gap-x-1 items-start pt-1">
                     <EvoLineGrid
                       standaloneTiles={standaloneTiles}
+                      hideAssignedMark={scopedToLines}
                       groups={model.leftGroups!}
                       assignedIds={assignedIds}
                       stagedIds={stagedSet}
@@ -1216,6 +1226,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
                     />
                     <EvoLineGrid
                       standaloneTiles={standaloneTiles}
+                      hideAssignedMark={scopedToLines}
                       groups={model.rightGroups!}
                       assignedIds={assignedIds}
                       stagedIds={stagedSet}
@@ -1241,6 +1252,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
                 <div className="pt-1">
                   <EvoLineGrid
                       standaloneTiles={standaloneTiles}
+                      hideAssignedMark={scopedToLines}
                     groups={model.groups!}
                     assignedIds={assignedIds}
                     stagedIds={stagedSet}

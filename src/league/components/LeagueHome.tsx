@@ -275,7 +275,7 @@ export function LeagueHome() {
           grabbed at, drawn by the same component as the row itself. */}
       <DragOverlay dropAnimation={null}>
         {held ? (
-          <HeldItems>
+          <HeldItems placement="below">
             <div
               className="overflow-hidden rounded-[0.3125rem] shadow-lg ring-1 ring-black/10"
               style={{ width: held.width || undefined }}

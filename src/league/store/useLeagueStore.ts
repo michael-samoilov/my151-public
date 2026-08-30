@@ -44,6 +44,8 @@ export interface LeagueState {
   placeBranch: (card: number, branch: number[], at?: 'end' | 'front') => void;
   /** Remove whichever line contains the id; later seats close up. */
   removeLineWith: (card: number, pokemonId: number) => void;
+  /** Swap the line at a seat for another, keeping the seat's place. */
+  replaceLine: (card: number, seat: number, branch: number[]) => void;
   moveSeat: (card: number, fromSeat: number, toSeat: number) => void;
   /** Set one stage's first row, pushing neighbouring boundaries (engine.setBoundary). */
   setStageBoundary: (card: number, seat: number, stage: number, row: number) => void;
@@ -108,6 +110,19 @@ export const useLeagueStore = create<LeagueState>()(
                 ? c.signatureSeat + 1
                 : c.signatureSeat;
             return { ...c, lines, signatureSeat };
+          }),
+        })),
+
+      replaceLine: (card, seat, branch) =>
+        set((s) => ({
+          cards: withCard(s.cards, card, (c) => {
+            if (seat < 1 || seat > c.lines.length) return c;
+            // The seat keeps everything that belongs to the seat rather than
+            // to the line: its place in the team, and the signature mark if
+            // it carried one. The evolution rows are the line's own, so the
+            // new line arrives with its own defaults.
+            const lines = c.lines.map((line, i) => (i === seat - 1 ? makePlacedLine(branch) : line));
+            return { ...c, lines };
           }),
         })),
 

@@ -9,6 +9,8 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  rectIntersection,
+  type CollisionDetection,
   type DragOverEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
@@ -147,6 +149,31 @@ interface PaintDrag {
   painted: boolean;
 }
 
+/**
+ * While a legendary is in hand, the boss row is chosen by column alone.
+ *
+ * The default hit test wants the pointer over the cell, which puts a thumb
+ * on top of the very Pokémon the outline is trying to point at. Matching on
+ * x lets the drag be held below the row and still say what it would replace.
+ */
+const bossRowByColumn: CollisionDetection = (args) => {
+  const x = args.pointerCoordinates?.x ?? args.collisionRect.left + args.collisionRect.width / 2;
+  let best: (typeof args.droppableContainers)[number] | null = null;
+  let bestDistance = Infinity;
+  for (const container of args.droppableContainers) {
+    const datum = container.data.current as CellDatum | undefined;
+    if (!datum || datum.row !== BOSS_ROW) continue;
+    const rect = container.rect.current;
+    if (!rect) continue;
+    const distance = Math.abs(rect.left + rect.width / 2 - x);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = container;
+    }
+  }
+  return best ? [{ id: best.id, data: { droppableContainer: best, value: bestDistance } }] : [];
+};
+
 function PokemonCell({ cardIndex, datum, pokemonId, held, ringWhenOver, onRemove, onReset }: {
   cardIndex: number;
   datum: CellDatum;
@@ -178,6 +205,10 @@ function PokemonCell({ cardIndex, datum, pokemonId, held, ringWhenOver, onRemove
     } else if (datum.row === BOSS_ROW) {
       // The hint under the card: tap a boss-row pokemon to swap in a legendary.
       openLeagueBrowser(cardIndex, 'legend', datum.seat);
+    } else if (pokemonId !== null) {
+      // Anywhere else, a placed pokemon offers to swap its line out. The
+      // seat keeps its place; only what sits in it changes.
+      openLeagueBrowser(cardIndex, 'replace', datum.seat, pokemonId);
     }
   };
 
@@ -222,11 +253,6 @@ function PokemonCell({ cardIndex, datum, pokemonId, held, ringWhenOver, onRemove
           />
         ) : (
           <EmptySlotBall />
-        )}
-        {datum.isLegend && (
-          <span className="absolute bottom-[1px] text-[0.5rem] font-bold" style={{ color: 'var(--lg-band)' }}>
-            ↔
-          </span>
         )}
       </button>
       {onReset && pokemon && (
@@ -339,7 +365,7 @@ function TmSlot({ view }: { view: CardView }) {
         {/* The disc's viewBox carries its own padding, so the label is pulled
             back up against it. */}
         <span
-          className="-mt-[0.1875rem] text-[0.5rem] font-extrabold tracking-[0.06em]"
+          className="-mt-[0.0625rem] text-[0.5rem] font-extrabold tracking-[0.06em]"
           style={{ color: 'var(--lg-hint)' }}
         >
           TM
@@ -502,7 +528,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   // What the pointer carries, and how big to draw it. The size is measured
   // from the cell it was lifted from, in client pixels, because the card sits
   // under a CSS `zoom` and the overlay is portalled out of it.
-  const [held, setHeld] = useState<{ pokemonId: number; sprite: number } | null>(null);
+  const [held, setHeld] = useState<{ ids: number[]; sprite: number; stacked: boolean } | null>(null);
 
   const onDragStart = useCallback(
     (e: DragStartEvent) => {
@@ -510,11 +536,15 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       if (!d) return;
       const cell = e.active.rect.current.initial;
       const cellRem = ROW_H - 2 * INSET_Y;
-      if (d.pokemonId !== null) {
-        setHeld({
-          pokemonId: d.pokemonId,
-          sprite: cell ? (cell.height * SPRITE_REM) / cellRem : 52,
-        });
+      const sprite = cell ? (cell.height * SPRITE_REM) / cellRem : 52;
+      // A column drag carries the column: its line's members, stacked, which
+      // is what the column holds however many rows it spans. A legendary
+      // drag carries the one Pokémon it is.
+      const grabbed = card.lines[d.seat - 1];
+      if (d.isLegend) {
+        setHeld({ ids: card.legend ? [card.legend.pokemonId] : [], sprite, stacked: false });
+      } else if (grabbed) {
+        setHeld({ ids: grabbed.branch, sprite: sprite * 0.72, stacked: true });
       }
       if (d.isLegend) {
         paintRef.current = {
@@ -654,7 +684,9 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       : rows;
   // A copy is carried once the gesture is a move: a vertical paint shifts an
   // evolution boundary in place, so there is nothing being carried there.
-  const heldPokemon = held && (legendDrag || previewMove) ? getPokemonById(held.pokemonId) : undefined;
+  const heldPokemon = held && (legendDrag || previewMove)
+    ? held.ids.map((id) => getPokemonById(id)).filter((p): p is NonNullable<typeof p> => !!p)
+    : [];
 
   // The column's topmost pokemon carries the remove control for its line.
   // The legendary overlay is skipped: it is not the line, it covers it.
@@ -670,6 +702,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   return (
     <DndContext
       sensors={sensors}
+      collisionDetection={legendDrag ? bossRowByColumn : rectIntersection}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
@@ -768,14 +801,19 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
           measured from the cell, not that size zoomed a second time. */}
       {createPortal(
         <DragOverlay dropAnimation={null}>
-          {held && heldPokemon ? (
-            <HeldItems>
-              <img
-                src={heldPokemon.sprite}
-                alt=""
-                className="max-w-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]"
-                style={{ width: held.sprite, height: held.sprite, imageRendering: 'pixelated' }}
-              />
+          {held && heldPokemon.length > 0 ? (
+            <HeldItems placement="below">
+              <div className={held.stacked ? 'flex flex-col items-center' : 'flex'}>
+                {heldPokemon.map((p) => (
+                  <img
+                    key={p.id}
+                    src={p.sprite}
+                    alt=""
+                    className="max-w-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]"
+                    style={{ width: held.sprite, height: held.sprite, imageRendering: 'pixelated' }}
+                  />
+                ))}
+              </div>
             </HeldItems>
           ) : null}
         </DragOverlay>,

@@ -705,6 +705,11 @@ export function PokedexGrid() {
 
   // Drag state
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
+  // The grabbed tile's own width, in client pixels. The held copy used to
+  // size itself with a percentage of the grid's column maths, which resolves
+  // against the drag overlay's box instead — every held tile came out half
+  // width and the line overlapped itself.
+  const [dragTileWidth, setDragTileWidth] = useState<number | null>(null);
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
   const [dragFromSection, setDragFromSection] = useState<string | null>(null);
   const [overTileId, setOverTileId] = useState<string | null>(null);
@@ -716,6 +721,7 @@ export function PokedexGrid() {
 
   const resetDrag = useCallback(() => {
     setDragLineIds(null);
+    setDragTileWidth(null);
     setDragFromSection(null);
     setOverTileId(null);
     setDropSide('left');
@@ -730,6 +736,8 @@ export function PokedexGrid() {
       const sectionIds = sections[sectionId] ?? [];
       const lineIds = findEvoLineGroup(pokemonId, sectionIds);
       setDragLineIds(lineIds);
+      const node = document.querySelector(`[data-tile-id="${CSS.escape(String(event.active.id))}"]`);
+      setDragTileWidth(node?.getBoundingClientRect().width ?? null);
       setDragFromSection(sectionId);
       dragInputIsTouch.current = event.activatorEvent instanceof TouchEvent;
     },
@@ -963,7 +971,7 @@ export function PokedexGrid() {
                   <HeldItems>
                     <div className="flex gap-1">
                       {dragLineIds.map((id) => (
-                        <div key={id} className="w-[calc((100%-24px-5%)/6)] md:w-[calc((100%-20px)/6)] max-w-[90px]">
+                        <div key={id} style={{ width: dragTileWidth ?? undefined }}>
                           <PokemonTileStatic id={id} />
                         </div>
                       ))}

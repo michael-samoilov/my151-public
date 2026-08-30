@@ -5,7 +5,7 @@ import { create } from 'zustand';
  * league home with everything closed, which is also the crawler's view.
  */
 
-export type BrowserPurpose = 'lines' | 'signature' | 'legend';
+export type BrowserPurpose = 'lines' | 'signature' | 'legend' | 'replace';
 
 interface LeagueUiState {
   /** null = league home; a number = that card is open full-screen. */
@@ -18,14 +18,17 @@ interface LeagueUiState {
   lastCard: number;
   browserOpen: boolean;
   browserPurpose: BrowserPurpose;
-  /** Boss-row seat a legend pick will overlay. */
-  legendSeat: number;
+  /** The seat the pick applies to: the boss seat a legendary overlays, or
+   *  the seat whose line is being replaced. */
+  targetSeat: number;
+  /** The Pokémon that was pressed to start a replacement, for the heading. */
+  replacingId: number | null;
   movePickerOpen: boolean;
   typePickerOpen: boolean;
 
   openCardPage: (card: number) => void;
   closeCardPage: () => void;
-  openBrowser: (purpose: BrowserPurpose, legendSeat?: number) => void;
+  openBrowser: (purpose: BrowserPurpose, targetSeat?: number, replacingId?: number | null) => void;
   closeBrowser: () => void;
   setMovePickerOpen: (open: boolean) => void;
   setTypePickerOpen: (open: boolean) => void;
@@ -36,15 +39,16 @@ export const useLeagueUi = create<LeagueUiState>()((set) => ({
   lastCard: 0,
   browserOpen: false,
   browserPurpose: 'lines',
-  legendSeat: 1,
+  targetSeat: 1,
+  replacingId: null,
   movePickerOpen: false,
   typePickerOpen: false,
 
   openCardPage: (card) => set({ openCard: card, lastCard: card }),
   closeCardPage: () =>
     set({ openCard: null, browserOpen: false, movePickerOpen: false, typePickerOpen: false }),
-  openBrowser: (purpose, legendSeat = 1) =>
-    set({ browserOpen: true, browserPurpose: purpose, legendSeat }),
+  openBrowser: (purpose, targetSeat = 1, replacingId = null) =>
+    set({ browserOpen: true, browserPurpose: purpose, targetSeat, replacingId }),
   closeBrowser: () => set({ browserOpen: false }),
   setMovePickerOpen: (open) => set({ movePickerOpen: open }),
   setTypePickerOpen: (open) => set({ typePickerOpen: open }),

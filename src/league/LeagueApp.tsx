@@ -7,6 +7,8 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 import { BrowserStoreContext } from '@/components/browser/browserStore';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { getPokemonById } from '@/hooks/usePokemonData';
+import { pokemonLabel } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { slotLabel } from './model/constants';
 import {
@@ -99,6 +101,8 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
 export function LeagueApp() {
   const openCard = useLeagueUi((s) => s.openCard);
   const shownCard = useLeagueUi((s) => s.openCard ?? s.lastCard);
+  const browserPurpose = useLeagueUi((s) => s.browserPurpose);
+  const replacingId = useLeagueUi((s) => s.replacingId);
   const browserOpen = useLeagueUi((s) => s.browserOpen);
   const closeBrowser = useLeagueUi((s) => s.closeBrowser);
   const isDesktop = useIsDesktop();
@@ -112,6 +116,26 @@ export function LeagueApp() {
       }),
     [],
   );
+
+  /**
+   * What the selection sheet is for, in its own words. Replacing a line is
+   * not adding to a slot, and saying "Adding to: Gym 1" while the user is
+   * swapping Gyarados out reads as the wrong action.
+   */
+  const replacing = browserPurpose === 'replace' && replacingId !== null
+    ? getPokemonById(replacingId)
+    : undefined;
+  const sheetHeading = replacing
+    ? {
+        lead: 'Replacing:',
+        subject: pokemonLabel(replacing.id, replacing.name).name,
+        plain: `Replacing ${pokemonLabel(replacing.id, replacing.name).name}`,
+      }
+    : {
+        lead: 'Adding to:',
+        subject: slotLabel(openCard ?? 0),
+        plain: `Adding to ${slotLabel(openCard ?? 0)}`,
+      };
 
   const browser = (
     <BrowserStoreContext.Provider value={useLeagueBrowserStore}>
@@ -205,11 +229,11 @@ export function LeagueApp() {
             onClose={closeBrowser}
             size="full"
             topGap={49}
-            closeLabel={`Adding to ${slotLabel(openCard ?? 0)}`}
+            closeLabel={sheetHeading.plain}
             title={
               <>
-                <span className="text-foreground">Adding to: </span>
-                <span className="text-primary">{slotLabel(openCard ?? 0)}</span>
+                <span className="text-foreground">{sheetHeading.lead} </span>
+                <span className="text-primary">{sheetHeading.subject}</span>
               </>
             }
           >

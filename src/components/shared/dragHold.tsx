@@ -1,45 +1,47 @@
 /**
- * One "you are holding this" treatment, for every drag in the app.
+ * How the app says "you are holding this".
  *
- * The dex builder, the view page, the league summary and the gym card each
- * grew their own: a faded source here, a scaled-and-ringed target there, a
- * shadowed copy somewhere else. Four treatments for one idea reads as four
- * half-finished features, so the idea lives here and every surface imports
- * it rather than restating it.
+ * Two treatments, because the two kinds of drag answer different questions.
  *
- * The pattern, in two parts:
+ * **Between** (dex builder, view page): you are choosing a *gap* — which two
+ * evolution lines to land between. The copy rides on the pointer and an
+ * insert bar marks the gap, because the gap is a place the pointer can be.
  *
- *  1. **The source recedes.** Whatever was picked up drops to
- *     `DRAG_SOURCE_OPACITY` where it sits, so the layout keeps its shape and
- *     the eye stops reading that copy as the live one.
- *  2. **A copy is held.** `HeldItems` centres a static copy of what was
- *     grabbed on the pointer, inside dnd-kit's `<DragOverlay>`. It is the
- *     only thing at full strength during a drag, which is what makes it read
- *     as held rather than as moved.
+ * **Into** (league summary, gym card): you are choosing a *slot*, and the
+ * page redraws to show what that slot would look like holding it. The thing
+ * you need to see is under your thumb, so the copy hangs below the grab
+ * point instead of sitting on it.
  *
- * What is *not* part of the pattern is how the destination is shown — an
- * insert bar in the dex builder, a re-derived preview in the league. Those
- * answer different questions and are meant to differ.
+ * What both share, and what makes a drag legible either way: the source
+ * recedes to `DRAG_SOURCE_OPACITY` where it sits, and exactly one copy is at
+ * full strength.
  */
 
 /** How far the picked-up thing recedes in place. */
 export const DRAG_SOURCE_OPACITY = 0.25;
 
 /**
- * The held copy, centred on the pointer.
+ * The held copy. Goes inside `<DragOverlay dropAnimation={null}>`.
  *
- * Goes inside `<DragOverlay dropAnimation={null}>`. Children render at their
- * natural size and carry their own `shadow-lg`, which is what lifts them off
- * the surface behind.
+ * `placement="on"` centres it on the grab point; `placement="below"` hangs it
+ * under, clear of the thumb. Children render at their natural size and carry
+ * their own `shadow-lg`.
  */
-export function HeldItems({ children }: { children: React.ReactNode }) {
+export function HeldItems({
+  children,
+  placement = 'on',
+}: {
+  children: React.ReactNode;
+  placement?: 'on' | 'below';
+}) {
   return (
     <div
       // The one handle every surface's held copy answers to, so "is something
       // being carried, and only one thing" is a question a test can ask.
       data-drag-held
-      className="absolute left-1/2 top-1/2 flex"
-      style={{ transform: 'translate(-50%, -50%)' }}
+      data-placement={placement}
+      className={placement === 'below' ? 'absolute left-1/2 top-full flex' : 'absolute left-1/2 top-1/2 flex'}
+      style={{ transform: placement === 'below' ? 'translate(-50%, 0.5rem)' : 'translate(-50%, -50%)' }}
     >
       {children}
     </div>

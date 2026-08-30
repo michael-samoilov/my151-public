@@ -103,10 +103,11 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         searchQuery: '',
         activeCategoryFilter: null,
         activeArchetypeFilter: null,
-        // The leader's own type arrives pre-selected whenever the pane is
-        // picking pokemon for the card — lines and the signature alike. The
-        // signature's scope chip narrows to the team on top of that.
-        typeFilter: purpose !== 'legend' && type && type !== 'none' ? [type] : null,
+        // The leader's own type arrives pre-selected whatever the pane is
+        // picking — a line, a replacement, the signature, or the endgame
+        // boss's legendary. The chip is there to remove when the gym wants
+        // something off-type.
+        typeFilter: type && type !== 'none' ? [type] : null,
         typeFilterMode: 'any',
         generationFilter: null,
         shapeFilter: null,
@@ -137,7 +138,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // pane, like "My dex". It cannot outlive what it scopes to, though:
         // with no lines seated it would filter to nothing, so an empty card
         // clears it rather than handing back a dead end.
-        scopeFilter: lines.length > 0 ? (get().scopeFilter ?? false) : false,
+        scopeFilter: purpose === 'signature' && lines.length > 0 ? (get().scopeFilter ?? false) : false,
         // No chip at all on an empty card: there is no team to narrow to, and
         // a chip whose only effect is an empty result is a dead end.
         scopeFilterIds: purpose === 'signature' && !cardFull && lines.length > 0 ? placed : undefined,
@@ -161,8 +162,12 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       if (purpose === 'legend') {
         league().setLegend(card, {
           pokemonId: branch[branch.length - 1],
-          seat: ui().legendSeat,
+          seat: ui().targetSeat,
         });
+        ui().closeBrowser();
+      } else if (purpose === 'replace') {
+        // The seat keeps its place in the team; only its line changes.
+        league().replaceLine(card, ui().targetSeat, branch);
         ui().closeBrowser();
       } else if (purpose === 'signature') {
         // Under six lines the signature line seats itself rightmost,
@@ -182,8 +187,12 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       if (purpose === 'legend') {
         const final = branchEndingAt(pokemonId).pop();
         if (final !== undefined) {
-          useLeagueStore.getState().setLegend(card, { pokemonId: final, seat: ui().legendSeat });
+          useLeagueStore.getState().setLegend(card, { pokemonId: final, seat: ui().targetSeat });
         }
+        ui().closeBrowser();
+      } else if (purpose === 'replace') {
+        // Already on the card: swapping a seat for a line the team already
+        // holds would duplicate it, so this is "keep what is there".
         ui().closeBrowser();
       } else if (purpose === 'signature') {
         // Tapping an already-placed line marks it, rather than removing it.
@@ -251,7 +260,12 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
 });
 
 /** Open the selection pane aimed at a card, for one of its three purposes. */
-export function openLeagueBrowser(card: number, purpose: BrowserPurpose, legendSeat = 1): void {
-  useLeagueUi.getState().openBrowser(purpose, legendSeat);
+export function openLeagueBrowser(
+  card: number,
+  purpose: BrowserPurpose,
+  targetSeat = 1,
+  replacingId: number | null = null,
+): void {
+  useLeagueUi.getState().openBrowser(purpose, targetSeat, replacingId);
   useLeagueBrowserStore.getState().openFor(card);
 }
