@@ -965,6 +965,31 @@ the other's territory, which is the first diagonal's mistake wearing a
 different hat — so the study measures every panel and asserts no box crosses
 its seam and nothing overflows the slot.
 
+### Round 16, from the preview
+
+**A press and hold picks a row up; it does not select it.** On iOS a long
+press is two gestures at once — pick this up, and start a text selection —
+and the selection was winning: the league summary answered a press-and-hold
+with a Copy / Search callout spanning two rows, and the gym card did the same
+on a column.
+
+The `-webkit-touch-callout: none` already on `*` suppresses the *image and
+link* callout, not the selection one. Only `user-select` does that, and the
+dex builder's tiles had always set it for themselves while the two league
+surfaces never had.
+
+So the rule went where every drag surface can reach it. dnd-kit marks each
+draggable with `aria-roledescription="draggable"`, which makes one selector
+in `index.css` cover the surfaces that exist and the ones nobody has written
+yet. Descendants are named explicitly, because `user-select` is not an
+inherited property; fields inside a draggable are exempted, so the day one
+exists it still works.
+
+`e2e/drag-hold.spec.ts` asserts the property on all three surfaces, and it
+proves it rather than reading the declaration: it asks the engine to select
+each draggable's contents and requires nothing back. The callout itself is
+device-only and is named as such.
+
 ### Round 3, follow-ups from the preview
 
 1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;
