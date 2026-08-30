@@ -344,12 +344,8 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
       {/* Mega bottom-left, Dynamax bottom-right, on the rows that allow a
           powerup and only for Pokémon that have one. Pressing cycles that
           Pokémon's forms and then returns to base, which is what lets one
-          button carry Charizard's two Megas.
-
-          Inset by more than the wrapper is proud of the cell (2.9px), so the
-          disc AND the 2px ring an active one wears both stay inside the
-          cell's own edge. At the corner one seat's Dynamax button met the
-          next seat's Mega button, and the ring closed what gap was left. */}
+          button carry Charizard's two Megas. `SLACK` decides where each disc
+          sits and how far a press reaches. */}
       {onPowerup && pokemon && (
         <>
           {formsFor(pokemon.id, 'mega').length > 0 && (
@@ -357,7 +353,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
               kind="mega"
               active={powerupKind === 'mega'}
               onPress={() => onPowerup('mega')}
-              className="left-[0.375rem]"
+              side="left"
             />
           )}
           {formsFor(pokemon.id, 'dynamax').length > 0 && (
@@ -365,7 +361,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
               kind="dynamax"
               active={powerupKind === 'dynamax'}
               onPress={() => onPowerup('dynamax')}
-              className="right-[0.375rem]"
+              side="right"
             />
           )}
         </>
@@ -428,12 +424,47 @@ function symbolScale(kind: PowerupKind): string {
   return `${((SYMBOL_EXTENT / SYMBOL_INK[kind]) * 100).toFixed(1)}%`;
 }
 
-/** One corner button, sized like the cell's other overlays. */
-function PowerupButton({ kind, active, onPress, className }: {
+/** The disc's diameter. Every other powerup measure derives from it. */
+const DISC_REM = 1;
+
+/** How far above and below the disc a press still counts. */
+const HIT_UP_REM = 0.5;
+const HIT_DOWN_REM = 0.125;
+
+/**
+ * The width a cell has left once both discs are drawn.
+ *
+ * A disc has two neighbours: the cell's other button, and the next seat's
+ * across the column boundary. Splitting the slack four ways sits each disc
+ * exactly midway between them at any width, which is the only rule that
+ * holds — the column is a share of the viewport while the disc is rem, so
+ * the two drift apart as the window changes. Measured with a fixed 0.375rem
+ * inset: 11.1px of clearance at 430px, and at 320px the two discs in a cell
+ * overlapped by 1.8px.
+ */
+const SLACK = `(100% - ${2 * DISC_REM}rem)`;
+
+/**
+ * The press box: the disc plus half the slack, centred on it.
+ *
+ * A 1rem target sits beside a tap that opens the line picker, so a press a
+ * little wide of Dynamax offered to replace the whole evolution line. The
+ * box is larger than the paint, and takes half the room rather than all of
+ * it, so two press boxes are still as clear of each other as two discs.
+ * Upward is the generous direction because the row has room there, and what
+ * it takes is the cell's own tap — the mis-tap being prevented.
+ */
+const HIT_INSET = `calc(${SLACK} / 8)`;
+const HIT_WIDTH = `calc(${DISC_REM}rem + ${SLACK} / 4)`;
+const HIT_HEIGHT = `${DISC_REM + HIT_UP_REM + HIT_DOWN_REM}rem`;
+
+/** One corner button: a press box, with the disc drawn at the bottom of it. */
+function PowerupButton({ kind, active, onPress, side }: {
   kind: PowerupKind;
   active: boolean;
   onPress: () => void;
-  className?: string;
+  /** Mega takes the cell's left corner, Dynamax its right. */
+  side: 'left' | 'right';
 }) {
   return (
     <button
@@ -446,33 +477,46 @@ function PowerupButton({ kind, active, onPress, className }: {
         e.stopPropagation();
         onPress();
       }}
+      // A press here is not a drag. The press box makes a wider dead zone for
+      // the column drag, which still starts anywhere else on the cell.
       onPointerDown={(e) => e.stopPropagation()}
-      // Always a white disc: the symbols are fine art at poster size and mush
-      // at 15px on top of a sprite. The disc gives them a ground, and the
-      // ring — not the opacity — carries the on state, so an available
-      // powerup stays legible while an active one is unmistakable.
-      //
-      // `contain:paint` is what keeps the disc round. The card scales itself
-      // with CSS `zoom`, so a 1rem box is a fractional number of CSS pixels
-      // and the painted rect snaps its edges independently: this button
-      // measured 15px wide by 16px tall and `rounded-full` drew that as an
-      // ellipse. Paint containment gives the element its own paint context,
-      // which rasterises at subpixel precision. Measured, both ways: 240x256
-      // without it, 256x256 with it.
-      className={cn(
-        'absolute bottom-[0.125rem] z-[15] flex h-[1rem] w-[1rem] cursor-pointer items-center justify-center rounded-full bg-white transition-shadow [contain:paint]',
-        active ? 'ring-2 ring-[var(--lg-band)] shadow' : 'ring-1 ring-black/15',
-        className,
-      )}
+      className="absolute bottom-0 z-[15] flex cursor-pointer items-end justify-center"
+      style={{
+        [side]: HIT_INSET,
+        width: HIT_WIDTH,
+        height: HIT_HEIGHT,
+        paddingBottom: `${HIT_DOWN_REM}rem`,
+      }}
     >
-      {/* The disc stays opaque so the symbol always has a ground; the symbol
-          itself dims when the powerup is merely available. */}
-      <img
-        src={`/powerups/${kind}.png`}
-        alt=""
-        className={cn('object-contain transition-opacity', !active && 'opacity-55')}
-        style={{ width: symbolScale(kind), height: symbolScale(kind) }}
-      />
+      {/* Always a white disc: the symbols are fine art at poster size and
+          mush at 15px on top of a sprite. The disc gives them a ground, and
+          the ring — not the opacity — carries the on state, so an available
+          powerup stays legible while an active one is unmistakable.
+
+          `contain:paint` is what keeps the disc round. The card scales itself
+          with CSS `zoom`, so a 1rem box is a fractional number of CSS pixels
+          and the painted rect snaps its edges independently: this disc
+          measured 15px wide by 16px tall and `rounded-full` drew that as an
+          ellipse. Paint containment gives the element its own paint context,
+          which rasterises at subpixel precision. Measured, both ways: 240x256
+          without it, 256x256 with it. */}
+      <span
+        data-powerup-disc
+        className={cn(
+          'flex items-center justify-center rounded-full bg-white transition-shadow [contain:paint]',
+          active ? 'ring-2 ring-[var(--lg-band)] shadow' : 'ring-1 ring-black/15',
+        )}
+        style={{ width: `${DISC_REM}rem`, height: `${DISC_REM}rem` }}
+      >
+        {/* The disc stays opaque so the symbol always has a ground; the
+            symbol itself dims when the powerup is merely available. */}
+        <img
+          src={`/powerups/${kind}.png`}
+          alt=""
+          className={cn('object-contain transition-opacity', !active && 'opacity-55')}
+          style={{ width: symbolScale(kind), height: symbolScale(kind) }}
+        />
+      </span>
     </button>
   );
 }

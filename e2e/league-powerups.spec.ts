@@ -73,13 +73,16 @@ test.describe('powerups', () => {
     // independently. The right-anchored button measured 15px wide by 16px
     // tall, and `rounded-full` drew that as an ellipse. Paint containment
     // rasterises the element at subpixel precision instead.
+    // The disc is what is drawn, and it is not the button: the button is a
+    // larger, transparent press area around it.
     const discs = await page.evaluate(() =>
       [...document.querySelectorAll('[data-powerup]')].map((btn) => {
-        const r = btn.getBoundingClientRect();
+        const disc = btn.querySelector('[data-powerup-disc]')!;
+        const r = disc.getBoundingClientRect();
         return {
           kind: btn.getAttribute('data-powerup'),
           ratio: +(r.width / r.height).toFixed(3),
-          contain: getComputedStyle(btn).contain,
+          contain: getComputedStyle(disc).contain,
         };
       }),
     );
@@ -88,6 +91,68 @@ test.describe('powerups', () => {
       expect(disc.ratio, `${disc.kind} box is square`).toBe(1);
       expect(disc.contain, `${disc.kind} keeps its own paint context`).toContain('paint');
     }
+  });
+
+  test('a press wide of the disc still toggles, and no two areas meet', async ({ page }) => {
+    // The disc is 1rem so neighbouring seats' buttons cannot touch. That
+    // leaves a 1rem target beside a tap that opens the line picker, so the
+    // press area is larger than the paint — and no larger than the room.
+    await openCard(page, 12);
+    await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
+    await seat(page, '[data-testid="card-cell-1-2"]', 'lapras');
+
+    const geometry = await page.evaluate(() => {
+      const rects = [...document.querySelectorAll('[data-powerup]')].map((el) =>
+        el.getBoundingClientRect(),
+      );
+      let tightest = Infinity;
+      for (let i = 0; i < rects.length; i++) {
+        for (let j = i + 1; j < rects.length; j++) {
+          const a = rects[i];
+          const b = rects[j];
+          tightest = Math.min(
+            tightest,
+            Math.max(
+              Math.max(a.left - b.right, b.left - a.right),
+              Math.max(a.top - b.bottom, b.top - a.bottom),
+            ),
+          );
+        }
+      }
+      const hit = rects[0];
+      const disc = document.querySelector('[data-powerup-disc]')!.getBoundingClientRect();
+      return {
+        areas: rects.length,
+        growth: (hit.width * hit.height) / (disc.width * disc.height),
+        tightest,
+      };
+    });
+    expect(geometry.areas, 'every button has a press box').toBeGreaterThan(1);
+    expect(geometry.growth, 'the press box is bigger than the disc').toBeGreaterThan(1.7);
+    expect(geometry.tightest, 'no two press boxes meet').toBeGreaterThan(0);
+
+    // The mis-tap this prevents: a press above the disc used to land on the
+    // cell, which offers to replace the whole evolution line.
+    const spot = await page.evaluate(() => {
+      const cell = document.querySelector('[data-testid="card-cell-10-1"]')!;
+      const button = cell.parentElement!.querySelector('[data-powerup="dynamax"]')!;
+      const hit = button.getBoundingClientRect();
+      const disc = button.querySelector('[data-powerup-disc]')!.getBoundingClientRect();
+      return { x: disc.left + disc.width / 2, y: hit.top + 2, above: disc.top - hit.top - 2 };
+    });
+    expect(spot.above, 'the probe is clear of the disc').toBeGreaterThan(3);
+
+    // Counted rather than asserted at zero: the desktop pane keeps a grid on
+    // screen between picks, so "the picker opened" is a change in the grid.
+    const before = await drawn(page, 10, 1);
+    const tilesBefore = await page.locator('[data-testid="verify-evo-card"]').count();
+    await page.mouse.click(spot.x, spot.y);
+    await page.waitForTimeout(600);
+    expect(
+      await page.locator('[data-testid="verify-evo-card"]').count(),
+      'the line picker stays shut',
+    ).toBe(tilesBefore);
+    expect(await drawn(page, 10, 1), 'the powerup toggled').not.toBe(before);
   });
 
   test('only the champion and boss rows offer them, and only where a form exists', async ({ page }) => {
