@@ -161,6 +161,60 @@ test.describe('drag hold', () => {
     expect(state.lifted, 'every cell of the column lifts').toBe(state.openSeats);
   });
 
+  test('the legendary is carried on a cell face', async ({ page }) => {
+    // The copy in hand wears what a cell wears, so a drag reads the same
+    // whether it carries a column or the boss's legendary. A bare sprite on
+    // the dark band read as a cutout beside the lifted cells.
+    await seededLeague(page);
+    await page.goto('/pokemon-league-builder');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.waitForTimeout(400);
+    await page.click('[data-testid="league-slot-13"]');
+    await page.waitForSelector('[data-testid="card-cell-11-6"]');
+    await page.waitForTimeout(900);
+
+    const grab = (await page.locator('[data-testid="card-cell-11-6"]').boundingBox())!;
+    await page.mouse.move(grab.x + grab.width / 2, grab.y + grab.height / 2);
+    await page.mouse.down();
+    await page.waitForTimeout(350);
+    await page.mouse.move(grab.x + grab.width / 2 + 90, grab.y + grab.height / 2 + 12, { steps: 8 });
+    await page.waitForTimeout(300);
+    const state = await page.evaluate(() => {
+      const face = document.querySelector('[data-held-face]');
+      const cell = document.querySelector('[data-testid="card-cell-11-1"]')!;
+      const f = face?.getBoundingClientRect();
+      const c = cell.getBoundingClientRect();
+      const fs = face ? getComputedStyle(face) : null;
+      return {
+        faces: document.querySelectorAll('[data-held-face]').length,
+        background: fs?.backgroundColor ?? null,
+        shadow: fs?.boxShadow ?? null,
+        radius: fs ? parseFloat(fs.borderTopLeftRadius) : null,
+        // The card scales itself with CSS `zoom` and the copy is portalled
+        // out of it, so matching the cell means matching what it PAINTS. A
+        // computed style is the unzoomed value, so the cell's own corner has
+        // to be scaled by the zoom the same two numbers reveal.
+        widthGap: f ? Math.abs(f.width - c.width) : null,
+        heightGap: f ? Math.abs(f.height - c.height) : null,
+        cellRadius:
+          parseFloat(getComputedStyle(cell).borderTopLeftRadius)
+          * (c.height / parseFloat(getComputedStyle(cell).height)),
+      };
+    });
+    await page.mouse.up();
+    await page.waitForTimeout(200);
+
+    expect(state.faces, 'exactly one face in hand').toBe(1);
+    expect(state.background, 'the face is white, like a cell').toBe('rgb(255, 255, 255)');
+    expect(state.shadow, 'the face carries the lift shadow').toContain('rgba(15, 23, 42, 0.28)');
+    expect(
+      Math.abs((state.radius ?? 0) - state.cellRadius),
+      "the face's corner is the cell's",
+    ).toBeLessThan(0.5);
+    expect(state.widthGap, 'the face is the width of a cell').toBeLessThan(1);
+    expect(state.heightGap, 'the face is the height of a cell').toBeLessThan(1);
+  });
+
   test('a column reorder paints the line it carries, not the seat it lands on', async ({ page }) => {
     // A reorder swaps `src` on cells that are already on screen, and a
     // browser that does not have the new bitmap keeps painting the old one.

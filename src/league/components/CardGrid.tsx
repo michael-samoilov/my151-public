@@ -190,6 +190,41 @@ const bossRowByColumn: CollisionDetection = (args) => {
   return best ? [{ id: best.id, data: { droppableContainer: best, value: bestDistance } }] : [];
 };
 
+/**
+ * The face a drag lifts off the card: the grabbed cell, as it paints.
+ *
+ * The copy in hand is portalled out of the card's CSS `zoom`, so it has to be
+ * sized from what the cell paints rather than from what it declares. dnd-kit's
+ * own rect cannot answer that twice over: it is the unzoomed layout box, and
+ * it is still null while `onDragStart` runs.
+ *
+ * The corner is read off the cell rather than restated, because `rounded-md`
+ * is a theme token whose value moves with the root font size — hard-coding it
+ * gave a 5px corner where the desktop card paints 8px.
+ */
+function grabbedCellFace(activatorEvent: Event): {
+  width: number;
+  height: number;
+  radius: number;
+  /** One of the card's rem, in the portal's pixels. */
+  rem: number;
+} | null {
+  const target = activatorEvent.target;
+  const cell = target instanceof Element ? target.closest('[data-testid^="card-cell-"]') : null;
+  if (!cell) return null;
+  const box = cell.getBoundingClientRect();
+  const style = getComputedStyle(cell);
+  // The card's zoom, from the one element that carries both numbers: the
+  // painted height and the layout height it came from.
+  const zoom = box.height / (parseFloat(style.height) || box.height);
+  return {
+    width: box.width,
+    height: box.height,
+    radius: parseFloat(style.borderTopLeftRadius) * zoom,
+    rem: box.height / (ROW_H - 2 * INSET_Y),
+  };
+}
+
 /** A powerup form's sprite: the form's own id is its filename. */
 function formSprite(form: PowerupForm): string {
   return `/sprites/pokemon/${form.id}.png`;
@@ -705,26 +740,42 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const paintRef = useRef<PaintDrag | null>(null);
   const [previewMove, setPreviewMove] = useState<{ from: number; to: number } | null>(null);
   const [legendDrag, setLegendDrag] = useState(false);
-  // What the pointer carries, and how big to draw it. The size is measured
+  // What the pointer carries, and how big to draw it. Every size is measured
   // from the cell it was lifted from, in client pixels, because the card sits
-  // under a CSS `zoom` and the overlay is portalled out of it.
-  const [held, setHeld] = useState<{ ids: number[]; sprite: number; stacked: boolean } | null>(null);
+  // under a CSS `zoom` and the overlay is portalled out of it — a rem in the
+  // portal is the root's rem, not the card's.
+  const [held, setHeld] = useState<{
+    ids: number[];
+    sprite: number;
+    /** The cell face the copy wears, in client pixels. */
+    face: { width: number; height: number; radius: number; shadow: string };
+  } | null>(null);
 
   const onDragStart = useCallback(
     (e: DragStartEvent) => {
       const d = e.active.data.current as CellDatum | undefined;
       if (!d) return;
-      const cell = e.active.rect.current.initial;
-      const cellRem = ROW_H - 2 * INSET_Y;
-      const sprite = cell ? (cell.height * SPRITE_REM) / cellRem : 52;
+      const cell = grabbedCellFace(e.activatorEvent);
+      const rem = cell?.rem ?? 16;
+      const sprite = SPRITE_REM * rem;
+      // The same face a lifted cell wears: white, the cell's own corner, and
+      // the lift shadow, so a copy in hand and a column in hand read as one
+      // gesture. White is spelled out rather than read from `--lg-slot`,
+      // which is set on the card and does not reach a portal.
+      const face = {
+        width: cell?.width ?? sprite,
+        height: cell?.height ?? sprite,
+        radius: cell?.radius ?? 0,
+        shadow: `0 ${0.5 * rem}px ${rem}px rgba(15,23,42,0.28)`,
+      };
       // A column drag carries the column: its line's members, stacked, which
       // is what the column holds however many rows it spans. A legendary
       // drag carries the one Pokémon it is.
       const grabbed = card.lines[d.seat - 1];
       if (d.isLegend) {
-        setHeld({ ids: card.legend ? [card.legend.pokemonId] : [], sprite, stacked: false });
+        setHeld({ ids: card.legend ? [card.legend.pokemonId] : [], sprite, face });
       } else if (grabbed) {
-        setHeld({ ids: grabbed.branch, sprite: sprite * 0.72, stacked: true });
+        setHeld({ ids: grabbed.branch, sprite, face });
       }
       if (d.isLegend) {
         paintRef.current = {
@@ -994,13 +1045,26 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         <DragOverlay dropAnimation={null}>
           {held && heldPokemon.length > 0 ? (
             <HeldItems placement="above">
-              <div className={held.stacked ? 'flex flex-col items-center' : 'flex'}>
+              {/* A cell, lifted off the card: same white face, same corner,
+                  same shadow as the column drag's lifted cells. The sprite
+                  alone read as a loose cutout beside them. */}
+              <div
+                data-held-face
+                className="flex items-center justify-center"
+                style={{
+                  width: held.face.width,
+                  height: held.face.height,
+                  borderRadius: held.face.radius,
+                  background: '#ffffff',
+                  boxShadow: held.face.shadow,
+                }}
+              >
                 {heldPokemon.map((p) => (
                   <img
                     key={p.id}
                     src={p.sprite}
                     alt=""
-                    className="max-w-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]"
+                    className="max-w-none"
                     style={{ width: held.sprite, height: held.sprite, imageRendering: 'pixelated' }}
                   />
                 ))}
