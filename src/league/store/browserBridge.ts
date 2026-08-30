@@ -147,8 +147,10 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // The branches themselves, so the scoped view can draw the lines the
         // user seated rather than the chains they belong to.
         scopeFilterLines: purpose === 'signature' ? lines.map((l) => l.branch) : undefined,
-        // The signature is one Pokémon, so each one is its own tile.
-        standaloneTiles: purpose === 'signature',
+        // The signature is one Pokémon and so is the boss's legendary, so
+        // each Pokémon is its own tile — and the grid merges a split chain's
+        // branches, so none of them appears twice.
+        standaloneTiles: purpose === 'signature' || purpose === 'legend',
       });
     },
 

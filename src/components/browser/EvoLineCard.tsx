@@ -507,8 +507,11 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                 />
               </div>
             </div>
-            {/* Chevron between evo line members */}
-            {!isLast && (
+            {/* Chevron between evo line members. Standalone tiles have no
+                such relation to show: each tile is its own pick, so an arrow
+                from one to the next would claim an evolution the tap does
+                not follow. */}
+            {!isLast && !standaloneTiles && (
               <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10">
                 <ChevronRight className="w-[calc(var(--tile-sprite)*0.18)] h-[calc(var(--tile-sprite)*0.18)] text-muted-foreground/60" />
               </div>

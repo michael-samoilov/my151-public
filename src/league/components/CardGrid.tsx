@@ -267,9 +267,10 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           Pokémon's forms and then returns to base, which is what lets one
           button carry Charizard's two Megas.
 
-          Inset rather than flush to the corner: these discs are wider than
-          the remove X, and at the corner one seat's Dynamax button met the
-          next seat's Mega button with no gap at all. */}
+          Inset by more than the wrapper is proud of the cell (2.9px), so the
+          disc AND the 2px ring an active one wears both stay inside the
+          cell's own edge. At the corner one seat's Dynamax button met the
+          next seat's Mega button, and the ring closed what gap was left. */}
       {onPowerup && pokemon && (
         <>
           {formsFor(pokemon.id, 'mega').length > 0 && (
@@ -277,7 +278,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
               kind="mega"
               active={powerupKind === 'mega'}
               onPress={() => onPowerup('mega')}
-              className="left-[0.125rem]"
+              className="left-[0.375rem]"
             />
           )}
           {formsFor(pokemon.id, 'dynamax').length > 0 && (
@@ -285,7 +286,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
               kind="dynamax"
               active={powerupKind === 'dynamax'}
               onPress={() => onPowerup('dynamax')}
-              className="right-[0.125rem]"
+              className="right-[0.375rem]"
             />
           )}
         </>
@@ -322,6 +323,17 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
   );
 }
 
+/**
+ * How much of the disc each symbol takes.
+ *
+ * Measured from the art rather than guessed. `mega.png` is 56x74 and its ink
+ * reaches every edge; `dynamax.png` is 103x103 but its ink fills only 77% of
+ * that height. One shared percentage therefore drew the Dynamax symbol a
+ * fifth smaller than the Mega one. These two land both inks at about 72% of
+ * the disc.
+ */
+const SYMBOL_SCALE: Record<PowerupKind, string> = { mega: '80%', dynamax: '94%' };
+
 /** One corner button, sized like the cell's other overlays. */
 function PowerupButton({ kind, active, onPress, className }: {
   kind: PowerupKind;
@@ -346,7 +358,7 @@ function PowerupButton({ kind, active, onPress, className }: {
       // ring — not the opacity — carries the on state, so an available
       // powerup stays legible while an active one is unmistakable.
       className={cn(
-        'absolute bottom-[0.125rem] z-[15] flex h-[1.15rem] w-[1.15rem] cursor-pointer items-center justify-center rounded-full bg-white transition-shadow',
+        'absolute bottom-[0.125rem] z-[15] flex h-[1rem] w-[1rem] cursor-pointer items-center justify-center rounded-full bg-white transition-shadow',
         active ? 'ring-2 ring-[var(--lg-band)] shadow' : 'ring-1 ring-black/15',
         className,
       )}
@@ -356,7 +368,8 @@ function PowerupButton({ kind, active, onPress, className }: {
       <img
         src={`/powerups/${kind}.png`}
         alt=""
-        className={cn('h-[78%] w-[78%] object-contain transition-opacity', !active && 'opacity-55')}
+        className={cn('object-contain transition-opacity', !active && 'opacity-55')}
+        style={{ width: SYMBOL_SCALE[kind], height: SYMBOL_SCALE[kind] }}
       />
     </button>
   );

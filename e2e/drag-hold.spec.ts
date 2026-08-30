@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { seedDex, TUNE_URL } from './support/dexSeed';
+import { blankLeague } from './support/leagueSeed';
 
 /**
  * One drag treatment, four surfaces.
@@ -75,6 +76,7 @@ test.describe('drag hold', () => {
   });
 
   test('the league summary and the gym card hold the same way', async ({ page }) => {
+    await blankLeague(page);
     await page.goto('/pokemon-league-builder');
     await page.waitForSelector('[data-testid="league-slot-0"]');
 
@@ -130,6 +132,7 @@ test.describe('drag hold', () => {
   });
 
   test('shifting an evolution boundary carries nothing', async ({ page }) => {
+    await blankLeague(page);
     await page.goto('/pokemon-league-builder');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-3"]');

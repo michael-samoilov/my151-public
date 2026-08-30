@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { blankLeague } from './support/leagueSeed';
 
 /**
  * Mega Evolution and Gigantamax on the champion and endgame boss rows.
@@ -9,6 +10,7 @@ import { expect, test, type Page } from '@playwright/test';
  */
 
 const openCard = async (page: Page, slot: number) => {
+  await blankLeague(page);
   await page.goto('/pokemon-league-builder');
   await page.waitForSelector('[data-testid="league-slot-0"]');
   await page.click(`[data-testid="league-slot-${slot}"]`);

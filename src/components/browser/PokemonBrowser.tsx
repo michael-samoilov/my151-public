@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
 import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
 import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup } from '@/hooks/usePokemonData';
+import { mergeBranchesByChain } from './chainMerge';
 import { useBrowserStore } from './browserStore';
 import { ARCHETYPES } from '@/data/archetypes';
 import { BUILD_GROUPS } from '@/data/slot-template';
@@ -544,6 +545,13 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
       spriteOverrides?: Record<number, string>;
     }[] = [];
 
+    // Standalone tiles draw one card per chain, and the generation (or build
+    // section) headings are cut from the *members*, so a chain that spans
+    // several of them is drawn under each: Eevee appeared under Generation 1,
+    // 2, 4 and 6. The first heading that claims a chain keeps it, which is
+    // the earliest generation holding a member the filters matched.
+    const claimedChains = standaloneTiles ? new Set<number>() : null;
+
     for (const sub of source) {
       const subIdSet = new Set(sub.pokemonIds);
 
@@ -573,8 +581,15 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
         continue;
       }
 
-      const matching = groups.filter(g => g.members.some(m => subIdSet.has(m.id)));
+      let matching = groups.filter(g => g.members.some(m => subIdSet.has(m.id)));
       if (matching.length === 0) continue;
+      // A standalone tile picks one Pokémon, so a Pokémon may only appear
+      // once — not once per branch, and not once per heading.
+      if (claimedChains) {
+        matching = mergeBranchesByChain(matching).filter((g) => !claimedChains.has(g.chainId));
+        for (const group of matching) claimedChains.add(group.chainId);
+        if (matching.length === 0) continue;
+      }
 
       if (!isSearching && gridArchetypeDef) {
         // Archetype view: preserve curated pokemonIds order.
@@ -637,17 +652,19 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
       }
     }
     return models;
-  }, [isSearching, searchSubgroups, effectiveSubgroups, groups, gridArchetypeDef, gridCategoryDef, shinyIds, spriteOverrides]);
+  }, [isSearching, searchSubgroups, effectiveSubgroups, groups, gridArchetypeDef, gridCategoryDef, shinyIds, spriteOverrides, standaloneTiles]);
   const typeKey = typeFilter ? `${typeFilterMode}-${typeFilter.join(',')}` : 'none';
   /**
    * The count beside the search box has to agree with what is drawn.
    *
    * `totalCount` counts every member of every matching *chain*, which is
    * right when the grid draws chains. The scoped view draws the seated lines
-   * instead — no alternative branches, no Pokémon twice — so it counts those.
+   * instead, and standalone tiles draw each Pokémon once however many
+   * branches it belongs to — neither matches a per-branch sum, so both count
+   * what the grid actually holds.
    */
   const shownCount = useMemo(() => {
-    if (!scopedToLines) return totalCount;
+    if (!scopedToLines && !standaloneTiles) return totalCount;
     const ids = new Set<number>();
     for (const model of subgroupModels) {
       for (const group of model.groups ?? []) {
@@ -655,7 +672,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
       }
     }
     return ids.size;
-  }, [scopedToLines, subgroupModels, totalCount]);
+  }, [scopedToLines, standaloneTiles, subgroupModels, totalCount]);
 
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
   const shapeKey = shapeFilter ? shapeFilter.join(',') : 'none';

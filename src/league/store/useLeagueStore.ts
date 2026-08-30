@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { LEAGUE_STORAGE_KEY, seedLeagueOnFirstVisit } from './seedLeague';
 import type { TypeName } from '@/types/pokemon';
 import { SLOT_COUNT, TEAM_SIZES, BOSS_ROW } from '../model/constants';
 import { cyclePowerup, type Powerup, type PowerupKind } from '../model/powerups';
@@ -92,6 +93,10 @@ function withCard(
 ): GymCard[] {
   return cards.map((c, i) => (i === index ? fn(c) : c));
 }
+
+// Writes a seeded league on a preview build's first visit, before `persist`
+// reads the key. No-op on production and on every later visit.
+seedLeagueOnFirstVisit();
 
 export const useLeagueStore = create<LeagueState>()(
   persist(
@@ -236,7 +241,7 @@ export const useLeagueStore = create<LeagueState>()(
         }),
     }),
     {
-      name: 'league-builder',
+      name: LEAGUE_STORAGE_KEY,
       version: 1,
     },
   ),

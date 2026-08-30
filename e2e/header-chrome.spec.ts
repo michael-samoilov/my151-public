@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { blankLeague } from './support/leagueSeed';
 
 /**
  * The two-bar chrome's one hard invariant: the tool bar's three cells —
@@ -100,6 +101,7 @@ test.describe('two-bar chrome', () => {
   });
 
   test('league tool bar holds the dex bar height on home and card', async ({ page }) => {
+    await blankLeague(page);
     await page.goto('/pokemon-league-builder');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     const rootPx = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16);

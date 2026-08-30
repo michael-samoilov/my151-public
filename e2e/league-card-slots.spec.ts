@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { blankLeague } from './support/leagueSeed';
 
 /**
  * The gym card's two authored slots: the TM and the badge.
@@ -10,6 +11,7 @@ import { expect, test, type Page } from '@playwright/test';
  */
 
 const openCard = async (page: Page) => {
+  await blankLeague(page);
   await page.goto('/pokemon-league-builder');
   await page.waitForSelector('[data-testid="league-slot-0"]');
   await page.click('[data-testid="league-slot-0"]');

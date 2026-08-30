@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { blankLeague } from './support/leagueSeed';
 
 /**
  * Every overlay the league builder opens has to land on the viewport.
@@ -44,6 +45,7 @@ async function overlayExtent(page: Page, selector: string) {
 
 test.describe('league overlays', () => {
   test('every picker opens onto the viewport, not the pane track', async ({ page }) => {
+    await blankLeague(page);
     await page.goto('/pokemon-league-builder');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
@@ -77,6 +79,7 @@ test.describe('league overlays', () => {
   });
 
   test('seating a line leaves the card inside the viewport', async ({ page }) => {
+    await blankLeague(page);
     await page.goto('/pokemon-league-builder');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');

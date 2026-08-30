@@ -13,6 +13,7 @@ import {
 } from '@dnd-kit/core';
 import { ArrowUpDown, ChevronRight, Plus } from 'lucide-react';
 import { getPokemonById } from '@/hooks/usePokemonData';
+import { formAt } from '../model/powerups';
 import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
 import { DRAG_SOURCE_OPACITY, HeldItems } from '@/components/shared/dragHold';
@@ -119,12 +120,17 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
         ))}
         {cells.map((cell) => {
           const p = cell.pokemonId !== null ? getPokemonById(cell.pokemonId) : undefined;
+          // The summary is a small copy of the card's own row, so a seat
+          // wearing a Mega or Gigantamax wears it here too. Without this the
+          // champion row showed Charizard while its card showed Mega
+          // Charizard X.
+          const form = formAt(card.powerup ?? null, row, cell.seat, cell.pokemonId);
           return (
             <span key={cell.seat} className="flex items-center justify-center">
               {p ? (
                 <img
-                  src={p.sprite}
-                  alt={p.name}
+                  src={form ? `/sprites/pokemon/${form.id}.png` : p.sprite}
+                  alt={form ? form.label : p.name}
                   className="max-w-none"
                   style={{ width: `${SPRITE_REM}rem`, height: `${SPRITE_REM}rem`, imageRendering: 'pixelated' }}
                 />

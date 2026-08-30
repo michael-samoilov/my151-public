@@ -1,0 +1,114 @@
+import { expect, test, type Page } from '@playwright/test';
+import { blankLeague } from './support/leagueSeed';
+
+/**
+ * The pickers that choose one Pokémon rather than one evolution line: the
+ * signature slot and the endgame boss's legendary.
+ *
+ * Both draw a tile per Pokémon, so both owe the user two things the
+ * line-picker does not: no Pokémon twice, and no arrow claiming that one
+ * tile evolves into the next.
+ */
+
+const search = async (page: Page, query: string) => {
+  await page.evaluate((q) => {
+    const inputs = [...document.querySelectorAll('input')];
+    const el = inputs[inputs.length - 1];
+    const setValue = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+    setValue.call(el, q);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  }, query);
+  await page.waitForTimeout(700);
+};
+
+/** Every tile's sprite name, in draw order. */
+const drawn = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll('[data-testid="verify-evo-card"]')].map((tile) => {
+      const img = [...tile.querySelectorAll('img')].find((i) =>
+        (i.getAttribute('src') ?? '').includes('/sprites/pokemon/'),
+      );
+      return img?.getAttribute('alt') ?? '(none)';
+    }),
+  );
+
+const chevrons = (page: Page) =>
+  page.evaluate(
+    () =>
+      [...document.querySelectorAll('[data-testid="verify-evo-card"]')].reduce(
+        (n, tile) =>
+          n + (tile.parentElement?.querySelectorAll('svg.lucide-chevron-right').length ?? 0),
+        0,
+      ),
+  );
+
+const reported = (page: Page) =>
+  page.locator('[data-result-count]').first().getAttribute('data-result-count');
+
+const openCard = async (page: Page, slot: number) => {
+  await blankLeague(page);
+  await page.goto('/pokemon-league-builder');
+  await page.waitForSelector('[data-testid="league-slot-0"]');
+  await page.click(`[data-testid="league-slot-${slot}"]`);
+  await page.waitForSelector('[data-testid="card-cell-1-1"]');
+  await page.waitForTimeout(400);
+};
+
+/** Seat one line, so the signature slot and the boss row have something. */
+const seatOne = async (page: Page, query: string) => {
+  await page.click('[data-testid="card-cell-1-1"]');
+  await page.waitForTimeout(500);
+  await search(page, query);
+  await page.click('[data-testid="verify-evo-card"]');
+  await page.waitForTimeout(500);
+};
+
+test.describe('one-Pokémon pickers', () => {
+  test('the signature picker draws a split chain once', async ({ page }) => {
+    await openCard(page, 0);
+    await seatOne(page, 'pikachu');
+    await page.evaluate(() => {
+      const btn = [...document.querySelectorAll('button')].find((b) =>
+        /SIGNATURE POK/.test(b.textContent ?? ''),
+      );
+      (btn as HTMLButtonElement).click();
+    });
+    await page.waitForTimeout(800);
+
+    // Eevee reaches eight leaves, so the chain used to arrive as eight
+    // branches spread over four generation headings: Eevee nine times over.
+    await search(page, 'eevee');
+    const tiles = await drawn(page);
+    expect(new Set(tiles).size, 'no Pokémon twice').toBe(tiles.length);
+    expect(tiles).toContain('eevee');
+    expect(tiles).toContain('sylveon');
+    expect(await reported(page), 'the count agrees with the grid').toBe(String(tiles.length));
+    expect(await chevrons(page), 'no evolution arrows between standalone tiles').toBe(0);
+  });
+
+  test('the legendary picker draws a split chain once', async ({ page }) => {
+    await openCard(page, 13);
+    await seatOne(page, 'pikachu');
+    // The hint under the card: tap a boss-row Pokémon to swap in a legendary.
+    await page.click('[data-testid="card-cell-11-1"]');
+    await page.waitForTimeout(800);
+
+    // Cosmog leads to both Solgaleo and Lunala, so it and Cosmoem used to
+    // arrive twice each.
+    await search(page, 'cosmog');
+    expect(await drawn(page)).toEqual(['cosmog', 'cosmoem', 'solgaleo', 'lunala']);
+    expect(await chevrons(page)).toBe(0);
+  });
+
+  test('the line picker keeps its chevrons and its branches', async ({ page }) => {
+    await openCard(page, 0);
+    // An empty cell opens the line picker, which picks whole lines.
+    await page.click('[data-testid="card-cell-1-1"]');
+    await page.waitForTimeout(500);
+    await search(page, 'scyther');
+    const tiles = await drawn(page);
+    // Scyther leads to Scizor and to Kleavor: two lines, so Scyther twice.
+    expect(tiles.filter((n) => n === 'scyther').length).toBeGreaterThan(1);
+    expect(await chevrons(page), 'a line still shows what evolves into what').toBeGreaterThan(0);
+  });
+});

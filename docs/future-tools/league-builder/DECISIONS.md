@@ -514,6 +514,70 @@ Two bugs came out of building those.
 10. **"TM" and the disc back apart by 1px.** Round 3 closed the gap and
     closed it too far; the two read as one glyph.
 
+### Round 7, from the preview
+
+1. **No chevron between standalone tiles.** The arrow says one tile evolves
+   into the next, which is a relation the tap does not follow when each tile
+   is its own pick. The line picker keeps its arrows.
+2. **The legendary picker draws individual Pokémon**, on the same terms as
+   the signature picker: one tile each, one pick each, and no Pokémon twice.
+3. **The powerup discs are smaller and their symbols larger.** 1rem instead
+   of 1.15rem, inset far enough that the disc AND an active one's 2px ring
+   stay inside the cell — 11.6px now separates neighbouring seats' buttons,
+   where 3.8px did and the ring ate most of it. The symbols carry their own
+   scale, measured from the art: `dynamax.png` is square but its ink fills
+   only 77% of the height, so one shared percentage drew the Gigantamax
+   symbol a fifth smaller than the Mega one.
+4. **A preview build seeds a Kanto league.** Below.
+
+Three defects came out of building those, all in what shipped last round.
+
+- **A Pokémon appeared once per generation heading its chain spans.** The
+  headings are cut from the members, and a chain is drawn under every heading
+  holding one of them: Eevee arrived under Generation 1, 2, 4 and 6, nine
+  tiles for a nine-Pokémon chain. The first heading that claims a chain keeps
+  it now.
+- **A Pokémon appeared once per branch.** `useFilteredPokemonGrouped` emits
+  one group per root-to-leaf path, so a split chain repeats every member
+  above the split. `mergeBranchesByChain` merges the branches back, which
+  keeps a chain's tiles adjacent — the reason the pickers draw lines at all —
+  while drawing each member once. Together with the heading fix, Scyther went
+  from three tiles to one and Eevee from four to one.
+- **The league summary drew the base sprite where the card drew the form.**
+  The champion row read Charizard while its own card read Mega Charizard X.
+  The summary is a small copy of the card's row, so it takes the form too.
+
+### The seeded Kanto league
+
+A preview build with no saved league opens on one: six gyms, three Elite Four
+members, a champion and an endgame boss, after Kanto. Gyms 7 and 8 and the
+fourth Elite Four member stay empty, because feature work needs both states
+in front of it.
+
+It is a fixture, not content, and three guards keep it that way
+(`src/league/store/seedLeague.ts`):
+
+1. **Never on production.** The live app opens empty, as it always has.
+2. **Never when the key exists.** It writes the store's own persisted shape
+   before the store reads it, and only when there is no key at all. A
+   returning visitor keeps their league; someone who deliberately cleared
+   theirs keeps it cleared. "The key is missing" means a first visit, where
+   "every card is empty" does not.
+3. **Never past an error.** A blocked or full `localStorage` leaves the app
+   on an empty league rather than a broken page.
+
+Two things about the content. Branches start at the Kanto stage, so Pikachu
+arrives without Pichu and Jynx without Smoochum — the picker still seats the
+baby, and that question is still open above. And the seed carries one of each
+thing that is tedious to reach by hand: a Mega on Blue's Charizard, a
+Gigantamax on Red's, Mewtwo covering Red's last seat on the boss row only,
+a signature on every card, and a TM on every card.
+
+`e2e/league-seed.spec.ts` holds the slot shape, both powerups and the
+legendary. Every other league spec now starts from an explicitly blank league
+(`e2e/support/leagueSeed.ts`), which is a better statement of intent than the
+empty template they used to inherit.
+
 ### Two drag treatments, four surfaces
 
 The dex builder, the view page, the league summary and the gym card each had
