@@ -300,18 +300,622 @@ Veto any of these; they ship as stated otherwise.
   reverts the other. Base form is the shared reset point.
 - The concrete curve numbers in item 3.
 - Column removal: an X control per column, dex-builder style; remaining
-  columns compact toward the rightmost seat.
+  columns compact toward the rightmost seat. *(Owner-confirmed 2026-08-29
+  and built: the X sits on the column's topmost Pokemon.)*
 - League reorder works across sections (gym ↔ E4 ↔ champion ↔ boss).
+
+## App feedback round 1 (2026-08-29, decided on the live preview)
+
+1. **Fit-to-viewport card.** The whole template (card + hint lines) fits the
+   viewport with no scroll. A JS-measured CSS `zoom` on the card wrapper
+   scales everything proportionally; floor 0.55, then scrolling returns.
+2. **TM slot empty state** uses the badge hexagon's stroke shade (`dash`),
+   not the cell shade.
+3. **"No type" is a real option**: the type badge pipeline (geometry, text
+   fit, casing) over the no-type grey, with the 4-point star spandrel as its
+   symbol. In the picker it spans the grid's full bottom row.
+4. **Unset type chip** reads "Select a type": red dotted border, exactly a
+   type badge's height, so picking a type shifts no layout.
+5. **Column drag previews the reorder**: the grabbed column lifts (shadow,
+   slight scale) and snaps to the hovered seat; columns between slide one
+   seat over, live. No target ring for reorders — the ring stays only for
+   evolution-boundary rows and legendary retargeting.
+6. **Hint arrows render as text** (`↕` carries U+FE0E so iOS does not
+   substitute the emoji), matching the left-right arrow.
+7. **Inputs never trigger iOS focus zoom — at their design sizes.** 16px
+   text was tried and rejected as too big. Instead the league entry caps
+   the viewport's maximum-scale on iOS only, which suppresses the focus
+   auto-zoom while Safari still allows user pinch zoom (it ignores the cap
+   for gestures since iOS 10). Android is untouched: it honours the cap
+   for pinch and never auto-zooms inputs. The badge input left-aligns
+   while empty so the caret sits at the placeholder's start.
+8. **Signature picker is restricted to the card's placed lines** — a
+   signature is chosen among the team.
+9. **TM picker sits on the selection pane's architecture**: BottomSheet on
+   mobile (its drag-to-dismiss), centred dialog on desktop, and the pane's
+   filter idiom — entry chips opening panels, multi-select values as
+   dismissible coloured chips, or/and mode for types, category and contest
+   as multi-select with the decided colours. (With single-typed moves,
+   "all" across 2+ types is naturally empty.)
+10. **Per-column removal shipped** on the topmost Pokemon, dex `RedXIcon`.
+
+## App feedback round 2 (2026-08-30, decided on the live preview)
+
+1. **Boundary drags are shelf handles, applied live.** A run's top edge
+   moves that stage's own boundary; its bottom edge moves the next
+   stage's; boundaries push their neighbours instead of clamping into
+   them, so a shelf can cover stages entirely and either visible handle
+   recovers them (`engine.setBoundary`). A mid-run grab is inert until
+   the pointer crosses the run's original edge, then continues as that
+   handle — releasing mid-run changes nothing. Every move paints the
+   store immediately; nothing waits for the release.
+2. **Reorder drags preview the real result.** The grid re-derives every
+   column at its previewed seat while the drag is held, so a line moved
+   toward a later seat shows exactly the members that seat's join row
+   admits, and boundaries ride the line object — custom evolution rows
+   survive a trip through a shorter column.
+3. **Type is a tri-state.** Unset shows "SELECT A TYPE" through the badge
+   pipeline (dashed red, plus icon); an explicit "NO TYPE" is its own
+   stored value (`'none'`) wearing the grey star badge at identical
+   proportions; both differ from a chosen type.
+4. **Signature picker defaults unfiltered**, with a "Card lines" chip to
+   scope to the card's placed lines; a full template forces the scope
+   structurally.
+5. **TM picker numeric columns run Att., Acc., PP**; the card's TM slot
+   shows the move's type badge and category chip above its name.
+6. **Badge slot**: the whole tile (hexagon included) starts text entry;
+   the placeholder is centred.
+7. **Dex nav switches fade in** (180ms) and heavy pages mount inside a
+   transition so the tab animation stops freezing.
+
+## App feedback round 3 (2026-08-30, decided on the live preview)
+
+1. **Type chips.** "Select a type" takes a solid red outline, not a dashed
+   one. "NO TYPE" runs through the badge's condense like every real badge —
+   it was set at full width and overhung the pill on both sides.
+2. **League home fits the screen.** The same fit zoom the gym card uses,
+   extracted to `useFitScale`. The desktop league pane is now a fit viewport
+   too.
+3. **Nine columns, action on the right.** The team block is six wide — the
+   largest team the template holds — so the column that was always empty
+   moved from the left of the block to the right and became the row's own
+   affordance: a plus while the gym is empty, a chevron once it holds
+   anything. Both open the card, as the whole row already did.
+4. **Mobile is one two-pane track.** Home and the open card sit side by side
+   and the track translates, so opening a card pans the camera rather than
+   swapping the DOM. `transform` only, 280ms on a decelerating curve, and
+   nothing at all under `prefers-reduced-motion`. Both panes stay mounted;
+   the off-screen one is `inert`.
+5. **Reset a custom evolution order.** When a line's rows no longer match its
+   defaults, a blue reset appears on the topmost cell — the opposite corner
+   from the red remove X, so the destructive control and the undo one are
+   never under the same thumb. (The ask said "top right, opposite the red
+   X"; the X is itself top right, so opposite won.)
+6. **Card colours separate.** Every cell used to solve for one fixed
+   luminance, which threw away the one thing fighting and ground, or ice and
+   steel, differ by. Measured: all eighteen cells sat within 0.04 of each
+   other in contrast, and the closest pair was ΔE2000 3.95. The target now
+   follows each type's own brightness through a saturating curve into a band
+   whose ends are set by what the surface has to carry. Closest pair 6.58;
+   fighting/ground 4.16 → 12.95, ghost/fairy 3.95 → 15.20.
+   `npm run shade-report` prints the ramp; `theme.test.ts` holds the floor.
+7. **The league name looks typable.** Sized to its own text by an invisible
+   copy in the same grid cell, with a dotted rule under it and a pencil at
+   the end of the words.
+8. **League rows preview live.** The card grid's column preview, applied to
+   the home: while a row is dragged every position draws the card that would
+   sit there, at the team size that position allows.
+9. **Spacer notes share the label's size and baseline.**
+10. **Hints are hanging icon bullets.** One column for the mark, one for the
+    words, so wrapped lines keep the indent. Lucide has no laurel — the
+    current release ships 2048 icons and none is a wreath — so Tabler's
+    `laurel-wreath` (MIT) is vendored as a single component rather than
+    adding a second icon library for one glyph.
+11. **The legendary is carried in hand.** A floating copy follows the
+    pointer, the target still outlines, and its home cell shows the pokemon
+    it currently covers instead of the legendary — so the outline says what
+    would be replaced.
+12. **The My dex chip carries the count**, "My dex n/151", the count in the
+    app red and the total in the chip's own ink, in both states.
+13. **My dex groups by build section.** With the chip on, results group and
+    order by the build page's own sections rather than by generation, so a
+    dex built section by section reads back that way.
+
+### Round 4, from the preview
+
+1. **A skipped evolution stage is not a defect.** The correction that forced
+   each stage to take at least the row after its pre-evolution's is reverted.
+   Levels decide: Caterpie, Metapod and Butterfree all arrive under the first
+   threshold, so the card opens on Butterfree, and the shelf handle is what
+   pulls the other two in. Same for the six evolutions whose implied level
+   lands under the real one below them. `/evolution-levels` still lists every
+   line this happens to — as information, not as a fault.
+2. **The signature pane, scoped to the team**, is one group rather than a
+   generation split: a handful of lines cut across six headings buries the
+   thing the user came to pick from. The lines order by the whole line —
+   earliest generation any member belongs to, then earliest dex number in it
+   — so a Magnezone sits with the generation 1 lines, because its line starts
+   at Magnemite.
+3. **The summary's sprites take 95% of the row**, the proportion the gym card
+   already uses. They were at 77%, which read as icons rather than creatures.
+4. **The tool name and the league name are two lines, not one field.** The
+   tool name used to *be* the input's placeholder, so typing appeared to
+   rename the page. Now the heading names the page and never changes (still
+   the crawlable h1), and the field under it — placeholder "Name your league",
+   grey and unbolded — is the user's, bold and black once used.
+
+### Round 5, from the preview
+
+1. **In the signature pane each Pokémon is its own tile.** Positions are
+   untouched — a line still occupies its own adjacent columns and still never
+   straddles a row — but the backing rectangle is per Pokémon rather than
+   stretched across the line. The line-shaped tile was picking the wrong
+   thing anyway: the signature slot takes one Pokémon, and tapping Chinchou
+   staged Lanturn, the last member of its line. Only the signature pane does
+   this; picking lines for the card still picks lines.
+2. **The team scope draws the seated branches**, not the chains they belong
+   to. A flat id set cannot say which branch of a split chain the user chose,
+   so with Scyther and Scizor seated the chain grouping still offered Kleavor
+   and could show Scyther once per branch. The store now carries the lines
+   themselves (`scopeFilterLines`), and the scoped view draws exactly them:
+   each line once, each Pokémon once.
+3. **"My dex" survives closing the pane.** It is the user's choice, not a
+   per-open default; only its contents are re-read.
+4. **"Current Team" survives it too**, with one exception it cannot outlive:
+   an empty card. With no lines seated there is nothing to narrow to, so the
+   chip clears — and does not render at all, rather than offering a tap whose
+   only effect is an empty result.
+
+Two bugs came out of building those.
+
+- **The count disagreed with the grid.** It counted every member of every
+  matching *chain*, which is right when the grid draws chains and wrong when
+  it draws lines: four tiles under a heading that said six. It now counts
+  what is drawn.
+- **Restricting to nothing was indistinguishable from not restricting.**
+  `useFilteredPokemonGrouped` keys its memo on the restriction's ids joined
+  by commas, and an empty set and no set both join to `''` — so a user whose
+  dex is still empty tapped "My dex 0/151" and got all 1126 back. The key is
+  prefixed now, and the empty dex shows the empty state.
+
+### Round 6, from the preview
+
+1. **The league surfaces got their own hold behaviour.** One treatment for
+   four surfaces was wrong: see the section below.
+2. **The held tile is the size of the tile that was grabbed.** The dex
+   builder sizes its tiles against their grid
+   (`w-[calc((100%-24px-5%)/6)]`), and inside the drag overlay that
+   percentage resolved against the overlay's own box — 27.7px held for a
+   56px tile. The overlay measures the grabbed element now and holds that
+   width.
+3. **A horizontal drag on the gym card picks up the column.** The column is
+   what moves, so the column is what the hand holds: every member of the
+   line, stacked as the card draws them, not the top sprite alone.
+4. **The TM picker drops AND/OR.** A move carries one type, so the two modes
+   select the same moves, and offering the choice implies a filter that
+   cannot exist. The type chips there are a plain OR.
+5. **The "Att" sort caret matches the others.** It had inherited a smaller
+   box from the header cell around it.
+6. **The legendary drop targets a column, not a cell.** dnd-kit's default
+   collision wants the pointer inside the droppable, which on the boss row
+   means dropping the legendary on the Pokémon it replaces and hiding it. A
+   custom `CollisionDetection` (`bossRowByColumn`) matches on x alone, so a
+   column takes the drop from anywhere along its length.
+7. **The ↔ hint leaves the legendary cell.** The legendary does not move
+   sideways, and the arrow promised a gesture that does nothing.
+8. **The "already on the card" pokeball hides under Current Team.** With the
+   list scoped to the team every result carries the mark, so it marks
+   nothing and costs a corner of every tile.
+9. **Tapping a placed line replaces it.** The pane opens on that seat under
+   "Replacing: *Gyarados*" rather than "Adding to: Gym 3", and the seat
+   keeps its place in the team and its signature mark. The boss row's
+   legendary slot overrides this: it opens the legendary picker, and that
+   picker now opens on the gym's own type like every other purpose.
+10. **"TM" and the disc back apart by 1px.** Round 3 closed the gap and
+    closed it too far; the two read as one glyph.
+
+### Round 7, from the preview
+
+1. **No chevron between standalone tiles.** The arrow says one tile evolves
+   into the next, which is a relation the tap does not follow when each tile
+   is its own pick. The line picker keeps its arrows.
+2. **The legendary picker draws individual Pokémon**, on the same terms as
+   the signature picker: one tile each, one pick each, and no Pokémon twice.
+3. **The powerup discs are smaller and their symbols larger.** 1rem instead
+   of 1.15rem, inset far enough that the disc AND an active one's 2px ring
+   stay inside the cell — 11.6px now separates neighbouring seats' buttons,
+   where 3.8px did and the ring ate most of it.
+4. **The discs are circles again**, and the symbols are sized to the circle
+   rather than to their own image box. Two separate causes, below.
+5. **A preview build seeds a Kanto league.** Below.
+
+Three defects came out of building those, all in what shipped last round.
+
+- **A Pokémon appeared once per generation heading its chain spans.** The
+  headings are cut from the members, and a chain is drawn under every heading
+  holding one of them: Eevee arrived under Generation 1, 2, 4 and 6, nine
+  tiles for a nine-Pokémon chain. The first heading that claims a chain keeps
+  it now.
+- **A Pokémon appeared once per branch.** `useFilteredPokemonGrouped` emits
+  one group per root-to-leaf path, so a split chain repeats every member
+  above the split. `mergeBranchesByChain` merges the branches back, which
+  keeps a chain's tiles adjacent — the reason the pickers draw lines at all —
+  while drawing each member once. Together with the heading fix, Scyther went
+  from three tiles to one and Eevee from four to one.
+- **The league summary drew the base sprite where the card drew the form.**
+  The champion row read Charizard while its own card read Mega Charizard X.
+  The summary is a small copy of the card's row, so it takes the form too.
+
+### Why the Dynamax disc was not a circle
+
+Two things made one 1rem button read as squashed sideways, and only one of
+them was visible in the layout box.
+
+**The box snapped to an ellipse.** The card scales itself with CSS `zoom`
+(`useFitScale`), so a 1rem square is a fractional number of CSS pixels, and
+paint snaps an element's edges to whole pixels independently on each axis.
+The right-anchored button landed on a fraction that snapped to 15px wide by
+16px tall, and `rounded-full` faithfully drew that box: an ellipse.
+`getBoundingClientRect` reports the *unsnapped* 15.52 x 15.52 and cannot see
+it, which is why the first look at this said the button was fine.
+
+Measuring the painted pixels instead settled it. Filling the disc with a
+colour nothing else on the page uses, at a 16x device pixel ratio, the Mega
+disc measured 256x256 and the Dynamax one 240x256 — symmetric on both sides,
+so an ellipse rather than something clipped. Of the fixes tried, only two
+gave a true circle: promoting the button to its own compositing layer
+(`will-change: transform`) and paint containment (`contain: paint`). Left
+anchoring, `translateZ(0)`, `backface-visibility`, `opacity`, `isolation`, a
+no-op filter and `aspect-ratio` all still measured 240x256. `contain: paint`
+wins on cost: it gives the element its own paint context with no layer per
+button, and the outset ring still draws (measured 318x318, both kinds).
+
+**The symbol pushed on the rim.** Both symbols are `object-contain` in a
+square box, and the two arts are shaped very differently: `mega.png` is 56x74
+with ink to every edge, so its height binds, while `dynamax.png` is square
+but its ink fills 96% of the width and 77% of the height, so its width binds.
+One shared percentage cannot serve both — too small and the Dynamax symbol
+reads a fifth smaller than the Mega one, too large and its ink runs to the
+left and right rims with clear space above and below. Each symbol is now
+sized so its *widest* side takes the same share of the disc
+(`SYMBOL_EXTENT`, 80%), which works out to 80.0% for Mega and 83.2% for
+Dynamax and leaves both the same margin all round.
+
+`e2e/league-powerups.spec.ts` holds the box square and paint containment on,
+so removing either brings the ellipse back with a failing test rather than
+silently.
+
+### The seeded Kanto league
+
+A preview build with no saved league opens on one: all fourteen slots, six
+lines each — the eight Kanto gym leaders, the Elite Four, the champion and
+Red on Mt. Silver.
+
+The teams are not invented and not typed out. They come from the game's own
+trainer table, `files/poketool/trainer/trainers.json` in the pret
+HeartGold/SoulSilver decompilation: the gym leaders' **rematch** parties (the
+only Kanto ones that run to six), the Elite Four's second-round parties,
+Lance, and Red. A script resolved every species against `pokemon.json` and
+computed every branch by walking `evolvesFrom`, so no id in the seed was
+written by hand. Serebii, which is where the request pointed, is blocked by
+this environment's egress proxy; the decompilation is the same data closer to
+the source.
+
+**Nothing in the seed is a state the app cannot reach on its own.** That rule
+replaced an earlier shortcut: the first version stripped baby stages, so
+Raichu arrived without Pichu. That was special logic in the generator, not
+anything the level curve does — the picker walks `evolvesFrom` to the root and
+always seats the baby — so it is gone. A seeded line is now the whole line,
+root to leaf, exactly as a picker hands it over.
+
+Which raises the case the rule exists for: a leader who fields a stage that is
+not the leaf. Brock's team is Onix, and the line a picker gives you is Onix
+into Steelix. The seed does not invent a one-member Onix line; it seats the
+real line and then reaches Brock's state the way a person would, with one
+`setBoundary` call — the same operation a downward drag performs — pushing
+Steelix off the bottom of the card. The line then reads as edited, blue reset
+button and all, because it is edited. Only two lines need it: Brock's Onix and
+Red's Pikachu.
+
+**Seat order is by level, highest first**, so each leader's ace takes seat 1 —
+the rightmost column — and carries the signature. Mewtwo on the boss row is
+the one thing not from the game: Red has no legendary, and the slot needs
+exercising.
+
+It is a fixture, not content, and three guards keep it that way
+(`src/league/store/seedLeague.ts`):
+
+1. **Never on production.** The live app opens empty, as it always has.
+2. **Never when the key exists.** It writes the store's own persisted shape
+   before the store reads it, and only when there is no key at all. A
+   returning visitor keeps their league; someone who deliberately cleared
+   theirs keeps it cleared. "The key is missing" means a first visit, where
+   "every card is empty" does not.
+3. **Never past an error.** A blocked or full `localStorage` leaves the app
+   on an empty league rather than a broken page.
+
+Two things about the content. Branches start at the Kanto stage, so Pikachu
+arrives without Pichu and Jynx without Smoochum — the picker still seats the
+baby, and that question is still open above. And the seed carries one of each
+thing that is tedious to reach by hand: a Mega on Blue's Charizard, a
+Gigantamax on Red's, Mewtwo covering Red's last seat on the boss row only,
+a signature on every card, and a TM on every card.
+
+`e2e/league-seed.spec.ts` holds the slot shape, both powerups and the
+legendary. Every other league spec now starts from an explicitly blank league
+(`e2e/support/leagueSeed.ts`), which is a better statement of intent than the
+empty template they used to inherit.
+
+### Two drag treatments, four surfaces
+
+The dex builder, the view page, the league summary and the gym card each had
+their own idea of what holding something looks like: a source faded to 25%
+here, a target scaled and ringed there, a shadowed copy somewhere else. Four
+treatments for one idea reads as four half-finished features.
+
+One treatment for all four was the first fix, and the preview showed why it
+was wrong: the two kinds of drag ask different questions. The dex builder asks
+*which gap* — between which two lines does this land. The league summary and
+the gym card ask *which slot*, and they answer by redrawing the page as if the
+slot already held the thing. A copy centred on the pointer covers exactly the
+cell that carries the answer.
+
+So `src/components/shared/dragHold.tsx` holds two treatments, and every
+surface imports one rather than restating its own:
+
+1. **Between** (dex builder, view page): the copy rides on the pointer and an
+   insert bar marks the gap, because the gap is a place the pointer can be.
+2. **Into** (league summary, gym card): the copy hangs below the grab point,
+   clear of the thumb, and the target reads above it — the row or column the
+   drop would take, redrawn with the carried thing seated in it.
+
+Both share what makes a drag legible either way. The source recedes to
+`DRAG_SOURCE_OPACITY` (0.25) where it sits, so the layout keeps its shape and
+the eye stops reading that copy as live, and exactly one copy stands at full
+strength. Where a surface previews the drop, the receding copy is the
+previewed one, which is where the carried thing is actually drawn.
+
+What each surface shows about the *destination* still differs, and is meant
+to: an insert bar in the dex builder, a re-derived arrangement in the league,
+a ring on the boss row for a legendary. Those answer different questions.
+
+A vertical drag on the gym card carries nothing, because it carries nothing:
+it shifts an evolution boundary in place. A horizontal one carries the whole
+column, the line's members stacked as the card draws them.
+
+`e2e/drag-hold.spec.ts` measures both properties on all four surfaces
+mid-drag, and that the held row is the width of the row. The dex half runs on
+desktop only, for a harness reason rather than a product one: the touch
+projects arm dnd-kit's `TouchSensor`, which wants real touch events, and
+Playwright's mouse API emits mouse events.
+
+### Signature picker
+
+Opens on the gym's own type, like the line picker — the scope chip narrows to
+the card's team on top of that, and is called **Current Team**.
+
+### Round 8, from the preview
+
+Two defects, both reported from the live preview and both fixed by measuring
+the running app rather than reading the code.
+
+1. **The signature mark carries the Pokemon, not just the seat.** The picker
+   draws one tile per Pokemon (round 5, item 1), so a tap names a Pokemon.
+   The slot then re-derived which member to draw from the boss row, which
+   fields the line's leaf: a tap on Geodude answered with Golem, and Brock's
+   own Onix would have read as Steelix. `GymCard` now holds `signatureId`
+   beside `signatureSeat`, and `signatureMember` in the engine prefers it.
+
+   The seat still owns the mark. A card whose marked line is replaced, or one
+   marked before the field existed, falls back to the boss row's member: the
+   pick is checked against the line's own members rather than migrated, so
+   nothing has to change on disk.
+
+2. **A drag paints the line it carries, not the seat it lands on.** A reorder
+   preview swaps `src` on cells that are already on screen. Setting a new
+   `src` does not blank an `<img>` — the browser keeps painting the bitmap it
+   has until the new one is ready — so a cell whose new sprite had never been
+   drawn kept showing the previous tenant for as long as the fetch took.
+
+   Moving a line to a deeper seat is exactly the case that reveals one: seat
+   6 reaches the last two rows and seat 1 reaches all eleven, so the stages a
+   line hid at seat 6 all arrive at once. A boundary drag does the same on a
+   single column. Measured across seven seeded cards, one reorder each: 19
+   cells received a sprite the browser was not ready to paint. The card now
+   warms every member of every line — plus their Mega and Gigantamax forms,
+   because the powerup rides its seat — when the card opens. The same count
+   is 0 after.
+
+   `e2e/drag-hold.spec.ts` watches for the swap itself rather than for a
+   frame: any `<img>` whose `src` changes to a bitmap the browser does not
+   have is the defect, whatever the network does next.
+
+### Round 3, follow-ups from the preview
+
+1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;
+   the gym's colour is already the whole card. The label sits tight under
+   the disc — its viewBox carries its own padding, so the gap was double.
+2. **The badge name is one phrase.** "Badge" flows after the entered text and
+   wraps with it, so a long name puts the word at the end of the last line.
+   That rules an `<input>` out — a replaced element neither wraps nor flows
+   with a sibling word — so the field is a contenteditable span, one text
+   flow, nothing to keep in sync with a mirror. Its placeholder is the
+   field's own `::before`, because an empty inline span is zero-wide and
+   leaves nothing to tap.
+
+   The limit is the box, not a character count: 40 wide letters and 40 narrow
+   ones do not occupy the same space, so any single cap is either too tight
+   for one or lets the other spill. Each edit is measured against the room
+   the slot has and rejected if it does not fit, with a hard ceiling of 60
+   behind it so a paste cannot put a novel in the store.
+
+   Two traps, both real, both found by driving it: normalizing the text on
+   input makes the store and the DOM disagree on the next render (a browser
+   inserts a non-breaking space for a trailing one), and the only way to
+   reconcile that is to rewrite the field, which throws the caret to the
+   start — typing "Thunder Cascade" came back as "Cascade SThunder". And
+   writing to the field at all while it has focus is the same bug by another
+   route. So the field stores exactly what it holds, and React only ever
+   catches it up while it is unfocused.
+3. **The My dex chip's count is bold**, in the app red, against the total in
+   the chip's own ink.
+
+`e2e/league-card-slots.spec.ts` holds the disc colour, the phrase, and the
+fit — at 320, 390 and desktop widths.
+
+### What the pane track broke, and the rule that came out of it
+
+The two-pane track pays for its smoothness with a `transform`, and a
+transformed ancestor becomes the containing block for `position: fixed`
+descendants. So the card's own overlays — the type picker and the TM picker —
+stopped anchoring to the viewport and anchored to the 200%-wide track: the
+type picker spanned both panes, half of it off screen to the left.
+
+Both are portalled to `document.body` now, which takes them out of the tree
+entirely so no ancestor can move them again. The selection sheet was already
+safe, being a sibling of the track rather than a child.
+
+The rule this leaves: **an overlay is viewport furniture, so it renders at the
+document root, not wherever its owner happens to sit.** `e2e/league-overlays.spec.ts`
+holds it — it opens each picker and measures the outermost fixed box against
+the window, at 320, 390 and desktop widths. Put the picker back inside the
+track and it fails at `left: -412`.
+
+### Level model, and what it was hiding
+
+The round-3 pass also asked for the evolution-level regression to be made
+inspectable. `/evolution-levels` is a preview-only page (the entry refuses to
+mount on the production deploy) that draws the fit, the cloud it was fitted
+to, and every level-less evolver where the model put it.
+`npm run level-report` prints the same numbers.
+
+Building it turned up a defect worth recording. The curve alone stripped a
+member from **fifteen** lines, for two reasons:
+
+- Whole lines finish under the first threshold. Caterpie, Metapod and
+  Butterfree all arrive at or below level 12, so all three claimed row 1 and
+  only Butterfree ever drew.
+- Six evolutions have no stated level and the implied one lands at or under
+  the real level of the stage below — Rhydon evolves at 42, Rhyperior is a
+  trade whose implied level is 38 — squeezing the middle stage out.
+
+`defaultBoundaries` now gives each stage at least the row after its
+pre-evolution's. Levels still decide wherever they are consistent; the rule
+only ever moves a boundary that would have erased a member. All fifteen lines
+show every member again.
+
+Open, for the owner:
+
+- **Baby forms.** Seating any member of 21 lines seats the baby too, because
+  the branch walks to the root of the chain. Picking Pikachu puts Pichu in
+  gym 1. Keep, or start the line at the first non-baby stage?
+- **Seat capacity.** Seat 6 joins at row 10, so it offers two rows for a
+  three-stage line. Structural; the drag can still reveal the third.
+- **Fit error.** R² 0.52, RMSE 7.3 levels against rows about six levels
+  apart, so an implied stage is often one row out either way. A better model
+  would need the evolution *method* (stone, trade, friendship), which the
+  dataset does not carry.
+
+### Mega and Gigantamax (built 2026-08-30)
+
+The card spacer has always read "Champion may have one Mega/Gigantamax", and
+nothing rendered the buttons. The blocker was data, not UI: `pokemon.json`
+carries one row per species, with no Mega or Gigantamax flag and no form
+sprites, so eligibility could not be derived from anything checked in.
+
+`npm run league:powerups` (`scripts/league/fetch-powerup-forms.ts`) harvests
+it and commits the result, so the app itself needs no network. It reads
+PokeAPI's `pokemon.csv`, keeps the `-mega`, `-mega-x`, `-mega-y`, `-mega-z`,
+`-primal` and `-gmax` forms, and writes `src/league/data/powerupForms.json`
+plus one sprite per form. **116 species — 88 with a Mega or Primal, 32 with a
+Gigantamax, four with both — and 126 form sprites.** Six Pokémon carry two
+Megas: Charizard, Raichu and Mewtwo their X and Y, and Absol, Garchomp and
+Lucario their Z.
+
+Three things the raw table needed:
+
+- **Deduplication by label.** The CSV carries per-gender and per-appearance
+  rows, so Meowstic listed two identical Gigantamax entries and Tatsugiri
+  three. Keying on `species:label` collapses them and still keeps Charizard's
+  Mega X and Mega Y apart, because those are different labels.
+- **A sprite that exists.** `zygarde-mega` sits in the table and has no
+  sprite anywhere. A form whose sprite fails to download is dropped, so the
+  card can never render a hole.
+- **Every lettered suffix spelled out.** The first harvest matched
+  `-mega-x`, `-mega-y` and `-mega`, and `absol-mega-z` ends with none of
+  them, so three Pokémon silently lost their second Mega. `-eternamax` stays
+  out on purpose: Eternamax Eternatus is a raid boss rather than a form a
+  trainer takes, and Eternatus reaches a card only through the legendary
+  slot, which carries no buttons.
+
+How the card behaves:
+
+1. **The buttons live on the champion and endgame boss rows only**, and only
+   under a Pokémon that has that form. Mega bottom-left, Dynamax
+   bottom-right, opposite corners so neither sits under the remove X.
+2. **One powerup per card.** Pressing Mega on another seat moves it there,
+   as does pressing Dynamax on the same seat: the two are exclusive on one
+   Pokémon, and the card allows one.
+3. **Pressing cycles, then returns to base** — Mega Charizard X, Mega
+   Charizard Y, Charizard. That is what lets one button carry a Pokémon with
+   two Megas, and what gives every button an off state without a second
+   control.
+4. **A powerup is a form change, never a swap** (item 8). The seat keeps its
+   line, its place, and its evolution rows; the sprite and the alt text
+   change on the rows that allow it.
+5. **The state stores a seat, a kind and an index**, not a form id. The
+   seat's Pokémon can change under it — the line is replaced, a boundary
+   moves — and an index still means "this Pokémon's first Mega" wherever it
+   lands. When the new occupant has no such form, `formAt` returns null and
+   the base sprite draws.
+
+Always a white disc behind the symbol, whatever the card's colour: the
+Bulbapedia symbols are poster art and mush at 18px on top of a sprite. The
+*ring* carries the on state, not the opacity, so an available powerup stays
+readable while an active one is unmistakable.
+
+`e2e/league-powerups.spec.ts` proves the row restriction, the Charizard
+cycle, and that a card holds one powerup at a time, on all three projects.
+
+Still open: DECISIONS' own rule that **a legendary covering the Mega or
+Gigantamax frees that powerup for another Pokémon** is not implemented — the
+legendary and the powerup are independent today. The form *names* also appear
+only in the sprite's alt text; nothing on the card says "Mega Charizard X".
+
+## Site chrome (decided 2026-08-29, built the same day)
+
+Two bars, both tools. Top bar, identical everywhere: wordmark left; the
+language globe and a **Tools dropdown** right — a dropdown, not spelled-out
+links, because more tools are coming. Second bar is the tool's own, one
+2.75rem height across tools:
+
+- **Dex builder:** "Dex Builder" left as real text until anything is
+  placed, then the n/151 count; the Build/Analytics/View nav centred; the
+  page's own controls (report, settings, export) right-aligned with no
+  vertical divider and no shading. The milestone progress bar is retired —
+  the admin dashboard shows it did not lift conversion — and the milestone
+  popups stay (they mount in App, independent of the chrome).
+- **League builder:** the name input reads "Pokémon League Builder" until
+  the user names their league; an sr-only h1 keeps the heading in the
+  hydrated DOM and the static shell keeps the crawlable one. Home and card
+  bars hold the same height as the dex bar.
+
+Enforced, not hoped: `e2e/header-chrome.spec.ts` proves the three cells
+never overlap at 320/390/desktop in both left-cell states, and the verify
+harness asserts the same lanes per view on every surface plus the league
+bar height.
 
 ## Build plan (own tasks, not part of the page)
 
-- **Powerup symbols:** harvested — Bulbapedia's Mega Evolution and Dynamax
-  symbols drive the corner buttons, and the two Primal Reversion icons
-  (Kyogre, Groudon) are checked in beside them for the form cycle. All four
-  live next to the canvas as `powerup-*.png`.
-- **Sprite harvest:** all forms of all Pokémon — gender, alt forms, shiny,
-  Mega, Gigantamax — cached like the current set, plus data entries for the
-  form Pokémon and a base→forms mapping.
+- **Powerup symbols:** done. Bulbapedia's Mega Evolution and Dynamax symbols
+  drive the corner buttons, checked in as `public/powerups/mega.png` and
+  `dynamax.png`. The two Primal Reversion icons (Kyogre, Groudon) stay beside
+  the canvas, unused: a Primal is a Mega-slot form here, under the Mega
+  button.
+- **Sprite harvest:** the Mega and Gigantamax half is done — 123 form sprites
+  and a species→forms map, from `npm run league:powerups`. Gender, alt-form
+  and shiny sprites are still open, as are data entries for the form Pokémon
+  themselves (the card reads a label and a sprite id, nothing more).
 - **Implied-level module:** the regression from item 6, dev-only,
   rerunnable.
 - **Onboarding:** a first-run popup explaining the gestures, re-openable
