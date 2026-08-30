@@ -12,26 +12,33 @@ SIG = {'src': '__SP95__', 'name': 'Onix', 'head': 'SIGNATURE', 'types': ['rock',
 PAR = {'src': '__SP25__', 'name': 'Pikachu', 'head': 'PARTNER', 'types': ['electric']}
 
 
-def block(box, occ, head, sprite, types, align='center'):
-    """One half's content, laid out inside a box that clears the seam."""
+def block(box, occ, head, sprite, types, align='center', head_below=False):
+    """One half's content, laid out inside a box that clears the seam.
+
+    `head_below` puts the heading under the sprite and the name instead of
+    over them. It is for the half that sits against the seam: a heading is
+    full-width text and a sprite is not, so leading with the sprite keeps the
+    widest thing in the block away from the edge the two halves share.
+    """
     x, y, w, h = box
+    frame = (f'left:{x:.1f}px;top:{y:.1f}px;width:{w:.1f}px;height:{h:.1f}px;text-align:{align}')
     if occ is None:
         d = min(w, h) * 0.42
-        return (f'<div class="hb" style="left:{x:.1f}px;top:{y:.1f}px;width:{w:.1f}px;height:{h:.1f}px;'
-                f'text-align:{align}">'
-                f'<span class="hd2">{head}</span>'
-                f'<span class="ball" style="width:{d:.1f}px;height:{d:.1f}px;margin:{(h-d)/2-14:.1f}px auto 0">'
-                f'</span></div>')
+        ball = (f'<span class="ball" style="width:{d:.1f}px;height:{d:.1f}px;'
+                f'margin:{(h-d)/2-14:.1f}px auto 0"></span>')
+        head_el = f'<span class="hd2">{head}</span>'
+        inner = (ball + head_el) if head_below else (head_el + ball)
+        return f'<div class="hb" style="{frame}">{inner}</div>'
     pills = ''
     if types:
         pills = '<span class="pills">' + ''.join(
             f'<span class="pill" style="background:{TYPE_COLORS[t]}">{t.upper()}</span>' for t in occ['types']
         ) + '</span>'
-    return (f'<div class="hb" style="left:{x:.1f}px;top:{y:.1f}px;width:{w:.1f}px;height:{h:.1f}px;'
-            f'text-align:{align}">'
-            f'<span class="hd2">{occ["head"]}</span>'
-            f'<img class="sp2" src="{occ["src"]}" alt="" style="width:{sprite}px;height:{sprite}px">'
-            f'<span class="nm2">{occ["name"]}</span>{pills}</div>')
+    head_el = f'<span class="hd2">{occ["head"]}</span>'
+    body = (f'<img class="sp2" src="{occ["src"]}" alt="" style="width:{sprite}px;height:{sprite}px">'
+            f'<span class="nm2">{occ["name"]}</span>{pills}')
+    inner = (body + head_el) if head_below else (head_el + body)
+    return f'<div class="hb" style="{frame}">{inner}</div>'
 
 
 def variant(kind, has_sig, has_par, types):
@@ -49,23 +56,28 @@ def variant(kind, has_sig, has_par, types):
         sig_box, par_box = (29, 4, 90, 74), (29, 126, 90, 74)
         sprite, align = (36 if types else 46), 'center'
     else:  # major / minor
-        # A shallow seam, not a corner. A corner triangle big enough for a
-        # heading, a sprite, a name and two type pills is not a minor half any
-        # more — and a box that reaches past the seam puts the partner's own
-        # heading in the signature's territory, which is the first diagonal's
-        # mistake wearing a different hat. So the seam is laid at 62/38 and
-        # both boxes sit entirely on their own side of it.
+        # No type pills here, and the partner's heading sits under its sprite
+        # rather than over it. Both are the same economy: the seam is what
+        # limits this variant, so the less full-width text the minor half
+        # carries near it, the further into its own corner the block can sit
+        # — and the more room is left over for the sprite. Dropping the pills
+        # and moving the heading took the partner from 26px to 44.
         seam = ((W, 100), (0, 130))
-        sig_box, par_box = (8, 3, W - 16, 96), (8, 136, W - 16, 62)
-        sprite, align = (46 if types else 56), 'center'
-    sig_sprite = sprite if kind != 'major' else sprite
-    par_sprite = sprite if kind != 'major' else (26 if types else 34)
+        # The binding constraint for a full-width box is the seam at its
+        # RIGHT edge (101.6 here), not its left: the seam runs down to the
+        # left, so the box's far corner meets it first.
+        sig_box, par_box = (8, 4, W - 16, 94), (40, 124, 100, 76)
+        sprite, align = 68, 'center'
+    sig_sprite = sprite
+    par_sprite = sprite if kind != 'major' else 44
     (x1, y1), (x2, y2) = seam
+    below = kind == 'major'
     return (f'<div class="slot dg">'
             f'<svg class="seam" viewBox="0 0 {W:.0f} {H:.0f}" aria-hidden="true">'
             f'<line x1="{x1:.0f}" y1="{y1:.0f}" x2="{x2:.0f}" y2="{y2:.0f}"/></svg>'
             + block(sig_box, SIG if has_sig else None, 'SIGNATURE', sig_sprite, types, align)
-            + block(par_box, PAR if has_par else None, 'PARTNER', par_sprite, types, align)
+            + block(par_box, PAR if has_par else None, 'PARTNER', par_sprite, types, align,
+                    head_below=below)
             + '</div>')
 
 
@@ -93,10 +105,9 @@ VARIANTS = [
      'at its lowest point and loses all 72px the seam sweeps on its way across.'),
     ('major', 'Major and minor',
      'The seam cuts one corner off: the signature keeps a full-width trapezoid at the top, the partner takes '
-     'the bottom-right corner.',
-     'The only one of the three that says which is the ace, and the honest version of it is smaller than it '
-     'first looks: a corner triangle big enough for a heading, a sprite, a name and two type pills is not a '
-     'minor half any more. So the seam lies at 62/38 and the partner gets a 132 &times; 62 band &mdash; a '
-     '34px sprite, or 26px with types on. <i>That may simply be too small for a sprite to read as a '
-     'creature.</i>'),
+     'the bottom-right corner. No type pills, and the partner\'s heading sits <b>under</b> its sprite.',
+     'Both of those are the same economy. The seam is what limits this variant, so the less full-width text '
+     'the minor half carries near it, the further into its own corner the block can sit &mdash; which is room '
+     'the sprite gets back. Measured: the partner\'s sprite went from 26px with pills and a heading on top to '
+     '<b>44px</b>, and the signature\'s from 46px to <b>68px</b>, on the same 62/38 seam.'),
 ]
