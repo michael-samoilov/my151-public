@@ -88,6 +88,8 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
     scopeFilter: false,
     scopeFilterIds: undefined,
     scopeFilterLabel: undefined,
+    scopeFilterLines: undefined,
+    standaloneTiles: false,
 
     openFor: (card) => {
       const purpose = ui().browserPurpose;
@@ -111,7 +113,9 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         colorFilter: null,
         eggGroupFilter: null,
         evoLineSizeFilter: null,
-        myDexFilter: false,
+        // "My dex" is the user's own choice and survives reopening the pane;
+        // only its contents are re-read.
+        myDexFilter: get().myDexFilter ?? false,
         // "My dex" filters to the dex builder's own placed set, read from its
         // store (both stores share the page); snapshot at open is enough. The
         // sections come along so the chip can group results the way the user
@@ -132,6 +136,11 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         scopeFilter: false,
         scopeFilterIds: purpose === 'signature' && !cardFull ? placed : undefined,
         scopeFilterLabel: purpose === 'signature' && !cardFull ? 'Current Team' : undefined,
+        // The branches themselves, so the scoped view can draw the lines the
+        // user seated rather than the chains they belong to.
+        scopeFilterLines: purpose === 'signature' ? lines.map((l) => l.branch) : undefined,
+        // The signature is one Pokémon, so each one is its own tile.
+        standaloneTiles: purpose === 'signature',
       });
     },
 

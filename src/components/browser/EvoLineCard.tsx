@@ -123,6 +123,11 @@ interface EvoLineGridProps {
   /** Render only the rows near the viewport. Opt-in: the browser's result
    *  grid needs it, the much smaller drilldown grids do not. */
   windowed?: boolean;
+  /** Each member is its own tile and its own pick. See `standaloneTiles` on
+   *  the browser store: a slot that takes one Pokémon cannot be filled by a
+   *  tile that picks a whole line. Positions are untouched — a line still
+   *  occupies its own columns and never straddles a row. */
+  standaloneTiles?: boolean;
 }
 
 const GRID_CLASSES: Record<number, string> = {
@@ -131,7 +136,7 @@ const GRID_CLASSES: Record<number, string> = {
 };
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, windowed = false }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, windowed = false, standaloneTiles = false }: EvoLineGridProps) {
   // Canonical Pokemon-tile sprite size — shared with the build page so
   // Charizard (etc.) renders identically in the selection pane and in a
   // section tile at the same viewport width. See `PokemonTile.tsx`.
@@ -192,6 +197,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
             showShapeBadges={showShapeBadges}
             matchupInfo={matchupInfo}
             matchupType={matchupType}
+            standaloneTiles={standaloneTiles}
             spritePx={spritePx}
           />
         );
@@ -201,7 +207,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
       }
     }
     return result;
-  }, [rows, start, end, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx]);
+  }, [rows, start, end, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx, standaloneTiles]);
 
   // The fillers stand in for the rows outside the window so the scrollbar
   // still describes the whole list. They span every column, so each occupies
@@ -250,6 +256,8 @@ interface EvoLineCardProps {
   matchupType?: TypeName;
   /** Pixel-perfect sprite size in CSS px */
   spritePx: number;
+  /** Each member is its own tile and its own pick. */
+  standaloneTiles?: boolean;
 }
 
 function formatMult(v: number): string {
@@ -274,7 +282,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx }: EvoLineCardProps) {
+function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
   // Shared press state so clicking any member shrinks the *whole* evo line
@@ -307,23 +315,23 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
       releaseTimer.current = null;
     }, wait);
   };
-  const markedForRemoval = removalStagedIds
+  const lineMarkedForRemoval = removalStagedIds
     ? members.some((p) => removalStagedIds.has(p.id))
     : false;
 
-  const toggleRemoval = () => {
-    if (onToggleRemoval) {
-      onToggleRemoval(members.map((p) => p.id));
-    }
-  };
+  /** What a tap acts on: one member when tiles stand alone, else the line. */
+  const actedOn = (i: number) => (standaloneTiles ? [members[i].id] : members.map((p) => p.id));
 
-  const handleClick = () => {
+  const handleClick = (i: number) => {
     // Analytics variant: any placed member → toggle removal (partial lines ok)
     // Browser variant: all placed → toggle removal, else toggle staging
-    if (variant === 'analytics' ? anyInDex : allInDex) {
-      toggleRemoval();
+    const placed = standaloneTiles
+      ? assignedIds.has(members[i].id)
+      : variant === 'analytics' ? anyInDex : allInDex;
+    if (placed) {
+      onToggleRemoval?.(actedOn(i));
     } else if (variant !== 'analytics') {
-      onToggleStage(members.map((p) => p.id));
+      onToggleStage(actedOn(i));
     }
   };
 
@@ -344,6 +352,9 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
     <>
       {members.map((pokemon, i) => {
         const inDex = assignedIds.has(pokemon.id);
+        const markedForRemoval = standaloneTiles
+          ? (removalStagedIds?.has(pokemon.id) ?? false)
+          : lineMarkedForRemoval;
         const matched = matchedIds.has(pokemon.id);
         const isFirst = i === 0;
         const isLast = i === members.length - 1;
@@ -369,16 +380,18 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                 (gap-x is 0), so on press it scales as a single object about its
                 own centre — no per-cell segments means no seams. The outer
                 sprites (later grid items) paint on top of the overflow. */}
-            {isFirst && (
+            {(standaloneTiles || isFirst) && (
               <div
                 // Smooth scale animation both ways — shrink on press, grow back
-                // on release.
+                // on release. Standalone tiles get one rectangle each; a line
+                // gets one stretched across its columns, anchored in the first
+                // cell (gap-x is 0, so there are no seams).
                 className="absolute inset-y-0 rounded-md border border-border transition-[scale] duration-100 ease-out"
                 style={{
                   backgroundColor: `${bgColor}10`,
                   left: '3px',
-                  width: `calc(${members.length} * 100% - 6px)`,
-                  scale: pressed ? '0.98' : '1',
+                  width: standaloneTiles ? 'calc(100% - 6px)' : `calc(${members.length} * 100% - 6px)`,
+                  scale: (standaloneTiles ? pressedIdx === i : pressed) ? '0.98' : '1',
                 }}
               />
             )}
@@ -386,8 +399,8 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
               role="button"
               tabIndex={0}
               data-testid="verify-evo-card"
-              onClick={handleClick}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startPress(i); handleClick(); } }}
+              onClick={() => handleClick(i)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startPress(i); handleClick(i); } }}
               onKeyUp={endPress}
               onPointerDown={() => startPress(i)}
               onPointerUp={endPress}

@@ -65,6 +65,110 @@ test.describe('gym card slots', () => {
     ]);
   });
 
+  test('the team scope draws the seated branch, not the whole chain', async ({ page }) => {
+    await openCard(page);
+    // Scyther's chain splits: Scizor and Kleavor. Only the seated branch
+    // belongs in the pane, and Scyther belongs in it once.
+    await seat(page, '[data-testid="card-cell-1-1"]', 'scizor');
+    await seat(page, '[data-testid="card-cell-1-2"]', 'chinchou');
+
+    await page.click('text=SIGNATURE POKÉMON');
+    await page.waitForSelector('[data-filter-chip="scope"]');
+    await page.click('[data-filter-chip="scope"]');
+    await page.waitForTimeout(700);
+
+    const view = await page.evaluate(() => {
+      const tiles = [...document.querySelectorAll('[data-testid="verify-evo-card"]')];
+      const names = tiles.flatMap((t) => [...t.querySelectorAll('img[alt]')].map((i) => (i as HTMLImageElement).alt));
+      const cell = document.querySelector('[data-row-cell]')!.getBoundingClientRect().width;
+      // The backing rectangle: one per line when tiles are grouped, one per
+      // Pokémon when they stand alone.
+      const backs = [...document.querySelectorAll('div.absolute.rounded-md.border')]
+        .map((e) => e.getBoundingClientRect().width);
+      return {
+        names,
+        count: Number(document.querySelector('[data-result-count]')?.getAttribute('data-result-count')),
+        cell,
+        widestBack: Math.max(...backs),
+      };
+    });
+
+    expect(view.names).toEqual(['scyther', 'scizor', 'chinchou', 'lanturn']);
+    expect(view.names).not.toContain('kleavor');
+    // The count beside the search box agrees with what is drawn.
+    expect(view.count).toBe(4);
+    // Every backing rectangle fits inside one cell: each Pokémon is its own
+    // tile, not one rectangle stretched over a line.
+    expect(view.widestBack).toBeLessThan(view.cell);
+  });
+
+  test('My dex on an empty dex filters to nothing, not to everything', async ({ page }) => {
+    await openCard(page);
+    await page.click('[data-testid="card-cell-1-1"]');
+    await page.waitForSelector('[data-filter-chip="my-dex"]');
+    const before = await page.evaluate(
+      () => Number(document.querySelector('[data-result-count]')?.getAttribute('data-result-count')),
+    );
+    expect(before).toBeGreaterThan(100);
+
+    await page.click('[data-filter-chip="my-dex"]');
+    await page.waitForTimeout(600);
+    const after = await page.evaluate(
+      () => Number(document.querySelector('[data-result-count]')?.getAttribute('data-result-count')),
+    );
+    // Restricting to a set of none is not the same as not restricting. The
+    // two used to share a memo key, so the chip handed back everything.
+    expect(after).toBe(0);
+  });
+
+  test('the My dex chip stays on until it is turned off', async ({ page }) => {
+    // Seeded before any app script runs: the chip filters to the dex builder's
+    // own placed set, and an empty dex makes "filtered" and "unfiltered"
+    // indistinguishable from a mistake.
+    await page.addInitScript(() => {
+      localStorage.setItem('personal-151-pokedex-v3', JSON.stringify({
+        state: {
+          sections: { starter: [1, 2, 3, 4, 5, 6], forest: [10, 11, 12] },
+          customOrder: {}, sortOption: 'dex', groupSpecialAtEnd: false,
+        },
+        version: 3,
+      }));
+    });
+    await openCard(page);
+    const results = () =>
+      page.evaluate(() => Number(document.querySelector('[data-result-count]')?.getAttribute('data-result-count')));
+
+    await page.click('[data-testid="card-cell-1-1"]');
+    await page.waitForSelector('[data-filter-chip="my-dex"]');
+    const unfiltered = await results();
+    await page.click('[data-filter-chip="my-dex"]');
+    await page.waitForTimeout(500);
+    const filtered = await results();
+    expect(filtered).toBeLessThan(unfiltered);
+
+    // Close the pane and open it for a different seat.
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    await page.click('[data-testid="card-cell-1-2"]');
+    await page.waitForTimeout(800);
+    expect(await page.locator('[data-filter-chip="my-dex"]').count(), 'the off-state chip is gone').toBe(0);
+    expect(await results(), 'the filter is still applied').toBe(filtered);
+
+    // Turning it off sticks too.
+    await page.evaluate(() => {
+      const chip = [...document.querySelectorAll('span')].find(
+        (el) => /My dex/.test(el.textContent ?? '') && el.className.includes('bg-foreground'),
+      );
+      (chip?.querySelectorAll('button')[1] as HTMLButtonElement | undefined)?.click();
+    });
+    await page.waitForTimeout(500);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    await page.click('[data-testid="card-cell-2-3"]');
+    await page.waitForTimeout(800);
+    expect(await page.locator('[data-filter-chip="my-dex"]').count(), 'it stayed off').toBe(1);
+  });
+
   test('the TM disc takes the move\'s type, not the gym\'s', async ({ page }) => {
     await openCard(page);
     await page.click('text=Pick a move');

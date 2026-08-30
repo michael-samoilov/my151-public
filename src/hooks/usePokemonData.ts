@@ -372,11 +372,16 @@ function useFilteredPokemon({
 }: UseFilteredPokemonOptions): Pokemon[] {
   // Serialize excludeIds to a stable string for memo deps
   const excludeKey = useMemo(
-    () => (excludeIds ? [...excludeIds].sort((a, b) => a - b).join(',') : ''),
+    () => (excludeIds ? `x:${[...excludeIds].sort((a, b) => a - b).join(',')}` : ''),
     [excludeIds]
   );
+  // The `r:` prefix is what separates "restricted to nothing" from "not
+  // restricted": both join to an empty string, so without it an empty
+  // restriction reuses the unrestricted result. That is how the "My dex"
+  // chip appeared to do nothing for a user whose dex is still empty — it
+  // restricted to a set of none, and the memo handed back everything.
   const restrictKey = useMemo(
-    () => (restrictToIds ? [...restrictToIds].sort((a, b) => a - b).join(',') : ''),
+    () => (restrictToIds ? `r:${[...restrictToIds].sort((a, b) => a - b).join(',')}` : ''),
     [restrictToIds]
   );
 

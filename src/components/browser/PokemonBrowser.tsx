@@ -61,6 +61,12 @@ interface BrowserSubgroup {
    * wants: they are read as lines, not as the members that matched.
    */
   order?: 'evoLine';
+  /**
+   * Draw these exact lines rather than the chains the members belong to.
+   * A chain is the whole evolutionary tree; a line is one path through it,
+   * and that is what the user seated.
+   */
+  lines?: number[][];
 }
 
 /**
@@ -147,6 +153,8 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
   const scopeFilter = useBrowserStore((s) => s.scopeFilter);
   const scopeFilterIds = useBrowserStore((s) => s.scopeFilterIds);
   const scopeFilterLabel = useBrowserStore((s) => s.scopeFilterLabel);
+  const scopeFilterLines = useBrowserStore((s) => s.scopeFilterLines);
+  const standaloneTiles = useBrowserStore((s) => s.standaloneTiles);
   const setScopeFilter = useBrowserStore((s) => s.setScopeFilter);
   const t = useT();
   const tn = useTn();
@@ -374,11 +382,18 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
    * user came to pick from. Returns null when no scope chip is on.
    */
   const scopeSubgroup = useCallback((ids: Iterable<number>): BrowserSubgroup[] | null => {
-    if (!scopeFilter || !scopeFilterIds) return null;
-    const inScope = [...ids].filter((id) => scopeFilterIds.has(id));
+    // Also when the results are structurally confined to the same set — a
+    // full template forces the scope and shows no chip to turn it off.
+    if (!scopeFilterLines || !(scopeFilter || restrictIds)) return null;
+    const inScope = [...ids].filter((id) => scopeFilterLines.some((line) => line.includes(id)));
     if (inScope.length === 0) return [];
-    return [{ label: scopeFilterLabel ?? 'Scope', pokemonIds: inScope, order: 'evoLine' }];
-  }, [scopeFilter, scopeFilterIds, scopeFilterLabel]);
+    return [{
+      label: scopeFilterLabel ?? 'Scope',
+      pokemonIds: inScope,
+      order: 'evoLine',
+      lines: scopeFilterLines,
+    }];
+  }, [scopeFilter, scopeFilterLines, scopeFilterLabel, restrictIds]);
 
   /**
    * The dex, in the order the user built it: one subgroup per build section,
@@ -522,6 +537,33 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
 
     for (const sub of source) {
       const subIdSet = new Set(sub.pokemonIds);
+
+      if (sub.lines) {
+        // One card per seated line, in whole-line order. Nothing is derived
+        // from the chain here, so a split chain contributes only the branch
+        // that was seated and no Pokémon appears twice.
+        const drawn = sub.lines
+          .map((line) => line.map((id) => getPokemonById(id)).filter((p): p is Pokemon => !!p))
+          .filter((members) => members.length > 0 && members.some((m) => subIdSet.has(m.id)))
+          .map((members) => {
+            let gen = Infinity;
+            let first = Infinity;
+            for (const m of members) {
+              if (m.generation < gen) gen = m.generation;
+              if (m.id < first) first = m.id;
+            }
+            return { members, gen, first };
+          })
+          .sort((a, b) => a.gen - b.gen || a.first - b.first)
+          .map(({ members }) => ({
+            key: `${sub.label}-${members.map((m) => m.id).join('-')}`,
+            members,
+            matchedIds: new Set(members.filter((m) => subIdSet.has(m.id)).map((m) => m.id)),
+          }));
+        if (drawn.length > 0) models.push({ label: sub.label, groups: drawn });
+        continue;
+      }
+
       const matching = groups.filter(g => g.members.some(m => subIdSet.has(m.id)));
       if (matching.length === 0) continue;
 
@@ -588,6 +630,24 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
     return models;
   }, [isSearching, searchSubgroups, effectiveSubgroups, groups, gridArchetypeDef, gridCategoryDef, shinyIds, spriteOverrides]);
   const typeKey = typeFilter ? `${typeFilterMode}-${typeFilter.join(',')}` : 'none';
+  /**
+   * The count beside the search box has to agree with what is drawn.
+   *
+   * `totalCount` counts every member of every matching *chain*, which is
+   * right when the grid draws chains. The scoped view draws the seated lines
+   * instead — no alternative branches, no Pokémon twice — so it counts those.
+   */
+  const shownCount = useMemo(() => {
+    if (!scopeFilterLines || !(scopeFilter || restrictIds)) return totalCount;
+    const ids = new Set<number>();
+    for (const model of subgroupModels) {
+      for (const group of model.groups ?? []) {
+        for (const member of group.members) ids.add(member.id);
+      }
+    }
+    return ids.size;
+  }, [scopeFilterLines, scopeFilter, restrictIds, subgroupModels, totalCount]);
+
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
   const shapeKey = shapeFilter ? shapeFilter.join(',') : 'none';
   const colorKey = colorFilter ? colorFilter.join(',') : 'none';
@@ -847,9 +907,9 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
             className="shrink-0 text-xs text-muted-foreground text-right whitespace-nowrap"
             // The count as a number, for tests that must not depend on how the
             // sentence around it is worded in the active language.
-            data-result-count={totalCount}
+            data-result-count={shownCount}
           >
-            {tn('browser.results', totalCount)}
+            {tn('browser.results', shownCount)}
           </span>
         </div>
       </div>
@@ -1143,6 +1203,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
                   </div>
                   <div className="grid grid-cols-2 gap-x-1 items-start pt-1">
                     <EvoLineGrid
+                      standaloneTiles={standaloneTiles}
                       groups={model.leftGroups!}
                       assignedIds={assignedIds}
                       stagedIds={stagedSet}
@@ -1154,6 +1215,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
                       windowed
                     />
                     <EvoLineGrid
+                      standaloneTiles={standaloneTiles}
                       groups={model.rightGroups!}
                       assignedIds={assignedIds}
                       stagedIds={stagedSet}
@@ -1178,6 +1240,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
                 </div>
                 <div className="pt-1">
                   <EvoLineGrid
+                      standaloneTiles={standaloneTiles}
                     groups={model.groups!}
                     assignedIds={assignedIds}
                     stagedIds={stagedSet}

@@ -83,6 +83,23 @@ export interface BrowserStoreState {
   scopeFilterIds?: Set<number>;
   scopeFilterLabel?: string;
   setScopeFilter?: (on: boolean) => void;
+  /**
+   * The scope as the lines it was built from, not just their members.
+   *
+   * A flat id set cannot say which branch of a split chain the user actually
+   * chose: with Scyther and Scizor in scope, the chain's own grouping still
+   * offers Kleavor, and a chain that splits shows Scyther once per branch.
+   * Given the lines, the scoped view draws exactly them — each line once,
+   * each Pokémon once.
+   */
+  scopeFilterLines?: number[][];
+  /**
+   * Each Pokémon is its own tile and its own pick, rather than a line being
+   * one tile that picks all of its members. The signature slot takes one
+   * Pokémon, so the line-shaped tile was picking the wrong thing: tapping
+   * Chinchou staged Lanturn, the last member of its line.
+   */
+  standaloneTiles?: boolean;
 }
 
 type BrowserStoreHook = UseBoundStore<StoreApi<BrowserStoreState>>;

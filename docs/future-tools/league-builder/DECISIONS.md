@@ -444,6 +444,36 @@ Veto any of these; they ship as stated otherwise.
    the crawlable h1), and the field under it — placeholder "Name your league",
    grey and unbolded — is the user's, bold and black once used.
 
+### Round 5, from the preview
+
+1. **In the signature pane each Pokémon is its own tile.** Positions are
+   untouched — a line still occupies its own adjacent columns and still never
+   straddles a row — but the backing rectangle is per Pokémon rather than
+   stretched across the line. The line-shaped tile was picking the wrong
+   thing anyway: the signature slot takes one Pokémon, and tapping Chinchou
+   staged Lanturn, the last member of its line. Only the signature pane does
+   this; picking lines for the card still picks lines.
+2. **The team scope draws the seated branches**, not the chains they belong
+   to. A flat id set cannot say which branch of a split chain the user chose,
+   so with Scyther and Scizor seated the chain grouping still offered Kleavor
+   and could show Scyther once per branch. The store now carries the lines
+   themselves (`scopeFilterLines`), and the scoped view draws exactly them:
+   each line once, each Pokémon once.
+3. **"My dex" survives closing the pane.** It is the user's choice, not a
+   per-open default; only its contents are re-read.
+
+Two bugs came out of building those.
+
+- **The count disagreed with the grid.** It counted every member of every
+  matching *chain*, which is right when the grid draws chains and wrong when
+  it draws lines: four tiles under a heading that said six. It now counts
+  what is drawn.
+- **Restricting to nothing was indistinguishable from not restricting.**
+  `useFilteredPokemonGrouped` keys its memo on the restriction's ids joined
+  by commas, and an empty set and no set both join to `''` — so a user whose
+  dex is still empty tapped "My dex 0/151" and got all 1126 back. The key is
+  prefixed now, and the empty dex shows the empty state.
+
 ### One drag treatment, four surfaces
 
 The dex builder, the view page, the league summary and the gym card each had
