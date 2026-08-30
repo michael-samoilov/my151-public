@@ -121,6 +121,52 @@ test.describe('gym card slots', () => {
     expect(after).toBe(0);
   });
 
+  test('the Current Team chip stays on until the card is emptied', async ({ page }) => {
+    await openCard(page);
+    const results = () =>
+      page.evaluate(() => Number(document.querySelector('[data-result-count]')?.getAttribute('data-result-count')));
+    const chipIsOff = () => page.locator('[data-filter-chip="scope"]').count();
+
+    // Nothing seated: there is no team to narrow to, so no chip at all.
+    await page.click('text=SIGNATURE POKÉMON');
+    await page.waitForSelector('[data-result-count]');
+    await page.waitForTimeout(500);
+    expect(await chipIsOff(), 'no chip on an empty card').toBe(0);
+    expect(await page.evaluate(() => /Current Team/.test(document.body.innerText))).toBe(false);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(400);
+
+    await seat(page, '[data-testid="card-cell-1-1"]', 'chinchou');
+    await seat(page, '[data-testid="card-cell-1-2"]', 'lotad');
+
+    await page.click('text=SIGNATURE POKÉMON');
+    await page.waitForSelector('[data-filter-chip="scope"]');
+    await page.click('[data-filter-chip="scope"]');
+    await page.waitForTimeout(600);
+    const scoped = await results();
+    expect(scoped).toBe(5);
+
+    // Reopening keeps it on.
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    await page.click('text=SIGNATURE POKÉMON');
+    await page.waitForTimeout(800);
+    expect(await chipIsOff(), 'still on after reopening').toBe(0);
+    expect(await results()).toBe(scoped);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+
+    // Emptying the card clears it: the scope cannot outlive what it scopes to.
+    for (let i = 0; i < 2; i++) {
+      await page.locator('[aria-label^="Remove"]').first().click();
+      await page.waitForTimeout(500);
+    }
+    await page.click('text=SIGNATURE POKÉMON');
+    await page.waitForTimeout(800);
+    expect(await page.evaluate(() => /Current Team/.test(document.body.innerText))).toBe(false);
+    expect(await results()).toBeGreaterThan(100);
+  });
+
   test('the My dex chip stays on until it is turned off', async ({ page }) => {
     // Seeded before any app script runs: the chip filters to the dex builder's
     // own placed set, and an empty dex makes "filtered" and "unfiltered"

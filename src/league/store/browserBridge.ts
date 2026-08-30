@@ -133,9 +133,16 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
             : purpose === 'signature' && cardFull
               ? placed
               : undefined,
-        scopeFilter: false,
-        scopeFilterIds: purpose === 'signature' && !cardFull ? placed : undefined,
-        scopeFilterLabel: purpose === 'signature' && !cardFull ? 'Current Team' : undefined,
+        // The scope chip is the user's choice and survives reopening the
+        // pane, like "My dex". It cannot outlive what it scopes to, though:
+        // with no lines seated it would filter to nothing, so an empty card
+        // clears it rather than handing back a dead end.
+        scopeFilter: lines.length > 0 ? (get().scopeFilter ?? false) : false,
+        // No chip at all on an empty card: there is no team to narrow to, and
+        // a chip whose only effect is an empty result is a dead end.
+        scopeFilterIds: purpose === 'signature' && !cardFull && lines.length > 0 ? placed : undefined,
+        scopeFilterLabel:
+          purpose === 'signature' && !cardFull && lines.length > 0 ? 'Current Team' : undefined,
         // The branches themselves, so the scoped view can draw the lines the
         // user seated rather than the chains they belong to.
         scopeFilterLines: purpose === 'signature' ? lines.map((l) => l.branch) : undefined,

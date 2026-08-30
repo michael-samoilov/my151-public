@@ -461,6 +461,10 @@ Veto any of these; they ship as stated otherwise.
    each line once, each Pokémon once.
 3. **"My dex" survives closing the pane.** It is the user's choice, not a
    per-open default; only its contents are re-read.
+4. **"Current Team" survives it too**, with one exception it cannot outlive:
+   an empty card. With no lines seated there is nothing to narrow to, so the
+   chip clears — and does not render at all, rather than offering a tap whose
+   only effect is an empty result.
 
 Two bugs came out of building those.
 
