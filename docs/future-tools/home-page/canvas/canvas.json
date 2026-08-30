@@ -155,9 +155,17 @@
       "id": "d-note",
       "page": "page-2",
       "x": 0,
-      "y": -250,
+      "y": -280,
       "w": 940,
-      "text": "D · Poster cards — each screenshot runs all the way to the card's BOTTOM edge, which is the only edge that cuts it. It overhangs the top and left, and stops short of the right edge so the tile always shows there.\nA red gradient rises from the bottom over the artwork, and the copy sits on it.\nThe fan is the -5°/-2°/+1.5° lean the dex builder's own onboarding staircase uses (STAIR in IntroCard.tsx), applied left to right across the four cards: -5, -2.5, -4, -2.\nEvery frame here is a real device viewport, so nothing scrolls: 390×844, 834×1112, 1440×900."
+      "text": "D · Poster cards — built from your PowerPoint.\nEach phone is a WHOLE mobile viewport screenshot at its own proportions: nothing is scaled up or cropped, so the right edge and both top corners stay visible. It overhangs the tile on the top and left, stops well short of the right edge, and runs off the BOTTOM — the only edge that cuts it. A red gradient rises from that bottom edge and the copy sits on it, hiding the cut.\nThe phones are a fanned pair at -4 degrees, offset like a stacked deck. The back one is a second screen from the same tool, not a duplicate."
+    },
+    {
+      "id": "d-shape-note",
+      "page": "page-2",
+      "x": 1000,
+      "y": -280,
+      "w": 900,
+      "text": "Why the tiles are wide and short: a phone screenshot is about 1:1.6, so it only outruns the tile's bottom edge while still being narrow enough to leave bare tile on the right. Make the tile TALL and the phone has to be blown up past the tile's own width to reach the bottom — which is exactly what made the last version look clipped on the right.\nThree rules now fail the build instead of being caught by eye: the phone must outrun the tile's bottom, it must leave at least 18% of the tile bare on its right, and the grid's top padding must clear the overhang so the first row does not land on the hero."
     },
     {
       "id": "d-scrim-note",
@@ -165,7 +173,7 @@
       "x": 0,
       "y": 880,
       "w": 420,
-      "text": "Red card, red gradient, white copy. The tile is #dc2626, the app's primary. This is the version the tablet and desktop frames use.\nOne thing to weigh at 390: the gradient needs about 100px of solid colour to carry the chip, heading and line of copy, and the card is only ~260px tall — so the gradient takes the lower half. On the tablet and desktop tiles the same copy block costs a third of the height, which is why the effect reads much better there."
+      "text": "Red tile, red gradient, white copy — as asked. This is what the tablet and desktop frames use.\nAt 390 the tiles are half the screen wide, so the phone nearly fills one: the bare strip on its right is about 34px, against roughly half the tile on desktop. The effect is strongest where the tiles are widest."
     },
     {
       "id": "d-band-note",
@@ -173,15 +181,15 @@
       "x": 490,
       "y": 880,
       "w": 420,
-      "text": "White card, white gradient, dark copy. Identical geometry — only the tile and gradient colour change — so this isolates the one variable.\nQuieter, and it keeps the page's neutral ground; red stays a signal rather than a surface. The screenshots also sit on their own colour instead of on red.\nCost: with four cards, the row loses the block of colour that makes the set read as one shelf."
+      "text": "White tile, white gradient, dark copy. Identical geometry — only the colour changes — so the pair isolates that one choice.\nQuieter, and it keeps red as a signal rather than a surface. Cost: the row loses the block of colour that makes the four read as one shelf."
     },
     {
       "id": "d-seo-note",
       "page": "page-2",
       "x": 1000,
-      "y": -250,
+      "y": 880,
       "w": 900,
-      "text": "What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold.\nTwo build notes: the overhang means a card cannot use overflow:hidden, so the artwork needs its own clipping box — offset outward on top and left, inward on the right, flush with the card at the bottom. And the gradient spans the card only, so each card's overhang is sized to fall back inside the card before the gradient starts."
+      "text": "What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold."
     }
   ],
   "pages": [
