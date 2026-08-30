@@ -587,10 +587,27 @@ silently.
 
 ### The seeded Kanto league
 
-A preview build with no saved league opens on one: six gyms, three Elite Four
-members, a champion and an endgame boss, after Kanto. Gyms 7 and 8 and the
-fourth Elite Four member stay empty, because feature work needs both states
-in front of it.
+A preview build with no saved league opens on one: all fourteen slots, six
+lines each — the eight Kanto gym leaders, the Elite Four, the champion and
+Red on Mt. Silver.
+
+The teams are not invented and not typed out. They come from the game's own
+trainer table, `files/poketool/trainer/trainers.json` in the pret
+HeartGold/SoulSilver decompilation: the gym leaders' **rematch** parties (the
+only Kanto ones that run to six), the Elite Four's second-round parties,
+Lance, and Red. A script resolved every species against `pokemon.json` and
+computed every branch by walking `evolvesFrom`, so no id in the seed was
+written by hand. Serebii, which is where the request pointed, is blocked by
+this environment's egress proxy; the decompilation is the same data closer to
+the source.
+
+Two liberties. **Seat order is by level, highest first**, so each leader's ace
+takes seat 1 — the rightmost column — and carries the signature. **Baby stages
+are stripped**, so Raichu arrives without Pichu; the picker still seats the
+baby, and that question is still open above. Bruno is where it shows: without
+Tyrogue his three Hitmons are three one-member lines rather than three copies
+of one branch. Mewtwo on the boss row is the one thing not from the game —
+Red has no legendary, and the slot needs exercising.
 
 It is a fixture, not content, and three guards keep it that way
 (`src/league/store/seedLeague.ts`):
