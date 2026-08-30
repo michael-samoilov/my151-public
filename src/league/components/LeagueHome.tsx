@@ -16,7 +16,8 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { formAt } from '../model/powerups';
 import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
-import { DRAG_SOURCE_OPACITY, HeldItems } from '@/components/shared/dragHold';
+import { HeldItems } from '@/components/shared/dragHold';
+import { createEffectiveCursorCollision, dragInputIsTouch, isTouchDrag, snapOverlayToTarget } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
 import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { deriveRow, moveSeat } from '../model/engine';
@@ -50,6 +51,21 @@ const SPRITE_REM = 2.625;
 const BAND_RED = '#dc2626';
 /** The widest team any row holds — the team block's column count. */
 const TEAM_COLS = 6;
+
+/**
+ * How far above the thumb the drop is read, on touch.
+ *
+ * A finger covers about a row and a half of this list, so the row it picks
+ * has to sit clear of it. The dex pages do the same thing with 180px over
+ * their much taller tiles (`src/lib/dragCollision.ts`).
+ */
+const HIT_LIFT_PX = 64;
+
+/** How far the copy is lifted off the slot it would fill. */
+const SLOT_LIFT_PX = 13;
+
+const rowCollision = createEffectiveCursorCollision(HIT_LIFT_PX);
+const snapToSlot = snapOverlayToTarget(SLOT_LIFT_PX);
 
 const SECTION_BEFORE: Record<number, string> = {
   0: 'GYM LEADERS',
@@ -160,11 +176,27 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
   );
 }
 
+/**
+ * An open slot, drawn where the carried row would land.
+ *
+ * The copy in hand already shows that team, so drawing it here too would
+ * draw it twice. The gap says "this is the place" and nothing more.
+ */
+function EmptySlotFace() {
+  return (
+    <div
+      data-slot-open
+      className="rounded-[0.3125rem] border-[1.5px] border-dashed"
+      style={{ height: `${ROW_H}rem`, borderColor: '#c2c7cd', background: 'rgba(15,23,42,0.03)' }}
+    />
+  );
+}
+
 /** The row as the league renders it: a drop target that drags and opens. */
 function SlotRow({ position, cardIndex, held }: {
   position: number;
   cardIndex: number;
-  /** This row is the one being carried; it recedes where it sits. */
+  /** This row is the one being carried; its slot opens where it would land. */
   held: boolean;
 }) {
   const card = useLeagueStore((s) => s.cards[cardIndex]);
@@ -185,9 +217,9 @@ function SlotRow({ position, cardIndex, held }: {
         data-testid={`league-slot-${position}`}
         onClick={() => openCardPage(cardIndex)}
         className="block w-full cursor-pointer"
-        style={{ opacity: held ? DRAG_SOURCE_OPACITY : 1, touchAction: 'none' }}
+        style={{ touchAction: 'none' }}
       >
-        <SlotRowFace position={position} card={card} />
+        {held ? <EmptySlotFace /> : <SlotRowFace position={position} card={card} />}
       </button>
     </div>
   );
@@ -205,6 +237,10 @@ export function LeagueHome() {
   const cards = useLeagueStore((s) => s.cards);
 
   const onDragStart = useCallback((e: DragStartEvent) => {
+    // Only a finger needs the lift; a mouse cursor covers nothing. This is a
+    // PointerSensor, so the activator is a PointerEvent and never a
+    // TouchEvent — read `pointerType`, or the lift never applies on a phone.
+    dragInputIsTouch.current = isTouchDrag(e.activatorEvent);
     const position = (e.active.data.current as { index: number } | undefined)?.index;
     if (position === undefined) return;
     // Measured off the row itself. dnd-kit's own rect is not always filled in
@@ -223,6 +259,7 @@ export function LeagueHome() {
 
   const onDragEnd = useCallback(
     (e: DragEndEvent) => {
+      dragInputIsTouch.current = false;
       setPreview(null);
       setHeld(null);
       const from = (e.active.data.current as { index: number } | undefined)?.index;
@@ -247,10 +284,12 @@ export function LeagueHome() {
   return (
     <DndContext
       sensors={sensors}
+      collisionDetection={rowCollision}
+      modifiers={[snapToSlot]}
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
       onDragStart={onDragStart}
-      onDragCancel={() => { setPreview(null); setHeld(null); }}
+      onDragCancel={() => { dragInputIsTouch.current = false; setPreview(null); setHeld(null); }}
     >
       <div ref={fitRef} style={{ zoom: fit }}>
         <div className="rounded-xl bg-card p-1 px-2 shadow-elevated">
@@ -281,7 +320,7 @@ export function LeagueHome() {
           grabbed at, drawn by the same component as the row itself. */}
       <DragOverlay dropAnimation={null}>
         {held ? (
-          <HeldItems placement="below">
+          <HeldItems placement="on">
             <div
               className="overflow-hidden rounded-[0.3125rem] shadow-lg ring-1 ring-black/10"
               style={{ width: held.width || undefined }}

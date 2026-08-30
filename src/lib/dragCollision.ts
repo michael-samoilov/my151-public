@@ -33,6 +33,23 @@ import {
 export const dragInputIsTouch = { current: false };
 
 /**
+ * Whether a drag was started by a finger.
+ *
+ * Which event a sensor hands over depends on the sensor: `TouchSensor` gives
+ * a `TouchEvent`, `PointerSensor` gives a `PointerEvent` whose `pointerType`
+ * is the only thing that says finger or mouse. Checking for `TouchEvent`
+ * alone is silently false on every PointerSensor surface.
+ */
+export function isTouchDrag(activatorEvent: Event | null): boolean {
+  if (!activatorEvent) return false;
+  if (typeof TouchEvent !== 'undefined' && activatorEvent instanceof TouchEvent) return true;
+  if (typeof PointerEvent !== 'undefined' && activatorEvent instanceof PointerEvent) {
+    return activatorEvent.pointerType !== 'mouse';
+  }
+  return false;
+}
+
+/**
  * Last raw pointer coordinates observed by the collision detector. Set
  * on every collision check (which is every pointer move), cleared on
  * drag end. Drag-move handlers read from this as the authoritative
@@ -136,6 +153,31 @@ export function createSnapCenterToPointer(overlayLiftPx: number): Modifier {
       ...transform,
       x: ptr.x - draggingNodeRect.left - draggingNodeRect.width / 2,
       y: ptr.y - draggingNodeRect.top - draggingNodeRect.height / 2 + lift,
+    };
+  };
+}
+
+/**
+ * Put the held copy ON the target rather than near the pointer.
+ *
+ * Where the copy can *be* the preview — a whole row — the clearest thing it
+ * can do is sit where the drop would land. That is not an offset from the
+ * finger, so no `placement` expresses it: the overlay has to be moved onto
+ * the droppable's own rect.
+ *
+ * `lift` raises it a few pixels so the empty slot underneath still reads,
+ * and so the copy looks picked up rather than already dropped.
+ */
+export function snapOverlayToTarget(lift = 0): Modifier {
+  return ({ draggingNodeRect, over, transform }) => {
+    const rect = over?.rect;
+    // No target yet (the drag has not reached one) — leave dnd-kit's own
+    // transform alone so the copy still follows the finger.
+    if (!draggingNodeRect || !rect) return transform;
+    return {
+      ...transform,
+      x: rect.left - draggingNodeRect.left,
+      y: rect.top - draggingNodeRect.top - lift,
     };
   };
 }

@@ -21,7 +21,7 @@ import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { TypeName } from '@/types/pokemon';
-import { DRAG_SOURCE_OPACITY, HeldItems } from '@/components/shared/dragHold';
+import { HeldItems } from '@/components/shared/dragHold';
 import { cn } from '@/lib/utils';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
 import { defaultBoundaries, deriveRows, moveSeat as reorderLines, stageAt } from '../model/engine';
@@ -52,6 +52,14 @@ const INSET_Y = 0.375; // 6px
 const INSET_X = 0.1875; // 3px
 /** Cell sprite size; larger than the cell on purpose, as on the boards. */
 const SPRITE_REM = 3.25;
+
+/**
+ * How far a carried column lifts off the card.
+ *
+ * Enough that the open seat reads underneath it, little enough that the
+ * column still looks like it belongs to the row it is over.
+ */
+const CELL_LIFT_REM = 0.5;
 
 /** Rows whose glyph cell is double width, reaching the card's left edge. */
 const GLYPH_SPAN: Record<number, number> = { 1: 2, 8: 2, 9: 2 };
@@ -227,8 +235,25 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
     <div
       ref={setDropRef}
       className="relative flex h-full items-center justify-center"
-      style={{ opacity: held ? DRAG_SOURCE_OPACITY : 1 }}
     >
+      {/* The carried column is not drawn twice. The seat under it opens, and
+          the column itself lifts off the card at full strength — so the copy
+          in hand IS the preview, at the size and placement its new seat
+          gives it. A faded copy in the seat plus a stack under the thumb
+          showed the same line twice, and neither one clearly. */}
+      {held && (
+        <div
+          data-seat-open
+          aria-hidden
+          className="absolute rounded-md border-[1.5px] border-dashed"
+          style={{
+            width: `calc(100% - ${2 * INSET_X}rem)`,
+            height: `${ROW_H - 2 * INSET_Y}rem`,
+            borderColor: 'var(--lg-dash)',
+            background: 'rgba(15,23,42,0.035)',
+          }}
+        />
+      )}
       <button
         type="button"
         ref={setDragRef}
@@ -249,6 +274,13 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           height: `${ROW_H - 2 * INSET_Y}rem`,
           background: 'var(--lg-slot)',
           touchAction: 'none',
+          ...(held
+            ? {
+                transform: `translateY(-${CELL_LIFT_REM}rem)`,
+                boxShadow: '0 0.5rem 1rem rgba(15,23,42,0.28)',
+                zIndex: 20,
+              }
+            : null),
         }}
       >
         {pokemon ? (
@@ -796,7 +828,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       : rows;
   // A copy is carried once the gesture is a move: a vertical paint shifts an
   // evolution boundary in place, so there is nothing being carried there.
-  const heldPokemon = held && (legendDrag || previewMove)
+  const heldPokemon = held && legendDrag
     ? held.ids.map((id) => getPokemonById(id)).filter((p): p is NonNullable<typeof p> => !!p)
     : [];
 
@@ -925,7 +957,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       {createPortal(
         <DragOverlay dropAnimation={null}>
           {held && heldPokemon.length > 0 ? (
-            <HeldItems placement="below">
+            <HeldItems placement="above">
               <div className={held.stacked ? 'flex flex-col items-center' : 'flex'}>
                 {heldPokemon.map((p) => (
                   <img

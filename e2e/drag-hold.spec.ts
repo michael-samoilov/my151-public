@@ -3,13 +3,13 @@ import { seedDex, TUNE_URL } from './support/dexSeed';
 import { blankLeague } from './support/leagueSeed';
 
 /**
- * One drag treatment, four surfaces.
+ * Where a drag puts things, on four surfaces.
  *
- * The dex builder, the view page, the league summary and the gym card each
- * had their own idea of what "holding something" looks like — a faded source
- * here, a scaled-and-ringed target there. They now share
- * `src/components/shared/dragHold.tsx`, and this is what keeps them sharing
- * it: the same two measurements on all four, taken mid-drag.
+ * One rule decides it: nothing the drop is about sits below the thumb, because
+ * a finger hides whatever is under it. The dex pages answer that by lifting
+ * the copy and the hit test above the thumb; the league surfaces answer it by
+ * putting the copy ON the target and opening the slot underneath. These are
+ * the measurements that keep both honest, taken mid-drag.
  */
 
 const DRAG_SOURCE_OPACITY = 0.25;
@@ -75,28 +75,44 @@ test.describe('drag hold', () => {
     carries(await midDrag(page, '[data-view-tile]', 120, 0), 'view page');
   });
 
-  test('the league summary and the gym card hold the same way', async ({ page }) => {
+  test('a league row is carried on its slot, and the slot opens', async ({ page }) => {
     await blankLeague(page);
     await page.goto('/pokemon-league-builder');
     await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.waitForTimeout(300);
 
-    // A held copy is the size of the thing that was grabbed. A row measured
-    // too late arrives in hand shrunk to its content, at about half width.
-    const row = (await page.locator('[data-testid="league-slot-0"]').boundingBox())!;
-    await page.mouse.move(row.x + row.width / 2, row.y + row.height / 2);
+    const row = (await page.locator('[data-testid="league-slot-2"]').boundingBox())!;
+    const x = row.x + row.width / 2;
+    const y = row.y + row.height / 2;
+    await page.mouse.move(x, y);
     await page.mouse.down();
     await page.waitForTimeout(350);
-    await page.mouse.move(row.x + row.width / 2, row.y + row.height / 2 + 120, { steps: 8 });
-    await page.waitForTimeout(250);
-    const rowState = await holdState(page);
-    const heldWidth = await page.evaluate(
-      () => document.querySelector('[data-drag-held]')?.firstElementChild?.getBoundingClientRect().width ?? 0,
-    );
+    await page.mouse.move(x, y - 100, { steps: 8 });
+    await page.waitForTimeout(300);
+    const state = await page.evaluate(() => {
+      const held = document.querySelector('[data-drag-held]')?.firstElementChild?.getBoundingClientRect();
+      const slot = document.querySelector('[data-slot-open]')?.getBoundingClientRect();
+      return {
+        copies: document.querySelectorAll('[data-drag-held]').length,
+        slots: document.querySelectorAll('[data-slot-open]').length,
+        // The copy sits on the slot, lifted, so the gap reads underneath it.
+        lift: held && slot ? Math.round(slot.top - held.top) : null,
+        sameWidth: held && slot ? Math.abs(held.width - slot.width) < 3 : false,
+      };
+    });
     await page.mouse.up();
     await page.waitForTimeout(200);
-    carries(rowState, 'league rows');
-    expect(Math.abs(heldWidth - row.width), 'the held row is the width of the row').toBeLessThan(2);
 
+    expect(state.copies, 'exactly one copy in hand').toBe(1);
+    expect(state.slots, 'exactly one open slot').toBe(1);
+    expect(state.lift, 'the copy is lifted off the slot it would fill').toBeGreaterThan(6);
+    expect(state.sameWidth, 'the copy is the width of the slot').toBe(true);
+  });
+
+  test('a gym column is carried in place, with no stack under the thumb', async ({ page }) => {
+    await blankLeague(page);
+    await page.goto('/pokemon-league-builder');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-3"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
     await page.waitForTimeout(400);
@@ -118,17 +134,31 @@ test.describe('drag hold', () => {
       await page.waitForTimeout(400);
     }
 
-    // A column, carried sideways onto the next seat.
     const from = (await page.locator('[data-testid="card-cell-11-1"]').boundingBox())!;
     const to = (await page.locator('[data-testid="card-cell-11-2"]').boundingBox())!;
     await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
     await page.mouse.down();
+    await page.waitForTimeout(350);
     await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 8 });
     await page.waitForTimeout(300);
-    const column = await holdState(page);
+    const state = await page.evaluate(() => {
+      const lifted = [...document.querySelectorAll<HTMLElement>('[data-testid^="card-cell-"]')].filter((c) =>
+        /matrix\(1, 0, 0, 1, 0, -/.test(getComputedStyle(c).transform),
+      );
+      return {
+        copies: document.querySelectorAll('[data-drag-held]').length,
+        openSeats: document.querySelectorAll('[data-seat-open]').length,
+        lifted: lifted.length,
+      };
+    });
     await page.mouse.up();
     await page.waitForTimeout(200);
-    carries(column, 'card columns');
+
+    // The column IS the preview: it lifts off the card over an open seat.
+    // A truncated stack under the thumb showed neither the shape nor the seat.
+    expect(state.copies, 'a column carries no overlay').toBe(0);
+    expect(state.openSeats, 'the seat under the column opens').toBeGreaterThan(0);
+    expect(state.lifted, 'every cell of the column lifts').toBe(state.openSeats);
   });
 
   test('shifting an evolution boundary carries nothing', async ({ page }) => {
