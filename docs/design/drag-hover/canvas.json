@@ -1,0 +1,20 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "title": "The rule", "x": 0, "y": 0, "w": 880, "h": 700 },
+    { "file": "BuildPage.dc.html", "title": "Dex builder · build page", "x": 0, "y": 800, "w": 620, "h": 470 },
+    { "file": "ViewPage.dc.html", "title": "Dex builder · view page", "x": 700, "y": 800, "w": 620, "h": 470 },
+    { "file": "LeagueHomeNow.dc.html", "title": "League home · today", "x": 0, "y": 1390, "w": 620, "h": 450 },
+    { "file": "LeagueHomeFixed.dc.html", "title": "League home · proposed", "x": 700, "y": 1390, "w": 620, "h": 450 },
+    { "file": "GymColumn.dc.html", "title": "Gym card · column", "x": 0, "y": 1960, "w": 620, "h": 520 },
+    { "file": "Legendary.dc.html", "title": "Gym card · legendary", "x": 700, "y": 1960, "w": 620, "h": 480 }
+  ],
+  "annotations": [
+    { "id": "note-pair", "x": 1400, "y": 1390, "w": 260,
+      "text": "The one behaviour change.\n\nEverything else on this canvas already follows the rule — these two boards are the same drag, one moment apart in the fix.\n\nOnly the hit-test point moves: 64px above the thumb instead of on it." },
+    { "id": "note-debug", "x": 960, "y": 0, "w": 260,
+      "text": "The teal marks are debug only.\n\nThe crosshair, the dashed guides and the thumb circle are here so you can see where the hit test reads. None of them are drawn in the app.\n\nThe red marks are real: the insert bar and the faint cursor marker already ship on the dex pages." },
+    { "id": "note-cols", "x": 1400, "y": 1960, "w": 260,
+      "text": "Column drags are the easy case.\n\nBoth card surfaces already match on x alone, so the finger never has to sit on a sprite. Putting the thumb below the card is what keeps the copy off it too." }
+  ],
+  "launch": { "view": "canvas" }
+}

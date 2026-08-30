@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; -webkit-font-smoothing: antialiased; color: #1b1f24; }
+    a { color: #0e7490; } a:hover { color: #155e75; }
+    .board { position: relative; background: #eceef1; }
+    .phone { position: absolute; left: 0; top: 0; width: 390px; background: #f7f7f8; overflow: hidden; box-shadow: 0 0 0 1px #dde1e6; }
+    .hd { position: absolute; font-weight: 800; letter-spacing: -0.01em; }
+    /* ---- debug annotation system ---- */
+    .pill { position: absolute; display: inline-flex; align-items: center; height: 18px; padding: 0 7px; border-radius: 9999px;
+            font-size: 9.5px; font-weight: 800; letter-spacing: 0.045em; white-space: nowrap; z-index: 70; }
+    .pill.dbg { background: #0e7490; color: #fff; }
+    .pill.ghost { background: #fff; color: #0e7490; box-shadow: inset 0 0 0 1.5px #0e7490; }
+    .pill.app { background: #dc2626; color: #fff; }
+    .pill.mute { background: #fff; color: #57606b; box-shadow: inset 0 0 0 1px #c8ced5; }
+    .pill.warn { background: #b45309; color: #fff; }
+    .tline { position: absolute; height: 0; border-top: 1.5px dashed #0e7490; z-index: 64; }
+    .vline { position: absolute; width: 0; border-left: 1.5px dashed #0e7490; z-index: 64; }
+    .xhair { position: absolute; width: 13px; height: 13px; margin: -6.5px 0 0 -6.5px; border-radius: 50%;
+             background: #0e7490; box-shadow: 0 0 0 4px rgba(14,116,144,0.20); z-index: 66; }
+    .thumb { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%;
+             border: 2px dashed #626b76; background: rgba(98,107,118,0.12); z-index: 65; }
+    .thumb i { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px;
+               border-radius: 50%; background: #333a43; display: block; }
+    .prev { position: absolute; border: 2px dashed #0e7490; border-radius: 8px; z-index: 63; background: rgba(14,116,144,0.07); }
+    .held { position: absolute; z-index: 68; border-radius: 6px; box-shadow: 0 10px 22px rgba(15,23,42,0.28); }
+    .bad { position: absolute; border: 2px solid #b45309; border-radius: 8px; z-index: 69; background: rgba(180,83,9,0.10); }
+    .cap { position: absolute; font-size: 10.5px; line-height: 1.45; color: #48515c; }
+    .cap b { color: #1b1f24; }
+    .foot { position: absolute; left: 0; right: 0; bottom: 0; padding: 9px 12px 11px; background: #fff;
+            border-top: 1px solid #dde1e6; font-size: 10px; line-height: 1.5; color: #48515c; }
+    .foot b { color: #0e7490; }
+    .row { display: grid; align-items: center; }
+    .sp { image-rendering: pixelated; display: block; }
+  </style>
+</helmet>
+
+<div class="board" style="width:880px;height:700px;padding:28px 30px">
+  <div style="position:absolute;left:30px;top:26px;font-size:19px;font-weight:800;letter-spacing:-0.02em">Drag hover states · where the target goes</div>
+  <div style="position:absolute;left:30px;top:52px;width:700px;font-size:11.5px;line-height:1.55;color:#48515c">
+    One rule across all five surfaces: <b style="color:#0e7490">the held copy never covers the target</b>. The thumb sits between them.
+    Each surface board carries a debug marker at the exact point the hit test reads — that marker is for this review, not for the app.
+  </div>
+  <div style="position:absolute;left:30px;top:0;width:820px;height:700px">
+    <div style="position:absolute;left:0px;top:96px;width:248px;font-size:12px;font-weight:800;letter-spacing:-0.01em">Between — dex builder</div><div style="position:absolute;left:0px;top:113px;width:248px;font-size:10px;line-height:1.45;color:#57606b">The target is a <b>gap</b> between two tiles. Both the copy and the gap read above the thumb, and the copy is short enough to leave the gap clear.</div><div style="position:absolute;left:0px;top:144px;width:248px;height:30px;border-radius:7px;background:#0e7490;display:flex;align-items:center;padding:0 10px;font-size:10.5px;font-weight:800;color:#fff;letter-spacing:0.03em">TARGET · insert bar<span style="margin-left:auto;font-weight:600;opacity:0.82;letter-spacing:0">thumb − 180</span></div><div style="position:absolute;left:0px;top:180px;width:248px;height:56px;border-radius:7px;background:#8b939d;display:flex;align-items:center;padding:0 10px;font-size:10.5px;font-weight:800;color:#fff;letter-spacing:0.03em">HELD COPY<span style="margin-left:auto;font-weight:600;opacity:0.82;letter-spacing:0">thumb − 63</span></div><div style="position:absolute;left:0px;top:242px;width:248px;height:30px;border-radius:7px;background:#333a43;display:flex;align-items:center;padding:0 10px;font-size:10.5px;font-weight:800;color:#fff;letter-spacing:0.03em">THUMB<span style="margin-left:auto;font-weight:600;opacity:0.82;letter-spacing:0">0</span></div><div style="position:absolute;left:286px;top:96px;width:248px;font-size:12px;font-weight:800;letter-spacing:-0.01em">Into — league, today</div><div style="position:absolute;left:286px;top:113px;width:248px;font-size:10px;line-height:1.45;color:#57606b">The target is a <b>slot</b>, previewed in place. The copy hangs below the thumb, so it lands on the row the preview just drew.</div><div style="position:absolute;left:286px;top:144px;width:248px;height:30px;border-radius:7px;background:#333a43;display:flex;align-items:center;padding:0 10px;font-size:10.5px;font-weight:800;color:#fff;letter-spacing:0.03em">THUMB  ·  and TARGET<span style="margin-left:auto;font-weight:600;opacity:0.82;letter-spacing:0">0</span></div><div style="position:absolute;left:286px;top:180px;width:248px;height:56px;border-radius:7px;background:#b45309;display:flex;align-items:center;padding:0 10px;font-size:10.5px;font-weight:800;color:#fff;letter-spacing:0.03em">HELD COPY<span style="margin-left:auto;font-weight:600;opacity:0.82;letter-spacing:0">thumb + 8</span></div><div style="position:absolute;left:286px;top:242px;width:248px;height:30px;border-radius:7px;background:#0e7490;display:flex;align-items:center;padding:0 10px;font-size:10.5px;font-weight:800;color:#fff;letter-spacing:0.03em">TARGET (covered)<span style="margin-left:auto;font-weight:600;opacity:0.82;letter-spacing:0">under the copy</span></div><div style="position:absolute;left:286px;top:280px;width:248px;font-size:10px;font-weight:800;color:#b45309">↑ the copy lands on the target</div><div style="position:absolute;left:572px;top:96px;width:248px;font-size:12px;font-weight:800;letter-spacing:-0.01em">Into — league, proposed</div><div style="position:absolute;left:572px;top:113px;width:248px;font-size:10px;line-height:1.45;color:#57606b">The thumb sits <b>between</b> them: the target reads above it, the copy hangs below it. Neither can reach the other.</div><div style="position:absolute;left:572px;top:144px;width:248px;height:30px;border-radius:7px;background:#0e7490;display:flex;align-items:center;padding:0 10px;font-size:10.5px;font-weight:800;color:#fff;letter-spacing:0.03em">TARGET · previewed row<span style="margin-left:auto;font-weight:600;opacity:0.82;letter-spacing:0">thumb − 64</span></div><div style="position:absolute;left:572px;top:180px;width:248px;height:30px;border-radius:7px;background:#333a43;display:flex;align-items:center;padding:0 10px;font-size:10.5px;font-weight:800;color:#fff;letter-spacing:0.03em">THUMB<span style="margin-left:auto;font-weight:600;opacity:0.82;letter-spacing:0">0</span></div><div style="position:absolute;left:572px;top:216px;width:248px;height:56px;border-radius:7px;background:#8b939d;display:flex;align-items:center;padding:0 10px;font-size:10.5px;font-weight:800;color:#fff;letter-spacing:0.03em">HELD COPY<span style="margin-left:auto;font-weight:600;opacity:0.82;letter-spacing:0">thumb + 8</span></div>
+    <div style="position:absolute;left:0;top:426px;width:820px;height:1px;background:#dde1e6"></div>
+    <div style="position:absolute;left:0;top:436px;font-size:11px;font-weight:800;letter-spacing:0.05em;color:#8b939d">WHAT THE MARKS MEAN</div>
+    <div style="position:absolute;left:0;top:452px;width:820px;display:flex;align-items:center;gap:11px"><span style="width:30px;display:flex;justify-content:center;align-items:center"><span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#0e7490;box-shadow:0 0 0 3px rgba(14,116,144,0.20)"></span></span><span style="width:104px;font-size:11px;font-weight:800">Target point</span><span style="font-size:10.5px;color:#57606b">Debug only. The exact point the hit test reads — not drawn in the app.</span></div><div style="position:absolute;left:0;top:484px;width:820px;display:flex;align-items:center;gap:11px"><span style="width:30px;display:flex;justify-content:center;align-items:center"><span style="display:inline-block;width:26px;height:26px;border-radius:50%;border:2px dashed #626b76;background:rgba(98,107,118,0.12)"></span></span><span style="width:104px;font-size:11px;font-weight:800">Thumb</span><span style="font-size:10.5px;color:#57606b">Debug only. Where the finger actually is, at its real 44px size.</span></div><div style="position:absolute;left:0;top:516px;width:820px;display:flex;align-items:center;gap:11px"><span style="width:30px;display:flex;justify-content:center;align-items:center"><span style="display:inline-block;width:26px;height:16px;border:2px dashed #0e7490;border-radius:5px;background:rgba(14,116,144,0.07)"></span></span><span style="width:104px;font-size:11px;font-weight:800">Preview</span><span style="font-size:10.5px;color:#57606b">The app redraws this to show what the drop would look like.</span></div><div style="position:absolute;left:0;top:548px;width:820px;display:flex;align-items:center;gap:11px"><span style="width:30px;display:flex;justify-content:center;align-items:center"><span style="display:inline-block;width:26px;height:16px;border-radius:4px;background:#fff;box-shadow:0 4px 10px rgba(15,23,42,0.3),inset 0 0 0 1px #d7dbe0"></span></span><span style="width:104px;font-size:11px;font-weight:800">Held copy</span><span style="font-size:10.5px;color:#57606b">The one thing at full strength while a drag is on.</span></div><div style="position:absolute;left:0;top:580px;width:820px;display:flex;align-items:center;gap:11px"><span style="width:30px;display:flex;justify-content:center;align-items:center"><span style="display:inline-block;width:3px;height:20px;border-radius:2px;background:#dc2626"></span></span><span style="width:104px;font-size:11px;font-weight:800">Insert bar</span><span style="font-size:10.5px;color:#57606b">The app’s own red bar. Dex builder only — it marks a gap.</span></div><div style="position:absolute;left:0;top:612px;width:820px;display:flex;align-items:center;gap:11px"><span style="width:30px;display:flex;justify-content:center;align-items:center"><span style="display:inline-block;width:3px;height:20px;border-radius:2px;background:rgba(239,68,68,0.4)"></span></span><span style="width:104px;font-size:11px;font-weight:800">Cursor marker</span><span style="font-size:10.5px;color:#57606b">The app’s own faint marker, already shipped on the dex pages.</span></div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
