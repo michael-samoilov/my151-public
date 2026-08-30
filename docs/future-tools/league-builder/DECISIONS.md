@@ -694,6 +694,42 @@ Playwright's mouse API emits mouse events.
 Opens on the gym's own type, like the line picker — the scope chip narrows to
 the card's team on top of that, and is called **Current Team**.
 
+### Round 8, from the preview
+
+Two defects, both reported from the live preview and both fixed by measuring
+the running app rather than reading the code.
+
+1. **The signature mark carries the Pokemon, not just the seat.** The picker
+   draws one tile per Pokemon (round 5, item 1), so a tap names a Pokemon.
+   The slot then re-derived which member to draw from the boss row, which
+   fields the line's leaf: a tap on Geodude answered with Golem, and Brock's
+   own Onix would have read as Steelix. `GymCard` now holds `signatureId`
+   beside `signatureSeat`, and `signatureMember` in the engine prefers it.
+
+   The seat still owns the mark. A card whose marked line is replaced, or one
+   marked before the field existed, falls back to the boss row's member: the
+   pick is checked against the line's own members rather than migrated, so
+   nothing has to change on disk.
+
+2. **A drag paints the line it carries, not the seat it lands on.** A reorder
+   preview swaps `src` on cells that are already on screen. Setting a new
+   `src` does not blank an `<img>` — the browser keeps painting the bitmap it
+   has until the new one is ready — so a cell whose new sprite had never been
+   drawn kept showing the previous tenant for as long as the fetch took.
+
+   Moving a line to a deeper seat is exactly the case that reveals one: seat
+   6 reaches the last two rows and seat 1 reaches all eleven, so the stages a
+   line hid at seat 6 all arrive at once. A boundary drag does the same on a
+   single column. Measured across seven seeded cards, one reorder each: 19
+   cells received a sprite the browser was not ready to paint. The card now
+   warms every member of every line — plus their Mega and Gigantamax forms,
+   because the powerup rides its seat — when the card opens. The same count
+   is 0 after.
+
+   `e2e/drag-hold.spec.ts` watches for the swap itself rather than for a
+   frame: any `<img>` whose `src` changes to a bitmap the browser does not
+   have is the defect, whatever the network does next.
+
 ### Round 3, follow-ups from the preview
 
 1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;
