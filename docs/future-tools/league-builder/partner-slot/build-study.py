@@ -114,7 +114,7 @@ SECTIONS = [
 
 parts = []
 for i, (kind, title, verdict, note) in enumerate(SECTIONS, 1):
-    parts.append(f'<section><h2><span class="idx">{i:02d}</span>{title}</h2>'
+    parts.append(f'<section id="s{i}"><h2><span class="idx">{i:02d}</span>{title}</h2>'
                  f'<p class="verdict">{verdict}</p>{panels(kind)}'
                  f'<p class="note">{note}</p></section>')
 
@@ -133,13 +133,22 @@ for i, (kind, title, verdict, note) in enumerate(dg.VARIANTS, 1):
             else f'<p class="sub2">Without types</p>{dg.row(kind, False)}'
                  f'<p class="sub2">With types</p>{dg.row(kind, True)}')
     dparts.append(
-        f'<section><h2><span class="idx">3{chr(96+i)}</span>{title}</h2>'
+        f'<section id="s3{chr(96+i)}"><h2><span class="idx">3{chr(96+i)}</span>{title}</h2>'
         f'<p class="verdict">{verdict}</p>{rows}'
         f'<p class="note">{note}</p></section>')
 
 TEMPLATE = open('/tmp/claude-0/-home-user-my151/d74790d9-bbfd-5538-8993-a07d19412b2a/scratchpad/partner-template.html').read()
-html = TEMPLATE.replace('__SECTIONS__', '\n\n  '.join(parts))
-html = html.replace('__DIAGONALS__', '\n\n  '.join(dparts))
+# The three seams are variants of section 03, so they follow it. Numbering
+# them 3a-3c and then printing them below 04 sent the reader past four
+# screens of the page looking for something that was two above.
+INTRO = (
+    '<section class="intro"><h2>The diagonal, revisited</h2>'
+    '<p class="verdict">The seam above cuts its own halves: the lower one loses its heading, and the two '
+    'stop reading in the same order. These three keep a seam and give each half a rectangle that fits '
+    'entirely inside it, so <b>nothing is clipped</b>.</p></section>'
+)
+running = parts[:3] + [INTRO] + dparts + parts[3:]
+html = TEMPLATE.replace('__SECTIONS__', '\n\n  '.join(running))
 html = html.replace('__SP95__', sp[95]).replace('__SP25__', sp[25])
 open('/tmp/claude-0/-home-user-my151/d74790d9-bbfd-5538-8993-a07d19412b2a/scratchpad/partner-slot.html', 'w').write(html)
 print('written', len(html), 'bytes')
