@@ -51,6 +51,7 @@ import {
   type DragEndEvent,
   type DragMoveEvent,
 } from '@dnd-kit/core';
+import { DRAG_SOURCE_OPACITY, HeldItems } from '@/components/shared/dragHold';
 
 /**
  * Re-measure droppable rects on every frame during a drag. The default
@@ -277,11 +278,12 @@ function DraggableViewTile({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
+      data-view-tile={pokemon.id}
       className="relative overflow-visible cursor-grab active:cursor-grabbing select-none"
       style={{
         width: tileSize,
         height: tileSize,
-        opacity: isDragging || isDraggedLine ? 0.25 : 1,
+        opacity: isDragging || isDraggedLine ? DRAG_SOURCE_OPACITY : 1,
         // Intentionally NOT setting `touchAction: 'none'` here. The touch
         // sensor uses delay-based activation (250ms hold), which does not
         // require disabling native touch behaviours — and disabling them
@@ -1356,14 +1358,11 @@ export function ViewPage() {
 
                 <DragOverlay dropAnimation={null}>
                   {dragOverlayPokemon.length > 0 && (
-                    <div
-                      className="flex absolute top-1/2 left-1/2"
-                      style={{ transform: 'translate(-50%, -50%)' }}
-                    >
+                    <HeldItems>
                       {dragOverlayPokemon.map((p) => (
                         <StaticViewTile key={p.id} pokemon={p} tileSize={tileSize} />
                       ))}
-                    </div>
+                    </HeldItems>
                   )}
                 </DragOverlay>
                 {cursorPos && dragLineIds && (

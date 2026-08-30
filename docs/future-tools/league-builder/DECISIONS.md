@@ -421,6 +421,43 @@ Veto any of these; they ship as stated otherwise.
     order by the build page's own sections rather than by generation, so a
     dex built section by section reads back that way.
 
+### One drag treatment, four surfaces
+
+The dex builder, the view page, the league summary and the gym card each had
+their own idea of what holding something looks like: a source faded to 25%
+here, a target scaled and ringed there, a shadowed copy somewhere else. Four
+treatments for one idea reads as four half-finished features.
+
+The idea now lives in `src/components/shared/dragHold.tsx` and every surface
+imports it rather than restating it:
+
+1. **The source recedes** to `DRAG_SOURCE_OPACITY` (0.25) where it sits, so
+   the layout keeps its shape and the eye stops reading that copy as live.
+   Where a surface previews the drop — the league summary and the gym card
+   both re-derive mid-drag — the receding copy is the previewed one, which is
+   where the carried thing is actually drawn.
+2. **A copy is held**, centred on the pointer inside dnd-kit's
+   `<DragOverlay>`, at the size of the thing that was grabbed, and it is the
+   only thing at full strength during a drag.
+
+What each surface shows about the *destination* still differs, and is meant
+to: an insert bar in the dex builder, a re-derived arrangement in the league,
+a ring on the boss row for a legendary. Those answer different questions.
+
+A vertical drag on the gym card carries nothing, because it carries nothing:
+it shifts an evolution boundary in place.
+
+`e2e/drag-hold.spec.ts` measures both properties on all four surfaces
+mid-drag, and that the held row is the width of the row. The dex half runs on
+desktop only, for a harness reason rather than a product one: the touch
+projects arm dnd-kit's `TouchSensor`, which wants real touch events, and
+Playwright's mouse API emits mouse events.
+
+### Signature picker
+
+Opens on the gym's own type, like the line picker — the scope chip narrows to
+the card's team on top of that, and is called **Current Team**.
+
 ### Round 3, follow-ups from the preview
 
 1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;

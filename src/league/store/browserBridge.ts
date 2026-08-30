@@ -101,8 +101,10 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         searchQuery: '',
         activeCategoryFilter: null,
         activeArchetypeFilter: null,
-        // The leader's own type arrives pre-selected when picking lines.
-        typeFilter: purpose === 'lines' && type && type !== 'none' ? [type] : null,
+        // The leader's own type arrives pre-selected whenever the pane is
+        // picking pokemon for the card — lines and the signature alike. The
+        // signature's scope chip narrows to the team on top of that.
+        typeFilter: purpose !== 'legend' && type && type !== 'none' ? [type] : null,
         typeFilterMode: 'any',
         generationFilter: null,
         shapeFilter: null,
@@ -117,8 +119,9 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         myDexIds: new Set(Object.values(usePokedexStore.getState().sections).flat()),
         myDexSections: usePokedexStore.getState().sections,
         // The legendary picker restricts structurally. The signature picker
-        // starts unfiltered with a "Card lines" chip to opt into the card's
-        // own placed lines — and once the template is full, the restriction
+        // starts on the gym's type with a "Current Team" chip to narrow to
+        // the card's own placed lines — and once the template is full, the
+        // restriction
         // is structural: a seventh line has nowhere to sit.
         restrictIds:
           purpose === 'legend'
@@ -128,7 +131,7 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
               : undefined,
         scopeFilter: false,
         scopeFilterIds: purpose === 'signature' && !cardFull ? placed : undefined,
-        scopeFilterLabel: purpose === 'signature' && !cardFull ? 'Card lines' : undefined,
+        scopeFilterLabel: purpose === 'signature' && !cardFull ? 'Current Team' : undefined,
       });
     },
 

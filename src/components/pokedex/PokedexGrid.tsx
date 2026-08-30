@@ -97,6 +97,7 @@ function parseTileId(id: string): { sectionId: string; pokemonId: number } {
 // ---------- gen badge ----------
 
 import { GenBadge } from '@/components/shared/GenBadge';
+import { DRAG_SOURCE_OPACITY, HeldItems } from '@/components/shared/dragHold';
 
 // ---------- static pokemon tile (for overlay) ----------
 
@@ -169,7 +170,7 @@ function DraggableTile({
       data-tile-id={id}
       className="relative"
       style={{
-        opacity: isDragging || isDraggedLine ? 0.25 : 1,
+        opacity: isDragging || isDraggedLine ? DRAG_SOURCE_OPACITY : 1,
         ['--tile-sprite' as string]: `${spritePx}px`,
       }}
     >
@@ -959,16 +960,15 @@ export function PokedexGrid() {
 
               <DragOverlay dropAnimation={null}>
                 {dragLineIds && (
-                  <div
-                    className="flex gap-1 absolute top-1/2 left-1/2"
-                    style={{ transform: 'translate(-50%, -50%)' }}
-                  >
-                    {dragLineIds.map((id) => (
-                      <div key={id} className="w-[calc((100%-24px-5%)/6)] md:w-[calc((100%-20px)/6)] max-w-[90px]">
-                        <PokemonTileStatic id={id} />
-                      </div>
-                    ))}
-                  </div>
+                  <HeldItems>
+                    <div className="flex gap-1">
+                      {dragLineIds.map((id) => (
+                        <div key={id} className="w-[calc((100%-24px-5%)/6)] md:w-[calc((100%-20px)/6)] max-w-[90px]">
+                          <PokemonTileStatic id={id} />
+                        </div>
+                      ))}
+                    </div>
+                  </HeldItems>
                 )}
               </DragOverlay>
               {cursorPos && dragLineIds && (

@@ -8,17 +8,20 @@ import {
   useSensors,
   type DragEndEvent,
   type DragOverEvent,
+  type DragStartEvent,
+  DragOverlay,
 } from '@dnd-kit/core';
 import { ArrowUpDown, ChevronRight, Plus } from 'lucide-react';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
+import { DRAG_SOURCE_OPACITY, HeldItems } from '@/components/shared/dragHold';
 import { cn } from '@/lib/utils';
 import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { deriveRow, moveSeat } from '../model/engine';
 import { cardShades } from '../theme';
 import { useFitScale } from '../useFitScale';
-import { useLeagueStore } from '../store/useLeagueStore';
+import { useLeagueStore, type GymCard } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
 
@@ -64,19 +67,12 @@ function SlotGlyph({ index, cell }: { index: number; cell: string }) {
  * reorder. Splitting the two is what lets a dragged row re-derive its team at
  * the size its would-be position allows.
  */
-function SlotRow({ position, cardIndex, lifted }: {
-  position: number;
-  cardIndex: number;
-  lifted: boolean;
-}) {
-  const card = useLeagueStore((s) => s.cards[cardIndex]);
-  const openCardPage = useLeagueUi((s) => s.openCardPage);
-  const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
-    id: `slot-${position}`,
-    data: { index: position },
-  });
-  const { setNodeRef: setDropRef } = useDroppable({ id: `slotdrop-${position}`, data: { index: position } });
-
+/**
+ * A row's face, with nothing interactive on it. The row itself renders one,
+ * and so does the copy held under the pointer during a drag — one component
+ * so the held copy cannot drift from the thing it is a copy of.
+ */
+function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
   const shades = card.type ? cardShades(card.type) : null;
   const cellColour = shades ? shades.cell : GREY;
   const row = slotRow(position);
@@ -84,26 +80,15 @@ function SlotRow({ position, cardIndex, lifted }: {
   const filled = card.lines.length > 0;
 
   return (
-    <div ref={setDropRef} className="relative" style={{ zIndex: lifted ? 10 : undefined }}>
-      <button
-        type="button"
-        ref={setDragRef}
-        {...listeners}
-        {...attributes}
-        data-testid={`league-slot-${position}`}
-        onClick={() => openCardPage(cardIndex)}
-        className={cn(
-          'grid w-full cursor-pointer items-center rounded-[0.3125rem] text-left',
-          lifted && 'shadow-lg ring-1 ring-black/10',
-        )}
-        style={{
-          gridTemplateColumns: `2.75rem 2rem repeat(${TEAM_COLS + 1}, minmax(0, 1fr))`,
-          height: `${ROW_H}rem`,
-          background: shades ? shades.base : undefined,
-          boxShadow: lifted ? undefined : 'inset 0 1px 0 #f0f0f1',
-          touchAction: 'none',
-        }}
-      >
+    <div
+      className="grid w-full items-center rounded-[0.3125rem] text-left"
+      style={{
+        gridTemplateColumns: `2.75rem 2rem repeat(${TEAM_COLS + 1}, minmax(0, 1fr))`,
+        height: `${ROW_H}rem`,
+        background: shades ? shades.base : '#ffffff',
+        boxShadow: 'inset 0 1px 0 #f0f0f1',
+      }}
+    >
         <span
           className="mx-[0.1875rem] flex items-center justify-center self-center rounded-[0.3125rem]"
           style={{ height: `${ROW_H - 0.625}rem`, background: cellColour }}
@@ -156,8 +141,40 @@ function SlotRow({ position, cardIndex, lifted }: {
               : 'h-[1.875rem] w-[1.875rem] border-[1.4px] border-dashed border-[#d4d4d4] text-[#a3a3a3]',
           )}
         >
-          {filled ? <ChevronRight size={16} strokeWidth={2.4} /> : <Plus size={12} strokeWidth={2.4} />}
-        </span>
+        {filled ? <ChevronRight size={16} strokeWidth={2.4} /> : <Plus size={12} strokeWidth={2.4} />}
+      </span>
+    </div>
+  );
+}
+
+/** The row as the league renders it: a drop target that drags and opens. */
+function SlotRow({ position, cardIndex, held }: {
+  position: number;
+  cardIndex: number;
+  /** This row is the one being carried; it recedes where it sits. */
+  held: boolean;
+}) {
+  const card = useLeagueStore((s) => s.cards[cardIndex]);
+  const openCardPage = useLeagueUi((s) => s.openCardPage);
+  const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
+    id: `slot-${position}`,
+    data: { index: position },
+  });
+  const { setNodeRef: setDropRef } = useDroppable({ id: `slotdrop-${position}`, data: { index: position } });
+
+  return (
+    <div ref={setDropRef}>
+      <button
+        type="button"
+        ref={setDragRef}
+        {...listeners}
+        {...attributes}
+        data-testid={`league-slot-${position}`}
+        onClick={() => openCardPage(cardIndex)}
+        className="block w-full cursor-pointer"
+        style={{ opacity: held ? DRAG_SOURCE_OPACITY : 1, touchAction: 'none' }}
+      >
+        <SlotRowFace position={position} card={card} />
       </button>
     </div>
   );
@@ -169,6 +186,20 @@ export function LeagueHome() {
   const fitRef = useRef<HTMLDivElement>(null);
   const fit = useFitScale(fitRef);
   const [preview, setPreview] = useState<{ from: number; to: number } | null>(null);
+  // Width in client pixels, so the held copy is the size of the row that was
+  // grabbed rather than the size a portalled copy would default to.
+  const [held, setHeld] = useState<{ position: number; width: number } | null>(null);
+  const cards = useLeagueStore((s) => s.cards);
+
+  const onDragStart = useCallback((e: DragStartEvent) => {
+    const position = (e.active.data.current as { index: number } | undefined)?.index;
+    if (position === undefined) return;
+    // Measured off the row itself. dnd-kit's own rect is not always filled in
+    // by the time the drag starts, and a held copy with no width shrinks to
+    // its content — a full-width row arrives in hand at half size.
+    const row = document.querySelector(`[data-testid="league-slot-${position}"]`);
+    setHeld({ position, width: row?.getBoundingClientRect().width ?? 0 });
+  }, []);
 
   const onDragOver = useCallback((e: DragOverEvent) => {
     const from = (e.active.data.current as { index: number } | undefined)?.index;
@@ -180,6 +211,7 @@ export function LeagueHome() {
   const onDragEnd = useCallback(
     (e: DragEndEvent) => {
       setPreview(null);
+      setHeld(null);
       const from = (e.active.data.current as { index: number } | undefined)?.index;
       const to = (e.over?.data.current as { index: number } | undefined)?.index;
       if (from === undefined || to === undefined || from === to) return;
@@ -204,7 +236,8 @@ export function LeagueHome() {
       sensors={sensors}
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
-      onDragCancel={() => setPreview(null)}
+      onDragStart={onDragStart}
+      onDragCancel={() => { setPreview(null); setHeld(null); }}
     >
       <div ref={fitRef} style={{ zoom: fit }}>
         <div className="rounded-xl bg-card p-1 px-2 shadow-elevated">
@@ -221,7 +254,7 @@ export function LeagueHome() {
               <SlotRow
                 position={position}
                 cardIndex={cardIndex}
-                lifted={preview !== null && position === preview.to}
+                held={preview !== null && position === preview.to}
               />
             </div>
           ))}
@@ -231,6 +264,20 @@ export function LeagueHome() {
           <span>Drag a row to reorder the league · tap a row to open its card</span>
         </div>
       </div>
+      {/* The copy in hand: the row that was grabbed, at the width it was
+          grabbed at, drawn by the same component as the row itself. */}
+      <DragOverlay dropAnimation={null}>
+        {held ? (
+          <HeldItems>
+            <div
+              className="overflow-hidden rounded-[0.3125rem] shadow-lg ring-1 ring-black/10"
+              style={{ width: held.width || undefined }}
+            >
+              <SlotRowFace position={held.position} card={cards[held.position]} />
+            </div>
+          </HeldItems>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }

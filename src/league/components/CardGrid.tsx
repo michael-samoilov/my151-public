@@ -19,6 +19,7 @@ import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
 import type { TypeName } from '@/types/pokemon';
+import { DRAG_SOURCE_OPACITY, HeldItems } from '@/components/shared/dragHold';
 import { cn } from '@/lib/utils';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
 import { defaultBoundaries, deriveRows, moveSeat as reorderLines, stageAt } from '../model/engine';
@@ -117,6 +118,8 @@ interface CellDatum {
   stage: number;
   isLegend: boolean;
   filled: boolean;
+  /** What the cell draws, so a drag can carry a copy of it. */
+  pokemonId: number | null;
 }
 
 /**
@@ -144,12 +147,12 @@ interface PaintDrag {
   painted: boolean;
 }
 
-function PokemonCell({ cardIndex, datum, pokemonId, lifted, ringWhenOver, onRemove, onReset }: {
+function PokemonCell({ cardIndex, datum, pokemonId, held, ringWhenOver, onRemove, onReset }: {
   cardIndex: number;
   datum: CellDatum;
   pokemonId: number | null;
-  /** The column previewed at its drop seat during a reorder drag. */
-  lifted: boolean;
+  /** Part of the column being carried; it recedes where it is drawn. */
+  held: boolean;
   /** A legendary drag is in flight; boss-row cells ring under the pointer. */
   ringWhenOver: boolean;
   /** Set on the column's topmost pokemon: remove this evo line. */
@@ -186,7 +189,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, lifted, ringWhenOver, onRemo
     <div
       ref={setDropRef}
       className="relative flex h-full items-center justify-center"
-      style={{ zIndex: lifted ? 10 : undefined }}
+      style={{ opacity: held ? DRAG_SOURCE_OPACITY : 1 }}
     >
       <button
         type="button"
@@ -201,7 +204,6 @@ function PokemonCell({ cardIndex, datum, pokemonId, lifted, ringWhenOver, onRemo
         className={cn(
           'relative flex items-center justify-center rounded-md',
           datum.filled && 'cursor-grab active:cursor-grabbing',
-          lifted && 'scale-[1.04] shadow-lg ring-1 ring-black/10',
           ringed && 'ring-2 ring-[var(--lg-cell)]',
         )}
         style={{
@@ -496,24 +498,31 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
 
   const paintRef = useRef<PaintDrag | null>(null);
   const [previewMove, setPreviewMove] = useState<{ from: number; to: number } | null>(null);
-  // The legendary drag carries a copy under the pointer. Its size comes from
-  // the cell it was lifted from, measured in client pixels, because the card
-  // sits under a CSS `zoom` and the overlay is portalled out of it.
-  const [legendDrag, setLegendDrag] = useState<{ sprite: number } | null>(null);
+  const [legendDrag, setLegendDrag] = useState(false);
+  // What the pointer carries, and how big to draw it. The size is measured
+  // from the cell it was lifted from, in client pixels, because the card sits
+  // under a CSS `zoom` and the overlay is portalled out of it.
+  const [held, setHeld] = useState<{ pokemonId: number; sprite: number } | null>(null);
 
   const onDragStart = useCallback(
     (e: DragStartEvent) => {
       const d = e.active.data.current as CellDatum | undefined;
       if (!d) return;
+      const cell = e.active.rect.current.initial;
+      const cellRem = ROW_H - 2 * INSET_Y;
+      if (d.pokemonId !== null) {
+        setHeld({
+          pokemonId: d.pokemonId,
+          sprite: cell ? (cell.height * SPRITE_REM) / cellRem : 52,
+        });
+      }
       if (d.isLegend) {
         paintRef.current = {
           legend: true, seat: d.seat, stage: 0, startRow: d.row, role: 'mid',
           runTop: d.row, runBottom: d.row, canTop: false, canBottom: false,
           initial: [], painted: false,
         };
-        const cell = e.active.rect.current.initial;
-        const cellRem = ROW_H - 2 * INSET_Y;
-        setLegendDrag({ sprite: cell ? (cell.height * SPRITE_REM) / cellRem : 52 });
+        setLegendDrag(true);
         return;
       }
       const line = card.lines[d.seat - 1];
@@ -592,7 +601,8 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     paintRef.current = null;
     if (p && !p.legend && p.painted) setLineBoundaries(cardIndex, p.seat, p.initial);
     setPreviewMove(null);
-    setLegendDrag(null);
+    setLegendDrag(false);
+    setHeld(null);
   }, [cardIndex, setLineBoundaries]);
 
   const onDragEnd = useCallback(
@@ -600,7 +610,8 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       const p = paintRef.current;
       paintRef.current = null;
       setPreviewMove(null);
-      setLegendDrag(null);
+      setLegendDrag(false);
+      setHeld(null);
       const to = e.over?.data.current as CellDatum | undefined;
       if (!p) return;
       if (p.legend) {
@@ -641,7 +652,9 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     previewMove || legendDrag
       ? deriveRows(renderLines, legendDrag ? null : card.legend)
       : rows;
-  const legendPokemon = card.legend ? getPokemonById(card.legend.pokemonId) : undefined;
+  // A copy is carried once the gesture is a move: a vertical paint shifts an
+  // evolution boundary in place, so there is nothing being carried there.
+  const heldPokemon = held && (legendDrag || previewMove) ? getPokemonById(held.pokemonId) : undefined;
 
   // The column's topmost pokemon carries the remove control for its line.
   // The legendary overlay is skipped: it is not the line, it covers it.
@@ -707,6 +720,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                     stage: line ? stageAt(line, row) : 0,
                     isLegend: cell.isLegend,
                     filled: cell.pokemonId !== null || legendSource,
+                    pokemonId: cell.pokemonId,
                   };
                   const topId = topRowBySeat.get(cell.seat) === row ? cell.pokemonId : null;
                   const custom =
@@ -718,8 +732,8 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       cardIndex={cardIndex}
                       datum={datum}
                       pokemonId={cell.pokemonId}
-                      lifted={previewMove !== null && cell.seat === previewMove.to && cell.pokemonId !== null && !cell.isLegend}
-                      ringWhenOver={legendDrag !== null}
+                      held={previewMove !== null && cell.seat === previewMove.to && cell.pokemonId !== null && !cell.isLegend}
+                      ringWhenOver={legendDrag}
                       onRemove={topId !== null ? () => removeLineWith(cardIndex, topId) : undefined}
                       onReset={
                         custom && line
@@ -754,19 +768,15 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
           measured from the cell, not that size zoomed a second time. */}
       {createPortal(
         <DragOverlay dropAnimation={null}>
-          {legendDrag && legendPokemon ? (
-            <div className="flex h-full w-full items-center justify-center">
+          {held && heldPokemon ? (
+            <HeldItems>
               <img
-                src={legendPokemon.sprite}
+                src={heldPokemon.sprite}
                 alt=""
                 className="max-w-none drop-shadow-[0_4px_8px_rgba(0,0,0,0.35)]"
-                style={{
-                  width: legendDrag.sprite,
-                  height: legendDrag.sprite,
-                  imageRendering: 'pixelated',
-                }}
+                style={{ width: held.sprite, height: held.sprite, imageRendering: 'pixelated' }}
               />
-            </div>
+            </HeldItems>
           ) : null}
         </DragOverlay>,
         document.body,
