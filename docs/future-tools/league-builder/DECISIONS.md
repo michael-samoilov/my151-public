@@ -730,6 +730,23 @@ the running app rather than reading the code.
    frame: any `<img>` whose `src` changes to a bitmap the browser does not
    have is the defect, whatever the network does next.
 
+3. **The held legendary wears a cell face.** White, the cell's own corner,
+   and the lift shadow, so the copy in hand and a lifted column read as one
+   gesture. A bare sprite over the dark boss band read as a loose cutout.
+
+   The face is measured off the grabbed cell at drag start rather than
+   restated in rem. Two reasons, both found by measuring: the copy is
+   portalled out of the card's CSS `zoom`, so a rem there is the root's rem
+   and not the card's; and `rounded-md` is a theme token that moves with the
+   root font size, so a hard-coded corner drew 5px where the desktop card
+   paints 8px. `grabbedCellFace` reads the painted box, the painted corner,
+   and one card-rem in portal pixels, all from the cell itself.
+
+   That also fixed a size the code only appeared to measure. dnd-kit's
+   `active.rect.current.initial` is null while `onDragStart` runs, so the
+   sprite had always taken the 52px fallback beside a card that paints
+   50.47px. It now matches the card exactly.
+
 ### Round 3, follow-ups from the preview
 
 1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;
