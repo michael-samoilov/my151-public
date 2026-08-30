@@ -189,6 +189,39 @@ img {
   pointer-events: none;
 }
 
+/* Every drag surface, marked by the one thing they all share.
+ *
+ * A long press on a draggable is the gesture that picks it up. On iOS it is
+ * also the gesture that starts a text selection, and the selection wins: the
+ * league summary answered a press-and-hold with a Copy / Search callout
+ * spanning two rows instead of lifting the row.
+ *
+ * The `-webkit-touch-callout` rule above suppresses the image and link
+ * callout, not the selection one; only `user-select` does that. Each surface
+ * could set it for itself, and the dex builder's tiles do — the two league
+ * surfaces are what it looks like when one of them forgets. dnd-kit marks
+ * every draggable with `aria-roledescription="draggable"`, so one rule here
+ * covers the surfaces that exist and the ones nobody has written yet.
+ *
+ * The descendants are named explicitly rather than left to inheritance,
+ * because `user-select` is not an inherited property — a child's `auto`
+ * resolves against its parent, and a child that sets anything else does not. */
+[aria-roledescription='draggable'],
+[aria-roledescription='draggable'] * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Except where the point of the element is to type in it. Nothing in the app
+ * puts a field inside a drag surface today; this is here so that the day one
+ * does, the field still works. */
+[aria-roledescription='draggable'] input,
+[aria-roledescription='draggable'] textarea,
+[aria-roledescription='draggable'] [contenteditable]:not([contenteditable='false']) {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 /* Always-visible thin scrollbars — mobile browsers hide native scrollbars by default,
  * leaving users without any indicator that content is scrollable. */
 ::-webkit-scrollbar {

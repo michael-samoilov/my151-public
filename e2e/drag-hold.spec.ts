@@ -161,6 +161,59 @@ test.describe('drag hold', () => {
     expect(state.lifted, 'every cell of the column lifts').toBe(state.openSeats);
   });
 
+  test('a press and hold picks things up, it does not select them', async ({ page }) => {
+    // On iOS a long press is both "pick this up" and "start a selection", and
+    // the selection wins: the league summary answered a press-and-hold with a
+    // Copy / Search callout across two rows. The callout itself is device-only
+    // — what a browser here can be asked is whether the surface is selectable
+    // at all, which is the property that decides it.
+    const audit = () =>
+      page.evaluate(() => {
+        const bad: string[] = [];
+        const draggables = [...document.querySelectorAll<HTMLElement>('[aria-roledescription="draggable"]')];
+        for (const el of draggables) {
+          if (getComputedStyle(el).userSelect !== 'none') {
+            bad.push(`${el.getAttribute('data-testid') ?? el.tagName.toLowerCase()}: user-select is not none`);
+            continue;
+          }
+          // And prove it, rather than trusting the declaration: a subtree the
+          // engine will not select returns nothing to a selection of it.
+          const selection = window.getSelection();
+          if (!selection) continue;
+          selection.removeAllRanges();
+          selection.selectAllChildren(el);
+          const text = selection.toString().trim();
+          selection.removeAllRanges();
+          if (text.length > 0) {
+            bad.push(`${el.getAttribute('data-testid') ?? el.tagName.toLowerCase()}: selected "${text.slice(0, 24)}"`);
+          }
+        }
+        return { count: draggables.length, bad };
+      });
+
+    await seededLeague(page);
+    await page.goto('/pokemon-league-builder');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.waitForTimeout(600);
+    const home = await audit();
+    expect(home.count, 'the summary has draggable rows').toBeGreaterThan(0);
+    expect(home.bad, 'league summary').toEqual([]);
+
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="card-cell-1-1"]');
+    await page.waitForTimeout(600);
+    const card = await audit();
+    expect(card.count, 'the card has draggable cells').toBeGreaterThan(0);
+    expect(card.bad, 'gym card').toEqual([]);
+
+    // The dex builder shares the rule, and is where the app first needed it.
+    await page.goto(TUNE_URL);
+    await seedDex(page);
+    await page.waitForSelector('[data-tile-id]');
+    await page.waitForTimeout(400);
+    expect((await audit()).bad, 'dex builder').toEqual([]);
+  });
+
   test('the legendary is carried on a cell face', async ({ page }) => {
     // The copy in hand wears what a cell wears, so a drag reads the same
     // whether it carries a column or the boss's legendary. A bare sprite on
