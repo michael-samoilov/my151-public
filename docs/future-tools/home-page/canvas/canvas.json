@@ -83,7 +83,7 @@
     },
     {
       "file": "PosterMobile.dc.html",
-      "title": "D · Poster — Mobile 390, red card",
+      "title": "A · two phones, moderate fan",
       "x": 0,
       "y": 0,
       "w": 390,
@@ -92,7 +92,7 @@
     },
     {
       "file": "PosterMobileBand.dc.html",
-      "title": "D · Poster — Mobile 390, white card",
+      "title": "B · two phones, wide fan, shorter card",
       "x": 490,
       "y": 0,
       "w": 390,
@@ -100,19 +100,37 @@
       "page": "page-2"
     },
     {
-      "file": "PosterTablet.dc.html",
-      "title": "D · Poster — Tablet 834",
+      "file": "PosterMobileC.dc.html",
+      "title": "C · three phones, moderate fan",
       "x": 980,
       "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "page-2"
+    },
+    {
+      "file": "PosterMobileD.dc.html",
+      "title": "D · three phones, widest fan, shortest card",
+      "x": 1470,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "page-2"
+    },
+    {
+      "file": "PosterTablet.dc.html",
+      "title": "Tablet 834 — permutation A",
+      "x": 0,
+      "y": 1120,
       "w": 834,
       "h": 1112,
       "page": "page-2"
     },
     {
       "file": "PosterDesktop.dc.html",
-      "title": "D · Poster — Desktop 1440",
-      "x": 1914,
-      "y": 0,
+      "title": "Desktop 1440 — permutation A, four across",
+      "x": 934,
+      "y": 1120,
       "w": 1440,
       "h": 900,
       "page": "page-2"
@@ -155,41 +173,25 @@
       "id": "d-note",
       "page": "page-2",
       "x": 0,
-      "y": -280,
-      "w": 940,
-      "text": "D · Poster cards — built from your PowerPoint.\nEach phone is a WHOLE mobile viewport screenshot at its own proportions: nothing is scaled up or cropped, so the right edge and both top corners stay visible. It overhangs the tile on the top and left, stops well short of the right edge, and runs off the BOTTOM — the only edge that cuts it. A red gradient rises from that bottom edge and the copy sits on it, hiding the cut.\nThe phones are a fanned pair at -4 degrees, offset like a stacked deck. The back one is a second screen from the same tool, not a duplicate."
+      "y": -300,
+      "w": 980,
+      "text": "D · Poster cards — four permutations of the fan, so pick one and we iterate on it.\nSame page and same copy in all four; only the card differs. A and B use two phones, C and D use three. Left to right the fan gets wider and the red card gets shorter.\nEach phone is a whole mobile viewport screenshot at its own proportions — nothing scaled or cropped — overhanging the card top and left, cut only by the card's bottom edge."
     },
     {
       "id": "d-shape-note",
       "page": "page-2",
-      "x": 1000,
-      "y": -280,
-      "w": 900,
-      "text": "Why the tiles are wide and short: a phone screenshot is about 1:1.6, so it only outruns the tile's bottom edge while still being narrow enough to leave bare tile on the right. Make the tile TALL and the phone has to be blown up past the tile's own width to reach the bottom — which is exactly what made the last version look clipped on the right.\nThree rules now fail the build instead of being caught by eye: the phone must outrun the tile's bottom, it must leave at least 18% of the tile bare on its right, and the grid's top padding must clear the overhang so the first row does not land on the hero."
+      "x": 1030,
+      "y": -300,
+      "w": 940,
+      "text": "Why the tilt and the gradient are linked. The gradient is clipped to the card, so it has to be fully transparent below the height where the artwork starts hanging off the left — otherwise its hard left edge shows against artwork that keeps going.\nEach phone rotates about its own top-left corner, so its left edge walks rightwards as it descends and crosses back inside the card at popLeft / sin(tilt) below its top. A steeper tilt crosses sooner and leaves more room for the gradient; a shallow tilt with a wide overhang leaves none. That is why the wider fans (B and D) can also be the shortest cards.\nFour rules now fail the build rather than being caught by eye: the phone must outrun the card's bottom, leave at least 16% of the card bare on its right, clear the grid's top padding so row one does not land on the hero, and leave the gradient enough headroom."
     },
     {
-      "id": "d-scrim-note",
+      "id": "d-row2-note",
       "page": "page-2",
       "x": 0,
-      "y": 880,
-      "w": 420,
-      "text": "Red tile, red gradient, white copy — as asked. This is what the tablet and desktop frames use.\nAt 390 the tiles are half the screen wide, so the phone nearly fills one: the bare strip on its right is about 34px, against roughly half the tile on desktop. The effect is strongest where the tiles are widest."
-    },
-    {
-      "id": "d-band-note",
-      "page": "page-2",
-      "x": 490,
-      "y": 880,
-      "w": 420,
-      "text": "White tile, white gradient, dark copy. Identical geometry — only the colour changes — so the pair isolates that one choice.\nQuieter, and it keeps red as a signal rather than a surface. Cost: the row loses the block of colour that makes the four read as one shelf."
-    },
-    {
-      "id": "d-seo-note",
-      "page": "page-2",
-      "x": 1000,
-      "y": 880,
-      "w": 900,
-      "text": "What one viewport costs on SEO: these cards carry about 45 characters of blurb each, against 150 in direction A, and there is no footer link row. The h2 anchor text and the four slugs are intact, which is the part that matters most.\nIf you want the longer copy back, keep this exact first screen and put a prose block BELOW the fold. Google indexes the rendered DOM whether or not it is above the fold."
+      "y": 1010,
+      "w": 980,
+      "text": "The other two widths, both using permutation A. Desktop is the four mobile cards side by side, not a two-by-two.\nSwap in whichever permutation you pick and these follow."
     }
   ],
   "pages": [
