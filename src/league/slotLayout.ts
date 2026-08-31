@@ -163,6 +163,25 @@ export function placeHalf(
 }
 
 /**
+ * Where a half goes when the seam cannot hold it.
+ *
+ * `placeHalf` returns null rather than lie about a placement that crosses the
+ * seam, which is right for the card and useless for the lab: a size chosen by
+ * hand is *meant* to be tried before it is known to fit, and a half that
+ * answers by disappearing cannot be dragged anywhere. This puts it in its own
+ * corner of the slot, which is honest about being a starting point.
+ */
+export function placeFree(
+  w: number, h: number, sprite: number, runs: Runs, upper: boolean,
+): Placed {
+  const width = Math.max(sprite, runs.head[0], runs.name[0]);
+  const total = runs.head[1] + sprite + runs.name[1];
+  return upper
+    ? { left: PAD, top: PAD, width, sprite }
+    : { left: Math.max(PAD, w - PAD - width), top: Math.max(PAD, h - PAD - total), width, sprite };
+}
+
+/**
  * The largest sprite both halves can hold *and still sit evenly in*.
  *
  * Equal, because sizing each half on its own made the partner read as the

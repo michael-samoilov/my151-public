@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { LeagueApp } from '../league/LeagueApp';
-import { useSlotLab } from '../league/slotLab';
+import { STANDARD_SPRITE, useSlotLab } from '../league/slotLab';
 
 /**
  * The real league builder, with the ace and partner halves loose.
@@ -21,7 +21,12 @@ export function SlotLabPage() {
   const ace = useSlotLab((s) => s.ace);
   const partner = useSlotLab((s) => s.partner);
   const slot = useSlotLab((s) => s.slot);
+  const sprite = useSlotLab((s) => s.sprite);
+  const setSprite = useSlotLab((s) => s.setSprite);
   const reset = useSlotLab((s) => s.reset);
+  // The panel sits over the card's own hint lines, so it folds away to a
+  // title when the thing being judged is underneath it.
+  const [open, setOpen] = useState(true);
 
   const row = (label: string, o: { dx: number; dy: number }) => (
     <div style={{ display: 'contents' }}>
@@ -49,9 +54,19 @@ export function SlotLabPage() {
           boxShadow: '0 4px 16px rgba(0,0,0,0.12)', maxWidth: 'calc(100vw - 16px)',
         }}
       >
-        <div style={{ fontWeight: 700, marginBottom: 4 }}>
-          Slot lab · drag either half
-        </div>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          style={{
+            display: 'block', width: '100%', textAlign: 'left', padding: 0,
+            border: 0, background: 'none', font: 'inherit', fontWeight: 700,
+            marginBottom: open ? 4 : 0, cursor: 'pointer',
+          }}
+        >
+          {open ? '▾' : '▸'} Slot lab · drag either half, size them together
+        </button>
+        {open && (
+        <>
         <div
           style={{
             display: 'grid', gridTemplateColumns: 'auto auto auto auto',
@@ -61,8 +76,32 @@ export function SlotLabPage() {
           {row('ace', ace)}
           {row('partner', partner)}
         </div>
+        <label
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            marginTop: 7, paddingTop: 6, borderTop: '1px solid #e4e4e7',
+          }}
+        >
+          <span style={{ fontWeight: 600 }}>sprite</span>
+          <input
+            type="range"
+            min={24}
+            max={140}
+            step={2}
+            value={sprite}
+            onChange={(e) => setSprite(Number(e.target.value))}
+            style={{ flex: 1, minWidth: 110 }}
+          />
+          <span style={{ fontVariantNumeric: 'tabular-nums', minWidth: 74 }}>
+            {sprite}px · {(sprite / 16).toFixed(2)}rem
+          </span>
+        </label>
         <div style={{ marginTop: 5, color: '#6b7280' }}>
           slot {slot ? `${slot.w.toFixed(0)} × ${slot.h.toFixed(0)}` : 'not measured'}
+          {'  ·  '}
+          {/* What the slot gave one Pokemon before it held two, so a size can
+              be read as a fraction of the thing it replaced. */}
+          {(sprite / STANDARD_SPRITE * 100).toFixed(0)}% of standard
         </div>
         <button
           type="button"
@@ -74,6 +113,8 @@ export function SlotLabPage() {
         >
           Reset both
         </button>
+        </>
+        )}
       </div>
     </>
   );

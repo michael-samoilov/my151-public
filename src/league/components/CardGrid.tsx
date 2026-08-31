@@ -38,7 +38,7 @@ import type { CardView } from '../useCardView';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyphs';
 import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
-import { SEAM_RIGHT, placeHalf, sharedSprite, type Placed, type Runs } from '../slotLayout';
+import { SEAM_RIGHT, placeFree, placeHalf, sharedSprite, type Placed, type Runs } from '../slotLayout';
 import { useSlotLab } from '../slotLab';
 
 /**
@@ -712,6 +712,9 @@ const PARTNER_NAME_CLASS = 'text-[0.8125rem] font-medium';
 function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
   const [layout, setLayout] = useState<{ ace: Placed; partner: Placed } | null>(null);
   const version = useNamesVersion();
+  // The lab's size is an input to the solve, so a change to it has to
+  // re-measure. Nothing else reads it, and on the card it never changes.
+  const labSprite = useSlotLab((s) => (s.enabled ? s.sprite : 0));
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -742,9 +745,16 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
       const key = [w, h, ace.head, ace.name, partner.head, partner.name].join('|');
       if (key === last) return;
       last = key;
-      const sprite = sharedSprite(w, h, ace, partner);
-      const a = placeHalf(w, h, sprite, ace, true);
-      const p = placeHalf(w, h, sprite, partner, false);
+      // The lab picks the size by hand; the card solves for it.
+      const lab = useSlotLab.getState();
+      const sprite = lab.enabled ? lab.sprite : sharedSprite(w, h, ace, partner);
+      // A hand-picked size is meant to be tried before it is known to fit, so
+      // the lab falls back to a corner rather than to nothing — a half that
+      // answers by disappearing cannot be dragged anywhere.
+      const a = placeHalf(w, h, sprite, ace, true)
+        ?? (lab.enabled ? placeFree(w, h, sprite, ace, true) : null);
+      const p = placeHalf(w, h, sprite, partner, false)
+        ?? (lab.enabled ? placeFree(w, h, sprite, partner, false) : null);
       if (a && p) setLayout({ ace: a, partner: p });
       // The lab reads offsets as fractions of the slot, so it needs the slot.
       // Setting it always costs one shallow compare; the store ignores a
@@ -772,7 +782,7 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [ref, version]);
+  }, [ref, version, labSprite]);
   return layout;
 }
 

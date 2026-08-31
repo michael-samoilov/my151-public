@@ -24,14 +24,27 @@ export interface SlotOffset {
   dy: number;
 }
 
+/**
+ * The sprite the slot gave one Pokemon before it held two: `5.75rem`.
+ *
+ * The lab starts here rather than at whatever the solver's equal-size search
+ * returns, because the search answers "what fits" and the question the lab is
+ * for is "what should it be". Starting at the answer makes the lab agree with
+ * the thing it is meant to replace.
+ */
+export const STANDARD_SPRITE = 92;
+
 interface SlotLabState {
   enabled: boolean;
   ace: SlotOffset;
   partner: SlotOffset;
+  /** Both halves' sprite edge, in the card's own pixels. */
+  sprite: number;
   /** The slot's measured size, so the page can show pixels beside fractions. */
   slot: { w: number; h: number } | null;
   enable: () => void;
   nudge: (half: 'ace' | 'partner', dx: number, dy: number) => void;
+  setSprite: (px: number) => void;
   setSlot: (w: number, h: number) => void;
   reset: () => void;
 }
@@ -42,10 +55,12 @@ export const useSlotLab = create<SlotLabState>()((set) => ({
   enabled: false,
   ace: ZERO,
   partner: ZERO,
+  sprite: STANDARD_SPRITE,
   slot: null,
   enable: () => set({ enabled: true }),
   nudge: (half, dx, dy) =>
     set((s) => ({ [half]: { dx: s[half].dx + dx, dy: s[half].dy + dy } }) as Partial<SlotLabState>),
+  setSprite: (px) => set({ sprite: Math.max(16, Math.min(160, Math.round(px))) }),
   setSlot: (w, h) => set((s) => (s.slot && s.slot.w === w && s.slot.h === h ? s : { slot: { w, h } })),
-  reset: () => set({ ace: ZERO, partner: ZERO }),
+  reset: () => set({ ace: ZERO, partner: ZERO, sprite: STANDARD_SPRITE }),
 }));
