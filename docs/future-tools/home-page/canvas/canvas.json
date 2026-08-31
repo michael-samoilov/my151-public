@@ -83,7 +83,7 @@
     },
     {
       "file": "PosterMobile.dc.html",
-      "title": "A · two phones, moderate fan",
+      "title": "A · reference proportions, two phones",
       "x": 0,
       "y": 0,
       "w": 390,
@@ -92,7 +92,7 @@
     },
     {
       "file": "PosterMobileBand.dc.html",
-      "title": "B · two phones, wide fan, shorter card",
+      "title": "B · reference proportions, three phones",
       "x": 490,
       "y": 0,
       "w": 390,
@@ -101,7 +101,7 @@
     },
     {
       "file": "PosterMobileC.dc.html",
-      "title": "C · three phones, moderate fan",
+      "title": "C · taller card, bigger phones",
       "x": 980,
       "y": 0,
       "w": 390,
@@ -110,7 +110,7 @@
     },
     {
       "file": "PosterMobileD.dc.html",
-      "title": "D · three phones, widest fan, shortest card",
+      "title": "D · gradient stops at the card, steep fan",
       "x": 1470,
       "y": 0,
       "w": 390,
@@ -175,7 +175,7 @@
       "x": 0,
       "y": -300,
       "w": 980,
-      "text": "D · Poster cards — four permutations of the fan, so pick one and we iterate on it.\nSame page and same copy in all four; only the card differs. A and B use two phones, C and D use three. Left to right the fan gets wider and the red card gets shorter.\nEach phone is a whole mobile viewport screenshot at its own proportions — nothing scaled or cropped — overhanging the card top and left, cut only by the card's bottom edge."
+      "text": "D · Poster cards — proportions measured off your PowerPoint. Against a 315x161 red card: card height 0.51 of its width, phone 0.53 of the card width, top overhang 0.47 of the card height, left overhang 0.063 of the card width, front phone inset 0.098 of the card width. The back phone sits about 0.05 of the card height LOWER than the front and roughly 4 degrees counter-clockwise against the front's 2.5. Gradient covers about 0.67 of the card height.\nA and B are those numbers with two and three phones. C is the same on a slightly taller card, so more screenshot shows."
     },
     {
       "id": "d-shape-note",
@@ -183,7 +183,7 @@
       "x": 1030,
       "y": -300,
       "w": 940,
-      "text": "Why the tilt and the gradient are linked. The gradient is clipped to the card, so it has to be fully transparent below the height where the artwork starts hanging off the left — otherwise its hard left edge shows against artwork that keeps going.\nEach phone rotates about its own top-left corner, so its left edge walks rightwards as it descends and crosses back inside the card at popLeft / sin(tilt) below its top. A steeper tilt crosses sooner and leaves more room for the gradient; a shallow tilt with a wide overhang leaves none. That is why the wider fans (B and D) can also be the shortest cards.\nFour rules now fail the build rather than being caught by eye: the phone must outrun the card's bottom, leave at least 16% of the card bare on its right, clear the grid's top padding so row one does not land on the hero, and leave the gradient enough headroom."
+      "text": "D is the odd one out, and it is worth a look before you choose.\nLast round you asked for the gradient to be clipped by the card outline. Your PowerPoint does the opposite: the red runs out to the artwork's own left edge, past the card, which is why there is no seam there. The two cannot both hold at a shallow tilt — clipping the gradient to the card means the artwork has to come back inside the card before the gradient starts, and at 4 degrees it never does.\nSo A, B and C follow the PowerPoint: the gradient carries the back phone's rotation and ends where the artwork ends. D clips it to the card instead, and pays for it with a much steeper fan (-11 and -6). Pick whichever edge you prefer."
     },
     {
       "id": "d-row2-note",

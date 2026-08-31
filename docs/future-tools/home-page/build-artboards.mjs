@@ -90,7 +90,7 @@ const TOOLS = [
 const HERO = {
   eyebrow: 'FREE POKÉMON TOOLS · NO SIGN-UP',
   h1: 'Make a custom Pokédex, Gym Leader, and more',
-  p: 'my151 is a set of free Pokémon tools and templates. Build a custom region Pokédex by choosing your favorite Pokémon from each generation, make custom gym leader trainer cards, and pick your favorite Pokémon per type per generation.',
+  p: 'my151 is a set of free Pokémon tools and templates. Build a custom region &amp; Pokédex by choosing your favorites from each generation, make custom gym leader trainer cards, &amp; pick your favorite Pokémon per type per generation.',
   note: 'No account. Your picks save in this browser and can export as a shareable image.',
   // Used where the whole page has to fit one viewport and the long
   // paragraph would push the cards off the bottom.
@@ -553,7 +553,7 @@ function fanCrossing({ tilts, offsets, popLeft, phoneTop, popTop }) {
   return phoneTop + Math.max(...depths) - popTop;
 }
 
-function posterCard({ tool, tilts, offsets, phoneW, phoneTop, cardW, popTop, popLeft, radius, tone, copyBand, fade, titleSize, blurbSize, pad }) {
+function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, popTop, popLeft, radius, tone, gradientMode, copyBand, fade, titleSize, blurbSize, pad }) {
   const onRed = tone === 'red';
   const ink = onRed ? R.fg : C.fg;
   const inkSub = onRed ? R.sub : C.mut;
@@ -571,7 +571,7 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, cardW, popTop, pop
         alt: tool.shot ? `${tool.h2} screenshot` : suggestPhone({ phoneW }),
         w: phoneW,
         x: offsets[i],
-        y: phoneTop + i * Math.round(phoneW * 0.05),
+        y: phoneTop + (tilts.length - 1 - i) * dropStep,
         tilt,
         radius: phoneRadius,
       });
@@ -579,21 +579,55 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, cardW, popTop, pop
     })
     .join('\n    ');
 
+  const ramp = (h) =>
+    `linear-gradient(to top, rgb(${wash}) 0, rgb(${wash}) ${Math.round(
+      h * 0.55,
+    )}px, rgba(${wash}, 0.92) ${h}px, rgba(${wash}, 0) ${h + fade}px)`;
+
+  // Two ways to keep the copy readable, and they differ only at the bottom-left
+  // corner where the artwork hangs off the card.
+  //
+  // 'card': the gradient is a layer on the card, so it stops dead at the card's
+  //   left edge. Clean, but any artwork still outside the card at that height
+  //   shows beside it — which is why the fan has to be steep enough to bring
+  //   the artwork back inside first (check 4 in poster()).
+  //
+  // 'artwork': the gradient lives in the clipping box, whose left edge IS the
+  //   back phone's left edge, and it carries the back phone's rotation so the
+  //   two left edges stay parallel. Red meets red, there is no seam, and the
+  //   fan can stay as shallow as the reference. Rotating about the bottom-left
+  //   lifts the far end, so it is dropped by `lift` and grown to match.
+  const clipW = cardW + popLeft;
+  const lift = Math.ceil(clipW * Math.sin((Math.abs(tilts[0]) * Math.PI) / 180)) + 4;
+  const scrim =
+    gradientMode === 'artwork'
+      ? `<div style="position: absolute; left: 0; bottom: -${lift}px; width: ${
+          clipW + 60
+        }px; height: ${
+          copyBand + lift + fade
+        }px; transform-origin: 0 100%; transform: rotate(${
+          tilts[0]
+        }deg); background: ${ramp(copyBand + lift)};"></div>`
+      : '';
+
   return `<a href="${tool.slug}" style="position: relative; display: block; height: 100%; border-radius: ${radius}px; background: ${
     onRed ? R.card : C.card
   }; border: 1px solid ${
     onRed ? R.card : C.bd
   }; box-shadow: 0 1px 2px rgba(10, 10, 10, 0.06); text-decoration: none;">
-  <div style="position: absolute; top: -${popTop}px; left: -${popLeft}px; right: 0; bottom: 0; overflow: hidden;">
+  <div style="position: absolute; top: -${popTop}px; left: -${popLeft}px; right: 0; bottom: 0; overflow: hidden; border-radius: 0 0 ${radius}px 0;">
     ${fan}
+    ${scrim}
   </div>
-  <div style="position: absolute; left: 0; right: 0; bottom: 0; height: ${
-    copyBand + fade
-  }px; border-radius: 0 0 ${radius - 1}px ${
-    radius - 1
-  }px; background: linear-gradient(to top, rgb(${wash}) 0, rgb(${wash}) ${Math.round(
-    copyBand * 0.55,
-  )}px, rgba(${wash}, 0.92) ${copyBand}px, rgba(${wash}, 0) ${copyBand + fade}px);"></div>
+  ${
+    gradientMode === 'artwork'
+      ? ''
+      : `<div style="position: absolute; left: 0; right: 0; bottom: 0; height: ${
+          copyBand + fade
+        }px; border-radius: 0 0 ${radius - 1}px ${radius - 1}px; background: ${ramp(
+          copyBand,
+        )};"></div>`
+  }
   <div style="position: absolute; left: ${pad}px; right: ${pad}px; bottom: ${pad}px; display: flex; flex-direction: column; gap: 3px;">
     <h2 style="margin: 0; font-size: ${titleSize}px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; color: ${ink};">${
       tool.h2
@@ -610,7 +644,7 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, cardW, popTop, pop
  * hero. Row heights are fixed, not `1fr`, so the card height the checks below
  * reason about is the height that actually renders; the hero takes the slack.
  */
-function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phoneW, phoneTop, popTop, popLeft, radius, tone, copyBand, fade, gap, padTop, padX, padBottom, titleSize, blurbSize, pad, heroPad, h1Size, pSize, maxW, links, splitHero }) {
+function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phoneW, phoneTop, dropStep, popTop, popLeft, radius, tone, gradientMode, copyBand, fade, gap, padTop, padX, padBottom, titleSize, blurbSize, pad, heroPad, h1Size, pSize, maxW, links, splitHero }) {
   // Four ways this card silently stops working. Each is worth failing the build
   // for, because each one only shows up as "the design looks slightly off".
   //
@@ -642,11 +676,13 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
       )}px from the card's right edge, wanted at least ${Math.round(cardW * 0.16)}`,
     );
   }
-  // 4. The gradient is clipped to the card, so it has to end below the point
-  //    where the artwork starts hanging off the left. See fanCrossing().
+  // 4. With gradientMode 'card' the gradient stops at the card's left edge, so
+  //    it has to end below the point where the artwork starts hanging off to
+  //    the left. See fanCrossing(). Mode 'artwork' carries its own left edge and
+  //    is exempt.
   const crossing = fanCrossing({ tilts, offsets, popLeft, phoneTop, popTop });
   const headroom = cardH - crossing;
-  if (copyBand + fade > headroom) {
+  if (gradientMode === 'card' && copyBand + fade > headroom) {
     throw new Error(
       `gradient ${copyBand + fade}px tall but only ${Math.round(
         headroom,
@@ -689,11 +725,13 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
       offsets,
       phoneW,
       phoneTop,
+      dropStep,
       cardW,
       popTop,
       popLeft,
       radius,
       tone,
+      gradientMode,
       copyBand,
       fade,
       titleSize,
@@ -821,66 +859,70 @@ const FILES = {
     restShotH: 130, restPop: 54, gridPad: '0 16px', links: false,
   }),
 
-  // D · Poster cards. Four permutations of the fan at 390, then the chosen
-  // shape at 834 and 1440. Card proportions and tilts are constrained by the
-  // four checks in poster() — read those before changing a number here.
+  // D · Poster cards. Proportions are lifted from the owner's PowerPoint
+  // (card 315x161): cardH 0.51*cardW, phoneW 0.53*cardW, popTop 0.47*cardH,
+  // popLeft 0.063*cardW, front phone inset 0.098*cardW, back phone dropped
+  // 0.05*cardH, gradient 0.67*cardH. Tilts there measure about -4 back and
+  // -2.5 front, with the back phone sitting lower.
   //
-  // A: two phones, a moderate fan.
+  // A: the reference, two phones.
   'PosterMobile.dc.html': poster({
     width: 390, height: H['PosterMobile.dc.html'], cols: 2, rows: 2,
-    cardW: 166, cardH: 170, tone: 'red',
-    tilts: [-10, -5], offsets: [0, 14], phoneW: 140, phoneTop: 8,
-    popTop: 44, popLeft: 18, radius: 16, copyBand: 72, fade: 28,
-    gap: 10, padTop: 48, padX: 16, padBottom: 16,
-    titleSize: 13, blurbSize: 10.5, pad: 11,
+    cardW: 166, cardH: 112, tone: 'red', gradientMode: 'artwork',
+    tilts: [-4, -2.5], offsets: [0, 16], phoneW: 108, phoneTop: 8, dropStep: 6,
+    popTop: 52, popLeft: 10, radius: 16, copyBand: 62, fade: 30,
+    gap: 10, padTop: 56, padX: 16, padBottom: 16,
+    titleSize: 13, blurbSize: 10.5, pad: 10,
     heroPad: '16px 20px 12px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
   }),
-  // B: two phones, a wider fan on a shorter card.
+  // B: the reference, three phones.
   'PosterMobileBand.dc.html': poster({
     width: 390, height: H['PosterMobileBand.dc.html'], cols: 2, rows: 2,
-    cardW: 166, cardH: 150, tone: 'red',
-    tilts: [-16, -6], offsets: [0, 14], phoneW: 124, phoneTop: 8,
-    popTop: 44, popLeft: 18, radius: 16, copyBand: 72, fade: 34,
-    gap: 10, padTop: 48, padX: 16, padBottom: 16,
-    titleSize: 13, blurbSize: 10.5, pad: 11,
+    cardW: 166, cardH: 112, tone: 'red', gradientMode: 'artwork',
+    tilts: [-5, -3.5, -2], offsets: [0, 12, 24], phoneW: 108, phoneTop: 8, dropStep: 5,
+    popTop: 52, popLeft: 10, radius: 16, copyBand: 62, fade: 30,
+    gap: 10, padTop: 56, padX: 16, padBottom: 16,
+    titleSize: 13, blurbSize: 10.5, pad: 10,
     heroPad: '16px 20px 12px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
   }),
-  // C: three phones, a moderate fan.
+  // C: the reference on a slightly taller card, for more visible screenshot.
   'PosterMobileC.dc.html': poster({
     width: 390, height: H['PosterMobileC.dc.html'], cols: 2, rows: 2,
-    cardW: 166, cardH: 160, tone: 'red',
-    tilts: [-14, -8, -2], offsets: [0, 12, 24], phoneW: 132, phoneTop: 8,
-    popTop: 44, popLeft: 18, radius: 16, copyBand: 72, fade: 32,
-    gap: 10, padTop: 48, padX: 16, padBottom: 16,
-    titleSize: 13, blurbSize: 10.5, pad: 11,
+    cardW: 166, cardH: 130, tone: 'red', gradientMode: 'artwork',
+    tilts: [-4, -2.5], offsets: [0, 16], phoneW: 122, phoneTop: 8, dropStep: 7,
+    popTop: 56, popLeft: 12, radius: 16, copyBand: 66, fade: 32,
+    gap: 10, padTop: 60, padX: 16, padBottom: 16,
+    titleSize: 13, blurbSize: 10.5, pad: 10,
     heroPad: '16px 20px 12px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
   }),
-  // D: three phones, the widest fan on the shortest card.
+  // D: the only shape where the gradient can stop at the card's own edge. That
+  // needs the artwork back inside the card before the gradient starts, which
+  // needs a much steeper fan — the cost of clipping the gradient to the card.
   'PosterMobileD.dc.html': poster({
     width: 390, height: H['PosterMobileD.dc.html'], cols: 2, rows: 2,
-    cardW: 166, cardH: 138, tone: 'red',
-    tilts: [-20, -11, -3], offsets: [0, 12, 24], phoneW: 122, phoneTop: 8,
-    popTop: 44, popLeft: 18, radius: 16, copyBand: 70, fade: 34,
-    gap: 10, padTop: 48, padX: 16, padBottom: 16,
-    titleSize: 13, blurbSize: 10.5, pad: 11,
+    cardW: 166, cardH: 130, tone: 'red', gradientMode: 'card',
+    tilts: [-11, -6], offsets: [0, 16], phoneW: 122, phoneTop: 8, dropStep: 7,
+    popTop: 56, popLeft: 14, radius: 16, copyBand: 66, fade: 32,
+    gap: 10, padTop: 60, padX: 16, padBottom: 16,
+    titleSize: 13, blurbSize: 10.5, pad: 10,
     heroPad: '16px 20px 12px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
   }),
   'PosterTablet.dc.html': poster({
     width: 834, height: H['PosterTablet.dc.html'], cols: 2, rows: 2,
-    cardW: 363, cardH: 260, tone: 'red',
-    tilts: [-10, -5], offsets: [0, 28], phoneW: 215, phoneTop: 12,
-    popTop: 70, popLeft: 26, radius: 18, copyBand: 108, fade: 52,
-    gap: 18, padTop: 76, padX: 32, padBottom: 32,
+    cardW: 363, cardH: 232, tone: 'red', gradientMode: 'artwork',
+    tilts: [-4, -2.5], offsets: [0, 34], phoneW: 224, phoneTop: 14, dropStep: 12,
+    popTop: 100, popLeft: 22, radius: 18, copyBand: 116, fade: 54,
+    gap: 18, padTop: 106, padX: 32, padBottom: 32,
     titleSize: 21, blurbSize: 14, pad: 18,
     heroPad: '22px 32px 16px', h1Size: 40, pSize: 15.5, maxW: 660, links: true,
   }),
   // Four of the mobile cards side by side, as asked — not a two-by-two.
   'PosterDesktop.dc.html': poster({
     width: 1440, height: H['PosterDesktop.dc.html'], cols: 4, rows: 1,
-    cardW: 282, cardH: 288, tone: 'red',
-    tilts: [-10, -5], offsets: [0, 26], phoneW: 234, phoneTop: 12,
-    popTop: 76, popLeft: 30, radius: 18, copyBand: 108, fade: 56,
-    gap: 20, padTop: 82, padX: 80, padBottom: 44,
+    cardW: 282, cardH: 178, tone: 'red', gradientMode: 'artwork',
+    tilts: [-4, -2.5], offsets: [0, 28], phoneW: 180, phoneTop: 12, dropStep: 9,
+    popTop: 80, popLeft: 18, radius: 18, copyBand: 100, fade: 48,
+    gap: 20, padTop: 90, padX: 80, padBottom: 70,
     titleSize: 21, blurbSize: 14, pad: 18,
     heroPad: '28px 80px 20px', h1Size: 46, pSize: 16, maxW: 620, links: true,
     splitHero: true,
@@ -937,10 +979,10 @@ const artboards = ROWS.flatMap((row, r) =>
 // Row one: four permutations of the fan, same page, same copy, so the only
 // thing that differs is the card. Row two: the chosen shape at the other widths.
 const POSTER = [
-  ['PosterMobile.dc.html', 390, 0, 0, 'A · two phones, moderate fan'],
-  ['PosterMobileBand.dc.html', 390, 490, 0, 'B · two phones, wide fan, shorter card'],
-  ['PosterMobileC.dc.html', 390, 980, 0, 'C · three phones, moderate fan'],
-  ['PosterMobileD.dc.html', 390, 1470, 0, 'D · three phones, widest fan, shortest card'],
+  ['PosterMobile.dc.html', 390, 0, 0, 'A · reference proportions, two phones'],
+  ['PosterMobileBand.dc.html', 390, 490, 0, 'B · reference proportions, three phones'],
+  ['PosterMobileC.dc.html', 390, 980, 0, 'C · taller card, bigger phones'],
+  ['PosterMobileD.dc.html', 390, 1470, 0, 'D · gradient stops at the card, steep fan'],
   ['PosterTablet.dc.html', 834, 0, 1120, 'Tablet 834 — permutation A'],
   ['PosterDesktop.dc.html', 1440, 934, 1120, 'Desktop 1440 — permutation A, four across'],
 ];
@@ -976,11 +1018,11 @@ const annotations = [
   },
   {
     id: 'd-note', page: 'page-2', x: 0, y: -300, w: 980,
-    text: 'D · Poster cards — four permutations of the fan, so pick one and we iterate on it.\nSame page and same copy in all four; only the card differs. A and B use two phones, C and D use three. Left to right the fan gets wider and the red card gets shorter.\nEach phone is a whole mobile viewport screenshot at its own proportions — nothing scaled or cropped — overhanging the card top and left, cut only by the card\'s bottom edge.',
+    text: 'D · Poster cards — proportions measured off your PowerPoint. Against a 315x161 red card: card height 0.51 of its width, phone 0.53 of the card width, top overhang 0.47 of the card height, left overhang 0.063 of the card width, front phone inset 0.098 of the card width. The back phone sits about 0.05 of the card height LOWER than the front and roughly 4 degrees counter-clockwise against the front\'s 2.5. Gradient covers about 0.67 of the card height.\nA and B are those numbers with two and three phones. C is the same on a slightly taller card, so more screenshot shows.',
   },
   {
     id: 'd-shape-note', page: 'page-2', x: 1030, y: -300, w: 940,
-    text: 'Why the tilt and the gradient are linked. The gradient is clipped to the card, so it has to be fully transparent below the height where the artwork starts hanging off the left — otherwise its hard left edge shows against artwork that keeps going.\nEach phone rotates about its own top-left corner, so its left edge walks rightwards as it descends and crosses back inside the card at popLeft / sin(tilt) below its top. A steeper tilt crosses sooner and leaves more room for the gradient; a shallow tilt with a wide overhang leaves none. That is why the wider fans (B and D) can also be the shortest cards.\nFour rules now fail the build rather than being caught by eye: the phone must outrun the card\'s bottom, leave at least 16% of the card bare on its right, clear the grid\'s top padding so row one does not land on the hero, and leave the gradient enough headroom.',
+    text: 'D is the odd one out, and it is worth a look before you choose.\nLast round you asked for the gradient to be clipped by the card outline. Your PowerPoint does the opposite: the red runs out to the artwork\'s own left edge, past the card, which is why there is no seam there. The two cannot both hold at a shallow tilt — clipping the gradient to the card means the artwork has to come back inside the card before the gradient starts, and at 4 degrees it never does.\nSo A, B and C follow the PowerPoint: the gradient carries the back phone\'s rotation and ends where the artwork ends. D clips it to the card instead, and pays for it with a much steeper fan (-11 and -6). Pick whichever edge you prefer.',
   },
   {
     id: 'd-row2-note', page: 'page-2', x: 0, y: 1010, w: 980,
