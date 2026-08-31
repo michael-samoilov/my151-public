@@ -99,6 +99,31 @@ describe('where each half sits', () => {
     }
   });
 
+  it('holds the placeholder ring clear of the seam', () => {
+    // A sprite may put its corner over the seam, because that corner is its
+    // own transparent margin. A drawn circle is ink the whole way round.
+    for (const w of WIDTHS) {
+      const sprite = slotSprite(w, H);
+      const seamY = (x: number) => SEAM_RIGHT * H + (H - SEAM_RIGHT * H) * (1 - x / w);
+      for (const [runs, half] of [[ACE, 'ace'], [PARTNER, 'partner']] as const) {
+        const p = placeHalf(w, H, sprite, runs, half);
+        const [cx, cy] = centre(w, H, sprite, runs, half);
+        // The gap from the sprite's centre to the seam, square to the seam.
+        const ay = SEAM_RIGHT * H;
+        const gap = Math.abs(-w * (cy * H - ay) - (H - ay) * (cx * w - w)) / Math.hypot(w, H - ay);
+        expect(p.ring / 2, `${half} ring at ${w}`).toBeLessThanOrEqual(gap);
+        expect(p.ring, `${half} ring at ${w} is still a ring`).toBeGreaterThan(sprite * 0.3);
+        expect(p.ring, `${half} ring at ${w}`).toBeLessThanOrEqual(sprite * 0.62 + 0.001);
+        expect(seamY(cx * w)).toBeGreaterThan(0); // the seam is where we think
+      }
+    }
+  });
+
+  it('leaves the ace ring at its full size, because its half has the room', () => {
+    const p = placeHalf(W, H, STANDARD_SPRITE, ACE, 'ace');
+    expect(p.ring).toBeCloseTo(STANDARD_SPRITE * 0.62, 5);
+  });
+
   it('widens the block around a long name and leaves the sprite where it is', () => {
     const long: Runs = { ...ACE, name: [110, 19.6] };
     const plain = placeHalf(W, H, STANDARD_SPRITE, ACE, 'ace');

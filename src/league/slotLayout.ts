@@ -95,12 +95,27 @@ export interface Placed {
   width: number;
   /** The sprite's edge length. */
   sprite: number;
+  /** The empty state's placeholder ring, across. */
+  ring: number;
 }
 
 /** The edge both halves' sprites get, in the slot's own px. */
 export function slotSprite(w: number, h: number): number {
   return Math.round(Math.min(SPRITE_OF_H * h, SPRITE_OF_W * w));
 }
+
+/**
+ * The placeholder ring, as a share of the sprite square it stands in.
+ *
+ * A sprite may cross the seam at its corner, because that corner is its own
+ * transparent margin. A drawn circle has no such margin — every part of it is
+ * ink — so the ring is held clear of the seam instead, and this is only its
+ * ceiling.
+ */
+const RING_OF_SPRITE = 0.62;
+
+/** How close the ring may come to the seam, in px. */
+const RING_CLEAR = 2;
 
 /** Hold a block inside the slot. One too big for it starts at the edge. */
 function fit(v: number, room: number): number {
@@ -128,5 +143,15 @@ export function placeHalf(
     top: fit(centre.y * h - sprite / 2 - above, h - total),
     width,
     sprite,
+    ring: Math.max(0, Math.min(
+      RING_OF_SPRITE * sprite,
+      2 * (seamGap(w, h, centre.x * w, centre.y * h) - RING_CLEAR),
+    )),
   };
+}
+
+/** How far a point sits from the seam, square to it. */
+function seamGap(w: number, h: number, x: number, y: number): number {
+  const ay = SEAM_RIGHT * h;
+  return Math.abs(-w * (y - ay) - (h - ay) * (x - w)) / Math.hypot(w, h - ay);
 }

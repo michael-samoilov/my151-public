@@ -652,9 +652,17 @@ function SlotHalf({
         className="flex shrink-0 items-center justify-center"
         style={{ width: size, height: size }}
       >
+        {/* Sized by the solver, not by a share of the square. The partner's
+            sprite may put its corner over the seam because that corner is
+            transparent; a drawn circle is ink all the way round, so it stops
+            short of the seam instead. */}
         <span
           className="rounded-full border border-dashed"
-          style={{ width: '62%', aspectRatio: '1', borderColor: 'var(--lg-dash)' }}
+          style={{
+            width: `${place?.ring ?? 0}px`,
+            aspectRatio: '1',
+            borderColor: 'var(--lg-dash)',
+          }}
         />
       </span>
       {/* Blank, but it still takes its line: that is what holds the heading

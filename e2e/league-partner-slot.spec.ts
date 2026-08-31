@@ -50,14 +50,16 @@ async function slotGeometry(page: Page) {
     const s = slot.getBoundingClientRect();
     const halves = ['slot-ace', 'slot-partner'].map((id) => {
       const half = slot.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
-      // An empty half draws a ring at 62% of the square the geometry gives
-      // it, so scale back to that square. Comparing a filled half's sprite
-      // against a null is how this spec once "measured" a 50px difference
-      // between two halves that were in fact the same size.
+      // An empty half draws a ring inside the square the geometry gives it,
+      // so the square is the ring's parent — not the ring, which is sized to
+      // clear the seam and is a different share of the square in each half.
+      // Comparing a filled half's sprite against a null is how this spec once
+      // "measured" a 50px difference between two halves that were in fact the
+      // same size.
       const img = half.querySelector('img');
-      const ring = half.querySelector<HTMLElement>('span > span.rounded-full');
+      const ring = half.querySelector<HTMLElement>('span > span.rounded-full')?.parentElement;
       const r = (img ?? ring)!.getBoundingClientRect();
-      const sprite = img ? r.width : r.width / 0.62;
+      const sprite = r.width;
       const box = {
         left: r.left + r.width / 2 - sprite / 2,
         top: r.top + r.height / 2 - sprite / 2,
@@ -66,9 +68,21 @@ async function slotGeometry(page: Page) {
       const runs = [...half.querySelectorAll<HTMLElement>('span, img')]
         .map((el) => el.getBoundingClientRect())
         .filter((v) => v.width > 1);
+      // The dashed ring, and how far past the seam it reaches. Negative is
+      // clear of it.
+      const disc = half.querySelector<HTMLElement>('span > span.rounded-full')?.getBoundingClientRect();
+      const ay = (Number(seam.getAttribute('y1')) / 100) * s.height;
+      const past = disc
+        ? disc.width / 2 - Math.abs(
+            -s.width * (disc.top + disc.height / 2 - s.top - ay)
+            - (s.height - ay) * (disc.left + disc.width / 2 - s.left - s.width),
+          ) / Math.hypot(s.width, s.height - ay)
+        : null;
       return {
         id,
         sprite,
+        ring: disc ? disc.width : null,
+        ringPastSeam: past,
         cx: (box.left + sprite / 2 - s.left) / s.width,
         cy: (box.top + sprite / 2 - s.top) / s.height,
         box: { left: box.left, top: box.top, right: box.left + sprite, bottom: box.top + sprite },
@@ -116,6 +130,19 @@ test.describe('the ace and partner slot', () => {
     // how much: a corner, not a bite out of either sprite.
     const area = halves[0].sprite ** 2;
     expect(overlap / area, 'the sprites overlap').toBeLessThanOrEqual(0.1);
+  });
+
+  test('the placeholder rings stop short of the seam', async ({ page }) => {
+    await blankLeague(page);
+    await openCard(page);
+    const { halves } = await slotGeometry(page);
+    for (const half of halves) {
+      // A sprite may cross the seam at its corner, which is its own
+      // transparent margin. A drawn circle is ink the whole way round, so it
+      // has no corner to spend and stops short instead.
+      expect(half.ring, `${half.id} draws a ring when empty`).not.toBeNull();
+      expect(half.ringPastSeam!, `${half.id} ring reaches past the seam`).toBeLessThan(0);
+    }
   });
 
   test('neither sprite is smaller than a team cell', async ({ page }) => {
