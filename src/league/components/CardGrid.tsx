@@ -38,7 +38,7 @@ import type { CardView } from '../useCardView';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyphs';
 import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
-import { SEAM_RIGHT, placeFree, placeHalf, sharedSprite, type Placed, type Runs } from '../slotLayout';
+import { SEAM_RIGHT, placeHalf, slotSprite, type Placed, type Runs } from '../slotLayout';
 import { useSlotLab } from '../slotLab';
 
 /**
@@ -728,12 +728,22 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
     const measure = () => {
       const box = el.getBoundingClientRect();
       const probe = el.querySelector<HTMLElement>('[data-slot-probe]');
-      if (!probe || box.width < 8 || box.height < 8) return;
-      const w = Math.round(box.width);
-      const h = Math.round(box.height);
+      // The layout box, not the box on the screen. The card scales itself
+      // with CSS `zoom`, so a child placed at `left: 6px` is six *layout*
+      // pixels in and the zoom shrinks that to four or five on the glass.
+      // Solving against the screen box and applying the answer in the layout
+      // box is a placement scaled toward the top-left corner by the zoom —
+      // 24% of the slot on a short phone, which is where the pair being
+      // "not in the centre of mass of its segment" came from.
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      if (!probe || w < 8 || h < 8 || box.width < 8) return;
+      // The runs are text, so they can only be measured on the screen. Take
+      // the zoom back out so they arrive in the same units as the slot.
+      const zoom = box.width / w;
       const run = (sel: string): [number, number] => {
         const r = probe.querySelector<HTMLElement>(sel)!.getBoundingClientRect();
-        return [r.width, r.height];
+        return [r.width / zoom, r.height / zoom];
       };
       const ace: Runs = { head: run('[data-probe="ace-head"]'), name: run('[data-probe="ace-name"]'), headFirst: true };
       const partner: Runs = { head: run('[data-probe="partner-head"]'), name: run('[data-probe="partner-name"]'), headFirst: false };
@@ -745,17 +755,13 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
       const key = [w, h, ace.head, ace.name, partner.head, partner.name].join('|');
       if (key === last) return;
       last = key;
-      // The lab picks the size by hand; the card solves for it.
+      // The lab picks the size by hand; the card takes the measured one.
       const lab = useSlotLab.getState();
-      const sprite = lab.enabled ? lab.sprite : sharedSprite(w, h, ace, partner);
-      // A hand-picked size is meant to be tried before it is known to fit, so
-      // the lab falls back to a corner rather than to nothing — a half that
-      // answers by disappearing cannot be dragged anywhere.
-      const a = placeHalf(w, h, sprite, ace, true)
-        ?? (lab.enabled ? placeFree(w, h, sprite, ace, true) : null);
-      const p = placeHalf(w, h, sprite, partner, false)
-        ?? (lab.enabled ? placeFree(w, h, sprite, partner, false) : null);
-      if (a && p) setLayout({ ace: a, partner: p });
+      const sprite = lab.enabled ? lab.sprite : slotSprite(w, h);
+      setLayout({
+        ace: placeHalf(w, h, sprite, ace, 'ace'),
+        partner: placeHalf(w, h, sprite, partner, 'partner'),
+      });
       // The lab reads offsets as fractions of the slot, so it needs the slot.
       // Setting it always costs one shallow compare; the store ignores a
       // repeat of the same size.

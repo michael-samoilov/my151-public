@@ -1,13 +1,13 @@
 import { create } from 'zustand';
+import { STANDARD_SPRITE } from './slotLayout';
 
 /**
  * The ace/partner slot, opened up so its two halves can be dragged by hand.
  *
- * The geometry in `slotLayout.ts` is solved rather than drawn, which is right
- * for keeping it correct across widths and wrong for deciding what "right"
- * looks like in the first place. This lets a person move each half on the
- * real card — with the real pickers, the real empty states — and read off
- * where they put it.
+ * This is where the numbers in `slotLayout.ts` came from, and how to change
+ * them. A solver decides what fits; it cannot decide what the slot should
+ * look like. So this lets a person move each half on the real card — with the
+ * real pickers, the real empty states — and read off where they put it.
  *
  * Offsets are **fractions of the slot**, not pixels. The slot is a different
  * size on every device, so a pixel nudge means nothing away from the screen
@@ -24,15 +24,8 @@ export interface SlotOffset {
   dy: number;
 }
 
-/**
- * The sprite the slot gave one Pokemon before it held two: `5.75rem`.
- *
- * The lab starts here rather than at whatever the solver's equal-size search
- * returns, because the search answers "what fits" and the question the lab is
- * for is "what should it be". Starting at the answer makes the lab agree with
- * the thing it is meant to replace.
- */
-export const STANDARD_SPRITE = 92;
+/** The size the card itself gives both halves, so the lab starts on it. */
+export { STANDARD_SPRITE };
 
 interface SlotLabState {
   enabled: boolean;

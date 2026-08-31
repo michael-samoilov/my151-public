@@ -4,21 +4,30 @@ import { blankLeague } from './support/leagueSeed';
 /**
  * The ace and the partner share the card's top-left slot, split by a diagonal.
  *
- * Three things that split has to keep true, and none of them is visible in the
- * markup — they are all geometry, so this spec measures the running card:
- * neither half's content crosses the seam by more than the 4px the design
- * allows, the empty state holds the filled state's layout so the heading does
- * not slide up against the placeholder ring, and both sprites stay at least a
- * team cell's size at every width the card is drawn at.
+ * Where each one sits was measured, not derived: `slot-lab.html` opens the two
+ * halves so they can be dragged on the real card, and `slotLayout.ts` holds
+ * the reading that came back. So what this spec checks is that the running
+ * card still lands on that reading — at every width, in the slot's own
+ * proportions — because two things quietly move it. The card scales itself
+ * with CSS `zoom`, so a placement measured on the screen box and applied in
+ * the layout box comes out pulled toward the top-left corner by a quarter.
+ * And the runs are text, so their size follows the font and the language.
  */
 
-// The design lets a run's far corner sit 4px past the seam. This is measured
-// on the *union* of a half's button and everything it paints, which is a
-// slightly larger box than the run rectangles the solver constrains: line
-// boxes are taller than their glyphs and a centred heading rounds outward. 8px
-// is that box, not a looser rule — it caught the 15.7px crossing that rem-only
-// sizing produced at 320px, which is the failure this exists for.
-const ALLOWANCE = 8;
+/** The sprite centres the lab was read at, as shares of the slot. */
+const CENTRES = {
+  'slot-ace': { x: 0.3001, y: 0.3241 },
+  'slot-partner': { x: 0.6881, y: 0.6134 },
+};
+
+/**
+ * How far a centre may drift from its reading.
+ *
+ * Wide enough for the pixel rounding in a slot measured at six different
+ * widths, and nowhere near wide enough to pass the zoom bug this is here to
+ * catch: that one put the ace at 23% of the slot instead of 30%.
+ */
+const DRIFT = 0.02;
 
 const openCard = async (page: Page) => {
   await page.goto('/pokemon-league-builder');
@@ -28,81 +37,91 @@ const openCard = async (page: Page) => {
   await page.waitForTimeout(600);
 };
 
-/** How far each half reaches past the seam, and out of the slot. */
+/** Each half's sprite square, in shares of the slot, and what it paints. */
 async function slotGeometry(page: Page) {
   return page.evaluate(() => {
     const seam = document.querySelector('svg line[vector-effect="non-scaling-stroke"]')!;
     const slot = seam.closest('div')!;
     const s = slot.getBoundingClientRect();
-    // The seam's own endpoints, in the slot's coordinates. Reading them off
-    // the element rather than restating them keeps the check honest if the
-    // seam moves.
-    const y1 = (Number(seam.getAttribute('y1')) / 100) * s.height;
-    const y2 = (Number(seam.getAttribute('y2')) / 100) * s.height;
-    const x1 = s.width;
-    const x2 = 0;
-    const len = Math.hypot(x2 - x1, y2 - y1);
-    const side = (px: number, py: number) =>
-      ((x2 - x1) * (py - y1) - (y2 - y1) * (px - x1)) / len;
-    return ['slot-ace', 'slot-partner'].map((id) => {
+    const halves = ['slot-ace', 'slot-partner'].map((id) => {
       const half = slot.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
-      // Each painted run on its own — the heading, the sprite, the name —
-      // and not the block that holds them. That block's binding corner is
-      // empty: the heading is wide and at the top, the name narrow and
-      // centred at the bottom, so its bottom-right is blank space. Measuring
-      // the block's union asks the geometry to keep clear of the seam with
-      // nothing in it, which is the constraint the solver was deliberately
-      // freed from. A heading set wider than its button still counts, because
-      // it is one of the runs.
-      const runs = [...half.querySelectorAll<HTMLElement>('span, img')]
-        .filter((el) => el.getBoundingClientRect().width > 1)
-        .map((el) => el.getBoundingClientRect());
-      const d = runs.flatMap((r) => ([
-        [r.left - s.left, r.top - s.top], [r.right - s.left, r.top - s.top],
-        [r.left - s.left, r.bottom - s.top], [r.right - s.left, r.bottom - s.top],
-      ] as [number, number][]).map(([px, py]) => side(px, py)));
-      const r = {
-        left: Math.min(...runs.map((v) => v.left)),
-        right: Math.max(...runs.map((v) => v.right)),
-        top: Math.min(...runs.map((v) => v.top)),
-        bottom: Math.max(...runs.map((v) => v.bottom)),
-      };
-      // An empty half draws a ring at 62% of the square the geometry gives it,
-      // so scale back to that square. Comparing a filled half's sprite against
-      // a null is how this spec once "measured" a 50px difference between two
-      // halves that were in fact the same size.
+      // An empty half draws a ring at 62% of the square the geometry gives
+      // it, so scale back to that square. Comparing a filled half's sprite
+      // against a null is how this spec once "measured" a 50px difference
+      // between two halves that were in fact the same size.
       const img = half.querySelector('img');
       const ring = half.querySelector<HTMLElement>('span > span.rounded-full');
-      const square = img
-        ? img.getBoundingClientRect().width
-        : ring ? ring.getBoundingClientRect().width / 0.62 : null;
+      const r = (img ?? ring)!.getBoundingClientRect();
+      const sprite = img ? r.width : r.width / 0.62;
+      const box = {
+        left: r.left + r.width / 2 - sprite / 2,
+        top: r.top + r.height / 2 - sprite / 2,
+      };
+      // Every run the half paints, so nothing can leave the slot unnoticed.
+      const runs = [...half.querySelectorAll<HTMLElement>('span, img')]
+        .map((el) => el.getBoundingClientRect())
+        .filter((v) => v.width > 1);
       return {
         id,
-        sprite: square,
-        pastSeam: Math.max(0, Math.min(Math.max(...d), -Math.min(...d))),
+        sprite,
+        cx: (box.left + sprite / 2 - s.left) / s.width,
+        cy: (box.top + sprite / 2 - s.top) / s.height,
+        box: { left: box.left, top: box.top, right: box.left + sprite, bottom: box.top + sprite },
         outOfSlot: Math.max(
-          0, s.left - r.left, r.right - s.right, s.top - r.top, r.bottom - s.bottom,
+          0,
+          ...runs.flatMap((v) => [s.left - v.left, v.right - s.right, s.top - v.top, v.bottom - s.bottom]),
         ),
       };
     });
+    const [ace, partner] = halves;
+    return {
+      halves,
+      // The slot's own size, so a share can be read back as pixels.
+      slot: { width: s.width, height: s.height },
+      // A team cell, which is the sprite the pair is judged against.
+      team: document.querySelector('[data-testid="card-cell-1-1"] img')?.getBoundingClientRect().width ?? null,
+      // The two sprites are allowed to cross at the corner, where a sprite
+      // carries its transparent margin. How much they cross is the number.
+      overlap:
+        Math.max(0, Math.min(ace.box.right, partner.box.right) - Math.max(ace.box.left, partner.box.left)) *
+        Math.max(0, Math.min(ace.box.bottom, partner.box.bottom) - Math.max(ace.box.top, partner.box.top)),
+    };
   });
 }
 
 test.describe('the ace and partner slot', () => {
-  test('neither half crosses the seam, at any width the card is drawn at', async ({ page }, testInfo) => {
-    // Known, open: on the desktop project the slot is short and wide
-    // (199 x 167 against the phone's 154 x 197) and the partner's block lands
-    // 18.5px past the seam. The solver run offline against that box and those
-    // measured text runs answers 3.5px, so the live inputs differ from what
-    // the hook thinks it measured — not yet found. Mobile and narrow are
-    // clean, which is why this is skipped rather than loosened: loosening the
-    // allowance would stop it catching the 15.7px crossing it was written for.
-    test.skip(testInfo.project.name === 'desktop', 'open defect: partner 18.5px past the seam');
+  test('both halves sit where the lab put them, at any width', async ({ page }) => {
     await blankLeague(page);
     await openCard(page);
-    for (const half of await slotGeometry(page)) {
-      expect(half.pastSeam, `${half.id} reaches past the seam`).toBeLessThanOrEqual(ALLOWANCE);
+    const { halves, slot } = await slotGeometry(page);
+    for (const half of halves) {
+      const want = CENTRES[half.id as keyof typeof CENTRES];
+      const where = `${half.id} in a slot ${slot.width.toFixed(0)}px wide`;
+      expect(Math.abs(half.cx - want.x), `${where}, across`).toBeLessThanOrEqual(DRIFT);
+      expect(Math.abs(half.cy - want.y), `${where}, down`).toBeLessThanOrEqual(DRIFT);
       expect(half.outOfSlot, `${half.id} paints outside the slot`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test('the two sprites cross only at the corner', async ({ page }) => {
+    await blankLeague(page);
+    await openCard(page);
+    const { halves, overlap } = await slotGeometry(page);
+    // "It is fine if they cross a tiny bit" is the design, so the check is on
+    // how much: a corner, not a bite out of either sprite.
+    const area = halves[0].sprite ** 2;
+    expect(overlap / area, 'the sprites overlap').toBeLessThanOrEqual(0.1);
+  });
+
+  test('neither sprite is smaller than a team cell', async ({ page }) => {
+    await openCard(page);
+    const { halves, team } = await slotGeometry(page);
+    expect(team, 'the seeded card has a team cell to compare against').not.toBeNull();
+    for (const half of halves) {
+      // The complaint this replaced a fitting solver over: the two halves had
+      // been sized to what could clear the seam, which put the card's most
+      // important sprite below the size of one of its team members.
+      expect(half.sprite, `${half.id} against a team cell`).toBeGreaterThanOrEqual(team! - 1);
     }
   });
 
@@ -174,15 +193,12 @@ test.describe('the ace and partner slot', () => {
 
   test('both halves get the same sprite', async ({ page }) => {
     await openCard(page);
-    const halves = await slotGeometry(page);
+    const { halves } = await slotGeometry(page);
     const ace = halves.find((h) => h.id === 'slot-ace')!;
     const partner = halves.find((h) => h.id === 'slot-partner')!;
-    expect(ace.sprite, 'the ace has a sprite on the seeded card').not.toBeNull();
-    // Equal is the invariant, not a floor. The partner's wedge is the smaller
-    // partition, so it sets the size for both — and holding the pair to a
-    // team cell as well is not something the geometry can promise at every
-    // width the card is drawn at. What it can promise is that neither half
-    // is the lesser one.
-    expect(Math.abs(ace.sprite! - partner.sprite!), 'the two match').toBeLessThanOrEqual(1);
+    // Equal is the invariant. The partner's wedge is the smaller partition,
+    // so sizing each half to its own room made the partner read as the lesser
+    // one; the pair is one size and the slot's width sets it.
+    expect(Math.abs(ace.sprite - partner.sprite), 'the two match').toBeLessThanOrEqual(1);
   });
 });
