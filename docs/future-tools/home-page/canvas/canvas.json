@@ -146,17 +146,17 @@
       "id": "d-note",
       "page": "page-2",
       "x": 0,
-      "y": -280,
+      "y": -260,
       "w": 940,
-      "text": "D · Poster cards. The card is described once as ratios of its own width and scaled per breakpoint, so desktop is the mobile card enlarged rather than a differently proportioned one — that is what removes the extra red to the right of the screenshots on desktop.\nScreenshots are re-cropped to a real phone viewport, 390x844, so they read tall and narrow instead of squat.\nThe fourth card takes the app's own lucide Hammer, in white, sized to sit wholly inside the red."
+      "text": "D · Poster cards. The card is described once, in cardFrom(), as ratios of its own width — and that width now comes from the FRAME rather than being declared, so the numbers the build checks reason about are the numbers that render. A breakpoint only sets the page margin and the gutter.\nThat is what let the cards grow into the centre rail: the gutter used to carry the 34px shadow bleed as well as the gap, and it no longer does. The clip still reaches that far, so no shadow is sliced; a soft shadow grazing a neighbour is invisible.\nThe row gap is now the overhang plus a little, so the second row sits close under the first without its screenshots reaching the cards above."
     },
     {
-      "id": "d-type-note",
+      "id": "d-page-note",
       "page": "page-2",
       "x": 990,
-      "y": -280,
+      "y": -260,
       "w": 940,
-      "text": "Two numbers that are at their ceiling, so you know which way they move.\nThe LEFT OVERHANG is small — about 10px at 390. The gradient stops at the card's left edge, so it has to finish before the artwork starts hanging off to the left, and a wider overhang pushes that crossing lower and squeezes the gradient. Wider overhang means a steeper fan or less copy.\nThe CLEAR BAND on desktop is 29%, not the 33% asked for. At 900px the space below the header is 850px; the hero and the card block together need about 400px, which leaves 225px each side. 33% would need the content under 289px — reachable by dropping the second hero paragraph or shrinking the cards toward mobile size."
+      "text": "Page changes: the app header drops the tool links, since the cards are the navigation. The dex builder's own footer is on the bottom of every width, copied from PageFooter.tsx.\nThe fourth card has no gradient — there is no screenshot under the copy to rescue, and the wash only muddied the mark. Its Hammer is the app's own lucide icon, white, higher and smaller.\nOn desktop the card rail spans exactly the hero's measure: the left card lines up with the h1 and the right card with the sub-text's right edge, because both use the same 80px margin. The sub-text column is 700px wide so its last line holds without wrapping.\nThe desktop clear band is 24%: the hero, the card block and the footer together leave that much above and below."
     }
   ],
   "pages": [

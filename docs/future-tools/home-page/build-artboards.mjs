@@ -233,26 +233,7 @@ function card({ tool, shotH, pop, tilt = 0, titleSize, blurbSize, blurb, pad, ga
 </a>`;
 }
 
-function header({ width, links }) {
-  const nav = links
-    ? `<nav style="display: flex; align-items: center; gap: 4px;">
-      ${TOOLS.slice(0, 3)
-        .map(
-          (t, i) =>
-            `<a href="${t.slug}" style="padding: 6px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; color: ${
-              i === 0 ? C.fg : C.mut
-            }; text-decoration: none;">${
-              ['Pokédex builder', 'League builder', 'Favorites'][i]
-            }</a>`,
-        )
-        .join('\n      ')}
-      <span style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;">${globe(
-        18,
-      )}</span>
-    </nav>`
-    : `<span style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">${globe(
-        20,
-      )}</span>`;
+function header({ width }) {
   return `<header style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: ${
     width < 500 ? '4px 12px' : '8px 24px'
   }; background: ${C.card}; border-bottom: 1px solid ${C.bd};">
@@ -261,8 +242,42 @@ function header({ width, links }) {
     }px; font-weight: 800; letter-spacing: -0.025em;"><span style="color: ${
       C.pri
     };">my151</span><span style="color: ${C.fg};">.app</span></span>
-    ${nav}
+    <span style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px;">${globe(
+      width < 500 ? 20 : 18,
+    )}</span>
   </header>`;
+}
+
+/** The dex builder's own page footer, reproduced from PageFooter.tsx. */
+function pageFooter(width) {
+  const k = width < 500 ? 1 : 1.15;
+  return `<footer style="display: flex; flex-direction: column; align-items: center; gap: ${Math.round(
+    4 * k,
+  )}px; padding-bottom: ${Math.round(14 * k)}px;">
+    <div style="width: 85%; border-top: 1px solid ${C.bd}; margin-bottom: ${Math.round(
+      10 * k,
+    )}px;"></div>
+    <svg width="${Math.round(24 * k)}" height="${Math.round(
+      24 * k,
+    )}" viewBox="0 0 24 24" style="color: rgba(115, 115, 115, 0.4);">
+      <circle cx="12" cy="12" r="11" fill="none" stroke="currentColor" stroke-width="1.5"></circle>
+      <line x1="1" y1="12" x2="8.5" y2="12" stroke="currentColor" stroke-width="1.5"></line>
+      <line x1="15.5" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="1.5"></line>
+      <circle cx="12" cy="12" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"></circle>
+      <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
+    </svg>
+    <span style="font-size: ${(
+      9 * k
+    ).toFixed(1)}px; color: rgba(115, 115, 115, 0.7); text-align: center;">v260830 · Pokémon © 1995–2026 Nintendo / Game Freak / Creatures / TPC</span>
+    <span style="font-size: ${(
+      8 * k
+    ).toFixed(1)}px; color: rgba(115, 115, 115, 0.5);">Not affiliated with or endorsed by Nintendo.</span>
+    <span style="margin-top: ${Math.round(4 * k)}px; font-size: ${(
+      9 * k
+    ).toFixed(
+      1,
+    )}px; color: rgba(115, 115, 115, 0.7); text-decoration: underline; text-underline-offset: 2px;">Report a problem</span>
+  </footer>`;
 }
 
 function hero({ align, h1Size, pSize, maxW, pad, showNote = true }) {
@@ -348,7 +363,7 @@ function sketch({ width, minHeight, cols, gridPad, gap, shotH, pop, titleSize, b
   return page({
     width,
     minHeight,
-    body: `${header({ width, links })}
+    body: `${header({ width })}
 ${hero({ align: 'center', h1Size, pSize, maxW, pad: heroPad })}
 <div style="display: grid; grid-template-columns: repeat(${cols}, minmax(0, 1fr)); gap: ${gap}px; padding: ${gridPad}; box-sizing: border-box;">
 ${cards}
@@ -378,7 +393,7 @@ function marquee({ width, minHeight, cols, gridPad, gap, shotH, pop, titleSize, 
   return page({
     width,
     minHeight,
-    body: `${header({ width, links })}
+    body: `${header({ width })}
 <div style="display: flex; flex-direction: column; gap: 4px; padding: ${heroPad};">
 ${hero({ align: 'left', h1Size, pSize, maxW, pad: '0' })}
 </div>
@@ -460,7 +475,7 @@ function featured({ width, minHeight, split, heroPad, h1Size, pSize, maxW, featS
   return page({
     width,
     minHeight,
-    body: `${header({ width, links })}
+    body: `${header({ width })}
 ${hero({ align: 'left', h1Size, pSize, maxW, pad: heroPad, showNote: false })}
 <div style="padding: ${gridPad}; box-sizing: border-box;">
 ${feature}
@@ -580,11 +595,10 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, c
   // against the copy below. It borrows part of the overhang the other cards
   // spend on artwork, which keeps the four reading as one row; confined to the
   // card alone it would be squeezed between the top edge and the gradient.
-  const markBox = cardH - copyBand;
   const mark = `<div style="position: absolute; top: 0; left: 0; right: 0; height: ${
-    cardH - Math.round(copyBand * 0.55)
+    cardH - copyBand
   }px; display: flex; align-items: center; justify-content: center;">${hammer(
-    Math.round(Math.max(markBox, cardH * 0.42) * 0.92),
+    Math.round(cardH * 0.34),
     '#ffffff',
   )}</div>`;
 
@@ -602,13 +616,19 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, c
   </div>`
       : mark
   }
-  <div style="position: absolute; left: 0; right: 0; bottom: 0; height: ${
-    copyBand + fade
-  }px; border-radius: 0 0 ${radius - 1}px ${
-    radius - 1
-  }px; background: linear-gradient(to top, rgb(${wash}) 0, rgb(${wash}) ${Math.round(
-    copyBand * 0.55,
-  )}px, rgba(${wash}, 0.92) ${copyBand}px, rgba(${wash}, 0) ${copyBand + fade}px);"></div>
+  ${
+    tool.shot
+      ? `<div style="position: absolute; left: 0; right: 0; bottom: 0; height: ${
+          copyBand + fade
+        }px; border-radius: 0 0 ${radius - 1}px ${
+          radius - 1
+        }px; background: linear-gradient(to top, rgb(${wash}) 0, rgb(${wash}) ${Math.round(
+          copyBand * 0.55,
+        )}px, rgba(${wash}, 0.92) ${copyBand}px, rgba(${wash}, 0) ${
+          copyBand + fade
+        }px);"></div>`
+      : ''
+  }
   <div style="position: absolute; left: ${pad}px; right: ${pad}px; bottom: ${pad}px; display: flex; flex-direction: column; gap: 3px;">
     <h2 style="margin: 0; font-size: ${titleSize}px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; white-space: nowrap; color: ${ink};">${
       POSTER_TITLE[tool.key]
@@ -632,10 +652,11 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, c
  * in poster(). A wider overhang pushes that crossing lower and squeezes the
  * gradient, so this ratio is near its ceiling.
  */
-function cardScale(k) {
+function cardFrom(cardW) {
+  const k = cardW / 166;
   const r = (v) => Math.round(v * k);
   return {
-    cardW: r(166),
+    cardW,
     cardH: r(104),
     tilts: [-8, -3],
     offsets: [0, r(16)],
@@ -645,10 +666,8 @@ function cardScale(k) {
     popTop: r(56),
     popLeft: Math.max(6, Math.round(9.6 * k)),
     radius: r(14),
-    tone: 'red',
     copyBand: r(52),
     fade: r(26),
-    padTop: r(56) + 34,
     titleSize: +(8.4 * k).toFixed(1),
     blurbSize: +(8 * k).toFixed(1),
     pad: r(7),
@@ -660,7 +679,17 @@ function cardScale(k) {
  * hero. Row heights are fixed, not `1fr`, so the card height the checks below
  * reason about is the height that actually renders; the hero takes the slack.
  */
-function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phoneW, phoneTop, dropStep, popTop, popLeft, radius, tone, copyBand, fade, gap, padTop, padX, padBottom, titleSize, blurbSize, pad, bleed = 34, clearFraction = 0, heroPad, h1Size, pSize, maxW, links, splitHero }) {
+function poster({ width, height, cols, rows, gap, padX, padBottom, bleed = 34, clearFraction = 0, heroPad, h1Size, pSize, maxW, noteW, splitHero }) {
+  // The card takes its width from the frame, so the numbers the checks below
+  // reason about are the ones that render. The gutter is a plain gap: an
+  // artwork overhang of ~10-30px sits inside it without reaching the neighbour.
+  const cardW = Math.floor((width - 2 * padX - (cols - 1) * gap) / cols);
+  const {
+    cardH, tilts, offsets, phoneW, phoneTop, dropStep, popTop, popLeft,
+    radius, copyBand, fade, titleSize, blurbSize, pad,
+  } = cardFrom(cardW);
+  const tone = 'red';
+  const padTop = popTop + 10;
   // Four ways this card silently stops working. Each is worth failing the build
   // for, because each one only shows up as "the design looks slightly off".
   //
@@ -676,11 +705,9 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
   }
   // 2. The first row's overhang reaches `popTop` above the grid, so anything
   //    less than that in the grid's top padding puts artwork on the hero.
-  if (padTop < popTop + bleed) {
+  if (padTop < popTop) {
     throw new Error(
-      `grid top padding ${padTop} is under the ${
-        popTop + bleed
-      } overhang plus shadow bleed: the first row's artwork lands on the hero`,
+      `grid top padding ${padTop} is under the ${popTop} overhang: the first row's artwork lands on the hero`,
     );
   }
   // 3. The gradient stops at the card's left edge, so its top has to sit BELOW
@@ -717,12 +744,12 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
   }
 
   const heroBody = splitHero
-    ? `<section style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-start; padding: ${heroPad};">
+    ? `<section style="flex-shrink: 0; display: flex; flex-direction: column; padding: ${heroPad};">
     <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 40px;">
       <h1 style="margin: 0; max-width: ${maxW}px; font-size: ${h1Size}px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; color: ${
         C.fg
       };">${HERO.h1}</h1>
-      <div style="display: flex; flex-direction: column; gap: 10px; max-width: 520px;">
+      <div style="display: flex; flex-direction: column; gap: 10px; width: ${noteW}px; flex-shrink: 0;">
         <p style="margin: 0; font-size: ${pSize}px; line-height: 1.5; color: ${
           C.sub
         }; text-wrap: pretty;">${HERO.p}</p>
@@ -732,7 +759,7 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
       </div>
     </div>
   </section>`
-    : `<section style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: ${heroPad};">
+    : `<section style="flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: ${heroPad};">
     <h1 style="margin: 0; max-width: ${maxW}px; font-size: ${h1Size}px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.08; color: ${
       C.fg
     }; text-wrap: balance;">${HERO.h1}</h1>
@@ -750,9 +777,11 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
   // band is computed in px from the frame height instead.
   const clear = Math.round((height - (width < 500 ? 44 : 50)) * clearFraction);
   const bandOpen = clearFraction
-    ? `<div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; padding: ${clear}px 0;">`
+    ? `<div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; padding: ${clear}px 0 ${Math.round(
+        clear * 0.55,
+      )}px;">`
     : '';
-  const bandClose = clearFraction ? '</div>' : '';
+  const bandClose = clearFraction ? `</div>\n${pageFooter(width)}` : '';
 
   const cards = TOOLS.map((t) =>
     posterCard({
@@ -797,15 +826,14 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
 <div style="width: ${width}px; height: ${height}px; box-sizing: border-box; background: ${
     C.bg
   }; color: ${C.fg}; display: flex; flex-direction: column; overflow: hidden;">
-${header({ width, links })}
+${header({ width })}
 ${bandOpen}
 ${heroBody}
-<div style="flex-shrink: 0; display: grid; grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, ${cardH}px); column-gap: ${
-    popLeft + bleed + gap
-  }px; row-gap: ${popTop + bleed + gap}px; padding: ${padTop}px ${padX}px ${padBottom}px; box-sizing: border-box;">
+<div style="flex-shrink: 0; display: grid; grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, ${cardH}px); column-gap: ${gap}px; row-gap: ${popTop + Math.round(gap * 0.6)}px; padding: ${padTop}px ${padX}px ${padBottom}px; box-sizing: border-box;">
 ${cards}
 </div>
 ${bandClose}
+${clearFraction ? '' : `<div style="flex-grow: 1; min-height: 0;"></div>\n${pageFooter(width)}`}
 </div>
 </x-dc>
 </body>
@@ -895,29 +923,28 @@ const FILES = {
     restShotH: 130, restPop: 54, gridPad: '0 16px', links: false,
   }),
 
-  // D · Poster cards. One card, described once as ratios of its own width and
-  // scaled per breakpoint, so desktop is the mobile card enlarged rather than a
-  // differently proportioned one. `cardScale(k)` does the scaling; only the page
-  // frame around it changes.
+  // D · Poster cards. The card is described once, in cardFrom(), as ratios of
+  // its own width — and that width now comes from the frame, so the numbers the
+  // checks reason about are the numbers that render. A breakpoint only sets the
+  // page margins and the gutter.
   'PosterMobile.dc.html': poster({
     width: 390, height: H['PosterMobile.dc.html'], cols: 2, rows: 2,
-    ...cardScale(1),
-    gap: 10, padX: 16, padBottom: 16,
-    heroPad: '16px 20px 12px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
+    gap: 14, padX: 16, padBottom: 0,
+    heroPad: '20px 20px 22px', h1Size: 27, pSize: 12.5, maxW: 350,
   }),
   'PosterTablet.dc.html': poster({
     width: 834, height: H['PosterTablet.dc.html'], cols: 2, rows: 2,
-    ...cardScale(1.9),
-    gap: 18, padX: 66, padBottom: 32,
-    heroPad: '22px 32px 16px', h1Size: 40, pSize: 15.5, maxW: 660, links: true,
+    gap: 28, padX: 44, padBottom: 0,
+    heroPad: '20px 44px 12px', h1Size: 36, pSize: 14.5, maxW: 620,
   }),
-  // Four of the mobile cards side by side, as asked — not a two-by-two.
+  // Four across, with the rail spanning exactly the hero's own measure: the
+  // left card lines up with the h1, the right card with the sub-text's right
+  // edge, because both use the same horizontal margin.
   'PosterDesktop.dc.html': poster({
     width: 1440, height: H['PosterDesktop.dc.html'], cols: 4, rows: 1,
-    ...cardScale(1.35),
-    gap: 20, padX: 170, padBottom: 0,
-    heroPad: '0 80px', h1Size: 42, pSize: 15.5, maxW: 660, links: true,
-    splitHero: true, clearFraction: 0.29,
+    gap: 26, padX: 80, padBottom: 0,
+    heroPad: '0 80px', h1Size: 42, pSize: 15.5, maxW: 520, noteW: 700,
+    splitHero: true, clearFraction: 0.24,
   }),
 };
 
@@ -1006,12 +1033,12 @@ const annotations = [
     text: 'SEO structure, same in all three:\n· h1 carries "make your own Pokédex" plus region and league.\n· Each card is an <h2> that exactly matches its slug: /custom-pokedex-builder, /pokemon-league-builder, /favorite-pokemon-picker.\n· The footer repeats the four links as anchor text.\nWatch out: making / a router moves the dex builder off the URL that ranks today (~pos 7.8 for "pokedex builder").',
   },
   {
-    id: 'd-note', page: 'page-2', x: 0, y: -280, w: 940,
-    text: 'D · Poster cards. The card is described once as ratios of its own width and scaled per breakpoint, so desktop is the mobile card enlarged rather than a differently proportioned one — that is what removes the extra red to the right of the screenshots on desktop.\nScreenshots are re-cropped to a real phone viewport, 390x844, so they read tall and narrow instead of squat.\nThe fourth card takes the app\'s own lucide Hammer, in white, sized to sit wholly inside the red.',
+    id: 'd-note', page: 'page-2', x: 0, y: -260, w: 940,
+    text: 'D · Poster cards. The card is described once, in cardFrom(), as ratios of its own width — and that width now comes from the FRAME rather than being declared, so the numbers the build checks reason about are the numbers that render. A breakpoint only sets the page margin and the gutter.\nThat is what let the cards grow into the centre rail: the gutter used to carry the 34px shadow bleed as well as the gap, and it no longer does. The clip still reaches that far, so no shadow is sliced; a soft shadow grazing a neighbour is invisible.\nThe row gap is now the overhang plus a little, so the second row sits close under the first without its screenshots reaching the cards above.',
   },
   {
-    id: 'd-type-note', page: 'page-2', x: 990, y: -280, w: 940,
-    text: 'Two numbers that are at their ceiling, so you know which way they move.\nThe LEFT OVERHANG is small — about 10px at 390. The gradient stops at the card\'s left edge, so it has to finish before the artwork starts hanging off to the left, and a wider overhang pushes that crossing lower and squeezes the gradient. Wider overhang means a steeper fan or less copy.\nThe CLEAR BAND on desktop is 29%, not the 33% asked for. At 900px the space below the header is 850px; the hero and the card block together need about 400px, which leaves 225px each side. 33% would need the content under 289px — reachable by dropping the second hero paragraph or shrinking the cards toward mobile size.',
+    id: 'd-page-note', page: 'page-2', x: 990, y: -260, w: 940,
+    text: 'Page changes: the app header drops the tool links, since the cards are the navigation. The dex builder\'s own footer is on the bottom of every width, copied from PageFooter.tsx.\nThe fourth card has no gradient — there is no screenshot under the copy to rescue, and the wash only muddied the mark. Its Hammer is the app\'s own lucide icon, white, higher and smaller.\nOn desktop the card rail spans exactly the hero\'s measure: the left card lines up with the h1 and the right card with the sub-text\'s right edge, because both use the same 80px margin. The sub-text column is 700px wide so its last line holds without wrapping.\nThe desktop clear band is 24%: the hero, the card block and the footer together leave that much above and below.',
   },
 ];
 
