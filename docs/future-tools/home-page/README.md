@@ -15,6 +15,11 @@ node docs/future-tools/home-page/sweep.mjs --mutate all # prove the sweep can fa
 node docs/future-tools/home-page/sweep.mjs --floor      # shortest viewport that fits
 ```
 
+The artboards are taller than the viewport on purpose. `H` is the fold — the
+viewport the page is composed for — and the footer sits below it, so the canvas
+shows both. The generator's anchors are the shipped page's own numbers, so the
+canvas and the app agree; change one and change the other.
+
 The generator throws rather than rendering a broken card. Four rules:
 
 1. A screenshot must run past the card's bottom, or the effect collapses into
@@ -28,6 +33,11 @@ The generator throws rather than rendering a broken card. Four rules:
 ## The page
 
 `src/components/home/HomePage.tsx`, reached at `?home`.
+
+The header, hero and card grid fill one viewport inside a `min-h-dvh` block,
+and the footer comes after it. What a visitor sees before scrolling is exactly
+that block, at every width. `min-h` rather than `h`, so a viewport too short for
+the content pushes the footer further down instead of crushing the grid.
 
 **It is in review, not launched.** It has no URL of its own, so nothing links
 to it and no crawler finds it, and `main.tsx` adds `noindex, nofollow` when the
@@ -83,7 +93,8 @@ anything that does will hit this.
 npx playwright test e2e/sweeps/home-sweep.spec.ts --project=desktop
 ```
 
-It checks horizontal overflow, card-on-card overlap, one-line headings, blurb
+It checks horizontal overflow, the footer sitting below the fold,
+card-on-card overlap, one-line headings, blurb
 clipping, the bare strip at each card's right edge, artwork landing on the card
 above, the build mark's air above and below, hero copy inside the frame, and
 that `--art` resolves to what its band intends — that last one because the
