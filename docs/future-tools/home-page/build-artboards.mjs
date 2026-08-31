@@ -768,27 +768,27 @@ function poster({ width, height, cols, rows, gap, padX, padBottom, bleed = 34, c
     <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 40px;">
       <h1 style="margin: 0; max-width: ${maxW}px; font-size: ${h1Size}px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; color: ${
         C.fg
-      };">${HERO.h1}</h1>
+      }; text-wrap: pretty;">${HERO.h1}</h1>
       <div style="display: flex; flex-direction: column; gap: 10px; width: ${noteW}px; flex-shrink: 0;">
         <p style="margin: 0; font-size: ${pSize}px; line-height: 1.5; color: ${
           C.sub
         }; text-wrap: pretty;">${HERO.p}</p>
         <p style="margin: 0; font-size: ${pSize - 1}px; line-height: 1.5; color: ${
           C.mut
-        };">${HERO.note}</p>
+        }; text-wrap: pretty;">${HERO.note}</p>
       </div>
     </div>
   </section>`
     : `<section style="flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: ${heroPad};">
     <h1 style="margin: 0; max-width: ${maxW}px; font-size: ${h1Size}px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.08; color: ${
       C.fg
-    }; text-wrap: balance;">${HERO.h1}</h1>
+    }; text-wrap: pretty;">${HERO.h1}</h1>
     <p style="margin: 0; max-width: ${maxW}px; font-size: ${pSize}px; line-height: 1.45; color: ${
       C.sub
     }; text-wrap: pretty;">${HERO.p}</p>
     <p style="margin: 0; max-width: ${maxW}px; font-size: ${
       pSize - 1
-    }px; line-height: 1.45; color: ${C.mut};">${HERO.note}</p>
+    }px; line-height: 1.45; color: ${C.mut}; text-wrap: pretty;">${HERO.note}</p>
   </section>`;
 
   // A fifth of the space below the app header stays clear at the top and the
@@ -846,7 +846,7 @@ function poster({ width, height, cols, rows, gap, padX, padBottom, bleed = 34, c
     body { margin: 0; font-family: ${FONT}; -webkit-font-smoothing: antialiased; }
     a { color: ${C.pri}; text-decoration: none; }
     a:hover { color: #b91c1c; }
-    h1, h2 { text-wrap: balance; }
+    h2 { text-wrap: balance; }
   </style>
 </helmet>
 <div style="width: ${width}px; min-height: ${height}px; box-sizing: border-box; background: ${
