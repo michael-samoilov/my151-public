@@ -89,7 +89,7 @@ const TOOLS = [
 
 const HERO = {
   eyebrow: 'FREE POKÉMON TOOLS · NO SIGN-UP',
-  h1: 'Make a custom Pokédex, Gym Leader, and more',
+  h1: 'Make a custom Pokédex, Gym Leaders, and more',
   p: 'my151 is a set of free Pokémon tools and templates. Build a custom region &amp; Pokédex by choosing your favorites from each generation, make custom gym leader trainer cards, &amp; pick your favorite Pokémon per type per generation.',
   note: 'No account. Your picks save in this browser and can export as a shareable image.',
   // Used where the whole page has to fit one viewport and the long
@@ -108,11 +108,13 @@ const POSTER_TITLE = {
   next: "What's next?",
 };
 
+// No manual breaks: `text-wrap: balance` splits each of these into two even
+// lines on its own.
 const POSTER_BLURB = {
-  dex: 'Choose your starters, early bug,<br>pseudo, &amp; more from all regions',
-  league: 'Design gym leader teams into a<br>league with a champion &amp; boss',
-  fav: 'Pick your favorite Pokemon<br>per type per generation',
-  next: 'Give us feedback, or<br>tell us what to build next',
+  dex: 'Choose your starters, early bug, pseudo, &amp; more from all regions',
+  league: 'Design gym leader teams into a league with a champion &amp; boss',
+  fav: 'Pick your favorite Pokemon per type per generation',
+  next: 'Press here to give us feedback or tell us what to build next',
 };
 
 const STATUS = {
@@ -547,7 +549,7 @@ function phone({ src, alt, w, x, y, tilt, radius }) {
     : alt;
   return `<div style="position: absolute; left: ${x}px; top: ${y}px; width: ${w}px; transform: rotate(${tilt}deg); transform-origin: 0 0; border-radius: ${radius}px; overflow: hidden; background: ${
     C.card
-  }; border: 1px solid #d4d4d4; box-shadow: 0 14px 30px rgba(10, 10, 10, 0.24), 0 3px 8px rgba(10, 10, 10, 0.12);">
+  }; border: 1px solid #d4d4d4; ">
       ${body}
     </div>`;
 }
@@ -574,19 +576,30 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, c
   // so each screenshot's drop shadow has room to fall outside the card without
   // being sliced off at the clip edge. The screenshots shift by the same amount
   // and land where they would have anyway.
-  const fan = tilts
-    .map((tilt, i) =>
+  const place = (i) => ({
+    w: phoneW,
+    x: bleed + offsets[i],
+    y: bleed + phoneTop + (tilts.length - 1 - i) * dropStep,
+    tilt: tilts[i],
+    radius: phoneRadius,
+  });
+  const fanShadows = tilts
+    .map((_, i) => {
+      const { w, x, y, tilt, radius } = place(i);
+      return `<div style="position: absolute; left: ${x}px; top: ${y}px; width: ${w}px; height: ${Math.round(
+        w / SHOT_ASPECT,
+      )}px; transform: rotate(${tilt}deg); transform-origin: 0 0; border-radius: ${radius}px; box-shadow: 0 14px 30px rgba(10, 10, 10, 0.2), 0 3px 8px rgba(10, 10, 10, 0.1);"></div>`;
+    })
+    .join('\n    ');
+  const fanImages = tilts
+    .map((_, i) =>
       phone({
         src: shots[shots.length - tilts.length + i],
         alt: `${tool.h2} screenshot`,
-        w: phoneW,
-        x: bleed + offsets[i],
-        y: bleed + phoneTop + (tilts.length - 1 - i) * dropStep,
-        tilt,
-        radius: phoneRadius,
+        ...place(i),
       }),
     )
-    .join('\n    ');
+    .join('\n      ');
 
   // No tool to screenshot yet, so the card carries a build icon instead. It is
   // centred across the clear area above the gradient and nudged up, so it reads
@@ -612,8 +625,13 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, c
     tool.shot
       ? `<div style="position: absolute; top: -${popTop + bleed}px; left: -${
           popLeft + bleed
+        }px; right: 0; bottom: 0; overflow: hidden; -webkit-mask-image: linear-gradient(to top, transparent 0, #000 ${bleed}px); mask-image: linear-gradient(to top, transparent 0, #000 ${bleed}px);">
+    ${fanShadows}
+  </div>
+  <div style="position: absolute; top: -${popTop + bleed}px; left: -${
+          popLeft + bleed
         }px; right: 0; bottom: 0; overflow: hidden;">
-    ${fan}
+    ${fanImages}
   </div>`
       : mark
   }
@@ -636,7 +654,7 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, c
     }</h2>
     <p style="margin: 0; height: ${Math.round(
       blurbSize * 1.35 * 2,
-    )}px; font-size: ${blurbSize}px; line-height: 1.35; color: ${inkSub};">${
+    )}px; font-size: ${blurbSize}px; line-height: 1.35; color: ${inkSub}; text-wrap: balance;">${
       POSTER_BLURB[tool.key]
     }</p>
   </div>
@@ -669,9 +687,9 @@ function cardFrom(cardW, art = 1) {
     radius: r(14),
     copyBand: r(52),
     fade: r(26),
-    titleSize: +(8.4 * k).toFixed(1),
-    blurbSize: +(8 * k).toFixed(1),
-    pad: r(7),
+    titleSize: +(9.1 * k).toFixed(1),
+    blurbSize: +(8.5 * k).toFixed(1),
+    pad: r(6),
   };
 }
 
@@ -840,7 +858,7 @@ ${bandOpen}
 ${clearFraction ? '' : '<div style="flex-grow: 1; min-height: 0;"></div>'}
 ${heroBody}
 ${clearFraction ? '' : '<div style="flex-grow: 1; min-height: 0;"></div>'}
-<div style="flex-shrink: 0; display: grid; grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, ${cardH}px); column-gap: ${gap}px; row-gap: ${popTop + Math.round(gap * 0.6)}px; padding: ${padTop}px ${padX}px ${padBottom}px; box-sizing: border-box;">
+<div style="flex-shrink: 0; display: grid; grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, ${cardH}px); column-gap: ${gap}px; row-gap: ${popTop + gap + 14}px; padding: ${padTop}px ${padX}px ${padBottom}px; box-sizing: border-box;">
 ${cards}
 </div>
 ${bandClose}
@@ -872,7 +890,6 @@ const H = {
   // whole router has to fit without scrolling, so the frame IS the constraint.
   'PosterMobile.dc.html': 844,
   'PosterTablet.dc.html': 1112,
-  'PosterTabletNarrow.dc.html': 1112,
   'PosterDesktop.dc.html': 900,
 };
 
@@ -953,13 +970,6 @@ const FILES = {
     gap: 28, padX: 44, padBottom: 0, art: 0.82,
     heroPad: '0 44px', h1Size: 36, pSize: 14.5, maxW: 620,
   }),
-  // Tablet, centred: the mobile page at its own measure with the sides left
-  // blank. Nothing is scaled, so the cards read exactly as they do on a phone.
-  'PosterTabletNarrow.dc.html': poster({
-    width: 834, height: H['PosterTabletNarrow.dc.html'], cols: 2, rows: 2,
-    gap: 14, padX: 16, padBottom: 0, contentW: 430,
-    heroPad: '0 20px', h1Size: 29, pSize: 13, maxW: 390,
-  }),
   // Four across, with the rail spanning exactly the hero's own measure: the
   // left card lines up with the h1, the right card with the sub-text's right
   // edge, because both use the same horizontal margin.
@@ -1022,9 +1032,8 @@ const artboards = ROWS.flatMap((row, r) =>
 // thing that differs is the card. Row two: the chosen shape at the other widths.
 const POSTER = [
   ['PosterMobile.dc.html', 390, 0, 0, 'Mobile 390'],
-  ['PosterTablet.dc.html', 834, 490, 0, 'Tablet 834 — packed'],
-  ['PosterTabletNarrow.dc.html', 834, 1424, 0, 'Tablet 834 — centred, mobile measure'],
-  ['PosterDesktop.dc.html', 1440, 2358, 0, 'Desktop 1440 — four across'],
+  ['PosterTablet.dc.html', 834, 490, 0, 'Tablet 834'],
+  ['PosterDesktop.dc.html', 1440, 1424, 0, 'Desktop 1440 — four across'],
 ];
 
 artboards.push(
@@ -1058,11 +1067,11 @@ const annotations = [
   },
   {
     id: 'd-note', page: 'page-2', x: 0, y: -260, w: 940,
-    text: 'D · Poster cards. Mobile and tablet now space out evenly: three equal flex spacers put the same gap above the intro text, between the text and the grid, and between the grid and the footer.\nThe Hammer is centred between the card\'s top edge and the top of its heading, so the space above it matches the space below by construction rather than by eye.\nDesktop has about 110px between the sub-text and the artwork, which is the room for a hover nudge.',
+    text: 'D · Poster cards. Mobile and tablet space out evenly: three equal flex spacers put the same gap above the intro text, between the text and the grid, and between the grid and the footer.\nThe Hammer is centred between the card\'s top edge and the top of its heading, so the space above it matches the space below by construction rather than by eye.\nDesktop has about 110px between the sub-text and the artwork, which is the room for a hover nudge.',
   },
   {
-    id: 'd-tablet-note', page: 'page-2', x: 990, y: -260, w: 940,
-    text: 'Two tablets, pick one.\nPACKED scales the artwork to 82% — thinner screenshots and a shallower overhang, which keeps their tallness while letting the two rows sit closer. One knob, `art`, does it; the left overhang scales with it, or the gradient rule fails the build (it did on the first try).\nCENTRED keeps the phone measure and leaves the sides blank. Nothing is scaled, so the cards read exactly as they do on a phone, and the header and footer still span the full width. Airier, and it is one line of layout rather than a second set of numbers to maintain.',
+    id: 'd-detail-note', page: 'page-2', x: 990, y: -260, w: 940,
+    text: 'This pass, four changes.\nThe screenshot shadow no longer stops in a straight line at the card\'s bottom. The shadow now paints in its own layer that fades out over the last 34px, so it thins to nothing instead of ending on an edge; the screenshots themselves still cut on that edge, which is the point.\nTablet is the packed one: the artwork scales to 82%, so the two rows sit closer. `art` is the single knob, and the left overhang scales with it or the gradient rule fails the build.\nCard copy is a step larger — 9.4px title, 8.8px blurb at 390px. It cannot reach the 11.5px of the "No account…" line: "Trainer Card & League Builder" already fills 154 of the 158px the card gives it, so one line of title caps the size at about 9.6px. Matching 11.5px needs a shorter title or one card per row.\nLine breaks in the headings and blurbs come from `text-wrap: balance`, not manual breaks.',
   },
 ];
 

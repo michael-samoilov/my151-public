@@ -92,17 +92,8 @@
     },
     {
       "file": "PosterTablet.dc.html",
-      "title": "Tablet 834 — packed",
+      "title": "Tablet 834",
       "x": 490,
-      "y": 0,
-      "w": 834,
-      "h": 1112,
-      "page": "page-2"
-    },
-    {
-      "file": "PosterTabletNarrow.dc.html",
-      "title": "Tablet 834 — centred, mobile measure",
-      "x": 1424,
       "y": 0,
       "w": 834,
       "h": 1112,
@@ -111,7 +102,7 @@
     {
       "file": "PosterDesktop.dc.html",
       "title": "Desktop 1440 — four across",
-      "x": 2358,
+      "x": 1424,
       "y": 0,
       "w": 1440,
       "h": 900,
@@ -157,15 +148,15 @@
       "x": 0,
       "y": -260,
       "w": 940,
-      "text": "D · Poster cards. Mobile and tablet now space out evenly: three equal flex spacers put the same gap above the intro text, between the text and the grid, and between the grid and the footer.\nThe Hammer is centred between the card's top edge and the top of its heading, so the space above it matches the space below by construction rather than by eye.\nDesktop has about 110px between the sub-text and the artwork, which is the room for a hover nudge."
+      "text": "D · Poster cards. Mobile and tablet space out evenly: three equal flex spacers put the same gap above the intro text, between the text and the grid, and between the grid and the footer.\nThe Hammer is centred between the card's top edge and the top of its heading, so the space above it matches the space below by construction rather than by eye.\nDesktop has about 110px between the sub-text and the artwork, which is the room for a hover nudge."
     },
     {
-      "id": "d-tablet-note",
+      "id": "d-detail-note",
       "page": "page-2",
       "x": 990,
       "y": -260,
       "w": 940,
-      "text": "Two tablets, pick one.\nPACKED scales the artwork to 82% — thinner screenshots and a shallower overhang, which keeps their tallness while letting the two rows sit closer. One knob, `art`, does it; the left overhang scales with it, or the gradient rule fails the build (it did on the first try).\nCENTRED keeps the phone measure and leaves the sides blank. Nothing is scaled, so the cards read exactly as they do on a phone, and the header and footer still span the full width. Airier, and it is one line of layout rather than a second set of numbers to maintain."
+      "text": "This pass, four changes.\nThe screenshot shadow no longer stops in a straight line at the card's bottom. The shadow now paints in its own layer that fades out over the last 34px, so it thins to nothing instead of ending on an edge; the screenshots themselves still cut on that edge, which is the point.\nTablet is the packed one: the artwork scales to 82%, so the two rows sit closer. `art` is the single knob, and the left overhang scales with it or the gradient rule fails the build.\nCard copy is a step larger — 9.4px title, 8.8px blurb at 390px. It cannot reach the 11.5px of the \"No account…\" line: \"Trainer Card & League Builder\" already fills 154 of the 158px the card gives it, so one line of title caps the size at about 9.6px. Matching 11.5px needs a shorter title or one card per row.\nLine breaks in the headings and blurbs come from `text-wrap: balance`, not manual breaks."
     }
   ],
   "pages": [
