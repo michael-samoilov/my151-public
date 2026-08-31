@@ -6,6 +6,7 @@ import { sectionName, t } from '@/i18n';
 import { computeRemovalCascade, getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
+import { useDragSensors } from '@/lib/dragSensors';
 import { sectionColor } from '@/lib/sectionColors';
 import { useToolbarSlot } from '@/components/layout/toolbarSlot';
 import {
@@ -26,10 +27,6 @@ import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import {
   DndContext,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
   DragOverlay,
   useDroppable,
   MeasuringStrategy,
@@ -715,9 +712,7 @@ export function PokedexGrid() {
   const [overTileId, setOverTileId] = useState<string | null>(null);
   const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
 
-  const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
-  const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
-  const sensors = useSensors(mouseSensor, touchSensor);
+  const sensors = useDragSensors();
 
   const resetDrag = useCallback(() => {
     setDragLineIds(null);

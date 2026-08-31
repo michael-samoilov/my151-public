@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
+import { useDragSensors } from '@/lib/dragSensors';
 import { createPortal } from 'react-dom';
 import { useToolbarSlot } from '@/components/layout/toolbarSlot';
 import { Settings, Download, Loader2 } from 'lucide-react';
@@ -39,10 +40,6 @@ import {
 } from '@/lib/sectionOutlines';
 import {
   DndContext,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
   DragOverlay,
   useDroppable,
   useDraggable,
@@ -960,9 +957,7 @@ export function ViewPage() {
   // lives, distinct from the strong red indicator that shows where the
   // drop will land if released.
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
-  const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
-  const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
-  const sensors = useSensors(mouseSensor, touchSensor);
+  const sensors = useDragSensors();
 
   const resetDragState = useCallback(() => {
     setDragLineIds(null);

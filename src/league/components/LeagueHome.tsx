@@ -1,11 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import {
   DndContext,
-  PointerSensor,
   useDraggable,
   useDroppable,
-  useSensor,
-  useSensors,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -19,6 +16,7 @@ import { starPath } from '@/lib/sectionOutlines';
 import { HeldItems } from '@/components/shared/dragHold';
 import { createEffectiveCursorCollision, dragInputIsTouch, isTouchDrag, snapOverlayToTarget } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
+import { useDragSensors } from '@/lib/dragSensors';
 import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { deriveRow, moveSeat } from '../model/engine';
 import { cardShades } from '../theme';
@@ -230,7 +228,7 @@ function SlotRow({ position, cardIndex, held }: {
 
 export function LeagueHome() {
   const moveSlot = useLeagueStore((s) => s.moveSlot);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const sensors = useDragSensors();
   const fitRef = useRef<HTMLDivElement>(null);
   const fit = useFitScale(fitRef);
   const [preview, setPreview] = useState<{ from: number; to: number } | null>(null);
@@ -238,6 +236,13 @@ export function LeagueHome() {
   // grabbed rather than the size a portalled copy would default to.
   const [held, setHeld] = useState<{ position: number; width: number } | null>(null);
   const cards = useLeagueStore((s) => s.cards);
+  // Nothing placed anywhere: a row's tap can only mean "add a trainer", so
+  // the hint says that instead of naming a card that does not exist yet. A
+  // card counts as used once it holds a line, a type or a name — the same
+  // test `SlotRowFace` uses to decide whether to draw a face at all.
+  const blank = cards.every(
+    (c) => c.lines.length === 0 && !c.type && !c.theme && !c.badgeName,
+  );
 
   const onDragStart = useCallback((e: DragStartEvent) => {
     // Only a finger needs the lift; a mouse cursor covers nothing. This is a
@@ -314,9 +319,30 @@ export function LeagueHome() {
             </div>
           ))}
         </div>
-        <div className="flex items-start gap-[0.3125rem] px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground">
-          <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
-          <span>Drag a row to reorder the league · tap a row to open its card</span>
+        {/* A fixed height, and neither line may wrap.
+            The whole card is scaled to fit the viewport's height, and that
+            scale is computed back from the card's own measured height — so a
+            hint that wraps at one zoom and not at another feeds its own input
+            and the fit never settles. Two lines of 0.625rem at 1.35 leading,
+            plus the gap between them, is 1.8125rem whatever the zoom does. */}
+        <div className="h-[1.8125rem] px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground">
+          <div className="flex items-start gap-[0.3125rem]">
+            <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
+            <span className="min-w-0 truncate">Drag a row to reorder the league · tap a row to open its card</span>
+          </div>
+          {/* What a tap actually does depends on whether anything is there
+              yet, so the second line says the one that applies rather than
+              covering both and leaving the reader to work out which. */}
+          <div className="mt-[0.125rem] flex items-start gap-[0.3125rem]">
+            {blank ? (
+              <Plus className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
+            ) : (
+              <ChevronRight className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
+            )}
+            <span className="min-w-0 truncate">
+              {blank ? 'Tap a row to add a trainer' : 'Tap a row to open its trainer card'}
+            </span>
+          </div>
         </div>
       </div>
       {/* The copy in hand: the row that was grabbed, at the width it was

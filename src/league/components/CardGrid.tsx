@@ -3,11 +3,8 @@ import { createPortal } from 'react-dom';
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
   useDraggable,
   useDroppable,
-  useSensor,
-  useSensors,
   type DragEndEvent,
   rectIntersection,
   type CollisionDetection,
@@ -22,6 +19,7 @@ import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { HeldItems } from '@/components/shared/dragHold';
 import { cn } from '@/lib/utils';
+import { useDragSensors } from '@/lib/dragSensors';
 import { warmImages } from '@/lib/warmImages';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
 import {
@@ -40,6 +38,7 @@ import type { CardView } from '../useCardView';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyphs';
 import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
+import { SEAM_RIGHT, placeHalf, sharedSprite, type Placed, type Runs } from '../slotLayout';
 
 /**
  * The 11-row gym leader card. Geometry mirrors the design canvas
@@ -162,6 +161,15 @@ interface PaintDrag {
   canBottom: boolean;
   initial: number[];
   painted: boolean;
+  /**
+   * The gesture has displaced another column at least once.
+   *
+   * It stays true for the rest of the drag, including the leg that brings the
+   * column home. A drag that has moved sideways is a reorder, and a reorder
+   * that ends where it started is a reorder that changed nothing — not a
+   * vertical paint that happens to share its last frame.
+   */
+  reordered: boolean;
 }
 
 /**
@@ -384,18 +392,27 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           // independently. The disc came out an ellipse and the arrow inside
           // it sat up and to the left, even though both are centred to the
           // pixel in layout.
-          className="absolute left-0 top-[0.175rem] z-[15] flex h-[0.95rem] w-[0.95rem] cursor-pointer items-center justify-center rounded-full bg-[#2563eb] [contain:paint]"
+          className="absolute left-0 top-[0.175rem] z-[15] h-[0.95rem] w-[0.95rem] cursor-pointer rounded-full bg-[#2563eb] [contain:paint]"
         >
-          {/* Sized to leave the rim alone. `RotateCcw` is a ring with an
-              arrowhead bolted to its top-left, so its bounding box is 2%
-              wider than its ring on that side; at 0.6rem with a 3-unit
-              stroke the head touched the disc's edge while the opposite
-              side kept a clear margin, and the whole mark read as pushed
-              up and left. Measured on the built preview at dpr 8: the disc
-              is a true circle (120x120) and the ink's centre of mass is
-              0.2% off its centre, so what was wrong was the clearance, not
-              the centring. */}
-          <RotateCcw className="h-[0.55rem] w-[0.55rem] text-white" strokeWidth={2.5} />
+          {/* Centred by having nothing to centre.
+              The card scales itself with CSS `zoom`, so the disc and a smaller
+              mark inside it are both a fractional number of pixels, and the
+              leftover space either side does not round the same way: measured
+              at dpr 10, a flex-centred mark sat 2.0% left of the disc's
+              centre, and a transform-centred one 3.3% left. Both divide a
+              gap. This leaves no gap — the svg fills the disc, and the icon's
+              own 24-unit ink is inset by padding its viewBox, so the ink's
+              centre and the disc's are the same point by construction.
+              `strokeWidth` is in viewBox units, so it scales with the pad.
+              The half-unit on the origin is the glyph's own bias, measured
+              rather than guessed: `RotateCcw` carries its arrowhead outside
+              the ring on the top-left, so its painted ink sits 1.3% up and
+              left of the 24-unit box it is drawn in. */}
+          <RotateCcw
+            viewBox="-7.5 -7.5 38 38"
+            className="absolute inset-0 h-full w-full text-white"
+            strokeWidth={4}
+          />
         </button>
       )}
       {onRemove && pokemon && (
@@ -539,43 +556,6 @@ function PowerupButton({ kind, active, onPress, side }: {
 }
 
 /**
- * Where the seam meets the slot's right edge, as a fraction of slot height.
- *
- * The seam runs from there to the bottom-left corner. It is "Corner, high" in
- * the partner-slot study: of the seams tried it is the one that leaves the ace
- * within 8px of the 92px it used to have to itself, while still giving the
- * partner a sprite larger than a team cell.
- */
-const SEAM_RIGHT = 56 / 204;
-
-/**
- * The two halves, solved rather than drawn.
- *
- * Each sprite's centre wants to sit on the area centroid of its own partition
- * — the shape the seam cuts out of the slot. `docs/future-tools/league-builder/
- * partner-slot/seamends.py` searches the placements where the whole block
- * (heading, sprite, name) clears the seam, and keeps the one landing nearest
- * that centroid; these are its answers at the slot's design size, 148 x 204.
- *
- * Two units, because the slot has two: its height is rem (four rows), and its
- * width is a percentage of a card whose own width is not fixed — the fit zoom
- * matches height, not width, so the slot runs from about 115px on a 320px
- * screen to about 200px on a desktop. `left` and `top` follow the dimension
- * they belong to. A square sprite has to answer to both, so its size is the
- * smaller of the two: at 320px the width binds and the sprite comes down; on
- * a desktop the height binds and it comes down instead. Taking only one would
- * leave the sprite oversized on the other, which on a narrow screen puts it
- * through the seam.
- */
-const ACE_BOX = { left: 9.5 / 148, wide: 80 / 148, tall: 5, top: 0.625 };
-const PARTNER_BOX = { left: 84 / 148, wide: 56 / 148, tall: 3.5, top: 7.25 };
-
-/** The sprite's edge: the smaller of what the slot's width and height allow. */
-function halfSize(box: typeof ACE_BOX): string {
-  return `min(${(box.wide * 100).toFixed(2)}%, ${box.tall}rem)`;
-}
-
-/**
  * One half of the ace/partner slot: heading, sprite, name.
  *
  * The empty state is the filled state with the sprite taken out and its square
@@ -584,33 +564,33 @@ function halfSize(box: typeof ACE_BOX): string {
  * it, which is a different layout wearing the same name.
  */
 function SlotHalf({
-  box, testId, heading, headingBelow, pokemon, nameClass, onPick,
+  place, testId, heading, headingBelow, pokemon, nameClass,
+  headClass, onPick,
 }: {
-  box: typeof ACE_BOX;
+  place: Placed | null;
   testId: string;
   heading: string;
   headingBelow: boolean;
   pokemon: ReturnType<typeof getPokemonById>;
   nameClass: string;
+  headClass: string;
   onPick: () => void;
 }) {
   const label = (
     // One line, always. A wrapped heading costs a line the geometry does not
     // budget for, and it costs it in the filled state only.
-    <span
-      className="whitespace-nowrap text-[0.53125rem] font-extrabold tracking-[0.08em]"
-      style={{ color: 'var(--lg-band)' }}
-    >
+    <span className={cn('whitespace-nowrap', headClass)} style={{ color: 'var(--lg-band)' }}>
       {heading}
     </span>
   );
+  const size = place ? `${place.sprite}px` : '0px';
   const body = pokemon ? (
     <>
       <img
         src={pokemon.sprite}
         alt={pokemon.name}
         className="max-w-none shrink-0"
-        style={{ width: '100%', aspectRatio: '1', imageRendering: 'pixelated' }}
+        style={{ width: size, height: size, imageRendering: 'pixelated' }}
       />
       <span className={cn('leading-tight', nameClass)}>
         {pokemonLabel(pokemon.id, pokemon.name).name}
@@ -620,7 +600,7 @@ function SlotHalf({
     <>
       <span
         className="flex shrink-0 items-center justify-center"
-        style={{ width: '100%', aspectRatio: '1' }}
+        style={{ width: size, height: size }}
       >
         <span
           className="rounded-full border border-dashed"
@@ -640,14 +620,92 @@ function SlotHalf({
       aria-label={pokemon ? `${heading}: ${pokemon.name}` : `Choose a ${heading.toLowerCase()}`}
       className="absolute z-[6] flex flex-col items-center text-center"
       style={{
-        left: `${(box.left * 100).toFixed(2)}%`,
-        top: `${box.top}rem`,
-        width: halfSize(box),
+        left: `${place?.left ?? 0}px`,
+        top: `${place?.top ?? 0}px`,
+        width: `${place?.width ?? 0}px`,
+        visibility: place ? undefined : 'hidden',
       }}
     >
       {headingBelow ? <>{body}{label}</> : <>{label}{body}</>}
     </button>
   );
+}
+
+const ACE_HEAD = 'ACE POKÉMON';
+const PARTNER_HEAD = 'PARTNER';
+const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
+const ACE_NAME_CLASS = 'text-[0.8125rem] font-medium';
+const PARTNER_NAME_CLASS = 'text-[0.8125rem] font-medium';
+
+/**
+ * Measure the slot, then solve both halves against what it actually is.
+ *
+ * The run sizes come from the DOM rather than from constants: the heading and
+ * the name are text, so their widths follow the font, the language and the
+ * root font size, none of which this file gets to decide. A hidden copy of
+ * each run is measured once per resize and handed to the solver.
+ */
+function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
+  const [layout, setLayout] = useState<{ ace: Placed; partner: Placed } | null>(null);
+  const version = useNamesVersion();
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // The card scales itself to fit the viewport's height, and that scale is
+    // recomputed from the card's own measured height. An observer that sets
+    // state on every fire joins that loop: re-render, re-measure, re-scale,
+    // fire again — and on a narrow screen, where the fit is already at its
+    // floor, it never settles. Nothing here is worth sub-pixel precision, so
+    // the box is rounded and an unchanged box does no work at all.
+    let last = '';
+    const measure = () => {
+      const box = el.getBoundingClientRect();
+      const probe = el.querySelector<HTMLElement>('[data-slot-probe]');
+      if (!probe || box.width < 8 || box.height < 8) return;
+      const w = Math.round(box.width);
+      const h = Math.round(box.height);
+      const run = (sel: string): [number, number] => {
+        const r = probe.querySelector<HTMLElement>(sel)!.getBoundingClientRect();
+        return [r.width, r.height];
+      };
+      const ace: Runs = { head: run('[data-probe="ace-head"]'), name: run('[data-probe="ace-name"]'), headFirst: true };
+      const partner: Runs = { head: run('[data-probe="partner-head"]'), name: run('[data-probe="partner-name"]'), headFirst: false };
+      // The key covers the text as well as the box. Keying on the box alone
+      // meant the first measurement — taken before the webfont had swapped —
+      // was the only one that ever ran: the box never changed afterwards, so
+      // the placement stayed solved for metrics the card no longer had, and
+      // the partner ended up 18px through the seam on a desktop slot.
+      const key = [w, h, ace.head, ace.name, partner.head, partner.name].join('|');
+      if (key === last) return;
+      last = key;
+      const sprite = sharedSprite(w, h, ace, partner);
+      const a = placeHalf(w, h, sprite, ace, true);
+      const p = placeHalf(w, h, sprite, partner, false);
+      if (a && p) setLayout({ ace: a, partner: p });
+    };
+    measure();
+    // A ResizeObserver is not enough on its own. The card is scaled by CSS
+    // `zoom` on an ancestor, and that changes the box this slot *renders* at
+    // without resizing the slot in its own coordinate space — so the observer
+    // stays silent while the geometry underneath it moves, and the placement
+    // keeps answering to a box the card no longer has. Re-checking for a few
+    // frames after mount catches the fit settling; the key guard above means
+    // a frame where nothing moved costs one rect read.
+    let frames = 0;
+    let raf = 0;
+    const settle = () => {
+      measure();
+      if (++frames < 30) raf = requestAnimationFrame(settle);
+    };
+    raf = requestAnimationFrame(settle);
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [ref, version]);
+  return layout;
 }
 
 function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
@@ -660,6 +718,8 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   const shown = signatureMember(line, card.signatureId ?? null);
   const ace = shown !== null ? getPokemonById(shown) : undefined;
   const partner = card.partnerId != null ? getPokemonById(card.partnerId) : undefined;
+  const slotRef = useRef<HTMLDivElement>(null);
+  const layout = useSlotLayout(slotRef);
   const pos = {
     ...slotX(1, 3),
     top: `${rowTop(1) + INSET_Y}rem`,
@@ -667,6 +727,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   };
   return (
     <div
+      ref={slotRef}
       className={cn('absolute z-[5] rounded-lg', ace || partner ? undefined : 'border border-dashed')}
       style={{
         ...pos,
@@ -674,6 +735,23 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         background: ace || partner ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
+      {/* The four text runs the solver needs the size of, drawn once and never
+          shown. Measuring them beats assuming them: they are text, so their
+          widths move with the font, the language and the root font size. */}
+      <span
+        data-slot-probe
+        aria-hidden="true"
+        className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap"
+      >
+        <span data-probe="ace-head" className={cn('inline-block', HEAD_CLASS)}>{ACE_HEAD}</span>
+        <span data-probe="ace-name" className={cn('inline-block leading-tight', ACE_NAME_CLASS)}>
+          {ace ? pokemonLabel(ace.id, ace.name).name : '\u00a0'}
+        </span>
+        <span data-probe="partner-head" className={cn('inline-block', HEAD_CLASS)}>{PARTNER_HEAD}</span>
+        <span data-probe="partner-name" className={cn('inline-block leading-tight', PARTNER_NAME_CLASS)}>
+          {partner ? pokemonLabel(partner.id, partner.name).name : '\u00a0'}
+        </span>
+      </span>
       {/* The seam is a drawn line, not a wall: a block's far corner is allowed
           a few pixels past it, because that corner holds a sprite's
           transparent margin rather than any ink. */}
@@ -694,21 +772,23 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         />
       </svg>
       <SlotHalf
-        box={ACE_BOX}
+        place={layout?.ace ?? null}
         testId="slot-ace"
-        heading="ACE POKÉMON"
+        heading={ACE_HEAD}
         headingBelow={false}
         pokemon={ace}
-        nameClass="text-[0.8125rem] font-medium"
+        nameClass={ACE_NAME_CLASS}
+        headClass={HEAD_CLASS}
         onPick={() => openLeagueBrowser(cardIndex, 'signature')}
       />
       <SlotHalf
-        box={PARTNER_BOX}
+        place={layout?.partner ?? null}
         testId="slot-partner"
-        heading="PARTNER"
+        heading={PARTNER_HEAD}
         headingBelow
         pokemon={partner}
-        nameClass="text-[0.6875rem] font-medium"
+        nameClass={PARTNER_NAME_CLASS}
+        headClass={HEAD_CLASS}
         onPick={() => openLeagueBrowser(cardIndex, 'partner')}
       />
     </div>
@@ -896,7 +976,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const cyclePowerupOnCard = useLeagueStore((s) => s.cyclePowerup);
   const { card, shades, rows } = view;
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const sensors = useDragSensors();
 
   // Every sprite this card can put in a cell, warmed while the card is idle.
   //
@@ -966,6 +1046,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         paintRef.current = {
           legend: true, seat: d.seat, stage: 0, startRow: d.row, role: 'mid',
           runTop: d.row, runBottom: d.row, canTop: false, canBottom: false,
+          reordered: false,
           initial: [], painted: false,
         };
         setLegendDrag(true);
@@ -995,7 +1076,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       else if (d.row === runBottom && canBottom) role = 'bottom';
       paintRef.current = {
         legend: false, seat: d.seat, stage, startRow: d.row, role,
-        runTop, runBottom, canTop, canBottom,
+        runTop, runBottom, canTop, canBottom, reordered: false,
         initial: [...line.boundaries], painted: false,
       };
     },
@@ -1009,6 +1090,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       if (!p || p.legend || !over) return;
       if (over.seat !== p.seat) {
         // The gesture is a reorder: undo any paint, preview the target seats.
+        p.reordered = true;
         if (p.painted) {
           setLineBoundaries(cardIndex, p.seat, p.initial);
           p.painted = false;
@@ -1019,6 +1101,11 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         return;
       }
       setPreviewMove(null);
+      // Home again, after having pushed another column aside. The column goes
+      // back where it started and nothing else happens: without this the
+      // return leg falls through to the paint below and rewrites the line's
+      // evolution stages, which is not what a cancelled reorder should do.
+      if (p.reordered) return;
       let role = p.role;
       if (role === 'edge' && over.row !== p.startRow) {
         role = over.row < p.startRow

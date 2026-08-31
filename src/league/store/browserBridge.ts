@@ -116,7 +116,11 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
       // no seventh seat for a line from outside it. That is a lock rather
       // than a hidden rule, so the chip shows, shows as on, and says why.
       const scopeLocked = purpose === 'signature' && cardFull;
-      const scopeOn = purpose === 'signature' && lines.length > 0
+      // Both one-Pokemon pickers offer the chip; only the ace's can lock it.
+      // A partner is the leader's companion rather than their sixth Pokemon,
+      // so narrowing to the team stays available and never becomes the rule.
+      const scoped = purpose === 'signature' || purpose === 'partner';
+      const scopeOn = scoped && lines.length > 0
         ? (scopeLocked || (get().scopeFilter ?? false))
         : false;
       const gymType: string[] | null = type && type !== 'none' ? [type] : null;
@@ -171,13 +175,13 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // No chip at all on an empty card: there is no team to narrow to, and
         // a chip whose only effect is an empty result is a dead end. A full
         // card does get one, locked — see `scopeLocked` above.
-        scopeFilterIds: purpose === 'signature' && lines.length > 0 ? placed : undefined,
-        scopeFilterLabel: purpose === 'signature' && lines.length > 0 ? 'Current Team' : undefined,
+        scopeFilterIds: scoped && lines.length > 0 ? placed : undefined,
+        scopeFilterLabel: scoped && lines.length > 0 ? 'Current Team' : undefined,
         scopeFilterLocked: scopeLocked,
         scopeFilterLockedHint: scopeLocked ? 'Choose a pokemon from your team' : undefined,
         // The branches themselves, so the scoped view can draw the lines the
         // user seated rather than the chains they belong to.
-        scopeFilterLines: purpose === 'signature' ? lines.map((l) => l.branch) : undefined,
+        scopeFilterLines: scoped ? lines.map((l) => l.branch) : undefined,
         // The ace is one Pokemon, and so are the boss's legendary and the
         // partner, so each Pokemon is its own tile — and the grid merges a
         // split chain's branches, so none of them appears twice.
