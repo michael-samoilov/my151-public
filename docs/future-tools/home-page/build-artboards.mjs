@@ -104,16 +104,16 @@ const HERO = {
 const POSTER_TITLE = {
   dex: 'Custom Pokédex Builder',
   league: 'Trainer Card &amp; League Builder',
-  fav: 'Favourite Pokémon Picker',
+  fav: 'Favorite Pokémon Picker',
   next: "What's next?",
 };
 
 // No manual breaks: `text-wrap: balance` splits each of these into two even
 // lines on its own.
 const POSTER_BLURB = {
-  dex: 'Choose your starters, early bug, pseudo, &amp; more from all regions',
+  dex: 'Choose your starters, early route mons, &amp; more from all regions',
   league: 'Design gym leader teams into a league with a champion &amp; boss',
-  fav: 'Pick your favorite Pokemon per type per generation',
+  fav: 'Pick your favorite Pokémon per type per generation',
   next: 'Press here to give us feedback or tell us what to build next',
 };
 
@@ -849,9 +849,9 @@ function poster({ width, height, cols, rows, gap, padX, padBottom, bleed = 34, c
     h1, h2 { text-wrap: balance; }
   </style>
 </helmet>
-<div style="width: ${width}px; height: ${height}px; box-sizing: border-box; background: ${
+<div style="width: ${width}px; min-height: ${height}px; box-sizing: border-box; background: ${
     C.bg
-  }; color: ${C.fg}; display: flex; flex-direction: column; overflow: hidden;">
+  }; color: ${C.fg}; display: flex; flex-direction: column;">
 ${header({ width })}
 ${colOpen}
 ${bandOpen}
@@ -870,6 +870,84 @@ ${clearFraction ? pageFooter(width) : pageFooter(width)}
 </body>
 </html>
 `;
+}
+
+
+// ------------------------------------------------- responsive poster config
+
+/**
+ * The poster layout as a function of viewport width, so every width between
+ * the device artboards is a real, checkable layout rather than an untested gap.
+ *
+ * Two regimes, because the shape itself changes at the app's `md` breakpoint:
+ * below 1024 the hero stacks and the cards go two up; at 1024 and above the
+ * hero splits left/right and the cards go four across. Inside a regime every
+ * number is piecewise-linear between anchors, so the anchor widths reproduce
+ * the reviewed artboards exactly and the widths between them move smoothly.
+ */
+const POSTER_BREAKPOINT = 1024;
+
+// gap and padX are the grid's; heroPadX is the hero's own horizontal padding.
+const STACKED_ANCHORS = [
+  { w: 320, padX: 12, gap: 10, heroPadX: 16, h1Size: 23, pSize: 11.5, art: 1, maxW: 288 },
+  { w: 390, padX: 16, gap: 14, heroPadX: 20, h1Size: 27, pSize: 12.5, art: 1, maxW: 350 },
+  { w: 834, padX: 44, gap: 28, heroPadX: 44, h1Size: 36, pSize: 14.5, art: 0.82, maxW: 620 },
+  { w: 1023, padX: 54, gap: 30, heroPadX: 54, h1Size: 39, pSize: 15, art: 0.78, maxW: 680 },
+];
+
+const SPLIT_ANCHORS = [
+  { w: 1024, padX: 48, gap: 20, heroPadX: 48, h1Size: 34, pSize: 14.5, art: 1, maxW: 380, noteW: 500, clearFraction: 0.14 },
+  { w: 1440, padX: 80, gap: 26, heroPadX: 80, h1Size: 42, pSize: 15.5, art: 1, maxW: 520, noteW: 700, clearFraction: 0.17 },
+  { w: 1920, padX: 120, gap: 34, heroPadX: 120, h1Size: 52, pSize: 17, art: 1, maxW: 690, noteW: 930, clearFraction: 0.19 },
+];
+
+/** Piecewise-linear lookup over an anchor table, clamped past both ends. */
+function lerpAnchors(anchors, width, key) {
+  if (width <= anchors[0].w) return anchors[0][key];
+  const last = anchors[anchors.length - 1];
+  if (width >= last.w) return last[key];
+  for (let i = 1; i < anchors.length; i += 1) {
+    const a = anchors[i - 1];
+    const b = anchors[i];
+    if (width <= b.w) {
+      const t = (width - a.w) / (b.w - a.w);
+      return a[key] + (b[key] - a[key]) * t;
+    }
+  }
+  return last[key];
+}
+
+/**
+ * Every `poster()` option, derived from the viewport alone. The artboards call
+ * it, so what a sweep checks is what a reviewer looks at.
+ */
+function posterConfig(width, height) {
+  const split = width >= POSTER_BREAKPOINT;
+  const anchors = split ? SPLIT_ANCHORS : STACKED_ANCHORS;
+  const at = (key) => lerpAnchors(anchors, width, key);
+  const round = (key) => Math.round(at(key));
+  const heroPadX = round('heroPadX');
+  const base = {
+    width,
+    height,
+    cols: split ? 4 : 2,
+    rows: split ? 1 : 2,
+    gap: round('gap'),
+    padX: round('padX'),
+    padBottom: 0,
+    art: +at('art').toFixed(3),
+    heroPad: `0 ${heroPadX}px`,
+    h1Size: +at('h1Size').toFixed(1),
+    pSize: +at('pSize').toFixed(1),
+    maxW: round('maxW'),
+  };
+  if (!split) return base;
+  return {
+    ...base,
+    noteW: round('noteW'),
+    splitHero: true,
+    clearFraction: +at('clearFraction').toFixed(3),
+  };
 }
 
 // ------------------------------------------------------------ artboards
@@ -958,28 +1036,17 @@ const FILES = {
   // its own width — and that width comes from the frame, so the numbers the
   // checks reason about are the numbers that render. A breakpoint sets the page
   // margin, the gutter, and how much of the artwork it can afford (`art`).
-  'PosterMobile.dc.html': poster({
-    width: 390, height: H['PosterMobile.dc.html'], cols: 2, rows: 2,
-    gap: 14, padX: 16, padBottom: 0,
-    heroPad: '0 20px', h1Size: 27, pSize: 12.5, maxW: 350,
-  }),
+  'PosterMobile.dc.html': poster(posterConfig(390, H['PosterMobile.dc.html'])),
   // Tablet, packed: thinner screenshots and a shallower overhang, so two rows
   // fit without the second row's artwork crowding the first.
-  'PosterTablet.dc.html': poster({
-    width: 834, height: H['PosterTablet.dc.html'], cols: 2, rows: 2,
-    gap: 28, padX: 44, padBottom: 0, art: 0.82,
-    heroPad: '0 44px', h1Size: 36, pSize: 14.5, maxW: 620,
-  }),
+  'PosterTablet.dc.html': poster(posterConfig(834, H['PosterTablet.dc.html'])),
   // Four across, with the rail spanning exactly the hero's own measure: the
   // left card lines up with the h1, the right card with the sub-text's right
   // edge, because both use the same horizontal margin.
-  'PosterDesktop.dc.html': poster({
-    width: 1440, height: H['PosterDesktop.dc.html'], cols: 4, rows: 1,
-    gap: 26, padX: 80, padBottom: 0,
-    heroPad: '0 80px', h1Size: 42, pSize: 15.5, maxW: 520, noteW: 700,
-    splitHero: true, clearFraction: 0.17,
-  }),
+  'PosterDesktop.dc.html': poster(posterConfig(1440, H['PosterDesktop.dc.html'])),
 };
+
+export { poster, posterConfig, POSTER_BREAKPOINT };
 
 for (const [name, html] of Object.entries(FILES)) {
   writeFileSync(join(OUT, name), html);
@@ -1068,6 +1135,10 @@ const annotations = [
   {
     id: 'd-note', page: 'page-2', x: 0, y: -260, w: 940,
     text: 'D · Poster cards. Mobile and tablet space out evenly: three equal flex spacers put the same gap above the intro text, between the text and the grid, and between the grid and the footer.\nThe Hammer is centred between the card\'s top edge and the top of its heading, so the space above it matches the space below by construction rather than by eye.\nDesktop has about 110px between the sub-text and the artwork, which is the room for a hover nudge.',
+  },
+  {
+    id: 'd-sweep-note', page: 'page-2', x: 1980, y: -260, w: 940,
+    text: 'Responsive check — `node docs/future-tools/home-page/sweep.mjs`.\nThe three artboards are three points on a curve, so the layout is now a function of width: `posterConfig(width, height)`. Two regimes meet at 1024, the app\'s own md breakpoint — stacked hero and two cards up below it, split hero and four across at and above it. Inside a regime every number is piecewise-linear between anchors, so 390, 834 and 1440 reproduce these artboards exactly.\nThe sweep drives 45 frames from 320 to 2560 in Chromium and reads geometry, not text: frame overflow, hero/grid/footer band order, card-on-card overlap, one-line headings, blurb clipping, a bare red strip at every card\'s right edge, artwork landing on the card above, and the mark centred in its card. 45 of 45 are clean.\n`--mutate all` injects six known defects and asserts each is caught. A sweep that cannot fail is not evidence.\nOne limit, measured: below a floor the page scrolls instead of filling one screen — 709px tall at 390 wide, 1059px at 834, 579px at 1440. Every current device clears it except short phones (320x568, 360x640, 375x667), which scroll by 35-91px. iPad mini at 768x1024 clears it by 16px.',
   },
   {
     id: 'd-detail-note', page: 'page-2', x: 990, y: -260, w: 940,
