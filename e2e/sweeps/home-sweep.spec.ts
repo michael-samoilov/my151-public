@@ -114,7 +114,19 @@ test.describe('home page responsive sweep', () => {
           }
         });
 
-        // 8. Hero copy stays inside the frame and breaks rather than overrunning.
+        // 8. The band's own knobs resolve to what the band intends. This repo
+        // sets `--breakpoint-md: 1024px`, and Tailwind sorts that px value ahead
+        // of `sm`'s 40rem, so it emits the md block FIRST: a bare `sm:` utility
+        // silently beats its own `md:` override above 1024px. That is invisible
+        // to every geometric check here — the page still looks plausible — so
+        // it gets its own assertion.
+        const art = getComputedStyle(grid!).getPropertyValue('--art').trim();
+        const wantArt = window.innerWidth >= 1024 || window.innerWidth < 640 ? '1' : '0.82';
+        if (parseFloat(art) !== parseFloat(wantArt)) {
+          fail.push(`--art is ${art}, expected ${wantArt} at ${window.innerWidth}px`);
+        }
+
+        // 9. Hero copy stays inside the frame and breaks rather than overrunning.
         const hero = document.querySelector('main > section');
         [...(hero?.querySelectorAll('h1, p') ?? [])].forEach((e, i) => {
           const r = R(e);

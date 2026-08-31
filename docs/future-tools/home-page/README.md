@@ -58,6 +58,22 @@ on the one above it however the grid reflows.
 The ratios match the generator's, written against the same 166-unit card, so the
 two stay comparable.
 
+### Two things that are measured, not chosen
+
+**The h1 size.** 21px is the largest whole pixel that keeps
+"Make a custom Pokédex, pick favorite Pokémon, and more" to two lines at 320px,
+the narrowest width the e2e projects cover; 22px spills to three. In the split
+hero the h1 gets a 373px column at 1024px, where anything over 1.75rem runs to
+four lines, so the large size waits for `xl`. Re-measure both if the copy
+changes.
+
+**Breakpoint order.** This repo sets `--breakpoint-md: 1024px`. Tailwind sorts
+that px value ahead of `sm`'s 40rem, so it emits the `md` block *first* — and a
+bare `sm:` utility then beats its own `md:` override above 1024px. Every tablet
+rule on this page is `sm:max-md:`, never a bare `sm:`, so the two bands cannot
+overlap. Nothing else in `src/` pairs `sm:` and `md:` on one property today, but
+anything that does will hit this.
+
 ### Proving it
 
 `e2e/sweeps/home-sweep.spec.ts` drives the real page at 20 widths from 320 to
@@ -69,4 +85,6 @@ npx playwright test e2e/sweeps/home-sweep.spec.ts --project=desktop
 
 It checks horizontal overflow, card-on-card overlap, one-line headings, blurb
 clipping, the bare strip at each card's right edge, artwork landing on the card
-above, the build mark's air above and below, and hero copy inside the frame.
+above, the build mark's air above and below, hero copy inside the frame, and
+that `--art` resolves to what its band intends — that last one because the
+breakpoint inversion above is invisible to every geometric check.

@@ -178,7 +178,7 @@ export const enUi = {
   'home.dex.title': 'Custom Pokédex Builder',
   'home.fav.blurb': 'Pick your favorite Pokémon per type per generation',
   'home.fav.title': 'Favorite Pokémon Picker',
-  'home.h1': 'Make a custom Pokédex, Gym Leaders, and more',
+  'home.h1': 'Make a custom Pokédex, pick favorite Pokémon, and more',
   'home.intro': 'my151 is a set of free Pokémon tools and templates. Build a custom region & Pokédex by choosing your favorites from each generation, make custom gym leader trainer cards, & pick your favorite Pokémon per type per generation.',
   'home.league.blurb': 'Design gym leader teams into a league with a champion & boss',
   'home.league.title': 'Trainer Card & League Builder',

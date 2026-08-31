@@ -287,15 +287,22 @@ export function HomePage() {
             gutter would stop growing exactly where the page gets widest. Type
             below is the opposite case and stays in rem on purpose, so it does
             follow that knob. */}
-        <main className="flex-1 px-[4%] sm:px-[5.3%] md:px-[5.6%] pt-6 md:pt-16 pb-4">
+        <main className="flex-1 px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%] pt-6 md:pt-16 pb-4">
           <section className="md:flex md:items-start md:justify-between">
             <h1
-              className="m-0 font-extrabold tracking-tight text-pretty text-[1.7rem] sm:text-[1.9rem] md:text-[2.1rem] sm:max-w-[83%] md:max-w-none md:w-[41%] md:shrink-0"
+              // Every step here was measured, not guessed — see the README.
+              // 1.3125rem is 21px at the mobile root size, the largest whole
+              // pixel that keeps this heading to two lines at 320px, the
+              // narrowest width the e2e projects cover; 22px spills to three.
+              // The split hero gives the h1 a 375px column at 1024, where
+              // anything over 1.75rem runs to four lines, so the big size waits
+              // for xl.
+              className="m-0 font-extrabold tracking-tight text-pretty text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:w-[41%] md:shrink-0"
               style={{ lineHeight: 1.08 }}
             >
               {t('home.h1')}
             </h1>
-            <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-w-[83%] md:max-w-none md:w-[55%] md:shrink-0">
+            <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:w-[55%] md:shrink-0">
               <p className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
                 {t('home.intro')}
               </p>
@@ -305,16 +312,24 @@ export function HomePage() {
             </div>
           </section>
 
-          {/* `art` shrinks the fan on tablet so the two rows pack closer; phone
-              and desktop run it at full size. */}
+          {/* `--art` shrinks the fan on tablet so the two rows pack closer;
+              phone and desktop run it at full size.
+
+              Every tablet rule is `sm:max-md:`, never a bare `sm:`. This repo
+              sets `--breakpoint-md: 1024px`, and Tailwind sorts that px value
+              ahead of `sm`'s 40rem, so it emits the md block FIRST — a bare
+              `sm:` then beats its own `md:` override above 1024px. Bounding the
+              tablet rules at md means the two bands cannot overlap at all. */}
           <div
-            className="mt-8 md:mt-16 grid grid-cols-2 md:grid-cols-4 gap-x-3.5 gap-y-3.5 sm:gap-x-7 md:gap-x-6 [--art:1] sm:[--art:0.82] md:[--art:1]"
+            className="mt-8 md:mt-16 grid grid-cols-2 md:grid-cols-4 gap-x-3.5 gap-y-3.5 sm:max-md:gap-x-7 md:gap-x-6 [--art:1] sm:max-md:[--art:0.82]"
           >
             {tools.map((tool) => (
               <Card
                 key={tool.key}
                 tool={tool}
-                onPress={tool.key === 'next' ? () => openFeedback() : undefined}
+                                // The card asks what to build next, so the form opens on
+                // Idea rather than the Bug it defaults to elsewhere.
+                onPress={tool.key === 'next' ? () => openFeedback('idea') : undefined}
               />
             ))}
           </div>
