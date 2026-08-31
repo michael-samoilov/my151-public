@@ -276,9 +276,23 @@ test.describe('gym card slots', () => {
     // What survived is what fits, and it is the head of what was typed —
     // not a scrambled reorder, which is what a field that rewrites itself
     // mid-keystroke produces.
-    expect(state.rendered.length).toBeGreaterThan(8);
+    // The box is a row and a half now, two lines beside the hexagon rather
+    // than three under it, so what fits is shorter than it was. The property
+    // is that what survived is the *head* of what was typed, whatever length
+    // the box allows — a field that rewrites itself mid-keystroke produces a
+    // scrambled reorder instead, which is what this catches.
+    expect(state.rendered.length).toBeGreaterThan(4);
     expect(state.rendered.length).toBeLessThan(60);
-    expect(state.rendered.startsWith('Thunder Cascade')).toBe(true);
+    // The head of what was typed, in order. Not every character of it, and
+    // not a fixed prefix: how much fits depends on the width the card is
+    // drawn at, and once the box is full a narrow letter can still slip in
+    // where a wide one was refused, so the last character may not be the one
+    // that came next. Both are the field's own behaviour. What this test is
+    // for is that everything before that point survives *in order*, which is
+    // what a field rewriting itself mid-keystroke destroys.
+    const typed = 'Thunder Cascade Marsh Rainbow Soul Volcano Earth Boulder Zephyr Glacier';
+    const kept = state.rendered.replace(/\u00a0/g, ' ');
+    expect(typed.startsWith(kept.slice(0, -1)), `"${kept}" starts what was typed`).toBe(true);
     expect(state.stored).toBe(state.rendered);
   });
 });

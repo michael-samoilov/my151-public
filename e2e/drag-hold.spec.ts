@@ -97,7 +97,11 @@ test.describe('drag hold', () => {
         slots: document.querySelectorAll('[data-slot-open]').length,
         // The copy sits on the slot, lifted, so the gap reads underneath it.
         lift: held && slot ? Math.round(slot.top - held.top) : null,
-        sameWidth: held && slot ? Math.abs(held.width - slot.width) < 3 : false,
+        // The copy is deliberately smaller than the row it came from, so it
+        // does not reach a full row either side of the thumb. What matters is
+        // that it is still the *slot's* shape and not shrunk to its content:
+        // a copy that lost its width arrives at half size.
+        widthRatio: held && slot ? held.width / slot.width : 0,
       };
     });
     await page.mouse.up();
@@ -106,7 +110,8 @@ test.describe('drag hold', () => {
     expect(state.copies, 'exactly one copy in hand').toBe(1);
     expect(state.slots, 'exactly one open slot').toBe(1);
     expect(state.lift, 'the copy is lifted off the slot it would fill').toBeGreaterThan(6);
-    expect(state.sameWidth, 'the copy is the width of the slot').toBe(true);
+    expect(state.widthRatio, 'the copy keeps the slot\'s width, scaled').toBeGreaterThan(0.75);
+    expect(state.widthRatio, 'and never exceeds it').toBeLessThanOrEqual(1.01);
   });
 
   test('a gym column is carried in place, with no stack under the thumb', async ({ page }) => {

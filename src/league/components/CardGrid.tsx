@@ -329,7 +329,14 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           width: `calc(100% - ${2 * INSET_X}rem)`,
           height: `${ROW_H - 2 * INSET_Y}rem`,
           background: 'var(--lg-slot)',
-          touchAction: 'none',
+          // Not `none`. `touch-action: none` hands every touch on this cell to
+          // the app, which takes the browser's own gestures with it — a pinch
+          // that starts over a cell does nothing, and the cells are most of
+          // the card. The drag no longer needs it: a touch has to press and
+          // hold before the sensor claims the gesture, so a pinch is over
+          // before there is anything to claim. Same value the dex builder's
+          // grid settled on.
+          touchAction: 'pan-y pinch-zoom',
           ...(held
             ? {
                 transform: `translateY(-${CELL_LIFT_REM}rem)`,
@@ -795,32 +802,67 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   );
 }
 
+/**
+ * The TM and the badge are one pair, so they are built from one set of
+ * numbers.
+ *
+ * Each takes a row and a half of the three that rows 5 to 7 give them, and
+ * each puts its glyph and the word under it in a fixed-width column on the
+ * left with the text beside it. Sharing the column width is what makes the
+ * disc and the hexagon line up, and the two words under them line up in turn
+ * — the alternative is two independently centred stacks that agree only by
+ * accident.
+ */
+const MARK_ROWS = 1.5;
+/**
+ * The glyph column, capped as a share of the box.
+ *
+ * A fixed rem width is wrong here: the box is two of the card's seven columns
+ * and the card's width is not fixed, so at a 320px viewport a 2.75rem column
+ * took most of the box and the badge name was down to two characters. The cap
+ * keeps the glyph from eating the text it labels; both slots use the same
+ * expression, so the disc and the hexagon stay on one axis whatever binds.
+ */
+const MARK_COL = 'min(2.75rem, 30%)';
+// A share of the column, not of the box. A percentage inside the column
+// resolves against the column, so repeating the box fraction here multiplies
+// the two and collapses the glyph to a few pixels.
+const MARK_GLYPH = '72%';
+const MARK_LABEL_CLASS = 'text-[0.5rem] font-extrabold tracking-[0.06em]';
+
 function TmSlot({ view }: { view: CardView }) {
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
   const move = view.card.tmMoveId !== null ? getMoveById(view.card.tmMoveId) : undefined;
   const pos = {
     ...slotX(1, 2),
     top: `${rowTop(5) + INSET_Y}rem`,
-    height: `${ROW_H - 2 * INSET_Y}rem`,
+    height: `${MARK_ROWS * ROW_H - 2 * INSET_Y}rem`,
   };
   return (
     <button
       type="button"
       onClick={() => setMovePickerOpen(true)}
+      data-testid="slot-tm"
       className={cn('absolute z-[5] flex items-center gap-[0.375rem] rounded-lg pl-[0.375rem]', !move && 'border border-dashed')}
       style={{ ...pos, borderColor: move ? undefined : 'var(--lg-dash)', background: move ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)' }}
     >
-      <span className="flex shrink-0 flex-col items-center">
+      <span
+        className="flex shrink-0 flex-col items-center"
+        style={{ width: MARK_COL }}
+      >
         {/* The disc wears the move's own type, not the gym's — a TM is the
             move, and the gym's colour is already the whole card. Empty, it
             matches the badge hexagon's stroke rather than the cell fill. */}
-        <TmDisc colour={move ? TYPE_COLORS[move.type] : 'var(--lg-dash)'} />
+        {/* The disc takes the column's width so it tracks the same cap. */}
+        <span className="w-full" style={{ aspectRatio: '1', maxWidth: MARK_GLYPH }}>
+          <TmDisc colour={move ? TYPE_COLORS[move.type] : 'var(--lg-dash)'} size="100%" />
+        </span>
         {/* The disc's viewBox carries its own padding, so the label is pulled
             back up against it. */}
         {/* The word wears the move's type too. A TM is the move, and the
             card's own colour is already everywhere else on the card. */}
         <span
-          className="-mt-[0.0625rem] text-[0.5rem] font-extrabold tracking-[0.06em]"
+          className={cn('-mt-[0.0625rem]', MARK_LABEL_CLASS)}
           style={{ color: move ? TYPE_COLORS[move.type] : 'var(--lg-hint)' }}
         >
           TM
@@ -869,8 +911,8 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const name = view.card.badgeName;
   const pos = {
     ...slotX(1, 2),
-    top: `${rowTop(6) + INSET_Y}rem`,
-    height: `${2 * ROW_H - 2 * INSET_Y}rem`,
+    top: `${rowTop(5) + MARK_ROWS * ROW_H + INSET_Y}rem`,
+    height: `${MARK_ROWS * ROW_H - 2 * INSET_Y}rem`,
   };
 
   // The field owns its own text, so React never re-renders it — that would
@@ -926,24 +968,43 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         fieldRef.current?.focus();
         putCaretAtEnd();
       }}
-      className={cn('absolute z-[5] flex cursor-text flex-col items-center justify-center gap-[0.375rem] rounded-lg', !name && 'border border-dashed')}
+      data-testid="slot-badge"
+      className={cn('absolute z-[5] flex cursor-text items-center gap-[0.375rem] rounded-lg pl-[0.375rem]', !name && 'border border-dashed')}
       style={{ ...pos, borderColor: name ? undefined : 'var(--lg-dash)', background: name ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)' }}
     >
-      <svg viewBox="0 0 32 32" className="h-[2.375rem] w-[2.375rem]">
-        <path
-          d="M16 3 L27 9.5 L27 22.5 L16 29 L5 22.5 L5 9.5 Z"
-          fill={name ? 'var(--lg-cell)' : 'none'}
-          stroke={name ? 'none' : 'var(--lg-dash)'}
-          strokeWidth="1.6"
-          strokeDasharray={name ? undefined : '3 2.4'}
-        />
-        <circle cx="16" cy="16" r="4.4" fill={name ? '#ffffff' : 'none'} stroke={name ? 'none' : 'var(--lg-dash)'} strokeWidth="1.6" />
-      </svg>
+      {/* The same column the TM slot uses, so the hexagon sits under the disc
+          and the word under the word. */}
+      <span
+        className="flex shrink-0 flex-col items-center"
+        style={{ width: MARK_COL }}
+      >
+        <svg viewBox="0 0 32 32" className="w-full" style={{ aspectRatio: '1', maxWidth: MARK_GLYPH }}>
+          <path
+            d="M16 3 L27 9.5 L27 22.5 L16 29 L5 22.5 L5 9.5 Z"
+            fill={name ? 'var(--lg-cell)' : 'none'}
+            stroke={name ? 'none' : 'var(--lg-dash)'}
+            strokeWidth="1.6"
+            strokeDasharray={name ? undefined : '3 2.4'}
+          />
+          <circle cx="16" cy="16" r="4.4" fill={name ? '#ffffff' : 'none'} stroke={name ? 'none' : 'var(--lg-dash)'} strokeWidth="1.6" />
+        </svg>
+        <span
+          className={cn('-mt-[0.0625rem]', MARK_LABEL_CLASS)}
+          style={{ color: name ? 'var(--lg-band)' : 'var(--lg-hint)' }}
+        >
+          BADGE
+        </span>
+      </span>
       <div
         ref={textRef}
-        // Three lines is what the slot has under the hexagon. The height is
-        // fixed rather than free so `scrollHeight` has something to exceed.
-        className="w-[5.25rem] overflow-hidden text-center text-[0.65625rem] leading-tight"
+        // Three lines. The box is 1.5 rows -- 4.3125rem -- and three lines of
+        // this size come to 2.46rem, so the height is not what limits the
+        // name; the width beside the hexagon is. Capping at two lines threw
+        // away a third of the room for nothing, and at a 320px viewport that
+        // left six characters. The height is still fixed rather than free, so
+        // `scrollHeight` has something to exceed and a name cannot grow past
+        // the box.
+        className="min-w-0 flex-1 overflow-hidden pr-[0.375rem] text-left text-[0.65625rem] leading-tight"
         style={{ maxHeight: `${3 * 0.65625 * 1.25}rem` }}
       >
         <span

@@ -85,7 +85,7 @@ export function EmptySlotBall({ size = 26 }: { size?: number }) {
 }
 
 /** A pokeball with the band taken out, sheared — the TM disc. */
-export function TmDisc({ colour, size = 22 }: { colour: string; size?: number }) {
+export function TmDisc({ colour, size = 22 }: { colour: string; size?: number | string }) {
   return (
     <svg viewBox="0 0 24 24" style={{ width: size, height: size }}>
       <g transform="translate(12,12) skewX(-16) translate(-12,-12)">
