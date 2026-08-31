@@ -89,7 +89,7 @@ const TOOLS = [
 
 const HERO = {
   eyebrow: 'FREE POKÉMON TOOLS · NO SIGN-UP',
-  h1: 'Make a custom Pokédex, Gym Leaders, and more',
+  h1: 'Make a custom Pokédex, pick favorite Pokémon, and more',
   p: 'my151 is a set of free Pokémon tools and templates. Build a custom region &amp; Pokédex by choosing your favorites from each generation, make custom gym leader trainer cards, &amp; pick your favorite Pokémon per type per generation.',
   note: 'No account. Your picks save in this browser and can export as a shareable image.',
   // Used where the whole page has to fit one viewport and the long
@@ -849,9 +849,10 @@ function poster({ width, height, cols, rows, gap, padX, padBottom, bleed = 34, c
     h2 { text-wrap: balance; }
   </style>
 </helmet>
-<div style="width: ${width}px; min-height: ${height}px; box-sizing: border-box; background: ${
+<div style="width: ${width}px; box-sizing: border-box; background: ${
     C.bg
   }; color: ${C.fg}; display: flex; flex-direction: column;">
+<div style="min-height: ${height}px; display: flex; flex-direction: column;">
 ${header({ width })}
 ${colOpen}
 ${bandOpen}
@@ -864,7 +865,8 @@ ${cards}
 ${bandClose}
 ${clearFraction ? '' : '<div style="flex-grow: 1; min-height: 0;"></div>'}
 ${colClose}
-${clearFraction ? pageFooter(width) : pageFooter(width)}
+</div>
+${pageFooter(width)}
 </div>
 </x-dc>
 </body>
@@ -889,16 +891,19 @@ const POSTER_BREAKPOINT = 1024;
 
 // gap and padX are the grid's; heroPadX is the hero's own horizontal padding.
 const STACKED_ANCHORS = [
-  { w: 320, padX: 12, gap: 10, heroPadX: 16, h1Size: 23, pSize: 11.5, art: 1, maxW: 288 },
-  { w: 390, padX: 16, gap: 14, heroPadX: 20, h1Size: 27, pSize: 12.5, art: 1, maxW: 350 },
-  { w: 834, padX: 44, gap: 28, heroPadX: 44, h1Size: 36, pSize: 14.5, art: 0.82, maxW: 620 },
-  { w: 1023, padX: 54, gap: 30, heroPadX: 54, h1Size: 39, pSize: 15, art: 0.78, maxW: 680 },
+  { w: 320, padX: 13, gap: 14, h1Size: 21, pSize: 12.5, art: 1, maxW: 2000 },
+  { w: 390, padX: 16, gap: 14, h1Size: 21, pSize: 12.5, art: 1, maxW: 2000 },
+  { w: 639, padX: 26, gap: 14, h1Size: 21, pSize: 12.5, art: 1, maxW: 2000 },
+  { w: 640, padX: 34, gap: 31, h1Size: 33.2, pSize: 13.7, art: 0.82, maxW: 475 },
+  { w: 834, padX: 44, gap: 33, h1Size: 35.8, pSize: 14.7, art: 0.82, maxW: 619 },
+  { w: 1023, padX: 54, gap: 35, h1Size: 38, pSize: 15.6, art: 0.82, maxW: 760 },
 ];
 
 const SPLIT_ANCHORS = [
-  { w: 1024, padX: 48, gap: 20, heroPadX: 48, h1Size: 34, pSize: 14.5, art: 1, maxW: 380, noteW: 500, clearFraction: 0.14 },
-  { w: 1440, padX: 80, gap: 26, heroPadX: 80, h1Size: 42, pSize: 15.5, art: 1, maxW: 520, noteW: 700, clearFraction: 0.17 },
-  { w: 1920, padX: 120, gap: 34, heroPadX: 120, h1Size: 52, pSize: 17, art: 1, maxW: 690, noteW: 930, clearFraction: 0.19 },
+  { w: 1024, padX: 57, gap: 30, h1Size: 35, pSize: 15.6, art: 1, maxW: 373, noteW: 500 },
+  { w: 1279, padX: 72, gap: 30, h1Size: 35, pSize: 15.6, art: 1, maxW: 466, noteW: 625 },
+  { w: 1280, padX: 72, gap: 30, h1Size: 42, pSize: 15.6, art: 1, maxW: 466, noteW: 625 },
+  { w: 1920, padX: 108, gap: 30, h1Size: 42, pSize: 15.6, art: 1, maxW: 699, noteW: 937 },
 ];
 
 /** Piecewise-linear lookup over an anchor table, clamped past both ends. */
@@ -926,28 +931,25 @@ function posterConfig(width, height) {
   const anchors = split ? SPLIT_ANCHORS : STACKED_ANCHORS;
   const at = (key) => lerpAnchors(anchors, width, key);
   const round = (key) => Math.round(at(key));
-  const heroPadX = round('heroPadX');
+  // One gutter for the hero and the grid alike, as `main` gives them in the
+  // app, so a card's left edge lines up with the h1's.
+  const padX = round('padX');
   const base = {
     width,
     height,
     cols: split ? 4 : 2,
     rows: split ? 1 : 2,
     gap: round('gap'),
-    padX: round('padX'),
+    padX,
     padBottom: 0,
     art: +at('art').toFixed(3),
-    heroPad: `0 ${heroPadX}px`,
+    heroPad: `0 ${padX}px`,
     h1Size: +at('h1Size').toFixed(1),
     pSize: +at('pSize').toFixed(1),
     maxW: round('maxW'),
   };
   if (!split) return base;
-  return {
-    ...base,
-    noteW: round('noteW'),
-    splitHero: true,
-    clearFraction: +at('clearFraction').toFixed(3),
-  };
+  return { ...base, noteW: round('noteW'), splitHero: true };
 }
 
 // ------------------------------------------------------------ artboards
@@ -1097,22 +1099,17 @@ const artboards = ROWS.flatMap((row, r) =>
 // the second one is comparing the gradient against a solid band.
 // Row one: four permutations of the fan, same page, same copy, so the only
 // thing that differs is the card. Row two: the chosen shape at the other widths.
+// `H` is the fold — the viewport the page is composed for. The artboard is
+// taller, because the footer sits below that fold on purpose and the canvas
+// still has to show it. These are the rendered heights, measured once.
 const POSTER = [
-  ['PosterMobile.dc.html', 390, 0, 0, 'Mobile 390'],
-  ['PosterTablet.dc.html', 834, 490, 0, 'Tablet 834'],
-  ['PosterDesktop.dc.html', 1440, 1424, 0, 'Desktop 1440 — four across'],
+  ['PosterMobile.dc.html', 390, 945, 0, 0, 'Mobile 390 — fold, then footer'],
+  ['PosterTablet.dc.html', 834, 1229, 490, 0, 'Tablet 834 — fold, then footer'],
+  ['PosterDesktop.dc.html', 1440, 1017, 1424, 0, 'Desktop 1440 — four across'],
 ];
 
 artboards.push(
-  ...POSTER.map(([file, w, x, y, title]) => ({
-    file,
-    title,
-    x,
-    y,
-    w,
-    h: H[file],
-    page: 'page-2',
-  })),
+  ...POSTER.map(([file, w, h, x, y, title]) => ({ file, title, x, y, w, h, page: 'page-2' })),
 );
 
 const annotations = [
@@ -1137,12 +1134,12 @@ const annotations = [
     text: 'D · Poster cards. Mobile and tablet space out evenly: three equal flex spacers put the same gap above the intro text, between the text and the grid, and between the grid and the footer.\nThe Hammer is centred between the card\'s top edge and the top of its heading, so the space above it matches the space below by construction rather than by eye.\nDesktop has about 110px between the sub-text and the artwork, which is the room for a hover nudge.',
   },
   {
-    id: 'd-sweep-note', page: 'page-2', x: 1980, y: -260, w: 940,
-    text: 'Responsive check — `node docs/future-tools/home-page/sweep.mjs`.\nThe three artboards are three points on a curve, so the layout is now a function of width: `posterConfig(width, height)`. Two regimes meet at 1024, the app\'s own md breakpoint — stacked hero and two cards up below it, split hero and four across at and above it. Inside a regime every number is piecewise-linear between anchors, so 390, 834 and 1440 reproduce these artboards exactly.\nThe sweep drives 45 frames from 320 to 2560 in Chromium and reads geometry, not text: frame overflow, hero/grid/footer band order, card-on-card overlap, one-line headings, blurb clipping, a bare red strip at every card\'s right edge, artwork landing on the card above, and the mark centred in its card. 45 of 45 are clean.\n`--mutate all` injects six known defects and asserts each is caught. A sweep that cannot fail is not evidence.\nOne limit, measured: below a floor the page scrolls instead of filling one screen — 709px tall at 390 wide, 1059px at 834, 579px at 1440. Every current device clears it except short phones (320x568, 360x640, 375x667), which scroll by 35-91px. iPad mini at 768x1024 clears it by 16px.',
+    id: 'd-sweep-note', page: 'page-2', x: 1980, y: -300, w: 940,
+    text: 'Responsive check — `node docs/future-tools/home-page/sweep.mjs`.\nThe layout is a function of width: `posterConfig(width, height)`. Two regimes meet at 1024, the app\'s own md breakpoint — stacked hero and two cards up below it, split hero and four across at and above it. Inside a regime every number is piecewise-linear between anchors, and the anchors are the shipped page\'s own numbers.\nThe sweep drives 45 frames from 320 to 2560 in Chromium and reads geometry, not text: horizontal overflow, the footer sitting below the fold, hero/grid/footer band order, card-on-card overlap, one-line headings, blurb clipping, a bare red strip at every card\'s right edge, artwork landing on the card above, and the mark centred in its card. 45 of 45 are clean.\n`--mutate all` injects seven known defects and asserts each is caught. A sweep that cannot fail is not evidence.\nThe fold now fits a short phone: it needs 595px at 390 wide, 942px at 834, and 490px at 1440.',
   },
   {
-    id: 'd-detail-note', page: 'page-2', x: 990, y: -260, w: 940,
-    text: 'This pass, four changes.\nThe screenshot shadow no longer stops in a straight line at the card\'s bottom. The shadow now paints in its own layer that fades out over the last 34px, so it thins to nothing instead of ending on an edge; the screenshots themselves still cut on that edge, which is the point.\nTablet is the packed one: the artwork scales to 82%, so the two rows sit closer. `art` is the single knob, and the left overhang scales with it or the gradient rule fails the build.\nCard copy is a step larger — 9.4px title, 8.8px blurb at 390px. It cannot reach the 11.5px of the "No account…" line: "Trainer Card & League Builder" already fills 154 of the 158px the card gives it, so one line of title caps the size at about 9.6px. Matching 11.5px needs a shorter title or one card per row.\nLine breaks in the headings and blurbs come from `text-wrap: balance`, not manual breaks.',
+    id: 'd-detail-note', page: 'page-2', x: 990, y: -300, w: 940,
+    text: 'These artboards are taller than the viewport on purpose. The header, hero and card grid fill one screen on their own; the footer starts below that fold. What a visitor sees before scrolling is everything down to the footer\'s top rule — the rest is a scroll away.\nInside the fold, three equal spacers put the same air above the hero, between the hero and the grid, and below the grid.\nThe card: the screenshot shadow fades out over its last 34px instead of stopping in a straight line at the card\'s bottom edge; the screenshots themselves still cut on that edge, which is what makes them read as sliding behind the card.\nCard copy is 9.4px title and 8.8px blurb at 390. It cannot reach the 11.5px of the "No account…" line: "Trainer Card & League Builder" already fills 154 of the 158px the card gives it, so one line of title caps the size at about 9.6px.\nThe h1 is 21px on a phone — the largest whole pixel that keeps it to two lines at 320px. Line breaks come from `text-wrap: pretty` on the hero and `balance` in the cards, never manual breaks.',
   },
 ];
 

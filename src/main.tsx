@@ -49,6 +49,30 @@ if (new URLSearchParams(window.location.search).has('admin')) {
       </StrictMode>,
     );
   });
+} else if (new URLSearchParams(window.location.search).has('home')) {
+  // The router page, in review. It is deliberately reachable only by this flag:
+  // it has no URL of its own, so nothing links to it and no crawler finds it,
+  // and the tool slugs it points at do not exist yet. The `noindex` below is
+  // the belt to that braces. Give it a real route only when the tools it
+  // routes to are ready — see docs/future-tools/home-page/.
+  const robots = document.createElement('meta');
+  robots.name = 'robots';
+  robots.content = 'noindex, nofollow';
+  document.head.appendChild(robots);
+  void Promise.all([
+    import('./components/home/HomePage'),
+    initLocale({
+      search: window.location.search,
+      stored: usePokedexStore.getState().locale,
+      navigatorLanguages: navigator.languages,
+    }),
+  ]).then(([{ HomePage }]) => {
+    createRoot(rootEl).render(
+      <StrictMode>
+        <HomePage />
+      </StrictMode>,
+    );
+  });
 } else {
   // Resolve the display language before the first paint. English is bundled, so
   // the common path resolves synchronously; anything else is raced against a
