@@ -1,40 +1,44 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 
+/** How to draw the fitted block: the scale, and the width to hold it at. */
+export interface Fit {
+  /** The scale, applied as CSS `zoom`. */
+  scale: number;
+  /**
+   * The block's width in its own layout pixels, or 0 before it is measured.
+   *
+   * This is what makes the fit a scale. Left to itself the block fills its
+   * parent, and `zoom` sizes a percentage against the *zoomed* coordinate
+   * space — so a block at half scale lays out twice as wide and renders at
+   * the same width it always had, losing only height. Held at a fixed number
+   * of layout pixels instead, both of its sides scale together.
+   */
+  width: number;
+}
+
 /**
- * Fit zoom: the whole template must sit inside the viewport, so the card (or
+ * Fit scale: the whole template must sit inside the viewport, so the card (or
  * the league summary) and its hint lines shrink as one unit when the screen
- * is short. CSS `zoom` participates in layout and scales px, rem, text and
- * SVG together — the proportional shrink the responsive-sizing rules ask for.
- * The applied scale is divided out of `natural` so the loop is a fixed point,
- * not a spiral.
+ * is short.
  *
- * The budget comes from the nearest `[data-lg-viewport]` ancestor, so a pane
- * that scrolls on its own is measured rather than the window.
+ * CSS `zoom` rather than a transform, for two reasons. It participates in
+ * layout, so the block still takes the room it draws in and the footer below
+ * it follows. And a transformed ancestor becomes the containing block for
+ * `position: fixed` descendants, which the card's pickers are.
+ *
+ * The applied scale is divided out of `natural` so the loop is a fixed point,
+ * not a spiral. The budget comes from the nearest `[data-lg-viewport]`
+ * ancestor, so a pane that scrolls on its own is measured rather than the
+ * window.
  */
 export function useFitScale(
   ref: React.RefObject<HTMLDivElement | null>,
   /** Below this the content stops being readable and a short scroll wins. */
   floor = 0.55,
-): number {
-  const [scale, setScale] = useState(1);
+): Fit {
+  const [fit, setFit] = useState<Fit>({ scale: 1, width: 0 });
   const scaleRef = useRef(1);
-  /**
-   * The largest scale already seen to overflow, and the budget it was seen
-   * against.
-   *
-   * `zoom` scales the block's layout box, so a smaller scale is a *wider*
-   * box in layout pixels — and text in a wider box wraps onto fewer lines.
-   * The block's natural height is therefore not a constant, and one division
-   * can land a few pixels over. Correcting that by shrinking then invites a
-   * grow back to where it started, which is a two-state loop rather than a
-   * fit.
-   *
-   * So a scale that overflowed is never offered again while the budget holds.
-   * The corrections then only go one way and the fit settles. A real resize
-   * clears the ceiling, which is what lets the block grow back on rotation.
-   */
-  const ceiling = useRef(1);
-  const budget = useRef(Number.NaN);
+  const widthRef = useRef(0);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -53,21 +57,27 @@ export function useFitScale(
       } else {
         avail = window.innerHeight - rect.top - 8;
       }
-      if (!(Math.abs(avail - budget.current) <= 1)) {
-        budget.current = avail;
-        ceiling.current = 1;
+      // The room the block is drawn in, measured on the parent because the
+      // parent is not scaled. At scale 1 the block already has exactly this
+      // width, so pinning it changes nothing until the fit bites.
+      const host = el.parentElement;
+      let width = widthRef.current;
+      if (host) {
+        const pad = getComputedStyle(host);
+        width = Math.max(
+          0,
+          host.clientWidth
+            - (parseFloat(pad.paddingLeft) || 0)
+            - (parseFloat(pad.paddingRight) || 0),
+        );
       }
-      // Half a pixel, not zero: a block whose height rounds up by a fraction
-      // of a pixel has not overflowed anything a reader can see.
-      if (rect.height > avail + 0.5) {
-        ceiling.current = Math.min(ceiling.current, scaleRef.current - 0.004);
-      }
-      const next = Math.max(floor, Math.min(1, ceiling.current, avail / natural));
+      const next = Math.min(1, Math.max(floor, avail / natural));
       // 0.003 ≈ 2–3px at card height: tight enough to actually fit, loose
       // enough not to churn on subpixel measurements.
-      if (Math.abs(next - scaleRef.current) > 0.003) {
+      if (Math.abs(next - scaleRef.current) > 0.003 || Math.abs(width - widthRef.current) > 0.5) {
         scaleRef.current = next;
-        setScale(next);
+        widthRef.current = width;
+        setFit({ scale: next, width });
       }
     };
     compute();
@@ -79,5 +89,14 @@ export function useFitScale(
       window.removeEventListener('resize', compute);
     };
   }, [ref, floor]);
-  return scale;
+  return fit;
+}
+
+/** The style a fitted block wears: scaled, and centred on what it left. */
+export function fitStyle(fit: Fit): React.CSSProperties {
+  return {
+    zoom: fit.scale,
+    width: fit.width || undefined,
+    marginInline: 'auto',
+  };
 }

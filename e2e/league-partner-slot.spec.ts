@@ -23,11 +23,16 @@ const CENTRES = {
 /**
  * How far a centre may drift from its reading.
  *
- * Wide enough for the pixel rounding in a slot measured at six different
- * widths, and nowhere near wide enough to pass the zoom bug this is here to
- * catch: that one put the ace at 23% of the slot instead of 30%.
+ * Wide enough for two things. The pixel rounding in a slot measured at six
+ * different widths; and the clamp that holds a block inside the slot, which
+ * bites at 320px because the "ACE POKEMON" heading is wider there than the
+ * sprite it labels, so the block cannot sit on its own centre without
+ * painting outside the slot. That costs about 2.5px of a 110px slot.
+ *
+ * Still nowhere near wide enough to pass the zoom bug this is here to catch:
+ * that one put the ace at 23% of the slot instead of 30%.
  */
-const DRIFT = 0.02;
+const DRIFT = 0.03;
 
 const openCard = async (page: Page) => {
   await page.goto('/pokemon-league-builder');

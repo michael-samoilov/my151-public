@@ -18,7 +18,7 @@ import { useDragSensors } from '@/lib/dragSensors';
 import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { deriveRow, moveSeat } from '../model/engine';
 import { cardShades } from '../theme';
-import { useFitScale } from '../useFitScale';
+import { fitStyle, useFitScale } from '../useFitScale';
 import { legendsOf, powerupsAt, useLeagueStore, type GymCard } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
@@ -309,7 +309,7 @@ export function LeagueHome() {
       onDragStart={onDragStart}
       onDragCancel={() => { dragInputIsTouch.current = false; setPreview(null); }}
     >
-      <div ref={fitRef} style={{ zoom: fit }}>
+      <div ref={fitRef} style={fitStyle(fit)}>
         <div className="rounded-xl bg-card p-1 px-2 shadow-elevated">
           {order.map((cardIndex, position) => (
             <div key={position}>

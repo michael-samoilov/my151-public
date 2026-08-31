@@ -12,7 +12,7 @@ import { slotLabel } from '../model/constants';
 import { useLeagueStore, type CardType } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { useCardView } from '../useCardView';
-import { useFitScale } from '../useFitScale';
+import { fitStyle, useFitScale } from '../useFitScale';
 import { CardGrid } from './CardGrid';
 import { CardSettingsMenu } from './LeagueSettings';
 import { MovePicker } from './MovePicker';
@@ -210,7 +210,7 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
         <CardSettingsMenu cardIndex={cardIndex} />
       </div>
       <div className="px-3 pt-2.5">
-        <div ref={fitRef} style={{ zoom: fit }}>
+        <div ref={fitRef} style={fitStyle(fit)}>
           <CardGrid cardIndex={cardIndex} view={view} />
         </div>
       </div>
