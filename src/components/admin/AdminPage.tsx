@@ -8,6 +8,7 @@ import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
 import { cn, displayName } from '@/lib/utils';
 import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
+import { DROP_REASON_INFO, liveDropReasons } from '@/lib/beaconDrops';
 import { matchLocale } from '@/i18n/detect';
 
 const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
@@ -389,6 +390,120 @@ function Stat({ value, label }: { value: number | string; label: string }) {
       <span className="text-2xl font-bold tabular-nums">{value}</span>
       <span className="text-xs text-muted-foreground">{label}</span>
     </div>
+  );
+}
+
+/** A small centred dialog. Not the app's BottomSheet: that is `md:hidden` and
+ *  every caller pairs it with a different desktop surface, which is more
+ *  machinery than a paragraph of explanation needs at either width. */
+function InfoDialog({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        role="dialog"
+        aria-label={title}
+        className="bg-card rounded-lg shadow-elevated max-w-md w-full max-h-[80vh] overflow-y-auto p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 mb-2">
+          <h2 className="text-sm font-medium">{title}</h2>
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">
+            ✕
+          </Button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Beacons the server received but could not record — the only losses it can
+ * see. Silence here does not mean nothing was lost: it means nothing was lost
+ * *after* the request arrived, which is the point of the counter.
+ */
+function BeaconDropNotice({ events }: { events?: Record<string, number> }) {
+  const [open, setOpen] = useState(false);
+  const live = liveDropReasons(events);
+  const total = live.reduce((sum, d) => sum + d.count, 0);
+  if (total === 0) return null;
+
+  return (
+    <>
+      <p className="text-[0.65rem] text-amber-600 mt-2 flex items-center gap-1 flex-wrap">
+        <span>
+          ⚠ {total} beacons dropped server-side (
+          {live.map((d) => `${d.reason} ${d.count}`).join(' · ')})
+        </span>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="What does this mean?"
+          className="w-4 h-4 shrink-0 rounded-full border border-amber-600 text-amber-600 leading-none text-[0.6rem] cursor-pointer"
+        >
+          i
+        </button>
+      </p>
+      {open && (
+        <InfoDialog title="Beacons dropped server-side" onClose={() => setOpen(false)}>
+          <p className="text-xs text-muted-foreground mb-3">
+            A beacon is one progress report from someone's browser. These reached the server but
+            were not recorded, so the activity they described is missing from every number on this
+            page.
+          </p>
+          <div className="flex flex-col gap-3">
+            {live.map(({ reason, count }) => {
+              const info = DROP_REASON_INFO[reason];
+              return (
+                <div key={reason}>
+                  <p className="text-xs font-medium">
+                    {info ? info.title : reason} · {count}
+                  </p>
+                  {info ? (
+                    <>
+                      <p className="text-xs text-muted-foreground mt-0.5">{info.what}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        <span className="font-medium text-foreground">Reading the stats: </span>
+                        {info.reading}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      No description for this reason yet. It was added to the server after this
+                      panel was written.
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+            These are only the losses the server can see. If someone is missing from the dashboard
+            and this notice is absent, the loss happened earlier — in their browser, or the request
+            never left their device.
+          </p>
+        </InfoDialog>
+      )}
+    </>
   );
 }
 
@@ -2189,24 +2304,7 @@ export function AdminPage() {
                 <Stat value={data.retention.returning} label="Returning" />
                 <Stat value={data.retention.activeLast7} label="Active 7d" />
               </div>
-              {(() => {
-                // Beacons the server received but could not record — the only
-                // losses it can see, counted in api/submit.ts. Silence here
-                // means missing users were lost before reaching the server.
-                const drops = Object.entries(data.funnelEvents ?? {}).filter(([k]) =>
-                  k.startsWith('submit-drop:'),
-                );
-                const total = drops.reduce((sum, [, n]) => sum + n, 0);
-                if (total === 0) return null;
-                const detail = drops
-                  .map(([k, n]) => `${k.slice('submit-drop:'.length)} ${n}`)
-                  .join(' · ');
-                return (
-                  <p className="text-[0.65rem] text-amber-600 mt-2">
-                    ⚠ {total} beacons dropped server-side ({detail})
-                  </p>
-                );
-              })()}
+              <BeaconDropNotice events={data.funnelEvents} />
             </Card>
 
             {data.activity && data.activity.length > 0 && (
