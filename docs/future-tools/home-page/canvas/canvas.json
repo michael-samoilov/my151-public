@@ -92,8 +92,17 @@
     },
     {
       "file": "PosterTablet.dc.html",
-      "title": "Tablet 834",
+      "title": "Tablet 834 — packed",
       "x": 490,
+      "y": 0,
+      "w": 834,
+      "h": 1112,
+      "page": "page-2"
+    },
+    {
+      "file": "PosterTabletNarrow.dc.html",
+      "title": "Tablet 834 — centred, mobile measure",
+      "x": 1424,
       "y": 0,
       "w": 834,
       "h": 1112,
@@ -102,7 +111,7 @@
     {
       "file": "PosterDesktop.dc.html",
       "title": "Desktop 1440 — four across",
-      "x": 1424,
+      "x": 2358,
       "y": 0,
       "w": 1440,
       "h": 900,
@@ -148,15 +157,15 @@
       "x": 0,
       "y": -260,
       "w": 940,
-      "text": "D · Poster cards. The card is described once, in cardFrom(), as ratios of its own width — and that width now comes from the FRAME rather than being declared, so the numbers the build checks reason about are the numbers that render. A breakpoint only sets the page margin and the gutter.\nThat is what let the cards grow into the centre rail: the gutter used to carry the 34px shadow bleed as well as the gap, and it no longer does. The clip still reaches that far, so no shadow is sliced; a soft shadow grazing a neighbour is invisible.\nThe row gap is now the overhang plus a little, so the second row sits close under the first without its screenshots reaching the cards above."
+      "text": "D · Poster cards. Mobile and tablet now space out evenly: three equal flex spacers put the same gap above the intro text, between the text and the grid, and between the grid and the footer.\nThe Hammer is centred between the card's top edge and the top of its heading, so the space above it matches the space below by construction rather than by eye.\nDesktop has about 110px between the sub-text and the artwork, which is the room for a hover nudge."
     },
     {
-      "id": "d-page-note",
+      "id": "d-tablet-note",
       "page": "page-2",
       "x": 990,
       "y": -260,
       "w": 940,
-      "text": "Page changes: the app header drops the tool links, since the cards are the navigation. The dex builder's own footer is on the bottom of every width, copied from PageFooter.tsx.\nThe fourth card has no gradient — there is no screenshot under the copy to rescue, and the wash only muddied the mark. Its Hammer is the app's own lucide icon, white, higher and smaller.\nOn desktop the card rail spans exactly the hero's measure: the left card lines up with the h1 and the right card with the sub-text's right edge, because both use the same 80px margin. The sub-text column is 700px wide so its last line holds without wrapping.\nThe desktop clear band is 24%: the hero, the card block and the footer together leave that much above and below."
+      "text": "Two tablets, pick one.\nPACKED scales the artwork to 82% — thinner screenshots and a shallower overhang, which keeps their tallness while letting the two rows sit closer. One knob, `art`, does it; the left overhang scales with it, or the gradient rule fails the build (it did on the first try).\nCENTRED keeps the phone measure and leaves the sides blank. Nothing is scaled, so the cards read exactly as they do on a phone, and the header and footer still span the full width. Airier, and it is one line of layout rather than a second set of numbers to maintain."
     }
   ],
   "pages": [
