@@ -83,7 +83,7 @@
     },
     {
       "file": "PosterMobile.dc.html",
-      "title": "A · reference proportions, two phones",
+      "title": "A · reference card ratio, full titles",
       "x": 0,
       "y": 0,
       "w": 390,
@@ -92,7 +92,7 @@
     },
     {
       "file": "PosterMobileBand.dc.html",
-      "title": "B · reference proportions, three phones",
+      "title": "B · reference card ratio, short titles",
       "x": 490,
       "y": 0,
       "w": 390,
@@ -101,7 +101,7 @@
     },
     {
       "file": "PosterMobileC.dc.html",
-      "title": "C · taller card, bigger phones",
+      "title": "C · taller card, full titles",
       "x": 980,
       "y": 0,
       "w": 390,
@@ -110,7 +110,7 @@
     },
     {
       "file": "PosterMobileD.dc.html",
-      "title": "D · gradient stops at the card, steep fan",
+      "title": "D · tallest card, largest screenshots",
       "x": 1470,
       "y": 0,
       "w": 390,
@@ -175,7 +175,7 @@
       "x": 0,
       "y": -300,
       "w": 980,
-      "text": "D · Poster cards — proportions measured off your PowerPoint. Against a 315x161 red card: card height 0.51 of its width, phone 0.53 of the card width, top overhang 0.47 of the card height, left overhang 0.063 of the card width, front phone inset 0.098 of the card width. The back phone sits about 0.05 of the card height LOWER than the front and roughly 4 degrees counter-clockwise against the front's 2.5. Gradient covers about 0.67 of the card height.\nA and B are those numbers with two and three phones. C is the same on a slightly taller card, so more screenshot shows."
+      "text": "D · Poster cards — proportions measured off your PowerPoint. Against its 315x161 red card: card height 0.51 of its width, screenshot 0.53 of the card width, top overhang 0.47 of the card height, left overhang 0.063 of the card width, front screenshot inset 0.098 of the card width, back one dropped 0.05 of the card height, gradient 0.67 of the card height.\nThe fan is -8 and -3: the steep version's five degrees of separation, both rotated clockwise so the front screenshot sits near upright.\nThe gradient is a layer on the card, so it stops at the card outline, rounded corners included. The sliver of screenshot still hanging off the left below it stays unscrimmed, as in your deck."
     },
     {
       "id": "d-shape-note",
@@ -183,7 +183,7 @@
       "x": 1030,
       "y": -300,
       "w": 940,
-      "text": "D is the odd one out, and it is worth a look before you choose.\nLast round you asked for the gradient to be clipped by the card outline. Your PowerPoint does the opposite: the red runs out to the artwork's own left edge, past the card, which is why there is no seam there. The two cannot both hold at a shallow tilt — clipping the gradient to the card means the artwork has to come back inside the card before the gradient starts, and at 4 degrees it never does.\nSo A, B and C follow the PowerPoint: the gradient carries the back phone's rotation and ends where the artwork ends. D clips it to the card instead, and pays for it with a much steeper fan (-11 and -6). Pick whichever edge you prefer."
+      "text": "What the four vary, and why B exists.\nAt the reference card ratio a 166px-wide card is only 88px tall, and your card titles are exact-match SEO phrases: \"Custom Pokédex Builder\" wraps to two lines and the copy then fills almost the whole card, leaving screenshot visible only in the overhang above it. That is A.\nB keeps the same card and swaps in short display titles — \"Dex Builder\", the way your deck labels it — which is what makes the reference's balance land. The full phrase can still live in the markup for search without being the visible label.\nC and D keep the full titles and buy the room back by making the card taller: 112 and 130 against the reference's 88. D also carries the largest screenshots."
     },
     {
       "id": "d-row2-note",
@@ -191,7 +191,7 @@
       "x": 0,
       "y": 1010,
       "w": 980,
-      "text": "The other two widths, both using permutation A. Desktop is the four mobile cards side by side, not a two-by-two.\nSwap in whichever permutation you pick and these follow."
+      "text": "The other two widths, both at the reference card ratio with the full titles. The cards are wider here, so the same titles cost proportionally less height than they do at 390.\nDesktop is the four mobile cards side by side, not a two-by-two."
     }
   ],
   "pages": [
