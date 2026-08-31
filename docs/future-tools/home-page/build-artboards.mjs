@@ -98,21 +98,21 @@ const HERO = {
     'Free tools to build a custom Pokédex from all 1,025 Pokémon, lay out a region of routes and biomes, and design a gym leader league.',
 };
 
-// Poster-card copy. At the reference's card proportions the text block is the
-// binding constraint, so the blurb is one line and there is a short display
-// title available for the permutation that wants the reference's exact balance.
-const POSTER_BLURB = {
-  dex: 'Your 151 from all 1,025.',
-  league: 'Gym leaders and an Elite Four.',
-  fav: 'One favorite per type.',
-  next: 'Tell us what to build next.',
+// Poster-card copy, supplied by the owner. Titles are one line each and the
+// blurbs are exactly two, with the break where he put it — so the type sizes
+// below are chosen to hold the LONGEST title on one line, not the average.
+const POSTER_TITLE = {
+  dex: 'Custom Pokédex Builder',
+  league: 'Trainer Card &amp; League Builder',
+  fav: 'Favourite Pokémon Picker',
+  next: "What's next?",
 };
 
-const POSTER_SHORT_TITLE = {
-  dex: 'Dex Builder',
-  league: 'Gym Leader Builder',
-  fav: 'Favorite Picker',
-  next: 'What next?',
+const POSTER_BLURB = {
+  dex: 'Choose your starters, early bug,<br>pseudo, &amp; more from all regions',
+  league: 'Design gym leader teams into a<br>league with a champion &amp; boss',
+  fav: 'Pick your favorite Pokemon<br>per type per generation',
+  next: 'Give us feedback, or<br>tell us what to build next',
 };
 
 const STATUS = {
@@ -132,6 +132,29 @@ const globe = (size) =>
 
 const ball = (size) =>
   `<svg width="${size}" height="${size}" viewBox="0 0 32 32" style="flex-shrink: 0;"><circle cx="16" cy="16" r="15" fill="#fafafa" stroke="${C.pri}" stroke-width="1.5"></circle><path d="M2 16 A14 14 0 0 1 30 16" fill="${C.pri}"></path><line x1="2" y1="16" x2="30" y2="16" stroke="#fafafa" stroke-width="2"></line><circle cx="16" cy="16" r="4.5" fill="#fafafa" stroke="${C.pri}" stroke-width="2"></circle></svg>`;
+
+/**
+ * Crossed hammer and wrench, for the card that has no tool to screenshot yet.
+ * Built from lucide's own `wrench` and `hammer` paths, each rotated 45 degrees
+ * about the centre, so it sits beside the app's other lucide icons without
+ * looking like a different family.
+ */
+const hammerWrench = (size, color) => {
+  const WRENCH =
+    'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z';
+  const HAMMER = [
+    'm15 12-8.373 8.373a1 1 0 1 1-3-3L12 9',
+    'm18 15 4-4',
+    'm21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5',
+  ];
+  // Both lucide icons run handle-bottom-left to head-top-right, so rotating
+  // them apart just stacks the two heads. Mirroring the wrench instead makes
+  // the handles cross on their own, with a head at each top corner.
+  return `<svg width="${size}" height="${size}" viewBox="-3 -2 30 30" fill="none" stroke="${color}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+      <g transform="translate(24 0) scale(-1 1)"><path d="${WRENCH}"></path></g>
+      <g>${HAMMER.map((d) => `<path d="${d}"></path>`).join('')}</g>
+    </svg>`;
+};
 
 const spark = (size) =>
   `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${C.mut}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M12 8v6"></path><path d="M9 11h6"></path></svg>`;
@@ -543,7 +566,7 @@ function phone({ src, alt, w, x, y, tilt, radius }) {
  *   artwork still hanging off the left stays unscrimmed — which is what the
  *   reference does too.
  */
-function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, popTop, popLeft, radius, tone, copyBand, fade, titleSize, blurbSize, pad, shortTitle }) {
+function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, cardH, popTop, popLeft, radius, tone, copyBand, fade, titleSize, blurbSize, pad, bleed }) {
   const onRed = tone === 'red';
   const ink = onRed ? R.fg : C.fg;
   const inkSub = onRed ? R.sub : C.mut;
@@ -551,30 +574,52 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, p
   const phoneRadius = Math.round(phoneW * 0.09);
   const shots = [tool.shotC, tool.shotB, tool.shot];
 
-  // Back to front, so the front phone paints over the ones behind it. The back
-  // ones sit LOWER, as in the reference, so index 0 takes the largest drop.
+  // The clipping box reaches `bleed` further up and left than the artwork needs,
+  // so each screenshot's drop shadow has room to fall outside the card without
+  // being sliced off at the clip edge. The screenshots shift by the same amount
+  // and land where they would have anyway.
   const fan = tilts
     .map((tilt, i) =>
       phone({
-        src: tool.shot ? shots[shots.length - tilts.length + i] : null,
-        alt: tool.shot ? `${tool.h2} screenshot` : suggestPhone({ phoneW }),
+        src: shots[shots.length - tilts.length + i],
+        alt: `${tool.h2} screenshot`,
         w: phoneW,
-        x: offsets[i],
-        y: phoneTop + (tilts.length - 1 - i) * dropStep,
+        x: bleed + offsets[i],
+        y: bleed + phoneTop + (tilts.length - 1 - i) * dropStep,
         tilt,
         radius: phoneRadius,
       }),
     )
     .join('\n    ');
 
+  // No tool to screenshot yet, so the card carries a build icon instead. It is
+  // centred across the clear area above the gradient and nudged up, so it reads
+  // as optically centred once the copy below is taken into account.
+  // The icon sits a little above the card's middle, so it reads as balanced
+  // against the copy below. It borrows part of the overhang the other cards
+  // spend on artwork, which keeps the four reading as one row; confined to the
+  // card alone it would be squeezed between the top edge and the gradient.
+  const markTop = Math.round(popTop * 0.55);
+  const markBox = markTop + cardH - copyBand;
+  const mark = `<div style="position: absolute; top: -${markTop}px; left: 0; right: 0; height: ${markBox}px; display: flex; align-items: center; justify-content: center;">${hammerWrench(
+    Math.round(markBox * 0.74),
+    '#921616',
+  )}</div>`;
+
   return `<a href="${tool.slug}" style="position: relative; display: block; height: 100%; border-radius: ${radius}px; background: ${
     onRed ? R.card : C.card
   }; border: 1px solid ${
     onRed ? R.card : C.bd
   }; box-shadow: 0 1px 2px rgba(10, 10, 10, 0.06); text-decoration: none;">
-  <div style="position: absolute; top: -${popTop}px; left: -${popLeft}px; right: 0; bottom: 0; overflow: hidden;">
+  ${
+    tool.shot
+      ? `<div style="position: absolute; top: -${popTop + bleed}px; left: -${
+          popLeft + bleed
+        }px; right: 0; bottom: 0; overflow: hidden;">
     ${fan}
-  </div>
+  </div>`
+      : mark
+  }
   <div style="position: absolute; left: 0; right: 0; bottom: 0; height: ${
     copyBand + fade
   }px; border-radius: 0 0 ${radius - 1}px ${
@@ -583,10 +628,12 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, p
     copyBand * 0.55,
   )}px, rgba(${wash}, 0.92) ${copyBand}px, rgba(${wash}, 0) ${copyBand + fade}px);"></div>
   <div style="position: absolute; left: ${pad}px; right: ${pad}px; bottom: ${pad}px; display: flex; flex-direction: column; gap: 3px;">
-    <h2 style="margin: 0; font-size: ${titleSize}px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; color: ${ink};">${
-      shortTitle ? POSTER_SHORT_TITLE[tool.key] : tool.h2
+    <h2 style="margin: 0; font-size: ${titleSize}px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; white-space: nowrap; color: ${ink};">${
+      POSTER_TITLE[tool.key]
     }</h2>
-    <p style="margin: 0; font-size: ${blurbSize}px; line-height: 1.35; color: ${inkSub}; text-wrap: pretty;">${
+    <p style="margin: 0; height: ${Math.round(
+      blurbSize * 1.35 * 2,
+    )}px; font-size: ${blurbSize}px; line-height: 1.35; color: ${inkSub};">${
       POSTER_BLURB[tool.key]
     }</p>
   </div>
@@ -598,7 +645,7 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, p
  * hero. Row heights are fixed, not `1fr`, so the card height the checks below
  * reason about is the height that actually renders; the hero takes the slack.
  */
-function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phoneW, phoneTop, dropStep, popTop, popLeft, radius, tone, copyBand, fade, gap, padTop, padX, padBottom, titleSize, blurbSize, pad, shortTitle, heroPad, h1Size, pSize, maxW, links, splitHero }) {
+function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phoneW, phoneTop, dropStep, popTop, popLeft, radius, tone, copyBand, fade, gap, padTop, padX, padBottom, titleSize, blurbSize, pad, bleed = 34, clearFraction = 0, heroPad, h1Size, pSize, maxW, links, splitHero }) {
   // Four ways this card silently stops working. Each is worth failing the build
   // for, because each one only shows up as "the design looks slightly off".
   //
@@ -614,9 +661,11 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
   }
   // 2. The first row's overhang reaches `popTop` above the grid, so anything
   //    less than that in the grid's top padding puts artwork on the hero.
-  if (padTop < popTop) {
+  if (padTop < popTop + bleed) {
     throw new Error(
-      `grid top padding ${padTop} is under the ${popTop} overhang: the first row's artwork lands on the hero`,
+      `grid top padding ${padTop} is under the ${
+        popTop + bleed
+      } overhang plus shadow bleed: the first row's artwork lands on the hero`,
     );
   }
   // 3. A phone that reaches the card's right edge reads as clipped there, which
@@ -632,8 +681,8 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
   }
 
   const heroBody = splitHero
-    ? `<section style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; padding: ${heroPad};">
-    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 56px;">
+    ? `<section style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-start; padding: ${heroPad};">
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 56px;">
       <h1 style="margin: 0; max-width: ${maxW}px; font-size: ${h1Size}px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.05; color: ${
         C.fg
       };">${HERO.h1}</h1>
@@ -659,6 +708,16 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
     }px; line-height: 1.45; color: ${C.mut};">${HERO.note}</p>
   </section>`;
 
+  // A fifth of the space below the app header stays clear at the top and the
+  // bottom of the viewport, which is what lifts the card rail off the floor.
+  // Percentage padding in a flex column resolves against WIDTH, so the clear
+  // band is computed in px from the frame height instead.
+  const clear = Math.round((height - (width < 500 ? 44 : 50)) * clearFraction);
+  const bandOpen = clearFraction
+    ? `<div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; justify-content: space-between; padding: ${clear}px 0;">`
+    : '';
+  const bandClose = clearFraction ? '</div>' : '';
+
   const cards = TOOLS.map((t) =>
     posterCard({
       tool: t,
@@ -668,6 +727,7 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
       phoneTop,
       dropStep,
       cardW,
+      cardH,
       popTop,
       popLeft,
       radius,
@@ -677,7 +737,7 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
       titleSize,
       blurbSize,
       pad,
-      shortTitle,
+      bleed,
     }),
   ).join('\n');
 
@@ -702,12 +762,14 @@ function poster({ width, height, cols, rows, cardW, cardH, tilts, offsets, phone
     C.bg
   }; color: ${C.fg}; display: flex; flex-direction: column; overflow: hidden;">
 ${header({ width, links })}
+${bandOpen}
 ${heroBody}
 <div style="flex-shrink: 0; display: grid; grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, ${cardH}px); column-gap: ${
-    popLeft + gap
-  }px; row-gap: ${popTop + gap}px; padding: ${padTop}px ${padX}px ${padBottom}px; box-sizing: border-box;">
+    popLeft + bleed + gap
+  }px; row-gap: ${popTop + bleed + gap}px; padding: ${padTop}px ${padX}px ${padBottom}px; box-sizing: border-box;">
 ${cards}
 </div>
+${bandClose}
 </div>
 </x-dc>
 </body>
@@ -732,9 +794,6 @@ const H = {
   // D · Poster cards. These are real device viewports, not page heights: the
   // whole router has to fit without scrolling, so the frame IS the constraint.
   'PosterMobile.dc.html': 844,
-  'PosterMobileBand.dc.html': 844,
-  'PosterMobileC.dc.html': 844,
-  'PosterMobileD.dc.html': 844,
   'PosterTablet.dc.html': 1112,
   'PosterDesktop.dc.html': 900,
 };
@@ -800,73 +859,38 @@ const FILES = {
     restShotH: 130, restPop: 54, gridPad: '0 16px', links: false,
   }),
 
-  // D · Poster cards. Proportions from the owner's PowerPoint (card 315x161):
-  // cardH 0.51*cardW, phone 0.53*cardW, popTop 0.47*cardH, popLeft
-  // 0.063*cardW, front screenshot inset 0.098*cardW, back one dropped
-  // 0.05*cardH, gradient 0.67*cardH. Fan is -8 / -3: the steep fan's 5 degrees
-  // of separation, rotated clockwise so the front screenshot sits near upright.
-  //
-  // A: the reference ratio, with the full <h2> titles.
+  // D · Poster cards. Proportions from the owner's PowerPoint, with the card
+  // height cut a further 20%: at 390 the card is 104px on a 166px width.
+  // Type sizes hold the LONGEST title, "Trainer Card & League Builder", on one
+  // line — that is what sets them, not the average.
   'PosterMobile.dc.html': poster({
     width: 390, height: H['PosterMobile.dc.html'], cols: 2, rows: 2,
-    cardW: 166, cardH: 88, tone: 'red',
-    tilts: [-8, -3], offsets: [0, 16], phoneW: 126, phoneTop: 8, dropStep: 4,
-    popTop: 41, popLeft: 10, radius: 14, copyBand: 58, fade: 26,
-    gap: 10, padTop: 46, padX: 16, padBottom: 16,
-    titleSize: 12.5, blurbSize: 10, pad: 9,
-    heroPad: '16px 20px 12px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
-  }),
-  // B: the reference ratio with short display titles, which is what the
-  // reference itself uses. Same card, but the copy stops eating it.
-  'PosterMobileBand.dc.html': poster({
-    width: 390, height: H['PosterMobileBand.dc.html'], cols: 2, rows: 2,
-    cardW: 166, cardH: 88, tone: 'red', shortTitle: true,
-    tilts: [-8, -3], offsets: [0, 16], phoneW: 126, phoneTop: 8, dropStep: 4,
-    popTop: 41, popLeft: 10, radius: 14, copyBand: 44, fade: 24,
-    gap: 10, padTop: 46, padX: 16, padBottom: 16,
-    titleSize: 13, blurbSize: 10, pad: 9,
-    heroPad: '16px 20px 12px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
-  }),
-  // C: a taller card, full titles — the compromise if the <h2> has to be the
-  // exact-match phrase and you still want screenshot showing inside the card.
-  'PosterMobileC.dc.html': poster({
-    width: 390, height: H['PosterMobileC.dc.html'], cols: 2, rows: 2,
-    cardW: 166, cardH: 112, tone: 'red',
-    tilts: [-8, -3], offsets: [0, 16], phoneW: 126, phoneTop: 8, dropStep: 5,
-    popTop: 48, popLeft: 10, radius: 14, copyBand: 58, fade: 28,
-    gap: 10, padTop: 52, padX: 16, padBottom: 16,
-    titleSize: 12.5, blurbSize: 10, pad: 9,
-    heroPad: '16px 20px 12px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
-  }),
-  // D: taller still, and the largest screenshots of the four.
-  'PosterMobileD.dc.html': poster({
-    width: 390, height: H['PosterMobileD.dc.html'], cols: 2, rows: 2,
-    cardW: 166, cardH: 130, tone: 'red',
+    cardW: 166, cardH: 104, tone: 'red',
     tilts: [-8, -3], offsets: [0, 16], phoneW: 132, phoneTop: 8, dropStep: 6,
-    popTop: 56, popLeft: 12, radius: 16, copyBand: 60, fade: 30,
-    gap: 10, padTop: 60, padX: 16, padBottom: 16,
-    titleSize: 13, blurbSize: 10.5, pad: 10,
+    popTop: 56, popLeft: 12, radius: 14, copyBand: 52, fade: 26,
+    gap: 10, padTop: 92, padX: 16, padBottom: 16,
+    titleSize: 8.4, blurbSize: 8, pad: 7,
     heroPad: '16px 20px 12px', h1Size: 27, pSize: 12.5, maxW: 350, links: false,
   }),
   'PosterTablet.dc.html': poster({
     width: 834, height: H['PosterTablet.dc.html'], cols: 2, rows: 2,
-    cardW: 363, cardH: 185, tone: 'red',
+    cardW: 363, cardH: 148, tone: 'red',
     tilts: [-8, -3], offsets: [0, 36], phoneW: 236, phoneTop: 14, dropStep: 9,
-    popTop: 87, popLeft: 23, radius: 18, copyBand: 90, fade: 42,
-    gap: 18, padTop: 92, padX: 32, padBottom: 32,
-    titleSize: 21, blurbSize: 14, pad: 16,
+    popTop: 87, popLeft: 23, radius: 18, copyBand: 76, fade: 36,
+    gap: 18, padTop: 124, padX: 32, padBottom: 32,
+    titleSize: 18, blurbSize: 13, pad: 15,
     heroPad: '22px 32px 16px', h1Size: 40, pSize: 15.5, maxW: 660, links: true,
   }),
   // Four of the mobile cards side by side, as asked — not a two-by-two.
   'PosterDesktop.dc.html': poster({
     width: 1440, height: H['PosterDesktop.dc.html'], cols: 4, rows: 1,
-    cardW: 282, cardH: 144, tone: 'red',
+    cardW: 282, cardH: 115, tone: 'red',
     tilts: [-8, -3], offsets: [0, 28], phoneW: 190, phoneTop: 12, dropStep: 7,
-    popTop: 68, popLeft: 18, radius: 16, copyBand: 80, fade: 36,
-    gap: 20, padTop: 74, padX: 80, padBottom: 60,
-    titleSize: 18, blurbSize: 13.5, pad: 15,
-    heroPad: '28px 80px 20px', h1Size: 46, pSize: 16, maxW: 620, links: true,
-    splitHero: true,
+    popTop: 68, popLeft: 18, radius: 16, copyBand: 64, fade: 30,
+    gap: 20, padTop: 102, padX: 80, padBottom: 0,
+    titleSize: 14.4, blurbSize: 11, pad: 13,
+    heroPad: '0 80px', h1Size: 44, pSize: 15.5, maxW: 600, links: true,
+    splitHero: true, clearFraction: 0.2,
   }),
 };
 
@@ -920,12 +944,9 @@ const artboards = ROWS.flatMap((row, r) =>
 // Row one: four permutations of the fan, same page, same copy, so the only
 // thing that differs is the card. Row two: the chosen shape at the other widths.
 const POSTER = [
-  ['PosterMobile.dc.html', 390, 0, 0, 'A · reference card ratio, full titles'],
-  ['PosterMobileBand.dc.html', 390, 490, 0, 'B · reference card ratio, short titles'],
-  ['PosterMobileC.dc.html', 390, 980, 0, 'C · taller card, full titles'],
-  ['PosterMobileD.dc.html', 390, 1470, 0, 'D · tallest card, largest screenshots'],
-  ['PosterTablet.dc.html', 834, 0, 1120, 'Tablet 834 — permutation A'],
-  ['PosterDesktop.dc.html', 1440, 934, 1120, 'Desktop 1440 — permutation A, four across'],
+  ['PosterMobile.dc.html', 390, 0, 0, 'Mobile 390'],
+  ['PosterTablet.dc.html', 834, 490, 0, 'Tablet 834'],
+  ['PosterDesktop.dc.html', 1440, 1424, 0, 'Desktop 1440 — four across'],
 ];
 
 artboards.push(
@@ -958,16 +979,12 @@ const annotations = [
     text: 'SEO structure, same in all three:\n· h1 carries "make your own Pokédex" plus region and league.\n· Each card is an <h2> that exactly matches its slug: /custom-pokedex-builder, /pokemon-league-builder, /favorite-pokemon-picker.\n· The footer repeats the four links as anchor text.\nWatch out: making / a router moves the dex builder off the URL that ranks today (~pos 7.8 for "pokedex builder").',
   },
   {
-    id: 'd-note', page: 'page-2', x: 0, y: -300, w: 980,
-    text: 'D · Poster cards — proportions measured off your PowerPoint. Against its 315x161 red card: card height 0.51 of its width, screenshot 0.53 of the card width, top overhang 0.47 of the card height, left overhang 0.063 of the card width, front screenshot inset 0.098 of the card width, back one dropped 0.05 of the card height, gradient 0.67 of the card height.\nThe fan is -8 and -3: the steep version\'s five degrees of separation, both rotated clockwise so the front screenshot sits near upright.\nThe gradient is a layer on the card, so it stops at the card outline, rounded corners included. The sliver of screenshot still hanging off the left below it stays unscrimmed, as in your deck.',
+    id: 'd-note', page: 'page-2', x: 0, y: -280, w: 940,
+    text: 'D · Poster cards, settled. Card height is the reference ratio cut a further 20%: 104px on a 166px card at 390. Two screenshots fanned at -8 and -3, back one lower and further left. The gradient is a layer on the card, so it stops at the card outline including the rounded corners.\nThe artwork\'s clipping box now reaches 34px further up and left than the artwork needs, so each screenshot\'s drop shadow falls outside the card without being sliced at the clip edge. Both grid gaps carry that bleed too, so a shadow never lands on the neighbouring card.\nThe fourth card has no tool to screenshot, so it takes a crossed hammer and wrench in a darker red, sitting just above the card\'s middle.',
   },
   {
-    id: 'd-shape-note', page: 'page-2', x: 1030, y: -300, w: 940,
-    text: 'What the four vary, and why B exists.\nAt the reference card ratio a 166px-wide card is only 88px tall, and your card titles are exact-match SEO phrases: "Custom Pokédex Builder" wraps to two lines and the copy then fills almost the whole card, leaving screenshot visible only in the overhang above it. That is A.\nB keeps the same card and swaps in short display titles — "Dex Builder", the way your deck labels it — which is what makes the reference\'s balance land. The full phrase can still live in the markup for search without being the visible label.\nC and D keep the full titles and buy the room back by making the card taller: 112 and 130 against the reference\'s 88. D also carries the largest screenshots.',
-  },
-  {
-    id: 'd-row2-note', page: 'page-2', x: 0, y: 1010, w: 980,
-    text: 'The other two widths, both at the reference card ratio with the full titles. The cards are wider here, so the same titles cost proportionally less height than they do at 390.\nDesktop is the four mobile cards side by side, not a two-by-two.',
+    id: 'd-type-note', page: 'page-2', x: 990, y: -280, w: 940,
+    text: 'One thing to look at before this becomes code: the title sizes are set by "Trainer Card & League Builder" on one line, not by the average.\nAt 390 two-up, a card is 166px wide, and that title on one line lands at 8.4px — small. Desktop gets 14.4px and tablet 18px, which are fine. Two ways out if 8.4px is too small: give the league card a shorter label, or let mobile cards go one per row and scroll.\nOne SEO note: "Trainer Card & League Builder" drops the word Pokémon from that card\'s heading, which was carrying the /pokemon-league-builder match. Worth keeping the full phrase in the markup even if the visible label is this.\nI also spelled "psuedo" as "pseudo" in the dex blurb — say the word if that was deliberate.',
   },
 ];
 

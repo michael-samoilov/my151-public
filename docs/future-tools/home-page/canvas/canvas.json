@@ -83,35 +83,8 @@
     },
     {
       "file": "PosterMobile.dc.html",
-      "title": "A · reference card ratio, full titles",
+      "title": "Mobile 390",
       "x": 0,
-      "y": 0,
-      "w": 390,
-      "h": 844,
-      "page": "page-2"
-    },
-    {
-      "file": "PosterMobileBand.dc.html",
-      "title": "B · reference card ratio, short titles",
-      "x": 490,
-      "y": 0,
-      "w": 390,
-      "h": 844,
-      "page": "page-2"
-    },
-    {
-      "file": "PosterMobileC.dc.html",
-      "title": "C · taller card, full titles",
-      "x": 980,
-      "y": 0,
-      "w": 390,
-      "h": 844,
-      "page": "page-2"
-    },
-    {
-      "file": "PosterMobileD.dc.html",
-      "title": "D · tallest card, largest screenshots",
-      "x": 1470,
       "y": 0,
       "w": 390,
       "h": 844,
@@ -119,18 +92,18 @@
     },
     {
       "file": "PosterTablet.dc.html",
-      "title": "Tablet 834 — permutation A",
-      "x": 0,
-      "y": 1120,
+      "title": "Tablet 834",
+      "x": 490,
+      "y": 0,
       "w": 834,
       "h": 1112,
       "page": "page-2"
     },
     {
       "file": "PosterDesktop.dc.html",
-      "title": "Desktop 1440 — permutation A, four across",
-      "x": 934,
-      "y": 1120,
+      "title": "Desktop 1440 — four across",
+      "x": 1424,
+      "y": 0,
       "w": 1440,
       "h": 900,
       "page": "page-2"
@@ -173,25 +146,17 @@
       "id": "d-note",
       "page": "page-2",
       "x": 0,
-      "y": -300,
-      "w": 980,
-      "text": "D · Poster cards — proportions measured off your PowerPoint. Against its 315x161 red card: card height 0.51 of its width, screenshot 0.53 of the card width, top overhang 0.47 of the card height, left overhang 0.063 of the card width, front screenshot inset 0.098 of the card width, back one dropped 0.05 of the card height, gradient 0.67 of the card height.\nThe fan is -8 and -3: the steep version's five degrees of separation, both rotated clockwise so the front screenshot sits near upright.\nThe gradient is a layer on the card, so it stops at the card outline, rounded corners included. The sliver of screenshot still hanging off the left below it stays unscrimmed, as in your deck."
-    },
-    {
-      "id": "d-shape-note",
-      "page": "page-2",
-      "x": 1030,
-      "y": -300,
+      "y": -280,
       "w": 940,
-      "text": "What the four vary, and why B exists.\nAt the reference card ratio a 166px-wide card is only 88px tall, and your card titles are exact-match SEO phrases: \"Custom Pokédex Builder\" wraps to two lines and the copy then fills almost the whole card, leaving screenshot visible only in the overhang above it. That is A.\nB keeps the same card and swaps in short display titles — \"Dex Builder\", the way your deck labels it — which is what makes the reference's balance land. The full phrase can still live in the markup for search without being the visible label.\nC and D keep the full titles and buy the room back by making the card taller: 112 and 130 against the reference's 88. D also carries the largest screenshots."
+      "text": "D · Poster cards, settled. Card height is the reference ratio cut a further 20%: 104px on a 166px card at 390. Two screenshots fanned at -8 and -3, back one lower and further left. The gradient is a layer on the card, so it stops at the card outline including the rounded corners.\nThe artwork's clipping box now reaches 34px further up and left than the artwork needs, so each screenshot's drop shadow falls outside the card without being sliced at the clip edge. Both grid gaps carry that bleed too, so a shadow never lands on the neighbouring card.\nThe fourth card has no tool to screenshot, so it takes a crossed hammer and wrench in a darker red, sitting just above the card's middle."
     },
     {
-      "id": "d-row2-note",
+      "id": "d-type-note",
       "page": "page-2",
-      "x": 0,
-      "y": 1010,
-      "w": 980,
-      "text": "The other two widths, both at the reference card ratio with the full titles. The cards are wider here, so the same titles cost proportionally less height than they do at 390.\nDesktop is the four mobile cards side by side, not a two-by-two."
+      "x": 990,
+      "y": -280,
+      "w": 940,
+      "text": "One thing to look at before this becomes code: the title sizes are set by \"Trainer Card & League Builder\" on one line, not by the average.\nAt 390 two-up, a card is 166px wide, and that title on one line lands at 8.4px — small. Desktop gets 14.4px and tablet 18px, which are fine. Two ways out if 8.4px is too small: give the league card a shorter label, or let mobile cards go one per row and scroll.\nOne SEO note: \"Trainer Card & League Builder\" drops the word Pokémon from that card's heading, which was carrying the /pokemon-league-builder match. Worth keeping the full phrase in the markup even if the visible label is this.\nI also spelled \"psuedo\" as \"pseudo\" in the dex blurb — say the word if that was deliberate."
     }
   ],
   "pages": [
