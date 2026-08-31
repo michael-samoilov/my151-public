@@ -48,11 +48,16 @@ describe('the two halves', () => {
     }
   });
 
-  it('get the same sprite, and the same ring', () => {
+  it('get the same sprite, and the same two balls', () => {
     for (const w of WIDTHS) {
       const slot = placeSlot(w, H, ACE, PARTNER);
       expect(slot.ace.sprite, `sprite at ${w}`).toBe(slot.partner.sprite);
-      expect(slot.ace.ring, `ring at ${w}`).toBe(slot.partner.ring);
+      expect(slot.ace.ring, `placeholder at ${w}`).toBe(slot.partner.ring);
+      expect(slot.ace.ball, `ball at ${w}`).toBe(slot.partner.ball);
+      // The sprite overhangs the ball it sits on, and the placeholder is
+      // smaller again — the dex builder's proportions.
+      expect(slot.ace.ball).toBeLessThan(slot.ace.sprite);
+      expect(slot.ace.ring).toBeLessThan(slot.ace.ball);
     }
   });
 
@@ -131,14 +136,19 @@ describe('against the seam', () => {
     }
   });
 
-  it('keeps both placeholder rings clear of it', () => {
+  it('keeps both drawn balls clear of it', () => {
     for (const w of WIDTHS) {
       const slot = placeSlot(w, H, ACE, PARTNER);
       const { ace, partner } = centres(slot, ACE, PARTNER);
-      expect(past(w, H, ace[0], ace[1], 'ace') + slot.ace.ring / 2, `ace ring at ${w}`)
-        .toBeLessThan(0);
-      expect(past(w, H, partner[0], partner[1], 'partner') + slot.partner.ring / 2,
-        `partner ring at ${w}`).toBeLessThan(0);
+      // A sprite may cross at its corner, which is its own transparent
+      // margin. A ball is ink the whole way round, so neither the one behind
+      // a sprite nor the placeholder before it may touch the seam.
+      for (const size of [slot.ace.ring, slot.ace.ball]) {
+        expect(past(w, H, ace[0], ace[1], 'ace') + size / 2, `ace ${size} at ${w}`)
+          .toBeLessThan(0);
+        expect(past(w, H, partner[0], partner[1], 'partner') + size / 2,
+          `partner ${size} at ${w}`).toBeLessThan(0);
+      }
     }
   });
 });

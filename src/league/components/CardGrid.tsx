@@ -36,6 +36,7 @@ import { useLeagueUi } from '../store/useLeagueUi';
 import { openLeagueBrowser } from '../store/browserBridge';
 import type { CardView } from '../useCardView';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyphs';
+import { PokeballBg } from '@/components/shared/PokeballBg';
 import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
 import { placeSlot, type Placed, type Runs } from '../slotLayout';
@@ -635,30 +636,42 @@ function SlotHalf({
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
   };
-  const art = pokemon ? (
-    <img
-        src={pokemon.sprite}
-        alt={pokemon.name}
-        className="max-w-none shrink-0"
-      style={{ width: size, height: size, imageRendering: 'pixelated' }}
-    />
-  ) : (
+  // The square the geometry reserves, with the ball inside it. Filled, that
+  // is the two-tone ball the dex builder's tiles draw, with the sprite
+  // overhanging it; empty, it is the same outline the card's own team seats
+  // use. Both are sized by the solver, so the placeholder stands where the
+  // ball will be.
+  const art = (
     <span
-      className="flex shrink-0 items-center justify-center"
+      data-slot-art
+      className="relative flex shrink-0 items-center justify-center"
       style={{ width: size, height: size }}
     >
-        {/* Sized by the solver, not by a share of the square. The partner's
-            sprite may put its corner over the seam because that corner is
-            transparent; a drawn circle is ink all the way round, so it stops
-            short of the seam instead. */}
-      <span
-        className="rounded-full border border-dashed"
-        style={{
-          width: `${place?.ring ?? 0}px`,
-          aspectRatio: '1',
-          borderColor: 'var(--lg-dash)',
-        }}
-      />
+      {pokemon ? (
+        <>
+          <span
+            aria-hidden="true"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ width: `${place?.ball ?? 0}px`, height: `${place?.ball ?? 0}px` }}
+          >
+            <PokeballBg pokemon={pokemon} />
+          </span>
+          <img
+            src={pokemon.sprite}
+            alt={pokemon.name}
+            className="relative z-[1] max-w-none"
+            style={{ width: size, height: size, imageRendering: 'pixelated' }}
+          />
+        </>
+      ) : (
+        <span
+          data-slot-ring
+          className="block"
+          style={{ width: `${place?.ring ?? 0}px`, height: `${place?.ring ?? 0}px` }}
+        >
+          <EmptySlotBall size={place?.ring ?? 0} />
+        </span>
+      )}
     </span>
   );
   // Blank when empty, but it still takes its line: that is what holds the

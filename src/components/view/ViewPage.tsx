@@ -5,9 +5,9 @@ import { useToolbarSlot } from '@/components/layout/toolbarSlot';
 import { Settings, Download, Loader2 } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewSort';
-import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
+import { PokeballBg } from '@/components/shared/PokeballBg';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
@@ -100,50 +100,6 @@ const TOUCH_HIT_LIFT_PX = 90;
 const CURSOR_MARKER_HEIGHT = 24;
 const effectiveCursorCollision = createEffectiveCursorCollision(TOUCH_HIT_LIFT_PX);
 const snapCenterToPointer = createSnapCenterToPointer(OVERLAY_LIFT_PX);
-
-/** Pokeball SVG background with top/bottom halves colored by type, gap between halves. */
-function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
-  const primary = TYPE_COLORS[pokemon.types[0] as TypeName];
-  const secondary = TYPE_COLORS[(pokemon.types[1] ?? pokemon.types[0]) as TypeName];
-
-  return (
-    <>
-      <svg
-        viewBox="0 0 40 40"
-        className="absolute inset-0 w-full h-full opacity-[0.33] -rotate-[30deg]"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M20 2 C10.06 2 2 10.06 2 20 L15 20 A5 5 0 0 1 25 20 L38 20 C38 10.06 29.94 2 20 2 Z"
-          fill={primary}
-        />
-        <path
-          d="M15 20 A5 5 0 0 0 25 20 L38 20 C38 29.94 29.94 38 20 38 C10.06 38 2 29.94 2 20 L15 20 Z"
-          fill={secondary}
-        />
-      </svg>
-      <svg
-        viewBox="0 0 40 40"
-        className="absolute inset-0 w-full h-full -rotate-[30deg]"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M20 2 C10.06 2 2 10.06 2 20 L15 20 A5 5 0 0 1 25 20 L38 20 C38 10.06 29.94 2 20 2 Z"
-          fill="none"
-          stroke="var(--color-background)"
-          strokeWidth="3"
-        />
-        <path
-          d="M15 20 A5 5 0 0 0 25 20 L38 20 C38 29.94 29.94 38 20 38 C10.06 38 2 29.94 2 20 L15 20 Z"
-          fill="none"
-          stroke="var(--color-background)"
-          strokeWidth="3"
-        />
-        <circle cx="20" cy="20" r="4" fill="var(--color-background)" stroke="var(--color-background)" strokeWidth="3" />
-      </svg>
-    </>
-  );
-}
 
 /** Measure container and compute square tile size that fits all items.
  *  `colFactor` / `rowFactor` are the effective column / row counts in tileSize

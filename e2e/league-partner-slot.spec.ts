@@ -41,15 +41,12 @@ async function slotGeometry(page: Page) {
     const s = slot.getBoundingClientRect();
     const halves = ['slot-ace', 'slot-partner'].map((id) => {
       const half = slot.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
-      // An empty half draws a ring inside the square the geometry gives it,
-      // so the square is the ring's parent — not the ring, which is sized to
-      // clear the seam and is a different share of the square in each half.
-      // Comparing a filled half's sprite against a null is how this spec once
+      // The square the geometry reserves, which both states draw inside — the
+      // ball and the sprite when filled, the placeholder when not. Comparing
+      // a filled half's sprite against a null is how this spec once
       // "measured" a 50px difference between two halves that were in fact the
       // same size.
-      const img = half.querySelector('img');
-      const ring = half.querySelector<HTMLElement>('span > span.rounded-full')?.parentElement;
-      const r = (img ?? ring)!.getBoundingClientRect();
+      const r = half.querySelector<HTMLElement>('[data-slot-art]')!.getBoundingClientRect();
       const sprite = r.width;
       const box = {
         left: r.left + r.width / 2 - sprite / 2,
@@ -59,9 +56,9 @@ async function slotGeometry(page: Page) {
       const runs = [...half.querySelectorAll<HTMLElement>('span, img')]
         .map((el) => el.getBoundingClientRect())
         .filter((v) => v.width > 1);
-      // The dashed ring, and how far past the seam it reaches. Negative is
-      // clear of it.
-      const disc = half.querySelector<HTMLElement>('span > span.rounded-full')?.getBoundingClientRect();
+      // The empty state's placeholder ball, and how far past the seam it
+      // reaches. Negative is clear of it.
+      const disc = half.querySelector<HTMLElement>('[data-slot-ring]')?.getBoundingClientRect();
       const ay = (Number(seam.getAttribute('y1')) / 100) * s.height;
       const past = disc
         ? disc.width / 2 - Math.abs(
@@ -135,8 +132,8 @@ test.describe('the ace and partner slot', () => {
       // A sprite may cross the seam at its corner, which is its own
       // transparent margin. A drawn circle is ink the whole way round, so it
       // has no corner to spend and stops short instead.
-      expect(half.ring, `${half.id} draws a ring when empty`).not.toBeNull();
-      expect(half.ringPastSeam!, `${half.id} ring reaches past the seam`).toBeLessThan(0);
+      expect(half.ring, `${half.id} draws a placeholder when empty`).not.toBeNull();
+      expect(half.ringPastSeam!, `${half.id} placeholder reaches past the seam`).toBeLessThan(0);
     }
   });
 

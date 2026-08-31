@@ -43,8 +43,17 @@ const SLOT_H = 204;
 /** A team cell, 3.25rem. Neither half goes below the card's own sprites. */
 const TEAM_SPRITE = 52;
 
-/** The placeholder ring, as a share of the sprite square it stands in. */
-const RING_OF_SPRITE = 0.62;
+/**
+ * The ball behind a chosen sprite, and the placeholder before one is chosen,
+ * as shares of the sprite square.
+ *
+ * Both are the dex builder view page's own proportions. There a tile draws its
+ * ball across the whole tile and its sprite a fifth larger, so the sprite
+ * overhangs the ball; and an empty tile draws its outline at four fifths of
+ * the tile. Divide each by that fifth and they are shares of the sprite.
+ */
+const BALL_OF_SPRITE = 1 / 1.2;
+const RING_OF_SPRITE = 0.8 / 1.2;
 
 export interface Runs {
   /** Heading width and height, in the slot's own px. */
@@ -61,8 +70,10 @@ export interface Placed {
   width: number;
   /** The sprite's edge length. */
   sprite: number;
-  /** The empty state's placeholder ring, across. */
+  /** The empty state's placeholder ball, across. */
   ring: number;
+  /** The two-tone ball a chosen sprite sits on, across. */
+  ball: number;
 }
 
 export interface Slot {
@@ -180,5 +191,6 @@ function place(
     width,
     sprite,
     ring: RING_OF_SPRITE * sprite,
+    ball: BALL_OF_SPRITE * sprite,
   };
 }
