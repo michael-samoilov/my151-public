@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { makePlacedLine } from '../model/engine';
-import { BOSS_ROW, CHAMPION_ROW } from '../model/constants';
-import { emptyCard, powerupAt, useLeagueStore } from './useLeagueStore';
+import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW } from '../model/constants';
+import { emptyCard, legendAt, legendsOf, powerupAt, powerupsAt, useLeagueStore } from './useLeagueStore';
 
 /**
  * The signature mark's two halves.
@@ -84,7 +84,7 @@ describe('the powerup', () => {
       cards: [
         {
           ...cardWith([GEODUDE, ONIX, OMANYTE]),
-          powerups: { [CHAMPION]: { seat: 1, kind: 'mega', index: 0 }, [BOSS]: { seat: 1, kind: 'mega', index: 0 } },
+          powerups: { [CHAMPION]: [{ seat: 1, kind: 'mega', index: 0 }], [BOSS]: [{ seat: 1, kind: 'mega', index: 0 }] },
         },
         emptyCard(),
       ],
@@ -103,7 +103,7 @@ describe('the powerup', () => {
     useLeagueStore.setState({
       cards: useLeagueStore.getState().cards.map((c, i) =>
         i === 0
-          ? { ...c, powerups: { [CHAMPION]: { seat: 3, kind: 'mega', index: 0 }, [BOSS]: { seat: 3, kind: 'mega', index: 0 } } }
+          ? { ...c, powerups: { [CHAMPION]: [{ seat: 3, kind: 'mega', index: 0 }], [BOSS]: [{ seat: 3, kind: 'mega', index: 0 }] } }
           : c,
       ),
     });
@@ -149,12 +149,33 @@ describe('pressing a powerup', () => {
   it('sets only its own row after that', () => {
     useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6);
     useLeagueStore.getState().cyclePowerup(0, BOSS_ROW, 2, 'dynamax', 131);
-    expect(powerupAt(card(), CHAMPION_ROW), 'the champion keeps its Mega').toEqual({
+    expect(powerupAt(card(), CHAMPION_ROW, 1), 'the champion keeps its Mega').toEqual({
       seat: 1, kind: 'mega', index: 0,
     });
-    expect(powerupAt(card(), BOSS_ROW), 'the boss row moved on its own').toEqual({
+    expect(powerupAt(card(), CHAMPION_ROW, 2), 'and gains nothing').toBeNull();
+    // A second seat *adds*: a team may power up as many of its six as it
+    // likes, so pressing on seat 2 does not take seat 1's away.
+    expect(powerupAt(card(), BOSS_ROW, 1), 'the boss row keeps seat 1').toEqual({
+      seat: 1, kind: 'mega', index: 0,
+    });
+    expect(powerupAt(card(), BOSS_ROW, 2), 'and seat 2 joins it').toEqual({
       seat: 2, kind: 'dynamax', index: 0,
     });
+  });
+
+  it('powers up a whole team, one seat at a time', () => {
+    const kinds = ['mega', 'dynamax'] as const;
+    const ids = [6, 131];
+    for (let seat = 1; seat <= 2; seat += 1) {
+      useLeagueStore.getState().cyclePowerup(0, BOSS_ROW, seat, kinds[seat - 1], ids[seat - 1]);
+    }
+    expect(powerupsAt(card(), BOSS_ROW)).toHaveLength(2);
+    expect(powerupsAt(card(), BOSS_ROW).map((p) => p.seat).sort()).toEqual([1, 2]);
+  });
+
+  it('offers the elite four row too', () => {
+    useLeagueStore.getState().cyclePowerup(0, ELITE_ROW, 1, 'mega', 6);
+    expect(powerupAt(card(), ELITE_ROW, 1)).toEqual({ seat: 1, kind: 'mega', index: 0 });
   });
 
   it('cycles one row through a Pokemon\'s forms without moving the other', () => {
@@ -167,7 +188,7 @@ describe('pressing a powerup', () => {
   it('sets every row again once the card holds none', () => {
     useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6);
     // Cycle each row past its last form, which returns it to base.
-    for (const row of [CHAMPION_ROW, BOSS_ROW]) {
+    for (const row of [ELITE_ROW, CHAMPION_ROW, BOSS_ROW]) {
       useLeagueStore.getState().cyclePowerup(0, row, 1, 'mega', 6);
       useLeagueStore.getState().cyclePowerup(0, row, 1, 'mega', 6);
       expect(powerupAt(card(), row)).toBeNull();
@@ -218,5 +239,60 @@ describe('clearCard', () => {
     expect(untouched.type).toBe('water');
     expect(untouched.badgeName).toBe('Cascade');
     expect(untouched.lines).toHaveLength(1);
+  });
+});
+
+/**
+ * Four rules the card used to enforce and no longer does.
+ *
+ * Each was a restriction the model imposed rather than the game: a gym can
+ * field two Geodudes, an endgame team can be all legendaries, a champion can
+ * Mega more than one Pokemon, and a legendary belongs to the column a person
+ * put it on rather than to the position that column happened to be in.
+ */
+describe('what a card may now hold', () => {
+  const GEODUDE = 74;
+  const card0 = () => useLeagueStore.getState().cards[0];
+
+  beforeEach(() => {
+    useLeagueStore.setState({ cards: [emptyCard(), emptyCard()] });
+  });
+
+  it('the same species in more than one seat', () => {
+    useLeagueStore.getState().placeBranch(0, [GEODUDE]);
+    useLeagueStore.getState().placeBranch(0, [GEODUDE]);
+    expect(card0().lines).toHaveLength(2);
+    expect(card0().lines.every((l) => l.branch[0] === GEODUDE)).toBe(true);
+  });
+
+  it('a legendary on every seat of the endgame row', () => {
+    for (let seat = 1; seat <= 3; seat += 1) {
+      useLeagueStore.getState().placeBranch(0, [GEODUDE]);
+      useLeagueStore.getState().setLegend(0, { pokemonId: 240 + seat, seat });
+    }
+    expect(legendsOf(card0())).toHaveLength(3);
+    expect(legendsOf(card0()).map((l) => l.seat).sort()).toEqual([1, 2, 3]);
+  });
+
+  it('two legendaries trade places rather than one being lost', () => {
+    useLeagueStore.getState().placeBranch(0, [GEODUDE]);
+    useLeagueStore.getState().placeBranch(0, [GEODUDE]);
+    useLeagueStore.getState().setLegend(0, { pokemonId: 243, seat: 1 });
+    useLeagueStore.getState().setLegend(0, { pokemonId: 244, seat: 2 });
+    useLeagueStore.getState().swapLegends(0, 1, 2);
+    expect(legendAt(card0(), 1)?.pokemonId).toBe(244);
+    expect(legendAt(card0(), 2)?.pokemonId).toBe(243);
+    expect(legendsOf(card0()), 'neither vanished').toHaveLength(2);
+  });
+
+  it('a legendary that travels with its column', () => {
+    useLeagueStore.getState().placeBranch(0, [GEODUDE]);
+    useLeagueStore.getState().placeBranch(0, [131]);
+    useLeagueStore.getState().placeBranch(0, [95]);
+    // On the column that is about to move.
+    useLeagueStore.getState().setLegend(0, { pokemonId: 243, seat: 1 });
+    useLeagueStore.getState().moveSeat(0, 1, 3);
+    expect(legendAt(card0(), 3)?.pokemonId, 'it went with its column').toBe(243);
+    expect(legendAt(card0(), 1), 'and left the seat it was in').toBeNull();
   });
 });

@@ -19,7 +19,7 @@ import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { deriveRow, moveSeat } from '../model/engine';
 import { cardShades } from '../theme';
 import { useFitScale } from '../useFitScale';
-import { powerupAt, useLeagueStore, type GymCard } from '../store/useLeagueStore';
+import { legendsOf, powerupsAt, useLeagueStore, type GymCard } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
 
@@ -103,7 +103,7 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
   // The gym challenge reads each trainer at the row you meet them; the
   // rematch view reads every trainer at their last row instead.
   const row = view === 'rematch' ? BOSS_ROW : slotRow(position);
-  const cells = deriveRow(card.lines, row, row === BOSS_ROW ? card.legend : null);
+  const cells = deriveRow(card.lines, row, row === BOSS_ROW ? legendsOf(card) : []);
   const filled = card.lines.length > 0;
 
   return (
@@ -143,7 +143,7 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
           // wearing a Mega or Gigantamax wears it here too. Without this the
           // champion row showed Charizard while its card showed Mega
           // Charizard X.
-          const form = formAt(powerupAt(card, row), row, cell.seat, cell.pokemonId);
+          const form = formAt(powerupsAt(card, row), row, cell.seat, cell.pokemonId);
           return (
             <span key={cell.seat} className="flex items-center justify-center">
               {p ? (

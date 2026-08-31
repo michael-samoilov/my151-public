@@ -187,25 +187,28 @@ test.describe('powerups', () => {
     expect(await drawn(page, 10, 1)).toBe('Gigantamax Charizard');
   });
 
-  test('the first press sets both rows, and every press after that sets one', async ({ page }) => {
+  test('the first press sets every row, and every press after that sets one', async ({ page }) => {
     await openCard(page, 12);
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
     await seat(page, '[data-testid="card-cell-1-2"]', 'lapras');
 
-    // A leader's champion team and their endgame team are the same six
-    // Pokémon at different strengths, so one press means both.
+    // A leader's Elite Four, champion and endgame teams are the same six
+    // Pokémon at different strengths, so one press means all three.
     await press(page, 10, 1, 'mega');
     expect(await drawn(page, 10, 1)).toBe('Mega Charizard X');
+    expect(await drawn(page, 9, 1), 'the elite four row got it too').toBe('Mega Charizard X');
     expect(await drawn(page, 11, 1), 'the endgame team got it too').toBe('Mega Charizard X');
 
-    // From here the two rows are the user's to differ.
+    // From here the rows are the user's to differ — and a second seat *adds*
+    // rather than moving the first one's, so a whole team can be powered up.
     await press(page, 11, 2, 'dynamax');
     expect(await drawn(page, 11, 2)).toBe('Gigantamax Lapras');
-    expect(await drawn(page, 11, 1), 'the boss row moved its own powerup').toBe('charizard');
+    expect(await drawn(page, 11, 1), 'the boss row kept seat 1 as well').toBe('Mega Charizard X');
     expect(await drawn(page, 10, 1), 'the champion kept hers').toBe('Mega Charizard X');
+    expect(await drawn(page, 10, 2), 'and gained nothing').toBe('lapras');
   });
 
-  test('a row holds one powerup at a time', async ({ page }) => {
+  test('a seat holds one powerup, but a row holds as many as it has seats', async ({ page }) => {
     await openCard(page, 12);
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
     await seat(page, '[data-testid="card-cell-1-2"]', 'lapras');
@@ -218,11 +221,12 @@ test.describe('powerups', () => {
     await press(page, 10, 1, 'dynamax');
     expect(await buttons(page, 10, 1)).toEqual(['mega:false', 'dynamax:true']);
 
-    // And another seat takes that row's single powerup with it.
+    // Another seat adds its own. Both stay: a team where every Pokémon is
+    // powered up is a card a person can build.
     await press(page, 10, 2, 'dynamax');
-    expect(await buttons(page, 10, 1)).toEqual(['mega:false', 'dynamax:false']);
+    expect(await buttons(page, 10, 1), 'seat 1 keeps its own').toEqual(['mega:false', 'dynamax:true']);
     expect(await buttons(page, 10, 2)).toEqual(['dynamax:true']);
-    expect(await drawn(page, 10, 1)).toBe('charizard');
+    expect(await drawn(page, 10, 1)).toBe('Gigantamax Charizard');
     expect(await drawn(page, 10, 2)).toBe('Gigantamax Lapras');
   });
 });

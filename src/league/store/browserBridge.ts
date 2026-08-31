@@ -256,7 +256,11 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         useLeagueStore.getState().setPartner(card, pokemonId);
         ui().closeBrowser();
       } else {
-        useLeagueStore.getState().removeLineWith(card, pokemonId);
+        // A second tap on a species already on the card adds another of it,
+        // rather than taking the first one away. A gym can field two
+        // Geodudes, and the card's own red ✗ is how a line comes off — so
+        // the picker never has to double as the remove control.
+        useLeagueStore.getState().placeBranch(card, branchEndingAt(pokemonId));
       }
       get().refresh();
     },

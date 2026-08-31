@@ -58,7 +58,15 @@ export interface GymCard {
   partnerId?: number | null;
   tmMoveId: number | null;
   badgeName: string;
-  legend: LegendPick | null;
+  /**
+   * The single legendary, from before a row could hold more than one.
+   *
+   * Kept for cards already on disk. Nothing writes it any more; read the row
+   * through `legendsOf`, which folds it in.
+   */
+  legend?: LegendPick | null;
+  /** Every legendary swapped into the endgame row, at most one per seat. */
+  legends?: LegendPick[];
   /**
    * One Mega or Gigantamax per powerup row, by row.
    *
@@ -124,7 +132,10 @@ export interface LeagueState {
   setPartner: (card: number, pokemonId: number | null) => void;
   setTm: (card: number, moveId: number | null) => void;
   setBadgeName: (card: number, name: string) => void;
-  setLegend: (card: number, legend: LegendPick | null) => void;
+  /** Put a legendary on a seat. Passing null clears that seat's. */
+  setLegend: (card: number, legend: LegendPick | null, seat?: number) => void;
+  /** Trade two seats' legendaries, which is what a drop onto an occupied seat does. */
+  swapLegends: (card: number, fromSeat: number, toSeat: number) => void;
   moveSlot: (fromIndex: number, toIndex: number) => void;
 }
 
@@ -139,6 +150,7 @@ export function emptyCard(): GymCard {
     tmMoveId: null,
     badgeName: '',
     legend: null,
+    legends: [],
     powerups: {},
     powerup: null,
   };
@@ -151,20 +163,53 @@ export function emptyCard(): GymCard {
  * `powerups` map and one `powerup` instead, which applied to both rows — so
  * that is what it answers with, and the card keeps drawing what it drew.
  */
-export function powerupAt(card: GymCard, row: number): Powerup | null {
-  if (card.powerups) return card.powerups[row] ?? null;
-  return card.powerup ?? null;
+/**
+ * Every legendary on a card's endgame row.
+ *
+ * A card saved before the row could hold more than one carries a single
+ * `legend`, which reads as a one-entry list — exactly what it meant.
+ */
+export function legendsOf(card: GymCard): LegendPick[] {
+  if (card.legends) return card.legends;
+  return card.legend ? [card.legend] : [];
+}
+
+/** The legendary on one seat of the endgame row, or null. */
+export function legendAt(card: GymCard, seat: number): LegendPick | null {
+  return legendsOf(card).find((l) => l.seat === seat) ?? null;
+}
+
+export function powerupsAt(card: GymCard, row: number): Powerup[] {
+  const stored = card.powerups?.[row];
+  // A card saved before a row could hold more than one carries a single
+  // `Powerup` here, and one saved before the rows could differ carries the
+  // card-wide `powerup` instead. Both read as a one-entry row, which is
+  // exactly what they meant.
+  if (Array.isArray(stored)) return stored;
+  if (stored) return [stored as Powerup];
+  if (card.powerups) return [];
+  return card.powerup ? [card.powerup] : [];
+}
+
+/** The powerup on one seat of one row, or null. */
+export function powerupAt(card: GymCard, row: number, seat?: number): Powerup | null {
+  const all = powerupsAt(card, row);
+  if (seat === undefined) return all[0] ?? null;
+  return all.find((p) => p.seat === seat) ?? null;
 }
 
 /** Every row's powerup, as a map, whichever shape the card is stored in. */
 function powerupMap(card: GymCard): CardPowerups {
-  return Object.fromEntries(POWERUP_ROWS.map((row) => [row, powerupAt(card, row)]));
+  return Object.fromEntries(POWERUP_ROWS.map((row) => [row, powerupsAt(card, row)]));
 }
 
-/** Rewrite every row's powerup, dropping the pre-split field as it goes. */
+/** Rewrite every powerup on every row, dropping the pre-split field as it goes. */
 function withPowerups(card: GymCard, fn: (p: Powerup) => Powerup | null): GymCard {
   const powerups = Object.fromEntries(
-    Object.entries(powerupMap(card)).map(([row, p]) => [row, p ? fn(p) : null]),
+    POWERUP_ROWS.map((row) => [
+      row,
+      powerupsAt(card, row).map(fn).filter((p): p is Powerup => p !== null),
+    ]),
   );
   return { ...card, powerups, powerup: null };
 }
@@ -229,9 +274,10 @@ export const useLeagueStore = create<LeagueState>()(
         set((s) => ({
           cards: withCard(s.cards, card, (c) => {
             if (branch.length === 0 || c.lines.length >= MAX_SEATS) return c;
-            // The same branch twice makes no sense; a tap on it removes instead.
-            const key = branch.join('-');
-            if (c.lines.some((l) => l.branch.join('-') === key)) return c;
+            // The same line twice is allowed: a gym can field two Geodudes,
+            // and a team of six of the same Pokemon is a card a person can
+            // build. A line comes off by its own red ✗, so the picker never
+            // has to double as the remove control.
             const line = makePlacedLine(branch);
             const lines =
               at === 'front' ? [line, ...c.lines] : [...c.lines, line];
@@ -246,16 +292,21 @@ export const useLeagueStore = create<LeagueState>()(
       cyclePowerup: (card, row, seat, kind, pokemonId) =>
         set((s) => ({
           cards: withCard(s.cards, card, (c) => {
-            const next = cyclePowerup(powerupAt(c, row), seat, kind, pokemonId);
-            // The first press on a card sets every powerup row: a leader's
-            // champion team and their endgame team are the same six Pokemon,
-            // so pressing Mega once and finding it on only one of them reads
-            // as the press not having worked. Every press after that sets
-            // only its own row, which is what lets the two differ.
-            const bare = POWERUP_ROWS.every((r) => powerupAt(c, r) === null);
+            const next = cyclePowerup(powerupAt(c, row, seat), seat, kind, pokemonId);
+            /** This seat's entry replaced, added or dropped; the rest kept. */
+            const withSeat = (list: Powerup[]) => {
+              const rest = list.filter((p) => p.seat !== seat);
+              return next ? [...rest, next] : rest;
+            };
+            // The first press on a card sets this seat on every powerup row:
+            // a leader's Elite Four, champion and endgame teams are the same
+            // six Pokemon, so pressing Mega once and finding it on only one
+            // of them reads as the press not having worked. Every press after
+            // that sets only its own row, which is what lets the three differ.
+            const bare = POWERUP_ROWS.every((r) => powerupsAt(c, r).length === 0);
             const powerups = bare
-              ? Object.fromEntries(POWERUP_ROWS.map((r) => [r, next]))
-              : { ...powerupMap(c), [row]: next };
+              ? Object.fromEntries(POWERUP_ROWS.map((r) => [r, next ? [next] : []]))
+              : { ...powerupMap(c), [row]: withSeat(powerupsAt(c, row)) };
             return { ...c, powerups, powerup: null };
           }),
         })),
@@ -292,9 +343,16 @@ export const useLeagueStore = create<LeagueState>()(
               signatureSeat = null;
               signatureId = null;
             } else if (signatureSeat !== null && signatureSeat > seat) signatureSeat -= 1;
-            let legend = c.legend;
-            if (legend && legend.seat > lines.length) legend = null;
-            return { ...c, lines, signatureSeat, signatureId, legend, powerups, powerup: null };
+            // A legendary sits over a column, so it follows the seats closing
+            // up behind the removed one, and goes with the column it was on.
+            const legends = legendsOf(c)
+              .filter((l) => l.seat !== seat)
+              .map((l) => ({ ...l, seat: l.seat > seat ? l.seat - 1 : l.seat }))
+              .filter((l) => l.seat <= lines.length);
+            return {
+              ...c, lines, signatureSeat, signatureId,
+              legends, legend: null, powerups, powerup: null,
+            };
           }),
         })),
 
@@ -303,15 +361,21 @@ export const useLeagueStore = create<LeagueState>()(
           cards: withCard(s.cards, card, (c) => {
             if (fromSeat === toSeat) return c;
             const lines = reorderSeats(c.lines, fromSeat, toSeat);
-            // A column drag never changes which LINE carries the signature or
-            // the powerup. Both name a seat, so both are re-aimed at the seat
-            // their own line landed in.
+            // A column drag never changes which LINE carries the signature,
+            // the powerup or the legendary swapped over it. All three name a
+            // seat, so all three are re-aimed at the seat their own line
+            // landed in — a legendary belongs to the column a person put it
+            // on, not to the position that column happened to be in.
             const signatureSeat = seatAfterMove(c.signatureSeat, fromSeat, toSeat);
             const { powerups } = withPowerups(c, (p) => ({
               ...p,
               seat: seatAfterMove(p.seat, fromSeat, toSeat) ?? p.seat,
             }));
-            return { ...c, lines, signatureSeat, powerups, powerup: null };
+            const legends = legendsOf(c).map((l) => ({
+              ...l,
+              seat: seatAfterMove(l.seat, fromSeat, toSeat) ?? l.seat,
+            }));
+            return { ...c, lines, signatureSeat, powerups, powerup: null, legends, legend: null };
           }),
         })),
 
@@ -367,9 +431,30 @@ export const useLeagueStore = create<LeagueState>()(
           cards: withCard(s.cards, card, (c) => ({ ...c, badgeName: name })),
         })),
 
-      setLegend: (card, legend) =>
+      setLegend: (card, legend, seat) =>
         set((s) => ({
-          cards: withCard(s.cards, card, (c) => ({ ...c, legend })),
+          cards: withCard(s.cards, card, (c) => {
+            const target = legend?.seat ?? seat;
+            if (target === undefined) return c;
+            const rest = legendsOf(c).filter((l) => l.seat !== target);
+            return { ...c, legends: legend ? [...rest, legend] : rest, legend: null };
+          }),
+        })),
+
+      swapLegends: (card, fromSeat, toSeat) =>
+        set((s) => ({
+          cards: withCard(s.cards, card, (c) => {
+            // Dropping a legendary on a seat that already holds one trades
+            // them, rather than one of the two vanishing. Both seats keep a
+            // legendary, which is the only reading of the gesture that loses
+            // nothing.
+            const legends = legendsOf(c).map((l) =>
+              l.seat === fromSeat ? { ...l, seat: toSeat }
+              : l.seat === toSeat ? { ...l, seat: fromSeat }
+              : l,
+            );
+            return { ...c, legends, legend: null };
+          }),
         })),
 
       moveSlot: (fromIndex, toIndex) =>

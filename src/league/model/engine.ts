@@ -137,7 +137,7 @@ export interface LegendPick {
 export function deriveRow(
   lines: PlacedLine[],
   row: number,
-  legend: LegendPick | null,
+  legends: readonly LegendPick[],
 ): CardCell[] {
   const size = TEAM_SIZES[row - 1];
   const cells: CardCell[] = [];
@@ -145,7 +145,10 @@ export function deriveRow(
     const line = lines[seat - 1];
     let pokemonId: number | null = null;
     let isLegend = false;
-    if (row === BOSS_ROW && legend && legend.seat === seat) {
+    // A seat holds at most one legendary, but the row may hold several: an
+    // endgame team of six legendaries is a card a person can build.
+    const legend = legends.find((l) => l.seat === seat);
+    if (row === BOSS_ROW && legend) {
       pokemonId = legend.pokemonId;
       isLegend = true;
     } else if (line && row >= joinRow(seat)) {
@@ -159,11 +162,11 @@ export function deriveRow(
 /** All 11 rows at once. */
 export function deriveRows(
   lines: PlacedLine[],
-  legend: LegendPick | null,
+  legends: readonly LegendPick[],
 ): CardCell[][] {
   const rows: CardCell[][] = [];
   for (let row = 1; row <= ROW_COUNT; row++) {
-    rows.push(deriveRow(lines, row, legend));
+    rows.push(deriveRow(lines, row, legends));
   }
   return rows;
 }

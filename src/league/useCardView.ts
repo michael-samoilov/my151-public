@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useLeagueStore, type GymCard } from './store/useLeagueStore';
+import { legendsOf, useLeagueStore, type GymCard } from './store/useLeagueStore';
 import { deriveRows, type CardCell } from './model/engine';
 import { cardShades, type CardShades } from './theme';
 
@@ -21,7 +21,7 @@ export function useCardView(cardIndex: number): CardView {
     () => ({
       card,
       shades: cardShades(card.type),
-      rows: deriveRows(card.lines, card.legend),
+      rows: deriveRows(card.lines, legendsOf(card)),
     }),
     [card],
   );

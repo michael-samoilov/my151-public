@@ -31,7 +31,7 @@ import {
 } from '../model/engine';
 import { getMoveById } from '../moves';
 import { CategoryChip } from './CategoryChip';
-import { powerupAt, useLeagueStore } from '../store/useLeagueStore';
+import { legendAt, legendsOf, powerupAt, powerupsAt, useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { openLeagueBrowser } from '../store/browserBridge';
 import type { CardView } from '../useCardView';
@@ -39,6 +39,7 @@ import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyp
 import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
 import { SEAM_RIGHT, placeHalf, sharedSprite, type Placed, type Runs } from '../slotLayout';
+import { useSlotLab } from '../slotLab';
 
 /**
  * The 11-row gym leader card. Geometry mirrors the design canvas
@@ -571,11 +572,12 @@ function PowerupButton({ kind, active, onPress, side }: {
  * it, which is a different layout wearing the same name.
  */
 function SlotHalf({
-  place, testId, heading, headingBelow, pokemon, nameClass,
+  place, testId, half, heading, headingBelow, pokemon, nameClass,
   headClass, onPick,
 }: {
   place: Placed | null;
   testId: string;
+  half: 'ace' | 'partner';
   heading: string;
   headingBelow: boolean;
   pokemon: ReturnType<typeof getPokemonById>;
@@ -591,6 +593,47 @@ function SlotHalf({
     </span>
   );
   const size = place ? `${place.sprite}px` : '0px';
+  const lab = useSlotLab((st) => st.enabled);
+  const slot = useSlotLab((st) => st.slot);
+  const shift = useSlotLab((st) => st[half]);
+  const nudge = useSlotLab((st) => st.nudge);
+  const dragged = useRef(false);
+  // The stored offset is a fraction of the slot, so it means the same thing on
+  // a phone and a desktop; it becomes pixels only here, against the slot this
+  // card actually has.
+  const offset = slot ? { x: shift.dx * slot.w, y: shift.dy * slot.h } : { x: 0, y: 0 };
+
+  const onLabPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+    if (!slot) return;
+    e.preventDefault();
+    const el = e.currentTarget;
+    el.setPointerCapture(e.pointerId);
+    dragged.current = false;
+    const from = { x: e.clientX, y: e.clientY };
+    // The card is scaled by CSS `zoom`, so a pointer moves more screen pixels
+    // than it does card pixels. Dividing by the slot's own scale keeps the
+    // half under the finger instead of running ahead of it.
+    const rect = el.getBoundingClientRect();
+    const scale = rect.width > 0 && place ? rect.width / place.width : 1;
+    const move = (ev: PointerEvent) => {
+      const dx = (ev.clientX - from.x) / scale;
+      const dy = (ev.clientY - from.y) / scale;
+      if (Math.hypot(dx, dy) > 3) dragged.current = true;
+      from.x = ev.clientX;
+      from.y = ev.clientY;
+      nudge(half, dx / slot.w, dy / slot.h);
+    };
+    const up = () => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', up);
+      // Let the click that follows see the flag, then clear it.
+      setTimeout(() => { dragged.current = false; }, 0);
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  };
   const body = pokemon ? (
     <>
       <img
@@ -622,15 +665,29 @@ function SlotHalf({
   return (
     <button
       type="button"
-      onClick={onPick}
+      onClick={(e) => {
+        // In the lab a press that travelled was a drag, not a tap. Everywhere
+        // else `dragged` is never set and this is the plain button it was.
+        if (dragged.current) {
+          e.preventDefault();
+          return;
+        }
+        onPick();
+      }}
+      onPointerDown={lab ? onLabPointerDown : undefined}
       data-testid={testId}
+      data-slot-half={half}
       aria-label={pokemon ? `${heading}: ${pokemon.name}` : `Choose a ${heading.toLowerCase()}`}
-      className="absolute z-[6] flex flex-col items-center text-center"
+      className={cn(
+        'absolute z-[6] flex flex-col items-center text-center',
+        lab && 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2',
+      )}
       style={{
-        left: `${place?.left ?? 0}px`,
-        top: `${place?.top ?? 0}px`,
+        left: `${(place?.left ?? 0) + offset.x}px`,
+        top: `${(place?.top ?? 0) + offset.y}px`,
         width: `${place?.width ?? 0}px`,
         visibility: place ? undefined : 'hidden',
+        outlineColor: lab ? 'rgba(37,99,235,0.5)' : undefined,
       }}
     >
       {headingBelow ? <>{body}{label}</> : <>{label}{body}</>}
@@ -689,6 +746,10 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
       const a = placeHalf(w, h, sprite, ace, true);
       const p = placeHalf(w, h, sprite, partner, false);
       if (a && p) setLayout({ ace: a, partner: p });
+      // The lab reads offsets as fractions of the slot, so it needs the slot.
+      // Setting it always costs one shallow compare; the store ignores a
+      // repeat of the same size.
+      useSlotLab.getState().setSlot(w, h);
     };
     measure();
     // A ResizeObserver is not enough on its own. The card is scaled by CSS
@@ -781,6 +842,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
       <SlotHalf
         place={layout?.ace ?? null}
         testId="slot-ace"
+        half="ace"
         heading={ACE_HEAD}
         headingBelow={false}
         pokemon={ace}
@@ -791,6 +853,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
       <SlotHalf
         place={layout?.partner ?? null}
         testId="slot-partner"
+        half="partner"
         heading={PARTNER_HEAD}
         headingBelow
         pokemon={partner}
@@ -1033,6 +1096,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const setStageBoundary = useLeagueStore((s) => s.setStageBoundary);
   const setLineBoundaries = useLeagueStore((s) => s.setLineBoundaries);
   const setLegend = useLeagueStore((s) => s.setLegend);
+  const swapLegends = useLeagueStore((s) => s.swapLegends);
   const removeLineWith = useLeagueStore((s) => s.removeLineWith);
   const cyclePowerupOnCard = useLeagueStore((s) => s.cyclePowerup);
   const { card, shades, rows } = view;
@@ -1099,7 +1163,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       // drag carries the one Pokémon it is.
       const grabbed = card.lines[d.seat - 1];
       if (d.isLegend) {
-        setHeld({ ids: card.legend ? [card.legend.pokemonId] : [], sprite, face });
+        setHeld({ ids: legendAt(card, d.seat) ? [legendAt(card, d.seat)!.pokemonId] : [], sprite, face });
       } else if (grabbed) {
         setHeld({ ids: grabbed.branch, sprite, face });
         // Held over its own seat is still held. Seeding the preview here is
@@ -1221,8 +1285,13 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       const to = e.over?.data.current as CellDatum | undefined;
       if (!p) return;
       if (p.legend) {
-        if (to && to.row === BOSS_ROW && card.legend) {
-          setLegend(cardIndex, { ...card.legend, seat: to.seat });
+        const moving = legendAt(card, p.seat);
+        if (to && to.row === BOSS_ROW && moving && to.seat !== p.seat) {
+          // Onto a seat that already holds one, the two trade places; onto an
+          // empty seat, it simply moves. Either way both legendaries survive
+          // the gesture, which is the only reading that loses nothing.
+          if (legendAt(card, to.seat)) swapLegends(cardIndex, p.seat, to.seat);
+          else setLegend(cardIndex, { ...moving, seat: to.seat });
         }
         return;
       }
@@ -1233,7 +1302,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       // Same seat: every paint already applied live, and an unpromoted
       // mid-run release touched nothing.
     },
-    [card, cardIndex, moveSeat, setLegend, setLineBoundaries],
+    [card, cardIndex, moveSeat, setLegend, setLineBoundaries, swapLegends],
   );
 
   const vars = {
@@ -1256,7 +1325,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   // covers, so the outline under the pointer says what it would replace.
   const renderRows =
     previewMove || legendDrag
-      ? deriveRows(renderLines, legendDrag ? null : card.legend)
+      ? deriveRows(renderLines, legendDrag ? [] : legendsOf(card))
       : rows;
   // A copy is carried once the gesture is a move: a vertical paint shifts an
   // evolution boundary in place, so there is nothing being carried there.
@@ -1322,7 +1391,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                   // nothing sits under it: dnd-kit ends a drag whose source
                   // draggable turns disabled mid-gesture.
                   const legendSource =
-                    legendDrag !== null && row === BOSS_ROW && card.legend?.seat === cell.seat;
+                    legendDrag !== null && row === BOSS_ROW && legendAt(card, cell.seat) !== null;
                   const datum: CellDatum = {
                     row,
                     seat: cell.seat,
@@ -1341,12 +1410,8 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       cardIndex={cardIndex}
                       datum={datum}
                       pokemonId={cell.pokemonId}
-                      form={formAt(powerupAt(card, row), row, cell.seat, cell.pokemonId)}
-                      powerupKind={
-                        isPowerupRow(row) && powerupAt(card, row)?.seat === cell.seat
-                          ? powerupAt(card, row)!.kind
-                          : null
-                      }
+                      form={formAt(powerupsAt(card, row), row, cell.seat, cell.pokemonId)}
+                      powerupKind={isPowerupRow(row) ? powerupAt(card, row, cell.seat)?.kind ?? null : null}
                       onPowerup={
                         isPowerupRow(row) && cell.pokemonId !== null && !cell.isLegend
                           ? (kind) => cyclePowerupOnCard(cardIndex, row, cell.seat, kind, cell.pokemonId as number)
@@ -1359,7 +1424,10 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       // that seat's own line back and touches nothing else.
                       onRemove={
                         cell.isLegend
-                          ? () => setLegend(cardIndex, null)
+                          // The seat has to be named: a row holds one
+                          // legendary per seat now, so "clear" without one
+                          // does not say which.
+                          ? () => setLegend(cardIndex, null, cell.seat)
                           : topId !== null
                             ? () => removeLineWith(cardIndex, topId)
                             : undefined
@@ -1389,8 +1457,8 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         <span>Press and hold a column of pokemon to drag and reorder it</span>
         <LaurelIcon className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" />
         <span>
-          {card.legend
-            ? 'Drag the Endgame Boss legendary to change which pokemon it replaces'
+          {legendsOf(card).length > 0
+            ? 'Drag a legendary onto another Endgame Boss column to move or swap it'
             : 'Tap a pokemon in the Endgame Boss row to swap in a legendary'}
         </span>
       </div>

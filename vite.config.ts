@@ -23,6 +23,9 @@ export default defineConfig({
         // The entry refuses to mount on the production deploy, and the page
         // is noindex wherever it is reachable.
         levels: path.resolve(__dirname, 'evolution-levels.html'),
+        // The ace/partner slot, with its two halves loose so their placement
+        // can be settled by hand. Same production gate as `levels`.
+        slotlab: path.resolve(__dirname, 'slot-lab.html'),
       },
     },
   },

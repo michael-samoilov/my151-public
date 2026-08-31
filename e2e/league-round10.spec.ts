@@ -56,8 +56,19 @@ test.describe('round 10', () => {
     // card the app has touched carries `powerups`, keyed by row. The spec
     // reads whichever it finds, because both are states the app produces.
     const CHAMPION_ROW = 10;
-    const rowPowerup = (card: { powerup?: { seat: number } | null; powerups?: Record<string, { seat: number } | null> }) =>
-      card.powerups?.[String(CHAMPION_ROW)] ?? card.powerup ?? null;
+    // Three shapes are on disk now: the card-wide `powerup` from before the
+    // rows could differ, a single `Powerup` per row from before a row could
+    // hold more than one, and today's list per row. All three are states the
+    // app produces, so the spec reads whichever it finds.
+    type Pick = { seat: number };
+    const rowPowerup = (card: {
+      powerup?: Pick | null;
+      powerups?: Record<string, Pick | Pick[] | null>;
+    }): Pick | null => {
+      const stored = card.powerups?.[String(CHAMPION_ROW)];
+      if (Array.isArray(stored)) return stored[0] ?? null;
+      return stored ?? card.powerup ?? null;
+    };
 
     const before = await stored(page, 12);
     const seat = rowPowerup(before)!.seat;
@@ -86,8 +97,14 @@ test.describe('round 10', () => {
 
   test('the legendary can be removed without touching the lines', async ({ page }) => {
     await openCard(page, 13);
+    type Pick = { pokemonId: number; seat: number };
+    // A card may hold one legendary per seat now, so the seeded single reads
+    // as a one-entry list; both shapes are on disk.
+    const legends = (card: { legend?: Pick | null; legends?: Pick[] }): Pick[] =>
+      card.legends ?? (card.legend ? [card.legend] : []);
+
     const before = await stored(page, 13);
-    expect(before.legend, 'the seeded boss has one').not.toBeNull();
+    expect(legends(before), 'the seeded boss has one').toHaveLength(1);
 
     const control = page.locator('button[aria-label="Remove the endgame boss legendary"]');
     expect(await control.count(), 'the legendary carries its own X').toBe(1);
@@ -95,7 +112,7 @@ test.describe('round 10', () => {
     await page.waitForTimeout(600);
 
     const after = await stored(page, 13);
-    expect(after.legend, 'the legendary is gone').toBeNull();
+    expect(legends(after), 'the legendary is gone').toHaveLength(0);
     expect(after.lines.length, 'every line stayed').toBe(before.lines.length);
     expect(after.lines, 'and none of them changed').toEqual(before.lines);
   });

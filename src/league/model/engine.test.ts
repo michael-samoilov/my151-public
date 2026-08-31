@@ -136,7 +136,7 @@ describe('deriveRow', () => {
   const lines = [CHINCHOU, WOOPER, MAGIKARP, LAPRAS].map(makePlacedLine);
 
   it('always emits every seat the row allows, filled or not', () => {
-    const row1 = deriveRow(lines.slice(0, 1), 1, null);
+    const row1 = deriveRow(lines.slice(0, 1), 1, []);
     expect(row1).toHaveLength(2);
     expect(row1[0]).toMatchObject({ seat: 2, pokemonId: null });
     expect(row1[1]).toMatchObject({ seat: 1, pokemonId: 170 });
@@ -144,22 +144,34 @@ describe('deriveRow', () => {
 
   it('joins seats at their row and evolves along the curve', () => {
     // Row 1 seats two: Wooper and Chinchou, unevolved.
-    const row1 = deriveRow(lines, 1, null);
+    const row1 = deriveRow(lines, 1, []);
     expect(row1.map((c) => c.pokemonId)).toEqual([194, 170]);
     // Left to right at row 5: Lapras (seat 4 joins here), Gyarados,
     // Quagsire (20 ≤ 34), Lanturn (27 ≤ 34).
-    const row5 = deriveRow(lines, 5, null);
+    const row5 = deriveRow(lines, 5, []);
     expect(row5.map((c) => c.pokemonId)).toEqual([131, 130, 195, 171]);
   });
 
   it('overlays the legendary on the boss row only', () => {
-    const legend = { pokemonId: 245, seat: 3 };
-    const boss = deriveRow(lines, BOSS_ROW, legend);
+    const legends = [{ pokemonId: 245, seat: 3 }];
+    const boss = deriveRow(lines, BOSS_ROW, legends);
     const seat3 = boss.find((c) => c.seat === 3)!;
     expect(seat3).toMatchObject({ pokemonId: 245, isLegend: true });
-    const champ = deriveRow(lines, 10, legend);
+    const champ = deriveRow(lines, 10, legends);
     expect(champ.find((c) => c.seat === 3)!.pokemonId).toBe(130); // untouched
-    expect(deriveRows(lines, legend)).toHaveLength(11);
+    expect(deriveRows(lines, legends)).toHaveLength(11);
+  });
+
+  it('overlays one legendary per seat, so the row can be all of them', () => {
+    const legends = [
+      { pokemonId: 245, seat: 1 },
+      { pokemonId: 243, seat: 2 },
+      { pokemonId: 244, seat: 3 },
+    ];
+    const boss = deriveRow(lines, BOSS_ROW, legends);
+    for (const { pokemonId, seat } of legends) {
+      expect(boss.find((c) => c.seat === seat)).toMatchObject({ pokemonId, isLegend: true });
+    }
   });
 });
 

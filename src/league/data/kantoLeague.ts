@@ -308,7 +308,8 @@ export function kantoCards(): GymCard[] {
       signatureId: aceId(seed.lines[0]),
       tmMoveId: seed.tmMoveId,
       badgeName: seed.badgeName ?? '',
-      legend: seed.legend ? { pokemonId: seed.legend[0], seat: seed.legend[1] } : null,
+      legends: seed.legend ? [{ pokemonId: seed.legend[0], seat: seed.legend[1] }] : [],
+      legend: null,
       powerup: seed.powerup ?? null,
     };
   }

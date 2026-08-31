@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import formsData from '../data/powerupForms.json';
-import { CHAMPION_ROW, BOSS_ROW } from './constants';
+import { CHAMPION_ROW, BOSS_ROW, ELITE_ROW } from './constants';
 import {
   cyclePowerup,
   formAt,
@@ -24,10 +24,12 @@ const ABSOL = 359;
 const GROUDON = 383;
 
 describe('powerup rows', () => {
-  it('offers powerups on the champion and boss rows only', () => {
+  it('offers powerups on the elite, champion and boss rows only', () => {
+    expect(isPowerupRow(ELITE_ROW)).toBe(true);
     expect(isPowerupRow(CHAMPION_ROW)).toBe(true);
     expect(isPowerupRow(BOSS_ROW)).toBe(true);
-    for (let row = 1; row < CHAMPION_ROW; row += 1) expect(isPowerupRow(row)).toBe(false);
+    // The gym rows are the challenge itself; a leader does not Mega there.
+    for (let row = 1; row < ELITE_ROW; row += 1) expect(isPowerupRow(row)).toBe(false);
   });
 });
 
@@ -90,13 +92,27 @@ describe('cycling', () => {
 });
 
 describe('what a cell draws', () => {
-  const mega = { seat: 1, kind: 'mega', index: 1 } as const;
+  const mega = [{ seat: 1, kind: 'mega', index: 1 }] as const;
 
   it('draws the form on the powerup rows, for that seat only', () => {
+    expect(formAt(mega, ELITE_ROW, 1, CHARIZARD)?.label).toBe('Mega Charizard Y');
     expect(formAt(mega, CHAMPION_ROW, 1, CHARIZARD)?.label).toBe('Mega Charizard Y');
     expect(formAt(mega, BOSS_ROW, 1, CHARIZARD)?.label).toBe('Mega Charizard Y');
     expect(formAt(mega, 1, 1, CHARIZARD), 'a gym row').toBeNull();
     expect(formAt(mega, CHAMPION_ROW, 2, CHARIZARD), 'another seat').toBeNull();
+  });
+
+  it('draws one per seat, so a whole team can be powered up', () => {
+    // Nothing about a row limits it to one: six seats may each hold their own.
+    const team = [
+      { seat: 1, kind: 'mega', index: 0 },
+      { seat: 2, kind: 'dynamax', index: 0 },
+      { seat: 3, kind: 'mega', index: 0 },
+    ] as const;
+    expect(formAt(team, CHAMPION_ROW, 1, CHARIZARD)?.label).toBe('Mega Charizard X');
+    expect(formAt(team, CHAMPION_ROW, 2, LAPRAS)?.label).toContain('Lapras');
+    expect(formAt(team, CHAMPION_ROW, 3, ABSOL)?.label).toContain('Absol');
+    expect(formAt(team, CHAMPION_ROW, 4, CHARIZARD), 'a seat with none').toBeNull();
   });
 
   it('falls back to the base sprite when the seat’s Pokémon changes under it', () => {
