@@ -151,6 +151,14 @@
       "text": "D · Poster cards. Mobile and tablet space out evenly: three equal flex spacers put the same gap above the intro text, between the text and the grid, and between the grid and the footer.\nThe Hammer is centred between the card's top edge and the top of its heading, so the space above it matches the space below by construction rather than by eye.\nDesktop has about 110px between the sub-text and the artwork, which is the room for a hover nudge."
     },
     {
+      "id": "d-sweep-note",
+      "page": "page-2",
+      "x": 1980,
+      "y": -260,
+      "w": 940,
+      "text": "Responsive check — `node docs/future-tools/home-page/sweep.mjs`.\nThe three artboards are three points on a curve, so the layout is now a function of width: `posterConfig(width, height)`. Two regimes meet at 1024, the app's own md breakpoint — stacked hero and two cards up below it, split hero and four across at and above it. Inside a regime every number is piecewise-linear between anchors, so 390, 834 and 1440 reproduce these artboards exactly.\nThe sweep drives 45 frames from 320 to 2560 in Chromium and reads geometry, not text: frame overflow, hero/grid/footer band order, card-on-card overlap, one-line headings, blurb clipping, a bare red strip at every card's right edge, artwork landing on the card above, and the mark centred in its card. 45 of 45 are clean.\n`--mutate all` injects six known defects and asserts each is caught. A sweep that cannot fail is not evidence.\nOne limit, measured: below a floor the page scrolls instead of filling one screen — 709px tall at 390 wide, 1059px at 834, 579px at 1440. Every current device clears it except short phones (320x568, 360x640, 375x667), which scroll by 35-91px. iPad mini at 768x1024 clears it by 16px."
+    },
+    {
       "id": "d-detail-note",
       "page": "page-2",
       "x": 990,
