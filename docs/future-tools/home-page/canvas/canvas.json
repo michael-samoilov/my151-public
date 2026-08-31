@@ -148,7 +148,7 @@
       "x": 0,
       "y": -280,
       "w": 940,
-      "text": "D · Poster cards, settled. Card height is the reference ratio cut a further 20%: 104px on a 166px card at 390. Two screenshots fanned at -8 and -3, back one lower and further left. The gradient is a layer on the card, so it stops at the card outline including the rounded corners.\nThe artwork's clipping box now reaches 34px further up and left than the artwork needs, so each screenshot's drop shadow falls outside the card without being sliced at the clip edge. Both grid gaps carry that bleed too, so a shadow never lands on the neighbouring card.\nThe fourth card has no tool to screenshot, so it takes a crossed hammer and wrench in a darker red, sitting just above the card's middle."
+      "text": "D · Poster cards. The card is described once as ratios of its own width and scaled per breakpoint, so desktop is the mobile card enlarged rather than a differently proportioned one — that is what removes the extra red to the right of the screenshots on desktop.\nScreenshots are re-cropped to a real phone viewport, 390x844, so they read tall and narrow instead of squat.\nThe fourth card takes the app's own lucide Hammer, in white, sized to sit wholly inside the red."
     },
     {
       "id": "d-type-note",
@@ -156,7 +156,7 @@
       "x": 990,
       "y": -280,
       "w": 940,
-      "text": "One thing to look at before this becomes code: the title sizes are set by \"Trainer Card & League Builder\" on one line, not by the average.\nAt 390 two-up, a card is 166px wide, and that title on one line lands at 8.4px — small. Desktop gets 14.4px and tablet 18px, which are fine. Two ways out if 8.4px is too small: give the league card a shorter label, or let mobile cards go one per row and scroll.\nOne SEO note: \"Trainer Card & League Builder\" drops the word Pokémon from that card's heading, which was carrying the /pokemon-league-builder match. Worth keeping the full phrase in the markup even if the visible label is this.\nI also spelled \"psuedo\" as \"pseudo\" in the dex blurb — say the word if that was deliberate."
+      "text": "Two numbers that are at their ceiling, so you know which way they move.\nThe LEFT OVERHANG is small — about 10px at 390. The gradient stops at the card's left edge, so it has to finish before the artwork starts hanging off to the left, and a wider overhang pushes that crossing lower and squeezes the gradient. Wider overhang means a steeper fan or less copy.\nThe CLEAR BAND on desktop is 29%, not the 33% asked for. At 900px the space below the header is 850px; the hero and the card block together need about 400px, which leaves 225px each side. 33% would need the content under 289px — reachable by dropping the second hero paragraph or shrinking the cards toward mobile size."
     }
   ],
   "pages": [
