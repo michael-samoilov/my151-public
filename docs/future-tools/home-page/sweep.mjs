@@ -81,10 +81,6 @@ const MUTATIONS = {
     catches: 'hero text 0 outside frame',
     apply: (html) => html.replace(/(<h1 style="margin: 0; max-width: )\d+px/, '$14000px; width: 4000px'),
   },
-  showfooter: {
-    catches: 'above the',
-    apply: (html) => html.replace(/min-height: (\d+)px; display: flex/, 'min-height: 0px; display: flex'),
-  },
   shortmark: {
     catches: 'mark air',
     apply: (html) => html.replace(/(display: flex; align-items: center; justify-content: center;">)/, 'display: flex; align-items: flex-start; justify-content: center;">'),
@@ -106,21 +102,16 @@ addEventListener('load', () => setTimeout(() => {
   const root = document.body.firstElementChild;
   const grid = [...root.querySelectorAll('div')].find((e) => getComputedStyle(e).display === 'grid');
   const cards = [...grid.children];
-  const fold = root.firstElementChild;
   const footer = root.lastElementChild;
   const hero = root.querySelector('section');
   const frame = R(root);
 
-  // 1. The page may grow downward and scroll. It may never scroll sideways.
+  // 1. The frame is the viewport. Nothing may extend past it in either axis.
   if (root.scrollWidth - root.clientWidth > 0.5) fail.push('h-overflow ' + root.scrollWidth + ' > ' + root.clientWidth);
+  if (root.scrollHeight - root.clientHeight > 0.5) fail.push('v-overflow ' + root.scrollHeight + ' > ' + root.clientHeight);
+  if (R(footer).bottom - frame.bottom > 0.5) fail.push('footer past frame by ' + (R(footer).bottom - frame.bottom).toFixed(1));
 
-  // 2. The footer starts below the fold. What a visitor sees before scrolling
-  // is the header, the hero and the grid — never the footer, at any width.
-  if (R(footer).top < FRAME_H - 0.5) {
-    fail.push('footer top at ' + R(footer).top.toFixed(1) + ', above the ' + FRAME_H + 'px fold');
-  }
-
-  // 3. Bands stay in order and never overlap: hero, grid, footer.
+  // 2. Bands stay in order and never overlap: hero, grid, footer.
   if (R(hero).bottom - R(grid).top > 0.5) fail.push('hero overlaps grid by ' + (R(hero).bottom - R(grid).top).toFixed(1));
   if (R(grid).bottom - R(footer).top > 0.5) fail.push('grid overlaps footer by ' + (R(grid).bottom - R(footer).top).toFixed(1));
 
@@ -205,11 +196,10 @@ addEventListener('load', () => setTimeout(() => {
 
   // 11. The page is allowed to grow past the viewport and scroll; it is not
   // allowed to hide content. Report the overrun so the sweep can name a floor.
-  // FRAME_H is the viewport the fold is designed for. The render window is
+  // FRAME_H is the viewport the frame is designed for. The render window is
   // taller on purpose, so window.innerHeight is not the number to compare to.
-  // The footer sits below the fold by design, so this measures the fold alone.
-  const need = Math.ceil(R(fold).height);
-  if (need > FRAME_H) info.push('fold needs ' + need + 'px in a ' + FRAME_H + 'px viewport (over by ' + (need - FRAME_H) + ')');
+  const need = Math.ceil(R(root).height);
+  if (need > FRAME_H) info.push('needs ' + need + 'px in a ' + FRAME_H + 'px viewport (over by ' + (need - FRAME_H) + ')');
 
   const out = JSON.stringify({ fail, info });
   document.title = 'SWEEP' + out + 'END';
@@ -322,7 +312,7 @@ if (process.argv.includes('--shots')) {
     for (const p of f.problems) console.log(`  · ${p}`);
   }
   if (notes.length) {
-    console.log(`\nfold taller than its viewport, so the page scrolls into the fold (${notes.length}):`);
+    console.log(`\nscrolls rather than fitting one viewport (${notes.length}):`);
     for (const n of notes) console.log(`  ${n.label} — ${n.info.join('; ')}`);
   }
   code = failures.length ? 1 : 0;

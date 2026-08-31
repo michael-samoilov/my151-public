@@ -83,20 +83,20 @@
     },
     {
       "file": "PosterMobile.dc.html",
-      "title": "Mobile 390 — fold, then footer",
+      "title": "Mobile 390",
       "x": 0,
       "y": 0,
       "w": 390,
-      "h": 945,
+      "h": 844,
       "page": "page-2"
     },
     {
       "file": "PosterTablet.dc.html",
-      "title": "Tablet 834 — fold, then footer",
+      "title": "Tablet 834",
       "x": 490,
       "y": 0,
       "w": 834,
-      "h": 1229,
+      "h": 1112,
       "page": "page-2"
     },
     {
@@ -105,7 +105,7 @@
       "x": 1424,
       "y": 0,
       "w": 1440,
-      "h": 1017,
+      "h": 900,
       "page": "page-2"
     }
   ],
@@ -154,17 +154,17 @@
       "id": "d-sweep-note",
       "page": "page-2",
       "x": 1980,
-      "y": -300,
+      "y": -260,
       "w": 940,
-      "text": "Responsive check — `node docs/future-tools/home-page/sweep.mjs`.\nThe layout is a function of width: `posterConfig(width, height)`. Two regimes meet at 1024, the app's own md breakpoint — stacked hero and two cards up below it, split hero and four across at and above it. Inside a regime every number is piecewise-linear between anchors, and the anchors are the shipped page's own numbers.\nThe sweep drives 45 frames from 320 to 2560 in Chromium and reads geometry, not text: horizontal overflow, the footer sitting below the fold, hero/grid/footer band order, card-on-card overlap, one-line headings, blurb clipping, a bare red strip at every card's right edge, artwork landing on the card above, and the mark centred in its card. 45 of 45 are clean.\n`--mutate all` injects seven known defects and asserts each is caught. A sweep that cannot fail is not evidence.\nThe fold now fits a short phone: it needs 595px at 390 wide, 942px at 834, and 490px at 1440."
+      "text": "Responsive check — `node docs/future-tools/home-page/sweep.mjs`.\nThe three artboards are three points on a curve, so the layout is now a function of width: `posterConfig(width, height)`. Two regimes meet at 1024, the app's own md breakpoint — stacked hero and two cards up below it, split hero and four across at and above it. Inside a regime every number is piecewise-linear between anchors, so 390, 834 and 1440 reproduce these artboards exactly.\nThe sweep drives 45 frames from 320 to 2560 in Chromium and reads geometry, not text: frame overflow, hero/grid/footer band order, card-on-card overlap, one-line headings, blurb clipping, a bare red strip at every card's right edge, artwork landing on the card above, and the mark centred in its card. 45 of 45 are clean.\n`--mutate all` injects six known defects and asserts each is caught. A sweep that cannot fail is not evidence.\nOne limit, measured: below a floor the page scrolls instead of filling one screen — 709px tall at 390 wide, 1059px at 834, 579px at 1440. Every current device clears it except short phones (320x568, 360x640, 375x667), which scroll by 35-91px. iPad mini at 768x1024 clears it by 16px."
     },
     {
       "id": "d-detail-note",
       "page": "page-2",
       "x": 990,
-      "y": -300,
+      "y": -260,
       "w": 940,
-      "text": "These artboards are taller than the viewport on purpose. The header, hero and card grid fill one screen on their own; the footer starts below that fold. What a visitor sees before scrolling is everything down to the footer's top rule — the rest is a scroll away.\nInside the fold, three equal spacers put the same air above the hero, between the hero and the grid, and below the grid.\nThe card: the screenshot shadow fades out over its last 34px instead of stopping in a straight line at the card's bottom edge; the screenshots themselves still cut on that edge, which is what makes them read as sliding behind the card.\nCard copy is 9.4px title and 8.8px blurb at 390. It cannot reach the 11.5px of the \"No account…\" line: \"Trainer Card & League Builder\" already fills 154 of the 158px the card gives it, so one line of title caps the size at about 9.6px.\nThe h1 is 21px on a phone — the largest whole pixel that keeps it to two lines at 320px. Line breaks come from `text-wrap: pretty` on the hero and `balance` in the cards, never manual breaks."
+      "text": "This pass, four changes.\nThe screenshot shadow no longer stops in a straight line at the card's bottom. The shadow now paints in its own layer that fades out over the last 34px, so it thins to nothing instead of ending on an edge; the screenshots themselves still cut on that edge, which is the point.\nTablet is the packed one: the artwork scales to 82%, so the two rows sit closer. `art` is the single knob, and the left overhang scales with it or the gradient rule fails the build.\nCard copy is a step larger — 9.4px title, 8.8px blurb at 390px. It cannot reach the 11.5px of the \"No account…\" line: \"Trainer Card & League Builder\" already fills 154 of the 158px the card gives it, so one line of title caps the size at about 9.6px. Matching 11.5px needs a shorter title or one card per row.\nLine breaks in the headings and blurbs come from `text-wrap: balance`, not manual breaks."
     }
   ],
   "pages": [
