@@ -168,16 +168,34 @@ export function createSnapCenterToPointer(overlayLiftPx: number): Modifier {
  * `lift` raises it a few pixels so the empty slot underneath still reads,
  * and so the copy looks picked up rather than already dropped.
  */
-export function snapOverlayToTarget(lift = 0): Modifier {
-  return ({ draggingNodeRect, over, transform }) => {
-    const rect = over?.rect;
-    // No target yet (the drag has not reached one) — leave dnd-kit's own
-    // transform alone so the copy still follows the finger.
-    if (!draggingNodeRect || !rect) return transform;
+export function snapOverlayToTarget(lift = 0, liveTargetSelector?: string): Modifier {
+  return ({ activeNodeRect, draggingNodeRect, over, transform }) => {
+    if (!draggingNodeRect) return transform;
+    // The gap the drop would fill, read from the page rather than from
+    // dnd-kit. `over.rect` is measured when the drag starts and is not
+    // remeasured, so on a list that reorders live it is stale the moment the
+    // preview moves a row — measured, it put the copy exactly one row past
+    // the slot it was meant to sit on. The open slot is the same thing dnd-kit
+    // is describing, only current.
+    const live = liveTargetSelector
+      ? document.querySelector(liveTargetSelector)?.getBoundingClientRect()
+      : undefined;
+    // No target yet — the first frame of a hold, before dnd-kit has offered
+    // one. The row is still over itself, so hold it there rather than let it
+    // follow the finger for a frame and then jump onto the slot.
+    const rect = live ?? over?.rect ?? activeNodeRect;
+    if (!rect) return transform;
+    // Corrected, not computed. Where the overlay's own origin sits is dnd-kit's
+    // business and not the same as either the source row or the target, so
+    // this asks the only question it can answer for certain: the copy is
+    // *here* under the transform it already has, it should be *there*, so add
+    // the difference. Deriving the transform from a rect instead pins the copy
+    // to whichever row it first reached — measured on a phone, it sat on the
+    // row it was picked up from while the open slot travelled 87px away.
     return {
       ...transform,
-      x: rect.left - draggingNodeRect.left,
-      y: rect.top - draggingNodeRect.top - lift,
+      x: transform.x + (rect.left - draggingNodeRect.left),
+      y: transform.y + (rect.top - draggingNodeRect.top) - lift,
     };
   };
 }

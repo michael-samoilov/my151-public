@@ -75,7 +75,7 @@ test.describe('drag hold', () => {
     carries(await midDrag(page, '[data-view-tile]', 120, 0), 'view page');
   });
 
-  test('a league row is carried on its slot, and the slot opens', async ({ page }) => {
+  test('a league row is carried in the slot it would fill', async ({ page }) => {
     await blankLeague(page);
     await page.goto('/pokemon-league-builder');
     await page.waitForSelector('[data-testid="league-slot-0"]');
@@ -90,29 +90,30 @@ test.describe('drag hold', () => {
     await page.mouse.move(x, y - 100, { steps: 8 });
     await page.waitForTimeout(300);
     const state = await page.evaluate(() => {
-      const held = document.querySelector('[data-drag-held]')?.firstElementChild?.getBoundingClientRect();
-      const slot = document.querySelector('[data-slot-open]')?.getBoundingClientRect();
+      const copy = document.querySelector('[data-drag-held]');
+      if (!copy) return { copies: 0 };
+      // The carried row is drawn inside the slot it would land in, so the
+      // slot is its own ancestor rather than something it floats over.
+      const slot = copy.closest('[data-testid^="league-slot-"]')!;
+      const c = copy.getBoundingClientRect();
+      const s = slot.getBoundingClientRect();
       return {
         copies: document.querySelectorAll('[data-drag-held]').length,
-        slots: document.querySelectorAll('[data-slot-open]').length,
-        // The copy sits on the slot, lifted, so the gap reads underneath it.
-        lift: held && slot ? Math.round(slot.top - held.top) : null,
-        // The copy is deliberately smaller than the row it came from, so it
-        // does not reach a full row either side of the thumb. What matters is
-        // that it is still the *slot's* shape and not shrunk to its content:
-        // a copy that lost its width arrives at half size.
-        widthRatio: held && slot ? held.width / slot.width : 0,
+        offCentre: Math.abs((c.top + c.height / 2) - (s.top + s.height / 2)),
+        heightRatio: c.height / s.height,
       };
     });
     await page.mouse.up();
     await page.waitForTimeout(200);
 
-    expect(state.copies, 'exactly one copy in hand').toBe(1);
-    expect(state.slots, 'exactly one open slot').toBe(1);
-    expect(state.lift, 'the copy is lifted off the slot it would fill').toBeGreaterThan(6);
-    expect(state.widthRatio, 'the copy keeps the slot\'s width, scaled').toBeGreaterThan(0.75);
-    expect(state.widthRatio, 'and never exceeds it').toBeLessThanOrEqual(1.01);
+    expect(state.copies, 'exactly one row in hand').toBe(1);
+    // Centred on the row it would be placed in, not floating above it.
+    expect(state.offCentre!, 'the copy is centred in its slot').toBeLessThan(1.5);
+    // Smaller than the slot, so it reads as picked up rather than dropped.
+    expect(state.heightRatio!, 'and smaller than the slot').toBeLessThan(0.95);
+    expect(state.heightRatio!, 'but still a row').toBeGreaterThan(0.6);
   });
+
 
   test('a gym column is carried in place, with no stack under the thumb', async ({ page }) => {
     await blankLeague(page);

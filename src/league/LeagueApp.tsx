@@ -19,6 +19,7 @@ import { useLeagueStore } from './store/useLeagueStore';
 import { useLeagueUi } from './store/useLeagueUi';
 import { LeagueHome } from './components/LeagueHome';
 import { CardPage } from './components/CardPage';
+import { PageFooter } from '@/components/shared/PageFooter';
 import { LeagueSettingsButton } from './components/LeagueSettings';
 
 /**
@@ -166,7 +167,7 @@ export function LeagueApp() {
               // before it arrives. `inert` keeps the one off screen out of
               // the tab order and off the screen reader.
               inert={openCard !== null}
-              className="h-full w-1/2 overflow-y-auto pb-6"
+              className="h-full w-1/2 overflow-y-auto"
             >
               {/* The tool bar — same 44px as the dex builder's. */}
               <div data-testid="league-tool-bar" className="flex h-11 items-center gap-2 border-b bg-card px-3">
@@ -179,15 +180,22 @@ export function LeagueApp() {
               <div className="mx-auto w-full max-w-[26rem] px-3 pt-2.5">
                 <LeagueHome />
               </div>
+              {/* Below the fold by construction. `useFitScale` measures from
+                  the fitted block's top to the bottom of this pane, so the
+                  block takes the whole viewport and the footer starts exactly
+                  where it ends — the same placement the dex builder's panes
+                  use, one footer per scrolling pane. */}
+              <PageFooter />
             </div>
             <div
               data-lg-viewport
               inert={openCard === null}
-              className="h-full w-1/2 overflow-y-auto pb-6"
+              className="h-full w-1/2 overflow-y-auto"
             >
               <div className="mx-auto w-full max-w-[26rem]">
                 <CardPage cardIndex={shownCard} showBack />
               </div>
+              <PageFooter />
             </div>
           </div>
         </div>
@@ -210,6 +218,7 @@ export function LeagueApp() {
               <div className="mx-auto w-full max-w-[26rem] px-3">
                 <LeagueHome />
               </div>
+              <PageFooter />
             </div>
           </section>
 
@@ -223,6 +232,7 @@ export function LeagueApp() {
               <div className="mx-auto w-full max-w-[26rem]">
                 <CardPage cardIndex={openCard ?? 0} showBack={false} />
               </div>
+              <PageFooter />
             </div>
           </section>
 

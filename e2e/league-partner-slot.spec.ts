@@ -46,21 +46,27 @@ async function slotGeometry(page: Page) {
       ((x2 - x1) * (py - y1) - (y2 - y1) * (px - x1)) / len;
     return ['slot-ace', 'slot-partner'].map((id) => {
       const half = slot.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
-      // The union of the button and everything it paints: a heading set wider
-      // than its button paints outside the button's own rect, which is exactly
-      // the overflow worth catching.
-      const boxes = [half, ...half.querySelectorAll('*')].map((el) => el.getBoundingClientRect());
-      const r = {
-        left: Math.min(...boxes.map((v) => v.left)),
-        right: Math.max(...boxes.map((v) => v.right)),
-        top: Math.min(...boxes.map((v) => v.top)),
-        bottom: Math.max(...boxes.map((v) => v.bottom)),
-      };
-      const corners: [number, number][] = [
+      // Each painted run on its own — the heading, the sprite, the name —
+      // and not the block that holds them. That block's binding corner is
+      // empty: the heading is wide and at the top, the name narrow and
+      // centred at the bottom, so its bottom-right is blank space. Measuring
+      // the block's union asks the geometry to keep clear of the seam with
+      // nothing in it, which is the constraint the solver was deliberately
+      // freed from. A heading set wider than its button still counts, because
+      // it is one of the runs.
+      const runs = [...half.querySelectorAll<HTMLElement>('span, img')]
+        .filter((el) => el.getBoundingClientRect().width > 1)
+        .map((el) => el.getBoundingClientRect());
+      const d = runs.flatMap((r) => ([
         [r.left - s.left, r.top - s.top], [r.right - s.left, r.top - s.top],
         [r.left - s.left, r.bottom - s.top], [r.right - s.left, r.bottom - s.top],
-      ];
-      const d = corners.map(([px, py]) => side(px, py));
+      ] as [number, number][]).map(([px, py]) => side(px, py)));
+      const r = {
+        left: Math.min(...runs.map((v) => v.left)),
+        right: Math.max(...runs.map((v) => v.right)),
+        top: Math.min(...runs.map((v) => v.top)),
+        bottom: Math.max(...runs.map((v) => v.bottom)),
+      };
       // An empty half draws a ring at 62% of the square the geometry gives it,
       // so scale back to that square. Comparing a filled half's sprite against
       // a null is how this spec once "measured" a 50px difference between two

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   DndContext,
   useDraggable,
@@ -6,15 +6,13 @@ import {
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
-  DragOverlay,
 } from '@dnd-kit/core';
 import { ArrowUpDown, ChevronRight, Plus } from 'lucide-react';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { formAt } from '../model/powerups';
 import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
-import { HeldItems } from '@/components/shared/dragHold';
-import { createEffectiveCursorCollision, dragInputIsTouch, isTouchDrag, snapOverlayToTarget } from '@/lib/dragCollision';
+import { createEffectiveCursorCollision, dragInputIsTouch, isTouchDrag } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
 import { useDragSensors } from '@/lib/dragSensors';
 import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
@@ -60,10 +58,14 @@ const TEAM_COLS = 6;
 const HIT_LIFT_PX = 64;
 
 /** How far the copy is lifted off the slot it would fill. */
-const SLOT_LIFT_PX = 13;
-
 const rowCollision = createEffectiveCursorCollision(HIT_LIFT_PX);
-const snapToSlot = snapOverlayToTarget(SLOT_LIFT_PX);
+/**
+ * The copy sits *on* the row it would be placed in, not above it.
+ *
+ * `snapOverlayToTarget` anchors it to the target row's own rect, so no offset
+ * is what centres it there — and before the thumb travels the target is the
+ * row it came from, which is also where the thumb is. One rule covers both.
+ */
 
 const SECTION_BEFORE: Record<number, string> = {
   0: 'GYM LEADERS',
@@ -183,21 +185,11 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
  * The copy in hand already shows that team, so drawing it here too would
  * draw it twice. The gap says "this is the place" and nothing more.
  */
-function EmptySlotFace() {
-  return (
-    <div
-      data-slot-open
-      className="rounded-[0.3125rem] border-[1.5px] border-dashed"
-      style={{ height: `${ROW_H}rem`, borderColor: '#c2c7cd', background: 'rgba(15,23,42,0.03)' }}
-    />
-  );
-}
-
 /** The row as the league renders it: a drop target that drags and opens. */
 function SlotRow({ position, cardIndex, held }: {
   position: number;
   cardIndex: number;
-  /** This row is the one being carried; its slot opens where it would land. */
+  /** This row is where the carried one would land, so it draws it in hand. */
   held: boolean;
 }) {
   const card = useLeagueStore((s) => s.cards[cardIndex]);
@@ -224,7 +216,24 @@ function SlotRow({ position, cardIndex, held }: {
         // separates a drag from a pinch, not a blanket claim on touch.
         style={{ touchAction: 'pan-y pinch-zoom' }}
       >
-        {held ? <EmptySlotFace /> : <SlotRowFace position={position} card={card} />}
+        {held ? (
+          // The carried row is drawn *here*, in the slot it would fill, rather
+          // than in a drag overlay positioned over it. An overlay cannot be
+          // aligned to this row reliably: its modifier runs before React has
+          // committed the reorder, so every rect it can read is a frame stale
+          // — measured, that left the copy exactly one row past its slot. The
+          // row it would become has no such problem, because it *is* the row.
+          <div
+            data-drag-held
+            data-placement="on"
+            className="origin-center overflow-hidden rounded-[0.3125rem] shadow-lg ring-1 ring-black/10"
+            style={{ transform: `scale(${HELD_ROW_SCALE})` }}
+          >
+            <SlotRowFace position={position} card={card} />
+          </div>
+        ) : (
+          <SlotRowFace position={position} card={card} />
+        )}
       </button>
     </div>
   );
@@ -239,15 +248,6 @@ export function LeagueHome() {
   const fitRef = useRef<HTMLDivElement>(null);
   const fit = useFitScale(fitRef);
   const [preview, setPreview] = useState<{ from: number; to: number } | null>(null);
-  // Width in client pixels, so the held copy is the size of the row that was
-  // grabbed rather than the size a portalled copy would default to.
-  const [held, setHeld] = useState<
-    { position: number; width: number; x: number; y: number } | null
-  >(null);
-  // A press and hold picks the row up before any movement, so "held" and
-  // "being dragged" are now two different states and the copy sits
-  // differently in each.
-  const [moved, setMoved] = useState(false);
   const cards = useLeagueStore((s) => s.cards);
   // Nothing placed anywhere: a row's tap can only mean "add a trainer", so
   // the hint says that instead of naming a card that does not exist yet. A
@@ -264,38 +264,11 @@ export function LeagueHome() {
     dragInputIsTouch.current = isTouchDrag(e.activatorEvent);
     const position = (e.active.data.current as { index: number } | undefined)?.index;
     if (position === undefined) return;
-    // Measured off the row itself. dnd-kit's own rect is not always filled in
-    // by the time the drag starts, and a held copy with no width shrinks to
-    // its content — a full-width row arrives in hand at half size.
-    const row = document.querySelector(`[data-testid="league-slot-${position}"]`);
-    setMoved(false);
-    // Where the finger was when it picked the row up. Measuring travel from
-    // here rather than from the first move event means the first real
-    // movement counts, instead of only setting the baseline for the next one.
-    const a = e.activatorEvent as { clientX?: number; clientY?: number };
-    setHeld({
-      position,
-      width: row?.getBoundingClientRect().width ?? 0,
-      x: a?.clientX ?? 0,
-      y: a?.clientY ?? 0,
-    });
+    // Seeded at pickup: the row is over itself before it travels, so the very
+    // first frame already draws it in hand rather than showing an untouched
+    // row for a frame and then swapping.
+    setPreview({ from: position, to: position });
   }, []);
-
-  // Read off the pointer, not off dnd-kit's delta.
-  //
-  // `snapToSlot` rewrites the drag's transform to sit on the target slot, and
-  // `delta` is that rewritten transform — so it jumps the moment the row is
-  // picked up, and a hold with a still thumb looked like travel. The finger's
-  // own movement is the only thing that answers "has this started moving".
-  useEffect(() => {
-    if (!held) return;
-    const onMove = (e: PointerEvent) => {
-      // Far enough that it is travel and not the wobble of a resting thumb.
-      if (Math.hypot(e.clientX - held.x, e.clientY - held.y) > 4) setMoved(true);
-    };
-    document.addEventListener('pointermove', onMove, { passive: true });
-    return () => document.removeEventListener('pointermove', onMove);
-  }, [held]);
 
   const onDragOver = useCallback((e: DragOverEvent) => {
     const from = (e.active.data.current as { index: number } | undefined)?.index;
@@ -308,8 +281,6 @@ export function LeagueHome() {
     (e: DragEndEvent) => {
       dragInputIsTouch.current = false;
       setPreview(null);
-      setHeld(null);
-      setMoved(false);
       const from = (e.active.data.current as { index: number } | undefined)?.index;
       const to = (e.over?.data.current as { index: number } | undefined)?.index;
       if (from === undefined || to === undefined || from === to) return;
@@ -333,11 +304,10 @@ export function LeagueHome() {
     <DndContext
       sensors={sensors}
       collisionDetection={rowCollision}
-      modifiers={[snapToSlot]}
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
       onDragStart={onDragStart}
-      onDragCancel={() => { dragInputIsTouch.current = false; setPreview(null); setHeld(null); }}
+      onDragCancel={() => { dragInputIsTouch.current = false; setPreview(null); }}
     >
       <div ref={fitRef} style={{ zoom: fit }}>
         <div className="rounded-xl bg-card p-1 px-2 shadow-elevated">
@@ -387,31 +357,6 @@ export function LeagueHome() {
       </div>
       {/* The copy in hand: the row that was grabbed, at the width it was
           grabbed at, drawn by the same component as the row itself. */}
-      <DragOverlay dropAnimation={null}>
-        {held ? (
-          // Under the thumb while it is only held, above it once it travels.
-          // Holding is not yet a move, so the copy stays where the finger put
-          // it and the row underneath is the one it came from; the moment it
-          // travels the finger is choosing, and what it is choosing must not
-          // be under the finger.
-          <HeldItems placement={moved ? 'above' : 'on'}>
-            <div
-              className="origin-center overflow-hidden rounded-[0.3125rem] shadow-lg ring-1 ring-black/10"
-              // Smaller than the row it came from. At full height the copy
-              // reaches a full row either side of the thumb and reads as if
-              // it were displacing the row above as well as landing on its
-              // own — ambiguous exactly when the answer needs to be clear.
-              style={{ width: held.width || undefined, transform: `scale(${HELD_ROW_SCALE})` }}
-            >
-              {/* The position it would inherit, not the one it came from: the
-                  glyph and the team size belong to the slot, so the copy
-                  answers "what would this trainer become here" while it is
-                  still in the air. The card is still the one in hand. */}
-              <SlotRowFace position={preview?.to ?? held.position} card={cards[held.position]} />
-            </div>
-          </HeldItems>
-        ) : null}
-      </DragOverlay>
     </DndContext>
   );
 }
