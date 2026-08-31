@@ -148,6 +148,9 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
             <span key={cell.seat} className="flex items-center justify-center">
               {p ? (
                 <img
+                  // Keyed by its source, so a row that changes teams paints
+                  // nothing rather than the frame it already decoded.
+                  key={form ? `/sprites/pokemon/${form.id}.png` : p.sprite}
                   src={form ? `/sprites/pokemon/${form.id}.png` : p.sprite}
                   alt={form ? form.label : p.name}
                   className="max-w-none"

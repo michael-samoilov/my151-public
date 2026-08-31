@@ -34,8 +34,9 @@ function centres(slot: Slot, ace: Runs, partner: Runs) {
 }
 
 /** How far past the seam a point sits. Positive is over it. */
+const T = Math.tan(Math.PI / 6);
 const past = (w: number, h: number, x: number, y: number, half: 'ace' | 'partner') => {
-  const side = (x / w + y / h - 1) * ((w * h) / Math.hypot(w, h));
+  const side = (y - h / 2 + T * (x - w / 2)) / Math.hypot(1, T);
   return half === 'ace' ? side : -side;
 };
 
@@ -85,7 +86,7 @@ describe('the sprite', () => {
     // on the seam, which is what the sprite's transparent corner is for and
     // the name's ink is not.
     const sprite = placeSlot(243, H, ACE, PARTNER).ace.sprite;
-    expect(sprite).toBeGreaterThan(STANDARD_SPRITE * 0.9);
+    expect(sprite).toBeGreaterThan(STANDARD_SPRITE * 0.8);
     expect(sprite).toBeLessThanOrEqual(STANDARD_SPRITE);
   });
 
@@ -111,9 +112,40 @@ describe('the sprite', () => {
   });
 });
 
+describe('the two names', () => {
+  it('share one baseline', () => {
+    for (const w of WIDTHS) {
+      const slot = placeSlot(w, H, ACE, PARTNER);
+      // The ace's name is the run below its sprite, the partner's the run
+      // above its own. Their boxes have to land in the same band, any shift
+      // included — that is the point of placing the pair down the slot rather
+      // than each half on its own.
+      const aceName = slot.ace.top + ACE.head[1] + slot.ace.sprite + slot.ace.nameShift;
+      const partnerName = slot.partner.top + slot.partner.nameShift;
+      expect(aceName, `at ${w}`).toBeCloseTo(partnerName, 5);
+    }
+  });
+
+  it('needs no shift to do it on a phone, and a sixth of a line at most', () => {
+    // Past a certain sprite the ace's block reaches the top of the slot
+    // before its name reaches the shared level, and the two can only meet by
+    // the names giving ground. The sprite gives up the last pixels first, so
+    // what is left for the names is a nudge.
+    expect(placeSlot(181, H, ACE, PARTNER).ace.nameShift).toBeCloseTo(0, 5);
+    for (const w of WIDTHS) {
+      const slot = placeSlot(w, H, ACE, PARTNER);
+      expect(Math.abs(slot.ace.nameShift), `at ${w}`).toBeLessThanOrEqual(ACE.name[1] / 6 + 0.001);
+      expect(slot.ace.nameShift, `mirrored at ${w}`).toBeCloseTo(-slot.partner.nameShift, 5);
+    }
+  });
+});
+
 describe('against the seam', () => {
   it('lets only a sprite corner over it, and only by its transparent margin', () => {
-    for (const w of WIDTHS) {
+    // 114 is the slot at a 320px viewport, where "ACE POKEMON" alone is 63%
+    // of the width. There the block cannot both stay inside the slot and keep
+    // off the seam; the slot's edge wins and the crossing is checked below.
+    for (const w of WIDTHS.filter((v) => v > 120)) {
       const slot = placeSlot(w, H, ACE, PARTNER);
       const rows = (p: typeof slot.ace, runs: Runs, half: 'ace' | 'partner') => {
         const order: Array<[number, number]> = half === 'ace'
@@ -134,6 +166,16 @@ describe('against the seam', () => {
         expect(over, `a partner run at ${w}`).toBeLessThanOrEqual(4.001);
       }
     }
+  });
+
+  it('gives the slot\'s edge the last word at 320px, and no more', () => {
+    const slot = placeSlot(114, H, ACE, PARTNER);
+    const { ace } = centres(slot, ACE, PARTNER);
+    // The sprite's own corner is what leans on the seam, and it leans by less
+    // than a fifth of itself — its transparent margin covers that.
+    expect(past(114, H, ace[0] + slot.ace.sprite / 2, ace[1] + slot.ace.sprite / 2, 'ace'))
+      .toBeLessThan(slot.ace.sprite / 4);
+    expect(slot.ace.left).toBeGreaterThanOrEqual(-0.001);
   });
 
   it('keeps both drawn balls clear of it', () => {

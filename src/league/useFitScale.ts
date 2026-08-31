@@ -67,6 +67,11 @@ export function useFitScale(
         // padding must come out of the budget or the fit overflows by it.
         const padBottom = parseFloat(getComputedStyle(viewport).paddingBottom) || 0;
         avail = viewport.clientHeight - (rect.top - vp.top + viewport.scrollTop) - padBottom - 2;
+        // Leave as much room under the block as sits above it. The block's
+        // own parent holds that gap as padding-top — between the card and the
+        // ribbon over it — and without matching it below, the last hint line
+        // ends flush with the fold.
+        avail -= parseFloat(getComputedStyle(el.parentElement ?? el).paddingTop) || 0;
       } else {
         avail = window.innerHeight - rect.top - 8;
       }

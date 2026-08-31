@@ -39,7 +39,7 @@ import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyp
 import { PokeballBg } from '@/components/shared/PokeballBg';
 import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
-import { placeSlot, type Placed, type Runs } from '../slotLayout';
+import { placeSlot, seamEnds, type Placed, type Runs } from '../slotLayout';
 import { useSlotLab } from '../slotLab';
 
 /**
@@ -349,7 +349,13 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
         }}
       >
         {pokemon ? (
+          // Keyed by its own source. Without that React keeps the element and
+          // swaps the `src`, and the browser keeps painting the frame it
+          // already decoded — so opening a second gym showed the first gym's
+          // team under the second gym's name and colours until the new
+          // sprites arrived. A new element paints nothing instead.
           <img
+            key={form ? formSprite(form) : pokemon.sprite}
             src={form ? formSprite(form) : pokemon.sprite}
             alt={form ? form.label : pokemon.name}
             className="pointer-events-none max-w-none"
@@ -574,7 +580,7 @@ function PowerupButton({ kind, active, onPress, side }: {
  */
 function SlotHalf({
   place, testId, half, heading, mirrored, pokemon, nameClass,
-  headClass, onPick,
+  headClass, onPick, onRemove,
 }: {
   place: Placed | null;
   testId: string;
@@ -586,6 +592,7 @@ function SlotHalf({
   nameClass: string;
   headClass: string;
   onPick: () => void;
+  onRemove: () => void;
 }) {
   const label = (
     // One line, always. A wrapped heading costs a line the geometry does not
@@ -657,11 +664,16 @@ function SlotHalf({
             <PokeballBg pokemon={pokemon} />
           </span>
           <img
+            key={pokemon.sprite}
             src={pokemon.sprite}
             alt={pokemon.name}
             className="relative z-[1] max-w-none"
             style={{ width: size, height: size, imageRendering: 'pixelated' }}
           />
+          {/* On the square, not on the block: the block's own corner is where
+              the heading and the name are, and a cross there sits on the
+              words. */}
+          <SlotRemove label={`Remove ${heading.toLowerCase()}`} onRemove={onRemove} />
         </>
       ) : (
         <span
@@ -680,7 +692,10 @@ function SlotHalf({
     // Held to the sprite's width. The two names are the runs either side of
     // the seam, so a name allowed to grow the block grows it into the other
     // half — at 320px that put one name through the other.
-    <span className={cn('block truncate leading-tight', nameClass)} style={{ maxWidth: size }}>
+    <span
+      className={cn('relative block truncate leading-tight', nameClass)}
+      style={{ maxWidth: size, top: `${place?.nameShift ?? 0}px` }}
+    >
       {pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : '\u00a0'}
     </span>
   );
@@ -717,6 +732,32 @@ function SlotHalf({
   );
 }
 
+/**
+ * The card's remove control, in the corner of whatever it is given.
+ *
+ * The same red cross the cells carry, so a slot with something in it is
+ * cleared the way an evolution line is. `stopPropagation` matters: every one
+ * of these sits inside a button that opens a picker.
+ */
+function SlotRemove({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      data-slot-remove
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        onRemove();
+      }}
+      className="absolute right-0 top-0 z-[15] h-[0.95rem] w-[0.95rem] cursor-pointer [contain:paint]"
+    >
+      <RedXIcon className="h-full w-full" />
+    </button>
+  );
+}
+
 const ACE_HEAD = 'ACE POKÉMON';
 const PARTNER_HEAD = 'PARTNER';
 const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
@@ -732,7 +773,9 @@ const PARTNER_NAME_CLASS = 'text-[0.8125rem] font-medium';
  * each run is measured once per resize and handed to the solver.
  */
 function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
-  const [layout, setLayout] = useState<{ ace: Placed; partner: Placed } | null>(null);
+  const [layout, setLayout] = useState<
+    { ace: Placed; partner: Placed; box: [number, number] } | null
+  >(null);
   const version = useNamesVersion();
   // The lab's size is an input to the solve, so a change to it has to
   // re-measure. Nothing else reads it, and on the card it never changes.
@@ -779,7 +822,7 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
       last = key;
       // The lab picks the size by hand; the card solves for it.
       const lab = useSlotLab.getState();
-      setLayout(placeSlot(w, h, ace, partner, lab.enabled ? lab.sprite : undefined));
+      setLayout({ ...placeSlot(w, h, ace, partner, lab.enabled ? lab.sprite : undefined), box: [w, h] });
       // The lab reads offsets as fractions of the slot, so it needs the slot.
       // Setting it always costs one shallow compare; the store ignores a
       // repeat of the same size.
@@ -811,6 +854,8 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
 }
 
 function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
+  const setSignatureSeat = useLeagueStore((s) => s.setSignatureSeat);
+  const setPartner = useLeagueStore((s) => s.setPartner);
   // `pokemonLabel` reads the name store without subscribing to it, so the
   // slot has to subscribe itself. Without this the name under the sprite did
   // not follow a language change.
@@ -822,6 +867,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   const partner = card.partnerId != null ? getPokemonById(card.partnerId) : undefined;
   const slotRef = useRef<HTMLDivElement>(null);
   const layout = useSlotLayout(slotRef);
+  const seam = seamEnds(layout?.box[0] ?? 1, layout?.box[1] ?? 1);
   const pos = {
     ...slotX(1, 3),
     top: `${rowTop(1) + INSET_Y}rem`,
@@ -864,10 +910,10 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         aria-hidden="true"
       >
         <line
-          x1="100"
-          y1="0"
-          x2="0"
-          y2="100"
+          x1={seam.x1 * 100}
+          y1={seam.y1 * 100}
+          x2={seam.x2 * 100}
+          y2={seam.y2 * 100}
           stroke="var(--lg-dash)"
           strokeWidth="1"
           vectorEffect="non-scaling-stroke"
@@ -883,6 +929,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         nameClass={ACE_NAME_CLASS}
         headClass={HEAD_CLASS}
         onPick={() => openLeagueBrowser(cardIndex, 'signature')}
+        onRemove={() => setSignatureSeat(cardIndex, null, null)}
       />
       <SlotHalf
         place={layout?.partner ?? null}
@@ -894,6 +941,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         nameClass={PARTNER_NAME_CLASS}
         headClass={HEAD_CLASS}
         onPick={() => openLeagueBrowser(cardIndex, 'partner')}
+        onRemove={() => setPartner(cardIndex, null)}
       />
     </div>
   );
@@ -920,15 +968,27 @@ const MARK_ROWS = 1.5;
  * keeps the glyph from eating the text it labels; both slots use the same
  * expression, so the disc and the hexagon stay on one axis whatever binds.
  */
-const MARK_COL = 'min(2.75rem, 30%)';
+const MARK_COL = 'min(2.75rem, 26%)';
+/**
+ * The box's left pad and the gap after the glyph column.
+ *
+ * Both are tighter than the card's usual 0.375rem, and deliberately: what
+ * they buy is width for the text beside them. The longest single-word move
+ * in the data is twelve characters — Flamethrower, Aromatherapy — and a
+ * single word cannot wrap, so every pixel left of it is a pixel it does not
+ * have. At 0.375rem apiece it cleared the box by one pixel on a phone.
+ */
+const MARK_PAD = '0.1875rem';
+const MARK_GAP = '0.25rem';
 // A share of the column, not of the box. A percentage inside the column
 // resolves against the column, so repeating the box fraction here multiplies
 // the two and collapses the glyph to a few pixels.
 const MARK_GLYPH = '72%';
 const MARK_LABEL_CLASS = 'text-[0.5rem] font-extrabold tracking-[0.06em]';
 
-function TmSlot({ view }: { view: CardView }) {
+function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
+  const setTm = useLeagueStore((s) => s.setTm);
   const move = view.card.tmMoveId !== null ? getMoveById(view.card.tmMoveId) : undefined;
   const pos = {
     ...slotX(1, 2),
@@ -940,8 +1000,14 @@ function TmSlot({ view }: { view: CardView }) {
       type="button"
       onClick={() => setMovePickerOpen(true)}
       data-testid="slot-tm"
-      className={cn('absolute z-[5] flex items-center gap-[0.375rem] rounded-lg pl-[0.375rem]', !move && 'border border-dashed')}
-      style={{ ...pos, borderColor: move ? undefined : 'var(--lg-dash)', background: move ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)' }}
+      className={cn('absolute z-[5] flex items-center rounded-lg', !move && 'border border-dashed')}
+      style={{
+        ...pos,
+        paddingLeft: MARK_PAD,
+        gap: MARK_GAP,
+        borderColor: move ? undefined : 'var(--lg-dash)',
+        background: move ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
+      }}
     >
       <span
         className="flex shrink-0 flex-col items-center"
@@ -966,18 +1032,31 @@ function TmSlot({ view }: { view: CardView }) {
         </span>
       </span>
       {move ? (
-        <span className="flex min-w-0 flex-col items-start gap-[2px]">
-          <span className="flex items-center gap-[3px]">
-            <TypeBadge type={move.type} className="w-[2.75rem]" />
+        <span className="flex min-w-0 flex-col items-start gap-[2px] overflow-hidden">
+          {/* Clipped rather than spilling. At 320px the type badge and the
+              category chip together are wider than the box's text column, and
+              a chip painted over the cell beside it is worse than one cut. */}
+          <span className="flex min-w-0 items-center gap-[3px]">
+            <TypeBadge type={move.type} className="w-[2.75rem] max-w-full shrink" />
             <CategoryChip category={move.category} className="h-[0.6875rem] w-[0.9375rem] rounded-[4px] border" />
           </span>
-          <span className="min-w-0 text-left text-[0.6875rem] leading-[1.15]">{move.name}</span>
+          {/* Truncated, not wrapped: a twelve-letter move is one word, so
+              a wrap would break it mid-syllable. Below about 340px of
+              viewport the box cannot hold the longest of them however far
+              left the text starts. */}
+          <span
+            className="min-w-0 max-w-full truncate text-left text-[0.6875rem] leading-[1.15]"
+            style={{ paddingRight: MARK_PAD }}
+          >
+            {move.name}
+          </span>
         </span>
       ) : (
         <span className="min-w-0 text-left text-[0.6875rem] leading-[1.15]" style={{ color: 'var(--lg-hint)' }}>
           Pick a move
         </span>
       )}
+      {move && <SlotRemove label="Remove TM" onRemove={() => setTm(cardIndex, null)} />}
     </button>
   );
 }
@@ -1066,8 +1145,14 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         putCaretAtEnd();
       }}
       data-testid="slot-badge"
-      className={cn('absolute z-[5] flex cursor-text items-center gap-[0.375rem] rounded-lg pl-[0.375rem]', !name && 'border border-dashed')}
-      style={{ ...pos, borderColor: name ? undefined : 'var(--lg-dash)', background: name ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)' }}
+      className={cn('absolute z-[5] flex cursor-text items-center rounded-lg', !name && 'border border-dashed')}
+      style={{
+        ...pos,
+        paddingLeft: MARK_PAD,
+        gap: MARK_GAP,
+        borderColor: name ? undefined : 'var(--lg-dash)',
+        background: name ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
+      }}
     >
       {/* The same column the TM slot uses, so the hexagon sits under the disc
           and the word under the word. */}
@@ -1121,6 +1206,16 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         />
         {name ? <span> Badge</span> : null}
       </div>
+      {name && (
+        <SlotRemove
+          label="Remove badge name"
+          onRemove={() => {
+            setBadgeName(cardIndex, '');
+            const field = fieldRef.current;
+            if (field) field.textContent = '';
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -1392,7 +1487,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         style={{ ...vars, background: shades.base, padding: `${PAD_Y}rem ${PAD_X}rem` }}
       >
         <AcePartnerSlot cardIndex={cardIndex} view={view} />
-        <TmSlot view={view} />
+        <TmSlot cardIndex={cardIndex} view={view} />
         <BadgeSlot cardIndex={cardIndex} view={view} />
         <Band label="GYM LEADER TEAM" />
         {renderRows.map((cells, i) => {

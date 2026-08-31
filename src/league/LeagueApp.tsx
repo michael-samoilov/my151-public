@@ -167,14 +167,7 @@ export function LeagueApp() {
               // before it arrives. `inert` keeps the one off screen out of
               // the tab order and off the screen reader.
               inert={openCard !== null}
-              // pb-2, the dex builder view page's buffer: small enough that
-              // the footer still sits flush under the fold, big enough to
-              // absorb the fit's sub-pixel rounding. The card pane next door
-              // does without it. Its hints wrap where the summary's truncate,
-              // so its fitted height steps by a whole line rather than
-              // sliding, and 8px there costs a step and leaves a visible gap
-              // above the footer instead of a buffer.
-              className="h-full w-1/2 overflow-y-auto pb-2"
+              className="h-full w-1/2 overflow-y-auto"
             >
               {/* The tool bar — same 44px as the dex builder's. */}
               <div data-testid="league-tool-bar" className="flex h-11 items-center gap-2 border-b bg-card px-3">

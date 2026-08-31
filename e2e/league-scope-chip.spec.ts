@@ -62,7 +62,11 @@ test.describe('the team scope chip', () => {
     await openSignature(page, 0);
     // One line out, so the template has room and the chip is the user's.
     await page.evaluate(() => {
-      (document.querySelector('button[aria-label^="Remove"]') as HTMLButtonElement).click();
+      // A *cell's* remove, not one of the slot removes the ace, partner, TM
+      // and badge now carry — those come first in the card's DOM.
+      (document.querySelector(
+        'button[aria-label^="Remove"]:not([data-slot-remove])',
+      ) as HTMLButtonElement).click();
     });
     await page.waitForTimeout(500);
     await openPane(page);

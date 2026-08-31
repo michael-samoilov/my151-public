@@ -1,19 +1,17 @@
 /**
  * Where the ace and the partner sit inside the card's split slot.
  *
- * The seam runs corner to corner, bottom-left to top-right, so the two halves
- * are congruent triangles. That is the whole reason this file is short. An
- * off-corner seam gave the partner the smaller wedge, and everything that
- * followed — a sprite sized to what the smaller half could hold, a
- * placeholder ring shrunk to clear a seam that leaned over it, a pair of
- * hand-measured centres that only held on the phone they were read on — was
- * work to hide that asymmetry. Congruent halves need none of it: solve one
- * and turn it over.
+ * The seam is the placeholder ball's own band, drawn across the whole slot: a
+ * line at 30 degrees, rising to the right, through the slot's middle. Through
+ * the middle is what matters — any line through the centre of a rectangle cuts
+ * it into two congruent halves, so the two sides are the same shape and size
+ * and neither is the lesser one. Solve one and turn it over.
  *
- * The two blocks are a 180-degree rotation of each other about the slot's
- * middle. The ace's heading sits above its sprite and its name below; the
- * partner's are the other way up. So both sprites sit the same distance from
- * their own labels, and both are the same distance from the seam.
+ * The two blocks are that 180-degree rotation of each other. The ace's heading
+ * sits above its sprite and its name below; the partner's are the other way
+ * up. So both sprites sit the same distance from their own labels and the same
+ * distance from the seam, and — because the pair is placed to make it so — the
+ * two Pokemon names share one baseline.
  *
  * Every number here is in the slot's **own** pixels. The card scales itself
  * with CSS `zoom`, so the slot's `getBoundingClientRect` is a fifth to a
@@ -22,13 +20,10 @@
  */
 
 /**
- * Where a right triangle's area is centred, along each leg.
- *
- * Each half aims for the centre of mass of its own triangle. With the seam on
- * the corner-to-corner diagonal that point is a third of the way along both
- * sides, which is also why the pair comes out symmetric for free.
+ * The seam's slope: 30 degrees, the angle the placeholder ball's band is
+ * drawn at (`EmptySlotBall` rotates a horizontal band by -30 degrees).
  */
-const CENTROID = 1 / 3;
+const SEAM_TAN = Math.tan(Math.PI / 6);
 
 /** A sprite's corner may cross the seam by this much, in px.
  *  That corner holds its transparent margin rather than any ink. */
@@ -74,6 +69,14 @@ export interface Placed {
   ring: number;
   /** The two-tone ball a chosen sprite sits on, across. */
   ball: number;
+  /**
+   * What the name run is offset by, in px, to meet the other half's name.
+   *
+   * Zero wherever the pair can be placed so the two names already line up,
+   * which is most of the time. Where the slot is too short for that, the
+   * sprites keep their size and the two names give half the difference each.
+   */
+  nameShift: number;
 }
 
 export interface Slot {
@@ -82,6 +85,33 @@ export interface Slot {
 }
 
 type Row = [number, number];
+type Pt = [number, number];
+
+/**
+ * How far a point sits past the seam, square to it. Negative is the ace's
+ * side, positive the partner's.
+ */
+function seamSide(w: number, h: number, x: number, y: number): number {
+  return (y - h / 2 + SEAM_TAN * (x - w / 2)) / Math.hypot(1, SEAM_TAN);
+}
+
+/**
+ * Where the seam meets the slot's edges, as fractions of the slot.
+ *
+ * The drawn line has to be given in the slot's own proportions. The SVG it
+ * lives in stretches a square viewBox to fill the slot, so a line at 30
+ * degrees *there* is not at 30 degrees on the screen.
+ */
+export function seamEnds(w: number, h: number): { x1: number; y1: number; x2: number; y2: number } {
+  const dy = (SEAM_TAN * w) / 2;
+  if (h / 2 + dy <= h) {
+    // The seam runs off the left and right edges.
+    return { x1: 0, y1: (h / 2 + dy) / h, x2: 1, y2: (h / 2 - dy) / h };
+  }
+  // A slot wide enough for the seam to leave through the top and bottom.
+  const dx = h / 2 / SEAM_TAN;
+  return { x1: (w / 2 - dx) / w, y1: 1, x2: (w / 2 + dx) / w, y2: 0 };
+}
 
 /**
  * A half's runs, top to bottom. The partner's block is the ace's turned over.
@@ -99,34 +129,6 @@ function stack(runs: Runs, sprite: number, half: 'ace' | 'partner'): Row[] {
     : [name, s, [...runs.head]];
 }
 
-/** The distance a unit of `c` buys, square to the seam. */
-const reach = (w: number, h: number) => (w * h) / Math.hypot(w, h);
-
-/**
- * The largest share `c` that keeps every one of a half's runs off the seam.
- *
- * The ace sits at `(c·w, c·h)` and the partner at `((1-c)·w, (1-c)·h)`, so one
- * number places both. Each run's binding corner — bottom-right for the ace,
- * top-left for the partner — has to stay on its own side, and the two forms
- * come out the same because the halves are congruent.
- */
-function seamLimit(w: number, h: number, sprite: number, runs: Runs, half: 'ace' | 'partner'): number {
-  const rows = stack(runs, sprite, half);
-  const above = rows[0][1];
-  const k = reach(w, h);
-  let offset = 0;
-  let limit = Infinity;
-  for (const [rw, rh] of rows) {
-    const edge = half === 'ace'
-      ? offset + rh - sprite / 2 - above
-      : -(offset - sprite / 2 - above);
-    const allow = rw === sprite ? CROSS : 0;
-    limit = Math.min(limit, (1 - rw / (2 * w) - edge / h + allow / k) / 2);
-    offset += rh;
-  }
-  return limit;
-}
-
 /**
  * The block's width: the sprite, or the heading when that is wider.
  *
@@ -138,59 +140,147 @@ function blockWidth(sprite: number, runs: Runs): number {
   return Math.max(sprite, runs.head[0]);
 }
 
-/** The smallest share `c` that keeps a half's block inside the slot. */
-function insideLimit(w: number, h: number, sprite: number, runs: Runs): number {
-  // The heading is the outer run in both halves — above the ace's sprite,
-  // below the partner's — so it is what the slot's edge has to clear.
-  return Math.max(blockWidth(sprite, runs) / (2 * w), (sprite / 2 + runs.head[1]) / h);
+/** The part of the slot on the ace's side of the seam. */
+function aceHalf(w: number, h: number): Pt[] {
+  const box: Pt[] = [[0, 0], [w, 0], [w, h], [0, h]];
+  const out: Pt[] = [];
+  box.forEach((cur, i) => {
+    const prv = box[(i - 1 + box.length) % box.length];
+    const sc = -seamSide(w, h, cur[0], cur[1]);
+    const sp = -seamSide(w, h, prv[0], prv[1]);
+    if (sc >= 0) {
+      if (sp < 0) out.push(cut(prv, cur, sp, sc));
+      out.push(cur);
+    } else if (sp >= 0) {
+      out.push(cut(prv, cur, sp, sc));
+    }
+  });
+  return out;
+}
+
+function cut(a: Pt, b: Pt, sa: number, sb: number): Pt {
+  const t = sa / (sa - sb);
+  return [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])];
+}
+
+/** A polygon's area centroid. */
+function centroid(poly: Pt[]): Pt {
+  let a = 0;
+  let cx = 0;
+  let cy = 0;
+  poly.forEach(([px, py], i) => {
+    const [qx, qy] = poly[(i + 1) % poly.length];
+    const cross = px * qy - qx * py;
+    a += cross;
+    cx += (px + qx) * cross;
+    cy += (py + qy) * cross;
+  });
+  a /= 2;
+  return [cx / (6 * a), cy / (6 * a)];
 }
 
 /**
- * Place both halves, mirrored.
+ * The largest x the ace's sprite centre may take before something crosses the
+ * seam. The partner's constraints come out in the same form, because the two
+ * halves are congruent, so one number covers both.
+ */
+function seamLimitX(w: number, h: number, sprite: number, y: number, runs: Runs, half: 'ace' | 'partner'): number {
+  const rows = stack(runs, sprite, half);
+  const above = rows[0][1];
+  const len = Math.hypot(1, SEAM_TAN);
+  let offset = 0;
+  let limit = Infinity;
+  for (const [rw, rh] of rows) {
+    // The ace's binding corner is its run's bottom-right and the partner's
+    // its top-left, and the partner's block hangs off `h - y`. Both reduce to
+    // the same bound on x once `h - y` is folded out, which is why one number
+    // places the pair.
+    const edge = half === 'ace'
+      ? y + offset + rh - sprite / 2 - above
+      : y - offset + sprite / 2 + above;
+    const allow = rw === sprite ? CROSS : 0;
+    const room = allow * len + h / 2 + (SEAM_TAN * w) / 2 - edge - (SEAM_TAN * rw) / 2;
+    limit = Math.min(limit, room / SEAM_TAN);
+    offset += rh;
+  }
+  return limit;
+}
+
+/** Hold a value in a range, taking the low end when the range is empty. */
+const hold = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, Math.max(lo, hi)));
+
+/**
+ * Place both halves, mirrored, with their two names on one baseline.
  *
- * The sprite is the standard one, given up a pixel at a time only while the
- * slot is too narrow to seat two of them clear of the seam, and never below a
- * team cell — a slot that cannot hold the card's own sprite size is a slot
- * whose sprites read as smaller than the team under them, which is the
- * complaint this geometry replaced.
+ * The baseline is what fixes the pair down the slot: put the ace's sprite
+ * centre at `(h - sprite - name)/2` and the partner's, being its mirror,
+ * lands with its name in exactly the same band. Where the slot is too short
+ * to hold both blocks at that height the sprites keep their size — shrinking
+ * them to buy an alignment is the wrong trade — and the two names take half
+ * the difference each instead.
  */
 export function placeSlot(w: number, h: number, ace: Runs, partner: Runs, fixed?: number): Slot {
-  const bounds = (sprite: number) => ({
-    lo: Math.max(insideLimit(w, h, sprite, ace), insideLimit(w, h, sprite, partner)),
-    hi: Math.min(seamLimit(w, h, sprite, ace, 'ace'), seamLimit(w, h, sprite, partner, 'partner')),
-  });
+  const nameH = Math.max(ace.name[1], partner.name[1]);
+  const headH = Math.max(ace.head[1], partner.head[1]);
   const floor = Math.round((TEAM_SPRITE / SLOT_H) * h);
+  /**
+   * How far a name may be moved to meet the other one: a sixth of its line.
+   *
+   * Past a certain size the sprite's own block reaches the top of the slot
+   * before its name reaches the level the pair share, and the two can only
+   * meet by the names giving ground. A sixth of a line is a nudge; half a
+   * line is a gap between a sprite and its name, and reads as a mistake. So
+   * the sprite gives up the last few pixels instead.
+   */
+  const maxShift = nameH / 6;
+
+  /** Where the ace's sprite centre goes, and what it costs the names. */
+  const solve = (sprite: number) => {
+    const level = (h - sprite - nameH) / 2;
+    // Both blocks inside the slot, top and bottom. The ace's block reaches
+    // `sprite/2 + headH` above its centre and the partner's the same below
+    // its own, so one range covers the pair.
+    const lo = sprite / 2 + headH;
+    const hi = h - sprite / 2 - nameH - Math.max(0, nameH - headH);
+    const y = hold(level, lo, Math.max(lo, hi));
+    const width = Math.max(blockWidth(sprite, ace), blockWidth(sprite, partner));
+    const xLo = width / 2;
+    const xHi = Math.min(
+      w - width / 2,
+      seamLimitX(w, h, sprite, y, ace, 'ace'),
+      seamLimitX(w, h, sprite, y, partner, 'partner'),
+    );
+    const [tx] = centroid(aceHalf(w, h));
+    const shift = y - level;
+    return { y, x: hold(tx, xLo, xHi), shift, fits: xLo <= xHi && Math.abs(shift) <= maxShift };
+  };
+
   let sprite = fixed ?? Math.round((STANDARD_SPRITE / SLOT_H) * h);
   if (fixed === undefined) {
-    while (sprite > floor) {
-      const { lo, hi } = bounds(sprite);
-      if (lo <= hi) break;
-      sprite -= 1;
-    }
+    while (sprite > floor && !solve(sprite).fits) sprite -= 1;
   }
-  const { lo, hi } = bounds(sprite);
-  // As close to the centre of its own triangle as the seam allows, then held
-  // inside the slot. When those two disagree the slot's edge wins: a run that
-  // leaves the box is worse than one that leans on the seam.
-  const c = Math.max(lo, Math.min(CENTROID, hi));
+  const { x, y, shift } = solve(sprite);
   return {
-    ace: place(w, h, sprite, ace, 'ace', c),
-    partner: place(w, h, sprite, partner, 'partner', c),
+    ace: place(w, h, sprite, ace, 'ace', x, y, -shift),
+    partner: place(w, h, sprite, partner, 'partner', x, y, shift),
   };
 }
 
 function place(
-  w: number, h: number, sprite: number, runs: Runs, half: 'ace' | 'partner', c: number,
+  w: number, h: number, sprite: number, runs: Runs, half: 'ace' | 'partner',
+  x: number, y: number, nameShift: number,
 ): Placed {
   const rows = stack(runs, sprite, half);
-  const width = blockWidth(sprite, runs);
-  const share = half === 'ace' ? c : 1 - c;
+  const width = Math.max(sprite, runs.head[0]);
+  const cx = half === 'ace' ? x : w - x;
+  const cy = half === 'ace' ? y : h - y;
   return {
-    left: share * w - width / 2,
-    top: share * h - sprite / 2 - rows[0][1],
+    left: cx - width / 2,
+    top: cy - sprite / 2 - rows[0][1],
     width,
     sprite,
     ring: RING_OF_SPRITE * sprite,
     ball: BALL_OF_SPRITE * sprite,
+    nameShift,
   };
 }

@@ -59,12 +59,17 @@ async function slotGeometry(page: Page) {
       // The empty state's placeholder ball, and how far past the seam it
       // reaches. Negative is clear of it.
       const disc = half.querySelector<HTMLElement>('[data-slot-ring]')?.getBoundingClientRect();
-      const ay = (Number(seam.getAttribute('y1')) / 100) * s.height;
+      // Both ends off the drawn line, because the seam is no longer a
+      // corner-to-corner diagonal: it runs at the placeholder ball's own 30
+      // degrees, through the middle of the slot.
+      const at = (n: string, size: number) => (Number(seam.getAttribute(n)) / 100) * size;
+      const [ax, ay, bx, by] = [at('x1', s.width), at('y1', s.height), at('x2', s.width), at('y2', s.height)];
+      const len = Math.hypot(bx - ax, by - ay);
       const past = disc
         ? disc.width / 2 - Math.abs(
-            -s.width * (disc.top + disc.height / 2 - s.top - ay)
-            - (s.height - ay) * (disc.left + disc.width / 2 - s.left - s.width),
-          ) / Math.hypot(s.width, s.height - ay)
+            (bx - ax) * (disc.top + disc.height / 2 - s.top - ay)
+            - (by - ay) * (disc.left + disc.width / 2 - s.left - ax),
+          ) / len
         : null;
       return {
         id,
