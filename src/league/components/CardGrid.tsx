@@ -1466,7 +1466,10 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
           every hint's text starts at the same indent and a wrapped line keeps
           it. The marks are icons rather than arrow characters, which the
           font sets at whatever weight it likes. */}
-      <div className="grid grid-cols-[0.75rem_1fr] gap-x-[0.375rem] gap-y-[3px] px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground">
+      <div
+        data-fit-tail
+        className="grid grid-cols-[0.75rem_1fr] gap-x-[0.375rem] gap-y-[3px] px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground"
+      >
         <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
         <span>Drag a pokemon up or down to shift when it evolves</span>
         <ArrowLeftRight className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />

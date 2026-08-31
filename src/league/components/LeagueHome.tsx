@@ -338,7 +338,10 @@ export function LeagueHome() {
             that height left the top padding out: the box measured 29px while
             it painted 37, so the fit ended the card 8px above its last line
             and the phone cropped it. */}
-        <div className="px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground">
+        <div
+          data-fit-tail
+          className="px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground"
+        >
           <div className="flex items-start gap-[0.3125rem]">
             <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
             <span className="min-w-0 truncate">Drag a row to reorder the league · tap a row to open its card</span>
