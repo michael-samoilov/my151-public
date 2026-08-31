@@ -45,6 +45,17 @@ export interface GymCard {
    * no longer holds the id falls back, so nothing has to migrate.
    */
   signatureId?: number | null;
+  /**
+   * The partner Pokemon sharing the ace's slot, or null.
+   *
+   * A plain id rather than a seat, because the partner is the leader's
+   * companion and not their sixth Pokemon: it does not have to be on the
+   * team. It is still *seated* when the card has room — choosing one on a
+   * five-line card fills the sixth line as well — but a full card keeps it in
+   * the slot alone. Optional, so cards saved before the field existed read as
+   * having no partner without a migration.
+   */
+  partnerId?: number | null;
   tmMoveId: number | null;
   badgeName: string;
   legend: LegendPick | null;
@@ -109,6 +120,8 @@ export interface LeagueState {
   /** Reset one card to an empty one. Every other card is untouched. */
   clearCard: (card: number) => void;
   setSignatureSeat: (card: number, seat: number | null, pokemonId?: number | null) => void;
+  /** Set or clear the partner sharing the ace's slot. */
+  setPartner: (card: number, pokemonId: number | null) => void;
   setTm: (card: number, moveId: number | null) => void;
   setBadgeName: (card: number, name: string) => void;
   setLegend: (card: number, legend: LegendPick | null) => void;
@@ -122,6 +135,7 @@ export function emptyCard(): GymCard {
     lines: [],
     signatureSeat: null,
     signatureId: null,
+    partnerId: null,
     tmMoveId: null,
     badgeName: '',
     legend: null,
@@ -336,6 +350,11 @@ export const useLeagueStore = create<LeagueState>()(
             signatureSeat: seat,
             signatureId: seat === null ? null : pokemonId,
           })),
+        })),
+
+      setPartner: (card, pokemonId) =>
+        set((s) => ({
+          cards: withCard(s.cards, card, (c) => ({ ...c, partnerId: pokemonId })),
         })),
 
       setTm: (card, moveId) =>

@@ -48,20 +48,13 @@ const reported = (page: Page) =>
 /** What the signature slot draws, or '(empty)' when it is still a placeholder. */
 const signatureAlt = (page: Page) =>
   page.evaluate(() => {
-    const btn = [...document.querySelectorAll('button')].find((b) =>
-      /SIGNATURE POK/.test(b.textContent ?? ''),
-    );
+    const btn = document.querySelector('[data-testid="slot-ace"]');
     return btn?.querySelector('img')?.getAttribute('alt') ?? '(empty)';
   });
 
 /** Open the signature picker, search, and tap one Pokémon's tile by name. */
 const pickSignature = async (page: Page, query: string, name: string) => {
-  await page.evaluate(() => {
-    const btn = [...document.querySelectorAll('button')].find((b) =>
-      /SIGNATURE POK/.test(b.textContent ?? ''),
-    );
-    (btn as HTMLButtonElement).click();
-  });
+  await page.click('[data-testid="slot-ace"]');
   await page.waitForTimeout(800);
   await search(page, query);
   const index = (await drawn(page)).indexOf(name);
@@ -96,9 +89,7 @@ test.describe('one-Pokémon pickers', () => {
     await openCard(page, 0);
     await seatOne(page, 'pikachu');
     await page.evaluate(() => {
-      const btn = [...document.querySelectorAll('button')].find((b) =>
-        /SIGNATURE POK/.test(b.textContent ?? ''),
-      );
+      const btn = document.querySelector('[data-testid="slot-ace"]');
       (btn as HTMLButtonElement).click();
     });
     await page.waitForTimeout(800);

@@ -5,7 +5,7 @@ import { create } from 'zustand';
  * league home with everything closed, which is also the crawler's view.
  */
 
-export type BrowserPurpose = 'lines' | 'signature' | 'legend' | 'replace';
+export type BrowserPurpose = 'lines' | 'signature' | 'partner' | 'legend' | 'replace';
 
 interface LeagueUiState {
   /** null = league home; a number = that card is open full-screen. */

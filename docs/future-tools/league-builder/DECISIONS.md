@@ -1090,6 +1090,58 @@ its children rather than the block's own rect, because a heading wider than
 its block paints outside that rect — which is exactly the overflow worth
 catching.
 
+### Round 18, built
+
+**The ace and partner slot is in the card.** `AcePartnerSlot` replaces
+`SignatureSlot` in `CardGrid.tsx`: one box, one seam, two halves.
+
+- **The seam** runs from 56/204 down the right edge to the bottom-left corner
+  — "Corner, high" from the study. It is an SVG line on a `0 0 100 100`
+  viewBox with `preserveAspectRatio="none"`, so it tracks the slot at any
+  size, and `vector-effect="non-scaling-stroke"` keeps it one pixel wide
+  rather than stretching with the box.
+- **The store** gains `partnerId` on `GymCard`, a plain id rather than a seat:
+  a partner is the leader's companion, not their sixth Pokemon, so it need not
+  be on the team. `clearCard` already returns `emptyCard()`, so a partner
+  clears with everything else and needed no change.
+- **The picker** gains a `'partner'` purpose. It never locks to the team and
+  never restricts, unlike the ace picker on a full card. On commit it calls
+  `placeBranch` and then `setPartner`: `placeBranch` is already a no-op on a
+  full card, which is exactly the rule — on a five-line card the partner
+  becomes the sixth line *and* the partner; on a full one it lives in the slot
+  alone.
+
+**Two units, because the slot has two.** The card's fit zoom matches height,
+not width, so the slot's height is fixed in rem (four rows) while its width is
+a percentage of a card whose own width is not: measured, it runs about 115px
+at a 320px viewport to about 200px on a desktop. `left` and `top` each follow
+the dimension they belong to. A square sprite has to answer to both, so its
+size is `min(<percent of width>, <rem from height>)`.
+
+That min is not caution, it is the fix for a measured defect. Sized from rem
+alone the ace sprite stayed 76px inside a 115px slot at 320px and drove
+**15.7px** through the seam, with the partner's heading 3.8px outside the slot.
+With the min it is 61.9px and clears the seam entirely, while mobile and
+desktop are unchanged at 77.1px and 65.6px.
+
+One trap worth naming: the percentage has to sit on the button, and the button's
+children have to size from *it*. Putting the same `min()` on both collapsed the
+sprite to a third of its size, because the inner percentage resolved against a
+parent that was itself a percentage.
+
+**Tests.** `e2e/league-partner-slot.spec.ts` measures the running card: neither
+half reaches more than 5px past the seam or outside the slot, the partner's
+heading and name do not move between empty and filled, the partner picker shows
+no lock, a partner on an empty card seats itself, and the ace sprite is never
+smaller than a team cell. The specs that reached the slot by its label text now
+use `data-testid="slot-ace"` and `slot-partner`.
+
+One assertion was retired rather than repaired: `league-round10` checked that
+the *type badges* under the ace followed a language change. The diagonal drops
+those badges for the room they cost (round 15), so the test now holds the name
+alone, and adds that the English name is gone — the control the badges used to
+provide.
+
 ### Round 3, follow-ups from the preview
 
 1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;

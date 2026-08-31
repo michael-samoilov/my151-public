@@ -24,9 +24,7 @@ const openSignature = async (page: Page, slot: number) => {
 
 const openPane = async (page: Page) => {
   await page.evaluate(() => {
-    const slot = [...document.querySelectorAll('button')].find((b) =>
-      /SIGNATURE POK/.test(b.textContent ?? ''),
-    );
+    const slot = document.querySelector('[data-testid="slot-ace"]');
     (slot as HTMLButtonElement).click();
   });
   await page.waitForTimeout(1200);

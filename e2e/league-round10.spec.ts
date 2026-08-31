@@ -31,10 +31,8 @@ test.describe('round 10', () => {
     await openCard(page, 0);
     const signature = () =>
       page.evaluate(() => {
-        const slot = [...document.querySelectorAll('button')].find((b) =>
-          /SIGNATURE POK/.test(b.textContent ?? ''),
-        );
-        return (slot?.textContent ?? '').replace('SIGNATURE POKÉMON', '');
+        const slot = document.querySelector('[data-testid="slot-ace"]');
+        return (slot?.textContent ?? '').replace('ACE POKÉMON', '');
       });
     expect(await signature()).toContain('Onix');
 
@@ -43,11 +41,13 @@ test.describe('round 10', () => {
     await page.locator('[role="menuitemradio"]:visible', { hasText: '日本語' }).first().click();
     await page.waitForTimeout(2500);
 
-    // The types under the sprite always switched; the name above them did
-    // not, because the snapshot behind `useNamesVersion` ignored the locale.
+    // The name is the whole check now. It used not to switch at all, because
+    // the snapshot behind `useNamesVersion` ignored the locale; the type
+    // badges that once sat under it were the control, and the ace/partner
+    // split dropped them for the room they cost.
     const after = await signature();
     expect(after, 'the name is translated').toContain('イワーク');
-    expect(after, 'and so are the types').toContain('いわ');
+    expect(after, 'the old English name is gone').not.toContain('Onix');
   });
 
   test('a powerup travels with its line, not its seat', async ({ page }) => {

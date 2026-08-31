@@ -20,7 +20,6 @@ import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
-import type { TypeName } from '@/types/pokemon';
 import { HeldItems } from '@/components/shared/dragHold';
 import { cn } from '@/lib/utils';
 import { warmImages } from '@/lib/warmImages';
@@ -539,62 +538,180 @@ function PowerupButton({ kind, active, onPress, side }: {
   );
 }
 
-function SignatureSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
+/**
+ * Where the seam meets the slot's right edge, as a fraction of slot height.
+ *
+ * The seam runs from there to the bottom-left corner. It is "Corner, high" in
+ * the partner-slot study: of the seams tried it is the one that leaves the ace
+ * within 8px of the 92px it used to have to itself, while still giving the
+ * partner a sprite larger than a team cell.
+ */
+const SEAM_RIGHT = 56 / 204;
+
+/**
+ * The two halves, solved rather than drawn.
+ *
+ * Each sprite's centre wants to sit on the area centroid of its own partition
+ * — the shape the seam cuts out of the slot. `docs/future-tools/league-builder/
+ * partner-slot/seamends.py` searches the placements where the whole block
+ * (heading, sprite, name) clears the seam, and keeps the one landing nearest
+ * that centroid; these are its answers at the slot's design size, 148 x 204.
+ *
+ * Two units, because the slot has two: its height is rem (four rows), and its
+ * width is a percentage of a card whose own width is not fixed — the fit zoom
+ * matches height, not width, so the slot runs from about 115px on a 320px
+ * screen to about 200px on a desktop. `left` and `top` follow the dimension
+ * they belong to. A square sprite has to answer to both, so its size is the
+ * smaller of the two: at 320px the width binds and the sprite comes down; on
+ * a desktop the height binds and it comes down instead. Taking only one would
+ * leave the sprite oversized on the other, which on a narrow screen puts it
+ * through the seam.
+ */
+const ACE_BOX = { left: 9.5 / 148, wide: 80 / 148, tall: 5, top: 0.625 };
+const PARTNER_BOX = { left: 84 / 148, wide: 56 / 148, tall: 3.5, top: 7.25 };
+
+/** The sprite's edge: the smaller of what the slot's width and height allow. */
+function halfSize(box: typeof ACE_BOX): string {
+  return `min(${(box.wide * 100).toFixed(2)}%, ${box.tall}rem)`;
+}
+
+/**
+ * One half of the ace/partner slot: heading, sprite, name.
+ *
+ * The empty state is the filled state with the sprite taken out and its square
+ * left in place, so the heading and the name keep the position they have once
+ * a Pokemon lands there. Drawing the ring on its own moves the word up against
+ * it, which is a different layout wearing the same name.
+ */
+function SlotHalf({
+  box, testId, heading, headingBelow, pokemon, nameClass, onPick,
+}: {
+  box: typeof ACE_BOX;
+  testId: string;
+  heading: string;
+  headingBelow: boolean;
+  pokemon: ReturnType<typeof getPokemonById>;
+  nameClass: string;
+  onPick: () => void;
+}) {
+  const label = (
+    // One line, always. A wrapped heading costs a line the geometry does not
+    // budget for, and it costs it in the filled state only.
+    <span
+      className="whitespace-nowrap text-[0.53125rem] font-extrabold tracking-[0.08em]"
+      style={{ color: 'var(--lg-band)' }}
+    >
+      {heading}
+    </span>
+  );
+  const body = pokemon ? (
+    <>
+      <img
+        src={pokemon.sprite}
+        alt={pokemon.name}
+        className="max-w-none shrink-0"
+        style={{ width: '100%', aspectRatio: '1', imageRendering: 'pixelated' }}
+      />
+      <span className={cn('leading-tight', nameClass)}>
+        {pokemonLabel(pokemon.id, pokemon.name).name}
+      </span>
+    </>
+  ) : (
+    <>
+      <span
+        className="flex shrink-0 items-center justify-center"
+        style={{ width: '100%', aspectRatio: '1' }}
+      >
+        <span
+          className="rounded-full border border-dashed"
+          style={{ width: '62%', aspectRatio: '1', borderColor: 'var(--lg-dash)' }}
+        />
+      </span>
+      {/* Blank, but it still takes its line: that is what holds the heading
+          where it sits once a Pokemon is chosen. */}
+      <span className={cn('leading-tight', nameClass)}>&nbsp;</span>
+    </>
+  );
+  return (
+    <button
+      type="button"
+      onClick={onPick}
+      data-testid={testId}
+      aria-label={pokemon ? `${heading}: ${pokemon.name}` : `Choose a ${heading.toLowerCase()}`}
+      className="absolute z-[6] flex flex-col items-center text-center"
+      style={{
+        left: `${(box.left * 100).toFixed(2)}%`,
+        top: `${box.top}rem`,
+        width: halfSize(box),
+      }}
+    >
+      {headingBelow ? <>{body}{label}</> : <>{label}{body}</>}
+    </button>
+  );
+}
+
+function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   // `pokemonLabel` reads the name store without subscribing to it, so the
-  // slot has to subscribe itself. Without this the types under the sprite
-  // switched language and the name above them did not.
+  // slot has to subscribe itself. Without this the name under the sprite did
+  // not follow a language change.
   useNamesVersion();
   const { card } = view;
   const line = card.signatureSeat !== null ? card.lines[card.signatureSeat - 1] : undefined;
   const shown = signatureMember(line, card.signatureId ?? null);
-  const pokemon = shown !== null ? getPokemonById(shown) : undefined;
+  const ace = shown !== null ? getPokemonById(shown) : undefined;
+  const partner = card.partnerId != null ? getPokemonById(card.partnerId) : undefined;
   const pos = {
     ...slotX(1, 3),
     top: `${rowTop(1) + INSET_Y}rem`,
     height: `${4 * ROW_H - 2 * INSET_Y}rem`,
   };
   return (
-    <button
-      type="button"
-      onClick={() => openLeagueBrowser(cardIndex, 'signature')}
-      className={cn(
-        'absolute z-[5] flex flex-col items-center rounded-lg',
-        pokemon ? 'bg-white' : 'border border-dashed',
-      )}
-      style={{ ...pos, borderColor: pokemon ? undefined : 'var(--lg-dash)', background: pokemon ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)' }}
+    <div
+      className={cn('absolute z-[5] rounded-lg', ace || partner ? undefined : 'border border-dashed')}
+      style={{
+        ...pos,
+        borderColor: ace || partner ? undefined : 'var(--lg-dash)',
+        background: ace || partner ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
+      }}
     >
-      {pokemon ? (
-        <>
-          <span className="pt-[0.375rem] text-[0.53125rem] font-extrabold tracking-[0.08em]" style={{ color: 'var(--lg-band)' }}>
-            SIGNATURE POKÉMON
-          </span>
-          <span className="flex flex-1 flex-col items-center justify-center">
-            <img
-              src={pokemon.sprite}
-              alt={pokemon.name}
-              className="max-w-none"
-              style={{ width: '5.75rem', height: '5.75rem', imageRendering: 'pixelated' }}
-            />
-            <span className="text-[0.875rem] font-medium leading-tight">{pokemonLabel(pokemon.id, pokemon.name).name}</span>
-            <span className="mt-[0.3125rem] flex flex-col items-center gap-[2px]">
-              {pokemon.types.map((t) => (
-                <TypeBadge key={t} type={t as TypeName} className="w-[5.25rem]" />
-              ))}
-            </span>
-          </span>
-        </>
-      ) : (
-        <span className="flex flex-1 flex-col items-center justify-center gap-[0.375rem]">
-          <svg viewBox="0 0 16 16" className="h-[1.375rem] w-[1.375rem]">
-            <line x1="3" y1="8" x2="13" y2="8" stroke="var(--lg-dash)" strokeWidth="1.8" strokeLinecap="round" />
-            <line x1="8" y1="3" x2="8" y2="13" stroke="var(--lg-dash)" strokeWidth="1.8" strokeLinecap="round" />
-          </svg>
-          <span className="text-[0.59375rem] font-bold tracking-[0.06em]" style={{ color: 'var(--lg-hint)' }}>
-            SIGNATURE POKÉMON
-          </span>
-        </span>
-      )}
-    </button>
+      {/* The seam is a drawn line, not a wall: a block's far corner is allowed
+          a few pixels past it, because that corner holds a sprite's
+          transparent margin rather than any ink. */}
+      <svg
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+      >
+        <line
+          x1="100"
+          y1={SEAM_RIGHT * 100}
+          x2="0"
+          y2="100"
+          stroke="var(--lg-dash)"
+          strokeWidth="1"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+      <SlotHalf
+        box={ACE_BOX}
+        testId="slot-ace"
+        heading="ACE POKÉMON"
+        headingBelow={false}
+        pokemon={ace}
+        nameClass="text-[0.8125rem] font-medium"
+        onPick={() => openLeagueBrowser(cardIndex, 'signature')}
+      />
+      <SlotHalf
+        box={PARTNER_BOX}
+        testId="slot-partner"
+        heading="PARTNER"
+        headingBelow
+        pokemon={partner}
+        nameClass="text-[0.6875rem] font-medium"
+        onPick={() => openLeagueBrowser(cardIndex, 'partner')}
+      />
+    </div>
   );
 }
 
@@ -1011,7 +1128,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         className="relative overflow-hidden rounded-2xl shadow-elevated"
         style={{ ...vars, background: shades.base, padding: `${PAD_Y}rem ${PAD_X}rem` }}
       >
-        <SignatureSlot cardIndex={cardIndex} view={view} />
+        <AcePartnerSlot cardIndex={cardIndex} view={view} />
         <TmSlot view={view} />
         <BadgeSlot cardIndex={cardIndex} view={view} />
         <Band label="GYM LEADER TEAM" />

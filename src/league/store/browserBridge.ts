@@ -178,10 +178,10 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // The branches themselves, so the scoped view can draw the lines the
         // user seated rather than the chains they belong to.
         scopeFilterLines: purpose === 'signature' ? lines.map((l) => l.branch) : undefined,
-        // The signature is one Pokémon and so is the boss's legendary, so
-        // each Pokémon is its own tile — and the grid merges a split chain's
-        // branches, so none of them appears twice.
-        standaloneTiles: purpose === 'signature' || purpose === 'legend',
+        // The ace is one Pokemon, and so are the boss's legendary and the
+        // partner, so each Pokemon is its own tile — and the grid merges a
+        // split chain's branches, so none of them appears twice.
+        standaloneTiles: purpose === 'signature' || purpose === 'legend' || purpose === 'partner',
       });
     },
 
@@ -208,6 +208,15 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // ends the branch, and it is also the one the slot must show.
         league().placeBranch(card, branch, 'front');
         league().setSignatureSeat(card, 1, branch[branch.length - 1]);
+        ui().closeBrowser();
+      } else if (purpose === 'partner') {
+        // A partner is seated when the card has room and not otherwise, so
+        // one pick means two different things depending on how full the card
+        // is. `placeBranch` already no-ops on a full card, which is exactly
+        // the rule: on a five-line card the partner becomes the sixth line
+        // *and* the partner; on a full one it lives in the slot alone.
+        league().placeBranch(card, branch);
+        league().setPartner(card, branch[branch.length - 1]);
         ui().closeBrowser();
       } else {
         league().placeBranch(card, branch);
@@ -236,6 +245,11 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         const seat =
           useLeagueStore.getState().cards[card]?.lines.findIndex((l) => l.branch.includes(pokemonId)) ?? -1;
         if (seat >= 0) useLeagueStore.getState().setSignatureSeat(card, seat + 1, pokemonId);
+        ui().closeBrowser();
+      } else if (purpose === 'partner') {
+        // Already on the card: a tap names it the partner rather than
+        // removing the line it sits in.
+        useLeagueStore.getState().setPartner(card, pokemonId);
         ui().closeBrowser();
       } else {
         useLeagueStore.getState().removeLineWith(card, pokemonId);
