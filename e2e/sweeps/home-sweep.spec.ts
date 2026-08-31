@@ -52,8 +52,9 @@ test.describe('home page responsive sweep', () => {
         }
 
         cards.forEach((cell, i) => {
-          // The red panel, not the cell: the cell also holds the overhang.
-          const panel = cell.querySelector('a, div > div');
+          // The red panel, not the cell: the cell also holds the overhang, so a
+          // structural selector picks the wrapper instead.
+          const panel = cell.querySelector('[data-card-panel]');
           const h2 = cell.querySelector('h2');
           const p = cell.querySelector('h2 + p');
           if (!panel || !h2 || !p) {

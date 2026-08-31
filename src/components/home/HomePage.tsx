@@ -82,6 +82,9 @@ interface CardProps {
  * fan at full size.
  */
 function Card({ tool, onPress }: CardProps) {
+  // `data-card-panel` marks the red panel itself. The cell that wraps it also
+  // carries the overhang, so a structural selector picks the wrong box — which
+  // is exactly what e2e/sweeps/home-sweep.spec.ts did until it read this.
   const panel = 'relative block w-full text-left bg-primary text-white no-underline';
   const panelStyle = { aspectRatio: CARD_ASPECT, borderRadius: RADIUS };
   const body = (
@@ -124,11 +127,11 @@ function Card({ tool, onPress }: CardProps) {
     <div style={{ containerType: 'inline-size' }}>
       <div style={{ paddingTop: `calc(${U(POP_TOP)} * var(--art))` }}>
         {onPress ? (
-          <button type="button" onClick={onPress} className={`${panel} cursor-pointer`} style={panelStyle}>
+          <button type="button" onClick={onPress} className={`${panel} cursor-pointer`} style={panelStyle} data-card-panel>
             {body}
           </button>
         ) : (
-          <a href={tool.href} className={panel} style={panelStyle}>
+          <a href={tool.href} className={panel} style={panelStyle} data-card-panel>
             {body}
           </a>
         )}
