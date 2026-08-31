@@ -40,7 +40,17 @@ test.describe('home page responsive sweep', () => {
           fail.push(`h-overflow ${root.scrollWidth} > ${root.clientWidth}`);
         }
 
-        // 2. No two cards touch.
+        // 2. The footer starts below the fold at every size. What a visitor
+        // sees before scrolling is the header, the hero and the grid — the
+        // footer is something they scroll to, never part of the first screen.
+        const footer = document.querySelector('main')?.parentElement?.nextElementSibling;
+        if (!footer) {
+          fail.push('footer not found after the fold block');
+        } else if (R(footer).top < window.innerHeight - 0.5) {
+          fail.push(`footer top at ${R(footer).top.toFixed(1)}, above the ${window.innerHeight}px fold`);
+        }
+
+        // 3. No two cards touch.
         for (let i = 0; i < cards.length; i += 1) {
           for (let j = i + 1; j < cards.length; j += 1) {
             const a = R(cards[i]);
@@ -63,7 +73,7 @@ test.describe('home page responsive sweep', () => {
           }
           const c = R(panel);
 
-          // 3. Each heading stays on one line. A block reports one client rect
+          // 4. Each heading stays on one line. A block reports one client rect
           // whatever it does, so the line count comes from the text range.
           const range = document.createRange();
           range.selectNodeContents(h2);
@@ -72,12 +82,12 @@ test.describe('home page responsive sweep', () => {
           if (lines > 1) fail.push(`card ${i} title wrapped to ${lines} lines`);
           if (text - R(h2).width > 0.5) fail.push(`card ${i} title overruns by ${(text - R(h2).width).toFixed(1)}`);
 
-          // 4. The blurb fits its fixed two-line band.
+          // 5. The blurb fits its fixed two-line band.
           if (p.scrollHeight - p.clientHeight > 0.5) {
             fail.push(`card ${i} blurb clipped by ${p.scrollHeight - p.clientHeight}`);
           }
 
-          // 5. Artwork never reaches the card's right edge: a bare red strip has
+          // 6. Artwork never reaches the card's right edge: a bare red strip has
           // to remain, or the screenshot reads as clipped there.
           [...cell.querySelectorAll('img')].forEach((img, k) => {
             const strip = c.right - R(img).right;
@@ -86,7 +96,7 @@ test.describe('home page responsive sweep', () => {
             }
           });
 
-          // 6. Artwork must not land on the card above it.
+          // 7. Artwork must not land on the card above it.
           [...cell.querySelectorAll('img')].forEach((img, k) => {
             cards.forEach((other, j) => {
               if (other === cell) return;
@@ -100,7 +110,7 @@ test.describe('home page responsive sweep', () => {
             });
           });
 
-          // 7. The build mark stays wholly inside its own card, with matching
+          // 8. The build mark stays wholly inside its own card, with matching
           // air above it and below it.
           const svg = cell.querySelector('svg');
           if (svg) {
@@ -114,7 +124,7 @@ test.describe('home page responsive sweep', () => {
           }
         });
 
-        // 8. The band's own knobs resolve to what the band intends. This repo
+        // 9. The band's own knobs resolve to what the band intends. This repo
         // sets `--breakpoint-md: 1024px`, and Tailwind sorts that px value ahead
         // of `sm`'s 40rem, so it emits the md block FIRST: a bare `sm:` utility
         // silently beats its own `md:` override above 1024px. That is invisible
@@ -126,7 +136,7 @@ test.describe('home page responsive sweep', () => {
           fail.push(`--art is ${art}, expected ${wantArt} at ${window.innerWidth}px`);
         }
 
-        // 9. Hero copy stays inside the frame and breaks rather than overrunning.
+        // 10. Hero copy stays inside the frame and breaks rather than overrunning.
         const hero = document.querySelector('main > section');
         [...(hero?.querySelectorAll('h1, p') ?? [])].forEach((e, i) => {
           const r = R(e);

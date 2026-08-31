@@ -271,69 +271,85 @@ export function HomePage() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="min-h-dvh flex flex-col bg-background text-foreground">
-        <header className="border-b bg-card">
-          <div className="flex items-center justify-between px-3 sm:px-6 py-2">
-            <span className="text-2xl font-extrabold tracking-tight whitespace-nowrap">
-              <span className="text-primary">my151</span>
-              <span className="text-foreground">.app</span>
-            </span>
-            <LanguagePicker />
-          </div>
-        </header>
-
-        {/* Horizontal padding is a share of the viewport, not a rem step: rem
-            here rides the root font-size knob, which caps at 1024px, so a rem
-            gutter would stop growing exactly where the page gets widest. Type
-            below is the opposite case and stays in rem on purpose, so it does
-            follow that knob. */}
-        <main className="flex-1 px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%] pt-6 md:pt-16 pb-4">
-          <section className="md:flex md:items-start md:justify-between">
-            <h1
-              // Every step here was measured, not guessed — see the README.
-              // 1.3125rem is 21px at the mobile root size, the largest whole
-              // pixel that keeps this heading to two lines at 320px, the
-              // narrowest width the e2e projects cover; 22px spills to three.
-              // The split hero gives the h1 a 375px column at 1024, where
-              // anything over 1.75rem runs to four lines, so the big size waits
-              // for xl.
-              className="m-0 font-extrabold tracking-tight text-pretty text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:w-[41%] md:shrink-0"
-              style={{ lineHeight: 1.08 }}
-            >
-              {t('home.h1')}
-            </h1>
-            <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:w-[55%] md:shrink-0">
-              <p className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
-                {t('home.intro')}
-              </p>
-              <p className="m-0 text-[0.72rem] leading-relaxed text-muted-foreground/70 text-pretty">
-                {t('home.note')}
-              </p>
+      <div className="flex flex-col bg-background text-foreground">
+        {/* The fold. Header and content fill one viewport on their own, so the
+            footer always starts below it — what a visitor sees before scrolling
+            is exactly this block. `min-h` rather than `h`, so a viewport too
+            short for the content pushes the footer further down instead of
+            crushing the grid. */}
+        <div className="flex min-h-dvh flex-col">
+          <header className="border-b bg-card">
+            <div className="flex items-center justify-between px-3 sm:px-6 py-2">
+              <span className="text-2xl font-extrabold tracking-tight whitespace-nowrap">
+                <span className="text-primary">my151</span>
+                <span className="text-foreground">.app</span>
+              </span>
+              <LanguagePicker />
             </div>
-          </section>
+          </header>
 
-          {/* `--art` shrinks the fan on tablet so the two rows pack closer;
-              phone and desktop run it at full size.
+          {/* Horizontal padding is a share of the viewport, not a rem step: rem
+              here rides the root font-size knob, which caps at 1024px, so a rem
+              gutter would stop growing exactly where the page gets widest. Type
+              below is the opposite case and stays in rem on purpose, so it does
+              follow that knob.
 
-              Every tablet rule is `sm:max-md:`, never a bare `sm:`. This repo
-              sets `--breakpoint-md: 1024px`, and Tailwind sorts that px value
-              ahead of `sm`'s 40rem, so it emits the md block FIRST — a bare
-              `sm:` then beats its own `md:` override above 1024px. Bounding the
-              tablet rules at md means the two bands cannot overlap at all. */}
-          <div
-            className="mt-8 md:mt-16 grid grid-cols-2 md:grid-cols-4 gap-x-3.5 gap-y-3.5 sm:max-md:gap-x-7 md:gap-x-6 [--art:1] sm:max-md:[--art:0.82]"
-          >
-            {tools.map((tool) => (
-              <Card
-                key={tool.key}
-                tool={tool}
-                                // The card asks what to build next, so the form opens on
-                // Idea rather than the Bug it defaults to elsewhere.
-                onPress={tool.key === 'next' ? () => openFeedback('idea') : undefined}
-              />
-            ))}
-          </div>
-        </main>
+              Vertically it is three equal spacers, so the air above the hero,
+              between the hero and the grid, and below the grid all match.
+              `min-h-6` is the floor they collapse to when the content is taller
+              than the viewport. */}
+          <main className="flex flex-1 flex-col px-[4%] sm:max-md:px-[5.3%] md:px-[5.6%]">
+            <div className="min-h-6 flex-1" />
+            <section className="md:flex md:items-start md:justify-between">
+              <h1
+                // Every step here was measured, not guessed — see the README.
+                // 1.3125rem is 21px at the mobile root size, the largest whole
+                // pixel that keeps this heading to two lines at 320px, the
+                // narrowest width the e2e projects cover; 22px spills to three.
+                // The split hero gives the h1 a 375px column at 1024, where
+                // anything over 1.75rem runs to four lines, so the big size waits
+                // for xl.
+                className="m-0 font-extrabold tracking-tight text-pretty text-[1.3125rem] sm:max-md:text-[1.9rem] md:text-[1.75rem] xl:text-[2.1rem] sm:max-md:max-w-[83%] md:w-[41%] md:shrink-0"
+                style={{ lineHeight: 1.08 }}
+              >
+                {t('home.h1')}
+              </h1>
+              <div className="mt-2.5 md:mt-0 flex flex-col gap-2.5 sm:max-md:max-w-[83%] md:w-[55%] md:shrink-0">
+                <p className="m-0 text-[0.78rem] leading-relaxed text-muted-foreground text-pretty">
+                  {t('home.intro')}
+                </p>
+                <p className="m-0 text-[0.72rem] leading-relaxed text-muted-foreground/70 text-pretty">
+                  {t('home.note')}
+                </p>
+              </div>
+            </section>
+
+            <div className="min-h-6 flex-1" />
+
+            {/* `--art` shrinks the fan on tablet so the two rows pack closer;
+                phone and desktop run it at full size.
+
+                Every tablet rule is `sm:max-md:`, never a bare `sm:`. This repo
+                sets `--breakpoint-md: 1024px`, and Tailwind sorts that px value
+                ahead of `sm`'s 40rem, so it emits the md block FIRST — a bare
+                `sm:` then beats its own `md:` override above 1024px. Bounding the
+                tablet rules at md means the two bands cannot overlap at all. */}
+            <div
+              className="grid grid-cols-2 md:grid-cols-4 gap-x-3.5 gap-y-3.5 sm:max-md:gap-x-7 md:gap-x-6 [--art:1] sm:max-md:[--art:0.82]"
+            >
+              {tools.map((tool) => (
+                <Card
+                  key={tool.key}
+                  tool={tool}
+                                  // The card asks what to build next, so the form opens on
+                  // Idea rather than the Bug it defaults to elsewhere.
+                  onPress={tool.key === 'next' ? () => openFeedback('idea') : undefined}
+                />
+              ))}
+            </div>
+            <div className="min-h-6 flex-1" />
+          </main>
+        </div>
 
         <PageFooter />
         <FeedbackHost route="home" />
