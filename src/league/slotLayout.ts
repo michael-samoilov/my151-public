@@ -13,24 +13,12 @@
 /**
  * Where the seam meets the right edge, as a fraction of the slot's height.
  *
- * This is the one number that prices the whole slot. The seam runs from here
- * to the bottom-left corner, so moving it down makes the ace's partition
- * larger and the partner's smaller — and the pair has to be the same size and
- * sit evenly in its own half, so the partner's wedge sets both. Measured on
- * the phone's slot, the largest sprite at which both halves sit within 10% of
- * even:
- *
- *     0px  corner to corner  63px
- *    14px                    57px
- *    28px  <- here           52px
- *    39px                    47px
- *    54px  "Corner, high"    40px
- *
- * 28px is where an evenly-placed pair still gets 52px each — `SPRITE_REM`, the
- * sprite a Pokemon gets in an ordinary team cell. Below that the seam reads
- * more like a straight halving; past it the sprites drop under a cell.
+ * The seam runs from there to the bottom-left corner. It is "Corner, high" in
+ * the partner-slot study: of the seams tried it is the one that leaves the ace
+ * a partition close to the 92px it used to have the whole slot for, while
+ * still giving the partner a wedge that holds a full team-cell sprite.
  */
-export const SEAM_RIGHT = 28 / 204;
+export const SEAM_RIGHT = 56 / 204;
 
 /** A block's far corner may cross the seam by this much, in px.
  *  That corner holds a sprite's transparent margin rather than any ink. */
@@ -60,27 +48,65 @@ export interface Placed {
 
 type Pt = [number, number];
 
+type Pt2 = Pt;
+
+/** The part of a polygon on one side of the seam. */
+function clip(poly: Pt2[], seam: [Pt, Pt], upper: boolean): Pt2[] {
+  const [[xa, ya], [xb, yb]] = seam;
+  const side = (p: Pt2) => {
+    const v = (xb - xa) * (p[1] - ya) - (yb - ya) * (p[0] - xa);
+    return upper ? v : -v;
+  };
+  const out: Pt2[] = [];
+  poly.forEach((cur, i) => {
+    const prv = poly[(i - 1 + poly.length) % poly.length];
+    const sc = side(cur);
+    const sp = side(prv);
+    const cut = (): Pt2 => {
+      const t = sp / (sp - sc);
+      return [prv[0] + t * (cur[0] - prv[0]), prv[1] + t * (cur[1] - prv[1])];
+    };
+    if (sc >= 0) {
+      if (sp < 0) out.push(cut());
+      out.push(cur);
+    } else if (sp >= 0) {
+      out.push(cut());
+    }
+  });
+  return out;
+}
+
+/** A polygon's area centroid. */
+function centroid(poly: Pt2[]): Pt2 {
+  let a = 0;
+  let cx = 0;
+  let cy = 0;
+  poly.forEach(([px, py], i) => {
+    const [qx, qy] = poly[(i + 1) % poly.length];
+    const cross = px * qy - qx * py;
+    a += cross;
+    cx += (px + qx) * cross;
+    cy += (py + qy) * cross;
+  });
+  a /= 2;
+  return [cx / (6 * a), cy / (6 * a)];
+}
+
 /**
- * Place one half so the whitespace left around its sprite reads as even.
+ * Place one half's sprite on the centre of mass of its own partition.
  *
- * Not the partition's centroid. The centroid is the centre of the *whole*
- * shape, which ignores that the sprite then occupies part of it; put a sprite
- * on the centroid of a wedge and the room left over is lopsided, because the
- * wedge is not the same width at both ends. What has to come out even is the
- * space that remains.
+ * Its *own* partition, which is the whole point. Balancing the room left over
+ * along the seam instead sounds equivalent and is not: that axis runs the
+ * length of the slot, so the middle of it is the middle of the *panel*, and
+ * the partner ended up there rather than in the wedge it belongs to. The
+ * centroid of the wedge is in the wedge.
  *
- * Two axes, and they are the seam's, not the slot's:
- *
- * - **Along the seam** — the top-right to bottom-left run, which is the pair
- *   the eye compares. From the sprite's centre, travel each way until you
- *   leave the slot; those two distances are the whitespace at its top-right
- *   and at its bottom-left, and the solver equalises them. The seam itself is
- *   parallel to this axis, so it never bounds it.
- * - **Across the seam** — the sprite sits midway between the seam on one side
- *   and the slot's own edge on the other.
- *
- * Both are subject to the three painted runs (heading, sprite, name) clearing
- * the seam, and to the block staying inside the slot.
+ * What is held clear of the seam is the three *painted runs* — heading,
+ * sprite, name, each centred and each its own width — and not the block that
+ * contains them. That block is mostly empty at the corner that binds: the
+ * heading is wide and at the top, the name narrow and centred at the bottom.
+ * Holding the box kept the ace jammed into the slot's corner, well short of
+ * its own centre; holding the runs lets it sit on it.
  */
 export function placeHalf(
   w: number, h: number, sprite: number, runs: Runs, upper: boolean,
@@ -101,25 +127,11 @@ export function placeHalf(
 
   const [[xa, ya], [xb, yb]] = seam;
   const len = Math.hypot(xb - xa, yb - ya);
-  // Along the seam, and across it pointing into this half.
-  const dx = (xb - xa) / len;
-  const dy = (yb - ya) / len;
-  const nx = -dy * (upper ? 1 : -1);
-  const ny = dx * (upper ? 1 : -1);
   const past = (px: number, py: number) => {
     const v = ((xb - xa) * (py - ya) - (yb - ya) * (px - xa)) / len;
     return upper ? -v : v;
   };
-
-  /** How far a ray from (px,py) travels inside the slot before leaving it. */
-  const exit = (px: number, py: number, ux: number, uy: number) => {
-    let t = Infinity;
-    if (ux > 1e-9) t = Math.min(t, (w - px) / ux);
-    if (ux < -1e-9) t = Math.min(t, -px / ux);
-    if (uy > 1e-9) t = Math.min(t, (h - py) / uy);
-    if (uy < -1e-9) t = Math.min(t, -py / uy);
-    return t;
-  };
+  const [tx, ty] = centroid(clip([[0, 0], [w, 0], [w, h], [0, h]], seam, upper));
 
   let best: Placed | null = null;
   let bestScore = Infinity;
@@ -137,66 +149,26 @@ export function placeHalf(
       if (!clear) continue;
       const cx = left + width / 2;
       const cy = top + spriteTop + sprite / 2;
-      // The pair the eye compares: room up the seam, room down it.
-      const upRun = exit(cx, cy, -dx, -dy);
-      const downRun = exit(cx, cy, dx, dy);
-      // And across it: the seam on one side, the slot's edge on the other.
-      const toSeam = -past(cx, cy);
-      const toEdge = exit(cx, cy, -nx, -ny);
-      const score = Math.abs(upRun - downRun) + Math.abs(toSeam - toEdge);
+      const score = (cx - tx) ** 2 + (cy - ty) ** 2;
       if (score < bestScore) {
         bestScore = score;
         best = { left, top, width, sprite };
       }
     }
   }
-  // No fallback. A half that cannot clear the seam at this size has no
-  // honest position, and returning the slot's corner instead hides that from
-  // the caller sizing it -- which is how a "fits" search convinced itself an
-  // 80px sprite was fine on a seam that cannot hold 44.
+  // No fallback. A half that cannot clear the seam at this size has no honest
+  // position, and returning the slot's corner instead hides that from the
+  // caller sizing it.
   return best;
-}
-
-/** How even the room around a placed sprite is, as a fraction of the mean. */
-export function balance(
-  w: number, h: number, place: Placed, runs: Runs, seamRight = SEAM_RIGHT,
-): { topRight: number; bottomLeft: number; skew: number } {
-  const seam: [Pt, Pt] = [[w, seamRight * h], [0, h]];
-  const [[xa, ya], [xb, yb]] = seam;
-  const len = Math.hypot(xb - xa, yb - ya);
-  const dx = (xb - xa) / len;
-  const dy = (yb - ya) / len;
-  const stack = runs.headFirst
-    ? [runs.head[1], place.sprite, runs.name[1]]
-    : [place.sprite, runs.name[1], runs.head[1]];
-  const spriteTop = runs.headFirst ? stack[0] : 0;
-  const cx = place.left + place.width / 2;
-  const cy = place.top + spriteTop + place.sprite / 2;
-  const exit = (ux: number, uy: number) => {
-    let t = Infinity;
-    if (ux > 1e-9) t = Math.min(t, (w - cx) / ux);
-    if (ux < -1e-9) t = Math.min(t, -cx / ux);
-    if (uy > 1e-9) t = Math.min(t, (h - cy) / uy);
-    if (uy < -1e-9) t = Math.min(t, -cy / uy);
-    return t;
-  };
-  const topRight = exit(-dx, -dy);
-  const bottomLeft = exit(dx, dy);
-  const mean = (topRight + bottomLeft) / 2;
-  return { topRight, bottomLeft, skew: mean > 0 ? Math.abs(topRight - bottomLeft) / mean : 1 };
 }
 
 /**
  * The largest sprite both halves can hold *and still sit evenly in*.
  *
  * Equal, because sizing each half on its own made the partner read as the
- * lesser one. And bounded by evenness, not only by fit: the largest sprite
- * that merely fits gets pushed into the corner of its wedge, which is the
- * lopsided look this is meant to avoid. The partner's triangle is the smaller
- * partition, so it sets the pair.
+ * lesser one. The partner's triangle is the smaller partition, so it sets the
+ * pair: the ace gives up its own ceiling for the two to match.
  */
-const SKEW_LIMIT = 0.12;
-
 export function sharedSprite(w: number, h: number, ace: Runs, partner: Runs): number {
   const fits = (s: number) => {
     for (const [runs, upper] of [[ace, true], [partner, false]] as const) {
@@ -220,7 +192,6 @@ export function sharedSprite(w: number, h: number, ace: Runs, partner: Runs): nu
         if ((upper ? -v : v) > CROSS + 0.5) return false;
         y += rh;
       }
-      if (balance(w, h, p, runs).skew > SKEW_LIMIT) return false;
     }
     return true;
   };

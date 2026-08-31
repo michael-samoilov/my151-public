@@ -1102,6 +1102,13 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         setHeld({ ids: card.legend ? [card.legend.pokemonId] : [], sprite, face });
       } else if (grabbed) {
         setHeld({ ids: grabbed.branch, sprite, face });
+        // Held over its own seat is still held. Seeding the preview here is
+        // what makes a press and hold say so before the column has gone
+        // anywhere: without it the column looks untouched until it reaches
+        // some *other* seat, so the gesture gives no sign it is ready.
+        // `moveSeat` is a no-op when the two seats are the same, so nothing
+        // moves — only the feedback appears.
+        setPreviewMove({ from: d.seat, to: d.seat });
       }
       if (d.isLegend) {
         paintRef.current = {
@@ -1161,7 +1168,12 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         );
         return;
       }
-      setPreviewMove(null);
+      // Back over its own seat: still held, just not moved. Clearing the
+      // preview here would drop the picked-up look every time the column
+      // passes over where it started.
+      setPreviewMove((cur) =>
+        cur && cur.from === p.seat && cur.to === p.seat ? cur : { from: p.seat, to: p.seat },
+      );
       // Home again, after having pushed another column aside. The column goes
       // back where it started and nothing else happens: without this the
       // return leg falls through to the paint below and rewrites the line's
@@ -1372,9 +1384,9 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
           font sets at whatever weight it likes. */}
       <div className="grid grid-cols-[0.75rem_1fr] gap-x-[0.375rem] gap-y-[3px] px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground">
         <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
-        <span>Drag a pokemon across rows to shift when it evolves</span>
+        <span>Drag a pokemon up or down to shift when it evolves</span>
         <ArrowLeftRight className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
-        <span>Drag a column to reorder</span>
+        <span>Press and hold a column of pokemon to drag and reorder it</span>
         <LaurelIcon className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" />
         <span>
           {card.legend
