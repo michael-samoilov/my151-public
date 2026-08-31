@@ -219,8 +219,12 @@
     letter-spacing: 0.09em;
     color: var(--band);
     line-height: 1.4;
+    /* A wrapped heading costs a line the solver did not budget, and it cost
+       it in one state only -- the sprite square held its height while the
+       placeholder gave way. The label is one line or the block is wrong. */
+    white-space: nowrap;
   }
-  .sp2 { image-rendering: pixelated; display: block; margin: auto 0; }
+  .sp2 { image-rendering: pixelated; display: block; flex: none; }
   .nm2 { font-size: 10px; line-height: 1.3; }
   /* A row, not a column. The card stacks its two type badges because it has
      the width for them; a half of that box does not, and two stacked pills
@@ -247,7 +251,7 @@
   /* The empty state keeps the sprite's square, so the heading and the name do
      not slide up against the ring. A placeholder that only draws the ring is a
      different layout wearing the same name. */
-  .ph { display: flex; align-items: center; justify-content: center; }
+  .ph { display: flex; flex: none; align-items: center; justify-content: center; }
   /* The half a seam cannot hold. It keeps full size and shows where that
      puts it, because drawing it small would hide the finding. */
   .hb.off { outline: 1px dashed var(--flag); outline-offset: 2px; border-radius: 4px; }
