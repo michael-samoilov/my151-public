@@ -1,9 +1,12 @@
-"""Variations on 3c: where the seam ends, with both sprites at full size.
+"""Variations on 3c: where the seam ends, and what each end gives each half.
 
-Full size is the card's own cell sprite, 3.25rem = 52px -- the size every
-other Pokemon on the card gets. Both halves get it, so the seam no longer
-decides who is the lesser one by shrinking them; it decides only whether the
-pair fits and where each one can sit.
+Sizing is per half, not shared. An earlier pass held both halves to one size,
+which sounds fair and is not: one size means the smaller half sets it, so the
+seam drags the signature down to whatever the partner can take. Here each
+half gets the largest sprite its own partition holds, and 52px -- SPRITE_REM,
+the sprite a Pokemon gets in a team cell -- is the floor. A half that cannot
+reach the floor is drawn at it and flagged, because a sprite smaller than a
+cell is the thing this whole section is trying to avoid.
 
 Placement is solved, not drawn. Each sprite wants its centre on the optical
 centre of its own partition -- the area centroid of the shape the seam cuts.
@@ -12,7 +15,9 @@ and the slot edges allow, so a half that has to give way gives way by the
 smallest amount rather than by a guess.
 """
 W, H = 148.0, 204.0
-SPRITE = 52.0                    # 3.25rem, the card's own cell sprite
+FLOOR = 52.0                     # 3.25rem = SPRITE_REM, a team cell's sprite
+SLOT_TODAY = 92.0                # 5.75rem, what this slot gives one Pokemon
+SPRITE = FLOOR                   # the default when a caller names no size
 HEAD, NAME = 11.9, 13.0
 SIG_MINW, PAR_MINW = 56.3, 45.8  # the headings are wider than the sprite
 PAD = 6.0
@@ -156,86 +161,77 @@ def half(box, occ, head_text, head_below, sprite=SPRITE, off=False):
     return f'<div class="{cls}" style="{frame}">{inner}</div>'
 
 
+def sized(seam, upper):
+    """The sprite this half gets, and whether the seam can actually hold it.
+
+    Rounded down to 4px so the drawn sizes land on the rem grid the card uses
+    and so the block keeps a little slack to move toward its own centre with.
+    """
+    m = largest(seam, upper)
+    s = max(FLOOR, (m // 4) * 4)
+    return s, m >= FLOOR
+
+
 def panel(seam, filled):
     (xa, ya), (xb, yb) = seam
     out = [f'<div class="slot dg"><svg class="seam" viewBox="0 0 {W:.0f} {H:.0f}" aria-hidden="true">'
            f'<line x1="{xa:.0f}" y1="{ya:.0f}" x2="{xb:.0f}" y2="{yb:.0f}"/></svg>']
-    misses = []
+    stats = []
     for upper, occ, text in ((True, SIG, 'SIGNATURE'), (False, PAR, 'PARTNER')):
-        solved = place(seam, upper)
-        box = solved[1] if solved else place_free(upper)
-        if not solved:
-            misses.append(overshoot(seam, box, upper))
+        size, ok = sized(seam, upper)
+        solved = place(seam, upper, size) if ok else None
+        box = solved[1] if solved else place_free(upper, size)
         out.append(half(box, occ if filled else None, text,
-                        head_below=not upper, off=not solved))
+                        head_below=not upper, sprite=size, off=not ok))
+        stats.append({'size': size, 'ok': ok,
+                      'off': solved[0] ** 0.5 if solved else None,
+                      'miss': None if ok else overshoot(seam, box, upper)})
     out.append('</div>')
-    return ''.join(out), misses
+    return ''.join(out), stats
 
 
 VARIANTS = [
-    ('Corner, full', ((W, 0), (0, H)),
-     'the seam 3c began with: corner to corner, and the only one that leaves both halves the same shape'),
-    ('Corner, high', ((W, 56), (0, H)),
-     'the steepest corner that still parts the two unevenly; the partner takes the whole nudge'),
-    ('Corner, mid', ((W, 96), (0, H)),
-     'past the limit &mdash; a full-size partner reaches 20px into the signature&rsquo;s half'),
-    ('Edge seam', ((W, 100), (0, 130)),
-     '3c today; it holds the pair, and it costs the partner half the nudge a steep corner does'),
+    ('Corner, full', ((W, 0), (0, H)), False,
+     'corner to corner: the only seam that halves the slot into the same shape twice, '
+     'so the two get the same sprite without either being held to it'),
+    ('Corner, high', ((W, 56), (0, H)), True,
+     'the signature within 12px of the 92px it has to itself today, and the partner '
+     'still a full team-cell sprite'),
+    ('Corner, mid', ((W, 96), (0, H)), False,
+     'past the limit: the partner solves to 36px, under a team cell, and is drawn at '
+     'the floor to show how far into the signature that reaches'),
+    ('Edge seam', ((W, 100), (0, 130)), False,
+     '3c today; it splits the difference, and it is the only one that gives the '
+     'partner more than a cell'),
 ]
 
 
 def section():
     both, empty, facts = [], [], []
-    for name, seam, blurb in VARIANTS:
-        p_both, misses = panel(seam, True)
+    for name, seam, pick, blurb in VARIANTS:
+        p_both, stats = panel(seam, True)
         p_empty, _ = panel(seam, False)
-        flag = (f'<span class="miss">crosses by {max(misses):.0f}px</span>' if misses else '')
-        both.append(f'<div class="state"><span class="cap">{name}</span>{p_both}{flag}</div>')
+        misses = [st['miss'] for st in stats if st['miss']]
+        flag = f'<span class="miss">crosses by {max(misses):.0f}px</span>' if misses else ''
+        tag = '<span class="pick">chosen</span>' if pick else ''
+        both.append(f'<div class="state"><span class="cap">{name}{tag}</span>{p_both}{flag}</div>')
         empty.append(f'<div class="state"><span class="cap">{name}</span>{p_empty}</div>')
-        su = place(seam, True)
-        pu = place(seam, False)
-        facts.append((name, blurb, misses,
-                      su[0] ** 0.5 if su else None, pu[0] ** 0.5 if pu else None,
-                      largest(seam, True), largest(seam, False)))
+        facts.append((name, pick, blurb, stats))
     rows = ('<p class="sub2">Both filled</p>'
             f'<div class="rail"><div class="states">{"".join(both)}</div></div>'
             '<p class="sub2">Empty</p>'
             f'<div class="rail"><div class="states">{"".join(empty)}</div></div>')
-    table = ('<div class="facts f5"><div class="fh">Seam</div><div class="fh">Sig. off-centre</div>'
-             '<div class="fh">Par. off-centre</div><div class="fh">Ceiling</div>'
-             '<div class="fh">What it costs</div>')
-    for name, blurb, misses, ds, dp, ms, mp in facts:
-        cell = lambda d: ('&mdash;' if d is None else ('centred' if d < 1 else f'{d:.0f}px'))
-        table += (f'<div class="fn">{name}</div><div class="fv">{cell(ds)}</div>'
-                  f'<div class="fv">{cell(dp)}</div><div class="fv">{min(ms, mp):.0f}px</div>'
-                  f'<div class="fc">{blurb}</div>')
+    table = ('<div class="facts f5"><div class="fh">Seam</div><div class="fh">Signature</div>'
+             '<div class="fh">Partner</div><div class="fh">Off centre</div>'
+             '<div class="fh">What it gives</div>')
+    for name, pick, blurb, stats in facts:
+        sg, pr = stats
+        cell = lambda st: (f'{st["size"]:.0f}px' if st['ok'] else f'{st["size"]:.0f}px<span class="no"> ?</span>')
+        offs = ' / '.join('centred' if st['off'] is not None and st['off'] < 1
+                          else ('&mdash;' if st['off'] is None else f'{st["off"]:.0f}px')
+                          for st in stats)
+        table += (f'<div class="fn">{name}{" &#9679;" if pick else ""}</div>'
+                  f'<div class="fv">{cell(sg)}</div><div class="fv">{cell(pr)}</div>'
+                  f'<div class="fv">{offs}</div><div class="fc">{blurb}</div>')
     table += '</div>'
     return rows + table
-
-
-CODA = 64.0   # 4rem: the most the pair can have with both still near centre
-
-
-def coda():
-    """One panel at the ceiling, for the seam that holds the most.
-
-    52px is what a Pokemon gets in a cell, so it is the honest floor for
-    "full size". It is not the most the pair can have. Corner to corner, both
-    halves are the same shape, and both sprites reach 64px before either one
-    has to leave its own centre by more than a sprite's quarter.
-    """
-    seam = ((W, 0), (0, H))
-    out = []
-    for filled in (True, False):
-        (xa, ya), (xb, yb) = seam
-        p = [f'<div class="slot dg"><svg class="seam" viewBox="0 0 {W:.0f} {H:.0f}" aria-hidden="true">'
-             f'<line x1="{xa:.0f}" y1="{ya:.0f}" x2="{xb:.0f}" y2="{yb:.0f}"/></svg>']
-        for upper, occ, text in ((True, SIG, 'SIGNATURE'), (False, PAR, 'PARTNER')):
-            box = place(seam, upper, CODA)[1]
-            p.append(half(box, occ if filled else None, text,
-                          head_below=not upper, sprite=CODA))
-        p.append('</div>')
-        cap = 'Both filled' if filled else 'Empty'
-        out.append(f'<div class="state"><span class="cap">{cap}</span>{"".join(p)}</div>')
-    return ('<p class="sub2">Corner to corner, at the ceiling</p>'
-            f'<div class="rail"><div class="states">{"".join(out)}</div></div>')

@@ -1000,59 +1000,71 @@ device-only and is named as such.
 
 ### Round 17, mocked up but not built
 
-**Both halves get a full-size Pokemon; the seam decides where, not how big.**
-The first pass of 3d solved each half for the largest sprite it could hold,
-which made the seam's angle a size dial: the partner ran 48px, 36px, 14px as
-the seam tilted down, and at 14px it is not a Pokemon any more. Sizing the
-minor half by whatever the geometry left over is what made it the minor half.
+**Corner, high is the seam.** It runs from 56px down the right edge to the
+bottom-left corner, and it gives the signature 80px and the partner 52px.
 
-So the size is fixed now and the placement is solved. Full size is **52px**,
-`SPRITE_REM` — the sprite every other Pokemon on the card gets, so nothing in
-the slot looks shrunken beside a team cell. Both halves get it.
+**Each half is sized on its own.** Two earlier passes got this wrong in
+opposite directions. The first solved each half for the largest sprite it
+could hold and let the seam's angle work as a size dial, so the partner fell
+to 14px. The second held both halves to one shared size, which sounds like
+the fix and is not: one size means the *smaller* half sets it, so the seam
+drags the signature down to whatever the partner can take, and every sprite
+in the section came out smaller than a sprite anywhere else in the study.
 
-Each sprite then wants its centre on the **area centroid of its own
-partition**, the shape the seam cuts out of the slot. `seamends.py` clips the
-slot rect against the seam, takes the centroid, and searches the placements
-where the whole block — heading, sprite and name — clears the seam and the
-slot edges, keeping the one whose *sprite* centre lands nearest. It solves for
-the sprite rather than the block because the heading sits above it on one half
-and below it on the other, so the same block puts its sprite in two different
-places.
+The rule now has a floor and a ceiling, both taken from the card.
 
-| Seam | Signature | Partner | Ceiling |
+- **52px is the floor.** It is `SPRITE_REM`, the sprite a Pokemon gets in a
+  team cell. Anything under it is smaller than an ordinary cell, which is the
+  thing the section exists to avoid. A half that cannot reach the floor is
+  drawn at it and flagged, rather than shrunk out of the finding.
+- **92px is the ceiling to beat.** It is `5.75rem`, what the slot gives one
+  Pokemon today, and it is what the signature gives up to share the slot.
+
+Between them each half takes the largest sprite its own partition holds,
+rounded down to 4px so the sizes land on the rem grid and the block keeps a
+little slack to move toward its own centre with.
+
+| Seam | Signature | Partner | Off centre |
 | --- | --- | --- | --- |
-| Corner, full (corner to corner) | centred | centred | 68px |
-| Corner, high (56px down the right edge) | centred | 15px off | 54px |
-| Corner, mid (96px) | centred | does not fit | 36px |
-| Edge seam (3c today) | centred | 14px off | 57px |
+| Corner, full (corner to corner) | 64px | 64px | 14px / 7px |
+| **Corner, high (chosen)** | **80px** | **52px** | 17px / 15px |
+| Corner, mid | 92px | 36px, under the floor | 14px / — |
+| Edge seam (3c today) | 76px | 56px | 10px / 32px |
 
-Three readings, and they reverse the round-16 verdict.
+**Placement is solved, not drawn.** Each sprite wants its centre on the area
+centroid of its own partition. `seamends.py` clips the slot rect against the
+seam, takes that centroid, and searches the placements where the whole block
+— heading, sprite and name — clears the seam and the slot edges, keeping the
+one whose *sprite* centre lands nearest. It solves for the sprite rather than
+the block because the heading sits above it on one half and below it on the
+other, so the same block puts its sprite in two different places.
 
-- **Corner to corner is the best seam, not the most extreme one.** It is the
-  only one whose halves are the same shape, and the only one where both
-  sprites sit on their own centre. Tilting the seam down buys the signature
-  nothing — it is already centred — and spends the partner's slack.
-- **A corner seam runs out.** The last one that holds two full-size Pokemon
-  ends 62px down the right edge. Past that the partner cannot clear the seam,
-  and 3d draws that failure at full size with the block flagged, rather than
-  shrinking it and hiding the finding.
-- **The edge seam is not the safer choice it looked like.** It holds the pair,
-  but puts the partner 14px off centre to do it — worse than corner to corner.
-  What it buys is headroom, 57px against the steep corner's 54px.
+Size and centring trade at about **3px of centring per 4px of sprite**, so
+the off-centre column is the price of the two before it.
 
-The ceiling for an equal pair is **68px**, on the corner-to-corner diagonal,
-against the 92px the signature has to itself today. 3d ends on a coda at
-**64px**: the most the pair can have with both still within a quarter-sprite
-of their own centre.
+Three readings from the table.
 
-**An empty half has to hold the filled half's layout, not just its ring.** The
-partner's heading sat directly under the placeholder circle when empty and
-under the name when filled, so the word moved between the two states. The
+- **Corner, high buys the most for the least.** The signature lands within
+  12px of the 92px it has to itself today, and the partner still gets a full
+  team-cell sprite. Nothing in the slot is smaller than a Pokemon anywhere
+  else on the card.
+- **Corner, full is the only seam that cuts the slot into the same shape
+  twice**, so both halves land on 64px and neither is the lesser one — which
+  is the argument against it as much as for it, since nothing then says which
+  of the two is the ace.
+- **A corner seam runs out.** Past about 62px down the right edge the partner
+  cannot clear the seam at a team cell's size. Corner, mid is drawn at the
+  floor and flagged to show how far into the signature it would reach.
+
+**An empty half has to hold the filled half's layout, not just its ring.**
+The partner's heading sat directly under the placeholder circle when empty
+and under the name when filled, so the word moved between the two states. The
 empty state now keeps the sprite's square and a blank name line, and only
 swaps the sprite for a ring. `check-seamends.mjs` measures it: it reads the
 heading and name offsets in both states and fails on more than 0.5px of
 movement. Removing the reserved line fails all four panels, which is how the
-check was proved to discriminate.
+check was proved to discriminate. The same script holds the 52px floor and
+allows a seam crossing only on a panel the section itself flags.
 
 ### Round 3, follow-ups from the preview
 
