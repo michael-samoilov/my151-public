@@ -595,8 +595,9 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, c
   // against the copy below. It borrows part of the overhang the other cards
   // spend on artwork, which keeps the four reading as one row; confined to the
   // card alone it would be squeezed between the top edge and the gradient.
+  const copyH = Math.round(titleSize * 1.15 + 3 + blurbSize * 1.35 * 2);
   const mark = `<div style="position: absolute; top: 0; left: 0; right: 0; height: ${
-    cardH - copyBand
+    cardH - pad - copyH
   }px; display: flex; align-items: center; justify-content: center;">${hammer(
     Math.round(cardH * 0.34),
     '#ffffff',
@@ -652,7 +653,7 @@ function posterCard({ tool, tilts, offsets, phoneW, phoneTop, dropStep, cardW, c
  * in poster(). A wider overhang pushes that crossing lower and squeezes the
  * gradient, so this ratio is near its ceiling.
  */
-function cardFrom(cardW) {
+function cardFrom(cardW, art = 1) {
   const k = cardW / 166;
   const r = (v) => Math.round(v * k);
   return {
@@ -660,11 +661,11 @@ function cardFrom(cardW) {
     cardH: r(104),
     tilts: [-8, -3],
     offsets: [0, r(16)],
-    phoneW: r(116),
+    phoneW: Math.round(116 * k * art),
     phoneTop: r(8),
     dropStep: r(6),
-    popTop: r(56),
-    popLeft: Math.max(6, Math.round(9.6 * k)),
+    popTop: Math.round(56 * k * art),
+    popLeft: Math.max(6, Math.round(9.6 * k * art)),
     radius: r(14),
     copyBand: r(52),
     fade: r(26),
@@ -679,15 +680,16 @@ function cardFrom(cardW) {
  * hero. Row heights are fixed, not `1fr`, so the card height the checks below
  * reason about is the height that actually renders; the hero takes the slack.
  */
-function poster({ width, height, cols, rows, gap, padX, padBottom, bleed = 34, clearFraction = 0, heroPad, h1Size, pSize, maxW, noteW, splitHero }) {
+function poster({ width, height, cols, rows, gap, padX, padBottom, bleed = 34, clearFraction = 0, art = 1, contentW = 0, heroPad, h1Size, pSize, maxW, noteW, splitHero }) {
   // The card takes its width from the frame, so the numbers the checks below
   // reason about are the ones that render. The gutter is a plain gap: an
   // artwork overhang of ~10-30px sits inside it without reaching the neighbour.
-  const cardW = Math.floor((width - 2 * padX - (cols - 1) * gap) / cols);
+  const pageW = contentW || width;
+  const cardW = Math.floor((pageW - 2 * padX - (cols - 1) * gap) / cols);
   const {
     cardH, tilts, offsets, phoneW, phoneTop, dropStep, popTop, popLeft,
     radius, copyBand, fade, titleSize, blurbSize, pad,
-  } = cardFrom(cardW);
+  } = cardFrom(cardW, art);
   const tone = 'red';
   const padTop = popTop + 10;
   // Four ways this card silently stops working. Each is worth failing the build
@@ -781,7 +783,13 @@ function poster({ width, height, cols, rows, gap, padX, padBottom, bleed = 34, c
         clear * 0.55,
       )}px;">`
     : '';
-  const bandClose = clearFraction ? `</div>\n${pageFooter(width)}` : '';
+  const bandClose = clearFraction ? '</div>' : '';
+  // A narrow content column centred in a wide frame: the header and footer stay
+  // full width, the page content keeps its phone measure.
+  const colOpen = contentW
+    ? `<div style="width: ${contentW}px; margin: 0 auto; flex-grow: 1; min-height: 0; display: flex; flex-direction: column;">`
+    : '';
+  const colClose = contentW ? '</div>' : '';
 
   const cards = TOOLS.map((t) =>
     posterCard({
@@ -827,13 +835,18 @@ function poster({ width, height, cols, rows, gap, padX, padBottom, bleed = 34, c
     C.bg
   }; color: ${C.fg}; display: flex; flex-direction: column; overflow: hidden;">
 ${header({ width })}
+${colOpen}
 ${bandOpen}
+${clearFraction ? '' : '<div style="flex-grow: 1; min-height: 0;"></div>'}
 ${heroBody}
+${clearFraction ? '' : '<div style="flex-grow: 1; min-height: 0;"></div>'}
 <div style="flex-shrink: 0; display: grid; grid-template-columns: repeat(${cols}, minmax(0, 1fr)); grid-template-rows: repeat(${rows}, ${cardH}px); column-gap: ${gap}px; row-gap: ${popTop + Math.round(gap * 0.6)}px; padding: ${padTop}px ${padX}px ${padBottom}px; box-sizing: border-box;">
 ${cards}
 </div>
 ${bandClose}
-${clearFraction ? '' : `<div style="flex-grow: 1; min-height: 0;"></div>\n${pageFooter(width)}`}
+${clearFraction ? '' : '<div style="flex-grow: 1; min-height: 0;"></div>'}
+${colClose}
+${clearFraction ? pageFooter(width) : pageFooter(width)}
 </div>
 </x-dc>
 </body>
@@ -859,6 +872,7 @@ const H = {
   // whole router has to fit without scrolling, so the frame IS the constraint.
   'PosterMobile.dc.html': 844,
   'PosterTablet.dc.html': 1112,
+  'PosterTabletNarrow.dc.html': 1112,
   'PosterDesktop.dc.html': 900,
 };
 
@@ -924,18 +938,27 @@ const FILES = {
   }),
 
   // D · Poster cards. The card is described once, in cardFrom(), as ratios of
-  // its own width — and that width now comes from the frame, so the numbers the
-  // checks reason about are the numbers that render. A breakpoint only sets the
-  // page margins and the gutter.
+  // its own width — and that width comes from the frame, so the numbers the
+  // checks reason about are the numbers that render. A breakpoint sets the page
+  // margin, the gutter, and how much of the artwork it can afford (`art`).
   'PosterMobile.dc.html': poster({
     width: 390, height: H['PosterMobile.dc.html'], cols: 2, rows: 2,
     gap: 14, padX: 16, padBottom: 0,
-    heroPad: '20px 20px 22px', h1Size: 27, pSize: 12.5, maxW: 350,
+    heroPad: '0 20px', h1Size: 27, pSize: 12.5, maxW: 350,
   }),
+  // Tablet, packed: thinner screenshots and a shallower overhang, so two rows
+  // fit without the second row's artwork crowding the first.
   'PosterTablet.dc.html': poster({
     width: 834, height: H['PosterTablet.dc.html'], cols: 2, rows: 2,
-    gap: 28, padX: 44, padBottom: 0,
-    heroPad: '20px 44px 12px', h1Size: 36, pSize: 14.5, maxW: 620,
+    gap: 28, padX: 44, padBottom: 0, art: 0.82,
+    heroPad: '0 44px', h1Size: 36, pSize: 14.5, maxW: 620,
+  }),
+  // Tablet, centred: the mobile page at its own measure with the sides left
+  // blank. Nothing is scaled, so the cards read exactly as they do on a phone.
+  'PosterTabletNarrow.dc.html': poster({
+    width: 834, height: H['PosterTabletNarrow.dc.html'], cols: 2, rows: 2,
+    gap: 14, padX: 16, padBottom: 0, contentW: 430,
+    heroPad: '0 20px', h1Size: 29, pSize: 13, maxW: 390,
   }),
   // Four across, with the rail spanning exactly the hero's own measure: the
   // left card lines up with the h1, the right card with the sub-text's right
@@ -944,7 +967,7 @@ const FILES = {
     width: 1440, height: H['PosterDesktop.dc.html'], cols: 4, rows: 1,
     gap: 26, padX: 80, padBottom: 0,
     heroPad: '0 80px', h1Size: 42, pSize: 15.5, maxW: 520, noteW: 700,
-    splitHero: true, clearFraction: 0.24,
+    splitHero: true, clearFraction: 0.17,
   }),
 };
 
@@ -999,8 +1022,9 @@ const artboards = ROWS.flatMap((row, r) =>
 // thing that differs is the card. Row two: the chosen shape at the other widths.
 const POSTER = [
   ['PosterMobile.dc.html', 390, 0, 0, 'Mobile 390'],
-  ['PosterTablet.dc.html', 834, 490, 0, 'Tablet 834'],
-  ['PosterDesktop.dc.html', 1440, 1424, 0, 'Desktop 1440 — four across'],
+  ['PosterTablet.dc.html', 834, 490, 0, 'Tablet 834 — packed'],
+  ['PosterTabletNarrow.dc.html', 834, 1424, 0, 'Tablet 834 — centred, mobile measure'],
+  ['PosterDesktop.dc.html', 1440, 2358, 0, 'Desktop 1440 — four across'],
 ];
 
 artboards.push(
@@ -1034,11 +1058,11 @@ const annotations = [
   },
   {
     id: 'd-note', page: 'page-2', x: 0, y: -260, w: 940,
-    text: 'D · Poster cards. The card is described once, in cardFrom(), as ratios of its own width — and that width now comes from the FRAME rather than being declared, so the numbers the build checks reason about are the numbers that render. A breakpoint only sets the page margin and the gutter.\nThat is what let the cards grow into the centre rail: the gutter used to carry the 34px shadow bleed as well as the gap, and it no longer does. The clip still reaches that far, so no shadow is sliced; a soft shadow grazing a neighbour is invisible.\nThe row gap is now the overhang plus a little, so the second row sits close under the first without its screenshots reaching the cards above.',
+    text: 'D · Poster cards. Mobile and tablet now space out evenly: three equal flex spacers put the same gap above the intro text, between the text and the grid, and between the grid and the footer.\nThe Hammer is centred between the card\'s top edge and the top of its heading, so the space above it matches the space below by construction rather than by eye.\nDesktop has about 110px between the sub-text and the artwork, which is the room for a hover nudge.',
   },
   {
-    id: 'd-page-note', page: 'page-2', x: 990, y: -260, w: 940,
-    text: 'Page changes: the app header drops the tool links, since the cards are the navigation. The dex builder\'s own footer is on the bottom of every width, copied from PageFooter.tsx.\nThe fourth card has no gradient — there is no screenshot under the copy to rescue, and the wash only muddied the mark. Its Hammer is the app\'s own lucide icon, white, higher and smaller.\nOn desktop the card rail spans exactly the hero\'s measure: the left card lines up with the h1 and the right card with the sub-text\'s right edge, because both use the same 80px margin. The sub-text column is 700px wide so its last line holds without wrapping.\nThe desktop clear band is 24%: the hero, the card block and the footer together leave that much above and below.',
+    id: 'd-tablet-note', page: 'page-2', x: 990, y: -260, w: 940,
+    text: 'Two tablets, pick one.\nPACKED scales the artwork to 82% — thinner screenshots and a shallower overhang, which keeps their tallness while letting the two rows sit closer. One knob, `art`, does it; the left overhang scales with it, or the gradient rule fails the build (it did on the first try).\nCENTRED keeps the phone measure and leaves the sides blank. Nothing is scaled, so the cards read exactly as they do on a phone, and the header and footer still span the full width. Airier, and it is one line of layout rather than a second set of numbers to maintain.',
   },
 ];
 
