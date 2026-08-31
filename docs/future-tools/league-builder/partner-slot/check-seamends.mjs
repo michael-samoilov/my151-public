@@ -1,5 +1,5 @@
 // Four promises of the revised 3d, measured rather than asserted:
-//   1. within a rail every sprite is the same size, and both halves get it;
+//   1. no sprite is under 52px, the sprite a Pokemon gets in a team cell;
 //   2. the empty state puts its heading and name exactly where the filled one
 //      does, so nothing slides up against the ring;
 //   3. no content crosses its seam, except where the panel is flagged for it;
@@ -17,15 +17,18 @@ console.log(JSON.stringify(await page.evaluate(() => {
   rails[0].forEach((f, i) => pairs.push([f, rails[1][i]]));
   if (rails[2]) pairs.push([rails[2][0], rails[2][1]]);
 
-  const drift = [], crossing = [], overflow = [], unequal = [];
-  const railSizes = rails.map((slots) => {
-    const set = new Set();
-    for (const s of slots) for (const img of s.querySelectorAll('.sp2')) {
-      set.add(+img.getBoundingClientRect().width.toFixed(1));
-    }
-    return [...set];
-  });
-  railSizes.forEach((s, i) => { if (s.length > 1) unequal.push(`rail ${i}: sprites at ${s.join(', ')}`); });
+  const drift = [], crossing = [], overflow = [], undersized = [];
+  // Each half is sized on its own now, so sizes differ within a panel by
+  // design. What must hold is the floor: nothing smaller than a team cell.
+  const FLOOR = 52;
+  const sizes = [];
+  rails.forEach((slots, r) => slots.forEach((slot, i) => {
+    slot.querySelectorAll('.sp2').forEach((img, j) => {
+      const w = +img.getBoundingClientRect().width.toFixed(1);
+      sizes.push({ rail: r, panel: i, half: j, w });
+      if (w < FLOOR - 0.5) undersized.push(`rail ${r} panel ${i} half ${j}: ${w}px`);
+    });
+  }));
 
   pairs.forEach(([f, e], i) => {
     const fs = f.getBoundingClientRect(), es = e.getBoundingClientRect();
@@ -67,9 +70,9 @@ console.log(JSON.stringify(await page.evaluate(() => {
   });
   return {
     panels: sec.querySelectorAll('.slot.dg').length,
-    railSizes,
+    sizes: [...new Set(sizes.map((s) => s.w))].sort((a, b) => a - b),
     flagged: [...sec.querySelectorAll('.miss')].map((el) => el.textContent),
-    unequal, drift,
+    undersized, drift,
     unflaggedCrossings: crossing.filter((c) => !c.endsWith('(flagged)')),
     crossing, overflow,
   };
