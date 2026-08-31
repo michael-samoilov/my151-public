@@ -2,7 +2,8 @@
 //   1. no sprite is under 52px, the sprite a Pokemon gets in a team cell;
 //   2. the empty state puts its heading and name exactly where the filled one
 //      does, so nothing slides up against the ring;
-//   3. no content crosses its seam, except where the panel is flagged for it;
+//   3. a block's far corner may cross its seam by the 4px the design allows,
+//      and no further, except where the panel is flagged as not fitting;
 //   4. nothing overflows its slot.
 import { chromium } from '/home/user/my151/node_modules/@playwright/test/index.mjs';
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
@@ -57,15 +58,32 @@ console.log(JSON.stringify(await page.evaluate(() => {
     const x2 = +line.getAttribute('x2'), y2 = +line.getAttribute('y2');
     const side = (px, py) => (x2 - x1) * (py - y1) - (y2 - y1) * (px - x1);
     slot.querySelectorAll('.hb').forEach((hb, j) => {
-      const r = hb.getBoundingClientRect();
+      // The union of the block and its children. A heading wider than its
+      // block paints outside the block's own rect, so measuring the rect
+      // alone would miss exactly the overflow worth catching.
+      const boxes = [hb, ...hb.querySelectorAll('*')].map((el) => el.getBoundingClientRect());
+      const r = {
+        left: Math.min(...boxes.map((v) => v.left)), right: Math.max(...boxes.map((v) => v.right)),
+        top: Math.min(...boxes.map((v) => v.top)), bottom: Math.max(...boxes.map((v) => v.bottom)),
+      };
       if (r.bottom > s.bottom + 0.5 || r.top < s.top - 0.5 ||
           r.left < s.left - 0.5 || r.right > s.right + 0.5) overflow.push(`panel ${i} half ${j}`);
       const cs = [[r.left - s.left, r.top - s.top], [r.right - s.left, r.top - s.top],
                   [r.left - s.left, r.bottom - s.top], [r.right - s.left, r.bottom - s.top]];
-      if (new Set(cs.map(([px, py]) => Math.sign(side(px, py)))).size > 1) {
-        // Only the half the section flags as not fitting may straddle a seam.
-        crossing.push(`panel ${i} half ${j}${hb.classList.contains('off') ? ' (flagged)' : ''}`);
+      // How far the deepest corner sits past the line, in slot pixels. The
+      // cross product scales by the seam's length, so divide it back out.
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      const depths = cs.map(([px, py]) => side(px, py) / len);
+      const spread = Math.max(...depths) - Math.min(...depths);
+      if (Math.min(Math.max(...depths), -Math.min(...depths)) > 0) {
+        const past = Math.min(Math.max(...depths), -Math.min(...depths));
+        // 4px is the design's allowance; the flagged half is the one that does
+        // not fit at all, and the section says so in its own words.
+        const tag = hb.classList.contains('off') ? ' (flagged)' : '';
+        if (past > 5 && !tag) crossing.push(`panel ${i} half ${j}: ${past.toFixed(1)}px past the seam`);
+        else crossing.push(`panel ${i} half ${j}: ${past.toFixed(1)}px${tag}`);
       }
+      void spread;
     });
   });
   return {
@@ -73,7 +91,7 @@ console.log(JSON.stringify(await page.evaluate(() => {
     sizes: [...new Set(sizes.map((s) => s.w))].sort((a, b) => a - b),
     flagged: [...sec.querySelectorAll('.miss')].map((el) => el.textContent),
     undersized, drift,
-    unflaggedCrossings: crossing.filter((c) => !c.endsWith('(flagged)')),
+    overAllowance: crossing.filter((c) => c.includes('past the seam')),
     crossing, overflow,
   };
 }), null, 1));

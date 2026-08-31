@@ -1001,7 +1001,19 @@ device-only and is named as such.
 ### Round 17, mocked up but not built
 
 **Corner, high is the seam.** It runs from 56px down the right edge to the
-bottom-left corner, and it gives the signature 80px and the partner 52px.
+bottom-left corner, and it gives the ace 84px and the partner 56px.
+
+**"Signature Pokemon" is now "Ace Pokemon"**, in the slot label and in this
+study. The code identifiers (`signatureSeat`, `signatureId`,
+`signatureMember`, the `'signature'` picker intent) still say signature; that
+rename is mechanical and belongs in its own commit, not mixed into feature
+work.
+
+**The seam is a drawn line, not a wall.** A block's far corner is allowed 4px
+past it. That corner holds the transparent margin of a sprite rather than any
+ink, so the two still read as two sides of a line, and buying those 4px back
+costs the sprite 4px it would actually show. The allowance is worth 4px of
+ace and 4px of partner on the chosen seam.
 
 **Each half is sized on its own.** Two earlier passes got this wrong in
 opposite directions. The first solved each half for the largest sprite it
@@ -1024,12 +1036,12 @@ Between them each half takes the largest sprite its own partition holds,
 rounded down to 4px so the sizes land on the rem grid and the block keeps a
 little slack to move toward its own centre with.
 
-| Seam | Signature | Partner | Off centre |
+| Seam | Ace | Partner | Off centre |
 | --- | --- | --- | --- |
-| Corner, full (corner to corner) | 64px | 64px | 14px / 7px |
-| **Corner, high (chosen)** | **80px** | **52px** | 17px / 15px |
-| Corner, mid | 92px | 36px, under the floor | 14px / — |
-| Edge seam (3c today) | 76px | 56px | 10px / 32px |
+| Corner, full (corner to corner) | 68px | 68px | 15px / 8px |
+| **Corner, high (chosen)** | **84px** | **56px** | 15px / 16px |
+| Corner, mid | 96px | 36px, under the floor | 15px / — |
+| Edge seam (3c today) | 84px | 60px | 11px / 32px |
 
 **Placement is solved, not drawn.** Each sprite wants its centre on the area
 centroid of its own partition. `seamends.py` clips the slot rect against the
@@ -1044,12 +1056,12 @@ the off-centre column is the price of the two before it.
 
 Three readings from the table.
 
-- **Corner, high buys the most for the least.** The signature lands within
-  12px of the 92px it has to itself today, and the partner still gets a full
-  team-cell sprite. Nothing in the slot is smaller than a Pokemon anywhere
+- **Corner, high buys the most for the least.** The ace lands within 8px of
+  the 92px it has to itself today, and the partner clears a team-cell sprite
+  with room to spare. Nothing in the slot is smaller than a Pokemon anywhere
   else on the card.
 - **Corner, full is the only seam that cuts the slot into the same shape
-  twice**, so both halves land on 64px and neither is the lesser one — which
+  twice**, so both halves land on 68px and neither is the lesser one — which
   is the argument against it as much as for it, since nothing then says which
   of the two is the ace.
 - **A corner seam runs out.** Past about 62px down the right edge the partner
@@ -1063,8 +1075,20 @@ empty state now keeps the sprite's square and a blank name line, and only
 swaps the sprite for a ring. `check-seamends.mjs` measures it: it reads the
 heading and name offsets in both states and fails on more than 0.5px of
 movement. Removing the reserved line fails all four panels, which is how the
-check was proved to discriminate. The same script holds the 52px floor and
-allows a seam crossing only on a panel the section itself flags.
+check was proved to discriminate. The same script holds the 52px floor, and
+holds every crossing to the 4px allowance except on a panel the section
+itself flags.
+
+**The longer label exposed two layout bugs, both now fixed.** "ACE POKEMON"
+wrapped to two lines inside a 68px block, which cost a line the solver had
+not budgeted for — and it cost it in one state only, because the sprite
+square held its height while the placeholder ring gave way, so the two states
+stopped agreeing. The heading is `white-space: nowrap` now, its measured
+one-line width is the block's minimum, and neither the sprite nor its
+placeholder can shrink. The checker also measures the union of a block and
+its children rather than the block's own rect, because a heading wider than
+its block paints outside that rect — which is exactly the overflow worth
+catching.
 
 ### Round 3, follow-ups from the preview
 

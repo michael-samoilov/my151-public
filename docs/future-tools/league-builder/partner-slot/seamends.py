@@ -1,5 +1,9 @@
 """Variations on 3c: where the seam ends, and what each end gives each half.
 
+The seam is a drawn line, not a wall. A block's far corner is allowed 4px past
+it, because that corner holds the transparent margin of a sprite rather than
+any ink -- and buying those 4px back costs the sprite 4px it would show.
+
 Sizing is per half, not shared. An earlier pass held both halves to one size,
 which sounds fair and is not: one size means the smaller half sets it, so the
 seam drags the signature down to whatever the partner can take. Here each
@@ -19,12 +23,13 @@ FLOOR = 52.0                     # 3.25rem = SPRITE_REM, a team cell's sprite
 SLOT_TODAY = 92.0                # 5.75rem, what this slot gives one Pokemon
 SPRITE = FLOOR                   # the default when a caller names no size
 HEAD, NAME = 11.9, 13.0
-SIG_MINW, PAR_MINW = 56.3, 45.8  # the headings are wider than the sprite
+SIG_MINW, PAR_MINW = 73.0, 45.8  # measured one-line widths of the two headings
 PAD = 6.0
-GAP = 3.0                        # clearance either side of the seam
+GAP = -4.0                       # the block's far corner may cross the seam by this
+MAX_CROSS = 4.0                  # ...and the drawing has to hold it to that
 STEP = 0.5
 
-SIG = {'src': '__SP95__', 'name': 'Onix', 'head': 'SIGNATURE'}
+SIG = {'src': '__SP95__', 'name': 'Onix', 'head': 'ACE POK\u00c9MON'}
 PAR = {'src': '__SP25__', 'name': 'Pikachu', 'head': 'PARTNER'}
 
 
@@ -177,7 +182,7 @@ def panel(seam, filled):
     out = [f'<div class="slot dg"><svg class="seam" viewBox="0 0 {W:.0f} {H:.0f}" aria-hidden="true">'
            f'<line x1="{xa:.0f}" y1="{ya:.0f}" x2="{xb:.0f}" y2="{yb:.0f}"/></svg>']
     stats = []
-    for upper, occ, text in ((True, SIG, 'SIGNATURE'), (False, PAR, 'PARTNER')):
+    for upper, occ, text in ((True, SIG, 'ACE POK\u00c9MON'), (False, PAR, 'PARTNER')):
         size, ok = sized(seam, upper)
         solved = place(seam, upper, size) if ok else None
         box = solved[1] if solved else place_free(upper, size)
@@ -195,8 +200,8 @@ VARIANTS = [
      'corner to corner: the only seam that halves the slot into the same shape twice, '
      'so the two get the same sprite without either being held to it'),
     ('Corner, high', ((W, 56), (0, H)), True,
-     'the signature within 12px of the 92px it has to itself today, and the partner '
-     'still a full team-cell sprite'),
+     'the ace within 8px of the 92px it has to itself today, and the partner '
+     'comfortably past a team-cell sprite'),
     ('Corner, mid', ((W, 96), (0, H)), False,
      'past the limit: the partner solves to 36px, under a team cell, and is drawn at '
      'the floor to show how far into the signature that reaches'),
@@ -221,7 +226,7 @@ def section():
             f'<div class="rail"><div class="states">{"".join(both)}</div></div>'
             '<p class="sub2">Empty</p>'
             f'<div class="rail"><div class="states">{"".join(empty)}</div></div>')
-    table = ('<div class="facts f5"><div class="fh">Seam</div><div class="fh">Signature</div>'
+    table = ('<div class="facts f5"><div class="fh">Seam</div><div class="fh">Ace</div>'
              '<div class="fh">Partner</div><div class="fh">Off centre</div>'
              '<div class="fh">What it gives</div>')
     for name, pick, blurb, stats in facts:
