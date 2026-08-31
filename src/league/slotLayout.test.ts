@@ -1,144 +1,159 @@
 import { describe, expect, it } from 'vitest';
-import { SEAM_RIGHT, STANDARD_SPRITE, placeHalf, slotSprite, type Runs } from './slotLayout';
+import { STANDARD_SPRITE, placeSlot, type Runs, type Slot } from './slotLayout';
 
 /**
- * The slot's geometry, held to the reading it came from.
+ * The slot's geometry: two congruent halves, one turned over.
  *
- * The placement is not derived from anything, so there is nothing here to
- * check the arithmetic of. What these guard is the reading itself: the two
- * centres were measured once, on a 195 x 204 slot, and every other width the
- * card is drawn at has to keep the same layout rather than drift into its own.
+ * The seam runs corner to corner, so whatever holds for the ace has to hold
+ * for the partner turned upside down. These check that it does, at every
+ * width the card is drawn at — the widths are what move, since the slot is
+ * always 12.75rem tall.
  */
 
-/** The runs on the slot the placement was read off: a phone at 393px. */
-const ACE: Runs = { head: [71.6, 11.9], name: [28.2, 19.6], headFirst: true };
-const PARTNER: Runs = { head: [44.8, 11.9], name: [3.4, 19.6], headFirst: false };
+/** The runs on a phone at 393px: "ACE POKEMON" is the widest of them. */
+const ACE: Runs = { head: [71.6, 11.9], name: [40, 19.6] };
+const PARTNER: Runs = { head: [44.8, 11.9], name: [40, 19.6] };
 
-/** The slot that reading was made on. */
-const W = 195;
 const H = 204;
+/** Every slot the card is drawn at, narrowest first. */
+const WIDTHS = [114, 145, 162, 181, 195, 243];
+const TEAM_SPRITE = 52;
 
-/** The sprite's centre, as a share of the slot. */
-const centre = (
-  w: number, h: number, sprite: number, runs: Runs, half: 'ace' | 'partner',
-) => {
-  const p = placeHalf(w, h, sprite, runs, half);
-  const top = p.top + (runs.headFirst ? runs.head[1] : 0);
-  return [(p.left + p.width / 2) / w, (top + p.sprite / 2) / h];
+/** Each half's sprite centre, in slot px. */
+function centres(slot: Slot, ace: Runs, partner: Runs) {
+  return {
+    ace: [
+      slot.ace.left + slot.ace.width / 2,
+      slot.ace.top + ace.head[1] + slot.ace.sprite / 2,
+    ] as const,
+    partner: [
+      slot.partner.left + slot.partner.width / 2,
+      slot.partner.top + partner.name[1] + slot.partner.sprite / 2,
+    ] as const,
+  };
+}
+
+/** How far past the seam a point sits. Positive is over it. */
+const past = (w: number, h: number, x: number, y: number, half: 'ace' | 'partner') => {
+  const side = (x / w + y / h - 1) * ((w * h) / Math.hypot(w, h));
+  return half === 'ace' ? side : -side;
 };
 
-/** Every slot the card is drawn at, widest last. The height never moves. */
-const WIDTHS = [144, 153, 162, 185, 195, 205, 243, 304];
-
-describe('the sprite both halves get', () => {
-  it('is the standard sprite on the slot it was measured on', () => {
-    expect(slotSprite(W, H)).toBe(STANDARD_SPRITE);
+describe('the two halves', () => {
+  it('are a rotation of each other about the slot\'s middle', () => {
+    for (const w of WIDTHS) {
+      const { ace, partner } = centres(placeSlot(w, H, ACE, PARTNER), ACE, PARTNER);
+      expect(ace[0] + partner[0], `across at ${w}`).toBeCloseTo(w, 6);
+      expect(ace[1] + partner[1], `down at ${w}`).toBeCloseTo(H, 6);
+    }
   });
 
-  it('never exceeds the standard, however wide the slot gets', () => {
-    for (const w of WIDTHS) expect(slotSprite(w, H)).toBeLessThanOrEqual(STANDARD_SPRITE);
+  it('get the same sprite, and the same ring', () => {
+    for (const w of WIDTHS) {
+      const slot = placeSlot(w, H, ACE, PARTNER);
+      expect(slot.ace.sprite, `sprite at ${w}`).toBe(slot.partner.sprite);
+      expect(slot.ace.ring, `ring at ${w}`).toBe(slot.partner.ring);
+    }
   });
 
-  it('gives up size rather than room when the slot is narrow', () => {
-    // 144 is the slot on a phone tall enough to skip the card's fit zoom.
-    // Two standard sprites there would overlap by three quarters of an edge.
-    expect(slotSprite(144, H)).toBeLessThan(STANDARD_SPRITE);
-    expect(slotSprite(144, H)).toBeGreaterThan(52); // still bigger than a team cell
-  });
-
-  it('scales with the root font size, which is what the height carries', () => {
-    // A desktop root font of 20px makes the same 12.75rem slot 255px tall.
-    expect(slotSprite(304, 255)).toBe(Math.round((STANDARD_SPRITE * 255) / H));
+  it('sit the same distance from their own labels', () => {
+    for (const w of WIDTHS) {
+      const slot = placeSlot(w, H, ACE, PARTNER);
+      const { ace, partner } = centres(slot, ACE, PARTNER);
+      // From the sprite's centre to the near edge of its own heading. The
+      // ace's heading is above its sprite and the partner's below, so this is
+      // only equal because the partner's block is the ace's turned over. The
+      // old stack put the name between the partner's sprite and its heading,
+      // and that half read 30px airier than the other.
+      const aceGap = ace[1] - (slot.ace.top + ACE.head[1]);
+      const partnerGap = (slot.partner.top + PARTNER.name[1] + slot.partner.sprite) - partner[1];
+      expect(aceGap, `at ${w}`).toBeCloseTo(partnerGap, 6);
+    }
   });
 });
 
-describe('where each half sits', () => {
-  it('puts both sprites on the centres that were read off the lab', () => {
-    const [ax, ay] = centre(W, H, STANDARD_SPRITE, ACE, 'ace');
-    const [px, py] = centre(W, H, STANDARD_SPRITE, PARTNER, 'partner');
-    expect(ax).toBeCloseTo(0.3001, 3);
-    expect(ay).toBeCloseTo(0.3241, 3);
-    expect(px).toBeCloseTo(0.6881, 3);
-    expect(py).toBeCloseTo(0.6134, 3);
+describe('the sprite', () => {
+  it('comes close to the standard one where the slot has room', () => {
+    // Not all the way to it. The run below the sprite — the ace's name, the
+    // partner's — sits a line closer to the seam than the sprite does, and it
+    // is the run that binds. Buying the last 7% back means letting ink lean
+    // on the seam, which is what the sprite's transparent corner is for and
+    // the name's ink is not.
+    const sprite = placeSlot(243, H, ACE, PARTNER).ace.sprite;
+    expect(sprite).toBeGreaterThan(STANDARD_SPRITE * 0.9);
+    expect(sprite).toBeLessThanOrEqual(STANDARD_SPRITE);
   });
 
-  it('keeps those centres at every width the card is drawn at', () => {
+  it('never drops below a team cell', () => {
     for (const w of WIDTHS) {
-      const sprite = slotSprite(w, H);
-      const [ax, ay] = centre(w, H, sprite, ACE, 'ace');
-      const [px, py] = centre(w, H, sprite, PARTNER, 'partner');
-      expect(ax, `ace across at ${w}`).toBeCloseTo(0.3001, 3);
-      expect(ay, `ace down at ${w}`).toBeCloseTo(0.3241, 3);
-      expect(px, `partner across at ${w}`).toBeCloseTo(0.6881, 3);
-      expect(py, `partner down at ${w}`).toBeCloseTo(0.6134, 3);
+      expect(placeSlot(w, H, ACE, PARTNER).ace.sprite, `at ${w}`)
+        .toBeGreaterThanOrEqual(TEAM_SPRITE);
     }
   });
 
-  it('leaves each sprite on its own side of the seam', () => {
-    for (const w of WIDTHS) {
-      const sprite = slotSprite(w, H);
-      const seamY = (x: number) => SEAM_RIGHT * H + (H - SEAM_RIGHT * H) * (1 - x / w);
-      const [ax, ay] = centre(w, H, sprite, ACE, 'ace');
-      const [px, py] = centre(w, H, sprite, PARTNER, 'partner');
-      expect(ay * H, `ace at ${w}`).toBeLessThan(seamY(ax * w));
-      expect(py * H, `partner at ${w}`).toBeGreaterThan(seamY(px * w));
-    }
+  it('follows the root font size, which is what the height carries', () => {
+    // A desktop root font of 20px makes the same 12.75rem slot 255px tall,
+    // and every run in it 25% bigger. The whole slot should come out scaled,
+    // not reshaped.
+    const k = 1.25;
+    const grow = (r: Runs): Runs => ({
+      head: [r.head[0] * k, r.head[1] * k],
+      name: [r.name[0] * k, r.name[1] * k],
+    });
+    const small = placeSlot(243, H, ACE, PARTNER).ace.sprite;
+    const big = placeSlot(243 * k, H * k, grow(ACE), grow(PARTNER)).ace.sprite;
+    expect(big / small).toBeCloseTo(k, 1);
   });
+});
 
-  it('paints nothing outside the slot', () => {
+describe('against the seam', () => {
+  it('lets only a sprite corner over it, and only by its transparent margin', () => {
     for (const w of WIDTHS) {
-      const sprite = slotSprite(w, H);
-      for (const [runs, half] of [[ACE, 'ace'], [PARTNER, 'partner']] as const) {
-        const p = placeHalf(w, H, sprite, runs, half);
-        const total = runs.head[1] + sprite + runs.name[1];
-        expect(p.left, `${half} left at ${w}`).toBeGreaterThanOrEqual(0);
-        expect(p.left + p.width, `${half} right at ${w}`).toBeLessThanOrEqual(w);
-        expect(p.top, `${half} top at ${w}`).toBeGreaterThanOrEqual(0);
-        expect(p.top + total, `${half} bottom at ${w}`).toBeLessThanOrEqual(H);
+      const slot = placeSlot(w, H, ACE, PARTNER);
+      const rows = (p: typeof slot.ace, runs: Runs, half: 'ace' | 'partner') => {
+        const order: Array<[number, number]> = half === 'ace'
+          ? [runs.head, [p.sprite, p.sprite], runs.name]
+          : [runs.name, [p.sprite, p.sprite], runs.head];
+        let y = p.top;
+        return order.map(([rw, rh]) => {
+          const x = p.left + (p.width - rw) / 2;
+          const corner: [number, number] = half === 'ace' ? [x + rw, y + rh] : [x, y];
+          y += rh;
+          return past(w, H, corner[0], corner[1], half);
+        });
+      };
+      for (const over of rows(slot.ace, ACE, 'ace')) {
+        expect(over, `an ace run at ${w}`).toBeLessThanOrEqual(4.001);
+      }
+      for (const over of rows(slot.partner, PARTNER, 'partner')) {
+        expect(over, `a partner run at ${w}`).toBeLessThanOrEqual(4.001);
       }
     }
   });
 
-  it('holds the placeholder ring clear of the seam', () => {
-    // A sprite may put its corner over the seam, because that corner is its
-    // own transparent margin. A drawn circle is ink the whole way round.
+  it('keeps both placeholder rings clear of it', () => {
     for (const w of WIDTHS) {
-      const sprite = slotSprite(w, H);
-      const seamY = (x: number) => SEAM_RIGHT * H + (H - SEAM_RIGHT * H) * (1 - x / w);
-      for (const [runs, half] of [[ACE, 'ace'], [PARTNER, 'partner']] as const) {
-        const p = placeHalf(w, H, sprite, runs, half);
-        const [cx, cy] = centre(w, H, sprite, runs, half);
-        // The gap from the sprite's centre to the seam, square to the seam.
-        const ay = SEAM_RIGHT * H;
-        const gap = Math.abs(-w * (cy * H - ay) - (H - ay) * (cx * w - w)) / Math.hypot(w, H - ay);
-        expect(p.ring / 2, `${half} ring at ${w}`).toBeLessThanOrEqual(gap);
-        expect(p.ring, `${half} ring at ${w} is still a ring`).toBeGreaterThan(sprite * 0.3);
-        expect(p.ring, `${half} ring at ${w}`).toBeLessThanOrEqual(sprite * 0.62 + 0.001);
-        expect(seamY(cx * w)).toBeGreaterThan(0); // the seam is where we think
-      }
+      const slot = placeSlot(w, H, ACE, PARTNER);
+      const { ace, partner } = centres(slot, ACE, PARTNER);
+      expect(past(w, H, ace[0], ace[1], 'ace') + slot.ace.ring / 2, `ace ring at ${w}`)
+        .toBeLessThan(0);
+      expect(past(w, H, partner[0], partner[1], 'partner') + slot.partner.ring / 2,
+        `partner ring at ${w}`).toBeLessThan(0);
     }
   });
+});
 
-  it('leaves the ace ring at its full size, because its half has the room', () => {
-    const p = placeHalf(W, H, STANDARD_SPRITE, ACE, 'ace');
-    expect(p.ring).toBeCloseTo(STANDARD_SPRITE * 0.62, 5);
-  });
-
-  it('widens the block around a long name and leaves the sprite where it is', () => {
-    const long: Runs = { ...ACE, name: [110, 19.6] };
-    const plain = placeHalf(W, H, STANDARD_SPRITE, ACE, 'ace');
-    const wide = placeHalf(W, H, STANDARD_SPRITE, long, 'ace');
-    expect(wide.width).toBe(110);
-    expect(wide.left + wide.width / 2).toBeCloseTo(plain.left + plain.width / 2, 5);
-  });
-
-  it('gives up the centre rather than paint a long name outside the slot', () => {
-    // A name wider than twice the ace's inset cannot be centred where the
-    // sprite wants to be. Staying inside the slot wins; the sprite comes with
-    // it, because the block is one stack.
-    const huge: Runs = { ...ACE, name: [180, 19.6] };
-    const p = placeHalf(W, H, STANDARD_SPRITE, huge, 'ace');
-    expect(p.left).toBe(0);
-    expect(p.left + p.width).toBeLessThanOrEqual(W);
+describe('inside the slot', () => {
+  it('paints nothing outside it', () => {
+    for (const w of WIDTHS) {
+      const slot = placeSlot(w, H, ACE, PARTNER);
+      for (const [p, runs] of [[slot.ace, ACE], [slot.partner, PARTNER]] as const) {
+        const total = runs.head[1] + p.sprite + runs.name[1];
+        expect(p.left, `left at ${w}`).toBeGreaterThanOrEqual(-0.001);
+        expect(p.left + p.width, `right at ${w}`).toBeLessThanOrEqual(w + 0.001);
+        expect(p.top, `top at ${w}`).toBeGreaterThanOrEqual(-0.001);
+        expect(p.top + total, `bottom at ${w}`).toBeLessThanOrEqual(H + 0.001);
+      }
+    }
   });
 });

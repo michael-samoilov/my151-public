@@ -14,25 +14,16 @@ import { blankLeague } from './support/leagueSeed';
  * And the runs are text, so their size follows the font and the language.
  */
 
-/** The sprite centres the lab was read at, as shares of the slot. */
-const CENTRES = {
-  'slot-ace': { x: 0.3001, y: 0.3241 },
-  'slot-partner': { x: 0.6881, y: 0.6134 },
-};
-
 /**
- * How far a centre may drift from its reading.
+ * How far a mirrored pair may drift apart.
  *
- * Wide enough for two things. The pixel rounding in a slot measured at six
- * different widths; and the clamp that holds a block inside the slot, which
- * bites at 320px because the "ACE POKEMON" heading is wider there than the
- * sprite it labels, so the block cannot sit on its own centre without
- * painting outside the slot. That costs about 2.5px of a 110px slot.
- *
- * Still nowhere near wide enough to pass the zoom bug this is here to catch:
- * that one put the ace at 23% of the slot instead of 30%.
+ * The two halves are a 180-degree rotation of each other about the slot's
+ * middle, so their centres must sum to the slot. Wide enough for the pixel
+ * rounding in a slot measured at three widths, and nowhere near wide enough
+ * to pass the zoom bug this is here to catch: that one put the ace at 23% of
+ * the slot instead of 30%, and moved the two halves by different amounts.
  */
-const DRIFT = 0.03;
+const DRIFT = 0.02;
 
 const openCard = async (page: Page) => {
   await page.goto('/pokemon-league-builder');
@@ -109,15 +100,19 @@ async function slotGeometry(page: Page) {
 }
 
 test.describe('the ace and partner slot', () => {
-  test('both halves sit where the lab put them, at any width', async ({ page }) => {
+  test('the two halves are a mirrored pair, at any width', async ({ page }) => {
     await blankLeague(page);
     await openCard(page);
     const { halves, slot } = await slotGeometry(page);
+    const ace = halves.find((h) => h.id === 'slot-ace')!;
+    const partner = halves.find((h) => h.id === 'slot-partner')!;
+    const where = `in a slot ${slot.width.toFixed(0)}px wide`;
+    // Turn the slot over and the two halves swap places. That is the whole
+    // design: the seam runs corner to corner, so the halves are congruent and
+    // neither is the lesser one.
+    expect(Math.abs(ace.cx + partner.cx - 1), `across, ${where}`).toBeLessThanOrEqual(DRIFT);
+    expect(Math.abs(ace.cy + partner.cy - 1), `down, ${where}`).toBeLessThanOrEqual(DRIFT);
     for (const half of halves) {
-      const want = CENTRES[half.id as keyof typeof CENTRES];
-      const where = `${half.id} in a slot ${slot.width.toFixed(0)}px wide`;
-      expect(Math.abs(half.cx - want.x), `${where}, across`).toBeLessThanOrEqual(DRIFT);
-      expect(Math.abs(half.cy - want.y), `${where}, down`).toBeLessThanOrEqual(DRIFT);
       expect(half.outOfSlot, `${half.id} paints outside the slot`).toBeLessThanOrEqual(1);
     }
   });

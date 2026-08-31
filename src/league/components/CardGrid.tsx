@@ -38,7 +38,7 @@ import type { CardView } from '../useCardView';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyphs';
 import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
-import { SEAM_RIGHT, placeHalf, slotSprite, type Placed, type Runs } from '../slotLayout';
+import { placeSlot, type Placed, type Runs } from '../slotLayout';
 import { useSlotLab } from '../slotLab';
 
 /**
@@ -572,14 +572,15 @@ function PowerupButton({ kind, active, onPress, side }: {
  * it, which is a different layout wearing the same name.
  */
 function SlotHalf({
-  place, testId, half, heading, headingBelow, pokemon, nameClass,
+  place, testId, half, heading, mirrored, pokemon, nameClass,
   headClass, onPick,
 }: {
   place: Placed | null;
   testId: string;
   half: 'ace' | 'partner';
   heading: string;
-  headingBelow: boolean;
+  /** The partner's block is the ace's turned over: name, sprite, heading. */
+  mirrored: boolean;
   pokemon: ReturnType<typeof getPokemonById>;
   nameClass: string;
   headClass: string;
@@ -634,41 +635,41 @@ function SlotHalf({
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
   };
-  const body = pokemon ? (
-    <>
-      <img
+  const art = pokemon ? (
+    <img
         src={pokemon.sprite}
         alt={pokemon.name}
         className="max-w-none shrink-0"
-        style={{ width: size, height: size, imageRendering: 'pixelated' }}
-      />
-      <span className={cn('leading-tight', nameClass)}>
-        {pokemonLabel(pokemon.id, pokemon.name).name}
-      </span>
-    </>
+      style={{ width: size, height: size, imageRendering: 'pixelated' }}
+    />
   ) : (
-    <>
-      <span
-        className="flex shrink-0 items-center justify-center"
-        style={{ width: size, height: size }}
-      >
+    <span
+      className="flex shrink-0 items-center justify-center"
+      style={{ width: size, height: size }}
+    >
         {/* Sized by the solver, not by a share of the square. The partner's
             sprite may put its corner over the seam because that corner is
             transparent; a drawn circle is ink all the way round, so it stops
             short of the seam instead. */}
-        <span
-          className="rounded-full border border-dashed"
-          style={{
-            width: `${place?.ring ?? 0}px`,
-            aspectRatio: '1',
-            borderColor: 'var(--lg-dash)',
-          }}
-        />
-      </span>
-      {/* Blank, but it still takes its line: that is what holds the heading
-          where it sits once a Pokemon is chosen. */}
-      <span className={cn('leading-tight', nameClass)}>&nbsp;</span>
-    </>
+      <span
+        className="rounded-full border border-dashed"
+        style={{
+          width: `${place?.ring ?? 0}px`,
+          aspectRatio: '1',
+          borderColor: 'var(--lg-dash)',
+        }}
+      />
+    </span>
+  );
+  // Blank when empty, but it still takes its line: that is what holds the
+  // heading where it sits once a Pokemon is chosen.
+  const name = (
+    // Held to the sprite's width. The two names are the runs either side of
+    // the seam, so a name allowed to grow the block grows it into the other
+    // half — at 320px that put one name through the other.
+    <span className={cn('block truncate leading-tight', nameClass)} style={{ maxWidth: size }}>
+      {pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : '\u00a0'}
+    </span>
   );
   return (
     <button
@@ -698,7 +699,7 @@ function SlotHalf({
         outlineColor: lab ? 'rgba(37,99,235,0.5)' : undefined,
       }}
     >
-      {headingBelow ? <>{body}{label}</> : <>{label}{body}</>}
+      {mirrored ? <>{name}{art}{label}</> : <>{label}{art}{name}</>}
     </button>
   );
 }
@@ -753,8 +754,8 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
         const r = probe.querySelector<HTMLElement>(sel)!.getBoundingClientRect();
         return [r.width / zoom, r.height / zoom];
       };
-      const ace: Runs = { head: run('[data-probe="ace-head"]'), name: run('[data-probe="ace-name"]'), headFirst: true };
-      const partner: Runs = { head: run('[data-probe="partner-head"]'), name: run('[data-probe="partner-name"]'), headFirst: false };
+      const ace: Runs = { head: run('[data-probe="ace-head"]'), name: run('[data-probe="ace-name"]') };
+      const partner: Runs = { head: run('[data-probe="partner-head"]'), name: run('[data-probe="partner-name"]') };
       // The key covers the text as well as the box. Keying on the box alone
       // meant the first measurement — taken before the webfont had swapped —
       // was the only one that ever ran: the box never changed afterwards, so
@@ -763,13 +764,9 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
       const key = [w, h, ace.head, ace.name, partner.head, partner.name].join('|');
       if (key === last) return;
       last = key;
-      // The lab picks the size by hand; the card takes the measured one.
+      // The lab picks the size by hand; the card solves for it.
       const lab = useSlotLab.getState();
-      const sprite = lab.enabled ? lab.sprite : slotSprite(w, h);
-      setLayout({
-        ace: placeHalf(w, h, sprite, ace, 'ace'),
-        partner: placeHalf(w, h, sprite, partner, 'partner'),
-      });
+      setLayout(placeSlot(w, h, ace, partner, lab.enabled ? lab.sprite : undefined));
       // The lab reads offsets as fractions of the slot, so it needs the slot.
       // Setting it always costs one shallow compare; the store ignores a
       // repeat of the same size.
@@ -855,7 +852,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
       >
         <line
           x1="100"
-          y1={SEAM_RIGHT * 100}
+          y1="0"
           x2="0"
           y2="100"
           stroke="var(--lg-dash)"
@@ -868,7 +865,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         testId="slot-ace"
         half="ace"
         heading={ACE_HEAD}
-        headingBelow={false}
+        mirrored={false}
         pokemon={ace}
         nameClass={ACE_NAME_CLASS}
         headClass={HEAD_CLASS}
@@ -879,7 +876,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         testId="slot-partner"
         half="partner"
         heading={PARTNER_HEAD}
-        headingBelow
+        mirrored
         pokemon={partner}
         nameClass={PARTNER_NAME_CLASS}
         headClass={HEAD_CLASS}
