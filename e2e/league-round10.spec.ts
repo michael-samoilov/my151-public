@@ -32,7 +32,9 @@ test.describe('round 10', () => {
     const signature = () =>
       page.evaluate(() => {
         const slot = document.querySelector('[data-testid="slot-ace"]');
-        return (slot?.textContent ?? '').replace('ACE POKÉMON', '');
+        // The heading is two runs now, so it arrives with no space between
+        // them. Strip each rather than the phrase.
+        return (slot?.textContent ?? '').replace('ACE', '').replace('POKÉMON', '');
       });
     expect(await signature()).toContain('Onix');
 

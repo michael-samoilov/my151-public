@@ -711,7 +711,7 @@ function SlotHalf({
   place: Placed | null;
   testId: string;
   half: 'ace' | 'partner';
-  heading: string;
+  heading: Heading;
   /** The partner's block is the ace's turned over: name, sprite, heading. */
   mirrored: boolean;
   pokemon: ReturnType<typeof getPokemonById>;
@@ -721,11 +721,7 @@ function SlotHalf({
   onRemove: () => void;
 }) {
   const label = (
-    // One line, always. A wrapped heading costs a line the geometry does not
-    // budget for, and it costs it in the filled state only.
-    <span className={cn('whitespace-nowrap', headClass)} style={{ color: 'var(--lg-band)' }}>
-      {heading}
-    </span>
+    <HeadRuns lines={heading.lines} className={headClass} style={{ color: 'var(--lg-band)' }} />
   );
   const size = place ? `${place.sprite}px` : '0px';
   const lab = useSlotLab((st) => st.enabled);
@@ -799,7 +795,7 @@ function SlotHalf({
           {/* On the square, not on the block: the block's own corner is where
               the heading and the name are, and a cross there sits on the
               words. */}
-          <SlotRemove label={`Remove ${heading.toLowerCase()}`} onRemove={onRemove} />
+          <SlotRemove label={`Remove ${heading.label.toLowerCase()}`} onRemove={onRemove} />
         </>
       ) : (
         <span
@@ -840,7 +836,9 @@ function SlotHalf({
       onPointerDown={lab ? onLabPointerDown : undefined}
       data-testid={testId}
       data-slot-half={half}
-      aria-label={pokemon ? `${heading}: ${pokemon.name}` : `Choose a ${heading.toLowerCase()}`}
+      aria-label={
+        pokemon ? `${heading.label}: ${pokemon.name}` : `Choose a ${heading.label.toLowerCase()}`
+      }
       className={cn(
         'absolute z-[6] flex flex-col items-center text-center',
         lab && 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2',
@@ -885,9 +883,45 @@ function SlotRemove({ label, onRemove }: { label: string; onRemove: () => void }
   );
 }
 
-const ACE_HEAD = 'ACE POKÉMON';
-const PARTNER_HEAD = 'PARTNER';
+/**
+ * A slot heading: what it shows, and what it is called.
+ *
+ * `lines` is the drawn form and `label` the spoken one. The partner's two
+ * lines name one role twice, so reading both out adds nothing; the ace's are
+ * one phrase broken in two, so the label keeps it whole.
+ */
+interface Heading {
+  readonly lines: readonly string[];
+  readonly label: string;
+}
+
+const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
+const PARTNER_HEAD: Heading = { lines: ['PARTNER', 'SHOULDERMON'], label: 'PARTNER' };
 const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
+
+/**
+ * A heading, one line per run, drawn the same way in the slot and in the probe.
+ *
+ * One component for both so the two cannot drift. The solver budgets the
+ * exact height the probe measures, so a heading that wrapped to a third line
+ * in the slot would be placed as though it had two -- which is why each line
+ * refuses to wrap rather than the heading as a whole.
+ */
+function HeadRuns({ lines, className, style, ...rest }: {
+  lines: readonly string[];
+  className?: string;
+  style?: React.CSSProperties;
+  /** Set on the probe copies, which the solver looks them up by. */
+  'data-probe'?: string;
+}) {
+  return (
+    <span {...rest} className={cn('inline-block text-center', className)} style={style}>
+      {lines.map((line) => (
+        <span key={line} className="block whitespace-nowrap">{line}</span>
+      ))}
+    </span>
+  );
+}
 const ACE_NAME_CLASS = 'text-[0.8125rem] font-medium';
 const PARTNER_NAME_CLASS = 'text-[0.8125rem] font-medium';
 
@@ -1018,11 +1052,11 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         aria-hidden="true"
         className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap"
       >
-        <span data-probe="ace-head" className={cn('inline-block', HEAD_CLASS)}>{ACE_HEAD}</span>
+        <HeadRuns lines={ACE_HEAD.lines} className={HEAD_CLASS} data-probe="ace-head" />
         <span data-probe="ace-name" className={cn('inline-block leading-tight', ACE_NAME_CLASS)}>
           {ace ? pokemonLabel(ace.id, ace.name).name : '\u00a0'}
         </span>
-        <span data-probe="partner-head" className={cn('inline-block', HEAD_CLASS)}>{PARTNER_HEAD}</span>
+        <HeadRuns lines={PARTNER_HEAD.lines} className={HEAD_CLASS} data-probe="partner-head" />
         <span data-probe="partner-name" className={cn('inline-block leading-tight', PARTNER_NAME_CLASS)}>
           {partner ? pokemonLabel(partner.id, partner.name).name : '\u00a0'}
         </span>
