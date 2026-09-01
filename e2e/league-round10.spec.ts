@@ -117,7 +117,7 @@ test.describe('round 10', () => {
     expect(after.lines, 'and none of them changed').toEqual(before.lines);
   });
 
-  test('the settings gear switches the league summary to rematches', async ({ page }) => {
+  test('the story/rematch toggle switches the league summary', async ({ page }) => {
     await seededLeague(page);
     await page.goto('/pokemon-league-builder');
     await page.waitForSelector('[data-testid="league-slot-0"]');
@@ -135,12 +135,9 @@ test.describe('round 10', () => {
     const gym1 = await team(0);
     expect(gym1, 'gym 1 fields a small team on the way through').toBeLessThan(6);
 
-    await page.locator('[data-testid="league-settings"]').click();
-    await page.waitForTimeout(500);
-    await page.locator('[data-league-view="rematch"]:visible').click();
+    // One press on the tool bar's own toggle: the gear and its menu are gone.
+    await page.locator('[data-league-view="rematch"]:visible').first().click();
     await page.waitForTimeout(600);
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(400);
 
     expect(await team(0), 'the rematch fields the whole card').toBeGreaterThan(gym1);
     expect(

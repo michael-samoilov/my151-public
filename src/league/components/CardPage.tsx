@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, X } from 'lucide-react';
+import { ChevronLeft, Pencil, X } from 'lucide-react';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_NAMES } from '@/types/pokemon';
 import { localeUppercase, typeLabels } from '@/i18n';
@@ -14,7 +14,9 @@ import { useLeagueUi } from '../store/useLeagueUi';
 import { useCardView } from '../useCardView';
 import { fitStyle, useFitScale } from '../useFitScale';
 import { CardGrid } from './CardGrid';
-import { CardSettingsMenu } from './LeagueSettings';
+import { CardSettingsMenu } from './CardSettingsMenu';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
+import { LeagueExportButton } from './HeaderActions';
 import { MovePicker } from './MovePicker';
 
 /**
@@ -22,6 +24,10 @@ import { MovePicker } from './MovePicker';
  * and the pickers it launches. `showBack` is the mobile full-screen mode;
  * the desktop pane renders the same component without it.
  */
+
+/** The page's own name, the way the league home names itself. */
+const CARD_NAME = 'Pro Trainer Card';
+const THEME_PLACEHOLDER = "What is this gym's theme?";
 
 /**
  * "No type" as a real option: the type badge pipeline's geometry, fit and
@@ -185,29 +191,61 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
             <ChevronLeft size={20} />
           </button>
         )}
-        <button
-          type="button"
-          onClick={() => setTypePickerOpen(true)}
-          aria-label="Gym type"
-          className="cursor-pointer transition-transform hover:scale-105"
-        >
-          {view.card.type === null ? (
-            <SelectTypeBadge className="w-[4.75rem]" />
-          ) : view.card.type === 'none' ? (
-            <NoTypeBadge className="w-[4.75rem]" />
-          ) : (
-            <TypeBadge type={view.card.type} className="w-[4.75rem]" />
-          )}
-        </button>
-        <input
-          value={view.card.theme}
-          onChange={(e) => setCardTheme(cardIndex, e.target.value)}
-          placeholder="What is this gym's theme?"
-          aria-label="Gym theme"
-          className="min-w-0 flex-1 bg-transparent text-[0.6875rem] font-semibold outline-none placeholder:font-normal placeholder:text-muted-foreground/70"
-        />
-        <span className="shrink-0 text-[0.6875rem] font-medium text-muted-foreground">{slotLabel(cardIndex)}</span>
-        <CardSettingsMenu cardIndex={cardIndex} />
+        {/* The league home's identity block, on the card: the page's name
+            above, small and quiet, and one editable line under it. The type
+            chip sits *beside* the underlined field rather than inside it —
+            the chip is a control of its own, and a dashed underline running
+            beneath it would read as an invitation to type on it. */}
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
+          <h2 className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
+            {CARD_NAME}
+          </h2>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setTypePickerOpen(true)}
+              aria-label="Gym type"
+              className="shrink-0 cursor-pointer transition-transform hover:scale-105"
+            >
+              {view.card.type === null ? (
+                <SelectTypeBadge className="w-[4.75rem]" />
+              ) : view.card.type === 'none' ? (
+                <NoTypeBadge className="w-[4.75rem]" />
+              ) : (
+                <TypeBadge type={view.card.type} className="w-[4.75rem]" />
+              )}
+            </button>
+            {/* The field is sized to its own text by an invisible copy in the
+                same grid cell, so the dashed line ends where the words do and
+                the pencil sits after them. */}
+            <label className="group flex min-w-0 cursor-text items-center gap-1 overflow-hidden">
+              <span className="grid min-w-0 items-center border-b border-dashed border-foreground/25 transition-colors group-hover:border-foreground/50 group-focus-within:border-foreground/60">
+                <span
+                  aria-hidden
+                  className={cn(
+                    'invisible col-start-1 row-start-1 whitespace-pre text-[0.6875rem] leading-tight',
+                    view.card.theme ? 'font-semibold' : 'font-normal',
+                  )}
+                >
+                  {view.card.theme || THEME_PLACEHOLDER}
+                </span>
+                <input
+                  value={view.card.theme}
+                  onChange={(e) => setCardTheme(cardIndex, e.target.value)}
+                  placeholder={THEME_PLACEHOLDER}
+                  aria-label="Gym theme"
+                  className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.6875rem] font-semibold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
+                />
+              </span>
+              <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
+            </label>
+          </div>
+        </div>
+        <span className="ml-auto flex shrink-0 items-center gap-1">
+          <FeedbackButton />
+          <CardSettingsMenu cardIndex={cardIndex} />
+          <LeagueExportButton />
+        </span>
       </div>
       <div className="px-3 pt-2.5">
         <div ref={fitRef} style={fitStyle(fit)}>

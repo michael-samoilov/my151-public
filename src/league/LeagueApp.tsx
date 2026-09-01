@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Info, Pencil } from 'lucide-react';
+import { useEffect } from 'react';
+import { Pencil } from 'lucide-react';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -20,7 +20,8 @@ import { useLeagueUi } from './store/useLeagueUi';
 import { LeagueHome } from './components/LeagueHome';
 import { CardPage } from './components/CardPage';
 import { PageFooter } from '@/components/shared/PageFooter';
-import { LeagueSettingsButton } from './components/LeagueSettings';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
+import { LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
 
 /**
  * The league builder's shell. Mobile: league home ⇄ full-screen card, with
@@ -91,7 +92,9 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
             aria-label="League name"
             // Small on purpose; the league entry caps maximum-scale on iOS so
             // focusing a sub-16px input no longer zooms the page.
-            className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.875rem] font-bold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground"
+            // The same weight the gym card's theme placeholder wears, so the
+            // two "not filled in yet" fields read as one thing.
+            className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.875rem] font-bold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
           />
         </span>
         <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
@@ -104,7 +107,6 @@ export function LeagueApp() {
   // The sheet heading names a Pokémon, and `pokemonLabel` reads the name
   // store without subscribing to it.
   useNamesVersion();
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const openCard = useLeagueUi((s) => s.openCard);
   const shownCard = useLeagueUi((s) => s.openCard ?? s.lastCard);
   const browserPurpose = useLeagueUi((s) => s.browserPurpose);
@@ -172,9 +174,10 @@ export function LeagueApp() {
               {/* The tool bar — same 44px as the dex builder's. */}
               <div data-testid="league-tool-bar" className="flex h-11 items-center gap-2 border-b bg-card px-3">
                 <LeagueNameRow h1 />
-                <span className="ml-auto flex items-center gap-1.5 text-muted-foreground">
-                  <Info size={16} aria-hidden />
-                  <LeagueSettingsButton open={settingsOpen} onOpenChange={setSettingsOpen} />
+                <span className="ml-auto flex shrink-0 items-center gap-1">
+                  <LeagueViewToggle />
+                  <FeedbackButton />
+                  <LeagueExportButton />
                 </span>
               </div>
               <div className="mx-auto w-full max-w-[26rem] px-3 pt-2.5">
@@ -208,9 +211,10 @@ export function LeagueApp() {
             <div data-testid="league-tool-bar" className="flex h-11 items-center border-b px-4">
               <div className="mx-auto flex w-full max-w-[26rem] items-center">
                 <LeagueNameRow h1 />
-                <span className="ml-auto flex items-center gap-1.5 text-muted-foreground">
-                  <Info size={16} aria-hidden />
-                  <LeagueSettingsButton open={settingsOpen} onOpenChange={setSettingsOpen} />
+                <span className="ml-auto flex shrink-0 items-center gap-1">
+                  <LeagueViewToggle />
+                  <FeedbackButton />
+                  <LeagueExportButton />
                 </span>
               </div>
             </div>

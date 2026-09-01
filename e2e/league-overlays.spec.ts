@@ -170,9 +170,6 @@ test.describe('league overlays', () => {
       }
     };
 
-    // The league's own gear, opened from the summary.
-    await sweep('league settings', () => page.click('[data-testid="league-settings"]'), dismiss);
-
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
     await page.waitForTimeout(500);
