@@ -15,6 +15,16 @@ const VIEWS: { value: LeagueView; label: string }[] = [
   { value: 'rematch', label: 'Rematch' },
 ];
 
+/**
+ * The height both header fields give their editable line.
+ *
+ * The league name is 0.875rem and the gym theme 0.6875rem, so left to their
+ * own line boxes the two dashed underlines sit at different heights — the
+ * card's ran 1.9px higher, which read as the type chip beside it being set
+ * low. One height for both, and the shorter text centres in it.
+ */
+export const HEADER_FIELD_H = '1.15625rem';
+
 export function LeagueViewToggle() {
   const view = useLeagueStore((s) => s.view);
   const setView = useLeagueStore((s) => s.setView);
@@ -26,9 +36,11 @@ export function LeagueViewToggle() {
           type="button"
           variant={view === v.value ? 'default' : 'ghost'}
           size="sm"
-          // Shorter and quieter than the dex builder's nav, which has a bar to
-          // itself. This one shares 44px with a two-line title and two icons.
-          className="h-7 rounded-md px-2 text-[0.6875rem] font-semibold"
+          // The dex builder's own type size and weight, which `size="sm"`
+          // already carries. Only the box is trimmed: that nav has a bar to
+          // itself and this one shares 44px with a two-line title and two
+          // icons.
+          className="h-7 rounded-md px-2"
           data-league-view={v.value}
           aria-pressed={view === v.value}
           onClick={() => setView(v.value)}

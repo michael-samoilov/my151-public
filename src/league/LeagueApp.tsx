@@ -21,7 +21,7 @@ import { LeagueHome } from './components/LeagueHome';
 import { CardPage } from './components/CardPage';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
-import { LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
+import { HEADER_FIELD_H, LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
 
 /**
  * The league builder's shell. Mobile: league home ⇄ full-screen card, with
@@ -75,7 +75,10 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
           the same grid cell, so the pencil sits at the end of the words
           rather than at the far edge of the bar. */}
       <label className="group flex min-w-0 max-w-full cursor-text items-center gap-1 overflow-hidden">
-        <span className="grid min-w-0 items-center border-b border-dashed border-foreground/25 transition-colors group-hover:border-foreground/50 group-focus-within:border-foreground/60">
+        <span
+          className="grid min-w-0 items-center border-b border-dashed border-foreground/25 transition-colors group-hover:border-foreground/50 group-focus-within:border-foreground/60"
+          style={{ height: HEADER_FIELD_H }}
+        >
           <span
             aria-hidden
             className={cn(

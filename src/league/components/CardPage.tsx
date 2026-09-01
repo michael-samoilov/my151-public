@@ -16,7 +16,7 @@ import { fitStyle, useFitScale } from '../useFitScale';
 import { CardGrid } from './CardGrid';
 import { CardSettingsMenu } from './CardSettingsMenu';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
-import { LeagueExportButton } from './HeaderActions';
+import { HEADER_FIELD_H, LeagueExportButton } from './HeaderActions';
 import { MovePicker } from './MovePicker';
 
 /**
@@ -219,7 +219,10 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
                 same grid cell, so the dashed line ends where the words do and
                 the pencil sits after them. */}
             <label className="group flex min-w-0 cursor-text items-center gap-1 overflow-hidden">
-              <span className="grid min-w-0 items-center border-b border-dashed border-foreground/25 transition-colors group-hover:border-foreground/50 group-focus-within:border-foreground/60">
+              <span
+                className="grid min-w-0 items-center border-b border-dashed border-foreground/25 transition-colors group-hover:border-foreground/50 group-focus-within:border-foreground/60"
+                style={{ height: HEADER_FIELD_H }}
+              >
                 <span
                   aria-hidden
                   className={cn(
