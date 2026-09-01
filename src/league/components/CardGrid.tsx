@@ -172,6 +172,16 @@ interface PaintDrag {
    * vertical paint that happens to share its last frame.
    */
   reordered: boolean;
+  /**
+   * The gesture has picked the column up.
+   *
+   * True from the start for a press that held still inside the cell it
+   * pressed, and only then: a press that set off first is aiming at an
+   * evolution boundary, and lifting its column would say the wrong thing
+   * about what the finger is doing. It turns true later if the drag crosses
+   * into another column, because that plainly is a reorder.
+   */
+  pickedUp: boolean;
 }
 
 /**
@@ -232,6 +242,48 @@ function grabbedCellFace(activatorEvent: Event): {
     radius: parseFloat(style.borderTopLeftRadius) * zoom,
     rem: box.height / (ROW_H - 2 * INSET_Y),
   };
+}
+
+/**
+ * How far the pointer has travelled since it went down, in client pixels.
+ *
+ * The card's two gestures begin identically — a finger on a cell — and part
+ * company only in what the finger does next. A press that stays put picks
+ * the column up; one that sets off up or down is aiming at an evolution
+ * boundary. dnd-kit starts the same drag either way, and the sensor's own
+ * tolerance cannot tell them apart: standing the sensor down on movement
+ * would take the boundary drag with it, which is the gesture that needs a
+ * moving finger most. So the distance is measured here and read when the
+ * drag starts.
+ *
+ * Capture-phase window listeners, because the cells stop propagation of
+ * their own presses and the powerup buttons stop it outright.
+ */
+function usePointerTravel(): React.RefObject<number> {
+  const travel = useRef(0);
+  useEffect(() => {
+    let from: { x: number; y: number } | null = null;
+    const down = (e: PointerEvent) => {
+      from = { x: e.clientX, y: e.clientY };
+      travel.current = 0;
+    };
+    const move = (e: PointerEvent) => {
+      if (!from) return;
+      travel.current = Math.max(travel.current, Math.hypot(e.clientX - from.x, e.clientY - from.y));
+    };
+    const up = () => { from = null; };
+    window.addEventListener('pointerdown', down, true);
+    window.addEventListener('pointermove', move, true);
+    window.addEventListener('pointerup', up, true);
+    window.addEventListener('pointercancel', up, true);
+    return () => {
+      window.removeEventListener('pointerdown', down, true);
+      window.removeEventListener('pointermove', move, true);
+      window.removeEventListener('pointerup', up, true);
+      window.removeEventListener('pointercancel', up, true);
+    };
+  }, []);
+  return travel;
 }
 
 /** A powerup form's sprite: the form's own id is its filename. */
@@ -1323,6 +1375,16 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const paintRef = useRef<PaintDrag | null>(null);
   const [previewMove, setPreviewMove] = useState<{ from: number; to: number } | null>(null);
   const [legendDrag, setLegendDrag] = useState(false);
+  const travelRef = usePointerTravel();
+  /**
+   * The column a moving press did not pick up.
+   *
+   * A press that set off before the hold was up is aiming at an evolution
+   * boundary, so the card does not lift its column — but the same drag can
+   * still cross into another column, and at that point it plainly is a
+   * reorder. The lift waits here until it is.
+   */
+  const pendingHeld = useRef<typeof held>(null);
   // What the pointer carries, and how big to draw it. Every size is measured
   // from the cell it was lifted from, in client pixels, because the card sits
   // under a CSS `zoom` and the overlay is portalled out of it — a rem in the
@@ -1351,6 +1413,13 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         radius: cell?.radius ?? 0,
         shadow: `0 ${0.5 * rem}px ${rem}px rgba(15,23,42,0.28)`,
       };
+      // Which of the card's two gestures this is. They begin identically —
+      // a finger on a cell — and part company in what the finger does next.
+      // A cell's own radius is the stillness the pickup asks for: stay inside
+      // the thing you pressed and you are holding it, leave it and you are
+      // dragging a boundary. Measured off the cell rather than named as a
+      // constant, so it follows the card's scale.
+      const pickedUp = travelRef.current <= (cell?.height ?? 0) / 2;
       // A column drag carries the column: its line's members, stacked, which
       // is what the column holds however many rows it spans. A legendary
       // drag carries the one Pokémon it is.
@@ -1358,20 +1427,25 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       if (d.isLegend) {
         setHeld({ ids: legendAt(card, d.seat) ? [legendAt(card, d.seat)!.pokemonId] : [], sprite, face });
       } else if (grabbed) {
-        setHeld({ ids: grabbed.branch, sprite, face });
-        // Held over its own seat is still held. Seeding the preview here is
-        // what makes a press and hold say so before the column has gone
-        // anywhere: without it the column looks untouched until it reaches
-        // some *other* seat, so the gesture gives no sign it is ready.
-        // `moveSeat` is a no-op when the two seats are the same, so nothing
-        // moves — only the feedback appears.
-        setPreviewMove({ from: d.seat, to: d.seat });
+        const column = { ids: grabbed.branch, sprite, face };
+        if (pickedUp) {
+          setHeld(column);
+          // Held over its own seat is still held. Seeding the preview here is
+          // what makes a press and hold say so before the column has gone
+          // anywhere: without it the column looks untouched until it reaches
+          // some *other* seat, so the gesture gives no sign it is ready.
+          // `moveSeat` is a no-op when the two seats are the same, so nothing
+          // moves — only the feedback appears.
+          setPreviewMove({ from: d.seat, to: d.seat });
+        } else {
+          pendingHeld.current = column;
+        }
       }
       if (d.isLegend) {
         paintRef.current = {
           legend: true, seat: d.seat, stage: 0, startRow: d.row, role: 'mid',
           runTop: d.row, runBottom: d.row, canTop: false, canBottom: false,
-          reordered: false,
+          reordered: false, pickedUp: true,
           initial: [], painted: false,
         };
         setLegendDrag(true);
@@ -1401,11 +1475,11 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       else if (d.row === runBottom && canBottom) role = 'bottom';
       paintRef.current = {
         legend: false, seat: d.seat, stage, startRow: d.row, role,
-        runTop, runBottom, canTop, canBottom, reordered: false,
+        runTop, runBottom, canTop, canBottom, reordered: false, pickedUp,
         initial: [...line.boundaries], painted: false,
       };
     },
-    [card],
+    [card, travelRef],
   );
 
   const onDragOver = useCallback(
@@ -1416,6 +1490,13 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       if (over.seat !== p.seat) {
         // The gesture is a reorder: undo any paint, preview the target seats.
         p.reordered = true;
+        // A press that set off too fast to be a pickup has just crossed into
+        // another column, which is what a reorder is. Lift it now.
+        p.pickedUp = true;
+        if (pendingHeld.current) {
+          setHeld(pendingHeld.current);
+          pendingHeld.current = null;
+        }
         if (p.painted) {
           setLineBoundaries(cardIndex, p.seat, p.initial);
           p.painted = false;
@@ -1427,10 +1508,14 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       }
       // Back over its own seat: still held, just not moved. Clearing the
       // preview here would drop the picked-up look every time the column
-      // passes over where it started.
-      setPreviewMove((cur) =>
-        cur && cur.from === p.seat && cur.to === p.seat ? cur : { from: p.seat, to: p.seat },
-      );
+      // passes over where it started. Only for a gesture that picked the
+      // column up in the first place — this line is what used to give a
+      // boundary drag the lifted look one frame after the drag began.
+      if (p.pickedUp) {
+        setPreviewMove((cur) =>
+          cur && cur.from === p.seat && cur.to === p.seat ? cur : { from: p.seat, to: p.seat },
+        );
+      }
       // Home again, after having pushed another column aside. The column goes
       // back where it started and nothing else happens: without this the
       // return leg falls through to the paint below and rewrites the line's
@@ -1466,6 +1551,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     setPreviewMove(null);
     setLegendDrag(false);
     setHeld(null);
+    pendingHeld.current = null;
   }, [cardIndex, setLineBoundaries]);
 
   const onDragEnd = useCallback(
@@ -1475,6 +1561,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       setPreviewMove(null);
       setLegendDrag(false);
       setHeld(null);
+      pendingHeld.current = null;
       const to = e.over?.data.current as CellDatum | undefined;
       if (!p) return;
       if (p.legend) {

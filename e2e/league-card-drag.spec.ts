@@ -116,3 +116,54 @@ test.describe('a card cell owns the touch it starts', () => {
     expect(held!.top, 'the card stayed where it was').toBeCloseTo(parked!.top, 1);
   });
 });
+
+/**
+ * The card's two gestures begin identically, and part company on movement.
+ *
+ * A press that stays inside the cell it pressed picks that column up, ready
+ * to reorder. One that sets off first is aiming at an evolution boundary, and
+ * lifting its column would say the wrong thing about what the finger is
+ * doing — the column read as picked up the instant the hold was up, on every
+ * boundary drag. The line between them is the cell's own radius.
+ */
+test.describe('a press decides which gesture it is', () => {
+  /** Press a cell, drift by `drift` px during the hold, and report the lift. */
+  const press = async (page: Page, cell: string, drift: number) => {
+    const box = (await page.locator(cell).boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', ty: number) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: type === 'touchEnd'
+          ? []
+          : [{ x, y: ty, radiusX: 10, radiusY: 10, force: 1, id: 1 }],
+      });
+    await touch('touchStart', y);
+    for (let i = 1; i <= 5; i += 1) {
+      await touch('touchMove', y + (drift * i) / 5);
+      await page.waitForTimeout(30);
+    }
+    // Past the sensor's own hold, so the drag has begun either way.
+    await page.waitForTimeout(420);
+    const lifted = await page.locator('[data-seat-open]').count();
+    await touch('touchEnd', y + drift);
+    await page.waitForTimeout(200);
+    return { lifted, radius: box.height / 2 };
+  };
+
+  test('a still press lifts the column', async ({ page }) => {
+    await openCard(page);
+    const { lifted } = await press(page, '[data-testid="card-cell-4-3"]', 0);
+    expect(lifted, 'the column is in hand').toBeGreaterThan(0);
+  });
+
+  test('a press that leaves its cell does not', async ({ page }) => {
+    await openCard(page);
+    // Twice the cell's own radius, which is a boundary drag by any reading.
+    const box = (await page.locator('[data-testid="card-cell-4-3"]').boundingBox())!;
+    const { lifted } = await press(page, '[data-testid="card-cell-4-3"]', box.height);
+    expect(lifted, 'no column is lifted for a boundary drag').toBe(0);
+  });
+});
