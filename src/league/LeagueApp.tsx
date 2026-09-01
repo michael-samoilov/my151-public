@@ -136,6 +136,14 @@ export function LeagueApp() {
   const replacing = browserPurpose === 'replace' && replacingId !== null
     ? getPokemonById(replacingId)
     : undefined;
+  /**
+   * A legendary joins the card's endgame boss row, not the card as a whole,
+   * and every card has one of those rows — so the subject names the row.
+   * "Adding to: Gym 1" over the legendary picker says the wrong place.
+   */
+  const target = browserPurpose === 'legend'
+    ? 'Endgame Boss legendary'
+    : slotLabel(openCard ?? 0);
   const sheetHeading = replacing
     ? {
         lead: 'Replacing:',
@@ -144,8 +152,8 @@ export function LeagueApp() {
       }
     : {
         lead: 'Adding to:',
-        subject: slotLabel(openCard ?? 0),
-        plain: `Adding to ${slotLabel(openCard ?? 0)}`,
+        subject: target,
+        plain: `Adding to ${target}`,
       };
 
   const browser = (

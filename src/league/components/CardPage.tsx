@@ -245,11 +245,14 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
               className="grid min-w-0 items-center border-b border-dashed border-foreground/25 transition-colors group-hover:border-foreground/50 group-focus-within:border-foreground/60"
               style={{ height: HEADER_FIELD_H }}
             >
+              {/* The league name's own type: 0.875rem bold. The two fields
+                  are the same field on two pages, so they are set the same
+                  and the shared line box puts them at the same height. */}
               <span
                 aria-hidden
                 className={cn(
-                  'invisible col-start-1 row-start-1 whitespace-pre text-[0.6875rem] leading-tight',
-                  view.card.theme ? 'font-semibold' : 'font-normal',
+                  'invisible col-start-1 row-start-1 whitespace-pre text-[0.875rem] leading-tight',
+                  view.card.theme ? 'font-bold' : 'font-normal',
                 )}
               >
                 {view.card.theme || THEME_PLACEHOLDER}
@@ -259,7 +262,7 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
                 onChange={(e) => setCardTheme(cardIndex, e.target.value)}
                 placeholder={THEME_PLACEHOLDER}
                 aria-label="Gym theme"
-                className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.6875rem] font-semibold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
+                className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.875rem] font-bold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
               />
             </span>
             <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
