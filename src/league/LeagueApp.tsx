@@ -18,7 +18,7 @@ import {
 import { useLeagueStore } from './store/useLeagueStore';
 import { useLeagueUi } from './store/useLeagueUi';
 import { LeagueHome } from './components/LeagueHome';
-import { CardPage } from './components/CardPage';
+import { CardActions, CardIdentity, CardPage } from './components/CardPage';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { HEADER_FIELD_H, LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
@@ -238,14 +238,20 @@ export function LeagueApp() {
           </section>
 
           <section className={cn('flex min-w-0 flex-col', browserOpen ? 'w-1/3 border-r' : 'w-1/2')}>
-            <div className="flex h-11 items-center border-b px-4">
-              <div className="mx-auto w-full max-w-[26rem] text-lg font-extrabold tracking-tight">
-                Pokémon Trainer Card
+            {/* The pane's header is the card's own identity, in the same bar
+                the league pane gives its identity. It used to be a second
+                title — "Pokémon Trainer Card", set large and bold — with the
+                card's real header a row below it, so the two panes named
+                themselves at different sizes and different heights. */}
+            <div data-testid="league-tool-bar" className="flex h-11 items-center border-b px-4">
+              <div className="mx-auto flex w-full max-w-[26rem] items-center gap-2">
+                <CardIdentity cardIndex={openCard ?? 0} showBack={false} />
+                <CardActions />
               </div>
             </div>
             <div data-lg-viewport className="min-h-0 flex-1 overflow-y-auto py-1">
               <div className="mx-auto w-full max-w-[26rem]">
-                <CardPage cardIndex={openCard ?? 0} showBack={false} />
+                <CardPage cardIndex={openCard ?? 0} showBack={false} withBar={false} />
               </div>
               <PageFooter />
             </div>

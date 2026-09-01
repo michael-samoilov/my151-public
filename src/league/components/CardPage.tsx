@@ -191,88 +191,124 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
   );
 }
 
-export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack: boolean }) {
+/**
+ * The card's identity, for whichever bar holds it.
+ *
+ * Its own component for the same reason `LeagueNameRow` is: the two layouts
+ * put it in different bars. Mobile gives the card a bar of its own inside the
+ * sliding pane; desktop hands it the pane's own header, which is where the
+ * league home puts its identity too — so the page's name and the theme land
+ * at the size and height the league's own two lines do, instead of a row
+ * below a second, differently set title.
+ */
+export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showBack: boolean }) {
   const view = useCardView(cardIndex);
   const setCardTheme = useLeagueStore((s) => s.setCardTheme);
   const closeCardPage = useLeagueUi((s) => s.closeCardPage);
-  const typePickerOpen = useLeagueUi((s) => s.typePickerOpen);
   const setTypePickerOpen = useLeagueUi((s) => s.setTypePickerOpen);
-  const movePickerOpen = useLeagueUi((s) => s.movePickerOpen);
-  const fitRef = useRef<HTMLDivElement>(null);
-  const fit = useFitScale(fitRef);
   // The square carries no word, so the button says which type it is. "No
   // type" is a chosen answer, not the absence of one, so it says so.
   const typeName = view.card.type === null
     ? ''
     : view.card.type === 'none' ? 'no type' : typeLabel(view.card.type);
+  return (
+    <>
+      {showBack && (
+        <button
+          type="button"
+          onClick={closeCardPage}
+          aria-label={`Back to the league (${slotLabel(cardIndex)})`}
+          className="cursor-pointer text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft size={20} />
+        </button>
+      )}
+      {/* The gym's own mark, before the words and outside them: the square
+          stands beside the whole identity block, so the page's name and the
+          theme field both start to its right. */}
+      <button
+        type="button"
+        onClick={() => setTypePickerOpen(true)}
+        aria-label={`Gym type${typeName ? `: ${typeName}` : ''}`}
+        className="shrink-0 cursor-pointer transition-transform hover:scale-105"
+      >
+        <TypeMark type={view.card.type} />
+      </button>
+      {/* The league home's identity block, on the card: the page's name
+          above, small and quiet, and one editable line under it. */}
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
+        <h2 className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
+          {CARD_NAME}
+        </h2>
+        {/* The field is sized to its own text by an invisible copy in the
+            same grid cell, so the dashed line ends where the words do and
+            the pencil sits after them. */}
+        <label className="group flex min-w-0 max-w-full cursor-text items-center gap-1 overflow-hidden">
+          <span
+            className="grid min-w-0 items-center border-b border-dashed border-foreground/25 transition-colors group-hover:border-foreground/50 group-focus-within:border-foreground/60"
+            style={{ height: HEADER_FIELD_H }}
+          >
+            {/* The league name's own type: 0.875rem bold. The two fields
+                are the same field on two pages, so they are set the same
+                and the shared line box puts them at the same height. */}
+            <span
+              aria-hidden
+              className={cn(
+                'invisible col-start-1 row-start-1 whitespace-pre text-[0.875rem] leading-tight',
+                view.card.theme ? 'font-bold' : 'font-normal',
+              )}
+            >
+              {view.card.theme || THEME_PLACEHOLDER}
+            </span>
+            <input
+              value={view.card.theme}
+              onChange={(e) => setCardTheme(cardIndex, e.target.value)}
+              placeholder={THEME_PLACEHOLDER}
+              aria-label="Gym theme"
+              className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.875rem] font-bold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
+            />
+          </span>
+          <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
+        </label>
+      </div>
+    </>
+  );
+}
+
+/** The controls both bars carry on their right. */
+export function CardActions() {
+  return (
+    <span className="ml-auto flex shrink-0 items-center gap-1">
+      <FeedbackButton />
+      <LeagueExportButton />
+    </span>
+  );
+}
+
+export function CardPage({ cardIndex, showBack, withBar = true }: {
+  cardIndex: number;
+  showBack: boolean;
+  /** Desktop hands the bar to the pane, so the card draws only its body. */
+  withBar?: boolean;
+}) {
+  const view = useCardView(cardIndex);
+  const typePickerOpen = useLeagueUi((s) => s.typePickerOpen);
+  const movePickerOpen = useLeagueUi((s) => s.movePickerOpen);
+  const fitRef = useRef<HTMLDivElement>(null);
+  const fit = useFitScale(fitRef);
 
   return (
     <div className="w-full">
-      {/* The tool bar — same 44px as the dex builder's. */}
-      <div data-testid="league-tool-bar" className={cn('flex h-11 items-center gap-2 px-3', showBack && 'border-b bg-card')}>
-        {showBack && (
-          <button
-            type="button"
-            onClick={closeCardPage}
-            aria-label={`Back to the league (${slotLabel(cardIndex)})`}
-            className="cursor-pointer text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft size={20} />
-          </button>
-        )}
-        {/* The gym's own mark, before the words and outside them: the square
-            stands beside the whole identity block, so the page's name and the
-            theme field both start to its right. */}
-        <button
-          type="button"
-          onClick={() => setTypePickerOpen(true)}
-          aria-label={`Gym type${typeName ? `: ${typeName}` : ''}`}
-          className="shrink-0 cursor-pointer transition-transform hover:scale-105"
+      {withBar && (
+        // The tool bar — same 44px as the dex builder's.
+        <div
+          data-testid="league-tool-bar"
+          className={cn('flex h-11 items-center gap-2 px-3', showBack && 'border-b bg-card')}
         >
-          <TypeMark type={view.card.type} />
-        </button>
-        {/* The league home's identity block, on the card: the page's name
-            above, small and quiet, and one editable line under it. */}
-        <div className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
-          <h2 className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
-            {CARD_NAME}
-          </h2>
-          {/* The field is sized to its own text by an invisible copy in the
-              same grid cell, so the dashed line ends where the words do and
-              the pencil sits after them. */}
-          <label className="group flex min-w-0 max-w-full cursor-text items-center gap-1 overflow-hidden">
-            <span
-              className="grid min-w-0 items-center border-b border-dashed border-foreground/25 transition-colors group-hover:border-foreground/50 group-focus-within:border-foreground/60"
-              style={{ height: HEADER_FIELD_H }}
-            >
-              {/* The league name's own type: 0.875rem bold. The two fields
-                  are the same field on two pages, so they are set the same
-                  and the shared line box puts them at the same height. */}
-              <span
-                aria-hidden
-                className={cn(
-                  'invisible col-start-1 row-start-1 whitespace-pre text-[0.875rem] leading-tight',
-                  view.card.theme ? 'font-bold' : 'font-normal',
-                )}
-              >
-                {view.card.theme || THEME_PLACEHOLDER}
-              </span>
-              <input
-                value={view.card.theme}
-                onChange={(e) => setCardTheme(cardIndex, e.target.value)}
-                placeholder={THEME_PLACEHOLDER}
-                aria-label="Gym theme"
-                className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.875rem] font-bold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
-              />
-            </span>
-            <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
-          </label>
+          <CardIdentity cardIndex={cardIndex} showBack={showBack} />
+          <CardActions />
         </div>
-        <span className="ml-auto flex shrink-0 items-center gap-1">
-          <FeedbackButton />
-          <LeagueExportButton />
-        </span>
-      </div>
+      )}
       <div className="px-3 pt-2.5">
         <div ref={fitRef} style={fitStyle(fit)}>
           <CardGrid cardIndex={cardIndex} view={view} />
