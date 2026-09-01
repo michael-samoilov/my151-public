@@ -887,8 +887,10 @@ function SlotRemove({ label, onRemove }: { label: string; onRemove: () => void }
  * A slot heading: what it shows, and what it is called.
  *
  * `lines` is the drawn form and `label` the spoken one. The partner's two
- * lines name one role twice, so reading both out adds nothing; the ace's are
- * one phrase broken in two, so the label keeps it whole.
+ * lines are two names for one role, with the slash drawn so they read as
+ * alternatives rather than a phrase; reading both out adds nothing, so its
+ * label is the first. The ace's lines are one phrase broken in two, so the
+ * label keeps it whole.
  */
 interface Heading {
   readonly lines: readonly string[];
@@ -896,7 +898,7 @@ interface Heading {
 }
 
 const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
-const PARTNER_HEAD: Heading = { lines: ['PARTNER', 'SHOULDERMON'], label: 'PARTNER' };
+const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
 const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
 
 /**
