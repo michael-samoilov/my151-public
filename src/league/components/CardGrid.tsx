@@ -558,6 +558,18 @@ const DISC_REM = 1;
 const MARK_REM = DISC_REM;
 const MARK_PAD_REM = 0.1875;
 const MARK_BOX_REM = MARK_REM + 2 * MARK_PAD_REM;
+/**
+ * How far the paint keeps off the corner it sits in.
+ *
+ * A pixel, and it is not decoration. The cross used to be flush: its top edge
+ * on its box's top edge and its right edge on its box's right, measured at
+ * every phone width. A round shape whose outermost pixels land exactly on a
+ * boundary is a shape the renderer may shave, and under the card's CSS `zoom`
+ * — where every edge is a fraction of a device pixel — one did: the cross
+ * came back with its top-right quadrant squared off. A pixel of ground is
+ * enough that the rounding has somewhere to go.
+ */
+const MARK_EDGE_REM = 0.0625;
 
 /**
  * A corner control's press box, placed so its paint lands where it did.
@@ -572,14 +584,20 @@ const MARK_BOX_REM = MARK_REM + 2 * MARK_PAD_REM;
  */
 function markBox(side: 'left' | 'right', inset: number): React.CSSProperties {
   const pad = `${MARK_PAD_REM}rem`;
+  const edge = `${MARK_EDGE_REM}rem`;
+  const inner = side === 'right' ? 'paddingLeft' : 'paddingRight';
+  const outer = side === 'right' ? 'paddingRight' : 'paddingLeft';
   return {
     [side]: 0,
     top: `${inset - MARK_PAD_REM}rem`,
-    width: `${MARK_REM + MARK_PAD_REM}rem`,
-    height: `${MARK_BOX_REM}rem`,
-    paddingTop: pad,
+    // The box carries the edge as well as the pad, so keeping the paint off
+    // the corner costs the press box nothing.
+    width: `${MARK_REM + MARK_PAD_REM + MARK_EDGE_REM}rem`,
+    height: `${MARK_BOX_REM + MARK_EDGE_REM}rem`,
+    paddingTop: `${MARK_PAD_REM + MARK_EDGE_REM}rem`,
     paddingBottom: pad,
-    [side === 'right' ? 'paddingLeft' : 'paddingRight']: pad,
+    [inner]: pad,
+    [outer]: edge,
   };
 }
 
