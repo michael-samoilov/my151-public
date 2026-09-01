@@ -411,8 +411,10 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           // independently. The disc came out an ellipse and the arrow inside
           // it sat up and to the left, even though both are centred to the
           // pixel in layout.
-          className="absolute left-0 top-[0.175rem] z-[15] h-[0.95rem] w-[0.95rem] cursor-pointer rounded-full bg-[#2563eb] [contain:paint]"
+          className="absolute z-[15] cursor-pointer"
+          style={markBox('left', 0.175)}
         >
+          <span className="block h-full w-full rounded-full bg-[#2563eb] [contain:paint]">
           {/* Centred by having nothing to centre.
               The card scales itself with CSS `zoom`, so the disc and a smaller
               mark inside it are both a fractional number of pixels, and the
@@ -432,6 +434,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
             className="absolute inset-0 h-full w-full text-white"
             strokeWidth={4}
           />
+          </span>
         </button>
       )}
       {onRemove && pokemon && (
@@ -442,7 +445,8 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute right-0 top-[0.175rem] z-[15] h-[0.95rem] w-[0.95rem] cursor-pointer [contain:paint]"
+          className="absolute z-[15] cursor-pointer [contain:paint]"
+          style={markBox('right', 0.175)}
         >
           <RedXIcon className="h-full w-full" />
         </button>
@@ -479,6 +483,46 @@ function symbolScale(kind: PowerupKind): string {
 
 /** The disc's diameter. Every other powerup measure derives from it. */
 const DISC_REM = 1;
+
+/**
+ * The card's small round controls: the remove cross, the reset disc and the
+ * two powerup discs. One size for all four, so a corner reads as one family
+ * whichever control sits in it — the crosses and the reset were 0.95rem
+ * against the discs' 1rem.
+ *
+ * `MARK_PAD_REM` is press box outside the paint, on every side. Sixteen
+ * pixels is under half of what a thumb needs, and these sit in the corners
+ * of cells whose own tap opens a picker, so the miss goes somewhere. The
+ * powerup buttons already carry a box of their own, tuned to the room the
+ * row has above them; this is the same idea for the two that had none.
+ */
+const MARK_REM = DISC_REM;
+const MARK_PAD_REM = 0.1875;
+const MARK_BOX_REM = MARK_REM + 2 * MARK_PAD_REM;
+
+/**
+ * A corner control's press box, placed so its paint lands where it did.
+ *
+ * It grows up and down freely — the rows are 6px apart and the paint sits
+ * 2.8px inside its cell, so there is room either side. Sideways it grows
+ * *inward* only: cells touch, so a box that hung past a cell's right edge
+ * landed on its neighbour's own control. Measured at a 320px viewport, where
+ * a cell is 32.5px: an outward pad put a remove cross 5.7px over the next
+ * cell's reset. So the outer edge stays where the paint's is, and what the
+ * box takes is the cell's own tap — which is the mis-tap being prevented.
+ */
+function markBox(side: 'left' | 'right', inset: number): React.CSSProperties {
+  const pad = `${MARK_PAD_REM}rem`;
+  return {
+    [side]: 0,
+    top: `${inset - MARK_PAD_REM}rem`,
+    width: `${MARK_REM + MARK_PAD_REM}rem`,
+    height: `${MARK_BOX_REM}rem`,
+    paddingTop: pad,
+    paddingBottom: pad,
+    [side === 'right' ? 'paddingLeft' : 'paddingRight']: pad,
+  };
+}
 
 /** How far above and below the disc a press still counts. */
 const HIT_UP_REM = 0.5;
@@ -755,7 +799,8 @@ function SlotRemove({ label, onRemove }: { label: string; onRemove: () => void }
         e.preventDefault();
         onRemove();
       }}
-      className="absolute right-0 top-0 z-[15] h-[0.95rem] w-[0.95rem] cursor-pointer [contain:paint]"
+      className="absolute z-[15] cursor-pointer [contain:paint]"
+      style={markBox('right', 0)}
     >
       <RedXIcon className="h-full w-full" />
     </button>

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Pencil } from 'lucide-react';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
@@ -22,6 +22,7 @@ import { CardActions, CardIdentity, CardPage } from './components/CardPage';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { HEADER_FIELD_H, LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
+import { usePencilRoom } from './components/usePencilRoom';
 
 /**
  * The league builder's shell. Mobile: league home ⇄ full-screen card, with
@@ -66,8 +67,11 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
   const name = useLeagueStore((s) => s.name);
   const setName = useLeagueStore((s) => s.setName);
   const Heading = h1 ? 'h1' : 'span';
+  const blockRef = useRef<HTMLDivElement>(null);
+  const ghostRef = useRef<HTMLSpanElement>(null);
+  const pencilRoom = usePencilRoom(blockRef, ghostRef, name);
   return (
-    <div className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
+    <div ref={blockRef} className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
       <Heading className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
         {TOOL_NAME}
       </Heading>
@@ -80,6 +84,7 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
           style={{ height: HEADER_FIELD_H }}
         >
           <span
+            ref={ghostRef}
             aria-hidden
             className={cn(
               'invisible col-start-1 row-start-1 whitespace-pre text-[0.875rem] leading-tight',
@@ -100,7 +105,9 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
             className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.875rem] font-bold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
           />
         </span>
-        <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
+        {pencilRoom && (
+          <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
+        )}
       </label>
     </div>
   );

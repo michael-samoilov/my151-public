@@ -17,6 +17,7 @@ import { fitStyle, useFitScale } from '../useFitScale';
 import { CardGrid } from './CardGrid';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { HEADER_FIELD_H, LeagueExportButton } from './HeaderActions';
+import { usePencilRoom } from './usePencilRoom';
 import { MovePicker } from './MovePicker';
 
 /**
@@ -211,6 +212,9 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
   const typeName = view.card.type === null
     ? ''
     : view.card.type === 'none' ? 'no type' : typeLabel(view.card.type);
+  const blockRef = useRef<HTMLDivElement>(null);
+  const ghostRef = useRef<HTMLSpanElement>(null);
+  const pencilRoom = usePencilRoom(blockRef, ghostRef, view.card.theme);
   return (
     <>
       {showBack && (
@@ -236,7 +240,7 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
       </button>
       {/* The league home's identity block, on the card: the page's name
           above, small and quiet, and one editable line under it. */}
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
+      <div ref={blockRef} className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
         <h2 className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
           {CARD_NAME}
         </h2>
@@ -252,6 +256,7 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
                 are the same field on two pages, so they are set the same
                 and the shared line box puts them at the same height. */}
             <span
+              ref={ghostRef}
               aria-hidden
               className={cn(
                 'invisible col-start-1 row-start-1 whitespace-pre text-[0.875rem] leading-tight',
@@ -268,7 +273,9 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
               className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.875rem] font-bold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
             />
           </span>
-          <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
+          {pencilRoom && (
+            <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
+          )}
         </label>
       </div>
     </>
