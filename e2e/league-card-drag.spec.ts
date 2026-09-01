@@ -167,3 +167,71 @@ test.describe('a press decides which gesture it is', () => {
     expect(lifted, 'no column is lifted for a boundary drag').toBe(0);
   });
 });
+
+/**
+ * What the preview shows is what the drop lands.
+ *
+ * The powerup and the legendary both name a *seat*, and the store re-aims
+ * them when a column moves. The preview did not, so a column carrying a Mega
+ * showed its base form the whole way across the card while the column it
+ * displaced wore the Mega instead — and the two only swapped to the truth
+ * once the finger came up. Measured on the seeded champion card, whose seat 3
+ * already wears one.
+ */
+test.describe('a carried column keeps what it carries', () => {
+  const bossRow = (page: Page) =>
+    page.evaluate(() => {
+      const out: Record<number, string | null> = {};
+      for (let seat = 1; seat <= 6; seat += 1) {
+        const cell = document.querySelector(`[data-testid="card-cell-11-${seat}"]`);
+        out[seat] = cell?.querySelector('img')?.getAttribute('src')?.split('/').pop() ?? null;
+      }
+      return out;
+    });
+
+  test('a Mega travels with its column, not with its seat', async ({ page }) => {
+    await seededLeague(page);
+    await page.goto('/pokemon-league-builder');
+    await page.waitForSelector('[data-testid="league-slot-12"]');
+    await page.click('[data-testid="league-slot-12"]');
+    await page.waitForSelector('[data-testid="card-cell-11-1"]');
+    await page.waitForTimeout(700);
+
+    const atRest = await bossRow(page);
+    // A form id above 10000 is a Mega or a Gigantamax.
+    const megaSeat = Number(
+      Object.keys(atRest).find((s) => Number((atRest[Number(s)] ?? '0').replace('.png', '')) > 10000),
+    );
+    expect(megaSeat, 'the seeded champion wears a Mega').toBeGreaterThan(0);
+    const mega = atRest[megaSeat];
+    const target = megaSeat === 1 ? 3 : 1;
+
+    const from = (await page.locator(`[data-testid="card-cell-6-${megaSeat}"]`).boundingBox())!;
+    const to = (await page.locator(`[data-testid="card-cell-6-${target}"]`).boundingBox())!;
+    const cdp = await page.context().newCDPSession(page);
+    const x = from.x + from.width / 2;
+    const y = from.y + from.height / 2;
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', tx: number) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: type === 'touchEnd'
+          ? []
+          : [{ x: tx, y, radiusX: 10, radiusY: 10, force: 1, id: 1 }],
+      });
+
+    await touch('touchStart', x);
+    await page.waitForTimeout(420);          // a still press: the column lifts
+    for (let i = 1; i <= 8; i += 1) {
+      await touch('touchMove', x + ((to.x - from.x) * i) / 8);
+      await page.waitForTimeout(35);
+    }
+    await page.waitForTimeout(250);
+    const during = await bossRow(page);
+    await touch('touchEnd', to.x + to.width / 2);
+    await page.waitForTimeout(600);
+    const landed = await bossRow(page);
+
+    expect(during[target], 'the Mega is carried, not left behind').toBe(mega);
+    expect(during, 'the preview is what the drop lands').toEqual(landed);
+  });
+});

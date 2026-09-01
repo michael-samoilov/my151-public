@@ -225,7 +225,7 @@ const MAX_SEATS = TEAM_SIZES[BOSS_ROW - 1];
  * the number. The dragged seat becomes the target; every other seat shifts by
  * the one that left and the one that arrived.
  */
-function seatAfterMove(seat: number | null, fromSeat: number, toSeat: number): number | null {
+export function seatAfterMove(seat: number | null, fromSeat: number, toSeat: number): number | null {
   if (seat === null) return null;
   if (seat === fromSeat) return toSeat;
   let next = seat;

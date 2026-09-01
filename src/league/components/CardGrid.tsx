@@ -31,7 +31,7 @@ import {
 } from '../model/engine';
 import { getMoveById } from '../moves';
 import { CategoryChip } from './CategoryChip';
-import { legendAt, legendsOf, powerupAt, powerupsAt, useLeagueStore } from '../store/useLeagueStore';
+import { legendAt, legendsOf, powerupsAt, seatAfterMove, useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { openLeagueBrowser } from '../store/browserBridge';
 import type { CardView } from '../useCardView';
@@ -66,7 +66,14 @@ const SPRITE_REM = 3.25;
  * Enough that the open seat reads underneath it, little enough that the
  * column still looks like it belongs to the row it is over.
  */
-const CELL_LIFT_REM = 0.5;
+/**
+ * How far a held cell rises off the card.
+ *
+ * A quarter of a rem. Half of that was a lift you could see the card through
+ * — the gap under each cell showed the row's own ground and every control the
+ * cells beside it carry, so a column in hand read as a column coming apart.
+ */
+const CELL_LIFT_REM = 0.25;
 
 /** Rows whose glyph cell is double width, reaching the card's left edge. */
 const GLYPH_SPAN: Record<number, number> = { 1: 2, 8: 2, 9: 2 };
@@ -1603,9 +1610,40 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     : card.lines;
   // A legendary in hand is off the board: the boss row shows the pokemon it
   // covers, so the outline under the pointer says what it would replace.
+  /**
+   * Where a seat's own things end up while the preview holds.
+   *
+   * The powerup and the legendary both name a seat, and the store re-aims
+   * them when the drop lands (`moveSeat`). Until then the preview drew them
+   * at the seats they started in, so a column carrying a Mega showed its base
+   * form all the way across the card and only became a Mega once it was let
+   * go — and whatever column it displaced wore the Mega in the meantime.
+   */
+  const previewSeat = useCallback(
+    (seat: number) => (previewMove ? seatAfterMove(seat, previewMove.from, previewMove.to) ?? seat : seat),
+    [previewMove],
+  );
+  const previewPowerups = useCallback(
+    (row: number) => powerupsAt(card, row).map((p) => ({ ...p, seat: previewSeat(p.seat) })),
+    [card, previewSeat],
+  );
+  /**
+   * A column is in hand, so the card's own controls stand down.
+   *
+   * The remove cross, the reset disc and the two powerup discs are for a card
+   * at rest. Mid-drag they are unreachable — a finger is already on the card
+   * — and a lifted cell shows the ones on the row under it through the gap it
+   * leaves, which reads as the column shedding its buttons as it goes.
+   */
+  const inHand = previewMove !== null || legendDrag;
   const renderRows =
     previewMove || legendDrag
-      ? deriveRows(renderLines, legendDrag ? [] : legendsOf(card))
+      ? deriveRows(
+          renderLines,
+          legendDrag
+            ? []
+            : legendsOf(card).map((l) => ({ ...l, seat: previewSeat(l.seat) })),
+        )
       : rows;
   // A copy is carried once the gesture is a move: a vertical paint shifts an
   // evolution boundary in place, so there is nothing being carried there.
@@ -1699,10 +1737,14 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       cardIndex={cardIndex}
                       datum={datum}
                       pokemonId={cell.pokemonId}
-                      form={formAt(powerupsAt(card, row), row, cell.seat, cell.pokemonId)}
-                      powerupKind={isPowerupRow(row) ? powerupAt(card, row, cell.seat)?.kind ?? null : null}
+                      form={formAt(previewPowerups(row), row, cell.seat, cell.pokemonId)}
+                      powerupKind={
+                        isPowerupRow(row)
+                          ? previewPowerups(row).find((p) => p.seat === cell.seat)?.kind ?? null
+                          : null
+                      }
                       onPowerup={
-                        isPowerupRow(row) && cell.pokemonId !== null && !cell.isLegend
+                        !inHand && isPowerupRow(row) && cell.pokemonId !== null && !cell.isLegend
                           ? (kind) => cyclePowerupOnCard(cardIndex, row, cell.seat, kind, cell.pokemonId as number)
                           : undefined
                       }
@@ -1712,18 +1754,20 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       // seat rather than filling one, so removing it puts
                       // that seat's own line back and touches nothing else.
                       onRemove={
-                        cell.isLegend
-                          // The seat has to be named: a row holds one
-                          // legendary per seat now, so "clear" without one
-                          // does not say which.
-                          ? () => setLegend(cardIndex, null, cell.seat)
-                          : topId !== null
-                            ? () => removeLineWith(cardIndex, topId)
-                            : undefined
+                        inHand
+                          ? undefined
+                          : cell.isLegend
+                            // The seat has to be named: a row holds one
+                            // legendary per seat now, so "clear" without one
+                            // does not say which.
+                            ? () => setLegend(cardIndex, null, cell.seat)
+                            : topId !== null
+                              ? () => removeLineWith(cardIndex, topId)
+                              : undefined
                       }
                       removeLabel={cell.isLegend ? 'Remove the endgame boss legendary' : undefined}
                       onReset={
-                        custom && line
+                        !inHand && custom && line
                           ? () => setLineBoundaries(cardIndex, cell.seat, defaultBoundaries(line.branch))
                           : undefined
                       }
