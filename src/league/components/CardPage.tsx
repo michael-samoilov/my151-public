@@ -249,7 +249,7 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
             the pencil sits after them. */}
         <label className="group flex min-w-0 max-w-full cursor-text items-center gap-1 overflow-hidden">
           <span
-            className="grid min-w-0 items-center border-b border-dashed border-foreground/25 transition-colors group-hover:border-foreground/50 group-focus-within:border-foreground/60"
+            className="grid min-w-0 items-center overflow-hidden border-b border-dashed border-foreground/25 transition-colors [grid-template-columns:minmax(0,max-content)] group-hover:border-foreground/50 group-focus-within:border-foreground/60"
             style={{ height: HEADER_FIELD_H }}
           >
             {/* The league name's own type: 0.875rem bold. The two fields
@@ -270,7 +270,17 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
               onChange={(e) => setCardTheme(cardIndex, e.target.value)}
               placeholder={THEME_PLACEHOLDER}
               aria-label="Gym theme"
-              className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.875rem] font-bold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
+              // The words are clipped at the field's own box, and a clip
+              // lands mid-glyph — which reads as the name running under
+              // whatever sits next in the bar rather than ending. An
+              // ellipsis says it ends. Browsers draw it only while the
+              // field is not focused, which is the behaviour to want: once
+              // you are typing you need to see the caret's end of the text,
+              // not a mark saying there is more.
+              //
+              // Only the drawing is cut. `value` is the whole name, and the
+              // store keeps it — the export renders from the store.
+              className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.875rem] font-bold leading-tight text-ellipsis outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
             />
           </span>
           {pencilRoom && (
