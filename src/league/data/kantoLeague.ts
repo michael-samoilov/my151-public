@@ -7,10 +7,11 @@ import { ROW_COUNT, SLOT_COUNT } from '../model/constants';
 /**
  * A Kanto league, seeded so preview builds open on a full template.
  *
- * All fourteen slots, six lines each: the eight Kanto gym leaders, the Elite
- * Four, the champion, and Red on Mt. Silver. It is a fixture, not content -
- * `seedLeague.ts` writes it only on a preview build's first visit, and never
- * on production.
+ * Fourteen slots, six lines each: the eight Kanto gym leaders, the Elite
+ * Four, the champion, and Red on Mt. Silver. Two of them are then blanked
+ * again by `BLANK_SLOTS`, so the preview opens with the empty row on screen
+ * next to the filled ones. It is a fixture, not content - `seedLeague.ts`
+ * writes it only on a preview build's first visit, and never on production.
  *
  * The teams are the HeartGold/SoulSilver ones, read from the game's own
  * trainer table (`files/poketool/trainer/trainers.json` in the pret
@@ -294,9 +295,24 @@ function aceId(seed: SeedLine | undefined): number | null {
 }
 
 /** The seeded cards, in slot order. */
+/**
+ * Slots the seed deliberately leaves empty.
+ *
+ * A template with every row filled never shows the other half of the league
+ * home: the dashed type square, the plus, the row that says "add" rather than
+ * "open". Judging a change to either state needs both on screen at once, so
+ * two rows stay blank. They are one gym and one Elite Four member, the two
+ * kinds that repeat, rather than two of a kind.
+ *
+ * The Kanto data for these slots stays in `SEED`. Filling a row again is
+ * removing its number here, not typing a team back in.
+ */
+const BLANK_SLOTS = new Set([6, 9]);
+
 export function kantoCards(): GymCard[] {
   const cards = Array.from({ length: SLOT_COUNT }, emptyCard);
   for (const seed of SEED) {
+    if (BLANK_SLOTS.has(seed.slot)) continue;
     cards[seed.slot] = {
       type: seed.type,
       theme: seed.theme,
