@@ -89,6 +89,16 @@ function NoTypeBadge({ className }: { className?: string }) {
  * of theme.
  */
 const TYPE_MARK = '1.875rem';
+/**
+ * The corner all three squares share.
+ *
+ * The Gen IX asset is drawn square — measured, its own corner is inset one
+ * pixel of sixty, which is half a pixel at this size — so left alone it reads
+ * as a sharp tile beside the app's rounded everything. Clipping it here gives
+ * the chosen type the same corner the empty and the no-type squares are drawn
+ * with, and puts the three states on one shape.
+ */
+const TYPE_MARK_RADIUS = '0.4375rem';
 
 /** The square a card wears before a type is chosen. */
 function UnsetTypeMark() {
@@ -98,8 +108,8 @@ function UnsetTypeMark() {
     // 0.06em extrabold they are set in. Red rather than the card's dashed
     // grey, because this one is a thing left undone, not a slot waiting.
     <span
-      className="flex flex-col items-center justify-center rounded-[0.4375rem] border-[1.5px] border-dashed border-primary/85 text-primary/85"
-      style={{ width: TYPE_MARK, height: TYPE_MARK }}
+      className="flex flex-col items-center justify-center gap-[0.09375rem] border-[1.5px] border-dashed border-primary/85 text-primary/85"
+      style={{ width: TYPE_MARK, height: TYPE_MARK, borderRadius: TYPE_MARK_RADIUS }}
     >
       <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
       <span className="text-[0.40625rem] font-extrabold leading-[1.1] tracking-[0.06em]">TYPE</span>
@@ -113,8 +123,11 @@ function NoTypeMark() {
     // The no-type grey and the 4-point star the NO TYPE badge carries, so
     // the two say the same thing in the header and in the picker.
     <span
-      className="grid place-items-center rounded-[0.4375rem]"
-      style={{ width: TYPE_MARK, height: TYPE_MARK, background: '#9CA3AF' }}
+      className="grid place-items-center"
+      style={{
+        width: TYPE_MARK, height: TYPE_MARK,
+        borderRadius: TYPE_MARK_RADIUS, background: '#9CA3AF',
+      }}
     >
       <svg viewBox="0 0 32 32" className="h-[0.9375rem] w-[0.9375rem]" aria-hidden>
         <path d={starPath(16, 16, 9)} fill="#ffffff" />
@@ -127,13 +140,13 @@ function TypeMark({ type }: { type: CardType }) {
   if (type === null) return <UnsetTypeMark />;
   if (type === 'none') return <NoTypeMark />;
   return (
-    // The PNG carries its own rounded square and its own padding, so it
-    // needs no box around it.
+    // The PNG carries its own colour and its own padding; only its corner
+    // has to be taken in.
     <img
       src={typeIconPath(type as TypeName)}
       alt=""
       className="block"
-      style={{ width: TYPE_MARK, height: TYPE_MARK }}
+      style={{ width: TYPE_MARK, height: TYPE_MARK, borderRadius: TYPE_MARK_RADIUS }}
     />
   );
 }
