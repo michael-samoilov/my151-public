@@ -1163,11 +1163,13 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         </span>
         {/* The disc's viewBox carries its own padding, so the label is pulled
             back up against it. */}
-        {/* The word wears the move's type too. A TM is the move, and the
-            card's own colour is already everywhere else on the card. */}
+        {/* The word wears the card's band shade, not the move's type. The two
+            slots share one rule: the glyph carries the colour, the word under
+            it stays quiet, so TM and BADGE read as a matched pair whatever
+            move the gym teaches. */}
         <span
           className={cn('-mt-[0.0625rem]', MARK_LABEL_CLASS)}
-          style={{ color: move ? TYPE_COLORS[move.type] : 'var(--lg-hint)' }}
+          style={{ color: move ? 'var(--lg-band)' : 'var(--lg-hint)' }}
         >
           TM
         </span>
@@ -1301,15 +1303,31 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         className="flex shrink-0 flex-col items-center"
         style={{ width: MARK_COL }}
       >
+        {/* Drawn the way the TM disc is drawn: an outline in the type's own
+            colour, not a filled shape. The fill was the reason the two slots
+            never matched -- a solid hexagon needs a muted shade to keep its
+            white centre readable, so it could never wear the vivid colour the
+            disc wears. Filling it with the raw type colour instead puts white
+            on #FAC000 at 1.67:1 for electric, which is not a centre at all.
+            Outlined, the slot background is the centre and every type reads.
+            The stroke is 2.4 in a 32 box against the disc's 2 in 24 -- the
+            same weight relative to the glyph, so neither looks lighter. */}
         <svg viewBox="0 0 32 32" className="w-full" style={{ aspectRatio: '1', maxWidth: MARK_GLYPH }}>
           <path
             d="M16 3 L27 9.5 L27 22.5 L16 29 L5 22.5 L5 9.5 Z"
-            fill={name ? 'var(--lg-cell)' : 'none'}
-            stroke={name ? 'none' : 'var(--lg-dash)'}
-            strokeWidth="1.6"
+            fill="none"
+            stroke={name ? view.shades.type : 'var(--lg-dash)'}
+            strokeWidth={name ? 2.4 : 1.6}
             strokeDasharray={name ? undefined : '3 2.4'}
           />
-          <circle cx="16" cy="16" r="4.4" fill={name ? '#ffffff' : 'none'} stroke={name ? 'none' : 'var(--lg-dash)'} strokeWidth="1.6" />
+          <circle
+            cx="16"
+            cy="16"
+            r="4.4"
+            fill="none"
+            stroke={name ? view.shades.type : 'var(--lg-dash)'}
+            strokeWidth={name ? 2.4 : 1.6}
+          />
         </svg>
         <span
           className={cn('-mt-[0.0625rem]', MARK_LABEL_CLASS)}
@@ -1766,7 +1784,13 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                           ? (kind) => cyclePowerupOnCard(cardIndex, row, cell.seat, kind, cell.pokemonId as number)
                           : undefined
                       }
-                      held={previewMove !== null && cell.seat === previewMove.to && cell.pokemonId !== null && !cell.isLegend}
+                      // A legendary sitting on this column rises with it. It
+                      // used to be excluded, so a column with one lifted
+                      // around it and the legendary stayed down on the card —
+                      // a hole in the middle of the thing in hand. During a
+                      // *legendary* drag `previewMove` is null, so this only
+                      // ever reads a column drag.
+                      held={previewMove !== null && cell.seat === previewMove.to && cell.pokemonId !== null}
                       ringWhenOver={legendDrag}
                       // The legendary carries its own control: it covers a
                       // seat rather than filling one, so removing it puts

@@ -234,4 +234,73 @@ test.describe('a carried column keeps what it carries', () => {
     expect(during[target], 'the Mega is carried, not left behind').toBe(mega);
     expect(during, 'the preview is what the drop lands').toEqual(landed);
   });
+
+  test('the legendary on a held column rises with it', async ({ page }) => {
+    // Seeded here rather than through the picker: the test needs one column
+    // that carries a legendary, and clicking through to place one proves
+    // nothing this test is about.
+    await page.addInitScript(() => {
+      const blank = {
+        type: null, theme: '', lines: [], signatureSeat: null,
+        tmMoveId: null, badgeName: '', legend: null, powerup: null,
+      };
+      const cards: unknown[] = Array.from({ length: 14 }, () => ({ ...blank }));
+      cards[12] = {
+        ...blank,
+        type: 'dragon',
+        legends: [{ pokemonId: 144, seat: 3 }],
+        lines: [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12], [13, 14, 15], [16, 17, 18]]
+          .map((branch) => ({ branch, boundaries: [] })),
+      };
+      window.localStorage.setItem(
+        'league-builder',
+        JSON.stringify({ state: { name: 'Legend lift', cards }, version: 1 }),
+      );
+    });
+    await page.goto('/pokemon-league-builder');
+    await page.waitForSelector('[data-testid="league-slot-12"]');
+    await page.click('[data-testid="league-slot-12"]');
+    await page.waitForSelector('[data-testid="card-cell-11-1"]');
+    await page.waitForTimeout(700);
+
+    const from = (await page.locator('[data-testid="card-cell-10-3"]').boundingBox())!;
+    const to = (await page.locator('[data-testid="card-cell-10-5"]').boundingBox())!;
+    const cdp = await page.context().newCDPSession(page);
+    const y = from.y + from.height / 2;
+    const x = from.x + from.width / 2;
+    const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', tx: number) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type,
+        touchPoints: type === 'touchEnd'
+          ? []
+          : [{ x: tx, y, radiusX: 12, radiusY: 12, force: 1, id: 1 }],
+      });
+
+    await touch('touchStart', x);
+    await page.waitForTimeout(420);          // a still press: the column lifts
+    for (let i = 1; i <= 8; i += 1) {
+      await touch('touchMove', x + ((to.x - from.x) * i) / 8);
+      await page.waitForTimeout(35);
+    }
+    await page.waitForTimeout(300);
+
+    // The column previews at seat 5, so seat 5 is the column in hand. Every
+    // cell it carries must sit at the same height: a boss row left on the
+    // card is a hole in the middle of the thing being dragged.
+    const column = await page.evaluate(() => {
+      const lift = (row: number) => {
+        const el = document.querySelector(`[data-testid="card-cell-${row}-5"]`);
+        if (!el?.querySelector('img')) return null;
+        const m = /matrix\(1, 0, 0, 1, [-\d.]+, ([-\d.]+)\)/.exec(getComputedStyle(el).transform);
+        return m ? Number(m[1]) : 0;
+      };
+      return { r8: lift(8), r9: lift(9), r10: lift(10), boss: lift(11) };
+    });
+    await touch('touchEnd', to.x + to.width / 2);
+
+    expect(column.r8, 'the column is in hand').toBeLessThan(0);
+    expect(column.boss, 'the legendary rises with its column').toBe(column.r8);
+    expect(column.r9).toBe(column.r8);
+    expect(column.r10).toBe(column.r8);
+  });
 });
