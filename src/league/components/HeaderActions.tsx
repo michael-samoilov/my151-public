@@ -21,20 +21,11 @@ const VIEWS: { value: LeagueView; label: string }[] = [
  * The league name is 0.875rem and the gym theme 0.6875rem, so left to their
  * own line boxes the two dashed underlines sit at different heights — the
  * card's ran 1.9px higher, which read as the type chip beside it being set
- * low. One height for both, and the shorter text centres in it.
+ * low. One height for both, and the shorter text centres in it. The name line
+ * above needs no such pinning: both headers set it in the same 0.6875rem, and
+ * nothing rides beside it any more.
  */
 export const HEADER_FIELD_H = '1.15625rem';
-
-/**
- * The height both headers give the name line above that field.
- *
- * The gym card sets its type chip on that line, and a chip is taller than the
- * eleven-pixel heading beside it. Left to the content, the card's block grew
- * and pushed its field two pixels below the league home's. Pinning the line
- * to the chip's own height keeps the two fields on one level: 4.75rem of a
- * 200x40 badge is 0.95rem tall.
- */
-export const HEADER_HEAD_H = '0.95rem';
 
 export function LeagueViewToggle() {
   const view = useLeagueStore((s) => s.view);

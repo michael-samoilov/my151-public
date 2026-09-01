@@ -21,12 +21,7 @@ import { LeagueHome } from './components/LeagueHome';
 import { CardPage } from './components/CardPage';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
-import {
-  HEADER_FIELD_H,
-  HEADER_HEAD_H,
-  LeagueExportButton,
-  LeagueViewToggle,
-} from './components/HeaderActions';
+import { HEADER_FIELD_H, LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
 
 /**
  * The league builder's shell. Mobile: league home ⇄ full-screen card, with
@@ -73,14 +68,9 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
   const Heading = h1 ? 'h1' : 'span';
   return (
     <div className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
-      {/* The same line box the gym card gives its own name line, where a
-          type chip rides beside the heading. Pinned rather than left to the
-          text, so both headers put their editable line at one height. */}
-      <div className="flex min-w-0 items-center" style={{ height: HEADER_HEAD_H }}>
-        <Heading className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
-          {TOOL_NAME}
-        </Heading>
-      </div>
+      <Heading className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
+        {TOOL_NAME}
+      </Heading>
       {/* The field is sized to its own text by an invisible copy stacked in
           the same grid cell, so the pencil sits at the end of the words
           rather than at the far edge of the bar. */}

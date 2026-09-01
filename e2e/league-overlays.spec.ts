@@ -112,7 +112,7 @@ test.describe('league overlays', () => {
     };
 
     // 1. The type picker.
-    await page.click('[aria-label="Gym type"]');
+    await page.click('[aria-label^="Gym type"]');
     await page.waitForSelector('svg[aria-label="No type"]');
     inside(await overlayExtent(page, 'svg[aria-label="No type"]'), 'the type picker');
     await page.click('svg[data-type="water"]');
@@ -175,7 +175,7 @@ test.describe('league overlays', () => {
     await page.waitForTimeout(500);
 
     // The card's type picker, its line picker and its TM picker.
-    await sweep('type picker', () => page.click('[aria-label="Gym type"]'), dismiss);
+    await sweep('type picker', () => page.click('[aria-label^="Gym type"]'), dismiss);
     await sweep('line picker', () => page.click('[data-testid="card-cell-1-1"]'), dismiss);
     await sweep('TM picker', () => page.click('text=Pick a move'), dismiss);
   });

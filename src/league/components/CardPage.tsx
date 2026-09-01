@@ -1,11 +1,12 @@
 import { useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, Pencil, X } from 'lucide-react';
+import { ChevronLeft, Pencil, Plus, X } from 'lucide-react';
 import { TypeBadge } from '@/components/shared/TypeBadge';
-import { TYPE_NAMES } from '@/types/pokemon';
-import { localeUppercase, typeLabels } from '@/i18n';
+import { TYPE_NAMES, type TypeName } from '@/types/pokemon';
+import { localeUppercase, typeLabel, typeLabels } from '@/i18n';
+import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
-import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W, typeBadgeGlyphBox } from '@/lib/typeBadgeGeometry';
+import { TYPE_BADGE, TYPE_BADGE_H, typeBadgeGlyphBox } from '@/lib/typeBadgeGeometry';
 import { typeBadgeFit } from '@/lib/typeBadgeFit';
 import { cn } from '@/lib/utils';
 import { slotLabel } from '../model/constants';
@@ -15,7 +16,7 @@ import { useCardView } from '../useCardView';
 import { fitStyle, useFitScale } from '../useFitScale';
 import { CardGrid } from './CardGrid';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
-import { HEADER_FIELD_H, HEADER_HEAD_H, LeagueExportButton } from './HeaderActions';
+import { HEADER_FIELD_H, LeagueExportButton } from './HeaderActions';
 import { MovePicker } from './MovePicker';
 
 /**
@@ -31,22 +32,21 @@ const THEME_PLACEHOLDER = "What is this gym's theme?";
 /**
  * "No type" as a real option: the type badge pipeline's geometry, fit and
  * casing over the no-type grey, with the app's 4-point star spandrel where
- * the type symbol sits. `wide` spans the picker grid's full bottom row —
- * the viewBox widens while the 40-unit height keeps badge-height parity;
- * the standard width is the chip a card with an explicit "no type" wears.
+ * the type symbol sits. It spans the picker grid's full bottom row — the
+ * viewBox widens while the 40-unit height keeps badge-height parity.
  */
 const NO_TYPE_BADGE_WIDE_W = 621;
 
-function NoTypeBadge({ wide = false, className }: { wide?: boolean; className?: string }) {
+function NoTypeBadge({ className }: { className?: string }) {
   const label = 'NO TYPE';
   const fit = typeBadgeFit(label, typeLabels().map(localeUppercase));
   const glyph = typeBadgeGlyphBox();
-  const w = wide ? NO_TYPE_BADGE_WIDE_W : TYPE_BADGE_W;
-  const cx = wide ? w / 2 : TYPE_BADGE.textCenterX;
+  const w = NO_TYPE_BADGE_WIDE_W;
+  const cx = w / 2;
   return (
     <svg
       viewBox={`0 0 ${w} ${TYPE_BADGE_H}`}
-      className={cn('h-auto', wide ? 'w-full' : undefined, className)}
+      className={cn('h-auto w-full', className)}
       role="img"
       aria-label="No type"
     >
@@ -75,54 +75,66 @@ function NoTypeBadge({ wide = false, className }: { wide?: boolean; className?: 
 }
 
 /**
- * The unset-type chip, through the same pipeline: badge geometry and text
- * fit, a red outline, and a plus where the type symbol sits — so choosing a
- * type replaces it with an identically proportioned badge.
+ * The gym's type, as the square icon rather than the wide chip.
+ *
+ * The 1x1 Gen IX icon the browser and the analytics pages already draw,
+ * standing beside the identity block rather than inside it, so the page's
+ * name and the theme field both start to its right. 1.875rem is the block's
+ * own height, so the square spans the two lines exactly.
+ *
+ * The chip it replaces was 4.75rem of a 44px bar, and it rode the name line
+ * — a line the theme does not use. The square is smaller but it stands
+ * beside both lines, so the theme field is about 37px narrower than it was.
+ * That is the trade: a mark the gym is recognised by, against six characters
+ * of theme.
  */
-function SelectTypeBadge({ className }: { className?: string }) {
-  const label = 'SELECT A TYPE';
-  const fit = typeBadgeFit(label, typeLabels().map(localeUppercase));
-  const glyph = typeBadgeGlyphBox();
-  const cx = glyph.x + glyph.size / 2;
-  const cy = glyph.y + glyph.size / 2;
-  const arm = glyph.size * 0.32;
+const TYPE_MARK = '1.875rem';
+
+/** The square a card wears before a type is chosen. */
+function UnsetTypeMark() {
   return (
-    <svg
-      viewBox={`0 0 ${TYPE_BADGE_W} ${TYPE_BADGE_H}`}
-      className={cn('h-auto', className)}
-      role="img"
-      aria-label="Select a type"
+    // A plus alone says "add something". The word says what — the same job
+    // the TM disc and the badge hexagon give their own words, and the same
+    // 0.06em extrabold they are set in. Red rather than the card's dashed
+    // grey, because this one is a thing left undone, not a slot waiting.
+    <span
+      className="flex flex-col items-center justify-center rounded-[0.4375rem] border-[1.5px] border-dashed border-primary/85 text-primary/85"
+      style={{ width: TYPE_MARK, height: TYPE_MARK }}
     >
-      <rect
-        x="1.5"
-        y="1.5"
-        width={TYPE_BADGE_W - 3}
-        height={TYPE_BADGE_H - 3}
-        rx={TYPE_BADGE.radius - 1.5}
-        fill="#ffffff"
-        stroke="#dc2626"
-        strokeWidth="3"
-      />
-      <line x1={cx - arm} y1={cy} x2={cx + arm} y2={cy} stroke="#dc2626" strokeWidth="4" strokeLinecap="round" />
-      <line x1={cx} y1={cy - arm} x2={cx} y2={cy + arm} stroke="#dc2626" strokeWidth="4" strokeLinecap="round" />
-      <g
-        transform={
-          `translate(${TYPE_BADGE.textCenterX} 0) scale(${fit.scaleX} 1) ` +
-          `translate(${-TYPE_BADGE.textCenterX} 0)`
-        }
-      >
-        <text
-          x={TYPE_BADGE.textCenterX}
-          y={fit.baseline}
-          textAnchor="middle"
-          fontSize={fit.fontSize}
-          fontWeight={TYPE_BADGE.fontWeight}
-          fill="#dc2626"
-        >
-          {label}
-        </text>
-      </g>
-    </svg>
+      <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
+      <span className="text-[0.40625rem] font-extrabold leading-[1.1] tracking-[0.06em]">TYPE</span>
+    </span>
+  );
+}
+
+/** The square a card wears once "no type" is the answer. */
+function NoTypeMark() {
+  return (
+    // The no-type grey and the 4-point star the NO TYPE badge carries, so
+    // the two say the same thing in the header and in the picker.
+    <span
+      className="grid place-items-center rounded-[0.4375rem]"
+      style={{ width: TYPE_MARK, height: TYPE_MARK, background: '#9CA3AF' }}
+    >
+      <svg viewBox="0 0 32 32" className="h-[0.9375rem] w-[0.9375rem]" aria-hidden>
+        <path d={starPath(16, 16, 9)} fill="#ffffff" />
+      </svg>
+    </span>
+  );
+}
+
+function TypeMark({ type }: { type: CardType }) {
+  if (type === null) return <UnsetTypeMark />;
+  if (type === 'none') return <NoTypeMark />;
+  return (
+    // The PNG carries its own rounded square and its own padding, so it
+    // needs no box around it.
+    <img
+      src={typeIconPath(type as TypeName)}
+      alt=""
+      className="block"
+      style={{ width: TYPE_MARK, height: TYPE_MARK }}
+    />
   );
 }
 
@@ -158,7 +170,7 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
             onClick={() => pick('none')}
             className="col-span-3 cursor-pointer transition-transform hover:scale-[1.02]"
           >
-            <NoTypeBadge wide />
+            <NoTypeBadge />
           </button>
         </div>
       </div>
@@ -175,6 +187,11 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
   const movePickerOpen = useLeagueUi((s) => s.movePickerOpen);
   const fitRef = useRef<HTMLDivElement>(null);
   const fit = useFitScale(fitRef);
+  // The square carries no word, so the button says which type it is. "No
+  // type" is a chosen answer, not the absence of one, so it says so.
+  const typeName = view.card.type === null
+    ? ''
+    : view.card.type === 'none' ? 'no type' : typeLabel(view.card.type);
 
   return (
     <div className="w-full">
@@ -190,33 +207,23 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
             <ChevronLeft size={20} />
           </button>
         )}
+        {/* The gym's own mark, before the words and outside them: the square
+            stands beside the whole identity block, so the page's name and the
+            theme field both start to its right. */}
+        <button
+          type="button"
+          onClick={() => setTypePickerOpen(true)}
+          aria-label={`Gym type${typeName ? `: ${typeName}` : ''}`}
+          className="shrink-0 cursor-pointer transition-transform hover:scale-105"
+        >
+          <TypeMark type={view.card.type} />
+        </button>
         {/* The league home's identity block, on the card: the page's name
-            above, small and quiet, and one editable line under it. The type
-            chip rides the name line rather than the editable one — the chip
-            is a control of its own, a dashed underline running beneath it
-            would read as an invitation to type on it, and keeping the lower
-            line to the field alone puts it exactly where the league home's
-            own field sits. */}
+            above, small and quiet, and one editable line under it. */}
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
-          <div className="flex min-w-0 items-center gap-1.5" style={{ height: HEADER_HEAD_H }}>
-            <h2 className="shrink-0 text-[0.6875rem] font-semibold leading-none text-muted-foreground">
-              {CARD_NAME}
-            </h2>
-            <button
-              type="button"
-              onClick={() => setTypePickerOpen(true)}
-              aria-label="Gym type"
-              className="shrink-0 cursor-pointer transition-transform hover:scale-105"
-            >
-              {view.card.type === null ? (
-                <SelectTypeBadge className="w-[4.75rem]" />
-              ) : view.card.type === 'none' ? (
-                <NoTypeBadge className="w-[4.75rem]" />
-              ) : (
-                <TypeBadge type={view.card.type} className="w-[4.75rem]" />
-              )}
-            </button>
-          </div>
+          <h2 className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
+            {CARD_NAME}
+          </h2>
           {/* The field is sized to its own text by an invisible copy in the
               same grid cell, so the dashed line ends where the words do and
               the pencil sits after them. */}
