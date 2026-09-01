@@ -30,6 +30,7 @@ import {
   stageAt,
 } from '../model/engine';
 import { getMoveById } from '../moves';
+import { cardShades } from '../theme';
 import { CategoryChip } from './CategoryChip';
 import { legendAt, legendsOf, powerupsAt, seatAfterMove, useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
@@ -1163,13 +1164,15 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         </span>
         {/* The disc's viewBox carries its own padding, so the label is pulled
             back up against it. */}
-        {/* The word wears the card's band shade, not the move's type. The two
-            slots share one rule: the glyph carries the colour, the word under
-            it stays quiet, so TM and BADGE read as a matched pair whatever
-            move the gym teaches. */}
+        {/* Both slots follow one rule: the glyph takes a type's unshaded
+            palette colour, the word takes that same type's band shade -- the
+            shade ACE POKEMON and PARTNER already wear. Which type differs.
+            The disc and its word answer to the move, because a TM is the
+            move; the hexagon and BADGE answer to the gym. So the word here
+            reads the move's own band rather than the card's `--lg-band`. */}
         <span
           className={cn('-mt-[0.0625rem]', MARK_LABEL_CLASS)}
-          style={{ color: move ? 'var(--lg-band)' : 'var(--lg-hint)' }}
+          style={{ color: move ? cardShades(move.type).band : 'var(--lg-hint)' }}
         >
           TM
         </span>
