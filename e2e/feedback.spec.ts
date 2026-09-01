@@ -145,4 +145,52 @@ test.describe('feedback', () => {
     await footerLink.click();
     await expect(page.getByRole('textbox', { name: 'What happened?' })).toBeVisible();
   });
+
+  /**
+   * Every report button on the league builder opens the form.
+   *
+   * The league builder boots from its own root (`src/league/main.tsx`) rather
+   * than from `App.tsx`, so it never inherited that app's `FeedbackHost`. An
+   * unregistered opener is a no-op rather than an error, so all of its report
+   * buttons did nothing at all, silently — which is exactly the failure a
+   * report button cannot have.
+   */
+  for (const openCard of [false, true]) {
+    const where = openCard ? 'an open gym card' : 'the league home';
+    test(`every report button opens the form on ${where}`, async ({ page }) => {
+      await stubApi(page);
+      await page.goto('/pokemon-league-builder');
+      await page.waitForSelector('[data-testid="league-slot-0"]');
+      if (openCard) {
+        await page.click('[data-testid="league-slot-0"]');
+        await page.waitForSelector('[data-testid="slot-tm"]');
+      }
+      await page.waitForTimeout(400);
+
+      // By attribute, not by accessible name: the name is translated, and
+      // this page draws more than one of these.
+      const buttons = page.locator('[data-feedback-open]');
+      // Only the ones a person can reach. On mobile both panes stay mounted
+      // and the one off screen is `inert` — its button is not hidden, so
+      // Playwright counts it visible, and the pane track swallows the click.
+      const reachable = await buttons.evaluateAll((els) =>
+        els.flatMap((el, i) => {
+          const r = el.getBoundingClientRect();
+          const onScreen =
+            r.width > 0 && r.left >= 0 && r.top >= 0
+            && r.right <= window.innerWidth && r.bottom <= window.innerHeight;
+          return !el.closest('[inert]') && onScreen ? [i] : [];
+        }),
+      );
+      expect(reachable.length, 'the page draws a report button').toBeGreaterThan(0);
+
+      const field = page.getByRole('textbox', { name: 'What happened?' });
+      for (const [k, i] of reachable.entries()) {
+        await buttons.nth(i).click();
+        await expect(field, `report button ${k + 1} of ${reachable.length}`).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(field).toBeHidden();
+      }
+    });
+  }
 });
