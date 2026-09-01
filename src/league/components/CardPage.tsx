@@ -14,9 +14,8 @@ import { useLeagueUi } from '../store/useLeagueUi';
 import { useCardView } from '../useCardView';
 import { fitStyle, useFitScale } from '../useFitScale';
 import { CardGrid } from './CardGrid';
-import { CardSettingsMenu } from './CardSettingsMenu';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
-import { HEADER_FIELD_H, LeagueExportButton } from './HeaderActions';
+import { HEADER_FIELD_H, HEADER_HEAD_H, LeagueExportButton } from './HeaderActions';
 import { MovePicker } from './MovePicker';
 
 /**
@@ -193,14 +192,16 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
         )}
         {/* The league home's identity block, on the card: the page's name
             above, small and quiet, and one editable line under it. The type
-            chip sits *beside* the underlined field rather than inside it —
-            the chip is a control of its own, and a dashed underline running
-            beneath it would read as an invitation to type on it. */}
+            chip rides the name line rather than the editable one — the chip
+            is a control of its own, a dashed underline running beneath it
+            would read as an invitation to type on it, and keeping the lower
+            line to the field alone puts it exactly where the league home's
+            own field sits. */}
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
-          <h2 className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
-            {CARD_NAME}
-          </h2>
-          <div className="flex min-w-0 items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5" style={{ height: HEADER_HEAD_H }}>
+            <h2 className="shrink-0 text-[0.6875rem] font-semibold leading-none text-muted-foreground">
+              {CARD_NAME}
+            </h2>
             <button
               type="button"
               onClick={() => setTypePickerOpen(true)}
@@ -215,38 +216,37 @@ export function CardPage({ cardIndex, showBack }: { cardIndex: number; showBack:
                 <TypeBadge type={view.card.type} className="w-[4.75rem]" />
               )}
             </button>
-            {/* The field is sized to its own text by an invisible copy in the
-                same grid cell, so the dashed line ends where the words do and
-                the pencil sits after them. */}
-            <label className="group flex min-w-0 cursor-text items-center gap-1 overflow-hidden">
-              <span
-                className="grid min-w-0 items-center border-b border-dashed border-foreground/25 transition-colors group-hover:border-foreground/50 group-focus-within:border-foreground/60"
-                style={{ height: HEADER_FIELD_H }}
-              >
-                <span
-                  aria-hidden
-                  className={cn(
-                    'invisible col-start-1 row-start-1 whitespace-pre text-[0.6875rem] leading-tight',
-                    view.card.theme ? 'font-semibold' : 'font-normal',
-                  )}
-                >
-                  {view.card.theme || THEME_PLACEHOLDER}
-                </span>
-                <input
-                  value={view.card.theme}
-                  onChange={(e) => setCardTheme(cardIndex, e.target.value)}
-                  placeholder={THEME_PLACEHOLDER}
-                  aria-label="Gym theme"
-                  className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.6875rem] font-semibold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
-                />
-              </span>
-              <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
-            </label>
           </div>
+          {/* The field is sized to its own text by an invisible copy in the
+              same grid cell, so the dashed line ends where the words do and
+              the pencil sits after them. */}
+          <label className="group flex min-w-0 max-w-full cursor-text items-center gap-1 overflow-hidden">
+            <span
+              className="grid min-w-0 items-center border-b border-dashed border-foreground/25 transition-colors group-hover:border-foreground/50 group-focus-within:border-foreground/60"
+              style={{ height: HEADER_FIELD_H }}
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  'invisible col-start-1 row-start-1 whitespace-pre text-[0.6875rem] leading-tight',
+                  view.card.theme ? 'font-semibold' : 'font-normal',
+                )}
+              >
+                {view.card.theme || THEME_PLACEHOLDER}
+              </span>
+              <input
+                value={view.card.theme}
+                onChange={(e) => setCardTheme(cardIndex, e.target.value)}
+                placeholder={THEME_PLACEHOLDER}
+                aria-label="Gym theme"
+                className="col-start-1 row-start-1 w-full min-w-0 bg-transparent text-[0.6875rem] font-semibold leading-tight outline-none placeholder:font-normal placeholder:text-muted-foreground/60"
+              />
+            </span>
+            <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
+          </label>
         </div>
         <span className="ml-auto flex shrink-0 items-center gap-1">
           <FeedbackButton />
-          <CardSettingsMenu cardIndex={cardIndex} />
           <LeagueExportButton />
         </span>
       </div>

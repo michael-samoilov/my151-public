@@ -174,8 +174,7 @@ test.describe('league overlays', () => {
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
     await page.waitForTimeout(500);
 
-    // The card's gear, its type picker, its line picker and its TM picker.
-    await sweep('card settings', () => page.click('[data-testid="card-settings"]'), dismiss);
+    // The card's type picker, its line picker and its TM picker.
     await sweep('type picker', () => page.click('[aria-label="Gym type"]'), dismiss);
     await sweep('line picker', () => page.click('[data-testid="card-cell-1-1"]'), dismiss);
     await sweep('TM picker', () => page.click('text=Pick a move'), dismiss);

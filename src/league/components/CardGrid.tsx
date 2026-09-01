@@ -19,7 +19,7 @@ import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { HeldItems } from '@/components/shared/dragHold';
 import { cn } from '@/lib/utils';
-import { useDragSensors } from '@/lib/dragSensors';
+import { useGridDragSensors } from '@/lib/dragSensors';
 import { warmImages } from '@/lib/warmImages';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
 import {
@@ -331,14 +331,18 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           width: `calc(100% - ${2 * INSET_X}rem)`,
           height: `${ROW_H - 2 * INSET_Y}rem`,
           background: 'var(--lg-slot)',
-          // Not `none`. `touch-action: none` hands every touch on this cell to
-          // the app, which takes the browser's own gestures with it — a pinch
-          // that starts over a cell does nothing, and the cells are most of
-          // the card. The drag no longer needs it: a touch has to press and
-          // hold before the sensor claims the gesture, so a pinch is over
-          // before there is anything to claim. Same value the dex builder's
-          // grid settled on.
-          touchAction: 'pan-y pinch-zoom',
+          // A cell with a line in it keeps the touch it is given. `pan-y`
+          // let the page scroll under the very gesture that is supposed to
+          // move a line up a row, so a drag begun with a moving finger
+          // scrolled the card away instead; dropping the pan leaves that
+          // touch to the drag, which is what a filled cell is for. `none`
+          // would go too far and take the browser's pinch with it, and the
+          // cells are most of the card.
+          //
+          // An empty cell has no drag to offer — it opens a picker on a tap —
+          // so it hands the pan back rather than swallowing it. See
+          // `useGridDragSensors`.
+          touchAction: datum.filled ? 'pinch-zoom' : 'pan-y pinch-zoom',
           ...(held
             ? {
                 transform: `translateY(-${CELL_LIFT_REM}rem)`,
@@ -979,7 +983,22 @@ const MARK_COL = 'min(2.75rem, 26%)';
  * have. At 0.375rem apiece it cleared the box by one pixel on a phone.
  */
 const MARK_PAD = '0.1875rem';
-const MARK_GAP = '0.25rem';
+/**
+ * The gap after the glyph column, which is also where the move name and the
+ * badge name begin.
+ */
+const MARK_GAP = '0.375rem';
+/**
+ * The pad after the text, which is what pays for that gap.
+ *
+ * The gap was 0.25rem, which put the name hard against the disc. Widening it
+ * moves the name right, and a name that starts two pixels later is a name
+ * with two fewer pixels — measured, that clipped Flamethrower at a 360px
+ * viewport, where it had 0.76px to spare. So the two pixels come off the far
+ * side instead: the text column keeps its width and only moves. Its right
+ * edge is the slot's own rounded corner, which is empty anyway.
+ */
+const MARK_TRAIL = '0.0625rem';
 // A share of the column, not of the box. A percentage inside the column
 // resolves against the column, so repeating the box fraction here multiplies
 // the two and collapses the glyph to a few pixels.
@@ -1046,7 +1065,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
               left the text starts. */}
           <span
             className="min-w-0 max-w-full truncate text-left text-[0.6875rem] leading-[1.15]"
-            style={{ paddingRight: MARK_PAD }}
+            style={{ paddingRight: MARK_TRAIL }}
           >
             {move.name}
           </span>
@@ -1186,7 +1205,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         // left six characters. The height is still fixed rather than free, so
         // `scrollHeight` has something to exceed and a name cannot grow past
         // the box.
-        className="min-w-0 flex-1 overflow-hidden pr-[0.375rem] text-left text-[0.65625rem] leading-tight"
+        className="min-w-0 flex-1 overflow-hidden pr-[0.25rem] text-left text-[0.65625rem] leading-tight"
         style={{ maxHeight: `${3 * 0.65625 * 1.25}rem` }}
       >
         <span
@@ -1230,7 +1249,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const cyclePowerupOnCard = useLeagueStore((s) => s.cyclePowerup);
   const { card, shades, rows } = view;
 
-  const sensors = useDragSensors();
+  const sensors = useGridDragSensors();
 
   // Every sprite this card can put in a cell, warmed while the card is idle.
   //
@@ -1476,6 +1495,15 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   return (
     <DndContext
       sensors={sensors}
+      // The compensation is dnd-kit answering a layout shift that is not one.
+      // A held cell lifts by `CELL_LIFT_REM`, so its rect moves the moment the
+      // drag starts; dnd-kit reads that as the page having shifted under the
+      // finger and scrolls the pane by the same amount to put it back. What
+      // the user sees is the card jumping three pixels every time they press
+      // and hold. Measured on the built preview: the pane went 56 -> 59 on a
+      // press, and stays put with this off. Both dex builder grids already
+      // carry the same line.
+      autoScroll={{ layoutShiftCompensation: false }}
       collisionDetection={legendDrag ? bossRowByColumn : rectIntersection}
       onDragStart={onDragStart}
       onDragOver={onDragOver}

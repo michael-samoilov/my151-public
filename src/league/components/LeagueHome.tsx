@@ -347,7 +347,7 @@ export function LeagueHome() {
         >
           <div className="flex items-start gap-[0.3125rem]">
             <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
-            <span className="min-w-0 truncate">Drag a row to reorder the league · tap a row to open its card</span>
+            <span className="min-w-0 truncate">Drag a row to reorder the league</span>
           </div>
           {/* What a tap actually does depends on whether anything is there
               yet, so the second line says the one that applies rather than

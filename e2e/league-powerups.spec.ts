@@ -187,16 +187,19 @@ test.describe('powerups', () => {
     expect(await drawn(page, 10, 1)).toBe('Gigantamax Charizard');
   });
 
-  test('the first press sets every row, and every press after that sets one', async ({ page }) => {
+  test('the first press fills downward, and every press after that sets one', async ({ page }) => {
     await openCard(page, 12);
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
     await seat(page, '[data-testid="card-cell-1-2"]', 'lapras');
 
     // A leader's Elite Four, champion and endgame teams are the same six
-    // Pokémon at different strengths, so one press means all three.
+    // Pokémon at different strengths, so one press means the rows after it
+    // too. Only the rows after it: the three run weakest to strongest, and a
+    // Mega named on the champion says nothing about the Elite Four team the
+    // player already went through.
     await press(page, 10, 1, 'mega');
     expect(await drawn(page, 10, 1)).toBe('Mega Charizard X');
-    expect(await drawn(page, 9, 1), 'the elite four row got it too').toBe('Mega Charizard X');
+    expect(await drawn(page, 9, 1), 'the elite four row is left alone').toBe('charizard');
     expect(await drawn(page, 11, 1), 'the endgame team got it too').toBe('Mega Charizard X');
 
     // From here the rows are the user's to differ — and a second seat *adds*

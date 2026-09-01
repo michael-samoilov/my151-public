@@ -117,7 +117,8 @@ export interface LeagueState {
   /** Swap the line at a seat for another, keeping the seat's place. */
   replaceLine: (card: number, seat: number, branch: number[]) => void;
   /** Press a powerup button on one row: cycle that seat's forms, or move
-   *  that row's powerup to it. The first press on a card sets every row. */
+   *  that row's powerup to it. The first press on a card also sets the rows
+   *  below the one pressed. */
   cyclePowerup: (card: number, row: number, seat: number, kind: PowerupKind, pokemonId: number) => void;
   moveSeat: (card: number, fromSeat: number, toSeat: number) => void;
   /** Set one stage's first row, pushing neighbouring boundaries (engine.setBoundary). */
@@ -298,14 +299,20 @@ export const useLeagueStore = create<LeagueState>()(
               const rest = list.filter((p) => p.seat !== seat);
               return next ? [...rest, next] : rest;
             };
-            // The first press on a card sets this seat on every powerup row:
-            // a leader's Elite Four, champion and endgame teams are the same
-            // six Pokemon, so pressing Mega once and finding it on only one
-            // of them reads as the press not having worked. Every press after
-            // that sets only its own row, which is what lets the three differ.
+            // The first press on a card sets this seat on the pressed row and
+            // every row below it: a leader's Elite Four, champion and endgame
+            // teams are the same six Pokemon, so pressing Mega once and
+            // finding it on only one of them reads as the press not having
+            // worked. Downward only, because the rows run weakest to
+            // strongest — a Mega added to the champion says nothing about the
+            // Elite Four team that came before it, and filling upward puts a
+            // powerup on a team the user has already been through. Every
+            // press after the first sets only its own row, which is what lets
+            // the three differ.
             const bare = POWERUP_ROWS.every((r) => powerupsAt(c, r).length === 0);
+            const below = POWERUP_ROWS.filter((r) => r >= row);
             const powerups = bare
-              ? Object.fromEntries(POWERUP_ROWS.map((r) => [r, next ? [next] : []]))
+              ? { ...powerupMap(c), ...Object.fromEntries(below.map((r) => [r, next ? [next] : []])) }
               : { ...powerupMap(c), [row]: withSeat(powerupsAt(c, row)) };
             return { ...c, powerups, powerup: null };
           }),

@@ -33,3 +33,38 @@ export function useDragSensors() {
   });
   return useSensors(mouse, touch);
 }
+
+/**
+ * A tolerance no finger can exceed, which is how a hold is made to own the
+ * gesture it started.
+ *
+ * dnd-kit reads a two-axis tolerance as "both axes at once", so an infinite
+ * pair can never trip and the sensor never stands down for movement.
+ */
+const NEVER_STAND_DOWN = { x: Infinity, y: Infinity };
+
+/**
+ * The gym card's rule: a press that lands on a cell is a drag, not a scroll.
+ *
+ * The card is a grid whose whole purpose is dragging a line up, down and
+ * across, and the page scrolls behind it. Under the shared rule the two
+ * fought for the same finger: 5px of drift before the hold was up stood the
+ * sensor down and handed the gesture to the page, so a drag begun with a
+ * moving finger scrolled the card away instead of picking a line up. Here the
+ * tolerance cannot trip, and the cell asks for `touch-action: pinch-zoom` so
+ * there is no pan for the browser to start.
+ *
+ * A pinch still reaches the browser. `pinch-zoom` leaves the two-finger
+ * gesture to it, and a browser that takes a touch over fires `touchcancel`,
+ * which is the event this sensor stands down on. So the one gesture that
+ * takes the finger back is the one that should.
+ */
+export function useGridDragSensors() {
+  const mouse = useSensor(MouseSensor, {
+    activationConstraint: { distance: MOUSE_DISTANCE_PX },
+  });
+  const touch = useSensor(TouchSensor, {
+    activationConstraint: { delay: DRAG_HOLD_MS, tolerance: NEVER_STAND_DOWN },
+  });
+  return useSensors(mouse, touch);
+}

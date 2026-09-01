@@ -138,7 +138,7 @@ describe('pressing a powerup', () => {
     useLeagueStore.setState({ cards: [cardWith([CHARIZARD, LAPRAS]), emptyCard()] });
   });
 
-  it('sets every row on the first press', () => {
+  it('sets the rows below it on the first press', () => {
     useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6);
     expect(powerupAt(card(), CHAMPION_ROW)).toEqual({ seat: 1, kind: 'mega', index: 0 });
     expect(powerupAt(card(), BOSS_ROW), 'the endgame team gets it too').toEqual({
@@ -185,18 +185,44 @@ describe('pressing a powerup', () => {
     expect(powerupAt(card(), BOSS_ROW)?.index, 'the boss row stayed on the first').toBe(0);
   });
 
-  it('sets every row again once the card holds none', () => {
-    useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6);
+  it('fills downward again once the card holds none', () => {
+    useLeagueStore.getState().cyclePowerup(0, ELITE_ROW, 1, 'mega', 6);
     // Cycle each row past its last form, which returns it to base.
     for (const row of [ELITE_ROW, CHAMPION_ROW, BOSS_ROW]) {
       useLeagueStore.getState().cyclePowerup(0, row, 1, 'mega', 6);
       useLeagueStore.getState().cyclePowerup(0, row, 1, 'mega', 6);
       expect(powerupAt(card(), row)).toBeNull();
     }
-    useLeagueStore.getState().cyclePowerup(0, BOSS_ROW, 2, 'dynamax', 131);
-    expect(powerupAt(card(), CHAMPION_ROW), 'an empty card is a first press again').toEqual({
+    useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 2, 'dynamax', 131);
+    expect(powerupAt(card(), BOSS_ROW), 'an empty card is a first press again').toEqual({
       seat: 2, kind: 'dynamax', index: 0,
     });
+  });
+
+  /**
+   * The first press fills downward and only downward.
+   *
+   * The three rows run weakest to strongest, so a Mega named on the champion
+   * says nothing about the Elite Four team the player already beat. Filling
+   * up put a powerup on a team behind them, which reads as the card editing
+   * itself.
+   */
+  it('fills the rows below the one pressed, and none above it', () => {
+    useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6);
+    expect(powerupAt(card(), ELITE_ROW, 1), 'the row above is left alone').toBeNull();
+    expect(powerupAt(card(), CHAMPION_ROW, 1), 'the pressed row takes it').toEqual({
+      seat: 1, kind: 'mega', index: 0,
+    });
+    expect(powerupAt(card(), BOSS_ROW, 1), 'and so does the row below').toEqual({
+      seat: 1, kind: 'mega', index: 0,
+    });
+  });
+
+  it('fills nothing but itself when the last row is pressed first', () => {
+    useLeagueStore.getState().cyclePowerup(0, BOSS_ROW, 1, 'mega', 6);
+    expect(powerupAt(card(), ELITE_ROW, 1)).toBeNull();
+    expect(powerupAt(card(), CHAMPION_ROW, 1)).toBeNull();
+    expect(powerupAt(card(), BOSS_ROW, 1)).toEqual({ seat: 1, kind: 'mega', index: 0 });
   });
 });
 

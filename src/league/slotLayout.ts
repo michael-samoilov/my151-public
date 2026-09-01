@@ -39,6 +39,18 @@ const SLOT_H = 204;
 const TEAM_SPRITE = 52;
 
 /**
+ * How far a block keeps off the slot's own edge, at the standard height.
+ *
+ * Without it the solver puts the ace's heading hard against the top-left
+ * corner and the partner's against the bottom-right, because nothing in the
+ * geometry says a corner is a worse place to be than the middle. The heading
+ * then reads as clipped rather than placed. Four pixels is a hair line at
+ * this size — enough that the words sit inside the slot, small enough that
+ * the sprite gives up almost nothing to pay for it.
+ */
+const EDGE = 3;
+
+/**
  * The ball behind a chosen sprite, and the placeholder before one is chosen,
  * as shares of the sprite square.
  *
@@ -223,6 +235,8 @@ export function placeSlot(w: number, h: number, ace: Runs, partner: Runs, fixed?
   const nameH = Math.max(ace.name[1], partner.name[1]);
   const headH = Math.max(ace.head[1], partner.head[1]);
   const floor = Math.round((TEAM_SPRITE / SLOT_H) * h);
+  /** The edge inset, in this slot's pixels rather than the standard slot's. */
+  const edge = (EDGE / SLOT_H) * h;
   /**
    * How far a name may be moved to meet the other one: a sixth of its line.
    *
@@ -240,13 +254,13 @@ export function placeSlot(w: number, h: number, ace: Runs, partner: Runs, fixed?
     // Both blocks inside the slot, top and bottom. The ace's block reaches
     // `sprite/2 + headH` above its centre and the partner's the same below
     // its own, so one range covers the pair.
-    const lo = sprite / 2 + headH;
-    const hi = h - sprite / 2 - nameH - Math.max(0, nameH - headH);
+    const lo = sprite / 2 + headH + edge;
+    const hi = h - sprite / 2 - nameH - Math.max(0, nameH - headH) - edge;
     const y = hold(level, lo, Math.max(lo, hi));
     const width = Math.max(blockWidth(sprite, ace), blockWidth(sprite, partner));
-    const xLo = width / 2;
+    const xLo = width / 2 + edge;
     const xHi = Math.min(
-      w - width / 2,
+      w - width / 2 - edge,
       seamLimitX(w, h, sprite, y, ace, 'ace'),
       seamLimitX(w, h, sprite, y, partner, 'partner'),
     );

@@ -36,6 +36,75 @@ const seat = async (page: Page, cell: string, query: string) => {
   await page.waitForTimeout(400);
 };
 
+/**
+ * The longest single-word move stays inside its box, at every phone shape.
+ *
+ * A single word cannot wrap, so the box either holds it or cuts it — and this
+ * box has been re-cut twice, once to fit the word and once to move the name
+ * off the disc. What must never happen is the third thing: the word painting
+ * over the cell beside it. So the invariant checked here is containment, not
+ * fit.
+ *
+ * Fit is not containment, and the difference is measured. The card is laid
+ * out at `room / squash` and then zoomed down, so a *short* viewport lays the
+ * card out wider and gives the text more room; a tall one gives it least.
+ * Flamethrower fits at 393x661 and is cut by 10px at 393x800. That is
+ * today's behaviour on both sides of this change, and it is a defect of the
+ * box's own width, not of where the name starts.
+ */
+const PHONES = [
+  { width: 360, height: 661 },
+  { width: 393, height: 800 },
+  { width: 412, height: 915 },
+];
+
+test.describe('the longest move in the TM box', () => {
+  for (const viewport of PHONES) {
+    test(`stays inside it at ${viewport.width}x${viewport.height}`, async ({ browser }) => {
+      const context = await browser.newContext({
+        viewport, deviceScaleFactor: 3, isMobile: true, hasTouch: true,
+      });
+      const page = await context.newPage();
+      // Flamethrower, twelve letters, seated straight into the card.
+      await page.addInitScript(() => {
+        const cards = Array.from({ length: 14 }, () => ({
+          type: null as string | null,
+          theme: '',
+          lines: [] as unknown[],
+          signatureSeat: null as number | null,
+          tmMoveId: null as number | null,
+          badgeName: '',
+          legend: null as unknown,
+          powerup: null as unknown,
+        }));
+        cards[0].tmMoveId = 53;
+        window.localStorage.setItem(
+          'league-builder',
+          JSON.stringify({ state: { name: '', cards }, version: 1 }),
+        );
+      });
+      await page.goto('/pokemon-league-builder');
+      await page.waitForSelector('[data-testid="league-slot-0"]');
+      await page.click('[data-testid="league-slot-0"]');
+      await page.waitForSelector('[data-testid="card-cell-1-1"]');
+      await page.waitForTimeout(700);
+
+      const fit = await page.evaluate(() => {
+        const slot = document.querySelector('[data-testid="slot-tm"]')!;
+        const name = [...slot.querySelectorAll('span')]
+          .find((el) => el.textContent === 'Flamethrower');
+        if (!name) return null;
+        const box = slot.getBoundingClientRect();
+        const run = name.getBoundingClientRect();
+        return { spill: +(run.right - box.right).toFixed(2) };
+      });
+      expect(fit, 'the move is on the card').not.toBeNull();
+      expect(fit!.spill, 'the name never reaches past its own box').toBeLessThanOrEqual(0.5);
+      await context.close();
+    });
+  }
+});
+
 test.describe('gym card slots', () => {
   test('the signature pane reads the team as lines, in league order', async ({ page }) => {
     await openCard(page);

@@ -196,6 +196,31 @@ describe('against the seam', () => {
 });
 
 describe('inside the slot', () => {
+  /**
+   * The headings used to sit hard against the slot's own edge — the ace's on
+   * the top-left corner and the partner's on the bottom-right — because
+   * nothing in the geometry said a corner was a worse place to be than the
+   * middle. A word touching the edge reads as clipped, so the solver keeps a
+   * hair line of ground on all four sides and shrinks the sprite to pay for
+   * it. Measured at the phone's own slot: 81px of sprite became 78.
+   */
+  it('keeps both blocks off the slot\'s edges', () => {
+    for (const w of WIDTHS) {
+      const slot = placeSlot(w, H, ACE, PARTNER);
+      /** Three pixels at the standard height, in this slot's own pixels. */
+      const edge = (3 / 204) * H - 0.001;
+      for (const [p, runs, half] of [
+        [slot.ace, ACE, 'ace'], [slot.partner, PARTNER, 'partner'],
+      ] as const) {
+        const total = runs.head[1] + p.sprite + runs.name[1];
+        expect(p.left, `${half} left at ${w}`).toBeGreaterThanOrEqual(edge);
+        expect(w - (p.left + p.width), `${half} right at ${w}`).toBeGreaterThanOrEqual(edge);
+        expect(p.top, `${half} top at ${w}`).toBeGreaterThanOrEqual(edge);
+        expect(H - (p.top + total), `${half} bottom at ${w}`).toBeGreaterThanOrEqual(edge);
+      }
+    }
+  });
+
   it('paints nothing outside it', () => {
     for (const w of WIDTHS) {
       const slot = placeSlot(w, H, ACE, PARTNER);
