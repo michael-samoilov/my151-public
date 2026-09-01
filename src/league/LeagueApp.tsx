@@ -117,7 +117,7 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
           />
         </span>
         {pencilRoom && (
-          <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
+          <Pencil size={11} className="shrink-0 text-primary" aria-hidden />
         )}
       </label>
     </div>

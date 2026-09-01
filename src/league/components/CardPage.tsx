@@ -109,8 +109,13 @@ function UnsetTypeMark() {
     // 0.06em extrabold they are set in. Red rather than the card's dashed
     // grey, because this one is a thing left undone, not a slot waiting.
     <span
-      className="flex flex-col items-center justify-center gap-[0.09375rem] border-[1.5px] border-dashed border-primary/85 text-primary/85"
-      style={{ width: TYPE_MARK, height: TYPE_MARK, borderRadius: TYPE_MARK_RADIUS }}
+      // The border is set inline, as the colour of the mark's own text.
+      // `border-primary/85` is on the element in name only: `src/index.css`
+      // sets `* { border-color }` outside any `@layer`, and an unlayered rule
+      // beats every utility, so the dashes came out `--color-border` grey
+      // under red text. An inline style is the one thing that outranks it.
+      className="flex flex-col items-center justify-center gap-[0.09375rem] border-[1.5px] border-dashed text-primary/85"
+      style={{ borderColor: 'currentColor', width: TYPE_MARK, height: TYPE_MARK, borderRadius: TYPE_MARK_RADIUS }}
     >
       <Plus className="h-3 w-3" strokeWidth={3} aria-hidden />
       <span className="text-[0.40625rem] font-extrabold leading-[1.1] tracking-[0.06em]">TYPE</span>
@@ -284,7 +289,7 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
             />
           </span>
           {pencilRoom && (
-            <Pencil size={11} className="shrink-0 text-muted-foreground/70 group-focus-within:text-foreground/60" aria-hidden />
+            <Pencil size={11} className="shrink-0 text-primary" aria-hidden />
           )}
         </label>
       </div>

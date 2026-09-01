@@ -452,3 +452,83 @@ test.describe('an empty slot and a filled one', () => {
     expect(filled.colours.partnerHead).not.toBe(filled.colours.aceHead);
   });
 });
+
+/**
+ * The two "add type" marks are red.
+ *
+ * Both carried a red border utility that never applied: `src/index.css` sets
+ * `* { border-color }` outside any `@layer`, and an unlayered rule beats every
+ * layered utility, so the dashes came out `--color-border` grey under red
+ * text. No existing spec could see that -- a class being present says nothing
+ * about a colour being painted -- so this one reads the paint.
+ *
+ * Checked as a contract rather than against a literal: each border must be
+ * the colour of its own text, which is how the fix is written, and neither
+ * may be the grey the unlayered rule paints.
+ */
+test.describe('the red marks', () => {
+  /** A colour string as Chrome would report it for `color`. */
+  const asRgb = (page: Page, value: string) =>
+    page.evaluate((v) => {
+      const el = document.createElement('span');
+      el.style.color = v;
+      document.body.append(el);
+      const out = getComputedStyle(el).color;
+      el.remove();
+      return out;
+    }, value);
+
+  test('both add-type marks paint their own text colour, not the grey default', async ({ page }) => {
+    await openCard(page);
+    const got = await page.evaluate(() => {
+      const mark = [...document.querySelectorAll('span')]
+        .find((s) => s.childElementCount === 0 && s.textContent?.trim() === 'TYPE')
+        ?.closest<HTMLElement>('[class*="border-dashed"]');
+      const square = [...document.querySelectorAll<HTMLElement>('[data-testid="league-slot-0"] span')]
+        .find((s) => getComputedStyle(s).borderTopStyle === 'dashed' && !s.dataset.testid);
+      const cs = (el: Element | null | undefined) => (el ? getComputedStyle(el) : null);
+      return {
+        mark: { border: cs(mark)?.borderTopColor, text: cs(mark)?.color },
+        square: { border: cs(square)?.borderTopColor, text: cs(square)?.color },
+      };
+    });
+    expect(got.mark.text, 'the "+ TYPE" mark exists').toBeTruthy();
+    expect(got.square.text, 'the summary square exists').toBeTruthy();
+    expect(got.mark.border, 'the mark\'s dashes are the colour of its own text').toBe(got.mark.text);
+    expect(got.square.border, 'the square\'s dashes are the colour of its own text').toBe(got.square.text);
+    for (const [name, value] of [['mark', got.mark.border], ['square', got.square.border]] as const) {
+      expect(await asRgb(page, value!), `${name} is not the grey default`).not.toMatch(/229, 229, 229/);
+    }
+  });
+
+  /**
+   * Seeded with short names on purpose. `usePencilRoom` drops a pencil that
+   * would sit on the text, and at 320px the empty theme's placeholder leaves
+   * it no room -- so a blank league has no pencil there to check.
+   */
+  test('both header pencils wear the primary token', async ({ page }) => {
+    await page.addInitScript(() => {
+      const blank = { type: null, theme: '', lines: [], signatureSeat: null, tmMoveId: null, badgeName: '', legend: null, powerup: null };
+      const cards: unknown[] = Array.from({ length: 14 }, () => ({ ...blank }));
+      cards[0] = { ...blank, theme: 'Rock' };
+      window.localStorage.setItem('league-builder', JSON.stringify({ state: { name: 'Kanto', cards }, version: 1 }));
+    });
+    await page.goto('/pokemon-league-builder');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="card-cell-1-1"]');
+    await page.waitForTimeout(500);
+    // Every pencil in the document. Both panes stay mounted, and a colour is
+    // computed whether or not its pane is the one on screen.
+    const got = await page.evaluate(() => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--color-primary)';
+      document.body.append(probe);
+      const primary = getComputedStyle(probe).color;
+      probe.remove();
+      return { primary, pencils: [...document.querySelectorAll('svg.lucide-pencil')].map((p) => getComputedStyle(p).color) };
+    });
+    expect(got.pencils.length, 'the league name and the theme each show a pencil').toBe(2);
+    for (const c of got.pencils) expect(c, 'the pencil wears the primary token').toBe(got.primary);
+  });
+});

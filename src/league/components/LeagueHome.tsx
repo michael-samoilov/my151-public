@@ -131,7 +131,13 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
           ) : card.type ? (
             <img src={typeIconPath(card.type)} alt={card.type} className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem]" />
           ) : (
-            <span className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem] border-[1.4px] border-dashed border-[#d4d4d4]" />
+            // Red, the shade the card's own "+ TYPE" mark wears. Inline for
+            // the reason given on that mark: the unlayered `* { border-color }`
+            // in `src/index.css` overrides any border-colour utility.
+            <span
+              className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem] border-[1.4px] border-dashed text-primary/85"
+              style={{ borderColor: 'currentColor' }}
+            />
           )}
         </span>
         {Array.from({ length: TEAM_COLS - cells.length }, (_, k) => (
