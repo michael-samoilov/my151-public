@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { blankLeague } from './support/leagueSeed';
+import { blankLeague, seededLeague } from './support/leagueSeed';
 
 /**
  * The gym card's two authored slots: the TM and the badge.
@@ -373,5 +373,82 @@ test.describe('gym card slots', () => {
       .toBeGreaterThanOrEqual(kept.length - 2);
     expect(common, 'and enough of it to show the order held').toBeGreaterThan(4);
     expect(state.stored).toBe(state.rendered);
+  });
+});
+
+/**
+ * Filling a slot moves nothing inside it.
+ *
+ * An empty slot used to wear its dashed outline as a border, and a border is
+ * layout: with `box-sizing: border-box` it takes its pixel from the inside,
+ * so every slot's content sat a pixel further in while empty and stepped
+ * back out the moment something was chosen. The outline is an overlay now.
+ * This reads each pane's anchor in both states and expects the same offset,
+ * to a twentieth of a pixel rather than the whole pixel that used to hide it.
+ *
+ * The heading colours ride along: the ace and partner words follow the TM
+ * and BADGE words -- the gym's hint shade while empty, its band once filled.
+ */
+test.describe('an empty slot and a filled one', () => {
+  /** Each pane's anchor, offset from the pane's own outer edge, in slot px. */
+  const anchors = (page: Page) =>
+    page.evaluate(() => {
+      const hex = (c: string) => {
+        const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(c);
+        return m ? '#' + [1, 2, 3].map((k) => Number(m[k]).toString(16).padStart(2, '0')).join('') : c;
+      };
+      const rel = (pane: Element, inner: Element) => {
+        const p = pane.getBoundingClientRect();
+        const i = inner.getBoundingClientRect();
+        const zoom = p.width / (pane as HTMLElement).offsetWidth;
+        return [(i.left - p.left) / zoom, (i.top - p.top) / zoom].map((v) => Number(v.toFixed(2)));
+      };
+      const tm = document.querySelector('[data-testid="slot-tm"]')!;
+      const badge = document.querySelector('[data-testid="slot-badge"]')!;
+      const ace = document.querySelector('[data-testid="slot-ace"]')!;
+      const partner = document.querySelector('[data-testid="slot-partner"]')!;
+      const pane = ace.parentElement!;
+      const word = (root: Element, text: string) =>
+        [...root.querySelectorAll('span')].find((el) => el.childElementCount === 0 && el.textContent === text)!;
+      return {
+        tm: rel(tm, tm.querySelector('svg')!),
+        badge: rel(badge, badge.querySelector('svg')!),
+        ace: rel(pane, ace.querySelector('[data-slot-art]')!),
+        partner: rel(pane, partner.querySelector('[data-slot-art]')!),
+        colours: {
+          aceHead: hex(getComputedStyle(word(ace, 'ACE')).color),
+          partnerHead: hex(getComputedStyle(word(partner, 'PARTNER /')).color),
+          tmWord: hex(getComputedStyle(word(tm, 'TM')).color),
+          badgeWord: hex(getComputedStyle(word(badge, 'BADGE')).color),
+        },
+      };
+    });
+
+  test('put their content in the same place', async ({ page }) => {
+    await openCard(page);
+    const empty = await anchors(page);
+
+    // The seeded card 0: an ace, a TM and a badge, and no partner.
+    await seededLeague(page);
+    await page.goto('/pokemon-league-builder');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="card-cell-1-1"]');
+    await page.waitForTimeout(500);
+    const filled = await anchors(page);
+
+    for (const key of ['tm', 'badge', 'ace', 'partner'] as const) {
+      expect(Math.abs(filled[key][0] - empty[key][0]), `${key} x`).toBeLessThanOrEqual(0.05);
+      expect(Math.abs(filled[key][1] - empty[key][1]), `${key} y`).toBeLessThanOrEqual(0.05);
+    }
+
+    // Empty, every heading is the hint; the ace and TM read the same shade.
+    expect(empty.colours.aceHead).toBe(empty.colours.tmWord);
+    expect(empty.colours.partnerHead).toBe(empty.colours.tmWord);
+    // Filled, the ace darkens to the band the BADGE word wears. The partner
+    // half is still empty on this card, so it stays on the hint.
+    expect(filled.colours.aceHead).toBe(filled.colours.badgeWord);
+    expect(filled.colours.aceHead).not.toBe(empty.colours.aceHead);
+    expect(filled.colours.partnerHead).not.toBe(filled.colours.aceHead);
   });
 });

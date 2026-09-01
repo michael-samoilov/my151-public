@@ -720,8 +720,16 @@ function SlotHalf({
   onPick: () => void;
   onRemove: () => void;
 }) {
+  // The same two shades the TM and BADGE words wear: the hint while the
+  // half is empty, the band once it holds a Pokemon. Both are the gym's
+  // own, which is right here -- an ace or a partner has no type of its own
+  // the way a TM's move does.
   const label = (
-    <HeadRuns lines={heading.lines} className={headClass} style={{ color: 'var(--lg-band)' }} />
+    <HeadRuns
+      lines={heading.lines}
+      className={headClass}
+      style={{ color: pokemon ? 'var(--lg-band)' : 'var(--lg-hint)' }}
+    />
   );
   const size = place ? `${place.sprite}px` : '0px';
   const lab = useSlotLab((st) => st.enabled);
@@ -897,6 +905,33 @@ interface Heading {
   readonly label: string;
 }
 
+/**
+ * The dashed outline an empty slot wears.
+ *
+ * An overlay rather than a border on the slot itself. A border is layout:
+ * with `box-sizing: border-box` it takes its pixel from the inside, so every
+ * slot's content sat one pixel further in while the slot was empty and
+ * stepped back out the moment something was chosen -- measured at 1.07px
+ * on a phone and 1.42px on desktop, in both axes, in all three panes. Nothing
+ * here takes part in layout, so filling a slot moves nothing. It also makes
+ * the placement solver's model true: it sizes the ace and partner against
+ * `offsetWidth`, the outer box, and places them in the padding box, and
+ * those are now the same box in both states.
+ *
+ * First among the children so the content paints over it, though the two
+ * never meet: the outline is the outer pixel and the content is padded in.
+ */
+function EmptyOutline() {
+  return (
+    <span
+      aria-hidden="true"
+      data-empty-outline
+      className="pointer-events-none absolute inset-0 rounded-lg border border-dashed"
+      style={{ borderColor: 'var(--lg-dash)' }}
+    />
+  );
+}
+
 const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
 const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
 const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
@@ -1039,13 +1074,13 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   return (
     <div
       ref={slotRef}
-      className={cn('absolute z-[5] rounded-lg', ace || partner ? undefined : 'border border-dashed')}
+      className="absolute z-[5] rounded-lg"
       style={{
         ...pos,
-        borderColor: ace || partner ? undefined : 'var(--lg-dash)',
         background: ace || partner ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
+      {!(ace || partner) && <EmptyOutline />}
       {/* The four text runs the solver needs the size of, drawn once and never
           shown. Measuring them beats assuming them: they are text, so their
           widths move with the font, the language and the root font size. */}
@@ -1178,15 +1213,15 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       type="button"
       onClick={() => setMovePickerOpen(true)}
       data-testid="slot-tm"
-      className={cn('absolute z-[5] flex items-center rounded-lg', !move && 'border border-dashed')}
+      className="absolute z-[5] flex items-center rounded-lg"
       style={{
         ...pos,
         paddingLeft: MARK_PAD,
         gap: MARK_GAP,
-        borderColor: move ? undefined : 'var(--lg-dash)',
         background: move ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
+      {!move && <EmptyOutline />}
       <span
         className="flex shrink-0 flex-col items-center"
         style={{ width: MARK_COL }}
@@ -1327,15 +1362,15 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         putCaretAtEnd();
       }}
       data-testid="slot-badge"
-      className={cn('absolute z-[5] flex cursor-text items-center rounded-lg', !name && 'border border-dashed')}
+      className="absolute z-[5] flex cursor-text items-center rounded-lg"
       style={{
         ...pos,
         paddingLeft: MARK_PAD,
         gap: MARK_GAP,
-        borderColor: name ? undefined : 'var(--lg-dash)',
         background: name ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
+      {!name && <EmptyOutline />}
       {/* The same column the TM slot uses, so the hexagon sits under the disc
           and the word under the word. */}
       <span

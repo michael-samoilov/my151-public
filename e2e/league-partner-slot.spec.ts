@@ -186,8 +186,12 @@ test.describe('the ace and partner slot', () => {
     const filled = await runs();
 
     // The partner half is the one that changed state; its runs must not move.
+    // A twentieth of a pixel, not a whole one: the runs are measured against
+    // the half's own box, and nothing inside it should move at all. This does
+    // not see the pane's own outline -- the half moves with it -- so a border
+    // that shifts the whole pane is the card-slots spec's job, not this one's.
     filled[1].forEach((top, i) => {
-      expect(Math.abs(top - empty[1][i]), `partner text run ${i} moved`).toBeLessThanOrEqual(1);
+      expect(Math.abs(top - empty[1][i]), `partner text run ${i} moved`).toBeLessThanOrEqual(0.05);
     });
   });
 
