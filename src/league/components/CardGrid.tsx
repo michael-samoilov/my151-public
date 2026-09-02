@@ -1270,12 +1270,18 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
               a chip painted over the cell beside it is worse than one cut. */}
           <span className="flex min-w-0 items-center gap-[3px]">
             {/* `overflow-visible`: the badge's pill fills its viewBox to the
-                edge, and an outer svg clips to its own box by default. At a
-                fractional width WebKit clips that box a pixel short, so the
-                pill's right end came out flat on a phone while its left end
-                stayed round. Letting the svg paint past its box costs nothing
-                -- the pill has nothing outside the viewBox to paint -- and
-                the text column's own clip still bounds it. */}
+                edge, and an outer svg clips to its own box by default. On a
+                phone the pill's right end came out flat while its left end
+                stayed round, which is what a clip rounded a pixel short of a
+                fractional width would do -- and this svg's width is
+                fractional. That is the hypothesis; it could not be
+                reproduced. WebKitGTK (AppleWebKit 605, the harness's iOS
+                lane) paints the pill round at both ends with and without
+                this, pixel for pixel, at scales 1 and 3. iOS rasterises the
+                same engine through a different compositor. Letting the svg
+                paint past its box removes the only clip that could cut it,
+                costs nothing -- there is nothing outside the viewBox to
+                paint -- and the text column's own clip still bounds it. */}
             <TypeBadge type={move.type} className="w-[2.75rem] max-w-full shrink overflow-visible" />
             <CategoryChip category={move.category} className="h-[0.6875rem] w-[0.9375rem] rounded-[4px] border" />
           </span>
