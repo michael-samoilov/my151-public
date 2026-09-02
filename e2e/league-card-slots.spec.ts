@@ -454,17 +454,14 @@ test.describe('an empty slot and a filled one', () => {
 });
 
 /**
- * The two "add type" marks are red.
+ * The two "add type" marks, as painted.
  *
- * Both carried a red border utility that never applied: `src/index.css` sets
+ * The card's is a solid red tile with a white plus and word; the summary's is
+ * a dashed grey square, the grey of the action square beside it. Read from
+ * the paint rather than the class list, because a class being present says
+ * nothing about a colour being painted: `src/index.css` sets
  * `* { border-color }` outside any `@layer`, and an unlayered rule beats every
- * layered utility, so the dashes came out `--color-border` grey under red
- * text. No existing spec could see that -- a class being present says nothing
- * about a colour being painted -- so this one reads the paint.
- *
- * Checked as a contract rather than against a literal: each border must be
- * the colour of its own text, which is how the fix is written, and neither
- * may be the grey the unlayered rule paints.
+ * border-colour utility, which is how a red border once came out grey here.
  */
 test.describe('the red marks', () => {
   /** A colour string as Chrome would report it for `color`. */
@@ -478,27 +475,30 @@ test.describe('the red marks', () => {
       return out;
     }, value);
 
-  test('both add-type marks paint their own text colour, not the grey default', async ({ page }) => {
+  test('the card\'s mark is a red tile with white on it, and the summary\'s square is grey', async ({ page }) => {
     await openCard(page);
     const got = await page.evaluate(() => {
       const mark = [...document.querySelectorAll('span')]
         .find((s) => s.childElementCount === 0 && s.textContent?.trim() === 'TYPE')
-        ?.closest<HTMLElement>('[class*="border-dashed"]');
+        ?.parentElement;
       const square = [...document.querySelectorAll<HTMLElement>('[data-testid="league-slot-0"] span')]
         .find((s) => getComputedStyle(s).borderTopStyle === 'dashed' && !s.dataset.testid);
+      const action = document.querySelector('[data-testid="league-action-0"]');
       const cs = (el: Element | null | undefined) => (el ? getComputedStyle(el) : null);
       return {
-        mark: { border: cs(mark)?.borderTopColor, text: cs(mark)?.color },
-        square: { border: cs(square)?.borderTopColor, text: cs(square)?.color },
+        mark: { fill: cs(mark)?.backgroundColor, text: cs(mark)?.color, border: cs(mark)?.borderTopWidth },
+        square: cs(square)?.borderTopColor,
+        action: cs(action)?.borderTopColor,
       };
     });
     expect(got.mark.text, 'the "+ TYPE" mark exists').toBeTruthy();
-    expect(got.square.text, 'the summary square exists').toBeTruthy();
-    expect(got.mark.border, 'the mark\'s dashes are the colour of its own text').toBe(got.mark.text);
-    expect(got.square.border, 'the square\'s dashes are the colour of its own text').toBe(got.square.text);
-    for (const [name, value] of [['mark', got.mark.border], ['square', got.square.border]] as const) {
-      expect(await asRgb(page, value!), `${name} is not the grey default`).not.toMatch(/229, 229, 229/);
-    }
+    expect(got.square, 'the summary square exists').toBeTruthy();
+    // Against the tokens as painted, so a retuned palette moves both sides.
+    expect(got.mark.fill, 'the mark is filled with the primary red').toBe(await asRgb(page, 'var(--color-primary)'));
+    expect(got.mark.text, 'the mark\'s plus and word are white on it').toBe(await asRgb(page, 'var(--color-primary-foreground)'));
+    expect(got.mark.border, 'the mark has no border').toBe('0px');
+    expect(got.square, 'the square is the grey its neighbour paints').toBe(got.action);
+    expect(got.square, 'and that grey is the border token').toBe(await asRgb(page, 'var(--color-border)'));
   });
 
   /**
