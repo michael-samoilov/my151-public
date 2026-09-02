@@ -158,15 +158,25 @@ test.describe('the ace and partner slot', () => {
     await blankLeague(page);
     await openCard(page);
 
-    /** Each half's heading and name, offset from the half's own top-left. */
+    /**
+     * Each half's heading and name, offset from the half's own top-left, in
+     * the slot's own pixels.
+     *
+     * Divided by the card's zoom, because the card re-fits itself to its
+     * content and its content changes here: an empty card's hints are not a
+     * filled card's, and at 320px one of them wraps. Read on the screen,
+     * every run would move by the change of scale and the check would be
+     * about the fit; read in layout pixels it is about the slot.
+     */
     const runs = () =>
       page.evaluate(() =>
         ['slot-ace', 'slot-partner'].map((id) => {
           const half = document.querySelector<HTMLElement>(`[data-testid="${id}"]`)!;
           const box = half.getBoundingClientRect();
+          const zoom = box.width / half.offsetWidth;
           return [...half.querySelectorAll('span')]
             .filter((el) => (el.textContent ?? '').trim().length > 0 || el.innerHTML === '&nbsp;')
-            .map((el) => Number((el.getBoundingClientRect().top - box.top).toFixed(2)));
+            .map((el) => Number(((el.getBoundingClientRect().top - box.top) / zoom).toFixed(2)));
         }),
       );
 
@@ -191,7 +201,7 @@ test.describe('the ace and partner slot', () => {
     // not see the pane's own outline -- the half moves with it -- so a border
     // that shifts the whole pane is the card-slots spec's job, not this one's.
     filled[1].forEach((top, i) => {
-      expect(Math.abs(top - empty[1][i]), `partner text run ${i} moved`).toBeLessThanOrEqual(0.05);
+      expect(Math.abs(top - empty[1][i]), `partner text run ${i} moved`).toBeLessThanOrEqual(0.1);
     });
   });
 

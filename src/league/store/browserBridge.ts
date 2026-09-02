@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import type { BrowserStoreState } from '@/components/browser/browserStore';
-import { getAllPokemon, getPokemonById } from '@/hooks/usePokemonData';
+import { getAllPokemon, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { CATEGORIES } from '@/data/categories';
 import { placedIds } from '../model/engine';
-import { BOSS_ROW, TEAM_SIZES, slotLabel } from '../model/constants';
+import { BOSS_ROW, ROW_COUNT, TEAM_SIZES, slotLabel } from '../model/constants';
 import { useLeagueStore } from './useLeagueStore';
 import { useLeagueUi, type BrowserPurpose } from './useLeagueUi';
 
@@ -36,6 +36,34 @@ function branchEndingAt(finalId: number): number[] {
     cur = cur.evolvesFrom !== null ? getPokemonById(cur.evolvesFrom) : undefined;
   }
   return branch;
+}
+
+/**
+ * The whole line through one Pokemon, root to leaf, along its first branch.
+ *
+ * What an ace or a partner pick seats. `branchEndingAt` stops at the tapped
+ * Pokemon, and a line that stops there has nothing below it: pick Pikachu and
+ * the column holds Pichu and Pikachu, and no drag can reveal a Raichu that
+ * was never seated. The picker's own line for a mid-stage tap is its first
+ * branch, which is also the one the picker lists first.
+ */
+function lineThrough(pokemonId: number): number[] {
+  const line = getEvolutionLine(pokemonId).map((p) => p.id);
+  return line.includes(pokemonId) ? line : branchEndingAt(pokemonId);
+}
+
+/**
+ * Field one stage of a seated line: push every later stage off the card.
+ *
+ * The same operation a downward drag performs, so the line then reads as
+ * edited, blue reset and all, and a drag back up reveals what was pushed.
+ * The seed does the same for Brock's Onix. A leaf has nothing after it and
+ * is left alone.
+ */
+function fieldStage(card: number, seat: number, branch: number[], pokemonId: number): void {
+  const stage = branch.indexOf(pokemonId);
+  if (stage < 0 || stage >= branch.length - 1) return;
+  useLeagueStore.getState().setStageBoundary(card, seat, stage + 1, ROW_COUNT + 1);
 }
 
 function sectionKey(card: number): string {
@@ -208,19 +236,32 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         ui().closeBrowser();
       } else if (purpose === 'signature') {
         // Under six lines the signature line seats itself rightmost,
-        // shifting the rest left (DECISIONS.md item 12). The tapped Pokemon
-        // ends the branch, and it is also the one the slot must show.
-        league().placeBranch(card, branch, 'front');
-        league().setSignatureSeat(card, 1, branch[branch.length - 1]);
+        // shifting the rest left (DECISIONS.md item 12). The whole line is
+        // seated and the tapped Pokemon is the stage fielded, so it is what
+        // the slot and the boss row show, and what sits below it on the
+        // line is still there for a drag to reveal.
+        const picked = ids[ids.length - 1];
+        const line = lineThrough(picked);
+        const before = league().cards[card]?.lines.length ?? 0;
+        league().placeBranch(card, line, 'front');
+        if ((league().cards[card]?.lines.length ?? 0) > before) fieldStage(card, 1, line, picked);
+        league().setSignatureSeat(card, 1, picked);
         ui().closeBrowser();
       } else if (purpose === 'partner') {
         // A partner is seated when the card has room and not otherwise, so
         // one pick means two different things depending on how full the card
         // is. `placeBranch` already no-ops on a full card, which is exactly
         // the rule: on a five-line card the partner becomes the sixth line
-        // *and* the partner; on a full one it lives in the slot alone.
-        league().placeBranch(card, branch);
-        league().setPartner(card, branch[branch.length - 1]);
+        // *and* the partner; on a full one it lives in the slot alone. When
+        // it does seat, it seats the whole line and fields the tapped stage,
+        // as the ace does.
+        const picked = ids[ids.length - 1];
+        const line = lineThrough(picked);
+        const before = league().cards[card]?.lines.length ?? 0;
+        league().placeBranch(card, line);
+        const after = league().cards[card]?.lines.length ?? 0;
+        if (after > before) fieldStage(card, after, line, picked);
+        league().setPartner(card, picked);
         ui().closeBrowser();
       } else {
         league().placeBranch(card, branch);

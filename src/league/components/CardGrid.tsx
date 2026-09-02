@@ -11,7 +11,7 @@ import {
   type DragOverEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
-import { ArrowLeftRight, ArrowUpDown, RotateCcw } from 'lucide-react';
+import { ArrowLeftRight, ArrowUpDown, Plus } from 'lucide-react';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
@@ -465,36 +465,45 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           // The opposite corner from the remove X, so the destructive control
           // and the undo one never sit under the same thumb.
           //
-          // `contain:paint` for the same reason the powerup discs have it:
-          // the card scales itself with CSS `zoom`, so this box is a
-          // fractional number of pixels and its painted edges snap
-          // independently. The disc came out an ellipse and the arrow inside
-          // it sat up and to the left, even though both are centred to the
-          // pixel in layout.
+          // No paint containment, unlike the cross and the powerup discs.
+          // Containment was what kept a span's `rounded-full` round; an svg
+          // circle is round on its own. And containment clips the button to
+          // a box snapped to the device grid, while the disc below is drawn
+          // to the very edge of that box -- so at some sub-pixel positions
+          // the clip shaved a device pixel off one side of the disc, and the
+          // disc read as off-centre by half of it.
           className="absolute z-[15] cursor-pointer"
           style={markBox('left', 0.175)}
         >
-          <span className="block h-full w-full rounded-full bg-[#2563eb] [contain:paint]">
-          {/* Centred by having nothing to centre.
-              The card scales itself with CSS `zoom`, so the disc and a smaller
-              mark inside it are both a fractional number of pixels, and the
-              leftover space either side does not round the same way: measured
-              at dpr 10, a flex-centred mark sat 2.0% left of the disc's
-              centre, and a transform-centred one 3.3% left. Both divide a
-              gap. This leaves no gap — the svg fills the disc, and the icon's
-              own 24-unit ink is inset by padding its viewBox, so the ink's
-              centre and the disc's are the same point by construction.
-              `strokeWidth` is in viewBox units, so it scales with the pad.
-              The half-unit on the origin is the glyph's own bias, measured
-              rather than guessed: `RotateCcw` carries its arrowhead outside
-              the ring on the top-left, so its painted ink sits 1.3% up and
-              left of the 24-unit box it is drawn in. */}
-          <RotateCcw
-            viewBox="-7.5 -7.5 38 38"
-            className="absolute inset-0 h-full w-full text-white"
-            strokeWidth={4}
-          />
-          </span>
+          {/* One svg for the disc and the arrow, the way `RedXIcon` draws
+              its disc and its cross. They used to be two layers -- a
+              rounded span for the disc and a lucide svg over it -- and two
+              layers are two rasterisations. The card scales itself with CSS
+              `zoom`, so each control sits at a fractional device pixel, and
+              the disc's edge and the arrow's strokes snapped to the grid
+              independently: measured at dpr 3, the arrow sat 0.6px up-left
+              of the disc's centre on one row and 1.1px on the next, and the
+              eye read the two resets on one card as one centred and one not.
+              Drawn together they share a phase, so whatever the origin does
+              to one it does to the other.
+
+              The 38-unit box is lucide's 24-unit icon inset by 7 on each
+              side, with the origin pulled a further half unit up and left:
+              the arrow carries its head outside the ring on that corner, so
+              its painted ink sits 1.3% up and left of the box it is drawn
+              in, and the half unit -- measured, not guessed -- is what puts
+              the ink's centre on the disc's. The disc is centred on the box,
+              at (11.5, 11.5), with a radius that fills it. `strokeWidth` is
+              in viewBox units, so it scales with the inset. The two paths
+              are lucide's `rotate-ccw` (ISC), copied so they can share the
+              disc's svg. */}
+          <svg viewBox="-7.5 -7.5 38 38" className="block h-full w-full" aria-hidden="true">
+            <circle cx="11.5" cy="11.5" r="19" fill="#2563eb" />
+            <g fill="none" stroke="#ffffff" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </g>
+          </svg>
         </button>
       )}
       {onRemove && pokemon && (
@@ -505,7 +514,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute z-[15] cursor-pointer [contain:paint]"
+          className="absolute z-[15] cursor-pointer"
           style={markBox('right', 0.175)}
         >
           <RedXIcon className="h-full w-full" />
@@ -883,7 +892,7 @@ function SlotRemove({ label, onRemove }: { label: string; onRemove: () => void }
         e.preventDefault();
         onRemove();
       }}
-      className="absolute z-[15] cursor-pointer [contain:paint]"
+      className="absolute z-[15] cursor-pointer"
       style={markBox('right', 0)}
     >
       <RedXIcon className="h-full w-full" />
@@ -1168,20 +1177,26 @@ const MARK_ROWS = 1.5;
  */
 const MARK_COL = 'min(2.75rem, 26%)';
 /**
- * The box's left pad and the gap after the glyph column.
+ * The box's left pad and the gap after the glyph column: equal, on purpose.
  *
- * Both are tighter than the card's usual 0.375rem, and deliberately: what
- * they buy is width for the text beside them. The longest single-word move
- * in the data is twelve characters — Flamethrower, Aromatherapy — and a
- * single word cannot wrap, so every pixel left of it is a pixel it does not
- * have. At 0.375rem apiece it cleared the box by one pixel on a phone.
+ * The word under the glyph is centred in its column, so the room between
+ * the box's edge and the word is `pad + (column - word) / 2`, and the room
+ * between the word and the name beside it is `(column - word) / 2 + gap`.
+ * They differ by exactly `gap - pad`, whatever the word: equal pad and gap
+ * put BADGE as far from the edge as from its name.
+ *
+ * Their sum is what the text gives up, and it is held at 0.5625rem. The
+ * longest single-word move in the data is twelve characters — Flamethrower,
+ * Aromatherapy — and a single word cannot wrap, so every pixel left of it is
+ * a pixel it does not have. At 0.375rem apiece it cleared the box by one
+ * pixel on a phone.
  */
-const MARK_PAD = '0.1875rem';
+const MARK_PAD = '0.28125rem';
 /**
  * The gap after the glyph column, which is also where the move name and the
- * badge name begin.
+ * badge name begin. See `MARK_PAD`: the two are equal, and their sum fixed.
  */
-const MARK_GAP = '0.375rem';
+const MARK_GAP = '0.28125rem';
 /**
  * The pad after the text, which is what pays for that gap.
  *
@@ -1254,7 +1269,14 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
               category chip together are wider than the box's text column, and
               a chip painted over the cell beside it is worse than one cut. */}
           <span className="flex min-w-0 items-center gap-[3px]">
-            <TypeBadge type={move.type} className="w-[2.75rem] max-w-full shrink" />
+            {/* `overflow-visible`: the badge's pill fills its viewBox to the
+                edge, and an outer svg clips to its own box by default. At a
+                fractional width WebKit clips that box a pixel short, so the
+                pill's right end came out flat on a phone while its left end
+                stayed round. Letting the svg paint past its box costs nothing
+                -- the pill has nothing outside the viewBox to paint -- and
+                the text column's own clip still bounds it. */}
+            <TypeBadge type={move.type} className="w-[2.75rem] max-w-full shrink overflow-visible" />
             <CategoryChip category={move.category} className="h-[0.6875rem] w-[0.9375rem] rounded-[4px] border" />
           </span>
           {/* Truncated, not wrapped: a twelve-letter move is one word, so
@@ -1903,16 +1925,31 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         data-fit-tail
         className="grid grid-cols-[0.75rem_1fr] gap-x-[0.375rem] gap-y-[3px] px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground"
       >
+        {/* An empty card leads with how to fill it, and holds the legendary
+            hint back: there is no line yet to put one over, so that hint
+            would be instructions for a state the reader is not in. Once a
+            line is placed the first hint has done its job and the legendary
+            takes its place. */}
+        {card.lines.length === 0 && (
+          <>
+            <Plus className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
+            <span>Tap an empty slot to add an evolution line</span>
+          </>
+        )}
         <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
         <span>Drag a pokemon up or down to shift when it evolves</span>
         <ArrowLeftRight className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
         <span>Press and hold a column of pokemon to drag and reorder it</span>
-        <LaurelIcon className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" />
-        <span>
-          {legendsOf(card).length > 0
-            ? 'Drag a legendary onto another Endgame Boss column to move or swap it'
-            : 'Tap a pokemon in the Endgame Boss row to swap in a legendary'}
-        </span>
+        {card.lines.length > 0 && (
+          <>
+            <LaurelIcon className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" />
+            <span>
+              {legendsOf(card).length > 0
+                ? 'Drag a legendary onto another Endgame Boss column to move or swap it'
+                : 'Tap a pokemon in the Endgame Boss row to swap in a legendary'}
+            </span>
+          </>
+        )}
       </div>
       {/* Portalled out of the card's `zoom` so its pixel size is the one
           measured from the cell, not that size zoomed a second time. */}
