@@ -177,17 +177,49 @@ test.describe('powerups', () => {
     expect(await drawn(page, 10, 1)).toBe('Mega Charizard X');
     await press(page, 10, 1, 'mega');
     expect(await drawn(page, 10, 1)).toBe('Mega Charizard Y');
+    // The first press filled the boss row too, and the second carries that
+    // fill with it: a person who wanted Charizard Y on the team presses
+    // the same button again, and both rows follow.
+    expect(await drawn(page, 11, 1), 'the boss row followed to Y').toBe('Mega Charizard Y');
     await press(page, 10, 1, 'mega');
     expect(await drawn(page, 10, 1), 'the cycle returns to base').toBe('charizard');
+    expect(await drawn(page, 11, 1), 'and so does the row it carried').toBe('charizard');
 
-    // Cycling is the champion row's own: the boss row kept what the first
-    // press gave it.
-    expect(await drawn(page, 11, 1), 'the boss row still has the first form').toBe('Mega Charizard X');
     await press(page, 10, 1, 'dynamax');
     expect(await drawn(page, 10, 1)).toBe('Gigantamax Charizard');
   });
 
-  test('the first press fills downward, and every press after that sets one', async ({ page }) => {
+  test('a row set apart keeps its own form', async ({ page }) => {
+    await openCard(page, 12);
+    await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
+
+    await press(page, 10, 1, 'mega'); // X on the champion and the boss
+    await press(page, 11, 1, 'mega'); // the boss alone to Y
+    expect(await drawn(page, 11, 1)).toBe('Mega Charizard Y');
+    expect(await drawn(page, 10, 1), 'the champion stays on X').toBe('Mega Charizard X');
+    // The boss no longer shows what the champion does, so the champion's
+    // next press carries nothing.
+    await press(page, 10, 1, 'dynamax');
+    expect(await drawn(page, 10, 1)).toBe('Gigantamax Charizard');
+    expect(await drawn(page, 11, 1), 'the boss keeps what it was given').toBe('Mega Charizard Y');
+  });
+
+  test('a second seat fills downward like the first', async ({ page }) => {
+    await openCard(page, 12);
+    await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
+    await seat(page, '[data-testid="card-cell-1-2"]', 'lapras');
+
+    // With a Mega already on seat 1, the first press on seat 2 used to set
+    // one row, which read as the second powerup working differently from
+    // the first. Filling down is the seat's, not the card's.
+    await press(page, 10, 1, 'mega');
+    await press(page, 10, 2, 'dynamax');
+    expect(await drawn(page, 10, 2)).toBe('Gigantamax Lapras');
+    expect(await drawn(page, 11, 2), 'the boss row got it too').toBe('Gigantamax Lapras');
+    expect(await drawn(page, 11, 1), 'seat 1 is untouched').toBe('Mega Charizard X');
+  });
+
+  test('the first press fills downward, and a press on the last row sets one', async ({ page }) => {
     await openCard(page, 12);
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
     await seat(page, '[data-testid="card-cell-1-2"]', 'lapras');
@@ -202,8 +234,9 @@ test.describe('powerups', () => {
     expect(await drawn(page, 9, 1), 'the elite four row is left alone').toBe('charizard');
     expect(await drawn(page, 11, 1), 'the endgame team got it too').toBe('Mega Charizard X');
 
-    // From here the rows are the user's to differ — and a second seat *adds*
-    // rather than moving the first one's, so a whole team can be powered up.
+    // A second seat *adds* rather than moving the first one's, so a whole
+    // team can be powered up. On the last row there is nothing below to
+    // fill.
     await press(page, 11, 2, 'dynamax');
     expect(await drawn(page, 11, 2)).toBe('Gigantamax Lapras');
     expect(await drawn(page, 11, 1), 'the boss row kept seat 1 as well').toBe('Mega Charizard X');

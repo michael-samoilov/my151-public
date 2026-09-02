@@ -331,27 +331,32 @@ export const useLeagueStore = create<LeagueState>()(
       cyclePowerup: (card, row, seat, kind, pokemonId) =>
         set((s) => ({
           cards: withCard(s.cards, card, (c) => {
-            const next = cyclePowerup(powerupAt(c, row, seat), seat, kind, pokemonId);
+            const current = powerupAt(c, row, seat);
+            const next = cyclePowerup(current, seat, kind, pokemonId);
             /** This seat's entry replaced, added or dropped; the rest kept. */
             const withSeat = (list: Powerup[]) => {
               const rest = list.filter((p) => p.seat !== seat);
               return next ? [...rest, next] : rest;
             };
-            // The first press on a card sets this seat on the pressed row and
-            // every row below it: a leader's Elite Four, champion and endgame
-            // teams are the same six Pokemon, so pressing Mega once and
-            // finding it on only one of them reads as the press not having
-            // worked. Downward only, because the rows run weakest to
-            // strongest — a Mega added to the champion says nothing about the
-            // Elite Four team that came before it, and filling upward puts a
-            // powerup on a team the user has already been through. Every
-            // press after the first sets only its own row, which is what lets
-            // the three differ.
-            const bare = POWERUP_ROWS.every((r) => powerupsAt(c, r).length === 0);
-            const below = POWERUP_ROWS.filter((r) => r >= row);
-            const powerups = bare
-              ? { ...powerupMap(c), ...Object.fromEntries(below.map((r) => [r, next ? [next] : []])) }
-              : { ...powerupMap(c), [row]: withSeat(powerupsAt(c, row)) };
+            // A press sets this seat on the pressed row and on every row
+            // below it that shows the same form. A leader's Elite Four,
+            // champion and endgame teams are the same six Pokemon, so a
+            // first press fills downward: pressing Mega once and finding it
+            // on one row reads as the press not having worked. A second
+            // press on the same button carries that fill with it — Charizard
+            // X on both rows becomes Charizard Y on both — while a row a
+            // person set apart keeps what they gave it. Downward only,
+            // because the rows run weakest to strongest: a Mega named on the
+            // champion says nothing about the Elite Four team the player
+            // already went through. By seat, so a second seat fills down
+            // like the first did.
+            const same = (p: Powerup | null) =>
+              p === null ? current === null : current !== null && p.kind === current.kind && p.index === current.index;
+            const rows = POWERUP_ROWS.filter((r) => r === row || (r > row && same(powerupAt(c, r, seat))));
+            const powerups = {
+              ...powerupMap(c),
+              ...Object.fromEntries(rows.map((r) => [r, withSeat(powerupsAt(c, r))])),
+            };
             return { ...c, powerups, powerup: null };
           }),
         })),

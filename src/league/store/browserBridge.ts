@@ -274,8 +274,19 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         }
         ui().closeBrowser();
       } else if (purpose === 'replace') {
-        // Already on the card: swapping a seat for a line the team already
-        // holds would duplicate it, so this is "keep what is there".
+        // Already on the card: the seat takes another of that line. A gym
+        // can field two Geodudes, so a line the team holds is as good a
+        // replacement as any other — whole, as the card holds it, for the
+        // reason given under the line picker below. The line the seat
+        // itself holds is the one exception: replacing it with itself asks
+        // for nothing, so nothing changes.
+        const seat = ui().targetSeat;
+        const lines = useLeagueStore.getState().cards[card]?.lines ?? [];
+        const held = lines.find((l) => l.branch.includes(pokemonId));
+        const own = lines[seat - 1];
+        if (!own?.branch.includes(pokemonId)) {
+          useLeagueStore.getState().replaceLine(card, seat, held ? [...held.branch] : branchEndingAt(pokemonId));
+        }
         ui().closeBrowser();
       } else if (purpose === 'signature') {
         // Tapping an already-placed line marks it, rather than removing it.

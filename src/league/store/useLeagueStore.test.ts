@@ -146,7 +146,7 @@ describe('pressing a powerup', () => {
     });
   });
 
-  it('sets only its own row after that', () => {
+  it('adds a second seat without touching the first', () => {
     useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6);
     useLeagueStore.getState().cyclePowerup(0, BOSS_ROW, 2, 'dynamax', 131);
     expect(powerupAt(card(), CHAMPION_ROW, 1), 'the champion keeps its Mega').toEqual({
@@ -178,24 +178,58 @@ describe('pressing a powerup', () => {
     expect(powerupAt(card(), ELITE_ROW, 1)).toEqual({ seat: 1, kind: 'mega', index: 0 });
   });
 
-  it('cycles one row through a Pokemon\'s forms without moving the other', () => {
+  /**
+   * A second press on the same button carries the rows it filled with it.
+   *
+   * The first press put Charizard X on the champion and the boss. A person
+   * who wanted Charizard Y presses again, and expects both rows to follow:
+   * cycling one row alone left the boss on X, which read as the press
+   * having changed the wrong thing.
+   */
+  it('carries the rows it filled through the cycle', () => {
     useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6); // Charizard X
     useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6); // Charizard Y
     expect(powerupAt(card(), CHAMPION_ROW)?.index).toBe(1);
-    expect(powerupAt(card(), BOSS_ROW)?.index, 'the boss row stayed on the first').toBe(0);
+    expect(powerupAt(card(), BOSS_ROW)?.index, 'the boss row followed').toBe(1);
+    useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6); // back to base
+    expect(powerupAt(card(), CHAMPION_ROW)).toBeNull();
+    expect(powerupAt(card(), BOSS_ROW), 'and followed back to base').toBeNull();
   });
 
-  it('fills downward again once the card holds none', () => {
-    useLeagueStore.getState().cyclePowerup(0, ELITE_ROW, 1, 'mega', 6);
-    // Cycle each row past its last form, which returns it to base.
-    for (const row of [ELITE_ROW, CHAMPION_ROW, BOSS_ROW]) {
-      useLeagueStore.getState().cyclePowerup(0, row, 1, 'mega', 6);
-      useLeagueStore.getState().cyclePowerup(0, row, 1, 'mega', 6);
-      expect(powerupAt(card(), row)).toBeNull();
-    }
+  it('leaves a row a person set apart', () => {
+    useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6); // X on both
+    useLeagueStore.getState().cyclePowerup(0, BOSS_ROW, 1, 'mega', 6); // the boss alone to Y
+    expect(powerupAt(card(), BOSS_ROW)?.index).toBe(1);
+    // The champion's next press carries nothing: the boss no longer shows
+    // what the champion does.
+    useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'dynamax', 6);
+    expect(powerupAt(card(), CHAMPION_ROW)).toEqual({ seat: 1, kind: 'dynamax', index: 0 });
+    expect(powerupAt(card(), BOSS_ROW), 'the boss kept its own').toEqual({ seat: 1, kind: 'mega', index: 1 });
+  });
+
+  /**
+   * Filling down is the seat's, not the card's. With seat 1 already a Mega,
+   * a first press on seat 2 used to set one row, which read as the second
+   * powerup working differently from the first.
+   */
+  it('fills downward for a second seat when the card already holds one', () => {
+    useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'mega', 6);
     useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 2, 'dynamax', 131);
-    expect(powerupAt(card(), BOSS_ROW), 'an empty card is a first press again').toEqual({
-      seat: 2, kind: 'dynamax', index: 0,
+    expect(powerupAt(card(), CHAMPION_ROW, 2)).toEqual({ seat: 2, kind: 'dynamax', index: 0 });
+    expect(powerupAt(card(), BOSS_ROW, 2), 'the boss row got it too').toEqual({ seat: 2, kind: 'dynamax', index: 0 });
+    expect(powerupAt(card(), BOSS_ROW, 1), 'seat 1 is untouched').toEqual({ seat: 1, kind: 'mega', index: 0 });
+  });
+
+  it('fills downward again once a seat holds none', () => {
+    useLeagueStore.getState().cyclePowerup(0, ELITE_ROW, 1, 'mega', 6);
+    // Two more presses walk every row past Charizard's last form and back
+    // to base together.
+    useLeagueStore.getState().cyclePowerup(0, ELITE_ROW, 1, 'mega', 6);
+    useLeagueStore.getState().cyclePowerup(0, ELITE_ROW, 1, 'mega', 6);
+    for (const row of [ELITE_ROW, CHAMPION_ROW, BOSS_ROW]) expect(powerupAt(card(), row)).toBeNull();
+    useLeagueStore.getState().cyclePowerup(0, CHAMPION_ROW, 1, 'dynamax', 6);
+    expect(powerupAt(card(), BOSS_ROW), 'an empty seat is a first press again').toEqual({
+      seat: 1, kind: 'dynamax', index: 0,
     });
   });
 

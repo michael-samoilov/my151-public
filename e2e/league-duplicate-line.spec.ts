@@ -75,6 +75,43 @@ test.describe('a line picked twice', () => {
     expect(new Set(column).size, `seat 2 shows more than one stage: ${column.join(',')}`).toBeGreaterThan(1);
   });
 
+  test('a line already on the card can replace another', async ({ page }) => {
+    await pick(page, 'geodude');
+    if (await sheetOpen(page)) await page.keyboard.press('Escape');
+    await pick(page, 'gengar');
+    if (await sheetOpen(page)) await page.keyboard.press('Escape');
+    await page.waitForTimeout(400);
+    expect(await seats(page)).toEqual([[74, 75, 76], [92, 93, 94]]);
+
+    // A tap on a placed Pokémon above the boss row offers to swap its line
+    // out. Gengar's line sits in seat 2.
+    const gengarCell = await page.evaluate(() => {
+      const cells = [...document.querySelectorAll('[data-testid^="card-cell-"]')];
+      const cell = cells.find((el) => {
+        const [, , row, seat] = el.getAttribute('data-testid')!.split('-').map(Number);
+        const alt = el.querySelector('img')?.getAttribute('alt') ?? '';
+        return seat === 2 && row < 11 && ['gastly', 'haunter', 'gengar'].includes(alt);
+      });
+      return cell?.getAttribute('data-testid') ?? null;
+    });
+    expect(gengarCell, 'a Gengar-line cell in seat 2').not.toBeNull();
+    await page.click(`[data-testid="${gengarCell}"]`);
+    await page.waitForSelector('[data-filter-chip="my-dex"]');
+    await page.evaluate(() => {
+      const inputs = [...document.querySelectorAll('input')];
+      const el = inputs[inputs.length - 1];
+      const set = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+      set.call(el, 'geodude');
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.waitForTimeout(700);
+    // Geodude's tile wears the "already placed" mark, and the picker used
+    // to read that tap as "keep what is there".
+    await page.click('[data-testid="verify-evo-card"]');
+    await page.waitForTimeout(800);
+    expect(await seats(page), 'seat 2 now holds another Geodude line').toEqual([[74, 75, 76], [74, 75, 76]]);
+  });
+
   test('the red cross removes the column it is on', async ({ page }) => {
     // Gengar: a species with a Mega, so the newer line can be marked through
     // the card's own controls rather than through storage.

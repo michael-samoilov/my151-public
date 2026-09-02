@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { createPortal } from 'react-dom';
 import {
   DndContext,
+  getClientRect,
   DragOverlay,
   useDraggable,
   useDroppable,
@@ -294,12 +295,27 @@ function usePointerTravel(): React.RefObject<number> {
   return travel;
 }
 
+/** See the `measuring` prop on the card's `DndContext`. */
+const OVERLAY_MEASURING = {
+  dragOverlay: { measure: (element: HTMLElement) => getClientRect(element, { ignoreTransform: true }) },
+};
+
+/**
+ * The wash a dragged stage's cells wear: the Pokémon's primary type at a
+ * strength that reads as a tint over white, not as a type badge.
+ */
+function stageTint(pokemonId: number): string {
+  const type = getPokemonById(pokemonId)?.types[0];
+  const colour = (type && TYPE_COLORS[type as keyof typeof TYPE_COLORS]) || '#888888';
+  return `${colour}2e`;
+}
+
 /** A powerup form's sprite: the form's own id is its filename. */
 function formSprite(form: PowerupForm): string {
   return `/sprites/pokemon/${form.id}.png`;
 }
 
-function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup, held, ringWhenOver, onRemove, removeLabel, onReset }: {
+function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup, held, ringWhenOver, onRemove, removeLabel, onReset, tint }: {
   cardIndex: number;
   datum: CellDatum;
   pokemonId: number | null;
@@ -319,6 +335,11 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
   removeLabel?: string;
   /** Set on the topmost pokemon of a line whose evolution rows were dragged. */
   onReset?: () => void;
+  /**
+   * A wash over the cell while its stage is being dragged: the dragged
+   * Pokémon's primary type, light, on every cell that stage occupies.
+   */
+  tint?: string;
 }) {
   const id = `cell-${datum.row}-${datum.seat}`;
   const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
@@ -381,6 +402,7 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
         {...(datum.filled ? listeners : undefined)}
         {...(datum.filled ? attributes : undefined)}
         data-testid={`card-cell-${datum.row}-${datum.seat}`}
+        data-stage-tint={tint ?? undefined}
         onClick={onTap}
         className={cn(
           'relative flex items-center justify-center rounded-md',
@@ -390,7 +412,9 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
         style={{
           width: `calc(100% - ${2 * INSET_X}rem)`,
           height: `${ROW_H - 2 * INSET_Y}rem`,
-          background: 'var(--lg-slot)',
+          // The tint is a layer over the slot's white rather than a colour
+          // in place of it, so the wash reads the same on every card.
+          background: tint ? `linear-gradient(${tint}, ${tint}), var(--lg-slot)` : 'var(--lg-slot)',
           // A cell with a line in it keeps the touch it is given. `pan-y`
           // let the page scroll under the very gesture that is supposed to
           // move a line up a row, so a drag begun with a moving finger
@@ -1521,6 +1545,14 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const paintRef = useRef<PaintDrag | null>(null);
   const [previewMove, setPreviewMove] = useState<{ from: number; to: number } | null>(null);
   const [legendDrag, setLegendDrag] = useState(false);
+  /**
+   * The stage a boundary drag is moving, while it moves. Its cells wear a
+   * wash of the Pokémon's primary type, so the thing being dragged is the
+   * run and not one cell of it. Set when a drag sets off as a boundary
+   * drag, or the moment a held column starts painting rows; cleared when
+   * the gesture turns out to be a reorder.
+   */
+  const [stageDrag, setStageDrag] = useState<{ seat: number; stage: number } | null>(null);
   const travelRef = usePointerTravel();
   /**
    * The column a moving press did not pick up.
@@ -1624,6 +1656,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         runTop, runBottom, canTop, canBottom, reordered: false, pickedUp,
         initial: [...line.boundaries], painted: false,
       };
+      if (!pickedUp) setStageDrag({ seat: d.seat, stage });
     },
     [card, travelRef],
   );
@@ -1647,6 +1680,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
           setLineBoundaries(cardIndex, p.seat, p.initial);
           p.painted = false;
         }
+        setStageDrag(null);
         setPreviewMove((cur) =>
           cur && cur.to === over.seat ? cur : { from: p.seat, to: over.seat },
         );
@@ -1686,6 +1720,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         setStageBoundary(cardIndex, p.seat, p.stage + 1, over.row + 1);
         p.painted = true;
       }
+      if (p.painted) setStageDrag((cur) => cur ?? { seat: p.seat, stage: p.stage });
     },
     [cardIndex, setLineBoundaries, setStageBoundary],
   );
@@ -1696,6 +1731,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     if (p && !p.legend && p.painted) setLineBoundaries(cardIndex, p.seat, p.initial);
     setPreviewMove(null);
     setLegendDrag(false);
+    setStageDrag(null);
     setHeld(null);
     pendingHeld.current = null;
   }, [cardIndex, setLineBoundaries]);
@@ -1706,6 +1742,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       paintRef.current = null;
       setPreviewMove(null);
       setLegendDrag(false);
+      setStageDrag(null);
       setHeld(null);
       pendingHeld.current = null;
       const to = e.over?.data.current as CellDatum | undefined;
@@ -1813,6 +1850,15 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       // press, and stays put with this off. Both dex builder grids already
       // carry the same line.
       autoScroll={{ layoutShiftCompensation: false }}
+      // The overlay is measured where it was placed, not where it has moved
+      // to. dnd-kit prefers the overlay's rect to the cell's for collisions,
+      // and measures it once, when it mounts -- with its transform. A drag
+      // that begins on movement mounts the overlay after the first move,
+      // so it was measured a move too high, and every row it was over from
+      // then on was one above the finger. A press and hold mounts it at
+      // rest and never saw this. Ignoring the transform reads the rect the
+      // overlay was positioned at, which is the cell's, whenever it mounts.
+      measuring={OVERLAY_MEASURING}
       collisionDetection={legendDrag ? bossRowByColumn : rectIntersection}
       onDragStart={onDragStart}
       onDragOver={onDragOver}
@@ -1870,11 +1916,17 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                   const custom =
                     topId !== null && line !== undefined
                     && line.boundaries.join() !== defaultBoundaries(line.branch).join();
+                  // Read off the live line, so the wash follows the run as
+                  // the drag grows or shrinks it.
+                  const tinted =
+                    stageDrag !== null && line !== undefined && cell.pokemonId !== null && !cell.isLegend
+                    && cell.seat === stageDrag.seat && datum.stage === stageDrag.stage;
                   return (
                     <PokemonCell
                       key={`${row}-${cell.seat}`}
                       cardIndex={cardIndex}
                       datum={datum}
+                      tint={tinted ? stageTint(line.branch[stageDrag.stage]) : undefined}
                       pokemonId={cell.pokemonId}
                       form={formAt(previewPowerups(row), row, cell.seat, cell.pokemonId)}
                       powerupKind={
