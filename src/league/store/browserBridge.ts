@@ -301,7 +301,14 @@ export const useLeagueBrowserStore = create<BridgeState>()((set, get) => {
         // rather than taking the first one away. A gym can field two
         // Geodudes, and the card's own red ✗ is how a line comes off — so
         // the picker never has to double as the remove control.
-        useLeagueStore.getState().placeBranch(card, branchEndingAt(pokemonId));
+        //
+        // "Another of it" is the line the card already holds, whole. The id
+        // that arrives is the first member of the tapped tile the card has,
+        // which for a placed line is its root -- and the branch ending at a
+        // root is the root alone, so a second Geodude came as a Geodude that
+        // never evolved on any row.
+        const held = useLeagueStore.getState().cards[card]?.lines.find((l) => l.branch.includes(pokemonId));
+        useLeagueStore.getState().placeBranch(card, held ? [...held.branch] : branchEndingAt(pokemonId));
       }
       get().refresh();
     },

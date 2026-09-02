@@ -112,7 +112,12 @@ export interface LeagueState {
   setCardTheme: (card: number, theme: string) => void;
   /** Seat a branch. 'front' = seat 1 (signature insertion), 'end' = next free. */
   placeBranch: (card: number, branch: number[], at?: 'end' | 'front') => void;
-  /** Remove whichever line contains the id; later seats close up. */
+  /** Remove the line at a seat; later seats close up. */
+  removeLineAt: (card: number, seat: number) => void;
+  /** Remove the first line that contains the id. A card's red cross names
+   *  its seat and uses `removeLineAt`: a card can hold two lines of one
+   *  species, and "the first that contains it" is then the wrong one half
+   *  the time. */
   removeLineWith: (card: number, pokemonId: number) => void;
   /** Swap the line at a seat for another, keeping the seat's place. */
   replaceLine: (card: number, seat: number, branch: number[]) => void;
@@ -254,6 +259,39 @@ function withCard(
 // reads the key. No-op on production and on every later visit.
 seedLeagueOnFirstVisit();
 
+/**
+ * A card without the line at one seat; later seats close up behind it.
+ *
+ * Shared by removal by seat and removal by id. The card's red cross removes
+ * by seat: a card can hold two lines of one species, and "the first line
+ * containing this id" was the older one under the newer line's cross.
+ */
+function withoutSeat(c: GymCard, seat: number): GymCard {
+  if (seat < 1 || seat > c.lines.length) return c;
+  const lines = c.lines.filter((_, i) => i !== seat - 1);
+  // The powerup belongs to the line, so it goes when the line goes
+  // and follows the seats that close up behind it, on every row.
+  const { powerups } = withPowerups(c, (p) => shiftPowerupAfterRemoval(p, seat));
+  // The signature travels with its line (and dies with it) —
+  // DECISIONS.md item 12.
+  let signatureSeat = c.signatureSeat;
+  let signatureId = c.signatureId ?? null;
+  if (signatureSeat === seat) {
+    signatureSeat = null;
+    signatureId = null;
+  } else if (signatureSeat !== null && signatureSeat > seat) signatureSeat -= 1;
+  // A legendary sits over a column, so it follows the seats closing
+  // up behind the removed one, and goes with the column it was on.
+  const legends = legendsOf(c)
+    .filter((l) => l.seat !== seat)
+    .map((l) => ({ ...l, seat: l.seat > seat ? l.seat - 1 : l.seat }))
+    .filter((l) => l.seat <= lines.length);
+  return {
+    ...c, lines, signatureSeat, signatureId,
+    legends, legend: null, powerups, powerup: null,
+  };
+}
+
 export const useLeagueStore = create<LeagueState>()(
   persist(
     (set) => ({
@@ -337,31 +375,12 @@ export const useLeagueStore = create<LeagueState>()(
         set((s) => ({
           cards: withCard(s.cards, card, (c) => {
             const seat = c.lines.findIndex((l) => l.branch.includes(pokemonId)) + 1;
-            if (seat === 0) return c;
-            const lines = c.lines.filter((_, i) => i !== seat - 1);
-            // The powerup belongs to the line, so it goes when the line goes
-            // and follows the seats that close up behind it, on every row.
-            const { powerups } = withPowerups(c, (p) => shiftPowerupAfterRemoval(p, seat));
-            // The signature travels with its line (and dies with it) —
-            // DECISIONS.md item 12.
-            let signatureSeat = c.signatureSeat;
-            let signatureId = c.signatureId ?? null;
-            if (signatureSeat === seat) {
-              signatureSeat = null;
-              signatureId = null;
-            } else if (signatureSeat !== null && signatureSeat > seat) signatureSeat -= 1;
-            // A legendary sits over a column, so it follows the seats closing
-            // up behind the removed one, and goes with the column it was on.
-            const legends = legendsOf(c)
-              .filter((l) => l.seat !== seat)
-              .map((l) => ({ ...l, seat: l.seat > seat ? l.seat - 1 : l.seat }))
-              .filter((l) => l.seat <= lines.length);
-            return {
-              ...c, lines, signatureSeat, signatureId,
-              legends, legend: null, powerups, powerup: null,
-            };
+            return seat > 0 ? withoutSeat(c, seat) : c;
           }),
         })),
+
+      removeLineAt: (card, seat) =>
+        set((s) => ({ cards: withCard(s.cards, card, (c) => withoutSeat(c, seat)) })),
 
       moveSeat: (card, fromSeat, toSeat) =>
         set((s) => ({

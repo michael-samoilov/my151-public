@@ -1488,7 +1488,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   const setLineBoundaries = useLeagueStore((s) => s.setLineBoundaries);
   const setLegend = useLeagueStore((s) => s.setLegend);
   const swapLegends = useLeagueStore((s) => s.swapLegends);
-  const removeLineWith = useLeagueStore((s) => s.removeLineWith);
+  const removeLineAt = useLeagueStore((s) => s.removeLineAt);
   const cyclePowerupOnCard = useLeagueStore((s) => s.cyclePowerup);
   const { card, shades, rows } = view;
 
@@ -1907,7 +1907,10 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                             // does not say which.
                             ? () => setLegend(cardIndex, null, cell.seat)
                             : topId !== null
-                              ? () => removeLineWith(cardIndex, topId)
+                              // By seat, not by id: a card can hold two lines
+                              // of one species, and "the line containing this
+                              // id" found the older one under the newer's cross.
+                              ? () => removeLineAt(cardIndex, cell.seat)
                               : undefined
                       }
                       removeLabel={cell.isLegend ? 'Remove the endgame boss legendary' : undefined}
@@ -1944,15 +1947,15 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
           </>
         )}
         <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
-        <span>Drag a pokemon up or down to shift when it evolves</span>
+        <span>Drag a pokemon up or down in its column to shift when it evolves</span>
         <ArrowLeftRight className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" aria-hidden />
-        <span>Press and hold a column of pokemon to drag and reorder it</span>
+        <span>Press and hold then drag a column of pokemon to reorder it</span>
         {card.lines.length > 0 && (
           <>
             <LaurelIcon className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem]" />
             <span>
               {legendsOf(card).length > 0
-                ? 'Drag a legendary onto another Endgame Boss column to move or swap it'
+                ? 'Drag an Endgame Boss legendary onto another column to move it'
                 : 'Tap a pokemon in the Endgame Boss row to swap in a legendary'}
             </span>
           </>

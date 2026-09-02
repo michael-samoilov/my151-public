@@ -246,6 +246,10 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
           }
         }
       }
+      // A tap is a tap: the sheet goes away after this one the way it does
+      // after a first pick above, whatever the store did with it. It used to
+      // stay up only on a repeat tap, which read as the tap not landing.
+      if (!isDesktop) setMobileBrowserOpen(false);
       return;
     }
     setRemovalStagedIds(prev => {
@@ -259,7 +263,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
         return [...prev, ...toAdd];
       }
     });
-  }, [pickMode, assignedIds, sections, removeEvoLine]);
+  }, [pickMode, isDesktop, assignedIds, sections, removeEvoLine, setMobileBrowserOpen]);
 
   const handleSubmitStaged = useCallback(() => {
     if (isDesktop) {
