@@ -12,10 +12,7 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { cn } from '@/lib/utils';
 import { slotLabel } from './model/constants';
-import {
-  labelForLeagueSection,
-  useLeagueBrowserStore,
-} from './store/browserBridge';
+import { useLeagueBrowserStore } from './store/browserBridge';
 import { useLeagueStore } from './store/useLeagueStore';
 import { useLeagueUi } from './store/useLeagueUi';
 import { LeagueHome } from './components/LeagueHome';
@@ -157,10 +154,14 @@ export function LeagueApp() {
   /**
    * A legendary joins the card's endgame boss row, not the card as a whole,
    * and every card has one of those rows — so the subject names the row.
-   * "Adding to: Gym 1" over the legendary picker says the wrong place.
+   * "Adding to: Gym 1" over the legendary picker says the wrong place. The
+   * ace and the partner are slots of their own on every card, and their
+   * pickers name the slot for the same reason.
    */
-  const target = browserPurpose === 'legend'
-    ? 'Endgame Boss legendary'
+  const target =
+    browserPurpose === 'legend' ? 'Endgame Boss legendary'
+    : browserPurpose === 'signature' ? 'Ace Pokémon'
+    : browserPurpose === 'partner' ? 'Partner / Shouldermon'
     : slotLabel(openCard ?? 0);
   const sheetHeading = replacing
     ? {
@@ -176,7 +177,9 @@ export function LeagueApp() {
 
   const browser = (
     <BrowserStoreContext.Provider value={useLeagueBrowserStore}>
-      <PokemonBrowser pickMode="instant" labelForSection={labelForLeagueSection} />
+      {/* The pane header on desktop says what the sheet title says on a
+          phone: the slot being filled, not the card it is on. */}
+      <PokemonBrowser pickMode="instant" labelForSection={() => target} />
     </BrowserStoreContext.Provider>
   );
 

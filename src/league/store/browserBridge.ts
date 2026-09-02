@@ -4,7 +4,7 @@ import { getAllPokemon, getEvolutionLine, getPokemonById } from '@/hooks/usePoke
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { CATEGORIES } from '@/data/categories';
 import { placedIds } from '../model/engine';
-import { BOSS_ROW, ROW_COUNT, TEAM_SIZES, slotLabel } from '../model/constants';
+import { BOSS_ROW, ROW_COUNT, TEAM_SIZES } from '../model/constants';
 import { useLeagueStore } from './useLeagueStore';
 import { useLeagueUi, type BrowserPurpose } from './useLeagueUi';
 
@@ -68,11 +68,6 @@ function fieldStage(card: number, seat: number, branch: number[], pokemonId: num
 
 function sectionKey(card: number): string {
   return `slot-${card}`;
-}
-
-export function labelForLeagueSection(sectionId: string): string {
-  const index = Number(sectionId.replace('slot-', ''));
-  return Number.isNaN(index) ? sectionId : slotLabel(index);
 }
 
 interface BridgeState extends BrowserStoreState {

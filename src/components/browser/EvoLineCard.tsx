@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useRowWindow } from './useRowWindow';
+import { homeGen, packRows } from './packRows';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
@@ -147,31 +148,10 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
   const gridMaxW = useTileGridMaxWidth(cols, 0, 0);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // Pack the lines into rows. A line never straddles a row: when one will not
-  // fit in the columns left, the row is padded out first. That invariant is
-  // what lets the grid be windowed by row.
-  const rows = useMemo(() => {
-    const out: { groups: EvoLineGroup[]; trailingSpacers: number }[] = [];
-    let current: EvoLineGroup[] = [];
-    let col = 0;
-    for (const group of groups) {
-      const size = group.members.length;
-      if (col > 0 && col + size > cols) {
-        out.push({ groups: current, trailingSpacers: cols - col });
-        current = [];
-        col = 0;
-      }
-      current.push(group);
-      col += size;
-      if (col === cols) {
-        out.push({ groups: current, trailingSpacers: 0 });
-        current = [];
-        col = 0;
-      }
-    }
-    if (current.length > 0) out.push({ groups: current, trailingSpacers: cols - col });
-    return out;
-  }, [groups, cols]);
+  // Pack the lines into rows. A line never straddles a row, and a line wider
+  // than a row is cut to fit: see `packRows`. That invariant is what lets
+  // the grid be windowed by row.
+  const rows = useMemo(() => packRows(groups, cols), [groups, cols]);
 
   const { start, end, topPad, bottomPad } = useRowWindow(gridRef, rows, windowed, `${cols}:${spritePx}`);
 
@@ -345,14 +325,10 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
   const bgColor = TYPE_COLORS[primaryType as keyof typeof TYPE_COLORS] ?? '#888';
 
   // Line's "home" gen. If the caller supplies anchorGen (regional drilldown,
-  // where one line may be placed in multiple gen sections), use that — it
-  // encodes which gen this particular placement belongs to. Otherwise infer
-  // from matched members (earliest-introduced = home), falling back to all
-  // members. Retro babies (e.g. Chingling Gen 4 → Chimecho Gen 3) land in the
-  // original's gen so the original isn't wrongly flagged cross-gen.
-  const matchedMembers = members.filter(m => matchedIds.has(m.id));
-  const referenceMembers = matchedMembers.length > 0 ? matchedMembers : members;
-  const lineGen = anchorGen ?? Math.min(...referenceMembers.map(m => m.generation));
+  // where one line may be placed in multiple gen sections, or a piece of a
+  // line the packer cut), use that — it encodes which gen this particular
+  // placement belongs to. Otherwise infer it from the members: see `homeGen`.
+  const lineGen = anchorGen ?? homeGen(members, matchedIds);
 
   return (
     <>
