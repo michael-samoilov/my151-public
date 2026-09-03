@@ -73,7 +73,8 @@ remains.
 Opt-outs are attributes in the markup, so the intent is visible in the source:
 `data-audit-clip="intended"` on a container that crops on purpose (a preview
 crop, a scroll region); `data-audit-scale="intended"` on an image that is meant
-to be scaled.
+to be scaled, or on an ancestor when a whole subtree is scaled on purpose (a
+phone-frame preview drawn with CSS `zoom`).
 
 ## What it cannot see
 

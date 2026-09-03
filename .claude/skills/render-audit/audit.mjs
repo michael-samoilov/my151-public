@@ -197,7 +197,7 @@ function inPage(cfg) {
     // Images.
     if (el.tagName === 'IMG') {
       if (!el.complete || el.naturalWidth === 0) add('image-broken', 'error', el, 'image did not load');
-      else if (el.getAttribute('data-audit-scale') !== 'intended') {
+      else if (!el.closest('[data-audit-scale="intended"]')) {
         const scale = r.width / el.naturalWidth;
         const pixel = /pixelated|crisp-edges/.test(cs.imageRendering);
         if (pixel && Math.abs(scale - Math.round(scale)) > 0.01) {
