@@ -164,6 +164,6 @@ survives every cleanup.
 
 `features/` holds one file per user-facing feature, with the four H2s
 (`Sub-features`, `How to get to it (user POV)`, `Driving it with the harness`,
-`Gotchas`). It describes today's single-tool app. As the multi-tool buildout lands
-(league builder, favourite picker), add one feature file per new tool and its
-standard-suite coverage. Keep it honest with `/maintain-verification-skill`.
+`Gotchas`). It describes the pokedex builder and the Pokémon League Builder. As
+the favourite picker lands, add one feature file for it and its standard-suite
+coverage. Keep it honest with `/maintain-verification-skill`.

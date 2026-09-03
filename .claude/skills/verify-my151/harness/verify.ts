@@ -6,7 +6,7 @@
 //     [--surfaces a,b] [--no-build]
 import { openSession, type EngineName } from './lib/engines.ts';
 import type { PersonaName } from './lib/personas.ts';
-import { runLeagueSuite, runStandardSuite } from './lib/flows.ts';
+import { runLeagueChangeSuite, runLeagueSuite, runStandardSuite } from './lib/flows.ts';
 import { probeEngines } from './doctor.ts';
 import { buildIn, startPreview, addWorktree, REPO_ROOT, type Preview, type Worktree } from './lib/servers.ts';
 import { Evidence, rollup, type SurfaceResult, type RunReport, type Check } from './lib/evidence.ts';
@@ -45,6 +45,7 @@ async function driveSurface(def: SurfaceDef, base: string, ev: Evidence, tag: st
     };
     const checks = await runStandardSuite(s, def.persona, ctx);
     checks.push(...(await runLeagueSuite(s, def.persona, ctx)));
+    checks.push(...(await runLeagueChangeSuite(s, def.persona, ctx)));
     return checks;
   } finally { await s.close(); }
 }

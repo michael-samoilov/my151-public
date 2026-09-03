@@ -340,10 +340,16 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
   // engines stop at rendering.
   if (s.engine === 'blink' && persona === null && hydrated) {
     const CARD = 3;
+    // A first visit seeds a Kanto league, and the drive wants an empty
+    // card: a type to set and one line to seat. Start from a blank league,
+    // written to the store and reloaded, as the change suite below does.
+    await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${BLANK_LEAGUE}); return true;`);
+    await s.navigate(url);
+    await waitLeagueHome(s);
     const dexBefore = await readSeedCount(s);
     await s.click(`[data-testid="league-slot-${CARD}"]`);
     await sleep(400);
-    await s.click('[aria-label="Gym type"]');
+    await s.click('[aria-label^="Gym type"]');
     await sleep(300);
     await s.click('svg[data-type="water"]');
     await sleep(400);
@@ -377,5 +383,231 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
 
   const errs = await s.errors();
   checks.push(ok('league:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
+  return checks;
+}
+
+// ---------------------------------------------------------------------------
+// The league builder's 2026-09-02/03 changes, driven as the user meets them:
+// the one-Pokémon pickers name their slot and pack a chain wider than the
+// grid without a gap; a powerup press carries the rows it filled and a
+// second seat fills down too; the replace picker takes a line already on
+// the card; and a quick flick moves an evolution boundary, washing the
+// moving stage while it moves. Handles are structural (test ids, the
+// league store, computed style). The flick is a synthetic touch, so it
+// drives the card's own sensor on every engine that exposes `TouchEvent`,
+// and skips by name on one that does not.
+
+const BLANK_LEAGUE =
+  "JSON.stringify({state:{name:'',cards:Array.from({length:14},()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null}))},version:1})";
+
+async function waitLeagueHome(s: Session): Promise<boolean> {
+  for (let i = 0; i < 40; i++) {
+    const hydrated = await s.evalJson<boolean>(`return !!document.querySelector('[data-testid="league-slot-0"]');`).catch(() => false);
+    if (hydrated) return true;
+    await sleep(250);
+  }
+  return false;
+}
+
+async function waitFor(s: Session, selector: string, tries = 40): Promise<boolean> {
+  for (let i = 0; i < tries; i++) {
+    const there = await s.evalJson<boolean>(`return !!document.querySelector(${JSON.stringify(selector)});`).catch(() => false);
+    if (there) return true;
+    await sleep(200);
+  }
+  return false;
+}
+
+/** Type into the picker's search box, which is the last text input on the page. */
+async function searchPicker(s: Session, query: string): Promise<void> {
+  await s.evalJson(`const is=[...document.querySelectorAll('input')]; const i=is[is.length-1];
+    const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+    set.call(i,${JSON.stringify(query)}); i.dispatchEvent(new Event('input',{bubbles:true})); return true;`);
+  await sleep(900);
+}
+
+/** A card's lines and powerups, as the league store holds them. */
+async function readCard(s: Session, card: number): Promise<{ lines: { branch: number[]; boundaries: number[] }[]; powerups: Record<string, { seat: number; kind: string; index: number }[]> }> {
+  return s.evalJson(`const d=JSON.parse(localStorage.getItem(${JSON.stringify(LEAGUE_KEY)})||'{}'); const c=d.state?.cards?.[${card}]||{};
+    return {lines:c.lines||[], powerups:c.powerups||{}};`);
+}
+
+/** Open a card from the league home; the home must be showing. */
+async function openLeagueCard(s: Session, card: number): Promise<boolean> {
+  await s.click(`[data-testid="league-slot-${card}"]`);
+  const there = await waitFor(s, '[data-testid="card-cell-1-1"]');
+  await sleep(500);
+  return there;
+}
+
+/** Press a powerup button beside a cell, as the user does. */
+async function pressPowerup(s: Session, row: number, seat: number, kind: 'mega' | 'dynamax'): Promise<boolean> {
+  const pressed = await s.evalJson<boolean>(`const cell=document.querySelector('[data-testid="card-cell-${row}-${seat}"]');
+    const b=cell&&cell.parentElement&&cell.parentElement.querySelector('[data-powerup="${kind}"]'); if(!b) return false; b.click(); return true;`);
+  await sleep(400);
+  return pressed;
+}
+
+const powerupOf = (card: Awaited<ReturnType<typeof readCard>>, row: number, seat: number) =>
+  (card.powerups[String(row)] ?? []).find((p) => p.seat === seat) ?? null;
+
+export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + LEAGUE_PATH;
+  const CARD = 9;
+
+  // A blank league, seeded through the store and reloaded, so the drive
+  // starts from the same empty card on every engine.
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'league-change:blank-league', status: 'skip', detail: 'league home never hydrated' });
+    return checks;
+  }
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${BLANK_LEAGUE}); return true;`);
+  await s.navigate(url);
+  const blank = (await waitLeagueHome(s)) && (await readCard(s, CARD)).lines.length === 0;
+  checks.push(ok('league-change:blank-league', blank));
+  if (!blank) return checks;
+
+  // 1. The ace picker names its slot, and its grid packs Eevee's nine tiles
+  //    without a gap in the rows after them.
+  if (await openLeagueCard(s, CARD)) {
+    await s.click('[data-testid="slot-ace"]');
+    const pickerUp = await waitFor(s, '[data-filter-chip="my-dex"]');
+    await sleep(600);
+    const heading = await s.evalJson<string>(`const h=[...document.querySelectorAll('h2')].find(e=>/Adding to:/.test(e.textContent||''));
+      if(h) return h.textContent.replace(/\\s+/g,' ').trim();
+      const lead=[...document.querySelectorAll('span')].find(x=>(x.textContent||'').trim()==='Adding to:');
+      return lead&&lead.parentElement?lead.parentElement.textContent.replace(/\\s+/g,' ').trim():'';`).catch(() => '');
+    checks.push(ok('league-change:ace-picker-names-slot', pickerUp && /Ace Pok/.test(heading), heading || 'no heading found'));
+
+    let eevee = false;
+    for (let i = 0; i < 60 && !eevee; i++) {
+      eevee = await s.evalJson<boolean>(`const scrollerOf=(el)=>{let n=el.parentElement;while(n){const oy=getComputedStyle(n).overflowY;if(oy==='auto'||oy==='scroll')return n;n=n.parentElement;}return null;};
+        const img=document.querySelector('img[alt="eevee"]'); if(img){img.scrollIntoView({block:'center'});return true;}
+        const cell=document.querySelector('[data-row-cell]'); const sc=cell?scrollerOf(cell):null; if(!sc) return false; sc.scrollTop+=sc.clientHeight*0.8; return false;`).catch(() => false);
+      await sleep(150);
+    }
+    await sleep(400);
+    const rows = await s.evalJson<string[][]>(`const img=document.querySelector('img[alt="eevee"]'); const grid=img&&img.closest('[data-row-cell]')&&img.closest('[data-row-cell]').parentElement; if(!grid) return [];
+      const byTop=new Map(); for(const child of grid.children){ if(child.hasAttribute('aria-hidden')) continue; const top=Math.round(child.getBoundingClientRect().top);
+        const sprite=[...child.querySelectorAll('img')].find(i=>(i.getAttribute('src')||'').includes('/sprites/pokemon/'));
+        const label=child.hasAttribute('data-row-cell')?(sprite?sprite.getAttribute('alt'):'?'):'·'; if(!byTop.has(top)) byTop.set(top,[]); byTop.get(top).push(label);}
+      return [...byTop.entries()].sort((a,b)=>a[0]-b[0]).map(e=>e[1]);`).catch(() => [] as string[][]);
+    const gapped = rows.filter((row) => row.some((c, i) => c === '·' && row.slice(i + 1).some((d) => d !== '·')));
+    const omastar = rows.find((row) => row.includes('omastar'));
+    const neighbour = omastar ? omastar[omastar.indexOf('omastar') + 1] : undefined;
+    checks.push(ok('league-change:picker-rows-have-no-mid-row-gap', eevee && rows.length > 3 && gapped.length === 0, eevee ? `${rows.length} rows read, gapped: ${JSON.stringify(gapped)}` : 'Eevee never scrolled into view'));
+    checks.push(ok('league-change:omastar-beside-kabuto', neighbour === 'kabuto', omastar ? omastar.join(', ') : 'no Omastar row rendered'));
+    await s.screenshot(ctx.shot('league-change-ace-picker'));
+  } else {
+    checks.push({ name: 'league-change:ace-picker-names-slot', status: 'skip', detail: 'card never opened' });
+  }
+
+  // 2. Powerups: a second press carries the rows it filled; a second seat
+  //    fills down like the first. Fresh page, so the picker is closed.
+  await s.navigate(url);
+  if ((await waitLeagueHome(s)) && (await openLeagueCard(s, CARD))) {
+    await s.click('[data-testid="card-cell-1-1"]');
+    await waitFor(s, '[data-filter-chip="my-dex"]');
+    await sleep(600);
+    await searchPicker(s, 'charizard');
+    await s.click(PLACE_CARD);
+    await sleep(700);
+    let card = await readCard(s, CARD);
+    const seated = card.lines.length === 1 && card.lines[0].branch.join() === '4,5,6';
+    checks.push(ok('league-change:charizard-seated', seated, JSON.stringify(card.lines.map((l) => l.branch))));
+    if (seated) {
+      await s.navigate(url);
+      await waitLeagueHome(s);
+      await openLeagueCard(s, CARD);
+      await pressPowerup(s, 10, 1, 'mega');
+      await pressPowerup(s, 10, 1, 'mega');
+      card = await readCard(s, CARD);
+      const champion = powerupOf(card, 10, 1);
+      const boss = powerupOf(card, 11, 1);
+      checks.push(ok('league-change:second-press-carries-the-fill', champion?.index === 1 && boss?.index === 1, `champion ${JSON.stringify(champion)}, boss ${JSON.stringify(boss)}`));
+      await s.screenshot(ctx.shot('league-change-charizard-y'));
+
+      // A second seat, with a Mega already on the team.
+      await s.click('[data-testid="card-cell-1-2"]');
+      await waitFor(s, '[data-filter-chip="my-dex"]');
+      await sleep(600);
+      await searchPicker(s, 'lapras');
+      await s.click(PLACE_CARD);
+      await sleep(700);
+      await s.navigate(url);
+      await waitLeagueHome(s);
+      await openLeagueCard(s, CARD);
+      await pressPowerup(s, 10, 2, 'dynamax');
+      card = await readCard(s, CARD);
+      const two = card.lines.length === 2;
+      const seat2 = [powerupOf(card, 10, 2), powerupOf(card, 11, 2)];
+      checks.push(ok('league-change:second-seat-fills-down', two && seat2.every((p) => p?.kind === 'dynamax' && p.index === 0) && powerupOf(card, 10, 1)?.index === 1,
+        `lines ${card.lines.length}, seat 2 rows 10/11 ${JSON.stringify(seat2)}, seat 1 champion ${JSON.stringify(powerupOf(card, 10, 1))}`));
+
+      // 3. The replace picker takes a line already on the card: tap a
+      //    Lapras cell, pick Charmander, and the seat holds Charizard's line.
+      const tapped = await s.evalJson<string | null>(`const cells=[...document.querySelectorAll('[data-testid^="card-cell-"]')];
+        const c=cells.find(el=>{const p=el.getAttribute('data-testid').split('-'); const row=Number(p[2]); const seat=Number(p[3]); const alt=el.querySelector('img')?el.querySelector('img').getAttribute('alt'):''; return seat===2&&row<11&&alt==='lapras';});
+        if(!c) return null; c.click(); return c.getAttribute('data-testid');`).catch(() => null);
+      const replaceUp = tapped !== null && (await waitFor(s, '[data-filter-chip="my-dex"]'));
+      await sleep(600);
+      if (replaceUp) {
+        await searchPicker(s, 'charmander');
+        await s.click(PLACE_CARD);
+        await sleep(800);
+      }
+      card = await readCard(s, CARD);
+      checks.push(ok('league-change:replace-with-placed-line', replaceUp && card.lines.map((l) => l.branch.join()).join('|') === '4,5,6|4,5,6',
+        `tapped ${tapped}, lines ${JSON.stringify(card.lines.map((l) => l.branch))}`));
+
+      // 4. A quick flick of Charizard's top cell two rows up, on the card's
+      //    own touch sensor, with the wash read while the finger is down.
+      await s.navigate(url);
+      await waitLeagueHome(s);
+      await openLeagueCard(s, CARD);
+      const touch = await s.evalJson<boolean>(`return typeof TouchEvent==='function' && typeof Touch==='function';`).catch(() => false);
+      const before = await readCard(s, CARD);
+      const top = before.lines[0]?.boundaries[2] ?? 0;
+      if (!touch) {
+        checks.push({ name: 'league-change:flick-moves-stage', status: 'skip', detail: 'this engine exposes no TouchEvent constructor; device-only here' });
+        checks.push({ name: 'league-change:flick-washes-the-stage', status: 'skip', detail: 'as above' });
+      } else if (top < 4) {
+        checks.push(ok('league-change:flick-moves-stage', false, `Charizard's run starts on row ${top}, no room to flick`));
+      } else {
+        const FLICK = `const from=document.querySelector('[data-testid="card-cell-${top}-1"]'); const to=document.querySelector('[data-testid="card-cell-${top - 2}-1"]');
+          const a=from.getBoundingClientRect(), b=to.getBoundingClientRect(); const x=a.x+a.width/2, y0=a.y+a.height/2, y1=b.y+b.height/2;
+          const at=(f)=>y0+(y1-y0)*f; const y=at(STEP);
+          const t=new Touch({identifier:1,target:from,clientX:x,clientY:y,pageX:x,pageY:y,screenX:x,screenY:y,radiusX:10,radiusY:10,force:1});
+          const end=TYPE==='touchend'; const ev=new TouchEvent(TYPE,{bubbles:true,cancelable:true,composed:true,touches:end?[]:[t],targetTouches:end?[]:[t],changedTouches:[t]});
+          from.dispatchEvent(ev); return document.querySelectorAll('[data-stage-tint]').length;`;
+        const step = (type: string, f: number) =>
+          s.evalJson<number>(FLICK.split('STEP').join(String(f)).split('TYPE').join(JSON.stringify(type)));
+        await step('touchstart', 0);
+        await sleep(30);
+        let washed = 0;
+        for (const f of [1 / 3, 2 / 3, 1]) {
+          washed = await step('touchmove', f);
+          await sleep(30);
+        }
+        await sleep(120);
+        const midCard = await readCard(s, CARD);
+        const washedMid = await s.evalJson<number>(`return document.querySelectorAll('[data-stage-tint]').length;`);
+        await s.screenshot(ctx.shot('league-change-flick-mid'));
+        await step('touchend', 1);
+        await sleep(400);
+        const after = await readCard(s, CARD);
+        const washedAfter = await s.evalJson<number>(`return document.querySelectorAll('[data-stage-tint]').length;`);
+        checks.push(ok('league-change:flick-moves-stage', after.lines[0]?.boundaries[2] === top - 2, `boundaries ${before.lines[0]?.boundaries} -> ${after.lines[0]?.boundaries} (mid ${midCard.lines[0]?.boundaries})`));
+        checks.push(ok('league-change:flick-washes-the-stage', washedMid > 0 && washedAfter === 0, `washed cells mid-flick ${washedMid} (last move ${washed}), after release ${washedAfter}`));
+      }
+    }
+  } else {
+    checks.push({ name: 'league-change:charizard-seated', status: 'skip', detail: 'card never opened' });
+  }
+
+  const errs = await s.errors();
+  checks.push(ok('league-change:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
   return checks;
 }
