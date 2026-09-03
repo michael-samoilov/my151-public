@@ -127,6 +127,37 @@ and relative A/Bs, never absolute timing. The app emits no `performance.mark`;
 measure timing externally via the Performance API on the real engine if needed,
 and gate on long tasks, not headless frame rate.
 
+## Video
+
+Pass `--video` to record the driven session per surface into the run's evidence.
+In diff mode you get a before and an after clip per surface for side-by-side
+review.
+
+```
+# Record the animation-relevant engines, before and after a change.
+node_modules/.bin/tsx .claude/skills/verify-my151/harness/verify.ts diff --base HEAD --surfaces blink,webkit,gecko --video
+```
+
+Per engine. Blink records with Playwright's built-in `recordVideo` (a `.webm` at
+the context viewport, so personas record at mobile size). WebKit and Gecko have no
+built-in recorder, so `--video` runs them under a fixed Xvfb display (WebKit on
+`:99`, Firefox non-headless on `:98`) and grabs it with ffmpeg to an `.mp4`. That
+needs ffmpeg, which `setup-engines.sh` installs. The default, non-video lanes are
+unchanged (`xvfb-run` for WebKit, headless Firefox), so a normal run is unaffected.
+
+When to use. Reach for `--video` when a change touches animation or otherwise
+benefits from motion review, such as view transitions, milestone celebrations,
+drag-and-reorder, sheet open and close, loading and skeleton states, or layout
+reflow. Record on the engines that matter, and attach the before and after clips
+as the proof. WebKit and Gecko are where iOS and Firefox animation rendering
+actually differs from Blink, so include them for a real cross-engine animation
+proof.
+
+Honest caveat, carried from the timing rules. Sandbox video proves animation
+correctness and relative before/after behavior, not device smoothness. WebKitGTK
+is software-rendered with no vsync, so true 60fps feel stays device-only. Never
+present a sandbox clip as a performance proof.
+
 ## Evidence
 
 Each run writes to `.claude/skills/verify-my151/evidence/<runId>/` (gitignored):
@@ -158,7 +189,8 @@ survives every cleanup.
 - `harness/discriminate.ts` is the mutation test for the verifier (shown above).
 - `harness/lib/engines.ts` is the three-engine Session layer; `personas.ts` the
   Blink identities; `flows.ts` the standard suite; `servers.ts` build+preview and
-  worktree isolation; `evidence.ts` the report writer.
+  worktree isolation; `evidence.ts` the report writer; `capture.ts` the Xvfb and
+  ffmpeg helpers for the WebKit and Gecko video lanes.
 
 ## Feature map
 
