@@ -49,7 +49,7 @@ Two boundaries:
 
 End every turn that changes anything with the five-part report in `.claude/skills/work-report/SKILL.md`: Changed, Merge, Verified, Tradeoffs, You test. The SessionStart hook injects the template each session. "Verified" means measured — root-cause tests, or screenshots from the running app — never inferred from code alone. For UI changes, send a before-and-after side by side so review needs no preview deploy.
 
-Before you share a rendered mockup, an image export, or a static page, run the render audit in `.claude/skills/render-audit/SKILL.md` on every board and fix what it finds. A clipped icon, a truncated name, or a label wrapped onto three lines is a defect you find, not one the reviewer points out. The clean run belongs under "Verified".
+Before you share a rendered mockup, an image export, or a static page, run the fix loop in `.claude/skills/render-audit/SKILL.md` until a round is clean: render, audit, fix at the source, repeat. A clipped icon, a truncated name, or a label wrapped onto three lines is a defect you find, not one the reviewer points out. When the real app changed, the loop ends with the verify-my151 diff, which runs the same audit on every engine. The clean round belongs under "Verified".
 
 ## Build Verification
 
