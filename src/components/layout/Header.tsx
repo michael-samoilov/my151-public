@@ -104,7 +104,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
         <div className="flex items-center gap-1">
           <Button
             variant={currentView === 'builder' ? 'default' : 'ghost'}
-            size="sm"
+            size="pill"
             onClick={() => onViewChange('builder')}
             className="px-2 sm:px-3"
             data-nav="builder"
@@ -116,7 +116,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
           {analyticsUnlocked ? (
             <Button
               variant={currentView === 'analytics' ? 'default' : 'ghost'}
-              size="sm"
+              size="pill"
               onClick={() => onViewChange('analytics')}
               className="px-2 sm:px-3"
               data-nav="analytics"
@@ -130,7 +130,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="pill"
                   onClick={() => setLockTip((o) => !o)}
                   className="px-2 text-muted-foreground/70 hover:text-muted-foreground sm:px-3"
                   data-nav="analytics"
@@ -152,7 +152,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
 
           <Button
             variant={currentView === 'view' ? 'default' : 'ghost'}
-            size="sm"
+            size="pill"
             onClick={() => onViewChange('view')}
             className="px-2 sm:px-3"
             data-nav="view"

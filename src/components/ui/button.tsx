@@ -20,6 +20,12 @@ const buttonVariants = cva(
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
         icon: "h-10 w-10",
+        // The tool bars' nav pill: the dex builder's view tabs and the league
+        // home's toggle, one height on both. The paint is 1.75rem; the press
+        // reaches 0.5rem above and below it through an invisible extension,
+        // so in a 2.75rem bar the target is the bar's full height (44px at a
+        // 16px root, Apple's minimum) while the pill stays short.
+        pill: "relative h-7 rounded-md px-2 before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']",
       },
     },
     defaultVariants: { variant: "default", size: "default" },
