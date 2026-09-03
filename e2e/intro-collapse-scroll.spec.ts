@@ -101,9 +101,12 @@ test.describe('intro card collapse keeps the page still', () => {
 
   /** The flow from the original screen recording: scroll a little, so the card
    *  straddles the top edge with its headline and CTA still showing, then fill
-   *  the Starters section right under it. Returns the Starters offset before
-   *  and after. The visible slice of card closes, so Starters is expected to
-   *  move up by exactly that slice — and no further. */
+   *  the Starters section right under it.
+   *
+   *  The card is the first thing in the list, so once it goes the only thing
+   *  above Starters is the list's own top padding. Every straddling collapse
+   *  therefore settles the same way: scrolled to the top, Starters sitting one
+   *  padding below the header rather than jammed against it. */
   async function fillStartersWithCardStraddlingTheTop(page: Page) {
     await page.goto('/');
     await expect(page.getByRole('button', { name: 'Dismiss intro' })).toBeVisible();
@@ -128,9 +131,8 @@ test.describe('intro card collapse keeps the page still', () => {
     await addButton.click();
     await expect(sheet).toBeHidden();
     await page.waitForTimeout(1_500);
-    const after = await startersOffset(page);
 
-    return { before, after };
+    return { before, ...(await restingState(page)) };
   }
 
   function startersOffset(page: Page) {
@@ -142,26 +144,49 @@ test.describe('intro card collapse keeps the page still', () => {
     });
   }
 
+  /** Where Starters ended up, plus the two things it should line up with: the
+   *  scroll offset, and the list's own top padding. The padding is read from
+   *  the DOM rather than hardcoded — it is rem-based, so it tracks the app's
+   *  JS-computed root font-size and differs between viewports. */
+  function restingState(page: Page) {
+    return page.evaluate(() => {
+      const scroller = document.querySelector('[data-build-scroll]') as HTMLElement | null;
+      const section = document.querySelector('[data-section-id="starter"]');
+      if (!scroller || !section) return { after: null, scrollTop: null, listPadding: null };
+      const list = section.parentElement?.parentElement as HTMLElement | null;
+      return {
+        after: Math.round(section.getBoundingClientRect().top - scroller.getBoundingClientRect().top),
+        scrollTop: Math.round(scroller.scrollTop),
+        listPadding: list ? Math.round(parseFloat(getComputedStyle(list).paddingTop)) : null,
+      };
+    });
+  }
+
   test('on Safari, filling Starters under a half-scrolled card keeps Starters on screen', async ({ page }) => {
     await emulateSafariScrolling(page);
-    const { before, after } = await fillStartersWithCardStraddlingTheTop(page);
+    const { before, after, scrollTop, listPadding } = await fillStartersWithCardStraddlingTheTop(page);
 
     expect(before).not.toBeNull();
     expect(after).not.toBeNull();
+    expect(listPadding).toBeGreaterThan(0);
     // Old code: `before - 374`, Starters gone off the top.
-    expect(after!).toBeGreaterThanOrEqual(0);
-    expect(Math.abs(after! - (before! - CARD_SLICE_ON_SCREEN))).toBeLessThanOrEqual(2);
+    expect(after!).toBeGreaterThan(0);
+    // Rests at the top of the list with its padding intact, not jammed under
+    // the header — which is where the first version of this fix left it.
+    expect(scrollTop).toBe(0);
+    expect(Math.abs(after! - listPadding!)).toBeLessThanOrEqual(2);
   });
 
   test('on anchoring browsers the straddling case is corrected too', async ({ page }) => {
-    const { before, after } = await fillStartersWithCardStraddlingTheTop(page);
+    const { before, after, scrollTop, listPadding } = await fillStartersWithCardStraddlingTheTop(page);
 
     expect(before).not.toBeNull();
     expect(after).not.toBeNull();
     // Chromium's own anchor lands inside the shrinking card here and scrolls
     // the wrong way (measured 394px). IntroCard has to take over.
-    expect(after!).toBeGreaterThanOrEqual(0);
-    expect(Math.abs(after! - (before! - CARD_SLICE_ON_SCREEN))).toBeLessThanOrEqual(2);
+    expect(after!).toBeGreaterThan(0);
+    expect(scrollTop).toBe(0);
+    expect(Math.abs(after! - listPadding!)).toBeLessThanOrEqual(2);
   });
 
   test('dismissing the card while it is on screen never touches scrollTop', async ({ page }) => {

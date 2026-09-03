@@ -514,6 +514,13 @@ export function IntroCard({
    * *was* on screen closes, and the content below moves up by that slice and
    * no more — which is what it would have done had the card been on screen and
    * folded in place.
+   *
+   * One clamp on top of that. The card is the first thing in the list, so
+   * `cardTop` is exactly the list's own top padding — nothing else is above it.
+   * When the card straddles the viewport's top edge the arithmetic above lands
+   * on `cardTop` every time, which parks the scroller *inside* that padding and
+   * presses the first section flat against the header. There is nothing up
+   * there worth keeping, so go to the top instead and let the padding show.
    */
   useLayoutEffect(() => {
     if (phase !== 'collapsing') return;
@@ -526,13 +533,14 @@ export function IntroCard({
     const above = scroller.scrollTop - cardTop;
     if (above <= 0) return; // card is on screen — let it animate
 
+    const corrected = scroller.scrollTop - Math.min(rect.height, above);
     const anchoring = scroller.style.overflowAnchor;
     scroller.style.overflowAnchor = 'none';
     // Skipping the animation also skips the effect that records the dismissal,
     // so record it here or the card comes back on the next visit.
     if (!FORCE_INTRO) markIntroSeen();
     setPhase('gone');
-    scroller.scrollTop -= Math.min(rect.height, above);
+    scroller.scrollTop = corrected <= cardTop ? 0 : corrected;
     requestAnimationFrame(() => {
       scroller.style.overflowAnchor = anchoring;
     });
