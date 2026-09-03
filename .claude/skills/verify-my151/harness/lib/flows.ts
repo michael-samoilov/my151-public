@@ -4,7 +4,7 @@
 import type { Session } from './engines.ts';
 import { READ_PERSONA, assertPersona, type PersonaReadback, type PersonaName } from './personas.ts';
 import type { Check } from './evidence.ts';
-import { auditBody, findingKey, HARD_KINDS } from '../../../render-audit/audit-core.mjs';
+import { auditBody, findingKey, APP_HARD_KINDS } from '../../../render-audit/audit-core.mjs';
 
 // Source of truth: src/lib/demoMode.ts POKEDEX_STORAGE_KEY (local build) and
 // src/store/usePokedexStore.ts persist version.
@@ -35,16 +35,17 @@ interface AuditFinding { kind: string; severity: string; path: string; text: str
 
 /**
  * The render audit (.claude/skills/render-audit), run on the page as it
- * stands: clipped boxes, cut or truncated text, broken or mis-scaled images.
- * The frame checks stay off: an app page scrolls, so content below the fold
- * is not outside anything. The check fails on hard findings; every finding
+ * stands: clipped boxes, cut text, broken images. Sprites are CSS-sized on
+ * screen and an ellipsis is a designed truncation, so those stay warnings
+ * here. The frame checks stay off: an app page scrolls, so content below the
+ * fold is not outside anything. The check fails on hard findings; every finding
  * rides along as a key, so diff mode names the new ones as regressions even
  * when the base already carried some.
  */
 async function auditRender(s: Session, name: string): Promise<Check> {
   try {
-    const result = await s.evalJson<{ findings: AuditFinding[] }>(auditBody({ minFont: 8, annotate: false, checkFrame: false }));
-    const hard = result.findings.filter((f) => HARD_KINDS.includes(f.kind));
+    const result = await s.evalJson<{ findings: AuditFinding[] }>(auditBody({ minFont: 8, annotate: false, checkFrame: false, offCanvasOk: true }));
+    const hard = result.findings.filter((f) => APP_HARD_KINDS.includes(f.kind));
     const detail = hard.slice(0, 4).map((f) => `${f.kind}: ${f.detail} (${f.text || f.path})`).join(' | ');
     return {
       name,
