@@ -4,6 +4,7 @@
 import type { Session } from './engines.ts';
 import { READ_PERSONA, assertPersona, type PersonaReadback, type PersonaName } from './personas.ts';
 import type { Check } from './evidence.ts';
+import { auditBody, findingKey, HARD_KINDS } from '../../../render-audit/audit-core.mjs';
 
 // Source of truth: src/lib/demoMode.ts POKEDEX_STORAGE_KEY (local build) and
 // src/store/usePokedexStore.ts persist version.
@@ -29,6 +30,32 @@ function seedValue(sections: Record<string, number[]>): string {
 }
 
 const ok = (name: string, cond: boolean, detail?: string): Check => ({ name, status: cond ? 'pass' : 'fail', detail });
+
+interface AuditFinding { kind: string; severity: string; path: string; text: string; detail: string; }
+
+/**
+ * The render audit (.claude/skills/render-audit), run on the page as it
+ * stands: clipped boxes, cut or truncated text, broken or mis-scaled images.
+ * The frame checks stay off: an app page scrolls, so content below the fold
+ * is not outside anything. The check fails on hard findings; every finding
+ * rides along as a key, so diff mode names the new ones as regressions even
+ * when the base already carried some.
+ */
+async function auditRender(s: Session, name: string): Promise<Check> {
+  try {
+    const result = await s.evalJson<{ findings: AuditFinding[] }>(auditBody({ minFont: 8, annotate: false, checkFrame: false }));
+    const hard = result.findings.filter((f) => HARD_KINDS.includes(f.kind));
+    const detail = hard.slice(0, 4).map((f) => `${f.kind}: ${f.detail} (${f.text || f.path})`).join(' | ');
+    return {
+      name,
+      status: hard.length === 0 ? 'pass' : 'fail',
+      detail: hard.length ? `${hard.length} hard finding(s): ${detail}` : `${result.findings.length} warning(s), no hard findings`,
+      findings: result.findings.map(findingKey),
+    };
+  } catch (e) {
+    return { name, status: 'fail', detail: `audit did not run: ${(e as Error).message.slice(0, 120)}` };
+  }
+}
 
 async function waitForApp(s: Session, tries = 40): Promise<boolean> {
   for (let i = 0; i < tries; i++) {
@@ -196,6 +223,7 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
   const sprites = await s.evalJson<number>(`return document.querySelectorAll('img').length;`);
   checks.push(ok('builder:sprites-rendered', sprites >= 10, `img count ${sprites}`));
   await s.screenshot(ctx.shot('builder-seeded'));
+  checks.push(await auditRender(s, 'render:no-clipped-content'));
 
   // Navigate each tab and confirm exactly it becomes active — and that the
   // tool bar's three cells (title/count, centred nav, page controls) hold
@@ -221,6 +249,7 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
     );
     checks.push(ok(`header:${nav}-no-overlap`, lanes.found && lanes.ok, lanes.detail));
     await s.screenshot(ctx.shot(`nav-${nav}`));
+    checks.push(await auditRender(s, `render:${nav}-no-clipped-content`));
   }
 
   // Scroll the builder container: setting the offset must take (proves it scrolls).
@@ -311,6 +340,7 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
   }
   checks.push(ok('league:hydrated-league-home', hydrated));
   await s.screenshot(ctx.shot('league-home'));
+  if (hydrated) checks.push(await auditRender(s, 'league:render-no-clipped-content'));
 
   const layout = await s.evalJson<{ scrollWidth: number; innerWidth: number; bodyH: number }>(LAYOUT);
   checks.push(ok('league:no-horizontal-overflow', layout.scrollWidth <= layout.innerWidth + 2, `scrollWidth ${layout.scrollWidth} vs innerWidth ${layout.innerWidth}`));
@@ -366,6 +396,7 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
     await s.click(PLACE_CARD);
     await sleep(700);
     await s.screenshot(ctx.shot('league-card-driven'));
+    checks.push(await auditRender(s, 'league:card-render-no-clipped-content'));
     const oracle = await readLeagueOracle(s, CARD);
     checks.push(ok('league:drive-writes-store', oracle.has && oracle.cardType === 'water' && oracle.lineCount === 1,
       `searched=${searched} type=${oracle.cardType} lines=${oracle.lineCount}`));

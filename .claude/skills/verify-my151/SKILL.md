@@ -93,17 +93,22 @@ Flags: `--base <ref>` (diff), `--surfaces a,b`, `--no-build` (reuse an existing
 `dist/`). The standard suite per surface is boot (React mounts), no horizontal
 overflow, the localStorage seed oracle round-trips, the seeded grid renders
 sprites, each nav tab activates (read from the nav button's computed background),
-the builder container scrolls, and a zero-tolerance JS-error tripwire
-(`runtime:no-js-errors`). A blanket overlap audit is deliberately not a standard
-check, because the dense sprite grid has intentional micro-overlaps; port
-`e2e/support/layoutAudit.ts` for a scoped audit of one container in a future tool. The tripwire is authoritative on Blink, where host-side
+the builder container scrolls, the render audit finds no clipped, cut, or
+truncated content on the grid and on each tab (`render:*-no-clipped-content`,
+the in-page code of `.claude/skills/render-audit`), and a zero-tolerance
+JS-error tripwire (`runtime:no-js-errors`). The render checks carry every
+finding as a key, so diff mode reports a finding the base did not have as a
+regression even when the check's status did not flip. A blanket overlap audit
+is deliberately not a standard check, because the dense sprite grid has
+intentional micro-overlaps; the render audit's overlap rule stays a warning
+for the same reason. The tripwire is authoritative on Blink, where host-side
 `pageerror` and the ErrorBoundary's `[P151] crash` console log are captured, and
 best-effort on WebKit and Gecko via a post-load page trap. A real-placement check
 (`placement:real-add-grows-store`) drives a live add on desktop Blink and skips
 until a `data-testid="verify-evo-card"` lands on the browser card.
 
 **Prove the verifier itself.** `harness/discriminate.ts` is a mutation test: it
-injects a known regression (async throw, wide element, broken persist)
+injects a known regression (async throw, wide element, clipped chip, broken persist)
 into a worktree, builds, runs the Blink suite, and asserts the matching check
 fails, with the clean tree passing. Run it after changing the harness. A verifier
 that always says PASS is worse than none.

@@ -41,6 +41,13 @@ const MUTATIONS: Mutation[] = [
     apply: (dir) => append(dir, 'src/main.tsx', `queueMicrotask(() => { const d = document.createElement('div'); d.style.cssText = 'position:relative;width:5000px;height:1px'; document.body.appendChild(d); });`),
   },
   {
+    name: 'clipped-chip',
+    expectFail: 'render:no-clipped-content',
+    expectPassStill: 'boot:react-mounted',
+    // A bordered chip wider than its overflow-hidden column: the shape the render audit exists to catch.
+    apply: (dir) => append(dir, 'src/main.tsx', `queueMicrotask(() => { const d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;top:0;width:60px;overflow:hidden;z-index:1'; d.innerHTML = '<span style="display:inline-block;width:120px;border:2px solid #333;box-sizing:border-box">verify-injected-clip</span>'; document.body.appendChild(d); });`),
+  },
+  {
     name: 'break-persist',
     // Not oracle:seed-persisted: that reads localStorage back after a reload,
     // which only exposes a broken partialize if something *writes* first. The

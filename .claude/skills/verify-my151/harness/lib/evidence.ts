@@ -7,7 +7,13 @@ import { REPO_ROOT } from './servers.ts';
 
 export type Status = 'pass' | 'fail' | 'skip';
 
-export interface Check { name: string; status: Status; detail?: string; }
+export interface Check {
+  name: string;
+  status: Status;
+  detail?: string;
+  /** Stable one-line keys, for checks whose result is a set (the render audit). Diff mode names new members as regressions. */
+  findings?: string[];
+}
 
 export interface SurfaceResult {
   surface: string; // e.g. "blink", "blink:ios-safari", "webkit", "gecko"

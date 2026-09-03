@@ -94,8 +94,13 @@ async function main() {
         if (args.mode === 'diff' && basePreview) {
           const before = await driveSurface(def, basePreview.url, ev, 'before');
           const beforeMap = new Map(before.map((c) => [c.name, c.status]));
+          const beforeFindings = new Map(before.map((c) => [c.name, new Set(c.findings ?? [])]));
           for (const c of after) {
             if (c.status === 'fail' && beforeMap.get(c.name) === 'pass') regressions.push(`${def.surface}:${c.name}`);
+            // A set-valued check regresses when it gains a member the base did not have,
+            // whatever its status: the app is assumed correct as it stands, so only the delta counts.
+            const fresh = (c.findings ?? []).filter((k) => !(beforeFindings.get(c.name)?.has(k)));
+            if (fresh.length) regressions.push(`${def.surface}:${c.name}: ${fresh.length} new finding(s): ${fresh.slice(0, 3).join(' ; ')}`);
           }
           checks = after.map((c) => ({ ...c, detail: `${c.detail ?? ''}${beforeMap.get(c.name) ? ` (before=${beforeMap.get(c.name)})` : ''}` }));
         }
