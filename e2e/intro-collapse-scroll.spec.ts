@@ -96,6 +96,74 @@ test.describe('intro card collapse keeps the page still', () => {
     expect(Math.abs(after! - before!)).toBeLessThanOrEqual(2);
   });
 
+  /** How much of the card is left on screen in the straddling flow. */
+  const CARD_SLICE_ON_SCREEN = 170;
+
+  /** The flow from the original screen recording: scroll a little, so the card
+   *  straddles the top edge with its headline and CTA still showing, then fill
+   *  the Starters section right under it. Returns the Starters offset before
+   *  and after. The visible slice of card closes, so Starters is expected to
+   *  move up by exactly that slice — and no further. */
+  async function fillStartersWithCardStraddlingTheTop(page: Page) {
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: 'Dismiss intro' })).toBeVisible();
+
+    await page.evaluate((keep) => {
+      const scroller = document.querySelector('[data-build-scroll]') as HTMLElement;
+      const card = document.querySelector('.intro-float-a')!.closest('.grid') as HTMLElement;
+      const target = card.getBoundingClientRect().bottom - scroller.getBoundingClientRect().top - keep;
+      scroller.scrollTop = Math.max(0, Math.round(target));
+    }, CARD_SLICE_ON_SCREEN);
+
+    // First water slot; the sheet opens pre-filtered to water starters.
+    await page.locator('[data-section-id="starter"] button.border-dashed').nth(6).click();
+    const sheet = page.getByRole('dialog');
+    await expect(sheet).toBeVisible();
+    await sheet.getByText('Squirtle', { exact: true }).first().click();
+
+    const addButton = page.getByRole('button', { name: /^Add 3/ });
+    await expect(addButton).toBeVisible();
+    const before = await startersOffset(page);
+
+    await addButton.click();
+    await expect(sheet).toBeHidden();
+    await page.waitForTimeout(1_500);
+    const after = await startersOffset(page);
+
+    return { before, after };
+  }
+
+  function startersOffset(page: Page) {
+    return page.evaluate(() => {
+      const scroller = document.querySelector('[data-build-scroll]');
+      const section = document.querySelector('[data-section-id="starter"]');
+      if (!scroller || !section) return null;
+      return Math.round(section.getBoundingClientRect().top - scroller.getBoundingClientRect().top);
+    });
+  }
+
+  test('on Safari, filling Starters under a half-scrolled card keeps Starters on screen', async ({ page }) => {
+    await emulateSafariScrolling(page);
+    const { before, after } = await fillStartersWithCardStraddlingTheTop(page);
+
+    expect(before).not.toBeNull();
+    expect(after).not.toBeNull();
+    // Old code: `before - 374`, Starters gone off the top.
+    expect(after!).toBeGreaterThanOrEqual(0);
+    expect(Math.abs(after! - (before! - CARD_SLICE_ON_SCREEN))).toBeLessThanOrEqual(2);
+  });
+
+  test('on anchoring browsers the straddling case is corrected too', async ({ page }) => {
+    const { before, after } = await fillStartersWithCardStraddlingTheTop(page);
+
+    expect(before).not.toBeNull();
+    expect(after).not.toBeNull();
+    // Chromium's own anchor lands inside the shrinking card here and scrolls
+    // the wrong way (measured 394px). IntroCard has to take over.
+    expect(after!).toBeGreaterThanOrEqual(0);
+    expect(Math.abs(after! - (before! - CARD_SLICE_ON_SCREEN))).toBeLessThanOrEqual(2);
+  });
+
   test('dismissing the card while it is on screen never touches scrollTop', async ({ page }) => {
     await emulateSafariScrolling(page);
     await page.goto('/');
