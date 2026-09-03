@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { expandTemplate } from '@/lib/richTemplate';
 import { formatNumber, raw, t } from '@/i18n';
 import { DEX_TOTAL } from '@/lib/milestones';
@@ -440,6 +440,7 @@ export function IntroCard({
   totalPlaced: number;
   onChooseStarters: () => void;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<'shown' | 'collapsing' | 'gone'>(() => {
     if (FORCE_INTRO) return 'shown';
     if (introSeen()) return 'gone';
@@ -481,10 +482,75 @@ export function IntroCard({
     return () => clearTimeout(t);
   }, [phase]);
 
+  /**
+   * Keep the content *below* the card still when the card folds away above the
+   * viewport — placing a Pokémon in a section further down does exactly that.
+   *
+   * No browser gets this right on its own, each in its own way. Safari has no
+   * scroll anchoring at all, so the page jumps up by the card's full height
+   * (374px measured) and the section the user just filled leaves the screen.
+   * Chrome anchors, and that is fine while the card is wholly above the fold,
+   * but when the card *straddles* the top edge Chrome's anchor lands inside the
+   * shrinking card and it scrolls the wrong way — measured 394px, worse than
+   * Safari. So this takes over for the one mutation that matters: switch the
+   * scroller's anchoring off, remove the card, correct scrollTop, and hand
+   * anchoring back the next frame.
+   *
+   * The correction is atomic rather than per-frame on purpose. Placing a
+   * Pokémon re-renders the whole grid, and that starves the main thread badly
+   * enough that the 450ms collapse timer has been measured firing 1342ms late.
+   * Anything spread across animation frames simply does not get the frames,
+   * and the height disappears in one jump anyway.
+   *
+   * So decide once, when the collapse starts:
+   *
+   *   above = scrollTop - (the card's top in content space)
+   *
+   * `above` is how much of the card sits over the viewport's top edge — the
+   * part whose removal moves everything below it. None: the card is on screen,
+   * the user is looking at it, it folds away as designed. Some: that fold is
+   * off screen and worth nothing, so drop the card in a single step and take
+   * `above` off scrollTop before the browser paints. Whatever slice of the card
+   * *was* on screen closes, and the content below moves up by that slice and
+   * no more — which is what it would have done had the card been on screen and
+   * folded in place.
+   *
+   * One clamp on top of that. The card is the first thing in the list, so
+   * `cardTop` is exactly the list's own top padding — nothing else is above it.
+   * When the card straddles the viewport's top edge the arithmetic above lands
+   * on `cardTop` every time, which parks the scroller *inside* that padding and
+   * presses the first section flat against the header. There is nothing up
+   * there worth keeping, so go to the top instead and let the padding show.
+   */
+  useLayoutEffect(() => {
+    if (phase !== 'collapsing') return;
+    const el = rootRef.current;
+    const scroller = el?.closest<HTMLElement>('[data-build-scroll]');
+    if (!el || !scroller) return;
+
+    const rect = el.getBoundingClientRect();
+    const cardTop = rect.top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+    const above = scroller.scrollTop - cardTop;
+    if (above <= 0) return; // card is on screen — let it animate
+
+    const corrected = scroller.scrollTop - Math.min(rect.height, above);
+    const anchoring = scroller.style.overflowAnchor;
+    scroller.style.overflowAnchor = 'none';
+    // Skipping the animation also skips the effect that records the dismissal,
+    // so record it here or the card comes back on the next visit.
+    if (!FORCE_INTRO) markIntroSeen();
+    setPhase('gone');
+    scroller.scrollTop = corrected <= cardTop ? 0 : corrected;
+    requestAnimationFrame(() => {
+      scroller.style.overflowAnchor = anchoring;
+    });
+  }, [phase]);
+
   if (phase === 'gone') return null;
 
   return (
     <div
+      ref={rootRef}
       className="grid transition-[grid-template-rows,opacity] ease-in-out"
       style={{
         gridTemplateRows: phase === 'collapsing' ? '0fr' : '1fr',
