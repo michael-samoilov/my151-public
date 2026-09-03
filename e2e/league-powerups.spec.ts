@@ -244,6 +244,25 @@ test.describe('powerups', () => {
     expect(await drawn(page, 10, 2), 'and gained nothing').toBe('lapras');
   });
 
+  test('a press animates nothing on the disc', async ({ page }) => {
+    // The ring and the symbol used to ease over 150ms, and for exactly those
+    // nine frames every cross and reset on the rows below sat a device pixel
+    // off, then dropped back: WebKit composites an element while it
+    // transitions and re-rasterises what overlaps it. Measured on a phone
+    // recording, and again on WebKitGTK with the transition slowed. The
+    // state change is instant, so nothing is composited.
+    await openCard(page, 12);
+    await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');
+    const durations = await page.evaluate(() =>
+      [...document.querySelectorAll('[data-powerup-disc]')].flatMap((disc) => {
+        const img = disc.querySelector('img');
+        return [getComputedStyle(disc).transitionDuration, img ? getComputedStyle(img).transitionDuration : '0s'];
+      }),
+    );
+    expect(durations.length, 'discs were drawn').toBeGreaterThan(0);
+    expect(durations.every((d) => d === '0s'), `every disc and symbol has no transition: ${[...new Set(durations)].join(', ')}`).toBe(true);
+  });
+
   test('a seat holds one powerup, but a row holds as many as it has seats', async ({ page }) => {
     await openCard(page, 12);
     await seat(page, '[data-testid="card-cell-1-1"]', 'charizard');

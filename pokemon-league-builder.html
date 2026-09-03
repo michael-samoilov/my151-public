@@ -21,6 +21,48 @@
       html { background-color: #f7f7f8; }
       body { margin: 0; background-color: #f7f7f8; color: #0a0a0a;
              font-family: system-ui, -apple-system, sans-serif; }
+      /* The root font-size the app installs from JS (src/lib/layoutFontSize.ts),
+       * as CSS, so the shell below lays out in the same rem the app will. At
+       * load the two agree exactly; the JS value then takes over as an inline
+       * style, so no vw clamp ever shrinks the app under a pinch. */
+      html { font-size: clamp(16px, 13px + 0.7vw, 20px); }
+      /* The shell is the app's own first paint: the site header, the tool bar
+       * with the page's h1 as its eyebrow, and the copy under them. A person
+       * arriving from the dex builder saw a smaller header and a block of
+       * text for the 80ms before React mounted, then both jumped. Every size
+       * here is the app's (LeagueApp.tsx GlobalHeader and the tool bar), and
+       * the copy is held back for a second, as the dex builder's shell holds
+       * its own -- it is for a crawler and a slow connection, not a flash. */
+      .lg-shell { display: flex; flex-direction: column; min-height: 100dvh; }
+      .lg-header { display: flex; align-items: center; justify-content: space-between;
+                   padding: 0.5rem 0.75rem; border-bottom: 1px solid #e5e5e5; background: #ffffff; }
+      .lg-wordmark { font-size: 1.5rem; line-height: 2rem; font-weight: 800; letter-spacing: -0.025em;
+                     color: #0a0a0a; text-decoration: none; white-space: nowrap; }
+      .lg-wordmark b { color: #dc2626; font-weight: inherit; }
+      .lg-controls { display: flex; flex-shrink: 0; align-items: center; gap: 0.25rem; color: #737373; }
+      .lg-globe { display: flex; align-items: center; height: 2.25rem; padding: 0 0.5rem; }
+      .lg-tools { display: flex; align-items: center; gap: 0.25rem; padding: 0.375rem 0.5rem;
+                  font-size: 0.875rem; line-height: 1.25rem; font-weight: 500; }
+      .lg-bar { display: flex; align-items: center; height: 2.75rem; box-sizing: border-box;
+                padding: 0 0.75rem; border-bottom: 1px solid #e5e5e5; background: #ffffff; }
+      .lg-bar-inner { display: flex; flex-direction: column; justify-content: center; gap: 0.0625rem; min-width: 0; }
+      .lg-bar h1 { margin: 0; font-size: 0.6875rem; line-height: 1; font-weight: 600; color: #737373; white-space: nowrap; }
+      .lg-field { display: flex; align-items: center; height: 1.15625rem; box-sizing: border-box;
+                  border-bottom: 1px dashed rgba(10, 10, 10, 0.25); font-size: 0.875rem; line-height: 1.25;
+                  color: rgba(115, 115, 115, 0.6); white-space: nowrap; }
+      .lg-main { max-width: 26rem; margin: 0 auto; padding: 0.625rem 0.75rem 0; box-sizing: border-box; width: 100%; }
+      .lg-copy { opacity: 0; animation: lg-reveal 320ms ease-out 1s forwards; }
+      .lg-copy p { margin: 0 0 0.5rem; font-size: 0.875rem; line-height: 1.5; color: #525252; }
+      @keyframes lg-reveal { to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .lg-copy { animation-duration: 1ms; } }
+      @media (min-width: 640px) { .lg-header { padding-left: 1.5rem; padding-right: 1.5rem; } }
+      /* Desktop: the tool bar is the left pane's, half the width with the seam
+       * showing, and its content centres a phone-width column (LeagueApp.tsx). */
+      @media (min-width: 1024px) {
+        .lg-bar { width: 50%; padding: 0 1rem; border-right: 1px solid #e5e5e5; }
+        .lg-bar-inner { width: 100%; max-width: 26rem; margin: 0 auto; }
+        .lg-main { margin-left: 0; }
+      }
     </style>
   </head>
   <body>
@@ -29,23 +71,33 @@
          paragraph. See docs/future-tools/HANDOFF.md for why this must be
          real served HTML, not a client-side route. -->
     <div id="root">
-      <header style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#ffffff;border-bottom:1px solid #e5e5e5;">
-        <span style="font-size:20px;font-weight:800;letter-spacing:-0.025em;"><span style="color:#dc2626;">my151</span>.app</span>
-        <a href="/" style="font-size:14px;color:#737373;text-decoration:none;">Dex Builder</a>
-      </header>
-      <main style="padding:16px 14px;max-width:26rem;margin:0 auto;">
-        <h1 style="font-size:22px;font-weight:800;letter-spacing:-0.02em;margin:0 0 8px;">Pokémon League Builder</h1>
-        <p style="font-size:14px;line-height:1.5;color:#525252;margin:0 0 8px;">
-          Design your own Pokémon League: eight gym leaders, the Elite Four, a
-          champion and an endgame boss. Give each leader a type and a theme,
-          seat an evolution line once, and the whole gym challenge derives
-          itself — early gyms face the young forms, the champion faces the
-          final ones.
-        </p>
-        <p style="font-size:14px;line-height:1.5;color:#525252;margin:0;">
-          Loading the builder…
-        </p>
-      </main>
+      <div class="lg-shell">
+        <header class="lg-header">
+          <a class="lg-wordmark" href="/pokemon-league-builder"><b>my151</b>.app</a>
+          <div class="lg-controls" aria-hidden="true">
+            <span class="lg-globe"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></span>
+            <span class="lg-tools">Tools<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+          </div>
+        </header>
+        <div class="lg-bar">
+          <div class="lg-bar-inner">
+            <h1>Pokémon League Builder</h1>
+            <div class="lg-field">Name your league</div>
+          </div>
+        </div>
+        <main class="lg-main">
+          <div class="lg-copy">
+            <p>
+              Design your own Pokémon League: eight gym leaders, the Elite Four, a
+              champion and an endgame boss. Give each leader a type and a theme,
+              seat an evolution line once, and the whole gym challenge derives
+              itself — early gyms face the young forms, the champion faces the
+              final ones.
+            </p>
+            <p>Loading the builder…</p>
+          </div>
+        </main>
+      </div>
     </div>
     <script type="module" src="/src/league/main.tsx"></script>
   </body>

@@ -710,8 +710,17 @@ function PowerupButton({ kind, active, onPress, side }: {
           without it, 256x256 with it. */}
       <span
         data-powerup-disc
+        // No transition on the ring or the symbol. A press used to ease the
+        // ring's shadow and the symbol's opacity over 150ms, and for exactly
+        // those nine frames the crosses and resets on the row below sat one
+        // to two device pixels up and to the side, then dropped back: WebKit
+        // composites an element while it transitions, and the discs whose
+        // boxes overlap it get rasterised on layers of their own, snapped to
+        // a different grid. Measured on a phone recording at 60fps, disc by
+        // disc; a cross on a row with no powerup never moved. The state
+        // change is instant now, so nothing is composited and nothing moves.
         className={cn(
-          'flex items-center justify-center rounded-full bg-white transition-shadow [contain:paint]',
+          'flex items-center justify-center rounded-full bg-white [contain:paint]',
           active ? 'ring-2 ring-[var(--lg-band)] shadow' : 'ring-1 ring-black/15',
         )}
         style={{ width: `${DISC_REM}rem`, height: `${DISC_REM}rem` }}
@@ -721,7 +730,7 @@ function PowerupButton({ kind, active, onPress, side }: {
         <img
           src={`/powerups/${kind}.png`}
           alt=""
-          className={cn('object-contain transition-opacity', !active && 'opacity-55')}
+          className={cn('object-contain', !active && 'opacity-55')}
           style={{ width: symbolScale(kind), height: symbolScale(kind) }}
         />
       </span>

@@ -94,9 +94,17 @@ body {
   text-wrap: pretty;
 }
 
-/* Headings read better balanced across lines rather than left-heavy. */
-h1, h2, h3, h4, h5, h6 {
-  text-wrap: balance;
+/* Headings read better balanced across lines rather than left-heavy.
+ *
+ * In the base layer, so a utility on the heading still wins. `text-wrap` is
+ * a longhand of the `white-space` shorthand, and unlayered this rule beat
+ * `truncate` on every heading: the league tool bar's eyebrow, set to one
+ * line with an ellipsis, wrapped to two at 320px and pushed its field out
+ * of the bar. */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+  }
 }
 
 /* Small-caps headings — `uppercase tracking-wide` — are an English typographic
