@@ -38,11 +38,12 @@ export function LeagueViewToggle() {
           type="button"
           variant={view === v.value ? 'default' : 'ghost'}
           size="sm"
-          // The dex builder's own type size and weight, which `size="sm"`
-          // already carries. Only the box is trimmed: that nav has a bar to
-          // itself and this one shares 44px with a two-line title and two
-          // icons.
-          className="h-7 rounded-md px-2"
+          // The dex builder's nav buttons, box and all: `size="sm"` is their
+          // height, type size and weight, so the red pill reads the same on
+          // both pages. The box used to be trimmed to 1.75rem to share the
+          // bar with the two-line title, which left the two pills at two
+          // heights; 2.25rem still sits inside the 2.75rem bar.
+          className="px-2"
           data-league-view={v.value}
           aria-pressed={view === v.value}
           onClick={() => setView(v.value)}
