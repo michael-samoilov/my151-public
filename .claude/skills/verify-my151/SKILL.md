@@ -137,6 +137,36 @@ real user path and its side effects (the localStorage `personal-151-pokedex-v3`
 store is the local oracle; beacons are suppressed locally, so do not wait on the
 network). State plainly what is device-only.
 
+## The hand-off test
+
+Every "You test" line in a work report has to pass this test first, and the
+answer is almost always that there is no such line.
+
+A "You test" step is only for what no engine here can do: a real finger's
+momentum, rubber-band or haptics, a device's safe-area insets, an account or
+a device only the user holds, or a taste call only they can make. Everything
+else is verifiable here, so it is verified here and reported under
+**Verified** with the number, the store value or the screenshot. Name the
+missing capability before writing the line; if you cannot name one, drive
+it.
+
+The line between the two is not "is it a UI interaction". A tap on a
+target, a press at the edge of a control, a state change after a click, a
+layout measure, a colour, a scroll offset: these are all drivable. Blink
+takes a real touch through Playwright (`page.touchscreen.tap`), Blink and
+WebKit take pointer presses (Playwright's mouse, W3C `/actions`), all three
+engines take clicks and read computed style and the store through the
+Session. Give WebKitGTK a second between a press and the read: at 400ms a
+read showed the state before the press, and looked like a failure. The one
+place a real finger differs is momentum and rubber-band, named above.
+
+The case that wrote this section: the nav pill's press target was extended
+past its paint, and the report asked the user to tap the bar's edge on
+their phone and confirm the tab switched. That is a touch at a coordinate
+followed by a read of the active tab, which Blink drives in one script and
+WebKit in another. It was verified in both within minutes of being asked,
+and should have been verified before the report was written.
+
 ## Cleanup
 
 `verify.ts` stops both preview servers and removes the base worktree in a

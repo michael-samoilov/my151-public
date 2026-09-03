@@ -49,7 +49,9 @@ instead of restating it.
   there. Asking the user to check what you could have checked is the failure
   this section exists to prevent. When something blocked you from measuring
   (an auth-gated URL, an unreachable host), name it under Verified as the
-  gap, not here as a chore for the user.
+  gap, not here as a chore for the user. Before writing a step here, run it
+  through the hand-off test in `.claude/skills/verify-my151/SKILL.md`: name
+  the engine capability that is missing, or drive the step yourself.
 
 ## Verification standard
 
