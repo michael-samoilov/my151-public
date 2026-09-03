@@ -567,11 +567,14 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
       await s.navigate(url);
       await waitLeagueHome(s);
       await openLeagueCard(s, CARD);
-      const touch = await s.evalJson<boolean>(`return typeof TouchEvent==='function' && typeof Touch==='function';`).catch(() => false);
+      // Detected by construction, not by name: an engine can expose the
+      // constructors and still refuse the init dictionaries.
+      const touch = await s.evalJson<boolean>(`try { const t=new Touch({identifier:1,target:document.body,clientX:0,clientY:0});
+        new TouchEvent('touchstart',{bubbles:true,touches:[t],targetTouches:[t],changedTouches:[t]}); return true; } catch (e) { return false; }`).catch(() => false);
       const before = await readCard(s, CARD);
       const top = before.lines[0]?.boundaries[2] ?? 0;
       if (!touch) {
-        checks.push({ name: 'league-change:flick-moves-stage', status: 'skip', detail: 'this engine exposes no TouchEvent constructor; device-only here' });
+        checks.push({ name: 'league-change:flick-moves-stage', status: 'skip', detail: 'this engine cannot construct a Touch or TouchEvent; a real finger on a device is the only proof here' });
         checks.push({ name: 'league-change:flick-washes-the-stage', status: 'skip', detail: 'as above' });
       } else if (top < 4) {
         checks.push(ok('league-change:flick-moves-stage', false, `Charizard's run starts on row ${top}, no room to flick`));

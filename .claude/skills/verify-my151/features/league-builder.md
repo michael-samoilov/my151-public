@@ -46,9 +46,10 @@ two rows up with synthetic `TouchEvent`s, reading the boundary and the
   that sets a type on it finds `aria-label="Gym type: <type>"`, not the bare
   label.
 - The flick is a synthetic touch dispatched on the cell, which the card's
-  own sensor handles. An engine with no `TouchEvent` constructor (desktop
-  Gecko under Xvfb) skips those two checks by name; a real finger on a device
-  is the only proof there.
+  own sensor handles. An engine that cannot construct a `Touch` or a
+  `TouchEvent` skips those two checks by name: desktop Gecko under Xvfb has
+  no constructor, and WebKitGTK exposes the names but throws on construction.
+  A real finger on a device is the only proof there.
 - Each check phase reloads the page to close the picker, because the Session
   interface has no keyboard.
 - The ace picker is windowed: Eevee's row is not in the DOM until the results
