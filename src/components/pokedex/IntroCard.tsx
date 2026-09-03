@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { expandTemplate } from '@/lib/richTemplate';
 import { formatNumber, raw, t } from '@/i18n';
 import { DEX_TOTAL } from '@/lib/milestones';
@@ -433,6 +433,25 @@ function StarterButton({ onClick }: { onClick: () => void }) {
 
 const COLLAPSE_MS = 450;
 
+/**
+ * Does this browser correct the scroll offset when content above the viewport
+ * changes height? Chrome and Firefox do (CSS scroll anchoring). **Safari does
+ * not implement it at all**, and iOS is Safari-only.
+ *
+ * That difference is what makes the collapse below a bug on one platform and
+ * invisible on the other. The card sits at the top of the build scroller, so
+ * placing a Pokémon in a section further down folds ~370px away *above* the
+ * user's viewport. Anchoring browsers subtract that from scrollTop and nothing
+ * moves; Safari leaves scrollTop alone, so every section jumps up by the card's
+ * height and whatever the user was looking at leaves the screen.
+ *
+ * `CSS.supports` is the standard probe: the property is unknown in Safari.
+ */
+const HAS_SCROLL_ANCHORING =
+  typeof CSS !== 'undefined' &&
+  typeof CSS.supports === 'function' &&
+  CSS.supports('overflow-anchor', 'auto');
+
 export function IntroCard({
   totalPlaced,
   onChooseStarters,
@@ -440,6 +459,7 @@ export function IntroCard({
   totalPlaced: number;
   onChooseStarters: () => void;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<'shown' | 'collapsing' | 'gone'>(() => {
     if (FORCE_INTRO) return 'shown';
     if (introSeen()) return 'gone';
@@ -481,10 +501,50 @@ export function IntroCard({
     return () => clearTimeout(t);
   }, [phase]);
 
+  /**
+   * Stand in for scroll anchoring where the browser has none, so the content
+   * *below* the card does not jump when the card folds away above the viewport.
+   *
+   * The correction is atomic rather than per-frame on purpose. Placing a
+   * Pokémon re-renders the whole grid, and that starves the main thread badly
+   * enough that the 450ms collapse timer has been measured firing 1342ms late.
+   * Anything that spreads the correction across animation frames simply does
+   * not get the frames, and the height disappears in one jump anyway.
+   *
+   * So decide once, when the collapse starts:
+   *
+   *   above = scrollTop - (the card's top in content space)
+   *
+   * `above` is how much of the card sits over the viewport's top edge — the
+   * part whose removal moves everything below it. If there is none, the card is
+   * on screen, the user is looking at it, and it folds away as designed. If
+   * there is, that fold is off screen and worth nothing, so drop the card in a
+   * single step and take the same distance off scrollTop before the browser
+   * paints. The two cancel, and the page holds still.
+   */
+  useLayoutEffect(() => {
+    if (phase !== 'collapsing' || HAS_SCROLL_ANCHORING) return;
+    const el = rootRef.current;
+    const scroller = el?.closest<HTMLElement>('[data-build-scroll]');
+    if (!el || !scroller) return;
+
+    const rect = el.getBoundingClientRect();
+    const cardTop = rect.top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+    const above = scroller.scrollTop - cardTop;
+    if (above <= 0) return; // card is on screen — let it animate
+
+    // Skipping the animation also skips the effect that records the dismissal,
+    // so record it here or the card comes back on the next visit.
+    if (!FORCE_INTRO) markIntroSeen();
+    setPhase('gone');
+    scroller.scrollTop -= Math.min(rect.height, above);
+  }, [phase]);
+
   if (phase === 'gone') return null;
 
   return (
     <div
+      ref={rootRef}
       className="grid transition-[grid-template-rows,opacity] ease-in-out"
       style={{
         gridTemplateRows: phase === 'collapsing' ? '0fr' : '1fr',
