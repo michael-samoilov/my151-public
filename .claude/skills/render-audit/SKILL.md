@@ -69,6 +69,17 @@ remains.
 | `text-overlap` | warning | Two text runs from different branches share pixels. |
 | `tiny-text` | warning | Text under the size floor. |
 
+Four things never count, because on screen they are design, not defects: a
+box under 2 px (screen-reader-only text); content past the edge of a scroll
+axis, which scrolls into view (`overflow-x: hidden` says nothing about the
+bottom edge, so each axis is judged on its own); an element wholly outside
+its clipper and moved there by a transform (an off-canvas pane; inside a
+running app any wholly hidden box counts as parked); and an image still
+loading (a lazy sprite below the fold). Inside a running app,
+`image-scale` and `truncated` are warnings, not errors: sprites are
+CSS-sized on screen and an ellipsis there is a designed truncation. On a
+static page or an export they stay errors.
+
 Opt-outs are attributes in the markup, so the intent is visible in the source:
 `data-audit-clip="intended"` on a container that crops on purpose (a preview
 crop, a scroll region); `data-audit-scale="intended"` on an image that is meant

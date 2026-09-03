@@ -7,7 +7,8 @@
  * boxes, and returns plain JSON.
  *
  * cfg: { frame?: {w, h}, family?: string, minFont: number,
- *        annotate?: boolean (default true), checkFrame?: boolean (default true) }
+ *        annotate?: boolean (default true), checkFrame?: boolean (default true),
+ *        offCanvasOk?: boolean (default false; a running app parks panes off-canvas) }
  */
 export const IN_PAGE_SOURCE = `function inPage(cfg) {
   const out = [];
@@ -42,7 +43,8 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
     const cs = getComputedStyle(el);
     if (cs.display === 'none' || cs.visibility === 'hidden' || Number(cs.opacity) === 0) return false;
     const r = el.getBoundingClientRect();
-    return r.width > 0 && r.height > 0;
+    // A box under 2px is hidden on purpose (sr-only text), not clipped.
+    return r.width >= 2 && r.height >= 2;
   };
   const ownText = (el) => [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim()).map((n) => n.textContent).join('').trim();
   const isTextLeaf = (el) => ownText(el).length > 0 && el.closest('svg') === null;
@@ -100,26 +102,48 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
       add('truncated', 'error', el, \`\${el.scrollWidth - el.clientWidth}px of the text is cut and replaced by an ellipsis\`);
     }
     // Text cut by a height clip on the element itself.
-    if (isTextLeaf(el) && hides(el) && el.scrollHeight > el.clientHeight + 1 && el.getAttribute('data-audit-clip') !== 'intended') {
+    if (isTextLeaf(el) && hides(el) && el.scrollHeight > el.clientHeight + 1 && el.getAttribute('data-audit-clip') !== 'intended' && (cs.webkitLineClamp === 'none' || !cs.webkitLineClamp)) {
       add('text-cut', 'error', el, \`\${el.scrollHeight - el.clientHeight}px of text hidden below the box\`);
     }
-    // Clipped by an ancestor.
-    for (let a = el.parentElement; a && a !== document.body && el !== root; a = a.parentElement) {
-      if (!hides(a)) continue;
-      if (a.getAttribute('data-audit-clip') === 'intended') break;
-      const ar = rectOf(a);
-      const acs = getComputedStyle(a);
-      const box = {
-        left: ar.left + parseFloat(acs.borderLeftWidth), top: ar.top + parseFloat(acs.borderTopWidth),
-        right: ar.right - parseFloat(acs.borderRightWidth), bottom: ar.bottom - parseFloat(acs.borderBottomWidth),
-      };
-      const over = [];
-      if (r.left < box.left - 1) over.push(\`left \${(box.left - r.left).toFixed(1)}px\`);
-      if (r.right > box.right + 1) over.push(\`right \${(r.right - box.right).toFixed(1)}px\`);
-      if (r.top < box.top - 1) over.push(\`top \${(box.top - r.top).toFixed(1)}px\`);
-      if (r.bottom > box.bottom + 1) over.push(\`bottom \${(r.bottom - box.bottom).toFixed(1)}px\`);
-      if (over.length) add('clipped', 'error', el, \`runs past its clipping container (\${pathOf(a)}) on the \${over.join(', ')}\`);
-      break; // the nearest clipper decides
+    // Clipped by an ancestor, judged per axis: overflow-x hidden says nothing
+    // about the bottom edge, and a scroll axis owns its overflow (the content
+    // scrolls into view). An element wholly outside a clipper and moved there
+    // by a transform is an off-canvas pane, not a clip; a running app
+    // (cfg.offCanvasOk) parks panes off-canvas by position too.
+    let needX = el !== root, needY = el !== root;
+    let transformed = false;
+    for (let a = el; a && a !== document.body && (needX || needY); a = a.parentElement) {
+      if (a !== el) {
+        const acs = getComputedStyle(a);
+        const ox = acs.overflowX, oy = acs.overflowY;
+        if (ox !== 'visible' || oy !== 'visible') {
+          const intended = a.getAttribute('data-audit-clip') === 'intended';
+          const ar = rectOf(a);
+          const box = {
+            left: ar.left + parseFloat(acs.borderLeftWidth), top: ar.top + parseFloat(acs.borderTopWidth),
+            right: ar.right - parseFloat(acs.borderRightWidth), bottom: ar.bottom - parseFloat(acs.borderBottomWidth),
+          };
+          const wholly = r.right <= box.left || r.left >= box.right || r.bottom <= box.top || r.top >= box.bottom;
+          const offCanvas = wholly && (transformed || cfg.offCanvasOk === true);
+          const over = [];
+          if (needX && ox !== 'visible') {
+            if (/hidden|clip/.test(ox) && !intended && !offCanvas) {
+              if (r.left < box.left - 1) over.push(\`left \${(box.left - r.left).toFixed(1)}px\`);
+              if (r.right > box.right + 1) over.push(\`right \${(r.right - box.right).toFixed(1)}px\`);
+            }
+            needX = false;
+          }
+          if (needY && oy !== 'visible') {
+            if (/hidden|clip/.test(oy) && !intended && !offCanvas) {
+              if (r.top < box.top - 1) over.push(\`top \${(box.top - r.top).toFixed(1)}px\`);
+              if (r.bottom > box.bottom + 1) over.push(\`bottom \${(r.bottom - box.bottom).toFixed(1)}px\`);
+            }
+            needY = false;
+          }
+          if (over.length) add('clipped', 'error', el, \`runs past its clipping container (\${pathOf(a)}) on the \${over.join(', ')}\`);
+        }
+      }
+      if (getComputedStyle(a).transform !== 'none') transformed = true;
     }
     // Outside the frame: only the part a viewer can see counts, so content a
     // container clips away on purpose is not reported twice.
@@ -136,8 +160,9 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
 
     // Images.
     if (el.tagName === 'IMG') {
-      if (!el.complete || el.naturalWidth === 0) add('image-broken', 'error', el, 'image did not load');
-      else if (!el.closest('[data-audit-scale="intended"]')) {
+      // Still loading (a lazy image below the fold) is not broken; a finished load with no pixels is.
+      if (el.complete && el.naturalWidth === 0) add('image-broken', 'error', el, 'image did not load');
+      else if (el.complete && !el.closest('[data-audit-scale="intended"]')) {
         const scale = r.width / el.naturalWidth;
         const pixel = /pixelated|crisp-edges/.test(cs.imageRendering);
         if (pixel && Math.abs(scale - Math.round(scale)) > 0.01) {
@@ -229,8 +254,16 @@ export function auditBody(cfg) {
   return `${IN_PAGE_SOURCE}\nreturn inPage(${JSON.stringify(cfg)});`;
 }
 
-/** Findings that are defects wherever they appear; the other kinds are warnings to read. */
+/** Findings that are defects on a static page or an export; the other kinds are warnings to read. */
 export const HARD_KINDS = ['clipped', 'text-cut', 'outside-frame', 'overflow-frame', 'image-broken', 'image-scale', 'truncated', 'font-fallback'];
+
+/**
+ * Findings that are defects in a running app. On screen, pixel art is sized
+ * by CSS and an ellipsis is a designed truncation, so those two stay
+ * warnings there; a clipped box, cut text, or a broken image is a defect
+ * anywhere.
+ */
+export const APP_HARD_KINDS = ['clipped', 'text-cut', 'image-broken'];
 
 /** One stable line per finding, for set comparison across runs. */
 export function findingKey(f) {
