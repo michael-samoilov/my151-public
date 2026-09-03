@@ -203,13 +203,23 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
     }
   }
 
+  /**
+   * The tops of the lines the element's OWN text occupies.
+   *
+   * Ranging over the whole element counts its children's boxes as lines, so a
+   * label group stacking three spans read as one run wrapped three times. Only
+   * the element's own text nodes are its own run.
+   */
   function lineTops(el) {
-    const range = document.createRange();
-    range.selectNodeContents(el);
     const tops = [];
-    for (const b of range.getClientRects()) {
-      if (b.width < 1 || b.height < 1) continue;
-      if (!tops.some((t) => Math.abs(t - b.top) < 3)) tops.push(b.top);
+    for (const node of el.childNodes) {
+      if (node.nodeType !== 3 || !node.textContent.trim()) continue;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      for (const b of range.getClientRects()) {
+        if (b.width < 1 || b.height < 1) continue;
+        if (!tops.some((t) => Math.abs(t - b.top) < 3)) tops.push(b.top);
+      }
     }
     return tops.sort((p, q) => p - q);
   }
