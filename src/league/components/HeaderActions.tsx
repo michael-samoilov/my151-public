@@ -1,6 +1,15 @@
-import { Download } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { shareOrDownload } from '@/lib/exportImage';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useLeagueStore, type LeagueView } from '../store/useLeagueStore';
+import {
+  CARD_FILENAME,
+  HOME_FILENAME,
+  exportGymCard,
+  exportLeagueHome,
+} from '../export/exportLeague';
 
 /**
  * The summary's two readings, as a pair of buttons.
@@ -54,22 +63,56 @@ export function LeagueViewToggle() {
 /**
  * The export control, in the shape the dex builder's pages give it.
  *
- * Disabled, and honestly so: the league has nothing to export yet. The dex
- * builder's export draws its grid on a canvas by hand, tile by tile, and
- * nothing in that is reusable for a card. The button is here so the header is
- * finished; what it does is its own piece of work.
+ * One button, two pictures: the league pane's exports the summary at whichever
+ * team toggle is on screen, and a card pane's exports that trainer's card.
+ * Both go through the dex export's platform path, so iOS offers "Save Image"
+ * into Photos, Android takes the download its gallery scans, and desktop gets
+ * a file.
+ *
+ * It never disables on an empty league. A blank trainer card is a template
+ * somebody may want a picture of, which is why the empty states were designed
+ * rather than suppressed.
+ *
+ * The store is read inside the handler rather than subscribed to. This button
+ * sits in a bar that is mounted for the whole session, and subscribing to the
+ * cards would re-render it on every keystroke in a theme field.
  */
-export function LeagueExportButton() {
+export function LeagueExportButton({ cardIndex }: { cardIndex?: number }) {
+  const [busy, setBusy] = useState(false);
+
+  const run = useCallback(async () => {
+    if (busy) return;
+    setBusy(true);
+    const isCard = cardIndex !== undefined;
+    // Before the share sheet, not after. On iOS the sheet suspends the page,
+    // and a beacon issued once it resolves often never leaves the device.
+    sendEventBeacon(isCard ? 'league-export-card' : 'league-export-league');
+    try {
+      const { name, cards, view } = useLeagueStore.getState();
+      const blob = isCard
+        ? await exportGymCard(cards[cardIndex])
+        : await exportLeagueHome(name, cards, view);
+      await shareOrDownload(blob, isCard ? CARD_FILENAME : HOME_FILENAME);
+    } catch (err) {
+      // Dismissing the iOS share sheet aborts the promise; that is a choice,
+      // not a failure.
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      console.error('League export failed:', err);
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, cardIndex]);
+
   return (
     <button
       type="button"
-      disabled
-      aria-label="Export"
-      title="Export is not built yet"
+      onClick={run}
+      disabled={busy}
+      aria-label={cardIndex === undefined ? 'Export league' : 'Export trainer card'}
       data-league-export
-      className="shrink-0 rounded-md border border-primary p-1.5 text-primary transition-colors disabled:cursor-default disabled:opacity-40"
+      className="shrink-0 cursor-pointer rounded-md border border-primary p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-primary"
     >
-      <Download className="h-4 w-4" />
+      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
     </button>
   );
 }

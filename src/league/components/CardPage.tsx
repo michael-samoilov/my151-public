@@ -294,11 +294,11 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
 }
 
 /** The controls both bars carry on their right. */
-export function CardActions() {
+export function CardActions({ cardIndex }: { cardIndex: number }) {
   return (
     <span className="ml-auto flex shrink-0 items-center gap-1">
       <FeedbackButton />
-      <LeagueExportButton />
+      <LeagueExportButton cardIndex={cardIndex} />
     </span>
   );
 }
@@ -324,7 +324,7 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
           className={cn('flex h-11 items-center gap-2 px-3', showBack && 'border-b bg-card')}
         >
           <CardIdentity cardIndex={cardIndex} showBack={showBack} />
-          <CardActions />
+          <CardActions cardIndex={cardIndex} />
         </div>
       )}
       <div className="px-3 pt-2.5">

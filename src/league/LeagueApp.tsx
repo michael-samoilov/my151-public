@@ -283,7 +283,7 @@ export function LeagueApp() {
             <div data-testid="league-tool-bar" className="flex h-11 items-center border-b px-4">
               <div className="mx-auto flex w-full max-w-[26rem] items-center gap-2">
                 <CardIdentity cardIndex={openCard ?? 0} showBack={false} />
-                <CardActions />
+                <CardActions cardIndex={openCard ?? 0} />
               </div>
             </div>
             <div data-lg-viewport className="min-h-0 flex-1 overflow-y-auto py-1">
