@@ -4,6 +4,8 @@
 // Usage (from repo root):
 //   npx tsx .claude/skills/verify-my151/harness/verify.ts [absolute|diff] [--base <ref>]
 //     [--surfaces a,b] [--no-build]
+import fs from 'node:fs';
+import path from 'node:path';
 import { openSession, type EngineName } from './lib/engines.ts';
 import type { PersonaName } from './lib/personas.ts';
 import { runLeagueSuite, runStandardSuite } from './lib/flows.ts';
@@ -32,11 +34,13 @@ function parseArgs(argv: string[]) {
     base: get('--base'),
     surfaces: get('--surfaces')?.split(','),
     noBuild: argv.includes('--no-build'),
+    video: argv.includes('--video'),
   };
 }
 
-async function driveSurface(def: SurfaceDef, base: string, ev: Evidence, tag: string): Promise<Check[]> {
-  const s = await openSession(def.engine, def.persona);
+async function driveSurface(def: SurfaceDef, base: string, ev: Evidence, tag: string, video: boolean): Promise<{ checks: Check[]; video: string | null }> {
+  const videoFile = video ? path.join(ev.dir, `${def.surface}-${tag}.${def.engine === 'blink' ? 'webm' : 'mp4'}`) : undefined;
+  const s = await openSession(def.engine, def.persona, videoFile);
   try {
     const ctx = {
       base,
@@ -45,7 +49,7 @@ async function driveSurface(def: SurfaceDef, base: string, ev: Evidence, tag: st
     };
     const checks = await runStandardSuite(s, def.persona, ctx);
     checks.push(...(await runLeagueSuite(s, def.persona, ctx)));
-    return checks;
+    return { checks, video: videoFile ?? null };
   } finally { await s.close(); }
 }
 
@@ -88,21 +92,24 @@ async function main() {
         continue;
       }
       try {
-        const after = await driveSurface(def, afterPreview.url, ev, 'after');
-        let checks = after;
+        const videos: string[] = [];
+        const afterRun = await driveSurface(def, afterPreview.url, ev, 'after', args.video);
+        if (afterRun.video && fs.existsSync(afterRun.video)) videos.push(path.basename(afterRun.video));
+        let checks = afterRun.checks;
         if (args.mode === 'diff' && basePreview) {
-          const before = await driveSurface(def, basePreview.url, ev, 'before');
-          const beforeMap = new Map(before.map((c) => [c.name, c.status]));
-          for (const c of after) {
+          const beforeRun = await driveSurface(def, basePreview.url, ev, 'before', args.video);
+          if (beforeRun.video && fs.existsSync(beforeRun.video)) videos.push(path.basename(beforeRun.video));
+          const beforeMap = new Map(beforeRun.checks.map((c) => [c.name, c.status]));
+          for (const c of afterRun.checks) {
             if (c.status === 'fail' && beforeMap.get(c.name) === 'pass') regressions.push(`${def.surface}:${c.name}`);
           }
-          checks = after.map((c) => ({ ...c, detail: `${c.detail ?? ''}${beforeMap.get(c.name) ? ` (before=${beforeMap.get(c.name)})` : ''}` }));
+          checks = afterRun.checks.map((c) => ({ ...c, detail: `${c.detail ?? ''}${beforeMap.get(c.name) ? ` (before=${beforeMap.get(c.name)})` : ''}` }));
         }
         const failed = checks.filter((c) => c.status === 'fail').length;
-        const result: SurfaceResult = { surface: def.surface, engine: def.engine, persona: def.persona, available: true, checks, screenshots: [] };
+        const result: SurfaceResult = { surface: def.surface, engine: def.engine, persona: def.persona, available: true, checks, screenshots: [], videos };
         surfaces.push(result);
         ev.writeSurface(result);
-        console.log(`  ${def.surface.padEnd(18)} ${failed === 0 ? 'PASS' : `FAIL (${failed})`}`);
+        console.log(`  ${def.surface.padEnd(18)} ${failed === 0 ? 'PASS' : `FAIL (${failed})`}${videos.length ? `  video:${videos.join(',')}` : ''}`);
       } catch (e) {
         surfaces.push({ surface: def.surface, engine: def.engine, persona: def.persona, available: true, checks: [], screenshots: [], error: (e as Error).message });
         console.log(`  ${def.surface.padEnd(18)} ERROR ${(e as Error).message.slice(0, 80)}`);

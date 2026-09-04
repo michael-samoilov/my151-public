@@ -44,6 +44,15 @@ else
   fi
 fi
 
+echo "== ffmpeg (only needed for --video on WebKit/Gecko; Blink records without it) =="
+if command -v ffmpeg >/dev/null; then
+  echo "  present: $(ffmpeg -version 2>/dev/null | head -1)"
+else
+  sudo apt-get update >/tmp/verify-aptupd.log 2>&1
+  sudo apt-get install -y ffmpeg >/tmp/verify-ffmpeg.log 2>&1
+  if command -v ffmpeg >/dev/null; then echo "  installed: $(ffmpeg -version 2>/dev/null | head -1)"; else echo "  BLOCKED: could not install ffmpeg (see /tmp/verify-ffmpeg.log); --video real-engine lanes unavailable"; fi
+fi
+
 echo "== summary =="
 [ -x "$WEBKIT" ] && echo "  webkit: UP" || echo "  webkit: DOWN"
 [ -x "$FF_BIN" ] && echo "  gecko:  UP" || echo "  gecko:  DOWN"
