@@ -190,16 +190,78 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
     }
   }
 
-  // Text over text: two text leaves from different branches sharing pixels.
-  const texts = visuals.filter(isTextLeaf).map((el) => ({ el, vis: visibleRect(el) })).filter((t) => t.vis);
-  for (let i = 0; i < texts.length; i++) {
-    for (let j = i + 1; j < texts.length; j++) {
-      const a = texts[i].el, b = texts[j].el;
+  /**
+   * Two things that share pixels when neither was placed to.
+   *
+   * Text runs, whole SVGs and painted boxes all count; an <img> does not,
+   * because a sprite drawn larger than its cell is how this app makes a
+   * creature stand in its tile. Nor does anything positioned or transformed:
+   * a remove cross over a cell, a sprite over its pokeball, a drag overlay,
+   * are all placed on top of something on purpose. What is left is elements
+   * in normal flow, which the browser lays out side by side or stacked --
+   * so two of those sharing pixels is a box that outgrew its column, which
+   * is the badge that reached under its neighbour.
+   */
+  /**
+   * The nearest ancestor that placed this element somewhere, or the body.
+   *
+   * Two elements are only judged against each other when they share one of
+   * these. Inside a common flow root the browser lays things out side by side
+   * or stacked, so two of them sharing pixels is a box that outgrew its
+   * column -- the badge that reached under its neighbour. Across different
+   * roots, something in between was positioned or transformed on purpose: a
+   * slot laid over the grid, a cross over a cell, a pane slid into place.
+   */
+  const rootCache = new WeakMap();
+  const flowRoot = (el) => {
+    if (rootCache.has(el)) return rootCache.get(el);
+    const off = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+    let r = document.body;
+    for (let e = el.parentElement; e && e !== document.body; e = e.parentElement) {
+      const cs = getComputedStyle(e);
+      const placed = cs.transform !== 'none'
+        || !(cs.position === 'static'
+             || (cs.position === 'relative' && off(cs.left) === 0 && off(cs.top) === 0));
+      if (placed || e.getAttribute('data-audit-overlap') === 'intended') { r = e; break; }
+    }
+    rootCache.set(el, r);
+    return r;
+  };
+  const inFlow = (el) => {
+    const cs = getComputedStyle(el);
+    const off = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+    return cs.transform === 'none'
+      && (cs.position === 'static'
+          || (cs.position === 'relative' && off(cs.left) === 0 && off(cs.top) === 0))
+      && !el.closest('[data-audit-overlap="intended"]');
+  };
+  const solid = visuals
+    .filter((el) => el.tagName !== 'IMG' && (isTextLeaf(el) || isPainted(el) || el.tagName === 'svg') && inFlow(el))
+    .map((el) => ({ el, vis: visibleRect(el) }))
+    .filter((t) => t.vis)
+    .sort((p, q) => p.vis.top - q.vis.top);
+  // A sweep by top edge: once a later element starts below this one's bottom,
+  // nothing after it can overlap either, so the scan stops. Without it a page
+  // of 151 tiles is a quarter of a million rect comparisons.
+  for (let i = 0; i < solid.length; i++) {
+    const ra = solid[i].vis;
+    for (let j = i + 1; j < solid.length; j++) {
+      const rb = solid[j].vis;
+      if (rb.top >= ra.bottom - 2) break;
+      const a = solid[i].el, b = solid[j].el;
       if (a.contains(b) || b.contains(a)) continue;
-      const ra = texts[i].vis, rb = texts[j].vis;
+      if (flowRoot(a) !== flowRoot(b)) continue;
       const ox = Math.min(ra.right, rb.right) - Math.max(ra.left, rb.left);
       const oy = Math.min(ra.bottom, rb.bottom) - Math.max(ra.top, rb.top);
-      if (ox > 2 && oy > 2) add('text-overlap', 'warning', a, \`overlaps "\${textOf(b)}" by \${ox.toFixed(0)}×\${oy.toFixed(0)}px\`);
+      // Half a pixel, not two: the badge that started this rule reached under
+      // its neighbour by 1.4px, which is a visible seam where two solid pills
+      // meet and was under a two-pixel floor. Boxes laid out side by side
+      // should share no pixels at all; the half-pixel allowance is for
+      // fractional layout rounding, nothing more.
+      if (ox > 0.5 && oy > 0.5) {
+        const what = textOf(b) || pathOf(b);
+        add('overlap', 'warning', a, \`overlaps "\${what}" by \${ox.toFixed(1)}×\${oy.toFixed(1)}px, and neither is positioned\`);
+      }
     }
   }
 
@@ -265,7 +327,7 @@ export function auditBody(cfg) {
 }
 
 /** Findings that are defects on a static page or an export; the other kinds are warnings to read. */
-export const HARD_KINDS = ['clipped', 'text-cut', 'outside-frame', 'overflow-frame', 'image-broken', 'image-scale', 'truncated', 'font-fallback'];
+export const HARD_KINDS = ['clipped', 'text-cut', 'outside-frame', 'overflow-frame', 'image-broken', 'image-scale', 'truncated', 'font-fallback', 'overlap'];
 
 /**
  * Findings that are defects in a running app. On screen, pixel art is sized
@@ -273,7 +335,7 @@ export const HARD_KINDS = ['clipped', 'text-cut', 'outside-frame', 'overflow-fra
  * warnings there; a clipped box, cut text, or a broken image is a defect
  * anywhere.
  */
-export const APP_HARD_KINDS = ['clipped', 'text-cut', 'image-broken'];
+export const APP_HARD_KINDS = ['clipped', 'text-cut', 'image-broken', 'overlap'];
 
 /** One stable line per finding, for set comparison across runs. */
 export function findingKey(f) {

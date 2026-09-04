@@ -53,6 +53,11 @@ Output: one line per finding, a red or orange numbered box around each one on
 `<out>/<name>.audit.png`, and `<out>/report.json`. Exit code 1 when any error
 remains.
 
+The screenshot is the full page, not a crop of the finding, because a crop
+cannot show whether the thing is out of balance with what sits beside it.
+Hand a reviewer that full frame with its boxes; see "Showing a defect" in
+`.claude/skills/work-report/SKILL.md`.
+
 ## What it finds
 
 | Finding | Severity | Meaning |

@@ -53,6 +53,23 @@ instead of restating it.
   through the hand-off test in `.claude/skills/verify-my151/SKILL.md`: name
   the engine capability that is missing, or drive the step yourself.
 
+## Showing a defect
+
+Show the whole screen, then point at the part that matters.
+
+A crop proves that something is cut or overlapping. It cannot show whether
+the thing is out of balance with everything beside it, which is the question
+a reviewer is actually answering. So every screenshot of a defect, an option,
+or a review finding is the full screen, the full page, or the full artboard,
+with the place to look marked on it: a box, an arrow, or a dimmed surround.
+
+A close-up may follow the full frame. It never replaces it. Where the fix
+changes one element, show the same full frame before and after, so the
+comparison is like for like.
+
+`.claude/skills/render-audit/audit.mjs` already writes evidence this way: a
+full-page screenshot with a numbered box around each finding.
+
 ## Verification standard
 
 "Verified" means measured, never inferred from reading the code:
