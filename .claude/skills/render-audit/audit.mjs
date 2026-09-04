@@ -108,7 +108,7 @@ console.log(`report: ${path.join(opt.out, 'report.json')}; ${errors} error(s) ac
 if (selfTest) {
   // The audit proves it can fail: every defect class in the fixture must be reported, and the clean page must be clean.
   const bad = report[0].findings.map((f) => f.kind);
-  const expected = ['truncated', 'text-cut', 'clipped', 'outside-frame', 'image-scale', 'image-broken', 'awkward-wrap', 'tiny-text', 'overlap'];
+  const expected = ['truncated', 'text-cut', 'clipped', 'outside-frame', 'image-scale', 'image-broken', 'awkward-wrap', 'tiny-text', 'overlap', 'stretched-box'];
   const missing = expected.filter((k) => !bad.includes(k));
   const good = report[1].findings;
   if (missing.length || good.length) {

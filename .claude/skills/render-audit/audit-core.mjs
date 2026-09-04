@@ -173,9 +173,36 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
       }
     }
 
-    // Text: size, wraps.
+    // Text: size, wraps, and space the box holds open but no line uses.
     if (isTextLeaf(el)) {
       const size = parseFloat(cs.fontSize);
+      /**
+       * A box far taller than the words in it, with the slack all on one side.
+       *
+       * This is what a torn layout looks like from the outside: a heading whose
+       * first line was given a sprite's height still reads as text, still sits
+       * inside its parent, still overlaps nothing -- and pushes the line under
+       * it half a slot away. Nothing else here notices, because every other
+       * rule asks whether something is cut or covered, and this is neither.
+       *
+       * Slack split evenly above and below is vertical centring, which is
+       * deliberate everywhere, so only a lopsided box is reported.
+       */
+      const pad = (side) => parseFloat(cs[\`padding\${side}\`]) + parseFloat(cs[\`border\${side}Width\`]);
+      const contentTop = r.top + pad('Top');
+      const contentBottom = r.bottom - pad('Bottom');
+      const own = ownTextRects(el);
+      // A true leaf only. An element that holds child elements as well as text
+      // has them filling the space under its own words, which is a stacked
+      // label, not a hole.
+      if (own.length && el.children.length === 0 && contentBottom > contentTop) {
+        const above = Math.min(...own.map((b) => b.top)) - contentTop;
+        const below = contentBottom - Math.max(...own.map((b) => b.bottom));
+        const slack = above + below;
+        if (slack > Math.max(10, size) && Math.min(above, below) < slack * 0.25) {
+          add('stretched-box', 'warning', el, \`holds \${slack.toFixed(0)}px of height that no line of its text uses, nearly all \${above > below ? 'above' : 'below'} the words\`);
+        }
+      }
       if (size < cfg.minFont) add('tiny-text', 'warning', el, \`\${size.toFixed(1)}px is under the \${cfg.minFont}px floor\`);
       const text = ownText(el).replace(/\\s+/g, ' ');
       const lines = lineTops(el);
@@ -263,6 +290,18 @@ export const IN_PAGE_SOURCE = `function inPage(cfg) {
         add('overlap', 'warning', a, \`overlaps "\${what}" by \${ox.toFixed(1)}×\${oy.toFixed(1)}px, and neither is positioned\`);
       }
     }
+  }
+
+  /** The boxes the element's own text nodes occupy, children excluded. */
+  function ownTextRects(el) {
+    const out = [];
+    for (const node of el.childNodes) {
+      if (node.nodeType !== 3 || !node.textContent.trim()) continue;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      for (const b of range.getClientRects()) if (b.width > 0.5 && b.height > 0.5) out.push(b);
+    }
+    return out;
   }
 
   /**
