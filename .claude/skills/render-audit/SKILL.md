@@ -26,6 +26,31 @@ measurement, on the rendered page, and prints the numbers that prove each one.
 The audit result goes under "Verified" in the work report, with the before and
 after screenshots. A run you did not do is a defect the person will find.
 
+## Audit every frame you hand over
+
+The audit only covers what you point it at. A canonical page can be clean
+while the picture you actually show is broken, and the picture is what the
+reader judges.
+
+So: every frame that reaches a person goes through the audit first. That
+includes the ones a page never produces on its own — a before state you
+recreated by editing the DOM, an option you rendered by changing a size in
+the browser, a state you drove the app into. Those are the most likely to be
+wrong, because you built them by hand a minute ago.
+
+For a page you have mutated in the browser, run the audit inside it rather
+than on a file:
+
+```js
+import { auditBody, APP_HARD_KINDS } from '.../render-audit/audit-core.mjs';
+const res = await page.evaluate(`(()=>{ ${auditBody({ minFont: 12, annotate: false, checkFrame: false })} })()`);
+const bad = res.findings.filter((f) => APP_HARD_KINDS.includes(f.kind) || f.kind === 'stretched-box');
+if (bad.length) throw new Error(`${bad.length} finding(s); fix before screenshotting`);
+```
+
+Put that between the mutation and the screenshot, so a frame cannot be saved
+until it is clean.
+
 ## Run it
 
 ```
@@ -70,6 +95,7 @@ Hand a reviewer that full frame with its boxes; see "Showing a defect" in
 | `image-scale` | error / warning | Pixel art drawn at a non-integer scale (error), or any image upscaled past 2× (warning). |
 | `image-broken` | error | An image did not load. |
 | `font-fallback` | error | The declared family did not load; every measurement below is suspect. |
+| `stretched-box` | warning | A text box holds height no line of its text uses, nearly all on one side. A torn block looks like this from the outside: nothing is cut, nothing is covered, and the words are half a slot from each other. |
 | `awkward-wrap` | warning | A label of 30 characters or fewer took three or more lines, or the last line holds one short word. |
 | `text-overlap` | warning | Two text runs from different branches share pixels. |
 | `tiny-text` | warning | Text under the size floor. |
