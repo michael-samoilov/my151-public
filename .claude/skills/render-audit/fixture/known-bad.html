@@ -16,8 +16,8 @@
   <div style="width:52px;font-size:14px;line-height:16px">No gym badge awarded</div>
   <!-- tiny-text -->
   <div style="font-size:9px">fine print</div>
-  <!-- text-overlap: two absolutely placed labels sharing pixels -->
-  <div style="position:relative;height:24px"><span style="position:absolute;left:0;top:0;font-size:16px">Onix</span><span style="position:absolute;left:10px;top:2px;font-size:16px">Geodude</span></div>
+  <!-- overlap: two in-flow badges each wider than the column that holds them -->
+  <div style="display:flex;gap:0"><div style="width:40px;display:flex;justify-content:center"><span style="width:56px;height:14px;background:#2980ef;flex:none"></span></div><div style="width:40px;display:flex;justify-content:center"><span style="width:56px;height:14px;background:#fac000;flex:none"></span></div></div>
   <!-- outside-frame: a label past the frame's bottom edge -->
   <div style="position:absolute;left:12px;top:310px;font-size:14px">past the edge</div>
 </div>
