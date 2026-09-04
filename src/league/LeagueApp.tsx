@@ -51,6 +51,19 @@ function GlobalHeader() {
  * hydrated DOM (the static shell carries the crawlable one).
  */
 const TOOL_NAME = 'Pokémon League Builder';
+/**
+ * The heading, once a third pane is open.
+ *
+ * The desktop layout gives the league a third of the width when the picker
+ * joins it, and the identity block gives up the difference: measured, the
+ * heading had 143px for 165px of text, so it rendered as "Pokémon League
+ * B…". Widening the block instead pushes the bar's own controls 26.9px past
+ * its right edge and into the card pane, and setting the heading smaller
+ * drops it below the 13.75px the dex builder's bar uses. Two words fit
+ * whole, so the narrow state says two words. The static shell keeps the
+ * crawlable full name, which is what a crawler reads.
+ */
+const TOOL_NAME_NARROW = 'League Builder';
 const LEAGUE_NAME_PLACEHOLDER = 'Name your league';
 
 /**
@@ -61,7 +74,7 @@ const LEAGUE_NAME_PLACEHOLDER = 'Name your league';
  * heading names the page and never changes (it is also the crawlable h1), and
  * the field under it is the user's, bold and black once they use it.
  */
-function LeagueNameRow({ h1 }: { h1: boolean }) {
+function LeagueNameRow({ h1, narrow = false }: { h1: boolean; narrow?: boolean }) {
   const name = useLeagueStore((s) => s.name);
   const setName = useLeagueStore((s) => s.setName);
   const Heading = h1 ? 'h1' : 'span';
@@ -70,8 +83,11 @@ function LeagueNameRow({ h1 }: { h1: boolean }) {
   const pencilRoom = usePencilRoom(blockRef, ghostRef, name);
   return (
     <div ref={blockRef} className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
-      <Heading className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
-        {TOOL_NAME}
+      <Heading
+        className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground"
+        title={narrow ? TOOL_NAME : undefined}
+      >
+        {narrow ? TOOL_NAME_NARROW : TOOL_NAME}
       </Heading>
       {/* The field is sized to its own text by an invisible copy stacked in
           the same grid cell, so the pencil sits at the end of the words
@@ -242,7 +258,7 @@ export function LeagueApp() {
           <section className={cn('flex min-w-0 flex-col border-r', browserOpen ? 'w-1/3' : 'w-1/2')}>
             <div data-testid="league-tool-bar" className="flex h-11 items-center border-b px-4">
               <div className="mx-auto flex w-full max-w-[26rem] items-center">
-                <LeagueNameRow h1 />
+                <LeagueNameRow h1 narrow={browserOpen} />
                 <span className="ml-auto flex shrink-0 items-center gap-1">
                   <LeagueViewToggle />
                   <FeedbackButton />
