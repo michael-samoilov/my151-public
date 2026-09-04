@@ -920,7 +920,7 @@ export function PokedexGrid() {
           <MilestoneBar />
         </div>
         <div className="shrink-0 flex items-center gap-1 justify-end" style={{ width: 'var(--ms-side)' }}>
-          <FeedbackButton route="builder" />
+          <FeedbackButton />
           <SettingsMenu onClear={clearAll} />
         </div>
       </div>

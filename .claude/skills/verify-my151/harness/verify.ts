@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { openSession, type EngineName } from './lib/engines.ts';
 import type { PersonaName } from './lib/personas.ts';
-import { runStandardSuite } from './lib/flows.ts';
+import { runLeagueSuite, runStandardSuite } from './lib/flows.ts';
 import { probeEngines } from './doctor.ts';
 import { buildIn, startPreview, addWorktree, REPO_ROOT, type Preview, type Worktree } from './lib/servers.ts';
 import { Evidence, rollup, type SurfaceResult, type RunReport, type Check } from './lib/evidence.ts';
@@ -42,11 +42,13 @@ async function driveSurface(def: SurfaceDef, base: string, ev: Evidence, tag: st
   const videoFile = video ? path.join(ev.dir, `${def.surface}-${tag}.${def.engine === 'blink' ? 'webm' : 'mp4'}`) : undefined;
   const s = await openSession(def.engine, def.persona, videoFile);
   try {
-    const checks = await runStandardSuite(s, def.persona, {
+    const ctx = {
       base,
       surface: `${def.surface}--${tag}`,
-      shot: (label) => ev.shotPath(`${def.surface}-${tag}`, label),
-    });
+      shot: (label: string) => ev.shotPath(`${def.surface}-${tag}`, label),
+    };
+    const checks = await runStandardSuite(s, def.persona, ctx);
+    checks.push(...(await runLeagueSuite(s, def.persona, ctx)));
     return { checks, video: videoFile ?? null };
   } finally { await s.close(); }
 }

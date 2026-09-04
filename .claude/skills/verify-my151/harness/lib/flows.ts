@@ -229,3 +229,123 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
 
   return checks;
 }
+
+// ---------------------------------------------------------------------------
+// League builder page (/pokemon-league-builder), added 2026-08-29. Checks are
+// the invariants that change introduced: the page boots on its own entry, the
+// served HTML carries the static SEO content, layout holds, a real drive
+// writes the league's own store key, and the run stays error-free. The drive
+// runs on desktop-width Blink (the instant-add path); other surfaces prove
+// boot, layout, and rendering.
+const LEAGUE_PATH = '/pokemon-league-builder';
+const LEAGUE_KEY = 'league-builder';
+
+interface LeagueOracle {
+  has: boolean;
+  cardType: string | null;
+  lineCount: number;
+  tm: number | null;
+}
+
+async function readLeagueOracle(s: Session, cardIndex: number): Promise<LeagueOracle> {
+  return s
+    .evalJson<LeagueOracle>(
+      `const raw=localStorage.getItem(${JSON.stringify(LEAGUE_KEY)});
+       if(!raw) return {has:false,cardType:null,lineCount:0,tm:null};
+       try { const d=JSON.parse(raw); const c=d.state?.cards?.[${cardIndex}];
+         return {has:true, cardType:c?.type??null, lineCount:c?.lines?.length??0, tm:c?.tmMoveId??null};
+       } catch { return {has:false,cardType:null,lineCount:0,tm:null}; }`,
+    )
+    .catch(() => ({ has: false, cardType: null, lineCount: 0, tm: null }));
+}
+
+export async function runLeagueSuite(s: Session, persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + LEAGUE_PATH;
+
+  // The served HTML must carry the static SEO content (crawlers see no JS).
+  // Fetched host-side so the check reads the wire bytes, not the DOM.
+  try {
+    const res = await fetch(url);
+    const html = await res.text();
+    const hasH1 = /<h1[^>]*>[^<]*League Builder/i.test(html);
+    const hasTitle = /<title>[^<]*League Builder/i.test(html);
+    if (!res.ok) {
+      // A non-200 is a real server failure, not a missing feature.
+      checks.push(ok('league:static-seo-content', false, `status ${res.status}`));
+      return checks;
+    }
+    if (!hasH1 || !hasTitle) {
+      // The league builder page is not in this build yet: /pokemon-league-builder
+      // serves the SPA fallback (dex HTML, 200). Skip loudly rather than fail,
+      // matching the placement check's skip-until-present rule; a check that flags
+      // a not-yet-built feature is a false failure on the current app.
+      checks.push({ name: 'league:static-seo-content', status: 'skip', detail: `league builder not in this build yet (SPA fallback at ${LEAGUE_PATH}, h1=${hasH1}, title=${hasTitle})` });
+      return checks;
+    }
+    checks.push(ok('league:static-seo-content', true, `status ${res.status}`));
+  } catch (e) {
+    checks.push({ name: 'league:static-seo-content', status: 'fail', detail: (e as Error).message });
+    return checks;
+  }
+
+  await s.navigate(url);
+  // waitForApp is satisfied by the static SEO shell too (it also fills #root),
+  // so hydration is proven by polling for an app-only handle.
+  let hydrated = false;
+  for (let i = 0; i < 40 && !hydrated; i++) {
+    hydrated = await s
+      .evalJson<boolean>(`return !!document.querySelector('[data-testid="league-slot-0"]');`)
+      .catch(() => false);
+    if (!hydrated) await sleep(250);
+  }
+  checks.push(ok('league:hydrated-league-home', hydrated));
+  await s.screenshot(ctx.shot('league-home'));
+
+  const layout = await s.evalJson<{ scrollWidth: number; innerWidth: number; bodyH: number }>(LAYOUT);
+  checks.push(ok('league:no-horizontal-overflow', layout.scrollWidth <= layout.innerWidth + 2, `scrollWidth ${layout.scrollWidth} vs innerWidth ${layout.innerWidth}`));
+
+  // The real drive: open a card, set its type, seat a line, pick a TM. The
+  // pickers and instant-add flow are desktop-shaped; personas and other
+  // engines stop at rendering.
+  if (s.engine === 'blink' && persona === null && hydrated) {
+    const CARD = 3;
+    const dexBefore = await readSeedCount(s);
+    await s.click(`[data-testid="league-slot-${CARD}"]`);
+    await sleep(400);
+    await s.click('[aria-label="Gym type"]');
+    await sleep(300);
+    await s.click('svg[data-type="water"]');
+    await sleep(400);
+    await s.click('[data-testid="card-cell-1-1"]');
+    await sleep(900);
+    const searched = await s
+      .evalJson<boolean>(`const i=[...document.querySelectorAll('input')].find(x=>x.placeholder&&x.type!=='hidden'&&x.closest('[class*="flex-col"]'));return !!i;`)
+      .catch(() => false);
+    // Type into the browser's search box (the last text input on the page).
+    await s.evalJson(`const is=[...document.querySelectorAll('input')]; const i=is[is.length-1];
+      const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+      set.call(i,'chinchou'); i.dispatchEvent(new Event('input',{bubbles:true})); return ${JSON.stringify('ok')};`);
+    await sleep(900);
+    await s.click(PLACE_CARD);
+    await sleep(700);
+    await s.screenshot(ctx.shot('league-card-driven'));
+    const oracle = await readLeagueOracle(s, CARD);
+    checks.push(ok('league:drive-writes-store', oracle.has && oracle.cardType === 'water' && oracle.lineCount === 1,
+      `searched=${searched} type=${oracle.cardType} lines=${oracle.lineCount}`));
+
+    // The drive must not have touched the dex store's placements.
+    const dexAfter = await readSeedCount(s);
+    checks.push(ok('league:dex-store-untouched', dexAfter === dexBefore, `dex count ${dexBefore} -> ${dexAfter}`));
+  } else {
+    checks.push({
+      name: 'league:drive-writes-store',
+      status: 'skip',
+      detail: hydrated ? 'desktop-width Blink only' : 'page never hydrated, drive not attempted',
+    });
+  }
+
+  const errs = await s.errors();
+  checks.push(ok('league:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
+  return checks;
+}

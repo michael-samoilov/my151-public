@@ -1204,7 +1204,7 @@ export function ViewPage() {
             <MilestoneBar />
           </div>
           <div className="flex items-center gap-1 shrink-0 justify-end" style={{ width: 'var(--ms-side)' }}>
-            <FeedbackButton route="view" />
+            <FeedbackButton />
             <button type="button"
               ref={exportBtnRef}
               onClick={handleExport}

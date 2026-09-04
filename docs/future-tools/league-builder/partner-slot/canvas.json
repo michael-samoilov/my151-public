@@ -1,0 +1,44 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "The slot the two would share",
+      "x": 0,
+      "y": 0,
+      "w": 760,
+      "h": 479
+    },
+    {
+      "file": "Stacked.dc.html",
+      "title": "Split &middot; Two full-width halves",
+      "x": 0,
+      "y": 559,
+      "w": 743,
+      "h": 418
+    },
+    {
+      "file": "SideBySide.dc.html",
+      "title": "Split &middot; Two half-width columns",
+      "x": 0,
+      "y": 1057,
+      "w": 743,
+      "h": 418
+    },
+    {
+      "file": "Diagonal.dc.html",
+      "title": "Split &middot; One box, one seam",
+      "x": 0,
+      "y": 1555,
+      "w": 743,
+      "h": 418
+    },
+    {
+      "file": "Inset.dc.html",
+      "title": "Split &middot; One primary, one inset",
+      "x": 0,
+      "y": 2053,
+      "w": 743,
+      "h": 418
+    }
+  ]
+}

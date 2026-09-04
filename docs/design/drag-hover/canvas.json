@@ -1,0 +1,86 @@
+{
+  "artboards": [
+    {
+      "file": "Main.dc.html",
+      "title": "The rule",
+      "x": 0,
+      "y": 0,
+      "w": 880,
+      "h": 640
+    },
+    {
+      "file": "BuildPage.dc.html",
+      "title": "Dex builder · build page",
+      "x": 0,
+      "y": 760,
+      "w": 620,
+      "h": 470
+    },
+    {
+      "file": "ViewPage.dc.html",
+      "title": "Dex builder · view page",
+      "x": 700,
+      "y": 760,
+      "w": 620,
+      "h": 470
+    },
+    {
+      "file": "LeagueHomeNow.dc.html",
+      "title": "League home · today",
+      "x": 0,
+      "y": 1350,
+      "w": 620,
+      "h": 520
+    },
+    {
+      "file": "LeagueHomeFixed.dc.html",
+      "title": "League home · proposed",
+      "x": 700,
+      "y": 1350,
+      "w": 620,
+      "h": 520
+    },
+    {
+      "file": "GymColumn.dc.html",
+      "title": "Gym card · column",
+      "x": 0,
+      "y": 1990,
+      "w": 620,
+      "h": 540
+    },
+    {
+      "file": "Legendary.dc.html",
+      "title": "Gym card · legendary",
+      "x": 700,
+      "y": 1990,
+      "w": 620,
+      "h": 600
+    }
+  ],
+  "annotations": [
+    {
+      "id": "note-pair",
+      "x": 1400,
+      "y": 1350,
+      "w": 260,
+      "text": "The behaviour change.\n\nToday the league summary reads no point at all — dnd-kit's default matches the dragged row's rectangle, so the target lands below the finger and the copy lands on it.\n\nThe fix reads a point 64px above the thumb. The two card boards below need the same idea, applied differently: their hit test already matches on x, so only the thumb moves."
+    },
+    {
+      "id": "note-debug",
+      "x": 960,
+      "y": 0,
+      "w": 260,
+      "text": "The teal marks are debug only.\n\nThe crosshair, the dashed guides and the thumb circle are here so you can see where the hit test reads. None of them are drawn in the app.\n\nThe red marks are real: the insert bar and the faint cursor marker already ship on the dex pages."
+    },
+    {
+      "id": "note-cols",
+      "x": 1400,
+      "y": 1990,
+      "w": 260,
+      "text": "Both card surfaces already match on x alone, so the finger never has to sit on the card.\n\nWhat changes is the copy: it moves above the finger, and on the column it takes the shape the seat it is over would give it, so it can be the preview outright."
+    }
+  ],
+  "launch": {
+    "view": "canvas"
+  }
+}

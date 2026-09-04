@@ -1,0 +1,184 @@
+{
+  "artboards": [
+    {
+      "file": "SketchMobile.dc.html",
+      "title": "A · Sketch grid — Mobile 390",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 1130,
+      "page": "page-1"
+    },
+    {
+      "file": "SketchTablet.dc.html",
+      "title": "A · Sketch grid — Tablet 834",
+      "x": 490,
+      "y": 0,
+      "w": 834,
+      "h": 1320,
+      "page": "page-1"
+    },
+    {
+      "file": "Main.dc.html",
+      "title": "A · Sketch grid — Desktop 1440",
+      "x": 1420,
+      "y": 0,
+      "w": 1440,
+      "h": 1660,
+      "page": "page-1"
+    },
+    {
+      "file": "MarqueeMobile.dc.html",
+      "title": "B · Marquee row — Mobile 390",
+      "x": 0,
+      "y": 1920,
+      "w": 390,
+      "h": 1680,
+      "page": "page-1"
+    },
+    {
+      "file": "MarqueeTablet.dc.html",
+      "title": "B · Marquee row — Tablet 834",
+      "x": 490,
+      "y": 1920,
+      "w": 834,
+      "h": 1290,
+      "page": "page-1"
+    },
+    {
+      "file": "MarqueeDesktop.dc.html",
+      "title": "B · Marquee row — Desktop 1440",
+      "x": 1420,
+      "y": 1920,
+      "w": 1440,
+      "h": 1120,
+      "page": "page-1"
+    },
+    {
+      "file": "FeaturedMobile.dc.html",
+      "title": "C · Featured — Mobile 390",
+      "x": 0,
+      "y": 3860,
+      "w": 390,
+      "h": 1790,
+      "page": "page-1"
+    },
+    {
+      "file": "FeaturedTablet.dc.html",
+      "title": "C · Featured — Tablet 834",
+      "x": 490,
+      "y": 3860,
+      "w": 834,
+      "h": 1360,
+      "page": "page-1"
+    },
+    {
+      "file": "FeaturedDesktop.dc.html",
+      "title": "C · Featured — Desktop 1440",
+      "x": 1420,
+      "y": 3860,
+      "w": 1440,
+      "h": 1280,
+      "page": "page-1"
+    },
+    {
+      "file": "PosterMobile.dc.html",
+      "title": "Mobile 390",
+      "x": 0,
+      "y": 0,
+      "w": 390,
+      "h": 844,
+      "page": "page-2"
+    },
+    {
+      "file": "PosterTablet.dc.html",
+      "title": "Tablet 834",
+      "x": 490,
+      "y": 0,
+      "w": 834,
+      "h": 1112,
+      "page": "page-2"
+    },
+    {
+      "file": "PosterDesktop.dc.html",
+      "title": "Desktop 1440 — four across",
+      "x": 1424,
+      "y": 0,
+      "w": 1440,
+      "h": 900,
+      "page": "page-2"
+    }
+  ],
+  "annotations": [
+    {
+      "id": "a-note",
+      "page": "page-1",
+      "x": 0,
+      "y": -190,
+      "w": 900,
+      "text": "A · Sketch grid — the attached sketch, literally.\nTwo by two at every width, screenshots tilted and broken out of the card top. Reads as a toy shelf.\nTradeoff: at 390px the two-up cards leave ~150px of text width, so the blurbs have to be short — that is the least SEO copy of the three."
+    },
+    {
+      "id": "b-note",
+      "page": "page-1",
+      "x": 0,
+      "y": 1730,
+      "w": 900,
+      "text": "B · Marquee row — four abreast, editorial hero.\nLeft-aligned hero so the h1 and the paragraph read as one block; cards straight-on and equal weight.\nTradeoff: four equal cards say all four tools are equally real. Three of them are not."
+    },
+    {
+      "id": "c-note",
+      "page": "page-1",
+      "x": 0,
+      "y": 3670,
+      "w": 900,
+      "text": "C · Featured — the shipped tool leads.\nThe dex builder gets a split hero card with a real screenshot and a solid CTA; the other three sit in a supporting row.\nTradeoff: it buries the league builder, which is the tool with a settled spec and the next page to rank."
+    },
+    {
+      "id": "seo-note",
+      "page": "page-1",
+      "x": 1000,
+      "y": -190,
+      "w": 860,
+      "text": "SEO structure, same in all three:\n· h1 carries \"make your own Pokédex\" plus region and league.\n· Each card is an <h2> that exactly matches its slug: /custom-pokedex-builder, /pokemon-league-builder, /favorite-pokemon-picker.\n· The footer repeats the four links as anchor text.\nWatch out: making / a router moves the dex builder off the URL that ranks today (~pos 7.8 for \"pokedex builder\")."
+    },
+    {
+      "id": "d-note",
+      "page": "page-2",
+      "x": 0,
+      "y": -260,
+      "w": 940,
+      "text": "D · Poster cards. Mobile and tablet space out evenly: three equal flex spacers put the same gap above the intro text, between the text and the grid, and between the grid and the footer.\nThe Hammer is centred between the card's top edge and the top of its heading, so the space above it matches the space below by construction rather than by eye.\nDesktop has about 110px between the sub-text and the artwork, which is the room for a hover nudge."
+    },
+    {
+      "id": "d-sweep-note",
+      "page": "page-2",
+      "x": 1980,
+      "y": -260,
+      "w": 940,
+      "text": "Responsive check — `node docs/future-tools/home-page/sweep.mjs`.\nThe three artboards are three points on a curve, so the layout is now a function of width: `posterConfig(width, height)`. Two regimes meet at 1024, the app's own md breakpoint — stacked hero and two cards up below it, split hero and four across at and above it. Inside a regime every number is piecewise-linear between anchors, so 390, 834 and 1440 reproduce these artboards exactly.\nThe sweep drives 45 frames from 320 to 2560 in Chromium and reads geometry, not text: frame overflow, hero/grid/footer band order, card-on-card overlap, one-line headings, blurb clipping, a bare red strip at every card's right edge, artwork landing on the card above, and the mark centred in its card. 45 of 45 are clean.\n`--mutate all` injects six known defects and asserts each is caught. A sweep that cannot fail is not evidence.\nOne limit, measured: below a floor the page scrolls instead of filling one screen — 709px tall at 390 wide, 1059px at 834, 579px at 1440. Every current device clears it except short phones (320x568, 360x640, 375x667), which scroll by 35-91px. iPad mini at 768x1024 clears it by 16px."
+    },
+    {
+      "id": "d-detail-note",
+      "page": "page-2",
+      "x": 990,
+      "y": -260,
+      "w": 940,
+      "text": "This pass, four changes.\nThe screenshot shadow no longer stops in a straight line at the card's bottom. The shadow now paints in its own layer that fades out over the last 34px, so it thins to nothing instead of ending on an edge; the screenshots themselves still cut on that edge, which is the point.\nTablet is the packed one: the artwork scales to 82%, so the two rows sit closer. `art` is the single knob, and the left overhang scales with it or the gradient rule fails the build.\nCard copy is a step larger — 9.4px title, 8.8px blurb at 390px. It cannot reach the 11.5px of the \"No account…\" line: \"Trainer Card & League Builder\" already fills 154 of the 158px the card gives it, so one line of title caps the size at about 9.6px. Matching 11.5px needs a shorter title or one card per row.\nLine breaks in the headings and blurbs come from `text-wrap: balance`, not manual breaks."
+    }
+  ],
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Directions A–C"
+    },
+    {
+      "id": "page-2",
+      "name": "D · Poster cards"
+    }
+  ],
+  "launch": {
+    "view": "canvas",
+    "page": "page-2"
+  }
+}
