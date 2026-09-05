@@ -34,12 +34,23 @@ export const CARD_R = 30;
 export const BAND_R = 9;
 export const SLOT_R = 15;
 
-/** The page margin around the card, and the credit strip under it. */
+/** The page margin above the card, and the credit strip under it. */
 export const MARGIN = 40;
-export const FOOT = 48;
+export const FOOT = 28;
+
+/**
+ * Every export page is 9:16, the story frame.
+ *
+ * Photos on an iPhone fits a picture to the screen's width and centres it. A
+ * page taller than about 9:16.8 leaves so little above it that the top edge
+ * sits under the notch; the first pages were 9:16.9 and 9:17.7 and lost their
+ * headers to it. At 9:16 the bars above and below are 9% of the screen each,
+ * which clears any notch. The content's height is fixed by 1× sprites, so
+ * the ratio is met by the side margins, never by squeezing rows.
+ */
+export const PAGE_ASPECT = 16 / 9;
 
 export const CARD_W = 7 * COL + 2 * PADX; // 674
-export const PAGE_W = CARD_W + 2 * MARGIN; // 754
 
 /** The identity block above the first band, and the gap under it. */
 export const HDR_H = 55;
@@ -105,10 +116,18 @@ export function rowTop(row: number): number {
   return top;
 }
 
-/** Left edge and width of a slot spanning columns `from`..`to`, 1-indexed. */
+/**
+ * Left edge and width of a slot spanning columns `from`..`to`, 1-indexed,
+ * measured from the grid's own left edge (the card's content box).
+ *
+ * The slot wears the same horizontal inset a team cell does, so its left
+ * edge lines up with the cells below it and its right edge stops one inset
+ * short of the next column. An earlier version also added the card's padding
+ * here, which pushed all three slots 15px right and over the glyph cells.
+ */
 export function slotX(from: number, to: number): { left: number; width: number } {
   return {
-    left: PADX + (from - 1) * COL + INX,
+    left: (from - 1) * COL + INX,
     width: (to - from + 1) * COL - 2 * INX,
   };
 }
@@ -131,6 +150,26 @@ export function cardPageHeight(): number {
   return MARGIN + cardHeight() + FOOT;
 }
 
+/**
+ * The page's width for a card: what 9:16 needs, never less than the card
+ * with its top margin either side, and with a whole-pixel margin. A page one
+ * pixel wider costs nothing; a half-pixel margin puts every pixel sprite
+ * between two pixels and dithers the whole grid.
+ */
+export function pageWidthFor(height: number, cardW: number): number {
+  let w = Math.max(cardW + 2 * MARGIN, Math.ceil(height / PAGE_ASPECT));
+  if ((w - Math.round(cardW)) % 2 !== 0) w += 1;
+  return w;
+}
+
+export function cardPageWidth(): number {
+  return pageWidthFor(cardPageHeight(), CARD_W);
+}
+
+export function cardSideMargin(): number {
+  return (cardPageWidth() - CARD_W) / 2;
+}
+
 // ---------- the league home ----------
 
 /** Export px per app rem-unit on the home, whose seat sprite is 2.625rem. */
@@ -140,15 +179,21 @@ export const ROW2 = 44 * K2;
 export const BAND2 = 20 * K2;
 export const HPADY = 4 * K2;
 export const HPADX = 8 * K2;
-export const GLYPH_COL = 44 * K2;
+/**
+ * The glyph column is wider than the app's own 2.75rem: its cell is drawn at
+ * three by two, the shape the cell has on a phone once the home is fitted to
+ * the screen, rather than the near-square the stylesheet asks for. The seat
+ * columns keep their width so neighbouring sprites do not crowd.
+ */
+export const GLYPH_COL = 57 * K2;
 export const TYPE_COL = 32 * K2;
 export const SEAT_COL = ((350 - 76) / 7) * K2;
-export const HOME_HDR_H = 44 * K2;
+/** One line: the league's name, with the team tag at the right. */
+export const HOME_HDR_H = 24 * K2;
 export const HOME_R = 5 * K2;
 
 export const HOME_INNER = GLYPH_COL + TYPE_COL + 7 * SEAT_COL;
 export const HOME_W = HOME_INNER + 2 * HPADX;
-export const HOME_PAGE_W = HOME_W + 2 * MARGIN;
 
 /** The section band drawn before a slot index. */
 export const SECTION_BEFORE: Record<number, string> = {
@@ -173,5 +218,20 @@ export function homeCardHeight(): number {
 export function homePageHeight(): number {
   return MARGIN + homeCardHeight() + FOOT;
 }
+
+export function homePageWidth(): number {
+  return pageWidthFor(homePageHeight(), HOME_W);
+}
+
+export function homeSideMargin(): number {
+  return (homePageWidth() - HOME_W) / 2;
+}
+
+/**
+ * The credit's size, as the dex poster sets it: an eighth of a sprite. The
+ * dex draws "made with my151.app" at 6px under 48px tiles; at 96px sprites
+ * that is 12px, a quiet line under the picture rather than a caption.
+ */
+export const CREDIT_PX = 12;
 
 export { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT };

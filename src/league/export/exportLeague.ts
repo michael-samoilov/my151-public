@@ -650,21 +650,23 @@ function drawGymCardPage(
   const cardH = L.cardHeight();
 
   ctx.fillStyle = PAGE_BG;
-  ctx.fillRect(0, 0, L.PAGE_W, L.cardPageHeight());
+  const pageW = L.cardPageWidth();
+  const left = L.cardSideMargin();
+  ctx.fillRect(0, 0, pageW, L.cardPageHeight());
 
   withCardShadow(ctx, () => {
     ctx.fillStyle = shades.base;
-    roundRect(ctx, L.MARGIN, L.MARGIN, L.CARD_W, cardH, L.CARD_R);
+    roundRect(ctx, left, L.MARGIN, L.CARD_W, cardH, L.CARD_R);
     ctx.fill();
   });
 
   // Everything inside the card is clipped by its corners, the way the CSS
   // `overflow:hidden` clips a sprite that overhangs its cell.
   ctx.save();
-  roundRect(ctx, L.MARGIN, L.MARGIN, L.CARD_W, cardH, L.CARD_R);
+  roundRect(ctx, left, L.MARGIN, L.CARD_W, cardH, L.CARD_R);
   ctx.clip();
 
-  const ox = L.MARGIN + L.PADX;
+  const ox = left + L.PADX;
   const oy = L.MARGIN + L.PADY;
 
   // --- the identity block: the mark and the theme, and nothing else ---
@@ -737,7 +739,7 @@ function drawGymCardPage(
 
   ctx.restore();
 
-  drawCredit(ctx, L.PAGE_W / 2, L.MARGIN + cardH + L.FOOT / 2, 26);
+  drawCredit(ctx, pageW / 2, L.MARGIN + cardH + L.FOOT / 2, L.CREDIT_PX);
 }
 
 // ---------- the league home ----------
@@ -820,50 +822,46 @@ function drawLeagueHomePage(
 ): void {
   const cardH = L.homeCardHeight();
   ctx.fillStyle = PAGE_BG;
-  ctx.fillRect(0, 0, L.HOME_PAGE_W, L.homePageHeight());
+  const pageW = L.homePageWidth();
+  const left = L.homeSideMargin();
+  ctx.fillRect(0, 0, pageW, L.homePageHeight());
 
   withCardShadow(ctx, () => {
     ctx.fillStyle = '#ffffff';
-    roundRect(ctx, L.MARGIN, L.MARGIN, L.HOME_W, cardH, 12 * L.K2);
+    roundRect(ctx, left, L.MARGIN, L.HOME_W, cardH, 12 * L.K2);
     ctx.fill();
   });
 
   ctx.save();
-  roundRect(ctx, L.MARGIN, L.MARGIN, L.HOME_W, cardH, 12 * L.K2);
+  roundRect(ctx, left, L.MARGIN, L.HOME_W, cardH, 12 * L.K2);
   ctx.clip();
 
-  const ox = L.MARGIN + L.HPADX;
+  const ox = left + L.HPADX;
   let y = L.MARGIN + L.HPADY;
 
-  // --- the identity block ---
+  // --- the identity line: the league's name, and which teams these are ---
+  // The tool's own name stays off the picture. Someone who is handed it
+  // wants to know whose league it is, not what drew it; the credit below
+  // already says that.
   const pad = 4 * L.K2;
-  const eyebrow = 11 * L.K2;
   const tagSize = 9 * L.K2;
   const big = 14 * L.K2;
-  const block = eyebrow * 1.2 + 4 + big * 1.25;
-  let ty = y + (L.HOME_HDR_H - block) / 2;
   ctx.save();
   ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = MUTED;
-  // The tool's name and the team tag are set at different sizes and share one
-  // baseline, so the smaller run sits on the line rather than in the middle
-  // of it. Drawing both from a middle baseline lifted the tag by two pixels.
-  ctx.font = font(eyebrow, 600);
-  const eyebrowBase = ty + (eyebrow * 1.2) / 2 + capHeight(ctx) / 2;
-  ctx.fillText('Pokémon League Builder', ox + pad, eyebrowBase);
+  ctx.font = name ? font(big, 700) : `italic 400 ${big}px ${FONT_STACK}`;
+  // The name and the tag are set at different sizes and share one baseline,
+  // so the smaller run sits on the line rather than in the middle of it.
+  const base = y + L.HOME_HDR_H / 2 + capHeight(ctx) / 2;
   ctx.font = font(tagSize, 600);
   const tag = view === 'rematch' ? 'REMATCH TEAMS' : 'STORY TEAMS';
   const track = 0.07 * tagSize;
-  fillTracked(ctx, tag, ox + L.HOME_INNER - pad - trackedWidth(ctx, tag, track), eyebrowBase, track);
-  ty += eyebrow * 1.2 + 4;
+  const tagW = trackedWidth(ctx, tag, track);
+  ctx.fillStyle = MUTED;
+  fillTracked(ctx, tag, ox + L.HOME_INNER - pad - tagW, base, track);
   ctx.font = name ? font(big, 700) : `italic 400 ${big}px ${FONT_STACK}`;
   ctx.fillStyle = name ? FG : MUTED;
-  const nameBase = ty + (big * 1.25) / 2 + capHeight(ctx) / 2;
-  ctx.fillText(
-    name ? ellipsize(ctx, name, L.HOME_INNER - 2 * pad) : 'Unnamed league',
-    ox + pad,
-    nameBase,
-  );
+  const room = L.HOME_INNER - 2 * pad - tagW - 4 * L.K2;
+  ctx.fillText(name ? ellipsize(ctx, name, room) : 'Unnamed league', ox + pad, base);
   ctx.restore();
   y += L.HOME_HDR_H;
 
@@ -887,7 +885,7 @@ function drawLeagueHomePage(
   }
 
   ctx.restore();
-  drawCredit(ctx, L.HOME_PAGE_W / 2, L.MARGIN + cardH + L.FOOT / 2, 13 * L.K2);
+  drawCredit(ctx, pageW / 2, L.MARGIN + cardH + L.FOOT / 2, L.CREDIT_PX);
 }
 
 // ---------- assembling a PNG ----------
@@ -934,7 +932,7 @@ async function render(
 /** One trainer's card as a PNG. */
 export async function exportGymCard(card: GymCard): Promise<Blob> {
   const images = await loadAll(cardImageUrls(card));
-  return render(L.PAGE_W, L.cardPageHeight(), (ctx) => drawGymCardPage(ctx, card, images));
+  return render(L.cardPageWidth(), L.cardPageHeight(), (ctx) => drawGymCardPage(ctx, card, images));
 }
 
 /** The league summary as a PNG, at whichever team toggle is on screen. */
@@ -944,7 +942,7 @@ export async function exportLeagueHome(
   view: LeagueView,
 ): Promise<Blob> {
   const images = await loadAll(homeImageUrls(cards, view));
-  return render(L.HOME_PAGE_W, L.homePageHeight(), (ctx) =>
+  return render(L.homePageWidth(), L.homePageHeight(), (ctx) =>
     drawLeagueHomePage(ctx, name, cards, view, images),
   );
 }

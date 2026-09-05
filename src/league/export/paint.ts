@@ -197,10 +197,10 @@ export function drawDiamonds(
 ): void {
   const perLine = n <= 4 ? n : 4;
   const rows = Math.ceil(n / perLine);
-  // The wrapping block is two pixels wider than the marks it holds, the way
-  // the component's own fixed width is, so a wrapped count sits where it does
-  // on screen rather than one pixel right of it.
-  const blockW = perLine * size + (perLine - 1) * gap + (n > 4 ? 2 : 0);
+  // Centred by the marks themselves. The component's wrapping block is two
+  // pixels wider than its marks, which on screen is invisible and in a still
+  // picture reads as the whole count sitting a pixel left of centre.
+  const blockW = perLine * size + (perLine - 1) * gap;
   const blockH = rows * size + (rows - 1) * gap;
   const left = cx - blockW / 2;
   const top = cy - blockH / 2;

@@ -13,20 +13,20 @@ import { makePlacedLine } from '../model/engine';
 describe('export layout', () => {
   it('gives the card seven columns and its padding', () => {
     expect(L.CARD_W).toBe(7 * L.COL + 2 * L.PADX);
-    expect(L.PAGE_W).toBe(L.CARD_W + 2 * L.MARGIN);
   });
 
-  it('keeps the card page inside a phone frame', () => {
-    // 9:19.5 is the tallest common phone. A taller page than that arrives
-    // shrunk to fit, which is what made the 1x sprite decision worth having.
-    const ratio = (9 * L.cardPageHeight()) / L.PAGE_W;
-    expect(ratio).toBeLessThan(19.5);
-    expect(ratio).toBeGreaterThan(15);
-  });
-
-  it('keeps the league home page inside a phone frame', () => {
-    const ratio = (9 * L.homePageHeight()) / L.HOME_PAGE_W;
-    expect(ratio).toBeLessThan(19.5);
+  it('frames both pages at 9:16, with the card no closer to the side than the top', () => {
+    // Photos fits a picture to the screen's width. At 9:16 the bars above
+    // and below clear the notch; the first pages were taller and lost their
+    // headers under it.
+    for (const [w, h, cardW, side] of [
+      [L.cardPageWidth(), L.cardPageHeight(), L.CARD_W, L.cardSideMargin()],
+      [L.homePageWidth(), L.homePageHeight(), L.HOME_W, L.homeSideMargin()],
+    ]) {
+      expect(h / w).toBeLessThanOrEqual(L.PAGE_ASPECT + 0.002);
+      expect(side).toBeGreaterThanOrEqual(L.MARGIN);
+      expect(w).toBe(cardW + 2 * side);
+    }
   });
 
   it('leaves a band before the elite and endgame rows only', () => {
@@ -68,6 +68,25 @@ describe('export layout', () => {
     expect(L.MARK_PAD + L.MARK_COL + L.MARK_PAD + L.TM_BADGE_W).toBeLessThan(tm.width);
   });
 
+  it('keeps every slot clear of the glyph cell beside it', () => {
+    // A slot ends one inset short of its last column; the glyph cell in the
+    // next column starts its own inset in. The two never touch. An earlier
+    // version added the card's padding to the slot and ran it 4px over.
+    const glyphInset = 3 * L.K;
+    for (const [from, to] of [[1, 3], [1, 2]] as const) {
+      const slot = L.slotX(from, to);
+      expect(slot.left).toBe((from - 1) * L.COL + L.INX);
+      expect(slot.left + slot.width).toBeLessThan(to * L.COL + glyphInset);
+    }
+  });
+
+  it('sets the home glyph cell three by two', () => {
+    const inset = 3 * L.K2;
+    const w = L.GLYPH_COL - 2 * inset;
+    const h = L.ROW2 - 10 * L.K2;
+    expect(w / h).toBeCloseTo(1.5, 1);
+  });
+
   it('keeps both slot labels above the legibility floor', () => {
     expect(L.MARK_LABEL_PX).toBeGreaterThanOrEqual(12);
     expect(L.HEAD_PX).toBeGreaterThanOrEqual(12);
@@ -75,7 +94,11 @@ describe('export layout', () => {
 
   it('spans the home row across its glyph, type and seat columns', () => {
     expect(L.HOME_INNER).toBeCloseTo(L.GLYPH_COL + L.TYPE_COL + 7 * L.SEAT_COL, 6);
-    expect(L.HOME_PAGE_W).toBeCloseTo(L.HOME_W + 2 * L.MARGIN, 6);
+  });
+
+  it('sets the credit at an eighth of a sprite, as the dex poster does', () => {
+    expect(L.CREDIT_PX).toBe(96 / 8);
+    expect(L.CREDIT_PX * 1.5).toBeLessThan(L.FOOT);
   });
 
   it('names a vacancy for every slot kind', () => {
