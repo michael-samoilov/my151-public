@@ -676,7 +676,7 @@ function drawGymCardPage(
 
   ctx.fillStyle = PAGE_BG;
   const left = L.SIDE;
-  ctx.fillRect(0, 0, L.PAGE_W, L.PAGE_H);
+  ctx.fillRect(0, 0, L.PAGE_W, L.CARD_PAGE_H);
 
   withCardShadow(ctx, () => {
     ctx.fillStyle = shades.base;
@@ -763,9 +763,6 @@ function drawGymCardPage(
 
   ctx.restore();
 
-  // The credit hugs its card. The league is three rows taller, so on the
-  // shared page the trainer card's credit sits higher and the page's bottom
-  // margin is deeper; the card itself is in the same place on both.
   drawCredit(ctx, L.PAGE_W / 2, L.MARGIN + cardH + L.FOOT / 2, L.CREDIT_PX, L.CARD_CREDIT_PREFIX);
 }
 
@@ -850,7 +847,7 @@ function drawLeagueHomePage(
   const cardH = L.homeCardHeight();
   ctx.fillStyle = PAGE_BG;
   const left = L.SIDE;
-  ctx.fillRect(0, 0, L.PAGE_W, L.PAGE_H);
+  ctx.fillRect(0, 0, L.PAGE_W, L.HOME_PAGE_H);
 
   withCardShadow(ctx, () => {
     ctx.fillStyle = '#ffffff';
@@ -958,7 +955,7 @@ async function render(
 /** One trainer's card as a PNG. */
 export async function exportGymCard(card: GymCard): Promise<Blob> {
   const images = await loadAll(cardImageUrls(card));
-  return render(L.PAGE_W, L.PAGE_H, (ctx) => drawGymCardPage(ctx, card, images));
+  return render(L.PAGE_W, L.CARD_PAGE_H, (ctx) => drawGymCardPage(ctx, card, images));
 }
 
 /** The league summary as a PNG, at whichever team toggle is on screen. */
@@ -968,7 +965,7 @@ export async function exportLeagueHome(
   view: LeagueView,
 ): Promise<Blob> {
   const images = await loadAll(homeImageUrls(cards, view));
-  return render(L.PAGE_W, L.PAGE_H, (ctx) =>
+  return render(L.PAGE_W, L.HOME_PAGE_H, (ctx) =>
     drawLeagueHomePage(ctx, name, cards, view, images),
   );
 }

@@ -19,14 +19,13 @@ export const K = 96 / 52;
 // ---------- the page, shared by both exports ----------
 
 /**
- * One page and one card box for both exports.
+ * One page width and one card box for both exports.
  *
  * Someone flipping between the league and a trainer card in their photo
- * gallery should see the card stay put: same page size, same left edge, same
- * top, same width. The gallery centres each picture, so a shorter page would
- * drop the card down the screen; the pages are therefore the same height too,
- * and the trainer card, which is three rows shorter than the league, leaves
- * the page's bottom margin deeper rather than moving.
+ * gallery should see the card keep its left edge and its width. Each page is
+ * as tall as its own card: the trainer card is three rows shorter than the
+ * league, and a page padded out to the league's height left a blank band
+ * under the card that read as a mistake.
  *
  * The box is the league's natural width at 1× sprites. The trainer card's
  * columns are derived from it below.
@@ -239,19 +238,20 @@ export function homeCardHeight(): number {
   return 2 * HPADY + HOME_HDR_H + 14 * ROW2 + 4 * BAND2 + 3 * 2;
 }
 
-// ---------- the shared page, sized by the taller card ----------
+// ---------- the pages: one width, each as tall as its own card ----------
 
-/** The page's height: the league, which is the taller of the two cards. */
-export const PAGE_H = Math.ceil(MARGIN + homeCardHeight() + FOOT);
+export const CARD_PAGE_H = Math.ceil(MARGIN + cardHeight() + FOOT);
+export const HOME_PAGE_H = Math.ceil(MARGIN + homeCardHeight() + FOOT);
 
 /**
- * The page's width: what 9:16 needs, and never less than the box with its
- * top margin either side. Kept to a whole side margin, so the box and every
- * column in it start on a pixel: a half-pixel margin once put every sprite
- * between two pixels.
+ * The page's width: what 9:16 needs for the taller page, and never less than
+ * the box with its top margin either side. Kept to a whole side margin, so
+ * the box and every column in it start on a pixel: a half-pixel margin once
+ * put every sprite between two pixels. The trainer card's page is shorter
+ * than 9:16 at this width, which clears the notch with more to spare.
  */
 export const PAGE_W = (() => {
-  let w = Math.max(BOX_W + 2 * MARGIN, Math.ceil(PAGE_H / PAGE_ASPECT));
+  let w = Math.max(BOX_W + 2 * MARGIN, Math.ceil(HOME_PAGE_H / PAGE_ASPECT));
   if ((w - BOX_W) % 2 !== 0) w += 1;
   return w;
 })();

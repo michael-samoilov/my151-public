@@ -15,23 +15,24 @@ describe('export layout', () => {
     expect(L.CARD_W).toBe(7 * L.COL + 2 * L.PADX);
   });
 
-  it('gives both exports one page and one card box', () => {
-    // Flipping between the two in a gallery must not move the card: same
-    // page, same left edge, same top, same width. Only the bottom edge
-    // differs, because the league is three rows taller.
+  it('gives both exports one width and one card box, each page as tall as its card', () => {
+    // Flipping between the two in a gallery keeps the card's left edge and
+    // width. Each page ends just under its own credit: a trainer card page
+    // padded to the league's height left a blank band under the card.
     expect(L.CARD_W).toBe(L.BOX_W);
     expect(L.HOME_W).toBe(L.BOX_W);
     expect(L.PAGE_W).toBe(L.BOX_W + 2 * L.SIDE);
-    expect(L.PAGE_H).toBeGreaterThanOrEqual(L.MARGIN + L.homeCardHeight() + L.FOOT);
-    expect(L.PAGE_H).toBeGreaterThanOrEqual(L.MARGIN + L.cardHeight() + L.FOOT);
-    expect(L.cardHeight()).toBeLessThan(L.homeCardHeight());
+    expect(L.CARD_PAGE_H).toBe(Math.ceil(L.MARGIN + L.cardHeight() + L.FOOT));
+    expect(L.HOME_PAGE_H).toBe(Math.ceil(L.MARGIN + L.homeCardHeight() + L.FOOT));
+    expect(L.CARD_PAGE_H).toBeLessThan(L.HOME_PAGE_H);
   });
 
-  it('frames the page at 9:16, with the box no closer to the side than the top', () => {
+  it('frames the taller page at 9:16, with the box no closer to the side than the top', () => {
     // Photos fits a picture to the screen's width. At 9:16 the bars above
     // and below clear the notch; the first pages were taller and lost their
-    // headers under it.
-    expect(L.PAGE_H / L.PAGE_W).toBeLessThanOrEqual(L.PAGE_ASPECT + 0.002);
+    // headers under it. The shorter page clears it with more to spare.
+    expect(L.HOME_PAGE_H / L.PAGE_W).toBeLessThanOrEqual(L.PAGE_ASPECT + 0.002);
+    expect(L.CARD_PAGE_H / L.PAGE_W).toBeLessThan(L.PAGE_ASPECT);
     expect(L.SIDE).toBeGreaterThanOrEqual(L.MARGIN);
     expect(Number.isInteger(L.SIDE)).toBe(true);
   });
