@@ -50,6 +50,19 @@ flag is set. Two of the three tool links point at slugs that do not exist yet:
 | Favorite Pokémon Picker | `/favorite-pokemon-picker` | no |
 | What's next? | opens the feedback sheet | yes |
 
+### The coming-soon version
+
+`?home=soon` is the same page with the favorite picker marked unbuilt: no
+screenshots, the words "Coming soon" where the artwork would be, and no link.
+The build mark stays with the feedback card, so the two unbuilt cards read as
+two different states rather than one repeated card.
+
+Known tradeoff: every cell reserves the overhang so all panels share a baseline,
+which is what a card with artwork beside one without needs. In this version the
+whole second row is artwork-free at two columns, so that reserve shows up as
+empty space above it on phone and tablet. Closing it needs either a different
+card order or a rule that knows the column count.
+
 The slugs come from `../HANDOFF.md` and `../league-builder/DECISIONS.md`. Give
 the page a real route only when the tools it routes to are ready. That move also
 decides whether the dex builder keeps `/`; see the SEO note in `HANDOFF.md`.

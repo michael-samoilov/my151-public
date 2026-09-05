@@ -19,12 +19,18 @@ const WIDTHS = [
 
 type Problem = string;
 
-test.describe('home page responsive sweep', () => {
+const VARIANTS = [
+  ['default', '/?home'],
+  ['coming-soon', '/?home=soon'],
+] as const;
+
+for (const [variant, url] of VARIANTS) {
+test.describe(`home page responsive sweep — ${variant}`, () => {
   for (const width of WIDTHS) {
     test(`layout holds at ${width}px`, async ({ page }) => {
       const height = width < 600 ? Math.round(width * 2.1) : width < 1024 ? Math.round(width * 1.33) : 900;
       await page.setViewportSize({ width, height });
-      await page.goto('/?home');
+      await page.goto(url);
       await page.waitForLoadState('networkidle');
 
       const problems = await page.evaluate((): Problem[] => {
@@ -110,16 +116,17 @@ test.describe('home page responsive sweep', () => {
             });
           });
 
-          // 8. The build mark stays wholly inside its own card, with matching
-          // air above it and below it.
-          const svg = cell.querySelector('svg');
-          if (svg) {
-            const s = R(svg);
-            if (s.top < c.top - 0.5 || s.bottom > c.bottom + 0.5) fail.push(`card ${i} mark escapes its card`);
+          // 8. A card with no artwork carries a badge instead — the build mark
+          // or the words "Coming soon". Either stays wholly inside its card,
+          // with matching air above it and below it.
+          const badge = cell.querySelector('[data-card-badge] > *');
+          if (badge) {
+            const s = R(badge);
+            if (s.top < c.top - 0.5 || s.bottom > c.bottom + 0.5) fail.push(`card ${i} badge escapes its card`);
             const above = s.top - c.top;
             const below = R(h2).top - s.bottom;
             if (Math.abs(above - below) > 2) {
-              fail.push(`card ${i} mark air ${above.toFixed(1)} above vs ${below.toFixed(1)} below`);
+              fail.push(`card ${i} badge air ${above.toFixed(1)} above vs ${below.toFixed(1)} below`);
             }
           }
         });
@@ -147,7 +154,8 @@ test.describe('home page responsive sweep', () => {
         return fail;
       });
 
-      expect(problems, `layout problems at ${width}px`).toEqual([]);
+      expect(problems, `layout problems at ${width}px (${variant})`).toEqual([]);
     });
   }
 });
+}

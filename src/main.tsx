@@ -67,9 +67,13 @@ if (new URLSearchParams(window.location.search).has('admin')) {
       navigatorLanguages: navigator.languages,
     }),
   ]).then(([{ HomePage }]) => {
+    // `?home=soon` is the version with the favorite picker marked unbuilt, for
+    // comparing the two side by side before either ships.
+    const variant =
+      new URLSearchParams(window.location.search).get('home') === 'soon' ? 'soon' : undefined;
     createRoot(rootEl).render(
       <StrictMode>
-        <HomePage />
+        <HomePage variant={variant} />
       </StrictMode>,
     );
   });

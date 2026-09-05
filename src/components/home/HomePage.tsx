@@ -64,6 +64,8 @@ interface Tool {
   title: string;
   blurb: string;
   shots?: [string, string];
+  /** No tool behind it yet: the card says so and does not navigate. */
+  soon?: boolean;
 }
 
 interface CardProps {
@@ -94,6 +96,8 @@ function Card({ tool, onPress }: CardProps) {
           <Artwork tool={tool} />
           <Gradient />
         </>
+      ) : tool.soon ? (
+        <Soon />
       ) : (
         <Mark />
       )}
@@ -130,10 +134,14 @@ function Card({ tool, onPress }: CardProps) {
           <button type="button" onClick={onPress} className={`${panel} cursor-pointer`} style={panelStyle} data-card-panel>
             {body}
           </button>
-        ) : (
+        ) : tool.href ? (
           <a href={tool.href} className={panel} style={panelStyle} data-card-panel>
             {body}
           </a>
+        ) : (
+          <div className={panel} style={panelStyle} data-card-panel>
+            {body}
+          </div>
         )}
       </div>
     </div>
@@ -236,14 +244,44 @@ function Mark() {
     <div
       className="absolute inset-x-0 top-0 flex items-center justify-center"
       style={{ height: `calc(${CARD_HEIGHT} - ${PAD} - ${COPY_HEIGHT})` }}
+      data-card-badge
     >
       <Hammer style={{ width: U(35), height: U(35) }} strokeWidth={2} />
     </div>
   );
 }
 
-export function HomePage() {
+/**
+ * A tool that does not exist yet. It takes the space the artwork would have
+ * used and says so in words, rather than borrowing the build icon — that icon
+ * belongs to the feedback card, and two cards wearing it would read as one
+ * repeated card rather than two different states.
+ */
+function Soon() {
   const t = useT();
+  return (
+    <div
+      className="absolute inset-x-0 top-0 flex items-center justify-center"
+      style={{ height: `calc(${CARD_HEIGHT} - ${PAD} - ${COPY_HEIGHT})` }}
+      data-card-badge
+    >
+      <span
+        className="font-extrabold tracking-tight uppercase"
+        style={{ fontSize: U(11), letterSpacing: '0.08em', color: 'rgba(255, 255, 255, 0.92)' }}
+      >
+        {t('home.soon')}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * `variant` picks which tools are shown as built. 'soon' is the version with
+ * the favorite picker marked unbuilt, for comparing the two before launch.
+ */
+export function HomePage({ variant }: { variant?: 'soon' }) {
+  const t = useT();
+  const favSoon = variant === 'soon';
   const tools: Tool[] = [
     {
       key: 'dex',
@@ -259,13 +297,15 @@ export function HomePage() {
       blurb: t('home.league.blurb'),
       shots: [leagueBack, leagueFront],
     },
-    {
-      key: 'fav',
-      href: '/favorite-pokemon-picker',
-      title: t('home.fav.title'),
-      blurb: t('home.fav.blurb'),
-      shots: [favBack, favFront],
-    },
+    favSoon
+      ? { key: 'fav', title: t('home.fav.title'), blurb: t('home.fav.blurb'), soon: true }
+      : {
+          key: 'fav',
+          href: '/favorite-pokemon-picker',
+          title: t('home.fav.title'),
+          blurb: t('home.fav.blurb'),
+          shots: [favBack, favFront],
+        },
     { key: 'next', title: t('home.next.title'), blurb: t('home.next.blurb') },
   ];
 

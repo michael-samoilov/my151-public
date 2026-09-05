@@ -185,6 +185,7 @@ export const enUi = {
   'home.next.blurb': 'Press here to give us feedback or tell us what to build next',
   'home.next.title': 'What\u2019s next?',
   'home.note': 'No account. Your picks save in this browser and can export as a shareable image.',
+  'home.soon': 'Coming soon',
   'intro.body': 'Hand-pick your favorites from all {total} Pokémon into a Pokédex that’s entirely yours.',
   'intro.cta': 'Choose your starters',
   'intro.headline': 'Build your own {count}',
