@@ -15,17 +15,42 @@ describe('export layout', () => {
     expect(L.CARD_W).toBe(7 * L.COL + 2 * L.PADX);
   });
 
-  it('frames both pages at 9:16, with the card no closer to the side than the top', () => {
+  it('gives both exports one page and one card box', () => {
+    // Flipping between the two in a gallery must not move the card: same
+    // page, same left edge, same top, same width. Only the bottom edge
+    // differs, because the league is three rows taller.
+    expect(L.CARD_W).toBe(L.BOX_W);
+    expect(L.HOME_W).toBe(L.BOX_W);
+    expect(L.PAGE_W).toBe(L.BOX_W + 2 * L.SIDE);
+    expect(L.PAGE_H).toBeGreaterThanOrEqual(L.MARGIN + L.homeCardHeight() + L.FOOT);
+    expect(L.PAGE_H).toBeGreaterThanOrEqual(L.MARGIN + L.cardHeight() + L.FOOT);
+    expect(L.cardHeight()).toBeLessThan(L.homeCardHeight());
+  });
+
+  it('frames the page at 9:16, with the box no closer to the side than the top', () => {
     // Photos fits a picture to the screen's width. At 9:16 the bars above
     // and below clear the notch; the first pages were taller and lost their
     // headers under it.
-    for (const [w, h, cardW, side] of [
-      [L.cardPageWidth(), L.cardPageHeight(), L.CARD_W, L.cardSideMargin()],
-      [L.homePageWidth(), L.homePageHeight(), L.HOME_W, L.homeSideMargin()],
-    ]) {
-      expect(h / w).toBeLessThanOrEqual(L.PAGE_ASPECT + 0.002);
-      expect(side).toBeGreaterThanOrEqual(L.MARGIN);
-      expect(w).toBe(cardW + 2 * side);
+    expect(L.PAGE_H / L.PAGE_W).toBeLessThanOrEqual(L.PAGE_ASPECT + 0.002);
+    expect(L.SIDE).toBeGreaterThanOrEqual(L.MARGIN);
+    expect(Number.isInteger(L.SIDE)).toBe(true);
+  });
+
+  it('gives the trainer card the column it has on a phone', () => {
+    // Fitted to a phone the card keeps the pane's width and gives up height,
+    // so its columns run wider than its rows are tall. The desktop's column
+    // is 92px in these units; the phone's, measured, 115px.
+    expect(L.COL).toBeGreaterThanOrEqual(115);
+    expect(L.ROW / L.COL).toBeLessThan(0.9);
+    expect(Number.isInteger(L.COL)).toBe(true);
+  });
+
+  it('puts every team sprite on a whole pixel', () => {
+    // A sprite centred on a half pixel is resampled one device pixel off the
+    // browser's own placement of the same sprite, which reads as hatching.
+    for (let i = 0; i < 7; i++) {
+      const cx = L.SIDE + L.PADX + (i + 0.5) * L.COL;
+      expect(Number.isInteger(cx)).toBe(true);
     }
   });
 
@@ -96,9 +121,21 @@ describe('export layout', () => {
     expect(L.HOME_INNER).toBeCloseTo(L.GLYPH_COL + L.TYPE_COL + 7 * L.SEAT_COL, 6);
   });
 
-  it('sets the credit at an eighth of a sprite, as the dex poster does', () => {
-    expect(L.CREDIT_PX).toBe(96 / 8);
+  it('sets the credit at about six points on a phone', () => {
+    // A 393pt-wide screen shows the page fitted to its width.
+    const onScreenPt = (L.CREDIT_PX / L.PAGE_W) * 393;
+    expect(onScreenPt).toBeGreaterThan(5.5);
+    expect(onScreenPt).toBeLessThan(7);
     expect(L.CREDIT_PX * 1.5).toBeLessThan(L.FOOT);
+  });
+
+  it('keeps a twelve-letter move inside the TM box at its full size', () => {
+    // "Flamethrower" and "Aromatherapy" are the longest single words in the
+    // move data. At 0.6875rem in Inter a capital-led twelve-letter word runs
+    // about 6.3 em, well inside the body once the mark column is paid for.
+    const tm = L.slotX(1, 2);
+    const body = tm.width - 3 * L.MARK_PAD - L.MARK_COL;
+    expect(body).toBeGreaterThan(6.6 * L.MOVE_PX);
   });
 
   it('names a vacancy for every slot kind', () => {

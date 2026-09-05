@@ -2,8 +2,8 @@
  * The export's geometry, in export pixels.
  *
  * Both exports are drawn on a canvas at 1× sprites, which fixes the scale: a
- * team sprite is its native 96px, and every other measurement is the app's own
- * rem value multiplied by `K`. Nothing here reads the DOM, so the numbers are
+ * team sprite is its native 96px, and every rem-based measurement is the app's
+ * own value multiplied by `K`. Nothing here reads the DOM, so the numbers are
  * the same on every engine and the tests can assert them without a browser.
  *
  * The design of record is the canvas at
@@ -13,30 +13,29 @@
 
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
 
-/** Export px per app rem-unit: the card's 3.25rem cell holds a 96px sprite. */
+/** Export px per app rem-unit: the card's 3.25rem sprite is 96px. */
 export const K = 96 / 52;
 
-// ---------- the gym card ----------
+// ---------- the page, shared by both exports ----------
 
-export const COL = 92;
-export const ROW = 100;
-/** A spacer band's height. */
-export const BAND = 37;
-export const PADX = 15;
-export const PADY = 20;
-/** Vertical inset of a cell inside its row. */
-export const INY = 11;
-/** Horizontal inset of a cell inside its column. */
-export const INX = 5.5;
-
-export const CELL_R = 11;
-export const CARD_R = 30;
-export const BAND_R = 9;
-export const SLOT_R = 15;
+/**
+ * One page and one card box for both exports.
+ *
+ * Someone flipping between the league and a trainer card in their photo
+ * gallery should see the card stay put: same page size, same left edge, same
+ * top, same width. The gallery centres each picture, so a shorter page would
+ * drop the card down the screen; the pages are therefore the same height too,
+ * and the trainer card, which is three rows shorter than the league, leaves
+ * the page's bottom margin deeper rather than moving.
+ *
+ * The box is the league's natural width at 1× sprites. The trainer card's
+ * columns are derived from it below.
+ */
+export const BOX_W = 864;
 
 /** The page margin above the card, and the credit strip under it. */
 export const MARGIN = 40;
-export const FOOT = 28;
+export const FOOT = 36;
 
 /**
  * Every export page is 9:16, the story frame.
@@ -50,7 +49,50 @@ export const FOOT = 28;
  */
 export const PAGE_ASPECT = 16 / 9;
 
-export const CARD_W = 7 * COL + 2 * PADX; // 674
+/**
+ * The credit's size and its prefix. About 6pt on a phone screen once the
+ * page is fitted to its width, the size the dex poster's credit lands at.
+ */
+export const CREDIT_PX = 16;
+export const CARD_CREDIT_PREFIX = "/vp/'s Pro Trainer Card";
+export const HOME_CREDIT_PREFIX = 'Pokémon League Builder';
+
+// ---------- the gym card ----------
+
+/**
+ * Half a pixel over the app's 15, so that with an odd column every cell
+ * centre, and so every sprite, lands on a whole pixel. A sprite drawn from a
+ * half pixel is resampled by one device pixel against the same sprite laid
+ * out by the browser, which showed up as hatching over every team member
+ * when the export was diffed against its artboard.
+ */
+export const PADX = 15.5;
+export const PADY = 20;
+/**
+ * The column: the box less the card's padding, over seven.
+ *
+ * On a phone the app fits the card by keeping the pane's width and giving up
+ * height, so the columns end up wider than the rows are tall: 3.9rem across
+ * to 3.375rem down, measured on an iPhone. The desktop's 3.11rem column made
+ * the export taller and narrower than the card people actually look at. At
+ * 119px the column is a touch wider still, so the trainer card can share the
+ * league's box.
+ */
+export const COL = (BOX_W - 2 * PADX) / 7;
+export const ROW = 100;
+/** A spacer band's height. */
+export const BAND = 37;
+/** Vertical inset of a cell inside its row. */
+export const INY = 11;
+/** Horizontal inset of a cell inside its column. */
+export const INX = 5.5;
+
+export const CELL_R = 11;
+export const CARD_R = 30;
+export const BAND_R = 9;
+export const SLOT_R = 15;
+
+export const CARD_W = BOX_W;
 
 /** The identity block above the first band, and the gap under it. */
 export const HDR_H = 55;
@@ -83,6 +125,9 @@ export const HEAD_PX = 8.5 * K;
 export const HEAD_TRACK = 0.08 * HEAD_PX;
 export const HEAD_LINE = HEAD_PX * 1.4;
 
+/** Placeholder copy in an empty slot: the app's 0.6875rem hint size. */
+export const HINT_PX = 11 * K;
+
 /** The glyph cell spans two columns on rows 1, 8 and 9. */
 export const GLYPH_SPAN: Record<number, number> = { 1: 2, 8: 2, 9: 2 };
 
@@ -92,8 +137,8 @@ export const BAND_BEFORE: Record<number, [string, string]> = {
 };
 
 /**
- * Three sizes that have to agree inside one 173px box: the label column, the
- * label in it, and the TM's type badge beside it.
+ * Three sizes that have to agree inside the TM and badge boxes: the label
+ * column, the label in it, and the TM's type badge beside it.
  *
  * "BADGE" at the app's own label size is about 52px, which a 45px column let
  * run into the badge's name. Widening the column instead squeezed the type
@@ -105,6 +150,9 @@ export const MARK_LABEL_PX = 6.7 * K;
 export const MARK_TRACK = 0.06 * MARK_LABEL_PX;
 export const TM_BADGE_W = 2.7 * 16 * K;
 export const MARK_PAD = 7;
+/** The move name, at the app's 0.6875rem, and the smallest it may shrink to. */
+export const MOVE_PX = 11 * K;
+export const MOVE_MIN_PX = 12;
 
 /** Top of a row inside the grid box, which starts at the first band. */
 export function rowTop(row: number): number {
@@ -146,30 +194,6 @@ export function cardHeight(): number {
   return 2 * PADY + HDR_H + HDR_GAP + gridHeight();
 }
 
-export function cardPageHeight(): number {
-  return MARGIN + cardHeight() + FOOT;
-}
-
-/**
- * The page's width for a card: what 9:16 needs, never less than the card
- * with its top margin either side, and with a whole-pixel margin. A page one
- * pixel wider costs nothing; a half-pixel margin puts every pixel sprite
- * between two pixels and dithers the whole grid.
- */
-export function pageWidthFor(height: number, cardW: number): number {
-  let w = Math.max(cardW + 2 * MARGIN, Math.ceil(height / PAGE_ASPECT));
-  if ((w - Math.round(cardW)) % 2 !== 0) w += 1;
-  return w;
-}
-
-export function cardPageWidth(): number {
-  return pageWidthFor(cardPageHeight(), CARD_W);
-}
-
-export function cardSideMargin(): number {
-  return (cardPageWidth() - CARD_W) / 2;
-}
-
 // ---------- the league home ----------
 
 /** Export px per app rem-unit on the home, whose seat sprite is 2.625rem. */
@@ -182,18 +206,18 @@ export const HPADX = 8 * K2;
 /**
  * The glyph column is wider than the app's own 2.75rem: its cell is drawn at
  * three by two, the shape the cell has on a phone once the home is fitted to
- * the screen, rather than the near-square the stylesheet asks for. The seat
- * columns keep their width so neighbouring sprites do not crowd.
+ * the screen, rather than the near-square the stylesheet asks for.
  */
 export const GLYPH_COL = 57 * K2;
 export const TYPE_COL = 32 * K2;
-export const SEAT_COL = ((350 - 76) / 7) * K2;
 /** One line: the league's name, with the team tag at the right. */
 export const HOME_HDR_H = 24 * K2;
 export const HOME_R = 5 * K2;
 
-export const HOME_INNER = GLYPH_COL + TYPE_COL + 7 * SEAT_COL;
-export const HOME_W = HOME_INNER + 2 * HPADX;
+export const HOME_W = BOX_W;
+export const HOME_INNER = HOME_W - 2 * HPADX;
+/** The seven seats share what the glyph and type columns leave. */
+export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / 7;
 
 /** The section band drawn before a slot index. */
 export const SECTION_BEFORE: Record<number, string> = {
@@ -215,23 +239,24 @@ export function homeCardHeight(): number {
   return 2 * HPADY + HOME_HDR_H + 14 * ROW2 + 4 * BAND2 + 3 * 2;
 }
 
-export function homePageHeight(): number {
-  return MARGIN + homeCardHeight() + FOOT;
-}
+// ---------- the shared page, sized by the taller card ----------
 
-export function homePageWidth(): number {
-  return pageWidthFor(homePageHeight(), HOME_W);
-}
-
-export function homeSideMargin(): number {
-  return (homePageWidth() - HOME_W) / 2;
-}
+/** The page's height: the league, which is the taller of the two cards. */
+export const PAGE_H = Math.ceil(MARGIN + homeCardHeight() + FOOT);
 
 /**
- * The credit's size, as the dex poster sets it: an eighth of a sprite. The
- * dex draws "made with my151.app" at 6px under 48px tiles; at 96px sprites
- * that is 12px, a quiet line under the picture rather than a caption.
+ * The page's width: what 9:16 needs, and never less than the box with its
+ * top margin either side. Kept to a whole side margin, so the box and every
+ * column in it start on a pixel: a half-pixel margin once put every sprite
+ * between two pixels.
  */
-export const CREDIT_PX = 12;
+export const PAGE_W = (() => {
+  let w = Math.max(BOX_W + 2 * MARGIN, Math.ceil(PAGE_H / PAGE_ASPECT));
+  if ((w - BOX_W) % 2 !== 0) w += 1;
+  return w;
+})();
+
+/** The box's left edge on the page. */
+export const SIDE = (PAGE_W - BOX_W) / 2;
 
 export { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT };

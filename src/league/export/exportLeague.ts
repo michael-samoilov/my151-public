@@ -42,6 +42,7 @@ import {
   drawStars,
   drawTmDisc,
   ellipsize,
+  fitFontSize,
   fillTracked,
   fillTrackedCentered,
   font,
@@ -200,23 +201,34 @@ function withCardShadow(ctx: CanvasRenderingContext2D, draw: () => void): void {
 }
 
 /**
- * "made with my151.app", centred in the footer strip.
+ * "<what this is> · made with my151.app", centred in the footer strip.
  *
- * The same translated template the dex poster uses, so the two exports carry
+ * The credit is the dex poster's translated template, so the two tools carry
  * one credit. The wordmark is a brand asset rather than copy: it stays
  * my151.app in every locale and only its place in the sentence is translated.
+ * The prefix names the picture — the trainer card template is /vp/'s, and
+ * the league is this tool's — in the muted grey the app's own labels use.
  */
-function drawCredit(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number): void {
-  const segs = expandTemplate<{ text: string; color: string }>(
-    raw('poster.credit'),
-    (text) => ({ text, color: ZINC }),
-    {
-      app: () => [
-        { text: 'my151', color: RED },
-        { text: '.app', color: FG },
-      ],
-    },
-  );
+function drawCredit(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  prefix: string,
+): void {
+  const segs = [
+    { text: `${prefix} · `, color: MUTED },
+    ...expandTemplate<{ text: string; color: string }>(
+      raw('poster.credit'),
+      (text) => ({ text, color: ZINC }),
+      {
+        app: () => [
+          { text: 'my151', color: RED },
+          { text: '.app', color: FG },
+        ],
+      },
+    ),
+  ];
   ctx.save();
   ctx.font = font(size, 600);
   ctx.textAlign = 'left';
@@ -396,18 +408,25 @@ function drawShowcase(
     return;
   }
 
+  // The placeholder copy is set at the hint size the TM and badge boxes use
+  // for theirs, and wraps inside four fifths of the box. At the name size it
+  // ran edge to edge of the slot.
   const ring = Math.round((0.8 / 1.2) * (92 / 204) * box.height);
-  ctx.font = font(13 * L.K, 500);
-  const nameH = 13 * L.K * 1.25;
-  const total = headH + gap + ring + gap + nameH;
+  ctx.font = font(L.HINT_PX, 500);
+  const lineH = L.HINT_PX * 1.25;
+  const lines = wrapLines(ctx, 'No signature Pokémon', box.width * 0.8, 2);
+  const total = headH + gap + ring + gap + lines.length * lineH;
   const top = y + (box.height - total) / 2;
   drawHeading(ctx, SIG_HEAD, cx, top, shades.hint);
   drawEmptyBall(ctx, ring, cx, top + headH + gap + ring / 2);
   ctx.save();
+  ctx.font = font(L.HINT_PX, 500);
   ctx.fillStyle = shades.hint;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('No signature Pokémon', cx, top + headH + gap + ring + gap + nameH / 2);
+  lines.forEach((line, i) => {
+    ctx.fillText(line, cx, top + headH + gap + ring + gap + (i + 0.5) * lineH);
+  });
   ctx.restore();
 }
 
@@ -497,9 +516,15 @@ function drawTmSlot(
   const chipW = 0.9375 * 16 * L.K;
   const chipH = 0.6875 * 16 * L.K;
   const gap = 2 * L.K;
-  ctx.font = font(9.6 * L.K, 400);
+  // The name at the app's own size, and never cut. A two-word move wraps; a
+  // single word too wide for the box comes down in size until it fits,
+  // because "Flamethro…" is not a move anyone recognises. The box holds the
+  // longest single word in the data with room, so the shrink is a guard.
+  const namePx = fitFontSize(ctx, move.name, bodyW, L.MOVE_PX, L.MOVE_MIN_PX, 400);
+  ctx.font = font(namePx, 400);
   const nameLines = wrapLines(ctx, move.name, bodyW, 2);
-  const nameH = nameLines.length * 9.6 * L.K * 1.15;
+  const nameLineH = namePx * 1.15;
+  const nameH = nameLines.length * nameLineH;
   const total = badgeH + gap + nameH;
   const top = cy - total / 2;
 
@@ -525,11 +550,11 @@ function drawTmSlot(
   ctx.restore();
 
   ctx.save();
-  ctx.font = font(9.6 * L.K, 400);
+  ctx.font = font(namePx, 400);
   ctx.fillStyle = FG;
   ctx.textBaseline = 'middle';
   nameLines.forEach((line, i) => {
-    ctx.fillText(line, bodyX, top + badgeH + gap + (i + 0.5) * 9.6 * L.K * 1.15);
+    ctx.fillText(line, bodyX, top + badgeH + gap + (i + 0.5) * nameLineH);
   });
   ctx.restore();
 }
@@ -650,9 +675,8 @@ function drawGymCardPage(
   const cardH = L.cardHeight();
 
   ctx.fillStyle = PAGE_BG;
-  const pageW = L.cardPageWidth();
-  const left = L.cardSideMargin();
-  ctx.fillRect(0, 0, pageW, L.cardPageHeight());
+  const left = L.SIDE;
+  ctx.fillRect(0, 0, L.PAGE_W, L.PAGE_H);
 
   withCardShadow(ctx, () => {
     ctx.fillStyle = shades.base;
@@ -739,7 +763,10 @@ function drawGymCardPage(
 
   ctx.restore();
 
-  drawCredit(ctx, pageW / 2, L.MARGIN + cardH + L.FOOT / 2, L.CREDIT_PX);
+  // The credit hugs its card. The league is three rows taller, so on the
+  // shared page the trainer card's credit sits higher and the page's bottom
+  // margin is deeper; the card itself is in the same place on both.
+  drawCredit(ctx, L.PAGE_W / 2, L.MARGIN + cardH + L.FOOT / 2, L.CREDIT_PX, L.CARD_CREDIT_PREFIX);
 }
 
 // ---------- the league home ----------
@@ -822,9 +849,8 @@ function drawLeagueHomePage(
 ): void {
   const cardH = L.homeCardHeight();
   ctx.fillStyle = PAGE_BG;
-  const pageW = L.homePageWidth();
-  const left = L.homeSideMargin();
-  ctx.fillRect(0, 0, pageW, L.homePageHeight());
+  const left = L.SIDE;
+  ctx.fillRect(0, 0, L.PAGE_W, L.PAGE_H);
 
   withCardShadow(ctx, () => {
     ctx.fillStyle = '#ffffff';
@@ -885,7 +911,7 @@ function drawLeagueHomePage(
   }
 
   ctx.restore();
-  drawCredit(ctx, pageW / 2, L.MARGIN + cardH + L.FOOT / 2, L.CREDIT_PX);
+  drawCredit(ctx, L.PAGE_W / 2, L.MARGIN + cardH + L.FOOT / 2, L.CREDIT_PX, L.HOME_CREDIT_PREFIX);
 }
 
 // ---------- assembling a PNG ----------
@@ -932,7 +958,7 @@ async function render(
 /** One trainer's card as a PNG. */
 export async function exportGymCard(card: GymCard): Promise<Blob> {
   const images = await loadAll(cardImageUrls(card));
-  return render(L.cardPageWidth(), L.cardPageHeight(), (ctx) => drawGymCardPage(ctx, card, images));
+  return render(L.PAGE_W, L.PAGE_H, (ctx) => drawGymCardPage(ctx, card, images));
 }
 
 /** The league summary as a PNG, at whichever team toggle is on screen. */
@@ -942,7 +968,7 @@ export async function exportLeagueHome(
   view: LeagueView,
 ): Promise<Blob> {
   const images = await loadAll(homeImageUrls(cards, view));
-  return render(L.homePageWidth(), L.homePageHeight(), (ctx) =>
+  return render(L.PAGE_W, L.PAGE_H, (ctx) =>
     drawLeagueHomePage(ctx, name, cards, view, images),
   );
 }

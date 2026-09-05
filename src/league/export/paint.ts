@@ -80,6 +80,32 @@ export function fillTrackedCentered(
   ctx.textAlign = prev;
 }
 
+/**
+ * The largest size, from `px` down to `floor`, at which every word of `text`
+ * fits `maxW` on its own. Words wrap; a word cannot, so the widest word is
+ * what decides. Returns `floor` when even that is too wide.
+ */
+export function fitFontSize(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxW: number,
+  px: number,
+  floor: number,
+  weight: number,
+): number {
+  const words = text.split(/\s+/).filter(Boolean);
+  const prev = ctx.font;
+  let size = px;
+  while (size > floor) {
+    ctx.font = font(size, weight);
+    const widest = Math.max(0, ...words.map((w) => ctx.measureText(w).width));
+    if (widest <= maxW) break;
+    size -= 0.5;
+  }
+  ctx.font = prev;
+  return Math.max(size, floor);
+}
+
 /** Shorten a run to fit, with the ellipsis the browser would have added. */
 export function ellipsize(ctx: CanvasRenderingContext2D, text: string, maxW: number): string {
   if (ctx.measureText(text).width <= maxW) return text;
