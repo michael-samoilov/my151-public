@@ -11,48 +11,35 @@
  * from these same constants.
  */
 
+import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
 
 /** Export px per app rem-unit: the card's 3.25rem sprite is 96px. */
 export const K = 96 / 52;
 
-// ---------- the page, shared by both exports ----------
+// ---------- the picture, shared by both exports ----------
 
 /**
- * One page width and one card box for both exports.
+ * One width for both pictures.
  *
- * Someone flipping between the league and a trainer card in their photo
- * gallery should see the card keep its left edge and its width. Each page is
- * as tall as its own card: the trainer card is three rows shorter than the
- * league, and a page padded out to the league's height left a blank band
- * under the card that read as a mistake.
+ * Each picture is its content, edge to edge: no page around it and no card
+ * chrome, so nothing reads as a card floating on a blank ground. Someone
+ * flipping between the league and a trainer card in their photo gallery sees
+ * one width; each picture is as tall as its own content.
  *
  * The box is the league's natural width at 1× sprites. The trainer card's
  * columns are derived from it below.
  */
 export const BOX_W = 864;
 
-/** The page margin above the card, and the credit strip under it. */
-export const MARGIN = 40;
+/** The credit strip under the content. */
 export const FOOT = 36;
 
 /**
- * Every export page is 9:16, the story frame.
- *
- * Photos on an iPhone fits a picture to the screen's width and centres it. A
- * page taller than about 9:16.8 leaves so little above it that the top edge
- * sits under the notch; the first pages were 9:16.9 and 9:17.7 and lost their
- * headers to it. At 9:16 the bars above and below are 9% of the screen each,
- * which clears any notch. The content's height is fixed by 1× sprites, so
- * the ratio is met by the side margins, never by squeezing rows.
+ * The credit's size and its prefix. Fitted to a 393pt phone screen a 14px run
+ * lands at about 6.4pt, the size the dex poster's credit lands at.
  */
-export const PAGE_ASPECT = 16 / 9;
-
-/**
- * The credit's size and its prefix. About 6pt on a phone screen once the
- * page is fitted to its width, the size the dex poster's credit lands at.
- */
-export const CREDIT_PX = 16;
+export const CREDIT_PX = 14;
 export const CARD_CREDIT_PREFIX = "/vp/'s Pro Trainer Card";
 export const HOME_CREDIT_PREFIX = 'Pokémon League Builder';
 
@@ -87,15 +74,49 @@ export const INY = 11;
 export const INX = 5.5;
 
 export const CELL_R = 11;
-export const CARD_R = 30;
 export const BAND_R = 9;
 export const SLOT_R = 15;
 
 export const CARD_W = BOX_W;
 
-/** The identity block above the first band, and the gap under it. */
-export const HDR_H = 55;
+/**
+ * The title row: "Pro Trainer Card", a break, then the type badge and "Type
+ * Specialist", all at one size and one weight so the row reads as a header
+ * rather than a title with a caption. A card with no type shows the title
+ * alone. The row is a whole pixel tall so the grid under it starts on one.
+ */
+export const CARD_TITLE = 'Pro Trainer Card';
+export const SPECIALIST = 'Type Specialist';
+export const TITLE_SEP = '·';
+export const TITLE_PX = 15 * K;
+export const TITLE_TRACK = -0.01 * TITLE_PX;
+export const TITLE_ROW_H = 34;
+/** Either side of the break. */
+export const TITLE_GAP = 14;
+/** Between the badge and "Type Specialist". */
+export const TITLE_WORD_GAP = 8;
+/** The badge, a touch over the 4.5rem the first draft had. */
+export const TITLE_BADGE_W = 5 * 16 * K;
+export const TITLE_BADGE_H = TITLE_BADGE_W / TYPE_BADGE_ASPECT;
+
+/**
+ * The theme row: THEME, then a white rounded field to the right edge, so the
+ * theme reads as something its owner filled in. The label keeps the size it
+ * had; the value is the size the showcase names were set at.
+ */
+export const THEME_LABEL_PX = 10.5 * K;
+export const THEME_TEXT_PX = 13 * K;
+/** Between the title row and the theme field. */
+export const THEME_GAP = 14;
+export const FIELD_H = 40;
+export const FIELD_R = 10;
+export const FIELD_PADX = 12;
+/** Between THEME and its field. */
+export const LABEL_GAP = 8;
+/** Under the theme field, above the first band. */
 export const HDR_GAP = 16;
+/** The title row, the theme field and their gaps: what sits above the grid. */
+export const TITLE_BLOCK_H = TITLE_ROW_H + THEME_GAP + FIELD_H + HDR_GAP;
 
 /**
  * The two showcase sprite sizes, settled.
@@ -110,14 +131,6 @@ export const HDR_GAP = 16;
  */
 export const PAIR_SPRITE = 96;
 export const SIG_SPRITE = 192;
-
-/**
- * THEME and the theme, in px rather than as a ratio, because px is what the
- * eye compares. The label keeps the size it had; the value comes down to the
- * size the showcase names were set at, which lands the pair near 0.81.
- */
-export const THEME_LABEL_PX = 10.5 * K;
-export const THEME_TEXT_PX = 13 * K;
 
 /** The slot heading runs: two lines, 0.53125rem extrabold, 1.4 line-height. */
 export const HEAD_PX = 8.5 * K;
@@ -189,8 +202,9 @@ export function gridHeight(): number {
   return rowTop(ROW_COUNT) + ROW;
 }
 
-export function cardHeight(): number {
-  return 2 * PADY + HDR_H + HDR_GAP + gridHeight();
+/** The grid's top inside the picture: under the padding and the title block. */
+export function gridTop(): number {
+  return PADY + TITLE_BLOCK_H;
 }
 
 // ---------- the league home ----------
@@ -234,29 +248,15 @@ export const VACANCY: Record<string, string> = {
   boss: 'No endgame boss trainer',
 };
 
-export function homeCardHeight(): number {
-  return 2 * HPADY + HOME_HDR_H + 14 * ROW2 + 4 * BAND2 + 3 * 2;
-}
+// ---------- the pictures: one width, each as tall as its content ----------
 
-// ---------- the pages: one width, each as tall as its own card ----------
-
-export const CARD_PAGE_H = Math.ceil(MARGIN + cardHeight() + FOOT);
-export const HOME_PAGE_H = Math.ceil(MARGIN + homeCardHeight() + FOOT);
+/** The trainer card: its padding, the title block, the grid, and the credit. */
+export const CARD_IMG_H = PADY + TITLE_BLOCK_H + gridHeight() + FOOT;
 
 /**
- * The page's width: what 9:16 needs for the taller page, and never less than
- * the box with its top margin either side. Kept to a whole side margin, so
- * the box and every column in it start on a pixel: a half-pixel margin once
- * put every sprite between two pixels. The trainer card's page is shorter
- * than 9:16 at this width, which clears the notch with more to spare.
+ * The league: its padding, the name line, four bands with their gaps,
+ * fourteen rows, and the credit.
  */
-export const PAGE_W = (() => {
-  let w = Math.max(BOX_W + 2 * MARGIN, Math.ceil(HOME_PAGE_H / PAGE_ASPECT));
-  if ((w - BOX_W) % 2 !== 0) w += 1;
-  return w;
-})();
-
-/** The box's left edge on the page. */
-export const SIDE = (PAGE_W - BOX_W) / 2;
+export const HOME_IMG_H = Math.ceil(HPADY + HOME_HDR_H + 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT);
 
 export { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import * as L from './layout';
-import { showcasePair, exportRow } from './exportLeague';
+import { showcasePair, exportRow, vacantRow } from './exportLeague';
 import { emptyCard, type GymCard } from '../store/useLeagueStore';
 import { makePlacedLine } from '../model/engine';
 
@@ -15,26 +15,17 @@ describe('export layout', () => {
     expect(L.CARD_W).toBe(7 * L.COL + 2 * L.PADX);
   });
 
-  it('gives both exports one width and one card box, each page as tall as its card', () => {
-    // Flipping between the two in a gallery keeps the card's left edge and
-    // width. Each page ends just under its own credit: a trainer card page
-    // padded to the league's height left a blank band under the card.
+  it('draws both pictures at the box width, each as tall as its own content', () => {
+    // The picture is the content, edge to edge: no page and no card chrome.
+    // Flipping between the two in a gallery keeps one width; each picture
+    // ends just under its own credit.
     expect(L.CARD_W).toBe(L.BOX_W);
     expect(L.HOME_W).toBe(L.BOX_W);
-    expect(L.PAGE_W).toBe(L.BOX_W + 2 * L.SIDE);
-    expect(L.CARD_PAGE_H).toBe(Math.ceil(L.MARGIN + L.cardHeight() + L.FOOT));
-    expect(L.HOME_PAGE_H).toBe(Math.ceil(L.MARGIN + L.homeCardHeight() + L.FOOT));
-    expect(L.CARD_PAGE_H).toBeLessThan(L.HOME_PAGE_H);
-  });
-
-  it('frames the taller page at 9:16, with the box no closer to the side than the top', () => {
-    // Photos fits a picture to the screen's width. At 9:16 the bars above
-    // and below clear the notch; the first pages were taller and lost their
-    // headers under it. The shorter page clears it with more to spare.
-    expect(L.HOME_PAGE_H / L.PAGE_W).toBeLessThanOrEqual(L.PAGE_ASPECT + 0.002);
-    expect(L.CARD_PAGE_H / L.PAGE_W).toBeLessThan(L.PAGE_ASPECT);
-    expect(L.SIDE).toBeGreaterThanOrEqual(L.MARGIN);
-    expect(Number.isInteger(L.SIDE)).toBe(true);
+    expect(L.CARD_IMG_H).toBe(L.PADY + L.TITLE_BLOCK_H + L.gridHeight() + L.FOOT);
+    expect(L.HOME_IMG_H).toBe(
+      Math.ceil(L.HPADY + L.HOME_HDR_H + 14 * L.ROW2 + 4 * L.BAND2 + 6 + L.FOOT),
+    );
+    expect(L.CARD_IMG_H).toBeLessThan(L.HOME_IMG_H);
   });
 
   it('gives the trainer card the column it has on a phone', () => {
@@ -49,10 +40,30 @@ describe('export layout', () => {
   it('puts every team sprite on a whole pixel', () => {
     // A sprite centred on a half pixel is resampled one device pixel off the
     // browser's own placement of the same sprite, which reads as hatching.
+    // The title block above the grid is a whole height for the same reason.
+    expect(Number.isInteger(L.TITLE_BLOCK_H)).toBe(true);
     for (let i = 0; i < 7; i++) {
-      const cx = L.SIDE + L.PADX + (i + 0.5) * L.COL;
-      expect(Number.isInteger(cx)).toBe(true);
+      expect(Number.isInteger(L.PADX + (i + 0.5) * L.COL)).toBe(true);
     }
+    for (let row = 1; row <= L.ROW_COUNT; row++) {
+      expect(Number.isInteger(L.gridTop() + L.rowTop(row) + L.ROW / 2)).toBe(true);
+    }
+  });
+
+  it('fits the title row inside the content, with the badge inside the row', () => {
+    // At 0.7em a glyph, wider than Inter's extrabold runs, the whole row
+    // still fits: the name, the break, the badge, and "Type Specialist".
+    const words = (L.CARD_TITLE.length + L.SPECIALIST.length) * 0.7 * L.TITLE_PX;
+    const row = words + 0.4 * L.TITLE_PX + L.TITLE_BADGE_W + 2 * L.TITLE_GAP + L.TITLE_WORD_GAP;
+    expect(row).toBeLessThan(L.CARD_W - 2 * L.PADX);
+    expect(L.TITLE_BADGE_H).toBeLessThanOrEqual(L.TITLE_ROW_H);
+    expect(L.TITLE_PX * 1.2).toBeLessThanOrEqual(L.TITLE_ROW_H);
+  });
+
+  it('gives the theme field room for its text and its label', () => {
+    expect(L.THEME_TEXT_PX * 1.25).toBeLessThan(L.FIELD_H);
+    expect(L.THEME_LABEL_PX).toBeLessThan(L.THEME_TEXT_PX);
+    expect(L.THEME_LABEL_PX).toBeGreaterThanOrEqual(12);
   });
 
   it('leaves a band before the elite and endgame rows only', () => {
@@ -123,8 +134,8 @@ describe('export layout', () => {
   });
 
   it('sets the credit at about six points on a phone', () => {
-    // A 393pt-wide screen shows the page fitted to its width.
-    const onScreenPt = (L.CREDIT_PX / L.PAGE_W) * 393;
+    // A 393pt-wide screen shows the picture fitted to its width.
+    const onScreenPt = (L.CREDIT_PX / L.CARD_W) * 393;
     expect(onScreenPt).toBeGreaterThan(5.5);
     expect(onScreenPt).toBeLessThan(7);
     expect(L.CREDIT_PX * 1.5).toBeLessThan(L.FOOT);
@@ -191,5 +202,15 @@ describe('reading a card for export', () => {
     });
     expect(exportRow(card, L.BOSS_ROW).some((c) => c.pokemonId === 150)).toBe(true);
     expect(exportRow(card, L.CHAMPION_ROW).some((c) => c.pokemonId === 150)).toBe(false);
+  });
+
+  it('shows the dashed square for a seat with no Pokémon and no type', () => {
+    // An open seat reads as the app shows it. A team with no type, or a type
+    // with no team, is a choice someone made, and keeps its mark.
+    expect(vacantRow(emptyCard())).toBe(true);
+    expect(vacantRow(cardWith({ type: 'none' }))).toBe(true);
+    expect(vacantRow(cardWith({ type: 'fire' }))).toBe(false);
+    expect(vacantRow(cardWith({ lines: [makePlacedLine([1, 2, 3])] }))).toBe(false);
+    expect(vacantRow(cardWith({ lines: [makePlacedLine([1, 2, 3])], type: 'none' }))).toBe(false);
   });
 });

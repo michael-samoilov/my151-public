@@ -56,7 +56,6 @@ import {
 export const CARD_FILENAME = 'my151-trainer-card.png';
 export const HOME_FILENAME = 'my151-league.png';
 
-const PAGE_BG = '#f7f7f8';
 const FG = '#0a0a0a';
 const RED = '#DC2626';
 const MUTED = '#737373';
@@ -146,7 +145,8 @@ async function loadAll(urls: Iterable<string>): Promise<Images> {
 /** Every image one gym card needs. */
 function cardImageUrls(card: GymCard): string[] {
   const urls: string[] = [];
-  if (card.type && card.type !== 'none') urls.push(typeIconPath(card.type));
+  // The title row's badge wants the type's white glyph, not its icon.
+  if (card.type && card.type !== 'none') urls.push(typeGlyphPath(card.type));
   const { ace, partner } = showcasePair(card);
   for (const id of [ace, partner]) {
     const url = spriteUrl(id, null);
@@ -182,23 +182,6 @@ function homeImageUrls(cards: GymCard[], view: LeagueView): string[] {
 }
 
 // ---------- shared chrome ----------
-
-/** The soft shadow both cards sit on, matching their CSS. */
-function withCardShadow(ctx: CanvasRenderingContext2D, draw: () => void): void {
-  ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.06)';
-  ctx.shadowBlur = 32;
-  ctx.shadowOffsetY = 8;
-  draw();
-  ctx.restore();
-  // A second, tighter pass for the 2px shadow under the same edge.
-  ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.06)';
-  ctx.shadowBlur = 4;
-  ctx.shadowOffsetY = 2;
-  draw();
-  ctx.restore();
-}
 
 /**
  * "<what this is> · made with my151.app", centred in the footer strip.
@@ -244,11 +227,13 @@ function drawCredit(
 }
 
 /**
- * The type square: the chosen type's icon, or the no-type grey and its star.
+ * The type square on a league row: the chosen type's icon, or the no-type
+ * grey and its star.
  *
- * An unset type exports as "no type" rather than as the app's red "+ TYPE"
- * prompt. The prompt is a control — it asks the card's owner to do something —
- * and a picture they hand to someone else has nothing to press.
+ * A trainer with a team and no type exports as "no type" rather than as the
+ * app's dashed square. The dashed square is an add affordance — it asks the
+ * card's owner to do something — and a picture they hand to someone else has
+ * nothing to press. An open seat is the exception: see `vacantRow`.
  */
 function drawTypeMark(
   ctx: CanvasRenderingContext2D,
@@ -586,7 +571,9 @@ function drawBadgeSlot(
   ctx.font = font(size, 400);
   ctx.fillStyle = name ? FG : shades.hint;
   ctx.textBaseline = 'middle';
-  const lines = name ? wrapLines(ctx, `${name} Badge`, bodyW, 3) : ['No badge awarded'];
+  // The empty state wraps like a name does: at this width "No badge awarded"
+  // is two lines, and set on one it ran past the slot's edge.
+  const lines = wrapLines(ctx, name ? `${name} Badge` : 'No badge awarded', bodyW, name ? 3 : 2);
   const lineH = size * 1.25;
   const top = cy - (lines.length * lineH) / 2;
   lines.forEach((line, i) => ctx.fillText(line, bodyX, top + (i + 0.5) * lineH));
@@ -666,53 +653,69 @@ function drawGlyphCell(
   ctx.restore();
 }
 
-function drawGymCardPage(
-  ctx: CanvasRenderingContext2D,
-  card: GymCard,
-  images: Images,
-): void {
+function drawGymCard(ctx: CanvasRenderingContext2D, card: GymCard, images: Images): void {
   const shades = cardShades(card.type);
-  const cardH = L.cardHeight();
 
-  ctx.fillStyle = PAGE_BG;
-  const left = L.SIDE;
-  ctx.fillRect(0, 0, L.PAGE_W, L.CARD_PAGE_H);
+  // The picture is the card's content on its own tint, edge to edge: no page
+  // and no card chrome, so nothing reads as a card floating on a blank ground.
+  ctx.fillStyle = shades.base;
+  ctx.fillRect(0, 0, L.CARD_W, L.CARD_IMG_H);
 
-  withCardShadow(ctx, () => {
-    ctx.fillStyle = shades.base;
-    roundRect(ctx, left, L.MARGIN, L.CARD_W, cardH, L.CARD_R);
-    ctx.fill();
-  });
+  const ox = L.PADX;
+  const innerW = L.CARD_W - 2 * L.PADX;
+  const right = ox + innerW;
 
-  // Everything inside the card is clipped by its corners, the way the CSS
-  // `overflow:hidden` clips a sprite that overhangs its cell.
-  ctx.save();
-  roundRect(ctx, left, L.MARGIN, L.CARD_W, cardH, L.CARD_R);
-  ctx.clip();
-
-  const ox = left + L.PADX;
-  const oy = L.MARGIN + L.PADY;
-
-  // --- the identity block: the mark and the theme, and nothing else ---
-  const markSize = 55;
-  drawTypeMark(ctx, card.type, images, ox, oy + (L.HDR_H - markSize) / 2, markSize, 0.4375 * 16 * L.K);
-  const textX = ox + markSize + 10 * L.K;
+  // --- the title row: the card's name, a break, the type and its word ---
+  const titleTop = L.PADY;
   ctx.save();
   ctx.textBaseline = 'alphabetic';
-  ctx.font = font(L.THEME_TEXT_PX, card.theme ? 700 : 500);
-  const base = oy + L.HDR_H / 2 + capHeight(ctx) / 2;
-  ctx.font = font(L.THEME_LABEL_PX, 800);
-  ctx.fillStyle = shades.band;
-  const labelTrack = 0.1 * L.THEME_LABEL_PX;
-  fillTracked(ctx, 'THEME', textX, base, labelTrack);
-  const valueX = textX + trackedWidth(ctx, 'THEME', labelTrack) + L.THEME_TEXT_PX * 0.34;
-  ctx.font = font(L.THEME_TEXT_PX, card.theme ? 700 : 500);
-  ctx.fillStyle = card.theme ? FG : shades.hint;
-  const room = L.CARD_W - 2 * L.PADX - (valueX - ox);
-  ctx.fillText(ellipsize(ctx, card.theme || 'No theme yet', room), valueX, base);
+  ctx.font = font(L.TITLE_PX, 800);
+  const titleBase = titleTop + L.TITLE_ROW_H / 2 + capHeight(ctx) / 2;
+  ctx.fillStyle = FG;
+  let x = ox;
+  fillTracked(ctx, L.CARD_TITLE, x, titleBase, L.TITLE_TRACK);
+  x += trackedWidth(ctx, L.CARD_TITLE, L.TITLE_TRACK) + L.TITLE_GAP;
+  if (card.type && card.type !== 'none') {
+    ctx.fillStyle = MUTED;
+    ctx.fillText(L.TITLE_SEP, x, titleBase);
+    x += ctx.measureText(L.TITLE_SEP).width + L.TITLE_GAP;
+    drawTypeBadge(
+      ctx,
+      card.type,
+      images.get(typeGlyphPath(card.type)) ?? null,
+      x,
+      titleTop + (L.TITLE_ROW_H - L.TITLE_BADGE_H) / 2,
+      L.TITLE_BADGE_H,
+    );
+    x += L.TITLE_BADGE_W + L.TITLE_WORD_GAP;
+    ctx.fillStyle = FG;
+    fillTracked(ctx, L.SPECIALIST, x, titleBase, L.TITLE_TRACK);
+  }
   ctx.restore();
 
-  const gridY = oy + L.HDR_H + L.HDR_GAP;
+  // --- the theme row: THEME, then a white field to the right edge ---
+  const fieldTop = titleTop + L.TITLE_ROW_H + L.THEME_GAP;
+  ctx.save();
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = font(L.THEME_LABEL_PX, 800);
+  const labelTrack = 0.1 * L.THEME_LABEL_PX;
+  ctx.fillStyle = shades.band;
+  fillTracked(ctx, 'THEME', ox, fieldTop + L.FIELD_H / 2 + capHeight(ctx) / 2, labelTrack);
+  const fieldX = ox + trackedWidth(ctx, 'THEME', labelTrack) + L.LABEL_GAP;
+  ctx.fillStyle = '#ffffff';
+  roundRect(ctx, fieldX, fieldTop, right - fieldX, L.FIELD_H, L.FIELD_R);
+  ctx.fill();
+  ctx.font = font(L.THEME_TEXT_PX, card.theme ? 700 : 500);
+  ctx.fillStyle = card.theme ? FG : shades.hint;
+  const room = right - fieldX - 2 * L.FIELD_PADX;
+  ctx.fillText(
+    ellipsize(ctx, card.theme || 'No theme yet', room),
+    fieldX + L.FIELD_PADX,
+    fieldTop + L.FIELD_H / 2 + capHeight(ctx) / 2,
+  );
+  ctx.restore();
+
+  const gridY = L.gridTop();
 
   // --- the rows, drawn first so the slots sit over the top-left corner ---
   drawBand(ctx, shades, 'GYM LEADER TEAM', null, ox, gridY);
@@ -725,7 +728,7 @@ function drawGymCardPage(
     if (row !== 1 && !banner) {
       ctx.save();
       ctx.fillStyle = shades.line;
-      ctx.fillRect(ox, y, L.CARD_W - 2 * L.PADX, L.K);
+      ctx.fillRect(ox, y, innerW, L.K);
       ctx.restore();
     }
     const cells = exportRow(card, row);
@@ -761,12 +764,22 @@ function drawGymCardPage(
   drawTmSlot(ctx, card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId), shades, images, ox, gridY);
   drawBadgeSlot(ctx, card.badgeName, shades, ox, gridY);
 
-  ctx.restore();
-
-  drawCredit(ctx, L.PAGE_W / 2, L.MARGIN + cardH + L.FOOT / 2, L.CREDIT_PX, L.CARD_CREDIT_PREFIX);
+  drawCredit(ctx, L.CARD_W / 2, gridY + L.gridHeight() + L.FOOT / 2, L.CREDIT_PX, L.CARD_CREDIT_PREFIX);
 }
 
 // ---------- the league home ----------
+
+/**
+ * Whether a league row shows the dashed square where a type would go.
+ *
+ * A trainer with no Pokémon at all is an open seat, and the row says so the
+ * way the app does: a dashed square, in the neutral shades. A trainer with a
+ * team and no type has made a choice and shows the no-type square; a type
+ * chosen for an empty seat is a choice too, and keeps its icon.
+ */
+export function vacantRow(card: GymCard): boolean {
+  return card.lines.length === 0 && (!card.type || card.type === 'none');
+}
 
 function drawHomeRow(
   ctx: CanvasRenderingContext2D,
@@ -777,14 +790,16 @@ function drawHomeRow(
   x: number,
   y: number,
 ): void {
-  const shades = card.type ? cardShades(card.type) : null;
-  const cell = shades ? shades.cell : GREY;
+  // An unset type takes the neutral ramp, as `cardShades` gives it in the
+  // app, rather than a grey of its own.
+  const shades = cardShades(card.type);
+  const cell = shades.cell;
   const row = view === 'rematch' ? L.BOSS_ROW : slotRow(index);
   const cells = exportRow(card, row);
   const filled = card.lines.length > 0;
 
   ctx.save();
-  ctx.fillStyle = shades ? shades.base : '#ffffff';
+  ctx.fillStyle = shades.base;
   roundRect(ctx, x, y, L.HOME_INNER, L.ROW2, L.HOME_R);
   ctx.fill();
   ctx.fillStyle = HOME_LINE;
@@ -808,9 +823,23 @@ function drawHomeRow(
   else if (kind === 'champion') drawCrown(ctx, 13 * L.K2, gcx, gcy);
   else drawBossBall(ctx, cell, 15 * L.K2, gcx, gcy);
 
-  // The type square.
+  // The type square, or the dashed square of an open seat.
   const sq = 22 * L.K2;
-  drawTypeMark(ctx, card.type, images, x + L.GLYPH_COL + (L.TYPE_COL - sq) / 2, y + (L.ROW2 - sq) / 2, sq, L.HOME_R);
+  const sqX = x + L.GLYPH_COL + (L.TYPE_COL - sq) / 2;
+  const sqY = y + (L.ROW2 - sq) / 2;
+  if (vacantRow(card)) {
+    ctx.save();
+    ctx.strokeStyle = shades.dash;
+    ctx.lineWidth = 1.4 * L.K2;
+    ctx.setLineDash([4 * L.K2, 4 * L.K2]);
+    // The stroke sits inside the square, as a CSS border does.
+    const half = ctx.lineWidth / 2;
+    roundRect(ctx, sqX + half, sqY + half, sq - 2 * half, sq - 2 * half, L.HOME_R - half);
+    ctx.stroke();
+    ctx.restore();
+  } else {
+    drawTypeMark(ctx, card.type, images, sqX, sqY, sq, L.HOME_R);
+  }
 
   const seatsX = x + L.GLYPH_COL + L.TYPE_COL;
   if (!filled) {
@@ -837,30 +866,19 @@ function drawHomeRow(
   });
 }
 
-function drawLeagueHomePage(
+function drawLeagueHome(
   ctx: CanvasRenderingContext2D,
   name: string,
   cards: GymCard[],
   view: LeagueView,
   images: Images,
 ): void {
-  const cardH = L.homeCardHeight();
-  ctx.fillStyle = PAGE_BG;
-  const left = L.SIDE;
-  ctx.fillRect(0, 0, L.PAGE_W, L.HOME_PAGE_H);
+  // The picture is the league's content on white, edge to edge.
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, L.HOME_W, L.HOME_IMG_H);
 
-  withCardShadow(ctx, () => {
-    ctx.fillStyle = '#ffffff';
-    roundRect(ctx, left, L.MARGIN, L.HOME_W, cardH, 12 * L.K2);
-    ctx.fill();
-  });
-
-  ctx.save();
-  roundRect(ctx, left, L.MARGIN, L.HOME_W, cardH, 12 * L.K2);
-  ctx.clip();
-
-  const ox = left + L.HPADX;
-  let y = L.MARGIN + L.HPADY;
+  const ox = L.HPADX;
+  let y = L.HPADY;
 
   // --- the identity line: the league's name, and which teams these are ---
   // The tool's own name stays off the picture. Someone who is handed it
@@ -907,8 +925,7 @@ function drawLeagueHomePage(
     y += L.ROW2;
   }
 
-  ctx.restore();
-  drawCredit(ctx, L.PAGE_W / 2, L.MARGIN + cardH + L.FOOT / 2, L.CREDIT_PX, L.HOME_CREDIT_PREFIX);
+  drawCredit(ctx, L.HOME_W / 2, y + L.FOOT / 2, L.CREDIT_PX, L.HOME_CREDIT_PREFIX);
 }
 
 // ---------- assembling a PNG ----------
@@ -955,7 +972,7 @@ async function render(
 /** One trainer's card as a PNG. */
 export async function exportGymCard(card: GymCard): Promise<Blob> {
   const images = await loadAll(cardImageUrls(card));
-  return render(L.PAGE_W, L.CARD_PAGE_H, (ctx) => drawGymCardPage(ctx, card, images));
+  return render(L.CARD_W, L.CARD_IMG_H, (ctx) => drawGymCard(ctx, card, images));
 }
 
 /** The league summary as a PNG, at whichever team toggle is on screen. */
@@ -965,7 +982,5 @@ export async function exportLeagueHome(
   view: LeagueView,
 ): Promise<Blob> {
   const images = await loadAll(homeImageUrls(cards, view));
-  return render(L.PAGE_W, L.HOME_PAGE_H, (ctx) =>
-    drawLeagueHomePage(ctx, name, cards, view, images),
-  );
+  return render(L.HOME_W, L.HOME_IMG_H, (ctx) => drawLeagueHome(ctx, name, cards, view, images));
 }
