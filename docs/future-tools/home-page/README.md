@@ -66,11 +66,14 @@ screenshots, the words "Coming soon" where the artwork would be, and no link.
 The build mark stays with the feedback card, so the two unbuilt cards read as
 two different states rather than one repeated card.
 
-Known tradeoff: every cell reserves the overhang so all panels share a baseline,
-which is what a card with artwork beside one without needs. In this version the
-whole second row is artwork-free at two columns, so that reserve shows up as
-empty space above it on phone and tablet. Closing it needs either a different
-card order or a rule that knows the column count.
+The overhang reserve belongs to the artwork, not the card: a card with
+screenshots reserves room above itself for them to pop into, a card without
+reserves nothing. Panels still line up across a row because each cell stretches
+to the row's height and its panel sits at the bottom. So a row where no card has
+artwork is simply shorter — in this version the second row sits a plain grid gap
+below the first on phone and tablet — and when the picker goes live, its card
+gains screenshots and the row drops back down on its own. The card order never
+changes.
 
 The slugs come from `../HANDOFF.md` and `../league-builder/DECISIONS.md`. Give
 the page a real route only when the tools it routes to are ready. That move also

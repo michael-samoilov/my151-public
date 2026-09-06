@@ -75,9 +75,9 @@ interface CardProps {
 
 /**
  * One card. The cell wrapper is the query container, so everything inside sizes
- * itself off the card's own width; the cell also reserves the overhang with
- * `padding-top`, which is why a card can never land on the one above it however
- * the grid reflows.
+ * itself off the card's own width. A card with artwork also reserves the
+ * overhang above itself with `padding-top`, which is why artwork can never land
+ * on the card above however the grid reflows.
  *
  * `--art` scales the artwork against the card without touching the card itself.
  * Tablet packs the two rows closer with a smaller fan; phone and desktop run the
@@ -127,9 +127,17 @@ function Card({ tool, onPress }: CardProps) {
       </div>
     </>
   );
+  // The overhang reserve belongs to the artwork, not the card. A card with
+  // screenshots reserves room above itself for them to pop into; a card
+  // without reserves nothing. Panels still line up across a row because each
+  // cell is stretched to the row's height and its panel sits at the bottom —
+  // so a row where every card lacks artwork is simply shorter, and a row that
+  // mixes the two keeps one baseline. When a coming-soon tool goes live, its
+  // card gains screenshots and the row drops back down on its own.
+  const reserve = tool.shots ? `calc(${U(POP_TOP)} * var(--art))` : 0;
   return (
-    <div style={{ containerType: 'inline-size' }}>
-      <div style={{ paddingTop: `calc(${U(POP_TOP)} * var(--art))` }}>
+    <div className="flex flex-col justify-end" style={{ containerType: 'inline-size' }}>
+      <div style={{ paddingTop: reserve }}>
         {onPress ? (
           <button type="button" onClick={onPress} className={`${panel} cursor-pointer`} style={panelStyle} data-card-panel>
             {body}

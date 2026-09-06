@@ -56,7 +56,23 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
           fail.push(`footer top at ${R(footer).top.toFixed(1)}, above the ${window.innerHeight}px fold`);
         }
 
-        // 3. No two cards touch.
+        // 3. Panels in one row share a top edge. The overhang reserve now
+        // belongs only to cards with artwork, so alignment across a row that
+        // mixes the two rests on each panel sitting at the bottom of a stretched
+        // cell. Cells whose tops match are one row; their panels must match too.
+        const rows = new Map<number, number[]>();
+        cards.forEach((cell) => {
+          const panel = cell.querySelector('[data-card-panel]');
+          if (!panel) return;
+          const key = Math.round(R(cell).top);
+          rows.set(key, [...(rows.get(key) ?? []), R(panel).top]);
+        });
+        for (const [cellTop, tops] of rows) {
+          const spread = Math.max(...tops) - Math.min(...tops);
+          if (spread > 0.5) fail.push(`row at ${cellTop}: panel tops differ by ${spread.toFixed(1)}px`);
+        }
+
+        // 4. No two cards touch.
         for (let i = 0; i < cards.length; i += 1) {
           for (let j = i + 1; j < cards.length; j += 1) {
             const a = R(cards[i]);
@@ -79,7 +95,7 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
           }
           const c = R(panel);
 
-          // 4. Each heading stays on one line. A block reports one client rect
+          // 5. Each heading stays on one line. A block reports one client rect
           // whatever it does, so the line count comes from the text range.
           const range = document.createRange();
           range.selectNodeContents(h2);
@@ -88,12 +104,12 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
           if (lines > 1) fail.push(`card ${i} title wrapped to ${lines} lines`);
           if (text - R(h2).width > 0.5) fail.push(`card ${i} title overruns by ${(text - R(h2).width).toFixed(1)}`);
 
-          // 5. The blurb fits its fixed two-line band.
+          // 6. The blurb fits its fixed two-line band.
           if (p.scrollHeight - p.clientHeight > 0.5) {
             fail.push(`card ${i} blurb clipped by ${p.scrollHeight - p.clientHeight}`);
           }
 
-          // 6. Artwork never reaches the card's right edge: a bare red strip has
+          // 7. Artwork never reaches the card's right edge: a bare red strip has
           // to remain, or the screenshot reads as clipped there.
           [...cell.querySelectorAll('img')].forEach((img, k) => {
             const strip = c.right - R(img).right;
@@ -102,7 +118,7 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
             }
           });
 
-          // 7. Artwork must not land on the card above it.
+          // 8. Artwork must not land on the card above it.
           [...cell.querySelectorAll('img')].forEach((img, k) => {
             cards.forEach((other, j) => {
               if (other === cell) return;
@@ -116,7 +132,7 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
             });
           });
 
-          // 8. A card with no artwork carries a badge instead — the build mark
+          // 9. A card with no artwork carries a badge instead — the build mark
           // or the words "Coming soon". Either stays wholly inside its card,
           // with matching air above it and below it.
           const badge = cell.querySelector('[data-card-badge] > *');
@@ -131,7 +147,7 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
           }
         });
 
-        // 9. The band's own knobs resolve to what the band intends. This repo
+        // 10. The band's own knobs resolve to what the band intends. This repo
         // sets `--breakpoint-md: 1024px`, and Tailwind sorts that px value ahead
         // of `sm`'s 40rem, so it emits the md block FIRST: a bare `sm:` utility
         // silently beats its own `md:` override above 1024px. That is invisible
@@ -143,7 +159,7 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
           fail.push(`--art is ${art}, expected ${wantArt} at ${window.innerWidth}px`);
         }
 
-        // 10. Hero copy stays inside the frame and breaks rather than overrunning.
+        // 11. Hero copy stays inside the frame and breaks rather than overrunning.
         const hero = document.querySelector('main > section');
         [...(hero?.querySelectorAll('h1, p') ?? [])].forEach((e, i) => {
           const r = R(e);
