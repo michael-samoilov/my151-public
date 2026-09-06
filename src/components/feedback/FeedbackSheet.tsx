@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bug, Check, Languages, Lightbulb, MessageCircle } from 'lucide-react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Bug, Check, Languages, Lightbulb, MessageCircle, X } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useSheetKeyboard } from '@/components/ui/sheetKeyboard';
 import { Button } from '@/components/ui/button';
 import { useT } from '@/i18n';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
+import type { FeedbackAnchor } from '@/components/feedback/feedbackChannel';
 import {
   collectFeedbackContext,
   sendFeedback,
@@ -296,15 +297,80 @@ function FeedbackForm({
   );
 }
 
+/** Gap between the card and its anchor, and the card and the viewport edge. */
+const CARD_GAP = 8;
+const CARD_MARGIN = 12;
+
+/**
+ * Position the desktop card against the control that opened it.
+ *
+ * Below the anchor and aligned to its right edge is the default, because every
+ * anchor today sits in a chrome row with the page under it. When the card would
+ * run off the bottom it flips above the anchor instead, and in both axes it is
+ * clamped into the viewport — a footer link near the bottom left has neither
+ * the room below nor the room to the right.
+ *
+ * The effect writes `style.top` / `style.left` on the node rather than setting
+ * React state. Position is a measurement of the DOM, taken after layout and fed
+ * straight back into it; routing it through a render would put a stale frame on
+ * screen first and buy nothing, since nothing else reads it.
+ *
+ * With no anchor — the crash screen, whose own button the form is replacing —
+ * the effect does nothing and the card keeps the corner its classes give it.
+ */
+function useAnchoredCard(anchor: FeedbackAnchor, enabled: boolean) {
+  const card = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const el = card.current;
+    if (!enabled || !anchor || !el) return;
+
+    const place = () => {
+      const a = anchor.getBoundingClientRect();
+      const w = el.offsetWidth;
+      const h = el.offsetHeight;
+      const below = a.bottom + CARD_GAP;
+      const above = a.top - CARD_GAP - h;
+      // Flip up only when the card genuinely does not fit below and does fit
+      // above. Clamping handles the case where neither is true.
+      const fitsBelow = below + h <= window.innerHeight - CARD_MARGIN;
+      const top = fitsBelow || above < CARD_MARGIN ? below : above;
+      const clamp = (v: number, max: number) => Math.min(Math.max(CARD_MARGIN, v), Math.max(CARD_MARGIN, max));
+      el.style.top = `${clamp(top, window.innerHeight - h - CARD_MARGIN)}px`;
+      el.style.left = `${clamp(a.right - w, window.innerWidth - w - CARD_MARGIN)}px`;
+    };
+
+    place();
+    // The anchor sits in a page row rather than fixed chrome, so a scroll
+    // behind the card moves it. Capture, because the scroll that matters is an
+    // inner container's, and a scroll event does not bubble.
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    // The form changes height as you type, open the disclosure, or fail a send.
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(place);
+    ro?.observe(el);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+      ro?.disconnect();
+    };
+  }, [anchor, enabled]);
+
+  return card;
+}
+
 export function FeedbackSheet({
   route,
   initialCategory = 'bug',
   error,
+  anchor = null,
   onClose,
 }: {
   route: string;
   initialCategory?: FeedbackCategory;
   error?: FeedbackContext['error'];
+  /** The control that opened the form; the desktop card opens beside it. */
+  anchor?: FeedbackAnchor;
   onClose: () => void;
 }) {
   const t = useT();
@@ -321,6 +387,11 @@ export function FeedbackSheet({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  // Every anchor the app passes today is a desktop-visible control, but the
+  // mobile branch renders no card, so gate on the breakpoint too.
+  const anchored = isDesktop && anchor !== null;
+  const cardRef = useAnchoredCard(anchor, isDesktop);
 
   const form = (fill?: boolean) => (
     <FeedbackForm
@@ -341,18 +412,43 @@ export function FeedbackSheet({
     );
   }
 
-  // Desktop: a card anchored over the button that opened it, rather than a
+  // Desktop: a card anchored to the control that opened it, rather than a
   // sheet scaled up — the same shape-differs-by-breakpoint treatment the
   // language picker and the analytics drilldowns use.
+  //
+  // `w-[26rem]`, not the `w-80` this started at: 320px left the chip row 288px
+  // to work with, where the mobile sheet gives it 358 and needs about 348 for
+  // German. So the one row the mobile layout is built around wrapped to two on
+  // the wider screen. 416px clears the widest locale with room to spare and
+  // still fits a 1024px window twice over. The cap keeps it inside a narrow
+  // desktop window, where wrapping is the right answer.
   return (
     <>
       <div className="fixed inset-0 z-[140]" onClick={onClose} aria-hidden />
       <div
+        ref={cardRef}
         role="dialog"
         aria-label={t('feedback.title')}
-        className="fixed bottom-16 end-3 z-[150] w-80 max-h-[80vh] overflow-y-auto overscroll-contain flex flex-col rounded-lg border bg-card shadow-xl"
+        className={`fixed z-[150] w-[26rem] max-w-[calc(100vw-1.5rem)] max-h-[80vh] overflow-y-auto overscroll-contain flex flex-col rounded-lg border bg-card shadow-xl${
+          anchored ? '' : ' bottom-16 end-3'
+        }`}
       >
-        <div className="px-4 pt-3 text-sm font-semibold">{t('feedback.title')}</div>
+        <div className="px-4 pt-3 flex items-start justify-between gap-2">
+          <span className="text-sm font-semibold">{t('feedback.title')}</span>
+          {/* Clicking the bug icon again closes the form, and so does Escape or
+              a click outside — none of which is visible in the card. A control
+              that offers no way out reads as stuck even when it is not. Same
+              accessible name as the sheet's own close control on mobile. */}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t('feedback.title')}
+            data-feedback-close
+            className="-me-1 -mt-0.5 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
         {form()}
       </div>
     </>

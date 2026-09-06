@@ -22,7 +22,7 @@ export function FeedbackButton() {
   return (
     <button
       type="button"
-      onClick={() => openFeedback('bug')}
+      onClick={(e) => openFeedback('bug', e.currentTarget)}
       aria-label={t('feedback.title')}
       // A locale-independent handle for the tests. The accessible name is
       // translated, which is right for a screen reader and useless for a spec

@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { FeedbackSheet } from '@/components/feedback/FeedbackSheet';
-import { registerFeedbackOpener, takePendingCrash } from '@/components/feedback/feedbackChannel';
+import {
+  registerFeedbackOpener,
+  takePendingCrash,
+  type FeedbackAnchor,
+} from '@/components/feedback/feedbackChannel';
 import type { FeedbackCategory, FeedbackContext } from '@/lib/feedbackContext';
 
 /**
@@ -24,11 +28,14 @@ export function FeedbackHost({ route }: { route: string }) {
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<FeedbackCategory>('bug');
   const [crash, setCrash] = useState<FeedbackContext['error']>(undefined);
+  // What was clicked, so the desktop card can open beside it.
+  const [anchor, setAnchor] = useState<FeedbackAnchor>(null);
 
   useEffect(
     () =>
-      registerFeedbackOpener((c) => {
+      registerFeedbackOpener((c, from) => {
         setCategory(c);
+        setAnchor(from);
         // An error boundary parks the crash it caught here on its way to
         // opening the form, because the tree that would have carried it as a
         // prop is the one that just died.
@@ -44,6 +51,7 @@ export function FeedbackHost({ route }: { route: string }) {
       route={route}
       initialCategory={category}
       error={crash}
+      anchor={anchor}
       onClose={() => setOpen(false)}
     />
   );
