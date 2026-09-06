@@ -1,4 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /**
  * Two servers, each authoritative for what it can actually prove.
@@ -16,6 +18,43 @@ import { defineConfig, devices } from '@playwright/test';
 const PREVIEW_PORT = 4173;
 const DEV_PORT = 4174;
 
+/**
+ * Find a Chromium this machine actually has.
+ *
+ * The cloud container preinstalls one revision under PLAYWRIGHT_BROWSERS_PATH
+ * and forbids the browser CDN, so Playwright's own resolution fails the moment
+ * the pinned @playwright/test revision moves ahead of the image. That is not a
+ * hypothetical: a 1194 image against a 1228 pin fails every spec with
+ * "Executable doesn't exist at .../chromium_headless_shell-1228/...". So read
+ * the directory instead of trusting the revision, and set executablePath, which
+ * also opts out of the separate headless-shell binary.
+ *
+ * PLAYWRIGHT_CHROMIUM_PATH overrides, for a machine that keeps Chromium
+ * elsewhere. Undefined means "let Playwright resolve its own", which is right
+ * wherever `npx playwright install` has run, including CI.
+ *
+ * `.claude/skills/verify-my151/harness/lib/engines.ts` carries the same logic
+ * for the same reason. The two stay separate on purpose: the harness ships as a
+ * self-contained skill and must not import from the app's test config.
+ */
+function resolveChromium(): string | undefined {
+  if (process.env.PLAYWRIGHT_CHROMIUM_PATH) return process.env.PLAYWRIGHT_CHROMIUM_PATH;
+  const root = process.env.PLAYWRIGHT_BROWSERS_PATH;
+  if (!root) return undefined;
+  try {
+    const dir = fs.readdirSync(root).find((d) => d.startsWith('chromium-'));
+    if (dir) {
+      const bin = path.join(root, dir, 'chrome-linux', 'chrome');
+      if (fs.existsSync(bin)) return bin;
+    }
+  } catch {
+    /* fall through to Playwright's own resolution */
+  }
+  return undefined;
+}
+
+const CHROMIUM_PATH = resolveChromium();
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -27,11 +66,10 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PREVIEW_PORT}`,
     trace: 'on-first-retry',
-    // Chromium is preinstalled in this environment at a fixed path; fall back to
-    // Playwright's own resolution anywhere it isn't.
-    launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH
-      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH }
-      : {},
+    // See resolveChromium() below. An empty launchOptions means "let Playwright
+    // resolve its own browser", which is correct on a machine that ran
+    // `npx playwright install`.
+    launchOptions: CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : {},
   },
 
   /**
