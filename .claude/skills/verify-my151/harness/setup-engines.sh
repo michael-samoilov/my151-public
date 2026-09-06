@@ -10,6 +10,27 @@ FF_BIN="$FF_DIR/firefox/firefox"
 WEBKIT="/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1/MiniBrowser"
 status=0
 
+echo "== apt index =="
+# Two things in a fresh cloud container break the WebKit install below, and both
+# are about the index rather than the package. The image ships a stale package
+# list, so every .deb URL 404s until the list refreshes. And two preinstalled
+# PPAs (deadsnakes, ondrej/php) answer 403 through the egress proxy, which makes
+# `apt-get update` exit non-zero even when every Ubuntu list refreshed fine.
+# So move the blocked PPAs aside, refresh, and judge the result by whether the
+# install works, never by the exit code. Skipped when nothing needs apt.
+if [ ! -x "$WEBKIT" ] || ! command -v ffmpeg >/dev/null; then
+  sudo mkdir -p /etc/apt/disabled-ppa
+  for f in /etc/apt/sources.list.d/*deadsnakes* /etc/apt/sources.list.d/*ondrej*; do
+    if [ -e "$f" ]; then
+      sudo mv "$f" /etc/apt/disabled-ppa/ && echo "  moved aside (403 through the proxy): $(basename "$f")"
+    fi
+  done
+  sudo apt-get update >/tmp/verify-aptupd.log 2>&1
+  echo "  refreshed $(grep -cE '^(Hit|Get)' /tmp/verify-aptupd.log) lists"
+else
+  echo "  skipped: webkit and ffmpeg are already present"
+fi
+
 echo "== WebKit (webkit2gtk-driver + xvfb) =="
 if [ -x "$WEBKIT" ] && command -v WebKitWebDriver >/dev/null && command -v xvfb-run >/dev/null; then
   echo "  present: $(WebKitWebDriver --version 2>/dev/null | head -1)"
@@ -48,7 +69,6 @@ echo "== ffmpeg (only needed for --video on WebKit/Gecko; Blink records without 
 if command -v ffmpeg >/dev/null; then
   echo "  present: $(ffmpeg -version 2>/dev/null | head -1)"
 else
-  sudo apt-get update >/tmp/verify-aptupd.log 2>&1
   sudo apt-get install -y ffmpeg >/tmp/verify-ffmpeg.log 2>&1
   if command -v ffmpeg >/dev/null; then echo "  installed: $(ffmpeg -version 2>/dev/null | head -1)"; else echo "  BLOCKED: could not install ffmpeg (see /tmp/verify-ffmpeg.log); --video real-engine lanes unavailable"; fi
 fi

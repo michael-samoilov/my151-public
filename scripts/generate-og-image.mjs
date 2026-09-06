@@ -12,7 +12,7 @@
  * Sprites and the Inter subset are inlined as data URIs so the render needs no
  * dev server and no network — headless Chromium loads a single self-contained page.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { chromium } from '@playwright/test';
@@ -134,10 +134,40 @@ const html = `<!doctype html>
   </body>
 </html>`;
 
-// Prefer an explicitly-provided Chromium (set CHROMIUM_PATH when the local
-// Playwright browser build doesn't match the pinned @playwright/test version, as
-// on CI images that ship a single system Chromium).
-const executablePath = process.env.CHROMIUM_PATH || undefined;
+/**
+ * Find a Chromium this machine actually has.
+ *
+ * An image that preinstalls one revision under PLAYWRIGHT_BROWSERS_PATH breaks
+ * Playwright's own resolution as soon as the pinned @playwright/test revision
+ * moves ahead of it, and the browser CDN is blocked there, so the usual
+ * `npx playwright install` repair is unavailable. Read the directory instead of
+ * trusting the revision. PLAYWRIGHT_CHROMIUM_PATH overrides; CHROMIUM_PATH stays
+ * accepted because this script documented it first. Undefined means "let
+ * Playwright resolve its own", which is right wherever the browsers are
+ * installed normally.
+ *
+ * playwright.config.ts and .claude/skills/verify-my151/harness/lib/engines.ts
+ * carry the same logic. All three stay separate: this script is plain ESM and
+ * cannot import either of the TypeScript copies.
+ */
+function resolveChromium() {
+  const explicit = process.env.PLAYWRIGHT_CHROMIUM_PATH || process.env.CHROMIUM_PATH;
+  if (explicit) return explicit;
+  const browsersRoot = process.env.PLAYWRIGHT_BROWSERS_PATH;
+  if (!browsersRoot) return undefined;
+  try {
+    const dir = readdirSync(browsersRoot).find((d) => d.startsWith('chromium-'));
+    if (dir) {
+      const bin = join(browsersRoot, dir, 'chrome-linux', 'chrome');
+      if (existsSync(bin)) return bin;
+    }
+  } catch {
+    /* fall through to Playwright's own resolution */
+  }
+  return undefined;
+}
+
+const executablePath = resolveChromium();
 const browser = await chromium.launch(executablePath ? { executablePath } : {});
 try {
   const page = await browser.newPage({
