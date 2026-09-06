@@ -19,33 +19,54 @@ const PREVIEW_PORT = 4173;
 const DEV_PORT = 4174;
 
 /**
- * Find a Chromium this machine actually has.
+ * Find a Chromium this machine actually has, without assuming a revision.
  *
- * The cloud container preinstalls one revision under PLAYWRIGHT_BROWSERS_PATH
- * and forbids the browser CDN, so Playwright's own resolution fails the moment
- * the pinned @playwright/test revision moves ahead of the image. That is not a
- * hypothetical: a 1194 image against a 1228 pin fails every spec with
- * "Executable doesn't exist at .../chromium_headless_shell-1228/...". So read
- * the directory instead of trusting the revision, and set executablePath, which
- * also opts out of the separate headless-shell binary.
+ * An image that preinstalls browsers under PLAYWRIGHT_BROWSERS_PATH pins one
+ * revision, and the pinned @playwright/test revision moves independently of it.
+ * The moment the two diverge, Playwright's own resolution fails on a path that
+ * was never installed, and the usual repair is unavailable because the browser
+ * CDN is blocked. So never name a revision. Ask, in order:
  *
- * PLAYWRIGHT_CHROMIUM_PATH overrides, for a machine that keeps Chromium
- * elsewhere. Undefined means "let Playwright resolve its own", which is right
- * wherever `npx playwright install` has run, including CI.
+ *   1. PLAYWRIGHT_CHROMIUM_PATH, for a machine that keeps Chromium elsewhere.
+ *   2. The unversioned `chromium` symlink the image maintains beside the
+ *      revision directories. This is the one name that survives an image bump.
+ *   3. The highest `chromium-<digits>` directory present. That pattern matches
+ *      neither chromium_headless_shell-* nor chromium-tip-of-tree-*, which are
+ *      a different binary and a different browser.
+ *   4. Nothing, which leaves Playwright to resolve its own. That is correct
+ *      wherever `npx playwright install` has run, CI included.
  *
- * `.claude/skills/verify-my151/harness/lib/engines.ts` carries the same logic
- * for the same reason. The two stay separate on purpose: the harness ships as a
- * self-contained skill and must not import from the app's test config.
+ * Setting executablePath also opts out of the separate headless-shell binary,
+ * whose absent revision is what the failure names first.
+ *
+ * `.claude/skills/verify-my151/harness/lib/engines.ts` and
+ * `scripts/generate-og-image.mjs` carry the same lookup for the same reason.
+ * The three stay separate on purpose: the harness ships as a self-contained
+ * skill, and the og-image script is plain ESM that cannot import either.
  */
+const CHROMIUM_LAYOUTS = [
+  ['chrome-linux', 'chrome'],
+  ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],
+  ['chrome-win', 'chrome.exe'],
+];
+
 function resolveChromium(): string | undefined {
   if (process.env.PLAYWRIGHT_CHROMIUM_PATH) return process.env.PLAYWRIGHT_CHROMIUM_PATH;
   const root = process.env.PLAYWRIGHT_BROWSERS_PATH;
   if (!root) return undefined;
   try {
-    const dir = fs.readdirSync(root).find((d) => d.startsWith('chromium-'));
-    if (dir) {
-      const bin = path.join(root, dir, 'chrome-linux', 'chrome');
-      if (fs.existsSync(bin)) return bin;
+    const stable = path.join(root, 'chromium');
+    if (fs.existsSync(stable) && fs.statSync(stable).isFile()) return stable;
+    const revisions = fs
+      .readdirSync(root)
+      .map((d) => /^chromium-(\d+)$/.exec(d))
+      .filter((m): m is RegExpExecArray => m !== null)
+      .sort((a, b) => Number(b[1]) - Number(a[1]));
+    for (const match of revisions) {
+      for (const layout of CHROMIUM_LAYOUTS) {
+        const bin = path.join(root, match[0], ...layout);
+        if (fs.existsSync(bin)) return bin;
+      }
     }
   } catch {
     /* fall through to Playwright's own resolution */
