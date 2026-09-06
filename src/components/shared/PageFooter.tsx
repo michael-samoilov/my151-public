@@ -27,7 +27,7 @@ export function PageFooter() {
           people find by accident; this is the one they go looking for. */}
       <button
         type="button"
-        onClick={() => openFeedback()}
+        onClick={(e) => openFeedback('bug', e.currentTarget)}
         className="mt-1 text-[0.5625rem] text-muted-foreground/70 underline underline-offset-2 hover:text-foreground cursor-pointer"
       >
         {t('footer.report')}
