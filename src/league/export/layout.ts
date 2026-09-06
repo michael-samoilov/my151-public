@@ -123,7 +123,7 @@ export const HDR_GAP = 16;
  * up with GYM LEADER TEAM under it, and the badge wears a white ring so the
  * pill reads on the bar.
  */
-export const BAR_PADY = 14;
+export const BAR_PADY = 20;
 export const BAR_H = TITLE_ROW_H + 2 * BAR_PADY;
 export const BAR_TEXT_X = PADX + 3 * K + 8 * K;
 export const BAR_RING = 2;
