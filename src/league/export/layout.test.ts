@@ -3,6 +3,7 @@ import * as L from './layout';
 import { showcasePair, exportRow, vacantRow } from './exportLeague';
 import { emptyCard, type GymCard } from '../store/useLeagueStore';
 import { makePlacedLine } from '../model/engine';
+import { placeSlot } from '../slotLayout';
 
 /**
  * The export's geometry is arithmetic, not layout: nothing here reads the DOM,
@@ -21,7 +22,8 @@ describe('export layout', () => {
     // ends just under its own credit.
     expect(L.CARD_W).toBe(L.BOX_W);
     expect(L.HOME_W).toBe(L.BOX_W);
-    expect(L.CARD_IMG_H).toBe(L.PADY + L.TITLE_BLOCK_H + L.gridHeight() + L.FOOT);
+    expect(L.CARD_IMG_H).toBe(L.TITLE_BLOCK_H + L.gridHeight() + L.FOOT);
+    expect(L.TITLE_BLOCK_H).toBe(L.BAR_H + L.THEME_GAP + L.FIELD_H + L.HDR_GAP);
     expect(L.HOME_IMG_H).toBe(
       Math.ceil(L.HPADY + L.HOME_HDR_H + 14 * L.ROW2 + 4 * L.BAND2 + 6 + L.FOOT),
     );
@@ -50,14 +52,39 @@ describe('export layout', () => {
     }
   });
 
-  it('fits the title row inside the content, with the badge inside the row', () => {
+  it('fits the title row inside the bar, with the ringed badge inside it', () => {
     // At 0.7em a glyph, wider than Inter's extrabold runs, the whole row
-    // still fits: the name, the break, the badge, and "Type Specialist".
+    // still fits from where the band labels start: the name, the break, the
+    // badge, and "Type Specialist".
     const words = (L.CARD_TITLE.length + L.SPECIALIST.length) * 0.7 * L.TITLE_PX;
     const row = words + 0.4 * L.TITLE_PX + L.TITLE_BADGE_W + 2 * L.TITLE_GAP + L.TITLE_WORD_GAP;
-    expect(row).toBeLessThan(L.CARD_W - 2 * L.PADX);
-    expect(L.TITLE_BADGE_H).toBeLessThanOrEqual(L.TITLE_ROW_H);
+    expect(L.BAR_TEXT_X + row).toBeLessThan(L.CARD_W - L.PADX);
+    expect(L.TITLE_BADGE_H + 2 * L.BAR_RING).toBeLessThanOrEqual(L.BAR_H);
     expect(L.TITLE_PX * 1.2).toBeLessThanOrEqual(L.TITLE_ROW_H);
+    expect(L.BAR_H).toBeGreaterThan(L.TITLE_ROW_H);
+  });
+
+  it('keeps both showcase blocks inside the slot at 2×', () => {
+    // The app's own solver, with the heading runs as the export measures
+    // them in Inter (ACE POKÉMON 91×44, PARTNER / SHOULDERMON 139×44) and no
+    // names. Pinned at 2× the two blocks overlap each other at their corners
+    // by design, but neither may leave the slot.
+    const box = L.showcaseBox();
+    const head = 2 * L.HEAD_LINE;
+    const slot = placeSlot(
+      box.width,
+      box.height,
+      { head: [91.2, head], name: [0, 0] },
+      { head: [138.5, head], name: [0, 0] },
+      L.PAIR_SPRITE,
+    );
+    for (const p of [slot.ace, slot.partner]) {
+      expect(p.sprite).toBe(L.PAIR_SPRITE);
+      expect(p.left).toBeGreaterThanOrEqual(0);
+      expect(p.top).toBeGreaterThanOrEqual(0);
+      expect(p.left + p.width).toBeLessThanOrEqual(box.width);
+      expect(p.top + head + p.sprite).toBeLessThanOrEqual(box.height);
+    }
   });
 
   it('gives the theme field room for its text and its label', () => {

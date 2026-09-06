@@ -18,7 +18,7 @@ import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath, typeGlyphPath } from '@/data/type-ids';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { drawTypeBadge } from '@/lib/drawTypeBadge';
-import { TYPE_BADGE_H, TYPE_BADGE_W } from '@/lib/typeBadgeGeometry';
+import { TYPE_BADGE, TYPE_BADGE_H, TYPE_BADGE_W } from '@/lib/typeBadgeGeometry';
 import { expandTemplate } from '@/lib/richTemplate';
 import { raw } from '@/i18n';
 import type { GymCard, LeagueView } from '../store/useLeagueStore';
@@ -633,8 +633,13 @@ function drawGlyphCell(
   ctx.restore();
 }
 
-function drawGymCard(ctx: CanvasRenderingContext2D, card: GymCard, images: Images): void {
+function drawGymCard(
+  ctx: CanvasRenderingContext2D,
+  card: GymCard,
+  images: Images,
+): void {
   const shades = cardShades(card.type);
+  const type = card.type !== 'none' ? card.type : null;
 
   // The picture is the card's content on its own tint, edge to edge: no page
   // and no card chrome, so nothing reads as a card floating on a blank ground.
@@ -645,36 +650,44 @@ function drawGymCard(ctx: CanvasRenderingContext2D, card: GymCard, images: Image
   const innerW = L.CARD_W - 2 * L.PADX;
   const right = ox + innerW;
 
-  // --- the title row: the card's name, a break, the type and its word ---
-  const titleTop = L.PADY;
+  // --- the header bar: the band shade across the top, the title in white ---
+  ctx.fillStyle = type ? shades.band : RED;
+  ctx.fillRect(0, 0, L.CARD_W, L.BAR_H);
   ctx.save();
   ctx.textBaseline = 'alphabetic';
   ctx.font = font(L.TITLE_PX, 800);
-  const titleBase = titleTop + L.TITLE_ROW_H / 2 + capHeight(ctx) / 2;
-  ctx.fillStyle = FG;
-  let x = ox;
+  const titleBase = L.BAR_H / 2 + capHeight(ctx) / 2;
+  ctx.fillStyle = '#ffffff';
+  let x = L.BAR_TEXT_X;
   fillTracked(ctx, L.CARD_TITLE, x, titleBase, L.TITLE_TRACK);
   x += trackedWidth(ctx, L.CARD_TITLE, L.TITLE_TRACK) + L.TITLE_GAP;
-  if (card.type && card.type !== 'none') {
-    ctx.fillStyle = MUTED;
+  if (type) {
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
     ctx.fillText(L.TITLE_SEP, x, titleBase);
     x += ctx.measureText(L.TITLE_SEP).width + L.TITLE_GAP;
-    drawTypeBadge(
+    const badgeTop = (L.BAR_H - L.TITLE_BADGE_H) / 2;
+    // The ring: two pixels of white outside the pill, following its radius.
+    const r = TYPE_BADGE.radius * (L.TITLE_BADGE_H / TYPE_BADGE_H);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = L.BAR_RING;
+    roundRect(
       ctx,
-      card.type,
-      images.get(typeGlyphPath(card.type)) ?? null,
-      x,
-      titleTop + (L.TITLE_ROW_H - L.TITLE_BADGE_H) / 2,
-      L.TITLE_BADGE_H,
+      x - L.BAR_RING / 2,
+      badgeTop - L.BAR_RING / 2,
+      L.TITLE_BADGE_W + L.BAR_RING,
+      L.TITLE_BADGE_H + L.BAR_RING,
+      r + L.BAR_RING / 2,
     );
+    ctx.stroke();
+    drawTypeBadge(ctx, type, images.get(typeGlyphPath(type)) ?? null, x, badgeTop, L.TITLE_BADGE_H);
     x += L.TITLE_BADGE_W + L.TITLE_WORD_GAP;
-    ctx.fillStyle = FG;
+    ctx.fillStyle = '#ffffff';
     fillTracked(ctx, L.SPECIALIST, x, titleBase, L.TITLE_TRACK);
   }
   ctx.restore();
 
   // --- the theme row: THEME, then a white field to the right edge ---
-  const fieldTop = titleTop + L.TITLE_ROW_H + L.THEME_GAP;
+  const fieldTop = L.BAR_H + L.THEME_GAP;
   ctx.save();
   ctx.textBaseline = 'alphabetic';
   ctx.font = font(L.THEME_LABEL_PX, 800);

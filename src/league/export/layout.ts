@@ -53,7 +53,6 @@ export const HOME_CREDIT_PREFIX = 'Pokémon League Builder';
  * when the export was diffed against its artboard.
  */
 export const PADX = 15.5;
-export const PADY = 20;
 /**
  * The column: the box less the card's padding, over seven.
  *
@@ -115,21 +114,34 @@ export const FIELD_PADX = 12;
 export const LABEL_GAP = 8;
 /** Under the theme field, above the first band. */
 export const HDR_GAP = 16;
-/** The title row, the theme field and their gaps: what sits above the grid. */
-export const TITLE_BLOCK_H = TITLE_ROW_H + THEME_GAP + FIELD_H + HDR_GAP;
 
 /**
- * The two showcase sprite sizes, settled.
+ * The header bar: the band shade, edge to edge across the top of the picture
+ * with square corners, and the title row inside it in white. It is the
+ * picture's own top edge rather than a card on it. A card with no type takes
+ * the site's red. The title starts where the band labels start, so it lines
+ * up with GYM LEADER TEAM under it, and the badge wears a white ring so the
+ * pill reads on the bar.
+ */
+export const BAR_PADY = 14;
+export const BAR_H = TITLE_ROW_H + 2 * BAR_PADY;
+export const BAR_TEXT_X = PADX + 3 * K + 8 * K;
+export const BAR_RING = 2;
+/** The bar, the theme field and their gaps: what sits above the grid. */
+export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
+
+/**
+ * The showcase sprite size: 2×, for a pair and for one.
  *
  * Pixel art only survives a whole multiple of its 96px source, so the choice
- * is 1× or 2× and nothing between. A pair takes 1×: two 2× sprites each need
- * 192px of clearance, and the slot's 30° seam leaves their centres at most
- * 73px apart across and 186px down, so they would collide by 125×100px. A
- * taller slot caps lower, not higher, because the seam leaves through the top
- * and bottom edges. One Pokémon takes 2×, having the whole slot and no seam
- * to share.
+ * is 1× or 2× and nothing between. Two 2× blocks do not both fit clear of the
+ * slot's 30° seam: placed by the solver they overlap by 49×105px at their
+ * corners, where a sprite carries its transparent margin. Measured on the two
+ * largest sprites, Hisuian Braviary and Celesteela, the ink overlaps in 38px,
+ * and the pair was chosen at 2× with that known. The seam is drawn first, so
+ * it runs behind both sprites.
  */
-export const PAIR_SPRITE = 96;
+export const PAIR_SPRITE = 192;
 export const SIG_SPRITE = 192;
 
 /** The slot heading runs: two lines, 0.53125rem extrabold, 1.4 line-height. */
@@ -199,9 +211,9 @@ export function gridHeight(): number {
   return rowTop(ROW_COUNT) + ROW;
 }
 
-/** The grid's top inside the picture: under the padding and the title block. */
+/** The grid's top inside the picture: under the bar and the theme field. */
 export function gridTop(): number {
-  return PADY + TITLE_BLOCK_H;
+  return TITLE_BLOCK_H;
 }
 
 // ---------- the league home ----------
@@ -247,8 +259,8 @@ export const VACANCY: Record<string, string> = {
 
 // ---------- the pictures: one width, each as tall as its content ----------
 
-/** The trainer card: its padding, the title block, the grid, and the credit. */
-export const CARD_IMG_H = PADY + TITLE_BLOCK_H + gridHeight() + FOOT;
+/** The trainer card: the bar and the theme field, the grid, and the credit. */
+export const CARD_IMG_H = TITLE_BLOCK_H + gridHeight() + FOOT;
 
 /**
  * The league: its padding, the name line, four bands with their gaps,
