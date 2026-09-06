@@ -50,6 +50,15 @@ flag is set. Two of the three tool links point at slugs that do not exist yet:
 | Favorite Pokémon Picker | `/favorite-pokemon-picker` | no |
 | What's next? | opens the feedback sheet | yes |
 
+### Getting there
+
+The wordmark in the app header links to it, the way a logo does on any other
+site (`HOME_HREF` in `src/components/layout/Header.tsx`). It is a link rather
+than a fourth nav tab: the router is a separate entry point, and the Pokédex
+lives in localStorage, so the full navigation loses nothing. When the page gets
+a real route, `HOME_HREF` and the constant in
+`e2e/wordmark-home.spec.ts` are the two lines that change.
+
 ### The coming-soon version
 
 `?home=soon` is the same page with the favorite picker marked unbuilt: no

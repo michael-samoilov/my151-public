@@ -9,6 +9,14 @@ import { LanguagePicker } from '@/components/layout/LanguagePicker';
 
 export type AppView = 'builder' | 'view' | 'analytics';
 
+/**
+ * Where the wordmark goes. The router page has no URL of its own yet — it is
+ * reached by a flag and carries `noindex` — so this is a query, not a path.
+ * Give it a real route and this constant is the one line that changes.
+ * See docs/future-tools/home-page/README.md.
+ */
+const HOME_HREF = '/?home';
+
 interface HeaderProps {
   currentView: AppView;
   onViewChange: (view: AppView) => void;
@@ -51,13 +59,25 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
          * readers currently announce just "my151.app", which says nothing about
          * what the page is. */}
         <h1 className="text-2xl font-extrabold tracking-tight whitespace-nowrap">
-          <span className="text-primary">my151</span><span className="text-foreground">.app</span>
-          {/* Through the catalog like every other visible string. It is
-              screen-reader-only, but "invisible" is not "untranslated": a
-              Japanese visitor's screen reader should not read them an English
-              tagline. The extraction spec catches it either way — that is how
-              this was found. */}
-          <span className="sr-only">{t('header.tagline')}</span>
+          {/* The wordmark is the way back to the router page, the way a logo is
+              on any other site. It is a plain link, not a view switch: the
+              router is a separate entry point, and the Pokédex lives in
+              localStorage, so a full navigation loses nothing.
+              No colour or underline reset needed — Tailwind's preflight already
+              gives `a` `color: inherit` and `text-decoration: inherit`, so the
+              spans below keep their own colours and nothing turns blue. */}
+          <a
+            href={HOME_HREF}
+            className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            <span className="text-primary">my151</span><span className="text-foreground">.app</span>
+            {/* Through the catalog like every other visible string. It is
+                screen-reader-only, but "invisible" is not "untranslated": a
+                Japanese visitor's screen reader should not read them an English
+                tagline. The extraction spec catches it either way — that is how
+                this was found. */}
+            <span className="sr-only">{t('header.tagline')}</span>
+          </a>
         </h1>
 
         <div className="flex items-center gap-1 flex-shrink-0">
