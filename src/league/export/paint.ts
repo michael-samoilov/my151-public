@@ -373,7 +373,11 @@ export function drawTmDisc(
   });
 }
 
-/** The badge hexagon: solid when the badge is named, dashed while it waits. */
+/**
+ * The badge hexagon. Named, it wears the type's colour at the weight the
+ * disc wears; empty, it wears the TM disc's own empty stroke: solid, the dash
+ * colour, and 2 in the disc's 24 box, which is 8/3 in this 32 box.
+ */
 export function drawHexagon(
   ctx: CanvasRenderingContext2D,
   colour: string,
@@ -384,8 +388,7 @@ export function drawHexagon(
 ): void {
   inBox(ctx, x, y, size, 32, () => {
     ctx.strokeStyle = colour;
-    ctx.lineWidth = filled ? 2.4 : 1.6;
-    if (!filled) ctx.setLineDash([3, 2.4]);
+    ctx.lineWidth = filled ? 2.4 : 8 / 3;
     ctx.stroke(path('hexagon'));
     ctx.beginPath();
     ctx.arc(16, 16, 4.4, 0, Math.PI * 2);

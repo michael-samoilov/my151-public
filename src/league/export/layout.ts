@@ -137,9 +137,6 @@ export const HEAD_PX = 8.5 * K;
 export const HEAD_TRACK = 0.08 * HEAD_PX;
 export const HEAD_LINE = HEAD_PX * 1.4;
 
-/** Placeholder copy in an empty slot: the app's 0.6875rem hint size. */
-export const HINT_PX = 11 * K;
-
 /** The glyph cell spans two columns on rows 1, 8 and 9. */
 export const GLYPH_SPAN: Record<number, number> = { 1: 2, 8: 2, 9: 2 };
 

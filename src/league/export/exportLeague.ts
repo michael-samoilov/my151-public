@@ -393,26 +393,13 @@ function drawShowcase(
     return;
   }
 
-  // The placeholder copy is set at the hint size the TM and badge boxes use
-  // for theirs, and wraps inside four fifths of the box. At the name size it
-  // ran edge to edge of the slot.
+  // Empty: the heading and the placeholder ball, and no words. The slot's
+  // dashed outline already says it waits to be filled in.
   const ring = Math.round((0.8 / 1.2) * (92 / 204) * box.height);
-  ctx.font = font(L.HINT_PX, 500);
-  const lineH = L.HINT_PX * 1.25;
-  const lines = wrapLines(ctx, 'No signature Pokémon', box.width * 0.8, 2);
-  const total = headH + gap + ring + gap + lines.length * lineH;
+  const total = headH + gap + ring;
   const top = y + (box.height - total) / 2;
   drawHeading(ctx, SIG_HEAD, cx, top, shades.hint);
   drawEmptyBall(ctx, ring, cx, top + headH + gap + ring / 2);
-  ctx.save();
-  ctx.font = font(L.HINT_PX, 500);
-  ctx.fillStyle = shades.hint;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  lines.forEach((line, i) => {
-    ctx.fillText(line, cx, top + headH + gap + ring + gap + (i + 0.5) * lineH);
-  });
-  ctx.restore();
 }
 
 /** The mark column both the TM and the badge slot open with. */
@@ -483,12 +470,6 @@ function drawTmSlot(
     drawMarkColumn(ctx, 'TM', shades.hint, markCx, cy, (size, gx, gy) =>
       drawTmDisc(ctx, shades.dash, size, gx, gy),
     );
-    ctx.save();
-    ctx.font = font(11 * L.K, 400);
-    ctx.fillStyle = shades.hint;
-    ctx.textBaseline = 'middle';
-    ctx.fillText(ellipsize(ctx, 'No TM awarded', bodyW), bodyX, cy);
-    ctx.restore();
     return;
   }
 
@@ -571,9 +552,8 @@ function drawBadgeSlot(
   ctx.font = font(size, 400);
   ctx.fillStyle = name ? FG : shades.hint;
   ctx.textBaseline = 'middle';
-  // The empty state wraps like a name does: at this width "No badge awarded"
-  // is two lines, and set on one it ran past the slot's edge.
-  const lines = wrapLines(ctx, name ? `${name} Badge` : 'No badge awarded', bodyW, name ? 3 : 2);
+  // Empty, the slot shows the hexagon and its word, and nothing else.
+  const lines = name ? wrapLines(ctx, `${name} Badge`, bodyW, 3) : [];
   const lineH = size * 1.25;
   const top = cy - (lines.length * lineH) / 2;
   lines.forEach((line, i) => ctx.fillText(line, bodyX, top + (i + 0.5) * lineH));

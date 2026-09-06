@@ -19,6 +19,7 @@ import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { HEADER_FIELD_H, LeagueExportButton } from './HeaderActions';
 import { usePencilRoom } from './usePencilRoom';
 import { MovePicker } from './MovePicker';
+import { confirmOnEnter } from './confirmOnEnter';
 
 /**
  * One open gym card: its identity row (type badge, theme), the 11-row grid,
@@ -271,6 +272,8 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
               onChange={(e) => setCardTheme(cardIndex, e.target.value)}
               placeholder={THEME_PLACEHOLDER}
               aria-label="Gym theme"
+              enterKeyHint="done"
+              onKeyDown={confirmOnEnter}
               // The words are clipped at the field's own box, and a clip
               // lands mid-glyph — which reads as the name running under
               // whatever sits next in the bar rather than ending. An

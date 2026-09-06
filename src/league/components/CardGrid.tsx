@@ -1447,14 +1447,15 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             on #FAC000 at 1.67:1 for electric, which is not a centre at all.
             Outlined, the slot background is the centre and every type reads.
             The stroke is 2.4 in a 32 box against the disc's 2 in 24 -- the
-            same weight relative to the glyph, so neither looks lighter. */}
+            same weight relative to the glyph, so neither looks lighter.
+            Empty, it wears the disc's own empty stroke: solid, and 2 in 24 is
+            8/3 in 32, so the two waiting outlines match. */}
         <svg viewBox="0 0 32 32" className="w-full" style={{ aspectRatio: '1', maxWidth: MARK_GLYPH }}>
           <path
             d="M16 3 L27 9.5 L27 22.5 L16 29 L5 22.5 L5 9.5 Z"
             fill="none"
             stroke={name ? view.shades.type : 'var(--lg-dash)'}
-            strokeWidth={name ? 2.4 : 1.6}
-            strokeDasharray={name ? undefined : '3 2.4'}
+            strokeWidth={name ? 2.4 : 8 / 3}
           />
           <circle
             cx="16"
@@ -1462,7 +1463,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             r="4.4"
             fill="none"
             stroke={name ? view.shades.type : 'var(--lg-dash)'}
-            strokeWidth={name ? 2.4 : 1.6}
+            strokeWidth={name ? 2.4 : 8 / 3}
           />
         </svg>
         <span

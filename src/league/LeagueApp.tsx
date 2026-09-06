@@ -21,6 +21,7 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { HEADER_FIELD_H, LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
 import { usePencilRoom } from './components/usePencilRoom';
+import { confirmOnEnter } from './components/confirmOnEnter';
 
 /**
  * The league builder's shell. Mobile: league home ⇄ full-screen card, with
@@ -112,6 +113,8 @@ function LeagueNameRow({ h1, narrow = false }: { h1: boolean; narrow?: boolean }
             onChange={(e) => setName(e.target.value)}
             placeholder={LEAGUE_NAME_PLACEHOLDER}
             aria-label="League name"
+            enterKeyHint="done"
+            onKeyDown={confirmOnEnter}
             // Small on purpose; the league entry caps maximum-scale on iOS so
             // focusing a sub-16px input no longer zooms the page.
             // The same weight the gym card's theme placeholder wears, so the
