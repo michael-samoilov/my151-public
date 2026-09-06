@@ -12,7 +12,7 @@
  * Sprites and the Inter subset are inlined as data URIs so the render needs no
  * dev server and no network — headless Chromium loads a single self-contained page.
  */
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { chromium } from '@playwright/test';
@@ -135,31 +135,50 @@ const html = `<!doctype html>
 </html>`;
 
 /**
- * Find a Chromium this machine actually has.
+ * Find a Chromium this machine actually has, without assuming a revision.
  *
- * An image that preinstalls one revision under PLAYWRIGHT_BROWSERS_PATH breaks
- * Playwright's own resolution as soon as the pinned @playwright/test revision
- * moves ahead of it, and the browser CDN is blocked there, so the usual
- * `npx playwright install` repair is unavailable. Read the directory instead of
- * trusting the revision. PLAYWRIGHT_CHROMIUM_PATH overrides; CHROMIUM_PATH stays
- * accepted because this script documented it first. Undefined means "let
- * Playwright resolve its own", which is right wherever the browsers are
+ * An image that preinstalls browsers under PLAYWRIGHT_BROWSERS_PATH pins one
+ * revision, and the pinned @playwright/test revision moves independently of it.
+ * Once the two diverge, Playwright's own resolution fails on a path that was
+ * never installed, and the browser CDN is blocked there, so
+ * `npx playwright install` cannot repair it. So never name a revision. Ask, in
+ * order: an explicit override, then the unversioned `chromium` symlink the
+ * image maintains beside the revision directories, then the highest
+ * `chromium-<digits>` directory. That pattern deliberately matches neither
+ * chromium_headless_shell-* nor chromium-tip-of-tree-*. Undefined leaves
+ * Playwright to resolve its own, which is right wherever browsers are
  * installed normally.
  *
+ * PLAYWRIGHT_CHROMIUM_PATH is the name the rest of the repo uses; CHROMIUM_PATH
+ * stays accepted because this script documented it first.
+ *
  * playwright.config.ts and .claude/skills/verify-my151/harness/lib/engines.ts
- * carry the same logic. All three stay separate: this script is plain ESM and
- * cannot import either of the TypeScript copies.
+ * carry the same lookup. All three stay separate: this script is plain ESM and
+ * cannot import either TypeScript copy.
  */
+const CHROMIUM_LAYOUTS = [
+  ['chrome-linux', 'chrome'],
+  ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],
+  ['chrome-win', 'chrome.exe'],
+];
+
 function resolveChromium() {
   const explicit = process.env.PLAYWRIGHT_CHROMIUM_PATH || process.env.CHROMIUM_PATH;
   if (explicit) return explicit;
   const browsersRoot = process.env.PLAYWRIGHT_BROWSERS_PATH;
   if (!browsersRoot) return undefined;
   try {
-    const dir = readdirSync(browsersRoot).find((d) => d.startsWith('chromium-'));
-    if (dir) {
-      const bin = join(browsersRoot, dir, 'chrome-linux', 'chrome');
-      if (existsSync(bin)) return bin;
+    const stable = join(browsersRoot, 'chromium');
+    if (existsSync(stable) && statSync(stable).isFile()) return stable;
+    const revisions = readdirSync(browsersRoot)
+      .map((d) => /^chromium-(\d+)$/.exec(d))
+      .filter((m) => m !== null)
+      .sort((a, b) => Number(b[1]) - Number(a[1]));
+    for (const match of revisions) {
+      for (const layout of CHROMIUM_LAYOUTS) {
+        const bin = join(browsersRoot, match[0], ...layout);
+        if (existsSync(bin)) return bin;
+      }
     }
   } catch {
     /* fall through to Playwright's own resolution */

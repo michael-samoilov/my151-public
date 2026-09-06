@@ -38,9 +38,39 @@ if (!window.__verifyTrap) {
 }
 return true;`;
 
+function safeReaddir(dir: string): string[] {
+  try { return fs.readdirSync(dir); } catch { return []; }
+}
+
+// WebKitGTK ships MiniBrowser under a directory whose ABI version moves with the
+// distro (webkit2gtk-4.1 today, webkitgtk-6.0 next) inside a multiarch directory
+// named for the CPU (x86_64-linux-gnu on this runner, aarch64-linux-gnu on an
+// arm one). Pinning either turns a working install into a false DOWN, so scan
+// and take the highest ABI present. The fallback is only there to keep the
+// doctor's "missing at ..." message concrete when nothing is installed yet.
+const WEBKIT_BROWSER_FALLBACK = '/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1/MiniBrowser';
+
+function resolveWebKitBrowser(): string {
+  if (process.env.VERIFY_WEBKIT_BROWSER) return process.env.VERIFY_WEBKIT_BROWSER;
+  const roots = ['/usr/libexec', '/usr/lib'];
+  for (const arch of safeReaddir('/usr/lib')) {
+    if (arch.includes('-linux-')) roots.push(path.join('/usr/lib', arch));
+  }
+  const found: string[] = [];
+  for (const root of roots) {
+    for (const name of safeReaddir(root)) {
+      if (!name.startsWith('webkit')) continue;
+      const bin = path.join(root, name, 'MiniBrowser');
+      if (fs.existsSync(bin)) found.push(bin);
+    }
+  }
+  found.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  return found.at(-1) ?? WEBKIT_BROWSER_FALLBACK;
+}
+
 export const ENGINE_PATHS = {
-  webkitDriver: 'WebKitWebDriver',
-  webkitBrowser: '/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1/MiniBrowser',
+  webkitDriver: process.env.VERIFY_WEBKIT_DRIVER || 'WebKitWebDriver',
+  webkitBrowser: resolveWebKitBrowser(),
   firefox: process.env.VERIFY_FIREFOX_BIN || '/opt/verify-my151/firefox/firefox',
   webkitPort: 4599,
   marionettePort: 2828,
@@ -92,12 +122,33 @@ class BlinkSession implements Session {
 // Playwright's browser CDN is blocked in this sandbox, so never rely on a
 // bundled download. Prefer an explicit path, else the pre-installed browser under
 // PLAYWRIGHT_BROWSERS_PATH, else let Playwright resolve its own.
+const CHROMIUM_LAYOUTS = [
+  ['chrome-linux', 'chrome'],
+  ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],
+  ['chrome-win', 'chrome.exe'],
+];
+
 function resolveChromium(): string | undefined {
   if (process.env.PLAYWRIGHT_CHROMIUM_PATH) return process.env.PLAYWRIGHT_CHROMIUM_PATH;
   const root = process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/pw-browsers';
   try {
-    const dir = fs.readdirSync(root).find((d) => d.startsWith('chromium-'));
-    if (dir) { const bin = path.join(root, dir, 'chrome-linux', 'chrome'); if (fs.existsSync(bin)) return bin; }
+    // The unversioned symlink beside the revision directories is the one name
+    // that survives an image bump, so prefer it. Otherwise take the highest
+    // revision. `chromium-<digits>` matches neither chromium_headless_shell-*
+    // (a different binary) nor chromium-tip-of-tree-* (a different browser).
+    const stable = path.join(root, 'chromium');
+    if (fs.existsSync(stable) && fs.statSync(stable).isFile()) return stable;
+    const revisions = fs
+      .readdirSync(root)
+      .map((d) => /^chromium-(\d+)$/.exec(d))
+      .filter((m): m is RegExpExecArray => m !== null)
+      .sort((a, b) => Number(b[1]) - Number(a[1]));
+    for (const match of revisions) {
+      for (const layout of CHROMIUM_LAYOUTS) {
+        const bin = path.join(root, match[0], ...layout);
+        if (fs.existsSync(bin)) return bin;
+      }
+    }
   } catch { /* fall through to Playwright default */ }
   return undefined;
 }

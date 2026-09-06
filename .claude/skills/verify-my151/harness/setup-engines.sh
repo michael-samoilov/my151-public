@@ -3,44 +3,91 @@
 # tarball). Blink ships with Playwright already. Idempotent: skips anything present.
 # On an egress block it prints the exact blocked host and keeps going, so the
 # harness degrades to whatever came up instead of failing the run.
+#
+# Nothing here names a version, an ABI, or a CPU. A container image is rebuilt on
+# somebody else's schedule, so every pinned string is a future false DOWN: the
+# distro moves webkit2gtk-4.1 to webkitgtk-6.0, an arm runner moves
+# x86_64-linux-gnu to aarch64-linux-gnu, and a stale third-party repo appears
+# where deadsnakes used to be. Discover each of those instead.
 set -uo pipefail
 
 FF_DIR="${VERIFY_ENGINE_DIR:-/opt/verify-my151}"
 FF_BIN="$FF_DIR/firefox/firefox"
-WEBKIT="/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1/MiniBrowser"
+DISABLED_DIR=/etc/apt/disabled-ppa
 status=0
 
-echo "== apt index =="
-# Two things in a fresh cloud container break the WebKit install below, and both
-# are about the index rather than the package. The image ships a stale package
-# list, so every .deb URL 404s until the list refreshes. And two preinstalled
-# PPAs (deadsnakes, ondrej/php) answer 403 through the egress proxy, which makes
-# `apt-get update` exit non-zero even when every Ubuntu list refreshed fine.
-# So move the blocked PPAs aside, refresh, and judge the result by whether the
-# install works, never by the exit code. Skipped when nothing needs apt.
-if [ ! -x "$WEBKIT" ] || ! command -v ffmpeg >/dev/null; then
-  sudo mkdir -p /etc/apt/disabled-ppa
-  for f in /etc/apt/sources.list.d/*deadsnakes* /etc/apt/sources.list.d/*ondrej*; do
-    if [ -e "$f" ]; then
-      sudo mv "$f" /etc/apt/disabled-ppa/ && echo "  moved aside (403 through the proxy): $(basename "$f")"
-    fi
+# WebKitGTK puts MiniBrowser under an ABI directory inside a multiarch directory,
+# and both halves of that path move. Take the highest ABI present.
+find_webkit_browser() {
+  ls -d /usr/libexec/webkit*gtk-*/MiniBrowser /usr/lib/*/webkit*gtk-*/MiniBrowser \
+    2>/dev/null | sort -V | tail -1
+}
+
+# `apt-get update` names the URI it could not reach. Map each failing URI back to
+# the file that declares it and move that file aside, so one unreachable
+# third-party repo cannot fail the whole refresh. Ubuntu's own repos are never
+# touched: a 404 there means a stale index, which the refresh itself repairs.
+disable_unreachable_sources() {
+  local log="$1" failed f declared u d disabled=0
+  failed=$(grep -E "Failed to fetch|no longer signed|is not signed" "$log" 2>/dev/null \
+    | grep -oE "https?://[^ ']+" | sort -u)
+  [ -n "$failed" ] || return 1
+  sudo mkdir -p "$DISABLED_DIR"
+  for f in /etc/apt/sources.list.d/*.sources /etc/apt/sources.list.d/*.list; do
+    [ -e "$f" ] || continue
+    declared=$(grep -oE "https?://[^ ]+" "$f" 2>/dev/null | sort -u)
+    for d in $declared; do
+      case "$d" in *ubuntu.com*) continue ;; esac
+      for u in $failed; do
+        case "$u" in
+          "$d"*)
+            sudo mv "$f" "$DISABLED_DIR"/ &&
+              echo "  disabled unreachable source: $(basename "$f")"
+            disabled=1
+            break 2
+            ;;
+        esac
+      done
+    done
   done
+  [ "$disabled" = 1 ]
+}
+
+echo "== apt index =="
+# The image ships a stale package list, so every .deb URL 404s until the list
+# refreshes. Refresh once, up front, before anything needs apt. Judge the result
+# by whether the install below works, never by this exit code: an unreachable
+# third-party repo makes `apt-get update` exit non-zero even when every Ubuntu
+# list refreshed fine. Skipped when nothing needs apt, so a warm container is fast.
+if [ ! -x "$(find_webkit_browser)" ] || ! command -v ffmpeg >/dev/null; then
   sudo apt-get update >/tmp/verify-aptupd.log 2>&1
+  if disable_unreachable_sources /tmp/verify-aptupd.log; then
+    sudo apt-get update >/tmp/verify-aptupd.log 2>&1
+  fi
   echo "  refreshed $(grep -cE '^(Hit|Get)' /tmp/verify-aptupd.log) lists"
 else
   echo "  skipped: webkit and ffmpeg are already present"
 fi
 
-echo "== WebKit (webkit2gtk-driver + xvfb) =="
-if [ -x "$WEBKIT" ] && command -v WebKitWebDriver >/dev/null && command -v xvfb-run >/dev/null; then
-  echo "  present: $(WebKitWebDriver --version 2>/dev/null | head -1)"
+echo "== WebKit (webkit driver + xvfb) =="
+WEBKIT="$(find_webkit_browser)"
+if [ -n "$WEBKIT" ] && [ -x "$WEBKIT" ] && command -v WebKitWebDriver >/dev/null && command -v xvfb-run >/dev/null; then
+  echo "  present: $WEBKIT"
 else
-  sudo apt-get install -y webkit2gtk-driver xvfb >/tmp/verify-apt.log 2>&1
-  if [ -x "$WEBKIT" ]; then
+  # The driver package is renamed across releases, so install whichever one this
+  # index actually offers rather than assuming today's name.
+  for pkg in webkit2gtk-driver webkitgtk-6.0-driver; do
+    apt-cache show "$pkg" >/dev/null 2>&1 || continue
+    echo "  installing $pkg"
+    sudo apt-get install -y "$pkg" xvfb >/tmp/verify-apt.log 2>&1
+    WEBKIT="$(find_webkit_browser)"
+    [ -n "$WEBKIT" ] && [ -x "$WEBKIT" ] && break
+  done
+  if [ -n "$WEBKIT" ] && [ -x "$WEBKIT" ]; then
     echo "  installed: $WEBKIT"
   else
-    echo "  BLOCKED: apt could not install webkit2gtk-driver (see /tmp/verify-apt.log)"
-    grep -iE '403|forbidden|not in allowlist|could not resolve' /tmp/verify-apt.log | head -3
+    echo "  BLOCKED: apt could not install a webkit driver (see /tmp/verify-apt.log)"
+    grep -iE '403|forbidden|not in allowlist|could not resolve|404' /tmp/verify-apt.log 2>/dev/null | head -3
     status=1
   fi
 fi
@@ -74,7 +121,8 @@ else
 fi
 
 echo "== summary =="
-[ -x "$WEBKIT" ] && echo "  webkit: UP" || echo "  webkit: DOWN"
+WEBKIT="$(find_webkit_browser)"
+[ -n "$WEBKIT" ] && [ -x "$WEBKIT" ] && echo "  webkit: UP ($WEBKIT)" || echo "  webkit: DOWN"
 [ -x "$FF_BIN" ] && echo "  gecko:  UP" || echo "  gecko:  DOWN"
 echo "  blink:  UP (Playwright Chromium)"
 exit $status
