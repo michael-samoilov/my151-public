@@ -1,0 +1,1096 @@
+{
+  "state": {
+    "name": "Kanto League",
+    "cards": [
+      {
+        "type": "rock",
+        "theme": "Kanto Rock Types",
+        "lines": [
+          {
+            "branch": [
+              95,
+              208
+            ],
+            "boundaries": [
+              1,
+              12
+            ]
+          },
+          {
+            "branch": [
+              74,
+              75,
+              76
+            ],
+            "boundaries": [
+              1,
+              3,
+              5
+            ]
+          },
+          {
+            "branch": [
+              138,
+              139
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              142
+            ],
+            "boundaries": [
+              1
+            ]
+          },
+          {
+            "branch": [
+              140,
+              141
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              111,
+              112,
+              464
+            ],
+            "boundaries": [
+              1,
+              7,
+              12
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 95,
+        "tmMoveId": 157,
+        "badgeName": "Boulder",
+        "partnerId": 438,
+        "legends": [],
+        "legend": null,
+        "powerup": {
+          "seat": 4,
+          "kind": "mega",
+          "index": 0
+        }
+      },
+      {
+        "type": "water",
+        "theme": "Misty's tidal power",
+        "lines": [
+          {
+            "branch": [
+              120,
+              121
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              349,
+              350
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              194,
+              195
+            ],
+            "boundaries": [
+              1,
+              3
+            ]
+          },
+          {
+            "branch": [
+              131
+            ],
+            "boundaries": [
+              1
+            ]
+          },
+          {
+            "branch": [
+              170,
+              171
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          },
+          {
+            "branch": [
+              418,
+              419
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 121,
+        "tmMoveId": 57,
+        "badgeName": "Cascade",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": null
+      },
+      {
+        "type": "electric",
+        "theme": "Lt. Surge's lightning",
+        "lines": [
+          {
+            "branch": [
+              172,
+              25,
+              26
+            ],
+            "boundaries": [
+              1,
+              2,
+              4
+            ]
+          },
+          {
+            "branch": [
+              417
+            ],
+            "boundaries": [
+              1
+            ]
+          },
+          {
+            "branch": [
+              239,
+              125,
+              466
+            ],
+            "boundaries": [
+              1,
+              5,
+              6
+            ]
+          },
+          {
+            "branch": [
+              309,
+              310
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          },
+          {
+            "branch": [
+              81,
+              82,
+              462
+            ],
+            "boundaries": [
+              1,
+              4,
+              6
+            ]
+          },
+          {
+            "branch": [
+              100,
+              101
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 26,
+        "tmMoveId": 85,
+        "badgeName": "Thunder",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": null
+      },
+      {
+        "type": "grass",
+        "theme": "Erika's fragrant garden",
+        "lines": [
+          {
+            "branch": [
+              114,
+              465
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              69,
+              70,
+              71
+            ],
+            "boundaries": [
+              1,
+              3,
+              5
+            ]
+          },
+          {
+            "branch": [
+              43,
+              44,
+              182
+            ],
+            "boundaries": [
+              1,
+              3,
+              5
+            ]
+          },
+          {
+            "branch": [
+              406,
+              315,
+              407
+            ],
+            "boundaries": [
+              1,
+              3,
+              6
+            ]
+          },
+          {
+            "branch": [
+              273,
+              274,
+              275
+            ],
+            "boundaries": [
+              1,
+              2,
+              4
+            ]
+          },
+          {
+            "branch": [
+              187,
+              188,
+              189
+            ],
+            "boundaries": [
+              1,
+              2,
+              4
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 465,
+        "tmMoveId": 202,
+        "badgeName": "Rainbow",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": null
+      },
+      {
+        "type": "poison",
+        "theme": "Janine's ninja poisons",
+        "lines": [
+          {
+            "branch": [
+              48,
+              49
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          },
+          {
+            "branch": [
+              167,
+              168
+            ],
+            "boundaries": [
+              1,
+              3
+            ]
+          },
+          {
+            "branch": [
+              109,
+              110
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              451,
+              452
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              41,
+              42,
+              169
+            ],
+            "boundaries": [
+              1,
+              3,
+              6
+            ]
+          },
+          {
+            "branch": [
+              453,
+              454
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 49,
+        "tmMoveId": 188,
+        "badgeName": "Soul",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": null
+      },
+      {
+        "type": "psychic",
+        "theme": "Sabrina's psychic will",
+        "lines": [
+          {
+            "branch": [
+              63,
+              64,
+              65
+            ],
+            "boundaries": [
+              1,
+              2,
+              5
+            ]
+          },
+          {
+            "branch": [
+              133,
+              196
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              439,
+              122
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          },
+          {
+            "branch": [
+              238,
+              124
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          },
+          {
+            "branch": [
+              360,
+              202
+            ],
+            "boundaries": [
+              1,
+              3
+            ]
+          },
+          {
+            "branch": [
+              280,
+              281,
+              475
+            ],
+            "boundaries": [
+              1,
+              3,
+              6
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 65,
+        "tmMoveId": 94,
+        "badgeName": "Marsh",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": null
+      },
+      {
+        "type": "fire",
+        "theme": "Blaine's burning quiz",
+        "lines": [
+          {
+            "branch": [
+              240,
+              126,
+              467
+            ],
+            "boundaries": [
+              1,
+              5,
+              6
+            ]
+          },
+          {
+            "branch": [
+              77,
+              78
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              218,
+              219
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              322,
+              323
+            ],
+            "boundaries": [
+              1,
+              5
+            ]
+          },
+          {
+            "branch": [
+              324
+            ],
+            "boundaries": [
+              1
+            ]
+          },
+          {
+            "branch": [
+              228,
+              229
+            ],
+            "boundaries": [
+              1,
+              3
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 467,
+        "tmMoveId": 53,
+        "badgeName": "Volcano",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": null
+      },
+      {
+        "type": "none",
+        "theme": "Blue's Viridian challenge",
+        "lines": [
+          {
+            "branch": [
+              16,
+              17,
+              18
+            ],
+            "boundaries": [
+              1,
+              2,
+              6
+            ]
+          },
+          {
+            "branch": [
+              111,
+              112,
+              464
+            ],
+            "boundaries": [
+              1,
+              7,
+              6
+            ]
+          },
+          {
+            "branch": [
+              246,
+              247,
+              248
+            ],
+            "boundaries": [
+              1,
+              4,
+              10
+            ]
+          },
+          {
+            "branch": [
+              66,
+              67,
+              68
+            ],
+            "boundaries": [
+              1,
+              4,
+              6
+            ]
+          },
+          {
+            "branch": [
+              58,
+              59
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              102,
+              103
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 18,
+        "tmMoveId": 63,
+        "badgeName": "Earth",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": null
+      },
+      {
+        "type": "psychic",
+        "theme": "Will's practised mind",
+        "lines": [
+          {
+            "branch": [
+              177,
+              178
+            ],
+            "boundaries": [
+              1,
+              3
+            ]
+          },
+          {
+            "branch": [
+              280,
+              281,
+              282
+            ],
+            "boundaries": [
+              1,
+              3,
+              4
+            ]
+          },
+          {
+            "branch": [
+              238,
+              124
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          },
+          {
+            "branch": [
+              79,
+              80
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              325,
+              326
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          },
+          {
+            "branch": [
+              436,
+              437
+            ],
+            "boundaries": [
+              1,
+              5
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 178,
+        "tmMoveId": 248,
+        "badgeName": "",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": null
+      },
+      {
+        "type": "poison",
+        "theme": "Koga's ninja arts",
+        "lines": [
+          {
+            "branch": [
+              41,
+              42,
+              169
+            ],
+            "boundaries": [
+              1,
+              3,
+              6
+            ]
+          },
+          {
+            "branch": [
+              48,
+              49
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          },
+          {
+            "branch": [
+              88,
+              89
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              316,
+              317
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          },
+          {
+            "branch": [
+              434,
+              435
+            ],
+            "boundaries": [
+              1,
+              5
+            ]
+          },
+          {
+            "branch": [
+              453,
+              454
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 169,
+        "tmMoveId": 92,
+        "badgeName": "",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": null
+      },
+      {
+        "type": "fighting",
+        "theme": "Bruno's iron body",
+        "lines": [
+          {
+            "branch": [
+              66,
+              67,
+              68
+            ],
+            "boundaries": [
+              1,
+              4,
+              6
+            ]
+          },
+          {
+            "branch": [
+              447,
+              448
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              236,
+              237
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          },
+          {
+            "branch": [
+              296,
+              297
+            ],
+            "boundaries": [
+              1,
+              3
+            ]
+          },
+          {
+            "branch": [
+              236,
+              106
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          },
+          {
+            "branch": [
+              236,
+              107
+            ],
+            "boundaries": [
+              1,
+              4
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 68,
+        "tmMoveId": 280,
+        "badgeName": "",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": null
+      },
+      {
+        "type": "dark",
+        "theme": "Karen's strong and beautiful",
+        "lines": [
+          {
+            "branch": [
+              198,
+              430
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              133,
+              197
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              228,
+              229
+            ],
+            "boundaries": [
+              1,
+              3
+            ]
+          },
+          {
+            "branch": [
+              215,
+              461
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              442
+            ],
+            "boundaries": [
+              1
+            ]
+          },
+          {
+            "branch": [
+              359
+            ],
+            "boundaries": [
+              1
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 430,
+        "tmMoveId": 399,
+        "badgeName": "",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": null
+      },
+      {
+        "type": "dragon",
+        "theme": "Lance's dragon mastery",
+        "lines": [
+          {
+            "branch": [
+              147,
+              148,
+              149
+            ],
+            "boundaries": [
+              1,
+              4,
+              10
+            ]
+          },
+          {
+            "branch": [
+              333,
+              334
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              371,
+              372,
+              373
+            ],
+            "boundaries": [
+              1,
+              4,
+              9
+            ]
+          },
+          {
+            "branch": [
+              443,
+              444,
+              445
+            ],
+            "boundaries": [
+              1,
+              3,
+              8
+            ]
+          },
+          {
+            "branch": [
+              129,
+              130
+            ],
+            "boundaries": [
+              1,
+              3
+            ]
+          },
+          {
+            "branch": [
+              4,
+              5,
+              6
+            ],
+            "boundaries": [
+              1,
+              2,
+              6
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 149,
+        "tmMoveId": 434,
+        "badgeName": "",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": {
+          "seat": 3,
+          "kind": "mega",
+          "index": 0
+        }
+      },
+      {
+        "type": "none",
+        "theme": "Red's silent challenge",
+        "lines": [
+          {
+            "branch": [
+              172,
+              25,
+              26
+            ],
+            "boundaries": [
+              1,
+              2,
+              12
+            ]
+          },
+          {
+            "branch": [
+              1,
+              2,
+              3
+            ],
+            "boundaries": [
+              1,
+              2,
+              4
+            ]
+          },
+          {
+            "branch": [
+              4,
+              5,
+              6
+            ],
+            "boundaries": [
+              1,
+              2,
+              6
+            ]
+          },
+          {
+            "branch": [
+              7,
+              8,
+              9
+            ],
+            "boundaries": [
+              1,
+              2,
+              6
+            ]
+          },
+          {
+            "branch": [
+              446,
+              143
+            ],
+            "boundaries": [
+              1,
+              6
+            ]
+          },
+          {
+            "branch": [
+              131
+            ],
+            "boundaries": [
+              1
+            ]
+          }
+        ],
+        "signatureSeat": 1,
+        "signatureId": 25,
+        "tmMoveId": 34,
+        "badgeName": "",
+        "partnerId": null,
+        "legends": [],
+        "legend": null,
+        "powerup": null
+      }
+    ]
+  },
+  "version": 1
+}

@@ -45,6 +45,16 @@ const BLEED = U(34);
 
 // A screenshot is a phone viewport, so its height follows from its width.
 const SHOT_ASPECT = 390 / 844;
+/**
+ * Corner radius as a share of the screenshot's width.
+ *
+ * A phone's own proportion, not this app's card radius: the shot is a picture
+ * of a phone screen, so its corners should read as that phone's. An iPhone 14
+ * rounds 47.3pt on a 390pt screen. The radius is applied here rather than baked
+ * into the asset, so one flat rectangle serves the 110px phone card and the
+ * 263px desktop card alike.
+ */
+const PHONE_RADIUS = 0.121;
 
 /** The fan: back card lower and further left, and turned a little more. */
 const FAN = [
@@ -242,7 +252,7 @@ function Artwork({ tool }: { tool: Tool }) {
       width: `calc(${U(SHOT_W)} * var(--art))`,
       transform: `rotate(${f.tilt}deg)`,
       transformOrigin: '0 0',
-      borderRadius: `calc(${U(SHOT_W)} * var(--art) * 0.09)`,
+      borderRadius: `calc(${U(SHOT_W)} * var(--art) * ${PHONE_RADIUS})`,
     };
   };
   return (

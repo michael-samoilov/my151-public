@@ -45,10 +45,13 @@ flag is set. Two of the three tool links point at slugs that do not exist yet:
 
 | Card | Links to | Exists |
 | --- | --- | --- |
-| Custom Pokédex Builder | `/` | yes — the app today |
-| Trainer Card & League Builder | `/pokemon-league-builder` | no |
-| Favorite Pokémon Picker | `/favorite-pokemon-picker` | no |
-| What's next? | opens the feedback sheet | yes |
+| Custom Region & Pokédex Builder | `/` | yes — the app today |
+| Trainer Card & League Builder | `/pokemon-league-builder` | on its own branch |
+| What should we build next? | opens the feedback sheet | yes |
+
+The favorite Pokémon picker is off the page until it is built. Adding it back is
+one entry in `useTools()`: the grid's column count, the overhang reserve, and
+whether the call to action spans a row all follow from the count.
 
 ### Getting there
 
@@ -59,21 +62,28 @@ lives in localStorage, so the full navigation loses nothing. When the page gets
 a real route, `HOME_HREF` and the constant in
 `e2e/wordmark-home.spec.ts` are the two lines that change.
 
-### The coming-soon version
+### The call to action's two shapes
 
-`?home=soon` is the same page with the favorite picker marked unbuilt: no
-screenshots, the words "Coming soon" where the artwork would be, and no link.
-The build mark stays with the feedback card, so the two unbuilt cards read as
-two different states rather than one repeated card.
+Three tools leave an orphan in the phone's two-up grid, so the call to action
+fills that row on its own: a wider, shorter panel with the build mark beside its
+copy rather than above it. It is not a tool, and this is the one place the page
+says so in shape rather than in words. At the desktop breakpoint it is an
+ordinary card in a three-across rail. The two are different markup and exactly
+one mounts, through `useIsDesktop` — the same pattern the browser panel and the
+analytics drilldown already use.
 
-The overhang reserve belongs to the artwork, not the card: a card with
-screenshots reserves room above itself for them to pop into, a card without
-reserves nothing. Panels still line up across a row because each cell stretches
-to the row's height and its panel sits at the bottom. So a row where no card has
-artwork is simply shorter — in this version the second row sits a plain grid gap
-below the first on phone and tablet — and when the picker goes live, its card
-gains screenshots and the row drops back down on its own. The card order never
-changes.
+### Where the overhang comes from
+
+The room above a panel belongs to the artwork, not to the card, so a row with no
+artwork in it simply sits higher. That is how the call-to-action row closes the
+gap under the tools today, and how it drops back down by itself when the
+favorite picker arrives with screenshots of its own.
+
+The reserve is shared across a row, though. One card keeping room it does not
+need is the price of every panel in that row sharing a top edge, and that edge
+is what puts the first line of every title on one baseline. Alignment has to be
+structural: the app ships in eight languages, and a translated title wraps
+differently, so copy tuned to equal line counts in English cannot hold it.
 
 The slugs come from `../HANDOFF.md` and `../league-builder/DECISIONS.md`. Give
 the page a real route only when the tools it routes to are ready. That move also
@@ -87,8 +97,8 @@ breakpoint only picks how many cards fit in a row; the card scales itself. That
 is the container-relative knob CLAUDE.md sanctions, not a `vw` clamp — a `vw`
 clamp would fight the root font-size and shrink under an iOS pinch-zoom.
 
-Each cell reserves its own overhang with `padding-top`, so a card can never land
-on the one above it however the grid reflows.
+Each row reserves its overhang with `padding-top` on the cells in it, so a card
+can never land on the one above it however the grid reflows.
 
 The ratios match the generator's, written against the same 166-unit card, so the
 two stay comparable.
@@ -96,8 +106,9 @@ two stay comparable.
 ### Two things that are measured, not chosen
 
 **The h1 size.** 21px is the largest whole pixel that keeps
-"Make a custom Pokédex, pick favorite Pokémon, and more" to two lines at 320px,
-the narrowest width the e2e projects cover; 22px spills to three. In the split
+"Make a custom Pokédex, build a league, and more" to two lines at 320px, the
+narrowest width the e2e projects cover; 22px spills to three. The copy is
+measured too: the longer "build a gym leader league" ran to three lines there. In the split
 hero the h1 gets a 373px column at 1024px, where anything over 1.75rem runs to
 four lines, so the large size waits for `xl`. Re-measure both if the copy
 changes.
@@ -120,24 +131,57 @@ node docs/future-tools/home-page/capture-shots.mjs          # capture them all
 node docs/future-tools/home-page/capture-shots.mjs dex      # just one
 ```
 
-Three things it settles, so nobody has to do them by hand:
+Five things it settles, so nobody has to do them by hand:
 
 - **No chrome to crop.** A headless viewport is the page and nothing else — no
   URL bar, no notch, no clock or battery. A capture from a real phone has all
   three and needs cropping; this has none.
+- **The app's own headers, cut.** The wordmark bar and the per-page bar under it
+  are chrome too, and they are in the viewport. The capture measures where they
+  end and starts below them, in a viewport a phone's height taller, so what is
+  left is exactly a phone's worth of content. `scrollTo` names a heading to
+  bring to the top of that frame — the analytics shot uses it to start at the
+  type charts rather than at What's Missing.
+- **Edge to edge.** Every shot is taken at a phone's width, so the page lays
+  itself out for a phone and nothing is cut off at the sides. The assets that
+  predate this were a wider render cropped to a phone's shape, which read as
+  zoomed in.
 - **Corners stay out of the image.** The card rounds them at render time with
   `border-radius` and `overflow: hidden`, scaled to the card, so one flat
   rectangle serves the 110px phone card and the 263px desktop card alike.
   Baking them in would fix the radius to one size and leave a hard edge at every
-  other. Every asset is a plain rectangle today; all four corners are opaque.
+  other. `PHONE_RADIUS` in `HomePage.tsx` holds the proportion, and it is a
+  phone's — 47.3pt on a 390pt screen — not this app's card radius, because the
+  shot is a picture of a phone screen.
 - **Enough resolution.** The widest card is desktop's three-across at 1440:
   409px, showing 263 CSS px of screenshot, which wants 789 device px on a 3x
-  display. `OUT_WIDTH` is 800. The assets that predate this script are 286px
-  wide and soften on a retina desktop.
+  display. `OUT_WIDTH` is 800, captured at 3x and resampled once. The assets
+  that predate this script are 286px wide and soften on a retina desktop.
+
+### The two league shots
+
+The league builder is still on `claude/pokemon-league-builder-soqxj6`, so the
+script checks that branch out into `.league-shot-tree/`, builds it, and serves
+it beside this one. Once `pokemon-league-builder.html` is in this tree the
+worktree is skipped and both apps come from the same build.
+
+Those two shots are the PNGs the app exports, not the app: a trainer card is
+made to be shared as an image, so the image is the honest thing to show. The
+export is shorter than a phone in proportion, so the frame keeps the app's own
+page colour under it — none of which shows, because the card clips every shot at
+its bottom edge, well above where the export ends.
+
+The state behind them is `league-fixture.json`, written into the league store's
+persisted key before the app boots. A fixture rather than the app's own Kanto
+seed, because that seed deliberately leaves two rows blank to keep the empty
+state in front of whoever is working on the page. The fixture is that seed with
+the vacancies filled, Brock's card as the shot wants it, and the champion
+carrying neither a Mega nor a legendary. Nothing in `src/` is patched to take
+the shot.
 
 To add or change a shot, edit the `SHOTS` map: `url` carries whatever query the
-state needs (`?demo=151` seeds a full Pokédex), and `nav` names the view tab to
-click first. Nothing else changes.
+state needs (`?demo=151` seeds a full Pokédex), `nav` names the view tab to press
+first, and `scrollTo` names a heading to bring to the top. Nothing else changes.
 
 ### Proving it
 
@@ -148,9 +192,15 @@ click first. Nothing else changes.
 npx playwright test e2e/sweeps/home-sweep.spec.ts --project=desktop
 ```
 
-It checks horizontal overflow, the footer sitting below the fold,
-card-on-card overlap, one-line headings, blurb
-clipping, the bare strip at each card's right edge, artwork landing on the card
-above, the build mark's air above and below, hero copy inside the frame, and
-that `--art` resolves to what its band intends — that last one because the
+It checks horizontal overflow, the footer sitting below the fold, panels in a
+row sharing a top edge, card-on-card overlap, the call to action having exactly
+one shape per band, one-line headings, blurb clipping, the bare strip at each
+card's right edge, artwork landing on the card above or running off the window's
+left edge, the build mark sitting centred, hero copy inside the frame, and that
+the page gutter resolves to what its band intends — that last one because the
 breakpoint inversion above is invisible to every geometric check.
+
+Seven mutations of the page each turn it red: an unshared overhang reserve, a
+call to action that stops spanning, one that mounts on desktop, screenshots
+grown until the red strip closes, a bare `sm:` gutter, an off-centre build mark,
+and artwork popped far enough left to leave the window.
