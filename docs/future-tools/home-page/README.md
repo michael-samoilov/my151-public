@@ -109,6 +109,36 @@ rule on this page is `sm:max-md:`, never a bare `sm:`, so the two bands cannot
 overlap. Nothing else in `src/` pairs `sm:` and `md:` on one property today, but
 anything that does will hit this.
 
+### The screenshots
+
+`capture-shots.mjs` takes them from the real app. It builds, serves, drives a
+headless Chromium at the phone viewport, and writes WebP into `src/assets/home/`.
+
+```
+node docs/future-tools/home-page/capture-shots.mjs --list   # what each shot is
+node docs/future-tools/home-page/capture-shots.mjs          # capture them all
+node docs/future-tools/home-page/capture-shots.mjs dex      # just one
+```
+
+Three things it settles, so nobody has to do them by hand:
+
+- **No chrome to crop.** A headless viewport is the page and nothing else — no
+  URL bar, no notch, no clock or battery. A capture from a real phone has all
+  three and needs cropping; this has none.
+- **Corners stay out of the image.** The card rounds them at render time with
+  `border-radius` and `overflow: hidden`, scaled to the card, so one flat
+  rectangle serves the 110px phone card and the 263px desktop card alike.
+  Baking them in would fix the radius to one size and leave a hard edge at every
+  other. Every asset is a plain rectangle today; all four corners are opaque.
+- **Enough resolution.** The widest card is desktop's three-across at 1440:
+  409px, showing 263 CSS px of screenshot, which wants 789 device px on a 3x
+  display. `OUT_WIDTH` is 800. The assets that predate this script are 286px
+  wide and soften on a retina desktop.
+
+To add or change a shot, edit the `SHOTS` map: `url` carries whatever query the
+state needs (`?demo=151` seeds a full Pokédex), and `nav` names the view tab to
+click first. Nothing else changes.
+
 ### Proving it
 
 `e2e/sweeps/home-sweep.spec.ts` drives the real page at 20 widths from 320 to
