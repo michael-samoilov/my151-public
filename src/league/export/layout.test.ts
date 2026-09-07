@@ -159,21 +159,24 @@ describe('export layout', () => {
   });
 
   it('mirrors every band overhang across the picture', () => {
-    // A band's label starts on the rail, so the band begins one label-padding
-    // left of it. That overhang is mirrored at the other end: the two bands
-    // sit the same distance in from their picture's edges.
+    // A band's corner curve ends on the rail, so the band begins one radius
+    // left of it and its label lands on the rail. That overhang is mirrored
+    // at the other end: the band sits the same distance in from each edge.
     const card = {
-      left: L.FRAME + L.PADX + L.RAIL - L.BAND_PADX,
-      right: L.FRAME + L.PADX + L.CARD_W - 2 * L.PADX - L.RAIL + L.BAND_PADX,
+      left: L.FRAME + L.PADX + L.RAIL - L.BAND_R,
+      right: L.FRAME + L.PADX + L.CARD_W - 2 * L.PADX - L.RAIL + L.BAND_R,
     };
     expect(L.CARD_IMG_W - card.right).toBeCloseTo(card.left, 6);
     expect(card.left).toBeGreaterThan(L.FRAME);
     const home = {
-      left: L.HPADX + L.HOME_RAIL - L.HOME_BAND_PADX,
-      right: L.HPADX + L.HOME_INNER - L.HOME_RAIL + L.HOME_BAND_PADX,
+      left: L.HPADX + L.HOME_RAIL - L.HOME_R,
+      right: L.HPADX + L.HOME_INNER - L.HOME_RAIL + L.HOME_R,
     };
     expect(L.HOME_W - home.right).toBeCloseTo(home.left, 6);
     expect(home.left).toBeGreaterThan(0);
+    // The overhang is shorter than it would be at the old label padding.
+    expect(L.BAND_R).toBeLessThan(8 * L.K);
+    expect(L.HOME_R).toBeLessThan(8 * L.K2);
   });
 
   it('sets the home glyph cell three by two', () => {
