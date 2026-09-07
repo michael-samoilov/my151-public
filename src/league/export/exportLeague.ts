@@ -568,9 +568,8 @@ function drawBand(
   ox: number,
   y: number,
 ): void {
-  const inset = 3 * L.K;
-  const x = ox + inset;
-  const w = L.CARD_W - 2 * L.PADX - 2 * inset;
+  const x = ox + L.RAIL;
+  const w = L.CARD_W - 2 * L.PADX - 2 * L.RAIL;
   ctx.save();
   ctx.fillStyle = shades.band;
   roundRect(ctx, x, y, w, L.BAND, L.BAND_R);
@@ -600,14 +599,13 @@ function drawGlyphCell(
   x: number,
   y: number,
 ): void {
-  const inset = 3 * L.K;
-  const w = span * L.COL - 2 * inset;
+  const w = span * L.COL - 2 * L.RAIL;
   const h = L.ROW - 2 * L.INY;
   ctx.save();
   ctx.fillStyle = shades.cell;
-  roundRect(ctx, x + inset, y + L.INY, w, h, L.CELL_R);
+  roundRect(ctx, x + L.RAIL, y + L.INY, w, h, L.CELL_R);
   ctx.fill();
-  const cx = x + inset + w / 2;
+  const cx = x + L.RAIL + w / 2;
   const cy = y + L.INY + h / 2;
   const gap = 2 * L.K;
   if (row === 1) {
@@ -654,7 +652,7 @@ function drawGymCard(
   const innerW = L.CARD_W - 2 * L.PADX;
   const right = ox + innerW;
 
-  // --- the header bar: the title in white, from where the band labels start ---
+  // --- the header bar: the title in white, from the grid's own left rail ---
   ctx.save();
   ctx.textBaseline = 'alphabetic';
   ctx.font = font(L.TITLE_PX, 800);
@@ -688,15 +686,16 @@ function drawGymCard(
   }
   ctx.restore();
 
-  // --- the theme row: THEME, then a white field to the right edge ---
+  // --- the theme row: THEME on the rail, then a white field to the right ---
   const fieldTop = L.BAR_H + L.THEME_GAP;
   ctx.save();
   ctx.textBaseline = 'alphabetic';
   ctx.font = font(L.THEME_LABEL_PX, 800);
   const labelTrack = 0.1 * L.THEME_LABEL_PX;
   ctx.fillStyle = shades.band;
-  fillTracked(ctx, 'THEME', ox, fieldTop + L.FIELD_H / 2 + capHeight(ctx) / 2, labelTrack);
-  const fieldX = ox + trackedWidth(ctx, 'THEME', labelTrack) + L.LABEL_GAP;
+  const labelX = ox + L.RAIL;
+  fillTracked(ctx, 'THEME', labelX, fieldTop + L.FIELD_H / 2 + capHeight(ctx) / 2, labelTrack);
+  const fieldX = labelX + trackedWidth(ctx, 'THEME', labelTrack) + L.LABEL_GAP;
   ctx.fillStyle = '#ffffff';
   roundRect(ctx, fieldX, fieldTop, right - fieldX, L.FIELD_H, L.FIELD_R);
   ctx.fill();

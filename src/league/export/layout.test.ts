@@ -3,6 +3,7 @@ import * as L from './layout';
 import { showcasePair, exportRow, vacantRow } from './exportLeague';
 import { emptyCard, type GymCard } from '../store/useLeagueStore';
 import { makePlacedLine } from '../model/engine';
+import { TEAM_SIZES } from '../model/constants';
 import { placeSlot } from '../slotLayout';
 
 /**
@@ -55,10 +56,21 @@ describe('export layout', () => {
     }
   });
 
+  it('starts the title, the theme label and the grid on one left rail', () => {
+    // The header block and the grid share a left edge. A band and a glyph
+    // cell are drawn one rail in from the card's padding, and a row that
+    // fills all seven columns leaves no lead, so its glyph cell is the
+    // leftmost on the card. The title and THEME start from the same x.
+    expect(L.BAR_TEXT_X).toBe(L.PADX + L.RAIL);
+    const leads = TEAM_SIZES.map((size, i) => 7 - size - (L.GLYPH_SPAN[i + 1] ?? 1));
+    expect(Math.min(...leads)).toBe(0);
+    expect(L.RAIL).toBeCloseTo(L.INX, 1);
+  });
+
   it('fits the title row inside the bar, with the ringed badge inside it', () => {
     // At 0.7em a glyph, wider than Inter's extrabold runs, the whole row
-    // still fits from where the band labels start: the name, the break, the
-    // badge, and "Type Specialist".
+    // still fits from the rail: the name, the break, the badge, and
+    // "Type Specialist".
     const words = (L.CARD_TITLE.length + L.SPECIALIST.length) * 0.7 * L.TITLE_PX;
     const row = words + 0.4 * L.TITLE_PX + L.TITLE_BADGE_W + 2 * L.TITLE_GAP + L.TITLE_WORD_GAP;
     expect(L.BAR_TEXT_X + row).toBeLessThan(L.CARD_W - L.PADX);
@@ -139,11 +151,10 @@ describe('export layout', () => {
     // A slot ends one inset short of its last column; the glyph cell in the
     // next column starts its own inset in. The two never touch. An earlier
     // version added the card's padding to the slot and ran it 4px over.
-    const glyphInset = 3 * L.K;
     for (const [from, to] of [[1, 3], [1, 2]] as const) {
       const slot = L.slotX(from, to);
       expect(slot.left).toBe((from - 1) * L.COL + L.INX);
-      expect(slot.left + slot.width).toBeLessThan(to * L.COL + glyphInset);
+      expect(slot.left + slot.width).toBeLessThan(to * L.COL + L.RAIL);
     }
   });
 

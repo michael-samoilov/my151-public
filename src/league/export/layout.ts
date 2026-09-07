@@ -72,6 +72,15 @@ export const INY = 11;
 /** Horizontal inset of a cell inside its column. */
 export const INX = 5.5;
 
+/**
+ * The left rail.
+ *
+ * A band, a glyph cell and a slot all start one inset in from the card's
+ * padding, so the grid reads against a single left edge rather than three.
+ * The header block starts there too: `BAR_TEXT_X` below, and the THEME label.
+ */
+export const RAIL = 3 * K;
+
 export const CELL_R = 11;
 export const BAND_R = 9;
 export const SLOT_R = 15;
@@ -119,13 +128,13 @@ export const HDR_GAP = 16;
  * The header bar: the band shade, edge to edge across the top of the picture
  * with square corners, and the title row inside it in white. It is the
  * picture's own top edge rather than a card on it. A card with no type takes
- * the site's red. The title starts where the band labels start, so it lines
- * up with GYM LEADER TEAM under it, and the badge wears a white ring so the
- * pill reads on the bar.
+ * the site's red. The title starts on the rail, so it shares a left edge with
+ * the bands and the leftmost glyph cells under it, and the badge wears a
+ * white ring so the pill reads on the bar.
  */
 export const BAR_PADY = 20;
 export const BAR_H = TITLE_ROW_H + 2 * BAR_PADY;
-export const BAR_TEXT_X = PADX + 3 * K + 8 * K;
+export const BAR_TEXT_X = PADX + RAIL;
 export const BAR_RING = 2;
 /** The bar, the theme field and their gaps: what sits above the grid. */
 export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
