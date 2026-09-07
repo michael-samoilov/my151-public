@@ -20,12 +20,12 @@ export const K = 96 / 52;
 // ---------- the picture, shared by both exports ----------
 
 /**
- * One width for both pictures.
+ * One box for both pictures.
  *
  * Each picture is its content, edge to edge: no page around it and no card
- * chrome, so nothing reads as a card floating on a blank ground. Someone
- * flipping between the league and a trainer card in their photo gallery sees
- * one width; each picture is as tall as its own content.
+ * chrome, so nothing reads as a card floating on a blank ground. The league is
+ * the box wide; the trainer card wears a frame either side of it, so it runs
+ * 24px wider. Each picture is as tall as its own content.
  *
  * The box is the league's natural width at 1× sprites. The trainer card's
  * columns are derived from it below.
@@ -129,6 +129,14 @@ export const BAR_TEXT_X = PADX + 3 * K + 8 * K;
 export const BAR_RING = 2;
 /** The bar, the theme field and their gaps: what sits above the grid. */
 export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
+
+/**
+ * The frame: the bar's own colour down both sides and along the bottom, with
+ * the bar as the top edge, so the picture reads as one bordered card. The
+ * content keeps its size and the picture grows by the frame. The league stays
+ * bare: a frame in its spacer red was tried and turned down.
+ */
+export const FRAME = 12;
 
 /**
  * The showcase sprite size: 2×, for a pair and for one.
@@ -259,8 +267,12 @@ export const VACANCY: Record<string, string> = {
 
 // ---------- the pictures: one width, each as tall as its content ----------
 
-/** The trainer card: the bar and the theme field, the grid, and the credit. */
-export const CARD_IMG_H = TITLE_BLOCK_H + gridHeight() + FOOT;
+/**
+ * The trainer card: the frame either side; the bar and the theme field, the
+ * grid, and the credit; and the frame's bottom edge.
+ */
+export const CARD_IMG_W = CARD_W + 2 * FRAME;
+export const CARD_IMG_H = TITLE_BLOCK_H + gridHeight() + FOOT + FRAME;
 
 /**
  * The league: its padding, the name line, four bands with their gaps,

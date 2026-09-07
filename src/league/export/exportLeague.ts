@@ -641,24 +641,26 @@ function drawGymCard(
   const shades = cardShades(card.type);
   const type = card.type !== 'none' ? card.type : null;
 
-  // The picture is the card's content on its own tint, edge to edge: no page
-  // and no card chrome, so nothing reads as a card floating on a blank ground.
+  // The frame and the bar are one colour: the whole picture first, then the
+  // card's own tint inside the frame and under the bar. No page and no card
+  // chrome beyond that, so nothing reads as a card floating on a blank ground.
+  ctx.fillStyle = type ? shades.band : RED;
+  ctx.fillRect(0, 0, L.CARD_IMG_W, L.CARD_IMG_H);
   ctx.fillStyle = shades.base;
-  ctx.fillRect(0, 0, L.CARD_W, L.CARD_IMG_H);
+  ctx.fillRect(L.FRAME, L.BAR_H, L.CARD_W, L.CARD_IMG_H - L.BAR_H - L.FRAME);
 
-  const ox = L.PADX;
+  const fx = L.FRAME;
+  const ox = fx + L.PADX;
   const innerW = L.CARD_W - 2 * L.PADX;
   const right = ox + innerW;
 
-  // --- the header bar: the band shade across the top, the title in white ---
-  ctx.fillStyle = type ? shades.band : RED;
-  ctx.fillRect(0, 0, L.CARD_W, L.BAR_H);
+  // --- the header bar: the title in white, from where the band labels start ---
   ctx.save();
   ctx.textBaseline = 'alphabetic';
   ctx.font = font(L.TITLE_PX, 800);
   const titleBase = L.BAR_H / 2 + capHeight(ctx) / 2;
   ctx.fillStyle = '#ffffff';
-  let x = L.BAR_TEXT_X;
+  let x = fx + L.BAR_TEXT_X;
   fillTracked(ctx, L.CARD_TITLE, x, titleBase, L.TITLE_TRACK);
   x += trackedWidth(ctx, L.CARD_TITLE, L.TITLE_TRACK) + L.TITLE_GAP;
   if (type) {
@@ -757,7 +759,7 @@ function drawGymCard(
   drawTmSlot(ctx, card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId), shades, images, ox, gridY);
   drawBadgeSlot(ctx, card.badgeName, shades, ox, gridY);
 
-  drawCredit(ctx, L.CARD_W / 2, gridY + L.gridHeight() + L.FOOT / 2, L.CREDIT_PX, L.CARD_CREDIT_PREFIX);
+  drawCredit(ctx, fx + L.CARD_W / 2, gridY + L.gridHeight() + L.FOOT / 2, L.CREDIT_PX, L.CARD_CREDIT_PREFIX);
 }
 
 // ---------- the league home ----------
@@ -965,7 +967,7 @@ async function render(
 /** One trainer's card as a PNG. */
 export async function exportGymCard(card: GymCard): Promise<Blob> {
   const images = await loadAll(cardImageUrls(card));
-  return render(L.CARD_W, L.CARD_IMG_H, (ctx) => drawGymCard(ctx, card, images));
+  return render(L.CARD_IMG_W, L.CARD_IMG_H, (ctx) => drawGymCard(ctx, card, images));
 }
 
 /** The league summary as a PNG, at whichever team toggle is on screen. */

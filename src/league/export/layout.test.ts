@@ -16,13 +16,15 @@ describe('export layout', () => {
     expect(L.CARD_W).toBe(7 * L.COL + 2 * L.PADX);
   });
 
-  it('draws both pictures at the box width, each as tall as its own content', () => {
+  it('frames the trainer card and leaves the league bare, each as tall as its content', () => {
     // The picture is the content, edge to edge: no page and no card chrome.
-    // Flipping between the two in a gallery keeps one width; each picture
-    // ends just under its own credit.
+    // The card wears a 12px frame in the bar's colour down its sides and
+    // along its bottom; the league is the bare box. Each picture ends just
+    // under its own credit, or its frame.
     expect(L.CARD_W).toBe(L.BOX_W);
     expect(L.HOME_W).toBe(L.BOX_W);
-    expect(L.CARD_IMG_H).toBe(L.TITLE_BLOCK_H + L.gridHeight() + L.FOOT);
+    expect(L.CARD_IMG_W).toBe(L.CARD_W + 2 * L.FRAME);
+    expect(L.CARD_IMG_H).toBe(L.TITLE_BLOCK_H + L.gridHeight() + L.FOOT + L.FRAME);
     expect(L.TITLE_BLOCK_H).toBe(L.BAR_H + L.THEME_GAP + L.FIELD_H + L.HDR_GAP);
     expect(L.HOME_IMG_H).toBe(
       Math.ceil(L.HPADY + L.HOME_HDR_H + 14 * L.ROW2 + 4 * L.BAND2 + 6 + L.FOOT),
@@ -44,8 +46,9 @@ describe('export layout', () => {
     // browser's own placement of the same sprite, which reads as hatching.
     // The title block above the grid is a whole height for the same reason.
     expect(Number.isInteger(L.TITLE_BLOCK_H)).toBe(true);
+    expect(Number.isInteger(L.FRAME)).toBe(true);
     for (let i = 0; i < 7; i++) {
-      expect(Number.isInteger(L.PADX + (i + 0.5) * L.COL)).toBe(true);
+      expect(Number.isInteger(L.FRAME + L.PADX + (i + 0.5) * L.COL)).toBe(true);
     }
     for (let row = 1; row <= L.ROW_COUNT; row++) {
       expect(Number.isInteger(L.gridTop() + L.rowTop(row) + L.ROW / 2)).toBe(true);
@@ -162,7 +165,7 @@ describe('export layout', () => {
 
   it('sets the credit at about six points on a phone', () => {
     // A 393pt-wide screen shows the picture fitted to its width.
-    const onScreenPt = (L.CREDIT_PX / L.CARD_W) * 393;
+    const onScreenPt = (L.CREDIT_PX / L.CARD_IMG_W) * 393;
     expect(onScreenPt).toBeGreaterThan(5.5);
     expect(onScreenPt).toBeLessThan(7);
     expect(L.CREDIT_PX * 1.5).toBeLessThan(L.FOOT);
