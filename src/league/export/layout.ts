@@ -253,6 +253,15 @@ export const TYPE_COL = 32 * K2;
 export const HOME_HDR_H = 24 * K2;
 export const HOME_R = 5 * K2;
 
+/**
+ * The home's left rail, the counterpart of the card's.
+ *
+ * A glyph cell is drawn one inset inside its row, so the section bands and
+ * the league's name start there too rather than at the row's own edge. The
+ * bands take the inset on both sides, so the picture keeps equal gutters.
+ */
+export const HOME_RAIL = 3 * K2;
+
 export const HOME_W = BOX_W;
 export const HOME_INNER = HOME_W - 2 * HPADX;
 /** The seven seats share what the glyph and type columns leave. */

@@ -158,8 +158,19 @@ describe('export layout', () => {
     }
   });
 
+  it('starts the home name, its bands and its glyph cells on one left rail', () => {
+    // The band used to run the row's full width, so it overhung the glyph
+    // cell under it. It now stops on the rail at both ends: one left edge
+    // down the picture, and the same gutter either side of it.
+    const bandLeft = L.HPADX + L.HOME_RAIL;
+    const bandRight = L.HPADX + L.HOME_INNER - L.HOME_RAIL;
+    expect(bandLeft).toBe(L.HPADX + L.HOME_RAIL);
+    expect(L.HOME_W - bandRight).toBeCloseTo(bandLeft, 6);
+    expect(L.HOME_RAIL).toBeLessThan(L.HPADX);
+  });
+
   it('sets the home glyph cell three by two', () => {
-    const inset = 3 * L.K2;
+    const inset = L.HOME_RAIL;
     const w = L.GLYPH_COL - 2 * inset;
     const h = L.ROW2 - 10 * L.K2;
     expect(w / h).toBeCloseTo(1.5, 1);

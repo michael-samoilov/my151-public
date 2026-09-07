@@ -800,12 +800,12 @@ function drawHomeRow(
   ctx.fillRect(x, y, L.HOME_INNER, L.K2);
   ctx.restore();
 
-  // The glyph cell.
-  const inset = 3 * L.K2;
+  // The glyph cell, on the rail.
   const glyphH = L.ROW2 - 10 * L.K2;
   ctx.save();
   ctx.fillStyle = cell;
-  roundRect(ctx, x + inset, y + (L.ROW2 - glyphH) / 2, L.GLYPH_COL - 2 * inset, glyphH, L.HOME_R);
+  const glyphW = L.GLYPH_COL - 2 * L.HOME_RAIL;
+  roundRect(ctx, x + L.HOME_RAIL, y + (L.ROW2 - glyphH) / 2, glyphW, glyphH, L.HOME_R);
   ctx.fill();
   ctx.restore();
   const gcx = x + L.GLYPH_COL / 2;
@@ -878,7 +878,6 @@ function drawLeagueHome(
   // The tool's own name stays off the picture. Someone who is handed it
   // wants to know whose league it is, not what drew it; the credit below
   // already says that.
-  const pad = 4 * L.K2;
   const tagSize = 9 * L.K2;
   const big = 14 * L.K2;
   ctx.save();
@@ -892,11 +891,11 @@ function drawLeagueHome(
   const track = 0.07 * tagSize;
   const tagW = trackedWidth(ctx, tag, track);
   ctx.fillStyle = MUTED;
-  fillTracked(ctx, tag, ox + L.HOME_INNER - pad - tagW, base, track);
+  fillTracked(ctx, tag, ox + L.HOME_INNER - L.HOME_RAIL - tagW, base, track);
   ctx.font = name ? font(big, 700) : `italic 400 ${big}px ${FONT_STACK}`;
   ctx.fillStyle = name ? FG : MUTED;
-  const room = L.HOME_INNER - 2 * pad - tagW - 4 * L.K2;
-  ctx.fillText(name ? ellipsize(ctx, name, room) : 'Unnamed league', ox + pad, base);
+  const room = L.HOME_INNER - 2 * L.HOME_RAIL - tagW - 4 * L.K2;
+  ctx.fillText(name ? ellipsize(ctx, name, room) : 'Unnamed league', ox + L.HOME_RAIL, base);
   ctx.restore();
   y += L.HOME_HDR_H;
 
@@ -905,13 +904,16 @@ function drawLeagueHome(
     if (section) {
       if (index !== 0) y += 2;
       ctx.save();
+      // The band stops on the rail at both ends, so it no longer overhangs
+      // the glyph cells and the picture keeps equal gutters.
       ctx.fillStyle = RED;
-      roundRect(ctx, ox, y, L.HOME_INNER, L.BAND2, L.HOME_R);
+      const bandX = ox + L.HOME_RAIL;
+      roundRect(ctx, bandX, y, L.HOME_INNER - 2 * L.HOME_RAIL, L.BAND2, L.HOME_R);
       ctx.fill();
       ctx.fillStyle = '#ffffff';
       ctx.font = font(9 * L.K2, 800);
       ctx.textBaseline = 'middle';
-      fillTracked(ctx, section, ox + 8 * L.K2, y + L.BAND2 / 2, 0.07 * 9 * L.K2);
+      fillTracked(ctx, section, bandX + 8 * L.K2, y + L.BAND2 / 2, 0.07 * 9 * L.K2);
       ctx.restore();
       y += L.BAND2;
     }
