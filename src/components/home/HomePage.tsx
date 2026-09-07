@@ -1,5 +1,6 @@
 import { Hammer } from 'lucide-react';
 import { useT } from '@/i18n';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
@@ -9,36 +10,34 @@ import dexBack from '@/assets/home/tool-dex-b.webp';
 import dexFront from '@/assets/home/tool-dex.webp';
 import leagueBack from '@/assets/home/tool-league-b.webp';
 import leagueFront from '@/assets/home/tool-league.webp';
-import favBack from '@/assets/home/tool-fav-b.webp';
-import favFront from '@/assets/home/tool-fav.webp';
 
 /**
- * The router page: four cards, one per tool.
+ * The router page: one card per tool, plus a call to action.
  *
- * Every measurement inside a card is a percentage of the card's own width, so
- * a breakpoint only picks how many cards fit in a row and the card scales
- * itself. That is `cqw` against the cell wrapper, which is the sanctioned
- * container-relative knob in CLAUDE.md — not a `vw` clamp, which would fight
- * the root font-size and shrink under an iOS pinch-zoom.
+ * The card is a red panel with the screenshots breaking out of its top and left
+ * edges, cut only by its bottom, and the copy in a caption below it. The copy
+ * sits below rather than inside because inside it needed a gradient to stay
+ * legible over the artwork, and it was capped at 9.4px by a one-line title rule.
+ * Outside, it is 14px and free to wrap.
+ *
+ * Every measurement inside a card is a percentage of the card's own width, so a
+ * breakpoint only picks how many cards fit in a row and the card scales itself.
+ * That is `cqw` against the cell wrapper, which is the container-relative knob
+ * CLAUDE.md sanctions — not a `vw` clamp, which would fight the root font-size
+ * and shrink under an iOS pinch-zoom.
  *
  * The ratios come from `docs/future-tools/home-page/build-artboards.mjs`, where
  * a 45-frame sweep proves them from 320px to 2560px. They are written here as
- * percentages of a 166-unit-wide card, the same base the generator uses, so the
- * two stay comparable.
+ * percentages of a 166-unit-wide card, the same base the generator uses.
  */
 const U = (n: number) => `${((n / 166) * 100).toFixed(3)}cqw`;
 
-const CARD_ASPECT = '166 / 104';
+/** Shorter than the artboard's 104: the copy no longer lives inside the panel. */
+const PANEL_ASPECT = '166 / 100';
 const RADIUS = U(14);
-const PAD = U(6);
-const COPY_BAND = U(52);
-const FADE = U(26);
-const TITLE = U(9.1);
-const BLURB = U(8.5);
-const COPY_GAP = '0.1875rem';
-const BLURB_BAND = `calc(${BLURB} * 2.7)`;
-const CARD_HEIGHT = U(104);
-const COPY_HEIGHT = `calc(${TITLE} * 1.15 + ${COPY_GAP} + ${BLURB_BAND})`;
+/** Caption type. Capped in px so a full-width card does not balloon it. */
+const TITLE = `min(${U(9.1)}, 19px)`;
+const BLURB = `min(${U(7.6)}, 15.6px)`;
 // Room for each screenshot's drop shadow to fall outside the clip box without
 // being sliced off at its edge. The artwork shifts by the same amount, so it
 // lands where it would have anyway.
@@ -64,103 +63,166 @@ interface Tool {
   title: string;
   blurb: string;
   shots?: [string, string];
-  /** No tool behind it yet: the card says so and does not navigate. */
-  soon?: boolean;
+}
+
+const HAMMER_TITLE = 'next';
+
+/**
+ * The tools, in the order they appear. Adding the favorite picker back is one
+ * entry here — the grid's column count and the call to action's shape both
+ * follow from the length, so nothing else changes. See `gridStyle` below.
+ */
+function useTools(): Tool[] {
+  const t = useT();
+  return [
+    {
+      key: 'dex',
+      href: '/',
+      title: t('home.dex.title'),
+      blurb: t('home.dex.blurb'),
+      shots: [dexBack, dexFront],
+    },
+    {
+      key: 'league',
+      href: '/pokemon-league-builder',
+      title: t('home.league.title'),
+      blurb: t('home.league.blurb'),
+      shots: [leagueBack, leagueFront],
+    },
+    { key: HAMMER_TITLE, title: t('home.next.title'), blurb: t('home.next.blurb') },
+  ];
 }
 
 interface CardProps {
   tool: Tool;
   onPress?: () => void;
+  /** Render as the wide bar that fills a row on its own. */
+  wide?: boolean;
+  /** Leave room above the panel for artwork to pop into. See `reserveByRow`. */
+  reserve?: boolean;
 }
+
+/** The wide bar spans both columns of the phone grid; a tall card takes one. */
+const SPAN = 'col-span-2';
 
 /**
  * One card. The cell wrapper is the query container, so everything inside sizes
- * itself off the card's own width. A card with artwork also reserves the
- * overhang above itself with `padding-top`, which is why artwork can never land
- * on the card above however the grid reflows.
+ * itself off the card's own width.
  *
- * `--art` scales the artwork against the card without touching the card itself.
- * Tablet packs the two rows closer with a smaller fan; phone and desktop run the
- * fan at full size.
+ * Cells top-align. That is what keeps the red panels in a row on one edge, and
+ * so the FIRST line of every title on one baseline, however many lines the
+ * caption below runs to. Copy can be tuned to equal line counts in English, but
+ * it cannot hold this on its own — the app ships in eight languages and a
+ * translated title wraps differently.
  */
-function Card({ tool, onPress }: CardProps) {
-  // `data-card-panel` marks the red panel itself. The cell that wraps it also
-  // carries the overhang, so a structural selector picks the wrong box — which
-  // is exactly what e2e/sweeps/home-sweep.spec.ts did until it read this.
+function Card({ tool, onPress, wide, reserve }: CardProps) {
   const panel = 'relative block w-full text-left bg-primary text-white no-underline';
-  const panelStyle = { aspectRatio: CARD_ASPECT, borderRadius: RADIUS };
-  const body = (
-    <>
-      {tool.shots ? (
-        <>
-          <Artwork tool={tool} />
-          <Gradient />
-        </>
-      ) : tool.soon ? (
-        <Soon />
-      ) : (
-        <Mark />
-      )}
-      <div
-        className="absolute flex flex-col"
-        style={{ left: PAD, right: PAD, bottom: PAD, gap: COPY_GAP }}
-      >
-        <h2
-          className="m-0 font-extrabold tracking-tight whitespace-nowrap"
-          style={{ fontSize: TITLE, lineHeight: 1.15 }}
+  const body = wide ? <WideBody tool={tool} /> : <TallBody tool={tool} />;
+  const style = wide ? undefined : { aspectRatio: PANEL_ASPECT, borderRadius: RADIUS };
+  const wideStyle = { borderRadius: `min(${U(14)}, 18px)` };
+  const inner = onPress ? (
+    <button
+      type="button"
+      onClick={onPress}
+      className={`${panel} cursor-pointer`}
+      style={wide ? wideStyle : style}
+      data-card-panel
+    >
+      {body}
+    </button>
+  ) : tool.href ? (
+    <a href={tool.href} className={panel} style={style} data-card-panel>
+      {body}
+    </a>
+  ) : (
+    <div className={panel} style={style} data-card-panel>
+      {body}
+    </div>
+  );
+
+  return (
+    <div
+      className={`flex flex-col ${wide ? SPAN : ''}`}
+      style={{ containerType: 'inline-size' }}
+    >
+      <div style={{ paddingTop: reserve ? `calc(${U(POP_TOP)} * var(--art))` : 0 }}>{inner}</div>
+      {wide ? null : <Caption tool={tool} />}
+    </div>
+  );
+}
+
+/** The panel body for a card in the grid: artwork, or the build mark. */
+function TallBody({ tool }: { tool: Tool }) {
+  return tool.shots ? (
+    <Artwork tool={tool} />
+  ) : (
+    <span className="absolute inset-0 flex items-center justify-center" data-card-badge>
+      <Hammer style={{ width: U(35), height: U(35) }} strokeWidth={2} />
+    </span>
+  );
+}
+
+/**
+ * The call to action fills a row on its own, so it takes a wider, shorter panel
+ * and sets its mark beside the copy rather than above it. It is not a tool, and
+ * this is the one place the page says so in shape rather than in words.
+ */
+function WideBody({ tool }: { tool: Tool }) {
+  return (
+    <span
+      className="flex items-center"
+      style={{ gap: U(7), padding: `${U(7.4)} ${U(8)}` }}
+      data-card-badge
+    >
+      <Hammer style={{ width: U(15), height: U(15), flex: 'none' }} strokeWidth={2} />
+      <span className="block">
+        <span
+          className="block font-bold tracking-tight"
+          style={{ fontSize: `min(${U(7.6)}, 19px)`, lineHeight: 1.2 }}
         >
           {tool.title}
-        </h2>
-        <p
-          className="m-0"
+        </span>
+        <span
+          className="block"
           style={{
-            fontSize: BLURB,
+            fontSize: `min(${U(6.4)}, 15.6px)`,
             lineHeight: 1.35,
-            // Two lines, always: a one-line blurb must not lift the title.
-            height: BLURB_BAND,
-            color: 'rgba(255, 255, 255, 0.86)',
-            textWrap: 'balance',
+            marginTop: U(1.6),
+            color: 'rgba(255, 255, 255, 0.82)',
           }}
         >
           {tool.blurb}
-        </p>
-      </div>
-    </>
+        </span>
+      </span>
+    </span>
   );
-  // The overhang reserve belongs to the artwork, not the card. A card with
-  // screenshots reserves room above itself for them to pop into; a card
-  // without reserves nothing. Panels still line up across a row because each
-  // cell is stretched to the row's height and its panel sits at the bottom —
-  // so a row where every card lacks artwork is simply shorter, and a row that
-  // mixes the two keeps one baseline. When a coming-soon tool goes live, its
-  // card gains screenshots and the row drops back down on its own.
-  const reserve = tool.shots ? `calc(${U(POP_TOP)} * var(--art))` : 0;
+}
+
+/** Ink on the page, under the panel. */
+function Caption({ tool }: { tool: Tool }) {
   return (
-    <div className="flex flex-col justify-end" style={{ containerType: 'inline-size' }}>
-      <div style={{ paddingTop: reserve }}>
-        {onPress ? (
-          <button type="button" onClick={onPress} className={`${panel} cursor-pointer`} style={panelStyle} data-card-panel>
-            {body}
-          </button>
-        ) : tool.href ? (
-          <a href={tool.href} className={panel} style={panelStyle} data-card-panel>
-            {body}
-          </a>
-        ) : (
-          <div className={panel} style={panelStyle} data-card-panel>
-            {body}
-          </div>
-        )}
-      </div>
+    <div style={{ padding: `${U(5.6)} ${U(1.7)} 0` }}>
+      <h2
+        className="m-0 font-bold tracking-tight"
+        style={{ fontSize: TITLE, lineHeight: 1.25 }}
+      >
+        {tool.title}
+      </h2>
+      <p
+        className="m-0 text-muted-foreground text-pretty"
+        style={{ fontSize: BLURB, lineHeight: 1.4, marginTop: U(3) }}
+      >
+        {tool.blurb}
+      </p>
     </div>
   );
 }
 
 /**
- * Two clip boxes, not one. Both reach past the card's top and left edges so the
- * screenshots break out there, and both stop at the card's bottom, which is the
- * only edge that cuts them. The shadows get their own box with a fade, so they
- * thin out instead of ending on a straight line at that edge.
+ * Two clip boxes, not one. Both reach past the panel's top and left edges so the
+ * screenshots break out there, and both stop at its bottom, which is the only
+ * edge that cuts them. The shadows get their own box with a fade, so they thin
+ * out instead of ending on a straight line at that edge.
  */
 function Artwork({ tool }: { tool: Tool }) {
   const box = {
@@ -185,7 +247,7 @@ function Artwork({ tool }: { tool: Tool }) {
   };
   return (
     <>
-      <div
+      <span
         style={{
           ...box,
           maskImage: `linear-gradient(to top, transparent 0, #000 ${BLEED})`,
@@ -193,22 +255,23 @@ function Artwork({ tool }: { tool: Tool }) {
         }}
       >
         {FAN.map((f, i) => (
-          <div
+          <span
             key={f.tilt}
             aria-hidden
             style={{
               ...place(i),
+              display: 'block',
               height: `calc(${U(SHOT_W)} * var(--art) / ${SHOT_ASPECT})`,
-              boxShadow: '0 14px 30px rgba(10, 10, 10, 0.2), 0 3px 8px rgba(10, 10, 10, 0.1)',
+              boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)',
             }}
           />
         ))}
-      </div>
-      <div style={box}>
+      </span>
+      <span style={box}>
         {FAN.map((f, i) => (
-          <div
+          <span
             key={f.tilt}
-            className="overflow-hidden border border-neutral-300 bg-background"
+            className="block overflow-hidden border border-neutral-300 bg-background"
             style={place(i)}
           >
             <img
@@ -218,104 +281,49 @@ function Artwork({ tool }: { tool: Tool }) {
               decoding="async"
               className="block w-full"
             />
-          </div>
+          </span>
         ))}
-      </div>
+      </span>
     </>
   );
 }
 
-/** Red rising from the card's bottom, so the copy stays legible over artwork. */
-function Gradient() {
-  const c = '220, 38, 38';
-  return (
-    <div
-      className="absolute inset-x-0 bottom-0"
-      style={{
-        height: `calc(${COPY_BAND} + ${FADE})`,
-        borderRadius: `0 0 ${RADIUS} ${RADIUS}`,
-        background:
-          `linear-gradient(to top, rgb(${c}) 0, rgb(${c}) calc(${COPY_BAND} * 0.55), ` +
-          `rgba(${c}, 0.92) ${COPY_BAND}, rgba(${c}, 0) calc(${COPY_BAND} + ${FADE}))`,
-      }}
-    />
-  );
+/**
+ * Which cards leave room above themselves for artwork to pop into.
+ *
+ * The room belongs to the artwork, not to the card, so a row with no artwork in
+ * it simply sits higher. That is how the call-to-action row closes the gap under
+ * the tools today, and how it drops back down by itself when the favorite picker
+ * ships with screenshots of its own.
+ *
+ * The reserve is shared across a row, though — one card in a row keeping room it
+ * does not need is the price of the panels in that row sharing a top edge, and
+ * the alignment is worth more than the gap. A spanning card always starts a row,
+ * because it only spans when the count is odd.
+ */
+function reserveByRow(tools: Tool[], cols: number): boolean[] {
+  const rowHasArt = new Map<number, boolean>();
+  tools.forEach((tool, i) => {
+    const row = Math.floor(i / cols);
+    rowHasArt.set(row, (rowHasArt.get(row) ?? false) || Boolean(tool.shots));
+  });
+  return tools.map((_, i) => rowHasArt.get(Math.floor(i / cols)) ?? false);
 }
 
-/**
- * No tool to screenshot yet, so this card carries the build icon the dex
- * builder already uses. It is centred in the space above the heading, so the
- * air above it matches the air below by construction rather than by eye.
- */
-function Mark() {
-  return (
-    <div
-      className="absolute inset-x-0 top-0 flex items-center justify-center"
-      style={{ height: `calc(${CARD_HEIGHT} - ${PAD} - ${COPY_HEIGHT})` }}
-      data-card-badge
-    >
-      <Hammer style={{ width: U(35), height: U(35) }} strokeWidth={2} />
-    </div>
-  );
-}
-
-/**
- * A tool that does not exist yet. It takes the space the artwork would have
- * used and says so in words, rather than borrowing the build icon — that icon
- * belongs to the feedback card, and two cards wearing it would read as one
- * repeated card rather than two different states.
- */
-function Soon() {
+export function HomePage() {
   const t = useT();
-  return (
-    <div
-      className="absolute inset-x-0 top-0 flex items-center justify-center"
-      style={{ height: `calc(${CARD_HEIGHT} - ${PAD} - ${COPY_HEIGHT})` }}
-      data-card-badge
-    >
-      <span
-        className="font-extrabold tracking-tight uppercase"
-        style={{ fontSize: U(11), letterSpacing: '0.08em', color: 'rgba(255, 255, 255, 0.92)' }}
-      >
-        {t('home.soon')}
-      </span>
-    </div>
-  );
-}
-
-/**
- * `variant` picks which tools are shown as built. 'soon' is the version with
- * the favorite picker marked unbuilt, for comparing the two before launch.
- */
-export function HomePage({ variant }: { variant?: 'soon' }) {
-  const t = useT();
-  const favSoon = variant === 'soon';
-  const tools: Tool[] = [
-    {
-      key: 'dex',
-      href: '/',
-      title: t('home.dex.title'),
-      blurb: t('home.dex.blurb'),
-      shots: [dexBack, dexFront],
-    },
-    {
-      key: 'league',
-      href: '/pokemon-league-builder',
-      title: t('home.league.title'),
-      blurb: t('home.league.blurb'),
-      shots: [leagueBack, leagueFront],
-    },
-    favSoon
-      ? { key: 'fav', title: t('home.fav.title'), blurb: t('home.fav.blurb'), soon: true }
-      : {
-          key: 'fav',
-          href: '/favorite-pokemon-picker',
-          title: t('home.fav.title'),
-          blurb: t('home.fav.blurb'),
-          shots: [favBack, favFront],
-        },
-    { key: 'next', title: t('home.next.title'), blurb: t('home.next.blurb') },
-  ];
+  const tools = useTools();
+  // Desktop gives every tool its own column, so the rail is one row whatever
+  // the count. On a phone it is two up, which leaves the last card alone when
+  // the count is odd — that is the card that spans instead.
+  const gridStyle = { '--tool-cols': tools.length } as React.CSSProperties;
+  // The wide bar is a phone shape only, and the two shapes are different markup
+  // rather than different CSS, so exactly one of them mounts. That is what
+  // `useIsDesktop` is for elsewhere in this app; the alternative is rendering
+  // both and hiding one, which duplicates the call to action's button.
+  const isDesktop = useIsDesktop();
+  const spansOnPhone = !isDesktop && tools.length % 2 === 1;
+  const reserves = reserveByRow(tools, isDesktop ? tools.length : 2);
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -374,8 +382,8 @@ export function HomePage({ variant }: { variant?: 'soon' }) {
 
             <div className="min-h-6 flex-1" />
 
-            {/* `--art` shrinks the fan on tablet so the two rows pack closer;
-                phone and desktop run it at full size.
+            {/* `--art` scales the artwork against the card without touching the
+                card itself.
 
                 Every tablet rule is `sm:max-md:`, never a bare `sm:`. This repo
                 sets `--breakpoint-md: 1024px`, and Tailwind sorts that px value
@@ -383,15 +391,18 @@ export function HomePage({ variant }: { variant?: 'soon' }) {
                 `sm:` then beats its own `md:` override above 1024px. Bounding the
                 tablet rules at md means the two bands cannot overlap at all. */}
             <div
-              className="grid grid-cols-2 md:grid-cols-4 gap-x-3.5 gap-y-3.5 sm:max-md:gap-x-7 md:gap-x-6 [--art:1] sm:max-md:[--art:0.82]"
+              className="grid grid-cols-2 md:grid-cols-[repeat(var(--tool-cols),minmax(0,1fr))] gap-x-3.5 gap-y-6 sm:max-md:gap-x-7 md:gap-x-6 [--art:0.92]"
+              style={gridStyle}
             >
-              {tools.map((tool) => (
+              {tools.map((tool, i) => (
                 <Card
                   key={tool.key}
                   tool={tool}
-                                  // The card asks what to build next, so the form opens on
-                  // Idea rather than the Bug it defaults to elsewhere.
-                  onPress={tool.key === 'next' ? () => openFeedback('idea') : undefined}
+                  wide={spansOnPhone && i === tools.length - 1}
+                  reserve={reserves[i]}
+                  // The card asks what to build next, so the form opens on Idea
+                  // rather than the Bug it defaults to elsewhere.
+                  onPress={tool.key === HAMMER_TITLE ? () => openFeedback('idea') : undefined}
                 />
               ))}
             </div>

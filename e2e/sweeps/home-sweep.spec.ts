@@ -17,29 +17,31 @@ const WIDTHS = [
   1024, 1180, 1280, 1440, 1920,
 ];
 
+/**
+ * Three tools ship today. The favorite picker returns as a fourth, and when it
+ * does this number changes with it — the page reads the count and lays itself
+ * out from that, so a stale number here would pass while the page is wrong.
+ */
+const CARDS = 3;
+
 type Problem = string;
 
-const VARIANTS = [
-  ['default', '/?home'],
-  ['coming-soon', '/?home=soon'],
-] as const;
-
-for (const [variant, url] of VARIANTS) {
-test.describe(`home page responsive sweep — ${variant}`, () => {
+test.describe('home page responsive sweep', () => {
   for (const width of WIDTHS) {
     test(`layout holds at ${width}px`, async ({ page }) => {
       const height = width < 600 ? Math.round(width * 2.1) : width < 1024 ? Math.round(width * 1.33) : 900;
       await page.setViewportSize({ width, height });
-      await page.goto(url);
+      await page.goto('/?home');
       await page.waitForLoadState('networkidle');
 
-      const problems = await page.evaluate((): Problem[] => {
+      const problems = await page.evaluate((cardCount): Problem[] => {
         const fail: Problem[] = [];
         const R = (e: Element) => e.getBoundingClientRect();
         const root = document.documentElement;
         const grid = document.querySelector('main > div.grid');
         const cards = grid ? [...grid.children] : [];
-        if (cards.length !== 4) fail.push(`expected 4 cards, found ${cards.length}`);
+        const desktop = window.innerWidth >= 1024;
+        if (cards.length !== cardCount) fail.push(`expected ${cardCount} cards, found ${cards.length}`);
 
         // 1. The page may grow downward and scroll. It may never scroll sideways.
         if (root.scrollWidth - root.clientWidth > 0.5) {
@@ -56,10 +58,11 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
           fail.push(`footer top at ${R(footer).top.toFixed(1)}, above the ${window.innerHeight}px fold`);
         }
 
-        // 3. Panels in one row share a top edge. The overhang reserve now
-        // belongs only to cards with artwork, so alignment across a row that
-        // mixes the two rests on each panel sitting at the bottom of a stretched
-        // cell. Cells whose tops match are one row; their panels must match too.
+        // 3. Panels in one row share a top edge, which is what puts the first
+        // line of every title in that row on one baseline. The overhang reserve
+        // is shared across a row for exactly this reason, so a row that mixes a
+        // card with artwork and one without still lines up. Cells whose tops
+        // match are one row; their panels must match too.
         const rows = new Map<number, number[]>();
         cards.forEach((cell) => {
           const panel = cell.querySelector('[data-card-panel]');
@@ -83,30 +86,53 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
           }
         }
 
+        // 5. The call to action is the wide bar below the desktop breakpoint and
+        // an ordinary card at or above it. The two are different markup, and
+        // exactly one of them mounts, so the caption is the tell: the bar keeps
+        // its copy inside the panel and has none.
+        const wide = cards.filter((cell) => !cell.querySelector('h2'));
+        if (desktop && wide.length) fail.push(`${wide.length} cards have no caption at desktop width`);
+        if (!desktop) {
+          if (wide.length !== 1) fail.push(`expected 1 wide bar on a phone, found ${wide.length}`);
+          wide.forEach((cell) => {
+            const spread = R(grid!).width - R(cell).width;
+            if (spread > 0.5) fail.push(`the wide bar is ${spread.toFixed(1)}px short of the grid`);
+          });
+        }
+
         cards.forEach((cell, i) => {
           // The red panel, not the cell: the cell also holds the overhang, so a
           // structural selector picks the wrapper instead.
           const panel = cell.querySelector('[data-card-panel]');
-          const h2 = cell.querySelector('h2');
-          const p = cell.querySelector('h2 + p');
-          if (!panel || !h2 || !p) {
-            fail.push(`card ${i} is missing its panel or copy`);
+          if (!panel) {
+            fail.push(`card ${i} is missing its panel`);
             return;
           }
           const c = R(panel);
+          const h2 = cell.querySelector('h2');
+          const p = cell.querySelector('h2 + p');
 
-          // 5. Each heading stays on one line. A block reports one client rect
-          // whatever it does, so the line count comes from the text range.
-          const range = document.createRange();
-          range.selectNodeContents(h2);
-          const lines = range.getClientRects().length;
-          const text = range.getBoundingClientRect().width;
-          if (lines > 1) fail.push(`card ${i} title wrapped to ${lines} lines`);
-          if (text - R(h2).width > 0.5) fail.push(`card ${i} title overruns by ${(text - R(h2).width).toFixed(1)}`);
-
-          // 6. The blurb fits its fixed two-line band.
-          if (p.scrollHeight - p.clientHeight > 0.5) {
-            fail.push(`card ${i} blurb clipped by ${p.scrollHeight - p.clientHeight}`);
+          // 6. Copy fits. A caption's title stays on one line and its blurb is
+          // never clipped; the wide bar's copy stays inside the panel it sits
+          // in. A block reports one client rect whatever it does, so the line
+          // count comes from the text range.
+          if (h2 && p) {
+            const range = document.createRange();
+            range.selectNodeContents(h2);
+            const lines = range.getClientRects().length;
+            const text = range.getBoundingClientRect().width;
+            if (lines > 1) fail.push(`card ${i} title wrapped to ${lines} lines`);
+            if (text - R(h2).width > 0.5) fail.push(`card ${i} title overruns by ${(text - R(h2).width).toFixed(1)}`);
+            if (p.scrollHeight - p.clientHeight > 0.5) {
+              fail.push(`card ${i} blurb clipped by ${p.scrollHeight - p.clientHeight}`);
+            }
+          } else {
+            [...panel.querySelectorAll('span > span')].forEach((line, k) => {
+              const r = R(line);
+              if (r.right > c.right + 0.5 || r.bottom > c.bottom + 0.5) {
+                fail.push(`card ${i} bar copy ${k} escapes its panel`);
+              }
+            });
           }
 
           // 7. Artwork never reaches the card's right edge: a bare red strip has
@@ -118,12 +144,14 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
             }
           });
 
-          // 8. Artwork must not land on the card above it.
+          // 8. Artwork breaks out of the panel's top and left, so it has to
+          // clear both the card above it and the window's own left edge.
           [...cell.querySelectorAll('img')].forEach((img, k) => {
+            const r = R(img);
+            if (r.left < -0.5) fail.push(`card ${i} shot ${k} runs ${(-r.left).toFixed(1)}px off the left edge`);
             cards.forEach((other, j) => {
               if (other === cell) return;
               const o = R(other);
-              const r = R(img);
               if (o.bottom <= R(cell).top + 0.5) {
                 const ox = Math.min(o.right, r.right) - Math.max(o.left, r.left);
                 const oy = Math.min(o.bottom, r.bottom) - Math.max(o.top, r.top);
@@ -132,17 +160,21 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
             });
           });
 
-          // 9. A card with no artwork carries a badge instead — the build mark
-          // or the words "Coming soon". Either stays wholly inside its card,
-          // with matching air above it and below it.
-          const badge = cell.querySelector('[data-card-badge] > *');
-          if (badge) {
-            const s = R(badge);
-            if (s.top < c.top - 0.5 || s.bottom > c.bottom + 0.5) fail.push(`card ${i} badge escapes its card`);
-            const above = s.top - c.top;
-            const below = R(h2).top - s.bottom;
-            if (Math.abs(above - below) > 2) {
-              fail.push(`card ${i} badge air ${above.toFixed(1)} above vs ${below.toFixed(1)} below`);
+          // 9. A card with no artwork carries the build mark instead. It stays
+          // wholly inside its panel, and where it is the only thing in there it
+          // sits centred. Centred means the two centres agree — not equal air on
+          // every side, which a panel wider than it is tall never has.
+          const badge = cell.querySelector('[data-card-badge]');
+          const mark = badge?.querySelector('svg');
+          if (badge && mark) {
+            const s = R(mark);
+            if (s.top < c.top - 0.5 || s.bottom > c.bottom + 0.5) fail.push(`card ${i} mark escapes its panel`);
+            if (h2) {
+              const dx = (s.left + s.right) / 2 - (c.left + c.right) / 2;
+              const dy = (s.top + s.bottom) / 2 - (c.top + c.bottom) / 2;
+              if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+                fail.push(`card ${i} mark is off centre by ${dx.toFixed(1)}/${dy.toFixed(1)}px`);
+              }
             }
           }
         });
@@ -152,11 +184,14 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
         // of `sm`'s 40rem, so it emits the md block FIRST: a bare `sm:` utility
         // silently beats its own `md:` override above 1024px. That is invisible
         // to every geometric check here — the page still looks plausible — so
-        // it gets its own assertion.
-        const art = getComputedStyle(grid!).getPropertyValue('--art').trim();
-        const wantArt = window.innerWidth >= 1024 || window.innerWidth < 640 ? '1' : '0.82';
-        if (parseFloat(art) !== parseFloat(wantArt)) {
-          fail.push(`--art is ${art}, expected ${wantArt} at ${window.innerWidth}px`);
+        // the one place the page uses all three bands gets its own assertion.
+        // A media query's rem is the initial 16px, not the root font-size knob,
+        // so `sm` is 640px whatever that knob has done.
+        const main = document.querySelector('main')!;
+        const pad = (parseFloat(getComputedStyle(main).paddingLeft) / window.innerWidth) * 100;
+        const wantPad = desktop ? 5.6 : window.innerWidth >= 640 ? 5.3 : 4;
+        if (Math.abs(pad - wantPad) > 0.05) {
+          fail.push(`gutter is ${pad.toFixed(2)}%, expected ${wantPad}% at ${window.innerWidth}px`);
         }
 
         // 11. Hero copy stays inside the frame and breaks rather than overrunning.
@@ -168,10 +203,9 @@ test.describe(`home page responsive sweep — ${variant}`, () => {
         });
 
         return fail;
-      });
+      }, CARDS);
 
-      expect(problems, `layout problems at ${width}px (${variant})`).toEqual([]);
+      expect(problems, `layout problems at ${width}px`).toEqual([]);
     });
   }
 });
-}
