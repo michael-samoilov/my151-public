@@ -10,19 +10,32 @@ import type { FeedbackContext, FeedbackCategory } from '@/lib/feedbackContext';
  * as a prop is the tree that just died.
  */
 
-let opener: ((category: FeedbackCategory) => void) | null = null;
+/**
+ * What opened the form, when there is one.
+ *
+ * The desktop card anchors itself to this element, so a report started from the
+ * bug icon opens beside the bug icon rather than in a corner the eye has to go
+ * find. A caller with nothing sensible to point at — the crash screen, whose
+ * own button is about to be replaced by the form — passes nothing, and the card
+ * falls back to its corner.
+ */
+export type FeedbackAnchor = HTMLElement | null;
+
+let opener: ((category: FeedbackCategory, anchor: FeedbackAnchor) => void) | null = null;
 let pendingCrash: FeedbackContext['error'] = undefined;
 
 /** Called by the mounted button; returns the teardown. */
-export function registerFeedbackOpener(fn: (category: FeedbackCategory) => void): () => void {
+export function registerFeedbackOpener(
+  fn: (category: FeedbackCategory, anchor: FeedbackAnchor) => void,
+): () => void {
   opener = fn;
   return () => {
     if (opener === fn) opener = null;
   };
 }
 
-export function openFeedback(category: FeedbackCategory = 'bug'): void {
-  opener?.(category);
+export function openFeedback(category: FeedbackCategory = 'bug', anchor: FeedbackAnchor = null): void {
+  opener?.(category, anchor);
 }
 
 export function setPendingCrash(error: FeedbackContext['error']): void {
