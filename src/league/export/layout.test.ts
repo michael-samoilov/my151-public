@@ -158,15 +158,22 @@ describe('export layout', () => {
     }
   });
 
-  it('starts the home name, its bands and its glyph cells on one left rail', () => {
-    // The band used to run the row's full width, so it overhung the glyph
-    // cell under it. It now stops on the rail at both ends: one left edge
-    // down the picture, and the same gutter either side of it.
-    const bandLeft = L.HPADX + L.HOME_RAIL;
-    const bandRight = L.HPADX + L.HOME_INNER - L.HOME_RAIL;
-    expect(bandLeft).toBe(L.HPADX + L.HOME_RAIL);
-    expect(L.HOME_W - bandRight).toBeCloseTo(bandLeft, 6);
-    expect(L.HOME_RAIL).toBeLessThan(L.HPADX);
+  it('mirrors every band overhang across the picture', () => {
+    // A band's label starts on the rail, so the band begins one label-padding
+    // left of it. That overhang is mirrored at the other end: the two bands
+    // sit the same distance in from their picture's edges.
+    const card = {
+      left: L.FRAME + L.PADX + L.RAIL - L.BAND_PADX,
+      right: L.FRAME + L.PADX + L.CARD_W - 2 * L.PADX - L.RAIL + L.BAND_PADX,
+    };
+    expect(L.CARD_IMG_W - card.right).toBeCloseTo(card.left, 6);
+    expect(card.left).toBeGreaterThan(L.FRAME);
+    const home = {
+      left: L.HPADX + L.HOME_RAIL - L.HOME_BAND_PADX,
+      right: L.HPADX + L.HOME_INNER - L.HOME_RAIL + L.HOME_BAND_PADX,
+    };
+    expect(L.HOME_W - home.right).toBeCloseTo(home.left, 6);
+    expect(home.left).toBeGreaterThan(0);
   });
 
   it('sets the home glyph cell three by two', () => {

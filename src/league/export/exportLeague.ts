@@ -568,8 +568,10 @@ function drawBand(
   ox: number,
   y: number,
 ): void {
-  const x = ox + L.RAIL;
-  const w = L.CARD_W - 2 * L.PADX - 2 * L.RAIL;
+  // The label starts on the rail, so the band itself begins one label-padding
+  // left of it and ends the same distance right of the rail's mirror.
+  const x = ox + L.RAIL - L.BAND_PADX;
+  const w = L.CARD_W - 2 * L.PADX - 2 * L.RAIL + 2 * L.BAND_PADX;
   ctx.save();
   ctx.fillStyle = shades.band;
   roundRect(ctx, x, y, w, L.BAND, L.BAND_R);
@@ -580,13 +582,13 @@ function drawBand(
   ctx.font = font(size, 800);
   const track = 0.07 * size;
   const cy = y + L.BAND / 2;
-  let tx = x + 8 * L.K;
+  let tx = x + L.BAND_PADX;
   fillTracked(ctx, label, tx, cy, track);
   if (note) {
     tx += trackedWidth(ctx, label, track) + 5 * L.K;
     ctx.font = font(size, 400);
     ctx.globalAlpha = 0.85;
-    ctx.fillText(ellipsize(ctx, note, x + w - 8 * L.K - tx), tx, cy);
+    ctx.fillText(ellipsize(ctx, note, x + w - L.BAND_PADX - tx), tx, cy);
   }
   ctx.restore();
 }
@@ -650,7 +652,9 @@ function drawGymCard(
   const fx = L.FRAME;
   const ox = fx + L.PADX;
   const innerW = L.CARD_W - 2 * L.PADX;
-  const right = ox + innerW;
+  // The theme field ends on the rail's mirror, where the team cells end, so
+  // the band below overhangs it by the same amount at each side.
+  const right = ox + innerW - L.RAIL;
 
   // --- the header bar: the title in white, from the grid's own left rail ---
   ctx.save();
@@ -904,16 +908,17 @@ function drawLeagueHome(
     if (section) {
       if (index !== 0) y += 2;
       ctx.save();
-      // The band stops on the rail at both ends, so it no longer overhangs
-      // the glyph cells and the picture keeps equal gutters.
+      // The label starts on the rail, with the league's name and the glyph
+      // cells; the band overhangs it by the label's padding at both ends.
       ctx.fillStyle = RED;
-      const bandX = ox + L.HOME_RAIL;
-      roundRect(ctx, bandX, y, L.HOME_INNER - 2 * L.HOME_RAIL, L.BAND2, L.HOME_R);
+      const bandX = ox + L.HOME_RAIL - L.HOME_BAND_PADX;
+      const bandW = L.HOME_INNER - 2 * L.HOME_RAIL + 2 * L.HOME_BAND_PADX;
+      roundRect(ctx, bandX, y, bandW, L.BAND2, L.HOME_R);
       ctx.fill();
       ctx.fillStyle = '#ffffff';
       ctx.font = font(9 * L.K2, 800);
       ctx.textBaseline = 'middle';
-      fillTracked(ctx, section, bandX + 8 * L.K2, y + L.BAND2 / 2, 0.07 * 9 * L.K2);
+      fillTracked(ctx, section, bandX + L.HOME_BAND_PADX, y + L.BAND2 / 2, 0.07 * 9 * L.K2);
       ctx.restore();
       y += L.BAND2;
     }

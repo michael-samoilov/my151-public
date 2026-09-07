@@ -73,13 +73,17 @@ export const INY = 11;
 export const INX = 5.5;
 
 /**
- * The left rail.
+ * The left rail: the one left edge every run of text starts on.
  *
- * A band, a glyph cell and a slot all start one inset in from the card's
- * padding, so the grid reads against a single left edge rather than three.
- * The header block starts there too: `BAR_TEXT_X` below, and the THEME label.
+ * A glyph cell and a slot are drawn one inset in from the card's padding, and
+ * that inset is the rail. Text starts there — the bar's title, the THEME
+ * label, a band's label — rather than the box the text sits in. A box may
+ * overhang the rail by its own padding, and then it overhangs the rail's
+ * mirror on the right by the same amount, so the picture stays symmetric.
  */
 export const RAIL = 3 * K;
+/** A band label's padding inside its band, and so the band's overhang. */
+export const BAND_PADX = 8 * K;
 
 export const CELL_R = 11;
 export const BAND_R = 9;
@@ -256,11 +260,14 @@ export const HOME_R = 5 * K2;
 /**
  * The home's left rail, the counterpart of the card's.
  *
- * A glyph cell is drawn one inset inside its row, so the section bands and
- * the league's name start there too rather than at the row's own edge. The
- * bands take the inset on both sides, so the picture keeps equal gutters.
+ * A glyph cell is drawn one inset inside its row, so the league's name and a
+ * section band's label start there too. The band overhangs the rail by its
+ * label's padding, and by the same amount past the rail's mirror on the
+ * right.
  */
 export const HOME_RAIL = 3 * K2;
+/** A section band's label padding, and so the band's overhang. */
+export const HOME_BAND_PADX = 8 * K2;
 
 export const HOME_W = BOX_W;
 export const HOME_INNER = HOME_W - 2 * HPADX;
