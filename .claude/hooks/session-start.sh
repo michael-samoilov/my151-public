@@ -6,6 +6,6 @@ set -euo pipefail
 [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
 cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/../..}"
 
-npm install
+npm install --no-audit --no-fund
 # Reports a missing engine as DOWN and keeps going; do not let that fail the hook.
 bash .claude/skills/verify-my151/harness/setup-engines.sh || true
