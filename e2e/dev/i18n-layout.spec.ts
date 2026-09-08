@@ -70,6 +70,16 @@ test.describe('pseudo-locale layout', () => {
             // header's SEO tagline is one, and it turned this check red the
             // moment it was routed through the catalog and picked up brackets.
             if (r.width <= 1 || r.height <= 1) continue;
+            // Text nobody can see cannot be clipped: the FAQ under the footer
+            // sits in a closed <details>, whose content keeps a box but is not
+            // rendered (content-visibility), so its paragraphs report a
+            // zero client width against a real scroll width.
+            if (!(el as HTMLElement).checkVisibility()) continue;
+            // An ellipsis is a decision, not an accident. The tool bar's h1
+            // eyebrow keeps its full text in the DOM for crawlers and truncates
+            // by CSS where the bar is too narrow (docs/seo/HANDOFF.md, the
+            // gym leader agent's item 3); that is the one string allowed to.
+            if (getComputedStyle(el).textOverflow === 'ellipsis') continue;
             if (el.scrollWidth > el.clientWidth + 1) bad.push(text.slice(0, 40));
           }
           return bad;
