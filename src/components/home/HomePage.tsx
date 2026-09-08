@@ -50,7 +50,8 @@ const BLEED = U(34);
  * of a phone screen, so its corners should read as that phone's. An iPhone 14
  * rounds 47.3pt on a 390pt screen. The radius is applied here rather than baked
  * into the asset, so one flat rectangle serves the 110px phone card and the
- * 263px desktop card alike.
+ * 263px desktop card alike. `capture-shots.mjs` keeps the same number and
+ * refuses to write an asset with ink inside this curve.
  */
 const PHONE_RADIUS = 0.121;
 

@@ -55,19 +55,18 @@ const OUT_WIDTH = 800;
 /** Encoder quality. Dense sprite grids punish low values; 0.86 holds up. */
 const QUALITY = 0.86;
 /**
- * Air at the top and bottom of every shot, as a share of its width.
+ * Air above every shot, as a share of its width.
  *
  * The card rounds the shot's corners at a phone's radius, and that curve eats
- * into the first rows of pixels: at 18px down a 800px-wide shot the curve is
- * still 41px in from the left, which is where the dex's first section label
- * starts. 5% clears it — at that depth the curve is 8px in — and the same band
- * at the bottom keeps the last row of content off the corner as well.
+ * into the first rows of pixels. 2.5% is 20px on an 800px-wide shot, which puts
+ * the curve 30px in from the left where the content begins — inside the margin
+ * every one of these images already carries.
  *
  * The band takes the shot's own top-left colour, so it extends whatever is
  * already there: the page's grey on an app shot, the card's frame on the
  * trainer card export.
  */
-const PAD = 0.05;
+const PAD = 0.025;
 
 /**
  * The league builder still lives on its own branch. Until it merges, its two
@@ -89,6 +88,25 @@ const LEAGUE_ENTRY = 'pokemon-league-builder.html';
  * straight into the store's own persisted key before the app boots, so no
  * source change is needed to reproduce either shot.
  */
+/**
+ * The corner radius the card rounds each shot at, as a share of its width.
+ *
+ * Kept in step with `PHONE_RADIUS` in HomePage.tsx: this script checks that
+ * nothing but the band's own colour falls inside that curve, which is the whole
+ * reason the band exists.
+ */
+const PHONE_RADIUS = 0.121;
+/**
+ * How far a pixel must sit from the band's colour to count as ink.
+ *
+ * The check below is about text and sprites, not about every pixel. The dex
+ * export's top-right section outline is a pale hairline that the curve grazes
+ * by three pixels — 0.4 of a pixel at the card's phone size, and a rounded box
+ * corner rather than a letter. Ink is what a reader would notice losing, and at
+ * this threshold none of the four assets has any inside the curve.
+ */
+const INK = 60;
+
 const LEAGUE_FIXTURE = join(HERE, 'league-fixture.json');
 const LEAGUE_KEY = 'league-builder';
 
@@ -178,6 +196,7 @@ try {
       ? await exportShot(browser, origins[shot.app], shot)
       : await pageShot(browser, origins[shot.app], shot);
     const png = await band(browser, raw);
+    await assertCornersClear(browser, png, key);
     const webp = await encode(browser, png, OUT_WIDTH);
     const out = join(OUT_DIR, shot.file);
     const before = existsSync(out) ? readFileSync(out).length : 0;
@@ -433,6 +452,58 @@ async function band(browser, png) {
   );
   await page.close();
   return Buffer.from(uri.split(',')[1], 'base64');
+}
+
+/**
+ * No ink may fall where the card's corner curve cuts.
+ *
+ * The band is there for exactly this, and an asset that reintroduces the
+ * clipping — a wider export, a bigger title, a smaller `PAD` — looks fine
+ * everywhere except the two top corners of one card on the page. Checking it
+ * here is the only place the two facts meet: the radius the card rounds at, and
+ * the pixels the asset carries.
+ */
+async function assertCornersClear(browser, png, key) {
+  const page = await browser.newPage();
+  const worst = await page.evaluate(
+    ([b64, share, ink]) =>
+      new Promise((res, rej) => {
+        const img = new Image();
+        img.onerror = () => rej(new Error('decode failed'));
+        img.onload = () => {
+          const c = document.createElement('canvas');
+          c.width = img.width;
+          c.height = img.height;
+          const x = c.getContext('2d', { willReadFrequently: true });
+          x.drawImage(img, 0, 0);
+          const r = Math.round(img.width * share);
+          const px = x.getImageData(0, 0, img.width, r).data;
+          const at = (col, row) => {
+            const i = (row * img.width + col) * 4;
+            return [px[i], px[i + 1], px[i + 2]];
+          };
+          const ground = at(2, 2);
+          const off = (col, row) => at(col, row).some((v, i) => Math.abs(v - ground[i]) > ink);
+          let deepest = 0;
+          for (let row = 0; row < r; row += 1) {
+            // How far the curve reaches in at this depth, on both sides.
+            const reach = Math.ceil(r - Math.sqrt(Math.max(0, r * r - (r - row) ** 2)));
+            for (let col = 0; col < reach; col += 1) {
+              if (off(col, row) || off(img.width - 1 - col, row)) deepest = Math.max(deepest, row + 1);
+            }
+          }
+          res(deepest);
+        };
+        img.src = 'data:image/png;base64,' + b64;
+      }),
+    [png.toString('base64'), PHONE_RADIUS, INK],
+  );
+  await page.close();
+  if (worst) {
+    throw new Error(
+      `${key}: content sits ${worst}px into the card's corner curve and would be clipped — raise PAD`,
+    );
+  }
 }
 
 /** An encoded image's height once it is resampled to `width`. */

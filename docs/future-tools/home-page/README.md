@@ -175,11 +175,16 @@ card clips every shot well above there in any case.
 ### The band at the top
 
 The card rounds each shot's corners at a phone's radius, and that curve eats
-into the first rows of pixels: 18px down an 800px-wide shot the curve is still
-41px in from the left, which is exactly where the dex's first section label
-starts. Every shot gets a band of 5% of its width above it, in its own top-left
-colour — the page's grey on the analytics shot, the card's frame on the trainer
-card export. Sampled rather than named, so a change to either colour follows.
+into the first rows of pixels. Every shot gets a band of 2.5% of its width above
+it, in its own top-left colour — the page's grey on the analytics shot, the
+card's frame on the trainer card export. Sampled rather than named, so a change
+to either colour follows.
+
+The script then refuses to write an asset with ink inside that curve, reading
+the pixels the curve would cut against the radius the card rounds at. Ink, not
+every pixel: the dex export's top-right section outline is a pale hairline the
+curve grazes by three pixels, which is 0.4 of a pixel at the card's phone size.
+Drop `PAD` to zero and the run stops on the first shot.
 
 ### The league shots' state
 
