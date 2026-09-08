@@ -32,13 +32,14 @@ import { confirmOnEnter } from './components/confirmOnEnter';
 
 function GlobalHeader() {
   return (
-    <header className="flex items-center justify-between border-b bg-card px-3 py-2 sm:px-6">
+    <header className="flex h-11 items-center justify-between border-b bg-card px-3 sm:px-6">
       <a href="/pokemon-league-builder" className="text-2xl font-extrabold tracking-tight">
         <span className="text-primary">my151</span>
         <span className="text-foreground">.app</span>
       </a>
       <div className="flex flex-shrink-0 items-center gap-1">
         <LanguagePicker />
+        <FeedbackButton />
         <ToolsMenu current="league" />
       </div>
     </header>
@@ -227,7 +228,6 @@ export function LeagueApp() {
                 <LeagueNameRow h1 />
                 <span className="ml-auto flex shrink-0 items-center gap-1">
                   <LeagueViewToggle />
-                  <FeedbackButton />
                   <LeagueExportButton />
                 </span>
               </div>
@@ -264,7 +264,6 @@ export function LeagueApp() {
                 <LeagueNameRow h1 narrow={browserOpen} />
                 <span className="ml-auto flex shrink-0 items-center gap-1">
                   <LeagueViewToggle />
-                  <FeedbackButton />
                   <LeagueExportButton />
                 </span>
               </div>

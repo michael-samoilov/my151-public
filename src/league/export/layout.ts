@@ -254,7 +254,13 @@ export const HPADX = 8 * K2;
  */
 export const GLYPH_COL = 57 * K2;
 export const TYPE_COL = 32 * K2;
-/** One line: the league's name, with the team tag at the right. */
+/**
+ * One line: the league's name.
+ *
+ * An unnamed league has no line at all — no placeholder, and no tag saying
+ * which teams these are — so the picture starts at its first band and is a
+ * line shorter. `homeImgH` takes the height from that.
+ */
 export const HOME_HDR_H = 24 * K2;
 export const HOME_R = 5 * K2;
 
@@ -298,9 +304,11 @@ export const CARD_IMG_W = CARD_W + 2 * FRAME;
 export const CARD_IMG_H = TITLE_BLOCK_H + gridHeight() + FOOT + FRAME;
 
 /**
- * The league: its padding, the name line, four bands with their gaps,
- * fourteen rows, and the credit.
+ * The league: its padding, the name line if there is one, four bands with
+ * their gaps, fourteen rows, and the credit.
  */
-export const HOME_IMG_H = Math.ceil(HPADY + HOME_HDR_H + 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT);
+export function homeImgH(named: boolean): number {
+  return Math.ceil(HPADY + (named ? HOME_HDR_H : 0) + 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT);
+}
 
 export { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT };

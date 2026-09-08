@@ -8,7 +8,6 @@ import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewS
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { PokeballBg } from '@/components/shared/PokeballBg';
-import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
@@ -1152,15 +1151,6 @@ export function ViewPage() {
             are the header's job now. */}
         {toolbarSlot && createPortal(
           <>
-            <FeedbackButton />
-            <button type="button"
-              ref={exportBtnRef}
-              onClick={handleExport}
-              disabled={exporting || count === 0}
-              className="p-1.5 rounded-md border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-primary"
-            >
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            </button>
             <button type="button"
               ref={settingsBtnRef}
               onClick={() => setSettingsOpen(true)}
@@ -1174,6 +1164,14 @@ export function ViewPage() {
                   aria-label="Custom order active"
                 />
               )}
+            </button>
+            <button type="button"
+              ref={exportBtnRef}
+              onClick={handleExport}
+              disabled={exporting || count === 0}
+              className="p-1.5 rounded-md border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-primary"
+            >
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             </button>
           </>,
           toolbarSlot,

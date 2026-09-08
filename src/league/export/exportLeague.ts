@@ -46,7 +46,6 @@ import {
   fillTracked,
   fillTrackedCentered,
   font,
-  FONT_STACK,
   roundRect,
   trackedWidth,
   wrapLines,
@@ -299,7 +298,12 @@ function drawHeading(
   ctx.restore();
 }
 
-/** A chosen Pokémon on its two-tone ball. */
+/**
+ * A chosen Pokémon on its two-tone ball, in one layer or in both.
+ *
+ * The showcase draws the pair in two passes, so it needs the ball and the
+ * sprite separately; everywhere else takes both at once.
+ */
 function drawShowcaseArt(
   ctx: CanvasRenderingContext2D,
   pokemonId: number,
@@ -307,11 +311,16 @@ function drawShowcaseArt(
   cx: number,
   cy: number,
   sprite: number,
+  layer: 'ball' | 'sprite' | 'both' = 'both',
 ): void {
-  const [primary, secondary] = ballColours(pokemonId);
-  drawPokeballBg(ctx, primary, secondary, sprite / 1.2, cx, cy);
-  const img = images.get(spriteUrl(pokemonId, null) ?? '');
-  if (img) drawSprite(ctx, img, cx, cy, sprite);
+  if (layer !== 'sprite') {
+    const [primary, secondary] = ballColours(pokemonId);
+    drawPokeballBg(ctx, primary, secondary, sprite / 1.2, cx, cy);
+  }
+  if (layer !== 'ball') {
+    const img = images.get(spriteUrl(pokemonId, null) ?? '');
+    if (img) drawSprite(ctx, img, cx, cy, sprite);
+  }
 }
 
 function drawShowcase(
@@ -354,6 +363,26 @@ function drawShowcase(
     const slot = placeSlot(box.width, box.height, aceRuns, partnerRuns, L.PAIR_SPRITE);
     const seam = seamEnds(box.width, box.height);
 
+    const blocks = [
+      { placed: slot.ace, lines: ACE_HEAD, id: ace, mirrored: false },
+      { placed: slot.partner, lines: PARTNER_HEAD, id: partner, mirrored: true },
+    ];
+    const centre = (b: (typeof blocks)[number]) => ({
+      cx: x + b.placed.left + b.placed.width / 2,
+      cy: y + b.placed.top + (b.mirrored ? b.placed.sprite / 2 : headH + b.placed.sprite / 2),
+    });
+
+    // Both balls, then the seam, then both sprites. A ball carries a solid
+    // white outline, and drawing the seam under it left the outline crossing
+    // the seam wherever the two blocks meet. Painting the seam between the
+    // layers keeps the line whole and still under the sprites. Drawing both
+    // balls before either sprite also stops the partner's ball from covering
+    // the ace: measured over every pair, that was 787px of the worst case.
+    for (const b of blocks) {
+      const { cx, cy } = centre(b);
+      drawShowcaseArt(ctx, b.id, images, cx, cy, b.placed.sprite, 'ball');
+    }
+
     ctx.save();
     ctx.strokeStyle = shades.dash;
     ctx.lineWidth = L.K;
@@ -363,20 +392,12 @@ function drawShowcase(
     ctx.stroke();
     ctx.restore();
 
-    const half = (
-      placed: (typeof slot)['ace'],
-      lines: string[],
-      pokemonId: number,
-      mirrored: boolean,
-    ) => {
-      const cx = x + placed.left + placed.width / 2;
-      const cy = y + placed.top + (mirrored ? placed.sprite / 2 : headH + placed.sprite / 2);
-      drawShowcaseArt(ctx, pokemonId, images, cx, cy, placed.sprite);
-      const headTop = mirrored ? cy + placed.sprite / 2 : cy - placed.sprite / 2 - headH;
-      drawHeading(ctx, lines, cx, headTop, shades.band);
-    };
-    half(slot.ace, ACE_HEAD, ace, false);
-    half(slot.partner, PARTNER_HEAD, partner, true);
+    for (const b of blocks) {
+      const { cx, cy } = centre(b);
+      drawShowcaseArt(ctx, b.id, images, cx, cy, b.placed.sprite, 'sprite');
+      const headTop = b.mirrored ? cy + b.placed.sprite / 2 : cy - b.placed.sprite / 2 - headH;
+      drawHeading(ctx, b.lines, cx, headTop, shades.band);
+    }
     return;
   }
 
@@ -874,35 +895,28 @@ function drawLeagueHome(
 ): void {
   // The picture is the league's content on white, edge to edge.
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, L.HOME_W, L.HOME_IMG_H);
+  ctx.fillRect(0, 0, L.HOME_W, L.homeImgH(!!name));
 
   const ox = L.HPADX;
   let y = L.HPADY;
 
-  // --- the identity line: the league's name, and which teams these are ---
-  // The tool's own name stays off the picture. Someone who is handed it
-  // wants to know whose league it is, not what drew it; the credit below
-  // already says that.
-  const tagSize = 9 * L.K2;
-  const big = 14 * L.K2;
-  ctx.save();
-  ctx.textBaseline = 'alphabetic';
-  ctx.font = name ? font(big, 700) : `italic 400 ${big}px ${FONT_STACK}`;
-  // The name and the tag are set at different sizes and share one baseline,
-  // so the smaller run sits on the line rather than in the middle of it.
-  const base = y + L.HOME_HDR_H / 2 + capHeight(ctx) / 2;
-  ctx.font = font(tagSize, 600);
-  const tag = view === 'rematch' ? 'REMATCH TEAMS' : 'STORY TEAMS';
-  const track = 0.07 * tagSize;
-  const tagW = trackedWidth(ctx, tag, track);
-  ctx.fillStyle = MUTED;
-  fillTracked(ctx, tag, ox + L.HOME_INNER - L.HOME_RAIL - tagW, base, track);
-  ctx.font = name ? font(big, 700) : `italic 400 ${big}px ${FONT_STACK}`;
-  ctx.fillStyle = name ? FG : MUTED;
-  const room = L.HOME_INNER - 2 * L.HOME_RAIL - tagW - 4 * L.K2;
-  ctx.fillText(name ? ellipsize(ctx, name, room) : 'Unnamed league', ox + L.HOME_RAIL, base);
-  ctx.restore();
-  y += L.HOME_HDR_H;
+  // --- the identity line: the league's name, and nothing else ---
+  // The tool's own name stays off the picture, and so does the reading:
+  // someone handed it wants to know whose league it is, and the rows say
+  // themselves which teams they are. An unnamed league gets no line, so the
+  // picture starts at its first band and is that much shorter.
+  if (name) {
+    const big = 14 * L.K2;
+    ctx.save();
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = font(big, 700);
+    ctx.fillStyle = FG;
+    const base = y + L.HOME_HDR_H / 2 + capHeight(ctx) / 2;
+    const room = L.HOME_INNER - 2 * L.HOME_RAIL;
+    ctx.fillText(ellipsize(ctx, name, room), ox + L.HOME_RAIL, base);
+    ctx.restore();
+    y += L.HOME_HDR_H;
+  }
 
   for (let index = 0; index < SLOT_COUNT; index++) {
     const section = L.SECTION_BEFORE[index];
@@ -984,5 +998,5 @@ export async function exportLeagueHome(
   view: LeagueView,
 ): Promise<Blob> {
   const images = await loadAll(homeImageUrls(cards, view));
-  return render(L.HOME_W, L.HOME_IMG_H, (ctx) => drawLeagueHome(ctx, name, cards, view, images));
+  return render(L.HOME_W, L.homeImgH(!!name), (ctx) => drawLeagueHome(ctx, name, cards, view, images));
 }

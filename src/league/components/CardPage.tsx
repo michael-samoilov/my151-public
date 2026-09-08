@@ -15,7 +15,6 @@ import { useLeagueUi } from '../store/useLeagueUi';
 import { useCardView } from '../useCardView';
 import { fitStyle, useFitScale } from '../useFitScale';
 import { CardGrid } from './CardGrid';
-import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { HEADER_FIELD_H, LeagueExportButton } from './HeaderActions';
 import { usePencilRoom } from './usePencilRoom';
 import { MovePicker } from './MovePicker';
@@ -300,7 +299,6 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
 export function CardActions({ cardIndex }: { cardIndex: number }) {
   return (
     <span className="ml-auto flex shrink-0 items-center gap-1">
-      <FeedbackButton />
       <LeagueExportButton cardIndex={cardIndex} />
     </span>
   );

@@ -27,10 +27,12 @@ describe('export layout', () => {
     expect(L.CARD_IMG_W).toBe(L.CARD_W + 2 * L.FRAME);
     expect(L.CARD_IMG_H).toBe(L.TITLE_BLOCK_H + L.gridHeight() + L.FOOT + L.FRAME);
     expect(L.TITLE_BLOCK_H).toBe(L.BAR_H + L.THEME_GAP + L.FIELD_H + L.HDR_GAP);
-    expect(L.HOME_IMG_H).toBe(
+    expect(L.homeImgH(true)).toBe(
       Math.ceil(L.HPADY + L.HOME_HDR_H + 14 * L.ROW2 + 4 * L.BAND2 + 6 + L.FOOT),
     );
-    expect(L.CARD_IMG_H).toBeLessThan(L.HOME_IMG_H);
+    // An unnamed league draws no name line, so its picture is that shorter.
+    expect(L.homeImgH(true) - L.homeImgH(false)).toBe(Math.round(L.HOME_HDR_H));
+    expect(L.CARD_IMG_H).toBeLessThan(L.homeImgH(false));
   });
 
   it('gives the trainer card the column it has on a phone', () => {

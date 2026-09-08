@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
  */
 
 const TOOLS = [
-  { id: 'dex', href: '/', label: 'Dex Builder' },
+  { id: 'dex', href: '/', label: 'Pokédex Builder' },
   { id: 'league', href: '/pokemon-league-builder', label: 'League Builder' },
 ] as const;
 

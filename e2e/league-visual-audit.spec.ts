@@ -162,25 +162,46 @@ test.describe('the card paints its controls', () => {
     });
   }
 
+  test('nothing in the TM or badge box is cut by a clipping ancestor', async ({ page }) => {
+    for (const slot of ['slot-tm', 'slot-badge']) {
+      const problems = await auditLayout(page, `[data-testid="${slot}"]`);
+      expect(problems.filter((p) => p.kind === 'escapes-parent'), `${slot}: nothing escapes its box`).toEqual([]);
+    }
+  });
+});
+
+/**
+ * The pill's own describe, because it is measured densely.
+ *
+ * On screen the pill is about 40px wide, so its corner radius is 4px. At one
+ * device pixel per CSS pixel the whole ramp is three or four columns, and a
+ * pixel of drift — the card is fitted to its pane, so any change in the
+ * chrome rescales it — moves that count without changing the shape. The
+ * mobile project already samples at 2.6x and reads the pill correctly; this
+ * fixes the density for every project instead of leaving it to the device.
+ * The thresholds are the ones the test has always used, in CSS pixels.
+ */
+const PILL_DSF = 4;
+
+test.describe('the card paints its TM pill', () => {
+  test.use({ deviceScaleFactor: PILL_DSF });
+  test.beforeEach(async ({ page }) => {
+    await denseCard(page);
+  });
+
   test('the TM type badge is round at both ends', async ({ page }) => {
     const pill = page.locator('[data-testid="slot-tm"] svg[viewBox="0 0 200 40"]');
     await expect(pill).toBeVisible();
     const ends = await pillEnds(page, pill, INK.coloured);
     // Ink reaches both edges of its box, less a pixel of antialiasing.
     expect.soft(ends.inkWidth, `the pill paints its whole width: ink ${ends.inkWidth} of box ${ends.boxWidth}`)
-      .toBeGreaterThanOrEqual(ends.boxWidth - 4);
+      .toBeGreaterThanOrEqual(ends.boxWidth - 4 * PILL_DSF);
     // Both ends climb, and climb alike. A clipped end has no ramp and a
     // first column already most of the pill's height.
-    expect.soft(ends.ramp.left, `the left end climbs: ${JSON.stringify(ends)}`).toBeGreaterThanOrEqual(2);
-    expect.soft(ends.ramp.right, `the right end climbs: ${JSON.stringify(ends)}`).toBeGreaterThanOrEqual(2);
-    expect.soft(Math.abs(ends.ramp.left - ends.ramp.right), `the two ends climb alike: ${JSON.stringify(ends)}`).toBeLessThanOrEqual(2);
+    expect.soft(ends.ramp.left, `the left end climbs: ${JSON.stringify(ends)}`).toBeGreaterThanOrEqual(2 * PILL_DSF);
+    expect.soft(ends.ramp.right, `the right end climbs: ${JSON.stringify(ends)}`).toBeGreaterThanOrEqual(2 * PILL_DSF);
+    expect.soft(Math.abs(ends.ramp.left - ends.ramp.right), `the two ends climb alike: ${JSON.stringify(ends)}`)
+      .toBeLessThanOrEqual(2 * PILL_DSF);
     expect.soft(ends.tip.right, `the right tip is a sliver, not a wall: ${JSON.stringify(ends)}`).toBeLessThanOrEqual(0.7);
-  });
-
-  test('nothing in the TM or badge box is cut by a clipping ancestor', async ({ page }) => {
-    for (const slot of ['slot-tm', 'slot-badge']) {
-      const problems = await auditLayout(page, `[data-testid="${slot}"]`);
-      expect(problems.filter((p) => p.kind === 'escapes-parent'), `${slot}: nothing escapes its box`).toEqual([]);
-    }
   });
 });

@@ -21,7 +21,6 @@ import { Trash2, Plus, Settings } from 'lucide-react';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 
 import { PageFooter } from '@/components/shared/PageFooter';
-import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { IntroCard } from '@/components/pokedex/IntroCard';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
@@ -917,13 +916,7 @@ export function PokedexGrid() {
     <div className="flex flex-col h-full">
       {/* This page's controls live in the shared tool bar, not a row of its
           own — the count and nav are the header's job now. */}
-      {toolbarSlot && createPortal(
-        <>
-          <FeedbackButton />
-          <SettingsMenu onClear={clearAll} />
-        </>,
-        toolbarSlot,
-      )}
+      {toolbarSlot && createPortal(<SettingsMenu onClear={clearAll} />, toolbarSlot)}
 
       <div
         ref={scrollContainerRef}

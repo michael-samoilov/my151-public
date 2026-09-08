@@ -5,6 +5,7 @@ import { BarChart3, Camera, Hammer, Lock } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { isAnalyticsUnlocked, ANALYTICS_UNLOCK_AT } from '@/lib/milestones';
 import { useT } from '@/i18n';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 
@@ -37,7 +38,8 @@ const LABEL_WIDE = 'sm:max-w-[7rem] sm:opacity-100 sm:ml-1';
 
 /**
  * The app's two-bar chrome. The top bar is the site's: wordmark left, the
- * language picker and the tools menu right — identical across tools. The
+ * language picker, the report button and the tools menu right — identical
+ * across tools, and the same height as the bar under it. The
  * second bar is the dex builder's: the tool name (the count once anything
  * is placed) left, the view nav centred, and the active page's controls
  * right. The milestone progress bar is gone — the admin dashboard showed
@@ -54,7 +56,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
 
   return (
     <header className="bg-card">
-      <div className="flex items-center justify-between border-b px-3 py-2 sm:px-6">
+      <div className="flex h-11 items-center justify-between border-b px-3 sm:px-6">
         {/* The visible wordmark is the page's only <h1>, so on its own it gives
          * crawlers that DO execute JS (Google) a keyword-free heading — see
          * SEO-HANDOFF.md §0. The appended text completes the heading without
@@ -78,6 +80,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
               existed in preview builds would leave them no way back. Whatever
               picks the language, the control to change it has to be reachable. */}
           <LanguagePicker />
+          <FeedbackButton />
           <ToolsMenu current="dex" />
         </div>
       </div>
