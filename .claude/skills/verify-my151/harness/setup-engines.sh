@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Bring up the two engines that need installing: WebKit (apt) and Firefox (Mozilla
-# tarball). Blink ships with Playwright already. Idempotent: skips anything present.
+# Bring up what needs installing: WebKit (apt), Firefox (Mozilla tarball) and the
+# agent-browser CLI (npm), which is the default Blink driver. Blink still has
+# Playwright as its fallback, so a blocked agent-browser install is not fatal.
+# Idempotent: skips anything present.
 # On an egress block it prints the exact blocked host and keeps going, so the
 # harness degrades to whatever came up instead of failing the run.
 #
@@ -112,6 +114,24 @@ else
   fi
 fi
 
+echo "== agent-browser (default Blink driver; Playwright is the fallback) =="
+# Installed out-of-tree, beside Firefox, so the skill stays self-contained and
+# package.json never changes. The CLI drives Chrome only, so it replaces the
+# Blink lane and nothing else: WebKit and Gecko keep their own drivers above.
+AB_DIR="$FF_DIR/agent-browser"
+AB_BIN="$AB_DIR/node_modules/.bin/agent-browser"
+if [ -x "$AB_BIN" ]; then
+  echo "  present: $("$AB_BIN" --version 2>/dev/null | head -1)"
+else
+  sudo mkdir -p "$AB_DIR"
+  if sudo npm install --silent --prefix "$AB_DIR" agent-browser >/tmp/verify-ab.log 2>&1 && [ -x "$AB_BIN" ]; then
+    echo "  installed: $("$AB_BIN" --version 2>/dev/null | head -1)"
+  else
+    echo "  BLOCKED: could not install agent-browser (see /tmp/verify-ab.log); Blink falls back to Playwright"
+    grep -iE '403|forbidden|not in allowlist|could not resolve|404|ETIMEDOUT' /tmp/verify-ab.log 2>/dev/null | head -3
+  fi
+fi
+
 echo "== ffmpeg (only needed for --video on WebKit/Gecko; Blink records without it) =="
 if command -v ffmpeg >/dev/null; then
   echo "  present: $(ffmpeg -version 2>/dev/null | head -1)"
@@ -124,5 +144,9 @@ echo "== summary =="
 WEBKIT="$(find_webkit_browser)"
 [ -n "$WEBKIT" ] && [ -x "$WEBKIT" ] && echo "  webkit: UP ($WEBKIT)" || echo "  webkit: DOWN"
 [ -x "$FF_BIN" ] && echo "  gecko:  UP" || echo "  gecko:  DOWN"
-echo "  blink:  UP (Playwright Chromium)"
+if [ -x "$AB_BIN" ]; then
+  echo "  blink:  UP (agent-browser CLI, Chromium from PLAYWRIGHT_BROWSERS_PATH)"
+else
+  echo "  blink:  UP (Playwright Chromium; agent-browser absent, using the fallback)"
+fi
 exit $status

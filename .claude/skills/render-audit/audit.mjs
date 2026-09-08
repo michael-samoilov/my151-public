@@ -9,6 +9,9 @@
  *                  [--manifest canvas.json] [--min-font 12] [--chromium <path>]
  *                  file.html [file2.html ...]
  *
+ * Driven through Vercel's agent-browser CLI, with Playwright as the fallback
+ * (see browser.mjs). Set RENDER_AUDIT_DRIVER to force one.
+ *
  * Every finding carries the element's path, its text, the numbers that prove
  * it, and a red (error) or orange (warning) box on <out>/<name>.audit.png.
  * Exit code 1 when any error-severity finding exists.
@@ -17,7 +20,7 @@
  * purpose (a crop, a scroll region) carries data-audit-clip="intended"; an image
  * meant to be scaled carries data-audit-scale="intended".
  */
-import { chromium } from 'playwright';
+import { openAuditBrowser } from './browser.mjs';
 import { auditBody } from './audit-core.mjs';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import * as fsSync from 'node:fs';
@@ -72,7 +75,7 @@ function frames() {
   return map;
 }
 
-const browser = await chromium.launch({ executablePath: findChromium() });
+const browser = await openAuditBrowser({ chromiumPath: findChromium() });
 mkdirSync(opt.out, { recursive: true });
 const frameMap = frames();
 const report = [];
@@ -82,20 +85,15 @@ for (const file of opt.files) {
   const stem = path.basename(abs).replace(/\.dc\.html$|\.html$/, '');
   let frame = frameMap.get(stem);
   if (!frame && opt.frame) { const [w, h] = opt.frame.split('x').map(Number); frame = { w, h }; }
-  const page = await browser.newPage({ viewport: { width: Math.round(frame?.w ?? 1280), height: Math.round(frame?.h ?? 800) }, deviceScaleFactor: 1 });
-  const pageErrors = [];
-  page.on('pageerror', (e) => pageErrors.push(String(e)));
-  await page.goto('file://' + abs);
-  if (opt.font && opt.family) {
-    const b64 = readFileSync(opt.font).toString('base64');
-    await page.addStyleTag({ content: `@font-face{font-family:'${opt.family}';src:url(data:font/woff2;base64,${b64}) format('woff2');font-weight:100 900;}` });
-  }
-  await page.evaluate(() => document.fonts.ready);
-  await page.waitForTimeout(250);
-  const result = await page.evaluate(`(() => { ${auditBody({ frame, family: opt.family, minFont: opt.minFont, annotate: true, checkFrame: true })} })()`);
+  await browser.setViewport(Math.round(frame?.w ?? 1280), Math.round(frame?.h ?? 800));
+  await browser.goto('file://' + abs);
+  if (opt.font && opt.family) await browser.addFontFace(opt.font, opt.family);
+  await browser.fontsReady();
+  await new Promise((r) => setTimeout(r, 250));
+  const result = await browser.evalJson(`(() => { ${auditBody({ frame, family: opt.family, minFont: opt.minFont, annotate: true, checkFrame: true })} })()`);
   const shot = path.join(opt.out, `${stem}.audit.png`);
-  await page.screenshot({ path: shot, fullPage: true });
-  await page.close();
+  await browser.screenshotFull(shot);
+  const pageErrors = await browser.pageErrors();
   const errs = result.findings.filter((f) => f.severity === 'error').length;
   errors += errs;
   report.push({ file: abs, frame: result.frame, pageErrors, findings: result.findings, screenshot: shot });
@@ -104,6 +102,7 @@ for (const file of opt.files) {
 }
 await browser.close();
 writeFileSync(path.join(opt.out, 'report.json'), JSON.stringify(report, null, 1));
+console.log(`driver: ${browser.driver}`);
 console.log(`report: ${path.join(opt.out, 'report.json')}; ${errors} error(s) across ${opt.files.length} file(s)`);
 if (selfTest) {
   // The audit proves it can fail: every defect class in the fixture must be reported, and the clean page must be clean.

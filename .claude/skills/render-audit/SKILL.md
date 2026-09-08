@@ -68,8 +68,14 @@ node .claude/skills/render-audit/audit.mjs \
   WxH` sets one size for every file; without either, the frame is the root
   element's own box.
 - `--min-font` sets the smallest allowed text size in page pixels (default 12).
-- The script finds the Playwright Chromium under `PLAYWRIGHT_BROWSERS_PATH` or
+- The script finds the Chromium under `PLAYWRIGHT_BROWSERS_PATH` or
   `/opt/pw-browsers`; pass `--chromium <path>` or set `PW_BIN` otherwise.
+- The browser runs through Vercel's
+  [agent-browser](https://github.com/vercel-labs/agent-browser) CLI by default,
+  with Playwright as the fallback (`browser.mjs`). Both drive the same Chromium,
+  so findings do not depend on the driver; the run prints which one it used, and
+  `RENDER_AUDIT_DRIVER` forces one. Install the CLI with
+  `.claude/skills/verify-my151/harness/setup-engines.sh`.
 - Pages must reference their assets by paths that resolve from disk. For a
   design canvas, keep a render copy whose image paths point at the asset
   directory.

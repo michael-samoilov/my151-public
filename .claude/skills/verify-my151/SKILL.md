@@ -28,7 +28,7 @@ string.
 
 | Surface | Engine | How it runs here |
 | --- | --- | --- |
-| desktop Chrome, Android Chrome | Blink | Playwright Chromium (pre-installed under `PLAYWRIGHT_BROWSERS_PATH`) |
+| desktop Chrome, Android Chrome | Blink | agent-browser CLI, Playwright as the fallback (Chromium from `PLAYWRIGHT_BROWSERS_PATH`) |
 | iOS Safari, iOS Chrome | WebKit | WebKitGTK MiniBrowser over W3C WebDriver |
 | desktop Firefox | Gecko | Mozilla-tarball Firefox over Marionette |
 
@@ -43,16 +43,48 @@ layout, and scroll on the actual engine. Every proof asserts its persona/engine
 first (`READ_PERSONA` + `assertPersona`), so a run can never silently verify the
 wrong surface.
 
+## Blink drivers
+
+Blink runs through Vercel's [agent-browser](https://github.com/vercel-labs/agent-browser)
+CLI by default. Playwright is the fallback, and `setup-engines.sh` installs the
+CLI out-of-tree, so a blocked install costs nothing. Set `VERIFY_BLINK_DRIVER`
+to `agent-browser` or `playwright` to force one. `doctor.ts` prints the driver
+it will use, so evidence always names it.
+
+agent-browser reaches Blink and nothing else. It drives `chrome` and
+`lightpanda` only, and its iOS mode needs Xcode and Appium, so **WebKit and
+Gecko keep their own drivers** and stay the only proof of real iOS and Firefox
+rendering.
+
+Three CLI behaviors are load-bearing in `lib/agentBrowser.ts`, each one measured:
+
+1. Configure through `AGENT_BROWSER_*` variables, never flags. The CLI keeps a
+   daemon and reads flags only when that daemon starts, so a later
+   `--user-agent` is dropped and the session runs with a default identity.
+2. Give every session a random `--session` name, so a name left by a crashed
+   run is never reused.
+3. Judge a command by the JSON `success` field. A failed command exits 0.
+
+Two differences from Playwright are handled in code, not left to chance:
+
+- **Clicks do not scroll.** Playwright scrolls a target into view first; the CLI
+  does not, so a button below the fold was clicked at the wrong place and did
+  nothing. `click()` runs `scrollintoview` first.
+- **`record start` drops the persona.** Recording rebuilds the page context and
+  loses the user-agent override and the init scripts, keeping only the viewport.
+  There is no runtime command to set the UA back, so a persona surface with
+  `--video` uses Playwright and says so on stderr.
+
 ## Launch
 
-One command installs the two engines that need it (Blink ships with Playwright):
+One command installs what needs installing (WebKit, Firefox, agent-browser):
 
 ```
 bash .claude/skills/verify-my151/harness/setup-engines.sh
 ```
 
 It is idempotent. It `apt`-installs `webkit2gtk-driver` + `xvfb`, downloads
-Firefox to `/opt/verify-my151/`, and needs no geckodriver (its only host is
+Firefox and agent-browser to `/opt/verify-my151/`, and needs no geckodriver (its only host is
 github, which this session gates; Marionette drives Firefox directly). On an
 egress block it prints the blocked host and keeps going, so the harness runs on
 whatever came up.

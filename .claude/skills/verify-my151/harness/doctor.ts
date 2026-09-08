@@ -2,7 +2,7 @@
 // now? Run before any verification, and again after anything looks off. Prints a
 // matrix and exits 0 if at least Blink (the guaranteed floor) is up.
 import fs from 'node:fs';
-import { openSession, ENGINE_PATHS, type EngineName } from './lib/engines.ts';
+import { openSession, blinkDriverChoice, ENGINE_PATHS, type EngineName } from './lib/engines.ts';
 
 const DATA_URL = 'data:text/html,<title>doctor</title><h1 id=x>ok</h1>';
 
@@ -31,6 +31,14 @@ export async function probeEngines(): Promise<EngineHealth[]> {
 }
 
 async function main() {
+  // Say which driver Blink is about to use, so a run's evidence names it and a
+  // silent fallback to Playwright is visible here rather than guessed at later.
+  try {
+    const { driver, detail } = blinkDriverChoice();
+    console.log(`driver blink   ${driver} (${detail})`);
+  } catch (e) {
+    console.log(`driver blink   ERROR ${(e as Error).message}`);
+  }
   const health = await probeEngines();
   for (const h of health) console.log(`${h.available ? 'UP  ' : 'DOWN'}  ${h.engine.padEnd(7)}  ${h.detail}`);
   const blink = health.find((h) => h.engine === 'blink');

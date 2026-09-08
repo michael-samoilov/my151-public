@@ -1,5 +1,6 @@
 // The three real browser engines behind one Session interface.
-//   Blink  — Playwright Chromium (also carries the personas).
+//   Blink  — agent-browser CLI by default, Playwright as the fallback (also
+//            carries the personas). See blinkDriverChoice below.
 //   WebKit — WebKitGTK MiniBrowser over raw W3C WebDriver (the real iOS engine).
 //   Gecko  — Mozilla-tarball Firefox over Marionette (no geckodriver; its only
 //            host is github, which this session gates).
@@ -14,6 +15,7 @@ import path from 'node:path';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { PERSONAS, type PersonaName } from './personas.ts';
 import { startXvfb, startFfmpeg, stopFfmpeg, killProc } from './capture.ts';
+import { openAgentBrowser, resolveAgentBrowser } from './agentBrowser.ts';
 
 // Fixed Xvfb displays for the video lanes. WebKit and Gecko never run at the same
 // time (surfaces drive serially), so a fixed display each is safe.
@@ -153,7 +155,7 @@ function resolveChromium(): string | undefined {
   return undefined;
 }
 
-export async function openBlink(persona: PersonaName | null, videoFile?: string): Promise<Session> {
+export async function openBlinkPlaywright(persona: PersonaName | null, videoFile?: string): Promise<Session> {
   const launchOptions: Parameters<typeof chromium.launch>[0] = { headless: true, args: ['--no-sandbox'] };
   const chromePath = resolveChromium();
   if (chromePath) launchOptions.executablePath = chromePath;
@@ -171,6 +173,52 @@ export async function openBlink(persona: PersonaName | null, videoFile?: string)
   page.on('pageerror', (e) => collected.push(`pageerror: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error' && m.text().includes('[P151] crash')) collected.push(`crash: ${m.text()}`); });
   return new BlinkSession(persona, browser, ctx, page, collected, videoFile);
+}
+
+// ---------- Blink driver choice ----------
+
+export type BlinkDriver = 'agent-browser' | 'playwright';
+
+// agent-browser is the default Blink driver; Playwright is the fallback. Force
+// either with VERIFY_BLINK_DRIVER. Nothing here can change WebKit or Gecko:
+// agent-browser drives chrome and lightpanda only, so those two lanes stay on
+// WebDriver and Marionette and remain the only proof of real iOS and Firefox
+// rendering.
+export function blinkDriverChoice(): { driver: BlinkDriver; detail: string } {
+  const forced = process.env.VERIFY_BLINK_DRIVER;
+  if (forced === 'playwright') return { driver: 'playwright', detail: 'forced by VERIFY_BLINK_DRIVER' };
+  const bin = resolveAgentBrowser();
+  if (forced === 'agent-browser') {
+    if (!bin) throw new Error('VERIFY_BLINK_DRIVER=agent-browser but the CLI is not installed (run setup-engines.sh)');
+    return { driver: 'agent-browser', detail: bin };
+  }
+  if (bin) return { driver: 'agent-browser', detail: bin };
+  return { driver: 'playwright', detail: 'agent-browser not installed; using Playwright' };
+}
+
+export async function openBlink(persona: PersonaName | null, videoFile?: string): Promise<Session> {
+  const { driver } = blinkDriverChoice();
+  if (driver === 'playwright') return openBlinkPlaywright(persona, videoFile);
+  // Measured limit of the CLI: `record start` rebuilds the page context and
+  // drops the user-agent override and the init scripts, while keeping the
+  // viewport. A persona recorded that way reports plain HeadlessChrome, so the
+  // run would claim a surface it never drove. There is no runtime command to
+  // set the UA back, so this combination goes to Playwright even when the
+  // driver is forced: silently wrong evidence is worse than a fallback.
+  if (videoFile && persona) {
+    console.warn(`blink: ${persona} with --video uses Playwright (agent-browser record drops the persona identity)`);
+    return openBlinkPlaywright(persona, videoFile);
+  }
+  try {
+    return await openAgentBrowser(persona, resolveChromium(), videoFile);
+  } catch (e) {
+    // A CLI that is installed but cannot start must not take the Blink floor
+    // down with it, so fall back and say so. An explicit VERIFY_BLINK_DRIVER
+    // never falls back: a forced driver that fails is a real failure.
+    if (process.env.VERIFY_BLINK_DRIVER) throw e;
+    console.warn(`blink: agent-browser failed (${(e as Error).message}); falling back to Playwright`);
+    return openBlinkPlaywright(persona, videoFile);
+  }
 }
 
 // ---------- WebKit (WebKitGTK, raw W3C WebDriver) ----------
