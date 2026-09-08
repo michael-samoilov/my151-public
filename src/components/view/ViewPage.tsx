@@ -1,11 +1,13 @@
 import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
+import { useDragSensors } from '@/lib/dragSensors';
+import { createPortal } from 'react-dom';
+import { useToolbarSlot } from '@/components/layout/toolbarSlot';
 import { Settings, Download, Loader2 } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewSort';
-import { TYPE_COLORS } from '@/data/type-colors';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { PageFooter } from '@/components/shared/PageFooter';
-import { FeedbackButton } from '@/components/feedback/FeedbackButton';
+import { PokeballBg } from '@/components/shared/PokeballBg';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
@@ -14,7 +16,6 @@ import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { FollowUpHint } from '@/components/milestone/FollowUpHint';
-import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
 import { DetailedStatsPanel, STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
 import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
@@ -38,10 +39,6 @@ import {
 } from '@/lib/sectionOutlines';
 import {
   DndContext,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
   DragOverlay,
   useDroppable,
   useDraggable,
@@ -50,6 +47,7 @@ import {
   type DragEndEvent,
   type DragMoveEvent,
 } from '@dnd-kit/core';
+import { DRAG_SOURCE_OPACITY, HeldItems } from '@/components/shared/dragHold';
 
 /**
  * Re-measure droppable rects on every frame during a drag. The default
@@ -101,50 +99,6 @@ const TOUCH_HIT_LIFT_PX = 90;
 const CURSOR_MARKER_HEIGHT = 24;
 const effectiveCursorCollision = createEffectiveCursorCollision(TOUCH_HIT_LIFT_PX);
 const snapCenterToPointer = createSnapCenterToPointer(OVERLAY_LIFT_PX);
-
-/** Pokeball SVG background with top/bottom halves colored by type, gap between halves. */
-function PokeballBg({ pokemon }: { pokemon: Pokemon }) {
-  const primary = TYPE_COLORS[pokemon.types[0] as TypeName];
-  const secondary = TYPE_COLORS[(pokemon.types[1] ?? pokemon.types[0]) as TypeName];
-
-  return (
-    <>
-      <svg
-        viewBox="0 0 40 40"
-        className="absolute inset-0 w-full h-full opacity-[0.33] -rotate-[30deg]"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M20 2 C10.06 2 2 10.06 2 20 L15 20 A5 5 0 0 1 25 20 L38 20 C38 10.06 29.94 2 20 2 Z"
-          fill={primary}
-        />
-        <path
-          d="M15 20 A5 5 0 0 0 25 20 L38 20 C38 29.94 29.94 38 20 38 C10.06 38 2 29.94 2 20 L15 20 Z"
-          fill={secondary}
-        />
-      </svg>
-      <svg
-        viewBox="0 0 40 40"
-        className="absolute inset-0 w-full h-full -rotate-[30deg]"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M20 2 C10.06 2 2 10.06 2 20 L15 20 A5 5 0 0 1 25 20 L38 20 C38 10.06 29.94 2 20 2 Z"
-          fill="none"
-          stroke="var(--color-background)"
-          strokeWidth="3"
-        />
-        <path
-          d="M15 20 A5 5 0 0 0 25 20 L38 20 C38 29.94 29.94 38 20 38 C10.06 38 2 29.94 2 20 L15 20 Z"
-          fill="none"
-          stroke="var(--color-background)"
-          strokeWidth="3"
-        />
-        <circle cx="20" cy="20" r="4" fill="var(--color-background)" stroke="var(--color-background)" strokeWidth="3" />
-      </svg>
-    </>
-  );
-}
 
 /** Measure container and compute square tile size that fits all items.
  *  `colFactor` / `rowFactor` are the effective column / row counts in tileSize
@@ -276,11 +230,12 @@ function DraggableViewTile({
       ref={setNodeRef}
       {...attributes}
       {...listeners}
+      data-view-tile={pokemon.id}
       className="relative overflow-visible cursor-grab active:cursor-grabbing select-none"
       style={{
         width: tileSize,
         height: tileSize,
-        opacity: isDragging || isDraggedLine ? 0.25 : 1,
+        opacity: isDragging || isDraggedLine ? DRAG_SOURCE_OPACITY : 1,
         // Intentionally NOT setting `touchAction: 'none'` here. The touch
         // sensor uses delay-based activation (250ms hold), which does not
         // require disabling native touch behaviours — and disabling them
@@ -559,6 +514,7 @@ export function ViewPage() {
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
+  const toolbarSlot = useToolbarSlot('view');
   const totalSlots = Math.max(count, 151);
 
   // Build-section outlines overlay: shown when the user enables it, in build order.
@@ -956,9 +912,7 @@ export function ViewPage() {
   // lives, distinct from the strong red indicator that shows where the
   // drop will land if released.
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
-  const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
-  const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
-  const sensors = useSensors(mouseSensor, touchSensor);
+  const sensors = useDragSensors();
 
   const resetDragState = useCallback(() => {
     setDragLineIds(null);
@@ -1193,26 +1147,10 @@ export function ViewPage() {
     <div className="h-full flex relative">
       {/* Main grid column */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <div className="flex items-center px-3 sm:px-6 py-2 border-b h-11">
-          <div className="shrink-0" style={{ width: 'var(--ms-side)' }}>
-            <h2 className="text-2xl font-extrabold tracking-tight leading-none tabular-nums">
-              <span className="text-primary">{count}</span>
-              <span className="text-foreground">/151</span>
-            </h2>
-          </div>
-          <div className="flex-1 min-w-0">
-            <MilestoneBar />
-          </div>
-          <div className="flex items-center gap-1 shrink-0 justify-end" style={{ width: 'var(--ms-side)' }}>
-            <FeedbackButton />
-            <button type="button"
-              ref={exportBtnRef}
-              onClick={handleExport}
-              disabled={exporting || count === 0}
-              className="p-1.5 rounded-md border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-primary"
-            >
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            </button>
+        {/* This page's controls ride the shared tool bar; the count and nav
+            are the header's job now. */}
+        {toolbarSlot && createPortal(
+          <>
             <button type="button"
               ref={settingsBtnRef}
               onClick={() => setSettingsOpen(true)}
@@ -1227,8 +1165,17 @@ export function ViewPage() {
                 />
               )}
             </button>
-          </div>
-        </div>
+            <button type="button"
+              ref={exportBtnRef}
+              onClick={handleExport}
+              disabled={exporting || count === 0}
+              className="p-1.5 rounded-md border border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-primary"
+            >
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            </button>
+          </>,
+          toolbarSlot,
+        )}
 
         {/* px-4 (not p-2): overflow-y-auto forces overflow-x to clip, so the extra
             horizontal padding gives the cards' soft shadows room before that clip.
@@ -1360,14 +1307,11 @@ export function ViewPage() {
 
                 <DragOverlay dropAnimation={null}>
                   {dragOverlayPokemon.length > 0 && (
-                    <div
-                      className="flex absolute top-1/2 left-1/2"
-                      style={{ transform: 'translate(-50%, -50%)' }}
-                    >
+                    <HeldItems>
                       {dragOverlayPokemon.map((p) => (
                         <StaticViewTile key={p.id} pokemon={p} tileSize={tileSize} />
                       ))}
-                    </div>
+                    </HeldItems>
                   )}
                 </DragOverlay>
                 {cursorPos && dragLineIds && (

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import pokemonData from '@/data/pokemon.json';
 import { en } from './catalogs/en';
 import { setCatalog } from './core';
-import { formLabel, formProvenance, speciesName, __setNamesForTest, type NameProvenance } from './names';
+import { formLabel, formProvenance, getNamesVersion, speciesName, __setNamesForTest, type NameProvenance } from './names';
 import { normalizeSearch } from './searchNormalize';
 import type { Locale } from './config';
 
@@ -148,6 +148,38 @@ describe('name catalogs', () => {
     for (const locale of ['ja', 'ko', 'zh-Hans', 'zh-Hant'] as const) {
       const accented = load(locale).affix?.filter((text) => /[À-ÿ]/.test(text)) ?? [];
       expect(accented, `${locale} left accented text in its affixes`).toEqual([]);
+    }
+  });
+});
+
+/**
+ * The snapshot `useNamesVersion` hands React.
+ *
+ * A locale switch changes the names a component would render, and it does not
+ * always come with a name catalog download: the target locale's names may be
+ * loaded already, or — as `applyLocale` orders things — the download may land
+ * *before* the switch that started it. When the snapshot ignored the locale,
+ * React was called back with an unchanged value and skipped the re-render, so
+ * a gym card showed Japanese type badges under an English name.
+ */
+describe('getNamesVersion', () => {
+  it('changes when the locale changes', () => {
+    const before = getNamesVersion();
+    setCatalog('ja', en);
+    const afterSwitch = getNamesVersion();
+    expect(afterSwitch).not.toBe(before);
+
+    setCatalog('en', en);
+    expect(getNamesVersion()).not.toBe(afterSwitch);
+  });
+
+  it('only ever goes up, so no two states can share a value', () => {
+    const seen = new Set<number>();
+    for (const locale of ['en', 'ja', 'ko', 'de', 'en'] as const) {
+      setCatalog(locale, en);
+      const version = getNamesVersion();
+      expect(seen.has(version), `${locale} repeated a version`).toBe(false);
+      seen.add(version);
     }
   });
 });

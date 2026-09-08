@@ -351,6 +351,9 @@ interface UseFilteredPokemonOptions {
   colors?: string[] | null; // Pokédex colors (Pokemon.color)
   eggGroups?: string[] | null; // egg groups (Pokemon.eggGroups — matches if any overlap)
   excludeIds?: Set<number>;
+  /** When set, only these ids can appear (the league's "My dex" filter).
+   *  Symmetric with excludeIds; both are keyed into the memo. */
+  restrictToIds?: Set<number>;
   evoLineSize?: number[] | null; // [1], [2], [3] where 3 means 3+
 }
 
@@ -365,11 +368,21 @@ function useFilteredPokemon({
   colors = null,
   eggGroups = null,
   excludeIds,
+  restrictToIds,
 }: UseFilteredPokemonOptions): Pokemon[] {
   // Serialize excludeIds to a stable string for memo deps
   const excludeKey = useMemo(
-    () => (excludeIds ? [...excludeIds].sort((a, b) => a - b).join(',') : ''),
+    () => (excludeIds ? `x:${[...excludeIds].sort((a, b) => a - b).join(',')}` : ''),
     [excludeIds]
+  );
+  // The `r:` prefix is what separates "restricted to nothing" from "not
+  // restricted": both join to an empty string, so without it an empty
+  // restriction reuses the unrestricted result. That is how the "My dex"
+  // chip appeared to do nothing for a user whose dex is still empty — it
+  // restricted to a set of none, and the memo handed back everything.
+  const restrictKey = useMemo(
+    () => (restrictToIds ? `r:${[...restrictToIds].sort((a, b) => a - b).join(',')}` : ''),
+    [restrictToIds]
   );
 
   const typesKey = types ? types.join(',') : '';
@@ -463,8 +476,13 @@ function useFilteredPokemon({
       filtered = filtered.filter(p => !excludeIds.has(p.id));
     }
 
+    if (restrictToIds) {
+      filtered = filtered.filter(p => restrictToIds.has(p.id));
+    }
+
     return filtered;
-  }, [search, category, archetype, typesKey, typeMode, gensKey, shapesKey, colorsKey, eggGroupsKey, excludeIds, excludeKey, namesVersion]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- excludeKey/restrictKey stand in for their Sets
+  }, [search, category, archetype, typesKey, typeMode, gensKey, shapesKey, colorsKey, eggGroupsKey, excludeKey, restrictKey, namesVersion]);
 }
 
 export interface EvolutionGroup {

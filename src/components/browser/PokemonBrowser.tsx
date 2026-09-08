@@ -5,8 +5,11 @@ import { Button } from '@/components/ui/button';
 import { EvoLineGrid } from './EvoLineCard';
 import { useTileGridMaxWidth } from '@/components/shared/PokemonTile';
 import { useFilteredPokemonGrouped, getPokemonById, getExclusiveForms, type EvolutionGroup } from '@/hooks/usePokemonData';
-import { usePokedexStore } from '@/store/usePokedexStore';
+import { mergeBranchesByChain } from './chainMerge';
+import { useBrowserStore } from './browserStore';
 import { ARCHETYPES } from '@/data/archetypes';
+import { BUILD_GROUPS } from '@/data/slot-template';
+import { DEX_TOTAL } from '@/lib/milestones';
 import { CATEGORIES, type PokemonCategory } from '@/data/categories';
 import { TYPE_NAMES, type Pokemon, type TypeName, type ShapeName, type ColorName, type EggGroupName } from '@/types/pokemon';
 import { ShapeIcon, SHAPE_ORDER } from '@/components/shared/ShapeIcon';
@@ -14,7 +17,7 @@ import { TypeBadge } from '@/components/shared/TypeBadge';
 import { COLOR_ORDER, COLOR_SWATCHES, colorTextOn, colorRingOn, EGG_GROUP_ORDER } from '@/data/classifications';
 import { archetypeName as archetypeLabel, categoryName as categoryLabel, colorLabel, eggGroupLabel, sectionName as sectionLabel, shapeLabel, t, typeLabel, useT, useTn, type MessageKey } from '@/i18n';
 import { TYPE_COLORS } from '@/data/type-colors';
-import { Search, X, ChevronDown } from 'lucide-react';
+import { Search, X, ChevronDown, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
@@ -51,6 +54,20 @@ interface BrowserSubgroup {
   label: string;
   pokemonIds: number[];
   shinyIds?: number[];
+  /**
+   * How the evolution lines inside the subgroup are ordered. The default is
+   * by the lowest *matching* member's dex number. `evoLine` orders by the
+   * whole line instead — earliest generation any member belongs to, then
+   * earliest dex number in it — which is what a set of already-chosen lines
+   * wants: they are read as lines, not as the members that matched.
+   */
+  order?: 'evoLine';
+  /**
+   * Draw these exact lines rather than the chains the members belong to.
+   * A chain is the whole evolutionary tree; a line is one path through it,
+   * and that is what the user seated.
+   */
+  lines?: number[][];
 }
 
 /**
@@ -77,8 +94,14 @@ interface SubgroupGridGroup {
   matchedIds: Set<number>;
 }
 
-export function PokemonBrowser() {
-  const searchQuery = usePokedexStore((s) => s.searchQuery);
+export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
+  /** 'stage' is the dex builder's flow (mobile taps stage, the FAB commits).
+   *  'instant' is the league's: a tap places the line and closes the sheet. */
+  pickMode?: 'stage' | 'instant';
+  /** Section-title resolver for hosts whose ids are not build groups. */
+  labelForSection?: (sectionId: string) => string;
+} = {}) {
+  const searchQuery = useBrowserStore((s) => s.searchQuery);
   /**
    * The text as it stood when an IME began composing, or null when nothing is
    * being composed.
@@ -96,33 +119,46 @@ export function PokemonBrowser() {
   const searchInput = composingFrom ?? searchQuery;
   // searchInput feeds filterOptions below, which is what gets deferred — so the
   // whole grid pipeline reads the composition-held value at deferred priority.
-  const setSearchQuery = usePokedexStore((s) => s.setSearchQuery);
-  const activeCategory = usePokedexStore((s) => s.activeCategoryFilter);
-  const setCategoryFilter = usePokedexStore((s) => s.setCategoryFilter);
-  const activeArchetype = usePokedexStore((s) => s.activeArchetypeFilter);
-  const setArchetypeFilter = usePokedexStore((s) => s.setArchetypeFilter);
-  const typeFilter = usePokedexStore((s) => s.typeFilter);
-  const setTypeFilter = usePokedexStore((s) => s.setTypeFilter);
-  const typeFilterMode = usePokedexStore((s) => s.typeFilterMode);
-  const setTypeFilterMode = usePokedexStore((s) => s.setTypeFilterMode);
-  const toggleType = usePokedexStore((s) => s.toggleType);
-  const generationFilter = usePokedexStore((s) => s.generationFilter);
-  const setGenerationFilter = usePokedexStore((s) => s.setGenerationFilter);
-  const toggleGeneration = usePokedexStore((s) => s.toggleGeneration);
-  const shapeFilter = usePokedexStore((s) => s.shapeFilter);
-  const setShapeFilter = usePokedexStore((s) => s.setShapeFilter);
-  const toggleShape = usePokedexStore((s) => s.toggleShape);
-  const colorFilter = usePokedexStore((s) => s.colorFilter);
-  const setColorFilter = usePokedexStore((s) => s.setColorFilter);
-  const toggleColor = usePokedexStore((s) => s.toggleColor);
-  const eggGroupFilter = usePokedexStore((s) => s.eggGroupFilter);
-  const setEggGroupFilter = usePokedexStore((s) => s.setEggGroupFilter);
-  const toggleEggGroup = usePokedexStore((s) => s.toggleEggGroup);
-  const evoLineSizeFilter = usePokedexStore((s) => s.evoLineSizeFilter);
-  const setEvoLineSizeFilter = usePokedexStore((s) => s.setEvoLineSizeFilter);
-  const sections = usePokedexStore((s) => s.sections);
-  const activeSection = usePokedexStore((s) => s.activeSection);
-  const addToSection = usePokedexStore((s) => s.addToSection);
+  const setSearchQuery = useBrowserStore((s) => s.setSearchQuery);
+  const activeCategory = useBrowserStore((s) => s.activeCategoryFilter);
+  const setCategoryFilter = useBrowserStore((s) => s.setCategoryFilter);
+  const activeArchetype = useBrowserStore((s) => s.activeArchetypeFilter);
+  const setArchetypeFilter = useBrowserStore((s) => s.setArchetypeFilter);
+  const typeFilter = useBrowserStore((s) => s.typeFilter);
+  const setTypeFilter = useBrowserStore((s) => s.setTypeFilter);
+  const typeFilterMode = useBrowserStore((s) => s.typeFilterMode);
+  const setTypeFilterMode = useBrowserStore((s) => s.setTypeFilterMode);
+  const toggleType = useBrowserStore((s) => s.toggleType);
+  const generationFilter = useBrowserStore((s) => s.generationFilter);
+  const setGenerationFilter = useBrowserStore((s) => s.setGenerationFilter);
+  const toggleGeneration = useBrowserStore((s) => s.toggleGeneration);
+  const shapeFilter = useBrowserStore((s) => s.shapeFilter);
+  const setShapeFilter = useBrowserStore((s) => s.setShapeFilter);
+  const toggleShape = useBrowserStore((s) => s.toggleShape);
+  const colorFilter = useBrowserStore((s) => s.colorFilter);
+  const setColorFilter = useBrowserStore((s) => s.setColorFilter);
+  const toggleColor = useBrowserStore((s) => s.toggleColor);
+  const eggGroupFilter = useBrowserStore((s) => s.eggGroupFilter);
+  const setEggGroupFilter = useBrowserStore((s) => s.setEggGroupFilter);
+  const toggleEggGroup = useBrowserStore((s) => s.toggleEggGroup);
+  const evoLineSizeFilter = useBrowserStore((s) => s.evoLineSizeFilter);
+  const setEvoLineSizeFilter = useBrowserStore((s) => s.setEvoLineSizeFilter);
+  const sections = useBrowserStore((s) => s.sections);
+  const activeSection = useBrowserStore((s) => s.activeSection);
+  const addToSection = useBrowserStore((s) => s.addToSection);
+  const myDexFilter = useBrowserStore((s) => s.myDexFilter);
+  const myDexIds = useBrowserStore((s) => s.myDexIds);
+  const myDexSections = useBrowserStore((s) => s.myDexSections);
+  const setMyDexFilter = useBrowserStore((s) => s.setMyDexFilter);
+  const restrictIds = useBrowserStore((s) => s.restrictIds);
+  const scopeFilter = useBrowserStore((s) => s.scopeFilter);
+  const scopeFilterIds = useBrowserStore((s) => s.scopeFilterIds);
+  const scopeFilterLabel = useBrowserStore((s) => s.scopeFilterLabel);
+  const scopeFilterLines = useBrowserStore((s) => s.scopeFilterLines);
+  const scopeFilterLocked = useBrowserStore((s) => s.scopeFilterLocked);
+  const scopeFilterLockedHint = useBrowserStore((s) => s.scopeFilterLockedHint);
+  const standaloneTiles = useBrowserStore((s) => s.standaloneTiles);
+  const setScopeFilter = useBrowserStore((s) => s.setScopeFilter);
   const t = useT();
   const tn = useTn();
   const [openSheet, setOpenSheet] = useState<FilterSheet>(null);
@@ -138,10 +174,10 @@ export function PokemonBrowser() {
   const [removalStagedIds, setRemovalStagedIds] = useState<number[]>([]);
   const removalStagedSet = useMemo(() => new Set(removalStagedIds), [removalStagedIds]);
   const prevSectionRef = useRef(activeSection);
-  const removeEvoLine = usePokedexStore((s) => s.removeEvoLine);
+  const removeEvoLine = useBrowserStore((s) => s.removeEvoLine);
 
-  const setMobileBrowserOpen = usePokedexStore((s) => s.setMobileBrowserOpen);
-  const setActiveSection = usePokedexStore((s) => s.setActiveSection);
+  const setMobileBrowserOpen = useBrowserStore((s) => s.setMobileBrowserOpen);
+  const setActiveSection = useBrowserStore((s) => s.setActiveSection);
 
   const assignedIds = useMemo(
     () => new Set(Object.values(sections).flat()),
@@ -159,14 +195,15 @@ export function PokemonBrowser() {
   }, [activeSection]);
 
   const handleToggleStage = useCallback((memberIds: number[]) => {
-    if (isDesktop && activeSection) {
-      // Desktop: instantly add unassigned pokemon (no staging)
+    if ((isDesktop || pickMode === 'instant') && activeSection) {
+      // Desktop (and the league's instant mode): add with no staging.
       const newIds = memberIds.filter(id => !assignedIds.has(id));
       if (newIds.length > 0) {
         addToSection(activeSection, newIds);
         // Scroll the build page to the target section
-        window.dispatchEvent(new CustomEvent('scroll-to-section', { detail: activeSection }));
+        if (isDesktop) window.dispatchEvent(new CustomEvent('scroll-to-section', { detail: activeSection }));
       }
+      if (pickMode === 'instant' && !isDesktop) setMobileBrowserOpen(false);
       return;
     }
     setStagedIds(prev => {
@@ -196,9 +233,25 @@ export function PokemonBrowser() {
         return [...cleaned, ...toAdd];
       }
     });
-  }, [isDesktop, activeSection, assignedIds, addToSection]);
+  }, [isDesktop, pickMode, activeSection, assignedIds, addToSection, setMobileBrowserOpen]);
 
   const handleToggleRemoval = useCallback((memberIds: number[]) => {
+    if (pickMode === 'instant') {
+      const placed = memberIds.find(id => assignedIds.has(id));
+      if (placed !== undefined) {
+        for (const [sectionId, ids] of Object.entries(sections)) {
+          if (ids.includes(placed)) {
+            removeEvoLine(sectionId, placed);
+            break;
+          }
+        }
+      }
+      // A tap is a tap: the sheet goes away after this one the way it does
+      // after a first pick above, whatever the store did with it. It used to
+      // stay up only on a repeat tap, which read as the tap not landing.
+      if (!isDesktop) setMobileBrowserOpen(false);
+      return;
+    }
     setRemovalStagedIds(prev => {
       const prevSet = new Set(prev);
       const allStaged = memberIds.every(id => prevSet.has(id));
@@ -210,7 +263,7 @@ export function PokemonBrowser() {
         return [...prev, ...toAdd];
       }
     });
-  }, []);
+  }, [pickMode, isDesktop, assignedIds, sections, removeEvoLine, setMobileBrowserOpen]);
 
   const handleSubmitStaged = useCallback(() => {
     if (isDesktop) {
@@ -261,7 +314,7 @@ export function PokemonBrowser() {
   }, [setActiveSection]);
 
   const sectionName = activeSection
-    ? sectionLabel(activeSection)
+    ? (labelForSection ? labelForSection(activeSection) : sectionLabel(activeSection))
     : null;
 
   // All inputs to the results grid go through one memoized options object
@@ -274,6 +327,17 @@ export function PokemonBrowser() {
   // `search` is `searchInput`, not `searchQuery`: while an IME is composing,
   // searchInput holds at the pre-composition text so the grid does not churn
   // through the intermediate states (see composingFrom above).
+  // Two restriction channels compose: the host's structural one (legend
+  // picker) and the user's "My dex" toggle.
+  const restrictToIds = useMemo(() => {
+    const active: Set<number>[] = [];
+    if (restrictIds) active.push(restrictIds);
+    if (myDexFilter && myDexIds) active.push(myDexIds);
+    if (scopeFilter && scopeFilterIds) active.push(scopeFilterIds);
+    if (active.length === 0) return undefined;
+    return active.reduce((acc, set) => new Set([...acc].filter((id) => set.has(id))));
+  }, [restrictIds, myDexFilter, myDexIds, scopeFilter, scopeFilterIds]);
+
   const filterOptions = useMemo(() => ({
     search: searchInput,
     category: activeCategory,
@@ -285,7 +349,8 @@ export function PokemonBrowser() {
     colors: colorFilter,
     eggGroups: eggGroupFilter,
     evoLineSize: evoLineSizeFilter,
-  }), [searchInput, activeCategory, activeArchetype, typeFilter, typeFilterMode, generationFilter, shapeFilter, colorFilter, eggGroupFilter, evoLineSizeFilter]);
+    restrictToIds: restrictToIds,
+  }), [searchInput, activeCategory, activeArchetype, typeFilter, typeFilterMode, generationFilter, shapeFilter, colorFilter, eggGroupFilter, evoLineSizeFilter, restrictToIds]);
   const deferredOptions = useDeferredValue(filterOptions);
   const groups = useFilteredPokemonGrouped(deferredOptions);
 
@@ -316,6 +381,53 @@ export function PokemonBrowser() {
   );
   const spriteOverrides = gridArchetypeDef?.spriteOverrides;
 
+  /**
+   * The pane is showing the card's own lines, drawn as lines.
+   *
+   * True when the scope chip is on, and also when the results are
+   * structurally confined to the same set — a full template forces the scope
+   * and shows no chip to turn it off.
+   */
+  const scopedToLines = !!(scopeFilterLines && (scopeFilter || restrictIds));
+
+  /**
+   * The scoped set as one group, not cut up.
+   *
+   * When the pane is narrowed to the card's own team there are a handful of
+   * lines, and slicing them across generation headings buries the thing the
+   * user came to pick from. Returns null when no scope chip is on.
+   */
+  const scopeSubgroup = useCallback((ids: Iterable<number>): BrowserSubgroup[] | null => {
+    // Also when the results are structurally confined to the same set — a
+    // full template forces the scope and shows no chip to turn it off.
+    if (!scopedToLines) return null;
+    const inScope = [...ids].filter((id) => scopeFilterLines.some((line) => line.includes(id)));
+    if (inScope.length === 0) return [];
+    return [{
+      label: scopeFilterLabel ?? 'Scope',
+      pokemonIds: inScope,
+      order: 'evoLine',
+      lines: scopeFilterLines,
+    }];
+  }, [scopedToLines, scopeFilterLines, scopeFilterLabel]);
+
+  /**
+   * The dex, in the order the user built it: one subgroup per build section,
+   * in the build page's own order, holding whichever of that section's ids
+   * survived the current filters. Returns null when the My dex chip is off or
+   * the host supplies no sections, so the caller falls back to generations.
+   */
+  const sectionSubgroups = useCallback((ids: Iterable<number>): BrowserSubgroup[] | null => {
+    if (!myDexFilter || !myDexSections) return null;
+    const inResults = new Set(ids);
+    return BUILD_GROUPS
+      .map((g) => ({
+        label: sectionLabel(g.id),
+        pokemonIds: (myDexSections[g.id] ?? []).filter((id) => inResults.has(id)),
+      }))
+      .filter((sub) => sub.pokemonIds.length > 0);
+  }, [myDexFilter, myDexSections]);
+
   // Subgroups: custom if archetype/category defines them, otherwise auto-generate by generation
   const effectiveSubgroups = useMemo((): BrowserSubgroup[] => {
     if (gridArchetypeDef?.subgroups) return gridArchetypeDef.subgroups;
@@ -328,6 +440,12 @@ export function PokemonBrowser() {
     const sourceIds = gridArchetypeDef
       ? gridArchetypeDef.pokemonIds
       : groups.flatMap(g => [...g.matchedIds]);
+
+    const scoped = scopeSubgroup(sourceIds);
+    if (scoped) return scoped;
+
+    const bySection = sectionSubgroups(sourceIds);
+    if (bySection) return bySection;
 
     const genMap = new Map<number, number[]>();
     for (const id of sourceIds) {
@@ -342,7 +460,7 @@ export function PokemonBrowser() {
       .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: ids }));
     // gridCategoryDef is read for its `.subgroups`; it's a stable .find() over
     // the static CATEGORIES array, so it only changes when the category does.
-  }, [gridArchetypeDef, gridCategoryDef, groups, t]);
+  }, [gridArchetypeDef, gridCategoryDef, groups, scopeSubgroup, sectionSubgroups, t]);
 
   const toggleEvoSize = (size: number) => {
     if (!evoLineSizeFilter) {
@@ -360,16 +478,19 @@ export function PokemonBrowser() {
   // "volcanic", "gym ace") are not. Cross-gen-evo is an exception: its custom subgroups
   // are labeled by generation, so badges correctly flag members from a different gen.
   const hasCustomSubgroups = !!(gridArchetypeDef?.subgroups || gridCategoryDef?.subgroups);
-  const showGenBadges = !hasCustomSubgroups || deferredOptions.archetype === 'cross-gen-evo' || deferredOptions.category === 'starter';
+  const groupedBySection = !!(myDexFilter && myDexSections) || !!(scopeFilter && scopeFilterIds);
+  const showGenBadges = !groupedBySection && (!hasCustomSubgroups || deferredOptions.archetype === 'cross-gen-evo' || deferredOptions.category === 'starter');
 
   // Deferred like the grid: the search view and its subgroups must switch
   // together with the `groups` they render.
   const isSearching = deferredOptions.search.trim().length > 0;
-  const hasActivePropertyFilters = !!((typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || (shapeFilter && shapeFilter.length > 0) || (colorFilter && colorFilter.length > 0) || (eggGroupFilter && eggGroupFilter.length > 0) || evoLineSizeFilter);
+  const hasActivePropertyFilters = !!(myDexFilter || scopeFilter || (typeFilter && typeFilter.length > 0) || (generationFilter && generationFilter.length > 0) || (shapeFilter && shapeFilter.length > 0) || (colorFilter && colorFilter.length > 0) || (eggGroupFilter && eggGroupFilter.length > 0) || evoLineSizeFilter);
   const hasActiveBrowseFilters = !!(activeCategory || activeArchetype);
   const hasActiveFilters = hasActivePropertyFilters || hasActiveBrowseFilters;
 
   const clearPropertyFilters = () => {
+    setMyDexFilter?.(false);
+    setScopeFilter?.(false);
     setTypeFilter(null);
     setTypeFilterMode('any');
     setGenerationFilter(null);
@@ -396,6 +517,11 @@ export function PokemonBrowser() {
 
   const searchSubgroups = useMemo((): BrowserSubgroup[] => {
     if (!isSearching || tooManyResults) return [];
+    const memberIds = groups.flatMap((g) => g.members.map((m) => m.id));
+    const scoped = scopeSubgroup(memberIds);
+    if (scoped) return scoped;
+    const bySection = sectionSubgroups(memberIds);
+    if (bySection) return bySection;
     const genMap = new Map<number, number[]>();
     for (const g of groups) {
       for (const m of g.members) {
@@ -406,7 +532,7 @@ export function PokemonBrowser() {
     return [...genMap.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([gen, ids]) => ({ label: t('browser.subgroupGeneration', { gen }), pokemonIds: [...new Set(ids)] }));
-  }, [isSearching, tooManyResults, groups, t]);
+  }, [isSearching, tooManyResults, groups, scopeSubgroup, sectionSubgroups, t]);
 
   // Per-subgroup render model. This filter/sort/map used to run inline in
   // JSX on every render — the main per-interaction JS cost of this
@@ -425,10 +551,51 @@ export function PokemonBrowser() {
       spriteOverrides?: Record<number, string>;
     }[] = [];
 
+    // Standalone tiles draw one card per chain, and the generation (or build
+    // section) headings are cut from the *members*, so a chain that spans
+    // several of them is drawn under each: Eevee appeared under Generation 1,
+    // 2, 4 and 6. The first heading that claims a chain keeps it, which is
+    // the earliest generation holding a member the filters matched.
+    const claimedChains = standaloneTiles ? new Set<number>() : null;
+
     for (const sub of source) {
       const subIdSet = new Set(sub.pokemonIds);
-      const matching = groups.filter(g => g.members.some(m => subIdSet.has(m.id)));
+
+      if (sub.lines) {
+        // One card per seated line, in whole-line order. Nothing is derived
+        // from the chain here, so a split chain contributes only the branch
+        // that was seated and no Pokémon appears twice.
+        const drawn = sub.lines
+          .map((line) => line.map((id) => getPokemonById(id)).filter((p): p is Pokemon => !!p))
+          .filter((members) => members.length > 0 && members.some((m) => subIdSet.has(m.id)))
+          .map((members) => {
+            let gen = Infinity;
+            let first = Infinity;
+            for (const m of members) {
+              if (m.generation < gen) gen = m.generation;
+              if (m.id < first) first = m.id;
+            }
+            return { members, gen, first };
+          })
+          .sort((a, b) => a.gen - b.gen || a.first - b.first)
+          .map(({ members }) => ({
+            key: `${sub.label}-${members.map((m) => m.id).join('-')}`,
+            members,
+            matchedIds: new Set(members.filter((m) => subIdSet.has(m.id)).map((m) => m.id)),
+          }));
+        if (drawn.length > 0) models.push({ label: sub.label, groups: drawn });
+        continue;
+      }
+
+      let matching = groups.filter(g => g.members.some(m => subIdSet.has(m.id)));
       if (matching.length === 0) continue;
+      // A standalone tile picks one Pokémon, so a Pokémon may only appear
+      // once — not once per branch, and not once per heading.
+      if (claimedChains) {
+        matching = mergeBranchesByChain(matching).filter((g) => !claimedChains.has(g.chainId));
+        for (const group of matching) claimedChains.add(group.chainId);
+        if (matching.length === 0) continue;
+      }
 
       if (!isSearching && gridArchetypeDef) {
         // Archetype view: preserve curated pokemonIds order.
@@ -437,6 +604,22 @@ export function PokemonBrowser() {
           orderIdx.set(g, sub.pokemonIds.findIndex(id => g.members.some(m => m.id === id)));
         }
         matching.sort((a, b) => orderIdx.get(a)! - orderIdx.get(b)!);
+      } else if (sub.order === 'evoLine') {
+        // Whole-line order: earliest generation in the line, then earliest
+        // dex number in it. A line's identity is its base form, so a Gen 1
+        // line stays with the Gen 1 lines even when the member that matched
+        // is a later cross-generation evolution.
+        const key = new Map<EvolutionGroup, [number, number]>();
+        for (const g of matching) {
+          let gen = Infinity;
+          let id = Infinity;
+          for (const m of g.members) {
+            if (m.generation < gen) gen = m.generation;
+            if (m.id < id) id = m.id;
+          }
+          key.set(g, [gen, id]);
+        }
+        matching.sort((a, b) => key.get(a)![0] - key.get(b)![0] || key.get(a)![1] - key.get(b)![1]);
       } else {
         // Default view: sort by lowest matching member's dex number.
         const minId = new Map<EvolutionGroup, number>();
@@ -475,8 +658,28 @@ export function PokemonBrowser() {
       }
     }
     return models;
-  }, [isSearching, searchSubgroups, effectiveSubgroups, groups, gridArchetypeDef, gridCategoryDef, shinyIds, spriteOverrides]);
+  }, [isSearching, searchSubgroups, effectiveSubgroups, groups, gridArchetypeDef, gridCategoryDef, shinyIds, spriteOverrides, standaloneTiles]);
   const typeKey = typeFilter ? `${typeFilterMode}-${typeFilter.join(',')}` : 'none';
+  /**
+   * The count beside the search box has to agree with what is drawn.
+   *
+   * `totalCount` counts every member of every matching *chain*, which is
+   * right when the grid draws chains. The scoped view draws the seated lines
+   * instead, and standalone tiles draw each Pokémon once however many
+   * branches it belongs to — neither matches a per-branch sum, so both count
+   * what the grid actually holds.
+   */
+  const shownCount = useMemo(() => {
+    if (!scopedToLines && !standaloneTiles) return totalCount;
+    const ids = new Set<number>();
+    for (const model of subgroupModels) {
+      for (const group of model.groups ?? []) {
+        for (const member of group.members) ids.add(member.id);
+      }
+    }
+    return ids.size;
+  }, [scopedToLines, standaloneTiles, subgroupModels, totalCount]);
+
   const genKey = generationFilter ? generationFilter.join(',') : 'none';
   const shapeKey = shapeFilter ? shapeFilter.join(',') : 'none';
   const colorKey = colorFilter ? colorFilter.join(',') : 'none';
@@ -736,9 +939,9 @@ export function PokemonBrowser() {
             className="shrink-0 text-xs text-muted-foreground text-right whitespace-nowrap"
             // The count as a number, for tests that must not depend on how the
             // sentence around it is worded in the active language.
-            data-result-count={totalCount}
+            data-result-count={shownCount}
           >
-            {tn('browser.results', totalCount)}
+            {tn('browser.results', shownCount)}
           </span>
         </div>
       </div>
@@ -748,6 +951,50 @@ export function PokemonBrowser() {
         {/* Row 1: Property filters (Type, Gen, Stages) */}
         <div className={cn("flex items-stretch border-x border-border transition-opacity", isSearching && hasActiveFilters && "opacity-40")}>
           <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center min-w-0 px-2 py-1">
+          {setMyDexFilter && (
+            myDexFilter ? (
+              <FilterChip
+                label={<MyDexLabel count={myDexIds?.size ?? 0} />}
+                onDismiss={() => setMyDexFilter(false)}
+                onClick={() => setMyDexFilter(false)}
+                className="bg-foreground text-background"
+              />
+            ) : (
+              <button type="button"
+                onClick={() => setMyDexFilter(true)}
+                data-filter-chip="my-dex"
+                className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+              >
+                <MyDexLabel count={myDexIds?.size ?? 0} />
+              </button>
+            )
+          )}
+          {setScopeFilter && scopeFilterIds && (
+            scopeFilter ? (
+              scopeFilterLocked ? (
+                <LockedFilterChip
+                  label={scopeFilterLabel ?? 'Scope'}
+                  hint={scopeFilterLockedHint ?? ''}
+                  className="bg-foreground text-background"
+                />
+              ) : (
+                <FilterChip
+                  label={scopeFilterLabel ?? 'Scope'}
+                  onDismiss={() => setScopeFilter(false)}
+                  onClick={() => setScopeFilter(false)}
+                  className="bg-foreground text-background"
+                />
+              )
+            ) : (
+              <button type="button"
+                onClick={() => setScopeFilter(true)}
+                data-filter-chip="scope"
+                className="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer border transition-colors border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+              >
+                {scopeFilterLabel ?? 'Scope'}
+              </button>
+            )
+          )}
           {typeFilter && typeFilter.length > 0 ? (
             <>
               {typeFilter.length > 1 && (
@@ -996,6 +1243,8 @@ export function PokemonBrowser() {
                   </div>
                   <div className="grid grid-cols-2 gap-x-1 items-start pt-1">
                     <EvoLineGrid
+                      standaloneTiles={standaloneTiles}
+                      hideAssignedMark={scopedToLines}
                       groups={model.leftGroups!}
                       assignedIds={assignedIds}
                       stagedIds={stagedSet}
@@ -1007,6 +1256,8 @@ export function PokemonBrowser() {
                       windowed
                     />
                     <EvoLineGrid
+                      standaloneTiles={standaloneTiles}
+                      hideAssignedMark={scopedToLines}
                       groups={model.rightGroups!}
                       assignedIds={assignedIds}
                       stagedIds={stagedSet}
@@ -1031,6 +1282,8 @@ export function PokemonBrowser() {
                 </div>
                 <div className="pt-1">
                   <EvoLineGrid
+                      standaloneTiles={standaloneTiles}
+                      hideAssignedMark={scopedToLines}
                     groups={model.groups!}
                     assignedIds={assignedIds}
                     stagedIds={stagedSet}
@@ -1177,10 +1430,76 @@ function EntryChip({ label, onClick, active, sheet }: { label: string; onClick: 
 }
 
 /** Active filter chip — shows value with dismiss */
+/**
+ * "My dex 37/151" — the count in the app red, the total in whatever the chip
+ * itself is set in, so the pair reads the same on the outlined chip and on
+ * the filled one. Same shape as the dex builder's own header counter.
+ */
+function MyDexLabel({ count }: { count: number }) {
+  return (
+    <span className="whitespace-nowrap">
+      My dex{' '}
+      <span className="font-bold tabular-nums text-primary">{count}</span>
+      <span className="tabular-nums">/{DEX_TOTAL}</span>
+    </span>
+  );
+}
+
+/**
+ * A chip that is on and cannot be turned off.
+ *
+ * Same shape as `FilterChip`, with a lock where the dismiss sits: the chip
+ * has to read as active, because it is, and the lock is what says the state
+ * is not the user's to change. Pressing it says why for a moment rather than
+ * doing nothing, which is how a disabled control earns a second and third
+ * press.
+ */
+const LOCK_HINT_MS = 2400;
+
+function LockedFilterChip({
+  label, hint, className,
+}: {
+  label: React.ReactNode; hint: string; className?: string;
+}) {
+  const [showing, setShowing] = useState(false);
+  useEffect(() => {
+    if (!showing) return;
+    const timer = setTimeout(() => setShowing(false), LOCK_HINT_MS);
+    return () => clearTimeout(timer);
+  }, [showing]);
+  return (
+    <span className="relative shrink-0">
+      <button
+        type="button"
+        data-filter-chip="scope-locked"
+        aria-describedby={showing ? 'scope-lock-hint' : undefined}
+        onClick={() => setShowing(true)}
+        className={cn(
+          'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium cursor-pointer',
+          className,
+        )}
+      >
+        {label}
+        <Lock size={10} aria-hidden />
+      </button>
+      {showing && (
+        <span
+          id="scope-lock-hint"
+          role="status"
+          data-scope-lock-hint
+          className="absolute left-1/2 top-full z-20 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-[0.6875rem] font-medium text-background shadow-lg"
+        >
+          {hint}
+        </span>
+      )}
+    </span>
+  );
+}
+
 function FilterChip({
   label, onDismiss, onClick, className, style,
 }: {
-  label: string; onDismiss: () => void; onClick: () => void; className?: string; style?: React.CSSProperties;
+  label: React.ReactNode; onDismiss: () => void; onClick: () => void; className?: string; style?: React.CSSProperties;
 }) {
   return (
     <span

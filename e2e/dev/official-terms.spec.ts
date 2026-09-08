@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { seedDex, TUNE_URL } from '../support/milestoneHeader';
+import { seedDex, TUNE_URL } from '../support/dexSeed';
 
 /**
  * The first genuinely user-visible localisation: official in-game terminology.

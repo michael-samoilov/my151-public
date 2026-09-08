@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { seedDex, TUNE_URL } from './support/milestoneHeader';
+import { seedDex, TUNE_URL } from './support/dexSeed';
 
 /**
  * Extraction is only correct if it is invisible in English: the same words, in

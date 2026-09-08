@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { openSession, type EngineName } from './lib/engines.ts';
 import type { PersonaName } from './lib/personas.ts';
-import { runLeagueSuite, runStandardSuite } from './lib/flows.ts';
+import { runLeagueChangeSuite, runLeagueSuite, runStandardSuite } from './lib/flows.ts';
 import { probeEngines } from './doctor.ts';
 import { buildIn, startPreview, addWorktree, REPO_ROOT, type Preview, type Worktree } from './lib/servers.ts';
 import { Evidence, rollup, type SurfaceResult, type RunReport, type Check } from './lib/evidence.ts';
@@ -49,6 +49,7 @@ async function driveSurface(def: SurfaceDef, base: string, ev: Evidence, tag: st
     };
     const checks = await runStandardSuite(s, def.persona, ctx);
     checks.push(...(await runLeagueSuite(s, def.persona, ctx)));
+    checks.push(...(await runLeagueChangeSuite(s, def.persona, ctx)));
     return { checks, video: videoFile ?? null };
   } finally { await s.close(); }
 }
@@ -100,8 +101,13 @@ async function main() {
           const beforeRun = await driveSurface(def, basePreview.url, ev, 'before', args.video);
           if (beforeRun.video && fs.existsSync(beforeRun.video)) videos.push(path.basename(beforeRun.video));
           const beforeMap = new Map(beforeRun.checks.map((c) => [c.name, c.status]));
+          const beforeFindings = new Map(beforeRun.checks.map((c) => [c.name, new Set(c.findings ?? [])]));
           for (const c of afterRun.checks) {
             if (c.status === 'fail' && beforeMap.get(c.name) === 'pass') regressions.push(`${def.surface}:${c.name}`);
+            // A set-valued check regresses when it gains a member the base did not have,
+            // whatever its status: the app is assumed correct as it stands, so only the delta counts.
+            const fresh = (c.findings ?? []).filter((k) => !(beforeFindings.get(c.name)?.has(k)));
+            if (fresh.length) regressions.push(`${def.surface}:${c.name}: ${fresh.length} new finding(s): ${fresh.slice(0, 3).join(' ; ')}`);
           }
           checks = afterRun.checks.map((c) => ({ ...c, detail: `${c.detail ?? ''}${beforeMap.get(c.name) ? ` (before=${beforeMap.get(c.name)})` : ''}` }));
         }

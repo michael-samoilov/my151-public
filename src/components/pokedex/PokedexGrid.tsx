@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { BUILD_GROUPS, type BuildGroup } from '@/data/slot-template';
 import { sectionName, t } from '@/i18n';
 import { computeRemovalCascade, getEvolutionChainIds, getEvolutionLine, getPokemonById } from '@/hooks/usePokemonData';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
+import { useDragSensors } from '@/lib/dragSensors';
 import { sectionColor } from '@/lib/sectionColors';
+import { useToolbarSlot } from '@/components/layout/toolbarSlot';
 import {
   PokemonTileContent,
   TILE_ACTION_BUTTON_CLASS,
@@ -18,17 +21,11 @@ import { Trash2, Plus, Settings } from 'lucide-react';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 
 import { PageFooter } from '@/components/shared/PageFooter';
-import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { IntroCard } from '@/components/pokedex/IntroCard';
-import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import {
   DndContext,
-  MouseSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
   DragOverlay,
   useDroppable,
   MeasuringStrategy,
@@ -96,6 +93,7 @@ function parseTileId(id: string): { sectionId: string; pokemonId: number } {
 // ---------- gen badge ----------
 
 import { GenBadge } from '@/components/shared/GenBadge';
+import { DRAG_SOURCE_OPACITY, HeldItems } from '@/components/shared/dragHold';
 
 // ---------- static pokemon tile (for overlay) ----------
 
@@ -168,7 +166,7 @@ function DraggableTile({
       data-tile-id={id}
       className="relative"
       style={{
-        opacity: isDragging || isDraggedLine ? 0.25 : 1,
+        opacity: isDragging || isDraggedLine ? DRAG_SOURCE_OPACITY : 1,
         ['--tile-sprite' as string]: `${spritePx}px`,
       }}
     >
@@ -671,6 +669,7 @@ export function PokedexGrid() {
   const setEvoLineSizeFilter = usePokedexStore((s) => s.setEvoLineSizeFilter);
   const setCategoryFilter = usePokedexStore((s) => s.setCategoryFilter);
   const clearAll = usePokedexStore((s) => s.clearAll);
+  const toolbarSlot = useToolbarSlot('builder');
   const moveEvoLine = usePokedexStore((s) => s.moveEvoLine);
 
   const totalPlaced = Object.values(sections).reduce((s, a) => s + a.length, 0);
@@ -702,17 +701,21 @@ export function PokedexGrid() {
 
   // Drag state
   const [dragLineIds, setDragLineIds] = useState<number[] | null>(null);
+  // The grabbed tile's own width, in client pixels. The held copy used to
+  // size itself with a percentage of the grid's column maths, which resolves
+  // against the drag overlay's box instead — every held tile came out half
+  // width and the line overlapped itself.
+  const [dragTileWidth, setDragTileWidth] = useState<number | null>(null);
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
   const [dragFromSection, setDragFromSection] = useState<string | null>(null);
   const [overTileId, setOverTileId] = useState<string | null>(null);
   const [dropSide, setDropSide] = useState<'left' | 'right'>('left');
 
-  const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 8 } });
-  const touchSensor = useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } });
-  const sensors = useSensors(mouseSensor, touchSensor);
+  const sensors = useDragSensors();
 
   const resetDrag = useCallback(() => {
     setDragLineIds(null);
+    setDragTileWidth(null);
     setDragFromSection(null);
     setOverTileId(null);
     setDropSide('left');
@@ -727,6 +730,8 @@ export function PokedexGrid() {
       const sectionIds = sections[sectionId] ?? [];
       const lineIds = findEvoLineGroup(pokemonId, sectionIds);
       setDragLineIds(lineIds);
+      const node = document.querySelector(`[data-tile-id="${CSS.escape(String(event.active.id))}"]`);
+      setDragTileWidth(node?.getBoundingClientRect().width ?? null);
       setDragFromSection(sectionId);
       dragInputIsTouch.current = event.activatorEvent instanceof TouchEvent;
     },
@@ -909,21 +914,9 @@ export function PokedexGrid() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center px-3 sm:px-6 py-2 border-b h-11">
-        <div className="shrink-0" style={{ width: 'var(--ms-side)' }}>
-          <h2 className="text-2xl font-extrabold tracking-tight leading-none tabular-nums">
-            <span className="text-primary">{totalPlaced}</span>
-            <span className="text-foreground">/151</span>
-          </h2>
-        </div>
-        <div className="flex-1 min-w-0">
-          <MilestoneBar />
-        </div>
-        <div className="shrink-0 flex items-center gap-1 justify-end" style={{ width: 'var(--ms-side)' }}>
-          <FeedbackButton />
-          <SettingsMenu onClear={clearAll} />
-        </div>
-      </div>
+      {/* This page's controls live in the shared tool bar, not a row of its
+          own — the count and nav are the header's job now. */}
+      {toolbarSlot && createPortal(<SettingsMenu onClear={clearAll} />, toolbarSlot)}
 
       <div
         ref={scrollContainerRef}
@@ -963,16 +956,15 @@ export function PokedexGrid() {
 
               <DragOverlay dropAnimation={null}>
                 {dragLineIds && (
-                  <div
-                    className="flex gap-1 absolute top-1/2 left-1/2"
-                    style={{ transform: 'translate(-50%, -50%)' }}
-                  >
-                    {dragLineIds.map((id) => (
-                      <div key={id} className="w-[calc((100%-24px-5%)/6)] md:w-[calc((100%-20px)/6)] max-w-[90px]">
-                        <PokemonTileStatic id={id} />
-                      </div>
-                    ))}
-                  </div>
+                  <HeldItems>
+                    <div className="flex gap-1">
+                      {dragLineIds.map((id) => (
+                        <div key={id} style={{ width: dragTileWidth ?? undefined }}>
+                          <PokemonTileStatic id={id} />
+                        </div>
+                      ))}
+                    </div>
+                  </HeldItems>
                 )}
               </DragOverlay>
               {cursorPos && dragLineIds && (

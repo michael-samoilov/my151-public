@@ -6,10 +6,10 @@ proves it works. The harness's standard suite (`harness/lib/flows.ts`) re-checks
 `standard-surfaces` on every run; the other files are the per-feature detail a
 change-specific flow builds on.
 
-This map describes **today's single-tool app** (the pokedex builder and its
-view/analytics tabs). The multi-tool buildout (league builder, favourite picker)
-will add one file per new tool. Do not treat this list as final; grow it with the
-app and keep it honest with `/maintain-verification-skill`.
+This map describes **two tools**: the pokedex builder with its view and
+analytics tabs, and the Pokémon League Builder. The favourite picker, when it
+lands, adds one file of its own. Do not treat this list as final; grow it with
+the app and keep it honest with `/maintain-verification-skill`.
 
 | Feature | File | Owner (source) |
 | --- | --- | --- |
@@ -18,6 +18,7 @@ app and keep it honest with `/maintain-verification-skill`.
 | Browse, filter, pick | `browse-and-filter.md` | `src/components/browser/PokemonBrowser.tsx` |
 | View and export the finished dex | `view-and-export.md` | `src/components/view/ViewPage.tsx` |
 | Analytics dashboard | `analytics.md` | `src/components/analytics/AnalyticsDashboard.tsx` |
+| Pokémon League Builder | `league-builder.md` | `src/league/LeagueApp.tsx`, `src/league/components/CardGrid.tsx` |
 
 ## Stable handles (the whole app has few)
 
@@ -29,6 +30,10 @@ app and keep it honest with `/maintain-verification-skill`.
 - State oracle: localStorage `personal-151-pokedex-v3`, a zustand-persist blob
   `{state:{sections:{groupId:number[]},…},version:10}`. `sections` is the source
   of truth for a build.
+- League builder: slots `[data-testid="league-slot-N"]`, cells
+  `[data-testid="card-cell-<row>-<seat>"]`, the ace and partner slots
+  `[data-testid="slot-ace"]` and `[data-testid="slot-partner"]`, and the
+  `league-builder` localStorage key as its oracle. See `league-builder.md`.
 
 The three tabs are React state, not URL-addressable, so navigate by clicking
 `[data-nav]`, never by deep link. Most `aria-label`s are i18n-templated; do not

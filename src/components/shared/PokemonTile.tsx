@@ -218,7 +218,7 @@ export function PokemonTileContent({
           explanation. */}
       <span
         data-i18n-exempt="pokemon-name"
-        className="flex items-baseline justify-center gap-[0.15em] w-full px-[calc(var(--tile-sprite)*0.045)] text-[calc(var(--tile-sprite)*0.18)] font-medium leading-tight"
+        className="flex items-baseline justify-center gap-[0.15em] w-full text-[calc(var(--tile-sprite)*0.18)] font-medium leading-tight"
         // While the catalog is in flight there is no name to announce or put in
         // a tooltip. The slug is not one: it is English, lowercase and
         // hyphenated in every locale, so offering it as the accessible name
@@ -254,12 +254,21 @@ export function PokemonTileContent({
           </>
         )}
       </span>
+      {/* The sprite overhangs its column on purpose; a badge may not. The
+          sprite is a picture with transparent margins, so an overhang reads as
+          a creature standing in its cell — a badge is a solid pill, so the same
+          overhang puts it under the neighbouring tile's badge. Measured in the
+          league picker, where the column (61.6px) is narrower than the sprite
+          (69px): adjacent WATER pills overlapped by 1.4px. `min` clamps the
+          badge to its column only where the column is the smaller of the two,
+          so every surface whose column is already wider than the sprite is
+          untouched. */}
       <div className="flex flex-col items-center gap-[calc(var(--tile-sprite)*0.03)] mt-[calc(var(--tile-sprite)*0.045)] w-full">
         {pokemon.types.map((t) => (
-          <TypeBadge key={t} type={t as TypeName} className="w-[var(--tile-sprite)]" />
+          <TypeBadge key={t} type={t as TypeName} className="w-[min(var(--tile-sprite),100%)]" />
         ))}
         {pokemon.types.length === 1 && (
-          <div className="w-[var(--tile-sprite)]" style={{ aspectRatio: '200/40' }} aria-hidden />
+          <div className="w-[min(var(--tile-sprite),100%)]" style={{ aspectRatio: '200/40' }} aria-hidden />
         )}
       </div>
       {afterTypes}

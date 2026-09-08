@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { seedDex, TUNE_URL } from './support/milestoneHeader';
+import { seedDex, TUNE_URL } from './support/dexSeed';
 
 /**
  * Clicking a ButterflyChart row opens the matching drill-down. This used to work

@@ -264,7 +264,14 @@ class WebKitSession implements Session {
   async navigate(url: string) { await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/url`, { url }); await this.injectTrap(); }
   async evalJson<T>(body: string): Promise<T> {
     const r = await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/execute/sync`, { script: `return JSON.stringify((function(){ ${body} })());`, args: [] });
-    return JSON.parse(r.value as string) as T;
+    // A script that throws comes back as an error object, not a string. Name
+    // it, so a failing check reads as its own message and not as a JSON
+    // parse failure of "[object Object]".
+    if (r.status >= 400 || typeof r.value !== 'string') {
+      const v = r.value as { error?: string; message?: string } | null;
+      throw new Error(`webkit script error (${r.status}): ${v?.error ?? ''} ${v?.message ?? String(r.value)}`.trim());
+    }
+    return JSON.parse(r.value) as T;
   }
   async click(selector: string) {
     const el = await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/element`, { using: 'css selector', value: selector });

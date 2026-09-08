@@ -18,8 +18,6 @@ import { regionName, shapeLabel, t, typeLabel } from '@/i18n';
 import { computeTypeDominance, getNationalBaseline, getNationalBaselineFiltered } from '@/hooks/useTypeDominance';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { StageDistributionChart } from './StageDistributionChart';
-import { MilestoneBar } from '@/components/pokedex/MilestoneBar';
-import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 
 // The gen and shape charts use a single app-red bar (no per-category colors);
 // the gen badge and shape silhouette carry the identity in the icon column.
@@ -498,25 +496,6 @@ export function AnalyticsDashboard() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header — outside scroll container, matches build/view pages */}
-      <div className="flex items-center px-3 sm:px-6 py-2 border-b h-11 shrink-0">
-        <div className="shrink-0" style={{ width: 'var(--ms-side)' }}>
-          <h2 className="text-2xl font-extrabold tracking-tight leading-none tabular-nums">
-            <span className="text-primary">{analytics.total}</span>
-            <span className="text-foreground">/151</span>
-          </h2>
-        </div>
-        <div className="flex-1 min-w-0">
-          <MilestoneBar />
-        </div>
-        {/* Mirrors the counter's reserved width so the right divider sits at
-            the same inset as the left. This page has no controls of its own, so
-            the report button is the only thing in it. */}
-        <div className="shrink-0 flex items-center justify-end" style={{ width: 'var(--ms-side)' }}>
-          <FeedbackButton />
-        </div>
-      </div>
-
       <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain md:overscroll-auto">
       <div className="p-6 pb-0 space-y-8 max-w-6xl md:max-w-2xl mx-auto">
         {/* What's Missing Advisor — moved to top */}

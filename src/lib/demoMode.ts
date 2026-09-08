@@ -35,6 +35,16 @@ export const PREVIEW_FEATURES: boolean = (() => {
   }
 })();
 
+/**
+ * True only on the live site.
+ *
+ * Diagnostic pages gate on `!PRODUCTION_DEPLOY` rather than on
+ * `PREVIEW_FEATURES`: a locally built preview has no `VERCEL_ENV` and
+ * `import.meta.env.DEV` is false there, so `PREVIEW_FEATURES` would hide the
+ * page from the one build you can actually check before pushing.
+ */
+export const PRODUCTION_DEPLOY: boolean = DEPLOY_ENV === 'production';
+
 /** Whether the `?demo=spandrels` test fixture is requested — a crafted dex that
  *  exercises every section's corner spandrel. Production-gated like DEMO_MODE. */
 export const SPANDREL_DEMO: boolean = (() => {
