@@ -1089,9 +1089,10 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
     // swaps within about half a second of mount; on a cold cache or a slow
     // connection it swaps later, and then the placement is the one solved
     // against the fallback metrics and nothing ever corrects it — the same
-    // trap `typeBadgeFit` keeps a generation counter for. Measuring again
-    // when the fonts resolve costs one rect read, and the key guard above
-    // makes it free when they resolved before mount.
+    // trap `typeBadgeFit` keeps a generation counter for.
+    //
+    // Measuring again when the fonts resolve costs one rect read, and the
+    // key guard above makes it free when they resolved before mount.
     let alive = true;
     if (typeof document !== 'undefined' && document.fonts?.ready) {
       void document.fonts.ready.then(() => { if (alive) measure(); });
