@@ -424,6 +424,35 @@ test.describe('an empty slot and a filled one', () => {
       };
     });
 
+  // The slot solves its placement from measured text, so a webfont that swaps
+  // after the settle window used to leave the placement solved against
+  // fallback metrics with nothing to correct it. CI caught it at 320px: the
+  // empty card and the filled one disagreed by 0.59px on the ace, because
+  // they mounted on opposite sides of the swap. Hold the font back past the
+  // window and the placement must still land where it does with the font
+  // already resident.
+  test('the placement survives a webfont that lands late', async ({ page }) => {
+    await page.route('**/*.woff2', async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+      await route.continue();
+    });
+    await openCard(page);
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForTimeout(300);
+    const late = await anchors(page);
+
+    // Second pass with the font resident: the route is gone and it is served
+    // from the cache, so it swaps before the slot ever measures.
+    await page.unroute('**/*.woff2');
+    await openCard(page);
+    const resident = await anchors(page);
+
+    for (const key of ['tm', 'badge', 'ace', 'partner'] as const) {
+      expect(Math.abs(late[key][0] - resident[key][0]), `${key} x`).toBeLessThanOrEqual(0.05);
+      expect(Math.abs(late[key][1] - resident[key][1]), `${key} y`).toBeLessThanOrEqual(0.05);
+    }
+  });
+
   test('put their content in the same place', async ({ page }) => {
     await openCard(page);
     const empty = await anchors(page);
