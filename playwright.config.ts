@@ -91,6 +91,13 @@ export default defineConfig({
     // resolve its own browser", which is correct on a machine that ran
     // `npx playwright install`.
     launchOptions: CHROMIUM_PATH ? { executablePath: CHROMIUM_PATH } : {},
+    // Without an explicit path, Playwright's default headless browser is the
+    // separate chrome-headless-shell binary, which snaps glyph advances to
+    // whole pixels where full Chromium does not. CI has no PLAYWRIGHT_BROWSERS_PATH
+    // and so took that default while every local run used full Chromium; the
+    // two disagreed on sub-pixel layout (0.59 px in the league card slots).
+    // Pinning the channel makes both run the same binary.
+    ...(CHROMIUM_PATH ? {} : { channel: 'chromium' as const }),
   },
 
   /**

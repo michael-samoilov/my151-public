@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { seedDex, TUNE_URL } from './support/milestoneHeader';
+import { seedDex, TUNE_URL } from './support/dexSeed';
 
 /**
  * The wordmark is the way back to the router page, from every view.
