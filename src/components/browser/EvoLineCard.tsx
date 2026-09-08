@@ -360,15 +360,23 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
             {/* Background + border spanning the whole evo line. Rendered once,
                 anchored in the first cell and stretched across all N columns
                 (gap-x is 0), so on press it scales as a single object about its
-                own centre — no per-cell segments means no seams. The outer
-                sprites (later grid items) paint on top of the overflow. */}
+                own centre — no per-cell segments means no seams.
+
+                Every card sits on z-0 and every tile on z-1 (below), so the
+                card chrome forms one layer under all sprites. Without the
+                split, paint order is DOM order: a sprite that overflows its
+                column into the next line's card is painted before that card,
+                and the card's 1px border cuts across it. The fill is ~6%
+                alpha, so only the border shows the seam. Real case: a desktop
+                pane narrower than the grid's max width (≈1024–1200px window),
+                where the 96px sprite is wider than its ~85px column. */}
             {(standaloneTiles || isFirst) && (
               <div
                 // Smooth scale animation both ways — shrink on press, grow back
                 // on release. Standalone tiles get one rectangle each; a line
                 // gets one stretched across its columns, anchored in the first
                 // cell (gap-x is 0, so there are no seams).
-                className="absolute inset-y-0 rounded-md border border-border transition-[scale] duration-100 ease-out"
+                className="absolute inset-y-0 z-0 rounded-md border border-border transition-[scale] duration-100 ease-out"
                 style={{
                   backgroundColor: `${bgColor}10`,
                   left: '3px',
@@ -392,7 +400,9 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                 // Scale driven by JS press state (not CSS :active) so the
                 // animation plays fully even on a flash mobile tap. The tapped
                 // sprite shrinks; the whole rectangle (above) shrinks too.
-                'relative flex flex-col items-center cursor-pointer w-full transition-[scale] duration-100 ease-out',
+                // z-1 keeps every tile above every card's border — see the
+                // background note above.
+                'relative z-[1] flex flex-col items-center cursor-pointer w-full transition-[scale] duration-100 ease-out',
                 TILE_ROOT_PADDING_CLASS,
               )}
               style={{ scale: pressedIdx === i ? '0.96' : '1' }}

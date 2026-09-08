@@ -22,6 +22,7 @@ export interface SurfaceResult {
   available: boolean;
   checks: Check[];
   screenshots: string[];
+  videos?: string[];
   error?: string;
 }
 

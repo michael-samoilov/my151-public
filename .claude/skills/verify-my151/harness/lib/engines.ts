@@ -13,6 +13,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { PERSONAS, type PersonaName } from './personas.ts';
+import { startXvfb, startFfmpeg, stopFfmpeg, killProc } from './capture.ts';
+
+// Fixed Xvfb displays for the video lanes. WebKit and Gecko never run at the same
+// time (surfaces drive serially), so a fixed display each is safe.
+const WEBKIT_DISPLAY = 99;
+const GECKO_DISPLAY = 98;
 
 export type EngineName = 'blink' | 'webkit' | 'gecko';
 export const W3C_ELEMENT = 'element-6066-11e4-a52e-4f735466cecf';
@@ -32,9 +38,39 @@ if (!window.__verifyTrap) {
 }
 return true;`;
 
+function safeReaddir(dir: string): string[] {
+  try { return fs.readdirSync(dir); } catch { return []; }
+}
+
+// WebKitGTK ships MiniBrowser under a directory whose ABI version moves with the
+// distro (webkit2gtk-4.1 today, webkitgtk-6.0 next) inside a multiarch directory
+// named for the CPU (x86_64-linux-gnu on this runner, aarch64-linux-gnu on an
+// arm one). Pinning either turns a working install into a false DOWN, so scan
+// and take the highest ABI present. The fallback is only there to keep the
+// doctor's "missing at ..." message concrete when nothing is installed yet.
+const WEBKIT_BROWSER_FALLBACK = '/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1/MiniBrowser';
+
+function resolveWebKitBrowser(): string {
+  if (process.env.VERIFY_WEBKIT_BROWSER) return process.env.VERIFY_WEBKIT_BROWSER;
+  const roots = ['/usr/libexec', '/usr/lib'];
+  for (const arch of safeReaddir('/usr/lib')) {
+    if (arch.includes('-linux-')) roots.push(path.join('/usr/lib', arch));
+  }
+  const found: string[] = [];
+  for (const root of roots) {
+    for (const name of safeReaddir(root)) {
+      if (!name.startsWith('webkit')) continue;
+      const bin = path.join(root, name, 'MiniBrowser');
+      if (fs.existsSync(bin)) found.push(bin);
+    }
+  }
+  found.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  return found.at(-1) ?? WEBKIT_BROWSER_FALLBACK;
+}
+
 export const ENGINE_PATHS = {
-  webkitDriver: 'WebKitWebDriver',
-  webkitBrowser: '/usr/lib/x86_64-linux-gnu/webkit2gtk-4.1/MiniBrowser',
+  webkitDriver: process.env.VERIFY_WEBKIT_DRIVER || 'WebKitWebDriver',
+  webkitBrowser: resolveWebKitBrowser(),
   firefox: process.env.VERIFY_FIREFOX_BIN || '/opt/verify-my151/firefox/firefox',
   webkitPort: 4599,
   marionettePort: 2828,
@@ -65,6 +101,7 @@ class BlinkSession implements Session {
     private ctx: BrowserContext,
     private page: Page,
     private collected: string[],
+    private videoFile: string | undefined,
   ) {}
   async navigate(url: string) { await this.page.goto(url, { waitUntil: 'load', timeout: 30000 }); }
   async evalJson<T>(body: string): Promise<T> {
@@ -74,37 +111,66 @@ class BlinkSession implements Session {
   async click(selector: string) { await this.page.click(selector, { timeout: 10000 }); }
   async screenshot(file: string) { await this.page.screenshot({ path: file }); }
   async errors() { return [...this.collected]; }
-  async close() { await this.ctx.close().catch(() => {}); await this.browser.close().catch(() => {}); }
+  async close() {
+    const video = this.videoFile ? this.page.video() : null;
+    await this.ctx.close().catch(() => {}); // finalizes the recording
+    if (video && this.videoFile) await video.saveAs(this.videoFile).catch(() => {});
+    await this.browser.close().catch(() => {});
+  }
 }
 
 // Playwright's browser CDN is blocked in this sandbox, so never rely on a
 // bundled download. Prefer an explicit path, else the pre-installed browser under
 // PLAYWRIGHT_BROWSERS_PATH, else let Playwright resolve its own.
+const CHROMIUM_LAYOUTS = [
+  ['chrome-linux', 'chrome'],
+  ['chrome-mac', 'Chromium.app', 'Contents', 'MacOS', 'Chromium'],
+  ['chrome-win', 'chrome.exe'],
+];
+
 function resolveChromium(): string | undefined {
   if (process.env.PLAYWRIGHT_CHROMIUM_PATH) return process.env.PLAYWRIGHT_CHROMIUM_PATH;
   const root = process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/pw-browsers';
   try {
-    const dir = fs.readdirSync(root).find((d) => d.startsWith('chromium-'));
-    if (dir) { const bin = path.join(root, dir, 'chrome-linux', 'chrome'); if (fs.existsSync(bin)) return bin; }
+    // The unversioned symlink beside the revision directories is the one name
+    // that survives an image bump, so prefer it. Otherwise take the highest
+    // revision. `chromium-<digits>` matches neither chromium_headless_shell-*
+    // (a different binary) nor chromium-tip-of-tree-* (a different browser).
+    const stable = path.join(root, 'chromium');
+    if (fs.existsSync(stable) && fs.statSync(stable).isFile()) return stable;
+    const revisions = fs
+      .readdirSync(root)
+      .map((d) => /^chromium-(\d+)$/.exec(d))
+      .filter((m): m is RegExpExecArray => m !== null)
+      .sort((a, b) => Number(b[1]) - Number(a[1]));
+    for (const match of revisions) {
+      for (const layout of CHROMIUM_LAYOUTS) {
+        const bin = path.join(root, match[0], ...layout);
+        if (fs.existsSync(bin)) return bin;
+      }
+    }
   } catch { /* fall through to Playwright default */ }
   return undefined;
 }
 
-export async function openBlink(persona: PersonaName | null): Promise<Session> {
+export async function openBlink(persona: PersonaName | null, videoFile?: string): Promise<Session> {
   const launchOptions: Parameters<typeof chromium.launch>[0] = { headless: true, args: ['--no-sandbox'] };
   const chromePath = resolveChromium();
   if (chromePath) launchOptions.executablePath = chromePath;
   const browser = await chromium.launch(launchOptions);
   const p = persona ? PERSONAS[persona] : null;
-  const ctx = await browser.newContext(
-    p ? { userAgent: p.userAgent, viewport: p.viewport, isMobile: p.isMobile, hasTouch: p.hasTouch, deviceScaleFactor: p.deviceScaleFactor } : { viewport: { width: 1280, height: 800 } },
-  );
+  const viewport = p ? p.viewport : { width: 1280, height: 800 };
+  const ctxOpts: Parameters<Browser['newContext']>[0] = p
+    ? { userAgent: p.userAgent, viewport, isMobile: p.isMobile, hasTouch: p.hasTouch, deviceScaleFactor: p.deviceScaleFactor }
+    : { viewport };
+  if (videoFile) ctxOpts.recordVideo = { dir: fs.mkdtempSync(path.join(os.tmpdir(), 'verify-vid-')), size: viewport };
+  const ctx = await browser.newContext(ctxOpts);
   if (p) await ctx.addInitScript(p.initScript);
   const page = await ctx.newPage();
   const collected: string[] = [];
   page.on('pageerror', (e) => collected.push(`pageerror: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error' && m.text().includes('[P151] crash')) collected.push(`crash: ${m.text()}`); });
-  return new BlinkSession(persona, browser, ctx, page, collected);
+  return new BlinkSession(persona, browser, ctx, page, collected, videoFile);
 }
 
 // ---------- WebKit (WebKitGTK, raw W3C WebDriver) ----------
@@ -145,7 +211,7 @@ async function clearStrayWebKit() {
 class WebKitSession implements Session {
   readonly engine = 'webkit' as const;
   readonly persona = null;
-  constructor(private driver: ChildProcess, private sid: string) {}
+  constructor(private driver: ChildProcess, private sid: string, private xvfb: ChildProcess | null, private ffmpeg: ChildProcess | null) {}
   private async injectTrap() { await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/execute/sync`, { script: ERROR_TRAP, args: [] }).catch(() => {}); }
   async navigate(url: string) { await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/url`, { url }); await this.injectTrap(); }
   async evalJson<T>(body: string): Promise<T> {
@@ -170,23 +236,42 @@ class WebKitSession implements Session {
     fs.writeFileSync(file, Buffer.from(r.value as string, 'base64'));
   }
   async errors() { return this.evalJson<string[]>(`return window.__verifyErrors || [];`).catch(() => [] as string[]); }
-  async close() { await w3c('DELETE', ENGINE_PATHS.webkitPort, `/session/${this.sid}`).catch(() => {}); killGroup(this.driver); }
+  async close() {
+    await stopFfmpeg(this.ffmpeg); // finalize the clip before the display goes away
+    await w3c('DELETE', ENGINE_PATHS.webkitPort, `/session/${this.sid}`).catch(() => {});
+    killGroup(this.driver);
+    killProc(this.xvfb);
+  }
 }
 
-export async function openWebKit(): Promise<Session> {
+// Video mode runs the driver under a fixed Xvfb display so ffmpeg can grab it; the
+// default keeps the simpler xvfb-run path, which the proven suite relies on.
+export async function openWebKit(videoFile?: string): Promise<Session> {
   await clearStrayWebKit();
-  const driver = spawn('xvfb-run', ['-a', ENGINE_PATHS.webkitDriver, `--port=${ENGINE_PATHS.webkitPort}`], { stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+  let xvfb: ChildProcess | null = null;
+  let driver: ChildProcess;
+  if (videoFile) {
+    xvfb = await startXvfb(WEBKIT_DISPLAY);
+    driver = spawn(ENGINE_PATHS.webkitDriver, [`--port=${ENGINE_PATHS.webkitPort}`], { stdio: ['ignore', 'pipe', 'pipe'], detached: true, env: { ...process.env, DISPLAY: `:${WEBKIT_DISPLAY}` } });
+  } else {
+    driver = spawn('xvfb-run', ['-a', ENGINE_PATHS.webkitDriver, `--port=${ENGINE_PATHS.webkitPort}`], { stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+  }
   let ready = false;
   for (let i = 0; i < 40 && !ready; i++) {
     await sleep(250);
     try { const s = await w3c('GET', ENGINE_PATHS.webkitPort, '/status'); if (s.status === 200) ready = true; } catch { /* not up yet */ }
   }
-  if (!ready) { killGroup(driver); throw new Error('WebKitWebDriver never became ready'); }
+  if (!ready) { killGroup(driver); killProc(xvfb); throw new Error('WebKitWebDriver never became ready'); }
   const caps = { capabilities: { alwaysMatch: { browserName: 'MiniBrowser', 'webkitgtk:browserOptions': { binary: ENGINE_PATHS.webkitBrowser, args: ['--automation'] } } } };
   const sess = await w3c('POST', ENGINE_PATHS.webkitPort, '/session', caps);
   const sid = (sess.value as { sessionId: string }).sessionId;
-  if (!sid) throw new Error('webkit: session create failed');
-  return new WebKitSession(driver, sid);
+  if (!sid) { killGroup(driver); killProc(xvfb); throw new Error('webkit: session create failed'); }
+  let ffmpeg: ChildProcess | null = null;
+  if (videoFile) {
+    await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${sid}/window/rect`, { x: 0, y: 0, width: 1280, height: 900 }).catch(() => {});
+    ffmpeg = startFfmpeg(WEBKIT_DISPLAY, videoFile);
+  }
+  return new WebKitSession(driver, sid, xvfb, ffmpeg);
 }
 
 // ---------- Gecko (Firefox over Marionette) ----------
@@ -216,7 +301,7 @@ class MarionetteConn {
 class GeckoSession implements Session {
   readonly engine = 'gecko' as const;
   readonly persona = null;
-  constructor(private ff: ChildProcess, private conn: MarionetteConn, private profile: string, private msgId: number) {}
+  constructor(private ff: ChildProcess, private conn: MarionetteConn, private profile: string, private msgId: number, private xvfb: ChildProcess | null, private ffmpeg: ChildProcess | null) {}
   private async cmd<T = Record<string, unknown>>(name: string, params: unknown): Promise<T> {
     this.conn.send([0, this.msgId++, name, params ?? {}]);
     const resp = await this.conn.next(); // [1, id, error, result]
@@ -241,6 +326,7 @@ class GeckoSession implements Session {
     fs.writeFileSync(file, Buffer.from(r.value, 'base64'));
   }
   async close() {
+    await stopFfmpeg(this.ffmpeg);
     await this.cmd('WebDriver:DeleteSession', {}).catch(() => {});
     this.conn.end();
     this.ff.kill('SIGKILL');
@@ -253,13 +339,25 @@ class GeckoSession implements Session {
         this.ff.once('exit', () => { clearTimeout(t); resolve(); });
       });
     }
+    killProc(this.xvfb);
     try { fs.rmSync(this.profile, { recursive: true, force: true }); } catch { /* best effort */ }
   }
 }
 
-export async function openGecko(): Promise<Session> {
+// Video mode runs Firefox non-headless under a fixed Xvfb display so ffmpeg can
+// grab it; the default stays -headless, which the proven suite relies on.
+export async function openGecko(videoFile?: string): Promise<Session> {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-ff-'));
-  const ff = spawn(ENGINE_PATHS.firefox, ['-headless', '-marionette', '-no-remote', '-profile', profile, 'about:blank'], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, MOZ_MARIONETTE: '1' } });
+  let xvfb: ChildProcess | null = null;
+  const args = ['-marionette', '-no-remote', '-profile', profile, 'about:blank'];
+  const env = { ...process.env, MOZ_MARIONETTE: '1' };
+  if (videoFile) {
+    xvfb = await startXvfb(GECKO_DISPLAY);
+    (env as Record<string, string>).DISPLAY = `:${GECKO_DISPLAY}`;
+  } else {
+    args.unshift('-headless');
+  }
+  const ff = spawn(ENGINE_PATHS.firefox, args, { stdio: ['ignore', 'pipe', 'pipe'], env });
   const sock = await new Promise<net.Socket>((resolve, reject) => {
     let tries = 0;
     const attempt = () => {
@@ -282,9 +380,17 @@ export async function openGecko(): Promise<Session> {
     conn.send([0, 1, 'WebDriver:NewSession', { capabilities: {} }]);
     const resp = await Promise.race([conn.next(), deadline]); // [1, id, error, result]
     if (resp[2]) throw new Error(`gecko NewSession: ${JSON.stringify(resp[2])}`);
-    return new GeckoSession(ff, conn, profile, 2);
+    let msgId = 2;
+    let ffmpeg: ChildProcess | null = null;
+    if (videoFile) {
+      conn.send([0, msgId++, 'WebDriver:SetWindowRect', { x: 0, y: 0, width: 1280, height: 900 }]);
+      await Promise.race([conn.next(), deadline]).catch(() => {});
+      ffmpeg = startFfmpeg(GECKO_DISPLAY, videoFile);
+    }
+    return new GeckoSession(ff, conn, profile, msgId, xvfb, ffmpeg);
   } catch (e) {
     ff.kill('SIGKILL');
+    killProc(xvfb);
     throw e;
   } finally {
     clearTimeout(timer);
@@ -293,8 +399,8 @@ export async function openGecko(): Promise<Session> {
 
 // ---------- dispatch ----------
 
-export async function openSession(engine: EngineName, persona: PersonaName | null = null): Promise<Session> {
-  if (engine === 'blink') return openBlink(persona);
-  if (engine === 'webkit') return openWebKit();
-  return openGecko();
+export async function openSession(engine: EngineName, persona: PersonaName | null = null, videoFile?: string): Promise<Session> {
+  if (engine === 'blink') return openBlink(persona, videoFile);
+  if (engine === 'webkit') return openWebKit(videoFile);
+  return openGecko(videoFile);
 }

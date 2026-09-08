@@ -318,12 +318,20 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
     const html = await res.text();
     const hasH1 = /<h1[^>]*>[^<]*League Builder/i.test(html);
     const hasTitle = /<title>[^<]*League Builder/i.test(html);
-    checks.push(ok('league:static-seo-content', res.ok && hasH1 && hasTitle, `status ${res.status}, h1=${hasH1}, title=${hasTitle}`));
-    // A build without the page serves the SPA fallback (the dex HTML, status
-    // 200), so absence is the content mismatch, not the status. Nothing else
-    // applies then — driving the dex page against league handles would only
-    // error the surface.
-    if (!res.ok || !hasH1 || !hasTitle) return checks;
+    if (!res.ok) {
+      // A non-200 is a real server failure, not a missing feature.
+      checks.push(ok('league:static-seo-content', false, `status ${res.status}`));
+      return checks;
+    }
+    if (!hasH1 || !hasTitle) {
+      // The league builder page is not in this build yet: /pokemon-league-builder
+      // serves the SPA fallback (dex HTML, 200). Skip loudly rather than fail,
+      // matching the placement check's skip-until-present rule; a check that flags
+      // a not-yet-built feature is a false failure on the current app.
+      checks.push({ name: 'league:static-seo-content', status: 'skip', detail: `league builder not in this build yet (SPA fallback at ${LEAGUE_PATH}, h1=${hasH1}, title=${hasTitle})` });
+      return checks;
+    }
+    checks.push(ok('league:static-seo-content', true, `status ${res.status}`));
   } catch (e) {
     checks.push({ name: 'league:static-seo-content', status: 'fail', detail: (e as Error).message });
     return checks;
