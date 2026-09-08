@@ -37,7 +37,8 @@ The generator throws rather than rendering a broken card. Four rules:
 
 ## The page
 
-`src/components/home/HomePage.tsx`, reached at `?home`.
+`src/components/home/HomePage.tsx`, served at `/` from its own entry,
+`index.html` and `src/home/main.tsx`. Until the launch it was reached at `?home`.
 
 The header, hero and card grid fill one viewport inside a `min-h-dvh` block,
 and the footer comes after it. What a visitor sees before scrolling is exactly
@@ -51,7 +52,7 @@ flag is set. Two of the three tool links point at slugs that do not exist yet:
 | Card | Links to | Exists |
 | --- | --- | --- |
 | Custom Region & Pokédex Builder | `/` | yes — the app today |
-| Trainer Card & League Builder | `/custom-gym-leader` | on its own branch |
+| Trainer Card & Gym Leader Maker | `/custom-gym-leader` | shipped with the hub |
 | What should we build next? | opens the feedback sheet | yes |
 
 The favorite Pokémon picker is off the page until it is built. Adding it back is
@@ -115,9 +116,9 @@ below the first on phone and tablet — and when the picker goes live, its card
 gains screenshots and the row drops back down on its own. The card order never
 changes.
 
-The slugs come from `../HANDOFF.md` and `../league-builder/DECISIONS.md`. Give
-the page a real route only when the tools it routes to are ready. That move also
-decides whether the dex builder keeps `/`; see the SEO note in `HANDOFF.md`.
+The slugs and every string come from `../../seo/LAUNCH-COPY.md`. The page took
+`/` at the launch, and the dex builder moved to `/pokedex-builder`; the plan and
+its reasoning are in `../launch/LAUNCH-PLAN.md`.
 
 ### How the card scales
 
