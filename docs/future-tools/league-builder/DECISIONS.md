@@ -782,6 +782,314 @@ the running app rather than reading the code.
    its own question, is that seat 1's reset and seat 2's remove meet **across
    the column boundary** with a 0.0px gap.
 
+### Round 10, from the preview
+
+1. **A name follows the language.** The fix is in the shared i18n layer, not
+   in the league. `useNamesVersion` handed React a snapshot that counted name
+   catalog downloads and ignored the locale, and the two are independent: a
+   switch to a locale whose names are loaded starts no download, and
+   `applyLocale` starts the names fetch *before* it awaits the UI catalog, so
+   the download can land while the locale is still the old one. In that order
+   React was called back with an unchanged snapshot and skipped the
+   re-render. The symptom, measured: a gym card reading `Onix` under type
+   badges that already said いわ / じめん, until something unrelated remounted
+   it. `getNamesVersion` now sums the two counters, which changes exactly when
+   either does, in whichever order they arrive.
+
+   The league surfaces that draw a name also have to subscribe at all, so
+   `SignatureSlot` and the pane heading call `useNamesVersion` themselves.
+
+2. **A settings gear, and two ways to read the league.** *Gym Challenge* is
+   the run through: each trainer at the row you meet them, two Pokemon up to
+   six. *Endgame Rematches* reads every trainer at their last row, at full
+   size, legendary and all — the HeartGold/SoulSilver rematch for the whole
+   league at once. The choice persists with the league.
+
+   The dex builder's view settings are a docked pane beside the grid. The
+   league already spends its desktop width on three panes, so the same
+   content arrives as an anchored dropdown there and as the same bottom sheet
+   on mobile. The option rows are the dex builder's.
+
+3. **A powerup belongs to its line, not its seat.** `Powerup` names a seat,
+   and a column drag renumbers seats, so dragging Salamence's column left
+   handed Mega Salamence to whatever line landed in seat 3. The signature
+   mark already had this rule; both now go through one `seatAfterMove`. The
+   powerup also leaves with its own line and shifts when an earlier line is
+   removed, and it does not transfer to a line that replaces its own.
+
+4. **The TM label wears the move's type.** The disc above it already did. A
+   TM is the move, and the card's own colour is everywhere else on the card.
+
+5. **The legendary carries its own remove control.** It covers a seat rather
+   than filling one, so removing it puts that seat's line back and touches
+   nothing else — measured: the lines are byte-for-byte unchanged.
+
+6. **The reset control has clearance.** `RotateCcw` is a ring with an
+   arrowhead bolted to its top-left, so its bounding box is wider than its
+   ring on that side; at 0.6rem with a 3-unit stroke the head touched the
+   disc's rim while the opposite side kept a clear margin. 0.55rem and a
+   2.5-unit stroke balance it: measured at dpr 8, the blue margins went from
+   29/24 to 29/31 across and 29/24 to 30/31 down.
+
+   What was *not* wrong is worth recording, because it was the obvious
+   suspect: the disc is a true circle (120x120 device pixels, before and
+   after), and the ink's centre of mass sits 0.2% from the disc's centre. The
+   defect was clearance, not centring.
+
+### Round 11, from the preview
+
+1. **A card can be cleared from its own gear.** One destructive row, behind
+   the dex builder's confirm: the first press turns *Clear Card* into *Are you
+   sure?*, the second empties the card and closes the menu, and the armed
+   state lapses after three seconds or on a press outside. That is the
+   `SettingsMenu` in `PokedexGrid.tsx`, moved to the card's tool bar; the
+   wording differs only because the scope does — the dex builder clears a dex
+   and this clears one card.
+
+   `clearCard` resets the card to `emptyCard()`, so it takes the type, theme,
+   lines, signature, TM, badge, legendary and powerup together. What it must
+   not take is anything else, and that is the assertion the tests lead with:
+   the next card comes back byte-for-byte.
+
+   It sits beside the card's own type and theme rather than in the league tool
+   bar, because the league's gear is league-wide (the view mode, round 10) and
+   this is not. Two gears, two scopes, each next to what it governs.
+
+### Round 12, from the preview
+
+1. **The team scope and the gym's type stop asking the same question.** Every
+   line on a Rock gym is Rock, so the type chip under the team scope narrows
+   the team to a subset of itself and on a mono-type card can narrow it to
+   nothing. Turning the scope on now puts the type filter aside; turning it
+   off gives it back, unless the user picked a different type meanwhile, in
+   which case their newer answer stands.
+
+2. **A full card shows the scope chip, locked.** The restriction was already
+   structural — there is no seventh seat for a line from outside the team —
+   but it was also invisible: the pane simply offered six Pokemon and said
+   nothing. The chip now shows and shows as on, wears a lock where the
+   dismiss sits, and answers a press with "Choose a pokemon from your team"
+   for a couple of seconds. A control that reads as broken earns a second and
+   a third press; one that says why earns none.
+
+### Round 13, mocked up but not built
+
+**Signature + partner.** Four geometries for splitting the card's top-left
+slot between two Pokemon, each drawn at the slot's real 148 x 204 and in all
+four states (empty, signature only, partner only, both):
+`partner-slot/` holds the artboards, the study page and the scripts that
+generate both.
+
+Two rules the mockups are built on, and they are the interesting part:
+
+- **The partner is not on the team.** The signature picker locks to the
+  card's own lines once the template is full; the partner picker never does.
+  A partner is the leader's companion rather than their sixth Pokemon, so the
+  pair can be off-type.
+- **It is still seated when there is room.** Choosing a partner while an
+  evolution line is free places it in that line: on a five-line card the
+  partner becomes the sixth line *and* the partner. Only on a full card does
+  it live in the slot alone — so the same tap means two different things, and
+  the picker has to say which before the tap rather than after.
+
+What the drawing settled, which the argument had not: the slot is portrait by
+a third, so halving it along the long side leaves two columns nearly three
+times taller than their contents; and a diagonal seam cannot hold the lower
+half's heading above its sprite, which costs the two halves a shared reading
+order. Nothing is decided.
+
+### Round 14, from the preview
+
+1. **A bottom sheet portals itself, and a test says so.** The settings sheet
+   opened 780px wide on a 390px phone, with its last line off the bottom.
+   Both halves of that are one cause: `position: fixed` anchors to the
+   viewport only while no ancestor is transformed, and the league's mobile
+   shell is two panes on one 200%-wide track that the camera translates.
+
+   The fix that cannot be got wrong is in `BottomSheet` rather than in each
+   caller: the sheet leaves the tree itself. Two callers were already
+   portalling their own; the third was not, which is the second time this
+   defect has shipped.
+
+   The test is the more useful half. `league-overlays.spec.ts` now sweeps
+   every overlay the league can open — both gears, the type picker, the line
+   picker, the TM picker — and after each one asserts the property rather
+   than the symptom: **no painted `position: fixed` element has a transformed,
+   filtered or perspective ancestor**, and every overlay box sits inside the
+   window. A new overlay is caught the moment the sweep opens it. (dnd-kit's
+   1x1 clipped live regions are skipped: where they land cannot be wrong.)
+
+   Portalling broke one thing worth recording. `LanguagePicker` closed itself
+   on any `mousedown` outside its own root, and a portalled sheet is outside
+   it — so picking a language from the sheet closed the menu before the chip
+   could act. `pressedOutside` (`src/lib/outsidePress.ts`) is the shared rule:
+   a press inside any `[data-overlay]` belongs to whatever opened it.
+
+2. **A powerup per row, and the first press sets both.** The champion and
+   endgame boss rows are the same six Pokemon at different strengths, so
+   pressing Mega once and finding it on only one of them would read as the
+   press not having worked. Every press after the first sets only its own
+   row, which is what lets a leader Mega one Pokemon as champion and another
+   at full strength.
+
+   `GymCard.powerups` is keyed by row. A card saved before the two could
+   differ carries `powerup` instead, and `powerupAt` reads that on both rows
+   — which is exactly what one shared powerup meant. Nothing writes the old
+   field any more; the first press on such a card replaces it.
+
+### Round 15, mocked up but not built
+
+**The diagonal, three seams that clip nothing.** The first diagonal cut its
+own halves: the lower one lost its heading and the two stopped reading in the
+same order. These three keep a seam and give each half a rectangle that fits
+entirely inside it, so both read heading, sprite, name — and, in a second row
+each, the Pokemon's types. `partner-slot/study.html` holds them, generated by
+`diagonals.py`.
+
+- **Corner quarters** keeps the 45 degree seam and gives each half the largest
+  rectangle inside its own triangle, 64 x 96. The only variant whose halves
+  are identical, so neither reads as the lesser one; the sprite falls to 46px
+  with types on.
+- **Shallow bands** lays the seam almost flat. The content is a 90px column
+  rather than the full width, because a full-width band has to clear the
+  seam's lowest point and loses all 72px the seam sweeps crossing the box.
+- **Major and minor** cuts a corner off at 62/38, with no type pills and the
+  partner's heading *under* its sprite rather than over it. Both are the same
+  economy: the seam is what limits this variant, so the less full-width text
+  the minor half carries near it, the further into its own corner the block
+  can sit — which is room the sprite gets back. Measured, the partner's
+  sprite went from 26px to 44px and the signature's from 46px to 68px, on the
+  same seam.
+
+  One thing the measurement corrected. For a full-width box under a seam that
+  runs down to the left, the binding constraint is the seam at the box's
+  *right* edge, not its left — the far corner meets it first. Sizing to the
+  left edge put the signature 14px into the partner's half.
+
+Two things the drawing settled. The type pills have to sit in a row rather
+than the card's own stack: two stacked pills cost 24px of the ~74 a half
+gets. And a content box that reaches past the seam puts one half's heading in
+the other's territory, which is the first diagonal's mistake wearing a
+different hat — so the study measures every panel and asserts no box crosses
+its seam and nothing overflows the slot.
+
+### Round 16, from the preview
+
+**A press and hold picks a row up; it does not select it.** On iOS a long
+press is two gestures at once — pick this up, and start a text selection —
+and the selection was winning: the league summary answered a press-and-hold
+with a Copy / Search callout spanning two rows, and the gym card did the same
+on a column.
+
+The `-webkit-touch-callout: none` already on `*` suppresses the *image and
+link* callout, not the selection one. Only `user-select` does that, and the
+dex builder's tiles had always set it for themselves while the two league
+surfaces never had.
+
+So the rule went where every drag surface can reach it. dnd-kit marks each
+draggable with `aria-roledescription="draggable"`, which makes one selector
+in `index.css` cover the surfaces that exist and the ones nobody has written
+yet. Descendants are named explicitly, because `user-select` is not an
+inherited property; fields inside a draggable are exempted, so the day one
+exists it still works.
+
+`e2e/drag-hold.spec.ts` asserts the property on all three surfaces, and it
+proves it rather than reading the declaration: it asks the engine to select
+each draggable's contents and requires nothing back. The callout itself is
+device-only and is named as such.
+
+### Round 17, mocked up but not built
+
+**Corner, high is the seam.** It runs from 56px down the right edge to the
+bottom-left corner, and it gives the ace 84px and the partner 56px.
+
+**"Signature Pokemon" is now "Ace Pokemon"**, in the slot label and in this
+study. The code identifiers (`signatureSeat`, `signatureId`,
+`signatureMember`, the `'signature'` picker intent) still say signature; that
+rename is mechanical and belongs in its own commit, not mixed into feature
+work.
+
+**The seam is a drawn line, not a wall.** A block's far corner is allowed 4px
+past it. That corner holds the transparent margin of a sprite rather than any
+ink, so the two still read as two sides of a line, and buying those 4px back
+costs the sprite 4px it would actually show. The allowance is worth 4px of
+ace and 4px of partner on the chosen seam.
+
+**Each half is sized on its own.** Two earlier passes got this wrong in
+opposite directions. The first solved each half for the largest sprite it
+could hold and let the seam's angle work as a size dial, so the partner fell
+to 14px. The second held both halves to one shared size, which sounds like
+the fix and is not: one size means the *smaller* half sets it, so the seam
+drags the signature down to whatever the partner can take, and every sprite
+in the section came out smaller than a sprite anywhere else in the study.
+
+The rule now has a floor and a ceiling, both taken from the card.
+
+- **52px is the floor.** It is `SPRITE_REM`, the sprite a Pokemon gets in a
+  team cell. Anything under it is smaller than an ordinary cell, which is the
+  thing the section exists to avoid. A half that cannot reach the floor is
+  drawn at it and flagged, rather than shrunk out of the finding.
+- **92px is the ceiling to beat.** It is `5.75rem`, what the slot gives one
+  Pokemon today, and it is what the signature gives up to share the slot.
+
+Between them each half takes the largest sprite its own partition holds,
+rounded down to 4px so the sizes land on the rem grid and the block keeps a
+little slack to move toward its own centre with.
+
+| Seam | Ace | Partner | Off centre |
+| --- | --- | --- | --- |
+| Corner, full (corner to corner) | 68px | 68px | 15px / 8px |
+| **Corner, high (chosen)** | **84px** | **56px** | 15px / 16px |
+| Corner, mid | 96px | 36px, under the floor | 15px / — |
+| Edge seam (3c today) | 84px | 60px | 11px / 32px |
+
+**Placement is solved, not drawn.** Each sprite wants its centre on the area
+centroid of its own partition. `seamends.py` clips the slot rect against the
+seam, takes that centroid, and searches the placements where the whole block
+— heading, sprite and name — clears the seam and the slot edges, keeping the
+one whose *sprite* centre lands nearest. It solves for the sprite rather than
+the block because the heading sits above it on one half and below it on the
+other, so the same block puts its sprite in two different places.
+
+Size and centring trade at about **3px of centring per 4px of sprite**, so
+the off-centre column is the price of the two before it.
+
+Three readings from the table.
+
+- **Corner, high buys the most for the least.** The ace lands within 8px of
+  the 92px it has to itself today, and the partner clears a team-cell sprite
+  with room to spare. Nothing in the slot is smaller than a Pokemon anywhere
+  else on the card.
+- **Corner, full is the only seam that cuts the slot into the same shape
+  twice**, so both halves land on 68px and neither is the lesser one — which
+  is the argument against it as much as for it, since nothing then says which
+  of the two is the ace.
+- **A corner seam runs out.** Past about 62px down the right edge the partner
+  cannot clear the seam at a team cell's size. Corner, mid is drawn at the
+  floor and flagged to show how far into the signature it would reach.
+
+**An empty half has to hold the filled half's layout, not just its ring.**
+The partner's heading sat directly under the placeholder circle when empty
+and under the name when filled, so the word moved between the two states. The
+empty state now keeps the sprite's square and a blank name line, and only
+swaps the sprite for a ring. `check-seamends.mjs` measures it: it reads the
+heading and name offsets in both states and fails on more than 0.5px of
+movement. Removing the reserved line fails all four panels, which is how the
+check was proved to discriminate. The same script holds the 52px floor, and
+holds every crossing to the 4px allowance except on a panel the section
+itself flags.
+
+**The longer label exposed two layout bugs, both now fixed.** "ACE POKEMON"
+wrapped to two lines inside a 68px block, which cost a line the solver had
+not budgeted for — and it cost it in one state only, because the sprite
+square held its height while the placeholder ring gave way, so the two states
+stopped agreeing. The heading is `white-space: nowrap` now, its measured
+one-line width is the block's minimum, and neither the sprite nor its
+placeholder can shrink. The checker also measures the union of a block and
+its children rather than the block's own rect, because a heading wider than
+its block paints outside that rect — which is exactly the overflow worth
+catching.
+
 ### Round 3, follow-ups from the preview
 
 1. **The TM disc wears the move's type**, not the gym's. A TM *is* the move;
@@ -986,6 +1294,11 @@ bar height.
   `e2e/dev/unextracted.spec.ts` already fails any visible text that bypasses
   the catalog on the builder, view and analytics pages. Adding the league
   page to it is the check that keeps this done once it is done.
+
+  Round 10 closed the one part of this that was a defect rather than missing
+  work: Pokemon names already had translations and were not being redrawn
+  when the language changed. Everything listed above is still English-only by
+  omission, which is the part that waits.
 
 - **Powerup symbols:** done. Bulbapedia's Mega Evolution and Dynamax symbols
   drive the corner buttons, checked in as `public/powerups/mega.png` and

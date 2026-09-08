@@ -239,6 +239,59 @@ test.describe('feedback sheet layout', () => {
     await openSheet(page, 'de');
     await expectClean(page, 'desktop card');
   });
+
+  test('the desktop card opens beside the control that opened it', async ({ page }) => {
+    // Reported: the card appeared in the bottom-right corner while the bug icon
+    // that opened it is in the `n/151` row, so the eye had to go find it.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openSheet(page, 'en');
+
+    const box = await page.evaluate(() => {
+      const card = document.querySelector('[role="dialog"]')!.getBoundingClientRect();
+      const anchor = document.querySelector('[data-feedback-open]')!.getBoundingClientRect();
+      return {
+        dx: card.right - anchor.right,
+        dy: card.top - anchor.bottom,
+        inside:
+          card.left >= 0 &&
+          card.top >= 0 &&
+          card.right <= window.innerWidth &&
+          card.bottom <= window.innerHeight,
+      };
+    });
+
+    expect(Math.abs(box.dx), 'the card is not aligned to the icon').toBeLessThanOrEqual(2);
+    expect(box.dy, 'the card is not directly under the icon').toBeGreaterThanOrEqual(0);
+    expect(box.dy, 'the card is not directly under the icon').toBeLessThanOrEqual(16);
+    expect(box.inside, 'the card hangs outside the viewport').toBe(true);
+  });
+
+  test('the desktop card has a close button that dismisses it', async ({ page }) => {
+    // Clicking the bug icon again closed it, and so did Escape and a click
+    // outside — none of which the card shows. It needs a visible way out.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await openSheet(page, 'en');
+    await page.locator('[data-feedback-close]').click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('the desktop chips stay on one row', async ({ page }) => {
+    // The same requirement the phone check makes, on the surface that had more
+    // room and used less of it: the card was narrower than the sheet, so the
+    // row that fits on a 390px phone wrapped on a 1280px desktop.
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    for (const locale of ALL_LOCALES) {
+      await openSheet(page, locale);
+      const rows = await page.evaluate(() => {
+        const row = document.querySelector<HTMLElement>('[role="dialog"] form > div');
+        if (!row) throw new Error('no chip row found');
+        return new Set(Array.from(row.children).map((c) => Math.round(c.getBoundingClientRect().top)))
+          .size;
+      });
+      expect(rows, `the ${locale} chips wrap onto ${rows} rows on desktop`).toBe(1);
+    }
+  });
 });
 
 /**

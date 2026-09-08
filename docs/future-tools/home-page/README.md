@@ -85,6 +85,31 @@ is what puts the first line of every title on one baseline. Alignment has to be
 structural: the app ships in eight languages, and a translated title wraps
 differently, so copy tuned to equal line counts in English cannot hold it.
 
+### Getting there
+
+The wordmark in the app header links to it, the way a logo does on any other
+site (`HOME_HREF` in `src/components/layout/Header.tsx`). It is a link rather
+than a fourth nav tab: the router is a separate entry point, and the Pokédex
+lives in localStorage, so the full navigation loses nothing. When the page gets
+a real route, `HOME_HREF` and the constant in
+`e2e/wordmark-home.spec.ts` are the two lines that change.
+
+### The coming-soon version
+
+`?home=soon` is the same page with the favorite picker marked unbuilt: no
+screenshots, the words "Coming soon" where the artwork would be, and no link.
+The build mark stays with the feedback card, so the two unbuilt cards read as
+two different states rather than one repeated card.
+
+The overhang reserve belongs to the artwork, not the card: a card with
+screenshots reserves room above itself for them to pop into, a card without
+reserves nothing. Panels still line up across a row because each cell stretches
+to the row's height and its panel sits at the bottom. So a row where no card has
+artwork is simply shorter — in this version the second row sits a plain grid gap
+below the first on phone and tablet — and when the picker goes live, its card
+gains screenshots and the row drops back down on its own. The card order never
+changes.
+
 The slugs come from `../HANDOFF.md` and `../league-builder/DECISIONS.md`. Give
 the page a real route only when the tools it routes to are ready. That move also
 decides whether the dex builder keeps `/`; see the SEO note in `HANDOFF.md`.
