@@ -3,8 +3,9 @@
 The router page: one card per tool, plus a call to action. Two things live here.
 
 For the launch view of this work — what the branch owns, what it waits on, and
-what is still undecided — read [HANDOFF.md](HANDOFF.md). This file is how the
-page and its tooling work.
+what is still undecided — read
+[`../launch/HANDOFF-home-page.md`](../launch/HANDOFF-home-page.md). This file is
+how the page and its tooling work.
 
 ## The mockup
 
