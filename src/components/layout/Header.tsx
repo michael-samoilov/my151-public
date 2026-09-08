@@ -110,7 +110,13 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
             it. The eyebrow is the one h1 on the page and matches the title tag,
             which is what Google falls back to when it rewrites a title. */}
         <div data-testid="tool-title" className="flex min-w-0 flex-col justify-center gap-[0.0625rem]">
-          <h1 className="m-0 truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
+          {/* Two lines on a phone, where the centred nav leaves this cell
+              about 105px: the name is 130px at this size and would truncate
+              on every visit. Two 11px lines plus the count still fit the
+              2.75rem bar. From `sm` up it is one line, clipped by CSS only if
+              a translation outgrows the cell — the full text stays in the DOM
+              for crawlers either way. */}
+          <h1 className="m-0 line-clamp-2 text-[0.6875rem] font-semibold leading-[1.1] text-muted-foreground sm:line-clamp-none sm:truncate sm:leading-none">
             {t('header.toolName')}
           </h1>
           <span className="whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums">
