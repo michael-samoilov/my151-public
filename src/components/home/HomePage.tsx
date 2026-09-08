@@ -440,7 +440,7 @@ export function HomePage() {
           </main>
         </div>
 
-        <PageFooter />
+        <PageFooter faq="hub" />
         <FeedbackHost route="home" />
       </div>
     </TooltipProvider>

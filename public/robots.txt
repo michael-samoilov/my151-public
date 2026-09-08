@@ -1,19 +1,25 @@
 Sitemap: https://my151.app/sitemap.xml
 
 User-agent: *
-# Admin dashboard and demo/tuning states are query-param views of "/" with no
-# standalone value in search results; canonical still points every one at "/".
+# The admin dashboard is a query view of "/"; the demo and tuning states are
+# query views of the tool pages. None has standalone value in search results,
+# and each page's canonical points at its own clean URL.
 #
 # Two deliberate choices here, both for cross-parser correctness:
 #  - Plain prefixes, not "/*?admin". These views are always entered at exactly
-#    "/?admin", "/?tune", "/?demo=…", and prefix rules are honored everywhere,
-#    whereas "*" wildcards are a Google/Bing extension.
+#    these URLs, and prefix rules are honored everywhere, whereas "*"
+#    wildcards are a Google/Bing extension.
 #  - Disallow listed *before* "Allow: /". Google resolves conflicts by longest
 #    match, but older first-match-wins parsers would otherwise stop at
 #    "Allow: /" and never reach these lines. This order is correct under both.
 Disallow: /?admin
-Disallow: /?tune
-Disallow: /?demo=
+Disallow: /pokedex-builder?tune
+Disallow: /pokedex-builder?demo=
+Disallow: /custom-gym-leader?demo=
+# Preview-only diagnostics for the gym leader maker. They refuse to mount on
+# production and carry noindex, so this only saves a crawl.
+Disallow: /evolution-levels
+Disallow: /slot-lab
 Allow: /
 
 User-agent: GPTBot

@@ -232,7 +232,7 @@ export function LeagueApp() {
                   block takes the whole viewport and the footer starts exactly
                   where it ends — the same placement the dex builder's panes
                   use, one footer per scrolling pane. */}
-              <PageFooter />
+              <PageFooter faq="league" />
             </div>
             <div
               data-lg-viewport
@@ -265,7 +265,7 @@ export function LeagueApp() {
               <div className="mx-auto w-full max-w-[26rem] px-3">
                 <LeagueHome />
               </div>
-              <PageFooter />
+              <PageFooter faq="league" />
             </div>
           </section>
 

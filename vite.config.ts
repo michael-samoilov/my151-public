@@ -15,9 +15,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       input: {
-        // The dex builder, and the league builder's own crawlable page —
-        // see docs/future-tools/HANDOFF.md for the multi-page SEO rationale.
+        // One served HTML file per page, each with its own head and crawlable
+        // copy — see docs/seo/PAGE-SEO-CONTRACT.md. `cleanUrls` in vercel.json
+        // serves `<name>.html` at `/<name>`; index.html is the hub at `/`.
         main: path.resolve(__dirname, 'index.html'),
+        pokedex: path.resolve(__dirname, 'pokedex-builder.html'),
         league: path.resolve(__dirname, 'custom-gym-leader.html'),
         // A preview-only diagnostic for the league builder's level model.
         // The entry refuses to mount on the production deploy, and the page

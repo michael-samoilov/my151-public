@@ -973,7 +973,7 @@ export function PokedexGrid() {
               <DragMeasureKicker />
             </DndContext>
           </div>
-          <PageFooter />
+          <PageFooter faq="dex" />
       </div>
     </div>
   );

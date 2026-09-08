@@ -39,55 +39,19 @@ if ('serviceWorker' in navigator) {
 
 const rootEl = document.getElementById('root')!;
 
-// Admin-only submissions view, reached at `?admin`. Code-split so the normal
-// app bundle never pulls it in.
-if (new URLSearchParams(window.location.search).has('admin')) {
-  void import('./components/admin/AdminPage').then(({ AdminPage }) => {
-    createRoot(rootEl).render(
-      <StrictMode>
-        <AdminPage />
-      </StrictMode>,
-    );
-  });
-} else if (new URLSearchParams(window.location.search).has('home')) {
-  // The router page, in review. It is deliberately reachable only by this flag:
-  // it has no URL of its own, so nothing links to it and no crawler finds it,
-  // and one of the tool slugs it points at does not exist yet. The `noindex`
-  // below is the belt to that braces. Give it a real route only when the tools
-  // it routes to are ready — see docs/future-tools/home-page/.
-  const robots = document.createElement('meta');
-  robots.name = 'robots';
-  robots.content = 'noindex, nofollow';
-  document.head.appendChild(robots);
-  void Promise.all([
-    import('./components/home/HomePage'),
-    initLocale({
-      search: window.location.search,
-      stored: usePokedexStore.getState().locale,
-      navigatorLanguages: navigator.languages,
-    }),
-  ]).then(([{ HomePage }]) => {
-    createRoot(rootEl).render(
-      <StrictMode>
-        <HomePage />
-      </StrictMode>,
-    );
-  });
-} else {
-  // Resolve the display language before the first paint. English is bundled, so
-  // the common path resolves synchronously; anything else is raced against a
-  // timeout inside initLocale so a stalled catalog degrades to English instead
-  // of holding the boot spinner open. That spinner (in index.html) already
-  // covers this window.
-  void initLocale({
-    search: window.location.search,
-    stored: usePokedexStore.getState().locale,
-    navigatorLanguages: navigator.languages,
-  }).finally(() => {
-    createRoot(rootEl).render(
-      <StrictMode>
-        <App />
-      </StrictMode>,
-    )
-  })
-}
+// Resolve the display language before the first paint. English is bundled, so
+// the common path resolves synchronously; anything else is raced against a
+// timeout inside initLocale so a stalled catalog degrades to English instead
+// of holding the boot spinner open. That spinner (in pokedex-builder.html)
+// already covers this window.
+void initLocale({
+  search: window.location.search,
+  stored: usePokedexStore.getState().locale,
+  navigatorLanguages: navigator.languages,
+}).finally(() => {
+  createRoot(rootEl).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  )
+})
