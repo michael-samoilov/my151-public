@@ -136,12 +136,12 @@ Five things it settles, so nobody has to do them by hand:
 - **No chrome to crop.** A headless viewport is the page and nothing else — no
   URL bar, no notch, no clock or battery. A capture from a real phone has all
   three and needs cropping; this has none.
-- **The app's own headers, cut.** The wordmark bar and the per-page bar under it
-  are chrome too, and they are in the viewport. The capture measures where they
-  end and starts below them, in a viewport a phone's height taller, so what is
-  left is exactly a phone's worth of content. `scrollTo` names a heading to
-  bring to the top of that frame — the analytics shot uses it to start at the
-  type charts rather than at What's Missing.
+- **The app's own headers, cut.** On a page shot the wordmark bar and the
+  per-page bar under it are chrome too, and they are in the viewport. The
+  capture measures where they end and starts below them, in a viewport a phone's
+  height taller, so what is left is exactly a phone's worth of content.
+  `scrollTo` names a heading to bring to the top of that frame — the analytics
+  shot uses it to start at the type charts rather than at What's Missing.
 - **Edge to edge.** Every shot is taken at a phone's width, so the page lays
   itself out for a phone and nothing is cut off at the sides. The assets that
   predate this were a wider render cropped to a phone's shape, which read as
@@ -158,18 +158,35 @@ Five things it settles, so nobody has to do them by hand:
   display. `OUT_WIDTH` is 800, captured at 3x and resampled once. The assets
   that predate this script are 286px wide and soften on a retina desktop.
 
-### The two league shots
+### Three of the four are exports
+
+The dex's View page and the league's two cards all export a PNG, and the export
+is the honest thing to show: it is the file a visitor would get, footer line and
+all, without the app's editing chrome around it. Each one goes through the
+button a person presses, so a change to what the export draws reaches these
+assets on the next run. Only the analytics shot is the app itself, because
+analytics has nothing to export.
+
+An export is shorter than a phone in proportion, so the frame ends at the
+image's own bottom edge rather than padding out to a full phone's height. What
+that saves is a fifth of the file and a band of dead colour in the asset — the
+card clips every shot well above there in any case.
+
+### The band at the top
+
+The card rounds each shot's corners at a phone's radius, and that curve eats
+into the first rows of pixels: 18px down an 800px-wide shot the curve is still
+41px in from the left, which is exactly where the dex's first section label
+starts. Every shot gets a band of 5% of its width above it, in its own top-left
+colour — the page's grey on the analytics shot, the card's frame on the trainer
+card export. Sampled rather than named, so a change to either colour follows.
+
+### The league shots' state
 
 The league builder is still on `claude/pokemon-league-builder-soqxj6`, so the
 script checks that branch out into `.league-shot-tree/`, builds it, and serves
 it beside this one. Once `pokemon-league-builder.html` is in this tree the
 worktree is skipped and both apps come from the same build.
-
-Those two shots are the PNGs the app exports, not the app: a trainer card is
-made to be shared as an image, so the image is the honest thing to show. The
-export is shorter than a phone in proportion, so the frame keeps the app's own
-page colour under it — none of which shows, because the card clips every shot at
-its bottom edge, well above where the export ends.
 
 The state behind them is `league-fixture.json`, written into the league store's
 persisted key before the app boots. A fixture rather than the app's own Kanto
@@ -181,7 +198,8 @@ the shot.
 
 To add or change a shot, edit the `SHOTS` map: `url` carries whatever query the
 state needs (`?demo=151` seeds a full Pokédex), `nav` names the view tab to press
-first, and `scrollTo` names a heading to bring to the top. Nothing else changes.
+first, `scrollTo` names a heading to bring to the top of a page shot, and
+`exportButton` finds the button that makes an export. Nothing else changes.
 
 ### Proving it
 
@@ -203,4 +221,7 @@ breakpoint inversion above is invisible to every geometric check.
 Seven mutations of the page each turn it red: an unshared overhang reserve, a
 call to action that stops spanning, one that mounts on desktop, screenshots
 grown until the red strip closes, a bare `sm:` gutter, an off-centre build mark,
-and artwork popped far enough left to leave the window.
+artwork popped far enough left to leave the window, and a shot too short to
+reach the panel's bottom edge — that last one because the assets are cropped to
+their own content, and one cropped too far would leave bare red under the
+artwork without failing a type check.

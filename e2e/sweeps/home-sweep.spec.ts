@@ -144,7 +144,17 @@ test.describe('home page responsive sweep', () => {
             }
           });
 
-          // 8. Artwork breaks out of the panel's top and left, so it has to
+          // 8. Every screenshot still reaches the panel's bottom edge. The
+          // assets are cropped to their own content — the dex's grid ends above
+          // the app's footer, an export ends at its own edge — so one cropped
+          // too far would leave bare red under the artwork. That is a change to
+          // a file, invisible to a type check and to every other check here.
+          [...cell.querySelectorAll('img')].forEach((img, k) => {
+            const short = c.bottom - R(img).bottom;
+            if (short > 0.5) fail.push(`card ${i} shot ${k} stops ${short.toFixed(1)}px above the panel's edge`);
+          });
+
+          // 9. Artwork breaks out of the panel's top and left, so it has to
           // clear both the card above it and the window's own left edge.
           [...cell.querySelectorAll('img')].forEach((img, k) => {
             const r = R(img);
@@ -160,7 +170,7 @@ test.describe('home page responsive sweep', () => {
             });
           });
 
-          // 9. A card with no artwork carries the build mark instead. It stays
+          // 10. A card with no artwork carries the build mark instead. It stays
           // wholly inside its panel, and where it is the only thing in there it
           // sits centred. Centred means the two centres agree — not equal air on
           // every side, which a panel wider than it is tall never has.
@@ -179,7 +189,7 @@ test.describe('home page responsive sweep', () => {
           }
         });
 
-        // 10. The band's own knobs resolve to what the band intends. This repo
+        // 11. The band's own knobs resolve to what the band intends. This repo
         // sets `--breakpoint-md: 1024px`, and Tailwind sorts that px value ahead
         // of `sm`'s 40rem, so it emits the md block FIRST: a bare `sm:` utility
         // silently beats its own `md:` override above 1024px. That is invisible
@@ -194,7 +204,7 @@ test.describe('home page responsive sweep', () => {
           fail.push(`gutter is ${pad.toFixed(2)}%, expected ${wantPad}% at ${window.innerWidth}px`);
         }
 
-        // 11. Hero copy stays inside the frame and breaks rather than overrunning.
+        // 12. Hero copy stays inside the frame and breaks rather than overrunning.
         const hero = document.querySelector('main > section');
         [...(hero?.querySelectorAll('h1, p') ?? [])].forEach((e, i) => {
           const r = R(e);

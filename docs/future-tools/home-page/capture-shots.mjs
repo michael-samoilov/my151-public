@@ -54,6 +54,20 @@ const SCALE = 3;
 const OUT_WIDTH = 800;
 /** Encoder quality. Dense sprite grids punish low values; 0.86 holds up. */
 const QUALITY = 0.86;
+/**
+ * Air at the top and bottom of every shot, as a share of its width.
+ *
+ * The card rounds the shot's corners at a phone's radius, and that curve eats
+ * into the first rows of pixels: at 18px down a 800px-wide shot the curve is
+ * still 41px in from the left, which is where the dex's first section label
+ * starts. 5% clears it — at that depth the curve is 8px in — and the same band
+ * at the bottom keeps the last row of content off the corner as well.
+ *
+ * The band takes the shot's own top-left colour, so it extends whatever is
+ * already there: the page's grey on an app shot, the card's frame on the
+ * trainer card export.
+ */
+const PAD = 0.05;
 
 /**
  * The league builder still lives on its own branch. Until it merges, its two
@@ -86,18 +100,26 @@ const LEAGUE_KEY = 'league-builder';
  * heading to bring to the top of the frame. `?demo=151` seeds a full Pokédex
  * (see src/lib/demoMode.ts) and never touches a real user's storage.
  *
- * `kind: 'export'` shoots the PNG the app exports rather than the app: the
- * league's cards are made to be shared as images, so the image is the honest
- * thing to show. `open` names the league slot whose card to open first.
+ * `kind: 'export'` shoots the PNG the app exports rather than the app, through
+ * the same button a person presses: `exportButton` finds it, `open` names the
+ * league slot to open first, and `fixture` writes the league state below. A
+ * Pokédex and a trainer card are both made to be shared as images, so the image
+ * is the honest thing to show — footer line and all.
+ *
+ * An export ends at its own bottom edge; a page shot keeps a full phone's
+ * height of content below the chrome.
  */
 const SHOTS = {
   dex: {
     file: 'tool-dex.webp',
     app: 'dex',
-    kind: 'page',
+    kind: 'export',
     url: '/?demo=151',
     nav: 'view',
-    note: 'View page, full 151 dex, build-order outlines on — the front card of the dex fan.',
+    // The View page's export button carries no label; it is the one button on
+    // the page with a download icon.
+    exportButton: 'button:visible:has(svg.lucide-download)',
+    note: 'View page export, full 151 dex, build-order outlines on — the front card of the dex fan.',
   },
   'dex-b': {
     file: 'tool-dex-b.webp',
@@ -112,7 +134,8 @@ const SHOTS = {
     file: 'tool-league.webp',
     app: 'league',
     kind: 'export',
-    exportLabel: 'Export trainer card',
+    fixture: true,
+    exportButton: 'button[aria-label="Export trainer card"]',
     open: 0,
     note: 'Gym card export, Brock as the fixture sets him — the front card of the league fan.',
   },
@@ -120,7 +143,8 @@ const SHOTS = {
     file: 'tool-league-b.webp',
     app: 'league',
     kind: 'export',
-    exportLabel: 'Export league',
+    fixture: true,
+    exportButton: 'button[aria-label="Export league"]',
     note: 'League summary export, story teams, no vacancies — the card behind it.',
   },
 };
@@ -150,14 +174,15 @@ try {
   const browser = await chromium.launch({ executablePath: CHROMIUM });
   mkdirSync(OUT_DIR, { recursive: true });
   for (const [key, shot] of todo) {
-    const png = shot.kind === 'export'
-      ? await exportShot(browser, origins.league, shot)
-      : await pageShot(browser, origins.dex, shot);
+    const raw = shot.kind === 'export'
+      ? await exportShot(browser, origins[shot.app], shot)
+      : await pageShot(browser, origins[shot.app], shot);
+    const png = await band(browser, raw);
     const webp = await encode(browser, png, OUT_WIDTH);
     const out = join(OUT_DIR, shot.file);
     const before = existsSync(out) ? readFileSync(out).length : 0;
     writeFileSync(out, webp);
-    const h = Math.round((OUT_WIDTH * VIEW.height) / VIEW.width);
+    const h = await heightOf(browser, webp, OUT_WIDTH);
     console.log(
       `${key.padEnd(10)} ${shot.file.padEnd(22)} ${OUT_WIDTH}x${h}  ${kb(webp.length)}` +
         (before ? `  (was ${kb(before)})` : '  (new)'),
@@ -194,6 +219,12 @@ async function serve(cwd, port) {
     cwd, stdio: 'ignore', detached: true,
   });
   servers.push(server.pid);
+  // `--strictPort` makes the server exit rather than move when the port is
+  // taken, and the readiness probe below would then pass against whatever was
+  // already there — a different app, serving a page with none of the elements
+  // this script drives. Watching for the exit names that instead.
+  let died = false;
+  server.on('exit', () => { died = true; });
   const base = `http://localhost:${port}`;
   const browser = await chromium.launch({ executablePath: CHROMIUM });
   // Wait for the server rather than sleeping a fixed amount.
@@ -201,6 +232,7 @@ async function serve(cwd, port) {
     const page = await browser.newPage();
     const ok = await page.goto(base, { timeout: 2000 }).then(() => true, () => false);
     await page.close();
+    if (died) throw new Error(`preview server for ${cwd} exited — is port ${port} already taken?`);
     if (ok) break;
     if (i > 30) throw new Error(`preview server on ${port} never came up`);
     await new Promise((r) => setTimeout(r, 500));
@@ -297,32 +329,45 @@ async function settle(page, shot) {
 }
 
 /**
- * The PNG the league app exports, shown at a phone's width.
+ * The PNG an app exports, shown at a phone's width.
  *
- * The export is shorter than a phone in proportion, so the frame keeps the
- * app's own page colour under it. None of that shows on the home page: the card
- * clips every shot at its bottom edge, well above where the export ends.
+ * The export goes through the app's own button, so the shot is the file a
+ * visitor would get, not a re-render of it.
  */
 async function exportShot(browser, base, shot) {
-  const fixture = readFileSync(LEAGUE_FIXTURE, 'utf8');
   const context = await browser.newContext({ viewport: VIEW, deviceScaleFactor: SCALE, acceptDownloads: true });
-  await context.addInitScript(
-    ([key, value]) => {
-      try { localStorage.setItem(key, value); } catch { /* private mode: fall back to the seed */ }
-    },
-    [LEAGUE_KEY, fixture],
-  );
-  const page = await context.newPage();
-  await page.goto(`${base}/${LEAGUE_ENTRY.replace(/\.html$/, '')}`, { waitUntil: 'networkidle' });
-  await page.waitForTimeout(1500);
-  if (shot.open !== undefined) {
-    await page.locator('button.block.w-full.cursor-pointer').nth(shot.open).click({ force: true });
-    await page.waitForTimeout(1500);
+  if (shot.fixture) {
+    const fixture = readFileSync(LEAGUE_FIXTURE, 'utf8');
+    await context.addInitScript(
+      ([key, value]) => {
+        try { localStorage.setItem(key, value); } catch { /* private mode: fall back to the seed */ }
+      },
+      [LEAGUE_KEY, fixture],
+    );
   }
+  const page = await context.newPage();
+  await page.goto(base + (shot.url ?? `/${LEAGUE_ENTRY.replace(/\.html$/, '')}`), { waitUntil: 'networkidle' });
+  if (shot.nav) {
+    await page.locator(`[data-nav="${shot.nav}"]`).first().click();
+  }
+  if (shot.open !== undefined) {
+    // Wait for the league's own rows rather than a fixed sleep: the store
+    // hydrates from the fixture after mount, and a cold preview server makes
+    // that slower than any sleep worth writing.
+    const rows = page.locator('button.block.w-full.cursor-pointer');
+    await rows.first().waitFor({ state: 'visible', timeout: 30000 });
+    await rows.nth(shot.open).click({ force: true });
+  }
+  const button = page.locator(shot.exportButton).first();
+  await button.waitFor({ state: 'visible', timeout: 30000 });
+  // The dex export button stays disabled until the Pokédex has loaded, and
+  // every export draws the sprites it is about to paint.
+  await page.waitForFunction((sel) => !document.querySelector(sel)?.disabled, shot.exportButton.replace(':visible', ''));
+  await settle(page, shot);
   const ground = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   const [download] = await Promise.all([
     page.waitForEvent('download', { timeout: 60000 }),
-    page.locator(`button[aria-label="${shot.exportLabel}"]`).click({ force: true }),
+    button.click({ force: true }),
   ]);
   const stream = await download.createReadStream();
   const chunks = [];
@@ -332,7 +377,14 @@ async function exportShot(browser, base, shot) {
   return frame(browser, exported, ground);
 }
 
-/** Put an image at the top of a phone-shaped frame, filling its width. */
+/**
+ * An exported image at a phone's width, and nothing below it.
+ *
+ * The export is shorter than a phone in proportion, so the frame ends at the
+ * image's own bottom edge rather than padding out to a full phone. The card
+ * clips every shot well above that anyway; what this saves is a fifth of the
+ * file and a band of dead colour in the asset itself.
+ */
 async function frame(browser, png, ground) {
   const page = await browser.newPage({ viewport: VIEW, deviceScaleFactor: SCALE });
   await page.setContent(
@@ -340,9 +392,64 @@ async function frame(browser, png, ground) {
       `<img src="data:image/png;base64,${png.toString('base64')}">`,
   );
   await page.waitForFunction(() => [...document.images].every((i) => i.complete && i.naturalWidth > 0));
+  const height = await page.evaluate(() => Math.ceil(document.images[0].getBoundingClientRect().height));
+  await page.setViewportSize({ width: VIEW.width, height });
   const shot = await page.screenshot();
   await page.close();
   return shot;
+}
+
+/**
+ * Extend a shot's own top-left colour upward by `PAD` of its width.
+ *
+ * Sampled rather than named: the app's shots open on the page's grey and the
+ * trainer card export opens on its frame, and both want their own colour. One
+ * canvas reads the pixel and paints the band in the same pass.
+ */
+async function band(browser, png) {
+  const page = await browser.newPage();
+  const uri = await page.evaluate(
+    ([b64, share]) =>
+      new Promise((res, rej) => {
+        const img = new Image();
+        img.onerror = () => rej(new Error('decode failed'));
+        img.onload = () => {
+          const pad = Math.round(img.width * share);
+          const c = document.createElement('canvas');
+          c.width = img.width;
+          c.height = img.height + pad;
+          const x = c.getContext('2d', { willReadFrequently: true });
+          x.drawImage(img, 0, 0);
+          const [r, g, b] = x.getImageData(2, 2, 1, 1).data;
+          x.clearRect(0, 0, c.width, c.height);
+          x.fillStyle = `rgb(${r},${g},${b})`;
+          x.fillRect(0, 0, c.width, pad);
+          x.drawImage(img, 0, pad);
+          res(c.toDataURL('image/png'));
+        };
+        img.src = 'data:image/png;base64,' + b64;
+      }),
+    [png.toString('base64'), PAD],
+  );
+  await page.close();
+  return Buffer.from(uri.split(',')[1], 'base64');
+}
+
+/** An encoded image's height once it is resampled to `width`. */
+async function heightOf(browser, webp, width) {
+  const page = await browser.newPage();
+  const h = await page.evaluate(
+    ([b64, w]) =>
+      new Promise((res, rej) => {
+        const img = new Image();
+        img.onerror = () => rej(new Error('decode failed'));
+        img.onload = () => res(Math.round((w * img.height) / img.width));
+        img.src = 'data:image/webp;base64,' + b64;
+      }),
+    [webp.toString('base64'), width],
+  );
+  await page.close();
+  return h;
 }
 
 /**

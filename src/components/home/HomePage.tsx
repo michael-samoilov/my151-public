@@ -43,8 +43,6 @@ const BLURB = `min(${U(7.6)}, 15.6px)`;
 // lands where it would have anyway.
 const BLEED = U(34);
 
-// A screenshot is a phone viewport, so its height follows from its width.
-const SHOT_ASPECT = 390 / 844;
 /**
  * Corner radius as a share of the screenshot's width.
  *
@@ -233,6 +231,13 @@ function Caption({ tool }: { tool: Tool }) {
  * screenshots break out there, and both stop at its bottom, which is the only
  * edge that cuts them. The shadows get their own box with a fade, so they thin
  * out instead of ending on a straight line at that edge.
+ *
+ * The shadow box holds a hidden copy of the same screenshot, which is what
+ * gives it the screenshot's shape. Each asset is cropped to its own content —
+ * the dex's grid ends above the app's footer, an export ends at its own edge —
+ * so no single aspect ratio describes all four, and a hardcoded one would put
+ * the shadow somewhere the picture is not. The copy costs one extra decode of
+ * an image the browser has already fetched.
  */
 function Artwork({ tool }: { tool: Tool }) {
   const box = {
@@ -268,13 +273,11 @@ function Artwork({ tool }: { tool: Tool }) {
           <span
             key={f.tilt}
             aria-hidden
-            style={{
-              ...place(i),
-              display: 'block',
-              height: `calc(${U(SHOT_W)} * var(--art) / ${SHOT_ASPECT})`,
-              boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)',
-            }}
-          />
+            className="block"
+            style={{ ...place(i), boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)' }}
+          >
+            <img src={tool.shots![i]} alt="" className="block w-full invisible" />
+          </span>
         ))}
       </span>
       <span style={box}>
