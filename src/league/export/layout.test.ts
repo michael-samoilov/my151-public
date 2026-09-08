@@ -30,8 +30,13 @@ describe('export layout', () => {
     expect(L.homeImgH(true)).toBe(
       Math.ceil(L.HPADY + L.HOME_HDR_H + 14 * L.ROW2 + 4 * L.BAND2 + 6 + L.FOOT),
     );
-    // An unnamed league draws no name line, so its picture is that shorter.
-    expect(L.homeImgH(true) - L.homeImgH(false)).toBe(Math.round(L.HOME_HDR_H));
+    // An unnamed league draws no name line, so its picture is that shorter —
+    // less the deeper top pad its first band takes instead.
+    expect(L.homeImgH(true) - L.homeImgH(false))
+      .toBe(Math.round(L.HOME_HDR_H - (L.HOME_GUTTER - L.HPADY)));
+    // That pad is the gutter: the band has the same air above it as beside it.
+    expect(L.homeTopPad(false)).toBe(L.HPADX + L.HOME_RAIL - L.HOME_R);
+    expect(L.homeTopPad(true)).toBe(L.HPADY);
     expect(L.CARD_IMG_H).toBeLessThan(L.homeImgH(false));
   });
 

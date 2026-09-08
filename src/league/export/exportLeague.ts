@@ -898,7 +898,9 @@ function drawLeagueHome(
   ctx.fillRect(0, 0, L.HOME_W, L.homeImgH(!!name));
 
   const ox = L.HPADX;
-  let y = L.HPADY;
+  // An unnamed league opens on its first band, so the band takes the gutter
+  // above it as well as either side of it.
+  let y = L.homeTopPad(!!name);
 
   // --- the identity line: the league's name, and nothing else ---
   // The tool's own name stays off the picture, and so does the reading:

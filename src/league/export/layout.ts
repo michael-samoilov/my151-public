@@ -273,6 +273,19 @@ export const HOME_R = 5 * K2;
  */
 export const HOME_RAIL = 3 * K2;
 
+/**
+ * What a band sits in from the picture's left and right edges.
+ *
+ * An unnamed league has no name line, so this is also the whitespace above
+ * its first band: the band then has the same air on three sides.
+ */
+export const HOME_GUTTER = HPADX + HOME_RAIL - HOME_R;
+
+/** The whitespace above the first thing the picture draws. */
+export function homeTopPad(named: boolean): number {
+  return named ? HPADY : HOME_GUTTER;
+}
+
 export const HOME_W = BOX_W;
 export const HOME_INNER = HOME_W - 2 * HPADX;
 /** The seven seats share what the glyph and type columns leave. */
@@ -308,7 +321,9 @@ export const CARD_IMG_H = TITLE_BLOCK_H + gridHeight() + FOOT + FRAME;
  * their gaps, fourteen rows, and the credit.
  */
 export function homeImgH(named: boolean): number {
-  return Math.ceil(HPADY + (named ? HOME_HDR_H : 0) + 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT);
+  return Math.ceil(
+    homeTopPad(named) + (named ? HOME_HDR_H : 0) + 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT,
+  );
 }
 
 export { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT };
