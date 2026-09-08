@@ -3,6 +3,7 @@ import { Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { shareOrDownload } from '@/lib/exportImage';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
+import { sendLeagueExportBeacon } from '../hooks/useLeagueBeacon';
 import { useLeagueStore, type LeagueView } from '../store/useLeagueStore';
 import {
   CARD_FILENAME,
@@ -87,6 +88,7 @@ export function LeagueExportButton({ cardIndex }: { cardIndex?: number }) {
     // Before the share sheet, not after. On iOS the sheet suspends the page,
     // and a beacon issued once it resolves often never leaves the device.
     sendEventBeacon(isCard ? 'league-export-card' : 'league-export-league');
+    sendLeagueExportBeacon(isCard ? 'card' : 'league');
     try {
       const { name, cards, view } = useLeagueStore.getState();
       const blob = isCard

@@ -74,7 +74,7 @@ const PAD = 0.025;
  * Once `custom-gym-leader.html` is in this tree, the worktree is skipped
  * and both apps come from the same build — nothing else changes.
  */
-const LEAGUE_BRANCH = 'origin/claude/custom-gym-leader-soqxj6';
+const LEAGUE_BRANCH = 'origin/claude/pokemon-league-builder-soqxj6';
 const LEAGUE_ENTRY = 'custom-gym-leader.html';
 
 /**

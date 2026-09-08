@@ -218,7 +218,7 @@ Drop `PAD` to zero and the run stops on the first shot.
 
 ### The league shots' state
 
-The league builder is still on `claude/custom-gym-leader-soqxj6`, so the
+The league builder is still on `claude/pokemon-league-builder-soqxj6`, so the
 script checks that branch out into `.league-shot-tree/`, builds it, and serves
 it beside this one. Once `custom-gym-leader.html` is in this tree the
 worktree is skipped and both apps come from the same build.

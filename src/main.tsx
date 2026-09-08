@@ -5,6 +5,7 @@ import '@fontsource-variable/inter/index.css'
 import './index.css'
 import App from './App.tsx'
 import { installLayoutFontSize } from './lib/layoutFontSize'
+import { installOptOut } from './lib/clientId'
 import { whenIdle } from './lib/whenIdle';
 import { initLocale } from './i18n/bootstrap'
 import { usePokedexStore } from './store/usePokedexStore'
@@ -23,6 +24,8 @@ document.head.prepend(preload);
 // that used to live in index.css — CSS vw is tied to iOS's visual viewport,
 // causing chrome to shrink during pinch-zoom. See lib/layoutFontSize.ts.
 installLayoutFontSize();
+// `?notme` marks this browser as the owner's, out of analytics.
+installOptOut();
 
 // Defer Vercel Analytics + Speed Insights so they don't block first paint or INP.
 whenIdle(() => {

@@ -4,6 +4,7 @@ import interLatinUrl from '@fontsource-variable/inter/files/inter-latin-wght-nor
 import '@fontsource-variable/inter/index.css'
 import '../index.css'
 import { installLayoutFontSize } from '../lib/layoutFontSize'
+import { installOptOut } from '../lib/clientId'
 import { whenIdle } from '../lib/whenIdle'
 import { initLocale } from '../i18n/bootstrap'
 import { usePokedexStore } from '../store/usePokedexStore'
@@ -36,6 +37,8 @@ if (isIos) {
 }
 
 installLayoutFontSize();
+// `?notme` marks this browser as the owner's, out of analytics.
+installOptOut();
 
 whenIdle(() => {
   void import('@vercel/analytics').then((m) => m.inject());

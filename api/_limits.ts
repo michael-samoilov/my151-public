@@ -23,3 +23,11 @@
  * for more than half an hour.
  */
 export const SUBMIT_CLIENT_DAILY_CAP = 3000;
+
+/**
+ * The cap is per tool as well as per browser: /api/submit keys its limiter
+ * by `dex:<cid>` and /api/league by `league:<cid>`. Two tools in two tabs
+ * each would otherwise send 5,760 a day against one 3,000 budget, and the
+ * dex builder's beacons would start dropping because the gym leader maker
+ * was open in another tab. Each tool's own ceiling is what the test holds.
+ */

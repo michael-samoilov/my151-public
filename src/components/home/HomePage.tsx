@@ -8,6 +8,8 @@ import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { openFeedback } from '@/components/feedback/feedbackChannel';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { usePokedexStore } from '@/store/usePokedexStore';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
+import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
 import { isMovedNoticeSeen, markLeaguePromoSeen, markMovedNoticeSeen } from '@/lib/launchFlags';
 import dexBack from '@/assets/home/tool-dex-b.webp';
 import dexFront from '@/assets/home/tool-dex.webp';
@@ -156,7 +158,14 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
       {body}
     </button>
   ) : tool.href ? (
-    <a href={tool.href} className={panel} style={style} data-card-panel>
+    <a
+      href={tool.href}
+      className={panel}
+      style={style}
+      data-card-panel
+      // fetch keepalive lets the beacon outlive the navigation this starts.
+      onClick={() => sendEventBeacon(tool.key === 'dex' ? 'hub-cta-dex' : 'hub-cta-league')}
+    >
       {body}
     </a>
   ) : (
@@ -390,6 +399,10 @@ function MovedNotice({ placed }: { placed: number }) {
 
 export function HomePage() {
   const t = useT();
+  useJsErrorCounter();
+  useEffect(() => {
+    sendEventBeacon('hub-shown', { once: true });
+  }, []);
   const placed = usePokedexStore((s) => Object.values(s.sections).reduce((n, ids) => n + ids.length, 0));
   const tools = useTools(placed);
   // Desktop gives every tool its own column, so the rail is one row whatever

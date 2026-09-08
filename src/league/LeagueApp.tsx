@@ -8,6 +8,9 @@ import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 import { BrowserStoreContext } from '@/components/browser/browserStore';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useJsErrorCounter } from '@/hooks/useJsErrorCounter';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
+import { useLeagueBeacon } from './hooks/useLeagueBeacon';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { cn } from '@/lib/utils';
@@ -138,6 +141,11 @@ export function LeagueApp() {
   // The sheet heading names a Pokémon, and `pokemonLabel` reads the name
   // store without subscribing to it.
   useNamesVersion();
+  useLeagueBeacon();
+  useJsErrorCounter();
+  useEffect(() => {
+    sendEventBeacon('league-open', { once: true });
+  }, []);
   const openCard = useLeagueUi((s) => s.openCard);
   const shownCard = useLeagueUi((s) => s.openCard ?? s.lastCard);
   const browserPurpose = useLeagueUi((s) => s.browserPurpose);
