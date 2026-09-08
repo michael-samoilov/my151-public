@@ -72,6 +72,9 @@ interface Tool {
   title: string;
   blurb: string;
   shots?: [string, string];
+  /** One description per shot, back then front. The shots are content, not
+   *  decoration: they show what each tool produces. */
+  alts?: [string, string];
 }
 
 const HAMMER_TITLE = 'next';
@@ -86,17 +89,25 @@ function useTools(): Tool[] {
   return [
     {
       key: 'dex',
-      href: '/',
+      href: '/pokedex-builder',
       title: t('home.dex.title'),
       blurb: t('home.dex.blurb'),
       shots: [dexBack, dexFront],
+      alts: [
+        'The Pokédex builder’s analytics page: type distribution charts for a custom region against the National Dex',
+        'A custom regional Pokédex of 151 Pokémon, exported as an image from the Pokédex builder',
+      ],
     },
     {
       key: 'league',
-      href: '/pokemon-league-builder',
+      href: '/custom-gym-leader',
       title: t('home.league.title'),
       blurb: t('home.league.blurb'),
       shots: [leagueBack, leagueFront],
+      alts: [
+        'A whole league exported from the gym leader maker: eight gym leaders, the Elite Four and the Champion with their teams',
+        'A gym leader’s pro trainer card exported from the gym leader maker, with the badge, ace Pokémon and team',
+      ],
     },
     { key: HAMMER_TITLE, title: t('home.next.title'), blurb: t('home.next.blurb') },
   ];
@@ -209,14 +220,18 @@ function WideBody({ tool }: { tool: Tool }) {
 
 /** Ink on the page, under the panel. */
 function Caption({ tool }: { tool: Tool }) {
+  // The tool cards are the page's h2 list: one heading per tool, which is
+  // also the anchor text of the link to it. The call to action is not a tool,
+  // so it is styled the same and is not a heading.
+  const Title = tool.href ? 'h2' : 'p';
   return (
     <div style={{ padding: `${U(5.6)} ${U(1.7)} 0` }}>
-      <h2
+      <Title
         className="m-0 font-bold tracking-tight"
         style={{ fontSize: TITLE, lineHeight: 1.25 }}
       >
         {tool.title}
-      </h2>
+      </Title>
       <p
         className="m-0 text-muted-foreground text-pretty"
         style={{ fontSize: BLURB, lineHeight: 1.4, marginTop: U(3) }}
@@ -288,10 +303,11 @@ function Artwork({ tool }: { tool: Tool }) {
             className="block overflow-hidden border border-neutral-300 bg-background"
             style={place(i)}
           >
+            {/* Not lazy: every card sits in the first viewport at every
+                width, and these are the page's largest paint. */}
             <img
               src={tool.shots![i]}
-              alt=""
-              loading="lazy"
+              alt={tool.alts?.[i] ?? ''}
               decoding="async"
               className="block w-full"
             />

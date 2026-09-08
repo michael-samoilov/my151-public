@@ -11,7 +11,7 @@ import { seededLeague } from './support/leagueSeed';
 
 const openCard = async (page: Page, slot: number) => {
   await seededLeague(page);
-  await page.goto('/pokemon-league-builder');
+  await page.goto('/custom-gym-leader');
   await page.waitForSelector('[data-testid="league-slot-0"]');
   await page.waitForTimeout(400);
   await page.click(`[data-testid="league-slot-${slot}"]`);
@@ -121,7 +121,7 @@ test.describe('round 10', () => {
 
   test('the story/rematch toggle switches the league summary', async ({ page }) => {
     await seededLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(700);
 

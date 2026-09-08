@@ -54,7 +54,7 @@ grid, the slots, and the glyph cells.
 ## Module map
 
 ```
-pokemon-league-builder.html      static SEO head + h1 + body copy inside #root
+custom-gym-leader.html      static SEO head + h1 + body copy inside #root
 src/league/
   main.tsx                       boot (fonts, layoutFontSize) + mount
   LeagueApp.tsx                  shell: header, home ↔ card, sheets, md panes

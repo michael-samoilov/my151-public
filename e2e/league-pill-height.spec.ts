@@ -29,7 +29,7 @@ test('the dex nav pill and the league toggle pill paint alike and press alike', 
   const dex = await page.evaluate(measurePill, { selector: '[data-nav="builder"]' });
 
   await seededLeague(page);
-  await page.goto('/pokemon-league-builder');
+  await page.goto('/custom-gym-leader');
   await page.waitForSelector('[data-league-view][aria-pressed="true"]');
   await page.waitForTimeout(300);
   const league = await page.evaluate(measurePill, { selector: '[data-league-view][aria-pressed="true"]' });

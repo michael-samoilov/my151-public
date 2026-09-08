@@ -99,7 +99,7 @@ async function overlayBoxes(page: Page) {
 test.describe('league overlays', () => {
   test('every picker opens onto the viewport, not the pane track', async ({ page }) => {
     await blankLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
@@ -134,7 +134,7 @@ test.describe('league overlays', () => {
   test('nothing the league can open escapes the viewport', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name === 'desktop', 'the pane track is the mobile shell');
     await blankLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(400);
 
@@ -182,7 +182,7 @@ test.describe('league overlays', () => {
 
   test('seating a line leaves the card inside the viewport', async ({ page }) => {
     await blankLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');

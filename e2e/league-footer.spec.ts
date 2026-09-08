@@ -60,7 +60,7 @@ async function footers(page: Page) {
 
 test.describe('the league footer', () => {
   test('the summary carries it, just below the fold', async ({ page }) => {
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(700);
     const panes = await footers(page);
@@ -73,7 +73,7 @@ test.describe('the league footer', () => {
   });
 
   test('the summary paints nothing below its own fold', async ({ page }) => {
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(700);
     const panes = await lowestPainted(page);
@@ -85,7 +85,7 @@ test.describe('the league footer', () => {
   });
 
   test('a gym card paints nothing below its own fold', async ({ page }) => {
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
@@ -99,7 +99,7 @@ test.describe('the league footer', () => {
   });
 
   test('a gym card carries it too', async ({ page }) => {
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');

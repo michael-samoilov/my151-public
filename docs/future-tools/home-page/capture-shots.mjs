@@ -71,11 +71,11 @@ const PAD = 0.025;
 /**
  * The league builder still lives on its own branch. Until it merges, its two
  * shots come from a worktree of that branch, built and served beside this one.
- * Once `pokemon-league-builder.html` is in this tree, the worktree is skipped
+ * Once `custom-gym-leader.html` is in this tree, the worktree is skipped
  * and both apps come from the same build — nothing else changes.
  */
-const LEAGUE_BRANCH = 'origin/claude/pokemon-league-builder-soqxj6';
-const LEAGUE_ENTRY = 'pokemon-league-builder.html';
+const LEAGUE_BRANCH = 'origin/claude/custom-gym-leader-soqxj6';
+const LEAGUE_ENTRY = 'custom-gym-leader.html';
 
 /**
  * The league state the two league shots are taken against.

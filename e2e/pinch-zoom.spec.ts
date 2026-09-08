@@ -40,14 +40,14 @@ async function pinchBlockers(page: Page) {
 
 test.describe('pinch to zoom', () => {
   test('nothing large on the league summary swallows it', async ({ page }) => {
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(500);
     expect(await pinchBlockers(page)).toEqual([]);
   });
 
   test('nothing large on a gym card swallows it', async ({ page }) => {
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');

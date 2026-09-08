@@ -1,6 +1,6 @@
 # Pokémon League Builder
 
-A second tool at `/pokemon-league-builder`: fourteen gym cards, each a grid of
+A second tool at `/custom-gym-leader`: fourteen gym cards, each a grid of
 evolution lines over twelve level rows, with an ace, a partner, a TM, a badge,
 powerups on the top three rows, and a legendary on the endgame boss row.
 
@@ -20,7 +20,7 @@ powerups on the top three rows, and a legendary on the endgame boss row.
 
 ## How to get to it (user POV)
 
-Open `/pokemon-league-builder`, tap a slot (`[data-testid="league-slot-N"]`).
+Open `/custom-gym-leader`, tap a slot (`[data-testid="league-slot-N"]`).
 Cells are `[data-testid="card-cell-<row>-<seat>"]`; the ace and partner slots
 are `[data-testid="slot-ace"]` and `[data-testid="slot-partner"]`. The browser
 sheet shows a `[data-filter-chip="my-dex"]` chip when open, and its tiles are

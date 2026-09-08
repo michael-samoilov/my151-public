@@ -80,7 +80,7 @@ test.describe('two-bar chrome', () => {
     await page.waitForSelector('[data-testid="tool-title"]');
 
     // Default state: the tool's name, no selections yet.
-    await expect(page.getByTestId('tool-title')).toContainText('Dex Builder');
+    await expect(page.getByTestId('tool-title')).toContainText('Custom Pokédex Builder');
     await expectNoOverlap(page);
 
     // Seed a dex past the analytics unlock, reload into the count state.
@@ -102,7 +102,7 @@ test.describe('two-bar chrome', () => {
 
   test('league tool bar holds the dex bar height on home and card', async ({ page }) => {
     await blankLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     const rootPx = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16);
     // Both bars carry the same handle: reading up the tree from a control

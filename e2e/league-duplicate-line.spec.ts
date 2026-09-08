@@ -45,7 +45,7 @@ async function pick(page: Page, query: string): Promise<void> {
 test.describe('a line picked twice', () => {
   test.beforeEach(async ({ page }) => {
     await blankLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');

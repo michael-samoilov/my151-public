@@ -77,7 +77,7 @@ test.describe('drag hold', () => {
 
   test('a league row is carried in the slot it would fill', async ({ page }) => {
     await blankLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(300);
 
@@ -117,7 +117,7 @@ test.describe('drag hold', () => {
 
   test('a gym column is carried in place, with no stack under the thumb', async ({ page }) => {
     await blankLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-3"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
@@ -198,7 +198,7 @@ test.describe('drag hold', () => {
       });
 
     await seededLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(600);
     const home = await audit();
@@ -225,7 +225,7 @@ test.describe('drag hold', () => {
     // whether it carries a column or the boss's legendary. A bare sprite on
     // the dark band read as a cutout beside the lifted cells.
     await seededLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(400);
     await page.click('[data-testid="league-slot-13"]');
@@ -282,7 +282,7 @@ test.describe('drag hold', () => {
     // sprite arrived. Measured on the built preview, seven cards showed 19
     // such cells before the card started warming every member it can draw.
     await seededLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(400);
     await page.click('[data-testid="league-slot-12"]');
@@ -326,7 +326,7 @@ test.describe('drag hold', () => {
 
   test('shifting an evolution boundary carries nothing', async ({ page }) => {
     await blankLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-3"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');

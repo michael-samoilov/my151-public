@@ -9,8 +9,8 @@ import { cn } from '@/lib/utils';
  */
 
 const TOOLS = [
-  { id: 'dex', href: '/', label: 'Pokédex Builder' },
-  { id: 'league', href: '/pokemon-league-builder', label: 'League Builder' },
+  { id: 'dex', href: '/pokedex-builder', label: 'Pokédex Builder' },
+  { id: 'league', href: '/custom-gym-leader', label: 'Gym Leader Maker' },
 ] as const;
 
 export type ToolId = (typeof TOOLS)[number]['id'];

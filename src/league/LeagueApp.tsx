@@ -33,7 +33,7 @@ import { confirmOnEnter } from './components/confirmOnEnter';
 function GlobalHeader() {
   return (
     <header className="flex h-11 items-center justify-between border-b bg-card px-3 sm:px-6">
-      <a href="/pokemon-league-builder" className="text-2xl font-extrabold tracking-tight">
+      <a href="/" data-testid="wordmark" className="text-2xl font-extrabold tracking-tight">
         <span className="text-primary">my151</span>
         <span className="text-foreground">.app</span>
       </a>
@@ -52,20 +52,13 @@ function GlobalHeader() {
  * shows the tool name — and an sr-only h1 keeps the heading in the
  * hydrated DOM (the static shell carries the crawlable one).
  */
-const TOOL_NAME = 'Pokémon League Builder';
+const TOOL_NAME = 'Custom Gym Leader & Trainer Card Maker';
 /**
- * The heading, once a third pane is open.
- *
- * The desktop layout gives the league a third of the width when the picker
- * joins it, and the identity block gives up the difference: measured, the
- * heading had 143px for 165px of text, so it rendered as "Pokémon League
- * B…". Widening the block instead pushes the bar's own controls 26.9px past
- * its right edge and into the card pane, and setting the heading smaller
- * drops it below the 13.75px the dex builder's bar uses. Two words fit
- * whole, so the narrow state says two words. The static shell keeps the
- * crawlable full name, which is what a crawler reads.
+ * One string, whatever the width. A narrow desktop pane once swapped in a
+ * two-word name, but Google crawls mobile-first and reads whichever string is
+ * in the DOM, so the full name stays and `truncate` clips it; the title
+ * attribute keeps the whole name reachable.
  */
-const TOOL_NAME_NARROW = 'League Builder';
 const LEAGUE_NAME_PLACEHOLDER = 'Name your league';
 
 /**
@@ -89,7 +82,7 @@ function LeagueNameRow({ h1, narrow = false }: { h1: boolean; narrow?: boolean }
         className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground"
         title={narrow ? TOOL_NAME : undefined}
       >
-        {narrow ? TOOL_NAME_NARROW : TOOL_NAME}
+        {TOOL_NAME}
       </Heading>
       {/* The field is sized to its own text by an invisible copy stacked in
           the same grid cell, so the pencil sits at the end of the words

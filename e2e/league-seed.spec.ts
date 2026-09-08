@@ -13,7 +13,7 @@ import { seededLeague } from './support/leagueSeed';
 test.describe('seeded league', () => {
   test.beforeEach(async ({ page }) => {
     await seededLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.waitForTimeout(400);
   });

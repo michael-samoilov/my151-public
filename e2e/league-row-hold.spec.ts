@@ -25,7 +25,7 @@ test.describe('holding a league row', () => {
       test.skip(browserName !== 'chromium', 'CDP touch injection');
       test.skip(testInfo.project.name === 'desktop', 'the hold is a touch affordance');
 
-      await page.goto('/pokemon-league-builder');
+      await page.goto('/custom-gym-leader');
       await page.waitForSelector('[data-testid="league-slot-0"]');
       await page.waitForTimeout(500);
 

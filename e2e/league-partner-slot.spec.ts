@@ -26,7 +26,7 @@ import { blankLeague } from './support/leagueSeed';
 const DRIFT = 0.02;
 
 const openCard = async (page: Page) => {
-  await page.goto('/pokemon-league-builder');
+  await page.goto('/custom-gym-leader');
   await page.waitForSelector('[data-testid="league-slot-0"]');
   await page.click('[data-testid="league-slot-0"]');
   await page.waitForSelector('[data-testid="card-cell-1-1"]');

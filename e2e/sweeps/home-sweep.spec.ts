@@ -31,7 +31,7 @@ test.describe('home page responsive sweep', () => {
     test(`layout holds at ${width}px`, async ({ page }) => {
       const height = width < 600 ? Math.round(width * 2.1) : width < 1024 ? Math.round(width * 1.33) : 900;
       await page.setViewportSize({ width, height });
-      await page.goto('/?home');
+      await page.goto('/');
       await page.waitForLoadState('networkidle');
 
       const problems = await page.evaluate((cardCount): Problem[] => {

@@ -2,28 +2,25 @@ import { test, expect } from '@playwright/test';
 import { seedDex, TUNE_URL } from './support/dexSeed';
 
 /**
- * The wordmark is the way back to the router page, from every view.
+ * The wordmark is the way back to the hub, from every view.
  *
- * It is a link rather than a view switch on purpose: the router is a separate
+ * It is a link rather than a view switch on purpose: the hub is a separate
  * entry point, not a fourth tab. The Pokédex lives in localStorage, so the full
  * navigation this causes loses nothing.
- *
- * The href is a query today because the router page has no route of its own —
- * see docs/future-tools/home-page/README.md. This asserts the behaviour, not
- * that shape: when the page gets a real path, only HOME_HREF and this constant
- * change.
  */
-const HOME_HREF = '/?home';
+const HOME_HREF = '/';
+const DEX_URL = '/pokedex-builder';
 
 const VIEWS = ['builder', 'view', 'analytics'] as const;
 
 test.describe('wordmark links home', () => {
   test('the wordmark is a link, and it names the site', async ({ page }) => {
-    await page.goto('/');
-    const link = page.locator('h1 a');
+    await page.goto(DEX_URL);
+    const link = page.getByTestId('wordmark');
     await expect(link).toHaveAttribute('href', HOME_HREF);
-    // The h1 stays the heading; the link sits inside it.
+    // The wordmark is not the heading: the tool bar's eyebrow is the one h1.
     await expect(page.locator('h1')).toHaveCount(1);
+    await expect(page.locator('h1')).toHaveText('Custom Pokédex Builder');
     await expect(link).toContainText('my151');
     // The screen-reader tagline rides along, so the link is not named "my151.app"
     // alone — that says nothing about where it goes.
@@ -61,15 +58,15 @@ test.describe('wordmark links home', () => {
           }, view),
         )
         .toEqual({ activeFilled: true, othersGhosted: true });
-      await expect(page.locator('h1 a')).toHaveAttribute('href', HOME_HREF);
+      await expect(page.getByTestId('wordmark')).toHaveAttribute('href', HOME_HREF);
     });
   }
 
-  test('following it reaches the router page', async ({ page }) => {
-    await page.goto('/');
-    await page.locator('h1 a').click();
+  test('following it reaches the hub', async ({ page }) => {
+    await page.goto(DEX_URL);
+    await page.getByTestId('wordmark').click();
     await page.waitForLoadState('networkidle');
-    await expect(page).toHaveURL(/\?home$/);
+    await expect(page).toHaveURL(/\/$/);
     // The router page's own heading, not the app's wordmark.
     await expect(page.locator('h1')).toContainText('Pokédex');
     await expect(page.locator('[data-card-panel]')).toHaveCount(3);

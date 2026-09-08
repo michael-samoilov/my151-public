@@ -311,13 +311,13 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
 }
 
 // ---------------------------------------------------------------------------
-// League builder page (/pokemon-league-builder), added 2026-08-29. Checks are
+// League builder page (/custom-gym-leader), added 2026-08-29. Checks are
 // the invariants that change introduced: the page boots on its own entry, the
 // served HTML carries the static SEO content, layout holds, a real drive
 // writes the league's own store key, and the run stays error-free. The drive
 // runs on desktop-width Blink (the instant-add path); other surfaces prove
 // boot, layout, and rendering.
-const LEAGUE_PATH = '/pokemon-league-builder';
+const LEAGUE_PATH = '/custom-gym-leader';
 const LEAGUE_KEY = 'league-builder';
 
 interface LeagueOracle {
@@ -356,7 +356,7 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
       return checks;
     }
     if (!hasH1 || !hasTitle) {
-      // The league builder page is not in this build yet: /pokemon-league-builder
+      // The league builder page is not in this build yet: /custom-gym-leader
       // serves the SPA fallback (dex HTML, 200). Skip loudly rather than fail,
       // matching the placement check's skip-until-present rule; a check that flags
       // a not-yet-built feature is a false failure on the current app.

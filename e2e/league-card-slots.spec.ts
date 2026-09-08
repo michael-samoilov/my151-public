@@ -12,7 +12,7 @@ import { blankLeague, seededLeague } from './support/leagueSeed';
 
 const openCard = async (page: Page) => {
   await blankLeague(page);
-  await page.goto('/pokemon-league-builder');
+  await page.goto('/custom-gym-leader');
   await page.waitForSelector('[data-testid="league-slot-0"]');
   await page.click('[data-testid="league-slot-0"]');
   await page.waitForSelector('[data-testid="card-cell-1-1"]');
@@ -83,7 +83,7 @@ test.describe('the longest move in the TM box', () => {
           JSON.stringify({ state: { name: '', cards }, version: 1 }),
         );
       });
-      await page.goto('/pokemon-league-builder');
+      await page.goto('/custom-gym-leader');
       await page.waitForSelector('[data-testid="league-slot-0"]');
       await page.click('[data-testid="league-slot-0"]');
       await page.waitForSelector('[data-testid="card-cell-1-1"]');
@@ -459,7 +459,7 @@ test.describe('an empty slot and a filled one', () => {
 
     // The seeded card 0: an ace, a TM and a badge, and no partner.
     await seededLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
@@ -542,7 +542,7 @@ test.describe('the red marks', () => {
       cards[0] = { ...blank, theme: 'Rock' };
       window.localStorage.setItem('league-builder', JSON.stringify({ state: { name: 'Kanto', cards }, version: 1 }));
     });
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');

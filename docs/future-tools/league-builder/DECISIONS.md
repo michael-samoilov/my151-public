@@ -9,7 +9,7 @@ https://claude.ai/code/artifact/35e27776-53a2-4159-8d33-4cbd9dcc3026
 
 ## Product frame
 
-- Own page at `/pokemon-league-builder`, second Vite entry, real static HTML
+- Own page at `/custom-gym-leader`, second Vite entry, real static HTML
   (title, meta description, h1, body copy). See `../HANDOFF.md`.
 - **Mobile-first.** Build the mobile layout first, port to desktop after.
 - **Direction A (card table) everywhere.** No stage-focus view exists.

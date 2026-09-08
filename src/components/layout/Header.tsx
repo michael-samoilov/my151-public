@@ -11,13 +11,8 @@ import { ToolsMenu } from '@/components/layout/ToolsMenu';
 
 export type AppView = 'builder' | 'view' | 'analytics';
 
-/**
- * Where the wordmark goes. The router page has no URL of its own yet — it is
- * reached by a flag and carries `noindex` — so this is a query, not a path.
- * Give it a real route and this constant is the one line that changes.
- * See docs/future-tools/home-page/README.md.
- */
-const HOME_HREF = '/?home';
+/** Where the wordmark goes: the hub, which routes to every tool. */
+const HOME_HREF = '/';
 
 interface HeaderProps {
   currentView: AppView;
@@ -65,13 +60,11 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
   return (
     <header className="bg-card">
       <div className="flex h-11 items-center justify-between border-b px-3 sm:px-6">
-        {/* The visible wordmark is the page's only <h1>, so on its own it gives
-         * crawlers that DO execute JS (Google) a keyword-free heading — see
-         * SEO-HANDOFF.md §0. The appended text completes the heading without
-         * changing a pixel, and it is a genuine accessibility win too: screen
-         * readers currently announce just "my151.app", which says nothing about
-         * what the page is. */}
-        <h1 className="text-2xl font-extrabold tracking-tight whitespace-nowrap">
+        {/* The wordmark is not the page's heading: the h1 is the tool bar's
+         * eyebrow below, so the heading Google reads names the tool. The sr-only
+         * tagline stays for screen readers, which otherwise hear only
+         * "my151.app". */}
+        <p className="m-0 text-2xl font-extrabold tracking-tight whitespace-nowrap">
           {/* The wordmark is the way back to the router page, the way a logo is
               on any other site. It is a plain link, not a view switch: the
               router is a separate entry point, and the Pokédex lives in
@@ -81,6 +74,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
               spans below keep their own colours and nothing turns blue. */}
           <a
             href={HOME_HREF}
+            data-testid="wordmark"
             className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <span className="text-primary">my151</span><span className="text-foreground">.app</span>
@@ -91,7 +85,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
                 this was found. */}
             <span className="sr-only">{t('header.tagline')}</span>
           </a>
-        </h1>
+        </p>
 
         <div className="flex flex-shrink-0 items-center gap-1">
           {/* Always present, in every environment. The app negotiates a locale
@@ -111,17 +105,18 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
         className="grid h-11 items-center gap-2 border-b px-3 sm:px-6"
         style={{ gridTemplateColumns: 'minmax(0,1fr) auto minmax(0,1fr)' }}
       >
-        <div data-testid="tool-title" className="min-w-0">
-          {count > 0 ? (
-            <span className="whitespace-nowrap text-lg font-extrabold leading-none tracking-tight tabular-nums sm:text-2xl">
-              <span className="text-primary">{count}</span>
-              <span className="text-foreground">/151</span>
-            </span>
-          ) : (
-            // The tool's name, as real text: the default a crawler executing
-            // JS reads on a fresh visit. The count replaces it, not joins it.
-            <h2 className="truncate text-lg font-extrabold leading-none tracking-tight">{t('header.toolName')}</h2>
-          )}
+        {/* The tool's identity in two lines, the league builder's pattern: the
+            page's h1 as a small eyebrow that never changes, and the count under
+            it. The eyebrow is the one h1 on the page and matches the title tag,
+            which is what Google falls back to when it rewrites a title. */}
+        <div data-testid="tool-title" className="flex min-w-0 flex-col justify-center gap-[0.0625rem]">
+          <h1 className="m-0 truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground">
+            {t('header.toolName')}
+          </h1>
+          <span className="whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums">
+            <span className="text-primary">{count}</span>
+            <span className="text-foreground">/151</span>
+          </span>
         </div>
 
         <div className="flex items-center gap-1">

@@ -23,7 +23,7 @@ test.use({ viewport: { width: 393, height: 560 }, hasTouch: true, isMobile: true
 
 const openCard = async (page: Page) => {
   await seededLeague(page);
-  await page.goto('/pokemon-league-builder');
+  await page.goto('/custom-gym-leader');
   await page.waitForSelector('[data-testid="league-slot-0"]');
   await page.click('[data-testid="league-slot-0"]');
   await page.waitForSelector('[data-testid="card-cell-1-1"]');
@@ -59,7 +59,7 @@ test.describe('a card cell owns the touch it starts', () => {
 
   test('hands the pan back where there is nothing to drag', async ({ page }) => {
     await blankLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
@@ -191,7 +191,7 @@ test.describe('a carried column keeps what it carries', () => {
 
   test('a Mega travels with its column, not with its seat', async ({ page }) => {
     await seededLeague(page);
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-12"]');
     await page.click('[data-testid="league-slot-12"]');
     await page.waitForSelector('[data-testid="card-cell-11-1"]');
@@ -257,7 +257,7 @@ test.describe('a carried column keeps what it carries', () => {
         JSON.stringify({ state: { name: 'Legend lift', cards }, version: 1 }),
       );
     });
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-12"]');
     await page.click('[data-testid="league-slot-12"]');
     await page.waitForSelector('[data-testid="card-cell-11-1"]');

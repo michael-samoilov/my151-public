@@ -68,7 +68,7 @@ const pickSignature = async (page: Page, query: string, name: string) => {
 
 const openCard = async (page: Page, slot: number) => {
   await blankLeague(page);
-  await page.goto('/pokemon-league-builder');
+  await page.goto('/custom-gym-leader');
   await page.waitForSelector('[data-testid="league-slot-0"]');
   await page.click(`[data-testid="league-slot-${slot}"]`);
   await page.waitForSelector('[data-testid="card-cell-1-1"]');

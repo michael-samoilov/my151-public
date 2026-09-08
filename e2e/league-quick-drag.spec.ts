@@ -21,7 +21,7 @@ test.use({ viewport: { width: 393, height: 800 }, hasTouch: true, isMobile: true
 
 const openCard = async (page: Page) => {
   await blankLeague(page);
-  await page.goto('/pokemon-league-builder');
+  await page.goto('/custom-gym-leader');
   await page.waitForSelector('[data-testid="league-slot-0"]');
   await page.click('[data-testid="league-slot-0"]');
   await page.waitForSelector('[data-testid="card-cell-1-1"]');

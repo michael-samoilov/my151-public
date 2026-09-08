@@ -159,7 +159,7 @@ test.describe('feedback', () => {
     const where = openCard ? 'an open gym card' : 'the league home';
     test(`every report button opens the form on ${where}`, async ({ page }) => {
       await stubApi(page);
-      await page.goto('/pokemon-league-builder');
+      await page.goto('/custom-gym-leader');
       await page.waitForSelector('[data-testid="league-slot-0"]');
       if (openCard) {
         await page.click('[data-testid="league-slot-0"]');

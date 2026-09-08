@@ -43,7 +43,7 @@ test('the static shell paints the app\'s header and tool bar', async ({ browser,
   const viewport = info.project.use.viewport ?? { width: 393, height: 852 };
   const scripts = await browser.newContext({ ...info.project.use, viewport, javaScriptEnabled: false });
   const shellPage = await scripts.newPage();
-  await shellPage.goto(`${baseURL}/pokemon-league-builder`, { waitUntil: 'domcontentloaded' });
+  await shellPage.goto(`${baseURL}/custom-gym-leader`, { waitUntil: 'domcontentloaded' });
   await shellPage.waitForTimeout(80);
   const shell = await shellPage.evaluate(MEASURE);
   expect(shell.copyOpacity, 'the copy is held back in the first 80ms').toBe('0');
@@ -53,7 +53,7 @@ test('the static shell paints the app\'s header and tool bar', async ({ browser,
 
   const app = await browser.newContext({ ...info.project.use, viewport });
   const appPage = await app.newPage();
-  await appPage.goto(`${baseURL}/pokemon-league-builder`);
+  await appPage.goto(`${baseURL}/custom-gym-leader`);
   await appPage.waitForSelector('[data-testid="league-slot-0"]');
   await appPage.waitForTimeout(400);
   const mounted = await appPage.evaluate(MEASURE);

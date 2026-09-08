@@ -140,7 +140,7 @@
       "x": 1000,
       "y": -190,
       "w": 860,
-      "text": "SEO structure, same in all three:\n· h1 carries \"make your own Pokédex\" plus region and league.\n· Each card is an <h2> that exactly matches its slug: /custom-pokedex-builder, /pokemon-league-builder, /favorite-pokemon-picker.\n· The footer repeats the four links as anchor text.\nWatch out: making / a router moves the dex builder off the URL that ranks today (~pos 7.8 for \"pokedex builder\")."
+      "text": "SEO structure, same in all three:\n· h1 carries \"make your own Pokédex\" plus region and league.\n· Each card is an <h2> that exactly matches its slug: /custom-pokedex-builder, /custom-gym-leader, /favorite-pokemon-picker.\n· The footer repeats the four links as anchor text.\nWatch out: making / a router moves the dex builder off the URL that ranks today (~pos 7.8 for \"pokedex builder\")."
     },
     {
       "id": "d-note",

@@ -247,7 +247,7 @@ export function LevelsPage() {
         <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[0.6875rem] font-semibold text-amber-800">
           Preview only
         </span>
-        <a href="/pokemon-league-builder" className="ml-auto text-[0.8125rem] text-primary underline">
+        <a href="/custom-gym-leader" className="ml-auto text-[0.8125rem] text-primary underline">
           League builder
         </a>
       </header>

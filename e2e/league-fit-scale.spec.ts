@@ -44,7 +44,7 @@ test.describe('the fit', () => {
     async ({ page }) => {
       const { width } = page.viewportSize()!;
       await page.setViewportSize({ width, height: ROOMY });
-      await page.goto('/pokemon-league-builder');
+      await page.goto('/custom-gym-leader');
       await page.waitForSelector('[data-testid="league-slot-0"]');
       await settle(page);
       const roomy = await paid(page);
@@ -64,7 +64,7 @@ test.describe('the fit', () => {
   test('pays for a gym card the same way', async ({ page }) => {
     const { width } = page.viewportSize()!;
     await page.setViewportSize({ width, height: TIGHT });
-    await page.goto('/pokemon-league-builder');
+    await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');
     await page.click('[data-testid="league-slot-0"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
