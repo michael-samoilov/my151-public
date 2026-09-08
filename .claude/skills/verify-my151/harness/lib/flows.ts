@@ -58,6 +58,33 @@ async function auditRender(s: Session, name: string): Promise<Check> {
   }
 }
 
+/**
+ * Wait for a page to stop drawing before it is audited.
+ *
+ * A tab click flips the active pill at once, but the view and analytics pages
+ * fetch and lay out their content after that. Auditing there reads a page
+ * that is not yet the page — the evidence for one false regression showed the
+ * view page still on its spinner — and whether the grid has painted is a
+ * race, so two identical trees disagreed run to run by 175 to 188 findings.
+ * Poll until the element count holds still twice, then audit. On a timeout,
+ * audit what is there rather than failing: a slow page is still a page.
+ */
+async function settle(s: Session, limit = 5000): Promise<void> {
+  let last = -1;
+  let steady = 0;
+  const started = Date.now();
+  while (Date.now() - started < limit) {
+    await new Promise((r) => setTimeout(r, 150));
+    const n = await s.evalJson<number>('return document.querySelectorAll("*").length;');
+    if (n === last) {
+      if (++steady >= 2) return;
+    } else {
+      steady = 0;
+      last = n;
+    }
+  }
+}
+
 async function waitForApp(s: Session, tries = 40): Promise<boolean> {
   for (let i = 0; i < tries; i++) {
     const mounted = await s.evalJson<boolean>(`const r=document.getElementById('root'); return !!r && r.children.length>0;`).catch(() => false);
@@ -220,7 +247,11 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
   );
   checks.push(ok('oracle:seed-persisted', oracle.has && oracle.count === SEED_COUNT, `sections count ${oracle.count}, expected ${SEED_COUNT}`));
 
-  // Grid renders the seeded dex (sprite images present).
+  // Grid renders the seeded dex (sprite images present). Settle first: the
+  // grid mounts after the store rehydrates, and on the software-rendered
+  // WebKit lane the count was read before a single tile existed, so the same
+  // two trees passed one run and failed the next with `img count 0`.
+  await settle(s);
   const sprites = await s.evalJson<number>(`return document.querySelectorAll('img').length;`);
   checks.push(ok('builder:sprites-rendered', sprites >= 10, `img count ${sprites}`));
   await s.screenshot(ctx.shot('builder-seeded'));
@@ -249,6 +280,7 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
        return {ok,found:true,detail:'title.r='+Math.round(titleRight)+' nav=['+Math.round(navLeft)+','+Math.round(navRight)+'] actions.l='+Math.round(actionsLeft)};`,
     );
     checks.push(ok(`header:${nav}-no-overlap`, lanes.found && lanes.ok, lanes.detail));
+    await settle(s);
     await s.screenshot(ctx.shot(`nav-${nav}`));
     checks.push(await auditRender(s, `render:${nav}-no-clipped-content`));
   }
