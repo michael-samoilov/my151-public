@@ -8,6 +8,8 @@ import { auditBody, findingKey, APP_HARD_KINDS } from '../../../render-audit/aud
 
 // Source of truth: src/lib/demoMode.ts POKEDEX_STORAGE_KEY (local build) and
 // src/store/usePokedexStore.ts persist version.
+// The dex builder's own page since the launch of the hub at "/".
+const DEX_PATH = '/pokedex-builder';
 const STORE_KEY = 'personal-151-pokedex-v3';
 const STORE_VERSION = 10;
 
@@ -137,11 +139,11 @@ async function writeSeedUntilStable(s: Session): Promise<boolean> {
 // empty.
 export async function seedDex(s: Session, base: string): Promise<void> {
   for (let attempt = 0; attempt < 3; attempt++) {
-    await s.navigate(base);
+    await s.navigate(base + DEX_PATH);
     await waitForApp(s);
     await waitForStoreKey(s);
     await writeSeedUntilStable(s);
-    await s.navigate(base);
+    await s.navigate(base + DEX_PATH);
     await waitForApp(s);
     await waitForStoreKey(s);
     if ((await readSeedCount(s)) === SEED_COUNT) return;
@@ -231,7 +233,7 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
   }
 
   // Boot on a clean origin.
-  await s.navigate(ctx.base);
+  await s.navigate(ctx.base + DEX_PATH);
   const booted = await waitForApp(s);
   checks.push(ok('boot:react-mounted', booted));
   await s.screenshot(ctx.shot('boot'));
