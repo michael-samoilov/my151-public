@@ -27,7 +27,7 @@ const QUERIES: Record<string, { display: string; queries: string[] }> = {
 };
 
 async function openBrowser(page: Page, locale: string) {
-  await page.goto(`/?lang=${locale}`);
+  await page.goto(`/pokedex-builder?lang=${locale}`);
   await page.locator('[data-add-slot]').first().click();
   // The name catalog is a separate lazy chunk that resolves after the locale
   // does; until it lands only the English slug is searchable.

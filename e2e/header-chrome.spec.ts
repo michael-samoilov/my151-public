@@ -76,7 +76,7 @@ async function expectNoOverlap(page: Page) {
 
 test.describe('two-bar chrome', () => {
   test('dex tool bar never overlaps, in both title states and on every view', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     await page.waitForSelector('[data-testid="tool-title"]');
 
     // Default state: the tool's name, no selections yet.

@@ -18,7 +18,7 @@ import { NAV_PAGES, seedDex } from '../support/dexSeed';
 const PSEUDO = ['en-XA', 'en-XC'] as const;
 
 async function open(page: Page, lang: string, nav: (typeof NAV_PAGES)[number]) {
-  await page.goto(`/?tune&lang=${lang}`);
+  await page.goto(`/pokedex-builder?tune&lang=${lang}`);
   await seedDex(page);
   await page.locator(`[data-nav="${nav}"]`).click();
   await page.waitForTimeout(300);
@@ -27,7 +27,7 @@ async function open(page: Page, lang: string, nav: (typeof NAV_PAGES)[number]) {
 test.describe('pseudo-locale layout', () => {
   test('en-XA actually reaches the DOM', async ({ page }) => {
     // If this fails, every other assertion in this file is vacuous.
-    await page.goto('/?tune&lang=en-XA');
+    await page.goto('/pokedex-builder?tune&lang=en-XA');
     const build = page.locator('[data-nav="builder"] span').first();
     await expect(build).toHaveText(/^\[/);
     await expect(build).not.toHaveText('Build');
@@ -36,7 +36,7 @@ test.describe('pseudo-locale layout', () => {
   test('the picker is not offered a pseudo-locale', async ({ page }) => {
     // They are a development tool; a real user seeing "[Ɓúíłđ···]" would just
     // think the app is broken.
-    await page.goto('/?tune');
+    await page.goto('/pokedex-builder?tune');
     await expect(page.locator('[data-nav="builder"] span').first()).toHaveText('Build');
   });
 

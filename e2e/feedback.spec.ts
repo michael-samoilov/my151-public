@@ -32,7 +32,7 @@ async function stubApi(page: Page): Promise<{ body(): Captured | null }> {
 }
 
 async function openForm(page: Page) {
-  await page.goto('/');
+  await page.goto('/pokedex-builder');
   await page.getByRole('button', { name: 'Report a problem' }).first().click();
   // The dwell check rejects anything sent within 2s of the form opening, so a
   // test that types instantly would be indistinguishable from a bot.
@@ -112,7 +112,7 @@ test.describe('feedback', () => {
 
   test('the footer link opens the same form', async ({ page }) => {
     await stubApi(page);
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     const footerLink = page.getByRole('button', { name: 'Report a problem' }).last();
     await footerLink.scrollIntoViewIfNeeded();
     await footerLink.click();
@@ -129,7 +129,7 @@ test.describe('feedback', () => {
     // A seeded dex, so Analytics renders its full dashboard. Its report host
     // only mounts once there is data; the empty state returns before it. `?tune`
     // exposes the store the helper writes to.
-    await page.goto('/?tune');
+    await page.goto('/pokedex-builder?tune');
     await seedDex(page);
 
     // Visit Analytics and let it finish mounting, which is when its copy of the

@@ -56,7 +56,7 @@ test.describe('pinch to zoom', () => {
   });
 
   test('nothing large on the dex builder swallows it', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     await page.waitForTimeout(1200);
     expect(await pinchBlockers(page)).toEqual([]);
   });

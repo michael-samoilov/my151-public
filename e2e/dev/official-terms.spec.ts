@@ -27,7 +27,7 @@ const TYPE_NAMES: Record<string, { fire: string; psychic: string }> = {
 test.describe('official terminology', () => {
   for (const [locale, names] of Object.entries(TYPE_NAMES)) {
     test(`${locale}: type names come from the games`, async ({ page }) => {
-      await page.goto(`/?tune&lang=${locale}`);
+      await page.goto(`/pokedex-builder?tune&lang=${locale}`);
       await seedDex(page);
       await page.locator('[data-nav="analytics"]').click();
 
@@ -40,7 +40,7 @@ test.describe('official terminology', () => {
   }
 
   test('ja: egg groups and colours are localised in the browser', async ({ page }) => {
-    await page.goto('/?tune&lang=ja');
+    await page.goto('/pokedex-builder?tune&lang=ja');
     await seedDex(page);
     await page.getByRole('button', { name: /^Add a Pokémon to / }).first().click();
 

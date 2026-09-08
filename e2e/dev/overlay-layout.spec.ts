@@ -48,7 +48,7 @@ const ALL_LOCALES = [
 ] as const;
 
 async function openSheet(page: Page, locale: string) {
-  await page.goto(`/?demo&lang=${locale}`);
+  await page.goto(`/pokedex-builder?demo&lang=${locale}`);
   // By attribute, not by accessible name: the name is translated, and a regex
   // of nine translations stops matching the first time one is reworded.
   await page.locator('[data-feedback-open]').first().click();
@@ -306,7 +306,7 @@ test.describe('other overlays', () => {
 
   for (const locale of LOCALES) {
     test(`${locale}: the language picker is laid out cleanly`, async ({ page }) => {
-      await page.goto(`/?demo&lang=${locale}`);
+      await page.goto(`/pokedex-builder?demo&lang=${locale}`);
       await page.getByRole('button', { name: /language|sprache|言語/i }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
       await expectClean(page, `${locale} language picker`);
@@ -316,7 +316,7 @@ test.describe('other overlays', () => {
   test('the language picker survives a keyboard being up', async ({ page }) => {
     // It has no field of its own, but a keyboard raised elsewhere and left up
     // still resizes every open sheet.
-    await page.goto('/?demo');
+    await page.goto('/pokedex-builder?demo');
     await page.getByRole('button', { name: /language/i }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await raiseKeyboard(page, 300);

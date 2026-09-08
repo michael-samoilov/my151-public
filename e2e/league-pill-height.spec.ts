@@ -23,7 +23,7 @@ function measurePill({ selector }: { selector: string }) {
 }
 
 test('the dex nav pill and the league toggle pill paint alike and press alike', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/pokedex-builder');
   await page.waitForSelector('[data-nav="builder"]');
   await page.waitForTimeout(300);
   const dex = await page.evaluate(measurePill, { selector: '[data-nav="builder"]' });

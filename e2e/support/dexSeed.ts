@@ -10,7 +10,7 @@ export type NavPage = (typeof NAV_PAGES)[number];
  * count alone — so this module is only the dex seed it always also was. The
  * `?tune` panel it hangs off is dev-only and still mounted.
  */
-export const TUNE_URL = '/?tune';
+export const TUNE_URL = '/pokedex-builder?tune';
 
 /**
  * Seed 100 placed Pokémon so Analytics is unlocked and every page renders.
@@ -30,10 +30,10 @@ export async function seedDex(page: Page): Promise<void> {
       milestoneCelebration: null,
     });
   });
-  // The header's count is the seed's visible effect: it replaces the tool
-  // name as soon as anything is placed.
+  // The header's count is the seed's visible effect. It reads 0/151 before
+  // the seed, so wait for a non-zero count, not for any count.
   await page.waitForFunction(
-    () => /\d+\/151/.test(document.querySelector('[data-testid="tool-title"]')?.textContent ?? ''),
+    () => /[1-9]\d*\/151/.test(document.querySelector('[data-testid="tool-title"]')?.textContent ?? ''),
   );
 }
 

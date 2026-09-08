@@ -17,7 +17,7 @@ import { expect, test } from '@playwright/test';
 test.use({ viewport: { width: 320, height: 800 } });
 
 test('the name truncates and the form marker survives', async ({ page }) => {
-  await page.goto('/?lang=en');
+  await page.goto('/pokedex-builder?lang=en');
   await page.getByRole('button', { name: /^Add a Pokémon to / }).first().click();
   await page.getByRole('textbox').first().fill('raichu');
 

@@ -73,7 +73,7 @@ async function drag(
 
 test.describe('bottom sheet scroll guard', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/pokedex-builder?lang=en');
     await page.locator('[data-add-slot]').first().click();
     await expect(page.locator('[data-overlay="true"]').first()).toBeVisible();
   });

@@ -132,7 +132,7 @@ const SHOTS = {
     file: 'tool-dex.webp',
     app: 'dex',
     kind: 'export',
-    url: '/?demo=151',
+    url: '/pokedex-builder?demo=151',
     nav: 'view',
     // The View page's export button carries no label; it is the one button on
     // the page with a download icon.
@@ -143,7 +143,7 @@ const SHOTS = {
     file: 'tool-dex-b.webp',
     app: 'dex',
     kind: 'page',
-    url: '/?demo=151',
+    url: '/pokedex-builder?demo=151',
     nav: 'analytics',
     scrollTo: 'Pokémon Type',
     note: 'Analytics, scrolled past What’s Missing to the type charts — the card behind it.',

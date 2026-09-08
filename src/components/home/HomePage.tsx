@@ -1,4 +1,5 @@
-import { Hammer } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Hammer, X } from 'lucide-react';
 import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
@@ -6,6 +7,8 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { openFeedback } from '@/components/feedback/feedbackChannel';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { usePokedexStore } from '@/store/usePokedexStore';
+import { isMovedNoticeSeen, markLeaguePromoSeen, markMovedNoticeSeen } from '@/lib/launchFlags';
 import dexBack from '@/assets/home/tool-dex-b.webp';
 import dexFront from '@/assets/home/tool-dex.webp';
 import leagueBack from '@/assets/home/tool-league-b.webp';
@@ -84,14 +87,16 @@ const HAMMER_TITLE = 'next';
  * entry here — the grid's column count and the call to action's shape both
  * follow from the length, so nothing else changes. See `gridStyle` below.
  */
-function useTools(): Tool[] {
+function useTools(placed: number): Tool[] {
   const t = useT();
   return [
     {
       key: 'dex',
       href: '/pokedex-builder',
       title: t('home.dex.title'),
-      blurb: t('home.dex.blurb'),
+      // A saved dex turns the blurb into the way back to it. The store is
+      // read, never written, from this page: the hub must not touch a dex.
+      blurb: placed > 0 ? t('home.dex.continue', { count: placed }) : t('home.dex.blurb'),
       shots: [dexBack, dexFront],
       alts: [
         'The Pokédex builder’s analytics page: type distribution charts for a custom region against the National Dex',
@@ -225,8 +230,9 @@ function Caption({ tool }: { tool: Tool }) {
   // so it is styled the same and is not a heading.
   const Title = tool.href ? 'h2' : 'p';
   return (
-    <div style={{ padding: `${U(5.6)} ${U(1.7)} 0` }}>
+    <div style={{ padding: `${U(5.6)} ${U(1.7)} 0` }} data-card-caption>
       <Title
+        data-card-title
         className="m-0 font-bold tracking-tight"
         style={{ fontSize: TITLE, lineHeight: 1.25 }}
       >
@@ -340,9 +346,52 @@ function reserveByRow(tools: Tool[], cols: number): boolean[] {
   return tools.map((_, i) => rowHasArt.get(Math.floor(i / cols)) ?? false);
 }
 
+/**
+ * Shown once to a visitor who saved a dex before the launch, when "/" was the
+ * builder: it says where the builder went and that nothing was lost. Seeing
+ * the hub is also seeing the gym leader card, so the dex builder's own promo
+ * for it is marked seen here and never repeats there.
+ */
+function MovedNotice({ placed }: { placed: number }) {
+  const t = useT();
+  const [open, setOpen] = useState(() => placed > 0 && !isMovedNoticeSeen());
+  useEffect(() => {
+    if (open) markLeaguePromoSeen();
+  }, [open]);
+  if (!open) return null;
+  const dismiss = () => {
+    markMovedNoticeSeen();
+    setOpen(false);
+  };
+  return (
+    <div
+      data-testid="moved-notice"
+      role="status"
+      className="mt-3 flex items-start gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[0.75rem] leading-relaxed text-foreground"
+    >
+      <p className="m-0 flex-1">
+        <strong className="font-semibold">{t('home.moved.title')}</strong>{' '}
+        {t('home.moved.body')}{' '}
+        <a href="/pokedex-builder" className="font-semibold text-primary underline underline-offset-2" onClick={markMovedNoticeSeen}>
+          {t('home.moved.cta', { count: placed })}
+        </a>
+      </p>
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label={t('home.moved.dismiss')}
+        className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+      >
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
+
 export function HomePage() {
   const t = useT();
-  const tools = useTools();
+  const placed = usePokedexStore((s) => Object.values(s.sections).reduce((n, ids) => n + ids.length, 0));
+  const tools = useTools(placed);
   // Desktop gives every tool its own column, so the rail is one row whatever
   // the count. On a phone it is two up, which leaves the last card alone when
   // the count is odd — that is the card that spans instead.
@@ -407,6 +456,7 @@ export function HomePage() {
                 <p className="m-0 text-[0.72rem] leading-relaxed text-muted-foreground/70 text-pretty">
                   {t('home.note')}
                 </p>
+                <MovedNotice placed={placed} />
               </div>
             </section>
 

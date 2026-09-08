@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Width sweep for the router page at `?home`.
+ * Width sweep for the hub at `/`.
  *
  * The page has no fixed breakpoint layout to eyeball: every card measurement is
  * a share of the card's own width, so the widths *between* the design sizes are
@@ -90,7 +90,7 @@ test.describe('home page responsive sweep', () => {
         // an ordinary card at or above it. The two are different markup, and
         // exactly one of them mounts, so the caption is the tell: the bar keeps
         // its copy inside the panel and has none.
-        const wide = cards.filter((cell) => !cell.querySelector('h2'));
+        const wide = cards.filter((cell) => !cell.querySelector('[data-card-title]'));
         if (desktop && wide.length) fail.push(`${wide.length} cards have no caption at desktop width`);
         if (!desktop) {
           if (wide.length !== 1) fail.push(`expected 1 wide bar on a phone, found ${wide.length}`);
@@ -109,8 +109,8 @@ test.describe('home page responsive sweep', () => {
             return;
           }
           const c = R(panel);
-          const h2 = cell.querySelector('h2');
-          const p = cell.querySelector('h2 + p');
+          const h2 = cell.querySelector('[data-card-title]');
+          const p = cell.querySelector('[data-card-title] + p');
 
           // 6. Copy fits. A caption's title stays on one line and its blurb is
           // never clipped; the wide bar's copy stays inside the panel it sits

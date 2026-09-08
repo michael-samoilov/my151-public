@@ -15,7 +15,7 @@ const TILES = '[data-row-cell]';
 
 test.describe('browser result grid windowing', () => {
   test('a generation filter fills the grid without scrolling', async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/pokedex-builder?lang=en');
     await page.locator('[data-add-slot]').first().click();
     await expect(page.locator(TILES).first()).toBeVisible();
 
@@ -44,7 +44,7 @@ test.describe('browser result grid windowing', () => {
   });
 
   test('windowing keeps the list short but its scroll height honest', async ({ page }) => {
-    await page.goto('/?lang=en');
+    await page.goto('/pokedex-builder?lang=en');
     await page.locator('[data-add-slot]').first().click();
     await page.getByRole('button', { name: /^Clear$/ }).first().click();
     await expect(page.locator('[data-result-count]').first()).toHaveAttribute(

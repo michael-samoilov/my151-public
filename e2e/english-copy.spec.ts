@@ -44,7 +44,7 @@ test.describe('English copy is unchanged by extraction', () => {
 
   test('the locked-analytics tooltip keeps its wording and count', async ({ page }) => {
     // Fresh dex, so Analytics is still locked.
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     await page.locator('[data-nav="analytics"]').click();
     await expect(page.getByText('Reach 25 Pokémon to unlock Analytics').first()).toBeVisible();
   });

@@ -37,7 +37,7 @@ test.use({ viewport: { width: 320, height: 800 } });
 test.describe('feedback chips', () => {
   for (const [locale, expected] of Object.entries(CHIPS)) {
     test(`${locale}: the chips are translated, and they fit`, async ({ page }) => {
-      await page.goto(`/?lang=${locale}`);
+      await page.goto(`/pokedex-builder?lang=${locale}`);
       await page.locator('[data-feedback-open]').first().click();
 
       const dialog = page.getByRole('dialog');
@@ -81,10 +81,10 @@ test.describe('feedback chips', () => {
     // The layering promise: a locale with no entry for a key falls back to
     // English. Worth pinning, because the failure mode of a partial catalog
     // should be "in the wrong language" and never "missing".
-    await page.goto('/?lang=ja');
+    await page.goto('/pokedex-builder?lang=ja');
     const openers = page.getByRole('button', { name: /.+/ });
     await expect(openers.first()).toBeVisible();
-    await page.goto('/?lang=ja');
+    await page.goto('/pokedex-builder?lang=ja');
     await page.locator('[data-feedback-open]').first().click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
