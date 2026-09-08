@@ -22,6 +22,7 @@ import { RedXIcon } from '@/components/browser/EvoLineCard';
 
 import { PageFooter } from '@/components/shared/PageFooter';
 import { IntroCard } from '@/components/pokedex/IntroCard';
+import { LeaguePromoCallout } from '@/components/pokedex/LeaguePromoCallout';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import {
@@ -673,6 +674,9 @@ export function PokedexGrid() {
   const moveEvoLine = usePokedexStore((s) => s.moveEvoLine);
 
   const totalPlaced = Object.values(sections).reduce((s, a) => s + a.length, 0);
+  // What was saved when the page opened: the promo is for people who built
+  // before the launch, not for the first Pokémon a new visitor places.
+  const [placedAtMount] = useState(totalPlaced);
   const containerMaxW = useTileGridMaxWidth(6, 4, 32);
 
   // Scroll container ref — used for auto-scroll when desktop browser adds pokemon
@@ -925,6 +929,7 @@ export function PokedexGrid() {
         style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
           <div className="p-3 pb-0" style={{ maxWidth: containerMaxW, marginInline: containerMaxW ? 'auto' : undefined }}>
+            <LeaguePromoCallout placedAtMount={placedAtMount} />
             <IntroCard
               totalPlaced={totalPlaced}
               onChooseStarters={() => handleAddClick('starter')}
