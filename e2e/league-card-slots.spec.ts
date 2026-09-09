@@ -488,9 +488,11 @@ test.describe('an empty slot and a filled one', () => {
  * The card's is a solid red tile with a white plus and word; the summary's is
  * a dashed grey square, the grey of the action square beside it. Read from
  * the paint rather than the class list, because a class being present says
- * nothing about a colour being painted: `src/index.css` sets
+ * nothing about a colour being painted. `src/index.css` once set
  * `* { border-color }` outside any `@layer`, and an unlayered rule beats every
- * border-colour utility, which is how a red border once came out grey here.
+ * border-colour utility, which is how a red border came out grey here. That
+ * rule now sits in `@layer base`, but the reason to assert on paint stands:
+ * this test is what would catch it coming back.
  */
 test.describe('the red marks', () => {
   /** A colour string as Chrome would report it for `color`. */

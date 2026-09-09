@@ -131,14 +131,13 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
           ) : card.type ? (
             <img src={typeIconPath(card.type)} alt={card.type} className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem]" />
           ) : (
-            // The same grey the row's action square beside it paints. Set
-            // inline: `src/index.css` sets `* { border-color }` outside any
-            // `@layer`, and an unlayered rule beats every border-colour
-            // utility, so a class here would be a name only.
-            <span
-              className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem] border-[1.4px] border-dashed"
-              style={{ borderColor: 'var(--color-border)' }}
-            />
+            // The same grey the row's action square beside it paints, from
+            // the same token. It used to be set inline because an unlayered
+            // `* { border-color }` in index.css beat every border-colour
+            // utility; that rule now sits in `@layer base`, so the class
+            // works and the two squares can name one token instead of two
+            // literals that only matched by accident.
+            <span className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem] border-[1.4px] border-dashed border-border" />
           )}
         </span>
         {Array.from({ length: TEAM_COLS - cells.length }, (_, k) => (
@@ -180,7 +179,7 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
             'flex items-center justify-center justify-self-center rounded-md',
             filled
               ? 'text-muted-foreground'
-              : 'h-[1.875rem] w-[1.875rem] border-[1.4px] border-dashed border-[#d4d4d4] text-[#a3a3a3]',
+              : 'h-[1.875rem] w-[1.875rem] border-[1.4px] border-dashed border-border text-[#a3a3a3]',
           )}
         >
         {filled ? <ChevronRight size={16} strokeWidth={2.4} /> : <Plus size={12} strokeWidth={2.4} />}

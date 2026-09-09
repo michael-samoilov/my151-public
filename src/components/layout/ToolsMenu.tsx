@@ -99,11 +99,9 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
               // A brand-red outline separates it without inverting the
               // surface, which at this size read heavier than the message.
               //
-              // `ring`, not `border-primary`: index.css carries an unlayered
-              // `* { border-color: var(--color-border) }`, and unlayered CSS
-              // outranks every Tailwind layer, so all `border-<colour>`
-              // utilities in this app resolve to the neutral border colour.
-              // A ring is a box-shadow and is not affected.
+              // A `ring` rather than a border: it draws outside the box
+              // instead of inside it, so the outline costs the notice no
+              // interior width at the phone size where it is tightest.
               //
               // The arrow is red too: filled with the popover colour it was
               // white on a white header, so the notice never visibly pointed

@@ -171,8 +171,20 @@ body {
     0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
-* {
-  border-color: var(--color-border);
+/* Tailwind v4's preflight leaves `border-color` at `currentColor`, so a bare
+ * `border` would draw in the text colour. This restores the v3 behaviour of a
+ * neutral default.
+ *
+ * It MUST stay inside `@layer base`. Unlayered CSS outranks every layer, so
+ * while this rule sat at the top level it beat `@layer utilities` and every
+ * `border-<colour>` utility in the app silently resolved to `--color-border`:
+ * border-primary, border-foreground, border-amber-600 and the rest all drew
+ * #e5e5e5. Inside the layer, a utility wins and a bare `border` still gets the
+ * neutral default. */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
 }
 
 /* iOS Safari long-press image callout blocker.
