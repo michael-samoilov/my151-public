@@ -12,6 +12,8 @@ import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { matchLocale } from '@/i18n/detect';
 import { CARD_COUNT, SEAT_MAX } from '../../../api/_leagueRecord';
+import { slotLabel } from '@/league/model/constants';
+import { defaultBoundaries } from '@/league/model/engine';
 
 const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
   BUILD_GROUPS.map((g) => [g.id, { name: g.name, color: g.color }]),
@@ -192,6 +194,7 @@ interface LeagueUser {
   maxCards: number;
   maxSeats: number;
   latest: LeagueSummary;
+  latestCards?: LeagueCard[];
   exportsCard: number;
   exportsLeague: number;
   exportedCardAt?: string;
@@ -199,6 +202,29 @@ interface LeagueUser {
   sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string }[];
   order?: 'dex-first' | 'league-first' | 'same-day';
   gapDays?: number;
+}
+
+/** One seated evolution line: member ids, and the per-stage first row when the
+ *  user dragged a stage off the level curve's default. */
+interface LeagueLine {
+  b: number[];
+  bd?: number[];
+}
+
+/** One trainer card's structure. No typed text by design — see describeLeague
+ *  in src/league/model/leagueSummary.ts. */
+interface LeagueCard {
+  i: number;
+  t?: string;
+  l: LeagueLine[];
+  ace?: number;
+  aceId?: number;
+  pa?: number;
+  tm?: number;
+  /** [seat, pokemonId]. */
+  lg?: [number, number][];
+  /** [row, seat, formIndex, 0 mega | 1 dynamax]. */
+  pw?: [number, number, number, number][];
 }
 
 interface LeagueSummary {
@@ -2541,9 +2567,162 @@ function LeagueSection({ league, stickyTop }: { league: LeagueUser; stickyTop?: 
         {league.order && league.order !== 'same-day' && `, ${Math.abs(league.gapDays ?? 0)}d apart`}
       </div>
       <LeagueTotals league={league} />
+      {league.latestCards && <LeagueCards cards={league.latestCards} stickyTop={stickyTop} />}
       <div className="mt-1">
         <LeagueVisits league={league} />
       </div>
+    </div>
+  );
+}
+
+/** Which stages of a line the user dragged off the level curve's default.
+ *  `bd` is sent only when at least one differs, but not every stage in it did —
+ *  ringing them all would overstate what the user actually touched. */
+function movedStages(line: LeagueLine): Set<number> {
+  if (!line.bd) return new Set();
+  const fallback = defaultBoundaries(line.b);
+  const out = new Set<number>();
+  line.bd.forEach((row, stage) => {
+    if (row !== fallback[stage]) out.add(stage);
+  });
+  return out;
+}
+
+/** One evolution line, as sprites with the stage the user pulled marked. */
+function LeagueLineRow({ line, ace }: { line: LeagueLine; ace?: number }) {
+  const moved = movedStages(line);
+  return (
+    <span className="inline-flex items-center gap-0.5 rounded bg-muted/60 px-1 py-0.5">
+      {line.b.map((id, stage) => {
+        const p = getPokemonById(id);
+        const isMoved = moved.has(stage);
+        return (
+          <Fragment key={`${id}-${stage}`}>
+            {stage > 0 && <span className="text-[0.55rem] text-muted-foreground">›</span>}
+            <span
+              title={
+                p
+                  ? `#${id} ${displayName(p.name)}${
+                      isMoved ? ` · moved to row ${line.bd?.[stage]} (default ${defaultBoundaries(line.b)[stage]})` : ''
+                    }`
+                  : `#${id}`
+              }
+              className={`w-6 h-6 shrink-0 flex items-center justify-center ${isMoved ? 'ring-1 ring-amber-500 rounded' : ''}`}
+            >
+              {p ? (
+                <img
+                  src={p.sprite}
+                  alt={p.name}
+                  width={24}
+                  height={24}
+                  loading="lazy"
+                  decoding="async"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              ) : (
+                <span className="text-[0.5rem] text-muted-foreground">#{id}</span>
+              )}
+            </span>
+          </Fragment>
+        );
+      })}
+      {ace !== undefined && <span title="Ace" className="text-[0.6rem]">⭐</span>}
+    </span>
+  );
+}
+
+/** A single Pokemon with a label, for the ace, partner and legendaries. */
+function LeagueMon({ id, label }: { id: number; label: string }) {
+  const p = getPokemonById(id);
+  return (
+    <span className="inline-flex items-center gap-1 text-[0.65rem] text-muted-foreground">
+      <span className="opacity-70">{label}</span>
+      {p ? (
+        <img
+          src={p.sprite}
+          alt={p.name}
+          width={20}
+          height={20}
+          loading="lazy"
+          decoding="async"
+          style={{ imageRendering: 'pixelated' }}
+          title={`#${id} ${displayName(p.name)}`}
+        />
+      ) : (
+        <span>#{id}</span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * What one browser's league actually holds.
+ *
+ * Structure only: the record carries which Pokemon sit where, the stages the
+ * user dragged, powerups and legendaries — never the badge name, the theme or
+ * the league name. A card that has never sent a structured beacon has none of
+ * this, and says so rather than rendering as an empty league.
+ */
+function LeagueCards({ cards, stickyTop }: { cards: LeagueCard[]; stickyTop?: number }) {
+  const [open, setOpen] = useState(false);
+  if (cards.length === 0) return null;
+  // Count the stages actually moved, not the lines carrying a boundary set.
+  const adjusted = cards.reduce(
+    (n, c) => n + c.l.reduce((m, l) => m + movedStages(l).size, 0),
+    0,
+  );
+  const powered = cards.filter((c) => c.pw && c.pw.length > 0).length;
+  const legendary = cards.filter((c) => c.lg && c.lg.length > 0).length;
+  return (
+    <div>
+      <div className={STICKY_LABEL_CLASS} style={stickyLabelStyle(stickyTop)}>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="w-full text-left cursor-pointer flex flex-wrap gap-x-2"
+        >
+          <span>
+            {open ? '▾' : '▸'} Cards ({cards.length})
+          </span>
+          {adjusted > 0 && (
+            <span className="text-amber-600">
+              {adjusted} evo stage{adjusted === 1 ? '' : 's'} moved
+            </span>
+          )}
+          {powered > 0 && <span>{powered} with a powerup</span>}
+          {legendary > 0 && <span>{legendary} with a legendary</span>}
+        </button>
+      </div>
+      {open && (
+        <ul className="flex flex-col gap-1.5">
+          {cards.map((c) => (
+            <li key={c.i} className="text-xs">
+              <div className="text-muted-foreground flex flex-wrap gap-x-2">
+                <span className="font-medium text-foreground">{slotLabel(c.i)}</span>
+                {c.t && c.t !== 'none' && <span>{c.t}</span>}
+                {c.tm !== undefined && <span>TM #{c.tm}</span>}
+              </div>
+              <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                {c.l.map((line, k) => (
+                  <LeagueLineRow key={k} line={line} ace={c.ace === k + 1 ? c.ace : undefined} />
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                {c.aceId !== undefined && <LeagueMon id={c.aceId} label="ace" />}
+                {c.pa !== undefined && <LeagueMon id={c.pa} label="partner" />}
+                {c.lg?.map(([seat, id]) => (
+                  <LeagueMon key={`lg-${seat}-${id}`} id={id} label={`legendary · seat ${seat}`} />
+                ))}
+                {c.pw?.map(([row, seat, , kind]) => (
+                  <span key={`pw-${row}-${seat}`} className="text-[0.65rem] text-muted-foreground">
+                    {kind === 0 ? 'Mega' : 'Gigantamax'} · row {row}, seat {seat}
+                  </span>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -2642,13 +2821,22 @@ function LeagueUserCard({
       {expanded && (
         <div className="flex flex-col gap-2 p-3 pt-2 bg-card rounded-b-lg shadow-elevated">
           <LeagueTotals league={rec} />
+          {rec.latestCards ? (
+            <LeagueCards cards={rec.latestCards} />
+          ) : (
+            /* Says what is missing rather than letting an empty space imply
+               they built nothing. Card structure is forward-only: a record
+               written before the beacon carried it has none until they
+               return. */
+            <p className="text-[0.65rem] text-muted-foreground">
+              No card structure stored. This browser has not sent a beacon since the league builder
+              started reporting one, so only their counts are known.
+            </p>
+          )}
           <LeagueVisits league={rec} />
-          {/* Says what is missing rather than letting an empty space imply the
-              user built nothing. The beacon sends counts, never contents. */}
           <p className="text-[0.65rem] text-muted-foreground border-t border-border pt-2">
-            Counts only. The league beacon reports how much of a league is filled, never which
-            Pokémon, powerups or legendaries are on the cards — see summarizeLeague in
-            src/league/model/leagueSummary.ts.
+            Structure only. Badge names, card themes and the league name stay in the user&rsquo;s
+            browser and are never sent — see describeLeague in src/league/model/leagueSummary.ts.
           </p>
         </div>
       )}

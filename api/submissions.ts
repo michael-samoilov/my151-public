@@ -107,6 +107,9 @@ interface LeagueUser {
   maxCards: number;
   maxSeats: number;
   latest: LeagueRecord['latest'];
+  /** The structure of their current league. Absent until they send a beacon
+   *  from a build that carries it — nothing backfills an older record. */
+  latestCards?: LeagueRecord['latestCards'];
   exportsCard: number;
   exportsLeague: number;
   exportedCardAt?: string;
@@ -143,6 +146,7 @@ function leagueUser(r: LeagueRecord, dexFirstTs?: number): LeagueUser {
     maxCards: r.maxCards,
     maxSeats: r.maxSeats,
     latest: r.latest,
+    latestCards: r.latestCards,
     exportsCard: r.exportsCard,
     exportsLeague: r.exportsLeague,
     exportedCardAt: r.exportedCardAt,

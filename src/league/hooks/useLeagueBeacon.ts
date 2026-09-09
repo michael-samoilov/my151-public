@@ -10,9 +10,9 @@ import {
   type BeaconDebouncer,
 } from '@/lib/beaconScheduler';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
-import type { LeagueExportKind, LeagueSummary } from '../../../api/_leagueRecord';
+import type { LeagueCardShape, LeagueExportKind, LeagueSummary } from '../../../api/_leagueRecord';
 import { useLeagueStore } from '../store/useLeagueStore';
-import { summarizeLeague } from '../model/leagueSummary';
+import { describeLeague, summarizeLeague } from '../model/leagueSummary';
 
 /**
  * The gym leader maker's build beacon, the dex builder's useCompletionBeacon
@@ -22,7 +22,12 @@ import { summarizeLeague } from '../model/leagueSummary';
  * (see useCompletionBeacon.ts).
  */
 
-function postLeagueBeacon(kind: 'progress' | 'export', summary: LeagueSummary, exportKind?: LeagueExportKind) {
+function postLeagueBeacon(
+  kind: 'progress' | 'export',
+  summary: LeagueSummary,
+  cards: LeagueCardShape[],
+  exportKind?: LeagueExportKind,
+) {
   if (DEMO_MODE || isOptedOut()) return;
   const payload = JSON.stringify({
     cid: getClientId(),
@@ -31,6 +36,8 @@ function postLeagueBeacon(kind: 'progress' | 'export', summary: LeagueSummary, e
     kind,
     exportKind,
     summary,
+    // Structure only — no badge name, theme or league name. See describeLeague.
+    cards,
     locale: getLocale(),
   });
   void fetch('/api/league', {
@@ -56,7 +63,7 @@ export function useLeagueBeacon() {
     if (summary.seats === 0) return;
     sendEventBeacon('league-first-seat', { once: true });
     if (summary.named > 0) sendEventBeacon('league-card-named', { once: true });
-    debouncer.schedule(() => postLeagueBeacon('progress', summary));
+    debouncer.schedule(() => postLeagueBeacon('progress', summary, describeLeague(cards)));
   }, [name, cards, debouncer]);
 
   useEffect(() => {
@@ -77,5 +84,5 @@ export function useLeagueBeacon() {
 /** One-shot export report, with the league as it was exported. */
 export function sendLeagueExportBeacon(exportKind: LeagueExportKind) {
   const { name, cards } = useLeagueStore.getState();
-  postLeagueBeacon('export', summarizeLeague(name, cards), exportKind);
+  postLeagueBeacon('export', summarizeLeague(name, cards), describeLeague(cards), exportKind);
 }

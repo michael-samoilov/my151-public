@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CARD_COUNT,
   SEAT_MAX,
+  parseCards,
   LEAGUE_SESSION_GAP_MS,
   mergeLeagueRecord,
   parseSummary,
@@ -120,5 +121,94 @@ describe('the summary ceiling matches the app', () => {
       cards: SLOT_COUNT,
       seats: 6 * SLOT_COUNT,
     });
+  });
+});
+
+/**
+ * The card structure the beacon now carries.
+ *
+ * parseCards is a trust boundary: everything in it came from a browser, so
+ * every field is bounded and a malformed part is dropped rather than failing
+ * the whole beacon — the counts beside it are still worth recording when one
+ * card arrives mangled.
+ */
+describe('parseCards', () => {
+  const card = (over: Record<string, unknown> = {}) => ({ i: 0, l: [{ b: [1, 2, 3] }], ...over });
+
+  it('keeps a well-formed card', () => {
+    expect(parseCards([card()])).toEqual([{ i: 0, l: [{ b: [1, 2, 3] }] }]);
+  });
+
+  it('keeps boundaries only when they are complete', () => {
+    expect(parseCards([card({ l: [{ b: [1, 2], bd: [1, 4] }] })])).toEqual([
+      { i: 0, l: [{ b: [1, 2], bd: [1, 4] }] },
+    ]);
+    // A partial set says a stage moved without saying where to.
+    expect(parseCards([card({ l: [{ b: [1, 2, 3], bd: [1, 4] }] })])).toEqual([
+      { i: 0, l: [{ b: [1, 2, 3] }] },
+    ]);
+  });
+
+  it('drops a card whose slot is out of range, and keeps the rest', () => {
+    expect(parseCards([card({ i: 99 }), card({ i: 3 })])).toEqual([{ i: 3, l: [{ b: [1, 2, 3] }] }]);
+  });
+
+  it('bounds the number of cards and the lines on one', () => {
+    const many = Array.from({ length: 40 }, (_, i) => card({ i: i % SLOT_COUNT }));
+    expect(parseCards(many)).toHaveLength(SLOT_COUNT);
+    const wide = card({ l: Array.from({ length: 20 }, () => ({ b: [1] })) });
+    expect(parseCards([wide])![0].l).toHaveLength(6);
+  });
+
+  it('rejects ids that are not positive integers', () => {
+    expect(parseCards([card({ l: [{ b: [0, -4, 1.5, 'x', 1] }] })])).toEqual([
+      { i: 0, l: [{ b: [1] }] },
+    ]);
+  });
+
+  it('keeps legendaries and powerups as bounded tuples', () => {
+    const c = parseCards([card({ lg: [[2, 144]], pw: [[9, 1, 0, 0]] })])![0];
+    expect(c.lg).toEqual([[2, 144]]);
+    expect(c.pw).toEqual([[9, 1, 0, 0]]);
+  });
+
+  it('drops a malformed legendary without losing the card', () => {
+    const c = parseCards([card({ lg: [[99, 144], 'nope', [2, 145]] })])![0];
+    expect(c.lg).toEqual([[2, 145]]);
+    expect(c.l).toHaveLength(1);
+  });
+
+  it('shape-checks the card type instead of matching a type list', () => {
+    expect(parseCards([card({ t: 'water' })])![0].t).toBe('water');
+    expect(parseCards([card({ t: '<script>' })])![0].t).toBeUndefined();
+  });
+
+  // The distinction mergeLeagueRecord depends on: no structure at all leaves
+  // what is stored alone, while an empty league really is empty.
+  it('separates "no structure sent" from "an empty league"', () => {
+    expect(parseCards(undefined)).toBeUndefined();
+    expect(parseCards('nope')).toBeUndefined();
+    expect(parseCards([])).toEqual([]);
+  });
+});
+
+describe('mergeLeagueRecord and the card structure', () => {
+  it('stores the structure a beacon carries', () => {
+    const rec = mergeLeagueRecord(null, beacon({ cards: [{ i: 0, l: [{ b: [1] }] }] }));
+    expect(rec.latestCards).toEqual([{ i: 0, l: [{ b: [1] }] }]);
+  });
+
+  it('replaces the structure with the newest one', () => {
+    const first = mergeLeagueRecord(null, beacon({ cards: [{ i: 0, l: [{ b: [1] }] }] }));
+    const second = mergeLeagueRecord(first, beacon({ now: 2_000_000, cards: [{ i: 1, l: [{ b: [4] }] }] }));
+    expect(second.latestCards).toEqual([{ i: 1, l: [{ b: [4] }] }]);
+  });
+
+  // A client that sends no structure must not erase one an earlier beacon
+  // stored — that is what an old tab still running the previous bundle does.
+  it('leaves a stored structure alone when a beacon omits it', () => {
+    const first = mergeLeagueRecord(null, beacon({ cards: [{ i: 0, l: [{ b: [1] }] }] }));
+    const second = mergeLeagueRecord(first, beacon({ now: 2_000_000 }));
+    expect(second.latestCards).toEqual([{ i: 0, l: [{ b: [1] }] }]);
   });
 });
