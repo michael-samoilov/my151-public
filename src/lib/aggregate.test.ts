@@ -1,0 +1,200 @@
+import { describe, expect, it } from 'vitest';
+import {
+  DAY_MS,
+  aggregate,
+  buildDepthCurve,
+  dailyActive,
+  heatmap,
+  mergeByCid,
+  retention,
+  sessionCurves,
+  tallies,
+  type SessionRecord,
+} from '../../api/_aggregate';
+
+// Two hand-built records, one per tool shape, so every assertion below is a
+// number a reader can recompute by hand.
+const T0 = Date.UTC(2026, 8, 1, 12, 0, 0); // Tue 2026-09-01 12:00 UTC
+
+/** A dex-shaped record: two sessions, two days apart. */
+const dex = (over: Partial<SessionRecord> = {}): SessionRecord => ({
+  cid: 'aaaa-0001',
+  firstTs: T0,
+  lastTs: T0 + 2 * DAY_MS,
+  sessions: 2,
+  sessionMs: [60_000, 300_000],
+  sessionLog: [{ ts: T0 }, { ts: T0 + 2 * DAY_MS }],
+  country: 'US',
+  tz: 'UTC',
+  lang: 'en-US',
+  locale: 'en',
+  device: 'Desktop',
+  os: 'macOS',
+  browser: 'Chrome',
+  localDow: 2,
+  localHour: 12,
+  ...over,
+});
+
+/** A league-shaped record: one session, the day after the dex record started. */
+const league = (over: Partial<SessionRecord> = {}): SessionRecord => ({
+  cid: 'bbbb-0002',
+  firstTs: T0 + DAY_MS,
+  lastTs: T0 + DAY_MS,
+  sessions: 1,
+  sessionMs: [120_000],
+  sessionLog: [{ ts: T0 + DAY_MS }],
+  country: 'JP',
+  tz: 'UTC',
+  lang: 'ja',
+  locale: 'ja',
+  device: 'Mobile',
+  os: 'iOS',
+  browser: 'Safari',
+  localDow: 3,
+  localHour: 12,
+  ...over,
+});
+
+describe('dailyActive', () => {
+  it('fills the gap between two active days', () => {
+    const series = dailyActive([dex()]);
+    expect(series.map((p) => p.dau)).toEqual([1, 0, 1]);
+  });
+
+  // The bug this guards: summing DAUs double-counts anyone who came back.
+  it('counts a returning browser once in rolling7', () => {
+    const series = dailyActive([dex()]);
+    expect(series[2].rolling7).toBe(1);
+  });
+
+  it('falls back to first and last activity when a record has no session log', () => {
+    const series = dailyActive([dex({ sessionLog: undefined })]);
+    expect(series).toHaveLength(3);
+    expect(series[0].dau).toBe(1);
+    expect(series[2].dau).toBe(1);
+  });
+
+  it('returns nothing for no records', () => {
+    expect(dailyActive([])).toEqual([]);
+  });
+});
+
+describe('retention', () => {
+  it('counts a record spanning two days as returning', () => {
+    expect(retention([dex(), league()], T0 + 2 * DAY_MS)).toEqual({
+      returning: 1,
+      activeLast7: 2,
+      newUsers: 1,
+    });
+  });
+
+  it('drops a record out of activeLast7 after seven days', () => {
+    expect(retention([league()], T0 + 9 * DAY_MS).activeLast7).toBe(0);
+  });
+});
+
+describe('sessionCurves', () => {
+  it('separates the first session from the longest', () => {
+    const curves = sessionCurves([dex()]);
+    // First is 60s, longest is 300s: half of each is the same single sample.
+    expect(curves.first.stats.p50).toBe(60);
+    expect(curves.longest.stats.p50).toBe(300);
+    expect(curves.all.n).toBe(2);
+  });
+
+  it('treats a legacy record as one session spanning first to last', () => {
+    const curves = sessionCurves([dex({ sessionMs: undefined })]);
+    expect(curves.longest.stats.p50).toBe((2 * DAY_MS) / 1000);
+  });
+});
+
+describe('tallies', () => {
+  it('counts browsers per value and skips absent ones', () => {
+    expect(tallies([dex(), league(), dex({ cid: 'cccc-0003', country: undefined })], 'country')).toEqual({
+      US: 1,
+      JP: 1,
+    });
+  });
+});
+
+describe('heatmap', () => {
+  it('places a record in its own local day and hour', () => {
+    const { hours, matrix } = heatmap([dex(), league()]);
+    expect(hours[12]).toBe(2);
+    expect(matrix[2][12]).toBe(1);
+    expect(matrix[3][12]).toBe(1);
+  });
+
+  // Back-population: a record written before localDow existed still lands in
+  // the right cell, derived from its timezone and last activity.
+  it('derives the slot from tz and lastTs when the stored fields are absent', () => {
+    const { matrix } = heatmap([dex({ localDow: undefined, localHour: undefined })]);
+    // lastTs is Thu 2026-09-03 12:00 UTC.
+    expect(matrix[4][12]).toBe(1);
+  });
+});
+
+describe('buildDepthCurve', () => {
+  it('reports the share reaching each count', () => {
+    const curve = buildDepthCurve([1, 3, 11, 11]);
+    expect(curve.survival[0].s).toBe(1); // everyone reached 0
+    expect(curve.survival[3].s).toBe(0.75); // three of four reached 3
+    expect(curve.survival[11].s).toBe(0.5); // two of four reached 11
+  });
+});
+
+describe('mergeByCid', () => {
+  const shared = 'dddd-0004';
+
+  it('makes one record out of the same browser in both tools', () => {
+    const merged = mergeByCid([
+      [dex({ cid: shared })],
+      [league({ cid: shared })],
+    ]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0].sessions).toBe(3);
+    expect(merged[0].firstTs).toBe(T0);
+    expect(merged[0].lastTs).toBe(T0 + 2 * DAY_MS);
+  });
+
+  // The reason merging is not a concat: the league session sits BETWEEN the
+  // two dex sessions, so "first session" is only right in time order.
+  it('interleaves the two tools sessions by time', () => {
+    const merged = mergeByCid([[dex({ cid: shared })], [league({ cid: shared })]]);
+    expect(merged[0].sessionMs).toEqual([60_000, 120_000, 300_000]);
+    expect(sessionCurves(merged).first.stats.p50).toBe(60);
+  });
+
+  it('counts a merged browser once per active day', () => {
+    const merged = mergeByCid([[dex({ cid: shared })], [league({ cid: shared })]]);
+    expect(dailyActive(merged).map((p) => p.dau)).toEqual([1, 1, 1]);
+  });
+
+  // A dex record split into cid::COUNTRY is still one browser to the league
+  // store, which never split it.
+  it('folds a country-split dex record back onto the bare cid', () => {
+    const merged = mergeByCid([
+      [dex({ cid: `${shared}::US` })],
+      [league({ cid: shared })],
+    ]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0].cid).toBe(shared);
+  });
+
+  it('leaves browsers that used only one tool alone', () => {
+    expect(mergeByCid([[dex()], [league()]])).toHaveLength(2);
+  });
+});
+
+describe('aggregate', () => {
+  it('reports every slice from one pass', () => {
+    const agg = aggregate([dex(), league()], T0 + 2 * DAY_MS);
+    expect(agg.users).toBe(2);
+    expect(agg.devices).toEqual({ Desktop: 1, Mobile: 1 });
+    expect(agg.os).toEqual({ macOS: 1, iOS: 1 });
+    expect(agg.activity).toHaveLength(3);
+    expect(agg.heatmap).toHaveLength(7);
+    expect(agg.hours).toHaveLength(24);
+  });
+});

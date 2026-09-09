@@ -66,3 +66,22 @@ export function isFunnelEvent(s: unknown): s is FunnelEvent {
 export const JOURNAL_PREFIX = 'journal';
 export const JOURNAL_TTL_S = 400 * 24 * 60 * 60;
 export const JOURNAL_MAX_PER_DAY = 50_000;
+
+/** One journal entry, as api/event.ts writes it and api/journal.ts returns it. */
+export interface JournalEntry {
+  t: number;
+  cid: string;
+  tool: Tool;
+  ev: FunnelEvent;
+  page?: string;
+}
+
+/**
+ * Which record stores a browser ended up in, as a bitmask on the journal
+ * response's `membership` map.
+ *
+ * The join lives on the server because only the server holds the two record
+ * hashes; the constants live here because the client reads the result.
+ */
+export const HAS_DEX = 1;
+export const HAS_LEAGUE = 2;

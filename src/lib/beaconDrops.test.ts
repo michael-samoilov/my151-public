@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DROP_REASON_INFO, liveDropReasons } from './beaconDrops';
+import { DROP_REASON_INFO, DROP_PREFIXES, liveDropReasons } from './beaconDrops';
 
 describe('liveDropReasons', () => {
   it('ignores funnel keys that are not drop counters', () => {
     expect(
       liveDropReasons({ 'intro-shown': 40, 'milestone-25': 12, 'submit-drop:cap': 3 }),
-    ).toEqual([{ reason: 'cap', count: 3 }]);
+    ).toEqual([{ tool: 'dex', reason: 'cap', count: 3 }]);
   });
 
   // The reason this module exists. The pre-split `rate-limit` counter holds 31
@@ -19,7 +19,7 @@ describe('liveDropReasons', () => {
   it('still shows live reasons alongside the retired one', () => {
     expect(
       liveDropReasons({ 'submit-drop:rate-limit': 31, 'submit-drop:rate-limit-ip': 4 }),
-    ).toEqual([{ reason: 'rate-limit-ip', count: 4 }]);
+    ).toEqual([{ tool: 'dex', reason: 'rate-limit-ip', count: 4 }]);
   });
 
   it('drops zero counts, so an initialized-but-unused counter is not a warning', () => {
@@ -34,15 +34,39 @@ describe('liveDropReasons', () => {
         'submit-drop:cap': 5,
       }),
     ).toEqual([
-      { reason: 'rate-limit-ip', count: 12 },
-      { reason: 'cap', count: 5 },
-      { reason: 'contention', count: 2 },
+      { tool: 'dex', reason: 'rate-limit-ip', count: 12 },
+      { tool: 'dex', reason: 'cap', count: 5 },
+      { tool: 'dex', reason: 'contention', count: 2 },
     ]);
   });
 
   it('handles missing data', () => {
     expect(liveDropReasons(undefined)).toEqual([]);
     expect(liveDropReasons({})).toEqual([]);
+  });
+
+  // The gym leader maker records the same four reasons under its own prefix.
+  // Before this, its drops were invisible: the notice read only `submit-drop:`,
+  // so a league store losing every beacon looked exactly like a healthy one.
+  it('reads both tools drop counters', () => {
+    expect(
+      liveDropReasons({ 'submit-drop:cap': 2, 'league-drop:contention': 7 }),
+    ).toEqual([
+      { tool: 'league', reason: 'contention', count: 7 },
+      { tool: 'dex', reason: 'cap', count: 2 },
+    ]);
+  });
+
+  it('narrows to one tool when asked', () => {
+    const events = { 'submit-drop:cap': 2, 'league-drop:contention': 7 };
+    expect(liveDropReasons(events, 'dex')).toEqual([{ tool: 'dex', reason: 'cap', count: 2 }]);
+    expect(liveDropReasons(events, 'league')).toEqual([
+      { tool: 'league', reason: 'contention', count: 7 },
+    ]);
+  });
+
+  it('applies the retired-reason rule to both tools', () => {
+    expect(liveDropReasons({ 'league-drop:rate-limit': 3 })).toEqual([]);
   });
 
   // A reason with no entry here renders as a bare code with no explanation,
@@ -54,5 +78,7 @@ describe('liveDropReasons', () => {
       expect(DROP_REASON_INFO[reason], `no copy for '${reason}'`).toBeDefined();
       expect(DROP_REASON_INFO[reason].reading.length).toBeGreaterThan(0);
     }
+    // Both endpoints write the same reasons, so one set of copy covers both.
+    expect(Object.keys(DROP_PREFIXES)).toEqual(['dex', 'league']);
   });
 });

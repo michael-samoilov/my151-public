@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { routeCounts } from '@/lib/feedbackRoutes';
 
 /**
  * The feedback inbox.
@@ -192,9 +193,13 @@ export function FeedbackCard({ token }: { token: string }) {
     });
   };
 
-  const items = data?.items ?? [];
+  const items = useMemo(() => data?.items ?? [], [data]);
   const shown = category === 'all' ? items : items.filter((i) => i.category === category);
   const unread = items.filter((i) => !seen.has(i.id)).length;
+  // Which surface reports come from. Folded out of the page already fetched:
+  // the endpoint keeps per-day counts by category, not by route.
+  const byRoute = useMemo(() => routeCounts(items), [items]);
+  const pagePartial = (data?.total ?? 0) > items.length;
 
   return (
     <div className="shadow-elevated rounded-lg p-3 bg-card">
@@ -236,6 +241,22 @@ export function FeedbackCard({ token }: { token: string }) {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {byRoute.length > 0 && (
+        <div className="mb-2">
+          <div className="text-xs text-muted-foreground mb-1">
+            By surface, 7 / 30 days
+            {pagePartial && <> · of the {items.length} reports loaded, not all {data?.total}</>}
+          </div>
+          <div className="flex gap-1 flex-wrap">
+            {byRoute.map((r) => (
+              <span key={r.route} className="text-xs rounded bg-muted px-2 py-0.5">
+                {r.label} <span className="tabular-nums opacity-70">{r.last7}/{r.last30}</span>
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

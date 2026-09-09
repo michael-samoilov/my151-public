@@ -9,6 +9,16 @@ import {
 } from './_shared.js';
 import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
 import { LEAGUE_CLIENTS_KEY, parseLeagueRecord, type LeagueRecord } from './_leagueRecord.js';
+import {
+  DAY_MS,
+  aggregate,
+  buildDepthCurve,
+  dayStart,
+  mergeByCid,
+  quantile,
+  sessionSeconds,
+  type Aggregates,
+} from './_aggregate.js';
 
 /** Distinct evolution lines represented by a set of ids (unknown ids count as
  *  their own line). Mirrors the client's countEvoLines so server-derived depth
@@ -19,40 +29,10 @@ function countEvoLines(ids: number[]): number {
   return chains.size;
 }
 
-const DAY = 86_400_000;
-const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
 // Date the onboarding suite (intro card + milestone progress bar + funnel
 // beacons) shipped to prod — deploy-branch merge on 2026-07-08 (commit
 // f5f4e55). The pre/post cohort slider defaults here. Update if it's re-dated.
 const ONBOARDING_LAUNCH_TS = Date.UTC(2026, 6, 8); // 2026-07-08 UTC (month is 0-based)
-
-/** Local day-of-week (0=Sun) and hour (0–23) for a record, derived from its
- *  timezone + last-activity timestamp. Prefers stored localDow/localHour when
- *  present, but falls back to deriving from lastTs+tz — which back-populates
- *  every legacy record that predates those fields. */
-function localSlot(r: ClientRecord): { dow: number; hour: number } | null {
-  if (typeof r.localDow === 'number' && typeof r.localHour === 'number') {
-    return { dow: r.localDow % 7, hour: r.localHour % 24 };
-  }
-  if (!r.lastTs) return null;
-  try {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone: r.tz || 'UTC',
-      weekday: 'short',
-      hour: 'numeric',
-      hour12: false,
-    }).formatToParts(r.lastTs);
-    const wd = parts.find((p) => p.type === 'weekday')?.value ?? '';
-    const hrStr = parts.find((p) => p.type === 'hour')?.value ?? '';
-    const dow = DOW_NAMES.indexOf(wd);
-    const hour = parseInt(hrStr, 10) % 24;
-    if (dow < 0 || !Number.isFinite(hour)) return null;
-    return { dow, hour };
-  } catch {
-    return null;
-  }
-}
 
 // Per-minute time-before-churn bars up to this cap; everything longer (incl.
 // returning users who came back another day) falls in the final overflow bar.
@@ -89,25 +69,144 @@ function rankBySection(
   return out;
 }
 
-/** Value at quantile q (0..1) of an ascending-sorted array. */
-function quantile(sortedAsc: number[], q: number): number {
-  if (sortedAsc.length === 0) return 0;
-  const i = Math.min(sortedAsc.length - 1, Math.floor(q * sortedAsc.length));
-  return sortedAsc[i];
+/** UTC Monday (ms) of the week a timestamp falls in. Weeks, not days, because
+ *  a per-day crossover rate on this traffic is mostly noise. */
+function weekStart(ts: number): number {
+  const day = dayStart(ts);
+  const dow = new Date(day).getUTCDay(); // 0 = Sunday
+  return day - ((dow + 6) % 7) * DAY_MS;
 }
 
-/** Fraction of values >= t (the survival function), via binary search. */
-function survivalAt(sortedAsc: number[], t: number): number {
-  const n = sortedAsc.length;
-  if (n === 0) return 0;
-  let lo = 0;
-  let hi = n;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (sortedAsc[mid] < t) lo = mid + 1;
-    else hi = mid;
+/** Where a browser's two tools sit relative to each other. `same-day` covers
+ *  the common case of finding the second tool from the first one's page. */
+export type ToolOrder = 'dex-first' | 'league-first' | 'same-day';
+
+function toolOrder(dexFirstTs: number, leagueFirstTs: number): ToolOrder {
+  const gap = leagueFirstTs - dexFirstTs;
+  if (Math.abs(gap) < DAY_MS) return 'same-day';
+  return gap > 0 ? 'dex-first' : 'league-first';
+}
+
+/** One browser's league record, trimmed to what the per-user card shows. */
+interface LeagueUser {
+  firstTs: number;
+  firstAt: string;
+  lastTs: number;
+  lastAt: string;
+  sessions: number;
+  maxSessionMs: number;
+  maxCards: number;
+  maxSeats: number;
+  latest: LeagueRecord['latest'];
+  exportsCard: number;
+  exportsLeague: number;
+  exportedCardAt?: string;
+  exportedLeagueAt?: string;
+  /** Each session's end state, so the card can diff visit to visit. */
+  sessionLog: LeagueRecord['sessionLog'];
+  order: ToolOrder;
+  /** Signed days from the first dex beacon to the first league one. */
+  gapDays: number;
+}
+
+function leagueUser(r: LeagueRecord, dexFirstTs: number): LeagueUser {
+  return {
+    firstTs: r.firstTs,
+    firstAt: r.firstAt,
+    lastTs: r.lastTs,
+    lastAt: r.lastAt,
+    sessions: r.sessions,
+    maxSessionMs: r.maxSessionMs,
+    maxCards: r.maxCards,
+    maxSeats: r.maxSeats,
+    latest: r.latest,
+    exportsCard: r.exportsCard,
+    exportsLeague: r.exportsLeague,
+    exportedCardAt: r.exportedCardAt,
+    exportedLeagueAt: r.exportedLeagueAt,
+    sessionLog: r.sessionLog,
+    order: toolOrder(dexFirstTs, r.firstTs),
+    gapDays: Math.round(((r.firstTs - dexFirstTs) / DAY_MS) * 10) / 10,
+  };
+}
+
+export interface Journeys {
+  /** Browsers with a record in both stores. */
+  both: number;
+  dexFirst: number;
+  leagueFirst: number;
+  sameDay: number;
+  /** Days between the two first beacons, ignoring direction. */
+  medianGapDays: number;
+  p75GapDays: number;
+  /** Per UTC week: how many browsers each tool gained, and how many of them
+   *  opened the other tool within 7 days of that first beacon. */
+  weekly: {
+    week: number;
+    newDex: number;
+    dexToLeague7d: number;
+    newLeague: number;
+    leagueToDex7d: number;
+  }[];
+}
+
+/**
+ * The number the launch was for: does one tool feed the other?
+ *
+ * Read from `firstTs` in both stores, so it reaches back to each tool's first
+ * beacon. "Within 7 days" is deliberately one-directional — a browser counts
+ * as converted only when the second tool's first beacon comes AFTER the
+ * first tool's and inside the window. Someone who already used both before
+ * the week in question is not a conversion.
+ */
+function crossToolJourneys(dexFirst: Map<string, number>, leagueFirst: Map<string, number>): Journeys {
+  const gaps: number[] = [];
+  let dexFirstCount = 0;
+  let leagueFirstCount = 0;
+  let sameDay = 0;
+  for (const [cid, dts] of dexFirst) {
+    const lts = leagueFirst.get(cid);
+    if (lts === undefined) continue;
+    gaps.push(Math.abs(lts - dts) / DAY_MS);
+    const order = toolOrder(dts, lts);
+    if (order === 'same-day') sameDay += 1;
+    else if (order === 'dex-first') dexFirstCount += 1;
+    else leagueFirstCount += 1;
   }
-  return (n - lo) / n;
+  gaps.sort((a, b) => a - b);
+
+  const weeks = new Map<number, { newDex: number; dexToLeague7d: number; newLeague: number; leagueToDex7d: number }>();
+  const week = (ts: number) => {
+    const k = weekStart(ts);
+    let w = weeks.get(k);
+    if (!w) weeks.set(k, (w = { newDex: 0, dexToLeague7d: 0, newLeague: 0, leagueToDex7d: 0 }));
+    return w;
+  };
+  const crossed = (from: number, to: number | undefined) =>
+    to !== undefined && to >= from && to - from <= 7 * DAY_MS;
+  for (const [cid, dts] of dexFirst) {
+    const w = week(dts);
+    w.newDex += 1;
+    if (crossed(dts, leagueFirst.get(cid))) w.dexToLeague7d += 1;
+  }
+  for (const [cid, lts] of leagueFirst) {
+    const w = week(lts);
+    w.newLeague += 1;
+    if (crossed(lts, dexFirst.get(cid))) w.leagueToDex7d += 1;
+  }
+
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+  return {
+    both: gaps.length,
+    dexFirst: dexFirstCount,
+    leagueFirst: leagueFirstCount,
+    sameDay,
+    medianGapDays: round1(quantile(gaps, 0.5)),
+    p75GapDays: round1(quantile(gaps, 0.75)),
+    weekly: [...weeks.entries()]
+      .map(([week, v]) => ({ week, ...v }))
+      .sort((a, b) => a.week - b.week),
+  };
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -161,6 +260,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       leagueExporters: leagueExporters.length,
       leagueExportersWithDex: leagueExporters.filter((c) => dexCids.has(c)).length,
     };
+    // Earliest beacon per browser in each store, keyed by the bare cid so a
+    // country-split dex record still matches its league record.
+    const dexFirstTs = new Map<string, number>();
+    for (const r of records) {
+      const cid = r.cid.split('::')[0];
+      dexFirstTs.set(cid, Math.min(dexFirstTs.get(cid) ?? Infinity, r.firstTs));
+    }
+    const leagueFirstTs = new Map(leagueRecords.map((r) => [r.cid, r.firstTs]));
+    const journeys = crossToolJourneys(dexFirstTs, leagueFirstTs);
+
     // The league funnel, from the records: opened is a record at all (the
     // first beacon needs a seated line), then named, then exported.
     const leagueDaily: Record<number, Set<string>> = {};
@@ -203,17 +312,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Newest-active first.
     records.sort((a, b) => b.lastTs - a.lastTs);
 
-    const countries: Record<string, number> = {};
-    const languages: Record<string, number> = {};
-    const devices: Record<string, number> = {};
-    const osCounts: Record<string, number> = {};
-    const hours = new Array<number>(24).fill(0);
-    // 7 (day-of-week, 0=Sun) × 24 (hour) heatmap of users' local build times.
-    const heatmap: number[][] = Array.from({ length: 7 }, () => new Array<number>(24).fill(0));
-    // Raw per-user values; we build survival (drop-off) curves from these.
-    const longestSecs: number[] = []; // each user's longest session, seconds
-    const firstSecs: number[] = []; // each user's first session, seconds
-    const allSecs: number[] = []; // every session pooled, seconds (per-session)
     // Depth (evolution-line) drop-off, four bases:
     //  total   = peak lines ever reached (overall breadth) — the default view.
     //  first   = lines net-added in the user's FIRST session.
@@ -237,23 +335,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     let completed = 0;
     let exported = 0;
-    let returning = 0;
-    let activeLast7 = 0;
     let multiSession = 0; // users with 2+ sessions (why the bases can differ)
     // Compact per-user cohort samples for the pre/post date comparison: one
     // tuple per user [firstTs, peakMon, peakLines, completed(0/1), exported(0/1)].
     // firstTs + peakMon predate onboarding, so the whole history is comparable.
     const cohort: [number, number, number, 0 | 1, 0 | 1][] = [];
-    // Daily active users: UTC-day-start (ms) -> set of distinct cids active that
-    // day. A user counts for each day they had any session ts (legacy records
-    // without a session log fall back to their first/last activity day). The
-    // rolling-7 line is derived from these sets (distinct-over-window, NOT a sum
-    // of DAUs, so a user active twice in the week is counted once).
-    const dauSets: Record<number, Set<string>> = {};
-    const dayStart = (ts: number): number => {
-      const d = new Date(ts);
-      return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-    };
     // Tally the View settings exporters actually used (forward-only — only
     // exports captured since settings-tracking shipped contribute).
     const exportSettingsAgg = {
@@ -265,15 +351,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     for (const r of records) {
-      // Session durations. Prefer the per-session list; fall back to the
-      // first→last span (as a single session) for legacy records.
-      const sessSecs =
-        r.sessionMs && r.sessionMs.length > 0
-          ? r.sessionMs.map((ms) => Math.round(ms / 1000))
-          : [Math.round(Math.max(0, r.lastTs - r.firstTs) / 1000)];
-      longestSecs.push(Math.max(...sessSecs));
-      firstSecs.push(sessSecs[0]);
-      for (const s of sessSecs) allSecs.push(s);
+      const sessSecs = sessionSeconds(r);
       // Index of this user's longest-DURATION session (aligns with the time
       // chart's "longest"); used to pick that session's build contribution.
       let li = 0;
@@ -307,30 +385,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const peakLines = Math.max(0, ...lineEnds);
       cohort.push([r.firstTs, peakMon, peakLines, r.completed ? 1 : 0, r.exported ? 1 : 0]);
 
-      // Mark this user active on every day they had a session (legacy records
-      // without a session log fall back to first/last activity).
-      const activeTs =
-        r.sessionLog && r.sessionLog.length > 0
-          ? r.sessionLog.map((s) => s.ts)
-          : [r.firstTs, r.lastTs];
-      for (const day of new Set(activeTs.map(dayStart))) {
-        (dauSets[day] ??= new Set()).add(r.cid);
-      }
-
-      if (r.country) countries[r.country] = (countries[r.country] ?? 0) + 1;
-      // Raw Accept-Language tags. Left unnormalized here so the admin can apply
-      // the app's own locale negotiation to them — the server has no business
-      // knowing which locales the app ships.
-      if (r.lang) languages[r.lang] = (languages[r.lang] ?? 0) + 1;
-      if (r.device) devices[r.device] = (devices[r.device] ?? 0) + 1;
-      if (r.os) osCounts[r.os] = (osCounts[r.os] ?? 0) + 1;
-      // Derive local day+hour from tz+lastTs (back-populates legacy records).
-      const slot = localSlot(r);
-      if (slot) {
-        hours[slot.hour] += 1;
-        heatmap[slot.dow][slot.hour] += 1;
-      }
-
       // Popularity across every user's final/current dex (one vote each), so it
       // reflects everyone — not just the few who finish a full 151.
       for (const id of r.latestIds ?? []) picksFinal[id] = (picksFinal[id] ?? 0) + 1;
@@ -363,54 +417,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const s = r.exportSettings.sort;
         exportSettingsAgg.sorts[s] = (exportSettingsAgg.sorts[s] ?? 0) + 1;
       }
-      if (r.lastTs - r.firstTs >= DAY) returning += 1;
-      if (now - r.lastTs <= 7 * DAY) activeLast7 += 1;
     }
 
     // --- Survival (drop-off) curves -------------------------------------
     // S(t) = fraction of sessions still active at t. The steepest part of the
-    // curve is where people churn — that's where to intervene. We sample the
-    // x-axis up to the 95th percentile (so the long tail doesn't flatten the
-    // interesting region) at a fixed number of points.
+    // curve is where people churn — that's where to intervene. See
+    // api/_aggregate.ts for how the x-axis is sampled.
 
-    // Build a time survival curve + percentile stats from a set of durations.
-    // Sampled fine-grained where it matters — every 30s for the first 10 min,
-    // then every 60s out to the 95th percentile (min 60s of range).
-    const buildTimeCurve = (secsRaw: number[]) => {
-      const secs = secsRaw.slice().sort((a, b) => a - b);
-      const tMax = Math.max(60, quantile(secs, 0.95));
-      const ticks: number[] = [];
-      for (let t = 0; t <= Math.min(tMax, 600); t += 30) ticks.push(t);
-      for (let t = 660; t <= tMax; t += 60) ticks.push(t);
-      if (ticks[ticks.length - 1] !== tMax) ticks.push(tMax);
-      return {
-        survival: ticks.map((t) => ({ t, s: survivalAt(secs, t) })),
-        stats: { p50: quantile(secs, 0.5), p75: quantile(secs, 0.75), p90: quantile(secs, 0.9) },
-        n: secs.length,
-      };
+    // Every record-agnostic aggregate, once per tool. `all` is one record per
+    // browser with both tools' sessions merged, so a person who used both is
+    // one user with one set of days — not two.
+    const dexAgg = aggregate(records, now);
+    const leagueAgg = aggregate(leagueRecords, now);
+    const allAgg = aggregate(mergeByCid([records, leagueRecords]), now);
+    const byTool: Record<'dex' | 'league' | 'all', Aggregates> = {
+      dex: dexAgg,
+      league: leagueAgg,
+      all: allAgg,
     };
-    // Three bases the admin can toggle between.
-    const timeCurves = {
-      longest: buildTimeCurve(longestSecs),
-      first: buildTimeCurve(firstSecs),
-      all: buildTimeCurve(allSecs),
-    };
-    // Back-compat default surface (longest session).
+
+    // Back-compat surface: the dex slice, where it has always been.
+    const timeCurves = dexAgg.timeCurves;
     const timeSurvival = timeCurves.longest.survival;
     const timeStats = timeCurves.longest.stats;
 
     // Depth survival: x in evolution lines, 0..maxObserved.
-    const buildDepthCurve = (vals: number[]) => {
-      const v = vals.slice().sort((a, b) => a - b);
-      const dMax = Math.max(1, v[v.length - 1] ?? 1);
-      const survival: { t: number; s: number }[] = [];
-      for (let d = 0; d <= dMax; d++) survival.push({ t: d, s: survivalAt(v, d) });
-      return {
-        survival,
-        stats: { p50: quantile(v, 0.5), p75: quantile(v, 0.75), p90: quantile(v, 0.9) },
-        n: v.length,
-      };
-    };
     const curvesFor = (v: typeof lineVals) => ({
       total: buildDepthCurve(v.total),
       first: buildDepthCurve(v.first),
@@ -426,31 +457,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const depthSurvival = lineCurves.total.survival;
     const depthStats = lineCurves.total.stats;
 
+    // League depth: how far a league gets, on the dex builder's pattern. Two
+    // metrics, because a league can be wide (11 cards, one line each) or deep
+    // (a few cards, six lines each) and the two fail differently.
+    const leagueCurves = {
+      cards: buildDepthCurve(leagueRecords.map((r) => r.maxCards)),
+      seats: buildDepthCurve(leagueRecords.map((r) => r.maxSeats)),
+    };
+
     const totalUsers = records.length;
     const page = records.slice(offset, offset + limit);
+
+    // The league record for each browser on this page of dex users, so the
+    // per-user card can show that person's other tool. Only the page's cids,
+    // so the payload does not carry the whole league store twice.
+    const leagueByCidAll = new Map(leagueRecords.map((r) => [r.cid, r]));
+    const leagueByCid: Record<string, LeagueUser> = {};
+    for (const r of page) {
+      const lr = leagueByCidAll.get(r.cid.split('::')[0]);
+      if (lr) leagueByCid[r.cid] = leagueUser(lr, r.firstTs);
+    }
 
     // Self-scaling qualification thresholds: median per-Pokemon count per list.
     const popularMin = tailThreshold(picksFinal);
     const droppedMin = tailThreshold(droppedCounts);
 
-    // Dense daily active-users series with a trailing-7-day rolling count.
-    // dau = distinct users that day; rolling7 = distinct users over that day and
-    // the prior 6 (a proper WAU that updates daily, not a sum of DAUs). Gaps are
-    // filled so the lines are continuous from the first to the last active day.
-    const dayKeys = Object.keys(dauSets).map(Number);
-    const activity: { day: number; dau: number; rolling7: number }[] = [];
-    if (dayKeys.length > 0) {
-      const firstDay = Math.min(...dayKeys);
-      const lastDay = Math.max(...dayKeys);
-      for (let day = firstDay; day <= lastDay; day += DAY) {
-        const roll = new Set<string>();
-        for (let d = day - 6 * DAY; d <= day; d += DAY) {
-          const s = dauSets[d];
-          if (s) for (const cid of s) roll.add(cid);
-        }
-        activity.push({ day, dau: dauSets[day]?.size ?? 0, rolling7: roll.size });
-      }
-    }
+    // The dex builder's daily active-users series (see api/_aggregate.ts for
+    // why rolling7 is a distinct-over-window count, not a sum of DAUs).
+    const activity = dexAgg.activity;
 
     // Private data — never cache.
     res.setHeader('Cache-Control', 'no-store');
@@ -467,7 +501,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       activity,
       onboardingLaunchTs: ONBOARDING_LAUNCH_TS,
       exportSettings: exportSettingsAgg,
-      retention: { returning, activeLast7, newUsers: totalUsers - returning },
+      retention: dexAgg.retention,
       multiSession,
       timeSurvival,
       timeStats,
@@ -477,12 +511,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       depthCurves,
       lineCurves,
       monCurves,
-      countries,
-      languages,
-      devices,
-      os: osCounts,
-      hours,
-      heatmap,
+      // The dex slice, kept at the top level where every existing card reads
+      // it. `byTool.dex` is the same object.
+      countries: dexAgg.countries,
+      languages: dexAgg.languages,
+      devices: dexAgg.devices,
+      os: dexAgg.os,
+      hours: dexAgg.hours,
+      heatmap: dexAgg.heatmap,
+      byTool,
+      journeys,
+      leagueCurves,
+      leagueByCid,
       // Full ranked lists; the admin UI previews the top N and expands the rest.
       // Qualification threshold = the median per-Pokemon count for that list, so
       // it self-scales with the data. No cap, so evo lines aren't cut off.
