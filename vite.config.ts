@@ -21,6 +21,9 @@ export default defineConfig({
         main: path.resolve(__dirname, 'index.html'),
         pokedex: path.resolve(__dirname, 'pokedex-builder.html'),
         league: path.resolve(__dirname, 'custom-gym-leader.html'),
+        // The owner's analytics opt-out switch. A real page, not only the
+        // `?notme` query flag, so the setting can be confirmed and undone.
+        notme: path.resolve(__dirname, 'notme.html'),
         // A preview-only diagnostic for the league builder's level model.
         // The entry refuses to mount on the production deploy, and the page
         // is noindex wherever it is reachable.

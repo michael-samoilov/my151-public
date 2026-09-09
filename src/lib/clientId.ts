@@ -10,22 +10,38 @@ const CID_KEY = 'p151-cid';
 const OPT_OUT_KEY = 'p151-opt-out';
 
 /**
- * Owner opt-out: visiting once with `?notme` flags this browser. The only
- * owner-exclusion mechanism — re-flag each device (and re-flag incognito,
- * whose storage clears on close).
+ * Owner opt-out: visiting once with `?notme`, or once at `/notme`, flags this
+ * browser. The only owner-exclusion mechanism — re-flag each device (and
+ * re-flag incognito, whose storage clears on close).
  *
  * An explicit call from every page entry, not an import-time side effect:
  * the effect only ran on pages that happened to import this module, and the
  * gym leader maker did not, so `?notme` there did nothing.
+ *
+ * The flag lives in localStorage, which is scoped to the ORIGIN and not to the
+ * path — so one `?notme` covers the hub, the dex builder and the gym leader
+ * maker together, for as long as that browser keeps its storage. A preview
+ * deployment is a different origin and needs its own.
  */
 export function installOptOut(search: string = window.location.search): void {
   try {
-    if (new URLSearchParams(search).has('notme')) {
-      localStorage.setItem(OPT_OUT_KEY, '1');
-    }
+    if (new URLSearchParams(search).has('notme')) setOptOut(true);
   } catch {
     // localStorage / URL may be unavailable
   }
+}
+
+/** Flag or unflag this browser. Returns whether the write stuck: some
+ *  restricted modes accept `setItem` and silently drop it, and an opt-out that
+ *  silently failed is worse than one that says so. */
+export function setOptOut(on: boolean): boolean {
+  try {
+    if (on) localStorage.setItem(OPT_OUT_KEY, '1');
+    else localStorage.removeItem(OPT_OUT_KEY);
+  } catch {
+    return false;
+  }
+  return isOptedOut() === on;
 }
 
 export function isOptedOut(): boolean {
