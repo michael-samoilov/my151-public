@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CARD_COUNT,
+  SEAT_MAX,
   LEAGUE_SESSION_GAP_MS,
   mergeLeagueRecord,
   parseSummary,
   type LeagueBeaconInput,
   type LeagueSummary,
 } from '../../api/_leagueRecord';
+import { SLOT_COUNT } from '../league/model/constants';
 
 const summary = (over: Partial<LeagueSummary> = {}): LeagueSummary => ({
   cards: 1, seats: 1, typed: 1, named: 0, aces: 0, leagueNamed: false, ...over,
@@ -67,9 +70,55 @@ describe('mergeLeagueRecord', () => {
 describe('parseSummary', () => {
   it('clamps and rejects junk', () => {
     expect(parseSummary({ cards: 99, seats: -3, typed: 2.6, named: 1, aces: 0, leagueNamed: 'yes' }))
-      .toEqual({ cards: 11, seats: 0, typed: 3, named: 1, aces: 0, leagueNamed: false });
+      .toEqual({ cards: SLOT_COUNT, seats: 0, typed: 3, named: 1, aces: 0, leagueNamed: false });
     expect(parseSummary({ cards: 'one' })).toBeNull();
     expect(parseSummary(null)).toBeNull();
     expect(parseSummary([])).toBeNull();
+  });
+});
+
+/**
+ * The ceiling the API clamps a summary to must be the number of cards the app
+ * actually renders.
+ *
+ * It was 11 while the app rendered 14, and `clampInt` clamps rather than
+ * rejects — so a league with 12, 13 or 14 filled cards was written to Redis as
+ * exactly 11, and up to 84 seats as 66. Silent, lossy, and unrecoverable: the
+ * true number never reached the server, so no later fix can restore it. These
+ * hold the two constants together.
+ */
+describe('the summary ceiling matches the app', () => {
+  it('clamps cards to the number of league slots the app renders', () => {
+    expect(CARD_COUNT).toBe(SLOT_COUNT);
+  });
+
+  it('clamps seats to six lines per card', () => {
+    expect(SEAT_MAX).toBe(6 * SLOT_COUNT);
+  });
+
+  it('keeps a full league instead of flattening it to the old ceiling', () => {
+    const full = parseSummary({
+      cards: SLOT_COUNT,
+      seats: 6 * SLOT_COUNT,
+      typed: SLOT_COUNT,
+      named: SLOT_COUNT,
+      aces: SLOT_COUNT,
+      leagueNamed: true,
+    });
+    expect(full).toEqual({
+      cards: SLOT_COUNT,
+      seats: 6 * SLOT_COUNT,
+      typed: SLOT_COUNT,
+      named: SLOT_COUNT,
+      aces: SLOT_COUNT,
+      leagueNamed: true,
+    });
+  });
+
+  it('still clamps a summary that claims more than the app can hold', () => {
+    expect(parseSummary({ cards: 99, seats: 999, typed: 0, named: 0, aces: 0 })).toMatchObject({
+      cards: SLOT_COUNT,
+      seats: 6 * SLOT_COUNT,
+    });
   });
 });

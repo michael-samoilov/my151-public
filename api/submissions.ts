@@ -8,7 +8,7 @@ import {
   type ClientRecord,
 } from './_shared.js';
 import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
-import { LEAGUE_CLIENTS_KEY, parseLeagueRecord, type LeagueRecord } from './_leagueRecord.js';
+import { CARD_COUNT, LEAGUE_CLIENTS_KEY, parseLeagueRecord, type LeagueRecord } from './_leagueRecord.js';
 import {
   DAY_MS,
   aggregate,
@@ -87,14 +87,23 @@ function toolOrder(dexFirstTs: number, leagueFirstTs: number): ToolOrder {
   return gap > 0 ? 'dex-first' : 'league-first';
 }
 
-/** One browser's league record, trimmed to what the per-user card shows. */
+/**
+ * One browser's league record, as the per-user cards read it.
+ *
+ * Serves two places: attached to a dex user's card, where `order` says which
+ * tool they met first, and as a card of its own under the League slice, where
+ * a browser that never touched the dex builder still has to be visible.
+ */
 interface LeagueUser {
+  cid: string;
   firstTs: number;
   firstAt: string;
   lastTs: number;
   lastAt: string;
+  submits: number;
   sessions: number;
   maxSessionMs: number;
+  sessionMs: number[];
   maxCards: number;
   maxSeats: number;
   latest: LeagueRecord['latest'];
@@ -104,19 +113,33 @@ interface LeagueUser {
   exportedLeagueAt?: string;
   /** Each session's end state, so the card can diff visit to visit. */
   sessionLog: LeagueRecord['sessionLog'];
-  order: ToolOrder;
+  country?: string;
+  region?: string;
+  tz?: string;
+  lang?: string;
+  locale?: string;
+  device?: string;
+  os?: string;
+  browser?: string;
+  /** Whether this browser also has a dex record. */
+  hasDex: boolean;
+  /** Absent when this browser has no dex record to be ordered against. */
+  order?: ToolOrder;
   /** Signed days from the first dex beacon to the first league one. */
-  gapDays: number;
+  gapDays?: number;
 }
 
-function leagueUser(r: LeagueRecord, dexFirstTs: number): LeagueUser {
+function leagueUser(r: LeagueRecord, dexFirstTs?: number): LeagueUser {
   return {
+    cid: r.cid,
     firstTs: r.firstTs,
     firstAt: r.firstAt,
     lastTs: r.lastTs,
     lastAt: r.lastAt,
+    submits: r.submits,
     sessions: r.sessions,
     maxSessionMs: r.maxSessionMs,
+    sessionMs: r.sessionMs,
     maxCards: r.maxCards,
     maxSeats: r.maxSeats,
     latest: r.latest,
@@ -125,8 +148,21 @@ function leagueUser(r: LeagueRecord, dexFirstTs: number): LeagueUser {
     exportedCardAt: r.exportedCardAt,
     exportedLeagueAt: r.exportedLeagueAt,
     sessionLog: r.sessionLog,
-    order: toolOrder(dexFirstTs, r.firstTs),
-    gapDays: Math.round(((r.firstTs - dexFirstTs) / DAY_MS) * 10) / 10,
+    country: r.country,
+    region: r.region,
+    tz: r.tz,
+    lang: r.lang,
+    locale: r.locale,
+    device: r.device,
+    os: r.os,
+    browser: r.browser,
+    hasDex: dexFirstTs !== undefined,
+    ...(dexFirstTs !== undefined
+      ? {
+          order: toolOrder(dexFirstTs, r.firstTs),
+          gapDays: Math.round(((r.firstTs - dexFirstTs) / DAY_MS) * 10) / 10,
+        }
+      : {}),
   };
 }
 
@@ -283,7 +319,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       users: leagueRecords.length,
       named: leagueRecords.filter((r) => r.latest.named > 0).length,
       typed: leagueRecords.filter((r) => r.latest.typed > 0).length,
-      fullLeague: leagueRecords.filter((r) => r.maxCards >= 11).length,
+      fullLeague: leagueRecords.filter((r) => r.maxCards >= CARD_COUNT).length,
       exportedCard: leagueRecords.filter((r) => r.exportsCard > 0).length,
       exportedLeague: leagueRecords.filter((r) => r.exportsLeague > 0).length,
       returning: leagueRecords.filter((r) => r.sessions > 1).length,
@@ -478,6 +514,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (lr) leagueByCid[r.cid] = leagueUser(lr, r.firstTs);
     }
 
+    // The league's own user list, newest-active first and paged like the dex
+    // one. A browser that only ever used the gym leader maker has no dex
+    // record, so this is the only place it appears as a person.
+    const leagueUsers = [...leagueRecords]
+      .sort((a, b) => b.lastTs - a.lastTs)
+      .slice(offset, offset + limit)
+      .map((r) => leagueUser(r, dexFirstTs.get(r.cid)));
+
     // Self-scaling qualification thresholds: median per-Pokemon count per list.
     const popularMin = tailThreshold(picksFinal);
     const droppedMin = tailThreshold(droppedCounts);
@@ -523,6 +567,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       journeys,
       leagueCurves,
       leagueByCid,
+      leagueUsers,
+      totalLeagueUsers: leagueRecords.length,
       // Full ranked lists; the admin UI previews the top N and expands the rest.
       // Qualification threshold = the median per-Pokemon count for that list, so
       // it self-scales with the data. No cap, so evo lines aren't cut off.

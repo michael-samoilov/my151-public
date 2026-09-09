@@ -27,7 +27,7 @@ export type LeagueExportKind = (typeof LEAGUE_EXPORT_KINDS)[number];
  * store: no card contents, no names — those are the user's.
  */
 export interface LeagueSummary {
-  /** Cards (of 11) holding at least one evolution line. */
+  /** Cards (of CARD_COUNT) holding at least one evolution line. */
   cards: number;
   /** Evolution lines seated across every card. */
   seats: number;
@@ -86,8 +86,20 @@ export function isLeagueExportKind(s: unknown): s is LeagueExportKind {
   return typeof s === 'string' && (LEAGUE_EXPORT_KINDS as readonly string[]).includes(s);
 }
 
-const CARD_COUNT = 11;
-const SEAT_MAX = 6 * CARD_COUNT;
+/**
+ * Trainer cards in a league: 8 gyms, 4 Elite Four, the champion, the endgame
+ * boss.
+ *
+ * MUST equal `SLOT_COUNT` in src/league/model/constants.ts, which is what the
+ * app actually renders. It said 11 while the app rendered 14, and parseSummary
+ * clamps rather than rejects — so every league with more than 11 filled cards
+ * was silently recorded as exactly 11, and its seats as 66 rather than 84.
+ * src/lib/leagueRecord.test.ts pins the two together so the drift cannot
+ * return quietly.
+ */
+export const CARD_COUNT = 14;
+/** Six lines per card. */
+export const SEAT_MAX = 6 * CARD_COUNT;
 
 function clampInt(v: unknown, max: number): number | null {
   if (typeof v !== 'number' || !Number.isFinite(v)) return null;

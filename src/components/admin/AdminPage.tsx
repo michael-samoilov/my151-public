@@ -11,6 +11,7 @@ import { cn, displayName } from '@/lib/utils';
 import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { matchLocale } from '@/i18n/detect';
+import { CARD_COUNT, SEAT_MAX } from '../../../api/_leagueRecord';
 
 const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
   BUILD_GROUPS.map((g) => [g.id, { name: g.name, color: g.color }]),
@@ -167,8 +168,21 @@ interface Aggregates {
   heatmap: number[][];
 }
 
-/** One browser's gym leader maker record, attached to their dex record. */
+/** One browser's gym leader maker record. Attached to their dex card when
+ *  they have one, and a card of its own under the League slice. */
 interface LeagueUser {
+  cid: string;
+  submits: number;
+  sessionMs: number[];
+  country?: string;
+  region?: string;
+  tz?: string;
+  lang?: string;
+  locale?: string;
+  device?: string;
+  os?: string;
+  browser?: string;
+  hasDex: boolean;
   firstTs: number;
   firstAt: string;
   lastTs: number;
@@ -183,8 +197,8 @@ interface LeagueUser {
   exportedCardAt?: string;
   exportedLeagueAt?: string;
   sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string }[];
-  order: 'dex-first' | 'league-first' | 'same-day';
-  gapDays: number;
+  order?: 'dex-first' | 'league-first' | 'same-day';
+  gapDays?: number;
 }
 
 interface LeagueSummary {
@@ -305,6 +319,9 @@ interface ApiResponse {
   leagueCurves?: { cards: SurvivalCurve; seats: SurvivalCurve };
   /** The league record for each browser on this page of dex users. */
   leagueByCid?: Record<string, LeagueUser>;
+  /** The gym leader maker's own user list, paged like `records`. */
+  leagueUsers?: LeagueUser[];
+  totalLeagueUsers?: number;
   records: ClientRecord[];
 }
 
@@ -581,7 +598,7 @@ function ToolsCard({ tools, league, events }: {
           <Stat value={league.users} label="Seated a line" />
           <Stat value={league.typed} label="Chose a type" />
           <Stat value={league.named} label="Named a card" />
-          <Stat value={league.fullLeague} label="Filled all 11" />
+          <Stat value={league.fullLeague} label={`Filled all ${CARD_COUNT}`} />
           <Stat value={league.exportedCard} label="Exported a card" />
           <Stat value={league.exportedLeague} label="Exported a league" />
           <Stat value={league.returning} label="Returning" />
@@ -1715,9 +1732,9 @@ function JourneysCard({ j }: { j: NonNullable<ApiResponse['journeys']> }) {
 }
 
 /**
- * How far a league gets. Two metrics, because a league can be wide (11 cards
- * with one line each) or deep (a few cards with six), and the two fail in
- * different places.
+ * How far a league gets. Two metrics, because a league can be wide (every
+ * card holding one line) or deep (a few cards holding six), and the two fail
+ * in different places.
  *
  * Built from Survival directly rather than through BasisDropoffCard: that card
  * exists for a session-basis toggle, and a league has only one basis. Passing
@@ -1728,8 +1745,9 @@ function LeagueDepthCard({ curves, users }: { curves: NonNullable<ApiResponse['l
   const curve = curves[metric];
   const unit = (n: number) => (metric === 'cards' ? (n === 1 ? 'card' : 'cards') : n === 1 ? 'seat' : 'seats');
   // The thresholds a league is actually built around: one card, a starter set,
-  // most of the way, and the full 11. The seat marks are their line equivalents.
-  const marks = metric === 'cards' ? [1, 3, 8, 11] : [1, 6, 22, 66];
+  // the eight gyms, and every trainer. The seat marks are their line
+  // equivalents, so both rows read against the same shape of league.
+  const marks = metric === 'cards' ? [1, 4, 8, CARD_COUNT] : [1, 6, 24, SEAT_MAX];
   const shareAt = (t: number) => curve.survival.find((p) => p.t === t)?.s ?? 0;
   return (
     <div className="shadow-elevated rounded-lg p-3 bg-card">
@@ -1738,10 +1756,10 @@ function LeagueDepthCard({ curves, users }: { curves: NonNullable<ApiResponse['l
         <div className="flex items-center gap-1 shrink-0 flex-wrap">
           <span className="text-[0.65rem] text-muted-foreground mr-1">Measure:</span>
           <Button variant={metric === 'cards' ? 'default' : 'ghost'} size="sm" onClick={() => setMetric('cards')}>
-            Cards (of 11)
+            Cards (of {CARD_COUNT})
           </Button>
           <Button variant={metric === 'seats' ? 'default' : 'ghost'} size="sm" onClick={() => setMetric('seats')}>
-            Seats (of 66)
+            Seats (of {SEAT_MAX})
           </Button>
         </div>
       </div>
@@ -1987,7 +2005,9 @@ function UserCard({ rec, league, onDelete, expanded, onToggle, zIndex, stickyOff
                   </span>
                 )}
                 {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning</span>}
-                {league && <span className="text-primary"> · 🏅 league ({league.maxCards}/11)</span>}
+                {league && (
+                  <span className="text-primary"> · 🏅 league ({league.maxCards}/{CARD_COUNT})</span>
+                )}
                 {userLocal && <> · their {userLocal}</>}
               </span>
             </div>
@@ -2418,7 +2438,7 @@ function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: numbe
 /** Minute-level view of a single local hour: each user active in that hour,
  *  with their exact local time and country. Computed from the loaded records. */
 /** Human phrasing for which tool a browser met first. */
-const ORDER_LABEL: Record<LeagueUser['order'], string> = {
+const ORDER_LABEL: Record<NonNullable<LeagueUser['order']>, string> = {
   'dex-first': 'Dex builder first',
   'league-first': 'Gym leader maker first',
   'same-day': 'Both on the same day',
@@ -2441,6 +2461,70 @@ function countLabel(n: number, one: string, many: string): string {
   return `${n} ${Math.abs(n) === 1 ? one : many}`;
 }
 
+/** How far this browser got, in one line. */
+function LeagueTotals({ league }: { league: LeagueUser }) {
+  return (
+    <div className="text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-0.5">
+      <span>
+        {league.sessions} session{league.sessions === 1 ? '' : 's'} · longest{' '}
+        {fmtDuration(league.maxSessionMs)}
+      </span>
+      <span>
+        peak {countLabel(league.maxCards, 'trainer card', 'trainer cards')} ·{' '}
+        {countLabel(league.maxSeats, 'seat', 'seats')}
+      </span>
+      <span>
+        latest {league.latest.cards}/{CARD_COUNT} filled, {league.latest.typed} typed,{' '}
+        {league.latest.named} named, {countLabel(league.latest.aces, 'ace', 'aces')}
+        {league.latest.leagueNamed ? ', league named' : ''}
+      </span>
+      {(league.exportsCard > 0 || league.exportsLeague > 0) && (
+        <span className="text-foreground">
+          📷 {league.exportsCard} card · {league.exportsLeague} league export
+          {league.exportsCard + league.exportsLeague === 1 ? '' : 's'}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * What each visit changed.
+ *
+ * A first session shows its end state; every later one shows the delta, which
+ * is what a visit actually was. The record stores counts and nothing else, so
+ * this is as far in as the data goes — see the note the card carries.
+ */
+function LeagueVisits({ league }: { league: LeagueUser }) {
+  const sessions = league.sessionLog;
+  if (sessions.length === 0) return null;
+  return (
+    <ul className="flex flex-col gap-1">
+      {sessions.map((sess, i) => {
+        const prev = i > 0 ? sessions[i - 1].summary : null;
+        const parts = SUMMARY_FIELDS.map(({ key, one, many }) => {
+          const now = sess.summary[key] as number;
+          if (!prev) return now > 0 ? countLabel(now, one, many) : null;
+          const d = now - (prev[key] as number);
+          return d !== 0 ? `${d > 0 ? '+' : ''}${countLabel(d, one, many)}` : null;
+        }).filter(Boolean);
+        // Two lines, not one wrapping row: a row that wraps only when the
+        // deltas are long puts the timestamp in a different place on every
+        // other line, which is harder to scan than a fixed shape.
+        return (
+          <li key={sess.ts} className="text-xs">
+            <div className="text-muted-foreground tabular-nums flex flex-wrap gap-x-2">
+              <span>{new Date(sess.ts).toLocaleString()}</span>
+              {sess.dev && <span>{sess.dev}</span>}
+            </div>
+            <div>{parts.length > 0 ? parts.join(' · ') : 'no change'}</div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 /**
  * This browser's other tool, on their dex user card.
  *
@@ -2449,62 +2533,126 @@ function countLabel(n: number, one: string, many: string): string {
  * did after they crossed over.
  */
 function LeagueSection({ league, stickyTop }: { league: LeagueUser; stickyTop?: number }) {
-  const sessions = league.sessionLog;
   return (
     <div>
       <div className={STICKY_LABEL_CLASS} style={stickyLabelStyle(stickyTop)}>
-        Gym leader maker · {ORDER_LABEL[league.order]}
-        {league.order !== 'same-day' && `, ${Math.abs(league.gapDays)}d apart`}
+        Gym leader maker
+        {league.order && ` · ${ORDER_LABEL[league.order]}`}
+        {league.order && league.order !== 'same-day' && `, ${Math.abs(league.gapDays ?? 0)}d apart`}
       </div>
-      <div className="text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-0.5 mb-1">
-        <span>
-          {league.sessions} session{league.sessions === 1 ? '' : 's'} · longest{' '}
-          {fmtDuration(league.maxSessionMs)}
-        </span>
-        <span>
-          peak {countLabel(league.maxCards, 'card', 'cards')} ·{' '}
-          {countLabel(league.maxSeats, 'seat', 'seats')}
-        </span>
-        <span>
-          latest {league.latest.cards}/11 cards, {league.latest.named} named,{' '}
-          {countLabel(league.latest.aces, 'ace', 'aces')}
-          {league.latest.leagueNamed ? ', league named' : ''}
-        </span>
-        {(league.exportsCard > 0 || league.exportsLeague > 0) && (
-          <span className="text-foreground">
-            📷 {league.exportsCard} card · {league.exportsLeague} league export
-            {league.exportsCard + league.exportsLeague === 1 ? '' : 's'}
-          </span>
-        )}
+      <LeagueTotals league={league} />
+      <div className="mt-1">
+        <LeagueVisits league={league} />
       </div>
-      {sessions.length > 0 && (
-        <ul className="flex flex-col gap-1">
-          {sessions.map((sess, i) => {
-            const prev = i > 0 ? sessions[i - 1].summary : null;
-            // What this visit changed. A first session shows its end state;
-            // later ones show the delta, which is what a visit actually was.
-            const parts = SUMMARY_FIELDS.map(({ key, one, many }) => {
-              const now = sess.summary[key] as number;
-              if (!prev) return now > 0 ? countLabel(now, one, many) : null;
-              const d = now - (prev[key] as number);
-              return d !== 0 ? `${d > 0 ? '+' : ''}${countLabel(d, one, many)}` : null;
-            }).filter(Boolean);
-            // Two lines, not one wrapping row: a row that wraps only when the
-            // deltas are long puts the timestamp in a different place on every
-            // other line, which is harder to scan than a fixed shape.
-            return (
-              <li key={sess.ts} className="text-xs">
-                <div className="text-muted-foreground tabular-nums flex flex-wrap gap-x-2">
-                  <span>{new Date(sess.ts).toLocaleString()}</span>
-                  {sess.dev && <span>{sess.dev}</span>}
-                </div>
-                <div>{parts.length > 0 ? parts.join(' · ') : 'no change'}</div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
     </div>
+  );
+}
+
+/**
+ * One gym leader maker user, the dex builder's UserCard for a league.
+ *
+ * Its own card rather than a row in the funnel table, because a league user
+ * who never touched the dex builder appears nowhere else on this page, and a
+ * row cannot hold their visit history.
+ */
+function LeagueUserCard({
+  rec,
+  expanded,
+  onToggle,
+  zIndex,
+  stickyOffset,
+}: {
+  rec: LeagueUser;
+  expanded: boolean;
+  onToggle: () => void;
+  zIndex: number;
+  stickyOffset: number;
+}) {
+  const cardRef = useRef<HTMLElement>(null);
+  const userLocal = localTime(rec.lastTs, rec.tz);
+  const ctx = [
+    rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
+    [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
+    rec.locale ? `🗣 ${langLabel(rec.locale)}` : rec.lang && `🗣 ${langLabel(rec.lang)} · browser`,
+  ].filter(Boolean);
+
+  const handleToggle = () => {
+    if (expanded) {
+      onToggle();
+      requestAnimationFrame(() => {
+        const el = cardRef.current;
+        if (!el) return;
+        if (el.getBoundingClientRect().top < 0) {
+          el.scrollIntoView({ block: 'start', behavior: 'instant' });
+        }
+      });
+    } else {
+      onToggle();
+    }
+  };
+
+  return (
+    <section ref={cardRef} style={{ zIndex, scrollMarginTop: stickyOffset }}>
+      <div className="sticky z-[5]" style={{ top: stickyOffset }}>
+        <div className="h-4 bg-background" />
+        <div
+          className={`bg-card p-3 ${expanded ? 'pb-1 border-b border-border/50 rounded-t-lg shadow-elevated' : 'rounded-lg shadow-elevated'}`}
+        >
+          <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+            <div className="text-sm">
+              <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
+              <span className="text-muted-foreground">
+                {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'}
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                {countLabel(rec.maxCards, 'trainer card', 'trainer cards')} filled of {CARD_COUNT} ·{' '}
+                {countLabel(rec.maxSeats, 'seat', 'seats')} · {rec.sessions} session
+                {rec.sessions === 1 ? '' : 's'}
+                {rec.sessionMs.length > 0 && `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}`}
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                {rec.maxCards >= CARD_COUNT && (
+                  <span className="text-primary font-medium">✓ full league </span>
+                )}
+                {(rec.exportsCard > 0 || rec.exportsLeague > 0) && (
+                  <span>📷 exported </span>
+                )}
+                {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning </span>}
+                {rec.hasDex ? (
+                  <span className="text-primary">· 📕 has a dex</span>
+                ) : (
+                  <span>· league only</span>
+                )}
+                {userLocal && <> · their {userLocal}</>}
+              </span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleToggle}>
+              {expanded ? 'Hide' : 'Visits'}
+            </Button>
+          </div>
+          {ctx.length > 0 && (
+            <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
+              {ctx.map((c, i) => (
+                <span key={i}>{c}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      {expanded && (
+        <div className="flex flex-col gap-2 p-3 pt-2 bg-card rounded-b-lg shadow-elevated">
+          <LeagueTotals league={rec} />
+          <LeagueVisits league={rec} />
+          {/* Says what is missing rather than letting an empty space imply the
+              user built nothing. The beacon sends counts, never contents. */}
+          <p className="text-[0.65rem] text-muted-foreground border-t border-border pt-2">
+            Counts only. The league beacon reports how much of a league is filled, never which
+            Pokémon, powerups or legendaries are on the cards — see summarizeLeague in
+            src/league/model/leagueSummary.ts.
+          </p>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -2594,6 +2742,7 @@ export function AdminPage() {
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
   const [slotDetail, setSlotDetail] = useState<{ dow: number; hour: number } | null>(null);
   const [expandedCid, setExpandedCid] = useState<string | null>(null);
+  const [expandedLeagueCid, setExpandedLeagueCid] = useState<string | null>(null);
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -2941,14 +3090,11 @@ export function AdminPage() {
               <Heatmap matrix={slice.heatmap} onCell={(dow, hour) => setSlotDetail({ dow, hour })} />
             </Card>
 
-            {showDex ? (
-              <span className="text-sm font-medium">Dex users ({data.totalUsers})</span>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Per-user cards are the dex builder&rsquo;s records. The gym leader maker&rsquo;s own users
-                are in its funnel table above.
-              </p>
-            )}
+            <span className="text-sm font-medium">
+              {showDex
+                ? `Dex users (${data.totalUsers})`
+                : `Gym leader maker users (${data.totalLeagueUsers ?? 0})`}
+            </span>
 
             {showDex && data.records.length === 0 && !loading && (
               <p className="text-sm text-muted-foreground">No users yet.</p>
@@ -2967,6 +3113,26 @@ export function AdminPage() {
                 />
               ))}
             </div>
+            {!showDex && data.leagueUsers && (
+              <div className="flex flex-col -mt-4">
+                {data.leagueUsers.map((rec, i) => (
+                  <LeagueUserCard
+                    key={rec.cid}
+                    rec={rec}
+                    expanded={expandedLeagueCid === rec.cid}
+                    onToggle={() =>
+                      setExpandedLeagueCid((prev) => (prev === rec.cid ? null : rec.cid))
+                    }
+                    zIndex={data.leagueUsers!.length - i}
+                    stickyOffset={pageHeaderH}
+                  />
+                ))}
+              </div>
+            )}
+            {!showDex && (data.leagueUsers?.length ?? 0) === 0 && !loading && (
+              <p className="text-sm text-muted-foreground">No league users yet.</p>
+            )}
+
             {showDex && data.records.length < data.totalUsers && (
               <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
                 {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${data.totalUsers})`}
