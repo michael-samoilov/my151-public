@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Hammer, X } from 'lucide-react';
+import { Hammer } from 'lucide-react';
 import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
+import { ToolsMenu, type ToolsCallout } from '@/components/layout/ToolsMenu';
+import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackHost } from '@/components/feedback/FeedbackHost';
 import { openFeedback } from '@/components/feedback/feedbackChannel';
@@ -355,48 +357,6 @@ function reserveByRow(tools: Tool[], cols: number): boolean[] {
   return tools.map((_, i) => rowHasArt.get(Math.floor(i / cols)) ?? false);
 }
 
-/**
- * Shown once to a visitor who saved a dex before the launch, when "/" was the
- * builder: it says where the builder went and that nothing was lost. Seeing
- * the hub is also seeing the gym leader card, so the dex builder's own promo
- * for it is marked seen here and never repeats there.
- */
-function MovedNotice({ placed }: { placed: number }) {
-  const t = useT();
-  const [open, setOpen] = useState(() => placed > 0 && !isMovedNoticeSeen());
-  useEffect(() => {
-    if (open) markLeaguePromoSeen();
-  }, [open]);
-  if (!open) return null;
-  const dismiss = () => {
-    markMovedNoticeSeen();
-    setOpen(false);
-  };
-  return (
-    <div
-      data-testid="moved-notice"
-      role="status"
-      className="mt-3 flex items-start gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[0.75rem] leading-relaxed text-foreground"
-    >
-      <p className="m-0 flex-1">
-        <strong className="font-semibold">{t('home.moved.title')}</strong>{' '}
-        {t('home.moved.body')}{' '}
-        <a href="/pokedex-builder" className="font-semibold text-primary underline underline-offset-2" onClick={markMovedNoticeSeen}>
-          {t('home.moved.cta', { count: placed })}
-        </a>
-      </p>
-      <button
-        type="button"
-        onClick={dismiss}
-        aria-label={t('home.moved.dismiss')}
-        className="-mr-1 -mt-0.5 shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
-      >
-        <X size={14} />
-      </button>
-    </div>
-  );
-}
-
 export function HomePage() {
   const t = useT();
   useJsErrorCounter();
@@ -405,6 +365,27 @@ export function HomePage() {
   }, []);
   const placed = usePokedexStore((s) => Object.values(s.sections).reduce((n, ids) => n + ids.length, 0));
   const tools = useTools(placed);
+
+  // Shown once to a visitor who saved a dex before the launch, when "/" was
+  // the builder: a tooltip on the Tools menu says where the builder went and
+  // that nothing was lost. Seeing the hub is also seeing the gym leader
+  // card, so the dex builder's own callout for it is marked seen here and
+  // never repeats there.
+  const [moved, setMoved] = useState(() => placed > 0 && !isMovedNoticeSeen());
+  useEffect(() => {
+    if (moved) markLeaguePromoSeen();
+  }, [moved]);
+  const movedCallout: ToolsCallout | null = moved
+    ? {
+        text: t('home.moved.tip', { count: placed }),
+        dismissLabel: t('home.moved.dismiss'),
+        testId: 'moved-notice',
+        onDismiss: () => {
+          markMovedNoticeSeen();
+          setMoved(false);
+        },
+      }
+    : null;
   // Desktop gives every tool its own column, so the rail is one row whatever
   // the count. On a phone it is two up, which leaves the last card alone when
   // the count is odd — that is the card that spans instead.
@@ -432,7 +413,12 @@ export function HomePage() {
                 <span className="text-primary">my151</span>
                 <span className="text-foreground">.app</span>
               </span>
-              <LanguagePicker />
+              {/* The same site bar as every tool page: language, report, tools. */}
+              <div className="flex flex-shrink-0 items-center gap-1">
+                <LanguagePicker />
+                <FeedbackButton />
+                <ToolsMenu callout={movedCallout} />
+              </div>
             </div>
           </header>
 
@@ -469,7 +455,6 @@ export function HomePage() {
                 <p className="m-0 text-[0.72rem] leading-relaxed text-muted-foreground/70 text-pretty">
                   {t('home.note')}
                 </p>
-                <MovedNotice placed={placed} />
               </div>
             </section>
 

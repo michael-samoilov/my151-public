@@ -56,6 +56,15 @@ function GlobalHeader() {
  * hydrated DOM (the static shell carries the crawlable one).
  */
 const TOOL_NAME = 'Custom Gym Leader & Trainer Card Maker';
+// The name in three pieces, so the eyebrow can hide the least essential ones
+// from sight where the bar is narrow while the DOM keeps the whole phrase:
+// " Maker" goes below `sm`, " & Trainer Card" goes below 380px, and both go
+// in the narrow desktop pane (143px). Measured: the full name is 200px at
+// 11px, "Custom Gym Leader & Trainer Card" 180px, "Custom Gym Leader"
+// 100px. No ellipsis, no clipped glyphs.
+const TOOL_NAME_HEAD = 'Custom Gym Leader';
+const TOOL_NAME_MID = ' & Trainer Card';
+const TOOL_NAME_TAIL = ' Maker';
 /**
  * One string, whatever the width. A narrow desktop pane once swapped in a
  * two-word name, but Google crawls mobile-first and reads whichever string is
@@ -82,10 +91,12 @@ function LeagueNameRow({ h1, narrow = false }: { h1: boolean; narrow?: boolean }
   return (
     <div ref={blockRef} className="flex min-w-0 flex-1 flex-col justify-center gap-[0.0625rem]">
       <Heading
-        className="truncate text-[0.6875rem] font-semibold leading-none text-muted-foreground"
-        title={narrow ? TOOL_NAME : undefined}
+        className="overflow-hidden whitespace-nowrap text-[0.6875rem] font-semibold leading-none text-muted-foreground"
+        title={TOOL_NAME}
       >
-        {TOOL_NAME}
+        {TOOL_NAME_HEAD}
+        <span className={cn('max-[380px]:sr-only', narrow && 'sr-only')}>{TOOL_NAME_MID}</span>
+        <span className={cn('max-sm:sr-only', narrow && 'sr-only')}>{TOOL_NAME_TAIL}</span>
       </Heading>
       {/* The field is sized to its own text by an invisible copy stacked in
           the same grid cell, so the pencil sits at the end of the words

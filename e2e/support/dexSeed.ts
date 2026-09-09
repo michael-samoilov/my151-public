@@ -18,6 +18,11 @@ export const TUNE_URL = '/pokedex-builder?tune';
  */
 export async function seedDex(page: Page): Promise<void> {
   await page.evaluate(() => {
+    // The seed can land before React mounts, and a dex present at mount is
+    // what summons the one-time gym leader callout on Tools. This is a
+    // fixture, not a returning visitor: mark the callout seen so it never
+    // hangs over the bars a test is about to click.
+    localStorage.setItem('p151-league-promo-seen', '1');
     const store = (window as unknown as { __pokedexStore: {
       getState: () => { sections: Record<string, number[]> };
       setState: (patch: Record<string, unknown>) => void;

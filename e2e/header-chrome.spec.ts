@@ -88,6 +88,9 @@ test.describe('two-bar chrome', () => {
     await page.evaluate(([k, v]) => localStorage.setItem(k, v), [STORE_KEY, SEED]);
     await page.waitForTimeout(400);
     await page.evaluate(([k, v]) => localStorage.setItem(k, v), [STORE_KEY, SEED]);
+    // A dex saved before the page opened summons the one-time gym leader
+    // callout on Tools; this test is about the bars, so mark it seen.
+    await page.evaluate(() => localStorage.setItem('p151-league-promo-seen', '1'));
     await page.reload();
     await page.waitForSelector('[data-testid="tool-title"]');
     await expect(page.getByTestId('tool-title')).toContainText('/151');

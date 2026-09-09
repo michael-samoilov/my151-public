@@ -40,7 +40,7 @@ test.describe('dex continuity across the move', () => {
   test('the moved notice shows once', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByTestId('moved-notice')).toBeVisible();
-    await page.getByRole('button', { name: 'Dismiss' }).click();
+    await page.getByTestId('moved-notice').getByRole('button', { name: 'Dismiss' }).click();
     await expect(page.getByTestId('moved-notice')).toHaveCount(0);
     await page.reload();
     await expect(page.locator('[data-card-panel]')).toHaveCount(3);

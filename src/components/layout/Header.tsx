@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipPortal, TooltipArrow } from '@/components/ui/tooltip';
 import { BarChart3, Camera, Hammer, Lock } from 'lucide-react';
@@ -7,7 +7,9 @@ import { isAnalyticsUnlocked, ANALYTICS_UNLOCK_AT } from '@/lib/milestones';
 import { useT } from '@/i18n';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
-import { ToolsMenu } from '@/components/layout/ToolsMenu';
+import { ToolsMenu, type ToolsCallout } from '@/components/layout/ToolsMenu';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
+import { isLeaguePromoSeen, markLeaguePromoSeen } from '@/lib/launchFlags';
 
 export type AppView = 'builder' | 'view' | 'analytics';
 
@@ -57,6 +59,31 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
   const [lockTip, setLockTip] = useState(false);
   const t = useT();
 
+  // Tells a person who already had a dex that the gym leader maker exists:
+  // once per browser, on the first visit after the launch, and only when a
+  // dex was already saved when the page opened — a new visitor has no
+  // reason to be interrupted, and usually came from the hub, which is the
+  // same message as a page. The hub marks it seen for anyone who came that
+  // way. A tooltip on the Tools menu, so it points at where the tool is.
+  const [placedAtMount] = useState(count);
+  const [promo, setPromo] = useState(() => placedAtMount > 0 && !isLeaguePromoSeen());
+  useEffect(() => {
+    if (!promo) return;
+    markLeaguePromoSeen();
+    sendEventBeacon('league-promo-shown', { once: true });
+  }, [promo]);
+  const promoCallout: ToolsCallout | null = promo
+    ? {
+        text: t('promo.league.tip'),
+        dismissLabel: t('promo.league.dismiss'),
+        testId: 'league-promo',
+        onDismiss: (reason) => {
+          sendEventBeacon(reason === 'menu' ? 'league-promo-cta' : 'league-promo-dismiss');
+          setPromo(false);
+        },
+      }
+    : null;
+
   return (
     <header className="bg-card">
       <div className="flex h-11 items-center justify-between border-b px-3 sm:px-6">
@@ -95,7 +122,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
               picks the language, the control to change it has to be reachable. */}
           <LanguagePicker />
           <FeedbackButton />
-          <ToolsMenu current="dex" />
+          <ToolsMenu current="dex" callout={promoCallout} />
         </div>
       </div>
 
@@ -110,14 +137,14 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
             it. The eyebrow is the one h1 on the page and matches the title tag,
             which is what Google falls back to when it rewrites a title. */}
         <div data-testid="tool-title" className="flex min-w-0 flex-col justify-center gap-[0.0625rem]">
-          {/* Two lines on a phone, where the centred nav leaves this cell
-              about 105px: the name is 130px at this size and would truncate
-              on every visit. Two 11px lines plus the count still fit the
-              2.75rem bar. From `sm` up it is one line, clipped by CSS only if
-              a translation outgrows the cell — the full text stays in the DOM
-              for crawlers either way. */}
-          <h1 className="m-0 line-clamp-2 text-[0.6875rem] font-semibold leading-[1.1] text-muted-foreground sm:line-clamp-none sm:truncate sm:leading-none">
-            {t('header.toolName')}
+          {/* One line, always. The centred nav leaves this cell about 105px on
+              a phone and the full name is 130px, so below `sm` the qualifier
+              is screen-reader-only: the eye reads "Pokédex Builder", the DOM
+              and a crawler read the whole phrase, and nothing is clipped or
+              given an ellipsis. */}
+          <h1 className="m-0 overflow-hidden whitespace-nowrap text-[0.6875rem] font-semibold leading-none text-muted-foreground">
+            <span className="max-sm:sr-only">{t('header.toolNameQualifier')} </span>
+            {t('header.toolNameCore')}
           </h1>
           <span className="whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums">
             <span className="text-primary">{count}</span>
