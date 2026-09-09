@@ -93,9 +93,15 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
               // readers; with a label it mirrors only the words, not the
               // close button.
               aria-label={callout.text}
-              className="z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 pr-7 text-left shadow-lg"
+              // Dark, not the default popover white. The header, the page and
+              // the popover are all within a few percent of white, so a white
+              // notice with only a shadow merged into the header's bottom edge
+              // and read as part of the page. Inverting the surface is what
+              // separates it; the shadow only lifts it. Red is taken — a
+              // second red block would compete with the page's own CTA.
+              className="z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 bg-foreground pr-7 text-left text-background shadow-xl"
             >
-              <TooltipArrow />
+              <TooltipArrow className="fill-foreground" />
               <div className="text-xs font-medium leading-snug">{callout.text}</div>
               <button
                 type="button"
