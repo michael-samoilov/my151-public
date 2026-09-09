@@ -93,15 +93,24 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
               // readers; with a label it mirrors only the words, not the
               // close button.
               aria-label={callout.text}
-              // Dark, not the default popover white. The header, the page and
-              // the popover are all within a few percent of white, so a white
-              // notice with only a shadow merged into the header's bottom edge
-              // and read as part of the page. Inverting the surface is what
-              // separates it; the shadow only lifts it. Red is taken — a
-              // second red block would compete with the page's own CTA.
-              className="z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 bg-foreground pr-7 text-left text-background shadow-xl"
+              // The header, the page and the popover are all within a few
+              // percent of white, so the original `border-0` notice merged
+              // into the header's bottom edge and read as part of the page.
+              // A brand-red outline separates it without inverting the
+              // surface, which at this size read heavier than the message.
+              //
+              // `ring`, not `border-primary`: index.css carries an unlayered
+              // `* { border-color: var(--color-border) }`, and unlayered CSS
+              // outranks every Tailwind layer, so all `border-<colour>`
+              // utilities in this app resolve to the neutral border colour.
+              // A ring is a box-shadow and is not affected.
+              //
+              // The arrow is red too: filled with the popover colour it was
+              // white on a white header, so the notice never visibly pointed
+              // at the menu it talks about.
+              className="z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 pr-7 text-left shadow-xl ring-2 ring-primary"
             >
-              <TooltipArrow className="fill-foreground" />
+              <TooltipArrow className="fill-primary" />
               <div className="text-xs font-medium leading-snug">{callout.text}</div>
               <button
                 type="button"
