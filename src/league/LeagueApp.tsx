@@ -95,8 +95,8 @@ function LeagueNameRow({ h1, narrow = false }: { h1: boolean; narrow?: boolean }
         title={TOOL_NAME}
       >
         {TOOL_NAME_HEAD}
-        <span className={cn('max-[380px]:sr-only', narrow && 'sr-only')}>{TOOL_NAME_MID}</span>
-        <span className={cn('max-sm:sr-only', narrow && 'sr-only')}>{TOOL_NAME_TAIL}</span>
+        <span className={cn('inline-block whitespace-pre leading-none max-[380px]:sr-only', narrow && 'sr-only')}>{TOOL_NAME_MID}</span>
+        <span className={cn('inline-block whitespace-pre leading-none max-sm:sr-only', narrow && 'sr-only')}>{TOOL_NAME_TAIL}</span>
       </Heading>
       {/* The field is sized to its own text by an invisible copy stacked in
           the same grid cell, so the pencil sits at the end of the words

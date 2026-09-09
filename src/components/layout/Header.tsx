@@ -138,12 +138,14 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
             which is what Google falls back to when it rewrites a title. */}
         <div data-testid="tool-title" className="flex min-w-0 flex-col justify-center gap-[0.0625rem]">
           {/* One line, always. The centred nav leaves this cell about 105px on
-              a phone and the full name is 130px, so below `sm` the qualifier
-              is screen-reader-only: the eye reads "Pokédex Builder", the DOM
-              and a crawler read the whole phrase, and nothing is clipped or
-              given an ellipsis. */}
+              a phone and the full name is 130px (142px at 640px, where the
+              cell is 138px), so below 680px the qualifier is
+              screen-reader-only: the eye reads "Pokédex Builder", the DOM and
+              a crawler read the whole phrase, and nothing is clipped or given
+              an ellipsis. Inline-block with the heading's line height, so its
+              box never stands taller than the heading that clips it. */}
           <h1 className="m-0 overflow-hidden whitespace-nowrap text-[0.6875rem] font-semibold leading-none text-muted-foreground">
-            <span className="max-sm:sr-only">{t('header.toolNameQualifier')} </span>
+            <span className="inline-block leading-none max-[680px]:sr-only">{t('header.toolNameQualifier')} </span>
             {t('header.toolNameCore')}
           </h1>
           <span className="whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums">
