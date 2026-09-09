@@ -107,6 +107,43 @@ interface ApiResponse {
   limit: number;
   funnel: { users: number; completed: number; exported: number };
   funnelEvents?: Record<string, number>;
+  /** Cross-tool identity, from the intersection of the two record hashes. */
+  tools?: {
+    dex: number;
+    league: number;
+    both: number;
+    leagueOnly: number;
+    dexOnly: number;
+    dexExporters: number;
+    dexExportersWhoOpenedLeague: number;
+    leagueExporters: number;
+    leagueExportersWithDex: number;
+  };
+  /** The gym leader maker's own funnel, from its records. */
+  league?: {
+    users: number;
+    named: number;
+    typed: number;
+    fullLeague: number;
+    exportedCard: number;
+    exportedLeague: number;
+    returning: number;
+    activeLast7: number;
+    activity: { day: number; dau: number }[];
+    recent: {
+      cid: string;
+      firstAt: string;
+      lastAt: string;
+      sessions: number;
+      maxSessionMs: number;
+      latest: { cards: number; seats: number; typed: number; named: number; aces: number; leagueNamed: boolean };
+      exportsCard: number;
+      exportsLeague: number;
+      country?: string;
+      device?: string;
+      hasDex: boolean;
+    }[];
+  };
   /** Per-user cohort samples: [firstTs, peakMon, peakLines, completed, exported]. */
   cohort?: [number, number, number, 0 | 1, 0 | 1][];
   /** Daily activity: per-day DAU and trailing-7-day rolling active count. */
@@ -390,6 +427,89 @@ function Stat({ value, label }: { value: number | string; label: string }) {
       <span className="text-2xl font-bold tabular-nums">{value}</span>
       <span className="text-xs text-muted-foreground">{label}</span>
     </div>
+  );
+}
+
+/**
+ * The tools since the launch of the hub and the gym leader maker: how many
+ * browsers used each, how many used both, and whether one tool's exporters
+ * try the other. Every number is computed on read from the two record
+ * hashes, so it reaches back to each tool's first beacon.
+ */
+function ToolsCard({ tools, league, events }: {
+  tools: NonNullable<ApiResponse['tools']>;
+  league: NonNullable<ApiResponse['league']>;
+  events?: Record<string, number>;
+}) {
+  const pct = (n: number, of: number) => (of > 0 ? `${Math.round((n / of) * 100)}%` : '–');
+  const ev = (k: string) => events?.[k] ?? 0;
+  return (
+    <>
+      <Card title="Tools (distinct browsers, since each tool's first beacon)">
+        <div className="flex flex-wrap gap-2">
+          <Stat value={tools.dex} label="Dex builder" />
+          <Stat value={tools.league} label="Gym leader maker" />
+          <Stat value={`${tools.both} (${pct(tools.both, tools.league)})`} label="Both · of league users" />
+          <Stat value={tools.leagueOnly} label="League only" />
+          <Stat value={`${tools.dexExportersWhoOpenedLeague} / ${tools.dexExporters}`} label="Dex exporters → league" />
+          <Stat value={`${tools.leagueExportersWithDex} / ${tools.leagueExporters}`} label="League exporters with a dex" />
+        </div>
+        <div className="mt-3">
+          <div className="text-xs text-muted-foreground mb-1">Hub (funnel counters; the per-day journal keeps the raw events)</div>
+          <div className="flex flex-wrap gap-2">
+            <Stat value={ev('hub-shown')} label="Hub shown (browsers)" />
+            <Stat value={`${ev('hub-cta-dex')} (${pct(ev('hub-cta-dex'), ev('hub-shown'))})`} label="→ Dex card clicks" />
+            <Stat value={`${ev('hub-cta-league')} (${pct(ev('hub-cta-league'), ev('hub-shown'))})`} label="→ League card clicks" />
+            <Stat value={`${ev('league-promo-cta')} / ${ev('league-promo-shown')}`} label="Dex callout: clicked / shown" />
+          </div>
+        </div>
+      </Card>
+      <Card title="Gym leader maker funnel (distinct browsers)">
+        <div className="flex flex-wrap gap-2">
+          <Stat value={ev('league-open')} label="Opened" />
+          <Stat value={league.users} label="Seated a line" />
+          <Stat value={league.typed} label="Chose a type" />
+          <Stat value={league.named} label="Named a card" />
+          <Stat value={league.fullLeague} label="Filled all 11" />
+          <Stat value={league.exportedCard} label="Exported a card" />
+          <Stat value={league.exportedLeague} label="Exported a league" />
+          <Stat value={league.returning} label="Returning" />
+          <Stat value={league.activeLast7} label="Active 7d" />
+        </div>
+        {league.recent.length > 0 && (
+          <div className="mt-3 overflow-x-auto">
+            <table className="text-xs w-full">
+              <thead className="text-muted-foreground">
+                <tr className="text-left">
+                  <th className="pr-2 font-medium">Last active</th>
+                  <th className="pr-2 font-medium">Sessions</th>
+                  <th className="pr-2 font-medium">Longest</th>
+                  <th className="pr-2 font-medium">Cards · seats</th>
+                  <th className="pr-2 font-medium">Named · aces</th>
+                  <th className="pr-2 font-medium">Exports</th>
+                  <th className="pr-2 font-medium">Where</th>
+                  <th className="font-medium">Has a dex</th>
+                </tr>
+              </thead>
+              <tbody>
+                {league.recent.map((r) => (
+                  <tr key={r.cid} className="border-t border-border/50">
+                    <td className="pr-2 py-1 whitespace-nowrap">{relativeTime(new Date(r.lastAt).getTime())}</td>
+                    <td className="pr-2 tabular-nums">{r.sessions}</td>
+                    <td className="pr-2 tabular-nums">{fmtDuration(r.maxSessionMs)}</td>
+                    <td className="pr-2 tabular-nums">{r.latest.cards} · {r.latest.seats}</td>
+                    <td className="pr-2 tabular-nums">{r.latest.named} · {r.latest.aces}</td>
+                    <td className="pr-2 tabular-nums">{r.exportsCard}c {r.exportsLeague}l</td>
+                    <td className="pr-2 whitespace-nowrap">{flag(r.country)} {r.device ?? ''}</td>
+                    <td>{r.hasDex ? 'yes' : '–'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </>
   );
 }
 
@@ -2306,6 +2426,10 @@ export function AdminPage() {
               </div>
               <BeaconDropNotice events={data.funnelEvents} />
             </Card>
+
+            {data.tools && data.league && (
+              <ToolsCard tools={data.tools} league={data.league} events={data.funnelEvents} />
+            )}
 
             {data.activity && data.activity.length > 0 && (
               <Card title="Active users (daily + rolling 7-day)">

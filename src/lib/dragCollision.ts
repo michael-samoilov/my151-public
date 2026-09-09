@@ -33,6 +33,23 @@ import {
 export const dragInputIsTouch = { current: false };
 
 /**
+ * Whether a drag was started by a finger.
+ *
+ * Which event a sensor hands over depends on the sensor: `TouchSensor` gives
+ * a `TouchEvent`, `PointerSensor` gives a `PointerEvent` whose `pointerType`
+ * is the only thing that says finger or mouse. Checking for `TouchEvent`
+ * alone is silently false on every PointerSensor surface.
+ */
+export function isTouchDrag(activatorEvent: Event | null): boolean {
+  if (!activatorEvent) return false;
+  if (typeof TouchEvent !== 'undefined' && activatorEvent instanceof TouchEvent) return true;
+  if (typeof PointerEvent !== 'undefined' && activatorEvent instanceof PointerEvent) {
+    return activatorEvent.pointerType !== 'mouse';
+  }
+  return false;
+}
+
+/**
  * Last raw pointer coordinates observed by the collision detector. Set
  * on every collision check (which is every pointer move), cleared on
  * drag end. Drag-move handlers read from this as the authoritative
@@ -136,6 +153,49 @@ export function createSnapCenterToPointer(overlayLiftPx: number): Modifier {
       ...transform,
       x: ptr.x - draggingNodeRect.left - draggingNodeRect.width / 2,
       y: ptr.y - draggingNodeRect.top - draggingNodeRect.height / 2 + lift,
+    };
+  };
+}
+
+/**
+ * Put the held copy ON the target rather than near the pointer.
+ *
+ * Where the copy can *be* the preview — a whole row — the clearest thing it
+ * can do is sit where the drop would land. That is not an offset from the
+ * finger, so no `placement` expresses it: the overlay has to be moved onto
+ * the droppable's own rect.
+ *
+ * `lift` raises it a few pixels so the empty slot underneath still reads,
+ * and so the copy looks picked up rather than already dropped.
+ */
+export function snapOverlayToTarget(lift = 0, liveTargetSelector?: string): Modifier {
+  return ({ activeNodeRect, draggingNodeRect, over, transform }) => {
+    if (!draggingNodeRect) return transform;
+    // The gap the drop would fill, read from the page rather than from
+    // dnd-kit. `over.rect` is measured when the drag starts and is not
+    // remeasured, so on a list that reorders live it is stale the moment the
+    // preview moves a row — measured, it put the copy exactly one row past
+    // the slot it was meant to sit on. The open slot is the same thing dnd-kit
+    // is describing, only current.
+    const live = liveTargetSelector
+      ? document.querySelector(liveTargetSelector)?.getBoundingClientRect()
+      : undefined;
+    // No target yet — the first frame of a hold, before dnd-kit has offered
+    // one. The row is still over itself, so hold it there rather than let it
+    // follow the finger for a frame and then jump onto the slot.
+    const rect = live ?? over?.rect ?? activeNodeRect;
+    if (!rect) return transform;
+    // Corrected, not computed. Where the overlay's own origin sits is dnd-kit's
+    // business and not the same as either the source row or the target, so
+    // this asks the only question it can answer for certain: the copy is
+    // *here* under the transform it already has, it should be *there*, so add
+    // the difference. Deriving the transform from a rect instead pins the copy
+    // to whichever row it first reached — measured on a phone, it sat on the
+    // row it was picked up from while the open slot travelled 87px away.
+    return {
+      ...transform,
+      x: transform.x + (rect.left - draggingNodeRect.left),
+      y: transform.y + (rect.top - draggingNodeRect.top) - lift,
     };
   };
 }

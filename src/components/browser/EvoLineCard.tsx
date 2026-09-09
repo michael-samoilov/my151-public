@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useRowWindow } from './useRowWindow';
+import { homeGen, packRows } from './packRows';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
@@ -123,6 +124,14 @@ interface EvoLineGridProps {
   /** Render only the rows near the viewport. Opt-in: the browser's result
    *  grid needs it, the much smaller drilldown grids do not. */
   windowed?: boolean;
+  /** Each member is its own tile and its own pick. See `standaloneTiles` on
+   *  the browser store: a slot that takes one Pokémon cannot be filled by a
+   *  tile that picks a whole line. Positions are untouched — a line still
+   *  occupies its own columns and never straddles a row. */
+  standaloneTiles?: boolean;
+  /** Drop the "already placed" pokeball. When the pane is showing only what
+   *  is already on the card, marking every tile as placed says nothing. */
+  hideAssignedMark?: boolean;
 }
 
 const GRID_CLASSES: Record<number, string> = {
@@ -131,7 +140,7 @@ const GRID_CLASSES: Record<number, string> = {
 };
 
 /** Renders evo line cards in an N-column grid, inserting spacers so no line wraps mid-row */
-export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, windowed = false }: EvoLineGridProps) {
+export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, cols = DEFAULT_COLS, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, windowed = false, standaloneTiles = false, hideAssignedMark = false }: EvoLineGridProps) {
   // Canonical Pokemon-tile sprite size — shared with the build page so
   // Charizard (etc.) renders identically in the selection pane and in a
   // section tile at the same viewport width. See `PokemonTile.tsx`.
@@ -139,31 +148,10 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
   const gridMaxW = useTileGridMaxWidth(cols, 0, 0);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  // Pack the lines into rows. A line never straddles a row: when one will not
-  // fit in the columns left, the row is padded out first. That invariant is
-  // what lets the grid be windowed by row.
-  const rows = useMemo(() => {
-    const out: { groups: EvoLineGroup[]; trailingSpacers: number }[] = [];
-    let current: EvoLineGroup[] = [];
-    let col = 0;
-    for (const group of groups) {
-      const size = group.members.length;
-      if (col > 0 && col + size > cols) {
-        out.push({ groups: current, trailingSpacers: cols - col });
-        current = [];
-        col = 0;
-      }
-      current.push(group);
-      col += size;
-      if (col === cols) {
-        out.push({ groups: current, trailingSpacers: 0 });
-        current = [];
-        col = 0;
-      }
-    }
-    if (current.length > 0) out.push({ groups: current, trailingSpacers: cols - col });
-    return out;
-  }, [groups, cols]);
+  // Pack the lines into rows. A line never straddles a row, and a line wider
+  // than a row is cut to fit: see `packRows`. That invariant is what lets
+  // the grid be windowed by row.
+  const rows = useMemo(() => packRows(groups, cols), [groups, cols]);
 
   const { start, end, topPad, bottomPad } = useRowWindow(gridRef, rows, windowed, `${cols}:${spritePx}`);
 
@@ -192,6 +180,8 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
             showShapeBadges={showShapeBadges}
             matchupInfo={matchupInfo}
             matchupType={matchupType}
+            standaloneTiles={standaloneTiles}
+            hideAssignedMark={hideAssignedMark}
             spritePx={spritePx}
           />
         );
@@ -201,7 +191,7 @@ export function EvoLineGrid({ groups, assignedIds, stagedIds, onToggleStage, rem
       }
     }
     return result;
-  }, [rows, start, end, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx]);
+  }, [rows, start, end, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant, showGenBadges, showShapeBadges, matchupInfo, matchupType, spritePx, standaloneTiles, hideAssignedMark]);
 
   // The fillers stand in for the rows outside the window so the scrollbar
   // still describes the whole list. They span every column, so each occupies
@@ -250,6 +240,10 @@ interface EvoLineCardProps {
   matchupType?: TypeName;
   /** Pixel-perfect sprite size in CSS px */
   spritePx: number;
+  /** Each member is its own tile and its own pick. */
+  standaloneTiles?: boolean;
+  /** Drop the "already placed" pokeball. */
+  hideAssignedMark?: boolean;
 }
 
 function formatMult(v: number): string {
@@ -274,7 +268,7 @@ function formatDoublings(n: number): string {
   return n >= 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
-function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx }: EvoLineCardProps) {
+function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, stagedIds, onToggleStage, removalStagedIds, onToggleRemoval, shinyIds, spriteOverrides, variant = 'browser', showGenBadges = true, showShapeBadges = false, matchupInfo, matchupType, spritePx, standaloneTiles = false, hideAssignedMark = false }: EvoLineCardProps) {
   const allInDex = members.every((p) => assignedIds.has(p.id));
   const anyInDex = members.some((p) => assignedIds.has(p.id));
   // Shared press state so clicking any member shrinks the *whole* evo line
@@ -307,23 +301,23 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
       releaseTimer.current = null;
     }, wait);
   };
-  const markedForRemoval = removalStagedIds
+  const lineMarkedForRemoval = removalStagedIds
     ? members.some((p) => removalStagedIds.has(p.id))
     : false;
 
-  const toggleRemoval = () => {
-    if (onToggleRemoval) {
-      onToggleRemoval(members.map((p) => p.id));
-    }
-  };
+  /** What a tap acts on: one member when tiles stand alone, else the line. */
+  const actedOn = (i: number) => (standaloneTiles ? [members[i].id] : members.map((p) => p.id));
 
-  const handleClick = () => {
+  const handleClick = (i: number) => {
     // Analytics variant: any placed member → toggle removal (partial lines ok)
     // Browser variant: all placed → toggle removal, else toggle staging
-    if (variant === 'analytics' ? anyInDex : allInDex) {
-      toggleRemoval();
+    const placed = standaloneTiles
+      ? assignedIds.has(members[i].id)
+      : variant === 'analytics' ? anyInDex : allInDex;
+    if (placed) {
+      onToggleRemoval?.(actedOn(i));
     } else if (variant !== 'analytics') {
-      onToggleStage(members.map((p) => p.id));
+      onToggleStage(actedOn(i));
     }
   };
 
@@ -331,19 +325,18 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
   const bgColor = TYPE_COLORS[primaryType as keyof typeof TYPE_COLORS] ?? '#888';
 
   // Line's "home" gen. If the caller supplies anchorGen (regional drilldown,
-  // where one line may be placed in multiple gen sections), use that — it
-  // encodes which gen this particular placement belongs to. Otherwise infer
-  // from matched members (earliest-introduced = home), falling back to all
-  // members. Retro babies (e.g. Chingling Gen 4 → Chimecho Gen 3) land in the
-  // original's gen so the original isn't wrongly flagged cross-gen.
-  const matchedMembers = members.filter(m => matchedIds.has(m.id));
-  const referenceMembers = matchedMembers.length > 0 ? matchedMembers : members;
-  const lineGen = anchorGen ?? Math.min(...referenceMembers.map(m => m.generation));
+  // where one line may be placed in multiple gen sections, or a piece of a
+  // line the packer cut), use that — it encodes which gen this particular
+  // placement belongs to. Otherwise infer it from the members: see `homeGen`.
+  const lineGen = anchorGen ?? homeGen(members, matchedIds);
 
   return (
     <>
       {members.map((pokemon, i) => {
         const inDex = assignedIds.has(pokemon.id);
+        const markedForRemoval = standaloneTiles
+          ? (removalStagedIds?.has(pokemon.id) ?? false)
+          : lineMarkedForRemoval;
         const matched = matchedIds.has(pokemon.id);
         const isFirst = i === 0;
         const isLast = i === members.length - 1;
@@ -377,16 +370,18 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                 alpha, so only the border shows the seam. Real case: a desktop
                 pane narrower than the grid's max width (≈1024–1200px window),
                 where the 96px sprite is wider than its ~85px column. */}
-            {isFirst && (
+            {(standaloneTiles || isFirst) && (
               <div
                 // Smooth scale animation both ways — shrink on press, grow back
-                // on release.
+                // on release. Standalone tiles get one rectangle each; a line
+                // gets one stretched across its columns, anchored in the first
+                // cell (gap-x is 0, so there are no seams).
                 className="absolute inset-y-0 z-0 rounded-md border border-border transition-[scale] duration-100 ease-out"
                 style={{
                   backgroundColor: `${bgColor}10`,
                   left: '3px',
-                  width: `calc(${members.length} * 100% - 6px)`,
-                  scale: pressed ? '0.98' : '1',
+                  width: standaloneTiles ? 'calc(100% - 6px)' : `calc(${members.length} * 100% - 6px)`,
+                  scale: (standaloneTiles ? pressedIdx === i : pressed) ? '0.98' : '1',
                 }}
               />
             )}
@@ -394,8 +389,8 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
               role="button"
               tabIndex={0}
               data-testid="verify-evo-card"
-              onClick={handleClick}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startPress(i); handleClick(); } }}
+              onClick={() => handleClick(i)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startPress(i); handleClick(i); } }}
               onKeyUp={endPress}
               onPointerDown={() => startPress(i)}
               onPointerUp={endPress}
@@ -427,7 +422,7 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                     <RedXIcon className="w-full h-full" />
                   </div>
                 )}
-                {inDex && variant === 'browser' && (
+                {inDex && variant === 'browser' && !hideAssignedMark && (
                   markedForRemoval ? (
                     <div className={TILE_ACTION_BUTTON_CLASS} style={{ transform: 'translateZ(0)' }}>
                       <RedXIcon className="w-full h-full" />
@@ -498,8 +493,11 @@ function EvoLineCard({ members, matchedIds, mutedIds, anchorGen, assignedIds, st
                 />
               </div>
             </div>
-            {/* Chevron between evo line members */}
-            {!isLast && (
+            {/* Chevron between evo line members. Standalone tiles have no
+                such relation to show: each tile is its own pick, so an arrow
+                from one to the next would claim an evolution the tap does
+                not follow. */}
+            {!isLast && !standaloneTiles && (
               <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-10">
                 <ChevronRight className="w-[calc(var(--tile-sprite)*0.18)] h-[calc(var(--tile-sprite)*0.18)] text-muted-foreground/60" />
               </div>

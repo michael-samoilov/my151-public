@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { seedDex } from '../support/milestoneHeader';
+import { seedDex } from '../support/dexSeed';
 
 /**
  * The picker is preview-only for now, so it runs against the dev server like
@@ -13,7 +13,7 @@ test.describe('language picker', () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
     test('switches the app to a locale and persists the choice', async ({ page }) => {
-      await page.goto('/?tune');
+      await page.goto('/pokedex-builder?tune');
       await seedDex(page);
 
       await page.getByRole('button', { name: 'Change language' }).click();
@@ -42,7 +42,7 @@ test.describe('language picker', () => {
   });
 
   test('offers endonyms, not flags, and marks the active one', async ({ page }) => {
-    await page.goto('/?tune');
+    await page.goto('/pokedex-builder?tune');
     await page.getByRole('button', { name: 'Change language' }).click();
 
     for (const endonym of ['English', '日本語', '한국어', '简体中文', '繁體中文', 'Français', 'Deutsch', 'Español', 'Italiano']) {
@@ -53,7 +53,7 @@ test.describe('language picker', () => {
   });
 
   test('each row declares its own language for screen readers', async ({ page }) => {
-    await page.goto('/?tune');
+    await page.goto('/pokedex-builder?tune');
     await page.getByRole('button', { name: 'Change language' }).click();
     // Without this a screen reader reads 日本語 through the page's English
     // voice, which is unintelligible.
@@ -61,7 +61,7 @@ test.describe('language picker', () => {
   });
 
   test('closes on Escape', async ({ page }) => {
-    await page.goto('/?tune');
+    await page.goto('/pokedex-builder?tune');
     await page.getByRole('button', { name: 'Change language' }).click();
     await expect(page.getByRole('menuitemradio', { name: '日本語' })).toBeVisible();
     await page.keyboard.press('Escape');

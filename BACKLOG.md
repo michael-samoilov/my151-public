@@ -46,6 +46,26 @@ patch script like `scripts/add-color-egg.mjs`, plus new fields on the `Pokemon`
 interface. Habitat covers Gen 1 species only, so decide how the filter behaves
 for the other 900+ species before you build it.
 
+## After the launch of the hub and the gym leader maker
+
+- **Translate the hub and the gym leader maker.** Every `home.*`, `faq.*`
+  and `promo.*` key, and the league's hardcoded tool bar, picker, hint and
+  export strings, are English in every locale. Needs the network-bound
+  i18n pipeline. Add the two pages to `e2e/dev/unextracted.spec.ts` once
+  the league's strings go through the catalog.
+- **`header.toolName` in nine locales.** The English value is now "Custom
+  Pokédex Builder" and the other catalogs fall back to it; translate or keep.
+- **Measure the ace slot without CSS `zoom`.** `useSlotLayout` in
+  `src/league/components/CardGrid.tsx` divides text measured through a zoom
+  back out; a browser that snaps glyph advances to whole pixels lands the
+  ace 0.59 px off. Playwright is pinned to full Chromium so CI matches
+  local runs, but the solver still depends on it.
+- **The favorite Pokémon picker page**, `/favorite-pokemon-by-type`. Copy
+  is in `docs/seo/LAUNCH-COPY.md`; the hub gains one entry in `useTools()`.
+- **A hub view in the admin dashboard from the journal.** The Tools card
+  reads the funnel counters; the per-day journal has the cids for a
+  distinct-browser read of each hub card.
+
 ## Done
 
 - **Body shape, color, and egg group filters** — shipped as their own filter

@@ -8,6 +8,7 @@ import {
   type ClientRecord,
 } from './_shared.js';
 import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
+import { LEAGUE_CLIENTS_KEY, parseLeagueRecord, type LeagueRecord } from './_leagueRecord.js';
 
 /** Distinct evolution lines represented by a set of ids (unknown ids count as
  *  their own line). Mirrors the client's countEvoLines so server-derived depth
@@ -136,10 +137,72 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (Number.isFinite(n)) funnelEvents[k] = n;
     }
 
+    const now = Date.now();
+    // The gym leader maker's records, in their own hash. A person who used
+    // both tools is one cid present in both, so overlap is a set
+    // intersection at read time — retroactive by construction.
+    const leagueAll = (await redis.hgetall(LEAGUE_CLIENTS_KEY)) as Record<string, unknown> | null;
+    const leagueRecords: LeagueRecord[] = Object.values(leagueAll ?? {})
+      .map(parseLeagueRecord)
+      .filter((r): r is LeagueRecord => r !== null);
+    const dexCids = new Set(records.map((r) => r.cid.split('::')[0]));
+    const leagueCids = new Set(leagueRecords.map((r) => r.cid));
+    const both = [...leagueCids].filter((c) => dexCids.has(c));
+    const dexExporters = records.filter((r) => r.exported).map((r) => r.cid.split('::')[0]);
+    const leagueExporters = leagueRecords.filter((r) => r.exportsCard + r.exportsLeague > 0).map((r) => r.cid);
+    const tools = {
+      dex: dexCids.size,
+      league: leagueCids.size,
+      both: both.length,
+      leagueOnly: leagueCids.size - both.length,
+      dexOnly: dexCids.size - both.length,
+      dexExporters: dexExporters.length,
+      dexExportersWhoOpenedLeague: dexExporters.filter((c) => leagueCids.has(c)).length,
+      leagueExporters: leagueExporters.length,
+      leagueExportersWithDex: leagueExporters.filter((c) => dexCids.has(c)).length,
+    };
+    // The league funnel, from the records: opened is a record at all (the
+    // first beacon needs a seated line), then named, then exported.
+    const leagueDaily: Record<number, Set<string>> = {};
+    for (const r of leagueRecords) {
+      for (const s of r.sessionLog) {
+        const day = Math.floor(s.ts / (24 * 60 * 60 * 1000)) * (24 * 60 * 60 * 1000);
+        (leagueDaily[day] ??= new Set()).add(r.cid);
+      }
+    }
+    const league = {
+      users: leagueRecords.length,
+      named: leagueRecords.filter((r) => r.latest.named > 0).length,
+      typed: leagueRecords.filter((r) => r.latest.typed > 0).length,
+      fullLeague: leagueRecords.filter((r) => r.maxCards >= 11).length,
+      exportedCard: leagueRecords.filter((r) => r.exportsCard > 0).length,
+      exportedLeague: leagueRecords.filter((r) => r.exportsLeague > 0).length,
+      returning: leagueRecords.filter((r) => r.sessions > 1).length,
+      activeLast7: leagueRecords.filter((r) => now - r.lastTs <= 7 * 24 * 60 * 60 * 1000).length,
+      activity: Object.entries(leagueDaily)
+        .map(([day, set]) => ({ day: Number(day), dau: set.size }))
+        .sort((a, b) => a.day - b.day),
+      recent: leagueRecords
+        .sort((a, b) => b.lastTs - a.lastTs)
+        .slice(0, 50)
+        .map((r) => ({
+          cid: r.cid,
+          firstAt: r.firstAt,
+          lastAt: r.lastAt,
+          sessions: r.sessions,
+          maxSessionMs: r.maxSessionMs,
+          latest: r.latest,
+          exportsCard: r.exportsCard,
+          exportsLeague: r.exportsLeague,
+          country: r.country,
+          device: r.device,
+          hasDex: dexCids.has(r.cid),
+        })),
+    };
+
     // Newest-active first.
     records.sort((a, b) => b.lastTs - a.lastTs);
 
-    const now = Date.now();
     const countries: Record<string, number> = {};
     const languages: Record<string, number> = {};
     const devices: Record<string, number> = {};
@@ -398,6 +461,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       limit,
       funnel: { users: totalUsers, completed, exported },
       funnelEvents,
+      tools,
+      league,
       cohort,
       activity,
       onboardingLaunchTs: ONBOARDING_LAUNCH_TS,

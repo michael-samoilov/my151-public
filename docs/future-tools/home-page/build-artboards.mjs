@@ -54,7 +54,7 @@ const TOOLS = [
   {
     key: 'league',
     h2: 'Pokémon League Builder',
-    slug: '/pokemon-league-builder',
+    slug: '/custom-gym-leader',
     long: 'Design a gym leader, Elite Four and champion roster. Eight badges, tiered teams, and level thresholds that evolve your picks for you.',
     short: 'Gym leaders, an Elite Four and a champion. Eight badges, tiered teams.',
     cta: 'See the preview',
@@ -1127,7 +1127,7 @@ const annotations = [
   },
   {
     id: 'seo-note', page: 'page-1', x: 1000, y: -190, w: 860,
-    text: 'SEO structure, same in all three:\n· h1 carries "make your own Pokédex" plus region and league.\n· Each card is an <h2> that exactly matches its slug: /custom-pokedex-builder, /pokemon-league-builder, /favorite-pokemon-picker.\n· The footer repeats the four links as anchor text.\nWatch out: making / a router moves the dex builder off the URL that ranks today (~pos 7.8 for "pokedex builder").',
+    text: 'SEO structure, same in all three:\n· h1 carries "make your own Pokédex" plus region and league.\n· Each card is an <h2> that exactly matches its slug: /custom-pokedex-builder, /custom-gym-leader, /favorite-pokemon-picker.\n· The footer repeats the four links as anchor text.\nWatch out: making / a router moves the dex builder off the URL that ranks today (~pos 7.8 for "pokedex builder").',
   },
   {
     id: 'd-note', page: 'page-2', x: 0, y: -260, w: 940,

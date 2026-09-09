@@ -125,17 +125,22 @@ Flags: `--base <ref>` (diff), `--surfaces a,b`, `--no-build` (reuse an existing
 `dist/`). The standard suite per surface is boot (React mounts), no horizontal
 overflow, the localStorage seed oracle round-trips, the seeded grid renders
 sprites, each nav tab activates (read from the nav button's computed background),
-the builder container scrolls, and a zero-tolerance JS-error tripwire
-(`runtime:no-js-errors`). A blanket overlap audit is deliberately not a standard
-check, because the dense sprite grid has intentional micro-overlaps; port
-`e2e/support/layoutAudit.ts` for a scoped audit of one container in a future tool. The tripwire is authoritative on Blink, where host-side
+the builder container scrolls, the render audit finds no clipped, cut, or
+truncated content on the grid and on each tab (`render:*-no-clipped-content`,
+the in-page code of `.claude/skills/render-audit`), and a zero-tolerance
+JS-error tripwire (`runtime:no-js-errors`). The render checks carry every
+finding as a key, so diff mode reports a finding the base did not have as a
+regression even when the check's status did not flip. A blanket overlap audit
+is deliberately not a standard check, because the dense sprite grid has
+intentional micro-overlaps; the render audit's overlap rule stays a warning
+for the same reason. The tripwire is authoritative on Blink, where host-side
 `pageerror` and the ErrorBoundary's `[P151] crash` console log are captured, and
 best-effort on WebKit and Gecko via a post-load page trap. A real-placement check
 (`placement:real-add-grows-store`) drives a live add on desktop Blink and skips
 until a `data-testid="verify-evo-card"` lands on the browser card.
 
 **Prove the verifier itself.** `harness/discriminate.ts` is a mutation test: it
-injects a known regression (async throw, wide element, broken persist)
+injects a known regression (async throw, wide element, clipped chip, broken persist)
 into a worktree, builds, runs the Blink suite, and asserts the matching check
 fails, with the clean tree passing. Run it after changing the harness. A verifier
 that always says PASS is worse than none.
@@ -200,6 +205,36 @@ real user path and its side effects (the localStorage `personal-151-pokedex-v3`
 store is the local oracle; beacons are suppressed locally, so do not wait on the
 network). State plainly what is device-only.
 
+## The hand-off test
+
+Every "You test" line in a work report has to pass this test first, and the
+answer is almost always that there is no such line.
+
+A "You test" step is only for what no engine here can do: a real finger's
+momentum, rubber-band or haptics, a device's safe-area insets, an account or
+a device only the user holds, or a taste call only they can make. Everything
+else is verifiable here, so it is verified here and reported under
+**Verified** with the number, the store value or the screenshot. Name the
+missing capability before writing the line; if you cannot name one, drive
+it.
+
+The line between the two is not "is it a UI interaction". A tap on a
+target, a press at the edge of a control, a state change after a click, a
+layout measure, a colour, a scroll offset: these are all drivable. Blink
+takes a real touch through Playwright (`page.touchscreen.tap`), Blink and
+WebKit take pointer presses (Playwright's mouse, W3C `/actions`), all three
+engines take clicks and read computed style and the store through the
+Session. Give WebKitGTK a second between a press and the read: at 400ms a
+read showed the state before the press, and looked like a failure. The one
+place a real finger differs is momentum and rubber-band, named above.
+
+The case that wrote this section: the nav pill's press target was extended
+past its paint, and the report asked the user to tap the bar's edge on
+their phone and confirm the tab switched. That is a touch at a coordinate
+followed by a read of the active tab, which Blink drives in one script and
+WebKit in another. It was verified in both within minutes of being asked,
+and should have been verified before the report was written.
+
 ## Cleanup
 
 `verify.ts` stops both preview servers and removes the base worktree in a
@@ -228,6 +263,6 @@ survives every cleanup.
 
 `features/` holds one file per user-facing feature, with the four H2s
 (`Sub-features`, `How to get to it (user POV)`, `Driving it with the harness`,
-`Gotchas`). It describes today's single-tool app. As the multi-tool buildout lands
-(league builder, favourite picker), add one feature file per new tool and its
-standard-suite coverage. Keep it honest with `/maintain-verification-skill`.
+`Gotchas`). It describes the pokedex builder and the Pokémon League Builder. As
+the favourite picker lands, add one feature file for it and its standard-suite
+coverage. Keep it honest with `/maintain-verification-skill`.

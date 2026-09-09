@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>my151 - Custom Pokédex Builder</title>
-    <meta name="description" content="Build your own personal Pokédex of 151 favorites, then see how your type coverage compares to the national dex." />
+    <title>my151 | Pokédex Builder &amp; Gym Leader Maker</title>
+    <meta name="description" content="Free Pokémon fan tools. Custom regional Pokédex builder with type distribution charts, gym leader &amp; trainer card maker with an Elite Four and Champion." />
     <link rel="canonical" href="https://my151.app/" />
 
     <!-- Search-console ownership proofs. Both are plain ownership tokens, not
-         trackers, and must stay in the served HTML for the properties to
+         trackers, and must stay in the HTML served at "/" for the properties to
          remain verified — do not strip them when editing head tags. -->
     <meta name="google-site-verification" content="hxa7MrDyw0rZHoHFww0GKiJpERvm5I0Vi7GuA7segkI" />
     <meta name="msvalidate.01" content="6EAC46368E8AEEC4C08A01171D758093" />
@@ -17,38 +17,28 @@
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content="my151" />
-    <meta property="og:title" content="my151 - Custom Pokédex Builder" />
-    <meta property="og:description" content="Build your own personal Pokédex of 151 favorites, then see how your type coverage compares to the national dex." />
+    <meta property="og:title" content="my151 | Pokédex Builder &amp; Gym Leader Maker" />
+    <meta property="og:description" content="Free Pokémon fan tools. Custom regional Pokédex builder with type distribution charts, gym leader &amp; trainer card maker with an Elite Four and Champion." />
     <meta property="og:url" content="https://my151.app/" />
-    <meta property="og:image" content="https://my151.app/og-image.png" />
+    <meta property="og:image" content="https://my151.app/og-hub.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="my151 — a six-by-four grid of Pokémon sprites beside the heading “Build your own Pokédex”." />
+    <meta property="og:image:alt" content="my151 — a grid of Pokémon sprites beside the heading “Free Pokémon fan tools”." />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="my151 - Custom Pokédex Builder" />
-    <meta name="twitter:description" content="Build your own personal Pokédex of 151 favorites, then see how your type coverage compares to the national dex." />
-    <meta name="twitter:image" content="https://my151.app/og-image.png" />
-    <meta name="twitter:image:alt" content="my151 — a six-by-four grid of Pokémon sprites beside the heading “Build your own Pokédex”." />
+    <meta name="twitter:title" content="my151 | Pokédex Builder &amp; Gym Leader Maker" />
+    <meta name="twitter:description" content="Free Pokémon fan tools. Custom regional Pokédex builder with type distribution charts, gym leader &amp; trainer card maker with an Elite Four and Champion." />
+    <meta name="twitter:image" content="https://my151.app/og-hub.png" />
+    <meta name="twitter:image:alt" content="my151 — a grid of Pokémon sprites beside the heading “Free Pokémon fan tools”." />
 
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebApplication",
+        "@type": "WebSite",
         "name": "my151",
-        "alternateName": "my151 - Custom Pokédex Builder",
         "url": "https://my151.app/",
-        "description": "Build your own personal Pokédex of 151 favorites, then see how your type coverage compares to the national dex.",
-        "applicationCategory": "GameApplication",
-        "operatingSystem": "Any",
-        "browserRequirements": "Requires JavaScript.",
-        "inLanguage": "en",
-        "isAccessibleForFree": true,
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD"
-        }
+        "description": "Free Pokémon fan tools. Custom regional Pokédex builder with type distribution charts, gym leader & trainer card maker with an Elite Four and Champion.",
+        "inLanguage": "en"
       }
     </script>
 
@@ -136,23 +126,16 @@
           <circle cx="16" cy="16" r="4.5" fill="#fafafa" stroke="#dc2626" stroke-width="2"/>
         </svg>
         <div class="p151-copy">
-          <h1>Make Your Own Custom Pokédex</h1>
-          <!-- Front-load the noun phrases people actually search: "custom Pokédex
-               builder", "Pokémon region template". A searcher scanning this needs the
-               first few words to confirm they found the right kind of tool, so no
-               modifier earns a place ahead of them. "Creator" and "generator" are left
-               out on purpose: they are synonyms of builder and generate, and stacking
-               synonyms reads as keyword stuffing. -->
+          <h1>Make a custom Pokédex, Gym Leaders, and more</h1>
+          <!-- The approved intro, docs/seo/LAUNCH-COPY.md. The only content a
+               crawler that does not execute JavaScript receives from "/". -->
           <p>
-            my151 is a custom Pokédex builder and Pokémon region template. Pick
-            your favorite 151 from all 1,025 Pokémon into labelled sections.
-            Compare your type coverage to the National Dex, then generate a
-            shareable image of your dex.
+            my151 is a set of free Pokémon fan tools that run in the browser. The Pokédex builder lets you create a custom region from a "paint-by-numbers" template of archetypes like regional bird and pikaclone. The gym leader maker lets you pick a signature Pokémon, badge, and team, then add an Elite Four and Champion. Both export as a PNG.
           </p>
         </div>
         <span>Loading…</span>
       </div>
     </div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/home/main.tsx"></script>
   </body>
 </html>

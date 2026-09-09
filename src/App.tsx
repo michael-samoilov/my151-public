@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, lazy, startTransition, Suspense } from 'react';
 import { Header } from '@/components/layout/Header';
 import type { AppView } from '@/components/layout/Header';
+import { ToolbarSlotContext } from '@/components/layout/toolbarSlot';
 import { PokedexGrid } from '@/components/pokedex/PokedexGrid';
 import { PokemonBrowser } from '@/components/browser/PokemonBrowser';
 import { DrillDownSheet, DrillDownPanel } from '@/components/analytics/DrillDownSheet';
@@ -89,6 +90,8 @@ function App() {
   useMilestoneTracker();
   useJsErrorCounter();
   const [currentView, setCurrentView] = useState<AppView>('builder');
+  // The second header's right cell; pages portal their controls into it.
+  const [toolbarEl, setToolbarEl] = useState<HTMLElement | null>(null);
   // State rather than refs so the idle pre-mount below can flip them without
   // a navigation. Once true they stay true: routes mount once and live on.
   const [viewMounted, setViewMounted] = useState(false);
@@ -221,8 +224,11 @@ function App() {
   const handleViewChange = useCallback((view: AppView) => {
     // Analytics is gated until 25 Pokémon (sticky). Guard every path here.
     if (view === 'analytics' && !isAnalyticsUnlocked(usePokedexStore.getState().milestoneMax)) return;
-    if (view === 'view') { setViewMounted(true); sendEventBeacon('view-visit', { once: true }); }
-    if (view === 'analytics') setAnalyticsMounted(true);
+    // The nav paints first; the heavy lazy page mounts inside a transition,
+    // so React can yield to the tab animation instead of freezing it — the
+    // old single synchronous commit is what made switches choppy.
+    if (view === 'view') { startTransition(() => setViewMounted(true)); sendEventBeacon('view-visit', { once: true }); }
+    if (view === 'analytics') startTransition(() => setAnalyticsMounted(true));
     setCurrentView(view);
     if (view !== 'builder') {
       setMobileBrowserOpen(false);
@@ -237,10 +243,11 @@ function App() {
   return (
     <TooltipProvider>
       <div className="h-dvh flex flex-col">
-        <Header currentView={currentView} onViewChange={handleViewChange} />
+        <Header currentView={currentView} onViewChange={handleViewChange} toolbarRef={setToolbarEl} />
 
+        <ToolbarSlotContext.Provider value={{ el: toolbarEl, view: currentView }}>
         {/* Builder — always mounted to avoid remount cost on tab switch */}
-        <div ref={builderAreaRef} className={cn('flex-1 min-h-0 relative overflow-hidden', currentView !== 'builder' && 'hidden')}>
+        <div ref={builderAreaRef} className={cn('flex-1 min-h-0 relative overflow-hidden', currentView !== 'builder' ? 'hidden' : 'p151-view-enter')}>
           <div className={cn(
             'h-full transition-[margin] duration-300 ease-out',
             'md:w-1/2',
@@ -266,7 +273,7 @@ function App() {
         </div>
 
         {/* View — lazy, mounted on first visit then kept alive */}
-        <div className={cn('flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col', currentView !== 'view' && 'hidden')}>
+        <div className={cn('flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col', currentView !== 'view' ? 'hidden' : 'p151-view-enter')}>
           {viewMounted && (
             <ErrorBoundary where="view">
               <Suspense fallback={<RouteFallback />}>
@@ -277,7 +284,7 @@ function App() {
         </div>
 
         {/* Analytics — lazy, mounted on first visit then kept alive */}
-        <div className={cn('flex-1 flex min-h-0', currentView !== 'analytics' && 'hidden')}>
+        <div className={cn('flex-1 flex min-h-0', currentView !== 'analytics' ? 'hidden' : 'p151-view-enter')}>
           <div className="flex-1 min-h-0 min-w-0 overflow-hidden flex flex-col">
             {analyticsMounted && (
               <ErrorBoundary where="analytics">
@@ -293,6 +300,7 @@ function App() {
             </div>
           )}
         </div>
+        </ToolbarSlotContext.Provider>
       </div>
 
       {/* Mobile browser sheet */}

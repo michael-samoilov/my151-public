@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { NAV_PAGES, seedDex } from '../support/milestoneHeader';
+import { NAV_PAGES, seedDex } from '../support/dexSeed';
 
 /**
  * Layout verification against the pseudo-locales, run before any real
@@ -18,7 +18,7 @@ import { NAV_PAGES, seedDex } from '../support/milestoneHeader';
 const PSEUDO = ['en-XA', 'en-XC'] as const;
 
 async function open(page: Page, lang: string, nav: (typeof NAV_PAGES)[number]) {
-  await page.goto(`/?tune&lang=${lang}`);
+  await page.goto(`/pokedex-builder?tune&lang=${lang}`);
   await seedDex(page);
   await page.locator(`[data-nav="${nav}"]`).click();
   await page.waitForTimeout(300);
@@ -27,7 +27,7 @@ async function open(page: Page, lang: string, nav: (typeof NAV_PAGES)[number]) {
 test.describe('pseudo-locale layout', () => {
   test('en-XA actually reaches the DOM', async ({ page }) => {
     // If this fails, every other assertion in this file is vacuous.
-    await page.goto('/?tune&lang=en-XA');
+    await page.goto('/pokedex-builder?tune&lang=en-XA');
     const build = page.locator('[data-nav="builder"] span').first();
     await expect(build).toHaveText(/^\[/);
     await expect(build).not.toHaveText('Build');
@@ -36,7 +36,7 @@ test.describe('pseudo-locale layout', () => {
   test('the picker is not offered a pseudo-locale', async ({ page }) => {
     // They are a development tool; a real user seeing "[Ɓúíłđ···]" would just
     // think the app is broken.
-    await page.goto('/?tune');
+    await page.goto('/pokedex-builder?tune');
     await expect(page.locator('[data-nav="builder"] span').first()).toHaveText('Build');
   });
 
@@ -70,6 +70,16 @@ test.describe('pseudo-locale layout', () => {
             // header's SEO tagline is one, and it turned this check red the
             // moment it was routed through the catalog and picked up brackets.
             if (r.width <= 1 || r.height <= 1) continue;
+            // Text nobody can see cannot be clipped: the FAQ under the footer
+            // sits in a closed <details>, whose content keeps a box but is not
+            // rendered (content-visibility), so its paragraphs report a
+            // zero client width against a real scroll width.
+            if (!(el as HTMLElement).checkVisibility()) continue;
+            // An ellipsis is a decision, not an accident. The tool bar's h1
+            // eyebrow keeps its full text in the DOM for crawlers and truncates
+            // by CSS where the bar is too narrow (docs/seo/HANDOFF.md, the
+            // gym leader agent's item 3); that is the one string allowed to.
+            if (getComputedStyle(el).textOverflow === 'ellipsis') continue;
             if (el.scrollWidth > el.clientWidth + 1) bad.push(text.slice(0, 40));
           }
           return bad;

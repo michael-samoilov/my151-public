@@ -58,7 +58,7 @@ interface Measurement {
 test.use({ viewport: { width: 1280, height: 900 } });
 
 async function measure(page: import('@playwright/test').Page, locale: string): Promise<Measurement[]> {
-  await page.goto(`/?lang=${locale}`);
+  await page.goto(`/pokedex-builder?lang=${locale}`);
   await page.getByRole('button', { name: /^Add a Pokémon to / }).first().click();
   await page.getByRole('button', { name: 'Type', exact: true }).first().click();
   const grid = page.locator('[data-testid="type-filter"]');

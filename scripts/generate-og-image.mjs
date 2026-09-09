@@ -49,9 +49,11 @@ const PAGES = {
   },
   hub: {
     file: 'og-hub.png',
-    heading: 'Custom Pokédex &amp; <span class="accent">Pokémon tools</span>',
+    // "Pokémon fan tools", not "Pokémon tools": the latter is a TCG phrase
+    // (docs/seo/HANDOFF.md, section 10).
+    heading: 'Free <span class="accent">Pokémon fan tools</span>',
     subtitle:
-      'Build a custom Pokédex of your 151 favorites and design your own gym leaders, Elite Four and Champion. Free, in the browser.',
+      'A custom regional Pokédex builder, and a gym leader &amp; trainer card maker with an Elite Four and Champion. Free, in the browser.',
     // A cross-generation spread: one recognizable face per generation and type
     // family, so the image reads as "all of Pokémon", not "Gen 1".
     sprites: [
@@ -63,9 +65,9 @@ const PAGES = {
   },
   league: {
     file: 'og-gym-leader.png',
-    heading: 'Build your own <span class="accent">Gym Leaders</span>',
+    heading: 'Custom <span class="accent">Gym Leader</span> &amp; trainer card maker',
     subtitle:
-      'Give each leader a team, a badge and a type specialty, then build the Elite Four and Champion. Export every trainer as a card.',
+      'Give each leader a signature Pokémon, badge and team, then add the Elite Four and Champion. Export every trainer as a card.',
     // Six aces per row, one row per "tier": gym leader signature Pokémon, then
     // Elite Four and Champion style powerhouses.
     sprites: [

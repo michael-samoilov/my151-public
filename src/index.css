@@ -94,9 +94,17 @@ body {
   text-wrap: pretty;
 }
 
-/* Headings read better balanced across lines rather than left-heavy. */
-h1, h2, h3, h4, h5, h6 {
-  text-wrap: balance;
+/* Headings read better balanced across lines rather than left-heavy.
+ *
+ * In the base layer, so a utility on the heading still wins. `text-wrap` is
+ * a longhand of the `white-space` shorthand, and unlayered this rule beat
+ * `truncate` on every heading: the league tool bar's eyebrow, set to one
+ * line with an ellipsis, wrapped to two at 320px and pushed its field out
+ * of the bar. */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+  }
 }
 
 /* Small-caps headings — `uppercase tracking-wide` — are an English typographic
@@ -187,6 +195,39 @@ img {
   user-select: none;
   -webkit-user-select: none;
   pointer-events: none;
+}
+
+/* Every drag surface, marked by the one thing they all share.
+ *
+ * A long press on a draggable is the gesture that picks it up. On iOS it is
+ * also the gesture that starts a text selection, and the selection wins: the
+ * league summary answered a press-and-hold with a Copy / Search callout
+ * spanning two rows instead of lifting the row.
+ *
+ * The `-webkit-touch-callout` rule above suppresses the image and link
+ * callout, not the selection one; only `user-select` does that. Each surface
+ * could set it for itself, and the dex builder's tiles do — the two league
+ * surfaces are what it looks like when one of them forgets. dnd-kit marks
+ * every draggable with `aria-roledescription="draggable"`, so one rule here
+ * covers the surfaces that exist and the ones nobody has written yet.
+ *
+ * The descendants are named explicitly rather than left to inheritance,
+ * because `user-select` is not an inherited property — a child's `auto`
+ * resolves against its parent, and a child that sets anything else does not. */
+[aria-roledescription='draggable'],
+[aria-roledescription='draggable'] * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Except where the point of the element is to type in it. Nothing in the app
+ * puts a field inside a drag surface today; this is here so that the day one
+ * does, the field still works. */
+[aria-roledescription='draggable'] input,
+[aria-roledescription='draggable'] textarea,
+[aria-roledescription='draggable'] [contenteditable]:not([contenteditable='false']) {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* Always-visible thin scrollbars — mobile browsers hide native scrollbars by default,
@@ -280,3 +321,37 @@ img {
    the viewport root font exactly as the counter does. (The count is capped at
    151, so the counter is always ≤ 3 digits — 4 digits can't occur.) */
 :root { --ms-side: 6.55rem; }
+
+/* Tab switches fade the incoming page in — the class lands when a view
+   container loses `hidden`, so the animation restarts on each activation. */
+@keyframes p151-view-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.p151-view-enter {
+  animation: p151-view-fade 180ms ease-out;
+}
+
+/* The league builder's mobile shell is one two-pane track that the camera pans
+   across: the home and the open gym card sit side by side and the track
+   translates, so opening a card is a move through one space rather than a
+   swap of two. Only `transform` animates, which the compositor owns, so the
+   pan holds its frame rate while the incoming pane's sprites decode.
+
+   280ms on a decelerating curve is the iOS push: long enough to read as
+   travel, short enough that a rapid back-and-forth never feels held up. */
+.p151-pane-track {
+  transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .p151-pane-track { transition: none; }
+}
+
+/* The gym badge's name is a contenteditable span so "Badge" can flow after it
+   and wrap with it — an input is a replaced element and would do neither. An
+   empty one is zero-wide, so its placeholder is its own `::before`: that gives
+   the field a box to tap and a place for the caret to sit. */
+[data-badge-field]:empty::before {
+  content: attr(data-placeholder);
+  color: var(--lg-hint);
+}

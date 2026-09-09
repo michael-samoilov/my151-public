@@ -1,10 +1,12 @@
 import { useT } from '@/i18n';
+import { Faq, type FaqPage } from '@/components/shared/Faq';
 import { openFeedback } from '@/components/feedback/feedbackChannel';
 declare const __BUILD_TIMESTAMP__: string;
 const BUILD_VERSION = __BUILD_TIMESTAMP__.replace(/[-:T]/g, '').slice(2, 12);
 const YEAR = new Date().getFullYear();
 
-export function PageFooter() {
+/** `faq` names the page whose "About this tool" block sits under the footer. */
+export function PageFooter({ faq }: { faq?: FaqPage } = {}) {
   const t = useT();
   return (
     <div className="mt-4 flex flex-col items-center gap-1">
@@ -33,6 +35,7 @@ export function PageFooter() {
         {t('footer.report')}
       </button>
       </div>
+      {faq && <Faq page={faq} />}
     </div>
   );
 }

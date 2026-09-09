@@ -9,12 +9,18 @@
 const CID_KEY = 'p151-cid';
 const OPT_OUT_KEY = 'p151-opt-out';
 
-// Owner opt-out: visiting once with `?notme` flags this browser. The only
-// owner-exclusion mechanism — re-flag each device (and re-flag incognito, whose
-// storage clears on close).
-if (typeof window !== 'undefined') {
+/**
+ * Owner opt-out: visiting once with `?notme` flags this browser. The only
+ * owner-exclusion mechanism — re-flag each device (and re-flag incognito,
+ * whose storage clears on close).
+ *
+ * An explicit call from every page entry, not an import-time side effect:
+ * the effect only ran on pages that happened to import this module, and the
+ * gym leader maker did not, so `?notme` there did nothing.
+ */
+export function installOptOut(search: string = window.location.search): void {
   try {
-    if (new URLSearchParams(window.location.search).has('notme')) {
+    if (new URLSearchParams(search).has('notme')) {
       localStorage.setItem(OPT_OUT_KEY, '1');
     }
   } catch {

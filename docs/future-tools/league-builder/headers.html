@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>League header mockups</title>
+<style>
+  :root {
+    --foreground: #0a0a0a;
+    --card: #ffffff;
+    --primary: #dc2626;
+    --muted: #f5f5f5;
+    --muted-foreground: #737373;
+    --border: #e5e5e5;
+    --page: #fafafa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 28px 20px 60px;
+    background: var(--page); color: var(--foreground);
+    font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 34px 0 2px; }
+  p.note { margin: 0 0 14px; color: var(--muted-foreground); font-size: 12.5px; max-width: 62ch; }
+  .pair { display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start; }
+  .frame { width: 393px; }
+  .frame > .cap {
+    font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .cap.now { color: #991b1b; }
+  .cap.next { color: #166534; }
+  .shell { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--card); }
+
+  /* --- the app's own bars --- */
+  .globalbar {
+    height: 52px; display: flex; align-items: center; gap: 8px;
+    padding: 0 12px; border-bottom: 1px solid var(--border); background: var(--card);
+  }
+  .brand { font-size: 21px; font-weight: 800; letter-spacing: -.02em; }
+  .brand b { color: var(--primary); }
+  .brand span { color: var(--foreground); }
+  .globalbar .right { margin-left: auto; display: flex; align-items: center; gap: 10px; color: var(--muted-foreground); }
+
+  /* h-11 = 44px, px-3 = 12px, gap-2 = 8px */
+  .toolbar {
+    height: 44px; display: flex; align-items: center; gap: 8px;
+    padding: 0 12px; border-bottom: 1px solid var(--border); background: var(--card);
+  }
+  .ident { display: flex; min-width: 0; flex: 1; flex-direction: column; justify-content: center; gap: 1px; }
+  .ident .h1 {
+    font-size: 11px; font-weight: 600; line-height: 1; color: var(--muted-foreground);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .editable { display: inline-flex; align-items: center; gap: 4px; min-width: 0; max-width: 100%; }
+  .editable > .line {
+    border-bottom: 1px dashed rgba(10,10,10,.25); min-width: 0;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .val { font-size: 14px; font-weight: 700; line-height: 1.25; white-space: nowrap; }
+  .ph { font-size: 14px; font-weight: 400; line-height: 1.25; white-space: nowrap; }
+  .ph.old { color: var(--muted-foreground); }
+  .ph.new { color: rgba(115,115,115,.62); }
+  .theme { font-size: 11px; font-weight: 600; line-height: 1.25; white-space: nowrap; }
+  .theme.ph-old { font-weight: 400; color: rgba(115,115,115,.7); }
+  .theme.ph-new { font-weight: 400; color: rgba(115,115,115,.45); }
+
+  .icons { margin-left: auto; display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+  .ib { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 6px; color: var(--muted-foreground); }
+  .ib.export { border: 1px solid var(--primary); color: var(--primary); }
+  svg { display: block; }
+  .chev { color: var(--muted-foreground); flex-shrink: 0; }
+  .slot { font-size: 11px; font-weight: 500; color: var(--muted-foreground); flex-shrink: 0; }
+
+  /* type chip, the shape TypeBadge draws */
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px; height: 15px; padding: 0 7px 0 5px;
+    border-radius: 999px; background: #b6a136; color: #fff;
+    font-size: 8.5px; font-weight: 800; letter-spacing: .06em; flex-shrink: 0;
+  }
+  .chip .dot { width: 9px; height: 9px; border-radius: 999px; background: rgba(255,255,255,.85); }
+
+  /* the story / rematch toggle */
+  .seg {
+    display: inline-flex; align-items: center; height: 22px; padding: 2px;
+    border: 1px solid var(--border); border-radius: 999px; background: var(--muted);
+    font-size: 10px; font-weight: 700; letter-spacing: .02em;
+  }
+  .seg > span { padding: 0 8px; height: 100%; display: grid; place-items: center; border-radius: 999px; color: var(--muted-foreground); }
+  .seg > span.on { background: var(--card); color: var(--foreground); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+  .body { padding: 12px; color: var(--muted-foreground); font-size: 11px; background: var(--page); }
+  ul { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; color: #3f3f46; }
+  li { margin: 3px 0; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
+</style>
+</head>
+<body>
+
+<h1>League builder — header mockups</h1>
+<p class="note">
+  Both bars are the app's own 44px tool bar, at a 393px phone width. The gym card's
+  bar keeps that height: the two-line identity block is the same one the league
+  home already fits into it.
+</p>
+
+<h2>League home</h2>
+<p class="note">
+  The settings wheel and the information icon both go. The story/rematch toggle takes the
+  wheel's job, and the bug and export buttons are the ones the dex builder's pages carry.
+</p>
+<div class="pair">
+  <div class="frame">
+    <div class="cap now">Now</div>
+    <div class="shell">
+      <div class="globalbar"><span class="brand"><b>my151</b><span>.app</span></span>
+        <span class="right">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/></svg>
+          <span style="font-size:15px">Tools ⌄</span>
+        </span>
+      </div>
+      <div class="toolbar">
+        <div class="ident">
+          <div class="h1">Pokémon League Builder</div>
+          <div class="editable"><span class="line"><span class="ph old">Name your league</span></span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(115,115,115,.7)" stroke-width="2"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+          </div>
+        </div>
+        <div class="icons">
+          <div class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></div>
+          <div class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/></svg></div>
+        </div>
+      </div>
+      <div class="body">the league rows…</div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap next">Proposed</div>
+    <div class="shell">
+      <div class="globalbar"><span class="brand"><b>my151</b><span>.app</span></span>
+        <span class="right">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/></svg>
+          <span style="font-size:15px">Tools ⌄</span>
+        </span>
+      </div>
+      <div class="toolbar">
+        <div class="ident">
+          <div class="h1">Pokémon League Builder</div>
+          <div class="editable"><span class="line"><span class="ph new">Name your league</span></span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(115,115,115,.7)" stroke-width="2"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+          </div>
+        </div>
+        <div class="icons">
+          <span class="seg"><span class="on">Story</span><span>Rematch</span></span>
+          <div class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-9"/><path d="M14 7a4 4 0 0 1 4 4v3a6 6 0 0 1-12 0v-3a4 4 0 0 1 4-4z"/><path d="M14.12 3.88 16 2"/><path d="M21 21a4 4 0 0 0-3.81-4"/><path d="M21 5a4 4 0 0 1-3.55 3.97"/><path d="M22 13h-4"/><path d="M3 21a4 4 0 0 1 3.81-4"/><path d="M3 5a4 4 0 0 0 3.55 3.97"/><path d="M6 13H2"/></svg></div>
+          <div class="ib export"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></div>
+        </div>
+      </div>
+      <div class="body">the league rows…</div>
+    </div>
+  </div>
+</div>
+
+<h2>Gym card</h2>
+<p class="note">
+  The card's bar takes the league home's shape: the page's name on top, small and
+  quiet, and one editable line under it holding the type chip and the theme. The
+  slot number moves into that heading, so the bar keeps one identity block and one
+  cluster of controls, exactly like the home.
+</p>
+<div class="pair">
+  <div class="frame">
+    <div class="cap now">Now</div>
+    <div class="shell">
+      <div class="globalbar"><span class="brand"><b>my151</b><span>.app</span></span>
+        <span class="right">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/></svg>
+          <span style="font-size:15px">Tools ⌄</span>
+        </span>
+      </div>
+      <div class="toolbar">
+        <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        <span class="chip"><span class="dot"></span>ROCK</span>
+        <span class="theme ph-old">What is this gym's theme?</span>
+        <span class="slot" style="margin-left:auto">Gym 1</span>
+        <div class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/></svg></div>
+      </div>
+      <div class="body">the gym card…</div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap next">Proposed</div>
+    <div class="shell">
+      <div class="globalbar"><span class="brand"><b>my151</b><span>.app</span></span>
+        <span class="right">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20"/></svg>
+          <span style="font-size:15px">Tools ⌄</span>
+        </span>
+      </div>
+      <div class="toolbar">
+        <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        <div class="ident">
+          <div class="h1">Pro Trainer Card</div>
+          <div class="editable"><span class="line">
+              <span class="chip"><span class="dot"></span>ROCK</span>
+              <span class="theme ph-new">What is this gym's theme?</span>
+            </span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(115,115,115,.7)" stroke-width="2"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+          </div>
+        </div>
+        <div class="icons">
+          <div class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-9"/><path d="M14 7a4 4 0 0 1 4 4v3a6 6 0 0 1-12 0v-3a4 4 0 0 1 4-4z"/><path d="M14.12 3.88 16 2"/><path d="M21 21a4 4 0 0 0-3.81-4"/><path d="M21 5a4 4 0 0 1-3.55 3.97"/><path d="M22 13h-4"/><path d="M3 21a4 4 0 0 1 3.81-4"/><path d="M3 5a4 4 0 0 0 3.55 3.97"/><path d="M6 13H2"/></svg></div>
+          <div class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/></svg></div>
+          <div class="ib export"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></div>
+        </div>
+      </div>
+      <div class="body">the gym card…</div>
+    </div>
+  </div>
+</div>
+
+<h2>Filled, and the muted placeholders side by side</h2>
+<div class="pair">
+  <div class="frame">
+    <div class="cap next">Filled</div>
+    <div class="shell">
+      <div class="toolbar">
+        <div class="ident">
+          <div class="h1">Pokémon League Builder</div>
+          <div class="editable"><span class="line"><span class="val">Kanto League</span></span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(115,115,115,.7)" stroke-width="2"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+          </div>
+        </div>
+        <div class="icons">
+          <span class="seg"><span>Story</span><span class="on">Rematch</span></span>
+          <div class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-9"/><path d="M14 7a4 4 0 0 1 4 4v3a6 6 0 0 1-12 0v-3a4 4 0 0 1 4-4z"/><path d="M14.12 3.88 16 2"/><path d="M21 21a4 4 0 0 0-3.81-4"/><path d="M21 5a4 4 0 0 1-3.55 3.97"/><path d="M22 13h-4"/><path d="M3 21a4 4 0 0 1 3.81-4"/><path d="M3 5a4 4 0 0 0 3.55 3.97"/><path d="M6 13H2"/></svg></div>
+          <div class="ib export"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <svg class="chev" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+        <div class="ident">
+          <div class="h1">Pro Trainer Card</div>
+          <div class="editable"><span class="line">
+              <span class="chip"><span class="dot"></span>ROCK</span>
+              <span class="theme">Brock's unyielding rock</span>
+            </span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(115,115,115,.7)" stroke-width="2"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+          </div>
+        </div>
+        <div class="icons">
+          <div class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20v-9"/><path d="M14 7a4 4 0 0 1 4 4v3a6 6 0 0 1-12 0v-3a4 4 0 0 1 4-4z"/><path d="M14.12 3.88 16 2"/><path d="M21 21a4 4 0 0 0-3.81-4"/><path d="M21 5a4 4 0 0 1-3.55 3.97"/><path d="M22 13h-4"/><path d="M3 21a4 4 0 0 1 3.81-4"/><path d="M3 5a4 4 0 0 0 3.55 3.97"/><path d="M6 13H2"/></svg></div>
+          <div class="ib"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/></svg></div>
+          <div class="ib export"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="frame">
+    <div class="cap next">Placeholder weight</div>
+    <div class="shell">
+      <div class="toolbar"><div class="ident">
+        <div class="h1">Now &mdash; muted-foreground</div>
+        <div class="editable"><span class="line"><span class="ph old">Name your league</span></span></div>
+      </div></div>
+      <div class="toolbar"><div class="ident">
+        <div class="h1">Proposed &mdash; 62% of it</div>
+        <div class="editable"><span class="line"><span class="ph new">Name your league</span></span></div>
+      </div></div>
+      <div class="toolbar"><div class="ident">
+        <div class="h1">Gym theme, now &mdash; 70%</div>
+        <div class="editable"><span class="line"><span class="theme ph-old">What is this gym's theme?</span></span></div>
+      </div></div>
+      <div class="toolbar"><div class="ident">
+        <div class="h1">Gym theme, proposed &mdash; 45%</div>
+        <div class="editable"><span class="line"><span class="theme ph-new">What is this gym's theme?</span></span></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<h2>What shipped</h2>
+<ul>
+  <li><b>Where the slot number goes.</b> The card's bar has no room for "Gym 1" on
+    its own once the identity block takes the left, so the mock folds it into the
+    heading: "Pro Trainer Card". The alternative is dropping it, since the
+    card's own top band already says which slot it is.</li>
+  <li><b>The toggle's labels</b> — settled as "Story" and "Rematch", in the dex
+    builder's own filled/ghost button pair without its icons.</li>
+  <li><b>The type chip beside the dashed line</b> — settled. The underline runs
+    under the theme only, and the chip sits beside it, centred on the same axis as
+    the words.</li>
+  <li><b>Losing the information icon.</b> Nothing else on the league home explains
+    what a spacer row is; the (i) was the only door to it.</li>
+</ul>
+
+</body>
+</html>

@@ -1,14 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  my151 is a single-URL app: every view (browse, dex, analytics, share, admin) is
-  reached through query params off "/" rather than a distinct path, so there is
-  exactly one canonical URL to list here. Add entries only if real routed paths
-  are introduced.
+  One entry per served page. The hub is index.html at "/"; each tool has its
+  own HTML file that Vercel's cleanUrls serves at the path below. Preview-only
+  diagnostics (/evolution-levels, /slot-lab) carry noindex and stay out.
+  `npm run indexnow` reads this file, so a new page is submitted once listed.
 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://my151.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://my151.app/pokedex-builder</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://my151.app/custom-gym-leader</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
   </url>
 </urlset>

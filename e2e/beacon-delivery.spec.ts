@@ -60,7 +60,7 @@ test.describe('beacon delivery', () => {
     const T0 = new Date('2026-08-18T12:00:00Z').getTime();
     await page.clock.install({ time: T0 });
     await page.clock.pauseAt(T0);
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     await expect(page.locator('[data-build-scroll]')).toBeVisible();
   });
 

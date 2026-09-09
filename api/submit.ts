@@ -1,9 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
+import { isFunnelEvent, parsePage, parseTool } from './_events.js';
 import {
   redis,
   getClientIp,
+  getClient,
+  getGeo,
+  getLang,
+  parseLocale,
   isBeaconKind,
   parseRecord,
   CLIENTS_KEY,
@@ -55,32 +60,6 @@ end
 return 0
 `;
 
-function header(req: VercelRequest, name: string): string | undefined {
-  const v = req.headers[name];
-  const raw = Array.isArray(v) ? v[0] : v;
-  const trimmed = raw?.trim();
-  return trimmed ? trimmed : undefined;
-}
-
-/** Coarse geo from Vercel's IP headers. Country/region/timezone only — we
- *  deliberately skip city + lat/long to keep this low-sensitivity. Vercel's
- *  'XX' placeholder for an unknown country is normalized to undefined. */
-function getGeo(req: VercelRequest) {
-  const country = header(req, 'x-vercel-ip-country');
-  return {
-    country: country && country !== 'XX' ? country : undefined,
-    region: header(req, 'x-vercel-ip-country-region'),
-    tz: header(req, 'x-vercel-ip-timezone'),
-  };
-}
-
-function getLang(req: VercelRequest): string | undefined {
-  const al = header(req, 'accept-language');
-  if (!al) return undefined;
-  const first = al.split(',')[0]?.split(';')[0]?.trim();
-  return first || undefined;
-}
-
 /** Hour-of-day (0–23) in the given IANA timezone, defaulting to UTC. */
 function localHourIn(tz: string | undefined, when: number): number {
   try {
@@ -106,38 +85,6 @@ function localDowIn(tz: string | undefined, when: number): number {
   } catch {
     return new Date(when).getUTCDay();
   }
-}
-
-/** Best-effort device/browser/OS classification from the User-Agent string. */
-function getClient(req: VercelRequest) {
-  const ua = header(req, 'user-agent') ?? '';
-
-  let os = 'Unknown';
-  if (/Windows NT/i.test(ua)) os = 'Windows';
-  else if (/iPhone|iPad|iPod/i.test(ua)) os = 'iOS';
-  else if (/Android/i.test(ua)) os = 'Android';
-  else if (/Mac OS X|Macintosh/i.test(ua)) os = 'macOS';
-  else if (/Linux/i.test(ua)) os = 'Linux';
-  else if (/CrOS/i.test(ua)) os = 'ChromeOS';
-
-  // Order matters: Edge/Opera/CriOS UAs also contain "Chrome"; Chrome/Edge
-  // also contain "Safari"; check the more specific tokens first.
-  let browser = 'Unknown';
-  if (/Edg(?:A|iOS)?\//i.test(ua)) browser = 'Edge';
-  else if (/OPR\/|Opera/i.test(ua)) browser = 'Opera';
-  else if (/SamsungBrowser/i.test(ua)) browser = 'Samsung Internet';
-  else if (/Firefox\/|FxiOS\//i.test(ua)) browser = 'Firefox';
-  else if (/CriOS\//i.test(ua)) browser = 'Chrome';
-  else if (/Chrome\//i.test(ua)) browser = 'Chrome';
-  else if (/Safari\//i.test(ua)) browser = 'Safari';
-
-  const device = /Mobi|iPhone|iPod|Android.*Mobile/i.test(ua)
-    ? 'Mobile'
-    : /iPad|Tablet|Android/i.test(ua)
-      ? 'Tablet'
-      : 'Desktop';
-
-  return { device, os, browser };
 }
 
 /** Validate a 1–151 unique-id build array; returns the ids or null. */
@@ -191,23 +138,12 @@ function validExportSettings(
   };
 }
 
-// Onboarding/funnel events allowed to attach to a session (mirrors the set in
-// api/event.ts). Anything else is ignored so a hostile client can't store junk.
-const VALID_EVENTS = new Set([
-  'intro-shown',
-  'intro-cta',
-  'intro-dismiss',
-  'milestone-25',
-  'milestone-100',
-  'milestone-151',
-  'view-visit',
-]);
 /** Sanitize the buffered funnel-event list sent with a build beacon. */
 function validEvents(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
   const out: string[] = [];
   for (const e of v) {
-    if (typeof e === 'string' && VALID_EVENTS.has(e) && !out.includes(e)) out.push(e);
+    if (isFunnelEvent(e) && !out.includes(e)) out.push(e);
     if (out.length >= 20) break;
   }
   return out;
@@ -228,6 +164,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       exportSettings?: unknown;
       events?: unknown;
       locale?: unknown;
+      tool?: unknown;
+      page?: unknown;
     };
 
     // Client id: a UUID minted once per browser. Length-bounded to avoid abuse.
@@ -280,7 +218,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.setHeader('Retry-After', Math.ceil((burst.reset - Date.now()) / 1000));
       return res.status(429).json({ error: 'Too many requests' });
     }
-    const perClient = await clientLimiter.limit(cid);
+    // Keyed per tool as well as per browser, so a person running two tools in
+    // two tabs each cannot exhaust one budget with the other's beacons.
+    const tool = parseTool(body.tool);
+    const page = parsePage(body.page);
+    const perClient = await clientLimiter.limit(`${tool}:${cid}`);
     if (!perClient.success) {
       await countDrop('rate-limit-client');
       res.setHeader('Retry-After', Math.ceil((perClient.reset - Date.now()) / 1000));
@@ -295,13 +237,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const secs = validSections(body.sections);
     const settings = kind === 'export' ? validExportSettings(body.exportSettings) : undefined;
     const newEvents = validEvents(body.events);
-    // The locale the client actually rendered in. Shape-checked rather than
-    // matched against a locale list, so this endpoint doesn't have to track
-    // which locales the app currently ships.
-    const locale =
-      typeof body.locale === 'string' && /^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$/i.test(body.locale)
-        ? body.locale
-        : undefined;
+    // The locale the client actually rendered in.
+    const locale = parseLocale(body.locale);
 
     // Merge this beacon into an existing record (or seed a new one). Pure given
     // `existing`, so it can be re-run on retry after a concurrent write.
@@ -379,6 +316,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ts: now,
         ids,
         country: geo.country,
+        ...(page ? { page } : {}),
         ...(devStamp ? { dev: devStamp } : {}),
         ...(mergedEvents.length ? { events: mergedEvents } : {}),
       };

@@ -4,6 +4,7 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
 import { getLocale } from '@/i18n/core';
+import { currentPage, currentTool } from '@/lib/tool';
 import {
   createBeaconDebouncer,
   PROGRESS_DEBOUNCE_MS,
@@ -91,6 +92,8 @@ function postBeacon(
   // knows the outcome.
   const payload = JSON.stringify({
     cid,
+    tool: currentTool(),
+    page: currentPage(),
     kind,
     ids,
     depth: countEvoLines(ids),
@@ -211,7 +214,7 @@ export function sendEventBeacon(event: string, opts?: { once?: boolean }) {
   void fetch('/api/event', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cid, event }),
+    body: JSON.stringify({ cid, event, tool: currentTool(), page: currentPage() }),
     keepalive: true,
   }).catch(() => {
     // best-effort analytics

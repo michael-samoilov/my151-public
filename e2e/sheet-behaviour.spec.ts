@@ -33,7 +33,7 @@ test.describe('mobile sheet', () => {
     });
 
   test('the app does not scroll behind an open sheet', async ({ page }) => {
-    await page.goto('/?demo');
+    await page.goto('/pokedex-builder?demo');
     await expect.poll(() => appScrollTop(page)).toBeGreaterThanOrEqual(0);
     await page.evaluate(() => {
       const el = document.querySelector<HTMLElement>('[data-build-scroll]');
@@ -69,7 +69,7 @@ test.describe('mobile sheet', () => {
   test('closing the sheet gives scrolling back', async ({ page }) => {
     // The mirror: the opt-out must not outlive the sheet, or the whitespace
     // beside the build page stops forwarding scroll at all.
-    await page.goto('/?demo');
+    await page.goto('/pokedex-builder?demo');
     await page.getByRole('button', { name: /report|feedback|problem/i }).first().click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.keyboard.press('Escape');
@@ -91,7 +91,7 @@ test.describe('mobile sheet', () => {
     // Chromium has no keyboard to raise, so the keyboard is simulated the way
     // iOS reports one: the visual viewport gets shorter while the layout
     // viewport does not. That is exactly the signal the fix reads.
-    await page.goto('/?demo');
+    await page.goto('/pokedex-builder?demo');
     await page.getByRole('button', { name: /report|feedback|problem/i }).first().click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
@@ -167,7 +167,7 @@ test.describe('mobile sheet', () => {
   });
 
   test('the focused field is at least 16px, so iOS does not zoom', async ({ page }) => {
-    await page.goto('/?demo');
+    await page.goto('/pokedex-builder?demo');
     await page.getByRole('button', { name: /report|feedback|problem/i }).first().click();
 
     const field = page.getByRole('dialog').locator('textarea').first();

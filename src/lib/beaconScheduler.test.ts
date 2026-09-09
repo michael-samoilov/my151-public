@@ -5,6 +5,9 @@ import {
   PROGRESS_MAX_WAIT_MS,
 } from './beaconScheduler';
 import { SUBMIT_CLIENT_DAILY_CAP } from '../../api/_limits';
+// The cap is keyed per tool (`dex:<cid>`, `league:<cid>`), so this budget
+// test holds for each tool on its own; the league beacon uses the same
+// cadence constants (src/league/hooks/useLeagueBeacon.ts).
 
 /** Deterministic clock + timer registry, so the tests drive time explicitly. */
 function harness(opts: { delayMs: number; maxWaitMs: number }) {

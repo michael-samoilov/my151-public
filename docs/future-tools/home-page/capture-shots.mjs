@@ -71,11 +71,11 @@ const PAD = 0.025;
 /**
  * The league builder still lives on its own branch. Until it merges, its two
  * shots come from a worktree of that branch, built and served beside this one.
- * Once `pokemon-league-builder.html` is in this tree, the worktree is skipped
+ * Once `custom-gym-leader.html` is in this tree, the worktree is skipped
  * and both apps come from the same build — nothing else changes.
  */
 const LEAGUE_BRANCH = 'origin/claude/pokemon-league-builder-soqxj6';
-const LEAGUE_ENTRY = 'pokemon-league-builder.html';
+const LEAGUE_ENTRY = 'custom-gym-leader.html';
 
 /**
  * The league state the two league shots are taken against.
@@ -132,7 +132,7 @@ const SHOTS = {
     file: 'tool-dex.webp',
     app: 'dex',
     kind: 'export',
-    url: '/?demo=151',
+    url: '/pokedex-builder?demo=151',
     nav: 'view',
     // The View page's export button carries no label; it is the one button on
     // the page with a download icon.
@@ -143,7 +143,7 @@ const SHOTS = {
     file: 'tool-dex-b.webp',
     app: 'dex',
     kind: 'page',
-    url: '/?demo=151',
+    url: '/pokedex-builder?demo=151',
     nav: 'analytics',
     scrollTo: 'Pokémon Type',
     note: 'Analytics, scrolled past What’s Missing to the type charts — the card behind it.',

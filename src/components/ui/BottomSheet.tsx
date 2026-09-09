@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { SheetKeyboardContext } from './sheetKeyboard';
 
 /** px drag distance past which the release dismisses the sheet. */
@@ -242,7 +243,23 @@ export function BottomSheet({
   const keyboardOpen = viewport !== null && viewport.height < window.innerHeight - 80;
   const gap = keyboardOpen ? Math.min(topGap, 8) : topGap;
 
-  return (
+  /*
+   * Portalled to the body, and that is the sheet's own job rather than each
+   * caller's.
+   *
+   * A `position: fixed` element anchors to the viewport only while no
+   * ancestor is transformed; a transformed one becomes its containing block
+   * instead. The league builder's mobile shell is exactly that — two panes on
+   * one 200%-wide track that the camera translates — so a sheet opened from
+   * inside it laid itself out against the track: 780px wide on a 390px phone,
+   * and pushed far enough down that its last line fell off the screen.
+   *
+   * Every caller could portal its own sheet, and two of them did. This is the
+   * version that cannot be got wrong: the sheet leaves the tree itself, so no
+   * ancestor a caller happens to sit under can move it. React context still
+   * reaches through, which is what `SheetKeyboardContext` needs.
+   */
+  return createPortal(
     <div
       ref={overlayRef}
       data-overlay
@@ -310,6 +327,7 @@ export function BottomSheet({
           <SheetKeyboardContext.Provider value={keyboardOpen}>{children}</SheetKeyboardContext.Provider>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

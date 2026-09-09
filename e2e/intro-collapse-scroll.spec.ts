@@ -52,7 +52,7 @@ test.describe('intro card collapse keeps the page still', () => {
    *  fold, bypassing the intro card's own CTA. Returns the section's offset
    *  just before and well after the placement. */
   async function placeFirstPokemonBelowTheFold(page: Page) {
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     await expect(page.getByRole('button', { name: 'Dismiss intro' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Add a Pokémon to Forest' }).click();
@@ -108,7 +108,7 @@ test.describe('intro card collapse keeps the page still', () => {
    *  therefore settles the same way: scrolled to the top, Starters sitting one
    *  padding below the header rather than jammed against it. */
   async function fillStartersWithCardStraddlingTheTop(page: Page) {
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     await expect(page.getByRole('button', { name: 'Dismiss intro' })).toBeVisible();
 
     await page.evaluate((keep) => {
@@ -191,7 +191,7 @@ test.describe('intro card collapse keeps the page still', () => {
 
   test('dismissing the card while it is on screen never touches scrollTop', async ({ page }) => {
     await emulateSafariScrolling(page);
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     const dismiss = page.getByRole('button', { name: 'Dismiss intro' });
     await expect(dismiss).toBeVisible();
 

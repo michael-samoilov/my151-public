@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { NAV_PAGES, seedDex } from '../support/milestoneHeader';
+import { NAV_PAGES, seedDex } from '../support/dexSeed';
 
 /**
  * Finds strings that were never routed through `t()`.
@@ -67,7 +67,7 @@ async function unextractedText(page: import('@playwright/test').Page): Promise<s
 test.describe('extraction coverage', () => {
   for (const nav of NAV_PAGES) {
     test(`${nav}: no visible text bypasses the catalog`, async ({ page }) => {
-      await page.goto('/?tune&lang=en-XA');
+      await page.goto('/pokedex-builder?tune&lang=en-XA');
       await seedDex(page);
       await page.locator(`[data-nav="${nav}"]`).click();
       await page.waitForTimeout(500);
@@ -87,7 +87,7 @@ test.describe('extraction coverage', () => {
     // Desktop: the filter panels render inline rather than as a second sheet
     // stacked on the browser's own, so they can be opened one after another.
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/?lang=en-XA');
+    await page.goto('/pokedex-builder?lang=en-XA');
     // By attribute, not by accessible name: the pseudo-locale rewrites the name.
     await page.locator('[data-add-slot]').first().click();
 

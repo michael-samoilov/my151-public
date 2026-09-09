@@ -43,3 +43,6 @@ docs/i18n/pokeapi/
 
 # verify-my151 run artifacts
 .claude/skills/verify-my151/evidence/
+
+# Scratch worktree the home page screenshot capture makes (see docs/future-tools/home-page).
+.league-shot-tree/

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { seedDex, TUNE_URL } from '../support/milestoneHeader';
+import { seedDex, TUNE_URL } from '../support/dexSeed';
 
 /**
  * The poster's insight line was rebuilt around a template splitter, so the

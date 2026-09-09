@@ -39,7 +39,7 @@ test.describe('language negotiation', () => {
   test('a Japanese browser gets Japanese without being asked', async ({ browser }) => {
     const ctx = await browser.newContext({ locale: 'ja-JP' });
     const page = await ctx.newPage();
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     expect(await typeNames(await openTypeFilter(page))).toContain(BUG_JA);
     await ctx.close();
   });
@@ -49,13 +49,13 @@ test.describe('language negotiation', () => {
     // near-miss or leave the catalog empty; it must land on English.
     const ctx = await browser.newContext({ locale: 'pt-BR' });
     const page = await ctx.newPage();
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     expect(await typeNames(await openTypeFilter(page))).toContain(BUG_EN);
     await ctx.close();
   });
 
   test('the switcher is present in the production bundle', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     await expect(page.getByRole('button', { name: /language/i })).toBeVisible();
   });
 
@@ -65,7 +65,7 @@ test.describe('language negotiation', () => {
     // the choice and the app argues with them forever.
     const ctx = await browser.newContext({ locale: 'ja-JP' });
     const page = await ctx.newPage();
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
 
     await page.getByRole('button', { name: /language/i }).click();
     await page.getByRole('menuitemradio', { name: /English/ }).click();
@@ -76,7 +76,7 @@ test.describe('language negotiation', () => {
 
     // Reload with the same Japanese browser: the stored choice must outrank
     // detection, or the visitor is switched back on their next visit.
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     expect(await typeNames(await openTypeFilter(page))).toContain(BUG_EN);
     await ctx.close();
   });
@@ -84,7 +84,7 @@ test.describe('language negotiation', () => {
   test('an English browser is left alone', async ({ browser }) => {
     const ctx = await browser.newContext({ locale: 'en-US' });
     const page = await ctx.newPage();
-    await page.goto('/');
+    await page.goto('/pokedex-builder');
     expect(await typeNames(await openTypeFilter(page))).toContain(BUG_EN);
     await ctx.close();
   });

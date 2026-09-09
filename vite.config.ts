@@ -13,6 +13,23 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      input: {
+        // One served HTML file per page, each with its own head and crawlable
+        // copy — see docs/seo/PAGE-SEO-CONTRACT.md. `cleanUrls` in vercel.json
+        // serves `<name>.html` at `/<name>`; index.html is the hub at `/`.
+        main: path.resolve(__dirname, 'index.html'),
+        pokedex: path.resolve(__dirname, 'pokedex-builder.html'),
+        league: path.resolve(__dirname, 'custom-gym-leader.html'),
+        // A preview-only diagnostic for the league builder's level model.
+        // The entry refuses to mount on the production deploy, and the page
+        // is noindex wherever it is reachable.
+        levels: path.resolve(__dirname, 'evolution-levels.html'),
+        // The ace/partner slot, with its two halves loose so their placement
+        // can be settled by hand. Same production gate as `levels`.
+        slotlab: path.resolve(__dirname, 'slot-lab.html'),
+      },
+    },
   },
   resolve: {
     alias: {

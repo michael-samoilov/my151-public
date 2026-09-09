@@ -49,7 +49,32 @@ instead of restating it.
   there. Asking the user to check what you could have checked is the failure
   this section exists to prevent. When something blocked you from measuring
   (an auth-gated URL, an unreachable host), name it under Verified as the
-  gap, not here as a chore for the user.
+  gap, not here as a chore for the user. Before writing a step here, run it
+  through the hand-off test in `.claude/skills/verify-my151/SKILL.md`: name
+  the engine capability that is missing, or drive the step yourself.
+
+## Showing a defect
+
+Show the whole screen, then point at the part that matters.
+
+A crop proves that something is cut or overlapping. It cannot show whether
+the thing is out of balance with everything beside it, which is the question
+a reviewer is actually answering. So every screenshot of a defect, an option,
+or a review finding is the full screen, the full page, or the full artboard,
+with the place to look marked on it: a box, an arrow, or a dimmed surround.
+
+A close-up may follow the full frame. It never replaces it. Where the fix
+changes one element, show the same full frame before and after, so the
+comparison is like for like.
+
+Every frame you publish has been through the render audit, not only the page
+it came from. A comparison frame you built by editing the DOM is the one most
+likely to be broken, because you built it by hand a minute ago — audit it
+between the edit and the screenshot. See "Audit every frame you hand over" in
+`.claude/skills/render-audit/SKILL.md`.
+
+`.claude/skills/render-audit/audit.mjs` already writes evidence this way: a
+full-page screenshot with a numbered box around each finding.
 
 ## Showing a defect
 
