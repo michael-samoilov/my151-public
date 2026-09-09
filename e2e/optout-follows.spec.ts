@@ -5,11 +5,12 @@ import { expect, test, type Page } from '@playwright/test';
  * was set on.
  *
  * It is stored in localStorage, which is scoped to the origin rather than the
- * path, so one visit should cover the hub, the dex builder and the gym leader
- * maker together. "Should" is the problem: the failure is silent. A broken
- * opt-out looks exactly like a working one until the owner's own sessions turn
- * up in the dashboard weeks later, mixed into every number. `?notme` already
- * did nothing at all on the gym leader maker once, for exactly this reason.
+ * path, so one `?notme` on any page should cover the hub, the dex builder and
+ * the gym leader maker together. "Should" is the problem: the failure is
+ * silent. A broken opt-out looks exactly like a working one until the owner's
+ * own sessions turn up in the dashboard weeks later, mixed into every number.
+ * `?notme` already did nothing at all on the gym leader maker once, for
+ * exactly this reason.
  *
  * Method: count every request the app makes to an analytics endpoint while
  * loading all three tools. The first test proves the counter can see beacons
@@ -40,14 +41,24 @@ async function countBeacons(page: Page): Promise<string[]> {
   return seen;
 }
 
-/** Load each tool and give the debounced build beacon time to arrive. */
+/**
+ * Load each tool and let it report.
+ *
+ * The flush has to be dispatched on `window`: that is where the beacon
+ * scheduler listens, and a plain `new Event('pagehide')` does not bubble, so
+ * dispatching it on `document` reaches nothing. With the wrong target this
+ * helper silently never flushed a build beacon, and the spec was only ever
+ * watching the funnel events — which are once-per-browser, so whichever page
+ * set the flag consumed its own and left nothing to detect.
+ */
 async function visitEveryTool(page: Page): Promise<void> {
   for (const path of ['/', '/pokedex-builder', '/custom-gym-leader']) {
     await page.goto(path);
     // The build beacon is debounced; back-grounding flushes anything pending,
     // which is what a real person leaving a page does.
     await page.waitForTimeout(1200);
-    await page.evaluate(() => document.dispatchEvent(new Event('pagehide')));
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    await page.waitForTimeout(400);
   }
 }
 
@@ -70,38 +81,33 @@ test.describe('the owner opt-out follows across pages', () => {
     expect(seen.length).toBeGreaterThan(0);
   });
 
-  test('one visit to /notme silences every tool', async ({ page }) => {
-    const seen = await countBeacons(page);
+  // One flag, set on any one page, has to hold on the other two. The flag is
+  // set per origin, so each of these is the same localStorage key reached from
+  // a different entry point — and each entry has to call installOptOut for it.
+  for (const entry of ['/', '/pokedex-builder', '/custom-gym-leader']) {
+    test(`?notme on ${entry} silences every tool`, async ({ page }) => {
+      const seen = await countBeacons(page);
+      await page.goto(`${entry}?notme`);
+      await page.waitForTimeout(800);
+      // Whatever that first page sent before the flag landed is not the
+      // subject; the question is what every tool sends afterwards.
+      seen.length = 0;
 
+      await visitEveryTool(page);
+      expect(seen, `beacons still sent from: ${seen.join(', ')}`).toEqual([]);
+    });
+  }
+
+  // There is no page and nothing in the UI: the flag is the owner's switch,
+  // and a discoverable page would invite anyone to erase themselves from the
+  // analytics.
+  test('there is no /notme page', async ({ page }) => {
+    const seen = await countBeacons(page);
     await page.goto('/notme');
-    await expect(page.getByText('This browser is excluded.')).toBeVisible();
-    // The switch page must not report on itself either.
-    expect(seen).toEqual([]);
-
-    await visitEveryTool(page);
-    expect(seen, `beacons still sent from: ${seen.join(', ')}`).toEqual([]);
-  });
-
-  test('the ?notme flag on any single page silences the others', async ({ page }) => {
-    const seen = await countBeacons(page);
-    // Set it on the gym leader maker — the page the flag once did nothing on.
-    await page.goto('/custom-gym-leader?notme');
     await page.waitForTimeout(500);
-    seen.length = 0;
-
+    await expect(page.getByText('This browser is excluded.')).toHaveCount(0);
+    // The path alone must not flag the browser either.
     await visitEveryTool(page);
-    expect(seen, `beacons still sent from: ${seen.join(', ')}`).toEqual([]);
-  });
-
-  test('the page can let the browser back in', async ({ page }) => {
-    await page.goto('/notme');
-    await expect(page.getByText('This browser is excluded.')).toBeVisible();
-
-    await page.getByRole('button', { name: 'Count this browser again' }).click();
-    await expect(page.getByText(/counted like anyone else/)).toBeVisible();
-
-    const seen = await countBeacons(page);
-    await visitEveryTool(page);
-    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.length, 'the bare path does not opt anyone out').toBeGreaterThan(0);
   });
 });

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { installOptOut, isOptedOut, resolveCidFrom, setOptOut } from './clientId';
+import { installOptOut, isOptedOut, resolveCidFrom } from './clientId';
 
 /** Minimal working storage stub. */
 function workingStore(seed?: Record<string, string>) {
@@ -114,26 +114,9 @@ describe('opt-out', () => {
     expect(isOptedOut()).toBe(true);
   });
 
-  it('can be turned back on, so a shared browser is not stuck', () => {
-    expect(setOptOut(true)).toBe(true);
-    expect(isOptedOut()).toBe(true);
-    expect(setOptOut(false)).toBe(true);
-    expect(isOptedOut()).toBe(false);
-  });
-
-  // A restricted mode can accept setItem and silently drop it. An opt-out that
-  // failed quietly is worse than one that says so, because the owner walks
-  // away believing they are excluded.
-  it('reports a write that did not stick', () => {
-    vi.stubGlobal('localStorage', {
-      getItem: () => null,
-      setItem: () => {},
-      removeItem: () => {},
-    } as unknown as Storage);
-    expect(setOptOut(true)).toBe(false);
-  });
-
-  it('reports a storage that throws', () => {
+  // A locked-down browser must not take the whole page down with it. There is
+  // no page to report the failure to, so both sides just stay quiet.
+  it('survives a storage that throws', () => {
     vi.stubGlobal('localStorage', {
       getItem: () => {
         throw new Error('denied');
@@ -141,9 +124,8 @@ describe('opt-out', () => {
       setItem: () => {
         throw new Error('denied');
       },
-      removeItem: () => {},
     } as unknown as Storage);
-    expect(setOptOut(true)).toBe(false);
+    expect(() => installOptOut('?notme')).not.toThrow();
     expect(isOptedOut()).toBe(false);
   });
 });
