@@ -90,6 +90,13 @@ export interface ClientRecord {
   device?: string;
   os?: string;
   browser?: string;
+  /** Host of the external site that first linked this browser here — a coarse
+   *  acquisition source (`reddit.com`, `t.co`). Set once, never overwritten
+   *  (forward-only), and host-only by design: the path and query of a referring
+   *  URL can carry personal data, so they are dropped, the same low-sensitivity
+   *  rule as getGeo. Absent on direct visits, internal navigation, and every
+   *  record written before the field existed. */
+  firstReferrer?: string;
   /** Union of every Pokemon this client has ever placed, across all submits.
    *  Compared against latestIds to surface "tried then dropped" picks — the
    *  real adjustment signal (order-independent, starter-prompt-immune). */
@@ -205,6 +212,25 @@ export function getClient(req: VercelRequest) {
  *  the app ships. */
 export function parseLocale(v: unknown): string | undefined {
   return typeof v === 'string' && /^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$/i.test(v) ? v : undefined;
+}
+
+/**
+ * The host of an external referrer a client sent, or undefined.
+ *
+ * Low-sensitivity by construction, the same choice as getGeo: a bare host
+ * (`reddit.com`, `t.co`), never a path or query where a referring URL can
+ * carry personal data. The client strips same-origin referrers and sends only
+ * the host, but this re-validates rather than trusting it — a host is 3–100
+ * characters of lowercase letters, digits, dot and hyphen, with at least one
+ * dot. A full URL, an internal marker, or junk returns undefined.
+ */
+export function parseReferrerHost(v: unknown): string | undefined {
+  if (typeof v !== 'string') return undefined;
+  const s = v.trim().toLowerCase();
+  if (s.length < 3 || s.length > 100) return undefined;
+  if (!/^[a-z0-9.-]+$/.test(s)) return undefined;
+  if (!s.includes('.')) return undefined;
+  return s;
 }
 
 /**

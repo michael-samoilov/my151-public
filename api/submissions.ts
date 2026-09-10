@@ -124,6 +124,8 @@ interface LeagueUser {
   device?: string;
   os?: string;
   browser?: string;
+  /** Coarse acquisition source (external referrer host), forward-only. */
+  firstReferrer?: string;
   /** Whether this browser also has a dex record. */
   hasDex: boolean;
   /** Absent when this browser has no dex record to be ordered against. */
@@ -160,6 +162,7 @@ function leagueUser(r: LeagueRecord, dexFirstTs?: number): LeagueUser {
     device: r.device,
     os: r.os,
     browser: r.browser,
+    firstReferrer: r.firstReferrer,
     hasDex: dexFirstTs !== undefined,
     ...(dexFirstTs !== undefined
       ? {

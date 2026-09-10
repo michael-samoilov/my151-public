@@ -9,6 +9,7 @@ import {
   getGeo,
   getLang,
   parseLocale,
+  parseReferrerHost,
   isBeaconKind,
   parseRecord,
   CLIENTS_KEY,
@@ -164,6 +165,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       exportSettings?: unknown;
       events?: unknown;
       locale?: unknown;
+      ref?: unknown;
       tool?: unknown;
       page?: unknown;
     };
@@ -239,6 +241,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const newEvents = validEvents(body.events);
     // The locale the client actually rendered in.
     const locale = parseLocale(body.locale);
+    // External referrer host, if the client sent one (host-only, forward-only).
+    const ref = parseReferrerHost(body.ref);
 
     // Merge this beacon into an existing record (or seed a new one). Pure given
     // `existing`, so it can be re-run on retry after a concurrent write.
@@ -347,6 +351,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Only overwrite when the client sent one, so a beacon from a client that
       // predates locale reporting doesn't blank an already-recorded locale.
       if (locale) rec.locale = locale;
+      // Acquisition source, set once and never overwritten: the first referrer
+      // is the one that brought the browser here. A later beacon (which always
+      // has this origin as its referrer, or none) must not clobber it.
+      if (ref && !rec.firstReferrer) rec.firstReferrer = ref;
       rec.device = ua.device;
       rec.os = ua.os;
       rec.browser = ua.browser;
