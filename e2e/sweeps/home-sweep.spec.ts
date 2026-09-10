@@ -212,6 +212,31 @@ test.describe('home page responsive sweep', () => {
           if (e.scrollWidth - e.clientWidth > 0.5) fail.push(`hero text ${i} overruns its measure`);
         });
 
+        // 13. On desktop the row sizes each card to the design's four-up width
+        // and left-aligns however many ship today, instead of stretching three
+        // cards across the whole page. The grid carries one track per the max of
+        // the tool count and four, so three tools keep the four-up size and leave
+        // a trailing empty column. A regression to one-track-per-tool stretches
+        // them, which reads plausible to every ratio check above but is the bug
+        // this page was reported for.
+        if (desktop && grid) {
+          const tracks = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean);
+          const wantCols = Math.max(cardCount, 4);
+          if (tracks.length !== wantCols) {
+            fail.push(`desktop grid has ${tracks.length} columns, expected ${wantCols}`);
+          }
+          // Left-aligned: with fewer cards than columns, the last card ends at
+          // least most of a track short of the grid's right edge.
+          if (cardCount < wantCols && cards.length) {
+            const lastRight = Math.max(...cards.map((c) => R(c).right));
+            const trackW = R(cards[0]).width;
+            const slack = R(grid).right - lastRight;
+            if (slack < trackW * 0.6) {
+              fail.push(`desktop row fills the width: ${slack.toFixed(1)}px slack, track ~${trackW.toFixed(0)}px`);
+            }
+          }
+        }
+
         return fail;
       }, CARDS);
 

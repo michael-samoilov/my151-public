@@ -145,7 +145,19 @@ const SPAN = 'col-span-2';
  * translated title wraps differently.
  */
 function Card({ tool, onPress, wide, reserve }: CardProps) {
-  const panel = 'relative block w-full text-left bg-primary text-white no-underline';
+  // On a pointer that hovers, the card lifts a little and casts a deeper shadow,
+  // and rises above its neighbours so its artwork reads on top. Tailwind's
+  // `hover:` is already `@media (hover: hover)` in v4, so a touch tap never
+  // sticks the lifted state, and `motion-reduce` drops the movement for a
+  // visitor who asks for less. The transform is on the panel, so the artwork
+  // that breaks out of it lifts with it; the caption below stays put, so the
+  // card floats over its own label.
+  const panel =
+    'relative block w-full text-left bg-primary text-white no-underline ' +
+    'transition-[transform,box-shadow] duration-200 ease-out ' +
+    'hover:z-10 hover:-translate-y-1.5 ' +
+    'hover:shadow-[0_16px_36px_-12px_rgba(10,10,10,0.45)] ' +
+    'motion-reduce:transition-none motion-reduce:hover:translate-y-0';
   const body = wide ? <WideBody tool={tool} /> : <TallBody tool={tool} />;
   const style = wide ? undefined : { aspectRatio: PANEL_ASPECT, borderRadius: RADIUS };
   const wideStyle = { borderRadius: `min(${U(14)}, 18px)` };
@@ -273,6 +285,12 @@ function Caption({ tool }: { tool: Tool }) {
  * an image the browser has already fetched.
  */
 function Artwork({ tool }: { tool: Tool }) {
+  // Both clip boxes reach far past the panel's top-left edge, mostly over empty
+  // space. That whole rectangle used to be part of the link, so a click well
+  // above or beside the artwork still navigated. `pointerEvents: 'none'` here
+  // hands those transparent margins back to the page; the screenshots below
+  // re-enable events on themselves, so the link's hit target is the panel and
+  // the two screenshots, nothing more.
   const box = {
     position: 'absolute',
     top: `calc((${U(POP_TOP)} * var(--art) + ${BLEED}) * -1)`,
@@ -280,6 +298,7 @@ function Artwork({ tool }: { tool: Tool }) {
     right: 0,
     bottom: 0,
     overflow: 'hidden',
+    pointerEvents: 'none',
   } as const;
   const place = (i: number) => {
     const f = FAN[i];
@@ -318,7 +337,9 @@ function Artwork({ tool }: { tool: Tool }) {
           <span
             key={f.tilt}
             className="block overflow-hidden border border-neutral-300 bg-background"
-            style={place(i)}
+            // Re-enable events the clip box turned off, so a click on the
+            // screenshot still follows the card's link.
+            style={{ ...place(i), pointerEvents: 'auto' }}
           >
             {/* Not lazy: every card sits in the first viewport at every
                 width, and these are the page's largest paint. */}
@@ -386,17 +407,21 @@ export function HomePage() {
         },
       }
     : null;
-  // Desktop gives every tool its own column, so the rail is one row whatever
-  // the count. On a phone it is two up, which leaves the last card alone when
-  // the count is odd — that is the card that spans instead.
-  const gridStyle = { '--tool-cols': tools.length } as React.CSSProperties;
+  // Desktop lays the tools on one row, but sizes each card as if the design's
+  // four tools were present and left-aligns however many exist today. Three
+  // cards keep the four-up card size and leave the last column empty, instead
+  // of stretching to a third of the page each. A fourth tool fills that column;
+  // a fifth or more widens the row. On a phone it is two up, which leaves the
+  // last card alone when the count is odd — that is the card that spans instead.
+  const desktopCols = Math.max(tools.length, 4);
+  const gridStyle = { '--tool-cols': desktopCols } as React.CSSProperties;
   // The wide bar is a phone shape only, and the two shapes are different markup
   // rather than different CSS, so exactly one of them mounts. That is what
   // `useIsDesktop` is for elsewhere in this app; the alternative is rendering
   // both and hiding one, which duplicates the call to action's button.
   const isDesktop = useIsDesktop();
   const spansOnPhone = !isDesktop && tools.length % 2 === 1;
-  const reserves = reserveByRow(tools, isDesktop ? tools.length : 2);
+  const reserves = reserveByRow(tools, isDesktop ? desktopCols : 2);
 
   return (
     <TooltipProvider delayDuration={200}>
