@@ -300,7 +300,12 @@ function Artwork({ tool }: { tool: Tool }) {
       left: `calc(${BLEED} + ${U(f.offset)})`,
       top: `calc(${BLEED} + ${U(SHOT_TOP)} + ${U(f.drop)})`,
       width: `calc(${U(SHOT_W)} * var(--art))`,
-      transform: `rotate(${f.tilt}deg)`,
+      // `--hf` is the hover float, set per shot in `index.css` and 0 at rest.
+      // It sits ahead of the rotate, so the shot rises straight up in screen
+      // space however it is tilted. The clip box does not move, so the shot
+      // slides up inside it and reveals the part of itself that sits hidden
+      // below the card's bottom edge, rather than the box sliding off the panel.
+      transform: `translateY(var(--hf, 0px)) rotate(${f.tilt}deg)`,
       transformOrigin: '0 0',
       borderRadius: `calc(${U(SHOT_W)} * var(--art) * ${PHONE_RADIUS})`,
     };
@@ -308,7 +313,6 @@ function Artwork({ tool }: { tool: Tool }) {
   return (
     <>
       <span
-        className="hub-float"
         style={{
           ...box,
           maskImage: `linear-gradient(to top, transparent 0, #000 ${BLEED})`,
@@ -319,18 +323,20 @@ function Artwork({ tool }: { tool: Tool }) {
           <span
             key={f.tilt}
             aria-hidden
-            className="block"
+            data-shot={i}
+            className="hub-float-shot block"
             style={{ ...place(i), boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)' }}
           >
             <img src={tool.shots![i]} alt="" className="block w-full invisible" />
           </span>
         ))}
       </span>
-      <span className="hub-float" style={box}>
+      <span style={box}>
         {FAN.map((f, i) => (
           <span
             key={f.tilt}
-            className="block overflow-hidden border border-neutral-300 bg-background"
+            data-shot={i}
+            className="hub-float-shot block overflow-hidden border border-neutral-300 bg-background"
             // Re-enable events the clip box turned off, so a click on the
             // screenshot still follows the card's link.
             style={{ ...place(i), pointerEvents: 'auto' }}

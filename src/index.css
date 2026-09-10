@@ -368,32 +368,43 @@ img {
   color: var(--lg-hint);
 }
 
-/* On hover the screenshots float up off the panel and settle back — the red
- * panel and the caption stay put. `.hub-card` (the cell) is the hover trigger
- * and never moves; `.hub-float` is the artwork, and it is the only thing that
- * translates. A stationary trigger keeps the pointer from chasing a target that
- * slides out from under it, so there is no hover flicker even with the pointer
- * on a screenshot above the panel. Both clip boxes carry the class — the shots
- * and their own shadow rise together — so the fan floats as one.
+/* On hover each screenshot floats up off the card and settles back. `.hub-card`
+ * (the cell) is the hover trigger and never moves; the clip boxes never move
+ * either. Only the shots inside them translate, driven by `--hf`, so a shot
+ * slides up WITHIN its fixed clip and reveals the part of itself that sits
+ * hidden below the card's bottom edge — the card edge always shows screenshot,
+ * never a strip of bare panel. A stationary trigger keeps the pointer from
+ * chasing a shot that slides out from under it, so there is no hover flicker.
  *
- * `.hub-float` sits on a plain clip box with no transform of its own (the
- * screenshots' `rotate` is on descendants), so a bare `translateY` is safe on
- * every engine, old WebKit included. 8px on a soft ease reads as a float, not a
- * snap. The hovered card also rises above its neighbours so the floating artwork
- * stays on top.
- *
- * Gated to a real hovering pointer, so a touch tap never sticks the state, and
- * dropped entirely under reduced motion. */
-.hub-float {
-  transform: translateY(0);
-  transition: transform 280ms cubic-bezier(0.23, 1, 0.32, 1);
+ * The two shots float by different amounts and on a slight stagger, so they
+ * move as two separate cards, not one block: the front shot lifts further and a
+ * beat later than the back. `--hf` feeds the shot's own `transform` ahead of its
+ * `rotate` (see `place` in HomePage.tsx), so the rise is straight up whatever
+ * the tilt. The hovered card rises above its neighbours so a floating shot stays
+ * on top. Gated to a real hovering pointer; dropped under reduced motion. */
+.hub-float-shot {
+  transition: transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
   will-change: transform;
 }
+.hub-float-shot[data-shot='1'] {
+  transition-delay: 70ms;
+}
 @media (hover: hover) and (pointer: fine) {
-  .hub-card:hover { z-index: 10; }
-  .hub-card:hover .hub-float { transform: translateY(-8px); }
+  .hub-card:hover {
+    z-index: 10;
+  }
+  .hub-card:hover .hub-float-shot[data-shot='0'] {
+    --hf: -7px;
+  }
+  .hub-card:hover .hub-float-shot[data-shot='1'] {
+    --hf: -13px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hub-float { transition: none; }
-  .hub-card:hover .hub-float { transform: translateY(0); }
+  .hub-float-shot {
+    transition: none;
+  }
+  .hub-card:hover .hub-float-shot {
+    --hf: 0px;
+  }
 }
