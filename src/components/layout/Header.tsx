@@ -145,7 +145,13 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
               an ellipsis. Inline-block with the heading's line height, so its
               box never stands taller than the heading that clips it. */}
           <h1 className="m-0 overflow-hidden whitespace-nowrap text-[0.6875rem] font-semibold leading-none text-muted-foreground">
-            <span className="inline-block leading-none max-[680px]:sr-only">{t('header.toolNameQualifier')} </span>
+            {/* The space is a node between the two, not the qualifier's trailing
+                character: an inline-block box trims trailing whitespace at its
+                edge, which butted "Custom" against "Pokédex". When the qualifier
+                is sr-only (absolute) below 680px, this space is the line's
+                leading whitespace and the browser collapses it, so the eye still
+                reads "Pokédex Builder" with no gap. */}
+            <span className="inline-block leading-none max-[680px]:sr-only">{t('header.toolNameQualifier')}</span>{' '}
             {t('header.toolNameCore')}
           </h1>
           <span className="whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums">
