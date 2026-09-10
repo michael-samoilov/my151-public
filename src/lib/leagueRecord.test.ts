@@ -51,6 +51,51 @@ describe('mergeLeagueRecord', () => {
     expect(rec.latest.cards).toBe(2);
   });
 
+  it('stores the league structure per session and carries it within a session', () => {
+    const cardsA = parseCards([{ i: 0, l: [{ b: [1, 2] }] }])!;
+    let rec = mergeLeagueRecord(null, beacon({ cards: cardsA }));
+    expect(rec.sessionLog[0].cards).toEqual(cardsA);
+    // A within-session beacon that carries no structure keeps the session's
+    // board rather than blanking it (an export beacon can omit structure).
+    rec = mergeLeagueRecord(
+      rec,
+      beacon({ now: 1_000_000 + 60_000, kind: 'export', exportKind: 'league', cards: undefined }),
+    );
+    expect(rec.sessionLog).toHaveLength(1);
+    expect(rec.sessionLog[0].cards).toEqual(cardsA);
+    // A new session with a new board logs the new structure separately, and the
+    // earlier session keeps its own — this is what lets the scrubber replay.
+    const cardsB = parseCards([
+      { i: 0, l: [{ b: [1, 2] }] },
+      { i: 1, l: [{ b: [4, 5] }] },
+    ])!;
+    rec = mergeLeagueRecord(
+      rec,
+      beacon({
+        now: 1_000_000 + 60_000 + LEAGUE_SESSION_GAP_MS + 1,
+        cards: cardsB,
+        summary: summary({ cards: 2, seats: 2 }),
+      }),
+    );
+    expect(rec.sessionLog).toHaveLength(2);
+    expect(rec.sessionLog[1].cards).toEqual(cardsB);
+    expect(rec.sessionLog[0].cards).toEqual(cardsA);
+  });
+
+  it('records the first referrer once and never overwrites it (forward-only)', () => {
+    let rec = mergeLeagueRecord(null, beacon({ referrer: 'reddit.com' }));
+    expect(rec.firstReferrer).toBe('reddit.com');
+    // A later beacon — whose referrer is this origin, or none — must not clobber
+    // the acquisition source that first brought the browser here.
+    rec = mergeLeagueRecord(rec, beacon({ now: 1_000_500, referrer: 'discord.com' }));
+    expect(rec.firstReferrer).toBe('reddit.com');
+  });
+
+  it('leaves firstReferrer unset for a direct visit', () => {
+    const rec = mergeLeagueRecord(null, beacon());
+    expect(rec.firstReferrer).toBeUndefined();
+  });
+
   it('counts exports by kind and never un-counts them', () => {
     let rec = mergeLeagueRecord(null, beacon({ kind: 'export', exportKind: 'card' }));
     rec = mergeLeagueRecord(rec, beacon({ kind: 'export', exportKind: 'league', now: 1_000_500 }));

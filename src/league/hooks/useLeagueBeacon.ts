@@ -3,6 +3,7 @@ import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
 import { getLocale } from '@/i18n/core';
 import { currentPage } from '@/lib/tool';
+import { externalReferrerHost } from '@/lib/referrer';
 import {
   createBeaconDebouncer,
   PROGRESS_DEBOUNCE_MS,
@@ -39,6 +40,8 @@ function postLeagueBeacon(
     // Structure only — no badge name, theme or league name. See describeLeague.
     cards,
     locale: getLocale(),
+    // External referrer host, if any — stored forward-only by the server.
+    ref: externalReferrerHost() || undefined,
   });
   void fetch('/api/league', {
     method: 'POST',

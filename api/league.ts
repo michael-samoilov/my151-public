@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { parsePage } from './_events.js';
-import { redis, getClientIp, getClient, getGeo, getLang, parseLocale, MAX_CLIENTS } from './_shared.js';
+import { redis, getClientIp, getClient, getGeo, getLang, parseLocale, parseReferrerHost, MAX_CLIENTS } from './_shared.js';
 import {
   LEAGUE_CLIENTS_KEY,
   LEAGUE_VERSION_KEY,
@@ -59,6 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       summary?: unknown;
       cards?: unknown;
       locale?: unknown;
+      ref?: unknown;
       page?: unknown;
     };
     if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
@@ -108,6 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ua: getClient(req),
       lang: getLang(req),
       locale: parseLocale(body.locale),
+      referrer: parseReferrerHost(body.ref),
       page: parsePage(body.page),
     };
 

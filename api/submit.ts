@@ -9,6 +9,7 @@ import {
   getGeo,
   getLang,
   parseLocale,
+  parseReferrerHost,
   isBeaconKind,
   parseRecord,
   CLIENTS_KEY,
@@ -164,6 +165,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       exportSettings?: unknown;
       events?: unknown;
       locale?: unknown;
+      ref?: unknown;
       tool?: unknown;
       page?: unknown;
     };
@@ -239,6 +241,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const newEvents = validEvents(body.events);
     // The locale the client actually rendered in.
     const locale = parseLocale(body.locale);
+    // External referrer host, if the client sent one (host-only, forward-only).
+    const ref = parseReferrerHost(body.ref);
 
     // Merge this beacon into an existing record (or seed a new one). Pure given
     // `existing`, so it can be re-run on retry after a concurrent write.
@@ -312,6 +316,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // iOS·Safari is two people behind one cid (shared or synced browser), and
       // this makes that visible in the dashboard instead of unfalsifiable.
       const devStamp = [ua.device, ua.os, ua.browser].filter((p) => p && p !== 'Unknown').join(' · ');
+      // Snapshot the section placement per session, carried forward within a
+      // session the way events are: a beacon that omits sections (an export)
+      // keeps the section map an earlier build beacon logged, rather than
+      // blanking it. This is what lets the admin scrubber reconstruct the
+      // grouped build at a past point, not just the flat id list. Absent on
+      // sessions from before the field, and on any session with no build beacon.
+      const prevSecs = newSession || log.length === 0 ? undefined : log[log.length - 1].sections;
+      const sessionSecs = secs ?? prevSecs;
       const entry = {
         ts: now,
         ids,
@@ -319,6 +331,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ...(page ? { page } : {}),
         ...(devStamp ? { dev: devStamp } : {}),
         ...(mergedEvents.length ? { events: mergedEvents } : {}),
+        ...(sessionSecs ? { sections: sessionSecs } : {}),
       };
       if (newSession || log.length === 0) log.push(entry);
       else log[log.length - 1] = entry;
@@ -347,6 +360,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Only overwrite when the client sent one, so a beacon from a client that
       // predates locale reporting doesn't blank an already-recorded locale.
       if (locale) rec.locale = locale;
+      // Acquisition source, set once and never overwritten: the first referrer
+      // is the one that brought the browser here. A later beacon (which always
+      // has this origin as its referrer, or none) must not clobber it.
+      if (ref && !rec.firstReferrer) rec.firstReferrer = ref;
       rec.device = ua.device;
       rec.os = ua.os;
       rec.browser = ua.browser;

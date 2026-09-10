@@ -5,6 +5,7 @@ import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
 import { getLocale } from '@/i18n/core';
 import { currentPage, currentTool } from '@/lib/tool';
+import { externalReferrerHost } from '@/lib/referrer';
 import {
   createBeaconDebouncer,
   PROGRESS_DEBOUNCE_MS,
@@ -101,6 +102,9 @@ function postBeacon(
     exportSettings,
     locale: getLocale(),
     events: events && events.length ? events : undefined,
+    // External referrer host, if any — the server stores it forward-only, so
+    // sending it on every beacon is harmless; '' (direct/internal) is omitted.
+    ref: externalReferrerHost() || undefined,
   });
   // fetch+keepalive (not navigator.sendBeacon): iOS WebKit silently drops
   // sendBeacon in several cases (after the share sheet, non-CORS-safelisted

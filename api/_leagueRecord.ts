@@ -103,6 +103,13 @@ export interface LeagueSessionEntry {
   country?: string;
   dev?: string;
   page?: string;
+  /** The league's structure at this session's last beacon: the same shape as
+   *  `latestCards`, kept per session so the admin scrubber can replay the board
+   *  at a past point, not only its counts. Absent on sessions logged before the
+   *  field existed, and on any beacon that carried no structure. Bounded by
+   *  LEAGUE_MAX_SESSIONS like the rest of the log; a full 14-card league is a
+   *  few KB, so a record with many sessions grows accordingly. */
+  cards?: LeagueCardShape[];
 }
 
 export interface LeagueRecord {
@@ -143,6 +150,12 @@ export interface LeagueRecord {
   device?: string;
   os?: string;
   browser?: string;
+  /** Host of the external site that first linked this browser here — a coarse
+   *  acquisition source, set once and never overwritten (forward-only), host
+   *  only. Mirrors ClientRecord.firstReferrer so a cross-tool browser reports
+   *  one acquisition source whichever tool it first hit. Absent on direct
+   *  visits, internal navigation, and legacy records. */
+  firstReferrer?: string;
 }
 
 export function isLeagueBeaconKind(s: unknown): s is LeagueBeaconKind {
@@ -296,6 +309,8 @@ export interface LeagueBeaconInput {
   lang?: string;
   locale?: string;
   page?: string;
+  /** External referrer host, host-only, already validated. Stored forward-only. */
+  referrer?: string;
 }
 
 /**
@@ -338,12 +353,19 @@ export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeacon
   rec.sessionMs = rec.sessionMs.slice(-LEAGUE_MAX_SESSIONS);
 
   const devStamp = [b.ua.device, b.ua.os, b.ua.browser].filter((p) => p && p !== 'Unknown').join(' · ');
+  // Carry the session's structure forward when a within-session beacon omits it
+  // (an export beacon can), the same reason the dex log carries events forward:
+  // rewriting the last entry must not blank a board an earlier beacon captured.
+  const prevCards =
+    !newSession && rec.sessionLog.length > 0 ? rec.sessionLog[rec.sessionLog.length - 1].cards : undefined;
+  const sessionCards = b.cards ?? prevCards;
   const entry: LeagueSessionEntry = {
     ts: b.now,
     summary: b.summary,
     ...(b.geo.country ? { country: b.geo.country } : {}),
     ...(devStamp ? { dev: devStamp } : {}),
     ...(b.page ? { page: b.page } : {}),
+    ...(sessionCards ? { cards: sessionCards } : {}),
   };
   if (newSession || rec.sessionLog.length === 0) rec.sessionLog.push(entry);
   else rec.sessionLog[rec.sessionLog.length - 1] = entry;
@@ -375,6 +397,8 @@ export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeacon
   rec.device = b.ua.device;
   rec.os = b.ua.os;
   rec.browser = b.ua.browser;
+  // Acquisition source, set once and never overwritten (forward-only).
+  if (b.referrer && !rec.firstReferrer) rec.firstReferrer = b.referrer;
   return rec;
 }
 
