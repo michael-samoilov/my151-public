@@ -9,6 +9,7 @@ import {
   isLeagueBeaconKind,
   isLeagueExportKind,
   mergeLeagueRecord,
+  parseCards,
   parseLeagueRecord,
   parseSummary,
 } from './_leagueRecord.js';
@@ -56,6 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       kind?: unknown;
       exportKind?: unknown;
       summary?: unknown;
+      cards?: unknown;
       locale?: unknown;
       page?: unknown;
     };
@@ -66,6 +68,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!isLeagueBeaconKind(body.kind)) return res.status(400).json({ error: 'invalid kind' });
     const summary = parseSummary(body.summary);
     if (!summary) return res.status(400).json({ error: 'invalid summary' });
+    // Bounded and field-by-field validated; a mangled card is dropped rather
+    // than failing a beacon whose counts are still good. Undefined when the
+    // client sent no structure, which leaves any stored structure alone.
+    const cards = parseCards(body.cards);
     const exportKind = body.kind === 'export' ? (isLeagueExportKind(body.exportKind) ? body.exportKind : undefined) : undefined;
     if (body.kind === 'export' && !exportKind) return res.status(400).json({ error: 'invalid exportKind' });
 
@@ -96,6 +102,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       kind: body.kind,
       exportKind,
       summary,
+      cards,
       now: Date.now(),
       geo: getGeo(req),
       ua: getClient(req),

@@ -93,9 +93,22 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
               // readers; with a label it mirrors only the words, not the
               // close button.
               aria-label={callout.text}
-              className="z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 pr-7 text-left shadow-lg"
+              // The header, the page and the popover are all within a few
+              // percent of white, so the original `border-0` notice merged
+              // into the header's bottom edge and read as part of the page.
+              // A brand-red outline separates it without inverting the
+              // surface, which at this size read heavier than the message.
+              //
+              // A `ring` rather than a border: it draws outside the box
+              // instead of inside it, so the outline costs the notice no
+              // interior width at the phone size where it is tightest.
+              //
+              // The arrow is red too: filled with the popover colour it was
+              // white on a white header, so the notice never visibly pointed
+              // at the menu it talks about.
+              className="z-[200] max-w-[min(18rem,calc(100vw-1.5rem))] border-0 pr-7 text-left shadow-xl ring-2 ring-primary"
             >
-              <TooltipArrow />
+              <TooltipArrow className="fill-primary" />
               <div className="text-xs font-medium leading-snug">{callout.text}</div>
               <button
                 type="button"

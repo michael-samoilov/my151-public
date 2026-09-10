@@ -17,6 +17,15 @@ const OPT_OUT_KEY = 'p151-opt-out';
  * An explicit call from every page entry, not an import-time side effect:
  * the effect only ran on pages that happened to import this module, and the
  * gym leader maker did not, so `?notme` there did nothing.
+ *
+ * The flag lives in localStorage, which is scoped to the ORIGIN and not to the
+ * path — so one `?notme` on any page covers the hub, the dex builder and the
+ * gym leader maker together, for as long as that browser keeps its storage. A
+ * preview deployment is a different origin and needs its own.
+ *
+ * Deliberately query-only, with no page and nothing in the UI: it is the
+ * owner's switch, and a discoverable page would invite anyone to erase
+ * themselves from the analytics.
  */
 export function installOptOut(search: string = window.location.search): void {
   try {

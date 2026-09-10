@@ -149,7 +149,10 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
             {t('header.toolNameCore')}
           </h1>
           <span className="whitespace-nowrap text-[0.875rem] font-bold leading-tight tabular-nums">
-            <span className="text-primary">{count}</span>
+            {/* The count is the number that changes and the one a person
+                looks for; the total is fixed context. A weight step separates
+                them the way the colour already does. */}
+            <span className="font-extrabold text-primary">{count}</span>
             <span className="text-foreground">/151</span>
           </span>
         </div>

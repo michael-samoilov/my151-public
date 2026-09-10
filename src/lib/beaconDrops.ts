@@ -8,8 +8,32 @@
  * warning about a fixed problem that can never clear itself.
  */
 
-/** Prefix under which api/submit.ts records drops in the funnel hash. */
-export const DROP_PREFIX = 'submit-drop:';
+/**
+ * The funnel-hash prefix each tool records its drops under: api/submit.ts
+ * writes `submit-drop:*`, api/league.ts writes `league-drop:*`.
+ *
+ * Both tools drop beacons for the same four reasons, so a single combined
+ * notice would say "4 dropped for cap" without saying which store lost them —
+ * and the two stores fail for different reasons at different times.
+ */
+export const DROP_PREFIXES = {
+  dex: 'submit-drop:',
+  league: 'league-drop:',
+} as const;
+
+export type DropTool = keyof typeof DROP_PREFIXES;
+
+/** Human label for each tool, for the notice. */
+export const DROP_TOOL_LABEL: Record<DropTool, string> = {
+  dex: 'Dex builder',
+  league: 'Gym leader maker',
+};
+
+export interface DropRow {
+  tool: DropTool;
+  reason: string;
+  count: number;
+}
 
 /**
  * Reasons retired by a later change. Their counters still hold real history in
@@ -53,18 +77,28 @@ export const DROP_REASON_INFO: Record<string, { title: string; what: string; rea
 };
 
 /**
- * Drop reasons worth showing, largest first: the funnel hash filtered to
- * `submit-drop:` keys, with retired reasons and zero counts removed.
+ * Drop reasons worth showing, largest first: the funnel hash filtered to the
+ * drop prefixes, with retired reasons and zero counts removed. Pass `tool` to
+ * limit it to one store.
  *
  * Zeroes are dropped because a counter that has been created but never
  * incremented is not a fault, and an amber warning reading "0" is noise.
  */
 export function liveDropReasons(
   events: Record<string, number> | undefined,
-): { reason: string; count: number }[] {
-  return Object.entries(events ?? {})
-    .filter(([key]) => key.startsWith(DROP_PREFIX))
-    .map(([key, count]) => ({ reason: key.slice(DROP_PREFIX.length), count }))
-    .filter(({ reason, count }) => count > 0 && reason !== '' && !LEGACY_DROP_REASONS.has(reason))
-    .sort((a, b) => b.count - a.count);
+  tool?: DropTool,
+): DropRow[] {
+  const wanted = tool ? [tool] : (Object.keys(DROP_PREFIXES) as DropTool[]);
+  const rows: DropRow[] = [];
+  for (const [key, count] of Object.entries(events ?? {})) {
+    for (const t of wanted) {
+      const prefix = DROP_PREFIXES[t];
+      if (!key.startsWith(prefix)) continue;
+      const reason = key.slice(prefix.length);
+      if (count > 0 && reason !== '' && !LEGACY_DROP_REASONS.has(reason)) {
+        rows.push({ tool: t, reason, count });
+      }
+    }
+  }
+  return rows.sort((a, b) => b.count - a.count);
 }

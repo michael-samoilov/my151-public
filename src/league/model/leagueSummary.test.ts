@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { summarizeLeague } from './leagueSummary';
+import { describeLeague, summarizeLeague } from './leagueSummary';
+import { defaultBoundaries } from './engine';
 import type { GymCard } from '../store/useLeagueStore';
 
 const card = (over: Partial<GymCard> = {}): GymCard => ({
@@ -20,5 +21,69 @@ describe('summarizeLeague', () => {
     ];
     expect(summarizeLeague('Kanto', cards))
       .toEqual({ cards: 2, seats: 3, typed: 2, named: 2, aces: 1, leagueNamed: true });
+  });
+});
+
+/**
+ * The structure the beacon sends alongside the counts.
+ *
+ * The privacy line is the point of most of these: the record may hold which
+ * Pokemon a card seats, and must never hold what the user typed on it.
+ */
+describe('describeLeague', () => {
+  const branch = [1, 2, 3];
+  const placed = (over: Partial<{ branch: number[]; boundaries: number[] }> = {}) =>
+    ({ branch, boundaries: defaultBoundaries(branch), ...over }) as GymCard['lines'][number];
+
+  it('omits cards with no lines, so an untouched league is empty', () => {
+    expect(describeLeague([card(), card()])).toEqual([]);
+  });
+
+  it('records which lines sit on which slot', () => {
+    const out = describeLeague([card(), card({ lines: [placed()] })]);
+    expect(out).toEqual([{ i: 1, l: [{ b: branch }] }]);
+  });
+
+  // The whole reason boundaries are conditional: their presence IS the signal
+  // that a user dragged a stage, and only the client knows the default.
+  it('sends boundaries only when the user moved a stage', () => {
+    const untouched = describeLeague([card({ lines: [placed()] })]);
+    expect(untouched[0].l[0].bd).toBeUndefined();
+
+    const moved = defaultBoundaries(branch).slice();
+    moved[2] = (moved[2] ?? 1) + 3;
+    const dragged = describeLeague([card({ lines: [placed({ boundaries: moved })] })]);
+    expect(dragged[0].l[0].bd).toEqual(moved);
+  });
+
+  it('records the type, ace, partner and TM', () => {
+    const out = describeLeague([
+      card({ lines: [placed()], type: 'water', signatureSeat: 2, signatureId: 9, partnerId: 25, tmMoveId: 57 }),
+    ]);
+    expect(out[0]).toMatchObject({ t: 'water', ace: 2, aceId: 9, pa: 25, tm: 57 });
+  });
+
+  it('records legendaries as seat and species', () => {
+    const out = describeLeague([
+      card({ lines: [placed()], legends: [{ seat: 3, pokemonId: 144 }] }),
+    ]);
+    expect(out[0].lg).toEqual([[3, 144]]);
+  });
+
+  // The rule this repo already encodes: read a card through legendsOf, never
+  // the raw field, so a card saved before a row could hold more than one
+  // legendary still reports its legendary.
+  it('folds in a legacy single legendary', () => {
+    const out = describeLeague([card({ lines: [placed()], legend: { seat: 1, pokemonId: 150 } })]);
+    expect(out[0].lg).toEqual([[1, 150]]);
+  });
+
+  it('never sends the badge name or the theme', () => {
+    const out = describeLeague([
+      card({ lines: [placed()], badgeName: 'my real name', theme: 'a private joke' }),
+    ]);
+    const json = JSON.stringify(out);
+    expect(json).not.toContain('my real name');
+    expect(json).not.toContain('a private joke');
   });
 });

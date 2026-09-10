@@ -5,7 +5,7 @@ import '@fontsource-variable/inter/index.css'
 import './index.css'
 import App from './App.tsx'
 import { installLayoutFontSize } from './lib/layoutFontSize'
-import { installOptOut } from './lib/clientId'
+import { installOptOut, isOptedOut } from './lib/clientId'
 import { whenIdle } from './lib/whenIdle';
 import { initLocale } from './i18n/bootstrap'
 import { usePokedexStore } from './store/usePokedexStore'
@@ -27,11 +27,17 @@ installLayoutFontSize();
 // `?notme` marks this browser as the owner's, out of analytics.
 installOptOut();
 
-// Defer Vercel Analytics + Speed Insights so they don't block first paint or INP.
-whenIdle(() => {
-  void import('@vercel/analytics').then((m) => m.inject());
-  void import('@vercel/speed-insights').then((m) => m.injectSpeedInsights());
-});
+// Vercel's own page-view counting obeys the same opt-out as our beacons. It is
+// a separate system with a separate dashboard, so leaving it ungated meant
+// `?notme` silenced our numbers while the owner kept showing up as a Vercel
+// visitor — the one place the exclusion was expected to hold.
+if (!isOptedOut()) {
+  // Deferred so they don't block first paint or INP.
+  whenIdle(() => {
+    void import('@vercel/analytics').then((m) => m.inject());
+    void import('@vercel/speed-insights').then((m) => m.injectSpeedInsights());
+  });
+}
 
 // Register service worker for offline sprite caching
 if ('serviceWorker' in navigator) {

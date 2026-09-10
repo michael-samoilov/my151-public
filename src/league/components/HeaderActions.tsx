@@ -112,7 +112,7 @@ export function LeagueExportButton({ cardIndex }: { cardIndex?: number }) {
       disabled={busy}
       aria-label={cardIndex === undefined ? 'Export league' : 'Export trainer card'}
       data-league-export
-      className="shrink-0 cursor-pointer rounded-md border border-primary p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-primary"
+      className="shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-primary"
     >
       {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
     </button>

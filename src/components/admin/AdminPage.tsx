@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
+import { HubCard } from '@/components/admin/HubCard';
 import { Input } from '@/components/ui/input';
 import { getAllPokemon, getPokemonById } from '@/hooks/usePokemonData';
 import { BUILD_GROUPS } from '@/data/slot-template';
@@ -8,8 +9,11 @@ import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
 import { cn, displayName } from '@/lib/utils';
 import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
-import { DROP_REASON_INFO, liveDropReasons } from '@/lib/beaconDrops';
+import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { matchLocale } from '@/i18n/detect';
+import { CARD_COUNT, SEAT_MAX } from '../../../api/_leagueRecord';
+import { slotLabel } from '@/league/model/constants';
+import { defaultBoundaries } from '@/league/model/engine';
 
 const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
   BUILD_GROUPS.map((g) => [g.id, { name: g.name, color: g.color }]),
@@ -59,7 +63,55 @@ function isOffSection(id: number, sectionId: string): boolean {
  */
 
 const TOKEN_KEY = 'p151-admin-token';
+// Beside the token, so the dashboard opens on the tool you were last reading.
+const TOOL_KEY = 'p151-admin-tool';
 const PAGE_SIZE = 50;
+
+/** Which tool's records every shared card reads. */
+type ToolSlice = 'all' | 'dex' | 'league';
+const TOOL_TABS: { key: ToolSlice; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'dex', label: 'Dex builder' },
+  { key: 'league', label: 'Gym leader maker' },
+];
+
+/**
+ * The selected tool's aggregates, falling back to the top-level fields for a
+ * deploy that predates `byTool`. The fallback is the dex slice, which is what
+ * those fields have always held.
+ */
+function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
+  const slice = data.byTool?.[tool];
+  if (slice) return slice;
+  return {
+    users: data.totalUsers,
+    activity: data.activity ?? [],
+    retention: data.retention,
+    timeCurves: data.timeCurves ?? {
+      longest: { survival: data.timeSurvival, stats: data.timeStats, n: 0 },
+      first: { survival: data.timeSurvival, stats: data.timeStats, n: 0 },
+      all: { survival: data.timeSurvival, stats: data.timeStats, n: 0 },
+    },
+    countries: data.countries,
+    languages: data.languages ?? {},
+    locales: {},
+    devices: data.devices,
+    os: data.os,
+    browsers: {},
+    hours: data.hours,
+    heatmap: data.heatmap,
+  };
+}
+
+function loadToolSlice(): ToolSlice {
+  try {
+    const v = localStorage.getItem(TOOL_KEY);
+    if (v === 'all' || v === 'dex' || v === 'league') return v;
+  } catch {
+    // localStorage may be unavailable
+  }
+  return 'all';
+}
 
 interface ClientRecord {
   cid: string;
@@ -99,6 +151,89 @@ interface ClientRecord {
     groupSpecial: boolean;
     showStats?: boolean;
   };
+}
+
+/** One tool's slice of every aggregate that does not care which tool it came
+ *  from. `all` is one record per browser with both tools' sessions merged. */
+interface Aggregates {
+  users: number;
+  activity: { day: number; dau: number; rolling7: number }[];
+  retention: { returning: number; activeLast7: number; newUsers: number };
+  timeCurves: Record<'longest' | 'first' | 'all', SurvivalCurve>;
+  countries: Record<string, number>;
+  languages: Record<string, number>;
+  locales: Record<string, number>;
+  devices: Record<string, number>;
+  os: Record<string, number>;
+  browsers: Record<string, number>;
+  hours: number[];
+  heatmap: number[][];
+}
+
+/** One browser's gym leader maker record. Attached to their dex card when
+ *  they have one, and a card of its own under the League slice. */
+interface LeagueUser {
+  cid: string;
+  submits: number;
+  sessionMs: number[];
+  country?: string;
+  region?: string;
+  tz?: string;
+  lang?: string;
+  locale?: string;
+  device?: string;
+  os?: string;
+  browser?: string;
+  hasDex: boolean;
+  firstTs: number;
+  firstAt: string;
+  lastTs: number;
+  lastAt: string;
+  sessions: number;
+  maxSessionMs: number;
+  maxCards: number;
+  maxSeats: number;
+  latest: LeagueSummary;
+  latestCards?: LeagueCard[];
+  exportsCard: number;
+  exportsLeague: number;
+  exportedCardAt?: string;
+  exportedLeagueAt?: string;
+  sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string }[];
+  order?: 'dex-first' | 'league-first' | 'same-day';
+  gapDays?: number;
+}
+
+/** One seated evolution line: member ids, and the per-stage first row when the
+ *  user dragged a stage off the level curve's default. */
+interface LeagueLine {
+  b: number[];
+  bd?: number[];
+}
+
+/** One trainer card's structure. No typed text by design — see describeLeague
+ *  in src/league/model/leagueSummary.ts. */
+interface LeagueCard {
+  i: number;
+  t?: string;
+  l: LeagueLine[];
+  ace?: number;
+  aceId?: number;
+  pa?: number;
+  tm?: number;
+  /** [seat, pokemonId]. */
+  lg?: [number, number][];
+  /** [row, seat, formIndex, 0 mega | 1 dynamax]. */
+  pw?: [number, number, number, number][];
+}
+
+interface LeagueSummary {
+  cards: number;
+  seats: number;
+  typed: number;
+  named: number;
+  aces: number;
+  leagueNamed: boolean;
 }
 
 interface ApiResponse {
@@ -194,6 +329,25 @@ interface ApiResponse {
   popularBySection: Record<string, [string, number][]>;
   droppedBySection: Record<string, [string, number][]>;
   picksBySectionAll: Record<string, [string, number][]>;
+  /** Every shared aggregate, per tool. Absent on an older deploy. */
+  byTool?: Record<ToolSlice, Aggregates>;
+  /** Cross-tool order and weekly crossover, for browsers in both stores. */
+  journeys?: {
+    both: number;
+    dexFirst: number;
+    leagueFirst: number;
+    sameDay: number;
+    medianGapDays: number;
+    p75GapDays: number;
+    weekly: { week: number; newDex: number; dexToLeague7d: number; newLeague: number; leagueToDex7d: number }[];
+  };
+  /** How far a league gets: cards with a line, and seats. */
+  leagueCurves?: { cards: SurvivalCurve; seats: SurvivalCurve };
+  /** The league record for each browser on this page of dex users. */
+  leagueByCid?: Record<string, LeagueUser>;
+  /** The gym leader maker's own user list, paged like `records`. */
+  leagueUsers?: LeagueUser[];
+  totalLeagueUsers?: number;
   records: ClientRecord[];
 }
 
@@ -470,7 +624,7 @@ function ToolsCard({ tools, league, events }: {
           <Stat value={league.users} label="Seated a line" />
           <Stat value={league.typed} label="Chose a type" />
           <Stat value={league.named} label="Named a card" />
-          <Stat value={league.fullLeague} label="Filled all 11" />
+          <Stat value={league.fullLeague} label={`Filled all ${CARD_COUNT}`} />
           <Stat value={league.exportedCard} label="Exported a card" />
           <Stat value={league.exportedLeague} label="Exported a league" />
           <Stat value={league.returning} label="Returning" />
@@ -569,16 +723,17 @@ function BeaconDropNotice({ events }: { events?: Record<string, number> }) {
 
   return (
     <>
-      <p className="text-[0.65rem] text-amber-600 mt-2 flex items-center gap-1 flex-wrap">
-        <span>
-          ⚠ {total} beacons dropped server-side (
-          {live.map((d) => `${d.reason} ${d.count}`).join(' · ')})
-        </span>
+      {/* One flowing paragraph, not a flex row: the reason list now names each
+          tool, so it fills the width and a flex sibling button is pushed onto a
+          line of its own. Inline, the button stays with the text it explains. */}
+      <p className="text-[0.65rem] text-amber-600 mt-2">
+        ⚠ {total} beacons dropped server-side (
+        {live.map((d) => `${DROP_TOOL_LABEL[d.tool]} ${d.reason} ${d.count}`).join(' · ')}){' '}
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="What does this mean?"
-          className="w-4 h-4 shrink-0 rounded-full border border-amber-600 text-amber-600 leading-none text-[0.6rem] cursor-pointer"
+          className="w-4 h-4 shrink-0 rounded-full border border-amber-600 text-amber-600 leading-none text-[0.6rem] cursor-pointer align-middle"
         >
           i
         </button>
@@ -588,15 +743,15 @@ function BeaconDropNotice({ events }: { events?: Record<string, number> }) {
           <p className="text-xs text-muted-foreground mb-3">
             A beacon is one progress report from someone's browser. These reached the server but
             were not recorded, so the activity they described is missing from every number on this
-            page.
+            page. Each tool keeps its own counters, so a drop names the store that lost it.
           </p>
           <div className="flex flex-col gap-3">
-            {live.map(({ reason, count }) => {
+            {live.map(({ tool, reason, count }) => {
               const info = DROP_REASON_INFO[reason];
               return (
-                <div key={reason}>
+                <div key={`${tool}:${reason}`}>
                   <p className="text-xs font-medium">
-                    {info ? info.title : reason} · {count}
+                    {DROP_TOOL_LABEL[tool]} · {info ? info.title : reason} · {count}
                   </p>
                   {info ? (
                     <>
@@ -1518,6 +1673,138 @@ function BuildDropoffCard({ data }: { data: ApiResponse }) {
   );
 }
 
+/**
+ * The number the launch was for: does one tool feed the other?
+ *
+ * Two tables. The first is the standing picture — of the browsers that used
+ * both tools, which one they met first and how long the second took. The
+ * second is the rate over time: of each week's new users of one tool, the
+ * share that opened the other within 7 days. The rate is what a change to the
+ * hub or the callout should move; the standing picture is not, because it
+ * mixes every week since launch.
+ */
+function JourneysCard({ j }: { j: NonNullable<ApiResponse['journeys']> }) {
+  const pct = (n: number, of: number) => (of > 0 ? `${Math.round((n / of) * 100)}%` : '–');
+  if (j.both === 0) {
+    return (
+      <Card title="Cross-tool journeys">
+        <p className="text-xs text-muted-foreground">
+          No browser has used both tools yet. This card fills in from the first one that does.
+        </p>
+      </Card>
+    );
+  }
+  // Newest weeks first, and only weeks that gained someone.
+  const weeks = [...j.weekly].reverse().filter((w) => w.newDex > 0 || w.newLeague > 0);
+  return (
+    <Card title="Cross-tool journeys (browsers with a record in both stores)">
+      <div className="flex flex-wrap gap-2">
+        <Stat value={j.both} label="Used both" />
+        <Stat value={`${j.dexFirst} (${pct(j.dexFirst, j.both)})`} label="Dex first" />
+        <Stat value={`${j.leagueFirst} (${pct(j.leagueFirst, j.both)})`} label="League first" />
+        <Stat value={`${j.sameDay} (${pct(j.sameDay, j.both)})`} label="Same day" />
+        <Stat value={`${j.medianGapDays}d`} label="Median gap" />
+        <Stat value={`${j.p75GapDays}d`} label="75th percentile gap" />
+      </div>
+      <p className="text-[0.65rem] text-muted-foreground mt-1">
+        Order and gap come from each store&rsquo;s first beacon for that browser, so they reach back to
+        each tool&rsquo;s launch. &ldquo;Same day&rdquo; means under 24 hours apart — normally finding the
+        second tool from the first one&rsquo;s page.
+      </p>
+
+      {weeks.length > 0 && (
+        <div className="mt-3 overflow-x-auto">
+          <div className="text-xs text-muted-foreground mb-1">
+            Crossover within 7 days, by the week the browser first arrived
+          </div>
+          <table className="text-xs w-full">
+            <thead className="text-muted-foreground">
+              <tr className="text-left">
+                <th className="pr-2 font-medium">Week of</th>
+                <th className="pr-2 font-medium">New dex</th>
+                <th className="pr-2 font-medium">→ League in 7d</th>
+                <th className="pr-2 font-medium">New league</th>
+                <th className="font-medium">→ Dex in 7d</th>
+              </tr>
+            </thead>
+            <tbody>
+              {weeks.map((w) => (
+                <tr key={w.week} className="border-t border-border/50">
+                  <td className="pr-2 py-1 whitespace-nowrap">
+                    {new Date(w.week).toISOString().slice(0, 10)}
+                  </td>
+                  <td className="pr-2 tabular-nums">{w.newDex}</td>
+                  <td className="pr-2 tabular-nums">
+                    {w.dexToLeague7d}{' '}
+                    <span className="text-muted-foreground">({pct(w.dexToLeague7d, w.newDex)})</span>
+                  </td>
+                  <td className="pr-2 tabular-nums">{w.newLeague}</td>
+                  <td className="tabular-nums">
+                    {w.leagueToDex7d}{' '}
+                    <span className="text-muted-foreground">({pct(w.leagueToDex7d, w.newLeague)})</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="text-[0.65rem] text-muted-foreground mt-1">
+            A browser counts as crossing over only when the second tool&rsquo;s first beacon comes after
+            the first tool&rsquo;s and inside 7 days. Someone who already used both is not a conversion.
+          </p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * How far a league gets. Two metrics, because a league can be wide (every
+ * card holding one line) or deep (a few cards holding six), and the two fail
+ * in different places.
+ *
+ * Built from Survival directly rather than through BasisDropoffCard: that card
+ * exists for a session-basis toggle, and a league has only one basis. Passing
+ * it a one-entry tab list renders a button that changes nothing.
+ */
+function LeagueDepthCard({ curves, users }: { curves: NonNullable<ApiResponse['leagueCurves']>; users: number }) {
+  const [metric, setMetric] = useState<'cards' | 'seats'>('cards');
+  const curve = curves[metric];
+  const unit = (n: number) => (metric === 'cards' ? (n === 1 ? 'card' : 'cards') : n === 1 ? 'seat' : 'seats');
+  // The thresholds a league is actually built around: one card, a starter set,
+  // the eight gyms, and every trainer. The seat marks are their line
+  // equivalents, so both rows read against the same shape of league.
+  const marks = metric === 'cards' ? [1, 4, 8, CARD_COUNT] : [1, 6, 24, SEAT_MAX];
+  const shareAt = (t: number) => curve.survival.find((p) => p.t === t)?.s ?? 0;
+  return (
+    <div className="shadow-elevated rounded-lg p-3 bg-card">
+      <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
+        <span className="text-sm font-medium">League depth (how far a league gets)</span>
+        <div className="flex items-center gap-1 shrink-0 flex-wrap">
+          <span className="text-[0.65rem] text-muted-foreground mr-1">Measure:</span>
+          <Button variant={metric === 'cards' ? 'default' : 'ghost'} size="sm" onClick={() => setMetric('cards')}>
+            Cards (of {CARD_COUNT})
+          </Button>
+          <Button variant={metric === 'seats' ? 'default' : 'ghost'} size="sm" onClick={() => setMetric('seats')}>
+            Seats (of {SEAT_MAX})
+          </Button>
+        </div>
+      </div>
+      <div className="flex items-center gap-1 mb-2 flex-wrap">
+        {marks.map((m) => (
+          <span key={m} className="text-xs rounded bg-muted px-2 py-1 tabular-nums">
+            {m} {unit(m)}: {Math.round(shareAt(m) * 100)}%
+          </span>
+        ))}
+      </div>
+      <Survival points={curve.survival} fmtX={(n) => `${n} ${unit(n)}`} xLabel={unit(2)} />
+      <ChurnReadout stats={curve.stats} fmt={(n) => `${n} ${unit(n)}`} />
+      <p className="text-[0.65rem] text-muted-foreground mt-0.5">
+        Peak {unit(2)} ever reached, across {users} league user{users === 1 ? '' : 's'} (n={curve.n}).
+      </p>
+    </div>
+  );
+}
+
 function SpriteRow({ ids }: { ids: number[] }) {
   return (
     <div className="flex flex-wrap gap-0.5">
@@ -1655,7 +1942,7 @@ function fmtExportSettings(s: NonNullable<ClientRecord['exportSettings']>): stri
   return parts.join(' · ');
 }
 
-function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: { rec: ClientRecord; onDelete: (rec: ClientRecord) => void; expanded: boolean; onToggle: () => void; zIndex: number; stickyOffset: number }) {
+function UserCard({ rec, league, onDelete, expanded, onToggle, zIndex, stickyOffset }: { rec: ClientRecord; league?: LeagueUser; onDelete: (rec: ClientRecord) => void; expanded: boolean; onToggle: () => void; zIndex: number; stickyOffset: number }) {
   const [droppedOpen, setDroppedOpen] = useState(false);
   // Two-step delete: first click arms, second confirms. Auto-disarms after a
   // few seconds so a forgotten armed button can't be hit later by accident.
@@ -1744,6 +2031,9 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: {
                   </span>
                 )}
                 {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning</span>}
+                {league && (
+                  <span className="text-primary"> · 🏅 league ({league.maxCards}/{CARD_COUNT})</span>
+                )}
                 {userLocal && <> · their {userLocal}</>}
               </span>
             </div>
@@ -1793,6 +2083,7 @@ function UserCard({ rec, onDelete, expanded, onToggle, zIndex, stickyOffset }: {
           <FinalBySection rec={rec} stickyTop={stickyLabelTop} />
           <DexMilestones rec={rec} stickyTop={stickyLabelTop} />
           <SessionDiffs rec={rec} stickyTop={stickyLabelTop} />
+          {league && <LeagueSection league={league} stickyTop={stickyLabelTop} />}
           <DroppedPokemon rec={rec} stickyTop={stickyLabelTop} droppedOpen={droppedOpen} setDroppedOpen={setDroppedOpen} />
         </div>
       )}
@@ -2172,6 +2463,387 @@ function SessionDiffs({ rec, stickyTop }: { rec: ClientRecord; stickyTop?: numbe
 
 /** Minute-level view of a single local hour: each user active in that hour,
  *  with their exact local time and country. Computed from the loaded records. */
+/** Human phrasing for which tool a browser met first. */
+const ORDER_LABEL: Record<NonNullable<LeagueUser['order']>, string> = {
+  'dex-first': 'Dex builder first',
+  'league-first': 'Gym leader maker first',
+  'same-day': 'Both on the same day',
+};
+
+/** The fields a league summary is built from, in the order a card fills them.
+ *  Two forms each, because a diff of one reads as "+1 card", not "+1 cards".
+ *  `typed` and `named` count cards in a state, so they do not inflect. */
+const SUMMARY_FIELDS: { key: keyof LeagueSummary; one: string; many: string }[] = [
+  { key: 'cards', one: 'card', many: 'cards' },
+  { key: 'seats', one: 'seat', many: 'seats' },
+  { key: 'typed', one: 'typed', many: 'typed' },
+  { key: 'named', one: 'named', many: 'named' },
+  { key: 'aces', one: 'ace', many: 'aces' },
+];
+
+/** `n` with the right form of its noun, counting by magnitude so a delta of
+ *  −1 reads the same as +1. */
+function countLabel(n: number, one: string, many: string): string {
+  return `${n} ${Math.abs(n) === 1 ? one : many}`;
+}
+
+/** How far this browser got, in one line. */
+function LeagueTotals({ league }: { league: LeagueUser }) {
+  return (
+    <div className="text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-0.5">
+      <span>
+        {league.sessions} session{league.sessions === 1 ? '' : 's'} · longest{' '}
+        {fmtDuration(league.maxSessionMs)}
+      </span>
+      <span>
+        peak {countLabel(league.maxCards, 'trainer card', 'trainer cards')} ·{' '}
+        {countLabel(league.maxSeats, 'seat', 'seats')}
+      </span>
+      <span>
+        latest {league.latest.cards}/{CARD_COUNT} filled, {league.latest.typed} typed,{' '}
+        {league.latest.named} named, {countLabel(league.latest.aces, 'ace', 'aces')}
+        {league.latest.leagueNamed ? ', league named' : ''}
+      </span>
+      {(league.exportsCard > 0 || league.exportsLeague > 0) && (
+        <span className="text-foreground">
+          📷 {league.exportsCard} card · {league.exportsLeague} league export
+          {league.exportsCard + league.exportsLeague === 1 ? '' : 's'}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * What each visit changed.
+ *
+ * A first session shows its end state; every later one shows the delta, which
+ * is what a visit actually was. The record stores counts and nothing else, so
+ * this is as far in as the data goes — see the note the card carries.
+ */
+function LeagueVisits({ league }: { league: LeagueUser }) {
+  const sessions = league.sessionLog;
+  if (sessions.length === 0) return null;
+  return (
+    <ul className="flex flex-col gap-1">
+      {sessions.map((sess, i) => {
+        const prev = i > 0 ? sessions[i - 1].summary : null;
+        const parts = SUMMARY_FIELDS.map(({ key, one, many }) => {
+          const now = sess.summary[key] as number;
+          if (!prev) return now > 0 ? countLabel(now, one, many) : null;
+          const d = now - (prev[key] as number);
+          return d !== 0 ? `${d > 0 ? '+' : ''}${countLabel(d, one, many)}` : null;
+        }).filter(Boolean);
+        // Two lines, not one wrapping row: a row that wraps only when the
+        // deltas are long puts the timestamp in a different place on every
+        // other line, which is harder to scan than a fixed shape.
+        return (
+          <li key={sess.ts} className="text-xs">
+            <div className="text-muted-foreground tabular-nums flex flex-wrap gap-x-2">
+              <span>{new Date(sess.ts).toLocaleString()}</span>
+              {sess.dev && <span>{sess.dev}</span>}
+            </div>
+            <div>{parts.length > 0 ? parts.join(' · ') : 'no change'}</div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/**
+ * This browser's other tool, on their dex user card.
+ *
+ * One cid is one browser across the whole site, so the two records belong to
+ * one person and reading them apart hides the thing worth knowing: what they
+ * did after they crossed over.
+ */
+function LeagueSection({ league, stickyTop }: { league: LeagueUser; stickyTop?: number }) {
+  return (
+    <div>
+      <div className={STICKY_LABEL_CLASS} style={stickyLabelStyle(stickyTop)}>
+        Gym leader maker
+        {league.order && ` · ${ORDER_LABEL[league.order]}`}
+        {league.order && league.order !== 'same-day' && `, ${Math.abs(league.gapDays ?? 0)}d apart`}
+      </div>
+      <LeagueTotals league={league} />
+      {league.latestCards && <LeagueCards cards={league.latestCards} stickyTop={stickyTop} />}
+      <div className="mt-1">
+        <LeagueVisits league={league} />
+      </div>
+    </div>
+  );
+}
+
+/** Which stages of a line the user dragged off the level curve's default.
+ *  `bd` is sent only when at least one differs, but not every stage in it did —
+ *  ringing them all would overstate what the user actually touched. */
+function movedStages(line: LeagueLine): Set<number> {
+  if (!line.bd) return new Set();
+  const fallback = defaultBoundaries(line.b);
+  const out = new Set<number>();
+  line.bd.forEach((row, stage) => {
+    if (row !== fallback[stage]) out.add(stage);
+  });
+  return out;
+}
+
+/** One evolution line, as sprites with the stage the user pulled marked. */
+function LeagueLineRow({ line, ace }: { line: LeagueLine; ace?: number }) {
+  const moved = movedStages(line);
+  return (
+    <span className="inline-flex items-center gap-0.5 rounded bg-muted/60 px-1 py-0.5">
+      {line.b.map((id, stage) => {
+        const p = getPokemonById(id);
+        const isMoved = moved.has(stage);
+        return (
+          <Fragment key={`${id}-${stage}`}>
+            {stage > 0 && <span className="text-[0.55rem] text-muted-foreground">›</span>}
+            <span
+              title={
+                p
+                  ? `#${id} ${displayName(p.name)}${
+                      isMoved ? ` · moved to row ${line.bd?.[stage]} (default ${defaultBoundaries(line.b)[stage]})` : ''
+                    }`
+                  : `#${id}`
+              }
+              className={`w-6 h-6 shrink-0 flex items-center justify-center ${isMoved ? 'ring-1 ring-amber-500 rounded' : ''}`}
+            >
+              {p ? (
+                <img
+                  src={p.sprite}
+                  alt={p.name}
+                  width={24}
+                  height={24}
+                  loading="lazy"
+                  decoding="async"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+              ) : (
+                <span className="text-[0.5rem] text-muted-foreground">#{id}</span>
+              )}
+            </span>
+          </Fragment>
+        );
+      })}
+      {ace !== undefined && <span title="Ace" className="text-[0.6rem]">⭐</span>}
+    </span>
+  );
+}
+
+/** A single Pokemon with a label, for the ace, partner and legendaries. */
+function LeagueMon({ id, label }: { id: number; label: string }) {
+  const p = getPokemonById(id);
+  return (
+    <span className="inline-flex items-center gap-1 text-[0.65rem] text-muted-foreground">
+      <span className="opacity-70">{label}</span>
+      {p ? (
+        <img
+          src={p.sprite}
+          alt={p.name}
+          width={20}
+          height={20}
+          loading="lazy"
+          decoding="async"
+          style={{ imageRendering: 'pixelated' }}
+          title={`#${id} ${displayName(p.name)}`}
+        />
+      ) : (
+        <span>#{id}</span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * What one browser's league actually holds.
+ *
+ * Structure only: the record carries which Pokemon sit where, the stages the
+ * user dragged, powerups and legendaries — never the badge name, the theme or
+ * the league name. A card that has never sent a structured beacon has none of
+ * this, and says so rather than rendering as an empty league.
+ */
+function LeagueCards({ cards, stickyTop }: { cards: LeagueCard[]; stickyTop?: number }) {
+  const [open, setOpen] = useState(false);
+  if (cards.length === 0) return null;
+  // Count the stages actually moved, not the lines carrying a boundary set.
+  const adjusted = cards.reduce(
+    (n, c) => n + c.l.reduce((m, l) => m + movedStages(l).size, 0),
+    0,
+  );
+  const powered = cards.filter((c) => c.pw && c.pw.length > 0).length;
+  const legendary = cards.filter((c) => c.lg && c.lg.length > 0).length;
+  return (
+    <div>
+      <div className={STICKY_LABEL_CLASS} style={stickyLabelStyle(stickyTop)}>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="w-full text-left cursor-pointer flex flex-wrap gap-x-2"
+        >
+          <span>
+            {open ? '▾' : '▸'} Cards ({cards.length})
+          </span>
+          {adjusted > 0 && (
+            <span className="text-amber-600">
+              {adjusted} evo stage{adjusted === 1 ? '' : 's'} moved
+            </span>
+          )}
+          {powered > 0 && <span>{powered} with a powerup</span>}
+          {legendary > 0 && <span>{legendary} with a legendary</span>}
+        </button>
+      </div>
+      {open && (
+        <ul className="flex flex-col gap-1.5">
+          {cards.map((c) => (
+            <li key={c.i} className="text-xs">
+              <div className="text-muted-foreground flex flex-wrap gap-x-2">
+                <span className="font-medium text-foreground">{slotLabel(c.i)}</span>
+                {c.t && c.t !== 'none' && <span>{c.t}</span>}
+                {c.tm !== undefined && <span>TM #{c.tm}</span>}
+              </div>
+              <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                {c.l.map((line, k) => (
+                  <LeagueLineRow key={k} line={line} ace={c.ace === k + 1 ? c.ace : undefined} />
+                ))}
+              </div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                {c.aceId !== undefined && <LeagueMon id={c.aceId} label="ace" />}
+                {c.pa !== undefined && <LeagueMon id={c.pa} label="partner" />}
+                {c.lg?.map(([seat, id]) => (
+                  <LeagueMon key={`lg-${seat}-${id}`} id={id} label={`legendary · seat ${seat}`} />
+                ))}
+                {c.pw?.map(([row, seat, , kind]) => (
+                  <span key={`pw-${row}-${seat}`} className="text-[0.65rem] text-muted-foreground">
+                    {kind === 0 ? 'Mega' : 'Gigantamax'} · row {row}, seat {seat}
+                  </span>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/**
+ * One gym leader maker user, the dex builder's UserCard for a league.
+ *
+ * Its own card rather than a row in the funnel table, because a league user
+ * who never touched the dex builder appears nowhere else on this page, and a
+ * row cannot hold their visit history.
+ */
+function LeagueUserCard({
+  rec,
+  expanded,
+  onToggle,
+  zIndex,
+  stickyOffset,
+}: {
+  rec: LeagueUser;
+  expanded: boolean;
+  onToggle: () => void;
+  zIndex: number;
+  stickyOffset: number;
+}) {
+  const cardRef = useRef<HTMLElement>(null);
+  const userLocal = localTime(rec.lastTs, rec.tz);
+  const ctx = [
+    rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
+    [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
+    rec.locale ? `🗣 ${langLabel(rec.locale)}` : rec.lang && `🗣 ${langLabel(rec.lang)} · browser`,
+  ].filter(Boolean);
+
+  const handleToggle = () => {
+    if (expanded) {
+      onToggle();
+      requestAnimationFrame(() => {
+        const el = cardRef.current;
+        if (!el) return;
+        if (el.getBoundingClientRect().top < 0) {
+          el.scrollIntoView({ block: 'start', behavior: 'instant' });
+        }
+      });
+    } else {
+      onToggle();
+    }
+  };
+
+  return (
+    <section ref={cardRef} style={{ zIndex, scrollMarginTop: stickyOffset }}>
+      <div className="sticky z-[5]" style={{ top: stickyOffset }}>
+        <div className="h-4 bg-background" />
+        <div
+          className={`bg-card p-3 ${expanded ? 'pb-1 border-b border-border/50 rounded-t-lg shadow-elevated' : 'rounded-lg shadow-elevated'}`}
+        >
+          <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+            <div className="text-sm">
+              <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
+              <span className="text-muted-foreground">
+                {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'}
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                {countLabel(rec.maxCards, 'trainer card', 'trainer cards')} filled of {CARD_COUNT} ·{' '}
+                {countLabel(rec.maxSeats, 'seat', 'seats')} · {rec.sessions} session
+                {rec.sessions === 1 ? '' : 's'}
+                {rec.sessionMs.length > 0 && `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}`}
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                {rec.maxCards >= CARD_COUNT && (
+                  <span className="text-primary font-medium">✓ full league </span>
+                )}
+                {(rec.exportsCard > 0 || rec.exportsLeague > 0) && (
+                  <span>📷 exported </span>
+                )}
+                {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning </span>}
+                {rec.hasDex ? (
+                  <span className="text-primary">· 📕 has a dex</span>
+                ) : (
+                  <span>· league only</span>
+                )}
+                {userLocal && <> · their {userLocal}</>}
+              </span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={handleToggle}>
+              {expanded ? 'Hide' : 'Visits'}
+            </Button>
+          </div>
+          {ctx.length > 0 && (
+            <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
+              {ctx.map((c, i) => (
+                <span key={i}>{c}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      {expanded && (
+        <div className="flex flex-col gap-2 p-3 pt-2 bg-card rounded-b-lg shadow-elevated">
+          <LeagueTotals league={rec} />
+          {rec.latestCards ? (
+            <LeagueCards cards={rec.latestCards} />
+          ) : (
+            /* Says what is missing rather than letting an empty space imply
+               they built nothing. Card structure is forward-only: a record
+               written before the beacon carried it has none until they
+               return. */
+            <p className="text-[0.65rem] text-muted-foreground">
+              No card structure stored. This browser has not sent a beacon since the league builder
+              started reporting one, so only their counts are known.
+            </p>
+          )}
+          <LeagueVisits league={rec} />
+          <p className="text-[0.65rem] text-muted-foreground border-t border-border pt-2">
+            Structure only. Badge names, card themes and the league name stay in the user&rsquo;s
+            browser and are never sent — see describeLeague in src/league/model/leagueSummary.ts.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function HourDetail({
   hour,
   dow,
@@ -2255,8 +2927,10 @@ export function AdminPage() {
   });
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<ApiResponse | null>(null);
+  const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
   const [slotDetail, setSlotDetail] = useState<{ dow: number; hour: number } | null>(null);
   const [expandedCid, setExpandedCid] = useState<string | null>(null);
+  const [expandedLeagueCid, setExpandedLeagueCid] = useState<string | null>(null);
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -2331,6 +3005,15 @@ export function AdminPage() {
     },
     [token],
   );
+
+  const pickTool = useCallback((next: ToolSlice) => {
+    setTool(next);
+    try {
+      localStorage.setItem(TOOL_KEY, next);
+    } catch {
+      // localStorage may be unavailable
+    }
+  }, []);
 
   const signOut = useCallback(() => {
     try {
@@ -2414,16 +3097,48 @@ export function AdminPage() {
             wrote, and the only thing that goes stale if it is not read. */}
         {token && <FeedbackCard token={token} />}
 
-        {data && (
+        {data && (() => {
+          const slice = sliceOf(data, tool);
+          const showDex = tool !== 'league';
+          return (
           <>
-            <Card title="Overview (since June 15)">
+            {/* The tool switch. Every card that reads per-browser records reads
+                the selected slice; "All" is one record per browser with both
+                tools' sessions merged, so a person who used both is one user. */}
+            <div role="group" aria-label="Tool" className="flex items-center gap-1 flex-wrap">
+              <span className="text-xs text-muted-foreground mr-1" aria-hidden="true">
+                Tool:
+              </span>
+              {TOOL_TABS.map((t) => (
+                <Button
+                  key={t.key}
+                  variant={tool === t.key ? 'default' : 'ghost'}
+                  size="sm"
+                  aria-pressed={tool === t.key}
+                  onClick={() => pickTool(t.key)}
+                >
+                  {t.label}
+                </Button>
+              ))}
+            </div>
+
+            <Card title={`Overview · ${TOOL_TABS.find((t) => t.key === tool)?.label} (since June 15)`}>
               <div className="flex flex-wrap gap-2">
-                <Stat value={data.funnel.users} label="Users" />
-                <Stat value={data.funnel.completed} label="Completed (151)" />
-                <Stat value={data.funnel.exported} label="Exported" />
-                <Stat value={data.retention.returning} label="Returning" />
-                <Stat value={data.retention.activeLast7} label="Active 7d" />
+                <Stat value={slice.users} label="Users" />
+                {showDex && <Stat value={data.funnel.completed} label="Completed (151)" />}
+                {showDex && <Stat value={data.funnel.exported} label="Exported" />}
+                {tool !== 'dex' && data.league && (
+                  <Stat value={data.league.exportedCard + data.league.exportedLeague} label="League exports" />
+                )}
+                <Stat value={slice.retention.returning} label="Returning" />
+                <Stat value={slice.retention.activeLast7} label="Active 7d" />
               </div>
+              {tool === 'all' && (
+                <p className="text-[0.65rem] text-muted-foreground mt-1">
+                  Users counts each browser once across both tools; Completed and Exported are the dex
+                  builder&rsquo;s own milestones.
+                </p>
+              )}
               <BeaconDropNotice events={data.funnelEvents} />
             </Card>
 
@@ -2431,25 +3146,31 @@ export function AdminPage() {
               <ToolsCard tools={data.tools} league={data.league} events={data.funnelEvents} />
             )}
 
-            {data.activity && data.activity.length > 0 && (
+            {token && <HubCard token={token} />}
+
+            {data.journeys && <JourneysCard j={data.journeys} />}
+
+            {slice.activity.length > 0 && (
               <Card title="Active users (daily + rolling 7-day)">
-                <ActivityChart series={data.activity} />
+                <ActivityChart series={slice.activity} />
               </Card>
             )}
 
-            {data.funnelEvents && Object.keys(data.funnelEvents).length > 0 && (
-              <Card title="Engagement funnel (distinct browsers)">
+            {/* Dex-only: every row is an intro, milestone or View event the gym
+                leader maker never sends. */}
+            {showDex && data.funnelEvents && Object.keys(data.funnelEvents).length > 0 && (
+              <Card title="Dex builder engagement funnel (distinct browsers)">
                 <FunnelChart events={data.funnelEvents} />
               </Card>
             )}
 
-            {data.cohort && data.cohort.length > 0 && (
+            {showDex && data.cohort && data.cohort.length > 0 && (
               <Card title="Before / after by signup date (pre-post)">
                 <PrePostCohort cohort={data.cohort} launchTs={data.onboardingLaunchTs} />
               </Card>
             )}
 
-            {data.exportSettings && data.exportSettings.tracked > 0 && (
+            {showDex && data.exportSettings && data.exportSettings.tracked > 0 && (
               <Card title={`Export settings (${data.exportSettings.tracked} export${data.exportSettings.tracked === 1 ? '' : 's'} tracked)`}>
                 {(() => {
                   const es = data.exportSettings!;
@@ -2481,7 +3202,7 @@ export function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <BasisDropoffCard
                 title="Session drop-off (when users churn by time)"
-                curves={data.timeCurves}
+                curves={slice.timeCurves}
                 tabs={[
                   { key: 'longest', label: 'Longest', note: "Each user's longest session" },
                   { key: 'first', label: 'First', note: "Each user's first session" },
@@ -2491,9 +3212,13 @@ export function AdminPage() {
                 fmtX={fmtSecs}
                 xLabel="session length"
               />
-              <BuildDropoffCard data={data} />
+              {showDex && <BuildDropoffCard data={data} />}
+              {tool !== 'dex' && data.leagueCurves && data.league && (
+                <LeagueDepthCard curves={data.leagueCurves} users={data.league.users} />
+              )}
             </div>
 
+            {showDex && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <PopularPanel
                 title="Most-picked (final dex, all users)"
@@ -2508,8 +3233,9 @@ export function AdminPage() {
                 minCount={data.droppedMin}
               />
             </div>
+            )}
 
-            {offPickRows.length > 0 && (
+            {showDex && offPickRows.length > 0 && (
               <PopularPanel
                 title="Most off-section picks"
                 rows={offPickRows}
@@ -2519,9 +3245,9 @@ export function AdminPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card title="By region">
-                {Object.keys(data.countries).length ? (
+                {Object.keys(slice.countries).length ? (
                   (() => {
-                    const groups = regionGroups(data.countries);
+                    const groups = regionGroups(slice.countries);
                     const total = groups.reduce((sum, g) => sum + g.count, 0);
                     return (
                       <>
@@ -2538,30 +3264,35 @@ export function AdminPage() {
                 )}
               </Card>
               <Card title="By language">
-                <LanguageBars languages={data.languages ?? {}} />
+                <LanguageBars languages={slice.languages} />
               </Card>
               <Card title="By device">
-                <Bars rows={tallyRows(data.devices)} />
+                <Bars rows={tallyRows(slice.devices)} />
               </Card>
               <Card title="By OS">
-                <Bars rows={tallyRows(data.os)} />
+                <Bars rows={tallyRows(slice.os)} />
               </Card>
             </div>
 
             <Card title="When users build (local day × hour) — click a cell for detail">
-              <Heatmap matrix={data.heatmap} onCell={(dow, hour) => setSlotDetail({ dow, hour })} />
+              <Heatmap matrix={slice.heatmap} onCell={(dow, hour) => setSlotDetail({ dow, hour })} />
             </Card>
 
-            <span className="text-sm font-medium">Users ({data.totalUsers})</span>
+            <span className="text-sm font-medium">
+              {showDex
+                ? `Dex users (${data.totalUsers})`
+                : `Gym leader maker users (${data.totalLeagueUsers ?? 0})`}
+            </span>
 
-            {data.records.length === 0 && !loading && (
+            {showDex && data.records.length === 0 && !loading && (
               <p className="text-sm text-muted-foreground">No users yet.</p>
             )}
             <div className="flex flex-col -mt-4">
-              {data.records.map((rec, i) => (
+              {showDex && data.records.map((rec, i) => (
                 <UserCard
                   key={rec.cid}
                   rec={rec}
+                  league={data.leagueByCid?.[rec.cid]}
                   onDelete={deleteUser}
                   expanded={expandedCid === rec.cid}
                   onToggle={() => setExpandedCid((prev) => (prev === rec.cid ? null : rec.cid))}
@@ -2570,7 +3301,27 @@ export function AdminPage() {
                 />
               ))}
             </div>
-            {data.records.length < data.totalUsers && (
+            {!showDex && data.leagueUsers && (
+              <div className="flex flex-col -mt-4">
+                {data.leagueUsers.map((rec, i) => (
+                  <LeagueUserCard
+                    key={rec.cid}
+                    rec={rec}
+                    expanded={expandedLeagueCid === rec.cid}
+                    onToggle={() =>
+                      setExpandedLeagueCid((prev) => (prev === rec.cid ? null : rec.cid))
+                    }
+                    zIndex={data.leagueUsers!.length - i}
+                    stickyOffset={pageHeaderH}
+                  />
+                ))}
+              </div>
+            )}
+            {!showDex && (data.leagueUsers?.length ?? 0) === 0 && !loading && (
+              <p className="text-sm text-muted-foreground">No league users yet.</p>
+            )}
+
+            {showDex && data.records.length < data.totalUsers && (
               <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
                 {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${data.totalUsers})`}
               </Button>
@@ -2586,7 +3337,8 @@ export function AdminPage() {
               />
             )}
           </>
-        )}
+          );
+        })()}
       </main>
     </div>
   );
