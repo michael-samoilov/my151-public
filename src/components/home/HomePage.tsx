@@ -176,24 +176,17 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
     </div>
   );
 
-  // `hub-card` is the hover trigger and stays put; `hub-card-lift` is the only
-  // thing that moves. Keeping the trigger stationary means the pointer never
-  // chases a target that slides out from under it, so a screenshot that breaks
-  // out of the panel lifts without any hover flicker. The panel and its
-  // screenshots ride one lift together; the caption below stays as the label.
-  // The motion lives in `index.css` (`.hub-card-lift`): a graceful upward ease,
-  // no panel shadow, gated to a real hovering pointer, off under reduced motion.
+  // `hub-card` is the hover trigger and stays put. On hover only the screenshots
+  // inside the panel float up and settle back — the red panel and the caption do
+  // not move. The motion is on the artwork (`.hub-float`), so a stationary
+  // trigger keeps the pointer from chasing a target that slides out from under
+  // it, and there is no hover flicker. The float lives in `index.css`.
   return (
     <div
       className={`hub-card flex flex-col ${wide ? SPAN : ''}`}
       style={{ containerType: 'inline-size' }}
     >
-      <div
-        className="hub-card-lift"
-        style={{ paddingTop: reserve ? `calc(${U(POP_TOP)} * var(--art))` : 0 }}
-      >
-        {inner}
-      </div>
+      <div style={{ paddingTop: reserve ? `calc(${U(POP_TOP)} * var(--art))` : 0 }}>{inner}</div>
       {wide ? null : <Caption tool={tool} />}
     </div>
   );
@@ -315,6 +308,7 @@ function Artwork({ tool }: { tool: Tool }) {
   return (
     <>
       <span
+        className="hub-float"
         style={{
           ...box,
           maskImage: `linear-gradient(to top, transparent 0, #000 ${BLEED})`,
@@ -332,7 +326,7 @@ function Artwork({ tool }: { tool: Tool }) {
           </span>
         ))}
       </span>
-      <span style={box}>
+      <span className="hub-float" style={box}>
         {FAN.map((f, i) => (
           <span
             key={f.tilt}

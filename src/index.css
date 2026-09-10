@@ -368,32 +368,32 @@ img {
   color: var(--lg-hint);
 }
 
-/* The hub's tool cards lift on hover. `.hub-card` is the trigger and never
- * moves; `.hub-card-lift` — the panel plus the screenshots that break out of
- * it — is the only thing that translates. A stationary trigger means the
- * pointer never chases a target that slides out from under it, so there is no
- * hover flicker even with the pointer on a screenshot above the panel.
+/* On hover the screenshots float up off the panel and settle back — the red
+ * panel and the caption stay put. `.hub-card` (the cell) is the hover trigger
+ * and never moves; `.hub-float` is the artwork, and it is the only thing that
+ * translates. A stationary trigger keeps the pointer from chasing a target that
+ * slides out from under it, so there is no hover flicker even with the pointer
+ * on a screenshot above the panel. Both clip boxes carry the class — the shots
+ * and their own shadow rise together — so the fan floats as one.
  *
- * The mover has no transform of its own — the screenshots' `rotate` sits on
- * descendants, not here — so a plain `translateY` is safe and works on every
- * engine, old WebKit included. 6px on a strong ease-out reads as a graceful
- * rise, not a jump. There is deliberately no shadow on the red panel — a thick
- * drop shadow reads as tacky; the screenshots keep their own soft resting
- * shadow, which lifts with them and is the only depth cue the motion needs. The
- * hovered card also rises above its neighbours so its artwork stays on top.
+ * `.hub-float` sits on a plain clip box with no transform of its own (the
+ * screenshots' `rotate` is on descendants), so a bare `translateY` is safe on
+ * every engine, old WebKit included. 8px on a soft ease reads as a float, not a
+ * snap. The hovered card also rises above its neighbours so the floating artwork
+ * stays on top.
  *
- * Gated to a real hovering pointer, so a touch tap never sticks the lifted
- * state, and dropped entirely under reduced motion. */
-.hub-card-lift {
+ * Gated to a real hovering pointer, so a touch tap never sticks the state, and
+ * dropped entirely under reduced motion. */
+.hub-float {
   transform: translateY(0);
-  transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
+  transition: transform 280ms cubic-bezier(0.23, 1, 0.32, 1);
   will-change: transform;
 }
 @media (hover: hover) and (pointer: fine) {
   .hub-card:hover { z-index: 10; }
-  .hub-card:hover .hub-card-lift { transform: translateY(-6px); }
+  .hub-card:hover .hub-float { transform: translateY(-8px); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .hub-card-lift { transition: none; }
-  .hub-card:hover .hub-card-lift { transform: translateY(0); }
+  .hub-float { transition: none; }
+  .hub-card:hover .hub-float { transform: translateY(0); }
 }
