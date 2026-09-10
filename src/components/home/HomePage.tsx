@@ -145,19 +145,7 @@ const SPAN = 'col-span-2';
  * translated title wraps differently.
  */
 function Card({ tool, onPress, wide, reserve }: CardProps) {
-  // On a pointer that hovers, the card lifts a little and casts a deeper shadow,
-  // and rises above its neighbours so its artwork reads on top. Tailwind's
-  // `hover:` is already `@media (hover: hover)` in v4, so a touch tap never
-  // sticks the lifted state, and `motion-reduce` drops the movement for a
-  // visitor who asks for less. The transform is on the panel, so the artwork
-  // that breaks out of it lifts with it; the caption below stays put, so the
-  // card floats over its own label.
-  const panel =
-    'relative block w-full text-left bg-primary text-white no-underline ' +
-    'transition-[transform,box-shadow] duration-200 ease-out ' +
-    'hover:z-10 hover:-translate-y-1.5 ' +
-    'hover:shadow-[0_16px_36px_-12px_rgba(10,10,10,0.45)] ' +
-    'motion-reduce:transition-none motion-reduce:hover:translate-y-0';
+  const panel = 'relative block w-full text-left bg-primary text-white no-underline';
   const body = wide ? <WideBody tool={tool} /> : <TallBody tool={tool} />;
   const style = wide ? undefined : { aspectRatio: PANEL_ASPECT, borderRadius: RADIUS };
   const wideStyle = { borderRadius: `min(${U(14)}, 18px)` };
@@ -188,12 +176,24 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
     </div>
   );
 
+  // `hub-card` is the hover trigger and stays put; `hub-card-lift` is the only
+  // thing that moves. Keeping the trigger stationary means the pointer never
+  // chases a target that slides out from under it, so a screenshot that breaks
+  // out of the panel lifts without any hover flicker. The panel and its
+  // screenshots ride one lift together; the caption below stays as the label.
+  // The motion lives in `index.css` (`.hub-card-lift`): a graceful upward ease,
+  // no panel shadow, gated to a real hovering pointer, off under reduced motion.
   return (
     <div
-      className={`flex flex-col ${wide ? SPAN : ''}`}
+      className={`hub-card flex flex-col ${wide ? SPAN : ''}`}
       style={{ containerType: 'inline-size' }}
     >
-      <div style={{ paddingTop: reserve ? `calc(${U(POP_TOP)} * var(--art))` : 0 }}>{inner}</div>
+      <div
+        className="hub-card-lift"
+        style={{ paddingTop: reserve ? `calc(${U(POP_TOP)} * var(--art))` : 0 }}
+      >
+        {inner}
+      </div>
       {wide ? null : <Caption tool={tool} />}
     </div>
   );
