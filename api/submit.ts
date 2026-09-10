@@ -316,6 +316,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // iOS·Safari is two people behind one cid (shared or synced browser), and
       // this makes that visible in the dashboard instead of unfalsifiable.
       const devStamp = [ua.device, ua.os, ua.browser].filter((p) => p && p !== 'Unknown').join(' · ');
+      // Snapshot the section placement per session, carried forward within a
+      // session the way events are: a beacon that omits sections (an export)
+      // keeps the section map an earlier build beacon logged, rather than
+      // blanking it. This is what lets the admin scrubber reconstruct the
+      // grouped build at a past point, not just the flat id list. Absent on
+      // sessions from before the field, and on any session with no build beacon.
+      const prevSecs = newSession || log.length === 0 ? undefined : log[log.length - 1].sections;
+      const sessionSecs = secs ?? prevSecs;
       const entry = {
         ts: now,
         ids,
@@ -323,6 +331,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ...(page ? { page } : {}),
         ...(devStamp ? { dev: devStamp } : {}),
         ...(mergedEvents.length ? { events: mergedEvents } : {}),
+        ...(sessionSecs ? { sections: sessionSecs } : {}),
       };
       if (newSession || log.length === 0) log.push(entry);
       else log[log.length - 1] = entry;

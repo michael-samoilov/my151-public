@@ -71,7 +71,19 @@ export interface ClientRecord {
    *  `dev` is the client (device · OS · browser) that sent the session — one
    *  cid is one browser, so sessions that alternate clients expose a shared
    *  cid (two people on one record). Absent on legacy records. */
-  sessionLog?: { ts: number; ids: number[]; country?: string; dev?: string; events?: string[]; page?: string }[];
+  sessionLog?: {
+    ts: number;
+    ids: number[];
+    country?: string;
+    dev?: string;
+    events?: string[];
+    page?: string;
+    /** The section placement (groupId -> ids) at this session's last build
+     *  beacon, so the scrubber can regroup the build at that point, not just
+     *  replay its flat ids. Carried forward within a session; absent on legacy
+     *  sessions and on any session with no build beacon. */
+    sections?: Record<string, number[]>;
+  }[];
   /** Deepest build (distinct evolution lines) ever reached. */
   maxDepth: number;
   /** Hour-of-day (0–23) in the user's own local time at their last submit. */
