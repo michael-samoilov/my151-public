@@ -37,6 +37,13 @@ html {
   --color-ring: #dc2626;
   --radius: 0.5rem;
 
+  /* Admin dashboard semantic colors. Red (--color-primary) stays reserved for
+     data-movement; these carry outcome meaning in the analytics views only. */
+  --color-success: #0b7a54; /* gains / success outcomes */
+  --color-priv: #3f5b8a; /* kept-private */
+  --color-sink: #8b8b93; /* attrition / drop-off */
+  --color-off: #8a5a00; /* off-section picks */
+
   --color-type-normal: #a8a77a;
   --color-type-fire: #ee8130;
   --color-type-water: #6390f0;
@@ -77,6 +84,11 @@ html {
   --color-border: #262626;
   --color-input: #262626;
   --color-ring: #ef4444;
+
+  --color-success: #34d399;
+  --color-priv: #8ea6d6;
+  --color-sink: #6b6b73;
+  --color-off: #e0a54a;
 }
 
 body {

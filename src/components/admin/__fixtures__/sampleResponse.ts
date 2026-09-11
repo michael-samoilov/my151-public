@@ -24,9 +24,12 @@ const FIRST = Date.UTC(2026, 5, 12, 0, 0, 0); // 2026-06-12
 const iso = (ts: number) => new Date(ts).toISOString();
 
 /** Build a survival curve from raw (t, survivors) points, with percentile
- *  stats derived so the existing readouts have something to show. */
+ *  stats derived so the existing readouts have something to show. `s` is stored
+ *  as a surviving fraction (0–1), matching the real aggregation — consumers
+ *  multiply by `n` to recover a count. */
 function curve(points: [number, number][], n: number): SurvivalCurve {
-  const survival = points.map(([t, s]) => ({ t, s }));
+  const base = points[0]?.[1] || n || 1;
+  const survival = points.map(([t, s]) => ({ t, s: s / base }));
   const at = (frac: number) => {
     // First t whose survivor share drops to/below `frac` of the start.
     const start = points[0][1] || 1;
