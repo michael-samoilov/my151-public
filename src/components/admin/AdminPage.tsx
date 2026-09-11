@@ -760,21 +760,22 @@ const typeColorOf = (t?: string) => (t && (TYPE_COLORS as Record<string, string>
 const isTypeName = (t?: string): t is TypeName => !!t && t in TYPE_COLORS;
 
 /** The slot's type marker: the real Gen IX type icon (white symbol on a colored
- *  square, like the base image) when the card has a type, else a plain swatch. */
+ *  square, like the base image) when the card has a type, else a plain swatch.
+ *  Fills its grid cell so the board scales with width. */
 function TypeMark({ t }: { t?: string }) {
   if (isTypeName(t)) {
-    return <img src={typeIconPath(t)} alt={t} title={t} className="h-[15px] w-[15px] rounded-[3px]" style={{ imageRendering: 'auto' }} />;
+    return <img src={typeIconPath(t)} alt={t} title={t} className="aspect-square w-full rounded-[3px]" style={{ imageRendering: 'auto' }} />;
   }
-  return <div className="h-[15px] w-[15px] rounded-[3px]" style={{ background: typeColorOf(t) }} title={t ?? 'untyped'} />;
+  return <div className="aspect-square w-full rounded-[3px]" style={{ background: typeColorOf(t) }} title={t ?? 'untyped'} />;
 }
 
-/** One 15px seat sprite; the ace gets a red ring around the tile, as the mockup
- *  marks it (no badge). */
+/** One seat sprite that fills its grid cell; the ace gets a red ring around the
+ *  tile, as the mockup marks it (no badge). */
 function MiniTile({ id, ace }: { id: number; ace?: boolean }) {
   const p = getPokemonById(id);
   return (
     <div
-      className="flex h-[15px] w-[15px] items-center justify-center overflow-hidden rounded-[3px] bg-card"
+      className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-[3px] bg-card"
       title={p ? `#${id} ${displayName(p.name)}${ace ? ' · ace' : ''}` : `#${id}`}
       style={ace ? { boxShadow: '0 0 0 2px var(--color-primary)', background: 'rgba(220,38,38,0.10)' } : undefined}
     >
@@ -816,27 +817,34 @@ function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
       );
     }
     const color = typeColorOf(card.t);
-    // Shortest first, left to right; the block is right-aligned, so the tallest
-    // line lands at the bottom-right corner — the staircase.
+    // Shortest first, so the short lines land in the left columns whose top
+    // cells the stage badge and type icon occupy — keeping those cells clear
+    // in the common case, and the tallest line at the bottom-right corner.
     const lines = [...card.l].sort((a, b) => a.b.length - b.b.length);
+    const n = lines.length;
+    // A 6×3 tile grid (6 evo lines, up to 3 stages). The stage badge sits in
+    // the first cell and the type icon in the cell to its right; evo lines are
+    // right-aligned (columns fill from the right) and bottom-aligned (a line's
+    // final stage rests on the floor row). Folding the badge and type into the
+    // grid keeps a card six columns wide, not seven, so three fit a phone.
     return (
-      <div key={i} className="flex rounded-lg border border-border px-[7px] py-[4px]" style={{ borderLeftWidth: 3, borderLeftColor: color }}>
-        {/* glyph column: slot badge + type icon, top-left */}
-        <div className="mr-[3px] flex flex-col gap-[1px] self-start">
-          <div className="flex h-[15px] w-[15px] items-center justify-center text-[8.5px] font-extrabold text-muted-foreground">
+      <div key={i} className="rounded-lg border border-border px-[6px] py-[4px]" style={{ borderLeftWidth: 3, borderLeftColor: color }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '1px' }}>
+          <div style={{ gridColumn: 1, gridRow: 1 }} className="flex aspect-square items-center justify-center text-[8px] font-extrabold text-muted-foreground">
             {slotBadge(i)}
           </div>
-          <TypeMark t={card.t} />
-        </div>
-        {/* evo lines: right-aligned block, columns bottom-aligned */}
-        <div className="ml-auto flex items-end justify-end gap-[2px]">
-          {lines.map((line, li) => (
-            <div key={li} className="flex flex-col justify-end gap-[1px]">
-              {line.b.map((id, stage) => (
-                <MiniTile key={`${id}-${stage}`} id={id} ace={id === card.aceId} />
-              ))}
-            </div>
-          ))}
+          <div style={{ gridColumn: 2, gridRow: 1 }}>
+            <TypeMark t={card.t} />
+          </div>
+          {lines.map((line, li) => {
+            const col = Math.max(1, 6 - n + li + 1);
+            const len = line.b.length;
+            return line.b.map((id, stage) => (
+              <div key={`${li}-${id}-${stage}`} style={{ gridColumn: col, gridRow: 4 - len + stage }}>
+                <MiniTile id={id} ace={id === card.aceId} />
+              </div>
+            ));
+          })}
         </div>
       </div>
     );
@@ -846,7 +854,7 @@ function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
   // per column, then a full-width row for the champion and endgame boss. This
   // keeps the whole board short enough to sit under the scrubber at once.
   return (
-    <div className="flex flex-col gap-[5px]">
+    <div className="flex max-w-[460px] flex-col gap-[5px]">
       <div
         className="grid gap-[5px]"
         style={{ gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(4, auto)', gridAutoFlow: 'column' }}
