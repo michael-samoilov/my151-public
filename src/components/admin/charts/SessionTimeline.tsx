@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 /** One session on the timeline. `count` is the headline number shown in the
  *  readout (dex: ids placed; league: cards). `net` is the running size the net
  *  line tracks (dex: ids; league: seated lines). `added`/`removed` are the
@@ -53,6 +55,9 @@ export function SessionTimeline({
   countUnit,
   deltaUnit = '',
   peakLabel,
+  leftChip,
+  rightChip,
+  milestones = [],
 }: {
   points: TimelinePoint[];
   index: number;
@@ -60,6 +65,9 @@ export function SessionTimeline({
   countUnit: string;
   deltaUnit?: string;
   peakLabel?: string;
+  leftChip?: ReactNode;
+  rightChip?: ReactNode;
+  milestones?: { t: number; label: string; tone?: 'export' | 'muted' }[];
 }) {
   if (points.length === 0) return <p className="text-xs text-muted-foreground">No sessions yet.</p>;
 
@@ -151,15 +159,33 @@ export function SessionTimeline({
             </g>
           );
         })}
+        {/* milestones (exports, or a "no exports" marker) */}
+        {milestones.map((m, i) => {
+          const bx = x(m.t);
+          const color = m.tone === 'muted' ? 'var(--color-muted-foreground)' : 'var(--color-success)';
+          const anchor = bx < 24 ? 'start' : bx > W - 24 ? 'end' : 'middle';
+          const lx = bx < 24 ? bx - 2 : bx > W - 24 ? bx + 2 : bx;
+          return (
+            <g key={`ms-${i}`}>
+              <rect x={(bx - 2.4).toFixed(1)} y={railY - 2.4} width={4.8} height={4.8} rx={0.8} transform={`rotate(45 ${bx.toFixed(1)} ${railY})`} fill={color} />
+              <text x={lx.toFixed(1)} y={railY + 8} fontSize={6.5} fill={color} textAnchor={anchor}>
+                {m.label}
+              </text>
+            </g>
+          );
+        })}
         {/* playhead */}
         <line x1={cx.toFixed(1)} x2={cx.toFixed(1)} y1={2} y2={94} stroke="var(--color-primary)" strokeWidth={1.5} />
       </svg>
 
-      {/* The rail and a dot at every session the thumb clamps to, drawn under
+      {/* The rail, flanked by the time-spent (left) and session-count (right)
+          summaries. A dot marks every session the thumb clamps to, drawn under
           the transparent track so drag distance to the next state is legible.
-          The whole control is inset from the card edges, so a drag from the
-          rim doesn't start a back gesture or catch the page scrollbar. */}
-      <div className="relative px-3">
+          The rail is inset from the chips, so a drag from the rim doesn't start
+          a back gesture or catch the page scrollbar. */}
+      <div className="flex items-center gap-2">
+        {leftChip}
+        <div className="relative flex-1 px-3">
         <div className="pointer-events-none absolute inset-y-0 left-3 right-3">
           <div
             className="absolute left-0 right-0 top-1/2 h-[7px] -translate-y-1/2 rounded-full"
@@ -185,6 +211,8 @@ export function SessionTimeline({
           aria-label="Scrub sessions"
           aria-valuetext={`${fmtDay(cur.t)}: ${cur.count} ${countUnit}`}
         />
+        </div>
+        {rightChip}
       </div>
 
       <div className="flex flex-wrap items-baseline gap-2">
