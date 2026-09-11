@@ -51,12 +51,24 @@ export function GymConnector({ openCard, color }: { openCard: number; color: str
       const y2t = clamp(gc.top);
       const y2b = clamp(gc.bottom);
       if (y1b - y1t < 1 || y2b - y2t < 1) { setD(null); return; }
+      // The trainer row has rounded corners of its own, so a straight narrow
+      // end left the same bare wedge on the left that the gym card left on the
+      // right. Trace the row's top-right and bottom-right corners with matching
+      // arcs, so the ribbon fills those wedges and follows the row's rounding
+      // exactly — it never laps onto the row's fill, which would darken it.
+      const face = row.querySelector('.grid');
+      const rowR0 = face ? parseFloat(getComputedStyle(face).borderTopRightRadius) || 0 : 0;
+      const rowR = Math.min(rowR0, (y1b - y1t) / 2);
+      const xr = x1 - rowR; // the narrow end's outer edge, in the wedge
       // Bend the S-curves in the visible gutter between the two cards, not in
       // the parts that now tuck under them.
       const mx = (lc.right + gc.left) / 2 - h.left;
       setD(
-        `M ${x1} ${y1t} C ${mx} ${y1t} ${mx} ${y2t} ${x2} ${y2t}` +
-        ` L ${x2} ${y2b} C ${mx} ${y2b} ${mx} ${y1b} ${x1} ${y1b} Z`,
+        `M ${xr} ${y1t} C ${mx} ${y1t} ${mx} ${y2t} ${x2} ${y2t}` +
+        ` L ${x2} ${y2b} C ${mx} ${y2b} ${mx} ${y1b} ${xr} ${y1b}` +
+        ` A ${rowR} ${rowR} 0 0 0 ${x1} ${y1b - rowR}` +
+        ` L ${x1} ${y1t + rowR}` +
+        ` A ${rowR} ${rowR} 0 0 0 ${xr} ${y1t} Z`,
       );
     };
 
