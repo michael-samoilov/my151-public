@@ -384,7 +384,11 @@ function Artwork({ tool }: { tool: Tool }) {
             data-hit
             className="hub-hit block"
             style={{ ...geom(i), transform: restTransform(i), pointerEvents: 'auto' }}
-            onPointerEnter={() => setFloated(i)}
+            // Float for a mouse or pen, never a touch tap (which would set the
+            // state and, with no matching leave, leave a shot stuck up). This
+            // replaces a CSS `(hover: hover) and (pointer: fine)` gate, which a
+            // touchscreen laptop fails even when a mouse is in use.
+            onPointerEnter={(e) => { if (e.pointerType !== 'touch') setFloated(i); }}
             onPointerLeave={() => setFloated((prev) => (prev === i ? null : prev))}
           >
             {/* An invisible copy of the shot gives the twin the shot's exact
