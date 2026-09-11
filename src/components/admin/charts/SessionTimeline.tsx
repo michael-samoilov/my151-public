@@ -59,6 +59,11 @@ export function SessionTimeline({
   const x = (t: number) => padL + (W - padL - padR) * ((t - t0) / span);
   const deltas = points.map((p, i) => p.magnitude - (i ? points[i - 1].magnitude : 0));
   const ref = Math.max(1, ...deltas.map((d) => Math.abs(d)));
+  // Bar width tracks the session's real length, so a long session reads wider
+  // than a short one. Position still comes from the timestamp, so spacing is
+  // elapsed time. Sessions without a duration fall back to the thinnest bar.
+  const maxDur = Math.max(1, ...points.map((p) => p.dur ?? 0));
+  const barW = (dur?: number) => 2.5 + ((dur ?? 0) / maxDur) * 9.5;
 
   const cur = points[Math.min(index, points.length - 1)];
   const curDelta = deltas[Math.min(index, points.length - 1)];
@@ -77,11 +82,12 @@ export function SessionTimeline({
         {points.map((p, i) => {
           const d = deltas[i];
           const h = Math.max(1.5, (Math.abs(d) / ref) * 30);
+          const w = barW(p.dur);
           return (
             <rect
               key={i}
-              x={(x(p.t) - 2).toFixed(1)}
-              width={4}
+              x={(x(p.t) - w / 2).toFixed(1)}
+              width={w.toFixed(1)}
               y={(d >= 0 ? baseY - h : baseY).toFixed(1)}
               height={h.toFixed(1)}
               rx={1}

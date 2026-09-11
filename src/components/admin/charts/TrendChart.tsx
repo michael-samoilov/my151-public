@@ -6,49 +6,28 @@ interface DailyPoint {
   rolling7: number;
 }
 
-interface WeekPoint {
-  week: number;
-  active: number;
-}
-
-/** Roll the daily series into weekly active-browser counts. The trailing-7-day
- *  rolling count sampled at each week's end is a weekly-active proxy from the
- *  data the endpoint already returns — no distinct-per-week field is needed. */
-function toWeekly(series: DailyPoint[]): WeekPoint[] {
-  const weeks: WeekPoint[] = [];
-  for (let i = 6; i < series.length; i += 7) {
-    weeks.push({ week: series[i].day, active: series[i].rolling7 });
-  }
-  // Always include the final (possibly partial) week so the latest point shows.
-  const last = series[series.length - 1];
-  if (last && (weeks.length === 0 || weeks[weeks.length - 1].week !== last.day)) {
-    weeks.push({ week: last.day, active: last.rolling7 });
-  }
-  return weeks;
-}
-
-/** 4-week trailing average — the denoised trend line. */
-function trailingAvg(vals: number[], window = 4): (number | null)[] {
+/** Trailing 7-day rolling SUM of the daily series — the "weekly traffic" line,
+ *  a weekly-active proxy on ~7× the daily scale, so it rides its own axis. */
+function rollingSum(vals: number[], window = 7): number[] {
   return vals.map((_, i) => {
-    if (i < window - 1) return null; // no full window yet
-    const slice = vals.slice(i - window + 1, i + 1);
-    return Math.round((slice.reduce((a, b) => a + b, 0) / slice.length) * 10) / 10;
+    const from = Math.max(0, i - window + 1);
+    return vals.slice(from, i + 1).reduce((a, b) => a + b, 0);
   });
 }
 
-const fmtWeek = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
 /**
- * Hero "Active browsers" weekly trend. Three honest layers, matching the
- * reviewed design: the raw weekly count (gray), a 4-week average (red — the one
- * data-movement accent), and a ±√n band that straddles the average, so the
- * envelope shows expected count noise rather than floating above the line.
+ * Hero traffic trend. Two honest layers on a daily interval: the daily count
+ * (faint, its own left axis) and a trailing 7-day rolling sum (the accent, its
+ * own right axis) that reads as the weekly trend. A translucent ±√n band around
+ * the daily line shows expected count noise, so a spike reads as noise or trend.
  */
 export function TrendChart({ series }: { series: DailyPoint[] }) {
-  const weekly = toWeekly(series);
-  const actives = weekly.map((w) => w.active);
-  const avg = trailingAvg(actives);
-  const labels = weekly.map((w) => fmtWeek(w.week));
+  const days = series.map((p) => p.day);
+  const daily = series.map((p) => p.dau);
+  const weekly = rollingSum(daily);
+  const labels = days.map(fmtDay);
 
   const ref = useECharts(
     (el): EChartsOption => {
@@ -56,22 +35,21 @@ export function TrendChart({ series }: { series: DailyPoint[] }) {
       const grid = cssVar(el, '--color-muted', '#f5f5f5');
       const red = cssVar(el, '--color-primary', '#dc2626');
 
-      // Band straddles the average: base = avg − √n (transparent), band = 2·√n
-      // stacked on top with a translucent neutral fill. Null where no average.
-      const bandBase = avg.map((a, i) => (a == null ? null : a - Math.sqrt(actives[i])));
-      const bandSpan = avg.map((a, i) => (a == null ? null : 2 * Math.sqrt(actives[i])));
+      // Band straddles the daily line: base = daily − √daily (transparent),
+      // span = 2·√daily stacked on top with a translucent neutral fill.
+      const bandBase = daily.map((d) => d - Math.sqrt(d));
+      const bandSpan = daily.map((d) => 2 * Math.sqrt(d));
 
       return {
         animation: false,
-        grid: { left: 30, right: 12, top: 10, bottom: 22 },
+        grid: { left: 34, right: 40, top: 10, bottom: 22 },
         tooltip: {
           ...tooltipStyle(el),
           trigger: 'axis',
           formatter: (params: unknown) => {
             const arr = params as { dataIndex: number }[];
             const i = arr[0]?.dataIndex ?? 0;
-            const a = avg[i];
-            return `${labels[i]}<br/><b>${actives[i]}</b> active${a != null ? ` · ${a} avg` : ''}`;
+            return `${labels[i]}<br/><b>${daily[i]}</b> daily · <b>${weekly[i]}</b> 7-day`;
           },
         },
         xAxis: {
@@ -83,58 +61,51 @@ export function TrendChart({ series }: { series: DailyPoint[] }) {
           axisLabel: {
             color: faint,
             fontSize: 9,
-            interval: (idx: number) => idx === 0 || idx === labels.length - 1 || idx % 3 === 0,
+            interval: (idx: number) => idx === 0 || idx === labels.length - 1 || idx % 14 === 0,
           },
         },
-        yAxis: {
-          type: 'value',
-          min: 0,
-          axisLabel: { color: faint, fontSize: 9 },
-          splitLine: { lineStyle: { color: grid } },
-        },
+        yAxis: [
+          {
+            type: 'value',
+            min: 0,
+            name: 'daily',
+            nameTextStyle: { color: faint, fontSize: 9, align: 'left' },
+            axisLabel: { color: faint, fontSize: 9 },
+            splitLine: { lineStyle: { color: grid } },
+          },
+          {
+            type: 'value',
+            min: 0,
+            name: '7-day',
+            nameTextStyle: { color: red, fontSize: 9, align: 'right' },
+            axisLabel: { color: red, fontSize: 9 },
+            splitLine: { show: false },
+          },
+        ],
         series: [
-          // Transparent base for the band.
+          // Transparent base for the ±√n band (left axis, with the daily line).
+          { type: 'line', yAxisIndex: 0, data: bandBase, lineStyle: { opacity: 0 }, stack: 'band', symbol: 'none', silent: true, z: 1 },
+          { type: 'line', yAxisIndex: 0, data: bandSpan, lineStyle: { opacity: 0 }, areaStyle: { color: faint, opacity: 0.13 }, stack: 'band', symbol: 'none', silent: true, z: 1 },
+          // Daily traffic.
           {
+            name: 'daily',
             type: 'line',
-            data: bandBase,
-            lineStyle: { opacity: 0 },
-            stack: 'band',
-            symbol: 'none',
-            silent: true,
-            z: 1,
-          },
-          // The band itself — neutral, so red stays the only saturated mark.
-          {
-            type: 'line',
-            data: bandSpan,
-            lineStyle: { opacity: 0 },
-            areaStyle: { color: faint, opacity: 0.13 },
-            stack: 'band',
-            symbol: 'none',
-            silent: true,
-            z: 1,
-          },
-          // Raw weekly count.
-          {
-            name: 'actual',
-            type: 'line',
-            data: actives,
-            lineStyle: { color: faint, width: 1.2 },
+            yAxisIndex: 0,
+            data: daily,
+            lineStyle: { color: faint, width: 1 },
             itemStyle: { color: faint },
-            symbol: 'circle',
-            symbolSize: 3,
+            symbol: 'none',
             z: 2,
           },
-          // 4-week average — the data-movement accent.
+          // Weekly traffic — the trailing 7-day rolling sum, the accent trend.
           {
-            name: '4-wk avg',
+            name: '7-day sum',
             type: 'line',
-            data: avg,
+            yAxisIndex: 1,
+            data: weekly,
             lineStyle: { color: red, width: 2.4 },
             itemStyle: { color: red },
             symbol: 'none',
-            smooth: false,
-            connectNulls: false,
             z: 3,
           },
         ],
@@ -143,35 +114,31 @@ export function TrendChart({ series }: { series: DailyPoint[] }) {
     [series],
   );
 
-  if (weekly.length < 2) {
+  if (series.length < 2) {
     return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
   }
 
-  const lo = Math.min(...actives);
-  const hi = Math.max(...actives);
+  const lo = Math.min(...daily);
+  const hi = Math.max(...daily);
   return (
     <div className="w-full">
       {/* Legend — identity is never color-alone. */}
-      <div className="mb-1 flex items-center gap-3 text-[0.65rem]">
+      <div className="mb-1 flex flex-wrap items-center gap-3 text-[0.65rem]">
         <span className="flex items-center gap-1">
-          <span className="inline-block h-[2px] w-3" style={{ backgroundColor: 'var(--color-muted-foreground)' }} /> actual
+          <span className="inline-block h-[2px] w-3" style={{ backgroundColor: 'var(--color-muted-foreground)' }} /> daily
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-[2px] w-3 bg-primary" /> 4-wk avg
+          <span className="inline-block h-[2px] w-3 bg-primary" /> weekly (7-day sum)
         </span>
         <span className="flex items-center gap-1">
-          <span
-            className="inline-block h-2 w-3 rounded-[1px]"
-            style={{ backgroundColor: 'var(--color-muted-foreground)', opacity: 0.2 }}
-          />{' '}
-          ±√n range
+          <span className="inline-block h-2 w-3 rounded-[1px]" style={{ backgroundColor: 'var(--color-muted-foreground)', opacity: 0.2 }} /> ±√n range
         </span>
       </div>
       <div
         ref={ref}
         className="h-[180px] w-full md:h-[220px]"
         role="img"
-        aria-label={`Weekly active browsers over ${weekly.length} weeks, ranging ${lo} to ${hi}, with a 4-week average and a plus-or-minus square-root-n band.`}
+        aria-label={`Daily active browsers over ${series.length} days, ranging ${lo} to ${hi}, with a trailing 7-day rolling sum and a plus-or-minus square-root-n band.`}
       />
     </div>
   );
