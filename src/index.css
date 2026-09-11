@@ -368,43 +368,38 @@ img {
   color: var(--lg-hint);
 }
 
-/* On hover each screenshot floats up off the card and settles back. `.hub-card`
- * (the cell) is the hover trigger and never moves; the clip boxes never move
- * either. Only the shots inside them translate, driven by `--hf`, so a shot
- * slides up WITHIN its fixed clip and reveals the part of itself that sits
- * hidden below the card's bottom edge — the card edge always shows screenshot,
- * never a strip of bare panel. A stationary trigger keeps the pointer from
- * chasing a shot that slides out from under it, so there is no hover flicker.
+/* Each screenshot floats up on its own when the pointer is over THAT screenshot,
+ * and settles back when the pointer leaves it. Scan the pointer across the fan
+ * and one shot lifts, then the next, never both at once.
  *
- * The two shots float by different amounts and on a slight stagger, so they
- * move as two separate cards, not one block: the front shot lifts further and a
- * beat later than the back. `--hf` feeds the shot's own `transform` ahead of its
- * `rotate` (see `place` in HomePage.tsx), so the rise is straight up whatever
- * the tilt. The hovered card rises above its neighbours so a floating shot stays
- * on top. Gated to a real hovering pointer; dropped under reduced motion. */
+ * The float is driven off a stationary hit layer, and that is the guard against
+ * flicker. `.hub-hit` is a transparent twin sitting at each shot's rest
+ * footprint; it never moves. Hovering a twin sets `--hf` on that shot's index
+ * (`data-shot`), and only the visible shot and its shadow move. Because the
+ * thing you hover stays put while the shot lifts, the shot can never rise out
+ * from under the pointer, un-hover, drop, and re-trigger — the classic hover
+ * flicker cannot start. The clip boxes stay put too, so a shot slides up WITHIN
+ * its clip and reveals the part of itself hidden below the card's bottom edge,
+ * rather than baring the panel.
+ *
+ * `--hf` feeds each shot's own transform ahead of its rotate (see `Artwork` in
+ * HomePage.tsx), so the rise is straight up whatever the tilt. `:has()` scopes
+ * the float to the hovered shot's index; where it is unsupported the shots
+ * simply do not float, which is fine for a hover nicety. Gated to a real
+ * hovering pointer and to motion being allowed, so a touch tap never sticks the
+ * state and reduced motion drops it. */
 .hub-float-shot {
   transition: transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
   will-change: transform;
 }
-.hub-float-shot[data-shot='1'] {
-  transition-delay: 70ms;
-}
-@media (hover: hover) and (pointer: fine) {
-  .hub-card:hover {
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .hub-card:has(.hub-hit:hover) {
     z-index: 10;
   }
-  .hub-card:hover .hub-float-shot[data-shot='0'] {
-    --hf: -7px;
+  [data-card-panel]:has(.hub-hit[data-shot='0']:hover) [data-shot='0'] {
+    --hf: -12px;
   }
-  .hub-card:hover .hub-float-shot[data-shot='1'] {
-    --hf: -13px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .hub-float-shot {
-    transition: none;
-  }
-  .hub-card:hover .hub-float-shot {
-    --hf: 0px;
+  [data-card-panel]:has(.hub-hit[data-shot='1']:hover) [data-shot='1'] {
+    --hf: -12px;
   }
 }

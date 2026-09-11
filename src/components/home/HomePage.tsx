@@ -293,25 +293,30 @@ function Artwork({ tool }: { tool: Tool }) {
     overflow: 'hidden',
     pointerEvents: 'none',
   } as const;
-  const place = (i: number) => {
+  // The rest geometry of a shot: where it sits and how it tilts, with no float.
+  const geom = (i: number) => {
     const f = FAN[i];
     return {
       position: 'absolute' as const,
       left: `calc(${BLEED} + ${U(f.offset)})`,
       top: `calc(${BLEED} + ${U(SHOT_TOP)} + ${U(f.drop)})`,
       width: `calc(${U(SHOT_W)} * var(--art))`,
-      // `--hf` is the hover float, set per shot in `index.css` and 0 at rest.
-      // It sits ahead of the rotate, so the shot rises straight up in screen
-      // space however it is tilted. The clip box does not move, so the shot
-      // slides up inside it and reveals the part of itself that sits hidden
-      // below the card's bottom edge, rather than the box sliding off the panel.
-      transform: `translateY(var(--hf, 0px)) rotate(${f.tilt}deg)`,
-      transformOrigin: '0 0',
+      transformOrigin: '0 0' as const,
       borderRadius: `calc(${U(SHOT_W)} * var(--art) * ${PHONE_RADIUS})`,
     };
   };
+  // The floating shots carry `--hf`, the per-shot hover float that `index.css`
+  // sets to 0 at rest and a lift on hover. It sits ahead of the rotate, so the
+  // shot rises straight up in screen space whatever its tilt. The clip box does
+  // not move, so the shot slides up inside it and reveals the part of itself
+  // that sits hidden below the card's bottom edge.
+  const floatTransform = (i: number) => `translateY(var(--hf, 0px)) rotate(${FAN[i].tilt}deg)`;
+  const restTransform = (i: number) => `rotate(${FAN[i].tilt}deg)`;
   return (
     <>
+      {/* Shadows. Masked so they fade out near the top break-out rather than
+          ending on a straight line at the clip edge. Each rides its own shot's
+          `--hf`, so a shadow floats with the shot it belongs to. */}
       <span
         style={{
           ...box,
@@ -325,21 +330,21 @@ function Artwork({ tool }: { tool: Tool }) {
             aria-hidden
             data-shot={i}
             className="hub-float-shot block"
-            style={{ ...place(i), boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)' }}
+            style={{ ...geom(i), transform: floatTransform(i), boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)' }}
           >
             <img src={tool.shots![i]} alt="" className="block w-full invisible" />
           </span>
         ))}
       </span>
+      {/* The visible shots. They float, so they carry no pointer events — the
+          stationary hit layer below owns hovering and clicking. */}
       <span style={box}>
         {FAN.map((f, i) => (
           <span
             key={f.tilt}
             data-shot={i}
             className="hub-float-shot block overflow-hidden border border-neutral-300 bg-background"
-            // Re-enable events the clip box turned off, so a click on the
-            // screenshot still follows the card's link.
-            style={{ ...place(i), pointerEvents: 'auto' }}
+            style={{ ...geom(i), transform: floatTransform(i) }}
           >
             {/* Not lazy: every card sits in the first viewport at every
                 width, and these are the page's largest paint. */}
@@ -349,6 +354,29 @@ function Artwork({ tool }: { tool: Tool }) {
               decoding="async"
               className="block w-full"
             />
+          </span>
+        ))}
+      </span>
+      {/* The hit layer: one transparent twin per shot, at the shot's REST
+          footprint, and it never moves. Hovering a twin floats that one shot
+          (see `.hub-hit` in index.css). Because the thing you hover stays put
+          while the shot lifts, the shot can never rise out from under the
+          pointer and drop back — the guard against hover flicker. The twins are
+          the click target too, so a click on a screenshot still follows the
+          card's link; the front twin sits last, so it wins the overlap. */}
+      <span style={box}>
+        {FAN.map((f, i) => (
+          <span
+            key={f.tilt}
+            data-shot={i}
+            data-hit
+            className="hub-hit block"
+            style={{ ...geom(i), transform: restTransform(i), pointerEvents: 'auto' }}
+          >
+            {/* An invisible copy of the shot gives the twin the shot's exact
+                height, so the hit area matches the screenshot's footprint. The
+                browser has already decoded this image, so it costs no fetch. */}
+            <img src={tool.shots![i]} alt="" className="block w-full invisible" />
           </span>
         ))}
       </span>
