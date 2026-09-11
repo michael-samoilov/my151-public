@@ -1019,8 +1019,13 @@ function HeadRuns({ lines, className, style, ...rest }: {
     </span>
   );
 }
-const ACE_NAME_CLASS = 'text-[0.8125rem] font-medium';
-const PARTNER_NAME_CLASS = 'text-[0.8125rem] font-medium';
+// The name is held to the sprite's width and truncates past it (see
+// `slotLayout.ts`), so its size is what decides how many letters clear the
+// seam. At 0.8125rem an eight-letter name filled the box to the last pixel and
+// a 2x display's subpixel rounding still clipped it; 0.75rem buys a few
+// letters' margin without reading as small.
+const ACE_NAME_CLASS = 'text-[0.75rem] font-medium';
+const PARTNER_NAME_CLASS = 'text-[0.75rem] font-medium';
 
 /**
  * Measure the slot, then solve both halves against what it actually is.
