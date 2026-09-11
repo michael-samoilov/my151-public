@@ -105,15 +105,17 @@ html {
 .admin-scrub {
   height: 26px;
 }
+/* Track is transparent; the rail and clamp-point dots are drawn by an overlay
+   beneath the thumb, so the dots sit on the rail rather than behind it. */
 .admin-scrub::-webkit-slider-runnable-track {
   height: 7px;
   border-radius: 999px;
-  background: var(--color-muted);
+  background: transparent;
 }
 .admin-scrub::-moz-range-track {
   height: 7px;
   border-radius: 999px;
-  background: var(--color-muted);
+  background: transparent;
 }
 .admin-scrub::-webkit-slider-thumb {
   -webkit-appearance: none;

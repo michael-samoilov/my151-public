@@ -122,17 +122,37 @@ export function SessionTimeline({
         <line x1={cx.toFixed(1)} x2={cx.toFixed(1)} y1={2} y2={94} stroke="var(--color-primary)" strokeWidth={1.5} />
       </svg>
 
-      <input
-        type="range"
-        min={0}
-        max={points.length - 1}
-        step={1}
-        value={Math.min(index, points.length - 1)}
-        onChange={(e) => onIndex(Number(e.target.value))}
-        className="admin-scrub w-full"
-        aria-label="Scrub sessions"
-        aria-valuetext={`${fmtDay(cur.t)}: ${cur.count} ${countUnit}`}
-      />
+      {/* The rail and a dot at every session the thumb clamps to, drawn under
+          the transparent track so drag distance to the next state is legible.
+          The whole control is inset from the card edges, so a drag from the
+          rim doesn't start a back gesture or catch the page scrollbar. */}
+      <div className="relative px-3">
+        <div className="pointer-events-none absolute inset-y-0 left-3 right-3">
+          <div
+            className="absolute left-0 right-0 top-1/2 h-[7px] -translate-y-1/2 rounded-full"
+            style={{ background: 'var(--color-muted)' }}
+          />
+          {points.length > 1 &&
+            points.map((_, i) => (
+              <span
+                key={i}
+                className="absolute top-1/2 h-[4px] w-[4px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                style={{ left: `calc(11px + ${i / (points.length - 1)} * (100% - 22px))`, background: 'var(--color-muted-foreground)' }}
+              />
+            ))}
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={points.length - 1}
+          step={1}
+          value={Math.min(index, points.length - 1)}
+          onChange={(e) => onIndex(Number(e.target.value))}
+          className="admin-scrub relative w-full touch-none"
+          aria-label="Scrub sessions"
+          aria-valuetext={`${fmtDay(cur.t)}: ${cur.count} ${countUnit}`}
+        />
+      </div>
 
       <div className="flex flex-wrap items-baseline gap-2">
         <b className="text-3xl leading-none tabular-nums">{cur.count}</b>
