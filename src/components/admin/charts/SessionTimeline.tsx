@@ -1,13 +1,14 @@
-import { cn } from '@/lib/utils';
-
 /** One session on the timeline. `count` is the headline number shown in the
- *  readout (dex: ids placed; league: cards). `magnitude` is the value whose
- *  session-over-session delta drives the bar height (dex: ids; league: seated
- *  lines). `dur` is seconds; `ev` are funnel events seen that session. */
+ *  readout (dex: ids placed; league: cards). `net` is the running size the net
+ *  line tracks (dex: ids; league: seated lines). `added`/`removed` are the
+ *  insertions and deletions that session — shown as up/down diff bars, never
+ *  netted. `dur` is seconds; `ev` are funnel events seen that session. */
 export interface TimelinePoint {
   t: number;
   count: number;
-  magnitude: number;
+  net: number;
+  added: number;
+  removed: number;
   dur?: number;
   ev?: string[];
 }
@@ -23,13 +24,27 @@ const EV_LABEL: Record<string, string> = {
   'view-visit': 'view',
 };
 
+/** Each Sunday-00:00 UTC boundary in [t0, t1] — the midnight between Saturday
+ *  and Sunday, so the count of lines is the count of calendar weeks touched. */
+function weekBoundaries(t0: number, t1: number): number[] {
+  const out: number[] = [];
+  const d = new Date(t0);
+  d.setUTCHours(0, 0, 0, 0);
+  while (d.getUTCDay() !== 0) d.setUTCDate(d.getUTCDate() + 1);
+  for (let ts = d.getTime(); ts <= t1; ts += 7 * 86_400_000) {
+    if (ts >= t0) out.push(ts);
+  }
+  return out;
+}
+
 /**
- * Bespoke session-history timeline, ported from the mockup: a diff bar per
- * session placed chronologically (x by timestamp, so spacing is elapsed time),
- * height = the session's net change on one shared linear scale, gain up in green
- * and loss down in neutral gray. Event dots ride a rail on top; a red playhead
- * marks the scrubbed session. The slider below scrubs; the readout states the
- * count, date, duration and delta.
+ * Bespoke session-history diff timeline. Each session is placed by timestamp (so
+ * spacing is elapsed time) and shows its insertions up in green and deletions
+ * down in red — never netted, so a session that swapped members reads as both. A
+ * line tracks the running size on the same axis. Grey verticals mark each
+ * Saturday→Sunday midnight, so the reader can count the weeks used. Event dots
+ * ride a rail on top; a red playhead marks the scrubbed session; the slider
+ * scrubs and the readout states the count, date, duration, and the diff.
  */
 export function SessionTimeline({
   points,
@@ -51,57 +66,75 @@ export function SessionTimeline({
   const W = 320;
   const padL = 6;
   const padR = 6;
-  const baseY = 64;
+  const topY = 20;
+  const botY = 74;
   const railY = 12;
   const t0 = points[0].t;
   const t1 = points[points.length - 1].t;
   const span = t1 - t0 || 1;
   const x = (t: number) => padL + (W - padL - padR) * ((t - t0) / span);
-  const deltas = points.map((p, i) => p.magnitude - (i ? points[i - 1].magnitude : 0));
-  const ref = Math.max(1, ...deltas.map((d) => Math.abs(d)));
-  // Bar width tracks the session's real length, so a long session reads wider
-  // than a short one. Position still comes from the timestamp, so spacing is
-  // elapsed time. Sessions without a duration fall back to the thinnest bar.
+
+  const maxAdded = Math.max(1, ...points.map((p) => p.added));
+  const maxRemoved = Math.max(0, ...points.map((p) => p.removed));
+  const maxNet = Math.max(1, ...points.map((p) => p.net));
+  const yTop = Math.max(maxAdded, maxNet);
+  const yBot = -maxRemoved;
+  const range = yTop - yBot || 1;
+  const yPix = (v: number) => topY + ((yTop - v) / range) * (botY - topY);
+  const zeroY = yPix(0);
+
+  // Bar width tracks the session's real length, so a long session reads wider.
   const maxDur = Math.max(1, ...points.map((p) => p.dur ?? 0));
   const barW = (dur?: number) => 2.5 + ((dur ?? 0) / maxDur) * 9.5;
 
+  const weeks = weekBoundaries(t0, t1);
+  const netPath = points.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${yPix(p.net).toFixed(1)}`).join(' ');
+
   const cur = points[Math.min(index, points.length - 1)];
-  const curDelta = deltas[Math.min(index, points.length - 1)];
   const cx = x(cur.t);
 
   return (
     <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-3 text-[0.62rem] text-muted-foreground">
+        <span className="flex items-center gap-1"><span className="inline-block h-[6px] w-[6px] rounded-[1px]" style={{ background: 'var(--color-success)' }} /> added</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-[6px] w-[6px] rounded-[1px]" style={{ background: 'var(--color-primary)' }} /> removed</span>
+        <span className="flex items-center gap-1"><span className="inline-block h-[2px] w-3" style={{ background: 'var(--color-foreground)' }} /> size</span>
+      </div>
+
       <div className="flex items-baseline justify-between text-[0.7rem] tabular-nums text-muted-foreground">
         <span>{fmtDay(t0)}</span>
         {peakLabel && <span className="font-semibold">{peakLabel}</span>}
         <span>{fmtDay(t1)}</span>
       </div>
 
-      <svg viewBox={`0 0 ${W} 96`} className="block w-full" style={{ height: 'auto' }} role="img" aria-label="Session history; drag the slider to scrub.">
-        {/* diff bars */}
+      <svg viewBox={`0 0 ${W} 96`} className="block w-full" style={{ height: 'auto' }} role="img" aria-label="Session diff history; drag the slider to scrub.">
+        {/* week boundaries (Sat→Sun midnight), so weeks used are countable */}
+        {weeks.map((ts, i) => (
+          <line key={`wk-${i}`} x1={x(ts).toFixed(1)} x2={x(ts).toFixed(1)} y1={topY - 4} y2={botY} stroke="var(--color-muted-foreground)" strokeWidth={0.7} strokeDasharray="2 2" opacity={0.5} />
+        ))}
+        {/* diff bars: insertions up (green), deletions down (red) */}
         {points.map((p, i) => {
-          const d = deltas[i];
-          const h = Math.max(1.5, (Math.abs(d) / ref) * 30);
           const w = barW(p.dur);
+          const bx = (x(p.t) - w / 2).toFixed(1);
           return (
-            <rect
-              key={i}
-              x={(x(p.t) - w / 2).toFixed(1)}
-              width={w.toFixed(1)}
-              y={(d >= 0 ? baseY - h : baseY).toFixed(1)}
-              height={h.toFixed(1)}
-              rx={1}
-              fill={d >= 0 ? 'var(--color-success)' : 'var(--color-sink)'}
-            />
+            <g key={i}>
+              {p.added > 0 && (
+                <rect x={bx} width={w.toFixed(1)} y={yPix(p.added).toFixed(1)} height={(zeroY - yPix(p.added)).toFixed(1)} rx={1} fill="var(--color-success)" />
+              )}
+              {p.removed > 0 && (
+                <rect x={bx} width={w.toFixed(1)} y={zeroY.toFixed(1)} height={(yPix(-p.removed) - zeroY).toFixed(1)} rx={1} fill="var(--color-primary)" />
+              )}
+            </g>
           );
         })}
-        <line x1={padL} x2={W - padR} y1={baseY} y2={baseY} stroke="var(--color-border)" />
-        <text x={W - 2} y={baseY - 30} fontSize={6.5} fill="var(--color-muted-foreground)" textAnchor="end">
-          +{ref}
-        </text>
-        <text x={W - 2} y={baseY + 22} fontSize={6.5} fill="var(--color-muted-foreground)" textAnchor="end">
-          −{ref}
-        </text>
+        {/* zero baseline */}
+        <line x1={padL} x2={W - padR} y1={zeroY.toFixed(1)} y2={zeroY.toFixed(1)} stroke="var(--color-border)" />
+        {/* running-size line, on the same axis as the bars */}
+        <path d={netPath} fill="none" stroke="var(--color-foreground)" strokeWidth={1.2} strokeLinejoin="round" />
+        <text x={W - 2} y={topY + 4} fontSize={6.5} fill="var(--color-muted-foreground)" textAnchor="end">+{yTop}</text>
+        {maxRemoved > 0 && (
+          <text x={W - 2} y={botY - 1} fontSize={6.5} fill="var(--color-muted-foreground)" textAnchor="end">−{maxRemoved}</text>
+        )}
         {/* event dots + labels on the rail */}
         {points.map((p, i) => {
           if (!p.ev || p.ev.length === 0) return null;
@@ -163,15 +196,15 @@ export function SessionTimeline({
             {Math.round(cur.dur / 60)}m
           </span>
         )}
-        {curDelta !== 0 && (
-          <span
-            className={cn(
-              'rounded px-1.5 py-0.5 text-[0.7rem] font-bold tabular-nums',
-              curDelta > 0 ? 'text-[var(--color-success)]' : 'text-muted-foreground',
-            )}
-          >
-            {curDelta > 0 ? '+' : ''}
-            {curDelta}
+        {cur.added > 0 && (
+          <span className="rounded px-1.5 py-0.5 text-[0.7rem] font-bold tabular-nums text-[var(--color-success)]">
+            +{cur.added}
+            {deltaUnit}
+          </span>
+        )}
+        {cur.removed > 0 && (
+          <span className="rounded px-1.5 py-0.5 text-[0.7rem] font-bold tabular-nums text-[var(--color-primary)]">
+            −{cur.removed}
             {deltaUnit}
           </span>
         )}
