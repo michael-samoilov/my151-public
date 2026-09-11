@@ -296,8 +296,8 @@ export function LeagueApp() {
 
         {/* ---------------- desktop: league | card | picker ---------------- */}
         {isDesktop && (
-        <div className="hidden min-h-0 flex-1 flex-col md:flex">
-          <div className="relative flex min-h-0 flex-1">
+        <div className="hidden min-h-0 flex-1 flex-col overflow-y-auto md:flex">
+          <div className="relative flex h-full min-h-0 shrink-0">
             {/* The sankey ribbon linking the open gym's row to its card, in the
                 gutter between the two panes. Mounted only with a card open. */}
             {openCard !== null && <GymConnector openCard={openCard} color={connectorColor} />}
@@ -357,13 +357,14 @@ export function LeagueApp() {
             )}
           </div>
 
-          {/* One footer for the whole page, pinned at the very bottom, and slim
-              on purpose: the full footer reserved ~225px that shrank every card
-              to fit above it. Compact, it hands that height back to the panes,
-              so the cards and their sprites grow. It also holds still as the
-              card pane opens and closes above it — the two per-pane footers
-              used to scroll with their own panes. */}
-          <div className="max-h-[45vh] shrink-0 overflow-y-auto border-t bg-background">
+          {/* One footer for the whole page, below the fold. The panes row
+              above takes the whole viewport (`h-full`), and this container
+              scrolls to reveal the footer under it. That hands every pixel of
+              height to the panes, so `useFitScale` grows the cards and their
+              sprites, and the footer holds still as the card pane opens and
+              closes — the two per-pane footers used to scroll with their own
+              panes. */}
+          <div className="shrink-0 border-t bg-background">
             <PageFooter faq="league" compact />
           </div>
         </div>
