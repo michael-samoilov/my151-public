@@ -44,10 +44,29 @@ export interface Fit {
  * ancestor, so a pane that scrolls on its own is measured rather than the
  * window.
  */
+/**
+ * Desktop grow mode: instead of squashing to fit, the block lays out at a fixed
+ * rem width and zooms *up* uniformly to fill whichever runs out first — the
+ * pane's width or its height — so the card and its sprites grow to use the
+ * vertical room a tall pane leaves. The zoom is capped so the sprites never
+ * pass their 1x native size (the size the Pokémon browser draws them at).
+ */
+export interface Grow {
+  /** The block's layout width, in rem. Sets the card's proportions; the zoom
+   *  then scales the whole thing. */
+  baseWidthRem: number;
+  /** The sprite's own size in rem, so the cap can be read in the same units. */
+  spriteRem: number;
+  /** The largest the sprite may render, in px (the browser's 1x native size). */
+  targetSpritePx: number;
+}
+
 export function useFitScale(
   ref: React.RefObject<HTMLDivElement | null>,
   /** Below this the content stops being readable and a short scroll wins. */
   floor = 0.55,
+  /** Desktop only: grow the block up to fill the pane instead of squashing. */
+  grow?: Grow,
 ): Fit {
   const [fit, setFit] = useState<Fit>({ scale: 1, width: 0 });
   const scaleRef = useRef(1);
@@ -88,6 +107,26 @@ export function useFitScale(
             - (parseFloat(pad.paddingRight) || 0),
         );
       }
+      if (grow) {
+        // Uniform grow-fit: the block is laid out at a fixed rem width and
+        // zoomed as one, so the whole card — cells, sprites, text — scales
+        // together. It grows to whichever binds first, the pane's width (room)
+        // or its height (avail), and no further than the sprite's 1x native
+        // size. So a tall pane's spare height lifts the card up rather than
+        // leaving whitespace, and the sprites ride up with it.
+        const rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+        const baseWidth = grow.baseWidthRem * rootFont;
+        const spriteCeil = grow.targetSpritePx / (grow.spriteRem * rootFont);
+        const wScale = room / baseWidth;
+        const hScale = avail / natural;
+        const next = Math.max(floor, Math.min(wScale, hScale, spriteCeil));
+        if (Math.abs(next - scaleRef.current) > 0.003 || Math.abs(baseWidth - widthRef.current) > 0.5) {
+          scaleRef.current = next;
+          widthRef.current = baseWidth;
+          setFit({ scale: next, width: baseWidth });
+        }
+        return;
+      }
       // What the block would be scaled to if only its body had to fit. The
       // layout width grows by exactly that much, so the zoom gives the body's
       // width straight back and the squash costs it only height. What is left
@@ -124,7 +163,10 @@ export function useFitScale(
       ro.disconnect();
       window.removeEventListener('resize', compute);
     };
-  }, [ref, floor]);
+    // `grow` is a fresh object each render, so depend on its fields, not its
+    // identity, or the effect would tear down and rebuild every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ref, floor, grow?.baseWidthRem, grow?.spriteRem, grow?.targetSpritePx]);
   return fit;
 }
 

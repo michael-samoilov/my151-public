@@ -77,6 +77,14 @@ const LUMINANCE_SCALE = 0.25;
 /** The neutral "no type" colour the boards use. */
 const NO_TYPE = '#9CA3AF';
 
+/**
+ * How much of the type colour the card body carries: the type at 6.3% over
+ * white. Exported so the desktop connector can wear the same tint by another
+ * route — the type colour at this alpha over white composites to the same rgb
+ * as `base`, so a translucent ribbon meets the row with no seam.
+ */
+export const BASE_TINT = 0.063;
+
 type Rgb = [number, number, number];
 
 function hexToRgb(hex: string): Rgb {
@@ -177,14 +185,14 @@ export function cardShades(type: TypeName | 'none' | null): CardShades {
   const cell = atLuminance(alt, CELL_LUMINANCE.lo + (CELL_LUMINANCE.hi - CELL_LUMINANCE.lo) * t);
   const shades: CardShades = {
     type: colour,
-    base: overWhite(colour, 0.063),
+    base: overWhite(colour, BASE_TINT),
     cell,
     band: atLuminance(alt, BAND_LUMINANCE.lo + (BAND_LUMINANCE.hi - BAND_LUMINANCE.lo) * t),
     line: overWhite(colour, 0.14),
     dash: overWhite(cell, 0.28),
     hint: overWhite(cell, 0.55),
     open: rgba(colour, 0.055),
-    hover: rgba(colour, 0.09),
+    hover: rgba(colour, 0.18),
   };
   cache.set(key, shades);
   return shades;

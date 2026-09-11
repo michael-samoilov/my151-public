@@ -226,6 +226,19 @@ function EndDropZone({ sectionId, showIndicator }: { sectionId: string; showIndi
   );
 }
 
+// ---------- add-tile sizing ----------
+
+// The grid is six columns wide, always. A "+" tile fills its row's height, as
+// tall as the Pokémon tiles beside it. But when its row holds no tile — a
+// trailing "+" that starts a fresh row on a section of exactly n*6 Pokémon, or
+// a block of type placeholders under a full row — `md:aspect-auto` would
+// collapse it to a short strip, so it stays a square instead.
+const PLUS_COLS = 6;
+/** The aspect class for a trailing "+", given the count of tiles before it. */
+function trailingPlusAspect(precedingCount: number): string {
+  return precedingCount % PLUS_COLS === 0 ? 'aspect-square' : 'aspect-square md:aspect-auto';
+}
+
 // ---------- starter type buttons ----------
 
 const STARTER_TYPES = [['grass', '#78C850'], ['fire', '#F08030'], ['water', '#6890F0']] as const;
@@ -273,41 +286,58 @@ function StarterContent({
       }
     }
 
-    const elements: React.ReactNode[] = [];
+    // One flat list of slots in grid order, so a placeholder can tell whether a
+    // Pokémon tile shares its six-column row: if so it stretches to that tile's
+    // height, otherwise it stays a square rather than a short strip.
+    type Slot =
+      | { kind: 'tile'; pid: number }
+      | { kind: 'ph'; type: string; color: string; i: number };
+    const slots: Slot[] = [];
     for (const [type, color] of STARTER_TYPES) {
       const typePids = pidsByType.get(type);
       if (typePids) {
-        for (const pid of typePids) {
-          const tid = tileId('starter', pid);
-          elements.push(
-            <DraggableTile
-              key={tid}
-              id={tid}
-              pokemonId={pid}
-              sectionId="starter"
-              isDraggedLine={dragSet.has(pid)}
-              showInsertBefore={insertIndicator.tileId === tid && insertIndicator.side === 'left'}
-              showInsertAfter={insertIndicator.tileId === tid && insertIndicator.side === 'right'}
-              showX={showXIds.has(pid)}
-            />
-          );
-        }
+        for (const pid of typePids) slots.push({ kind: 'tile', pid });
       } else {
-        for (let i = 0; i < 3; i++) {
-          elements.push(
+        for (let i = 0; i < 3; i++) slots.push({ kind: 'ph', type, color, i });
+      }
+    }
+    const rowHasTile: boolean[] = [];
+    slots.forEach((s, idx) => {
+      if (s.kind === 'tile') rowHasTile[Math.floor(idx / PLUS_COLS)] = true;
+    });
+
+    return (
+      <>
+        {slots.map((s, idx) => {
+          if (s.kind === 'tile') {
+            const tid = tileId('starter', s.pid);
+            return (
+              <DraggableTile
+                key={tid}
+                id={tid}
+                pokemonId={s.pid}
+                sectionId="starter"
+                isDraggedLine={dragSet.has(s.pid)}
+                showInsertBefore={insertIndicator.tileId === tid && insertIndicator.side === 'left'}
+                showInsertAfter={insertIndicator.tileId === tid && insertIndicator.side === 'right'}
+                showX={showXIds.has(s.pid)}
+              />
+            );
+          }
+          const aspect = rowHasTile[Math.floor(idx / PLUS_COLS)] ? 'aspect-square md:aspect-auto' : 'aspect-square';
+          return (
             <button type="button"
-              key={`${type}-${i}`}
-              onClick={() => onTypeClick(type)}
-              className="aspect-square rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,opacity,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer hover:opacity-80"
-              style={{ borderColor: `${color}40`, color: `${color}90`, backgroundColor: `${color}10` }}
+              key={`${s.type}-${s.i}`}
+              onClick={() => onTypeClick(s.type)}
+              className={`${aspect} rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,opacity,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer hover:opacity-80`}
+              style={{ borderColor: `${s.color}40`, color: `${s.color}90`, backgroundColor: `${s.color}10` }}
             >
               <Plus className="w-[27%] h-[27%]" />
             </button>
           );
-        }
-      }
-    }
-    return <>{elements}</>;
+        })}
+      </>
+    );
   }
 
   // Standard rendering: show tiles + trailing "+"
@@ -335,7 +365,7 @@ function StarterContent({
         <button type="button"
           onClick={onAddClick}
           aria-label="Add a Pokémon to Starters"
-          className="aspect-square md:aspect-auto rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
+          className={`${trailingPlusAspect(pokemonIds.length)} rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary`}
         >
           <Plus className="w-[27%] h-[27%]" />
         </button>
@@ -577,7 +607,7 @@ function GroupBox({
                   onClick={() => onAddClick(group.id)}
                   aria-label={t('builder.addToSection', { section: sectionName(group.id) })}
                   data-add-slot
-                  className="aspect-square md:aspect-auto rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary"
+                  className={`${trailingPlusAspect(pokemonIds.length)} rounded-lg border-2 border-dashed flex items-center justify-center transition-[color,background-color,border-color,scale] duration-150 ease-out active:scale-[0.97] cursor-pointer border-muted-foreground/30 text-muted-foreground hover:border-primary/50 hover:text-primary`}
                 >
                   <Plus className="w-[27%] h-[27%]" />
                 </button>
@@ -921,10 +951,14 @@ export function PokedexGrid() {
       <div
         ref={scrollContainerRef}
         data-build-scroll
-        className="flex-1 min-h-0 overflow-y-auto overscroll-contain md:overscroll-auto"
-        style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+        // The scroll container itself is capped and centred, not the content
+        // inside it, so its scrollbar rides the content's right edge instead of
+        // sitting far out in the empty margin. `scrollbar-gutter: stable` keeps
+        // the rail's width reserved so it does not flicker as content grows.
+        className="flex-1 min-h-0 w-full overflow-y-auto overscroll-contain md:overscroll-auto"
+        style={{ maxWidth: containerMaxW, marginInline: containerMaxW ? 'auto' : undefined, scrollbarGutter: 'stable', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
       >
-          <div className="p-3 pb-0" style={{ maxWidth: containerMaxW, marginInline: containerMaxW ? 'auto' : undefined }}>
+          <div className="p-3 pb-0">
             <IntroCard
               totalPlaced={totalPlaced}
               onChooseStarters={() => handleAddClick('starter')}

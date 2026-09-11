@@ -122,7 +122,7 @@ function OptionChip({ label, active, colour, onClick }: {
       onClick={onClick}
       className={cn(
         'inline-flex cursor-pointer items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors',
-        active ? 'border-transparent text-white' : 'border-border text-muted-foreground hover:text-foreground',
+        active ? 'border-transparent text-white' : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground',
       )}
       style={active ? { background: colour } : undefined}
     >
@@ -224,8 +224,11 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
         <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">{results.length} found</span>
       </div>
 
-      {/* Filter chip row — the selection pane's idiom. */}
-      <div className="flex items-center gap-1.5 overflow-x-auto px-3 pb-2 no-scrollbar">
+      {/* Filter chip row — the selection pane's idiom. `shrink-0` is
+          load-bearing: `overflow-x-auto` sets this flex child's automatic
+          minimum size to zero, so without it the column's flex-shrink crushed
+          the row below its content and clipped the chips top and bottom. */}
+      <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto px-3 pb-2 no-scrollbar">
         {/* No match-mode control: a move has exactly one type, so "all of
             these types" can only ever be empty. Several types selected always
             means any of them. */}
@@ -324,7 +327,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
                       type="button"
                       key={type}
                       onClick={() => toggleType(type)}
-                      className="flex cursor-pointer items-center justify-center rounded-md py-0.5 transition-[opacity,scale] duration-150 ease-out active:scale-[0.96]"
+                      className="flex cursor-pointer items-center justify-center rounded-full transition-opacity duration-150 ease-out hover:ring-[3px] hover:ring-foreground/25 active:scale-[0.96]"
                       style={{ opacity: typeFilter && typeFilter.length > 0 && !isSelected ? 0.3 : 1 }}
                     >
                       <TypeBadge type={type} className="w-[5.625rem]" />
@@ -380,7 +383,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
               setTm(cardIndex, m.id);
               onClose();
             }}
-            className="grid h-8 w-full cursor-pointer items-center border-t border-border/50 text-left hover:bg-secondary/60"
+            className="grid h-8 w-full cursor-pointer items-center border-t border-border/50 text-left transition-colors hover:bg-foreground/[0.06]"
             style={grid}
           >
             <TypeBadge type={m.type} className="w-[4.375rem]" />

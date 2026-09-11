@@ -14,6 +14,7 @@ import { useLeagueStore, type CardType } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { useCardView } from '../useCardView';
 import { fitStyle, useFitScale } from '../useFitScale';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { CardGrid } from './CardGrid';
 import { HEADER_FIELD_H, LeagueExportButton } from './HeaderActions';
 import { usePencilRoom } from './usePencilRoom';
@@ -176,14 +177,22 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           {TYPE_NAMES.map((t) => (
-            <button key={t} type="button" onClick={() => pick(t)} className="cursor-pointer transition-transform hover:scale-105">
+            <button
+              key={t}
+              type="button"
+              onClick={() => pick(t)}
+              // A static light-grey outline on hover, shown at once (no bloom,
+              // no fade): a 3px ring that hugs the badge with no gap, the same
+              // idiom the dex builder's type filter uses.
+              className="cursor-pointer rounded-full hover:ring-[3px] hover:ring-foreground/25"
+            >
               <TypeBadge type={t} className="w-full" />
             </button>
           ))}
           <button
             type="button"
             onClick={() => pick('none')}
-            className="col-span-3 cursor-pointer transition-transform hover:scale-[1.02]"
+            className="col-span-3 cursor-pointer rounded-full hover:ring-[3px] hover:ring-foreground/25"
           >
             <NoTypeBadge />
           </button>
@@ -235,7 +244,9 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
         type="button"
         onClick={() => setTypePickerOpen(true)}
         aria-label={`Gym type${typeName ? `: ${typeName}` : ''}`}
-        className="shrink-0 cursor-pointer transition-transform hover:scale-105"
+        // A static light-grey outline on hover, matching the type picker's
+        // badges — shown at once, hugging the square.
+        className="shrink-0 cursor-pointer rounded-[0.4375rem] hover:ring-[3px] hover:ring-foreground/25"
       >
         <TypeMark type={view.card.type} />
       </button>
@@ -314,7 +325,15 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
   const typePickerOpen = useLeagueUi((s) => s.typePickerOpen);
   const movePickerOpen = useLeagueUi((s) => s.movePickerOpen);
   const fitRef = useRef<HTMLDivElement>(null);
-  const fit = useFitScale(fitRef);
+  const isDesktop = useIsDesktop();
+  // Desktop grows the card to fill the pane, up to the browser's 1x sprite
+  // size (96px native). Mobile keeps the squash-to-fit that the sliding pane
+  // and the pickers depend on.
+  const fit = useFitScale(
+    fitRef,
+    0.55,
+    isDesktop && !withBar ? { baseWidthRem: 22, spriteRem: 3.25, targetSpritePx: 96 } : undefined,
+  );
 
   return (
     <div className="w-full">

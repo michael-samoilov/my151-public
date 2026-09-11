@@ -19,6 +19,7 @@ import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { deriveRow, moveSeat } from '../model/engine';
 import { cardShades } from '../theme';
 import { fitStyle, useFitScale } from '../useFitScale';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { legendsOf, powerupsAt, useLeagueStore, type GymCard } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
@@ -255,7 +256,14 @@ export function LeagueHome() {
   const moveSlot = useLeagueStore((s) => s.moveSlot);
   const sensors = useDragSensors();
   const fitRef = useRef<HTMLDivElement>(null);
-  const fit = useFitScale(fitRef);
+  const isDesktop = useIsDesktop();
+  // Desktop grows the summary to fill the pane the way the card does; mobile
+  // keeps the squash the sliding pane relies on.
+  const fit = useFitScale(
+    fitRef,
+    0.55,
+    isDesktop ? { baseWidthRem: 26, spriteRem: 2.625, targetSpritePx: 96 } : undefined,
+  );
   const [preview, setPreview] = useState<{ from: number; to: number } | null>(null);
   const cards = useLeagueStore((s) => s.cards);
   // Nothing placed anywhere: a row's tap can only mean "add a trainer", so
@@ -319,7 +327,13 @@ export function LeagueHome() {
       onDragCancel={() => { dragInputIsTouch.current = false; setPreview(null); }}
     >
       <div ref={fitRef} style={fitStyle(fit)}>
-        <div className="rounded-xl bg-card p-1 px-2 shadow-elevated">
+        {/* Uniform 0.6875rem gutter on all four sides, and an outer radius of
+            that gutter plus the rows' own 0.3125rem corner (= 1rem) — so the
+            card's rounded edge sits concentric with the bands and rows it
+            holds and hugs them. The same gutter and radius the gym leader card
+            wears, so the two read as one designed pair. It used to pad 0.25rem
+            top/bottom against 0.5rem sides. */}
+        <div data-lg-league-root className="rounded-2xl bg-card p-[0.6875rem] shadow-elevated">
           {order.map((cardIndex, position) => (
             <div key={position}>
               {SECTION_BEFORE[position] && (

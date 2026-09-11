@@ -315,9 +315,12 @@ function formSprite(form: PowerupForm): string {
   return `/sprites/pokemon/${form.id}.png`;
 }
 
-function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup, held, ringWhenOver, onRemove, removeLabel, onReset, tint }: {
+function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup, held, ringWhenOver, onRemove, removeLabel, onReset, tint, columnHovered }: {
   cardIndex: number;
   datum: CellDatum;
+  /** The pointer is over this cell's column, so its white slot washes to the
+   *  gym's tint. */
+  columnHovered?: boolean;
   pokemonId: number | null;
   /** The Mega or Gigantamax this cell is currently wearing, if any. */
   form: PowerupForm | null;
@@ -373,7 +376,13 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
   return (
     <div
       ref={setDropRef}
-      className="relative flex h-full items-center justify-center"
+      // The wrapper fills the whole column track, so its `data-seat` drives the
+      // column-hover wash across the gaps around the cell, and a `cursor-pointer`
+      // plus a click here make the gap read and act as part of the column: a
+      // click that lands beside the cell (not on it) runs the cell's own tap.
+      data-seat={datum.seat}
+      onClick={(e) => { if (e.target === e.currentTarget) onTap(); }}
+      className="relative flex h-full cursor-pointer items-center justify-center"
     >
       {/* The carried column is not drawn twice. The seat under it opens, and
           the column itself lifts off the card at full strength — so the copy
@@ -406,15 +415,22 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
         onClick={onTap}
         className={cn(
           'relative flex items-center justify-center rounded-md',
-          datum.filled && 'cursor-grab active:cursor-grabbing',
+          // A filled cell drags; an empty one opens the line picker on a tap,
+          // so it wears a pointer to say it is pressable.
+          datum.filled ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
           ringed && 'ring-2 ring-[var(--lg-cell)]',
         )}
         style={{
           width: `calc(100% - ${2 * INSET_X}rem)`,
           height: `${ROW_H - 2 * INSET_Y}rem`,
           // The tint is a layer over the slot's white rather than a colour
-          // in place of it, so the wash reads the same on every card.
-          background: tint ? `linear-gradient(${tint}, ${tint}), var(--lg-slot)` : 'var(--lg-slot)',
+          // in place of it, so the wash reads the same on every card. The
+          // column-hover wash is the same idea in the gym's own `hover` shade.
+          background: tint
+            ? `linear-gradient(${tint}, ${tint}), var(--lg-slot)`
+            : columnHovered
+              ? `linear-gradient(var(--lg-hover), var(--lg-hover)), var(--lg-slot)`
+              : 'var(--lg-slot)',
           // A cell with a line in it keeps the touch it is given. `pan-y`
           // let the page scroll under the very gesture that is supposed to
           // move a line up a row, so a drag begun with a moving finger
@@ -891,7 +907,9 @@ function SlotHalf({
       }
       className={cn(
         'absolute z-[6] flex flex-col items-center text-center',
-        lab && 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2',
+        // The half opens a one-Pokémon picker on a tap, so it wears a pointer.
+        // The slot lab overrides it with a grab handle for its drag-to-tune.
+        lab ? 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2' : 'cursor-pointer',
       )}
       style={{
         left: `${(place?.left ?? 0) + offset.x}px`,
@@ -1274,7 +1292,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       type="button"
       onClick={() => setMovePickerOpen(true)}
       data-testid="slot-tm"
-      className="absolute z-[5] flex items-center rounded-lg"
+      className="absolute z-[5] flex cursor-pointer items-center rounded-lg"
       style={{
         ...pos,
         paddingLeft: MARK_PAD,
@@ -1797,7 +1815,21 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     '--lg-dash': shades.dash,
     '--lg-hint': shades.hint,
     '--lg-slot': '#ffffff',
+    '--lg-hover': shades.hover,
   } as React.CSSProperties;
+
+  // Which column (seat) the pointer is over, so the whole column's white cells
+  // wash to the gym's own tint — the hover state the theme's `hover` shade was
+  // cut for. Read off the cell's full-height wrapper (`data-seat`), not the
+  // cell itself, so the wash holds while the pointer is in the gaps between and
+  // around the cells, not only dead on one. Off during a drag: the gesture
+  // speaks for itself and a wash under it only muddies the read.
+  const [hoverSeat, setHoverSeat] = useState<number | null>(null);
+  const onGridHover = useCallback((e: React.MouseEvent) => {
+    const wrap = (e.target as HTMLElement).closest('[data-seat]');
+    const seat = wrap?.getAttribute('data-seat');
+    setHoverSeat(seat !== null && seat !== undefined ? Number(seat) : null);
+  }, []);
 
   // During a reorder drag the grid renders the arrangement as it would land:
   // every column re-derives at its previewed seat, so a shifted line shows
@@ -1889,8 +1921,11 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       onDragCancel={onDragCancel}
     >
       <div
+        data-lg-card-root
         className="relative overflow-hidden rounded-2xl shadow-elevated"
         style={{ ...vars, background: shades.base, padding: `${PAD_Y}rem ${PAD_X}rem` }}
+        onMouseOver={onGridHover}
+        onMouseLeave={() => setHoverSeat(null)}
       >
         <AcePartnerSlot cardIndex={cardIndex} view={view} />
         <TmSlot cardIndex={cardIndex} view={view} />
@@ -1949,6 +1984,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       key={`${row}-${cell.seat}`}
                       cardIndex={cardIndex}
                       datum={datum}
+                      columnHovered={!inHand && stageDrag === null && !legendDrag && hoverSeat === cell.seat}
                       tint={tinted ? stageTint(line.branch[stageDrag.stage]) : undefined}
                       pokemonId={cell.pokemonId}
                       form={formAt(previewPowerups(row), row, cell.seat, cell.pokemonId)}

@@ -30,11 +30,11 @@ const FAQ: Record<FaqPage, [NoArgKey, NoArgKey][]> = {
   ],
 };
 
-export function Faq({ page }: { page: FaqPage }) {
+export function Faq({ page, compact = false }: { page: FaqPage; compact?: boolean }) {
   const t = useT();
   return (
-    <details data-testid="faq" className="mx-auto w-full max-w-[40rem] px-4 pb-6 text-left">
-      <summary className="cursor-pointer py-2 text-center text-[0.6875rem] text-muted-foreground/70 underline underline-offset-2 hover:text-foreground">
+    <details data-testid="faq" className={`mx-auto w-full max-w-[40rem] px-4 text-left ${compact ? 'pb-2' : 'pb-6'}`}>
+      <summary className={`cursor-pointer text-center text-[0.6875rem] text-muted-foreground/70 underline underline-offset-2 hover:text-foreground ${compact ? 'py-1' : 'py-2'}`}>
         {t('faq.summary')}
       </summary>
       <div className="flex flex-col gap-4 pt-2">

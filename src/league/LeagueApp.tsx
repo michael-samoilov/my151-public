@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, PanelRightClose } from 'lucide-react';
 import { LanguagePicker } from '@/components/layout/LanguagePicker';
 import { ToolsMenu } from '@/components/layout/ToolsMenu';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -19,6 +19,8 @@ import { useLeagueBrowserStore } from './store/browserBridge';
 import { useLeagueStore } from './store/useLeagueStore';
 import { useLeagueUi } from './store/useLeagueUi';
 import { LeagueHome } from './components/LeagueHome';
+import { GymConnector } from './components/GymConnector';
+import { cardShades } from './theme';
 import { CardActions, CardIdentity, CardPage } from './components/CardPage';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
@@ -148,6 +150,21 @@ function LeagueNameRow({ h1, narrow = false }: { h1: boolean; narrow?: boolean }
   );
 }
 
+/**
+ * Desktop pane content widths. Both columns grow with the pane — about two
+ * thirds of it, a shade past the middle half — instead of the old fixed 26rem,
+ * which read as a narrow island once a pane was wide. Capped so an ultra-wide
+ * pane does not inflate the card, floored so a three-pane layout keeps a usable
+ * width, and never wider than the pane itself. The dex builder sizes its grid
+ * the same way.
+ */
+const PANE_CONTENT = 'w-[min(100%,88%)]';
+/**
+ * With no card open the league owns the whole width, so it centres a larger
+ * column than it does when it shares the row with a card.
+ */
+const LEAGUE_SOLO_CONTENT = 'w-[min(100%,clamp(24rem,48%,44rem))]';
+
 export function LeagueApp() {
   // The sheet heading names a Pokémon, and `pokemonLabel` reads the name
   // store without subscribing to it.
@@ -163,6 +180,16 @@ export function LeagueApp() {
   const replacingId = useLeagueUi((s) => s.replacingId);
   const browserOpen = useLeagueUi((s) => s.browserOpen);
   const closeBrowser = useLeagueUi((s) => s.closeBrowser);
+  const closeCardPage = useLeagueUi((s) => s.closeCardPage);
+  // The open gym's own type colour tints the connector ribbon. Read reactively
+  // so retyping the gym recolours the ribbon; grey until a type is chosen.
+  const openCardType = useLeagueStore((s) => (openCard !== null ? s.cards[openCard]?.type ?? null : null));
+  // The ribbon carries the gym's own type colour (the hue), and the connector
+  // draws it translucent at `BASE_TINT` so it composites to the row's `base`
+  // colour over white. So the selected row flows out into the ribbon with no
+  // seam, but the ribbon stays a tint of the type rather than a flat fill.
+  // `cardShades(null)` gives the neutral hue a typeless row uses.
+  const connectorColor = cardShades(openCardType).type;
   const isDesktop = useIsDesktop();
 
   // Keep the browser's pseudo-section mirror current while the pane is open:
@@ -269,48 +296,77 @@ export function LeagueApp() {
 
         {/* ---------------- desktop: league | card | picker ---------------- */}
         {isDesktop && (
-        <div className="hidden min-h-0 flex-1 md:flex">
-          <section className={cn('flex min-w-0 flex-col border-r', browserOpen ? 'w-1/3' : 'w-1/2')}>
-            <div data-testid="league-tool-bar" className="flex h-11 items-center border-b px-4">
-              <div className="mx-auto flex w-full max-w-[26rem] items-center">
-                <LeagueNameRow h1 narrow={browserOpen} />
-                <span className="ml-auto flex shrink-0 items-center gap-1">
-                  <LeagueViewToggle />
-                  <LeagueExportButton />
-                </span>
+        <div className="hidden min-h-0 flex-1 flex-col overflow-y-auto md:flex">
+          <div className="relative flex h-full min-h-0 shrink-0">
+            {/* The sankey ribbon linking the open gym's row to its card, in the
+                gutter between the two panes. Mounted only with a card open. */}
+            {openCard !== null && <GymConnector openCard={openCard} color={connectorColor} />}
+            {/* League pane. It owns the whole width until a gym opens, then
+                gives half (a third once the picker joins) to the card. */}
+            <section className={cn('flex min-w-0 flex-col border-r', openCard === null ? 'flex-1' : browserOpen ? 'w-1/3' : 'w-1/2')}>
+              <div data-testid="league-tool-bar" className="flex h-11 items-center border-b px-4">
+                <div className={cn('mx-auto flex w-full items-center', openCard === null ? LEAGUE_SOLO_CONTENT : PANE_CONTENT)}>
+                  <LeagueNameRow h1 narrow={browserOpen} />
+                  <span className="ml-auto flex shrink-0 items-center gap-1">
+                    <LeagueViewToggle />
+                    <LeagueExportButton />
+                  </span>
+                </div>
               </div>
-            </div>
-            <div data-lg-viewport className="min-h-0 flex-1 overflow-y-auto py-3">
-              <div className="mx-auto w-full max-w-[26rem] px-3">
-                <LeagueHome />
+              <div data-lg-viewport className="min-h-0 flex-1 overflow-y-auto py-3">
+                <div className={cn('mx-auto px-3', openCard === null ? LEAGUE_SOLO_CONTENT : PANE_CONTENT)}>
+                  <LeagueHome />
+                </div>
               </div>
-              <PageFooter faq="league" />
-            </div>
-          </section>
+            </section>
 
-          <section className={cn('flex min-w-0 flex-col', browserOpen ? 'w-1/3 border-r' : 'w-1/2')}>
-            {/* The pane's header is the card's own identity, in the same bar
-                the league pane gives its identity. It used to be a second
-                title — "Pokémon Trainer Card", set large and bold — with the
-                card's real header a row below it, so the two panes named
-                themselves at different sizes and different heights. */}
-            <div data-testid="league-tool-bar" className="flex h-11 items-center border-b px-4">
-              <div className="mx-auto flex w-full max-w-[26rem] items-center gap-2">
-                <CardIdentity cardIndex={openCard ?? 0} showBack={false} />
-                <CardActions cardIndex={openCard ?? 0} />
-              </div>
-            </div>
-            <div data-lg-viewport className="min-h-0 flex-1 overflow-y-auto py-1">
-              <div className="mx-auto w-full max-w-[26rem]">
-                <CardPage cardIndex={openCard ?? 0} showBack={false} withBar={false} />
-              </div>
-              <PageFooter />
-            </div>
-          </section>
+            {/* Card pane — mounted only once a gym is open, so a new visitor
+                lands on the league alone. A collapse control folds it back to
+                the league, the way the Pokémon browser's pane collapses. */}
+            {openCard !== null && (
+              // `relative z-20` lifts the gym card above the connector so the
+              // ribbon tucks under its rounded corners, while the league pane
+              // stays under the connector so the ribbon can reach its row.
+              <section className={cn('relative z-20 flex min-w-0 flex-col', browserOpen ? 'w-1/3 border-r' : 'w-1/2')}>
+                {/* The pane's header is the card's own identity, in the same
+                    bar the league pane gives its identity. */}
+                <div data-testid="league-tool-bar" className="flex h-11 items-center gap-2 border-b px-4">
+                  <button
+                    type="button"
+                    onClick={closeCardPage}
+                    aria-label="Collapse the trainer card"
+                    className="shrink-0 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    <PanelRightClose size={18} />
+                  </button>
+                  <div className={cn('mx-auto flex w-full items-center gap-2', PANE_CONTENT)}>
+                    <CardIdentity cardIndex={openCard} showBack={false} />
+                    <CardActions cardIndex={openCard} />
+                  </div>
+                </div>
+                <div data-lg-viewport className="min-h-0 flex-1 overflow-y-auto py-1">
+                  <div className={cn('mx-auto', PANE_CONTENT)}>
+                    <CardPage cardIndex={openCard} showBack={false} withBar={false} />
+                  </div>
+                </div>
+              </section>
+            )}
 
-          {browserOpen && (
-            <section className="flex w-1/3 min-w-0 flex-col">{browser}</section>
-          )}
+            {browserOpen && (
+              <section className="flex w-1/3 min-w-0 flex-col">{browser}</section>
+            )}
+          </div>
+
+          {/* One footer for the whole page, below the fold. The panes row
+              above takes the whole viewport (`h-full`), and this container
+              scrolls to reveal the footer under it. That hands every pixel of
+              height to the panes, so `useFitScale` grows the cards and their
+              sprites, and the footer holds still as the card pane opens and
+              closes — the two per-pane footers used to scroll with their own
+              panes. */}
+          <div className="shrink-0 border-t bg-background">
+            <PageFooter faq="league" compact />
+          </div>
         </div>
         )}
 
