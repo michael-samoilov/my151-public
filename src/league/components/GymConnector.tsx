@@ -7,7 +7,8 @@ import { useLayoutEffect, useRef, useState } from 'react';
  * between their centred columns. The ribbon fills that gutter: narrow on the
  * left, at the selected row's own height against the league card's right edge,
  * and fanning to the card's full height on the right — so "this row" and "this
- * card" read as one flow. It carries the gym's own type colour, faint.
+ * card" read as one flow. It is painted in the row's own body colour (the
+ * `base` shade), so the row appears to flow straight into it with no seam.
  *
  * It measures three live elements (the league card, the selected row, the gym
  * card) and redraws on scroll, resize and the fit settling, because both panes
@@ -80,7 +81,7 @@ export function GymConnector({ openCard, color }: { openCard: number; color: str
 
   return (
     <svg ref={ref} className="pointer-events-none absolute inset-0 z-10 h-full w-full" aria-hidden>
-      {d && <path d={d} fill={color} fillOpacity={0.17} />}
+      {d && <path d={d} fill={color} />}
     </svg>
   );
 }

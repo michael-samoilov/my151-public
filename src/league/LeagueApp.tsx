@@ -184,7 +184,11 @@ export function LeagueApp() {
   // The open gym's own type colour tints the connector ribbon. Read reactively
   // so retyping the gym recolours the ribbon; grey until a type is chosen.
   const openCardType = useLeagueStore((s) => (openCard !== null ? s.cards[openCard]?.type ?? null : null));
-  const connectorColor = openCardType && openCardType !== 'none' ? cardShades(openCardType).type : '#94a3b8';
+  // The ribbon wears the row's own body colour (`base`), not the saturated type
+  // colour, so it reads as the selected row flowing out rather than a second,
+  // darker shape starting at the row's edge. `cardShades(null)` gives the same
+  // neutral base a typeless row paints.
+  const connectorColor = cardShades(openCardType).base;
   const isDesktop = useIsDesktop();
 
   // Keep the browser's pseudo-section mirror current while the pane is open:
