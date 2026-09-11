@@ -319,7 +319,10 @@ export function LeagueApp() {
                 lands on the league alone. A collapse control folds it back to
                 the league, the way the Pokémon browser's pane collapses. */}
             {openCard !== null && (
-              <section className={cn('flex min-w-0 flex-col', browserOpen ? 'w-1/3 border-r' : 'w-1/2')}>
+              // `relative z-20` lifts the gym card above the connector so the
+              // ribbon tucks under its rounded corners, while the league pane
+              // stays under the connector so the ribbon can reach its row.
+              <section className={cn('relative z-20 flex min-w-0 flex-col', browserOpen ? 'w-1/3 border-r' : 'w-1/2')}>
                 {/* The pane's header is the card's own identity, in the same
                     bar the league pane gives its identity. */}
                 <div data-testid="league-tool-bar" className="flex h-11 items-center gap-2 border-b px-4">

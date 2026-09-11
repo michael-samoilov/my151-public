@@ -34,15 +34,22 @@ export function GymConnector({ openCard, color }: { openCard: number; color: str
       const rr = row.getBoundingClientRect();
       const gc = gymCard.getBoundingClientRect();
       const clamp = (y: number) => Math.max(0, Math.min(h.height, y - h.top));
-      const x1 = lc.right - h.left;      // league card's right edge
-      const x2 = gc.left - h.left;       // gym card's left edge
+      // The narrow end reaches the trainer row's own right edge, not the league
+      // card's, so it touches the row it belongs to. The wide end runs a corner
+      // radius *under* the gym card's left edge, so the ribbon sits behind the
+      // card's rounded corners and fills the wedge they would otherwise leave.
+      const radius = parseFloat(getComputedStyle(gymCard).borderTopLeftRadius) || 0;
+      const x1 = rr.right - h.left;
+      const x2 = gc.left - h.left + radius;
       if (x2 - x1 < 8) { setD(null); return; } // no real gutter to fill
       const y1t = clamp(rr.top);
       const y1b = clamp(rr.bottom);
       const y2t = clamp(gc.top);
       const y2b = clamp(gc.bottom);
       if (y1b - y1t < 1 || y2b - y2t < 1) { setD(null); return; }
-      const mx = (x1 + x2) / 2; // control point x for both curved edges
+      // Bend the S-curves in the visible gutter between the two cards, not in
+      // the parts that now tuck under them.
+      const mx = (lc.right + gc.left) / 2 - h.left;
       setD(
         `M ${x1} ${y1t} C ${mx} ${y1t} ${mx} ${y2t} ${x2} ${y2t}` +
         ` L ${x2} ${y2b} C ${mx} ${y2b} ${mx} ${y1b} ${x1} ${y1b} Z`,
