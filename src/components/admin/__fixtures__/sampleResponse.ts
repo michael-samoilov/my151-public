@@ -183,6 +183,18 @@ const NEWEST: NewestSeed[] = [
   { cid: '4eab…af', c: 'GB', dev: 'Desktop', os: 'Windows', browser: 'Edge', lang: 'en-GB', sess: 1, dex: 3, comp: false, exp: false, hoursAgo: 27 },
 ];
 
+// Bucket a run of ids into a few real build sections so the scrubber shows a
+// grouped "build at this moment", not a flat row.
+const SECTION_IDS = ['starter', 'early-bird', 'forest', 'cave-pokemon', 'ocean'];
+function sectionsOf(ids: number[]): Record<string, number[]> {
+  const out: Record<string, number[]> = {};
+  ids.forEach((id, i) => {
+    const sid = SECTION_IDS[i % SECTION_IDS.length];
+    (out[sid] ??= []).push(id);
+  });
+  return out;
+}
+
 function record(s: NewestSeed): ClientRecord {
   const lastTs = NOW - s.hoursAgo * 3_600_000;
   const firstTs = lastTs - (s.sess + 2) * DAY;
@@ -198,12 +210,17 @@ function record(s: NewestSeed): ClientRecord {
     sessions: s.sess,
     maxSessionMs: Math.max(...sessionMs),
     sessionMs,
-    sessionLog: sessionMs.map((_ms, i) => ({
-      ts: firstTs + i * DAY,
-      ids: ids.slice(0, Math.round((ids.length * (i + 1)) / s.sess)),
-      country: s.c,
-      dev: `${s.dev} · ${s.os} · ${s.browser}`,
-    })),
+    sessionLog: sessionMs.map((_ms, i) => {
+      const upto = ids.slice(0, Math.round((ids.length * (i + 1)) / s.sess));
+      return {
+        ts: firstTs + i * DAY,
+        ids: upto,
+        country: s.c,
+        dev: `${s.dev} · ${s.os} · ${s.browser}`,
+        events: i === 0 ? ['intro-shown', 'intro-cta'] : i === 1 ? ['milestone-25'] : [],
+        sections: sectionsOf(upto),
+      };
+    }),
     maxDepth: Math.min(151, s.dex),
     localHour: 20,
     localDow: 3,
@@ -226,6 +243,25 @@ function record(s: NewestSeed): ClientRecord {
 }
 
 const records = NEWEST.map(record);
+
+// Build n trainer cards, each with a few seated evolution lines of real ids,
+// so the league scrubber shows a real board at each session.
+const LINE_POOL = [
+  [1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12], [13, 14, 15], [16, 17, 18],
+  [25, 26], [63, 64, 65], [92, 93, 94], [147, 148, 149],
+];
+function mkCards(n: number): import('../AdminPage').LeagueCard[] {
+  return Array.from({ length: n }, (_, i) => ({
+    i,
+    l: [
+      { b: LINE_POOL[(i * 3) % LINE_POOL.length] },
+      { b: LINE_POOL[(i * 3 + 1) % LINE_POOL.length] },
+      { b: LINE_POOL[(i * 3 + 2) % LINE_POOL.length] },
+    ],
+    ace: 0,
+    aceId: LINE_POOL[(i * 3) % LINE_POOL.length][0],
+  }));
+}
 
 // Five league browsers.
 function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAgo: number, hasDex: boolean): LeagueUser {
@@ -250,20 +286,25 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
     maxCards: cards,
     maxSeats: cards * 6,
     latest,
+    latestCards: mkCards(cards),
     exportsCard: cards >= 8 ? 1 : 0,
     exportsLeague: cards >= 11 ? 1 : 0,
-    sessionLog: Array.from({ length: sess }, (_, i) => ({
-      ts: firstTs + i * DAY,
-      summary: {
-        cards: Math.round((cards * (i + 1)) / sess),
-        seats: Math.round((cards * 6 * (i + 1)) / sess),
-        typed: Math.round((cards * (i + 1)) / sess),
-        named: Math.round((cards * (i + 1)) / sess),
-        aces: Math.round((cards * (i + 1)) / sess),
-        leagueNamed: false,
-      },
-      country: c,
-    })),
+    sessionLog: Array.from({ length: sess }, (_, i) => {
+      const c2 = Math.round((cards * (i + 1)) / sess);
+      return {
+        ts: firstTs + i * DAY,
+        summary: {
+          cards: c2,
+          seats: c2 * 6,
+          typed: c2,
+          named: c2,
+          aces: c2,
+          leagueNamed: false,
+        },
+        country: c,
+        cards: mkCards(c2),
+      };
+    }),
     order: hasDex ? 'dex-first' : undefined,
     gapDays: hasDex ? 3 : undefined,
   };
