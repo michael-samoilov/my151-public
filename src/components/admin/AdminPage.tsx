@@ -14,23 +14,16 @@ import { cn, displayName } from '@/lib/utils';
 import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
-import { slotLabel } from '@/league/model/constants';
+import { slotLabel, SLOT_COUNT } from '@/league/model/constants';
 import { defaultBoundaries } from '@/league/model/engine';
+import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
+import { OutlinedDex } from '@/components/admin/OutlinedDex';
 
 const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
   BUILD_GROUPS.map((g) => [g.id, { name: g.name, color: g.color }]),
 );
 
 // Human labels for the onboarding/funnel events shown per session.
-const EVENT_LABEL: Record<string, string> = {
-  'intro-shown': 'Intro shown',
-  'intro-cta': 'Intro CTA',
-  'intro-dismiss': 'Intro dismissed',
-  'milestone-25': 'Milestone 25',
-  'milestone-100': 'Milestone 100',
-  'milestone-151': 'Milestone 151',
-  'view-visit': 'Visited View',
-};
 
 // Set of section ids each Pokemon is a DEFAULT option for (its archetype /
 // category memberships). Used only to FLAG when a user placed a Pokemon in a
@@ -690,56 +683,28 @@ function SpriteRow({ ids }: { ids: number[] }) {
   );
 }
 
-/** Sprites grouped by build section, with off-section highlighting; falls back
- *  to a flat row when a snapshot carries no section map (legacy sessions). The
- *  shared renderer for the final dex and for each scrubbed session. */
-function SectionBuild({ sections, ids }: { sections?: Record<string, number[]>; ids: number[] }) {
-  if (!sections || Object.keys(sections).length === 0) {
-    if (!ids.length) return <p className="text-xs text-muted-foreground">Empty at this point.</p>;
-    return <SpriteRow ids={ids} />;
-  }
-  const order = BUILD_GROUPS.map((g) => g.id);
-  const present = Object.keys(sections)
-    .filter((sid) => sections[sid].length > 0)
-    .sort((a, b) => {
-      const ia = order.indexOf(a);
-      const ib = order.indexOf(b);
-      return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
-    });
-  if (present.length === 0) return <p className="text-xs text-muted-foreground">Empty at this point.</p>;
+/** The whole league at one moment: every slot (Gym 1-8, Elite Four, Champion,
+ *  Endgame Boss), empty or filled with its seated evolution lines and ace. */
+function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
+  const bySlot = new Map<number, LeagueCard>();
+  for (const c of cards) bySlot.set(c.i, c);
   return (
-    <div className="flex flex-col gap-1.5">
-      {present.map((sid) => {
-        const meta = SECTION_META[sid];
-        const gids = sections[sid];
+    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+      {Array.from({ length: SLOT_COUNT }, (_, i) => {
+        const card = bySlot.get(i);
         return (
-          <div key={sid}>
-            <div className="flex items-center gap-1 text-[0.65rem]">
-              <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: meta?.color ?? '#9ca3af' }} />
-              {meta?.name ?? sid} <span className="text-muted-foreground">· {gids.length}</span>
+          <div key={i} className="rounded-lg border border-border px-2.5 py-2">
+            <div className="mb-1 flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
+              {slotLabel(i)}
+              {!card && <span className="font-medium normal-case text-muted-foreground/70">· empty</span>}
             </div>
-            <div className="mt-0.5 flex flex-wrap gap-0.5">
-              {gids.map((id, idx) => {
-                const p = getPokemonById(id);
-                const off = isOffSection(id, sid);
-                return (
-                  <div
-                    key={`${id}-${idx}`}
-                    title={`${p ? '#' + id + ' ' + displayName(p.name) : '#' + id}${off ? ' — not a default here' : ''}`}
-                    className={cn(
-                      'flex h-6 w-6 shrink-0 items-center justify-center rounded',
-                      off && 'bg-amber-500/10 ring-1 ring-amber-500',
-                    )}
-                  >
-                    {p ? (
-                      <img src={p.sprite} alt={p.name} width={24} height={24} loading="lazy" style={{ imageRendering: 'pixelated' }} />
-                    ) : (
-                      <span className="text-[0.5rem] text-muted-foreground">#{id}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            {card && (
+              <div className="flex flex-wrap gap-1">
+                {card.l.map((line, li) => (
+                  <LeagueLineRow key={li} line={line} ace={card.ace === li ? card.aceId : undefined} />
+                ))}
+              </div>
+            )}
           </div>
         );
       })}
@@ -747,128 +712,169 @@ function SectionBuild({ sections, ids }: { sections?: Record<string, number[]>; 
   );
 }
 
-const scrubDate = (ts: number) => new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-
-/** Dex build scrubber: a slider over the session log that replays the whole
- *  build at each session — "Build at this moment" — with a live readout. The
- *  thumb is red, the one data-movement accent. Per-session section maps are
- *  forward-only, so older sessions fall back to a flat sprite row. */
-function BuildScrubber({ rec }: { rec: ClientRecord }) {
-  const log = rec.sessionLog ?? [];
-  const [i, setI] = useState(Math.max(0, log.length - 1));
-  if (log.length === 0) {
-    return (
-      <div>
-        <div className="mb-1 text-xs font-semibold text-muted-foreground">Final build</div>
-        <SectionBuild sections={rec.latestSections} ids={rec.latestIds ?? []} />
-      </div>
-    );
-  }
-  const idx = Math.min(i, log.length - 1);
-  const s = log[idx];
-  const ids = s.ids ?? [];
-  const prevCount = idx > 0 ? log[idx - 1].ids?.length ?? 0 : 0;
-  const delta = ids.length - prevCount;
-  const events = s.events ?? [];
+/** Facts chips shared by the two detail pages: geo, device, language. */
+function DetailFacts({ rec }: { rec: { country?: string; region?: string; device?: string; os?: string; browser?: string; locale?: string; lang?: string } }) {
+  const chips = [
+    rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? ' · ' + rec.region : ''}`,
+    [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
+    rec.locale ? `🗣 ${langLabel(rec.locale)}` : rec.lang && `🗣 ${langLabel(rec.lang)} · browser`,
+  ].filter(Boolean) as string[];
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Session {idx + 1} / {log.length}
+    <div className="flex flex-wrap gap-1.5">
+      {chips.map((c, i) => (
+        <span key={i} className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
+          {c}
         </span>
-        <span className="flex items-baseline gap-1.5 tabular-nums">
-          <b className="text-2xl leading-none">{ids.length}</b>
-          <span className="text-xs text-muted-foreground">/ 151</span>
-          <span className="text-[0.7rem] text-muted-foreground">· {scrubDate(s.ts)}</span>
-          {delta !== 0 && (
-            <span className="text-[0.7rem] font-semibold text-muted-foreground">
-              {delta > 0 ? '+' : ''}
-              {delta}
-            </span>
-          )}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={0}
-        max={log.length - 1}
-        step={1}
-        value={idx}
-        onChange={(e) => setI(Number(e.target.value))}
-        className="admin-scrub w-full"
-        aria-label="Scrub build sessions"
-        aria-valuetext={`Session ${idx + 1} of ${log.length}, ${scrubDate(s.ts)}, ${ids.length} of 151`}
-      />
-      {events.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {events.map((ev) => (
-            <span key={ev} className="rounded bg-muted px-1.5 py-0.5 text-[0.6rem] font-medium text-muted-foreground">
-              {EVENT_LABEL[ev] ?? ev}
-            </span>
-          ))}
-        </div>
-      )}
-      <div className="text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Build at this moment</div>
-      <SectionBuild sections={s.sections} ids={ids} />
+      ))}
     </div>
   );
 }
 
-/** League build scrubber: a slider over the league session log that replays the
- *  whole board at each session. Per-session card structure is forward-only, so
- *  legacy sessions show the summary counts and a note. */
-function LeagueScrubber({ league }: { league: LeagueUser }) {
+function Stat3({ items }: { items: { n: React.ReactNode; l: string }[] }) {
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {items.map((it, i) => (
+        <div key={i} className="rounded-lg bg-muted/60 px-3 py-2">
+          <div className="text-2xl font-bold leading-none tabular-nums">{it.n}</div>
+          <div className="mt-1 text-[0.7rem] text-muted-foreground">{it.l}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DetailHeader({ cid, onBack }: { cid: string; onBack: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
+        ‹ Back
+      </button>
+      <span className="text-sm font-bold tabular-nums">{cid}</span>
+      <span className="text-xs text-muted-foreground">1 browser</span>
+    </div>
+  );
+}
+
+/** Dex user detail page: session timeline + the build at the scrubbed moment,
+ *  drawn with the real section outlines. */
+function DexDetailPage({ rec, league, onBack }: { rec: ClientRecord; league?: LeagueUser; onBack: () => void }) {
+  const log = rec.sessionLog ?? [];
+  const [i, setI] = useState(Math.max(0, log.length - 1));
+  const points: TimelinePoint[] = log.map((s, k) => ({
+    t: s.ts,
+    count: s.ids.length,
+    magnitude: s.ids.length,
+    dur: rec.sessionMs?.[k] != null ? rec.sessionMs[k] / 1000 : undefined,
+    ev: s.events,
+  }));
+  const idx = Math.min(i, Math.max(0, log.length - 1));
+  const cur = log[idx];
+  const sections = cur?.sections ?? rec.latestSections;
+  const presentIds = cur?.ids ?? rec.latestIds ?? [];
+  const sectionedSet = new Set(Object.values(sections ?? {}).flat());
+  const offIds = presentIds.filter((id) => !sectionedSet.has(id));
+  const peak = Math.max(0, ...points.map((p) => p.count));
+  const totalMs = (rec.sessionMs ?? []).reduce((a, b) => a + b, 0);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <DetailHeader cid={rec.cid} onBack={onBack} />
+      <DetailFacts rec={rec} />
+      <Stat3
+        items={[
+          { n: rec.sessions ?? log.length, l: `sessions · ${activeDayCount(rec)}d` },
+          { n: totalMs ? fmtDuration(totalMs) : '—', l: 'total time' },
+          { n: rec.exported ? 1 : 0, l: rec.completed ? 'exports · hit 151' : 'exports' },
+        ]}
+      />
+      {points.length > 0 ? (
+        <SessionTimeline points={points} index={idx} onIndex={setI} countUnit="of 151" peakLabel={`${peak} / 151`} />
+      ) : (
+        <p className="text-xs text-muted-foreground">No session history.</p>
+      )}
+      <div className="text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Build at this moment</div>
+      {sections && Object.keys(sections).length > 0 ? (
+        <OutlinedDex sections={sections} presentIds={presentIds} />
+      ) : presentIds.length > 0 ? (
+        <SpriteRow ids={presentIds} />
+      ) : (
+        <p className="text-xs text-muted-foreground">Empty at this point.</p>
+      )}
+      {offIds.length > 0 && (
+        <div>
+          <div className="mb-1 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
+            Other sections · {offIds.length}
+          </div>
+          <SpriteRow ids={offIds} />
+        </div>
+      )}
+      {league && (
+        <div className="border-t border-border pt-3">
+          <div className="mb-2 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
+            🏅 League · {league.maxCards}/{CARD_COUNT} cards
+          </div>
+          <LeagueDetailBody league={league} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The league timeline + board, reused as a page and as the dex page's league
+ *  section. */
+function LeagueDetailBody({ league }: { league: LeagueUser }) {
   const log = league.sessionLog ?? [];
   const [i, setI] = useState(Math.max(0, log.length - 1));
-  if (log.length === 0) {
-    return (
-      <div>
-        <div className="mb-1 text-xs font-semibold text-muted-foreground">Latest league</div>
-        {league.latestCards ? <LeagueCards cards={league.latestCards} /> : <p className="text-xs text-muted-foreground">No structure captured.</p>}
-      </div>
-    );
-  }
-  const idx = Math.min(i, log.length - 1);
-  const s = log[idx];
-  const prevCards = idx > 0 ? log[idx - 1].summary.cards : 0;
-  const delta = s.summary.cards - prevCards;
+  const linesOf = (cards?: LeagueCard[], fallback = 0) =>
+    cards ? cards.reduce((n, c) => n + c.l.length, 0) : fallback;
+  const points: TimelinePoint[] = log.map((s, k) => ({
+    t: s.ts,
+    count: s.summary.cards,
+    magnitude: linesOf(s.cards, s.summary.seats),
+    dur: league.sessionMs?.[k] != null ? league.sessionMs[k] / 1000 : undefined,
+  }));
+  const idx = Math.min(i, Math.max(0, log.length - 1));
+  const cur = log[idx];
+  const peak = Math.max(0, ...points.map((p) => p.magnitude));
+
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-baseline justify-between gap-2">
-        <span className="text-xs font-semibold text-muted-foreground">
-          Session {idx + 1} / {log.length}
-        </span>
-        <span className="flex items-baseline gap-1.5 tabular-nums">
-          <b className="text-2xl leading-none">{s.summary.cards}</b>
-          <span className="text-xs text-muted-foreground">/ {CARD_COUNT} cards</span>
-          <span className="text-[0.7rem] text-muted-foreground">· {scrubDate(s.ts)}</span>
-          {delta !== 0 && (
-            <span className="text-[0.7rem] font-semibold text-muted-foreground">
-              {delta > 0 ? '+' : ''}
-              {delta}
-            </span>
-          )}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={0}
-        max={log.length - 1}
-        step={1}
-        value={idx}
-        onChange={(e) => setI(Number(e.target.value))}
-        className="admin-scrub w-full"
-        aria-label="Scrub league sessions"
-        aria-valuetext={`Session ${idx + 1} of ${log.length}, ${scrubDate(s.ts)}, ${s.summary.cards} of ${CARD_COUNT} cards`}
-      />
-      <div className="text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Whole league at this moment</div>
-      {s.cards && s.cards.length > 0 ? (
-        <LeagueCards cards={s.cards} defaultOpen />
+    <div className="flex flex-col gap-4">
+      {points.length > 0 ? (
+        <SessionTimeline points={points} index={idx} onIndex={setI} countUnit={`of ${CARD_COUNT} cards`} deltaUnit=" lines" peakLabel={`${peak} lines`} />
       ) : (
-        <p className="text-xs text-muted-foreground">
-          {s.summary.cards} card{s.summary.cards === 1 ? '' : 's'}, {s.summary.seats} seats · structure not captured for this session
-        </p>
+        <p className="text-xs text-muted-foreground">No session history.</p>
       )}
+      <div className="text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Whole league at this moment</div>
+      {cur?.cards && cur.cards.length > 0 ? (
+        <LeagueBoardSnapshot cards={cur.cards} />
+      ) : league.latestCards && league.latestCards.length > 0 ? (
+        <LeagueBoardSnapshot cards={league.latestCards} />
+      ) : (
+        <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
+      )}
+    </div>
+  );
+}
+
+/** League user detail page. */
+function LeagueDetailPage({ rec, onBack }: { rec: LeagueUser; onBack: () => void }) {
+  const totalMs = (rec.sessionMs ?? []).reduce((a, b) => a + b, 0);
+  return (
+    <div className="flex flex-col gap-4">
+      <DetailHeader cid={rec.cid} onBack={onBack} />
+      <DetailFacts rec={rec} />
+      <Stat3
+        items={[
+          { n: rec.sessions, l: totalMs ? `sessions · ${fmtDuration(totalMs)}` : 'sessions' },
+          { n: rec.maxCards, l: `cards · of ${CARD_COUNT}` },
+          { n: rec.exportsCard + rec.exportsLeague, l: 'exports' },
+        ]}
+      />
+      <LeagueDetailBody league={rec} />
+      <p className="border-t border-border pt-2 text-[0.65rem] text-muted-foreground">
+        Structure only. Badge names, card themes and the league name stay in the user&rsquo;s browser and are
+        never sent — see describeLeague in src/league/model/leagueSummary.ts.
+      </p>
     </div>
   );
 }
@@ -907,8 +913,7 @@ function fmtExportSettings(s: NonNullable<ClientRecord['exportSettings']>): stri
   return parts.join(' · ');
 }
 
-function UserCard({ rec, league, onDelete, expanded, onToggle, zIndex, stickyOffset }: { rec: ClientRecord; league?: LeagueUser; onDelete: (rec: ClientRecord) => void; expanded: boolean; onToggle: () => void; zIndex: number; stickyOffset: number }) {
-  const [droppedOpen, setDroppedOpen] = useState(false);
+function UserCard({ rec, league, onDelete, onOpen, zIndex, stickyOffset }: { rec: ClientRecord; league?: LeagueUser; onDelete: (rec: ClientRecord) => void; onOpen: () => void; zIndex: number; stickyOffset: number }) {
   // Two-step delete: first click arms, second confirms. Auto-disarms after a
   // few seconds so a forgotten armed button can't be hit later by accident.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -919,7 +924,6 @@ function UserCard({ rec, league, onDelete, expanded, onToggle, zIndex, stickyOff
   }, [confirmingDelete]);
   const cardRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
-  const [stickyLabelTop, setStickyLabelTop] = useState(0);
   const userLocal = localTime(rec.lastTs, rec.tz);
   const ctx = [
     rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
@@ -935,33 +939,11 @@ function UserCard({ rec, league, onDelete, expanded, onToggle, zIndex, stickyOff
       : undefined,
   ].filter(Boolean);
 
-  useLayoutEffect(() => {
-    if (expanded && headerRef.current) {
-      setStickyLabelTop(stickyOffset + headerRef.current.offsetHeight);
-    }
-  }, [expanded, stickyOffset]);
-
-  const handleToggle = () => {
-    if (expanded) {
-      onToggle();
-      requestAnimationFrame(() => {
-        const el = cardRef.current;
-        if (!el) return;
-        const rect = el.getBoundingClientRect();
-        if (rect.top < 0) {
-          el.scrollIntoView({ block: 'start', behavior: 'instant' });
-        }
-      });
-    } else {
-      onToggle();
-    }
-  };
-
   return (
     <section ref={cardRef} style={{ zIndex, scrollMarginTop: stickyOffset }}>
       <div ref={headerRef} className="sticky z-[5]" style={{ top: stickyOffset }}>
         <div className="h-4 bg-background" />
-        <div className={`bg-card p-3 ${expanded ? 'pb-1 border-b border-border/50 rounded-t-lg shadow-elevated' : 'rounded-lg shadow-elevated'}`}>
+        <div className="rounded-lg bg-card p-3 shadow-elevated">
           <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
             <div className="text-sm">
               <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
@@ -1003,8 +985,8 @@ function UserCard({ rec, league, onDelete, expanded, onToggle, zIndex, stickyOff
               </span>
             </div>
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" onClick={handleToggle}>
-                {expanded ? 'Hide' : 'Builds'}
+              <Button variant="ghost" size="sm" onClick={onOpen}>
+                Builds ›
               </Button>
               {confirmingDelete ? (
                 <>
@@ -1043,65 +1025,7 @@ function UserCard({ rec, league, onDelete, expanded, onToggle, zIndex, stickyOff
           )}
         </div>
       </div>
-      {expanded && (
-        <div className="flex flex-col gap-4 rounded-b-lg bg-card p-3 pt-2 shadow-elevated">
-          <BuildScrubber rec={rec} />
-          {league && (
-            <div className="border-t border-border/50 pt-3">
-              <div className="mb-2 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
-                🏅 League · {league.maxCards}/{CARD_COUNT} cards
-              </div>
-              <LeagueScrubber league={league} />
-            </div>
-          )}
-          <DroppedPokemon rec={rec} stickyTop={stickyLabelTop} droppedOpen={droppedOpen} setDroppedOpen={setDroppedOpen} />
-        </div>
-      )}
     </section>
-  );
-}
-
-const STICKY_LABEL_CLASS = 'sticky z-[4] bg-card text-xs text-muted-foreground mb-0.5 py-0.5 border-b border-border/50';
-function stickyLabelStyle(top?: number): React.CSSProperties | undefined {
-  if (!top) return undefined;
-  return { top };
-}
-
-function DroppedPokemon({
-  rec,
-  stickyTop,
-  droppedOpen,
-  setDroppedOpen,
-}: {
-  rec: ClientRecord;
-  stickyTop?: number;
-  droppedOpen: boolean;
-  setDroppedOpen: (fn: (v: boolean) => boolean) => void;
-}) {
-  const kept = new Set(rec.latestIds ?? []);
-  const dropped = (rec.everIds ?? []).filter((id) => !kept.has(id));
-  if (dropped.length === 0) return null;
-
-  return (
-    <div>
-      <div
-        className={cn(STICKY_LABEL_CLASS, 'flex items-center gap-1 cursor-pointer select-none')}
-        style={stickyLabelStyle(stickyTop)}
-        onClick={() => setDroppedOpen((v) => !v)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setDroppedOpen((v) => !v);
-          }
-        }}
-      >
-        <span className={cn('text-[0.5rem] transition-transform inline-block', droppedOpen && 'rotate-90')}>▶</span>
-        Tried then dropped ({dropped.length})
-      </div>
-      {droppedOpen && <SpriteRow ids={dropped} />}
-    </div>
   );
 }
 
@@ -1110,32 +1034,6 @@ function countLabel(n: number, one: string, many: string): string {
 }
 
 /** How far this browser got, in one line. */
-function LeagueTotals({ league }: { league: LeagueUser }) {
-  return (
-    <div className="text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-0.5">
-      <span>
-        {league.sessions} session{league.sessions === 1 ? '' : 's'} · longest{' '}
-        {fmtDuration(league.maxSessionMs)}
-      </span>
-      <span>
-        peak {countLabel(league.maxCards, 'trainer card', 'trainer cards')} ·{' '}
-        {countLabel(league.maxSeats, 'seat', 'seats')}
-      </span>
-      <span>
-        latest {league.latest.cards}/{CARD_COUNT} filled, {league.latest.typed} typed,{' '}
-        {league.latest.named} named, {countLabel(league.latest.aces, 'ace', 'aces')}
-        {league.latest.leagueNamed ? ', league named' : ''}
-      </span>
-      {(league.exportsCard > 0 || league.exportsLeague > 0) && (
-        <span className="text-foreground">
-          📷 {league.exportsCard} card · {league.exportsLeague} league export
-          {league.exportsCard + league.exportsLeague === 1 ? '' : 's'}
-        </span>
-      )}
-    </div>
-  );
-}
-
 function movedStages(line: LeagueLine): Set<number> {
   if (!line.bd) return new Set();
   const fallback = defaultBoundaries(line.b);
@@ -1190,118 +1088,14 @@ function LeagueLineRow({ line, ace }: { line: LeagueLine; ace?: number }) {
 }
 
 /** A single Pokemon with a label, for the ace, partner and legendaries. */
-function LeagueMon({ id, label }: { id: number; label: string }) {
-  const p = getPokemonById(id);
-  return (
-    <span className="inline-flex items-center gap-1 text-[0.65rem] text-muted-foreground">
-      <span className="opacity-70">{label}</span>
-      {p ? (
-        <img
-          src={p.sprite}
-          alt={p.name}
-          width={20}
-          height={20}
-          loading="lazy"
-          decoding="async"
-          style={{ imageRendering: 'pixelated' }}
-          title={`#${id} ${displayName(p.name)}`}
-        />
-      ) : (
-        <span>#{id}</span>
-      )}
-    </span>
-  );
-}
-
-/**
- * What one browser's league actually holds.
- *
- * Structure only: the record carries which Pokemon sit where, the stages the
- * user dragged, powerups and legendaries — never the badge name, the theme or
- * the league name. A card that has never sent a structured beacon has none of
- * this, and says so rather than rendering as an empty league.
- */
-function LeagueCards({ cards, stickyTop, defaultOpen = false }: { cards: LeagueCard[]; stickyTop?: number; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(defaultOpen);
-  if (cards.length === 0) return null;
-  // Count the stages actually moved, not the lines carrying a boundary set.
-  const adjusted = cards.reduce(
-    (n, c) => n + c.l.reduce((m, l) => m + movedStages(l).size, 0),
-    0,
-  );
-  const powered = cards.filter((c) => c.pw && c.pw.length > 0).length;
-  const legendary = cards.filter((c) => c.lg && c.lg.length > 0).length;
-  return (
-    <div>
-      <div className={STICKY_LABEL_CLASS} style={stickyLabelStyle(stickyTop)}>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="w-full text-left cursor-pointer flex flex-wrap gap-x-2"
-        >
-          <span>
-            {open ? '▾' : '▸'} Cards ({cards.length})
-          </span>
-          {adjusted > 0 && (
-            <span className="text-amber-600">
-              {adjusted} evo stage{adjusted === 1 ? '' : 's'} moved
-            </span>
-          )}
-          {powered > 0 && <span>{powered} with a powerup</span>}
-          {legendary > 0 && <span>{legendary} with a legendary</span>}
-        </button>
-      </div>
-      {open && (
-        <ul className="flex flex-col gap-1.5">
-          {cards.map((c) => (
-            <li key={c.i} className="text-xs">
-              <div className="text-muted-foreground flex flex-wrap gap-x-2">
-                <span className="font-medium text-foreground">{slotLabel(c.i)}</span>
-                {c.t && c.t !== 'none' && <span>{c.t}</span>}
-                {c.tm !== undefined && <span>TM #{c.tm}</span>}
-              </div>
-              <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                {c.l.map((line, k) => (
-                  <LeagueLineRow key={k} line={line} ace={c.ace === k + 1 ? c.ace : undefined} />
-                ))}
-              </div>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                {c.aceId !== undefined && <LeagueMon id={c.aceId} label="ace" />}
-                {c.pa !== undefined && <LeagueMon id={c.pa} label="partner" />}
-                {c.lg?.map(([seat, id]) => (
-                  <LeagueMon key={`lg-${seat}-${id}`} id={id} label={`legendary · seat ${seat}`} />
-                ))}
-                {c.pw?.map(([row, seat, , kind]) => (
-                  <span key={`pw-${row}-${seat}`} className="text-[0.65rem] text-muted-foreground">
-                    {kind === 0 ? 'Mega' : 'Gigantamax'} · row {row}, seat {seat}
-                  </span>
-                ))}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-/**
- * One gym leader maker user, the dex builder's UserCard for a league.
- *
- * Its own card rather than a row in the funnel table, because a league user
- * who never touched the dex builder appears nowhere else on this page, and a
- * row cannot hold their visit history.
- */
 function LeagueUserCard({
   rec,
-  expanded,
-  onToggle,
+  onOpen,
   zIndex,
   stickyOffset,
 }: {
   rec: LeagueUser;
-  expanded: boolean;
-  onToggle: () => void;
+  onOpen: () => void;
   zIndex: number;
   stickyOffset: number;
 }) {
@@ -1313,28 +1107,11 @@ function LeagueUserCard({
     rec.locale ? `🗣 ${langLabel(rec.locale)}` : rec.lang && `🗣 ${langLabel(rec.lang)} · browser`,
   ].filter(Boolean);
 
-  const handleToggle = () => {
-    if (expanded) {
-      onToggle();
-      requestAnimationFrame(() => {
-        const el = cardRef.current;
-        if (!el) return;
-        if (el.getBoundingClientRect().top < 0) {
-          el.scrollIntoView({ block: 'start', behavior: 'instant' });
-        }
-      });
-    } else {
-      onToggle();
-    }
-  };
-
   return (
     <section ref={cardRef} style={{ zIndex, scrollMarginTop: stickyOffset }}>
       <div className="sticky z-[5]" style={{ top: stickyOffset }}>
         <div className="h-4 bg-background" />
-        <div
-          className={`bg-card p-3 ${expanded ? 'pb-1 border-b border-border/50 rounded-t-lg shadow-elevated' : 'rounded-lg shadow-elevated'}`}
-        >
+        <div className="rounded-lg bg-card p-3 shadow-elevated">
           <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
             <div className="text-sm">
               <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
@@ -1363,8 +1140,8 @@ function LeagueUserCard({
                 {userLocal && <> · their {userLocal}</>}
               </span>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleToggle}>
-              {expanded ? 'Hide' : 'Visits'}
+            <Button variant="ghost" size="sm" onClick={onOpen}>
+              Visits ›
             </Button>
           </div>
           {ctx.length > 0 && (
@@ -1376,16 +1153,6 @@ function LeagueUserCard({
           )}
         </div>
       </div>
-      {expanded && (
-        <div className="flex flex-col gap-3 rounded-b-lg bg-card p-3 pt-2 shadow-elevated">
-          <LeagueTotals league={rec} />
-          <LeagueScrubber league={rec} />
-          <p className="border-t border-border pt-2 text-[0.65rem] text-muted-foreground">
-            Structure only. Badge names, card themes and the league name stay in the user&rsquo;s
-            browser and are never sent — see describeLeague in src/league/model/leagueSummary.ts.
-          </p>
-        </div>
-      )}
     </section>
   );
 }
@@ -1488,8 +1255,8 @@ export function AdminPage() {
   const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
   const [cohort, setCohort] = useState<'built' | 'incomplete' | 'completed'>('built');
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
-  const [expandedCid, setExpandedCid] = useState<string | null>(null);
-  const [expandedLeagueCid, setExpandedLeagueCid] = useState<string | null>(null);
+  // Clicking a preview opens a full detail page ({kind, cid}); Back clears it.
+  const [detail, setDetail] = useState<{ kind: 'dex' | 'league'; cid: string } | null>(null);
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -1673,10 +1440,22 @@ export function AdminPage() {
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 pb-24 pt-4 md:pb-8">
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {page === 'feedback' &&
+        {/* A clicked preview opens a full detail page; Back returns here. */}
+        {detail && data && (() => {
+          if (detail.kind === 'dex') {
+            const rec = data.records.find((r) => r.cid === detail.cid);
+            if (!rec) return null;
+            return <DexDetailPage rec={rec} league={data.leagueByCid?.[rec.cid]} onBack={() => setDetail(null)} />;
+          }
+          const rec = data.leagueUsers?.find((r) => r.cid === detail.cid);
+          if (!rec) return null;
+          return <LeagueDetailPage rec={rec} onBack={() => setDetail(null)} />;
+        })()}
+
+        {!detail && page === 'feedback' &&
           (token ? <FeedbackCard token={token} /> : <p className="text-sm text-muted-foreground">Sign in to read feedback.</p>)}
 
-        {page === 'analytics' && data && (() => {
+        {!detail && page === 'analytics' && data && (() => {
           const slice = sliceOf(data, tool);
           const showDex = tool !== 'league';
 
@@ -1945,8 +1724,7 @@ export function AdminPage() {
                       rec={rec}
                       league={data.leagueByCid?.[rec.cid]}
                       onDelete={deleteUser}
-                      expanded={expandedCid === rec.cid}
-                      onToggle={() => setExpandedCid((prev) => (prev === rec.cid ? null : rec.cid))}
+                      onOpen={() => setDetail({ kind: 'dex', cid: rec.cid })}
                       zIndex={data.records.length - i}
                       stickyOffset={pageHeaderH}
                     />
@@ -1959,8 +1737,7 @@ export function AdminPage() {
                     <LeagueUserCard
                       key={rec.cid}
                       rec={rec}
-                      expanded={expandedLeagueCid === rec.cid}
-                      onToggle={() => setExpandedLeagueCid((prev) => (prev === rec.cid ? null : rec.cid))}
+                      onOpen={() => setDetail({ kind: 'league', cid: rec.cid })}
                       zIndex={data.leagueUsers!.length - i}
                       stickyOffset={pageHeaderH}
                     />

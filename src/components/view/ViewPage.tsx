@@ -273,7 +273,7 @@ function DraggableViewTile({
 }
 
 /** Empty grid slot: position number + faint pokeball outline. */
-function EmptyPlaceholder({ tileSize, num }: { tileSize: number; num: number }) {
+export function EmptyPlaceholder({ tileSize, num }: { tileSize: number; num: number }) {
   return (
     <div className="relative" style={{ width: tileSize, height: tileSize }}>
       <span
@@ -296,7 +296,7 @@ function EmptyPlaceholder({ tileSize, num }: { tileSize: number; num: number }) 
   );
 }
 
-function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSize: number }) {
+export function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSize: number }) {
   return (
     <div className="relative overflow-visible" style={{ width: tileSize, height: tileSize }}>
       <PokeballBg pokemon={pokemon} />
@@ -315,7 +315,7 @@ function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSize: num
 
 // ---------- Section outlines (geometry in src/lib/sectionOutlines.ts) ----------
 
-function SectionOverlays({
+export function SectionOverlays({
   runs,
   cols,
   tileSize,
