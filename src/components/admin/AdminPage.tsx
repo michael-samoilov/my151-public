@@ -20,6 +20,8 @@ import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
+import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip } from '@/components/admin/platformIcons';
+import { Globe, Languages } from 'lucide-react';
 
 const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
   BUILD_GROUPS.map((g) => [g.id, { name: g.name, color: g.color }]),
@@ -146,6 +148,7 @@ export interface ClientRecord {
   tz?: string;
   lang?: string;
   locale?: string;
+  switched?: string;
   device?: string;
   os?: string;
   browser?: string;
@@ -195,6 +198,7 @@ export interface LeagueUser {
   tz?: string;
   lang?: string;
   locale?: string;
+  switched?: string;
   device?: string;
   os?: string;
   browser?: string;
@@ -869,74 +873,120 @@ function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
   );
 }
 
-/** Facts chips shared by the two detail pages: geo, device, OS, browser, and the
- *  browser → served language. One chip each, mirroring the mockup. */
-function DetailFacts({ rec }: { rec: { country?: string; region?: string; device?: string; os?: string; browser?: string; locale?: string; lang?: string } }) {
-  // Browser preference on the left; the language the app actually served on the
-  // right, shown only when it differs. Older records carry a served locale but
-  // no browser preference, so fall back to whichever is present.
-  const browserLang = rec.lang && langName(rec.lang);
-  const servedLang = rec.locale && langName(rec.locale);
-  let langChip: React.ReactNode = null;
-  if (browserLang && servedLang && rec.lang && rec.locale && !sameBaseLang(rec.lang, rec.locale)) {
-    langChip = (
-      <>
-        lang <b className="font-semibold">{browserLang}</b> → <b className="font-semibold">{servedLang}</b>
-      </>
-    );
-  } else if (browserLang || servedLang) {
-    langChip = (
-      <>
-        lang <b className="font-semibold">{browserLang ?? servedLang}</b>
-      </>
+/** Facts a detail header renders: id plus geo, platform, and languages. */
+interface HeaderRec {
+  cid: string;
+  country?: string;
+  region?: string;
+  device?: string;
+  os?: string;
+  browser?: string;
+  lang?: string;
+  locale?: string;
+  switched?: string;
+}
+
+/** Middle-truncate a long id to first two + last four, so it never wraps. A
+ *  short, already-elided fixture id is left as-is. */
+function middleId(cid: string): string {
+  if (cid.length <= 8 || cid.includes('…')) return cid;
+  return `${cid.slice(0, 2)}…${cid.slice(-4)}`;
+}
+
+/** The languages chip. Three sources — the browser default (globe), the language
+ *  we served (poké ball), and any manual switch (translation) — collapse to a
+ *  single name when they agree, else list browser › served › switched. */
+function LanguageChip({ lang, locale, switched }: { lang?: string; locale?: string; switched?: string }) {
+  const items = [
+    lang ? { tag: lang, name: langName(lang), kind: 'browser' as const } : null,
+    locale ? { tag: locale, name: langName(locale), kind: 'served' as const } : null,
+    switched ? { tag: switched, name: langName(switched), kind: 'switched' as const } : null,
+  ].filter(Boolean) as { tag: string; name?: string; kind: 'browser' | 'served' | 'switched' }[];
+  if (items.length === 0) return null;
+  const chip = 'flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-xs font-medium';
+  const allSame = items.every((it) => sameBaseLang(it.tag, items[0].tag));
+  if (allSame) {
+    return (
+      <span className={chip}>
+        <Globe className="h-[13px] w-[13px] text-muted-foreground" />
+        {items[0].name}
+      </span>
     );
   }
-
-  const chips: React.ReactNode[] = [
-    rec.country && (
-      <>
-        <b className="font-semibold">{countryName(rec.country)}</b>
-        {rec.region ? ` · ${rec.region}` : ''}
-      </>
-    ),
-    rec.device,
-    rec.os,
-    rec.browser,
-    langChip,
-  ].filter(Boolean);
-
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {chips.map((c, i) => (
-        <span key={i} className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium">
-          {c}
+    <span className={chip}>
+      {items.map((it, i) => (
+        <span key={it.kind} className="flex items-center gap-0.5">
+          {i > 0 && <span className="px-0.5 text-muted-foreground/50">›</span>}
+          {it.kind === 'browser' && <Globe className="h-[13px] w-[13px] text-muted-foreground" />}
+          {it.kind === 'served' && <span className="text-muted-foreground [&>svg]:h-[13px] [&>svg]:w-[13px]">{POKEBALL_SVG}</span>}
+          {it.kind === 'switched' && <Languages className="h-[13px] w-[13px] text-muted-foreground" />}
+          {it.name}
         </span>
       ))}
-    </div>
+    </span>
   );
 }
 
-function Stat3({ items }: { items: { n: React.ReactNode; l: string }[] }) {
+/** Consolidated detail header: Back, the middle-truncated id, and the geo /
+ *  platform / language chips on one rail (icons disclose their name on press or
+ *  hover), so the identity takes one row instead of three. */
+function DetailHeader({ rec, onBack }: { rec: HeaderRec; onBack: () => void }) {
   return (
-    <div className="grid grid-cols-3 gap-2">
-      {items.map((it, i) => (
-        <div key={i} className="rounded-lg border border-border bg-card px-3 py-2">
-          <div className="text-2xl font-bold leading-none tabular-nums">{it.n}</div>
-          <div className="mt-1 text-[0.7rem] text-muted-foreground">{it.l}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DetailHeader({ cid, onBack }: { cid: string; onBack: () => void }) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+      <button type="button" onClick={onBack} className="flex shrink-0 items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
         ‹ Back
       </button>
-      <span className="text-sm font-bold tabular-nums">{cid}</span>
-      <span className="text-xs text-muted-foreground">1 browser</span>
+      <span className="shrink-0 text-sm font-bold tabular-nums" title={rec.cid}>
+        {middleId(rec.cid)}
+      </span>
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
+        {rec.country && (
+          <InfoChip label={`${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}`}>
+            <FlagIcon country={rec.country} />
+          </InfoChip>
+        )}
+        {rec.device && (
+          <InfoChip label={rec.device}>
+            <DeviceIcon value={rec.device} />
+          </InfoChip>
+        )}
+        {rec.os && (
+          <InfoChip label={rec.os}>
+            <OsIcon value={rec.os} />
+          </InfoChip>
+        )}
+        {rec.browser && (
+          <InfoChip label={rec.browser}>
+            <BrowserIcon value={rec.browser} />
+          </InfoChip>
+        )}
+        <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+      </div>
+    </div>
+  );
+}
+
+/** Two compact, fixed-width stat chips that flank the scrubber rail. */
+function railChipStyle(): string {
+  return 'flex h-9 flex-col justify-center rounded-lg border border-border bg-card px-2 text-center tabular-nums';
+}
+function SessionsChip({ sessions, days }: { sessions: number; days: number }) {
+  return (
+    <div className={`${railChipStyle()} w-[68px]`}>
+      <div className="text-sm font-bold leading-none">{sessions}</div>
+      <div className="text-[0.6rem] text-muted-foreground">{days === 1 ? '1 day' : `${days} days`}</div>
+    </div>
+  );
+}
+function TimeChip({ ms }: { ms: number }) {
+  const mins = Math.round(ms / 60000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return (
+    <div className={`${railChipStyle()} w-[72px]`}>
+      <div className="text-[0.8rem] font-bold leading-none">{h > 0 ? `${h}h ${m}m` : `${m}m`}</div>
+      <div className="text-[0.6rem] text-muted-foreground">time</div>
     </div>
   );
 }
@@ -946,13 +996,21 @@ function DetailHeader({ cid, onBack }: { cid: string; onBack: () => void }) {
 function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void }) {
   const log = rec.sessionLog ?? [];
   const [i, setI] = useState(Math.max(0, log.length - 1));
-  const points: TimelinePoint[] = log.map((s, k) => ({
-    t: s.ts,
-    count: s.ids.length,
-    magnitude: s.ids.length,
-    dur: rec.sessionMs?.[k] != null ? rec.sessionMs[k] / 1000 : undefined,
-    ev: s.events,
-  }));
+  const points: TimelinePoint[] = log.map((s, k) => {
+    const prev = k ? new Set(log[k - 1].ids) : new Set<number>();
+    const now = new Set(s.ids);
+    const added = s.ids.filter((id) => !prev.has(id)).length;
+    const removed = k ? log[k - 1].ids.filter((id) => !now.has(id)).length : 0;
+    return {
+      t: s.ts,
+      count: s.ids.length,
+      net: s.ids.length,
+      added,
+      removed,
+      dur: rec.sessionMs?.[k] != null ? rec.sessionMs[k] / 1000 : undefined,
+      ev: s.events,
+    };
+  });
   const idx = Math.min(i, Math.max(0, log.length - 1));
   const cur = log[idx];
   const sections = cur?.sections ?? rec.latestSections;
@@ -962,19 +1020,32 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
   const peak = Math.max(0, ...points.map((p) => p.count));
   const totalMs = (rec.sessionMs ?? []).reduce((a, b) => a + b, 0);
 
+  const t0 = log.length ? log[0].ts : 0;
+  const t1 = log.length ? log[log.length - 1].ts : 0;
+  const clampT = (t: number) => Math.max(t0, Math.min(t1, t));
+  // Exports are milestones on the timeline; a browser that never exported gets a
+  // "no exports" marker at its most recent session, so the absence still reads.
+  const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] =
+    rec.exported && rec.exportedAt
+      ? [{ t: clampT(Date.parse(rec.exportedAt)), label: 'export', tone: 'export' }]
+      : log.length
+        ? [{ t: t1, label: 'no exports', tone: 'muted' }]
+        : [];
+
   return (
     <div className="flex flex-col gap-4">
-      <DetailHeader cid={rec.cid} onBack={onBack} />
-      <DetailFacts rec={rec} />
-      <Stat3
-        items={[
-          { n: rec.sessions ?? log.length, l: `sessions · ${activeDayCount(rec)}d` },
-          { n: totalMs ? fmtDuration(totalMs) : '—', l: 'total time' },
-          { n: rec.exported ? 1 : 0, l: rec.completed ? 'exports · hit 151' : 'exports' },
-        ]}
-      />
+      <DetailHeader rec={rec} onBack={onBack} />
       {points.length > 0 ? (
-        <SessionTimeline points={points} index={idx} onIndex={setI} countUnit="of 151" peakLabel={`${peak} / 151`} />
+        <SessionTimeline
+          points={points}
+          index={idx}
+          onIndex={setI}
+          countUnit="of 151"
+          peakLabel={`${peak} / 151`}
+          milestones={milestones}
+          leftChip={<TimeChip ms={totalMs} />}
+          rightChip={<SessionsChip sessions={rec.sessions ?? log.length} days={activeDayCount(rec)} />}
+        />
       ) : (
         <p className="text-xs text-muted-foreground">No session history.</p>
       )}
@@ -988,11 +1059,12 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
       )}
       {offIds.length > 0 && (
         <div className="rounded-lg border border-dashed border-[var(--color-off)]/60 p-3">
-          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+          <div className="mb-0.5 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
             <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: 'var(--color-border)' }} />
-            Other sections
+            Not in a section
             <span className="text-muted-foreground/70">{offIds.length}</span>
           </div>
+          <p className="mb-1.5 text-[0.7rem] text-muted-foreground/80">In the build at this moment, but not placed under any of the sections above.</p>
           <SpriteRow ids={offIds} />
         </div>
       )}
@@ -1007,21 +1079,52 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   const [i, setI] = useState(Math.max(0, log.length - 1));
   const linesOf = (cards?: LeagueCard[], fallback = 0) =>
     cards ? cards.reduce((n, c) => n + c.l.length, 0) : fallback;
-  const points: TimelinePoint[] = log.map((s, k) => ({
-    t: s.ts,
-    count: s.summary.cards,
-    magnitude: linesOf(s.cards, s.summary.seats),
-    dur: league.sessionMs?.[k] != null ? league.sessionMs[k] / 1000 : undefined,
-  }));
+  // Identify a seated line by its base-stage id, so lines added or removed
+  // between sessions can be counted as diff insertions/deletions.
+  const lineKeys = (cards?: LeagueCard[]) => new Set((cards ?? []).flatMap((c) => c.l.map((line) => line.b[0])));
+  const points: TimelinePoint[] = log.map((s, k) => {
+    const prev = k ? lineKeys(log[k - 1].cards) : new Set<number>();
+    const now = lineKeys(s.cards);
+    const added = [...now].filter((key) => !prev.has(key)).length;
+    const removed = [...prev].filter((key) => !now.has(key)).length;
+    return {
+      t: s.ts,
+      count: s.summary.cards,
+      net: linesOf(s.cards, s.summary.seats),
+      added,
+      removed,
+      dur: league.sessionMs?.[k] != null ? league.sessionMs[k] / 1000 : undefined,
+    };
+  });
   const idx = Math.min(i, Math.max(0, log.length - 1));
   const cur = log[idx];
-  const peak = Math.max(0, ...points.map((p) => p.magnitude));
+  const peak = Math.max(0, ...points.map((p) => p.net));
   const linesSeated = cur ? linesOf(cur.cards, cur.summary.seats) : 0;
+  const totalMs = (league.sessionMs ?? []).reduce((a, b) => a + b, 0);
+  const t0 = log.length ? log[0].ts : 0;
+  const t1 = log.length ? log[log.length - 1].ts : 0;
+  const days = Math.max(1, Math.round((t1 - t0) / 86_400_000) + 1);
+  const exported = (league.exportsCard ?? 0) + (league.exportsLeague ?? 0) > 0;
+  const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] = exported
+    ? [{ t: t1, label: 'export', tone: 'export' }]
+    : log.length
+      ? [{ t: t1, label: 'no exports', tone: 'muted' }]
+      : [];
 
   return (
     <div className="flex flex-col gap-4">
       {points.length > 0 ? (
-        <SessionTimeline points={points} index={idx} onIndex={setI} countUnit={`of ${CARD_COUNT} cards`} deltaUnit=" lines" peakLabel={`${peak} lines`} />
+        <SessionTimeline
+          points={points}
+          index={idx}
+          onIndex={setI}
+          countUnit={`of ${CARD_COUNT} cards`}
+          deltaUnit=" lines"
+          peakLabel={`${peak} lines`}
+          milestones={milestones}
+          leftChip={<TimeChip ms={totalMs} />}
+          rightChip={<SessionsChip sessions={league.sessions} days={days} />}
+        />
       ) : (
         <p className="text-xs text-muted-foreground">No session history.</p>
       )}
@@ -1040,18 +1143,9 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
 
 /** League user detail page. */
 function LeagueDetailPage({ rec, onBack }: { rec: LeagueUser; onBack: () => void }) {
-  const totalMs = (rec.sessionMs ?? []).reduce((a, b) => a + b, 0);
   return (
     <div className="flex flex-col gap-4">
-      <DetailHeader cid={rec.cid} onBack={onBack} />
-      <DetailFacts rec={rec} />
-      <Stat3
-        items={[
-          { n: rec.sessions, l: totalMs ? `sessions · ${fmtDuration(totalMs)}` : 'sessions' },
-          { n: rec.maxCards, l: `cards · of ${CARD_COUNT}` },
-          { n: rec.exportsCard + rec.exportsLeague, l: 'exports' },
-        ]}
-      />
+      <DetailHeader rec={rec} onBack={onBack} />
       <LeagueDetailBody league={rec} />
     </div>
   );
@@ -1280,35 +1374,72 @@ function LeagueUserCard({
   );
 }
 
+/** Dashboard entry for picks: a one-row preview of the overall most-picked, with
+ *  a button that opens the full per-section page. Kept short so it doesn't run
+ *  the dashboard long with every section expanded. */
 function WhatPeoplePick({
+  mostBySection,
+  n,
+  onOpen,
+}: {
+  mostBySection: Record<string, [string, number][]>;
+  n: number;
+  onOpen: () => void;
+}) {
+  const top = useMemo<[string, number][]>(() => {
+    const totals: Record<string, number> = {};
+    for (const rows of Object.values(mostBySection)) for (const [id, c] of rows) totals[id] = (totals[id] ?? 0) + c;
+    return Object.entries(totals).sort((a, b) => b[1] - a[1]).slice(0, 9);
+  }, [mostBySection]);
+  return (
+    <Panel
+      title="What people pick"
+      sub={[`of ${n} dexes`]}
+      actions={
+        <Button variant="ghost" size="sm" onClick={onOpen}>
+          Most picked ›
+        </Button>
+      }
+    >
+      {top.length > 0 ? <PopularGrid rows={top} /> : <p className="text-sm text-muted-foreground">No picks yet.</p>}
+    </Panel>
+  );
+}
+
+/** Full picks page: per-section grids, toggled between most-picked and the picks
+ *  placed off their section. Reached from the dashboard entry. */
+function PicksDetailPage({
   mostBySection,
   offBySection,
   n,
+  onBack,
 }: {
   mostBySection: Record<string, [string, number][]>;
   offBySection: Record<string, [string, number][]>;
   n: number;
+  onBack: () => void;
 }) {
-  // The card is always grouped per section; the toggle only flips which picks
-  // each section shows — the most-picked, or the ones placed off their section.
   const [view, setView] = useState<'most' | 'off'>('most');
   const hasOff = Object.keys(offBySection).length > 0;
   return (
-    <Panel
-      title="What people pick"
-      sub={[`of ${n} dexes`, view === 'off' ? 'off-section, per section' : 'most picked, per section']}
-      actions={
-        <Seg
-          ariaLabel="Picks metric"
-          options={[
-            { key: 'most', label: 'Most picked' },
-            { key: 'off', label: 'Off-section' },
-          ]}
-          value={view}
-          onChange={setView}
-        />
-      }
-    >
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-2">
+        <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
+          ‹ Back
+        </button>
+        <span className="text-sm font-bold">What people pick</span>
+        <span className="text-xs text-muted-foreground">of {n} dexes</span>
+      </div>
+      <Seg
+        ariaLabel="Picks metric"
+        options={[
+          { key: 'most', label: 'Most picked' },
+          { key: 'off', label: 'Off-section' },
+        ]}
+        value={view}
+        onChange={setView}
+      />
+      <div className="text-xs text-muted-foreground">{view === 'off' ? 'Off-section picks, grouped by the section they landed in.' : 'Most-picked, grouped by section.'}</div>
       {view === 'off' ? (
         hasOff ? (
           <SectionGroupedGrids bySection={offBySection} />
@@ -1318,7 +1449,7 @@ function WhatPeoplePick({
       ) : (
         <SectionGroupedGrids bySection={mostBySection} />
       )}
-    </Panel>
+    </div>
   );
 }
 
@@ -1361,6 +1492,9 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
 
 // ---------- main ----------
 
+/** What the detail pane shows: one browser's dex or league, or the picks page. */
+type Detail = { kind: 'dex' | 'league'; cid: string } | { kind: 'picks' };
+
 export function AdminPage() {
   const [token, setToken] = useState<string | null>(() => {
     try {
@@ -1377,7 +1511,7 @@ export function AdminPage() {
   const [cohort, setCohort] = useState<'built' | 'incomplete' | 'completed'>('built');
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
   // Clicking a preview opens a full detail page ({kind, cid}); Back clears it.
-  const [detail, setDetail] = useState<{ kind: 'dex' | 'league'; cid: string } | null>(null);
+  const [detail, setDetail] = useState<Detail | null>(null);
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -1388,6 +1522,18 @@ export function AdminPage() {
   useLayoutEffect(() => {
     if (pageHeaderRef.current) setPageHeaderH(pageHeaderRef.current.offsetHeight);
   });
+
+  // Open a detail page from the dashboard, remembering the scroll position so
+  // Back returns the reader to exactly where they were, not the top.
+  const dashScrollRef = useRef(0);
+  const openDetail = useCallback((d: Detail) => {
+    dashScrollRef.current = window.scrollY;
+    setDetail(d);
+    window.scrollTo(0, 0);
+  }, []);
+  useLayoutEffect(() => {
+    if (!detail) window.scrollTo(0, dashScrollRef.current);
+  }, [detail]);
 
   const load = useCallback(async (tok: string, limit = PAGE_SIZE) => {
     setLoading(true);
@@ -1565,6 +1711,10 @@ export function AdminPage() {
 
         {/* A clicked preview opens a full detail page; Back returns here. */}
         {detail && data && (() => {
+          if (detail.kind === 'picks') {
+            const nDex = data.tools?.dex ?? data.funnel.users;
+            return <PicksDetailPage mostBySection={data.popularBySection} offBySection={offBySection} n={nDex} onBack={() => setDetail(null)} />;
+          }
           if (detail.kind === 'dex') {
             const rec = data.records.find((r) => r.cid === detail.cid);
             if (!rec) return null;
@@ -1820,7 +1970,7 @@ export function AdminPage() {
             </Panel>
 
             {showDex && (
-              <WhatPeoplePick mostBySection={data.popularBySection} offBySection={offBySection} n={built} />
+              <WhatPeoplePick mostBySection={data.popularBySection} n={built} onOpen={() => openDetail({ kind: 'picks' })} />
             )}
 
             <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
@@ -1835,7 +1985,7 @@ export function AdminPage() {
                       rec={rec}
                       league={data.leagueByCid?.[rec.cid]}
                       onDelete={deleteUser}
-                      onOpen={() => setDetail({ kind: 'dex', cid: rec.cid })}
+                      onOpen={() => openDetail({ kind: 'dex', cid: rec.cid })}
                       zIndex={data.records.length - i}
                       stickyOffset={pageHeaderH}
                     />
@@ -1848,7 +1998,7 @@ export function AdminPage() {
                     <LeagueUserCard
                       key={rec.cid}
                       rec={rec}
-                      onOpen={() => setDetail({ kind: 'league', cid: rec.cid })}
+                      onOpen={() => openDetail({ kind: 'league', cid: rec.cid })}
                       zIndex={data.leagueUsers!.length - i}
                       stickyOffset={pageHeaderH}
                     />

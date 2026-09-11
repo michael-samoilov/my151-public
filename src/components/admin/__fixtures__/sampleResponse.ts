@@ -223,7 +223,14 @@ function record(s: NewestSeed): ClientRecord {
       if (s.sess >= 5 && i === Math.floor(s.sess / 2)) count -= Math.round(ids.length * 0.25);
       count = Math.max(1, Math.min(ids.length, count));
       if (isLast) count = ids.length; // land on the true final total
-      const upto = ids.slice(0, count);
+      let upto = ids.slice(0, count);
+      // One session both swaps members out and in, so the diff chart shows red
+      // deletions and green insertions in the same bar — not just a net change.
+      if (s.sess >= 6 && i === Math.floor(s.sess / 2) + 1 && count > 40) {
+        const dropped = new Set(ids.slice(10, 22)); // remove a mid-run block
+        const swapIn = ids.slice(count, Math.min(ids.length, count + 12)); // add beyond the prefix
+        upto = [...upto.filter((id) => !dropped.has(id)), ...swapIn];
+      }
       return {
         ts: firstTs + i * DAY,
         ids: upto,
