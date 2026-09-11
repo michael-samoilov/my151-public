@@ -264,18 +264,27 @@ const LINE_POOL = [
 ];
 const CARD_TYPES = ['fire', 'water', 'grass', 'electric', 'psychic', 'rock', 'dragon', 'fairy', 'ghost', 'steel', 'ground', 'ice', 'bug', 'poison'];
 function mkCards(n: number): import('../AdminPage').LeagueCard[] {
-  return Array.from({ length: n }, (_, i) => ({
-    i,
-    // A card carries a type theme, which tints the slot's swatch.
-    t: CARD_TYPES[i % CARD_TYPES.length],
-    l: [
+  return Array.from({ length: n }, (_, i) => {
+    const l = [
       { b: LINE_POOL[(i * 3) % LINE_POOL.length] },
       { b: LINE_POOL[(i * 3 + 1) % LINE_POOL.length] },
       { b: LINE_POOL[(i * 3 + 2) % LINE_POOL.length] },
-    ],
-    // Not every card has an ace; the user marks a favorite on some.
-    ...(i % 2 === 0 ? { ace: 0, aceId: LINE_POOL[(i * 3) % LINE_POOL.length][0] } : {}),
-  }));
+    ];
+    const card: import('../AdminPage').LeagueCard = {
+      i,
+      // A card carries a type theme, which tints the slot's swatch.
+      t: CARD_TYPES[i % CARD_TYPES.length],
+      l,
+    };
+    // Most trainers mark an ace. Cycle the chosen line and use its final
+    // evolution, so the ring lands on varied lines and stages — never a fixed
+    // grid position. Skip roughly every third card.
+    if (i % 3 !== 2) {
+      const line = l[i % 3].b;
+      card.aceId = line[line.length - 1];
+    }
+    return card;
+  });
 }
 
 // Five league browsers.
