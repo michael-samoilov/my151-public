@@ -176,14 +176,22 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
         </div>
         <div className="grid grid-cols-3 gap-1.5">
           {TYPE_NAMES.map((t) => (
-            <button key={t} type="button" onClick={() => pick(t)} className="cursor-pointer transition-transform hover:scale-105">
+            <button
+              key={t}
+              type="button"
+              onClick={() => pick(t)}
+              // A static outline on hover rather than a scale bloom: the badge
+              // stays put and a neutral ring says "pressable", the same idiom
+              // the dex builder's type filter now uses.
+              className="cursor-pointer rounded-lg transition-shadow hover:ring-2 hover:ring-foreground/40 hover:ring-offset-2 hover:ring-offset-background"
+            >
               <TypeBadge type={t} className="w-full" />
             </button>
           ))}
           <button
             type="button"
             onClick={() => pick('none')}
-            className="col-span-3 cursor-pointer transition-transform hover:scale-[1.02]"
+            className="col-span-3 cursor-pointer rounded-lg transition-shadow hover:ring-2 hover:ring-foreground/40 hover:ring-offset-2 hover:ring-offset-background"
           >
             <NoTypeBadge />
           </button>
@@ -235,7 +243,9 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
         type="button"
         onClick={() => setTypePickerOpen(true)}
         aria-label={`Gym type${typeName ? `: ${typeName}` : ''}`}
-        className="shrink-0 cursor-pointer transition-transform hover:scale-105"
+        // A static outline on hover, matching the type picker's badges — no
+        // scale bloom in the tight header bar.
+        className="shrink-0 cursor-pointer rounded-[0.4375rem] transition-shadow hover:ring-2 hover:ring-foreground/35"
       >
         <TypeMark type={view.card.type} />
       </button>

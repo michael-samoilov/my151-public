@@ -319,7 +319,13 @@ export function LeagueHome() {
       onDragCancel={() => { dragInputIsTouch.current = false; setPreview(null); }}
     >
       <div ref={fitRef} style={fitStyle(fit)}>
-        <div className="rounded-xl bg-card p-1 px-2 shadow-elevated">
+        {/* Uniform 0.6875rem gutter on all four sides, and an outer radius of
+            that gutter plus the rows' own 0.3125rem corner (= 1rem) — so the
+            card's rounded edge sits concentric with the bands and rows it
+            holds and hugs them. The same gutter and radius the gym leader card
+            wears, so the two read as one designed pair. It used to pad 0.25rem
+            top/bottom against 0.5rem sides. */}
+        <div data-lg-league-root className="rounded-2xl bg-card p-[0.6875rem] shadow-elevated">
           {order.map((cardIndex, position) => (
             <div key={position}>
               {SECTION_BEFORE[position] && (

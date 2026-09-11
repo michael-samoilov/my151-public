@@ -406,7 +406,9 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
         onClick={onTap}
         className={cn(
           'relative flex items-center justify-center rounded-md',
-          datum.filled && 'cursor-grab active:cursor-grabbing',
+          // A filled cell drags; an empty one opens the line picker on a tap,
+          // so it wears a pointer to say it is pressable.
+          datum.filled ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
           ringed && 'ring-2 ring-[var(--lg-cell)]',
         )}
         style={{
@@ -891,7 +893,9 @@ function SlotHalf({
       }
       className={cn(
         'absolute z-[6] flex flex-col items-center text-center',
-        lab && 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2',
+        // The half opens a one-Pokémon picker on a tap, so it wears a pointer.
+        // The slot lab overrides it with a grab handle for its drag-to-tune.
+        lab ? 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2' : 'cursor-pointer',
       )}
       style={{
         left: `${(place?.left ?? 0) + offset.x}px`,
@@ -1274,7 +1278,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       type="button"
       onClick={() => setMovePickerOpen(true)}
       data-testid="slot-tm"
-      className="absolute z-[5] flex items-center rounded-lg"
+      className="absolute z-[5] flex cursor-pointer items-center rounded-lg"
       style={{
         ...pos,
         paddingLeft: MARK_PAD,
@@ -1889,6 +1893,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
       onDragCancel={onDragCancel}
     >
       <div
+        data-lg-card-root
         className="relative overflow-hidden rounded-2xl shadow-elevated"
         style={{ ...vars, background: shades.base, padding: `${PAD_Y}rem ${PAD_X}rem` }}
       >

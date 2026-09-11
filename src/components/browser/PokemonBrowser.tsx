@@ -758,7 +758,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
                 <button type="button"
                   key={type}
                   onClick={() => toggleType(type)}
-                  className="flex items-center justify-center py-0.5 rounded-md cursor-pointer transition-[opacity,scale] duration-150 ease-out active:scale-[0.96]"
+                  className="flex items-center justify-center py-0.5 rounded-lg cursor-pointer transition-[opacity,box-shadow] duration-150 ease-out hover:ring-2 hover:ring-foreground/40 hover:ring-offset-2 hover:ring-offset-background active:scale-[0.96]"
                   style={{
                     opacity: typeFilter && typeFilter.length > 0 && !isSelected ? 0.3 : 1,
                   }}
@@ -777,7 +777,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
             <Button
               key={gen}
               variant={generationFilter?.includes(gen) ? 'default' : 'secondary'}
-              className="h-9 text-sm"
+              className="h-9 text-sm hover:ring-2 hover:ring-inset hover:ring-foreground/20"
               onClick={() => toggleGeneration(gen)}
             >
               {t('browser.genChip', { gen })}
@@ -792,7 +792,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
             <Button
               key={shape}
               variant={shapeFilter?.includes(shape) ? 'default' : 'secondary'}
-              className="h-14 flex flex-col items-center justify-center gap-0.5 px-1"
+              className="h-14 flex flex-col items-center justify-center gap-0.5 px-1 hover:ring-2 hover:ring-inset hover:ring-foreground/20"
               onClick={() => toggleShape(shape)}
               title={shapeLabel(shape)}
             >
@@ -811,7 +811,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
               <Button
                 key={color}
                 variant="secondary"
-                className="h-12 flex items-center justify-center gap-1.5 px-2"
+                className="h-12 flex items-center justify-center gap-1.5 px-2 hover:ring-2 hover:ring-inset hover:ring-foreground/20"
                 style={isSelected
                   ? {
                       backgroundColor: COLOR_SWATCHES[color],
@@ -841,7 +841,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
             <Button
               key={group}
               variant={eggGroupFilter?.includes(group) ? 'default' : 'secondary'}
-              className="h-10 text-xs px-1"
+              className="h-10 text-xs px-1 hover:ring-2 hover:ring-inset hover:ring-foreground/20"
               onClick={() => toggleEggGroup(group)}
               title={eggGroupLabel(group)}
             >
@@ -857,7 +857,7 @@ export function PokemonBrowser({ pickMode = 'stage', labelForSection }: {
             <Button
               key={size}
               variant={evoLineSizeFilter?.includes(size) ? 'default' : 'secondary'}
-              className="flex-1 h-10 text-sm"
+              className="flex-1 h-10 text-sm hover:ring-2 hover:ring-inset hover:ring-foreground/20"
               onClick={() => toggleEvoSize(size)}
             >
               {size === 1 && t('browser.stage.1')}

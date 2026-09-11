@@ -131,7 +131,7 @@ export function ToolsMenu({ current, callout }: { current?: ToolId; callout?: To
               key={t.id}
               href={t.href}
               className={cn(
-                'flex w-full items-center px-3 py-2 text-sm transition-colors hover:bg-muted',
+                'flex w-full items-center whitespace-nowrap px-3 py-2 text-sm transition-colors hover:bg-muted',
                 t.id === current ? 'font-semibold text-foreground' : 'text-muted-foreground',
               )}
             >
