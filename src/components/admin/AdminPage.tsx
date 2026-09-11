@@ -14,7 +14,7 @@ import { cn, displayName } from '@/lib/utils';
 import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
-import { slotKind, SLOT_COUNT } from '@/league/model/constants';
+import { slotKind } from '@/league/model/constants';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
@@ -798,54 +798,65 @@ function MiniTile({ id, ace }: { id: number; ace?: boolean }) {
 function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
   const bySlot = new Map<number, LeagueCard>();
   for (const c of cards) bySlot.set(c.i, c);
-  const rows = Math.ceil(SLOT_COUNT / 2);
-  return (
-    <div
-      className="grid gap-[5px]"
-      style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: `repeat(${rows}, auto)`, gridAutoFlow: 'column' }}
-    >
-      {Array.from({ length: SLOT_COUNT }, (_, i) => {
-        const card = bySlot.get(i);
-        if (!card || card.l.length === 0) {
-          return (
-            <div
-              key={i}
-              className="flex min-h-[22px] flex-col justify-center rounded-lg border border-border px-[7px] opacity-55"
-              style={{ borderLeftWidth: 3, borderLeftColor: 'var(--color-border)' }}
-            >
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[9px] font-extrabold text-muted-foreground">{slotAbbr(i)}</span>
-                <span className="text-[10px] font-semibold text-muted-foreground/70">empty</span>
-              </div>
-            </div>
-          );
-        }
-        const color = typeColorOf(card.t);
-        // Shortest first, left to right; the block is right-aligned, so the
-        // tallest line lands at the bottom-right corner — the staircase.
-        const lines = [...card.l].sort((a, b) => a.b.length - b.b.length);
-        return (
-          <div key={i} className="flex rounded-lg border border-border px-[7px] py-[4px]" style={{ borderLeftWidth: 3, borderLeftColor: color }}>
-            {/* glyph column: slot badge + type icon, top-left */}
-            <div className="mr-[3px] flex flex-col gap-[1px] self-start">
-              <div className="flex h-[15px] w-[15px] items-center justify-center text-[8.5px] font-extrabold text-muted-foreground">
-                {slotBadge(i)}
-              </div>
-              <TypeMark t={card.t} />
-            </div>
-            {/* evo lines: right-aligned block, columns bottom-aligned */}
-            <div className="ml-auto flex items-end justify-end gap-[2px]">
-              {lines.map((line, li) => (
-                <div key={li} className="flex flex-col justify-end gap-[1px]">
-                  {line.b.map((id, stage) => (
-                    <MiniTile key={`${id}-${stage}`} id={id} ace={id === card.aceId} />
-                  ))}
-                </div>
+
+  const slot = (i: number) => {
+    const card = bySlot.get(i);
+    if (!card || card.l.length === 0) {
+      return (
+        <div
+          key={i}
+          className="flex min-h-[22px] flex-col justify-center rounded-lg border border-border px-[7px] opacity-55"
+          style={{ borderLeftWidth: 3, borderLeftColor: 'var(--color-border)' }}
+        >
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[9px] font-extrabold text-muted-foreground">{slotAbbr(i)}</span>
+            <span className="text-[10px] font-semibold text-muted-foreground/70">empty</span>
+          </div>
+        </div>
+      );
+    }
+    const color = typeColorOf(card.t);
+    // Shortest first, left to right; the block is right-aligned, so the tallest
+    // line lands at the bottom-right corner — the staircase.
+    const lines = [...card.l].sort((a, b) => a.b.length - b.b.length);
+    return (
+      <div key={i} className="flex rounded-lg border border-border px-[7px] py-[4px]" style={{ borderLeftWidth: 3, borderLeftColor: color }}>
+        {/* glyph column: slot badge + type icon, top-left */}
+        <div className="mr-[3px] flex flex-col gap-[1px] self-start">
+          <div className="flex h-[15px] w-[15px] items-center justify-center text-[8.5px] font-extrabold text-muted-foreground">
+            {slotBadge(i)}
+          </div>
+          <TypeMark t={card.t} />
+        </div>
+        {/* evo lines: right-aligned block, columns bottom-aligned */}
+        <div className="ml-auto flex items-end justify-end gap-[2px]">
+          {lines.map((line, li) => (
+            <div key={li} className="flex flex-col justify-end gap-[1px]">
+              {line.b.map((id, stage) => (
+                <MiniTile key={`${id}-${stage}`} id={id} ace={id === card.aceId} />
               ))}
             </div>
-          </div>
-        );
-      })}
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Three columns of four — gyms 1-4, gyms 5-8, elite four — read top-to-bottom
+  // per column, then a full-width row for the champion and endgame boss. This
+  // keeps the whole board short enough to sit under the scrubber at once.
+  return (
+    <div className="flex flex-col gap-[5px]">
+      <div
+        className="grid gap-[5px]"
+        style={{ gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(4, auto)', gridAutoFlow: 'column' }}
+      >
+        {Array.from({ length: 12 }, (_, i) => slot(i))}
+      </div>
+      <div className="grid grid-cols-2 gap-[5px]">
+        {slot(12)}
+        {slot(13)}
+      </div>
     </div>
   );
 }

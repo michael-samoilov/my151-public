@@ -45,6 +45,24 @@ export function tooltipStyle(el: HTMLElement | null) {
   };
 }
 
+/** A tooltip pinned to the top strip of the chart (one line, never wrapping),
+ *  so scrubbing never covers the plotted content. Pair it with a `grid.top`
+ *  tall enough to hold the tooltip, and a `touch-none` container so a scrub
+ *  gesture doesn't scroll the page. `pointer-events:none` keeps the tooltip from
+ *  eating the pointer as it tracks the cursor. */
+export function topTooltip(el: HTMLElement | null) {
+  return {
+    ...tooltipStyle(el),
+    confine: false,
+    position: (point: number[], _params: unknown, _dom: unknown, _rect: unknown, size: { contentSize: number[]; viewSize: number[] }) => {
+      const w = size.contentSize[0];
+      const x = Math.max(0, Math.min(point[0] - w / 2, size.viewSize[0] - w));
+      return [x, 0];
+    },
+    extraCssText: 'border-radius:8px;box-shadow:0 4px 14px rgba(9,9,15,0.10);white-space:nowrap;pointer-events:none;',
+  };
+}
+
 /** Read a CSS custom property off an element, trimmed. Charts pull their colors
  *  from the app's design tokens so they track the theme instead of hardcoding
  *  hex values. Falls back to the given default when the property is unset. */

@@ -1,4 +1,4 @@
-import { useECharts, cssVar, tooltipStyle, type EChartsOption } from './useECharts';
+import { useECharts, cssVar, topTooltip, type EChartsOption } from './useECharts';
 
 interface Curve {
   survival: { t: number; s: number }[];
@@ -39,16 +39,16 @@ export function BuildDepthChart({
 
       return {
         animation: false,
-        grid: { left: 34, right: 14, top: 12, bottom: 22 },
+        grid: { left: 34, right: 14, top: 28, bottom: 22 },
         tooltip: {
-          ...tooltipStyle(el),
+          ...topTooltip(el),
           trigger: 'axis',
           formatter: (params: unknown) => {
             const arr = params as { data: [number, number] }[];
             const d = arr[0]?.data;
             if (!d) return '';
             const count = Math.round((d[1] / 100) * curve.n);
-            return `≥ ${d[0]} ${xLabel}<br/><b>${d[1]}%</b> still building (${count} of ${curve.n})`;
+            return `≥ ${d[0]} ${xLabel} · <b>${d[1]}%</b> still building (${count} of ${curve.n})`;
           },
         },
         xAxis: {
@@ -99,7 +99,7 @@ export function BuildDepthChart({
   return (
     <div
       ref={ref}
-      className="h-[200px] w-full md:h-[240px]"
+      className="h-[200px] w-full touch-none md:h-[240px]"
       role="img"
       aria-label={`${ariaLabel}: ${startCount} browsers at 1 ${xLabel} down to ${endCount} at ${xMax}.`}
     />
