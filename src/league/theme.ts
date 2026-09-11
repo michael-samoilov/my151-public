@@ -184,7 +184,7 @@ export function cardShades(type: TypeName | 'none' | null): CardShades {
     dash: overWhite(cell, 0.28),
     hint: overWhite(cell, 0.55),
     open: rgba(colour, 0.055),
-    hover: rgba(colour, 0.09),
+    hover: rgba(colour, 0.18),
   };
   cache.set(key, shades);
   return shades;

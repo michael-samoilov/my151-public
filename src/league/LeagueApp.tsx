@@ -158,7 +158,7 @@ function LeagueNameRow({ h1, narrow = false }: { h1: boolean; narrow?: boolean }
  * width, and never wider than the pane itself. The dex builder sizes its grid
  * the same way.
  */
-const PANE_CONTENT = 'w-[min(100%,clamp(22rem,66%,34rem))]';
+const PANE_CONTENT = 'w-[min(100%,88%)]';
 /**
  * With no card open the league owns the whole width, so it centres a larger
  * column than it does when it shares the row with a card.

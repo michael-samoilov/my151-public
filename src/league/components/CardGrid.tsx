@@ -315,9 +315,12 @@ function formSprite(form: PowerupForm): string {
   return `/sprites/pokemon/${form.id}.png`;
 }
 
-function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup, held, ringWhenOver, onRemove, removeLabel, onReset, tint }: {
+function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup, held, ringWhenOver, onRemove, removeLabel, onReset, tint, columnHovered }: {
   cardIndex: number;
   datum: CellDatum;
+  /** The pointer is over this cell's column, so its white slot washes to the
+   *  gym's tint. */
+  columnHovered?: boolean;
   pokemonId: number | null;
   /** The Mega or Gigantamax this cell is currently wearing, if any. */
   form: PowerupForm | null;
@@ -415,8 +418,13 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
           width: `calc(100% - ${2 * INSET_X}rem)`,
           height: `${ROW_H - 2 * INSET_Y}rem`,
           // The tint is a layer over the slot's white rather than a colour
-          // in place of it, so the wash reads the same on every card.
-          background: tint ? `linear-gradient(${tint}, ${tint}), var(--lg-slot)` : 'var(--lg-slot)',
+          // in place of it, so the wash reads the same on every card. The
+          // column-hover wash is the same idea in the gym's own `hover` shade.
+          background: tint
+            ? `linear-gradient(${tint}, ${tint}), var(--lg-slot)`
+            : columnHovered
+              ? `linear-gradient(var(--lg-hover), var(--lg-hover)), var(--lg-slot)`
+              : 'var(--lg-slot)',
           // A cell with a line in it keeps the touch it is given. `pan-y`
           // let the page scroll under the very gesture that is supposed to
           // move a line up a row, so a drag begun with a moving finger
@@ -1801,7 +1809,20 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
     '--lg-dash': shades.dash,
     '--lg-hint': shades.hint,
     '--lg-slot': '#ffffff',
+    '--lg-hover': shades.hover,
   } as React.CSSProperties;
+
+  // Which column (seat) the pointer is over, so the whole column's white cells
+  // wash to the gym's own tint — the hover state the theme's `hover` shade was
+  // cut for. Read off the cell under the pointer via a delegated handler, so it
+  // clears the moment the pointer crosses into a gap. Off during a drag: the
+  // gesture speaks for itself and a wash under it only muddies the read.
+  const [hoverSeat, setHoverSeat] = useState<number | null>(null);
+  const onGridHover = useCallback((e: React.MouseEvent) => {
+    const cell = (e.target as HTMLElement).closest('[data-testid^="card-cell-"]');
+    const seat = cell?.getAttribute('data-testid')?.split('-')[3];
+    setHoverSeat(seat !== undefined ? Number(seat) : null);
+  }, []);
 
   // During a reorder drag the grid renders the arrangement as it would land:
   // every column re-derives at its previewed seat, so a shifted line shows
@@ -1896,6 +1917,8 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         data-lg-card-root
         className="relative overflow-hidden rounded-2xl shadow-elevated"
         style={{ ...vars, background: shades.base, padding: `${PAD_Y}rem ${PAD_X}rem` }}
+        onMouseOver={onGridHover}
+        onMouseLeave={() => setHoverSeat(null)}
       >
         <AcePartnerSlot cardIndex={cardIndex} view={view} />
         <TmSlot cardIndex={cardIndex} view={view} />
@@ -1954,6 +1977,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       key={`${row}-${cell.seat}`}
                       cardIndex={cardIndex}
                       datum={datum}
+                      columnHovered={!inHand && stageDrag === null && !legendDrag && hoverSeat === cell.seat}
                       tint={tinted ? stageTint(line.branch[stageDrag.stage]) : undefined}
                       pokemonId={cell.pokemonId}
                       form={formAt(previewPowerups(row), row, cell.seat, cell.pokemonId)}

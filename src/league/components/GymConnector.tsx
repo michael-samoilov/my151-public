@@ -49,28 +49,25 @@ export function GymConnector({ openCard, color }: { openCard: number; color: str
       );
     };
 
+    // A continuous rAF loop rather than event listeners. The ribbon has to
+    // track three live boxes across every layout change — a pane resize, the
+    // card re-fitting over many frames, the footer's "About this tool"
+    // expanding, the browser pane opening — and any event-driven scheme misses
+    // some of them or reads mid-settle. Re-measuring every frame never misses;
+    // `compute` only sets state when the path string actually changes, so a
+    // still page does three getBoundingClientRects and no React work.
     let raf = 0;
-    const schedule = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(compute); };
-    const viewports = Array.from(document.querySelectorAll('[data-lg-viewport]'));
-    viewports.forEach((vp) => vp.addEventListener('scroll', schedule, { passive: true }));
-    window.addEventListener('resize', schedule);
-    const ro = new ResizeObserver(schedule);
-    ro.observe(host);
-    viewports.forEach((vp) => ro.observe(vp));
-
-    // The cards fit-scale over the first frames after mount, so re-measure for a
-    // short window; the state only changes when the path actually moves.
-    let frames = 0;
-    let settleRaf = 0;
-    const settle = () => { compute(); if (++frames < 30) settleRaf = requestAnimationFrame(settle); };
-    settleRaf = requestAnimationFrame(settle);
+    let alive = true;
+    const loop = () => {
+      if (!alive) return;
+      compute();
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
 
     return () => {
+      alive = false;
       cancelAnimationFrame(raf);
-      cancelAnimationFrame(settleRaf);
-      viewports.forEach((vp) => vp.removeEventListener('scroll', schedule));
-      window.removeEventListener('resize', schedule);
-      ro.disconnect();
     };
   }, [openCard]);
 

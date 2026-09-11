@@ -14,6 +14,7 @@ import { useLeagueStore, type CardType } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { useCardView } from '../useCardView';
 import { fitStyle, useFitScale } from '../useFitScale';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { CardGrid } from './CardGrid';
 import { HEADER_FIELD_H, LeagueExportButton } from './HeaderActions';
 import { usePencilRoom } from './usePencilRoom';
@@ -324,7 +325,15 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
   const typePickerOpen = useLeagueUi((s) => s.typePickerOpen);
   const movePickerOpen = useLeagueUi((s) => s.movePickerOpen);
   const fitRef = useRef<HTMLDivElement>(null);
-  const fit = useFitScale(fitRef);
+  const isDesktop = useIsDesktop();
+  // Desktop grows the card to fill the pane, up to the browser's 1x sprite
+  // size (96px native). Mobile keeps the squash-to-fit that the sliding pane
+  // and the pickers depend on.
+  const fit = useFitScale(
+    fitRef,
+    0.55,
+    isDesktop && !withBar ? { baseWidthRem: 22, spriteRem: 3.25, targetSpritePx: 96 } : undefined,
+  );
 
   return (
     <div className="w-full">
