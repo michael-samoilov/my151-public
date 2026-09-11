@@ -38,7 +38,7 @@ export function FilterChipList({
               'px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer border',
               isActive
                 ? 'text-white border-transparent'
-                : 'bg-secondary text-secondary-foreground border-transparent hover:border-foreground/25'
+                : 'bg-secondary text-secondary-foreground border-border hover:border-foreground/40'
             )}
             style={isActive ? { backgroundColor: item.color } : undefined}
           >

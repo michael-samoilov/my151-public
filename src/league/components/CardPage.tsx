@@ -180,10 +180,10 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
               key={t}
               type="button"
               onClick={() => pick(t)}
-              // A static outline on hover rather than a scale bloom: the badge
-              // stays put and a neutral ring says "pressable", the same idiom
-              // the dex builder's type filter now uses.
-              className="cursor-pointer rounded-lg transition-shadow hover:ring-2 hover:ring-foreground/40 hover:ring-offset-2 hover:ring-offset-background"
+              // A static light-grey outline on hover, shown at once (no bloom,
+              // no fade): a 3px ring that hugs the badge with no gap, the same
+              // idiom the dex builder's type filter uses.
+              className="cursor-pointer rounded-full hover:ring-[3px] hover:ring-foreground/25"
             >
               <TypeBadge type={t} className="w-full" />
             </button>
@@ -191,7 +191,7 @@ function TypePicker({ cardIndex }: { cardIndex: number }) {
           <button
             type="button"
             onClick={() => pick('none')}
-            className="col-span-3 cursor-pointer rounded-lg transition-shadow hover:ring-2 hover:ring-foreground/40 hover:ring-offset-2 hover:ring-offset-background"
+            className="col-span-3 cursor-pointer rounded-full hover:ring-[3px] hover:ring-foreground/25"
           >
             <NoTypeBadge />
           </button>
@@ -243,9 +243,9 @@ export function CardIdentity({ cardIndex, showBack }: { cardIndex: number; showB
         type="button"
         onClick={() => setTypePickerOpen(true)}
         aria-label={`Gym type${typeName ? `: ${typeName}` : ''}`}
-        // A static outline on hover, matching the type picker's badges — no
-        // scale bloom in the tight header bar.
-        className="shrink-0 cursor-pointer rounded-[0.4375rem] transition-shadow hover:ring-2 hover:ring-foreground/35"
+        // A static light-grey outline on hover, matching the type picker's
+        // badges — shown at once, hugging the square.
+        className="shrink-0 cursor-pointer rounded-[0.4375rem] hover:ring-[3px] hover:ring-foreground/25"
       >
         <TypeMark type={view.card.type} />
       </button>

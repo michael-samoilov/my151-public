@@ -327,7 +327,7 @@ function PickerBody({ cardIndex, onClose }: { cardIndex: number; onClose: () => 
                       type="button"
                       key={type}
                       onClick={() => toggleType(type)}
-                      className="flex cursor-pointer items-center justify-center rounded-lg py-0.5 transition-[opacity,box-shadow] duration-150 ease-out hover:ring-2 hover:ring-foreground/40 hover:ring-offset-2 hover:ring-offset-background active:scale-[0.96]"
+                      className="flex cursor-pointer items-center justify-center rounded-full transition-opacity duration-150 ease-out hover:ring-[3px] hover:ring-foreground/25 active:scale-[0.96]"
                       style={{ opacity: typeFilter && typeFilter.length > 0 && !isSelected ? 0.3 : 1 }}
                     >
                       <TypeBadge type={type} className="w-[5.625rem]" />

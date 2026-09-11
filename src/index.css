@@ -308,10 +308,16 @@ img {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-muted-foreground) 45%, transparent);
+  background: color-mix(in srgb, var(--color-muted-foreground) 55%, transparent);
   border-radius: 3px;
+  /* Never shrink to nothing on a long page — a thumb that vanishes mid-scroll
+   * leaves no grip. */
+  min-height: 36px;
 }
-::-webkit-scrollbar-thumb:hover {
+::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:active {
+  /* Stay fully visible while it is being dragged, even when the pointer runs
+   * off the 6px thumb during a fast drag. */
   background: var(--color-muted-foreground);
 }
 /* Firefox */
