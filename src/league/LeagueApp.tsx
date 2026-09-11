@@ -184,11 +184,12 @@ export function LeagueApp() {
   // The open gym's own type colour tints the connector ribbon. Read reactively
   // so retyping the gym recolours the ribbon; grey until a type is chosen.
   const openCardType = useLeagueStore((s) => (openCard !== null ? s.cards[openCard]?.type ?? null : null));
-  // The ribbon wears the row's own body colour (`base`), not the saturated type
-  // colour, so it reads as the selected row flowing out rather than a second,
-  // darker shape starting at the row's edge. `cardShades(null)` gives the same
-  // neutral base a typeless row paints.
-  const connectorColor = cardShades(openCardType).base;
+  // The ribbon carries the gym's own type colour (the hue), and the connector
+  // draws it translucent at `BASE_TINT` so it composites to the row's `base`
+  // colour over white. So the selected row flows out into the ribbon with no
+  // seam, but the ribbon stays a tint of the type rather than a flat fill.
+  // `cardShades(null)` gives the neutral hue a typeless row uses.
+  const connectorColor = cardShades(openCardType).type;
   const isDesktop = useIsDesktop();
 
   // Keep the browser's pseudo-section mirror current while the pane is open:

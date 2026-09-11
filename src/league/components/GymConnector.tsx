@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import { BASE_TINT } from '../theme';
 
 /**
  * A sankey-like ribbon that ties the open gym's league row to its trainer card.
@@ -7,8 +8,10 @@ import { useLayoutEffect, useRef, useState } from 'react';
  * between their centred columns. The ribbon fills that gutter: narrow on the
  * left, at the selected row's own height against the league card's right edge,
  * and fanning to the card's full height on the right — so "this row" and "this
- * card" read as one flow. It is painted in the row's own body colour (the
- * `base` shade), so the row appears to flow straight into it with no seam.
+ * card" read as one flow. It carries the gym's own type colour, drawn
+ * translucent at `BASE_TINT` so it composites to the row's `base` colour over
+ * white — the row flows straight into it with no seam, yet it stays a tint of
+ * the type rather than a flat fill.
  *
  * It measures three live elements (the league card, the selected row, the gym
  * card) and redraws on scroll, resize and the fit settling, because both panes
@@ -81,7 +84,7 @@ export function GymConnector({ openCard, color }: { openCard: number; color: str
 
   return (
     <svg ref={ref} className="pointer-events-none absolute inset-0 z-10 h-full w-full" aria-hidden>
-      {d && <path d={d} fill={color} />}
+      {d && <path d={d} fill={color} fillOpacity={BASE_TINT} />}
     </svg>
   );
 }
