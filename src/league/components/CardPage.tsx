@@ -332,7 +332,7 @@ export function CardPage({ cardIndex, showBack, withBar = true }: {
   const fit = useFitScale(
     fitRef,
     0.55,
-    isDesktop && !withBar ? { baseWidthRem: 22, spriteRem: 3.25, targetSpritePx: 96 } : undefined,
+    isDesktop && !withBar ? { baseWidthRem: 26, spriteRem: 3.25, targetSpritePx: 96 } : undefined,
   );
 
   return (
