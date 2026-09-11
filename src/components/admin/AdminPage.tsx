@@ -20,7 +20,7 @@ import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
-import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip } from '@/components/admin/platformIcons';
+import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import { Globe, Languages } from 'lucide-react';
 
 const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
@@ -893,9 +893,13 @@ function middleId(cid: string): string {
   return `${cid.slice(0, 2)}…${cid.slice(-4)}`;
 }
 
-/** The languages chip. Three sources — the browser default (globe), the language
- *  we served (poké ball), and any manual switch (translation) — collapse to a
- *  single name when they agree, else list browser › served › switched. */
+const KIND_WORD = { browser: 'Browser', served: 'Served', switched: 'Switched' } as const;
+const langAbbr = (tag: string) => tag.split('-')[0].toUpperCase();
+
+/** The languages chip, abbreviated with a press/hover tooltip. Three sources —
+ *  the browser default (globe), the language we served (poké ball), and any
+ *  manual switch (translation) — collapse to one code when they agree, else list
+ *  browser › served › switched; the tooltip spells the full names. */
 function LanguageChip({ lang, locale, switched }: { lang?: string; locale?: string; switched?: string }) {
   const items = [
     lang ? { tag: lang, name: langName(lang), kind: 'browser' as const } : null,
@@ -903,28 +907,28 @@ function LanguageChip({ lang, locale, switched }: { lang?: string; locale?: stri
     switched ? { tag: switched, name: langName(switched), kind: 'switched' as const } : null,
   ].filter(Boolean) as { tag: string; name?: string; kind: 'browser' | 'served' | 'switched' }[];
   if (items.length === 0) return null;
-  const chip = 'flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-xs font-medium';
   const allSame = items.every((it) => sameBaseLang(it.tag, items[0].tag));
   if (allSame) {
     return (
-      <span className={chip}>
-        <Globe className="h-[13px] w-[13px] text-muted-foreground" />
-        {items[0].name}
-      </span>
+      <InfoChip label={items[0].name ?? items[0].tag}>
+        <Globe className="h-[13px] w-[13px]" />
+        <span className="text-xs font-medium">{langAbbr(items[0].tag)}</span>
+      </InfoChip>
     );
   }
+  const label = items.map((it) => `${KIND_WORD[it.kind]} ${it.name ?? it.tag}`).join(' › ');
   return (
-    <span className={chip}>
+    <InfoChip label={label}>
       {items.map((it, i) => (
         <span key={it.kind} className="flex items-center gap-0.5">
           {i > 0 && <span className="px-0.5 text-muted-foreground/50">›</span>}
-          {it.kind === 'browser' && <Globe className="h-[13px] w-[13px] text-muted-foreground" />}
-          {it.kind === 'served' && <span className="text-muted-foreground [&>svg]:h-[13px] [&>svg]:w-[13px]">{POKEBALL_SVG}</span>}
-          {it.kind === 'switched' && <Languages className="h-[13px] w-[13px] text-muted-foreground" />}
-          {it.name}
+          {it.kind === 'browser' && <Globe className="h-[13px] w-[13px]" />}
+          {it.kind === 'served' && <span className="[&>svg]:h-[13px] [&>svg]:w-[13px]">{POKEBALL_SVG}</span>}
+          {it.kind === 'switched' && <Languages className="h-[13px] w-[13px]" />}
+          <span className="text-xs font-medium">{langAbbr(it.tag)}</span>
         </span>
       ))}
-    </span>
+    </InfoChip>
   );
 }
 
@@ -940,53 +944,58 @@ function DetailHeader({ rec, onBack }: { rec: HeaderRec; onBack: () => void }) {
       <span className="shrink-0 text-sm font-bold tabular-nums" title={rec.cid}>
         {middleId(rec.cid)}
       </span>
-      <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
-        {rec.country && (
-          <InfoChip label={`${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}`}>
-            <FlagIcon country={rec.country} />
-          </InfoChip>
-        )}
-        {rec.device && (
-          <InfoChip label={rec.device}>
-            <DeviceIcon value={rec.device} />
-          </InfoChip>
-        )}
-        {rec.os && (
-          <InfoChip label={rec.os}>
-            <OsIcon value={rec.os} />
-          </InfoChip>
-        )}
-        {rec.browser && (
-          <InfoChip label={rec.browser}>
-            <BrowserIcon value={rec.browser} />
-          </InfoChip>
-        )}
-        <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
-      </div>
+      <TooltipScope>
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
+          {rec.country && (
+            <InfoChip label={`${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}`}>
+              <FlagIcon country={rec.country} />
+            </InfoChip>
+          )}
+          {rec.device && (
+            <InfoChip label={rec.device}>
+              <DeviceIcon value={rec.device} />
+            </InfoChip>
+          )}
+          {rec.os && (
+            <InfoChip label={rec.os}>
+              <OsIcon value={rec.os} />
+            </InfoChip>
+          )}
+          {rec.browser && (
+            <InfoChip label={rec.browser}>
+              <BrowserIcon value={rec.browser} />
+            </InfoChip>
+          )}
+          <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+        </div>
+      </TooltipScope>
     </div>
   );
 }
 
-/** Two compact, fixed-width stat chips that flank the scrubber rail. */
-function railChipStyle(): string {
-  return 'flex h-9 flex-col justify-center rounded-lg border border-border bg-card px-2 text-center tabular-nums';
+/** Two compact, fixed-width stat chips that flank the scrubber rail (or, for a
+ *  single-session browser, split the width where the scrubber would be). */
+function railChipStyle(full?: boolean): string {
+  return `flex h-9 flex-col justify-center rounded-lg border border-border bg-card px-2 text-center tabular-nums ${full ? 'flex-1' : ''}`;
 }
-function SessionsChip({ sessions, days }: { sessions: number; days: number }) {
+function SessionsChip({ sessions, days, full }: { sessions: number; days: number; full?: boolean }) {
   return (
-    <div className={`${railChipStyle()} w-[68px]`}>
-      <div className="text-sm font-bold leading-none">{sessions}</div>
+    <div className={`${railChipStyle(full)} ${full ? '' : 'w-[82px]'}`}>
+      <div className="leading-none">
+        <span className="text-sm font-bold">{sessions}</span> <span className="text-[0.6rem] text-muted-foreground">{sessions === 1 ? 'session' : 'sessions'}</span>
+      </div>
       <div className="text-[0.6rem] text-muted-foreground">{days === 1 ? '1 day' : `${days} days`}</div>
     </div>
   );
 }
-function TimeChip({ ms }: { ms: number }) {
+function TimeChip({ ms, full }: { ms: number; full?: boolean }) {
   const mins = Math.round(ms / 60000);
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return (
-    <div className={`${railChipStyle()} w-[72px]`}>
+    <div className={`${railChipStyle(full)} ${full ? '' : 'w-[72px]'}`}>
       <div className="text-[0.8rem] font-bold leading-none">{h > 0 ? `${h}h ${m}m` : `${m}m`}</div>
-      <div className="text-[0.6rem] text-muted-foreground">time</div>
+      <div className="text-[0.6rem] text-muted-foreground">time spent</div>
     </div>
   );
 }
@@ -1043,8 +1052,8 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
           countUnit="of 151"
           peakLabel={`${peak} / 151`}
           milestones={milestones}
-          leftChip={<TimeChip ms={totalMs} />}
-          rightChip={<SessionsChip sessions={rec.sessions ?? log.length} days={activeDayCount(rec)} />}
+          leftChip={<SessionsChip sessions={rec.sessions ?? log.length} days={activeDayCount(rec)} full={log.length <= 1} />}
+          rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
         />
       ) : (
         <p className="text-xs text-muted-foreground">No session history.</p>
@@ -1122,8 +1131,8 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
           deltaUnit=" lines"
           peakLabel={`${peak} lines`}
           milestones={milestones}
-          leftChip={<TimeChip ms={totalMs} />}
-          rightChip={<SessionsChip sessions={league.sessions} days={days} />}
+          leftChip={<SessionsChip sessions={league.sessions} days={days} full={log.length <= 1} />}
+          rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
         />
       ) : (
         <p className="text-xs text-muted-foreground">No session history.</p>
