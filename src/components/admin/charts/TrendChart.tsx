@@ -91,6 +91,7 @@ export function TrendChart({ series }: { series: DailyPoint[] }) {
       };
     },
     [series],
+    { scrub: true },
   );
 
   if (series.length < 2) {

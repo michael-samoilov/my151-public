@@ -1138,7 +1138,13 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
         <p className="text-xs text-muted-foreground">No session history.</p>
       )}
       {cur && <div className="text-sm text-muted-foreground">{linesSeated} lines seated</div>}
-      <div className="text-sm font-bold">Whole league at this moment</div>
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span className="text-sm font-bold">Whole league at this moment</span>
+        <span className="flex items-center gap-1 text-[0.7rem] text-muted-foreground">
+          <span className="inline-block h-[11px] w-[11px] rounded-[3px]" style={{ boxShadow: '0 0 0 2px var(--color-primary)', background: 'rgba(220,38,38,0.10)' }} />
+          marks each card&rsquo;s ace
+        </span>
+      </div>
       {cur?.cards && cur.cards.length > 0 ? (
         <LeagueBoardSnapshot cards={cur.cards} />
       ) : league.latestCards && league.latestCards.length > 0 ? (
@@ -1429,7 +1435,19 @@ function PicksDetailPage({
   onBack: () => void;
 }) {
   const [view, setView] = useState<'most' | 'off'>('most');
+  const [excludeOneOffs, setExcludeOneOffs] = useState(false);
   const hasOff = Object.keys(offBySection).length > 0;
+  // Off-section picks with the single-occurrence noise dropped, when asked.
+  const offShown = useMemo<Record<string, [string, number][]>>(() => {
+    if (!excludeOneOffs) return offBySection;
+    const out: Record<string, [string, number][]> = {};
+    for (const [sid, rows] of Object.entries(offBySection)) {
+      const kept = rows.filter(([, c]) => c > 1);
+      if (kept.length) out[sid] = kept;
+    }
+    return out;
+  }, [offBySection, excludeOneOffs]);
+  const offHasAny = Object.keys(offShown).length > 0;
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
@@ -1439,21 +1457,37 @@ function PicksDetailPage({
         <span className="text-sm font-bold">What people pick</span>
         <span className="text-xs text-muted-foreground">of {n} dexes</span>
       </div>
-      <Seg
-        ariaLabel="Picks metric"
-        options={[
-          { key: 'most', label: 'Most picked' },
-          { key: 'off', label: 'Off-section' },
-        ]}
-        value={view}
-        onChange={setView}
-      />
+      <div className="flex flex-wrap items-center gap-2">
+        <Seg
+          ariaLabel="Picks metric"
+          options={[
+            { key: 'most', label: 'Most picked' },
+            { key: 'off', label: 'Off-section' },
+          ]}
+          value={view}
+          onChange={setView}
+        />
+        {/* Only meaningful once off-section is chosen — disclosed then. */}
+        {view === 'off' && (
+          <button
+            type="button"
+            aria-pressed={excludeOneOffs}
+            onClick={() => setExcludeOneOffs((v) => !v)}
+            className={cn(
+              'h-7 rounded-full border px-2.5 text-xs font-medium',
+              excludeOneOffs ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground hover:text-foreground',
+            )}
+          >
+            Exclude one-offs
+          </button>
+        )}
+      </div>
       <div className="text-xs text-muted-foreground">{view === 'off' ? 'Off-section picks, grouped by the section they landed in.' : 'Most-picked, grouped by section.'}</div>
       {view === 'off' ? (
-        hasOff ? (
-          <SectionGroupedGrids bySection={offBySection} />
+        hasOff && offHasAny ? (
+          <SectionGroupedGrids bySection={offShown} />
         ) : (
-          <p className="text-xs text-muted-foreground">No off-section picks.</p>
+          <p className="text-xs text-muted-foreground">{hasOff ? 'No off-section picks chosen more than once.' : 'No off-section picks.'}</p>
         )
       ) : (
         <SectionGroupedGrids bySection={mostBySection} />

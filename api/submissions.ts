@@ -73,6 +73,22 @@ function rankBySection(
   return out;
 }
 
+/** Rank within each section against that section's OWN mean, not the global
+ *  one. Using the global threshold front-loads early-route Pokemon: incomplete
+ *  dexes over-represent them, so they dominate the global mean and later
+ *  sections get cut too hard. A per-section threshold shows what was popular
+ *  within each section on its own terms. */
+function rankBySectionSelf(
+  bySection: Record<string, Record<string, number>>,
+): Record<string, [string, number][]> {
+  const out: Record<string, [string, number][]> = {};
+  for (const [sid, counts] of Object.entries(bySection)) {
+    const ranked = rankedAtLeast(counts, tailThreshold(counts));
+    if (ranked.length > 0) out[sid] = ranked;
+  }
+  return out;
+}
+
 /** UTC Monday (ms) of the week a timestamp falls in. Weeks, not days, because
  *  a per-day crossover rate on this traffic is mostly noise. */
 function weekStart(ts: number): number {
@@ -617,7 +633,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       popularMin,
       droppedMin,
       // Same, split by the section users actually placed them in (forward-only).
-      popularBySection: rankBySection(picksBySection, popularMin),
+      popularBySection: rankBySectionSelf(picksBySection),
       droppedBySection: rankBySection(droppedBySection, droppedMin),
       picksBySectionAll: rankBySection(picksBySection, 1),
       records: page,

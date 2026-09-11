@@ -93,6 +93,7 @@ export function BuildDepthChart({
       };
     },
     [curve, xLabel],
+    { scrub: true },
   );
 
   if (pts.length < 2) return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
