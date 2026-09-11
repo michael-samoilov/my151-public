@@ -101,7 +101,7 @@ export function InfoChip({ children, label }: { children: ReactNode; label: stri
         {children}
       </button>
       {open && (
-        <span className="absolute left-1/2 top-full z-30 mt-1 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-card px-2 py-1 text-[0.7rem] font-medium text-foreground shadow-md">
+        <span className="absolute left-1/2 top-full z-30 mt-1 max-w-[min(70vw,240px)] -translate-x-1/2 whitespace-normal break-words rounded-md border border-border bg-card px-2 py-1 text-center text-[0.7rem] font-medium leading-snug text-foreground shadow-md">
           {label}
         </span>
       )}

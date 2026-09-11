@@ -54,6 +54,12 @@ export function topTooltip(el: HTMLElement | null) {
   return {
     ...tooltipStyle(el),
     confine: false,
+    // No fade, so a held scrub reads as a solid readout, not a flickering one.
+    transitionDuration: 0,
+    // The scrub handler drives show/hide, so echarts never hides it on its own
+    // mouseout when the pointer runs off the plot edge mid-drag. It flips
+    // alwaysShowContent on for the duration of a drag (see useECharts).
+    triggerOn: 'none',
     position: (point: number[], _params: unknown, _dom: unknown, _rect: unknown, size: { contentSize: number[]; viewSize: number[] }) => {
       const w = size.contentSize[0];
       const x = Math.max(0, Math.min(point[0] - w / 2, size.viewSize[0] - w));
@@ -85,10 +91,13 @@ export function cssVar(el: HTMLElement | null, name: string, fallback = ''): str
 export function useECharts(
   build: (el: HTMLDivElement) => EChartsOption,
   deps: unknown[],
+  opts: { scrub?: boolean } = {},
 ): (el: HTMLDivElement | null) => void {
   const elRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
   const roRef = useRef<ResizeObserver | null>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
+  const scrub = opts.scrub ?? false;
   // Keep the latest builder without re-subscribing anything each render.
   const buildRef = useRef(build);
   useEffect(() => {
@@ -102,6 +111,8 @@ export function useECharts(
   const setNode = useCallback((el: HTMLDivElement | null) => {
     if (el === elRef.current) return;
     if (chartRef.current) {
+      cleanupRef.current?.();
+      cleanupRef.current = null;
       roRef.current?.disconnect();
       roRef.current = null;
       chartRef.current.dispose();
@@ -120,7 +131,60 @@ export function useECharts(
     });
     ro.observe(el);
     roRef.current = ro;
-  }, []);
+
+    if (scrub) {
+      // Keep the tooltip alive and clamped to the plot while a press is held —
+      // scrubbing off the edge pins it to the boundary instead of dismissing
+      // it. It only hides on release. Pairs with a `touch-none` container so
+      // the drag never scrolls the page.
+      let scrubbing = false;
+      const showAt = (clientX: number, clientY: number, clamp: boolean) => {
+        const r = el.getBoundingClientRect();
+        let x = clientX - r.left;
+        let y = clientY - r.top;
+        if (clamp) {
+          x = Math.max(1, Math.min(x, r.width - 1));
+          y = Math.max(1, Math.min(y, r.height - 1));
+        }
+        chart.dispatchAction({ type: 'showTip', x, y });
+      };
+      const onDown = (e: PointerEvent) => {
+        scrubbing = true;
+        try { el.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
+        // Keep the tip alive while the pointer is off the plot, then turn the
+        // flag back off on release so hideTip actually hides it.
+        chart.setOption({ tooltip: { alwaysShowContent: true } });
+        showAt(e.clientX, e.clientY, true);
+      };
+      const onMove = (e: PointerEvent) => {
+        // Dragging clamps to the plot so the readout pins to the edge; a plain
+        // hover (no button) tracks the cursor as usual.
+        showAt(e.clientX, e.clientY, scrubbing);
+        if (scrubbing) e.preventDefault();
+      };
+      const onLeave = () => {
+        if (!scrubbing) chart.dispatchAction({ type: 'hideTip' });
+      };
+      const onUp = () => {
+        if (!scrubbing) return;
+        scrubbing = false;
+        chart.setOption({ tooltip: { alwaysShowContent: false } });
+        chart.dispatchAction({ type: 'hideTip' });
+      };
+      el.addEventListener('pointerdown', onDown);
+      el.addEventListener('pointermove', onMove);
+      el.addEventListener('pointerleave', onLeave);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
+      cleanupRef.current = () => {
+        el.removeEventListener('pointerdown', onDown);
+        el.removeEventListener('pointermove', onMove);
+        el.removeEventListener('pointerleave', onLeave);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
+      };
+    }
+  }, [scrub]);
 
   // Redraw when the caller's data changes. `deps` is the caller's own list, so
   // it cannot be an array literal here — that's the design of the hook.
