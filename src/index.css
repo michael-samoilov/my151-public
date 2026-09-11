@@ -43,6 +43,7 @@ html {
   --color-priv: #3f5b8a; /* kept-private */
   --color-sink: #8b8b93; /* attrition / drop-off */
   --color-off: #8a5a00; /* off-section picks */
+  --color-info: #2563eb; /* event markers (distinct from data-movement red) */
 
   --color-type-normal: #a8a77a;
   --color-type-fire: #ee8130;
@@ -89,6 +90,7 @@ html {
   --color-priv: #8ea6d6;
   --color-sink: #6b6b73;
   --color-off: #e0a54a;
+  --color-info: #60a5fa;
 }
 
 /* Admin build scrubber: a slim track with a red thumb — red is the dashboard's
@@ -100,34 +102,37 @@ html {
   background: transparent;
   cursor: pointer;
 }
+.admin-scrub {
+  height: 26px;
+}
 .admin-scrub::-webkit-slider-runnable-track {
-  height: 4px;
+  height: 7px;
   border-radius: 999px;
   background: var(--color-muted);
 }
 .admin-scrub::-moz-range-track {
-  height: 4px;
+  height: 7px;
   border-radius: 999px;
   background: var(--color-muted);
 }
 .admin-scrub::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  margin-top: -6px;
-  height: 16px;
-  width: 16px;
+  margin-top: -8px;
+  height: 22px;
+  width: 22px;
   border-radius: 999px;
   background: var(--color-primary);
-  border: 2px solid var(--color-card);
-  box-shadow: 0 1px 3px rgba(9, 9, 15, 0.25);
+  border: 3px solid var(--color-card);
+  box-shadow: 0 1px 4px rgba(9, 9, 15, 0.3);
 }
 .admin-scrub::-moz-range-thumb {
-  height: 16px;
-  width: 16px;
-  border: 2px solid var(--color-card);
+  height: 22px;
+  width: 22px;
+  border: 3px solid var(--color-card);
   border-radius: 999px;
   background: var(--color-primary);
-  box-shadow: 0 1px 3px rgba(9, 9, 15, 0.25);
+  box-shadow: 0 1px 4px rgba(9, 9, 15, 0.3);
 }
 .admin-scrub:focus-visible {
   outline: 2px solid var(--color-ring);

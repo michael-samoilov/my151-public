@@ -105,8 +105,8 @@ export function SessionTimeline({
           const lx = bx < 24 ? bx - 2 : bx > W - 24 ? bx + 2 : bx;
           return (
             <g key={`ev-${i}`}>
-              <circle cx={bx.toFixed(1)} cy={railY} r={2.6} fill="var(--color-primary)" />
-              <text x={lx.toFixed(1)} y={railY - 4} fontSize={6.5} fill="var(--color-primary)" textAnchor={anchor}>
+              <circle cx={bx.toFixed(1)} cy={railY} r={2.6} fill="var(--color-info)" />
+              <text x={lx.toFixed(1)} y={railY - 4} fontSize={6.5} fill="var(--color-info)" textAnchor={anchor}>
                 {label}
               </text>
             </g>
@@ -131,9 +131,9 @@ export function SessionTimeline({
       <div className="flex flex-wrap items-baseline gap-2">
         <b className="text-3xl leading-none tabular-nums">{cur.count}</b>
         <span className="text-sm text-muted-foreground">{countUnit}</span>
-        <span className="rounded bg-muted px-1.5 py-0.5 text-[0.7rem] font-semibold tabular-nums">{fmtDay(cur.t)}</span>
+        <span className="rounded border border-border bg-card px-1.5 py-0.5 text-[0.7rem] font-semibold tabular-nums">{fmtDay(cur.t)}</span>
         {cur.dur != null && (
-          <span className="rounded bg-muted px-1.5 py-0.5 text-[0.7rem] font-semibold tabular-nums">
+          <span className="rounded border border-border bg-card px-1.5 py-0.5 text-[0.7rem] font-semibold tabular-nums">
             {Math.round(cur.dur / 60)}m
           </span>
         )}
@@ -147,11 +147,6 @@ export function SessionTimeline({
             {curDelta > 0 ? '+' : ''}
             {curDelta}
             {deltaUnit}
-          </span>
-        )}
-        {cur.ev && cur.ev.length > 0 && (
-          <span className="text-[0.7rem] font-medium text-primary">
-            ● {cur.ev.map((e) => EV_LABEL[e] ?? e).join(', ')}
           </span>
         )}
       </div>

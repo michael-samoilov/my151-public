@@ -188,7 +188,10 @@ const NEWEST: NewestSeed[] = [
 const SECTION_IDS = ['starter', 'early-bird', 'forest', 'cave-pokemon', 'ocean'];
 function sectionsOf(ids: number[]): Record<string, number[]> {
   const out: Record<string, number[]> = {};
-  ids.forEach((id, i) => {
+  // Assign a leading run into named sections; leave the trailing remainder
+  // unsectioned, so the detail page's "Other sections" box has content.
+  const sectioned = Math.ceil(ids.length * 0.6);
+  ids.slice(0, sectioned).forEach((id, i) => {
     const sid = SECTION_IDS[i % SECTION_IDS.length];
     (out[sid] ??= []).push(id);
   });
@@ -211,13 +214,22 @@ function record(s: NewestSeed): ClientRecord {
     maxSessionMs: Math.max(...sessionMs),
     sessionMs,
     sessionLog: sessionMs.map((_ms, i) => {
-      const upto = ids.slice(0, Math.round((ids.length * (i + 1)) / s.sess));
+      const isLast = i === s.sess - 1;
+      let count = Math.round((ids.length * (i + 1)) / s.sess);
+      // Deterministic wobble so session bars vary in height, like real runs.
+      count += Math.round(Math.sin(i * 1.7) * ids.length * 0.05);
+      // One larger mid-run pruning so the timeline shows a clear loss (gray)
+      // bar, not only gains — up vs down is the diff chart's whole point.
+      if (s.sess >= 5 && i === Math.floor(s.sess / 2)) count -= Math.round(ids.length * 0.25);
+      count = Math.max(1, Math.min(ids.length, count));
+      if (isLast) count = ids.length; // land on the true final total
+      const upto = ids.slice(0, count);
       return {
         ts: firstTs + i * DAY,
         ids: upto,
         country: s.c,
         dev: `${s.dev} · ${s.os} · ${s.browser}`,
-        events: i === 0 ? ['intro-shown', 'intro-cta'] : i === 1 ? ['milestone-25'] : [],
+        events: i === 0 ? ['intro-shown', 'intro-cta'] : i === 1 ? ['milestone-25'] : i === s.sess - 1 ? ['view-visit'] : [],
         sections: sectionsOf(upto),
       };
     }),
@@ -250,17 +262,29 @@ const LINE_POOL = [
   [1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12], [13, 14, 15], [16, 17, 18],
   [25, 26], [63, 64, 65], [92, 93, 94], [147, 148, 149],
 ];
+const CARD_TYPES = ['fire', 'water', 'grass', 'electric', 'psychic', 'rock', 'dragon', 'fairy', 'ghost', 'steel', 'ground', 'ice', 'bug', 'poison'];
 function mkCards(n: number): import('../AdminPage').LeagueCard[] {
-  return Array.from({ length: n }, (_, i) => ({
-    i,
-    l: [
+  return Array.from({ length: n }, (_, i) => {
+    const l = [
       { b: LINE_POOL[(i * 3) % LINE_POOL.length] },
       { b: LINE_POOL[(i * 3 + 1) % LINE_POOL.length] },
       { b: LINE_POOL[(i * 3 + 2) % LINE_POOL.length] },
-    ],
-    ace: 0,
-    aceId: LINE_POOL[(i * 3) % LINE_POOL.length][0],
-  }));
+    ];
+    const card: import('../AdminPage').LeagueCard = {
+      i,
+      // A card carries a type theme, which tints the slot's swatch.
+      t: CARD_TYPES[i % CARD_TYPES.length],
+      l,
+    };
+    // Most trainers mark an ace. Cycle the chosen line and use its final
+    // evolution, so the ring lands on varied lines and stages — never a fixed
+    // grid position. Skip roughly every third card.
+    if (i % 3 !== 2) {
+      const line = l[i % 3].b;
+      card.aceId = line[line.length - 1];
+    }
+    return card;
+  });
 }
 
 // Five league browsers.
@@ -268,11 +292,16 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
   const lastTs = NOW - hoursAgo * 3_600_000;
   const firstTs = lastTs - sess * DAY;
   const latest = { cards, seats: cards * 6, typed: cards, named: cards, aces: cards, leagueNamed: cards >= 8 };
+  const region = c === 'US' || c === 'CA' ? 'N. America' : c === 'AU' ? 'Oceania' : 'Europe';
+  const lang = c === 'IT' ? 'it-IT' : c === 'FR' ? 'fr-FR' : c === 'AU' ? 'en-AU' : 'en-US';
   return {
     cid,
     submits: sess * 2,
     sessionMs: Array.from({ length: sess }, () => 300_000),
     country: c,
+    region,
+    lang,
+    locale: lang.split('-')[0],
     device: 'Desktop',
     os: 'Windows',
     browser: 'Chrome',
