@@ -1086,20 +1086,40 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
 function LeagueDetailBody({ league }: { league: LeagueUser }) {
   const log = league.sessionLog ?? [];
   const [i, setI] = useState(Math.max(0, log.length - 1));
-  const linesOf = (cards?: LeagueCard[], fallback = 0) =>
-    cards ? cards.reduce((n, c) => n + c.l.length, 0) : fallback;
-  // Identify a seated line by its base-stage id, so lines added or removed
-  // between sessions can be counted as diff insertions/deletions.
-  const lineKeys = (cards?: LeagueCard[]) => new Set((cards ?? []).flatMap((c) => c.l.map((line) => line.b[0])));
+  // Size and diff are both in seated Pokemon, so the line and the bars always
+  // agree. When a session captured its card structure we diff the actual member
+  // set (so a swap shows as both an add and a remove); when it didn't (older
+  // beacons carry only the summary counts), we fall back to the seat-count
+  // delta, so the bars still track the line rather than vanishing.
+  const memberSet = (cards?: LeagueCard[]) => new Set((cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b)));
+  const cardsOf = (k: number) => {
+    const c = log[k]?.cards;
+    return c && c.length ? c : null;
+  };
+  const nets = log.map((s, k) => {
+    const c = cardsOf(k);
+    return c ? memberSet(c).size : s.summary.seats;
+  });
   const points: TimelinePoint[] = log.map((s, k) => {
-    const prev = k ? lineKeys(log[k - 1].cards) : new Set<number>();
-    const now = lineKeys(s.cards);
-    const added = [...now].filter((key) => !prev.has(key)).length;
-    const removed = [...prev].filter((key) => !now.has(key)).length;
+    const nowCards = cardsOf(k);
+    const prevCards = k > 0 ? cardsOf(k - 1) : null;
+    let added = 0;
+    let removed = 0;
+    if (nowCards && prevCards) {
+      const now = memberSet(nowCards);
+      const prev = memberSet(prevCards);
+      added = [...now].filter((x) => !prev.has(x)).length;
+      removed = [...prev].filter((x) => !now.has(x)).length;
+    } else if (k === 0) {
+      added = nets[0];
+    } else {
+      added = Math.max(0, nets[k] - nets[k - 1]);
+      removed = Math.max(0, nets[k - 1] - nets[k]);
+    }
     return {
       t: s.ts,
       count: s.summary.cards,
-      net: linesOf(s.cards, s.summary.seats),
+      net: nets[k],
       added,
       removed,
       dur: league.sessionMs?.[k] != null ? league.sessionMs[k] / 1000 : undefined,
@@ -1108,7 +1128,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   const idx = Math.min(i, Math.max(0, log.length - 1));
   const cur = log[idx];
   const peak = Math.max(0, ...points.map((p) => p.net));
-  const linesSeated = cur ? linesOf(cur.cards, cur.summary.seats) : 0;
+  const seated = nets[idx] ?? 0;
   const totalMs = (league.sessionMs ?? []).reduce((a, b) => a + b, 0);
   const t0 = log.length ? log[0].ts : 0;
   const t1 = log.length ? log[log.length - 1].ts : 0;
@@ -1128,8 +1148,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
           index={idx}
           onIndex={setI}
           countUnit={`of ${CARD_COUNT} cards`}
-          deltaUnit=" lines"
-          peakLabel={`${peak} lines`}
+          peakLabel={`${peak} seated`}
           milestones={milestones}
           leftChip={<SessionsChip sessions={league.sessions} days={days} full={log.length <= 1} />}
           rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
@@ -1137,7 +1156,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
       ) : (
         <p className="text-xs text-muted-foreground">No session history.</p>
       )}
-      {cur && <div className="text-sm text-muted-foreground">{linesSeated} lines seated</div>}
+      {cur && <div className="text-sm text-muted-foreground">{seated} Pokémon seated</div>}
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
         <span className="text-sm font-bold">Whole league at this moment</span>
         <span className="flex items-center gap-1 text-[0.7rem] text-muted-foreground">
