@@ -383,23 +383,20 @@ img {
  * rather than baring the panel.
  *
  * `--hf` feeds each shot's own transform ahead of its rotate (see `Artwork` in
- * HomePage.tsx), so the rise is straight up whatever the tilt. `:has()` scopes
- * the float to the hovered shot's index; where it is unsupported the shots
- * simply do not float, which is fine for a hover nicety. Gated to a real
- * hovering pointer and to motion being allowed, so a touch tap never sticks the
- * state and reduced motion drops it. */
+ * HomePage.tsx), so the rise is straight up whatever the tilt. `data-float`
+ * names the hovered shot's index; the pointer handlers on the twins set it, so
+ * this needs no `:has()` and works on every browser. Gated to a real hovering
+ * pointer and to motion being allowed, so a touch tap never floats and reduced
+ * motion drops it. */
 .hub-float-shot {
   transition: transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
   will-change: transform;
 }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .hub-card:has(.hub-hit:hover) {
-    z-index: 10;
-  }
-  [data-card-panel]:has(.hub-hit[data-shot='0']:hover) [data-shot='0'] {
+  [data-artwork][data-float='0'] [data-shot='0'] {
     --hf: -12px;
   }
-  [data-card-panel]:has(.hub-hit[data-shot='1']:hover) [data-shot='1'] {
+  [data-artwork][data-float='1'] [data-shot='1'] {
     --hf: -12px;
   }
 }

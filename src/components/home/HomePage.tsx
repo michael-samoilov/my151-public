@@ -278,6 +278,12 @@ function Caption({ tool }: { tool: Tool }) {
  * an image the browser has already fetched.
  */
 function Artwork({ tool }: { tool: Tool }) {
+  // Which shot is floating, or none. Driven by pointer events on the stationary
+  // hit twins below, not by `:has(:hover)`: the CSS approach silently no-ops on
+  // older Chrome and pre-16.4 iOS Safari, so this drives it in JS instead. The
+  // guard is unchanged — the handlers sit on the twins, which never move, so a
+  // floating shot can never move out from under the pointer and toggle itself.
+  const [floated, setFloated] = useState<number | null>(null);
   // Both clip boxes reach far past the panel's top-left edge, mostly over empty
   // space. That whole rectangle used to be part of the link, so a click well
   // above or beside the artwork still navigated. `pointerEvents: 'none'` here
@@ -312,8 +318,13 @@ function Artwork({ tool }: { tool: Tool }) {
   // that sits hidden below the card's bottom edge.
   const floatTransform = (i: number) => `translateY(var(--hf, 0px)) rotate(${FAN[i].tilt}deg)`;
   const restTransform = (i: number) => `rotate(${FAN[i].tilt}deg)`;
+  // `data-float` names the floating shot; `index.css` reads it to set `--hf`.
+  // `display: contents` keeps this wrapper out of the box tree, so the clip
+  // boxes still position against the panel. Images are `draggable={false}` so a
+  // drag grabs nothing — otherwise the browser drags the card link and shows a
+  // ghost of the whole card, which reads as one merged image.
   return (
-    <>
+    <span data-artwork data-float={floated ?? undefined} style={{ display: 'contents' }}>
       {/* Shadows. Masked so they fade out near the top break-out rather than
           ending on a straight line at the clip edge. Each rides its own shot's
           `--hf`, so a shadow floats with the shot it belongs to. */}
@@ -332,7 +343,7 @@ function Artwork({ tool }: { tool: Tool }) {
             className="hub-float-shot block"
             style={{ ...geom(i), transform: floatTransform(i), boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)' }}
           >
-            <img src={tool.shots![i]} alt="" className="block w-full invisible" />
+            <img src={tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
           </span>
         ))}
       </span>
@@ -351,6 +362,7 @@ function Artwork({ tool }: { tool: Tool }) {
             <img
               src={tool.shots![i]}
               alt={tool.alts?.[i] ?? ''}
+              draggable={false}
               decoding="async"
               className="block w-full"
             />
@@ -358,12 +370,12 @@ function Artwork({ tool }: { tool: Tool }) {
         ))}
       </span>
       {/* The hit layer: one transparent twin per shot, at the shot's REST
-          footprint, and it never moves. Hovering a twin floats that one shot
-          (see `.hub-hit` in index.css). Because the thing you hover stays put
-          while the shot lifts, the shot can never rise out from under the
-          pointer and drop back — the guard against hover flicker. The twins are
-          the click target too, so a click on a screenshot still follows the
-          card's link; the front twin sits last, so it wins the overlap. */}
+          footprint, and it never moves. Its pointer handlers float that one shot
+          and drop it again. Because the thing you hover stays put while the shot
+          lifts, the shot can never rise out from under the pointer and toggle
+          itself — the guard against hover flicker. The twins are the click
+          target too, so a click on a screenshot still follows the card's link;
+          the front twin sits last, so it wins the overlap. */}
       <span style={box}>
         {FAN.map((f, i) => (
           <span
@@ -372,15 +384,17 @@ function Artwork({ tool }: { tool: Tool }) {
             data-hit
             className="hub-hit block"
             style={{ ...geom(i), transform: restTransform(i), pointerEvents: 'auto' }}
+            onPointerEnter={() => setFloated(i)}
+            onPointerLeave={() => setFloated((prev) => (prev === i ? null : prev))}
           >
             {/* An invisible copy of the shot gives the twin the shot's exact
                 height, so the hit area matches the screenshot's footprint. The
                 browser has already decoded this image, so it costs no fetch. */}
-            <img src={tool.shots![i]} alt="" className="block w-full invisible" />
+            <img src={tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
           </span>
         ))}
       </span>
-    </>
+    </span>
   );
 }
 
