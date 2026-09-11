@@ -91,6 +91,50 @@ html {
   --color-off: #e0a54a;
 }
 
+/* Admin build scrubber: a slim track with a red thumb — red is the dashboard's
+   one data-movement accent (also the trend average and the playhead). */
+.admin-scrub {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+.admin-scrub::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-muted);
+}
+.admin-scrub::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-muted);
+}
+.admin-scrub::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -6px;
+  height: 16px;
+  width: 16px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  border: 2px solid var(--color-card);
+  box-shadow: 0 1px 3px rgba(9, 9, 15, 0.25);
+}
+.admin-scrub::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border: 2px solid var(--color-card);
+  border-radius: 999px;
+  background: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(9, 9, 15, 0.25);
+}
+.admin-scrub:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 2px;
+  border-radius: 999px;
+}
+
 body {
   margin: 0;
   background-color: var(--color-background);
