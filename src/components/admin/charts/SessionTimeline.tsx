@@ -17,6 +17,8 @@ export interface TimelinePoint {
 
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const fmtDay = (t: number) => `${MON[new Date(t).getUTCMonth()]} ${new Date(t).getUTCDate()}`;
+const fmtClock = (t: number) =>
+  new Date(t).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
 const EV_LABEL: Record<string, string> = {
   'intro-shown': 'intro',
   'intro-cta': 'start',
@@ -168,7 +170,7 @@ export function SessionTimeline({
           return (
             <g key={`ms-${i}`}>
               <rect x={(bx - 2.4).toFixed(1)} y={railY - 2.4} width={4.8} height={4.8} rx={0.8} transform={`rotate(45 ${bx.toFixed(1)} ${railY})`} fill={color} />
-              <text x={lx.toFixed(1)} y={railY + 8} fontSize={6.5} fill={color} textAnchor={anchor}>
+              <text x={lx.toFixed(1)} y={railY - 4} fontSize={6.5} fill={color} textAnchor={anchor}>
                 {m.label}
               </text>
             </g>
@@ -178,11 +180,18 @@ export function SessionTimeline({
         <line x1={cx.toFixed(1)} x2={cx.toFixed(1)} y1={2} y2={94} stroke="var(--color-primary)" strokeWidth={1.5} />
       </svg>
 
-      {/* The rail, flanked by the time-spent (left) and session-count (right)
-          summaries. A dot marks every session the thumb clamps to, drawn under
-          the transparent track so drag distance to the next state is legible.
-          The rail is inset from the chips, so a drag from the rim doesn't start
-          a back gesture or catch the page scrollbar. */}
+      {/* One session: no scrubber; the summary chips split the width. */}
+      {points.length <= 1 ? (
+        <div className="flex items-stretch gap-2">
+          {leftChip}
+          {rightChip}
+        </div>
+      ) : (
+      /* The rail, flanked by the session-count (left) and time-spent (right)
+         summaries. A dot marks every session the thumb clamps to, drawn under
+         the transparent track so drag distance to the next state is legible.
+         The rail is inset from the chips, so a drag from the rim doesn't start
+         a back gesture or catch the page scrollbar. */
       <div className="flex items-center gap-2">
         {leftChip}
         <div className="relative flex-1 px-3">
@@ -214,6 +223,7 @@ export function SessionTimeline({
         </div>
         {rightChip}
       </div>
+      )}
 
       <div className="flex flex-wrap items-baseline gap-2">
         <b className="text-3xl leading-none tabular-nums">{cur.count}</b>
@@ -221,7 +231,7 @@ export function SessionTimeline({
         <span className="rounded border border-border bg-card px-1.5 py-0.5 text-[0.7rem] font-semibold tabular-nums">{fmtDay(cur.t)}</span>
         {cur.dur != null && (
           <span className="rounded border border-border bg-card px-1.5 py-0.5 text-[0.7rem] font-semibold tabular-nums">
-            {Math.round(cur.dur / 60)}m
+            {fmtClock(cur.t)}–{fmtClock(cur.t + cur.dur * 1000)} · {Math.round(cur.dur / 60)}m
           </span>
         )}
         {cur.added > 0 && (

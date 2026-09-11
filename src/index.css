@@ -120,7 +120,10 @@ html {
 .admin-scrub::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  margin-top: -8px;
+  box-sizing: border-box;
+  /* Center the 22px thumb on the 7px track (and thus on the breakpoint dots):
+     (track 7 − thumb 22) / 2. */
+  margin-top: -7.5px;
   height: 22px;
   width: 22px;
   border-radius: 999px;

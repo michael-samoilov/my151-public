@@ -1,46 +1,48 @@
-import { useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useId, useState, type ReactNode } from 'react';
 import {
-  Monitor, Smartphone, Tablet, Apple, Bot, Terminal, LayoutGrid, Cpu,
-  CircleDot, Compass, Flame, Globe,
-} from 'lucide-react';
+  FaDesktop, FaMobileScreenButton, FaTabletScreenButton,
+  FaWindows, FaApple, FaAndroid, FaLinux, FaUbuntu,
+  FaChrome, FaFirefoxBrowser, FaSafari, FaEdge, FaOpera, FaGlobe,
+} from 'react-icons/fa6';
 import * as Flags from 'country-flag-icons/string/3x2';
-import { regionOf } from '@/lib/countryRegions';
 
-const ICON = 'h-[15px] w-[15px]';
+const SZ = 15;
 
-/** Device family icon. */
+/** Device family icon (FontAwesome brands via react-icons). */
 export function DeviceIcon({ value }: { value?: string }) {
   const v = (value ?? '').toLowerCase();
-  if (v.includes('mobile') || v.includes('phone')) return <Smartphone className={ICON} />;
-  if (v.includes('tablet')) return <Tablet className={ICON} />;
-  return <Monitor className={ICON} />;
+  if (v.includes('mobile') || v.includes('phone')) return <FaMobileScreenButton size={SZ} />;
+  if (v.includes('tablet')) return <FaTabletScreenButton size={SZ} />;
+  return <FaDesktop size={SZ} />;
 }
 
-/** OS icon. Brand-free glyphs from the shared lucide set, disambiguated by the
- *  chip's press/hover tooltip. */
+/** OS icon — the platform's own logo. */
 export function OsIcon({ value }: { value?: string }) {
   const v = (value ?? '').toLowerCase();
-  if (v.includes('mac') || v.includes('ios') || v.includes('ipad')) return <Apple className={ICON} />;
-  if (v.includes('win')) return <LayoutGrid className={ICON} />;
-  if (v.includes('android')) return <Bot className={ICON} />;
-  if (v.includes('linux')) return <Terminal className={ICON} />;
-  return <Cpu className={ICON} />;
+  if (v.includes('mac') || v.includes('ios') || v.includes('ipad')) return <FaApple size={SZ} />;
+  if (v.includes('win')) return <FaWindows size={SZ} />;
+  if (v.includes('android')) return <FaAndroid size={SZ} />;
+  if (v.includes('ubuntu')) return <FaUbuntu size={SZ} />;
+  if (v.includes('linux')) return <FaLinux size={SZ} />;
+  return <FaGlobe size={SZ} />;
 }
 
-/** Browser icon, from the shared lucide set. */
+/** Browser icon — the browser's own logo. */
 export function BrowserIcon({ value }: { value?: string }) {
   const v = (value ?? '').toLowerCase();
-  if (v.includes('safari')) return <Compass className={ICON} />;
-  if (v.includes('firefox')) return <Flame className={ICON} />;
-  if (v.includes('chrome')) return <CircleDot className={ICON} />;
-  return <Globe className={ICON} />;
+  if (v.includes('edge')) return <FaEdge size={SZ} />;
+  if (v.includes('safari')) return <FaSafari size={SZ} />;
+  if (v.includes('firefox')) return <FaFirefoxBrowser size={SZ} />;
+  if (v.includes('opera')) return <FaOpera size={SZ} />;
+  if (v.includes('chrome') || v.includes('chromium')) return <FaChrome size={SZ} />;
+  return <FaGlobe size={SZ} />;
 }
 
 /** Real flag icon (inline SVG, no network) for an ISO 3166-1 alpha-2 code. */
 export function FlagIcon({ country }: { country?: string }) {
   const code = (country ?? '').toUpperCase();
   const svg = (Flags as Record<string, string>)[code];
-  if (!svg) return <Globe className={ICON} />;
+  if (!svg) return <FaGlobe size={SZ} />;
   return (
     <img
       src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
@@ -50,24 +52,51 @@ export function FlagIcon({ country }: { country?: string }) {
   );
 }
 
-export { regionOf };
+/** Coordinates the icon-chip tooltips so only one shows at a time and a press
+ *  anywhere else (including another chip) dismisses it. */
+const TooltipCtx = createContext<{ openId: string | null; setOpenId: (id: string | null) => void }>({
+  openId: null,
+  setOpenId: () => {},
+});
+
+export function TooltipScope({ children }: { children: ReactNode }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!openId) return;
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (!t || !t.closest('[data-tooltip-chip]')) setOpenId(null);
+    };
+    const onScroll = () => setOpenId(null);
+    document.addEventListener('pointerdown', onDown, true);
+    window.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('pointerdown', onDown, true);
+      window.removeEventListener('scroll', onScroll, true);
+    };
+  }, [openId]);
+  return <TooltipCtx.Provider value={{ openId, setOpenId }}>{children}</TooltipCtx.Provider>;
+}
 
 /**
- * A compact chip whose label is disclosed on press (mobile) and on hover
- * (desktop). The button toggles the popover so a tap works without a hover,
- * and pointer enter/leave drives it on desktop.
+ * A compact chip whose label is disclosed on press (mobile) and hover (desktop).
+ * Presses are coordinated by TooltipScope: opening one closes any other, and a
+ * press anywhere else fades it.
  */
 export function InfoChip({ children, label }: { children: ReactNode; label: string }) {
-  const [open, setOpen] = useState(false);
+  const id = useId();
+  const { openId, setOpenId } = useContext(TooltipCtx);
+  const open = openId === id;
   return (
-    <span className="relative inline-flex">
+    <span className="relative inline-flex" data-tooltip-chip>
       <button
         type="button"
+        data-tooltip-chip
         className="flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground"
         aria-label={label}
-        onClick={() => setOpen((o) => !o)}
-        onPointerEnter={() => setOpen(true)}
-        onPointerLeave={() => setOpen(false)}
+        onClick={() => setOpenId(open ? null : id)}
+        onPointerEnter={(e) => e.pointerType !== 'touch' && setOpenId(id)}
+        onPointerLeave={(e) => e.pointerType !== 'touch' && setOpenId(null)}
       >
         {children}
       </button>
