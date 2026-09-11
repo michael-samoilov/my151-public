@@ -1,4 +1,4 @@
-import { useECharts, cssVar, type EChartsOption } from './useECharts';
+import { useECharts, cssVar, tooltipStyle, type EChartsOption } from './useECharts';
 
 interface DailyPoint {
   day: number;
@@ -52,11 +52,9 @@ export function TrendChart({ series }: { series: DailyPoint[] }) {
 
   const ref = useECharts(
     (el): EChartsOption => {
-      const ink = cssVar(el, '--color-foreground', '#0a0a0a');
       const faint = cssVar(el, '--color-muted-foreground', '#737373');
       const grid = cssVar(el, '--color-muted', '#f5f5f5');
       const red = cssVar(el, '--color-primary', '#dc2626');
-      const surface = cssVar(el, '--color-card', '#ffffff');
 
       // Band straddles the average: base = avg − √n (transparent), band = 2·√n
       // stacked on top with a translucent neutral fill. Null where no average.
@@ -67,10 +65,8 @@ export function TrendChart({ series }: { series: DailyPoint[] }) {
         animation: false,
         grid: { left: 30, right: 12, top: 10, bottom: 22 },
         tooltip: {
+          ...tooltipStyle(el),
           trigger: 'axis',
-          backgroundColor: ink,
-          borderWidth: 0,
-          textStyle: { color: surface, fontSize: 11 },
           formatter: (params: unknown) => {
             const arr = params as { dataIndex: number }[];
             const i = arr[0]?.dataIndex ?? 0;

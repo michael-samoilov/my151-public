@@ -4,11 +4,15 @@ import {
   aggregate,
   buildDepthCurve,
   dailyActive,
+  depthByDevice,
   heatmap,
   mergeByCid,
+  referrerFlow,
   retention,
   sessionCurves,
   tallies,
+  tallyCohort,
+  type Referrable,
   type SessionRecord,
 } from '../../api/_aggregate';
 
@@ -196,5 +200,69 @@ describe('aggregate', () => {
     expect(agg.activity).toHaveLength(3);
     expect(agg.heatmap).toHaveLength(7);
     expect(agg.hours).toHaveLength(24);
+  });
+});
+
+describe('tallyCohort', () => {
+  it('counts users and tallies device/country/browser for the slice given', () => {
+    const cohort = tallyCohort([dex(), dex({ cid: 'cccc-0003', country: 'FR', device: 'Mobile' })]);
+    expect(cohort.users).toBe(2);
+    expect(cohort.devices).toEqual({ Desktop: 1, Mobile: 1 });
+    expect(cohort.countries).toEqual({ US: 1, FR: 1 });
+    expect(cohort.browsers).toEqual({ Chrome: 2 });
+  });
+
+  it('reports zero users for an empty slice', () => {
+    expect(tallyCohort([]).users).toBe(0);
+  });
+});
+
+describe('depthByDevice', () => {
+  it('splits the depth curve by device, and keeps every value in "all"', () => {
+    const curves = depthByDevice([
+      { device: 'Desktop', value: 5 },
+      { device: 'Mobile', value: 2 },
+      { device: 'Mobile', value: 8 },
+      { device: 'Tablet', value: 1 }, // neither split, but still in "all"
+    ]);
+    expect(curves.all.n).toBe(4);
+    expect(curves.desktop.n).toBe(1);
+    expect(curves.mobile.n).toBe(2);
+    expect(curves.mobile.stats.p50).toBe(8); // quantile rounds up: index floor(0.5*2)=1
+  });
+});
+
+describe('referrerFlow', () => {
+  const withReferrer = (cid: string, firstReferrer: string): Referrable => ({ cid, firstReferrer });
+
+  it('groups by host and counts distinct browsers per store', () => {
+    const dexRecords = [withReferrer('aaaa', 'reddit.com'), withReferrer('bbbb', 'reddit.com')];
+    const leagueRecords = [withReferrer('bbbb', 'reddit.com'), withReferrer('cccc', 't.co')];
+    const rows = referrerFlow(dexRecords, leagueRecords);
+    expect(rows).toEqual([
+      { host: 'reddit.com', total: 2, dex: 2, league: 1 }, // aaaa, bbbb: total is distinct browsers, not dex+league
+      { host: 't.co', total: 1, dex: 0, league: 1 },
+    ]);
+  });
+
+  it('folds a country-split dex cid onto the bare cid before counting', () => {
+    const rows = referrerFlow([withReferrer('aaaa::FR', 'reddit.com')], []);
+    expect(rows).toEqual([{ host: 'reddit.com', total: 1, dex: 1, league: 0 }]);
+  });
+
+  it('skips records with no referrer and returns nothing when none exist', () => {
+    expect(referrerFlow([{ cid: 'aaaa' }], [{ cid: 'bbbb' }])).toEqual([]);
+  });
+
+  it('sorts by total reach descending and caps at the top 8 hosts', () => {
+    const dexRecords = Array.from({ length: 9 }, (_, i) =>
+      withReferrer(`cid-${i}`, `host-${i}.com`),
+    );
+    // Give host-0 a second browser so it is unambiguously the top host.
+    dexRecords.push(withReferrer('cid-extra', 'host-0.com'));
+    const rows = referrerFlow(dexRecords, []);
+    expect(rows).toHaveLength(8);
+    expect(rows[0].host).toBe('host-0.com');
+    expect(rows[0].total).toBe(2);
   });
 });

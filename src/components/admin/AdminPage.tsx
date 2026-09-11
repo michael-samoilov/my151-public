@@ -1,9 +1,8 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
-import { HubCard } from '@/components/admin/HubCard';
 import { TrendChart } from '@/components/admin/charts/TrendChart';
-import { FlowSankey, type SankeyNode, type SankeyLink } from '@/components/admin/charts/FlowSankey';
+import { FlowSankey } from '@/components/admin/charts/FlowSankey';
 import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
 import { Panel, Seg, Kpi, Delta, Rollup, type RollupRow } from '@/components/admin/ui';
 import { Input } from '@/components/ui/input';
@@ -14,8 +13,7 @@ import { getCategoryById } from '@/data/categories';
 import { cn, displayName } from '@/lib/utils';
 import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
-import { matchLocale } from '@/i18n/detect';
-import { CARD_COUNT, SEAT_MAX } from '../../../api/_leagueRecord';
+import { CARD_COUNT } from '../../../api/_leagueRecord';
 import { slotLabel } from '@/league/model/constants';
 import { defaultBoundaries } from '@/league/model/engine';
 
@@ -73,6 +71,23 @@ const PAGE_SIZE = 50;
 
 /** Which tool's records every shared card reads. */
 export type ToolSlice = 'all' | 'dex' | 'league';
+
+export type SurvivalCurve = { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number };
+
+interface BarGroup {
+  label: string;
+  count: number;
+  color?: string;
+  children: { label: string; count: number }[];
+}
+
+const SORT_LABELS: Record<string, string> = {
+  'build-order': 'Build Order',
+  regional: 'Regional',
+  national: 'National',
+  type: 'Type',
+  custom: 'Custom',
+};
 const TOOL_TABS: { key: ToolSlice; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'dex', label: 'Dex builder' },
@@ -335,6 +350,17 @@ export interface ApiResponse {
   picksBySectionAll: Record<string, [string, number][]>;
   /** Every shared aggregate, per tool. Absent on an older deploy. */
   byTool?: Record<ToolSlice, Aggregates>;
+  /** Dex cohort breakdowns (built / incomplete / completed). No "bounced" —
+   *  a browser that never built has no record, so its device is unknowable. */
+  cohorts?: Record<
+    'built' | 'incomplete' | 'completed',
+    { users: number; devices: Record<string, number>; countries: Record<string, number>; browsers: Record<string, number> }
+  >;
+  /** Build-depth survival by dex size, split by device. */
+  depthByDevice?: Record<'all' | 'mobile' | 'desktop', SurvivalCurve>;
+  /** Acquisition: referring host → dex / league landings. Forward-only, so
+   *  empty until referrers accumulate. */
+  referrerFlow?: { host: string; total: number; dex: number; league: number }[];
   /** Cross-tool order and weekly crossover, for browsers in both stores. */
   journeys?: {
     both: number;
@@ -366,21 +392,6 @@ function relativeTime(ts: number): string {
 }
 
 /** Format a whole-seconds value as a compact duration: 45s, 3m, 1h 5m. */
-function fmtSecs(s: number): string {
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return s % 60 ? `${m}m ${s % 60}s` : `${m}m`;
-  const h = Math.floor(m / 60);
-  return m % 60 ? `${h}h ${m % 60}m` : `${h}h`;
-}
-
-/**
- * Distinct local calendar days this record was active on.
- *
- * Read from the session log, which timestamps each session; falls back to the
- * first/last pair for records predating it. Capped by MAX_SESSIONS_TRACKED
- * upstream, so for a very heavy user this is a floor, not an exact count.
- */
 function activeDayCount(rec: ClientRecord): number {
   const days = new Set<string>();
   for (const s of rec.sessionLog ?? []) days.add(new Date(s.ts).toDateString());
@@ -400,125 +411,6 @@ function fmtDuration(ms: number): string {
   return `${h}h${m % 60 ? ` ${m % 60}m` : ''}`;
 }
 
-const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const DOW_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-/** Local day-of-week + hour for a record, derived from tz + last activity so it
- *  works for legacy records too (mirrors the server's localSlot). */
-function localSlotOf(r: ClientRecord): { dow: number; hour: number } | null {
-  if (typeof r.localDow === 'number' && typeof r.localHour === 'number') {
-    return { dow: r.localDow % 7, hour: r.localHour % 24 };
-  }
-  if (!r.lastTs) return null;
-  try {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone: r.tz || 'UTC',
-      weekday: 'short',
-      hour: 'numeric',
-      hour12: false,
-    }).formatToParts(r.lastTs);
-    const dow = DOW.indexOf(parts.find((p) => p.type === 'weekday')?.value ?? '');
-    const hour = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '', 10) % 24;
-    if (dow < 0 || !Number.isFinite(hour)) return null;
-    return { dow, hour };
-  } catch {
-    return null;
-  }
-}
-
-/** 12-hour label for an hour 0–23, optionally with minutes. */
-function hour12(h: number, min?: number): string {
-  const ap = h < 12 ? 'AM' : 'PM';
-  const hr = h % 12 === 0 ? 12 : h % 12;
-  return min === undefined ? `${hr} ${ap}` : `${hr}:${String(min).padStart(2, '0')} ${ap}`;
-}
-
-/** Day-of-week × hour-of-day heatmap of when users build (their local time).
- *  Cell opacity scales with count; click a cell to drill into that slot. A
- *  right column sums each day (all hours) and a bottom row sums each hour (all
- *  days); the corner is the grand total. `onCell` accepts a -1 wildcard for
- *  dow or hour to mean "the whole row/column". */
-function Heatmap({ matrix, onCell }: { matrix: number[][]; onCell: (dow: number, hour: number) => void }) {
-  const max = Math.max(1, ...matrix.flat());
-  const total = matrix.flat().reduce((a, b) => a + b, 0);
-  if (total === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
-  const dayTotals = matrix.map((row) => row.reduce((a, b) => a + b, 0));
-  const hourTotals = Array.from({ length: 24 }, (_, h) => matrix.reduce((a, row) => a + row[h], 0));
-  const dayMax = Math.max(1, ...dayTotals);
-  const hourMax = Math.max(1, ...hourTotals);
-  // Neutral (foreground) scale for the summary cells so they read distinctly
-  // from the red activity cells.
-  const sumBg = (v: number, m: number) =>
-    v > 0 ? `color-mix(in srgb, var(--color-foreground) ${Math.round(12 + 48 * (v / m))}%, transparent)` : 'var(--color-muted)';
-
-  return (
-    <div className="w-full">
-      <div className="grid gap-px w-full" style={{ gridTemplateColumns: `1.75rem repeat(24, minmax(0, 1fr)) 1.4rem` }}>
-        {/* Header row: hour labels every 3h, then a Σ for the day-total column */}
-        <div />
-        {Array.from({ length: 24 }, (_, h) => (
-          <div key={h} className="text-[0.5rem] text-muted-foreground text-center leading-none h-3">
-            {h % 3 === 0 ? (h % 12 === 0 ? 12 : h % 12) : ''}
-          </div>
-        ))}
-        <div className="text-[0.5rem] text-muted-foreground text-center leading-none h-3">Σ</div>
-
-        {matrix.map((row, d) => (
-          <Fragment key={d}>
-            <div className="text-[0.6rem] text-muted-foreground pr-1 flex items-center justify-end h-4">
-              {DOW[d]}
-            </div>
-            {row.map((c, h) => (
-              <div
-                key={h}
-                className={cn('h-4 rounded-[1px]', c > 0 ? 'cursor-pointer hover:ring-1 hover:ring-foreground/40' : '')}
-                style={{ backgroundColor: c > 0 ? `rgba(220,38,38,${0.15 + 0.85 * (c / max)})` : 'var(--color-muted)' }}
-                title={`${DOW_FULL[d]} ${hour12(h)}: ${c}`}
-                onClick={c > 0 ? () => onCell(d, h) : undefined}
-              />
-            ))}
-            {/* Day total (all hours) */}
-            <div
-              className={cn(
-                'h-4 rounded-[1px] flex items-center justify-center text-[0.5rem] tabular-nums',
-                dayTotals[d] > 0 ? 'cursor-pointer hover:ring-1 hover:ring-foreground/40' : '',
-              )}
-              style={{ backgroundColor: sumBg(dayTotals[d], dayMax) }}
-              title={`${DOW_FULL[d]} · all hours: ${dayTotals[d]}`}
-              onClick={dayTotals[d] > 0 ? () => onCell(d, -1) : undefined}
-            >
-              {dayTotals[d] || ''}
-            </div>
-          </Fragment>
-        ))}
-
-        {/* Bottom summary row: per-hour totals (all days), then grand total */}
-        <div className="text-[0.6rem] text-muted-foreground pr-1 flex items-center justify-end h-4">Σ</div>
-        {hourTotals.map((c, h) => (
-          <div
-            key={h}
-            className={cn(
-              'h-4 rounded-[1px] flex items-center justify-center text-[0.5rem] tabular-nums overflow-hidden',
-              c > 0 ? 'cursor-pointer hover:ring-1 hover:ring-foreground/40' : '',
-            )}
-            style={{ backgroundColor: sumBg(c, hourMax) }}
-            title={`${hour12(h)} · all days: ${c}`}
-            onClick={c > 0 ? () => onCell(-1, h) : undefined}
-          >
-            {c || ''}
-          </div>
-        ))}
-        <div
-          className="h-4 rounded-[1px] flex items-center justify-center text-[0.5rem] tabular-nums font-semibold"
-          style={{ backgroundColor: 'color-mix(in srgb, var(--color-foreground) 18%, transparent)' }}
-          title={`Total builds: ${total}`}
-        >
-          {total}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function flag(country?: string): string {
   if (!country || country.length !== 2) return '';
@@ -579,101 +471,12 @@ async function fetchDashboard(token: string, limit: number, offset: number): Pro
 
 // ---------- presentational bits ----------
 
-function Stat({ value, label }: { value: number | string; label: string }) {
-  return (
-    <div className="flex flex-col px-3 py-2 rounded-md bg-muted min-w-[6.5rem]">
-      <span className="text-2xl font-bold tabular-nums">{value}</span>
-      <span className="text-xs text-muted-foreground">{label}</span>
-    </div>
-  );
-}
-
 /**
  * The tools since the launch of the hub and the gym leader maker: how many
  * browsers used each, how many used both, and whether one tool's exporters
  * try the other. Every number is computed on read from the two record
  * hashes, so it reaches back to each tool's first beacon.
  */
-function ToolsCard({ tools, league, events }: {
-  tools: NonNullable<ApiResponse['tools']>;
-  league: NonNullable<ApiResponse['league']>;
-  events?: Record<string, number>;
-}) {
-  const pct = (n: number, of: number) => (of > 0 ? `${Math.round((n / of) * 100)}%` : '–');
-  const ev = (k: string) => events?.[k] ?? 0;
-  return (
-    <>
-      <Card title="Tools (distinct browsers, since each tool's first beacon)">
-        <div className="flex flex-wrap gap-2">
-          <Stat value={tools.dex} label="Dex builder" />
-          <Stat value={tools.league} label="Gym leader maker" />
-          <Stat value={`${tools.both} (${pct(tools.both, tools.league)})`} label="Both · of league users" />
-          <Stat value={tools.leagueOnly} label="League only" />
-          <Stat value={`${tools.dexExportersWhoOpenedLeague} / ${tools.dexExporters}`} label="Dex exporters → league" />
-          <Stat value={`${tools.leagueExportersWithDex} / ${tools.leagueExporters}`} label="League exporters with a dex" />
-        </div>
-        <div className="mt-3">
-          <div className="text-xs text-muted-foreground mb-1">Hub (funnel counters; the per-day journal keeps the raw events)</div>
-          <div className="flex flex-wrap gap-2">
-            <Stat value={ev('hub-shown')} label="Hub shown (browsers)" />
-            <Stat value={`${ev('hub-cta-dex')} (${pct(ev('hub-cta-dex'), ev('hub-shown'))})`} label="→ Dex card clicks" />
-            <Stat value={`${ev('hub-cta-league')} (${pct(ev('hub-cta-league'), ev('hub-shown'))})`} label="→ League card clicks" />
-            <Stat value={`${ev('league-promo-cta')} / ${ev('league-promo-shown')}`} label="Dex callout: clicked / shown" />
-          </div>
-        </div>
-      </Card>
-      <Card title="Gym leader maker funnel (distinct browsers)">
-        <div className="flex flex-wrap gap-2">
-          <Stat value={ev('league-open')} label="Opened" />
-          <Stat value={league.users} label="Seated a line" />
-          <Stat value={league.typed} label="Chose a type" />
-          <Stat value={league.named} label="Named a card" />
-          <Stat value={league.fullLeague} label={`Filled all ${CARD_COUNT}`} />
-          <Stat value={league.exportedCard} label="Exported a card" />
-          <Stat value={league.exportedLeague} label="Exported a league" />
-          <Stat value={league.returning} label="Returning" />
-          <Stat value={league.activeLast7} label="Active 7d" />
-        </div>
-        {league.recent.length > 0 && (
-          <div className="mt-3 overflow-x-auto">
-            <table className="text-xs w-full">
-              <thead className="text-muted-foreground">
-                <tr className="text-left">
-                  <th className="pr-2 font-medium">Last active</th>
-                  <th className="pr-2 font-medium">Sessions</th>
-                  <th className="pr-2 font-medium">Longest</th>
-                  <th className="pr-2 font-medium">Cards · seats</th>
-                  <th className="pr-2 font-medium">Named · aces</th>
-                  <th className="pr-2 font-medium">Exports</th>
-                  <th className="pr-2 font-medium">Where</th>
-                  <th className="font-medium">Has a dex</th>
-                </tr>
-              </thead>
-              <tbody>
-                {league.recent.map((r) => (
-                  <tr key={r.cid} className="border-t border-border/50">
-                    <td className="pr-2 py-1 whitespace-nowrap">{relativeTime(new Date(r.lastAt).getTime())}</td>
-                    <td className="pr-2 tabular-nums">{r.sessions}</td>
-                    <td className="pr-2 tabular-nums">{fmtDuration(r.maxSessionMs)}</td>
-                    <td className="pr-2 tabular-nums">{r.latest.cards} · {r.latest.seats}</td>
-                    <td className="pr-2 tabular-nums">{r.latest.named} · {r.latest.aces}</td>
-                    <td className="pr-2 tabular-nums">{r.exportsCard}c {r.exportsLeague}l</td>
-                    <td className="pr-2 whitespace-nowrap">{flag(r.country)} {r.device ?? ''}</td>
-                    <td>{r.hasDex ? 'yes' : '–'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
-    </>
-  );
-}
-
-/** A small centred dialog. Not the app's BottomSheet: that is `md:hidden` and
- *  every caller pairs it with a different desktop surface, which is more
- *  machinery than a paragraph of explanation needs at either width. */
 function InfoDialog({
   title,
   onClose,
@@ -786,369 +589,6 @@ function BeaconDropNotice({ events }: { events?: Record<string, number> }) {
   );
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(9,9,15,0.05)]">
-      <div className="mb-3 text-sm font-bold leading-tight">{title}</div>
-      {children}
-    </div>
-  );
-}
-
-/** Horizontal bar rows with a label and count — for categorical tallies. */
-function Bars({ rows }: { rows: { label: string; count: number }[] }) {
-  const max = Math.max(1, ...rows.map((r) => r.count));
-  return (
-    <div className="flex flex-col gap-1">
-      {rows.map((r) => (
-        <div key={r.label} className="flex items-center gap-2 text-xs">
-          <span className="w-16 shrink-0 text-muted-foreground text-right">{r.label}</span>
-          <div className="flex-1 bg-muted rounded h-4 overflow-hidden">
-            <div className="h-full bg-primary/70" style={{ width: `${(r.count / max) * 100}%` }} />
-          </div>
-          <span className="w-8 shrink-0 tabular-nums">{r.count}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** One-row part-to-whole bar. This is the pie chart's job done in a row: the
- *  same share-of-total read, a fraction of the height, and no sliver labels —
- *  segments too narrow to hold a number simply don't get one. */
-function ShareBar({
-  rows,
-  total,
-}: {
-  rows: { label: string; count: number; color?: string }[];
-  total: number;
-}) {
-  if (!total) return null;
-  const pct = (n: number) => (n / total) * 100;
-  const last = rows.length - 1;
-  return (
-    <div
-      className="flex w-full h-5 rounded overflow-hidden bg-muted mb-2"
-      role="img"
-      aria-label={rows.map((r) => `${r.label} ${Math.round(pct(r.count))}%`).join(', ')}
-    >
-      {rows.map((r, i) => {
-        const share = pct(r.count);
-        return (
-          <div
-            key={r.label}
-            className="h-full flex items-center justify-center"
-            style={{
-              width: `${share}%`,
-              // Never let a real region round away to nothing.
-              minWidth: r.count > 0 ? 2 : 0,
-              backgroundColor: r.color ?? 'var(--color-primary)',
-              // A 2px cut of the card colour separates neighbouring fills. Only
-              // on segments wide enough to spare it — on a sliver the border
-              // would be the whole segment.
-              borderRight: i < last && share >= 2 ? '2px solid var(--color-card)' : undefined,
-            }}
-            title={`${r.label} · ${r.count} (${Math.round(share)}%)`}
-          >
-            {share >= 10 && (
-              <span className="text-[0.55rem] text-white tabular-nums drop-shadow-[0_0_2px_rgba(0,0,0,0.5)]">
-                {Math.round(share)}%
-              </span>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-interface BarGroup {
-  label: string;
-  count: number;
-  color?: string;
-  children: { label: string; count: number }[];
-}
-
-/** Ranked bar list whose rows open to reveal their members. The long tail is
- *  what costs the space, so it starts folded away: the groups answer "roughly
- *  where", and a tap answers "exactly where". */
-function GroupedBars({ groups }: { groups: BarGroup[] }) {
-  const [open, setOpen] = useState<Set<string>>(new Set());
-  const max = Math.max(1, ...groups.map((g) => g.count));
-  const toggle = (label: string) =>
-    setOpen((prev) => {
-      const next = new Set(prev);
-      if (!next.delete(label)) next.add(label);
-      return next;
-    });
-
-  return (
-    <div className="flex flex-col gap-1">
-      {groups.map((g) => {
-        const isOpen = open.has(g.label);
-        return (
-          <div key={g.label}>
-            {/* The bar is 16px tall; the row it sits in is not. No horizontal
-                padding here: a negative margin cannot widen a `w-full` element,
-                so padding would shrink this row's content by 8px against the
-                member rows below — misaligning the tracks' right edge and
-                drawing regions on a slightly smaller scale than their own
-                members. */}
-            <button
-              type="button"
-              onClick={() => toggle(g.label)}
-              aria-expanded={isOpen}
-              className="w-full min-h-11 rounded flex items-center gap-2 text-xs cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
-            >
-              <span className="w-32 shrink-0 text-muted-foreground text-left truncate">
-                <span className="inline-block w-2">{isOpen ? '▾' : '▸'}</span> {g.label}
-              </span>
-              <div className="flex-1 bg-muted rounded h-4 overflow-hidden">
-                <div
-                  className="h-full rounded-r"
-                  style={{
-                    width: `${(g.count / max) * 100}%`,
-                    backgroundColor: g.color ?? 'var(--color-primary)',
-                  }}
-                />
-              </div>
-              <span className="w-8 shrink-0 tabular-nums text-right">{g.count}</span>
-            </button>
-            {isOpen && (
-              <div className="mb-1 flex flex-col">
-                {g.children.map((c) => (
-                  <div key={c.label} className="flex items-center gap-2 text-[0.7rem] min-h-6">
-                    {/* The same 8rem column the region label occupies, so both
-                        tracks share a left edge. The indent rule lives inside it
-                        as a fixed gutter, and stretches the full row height so
-                        consecutive rows join into one continuous line. */}
-                    <span className="w-32 shrink-0 self-stretch flex items-stretch gap-2 text-muted-foreground">
-                      <span className="w-3 border-l border-border/60" aria-hidden="true" />
-                      <span className="self-center truncate">{c.label}</span>
-                    </span>
-                    <div className="flex-1 bg-muted rounded h-3 overflow-hidden">
-                      {/* Members share the regions' scale, not one of their
-                          own. Scaled within a group, the largest member filled
-                          the track and so drew longer than the region it
-                          belongs to. On one scale a member can never outrun its
-                          parent, and members of different regions stay
-                          comparable. */}
-                      <div
-                        className="h-full rounded-r"
-                        style={{
-                          width: `${(c.count / max) * 100}%`,
-                          minWidth: c.count > 0 ? 2 : 0,
-                          backgroundColor: g.color ?? 'var(--color-primary)',
-                          // Members read as a lighter echo of their region.
-                          opacity: 0.55,
-                        }}
-                      />
-                    </div>
-                    <span className="w-8 shrink-0 tabular-nums text-right">{c.count}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Onboarding funnel: descending steps as % of the top step (bar width), with
- *  each step's raw count and the step-to-step conversion. The intro→CTA/dismiss
- *  split is shown as a sub-breakdown of the intro step, not funnel steps. */
-function FunnelChart({ events }: { events: Record<string, number> }) {
-  const g = (k: string) => events[k] ?? 0;
-  // Ordered funnel steps (monotonic-ish; each is a strict subset of intent).
-  const steps: { label: string; count: number }[] = [
-    { label: 'Saw intro', count: g('intro-shown') },
-    { label: 'Placed ≥25', count: g('milestone-25') },
-    { label: 'Placed ≥100', count: g('milestone-100') },
-    { label: 'Completed 151', count: g('milestone-151') },
-    { label: 'Visited View', count: g('view-visit') },
-  ];
-  const top = Math.max(1, steps[0].count);
-  const introCta = g('intro-cta');
-  const introDismiss = g('intro-dismiss');
-  const introTotal = g('intro-shown');
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-col gap-1.5">
-        {steps.map((s, i) => {
-          const pctOfTop = (s.count / top) * 100;
-          // Conversion from the previous step (drop-off between stages).
-          const prev = i > 0 ? steps[i - 1].count : s.count;
-          const conv = prev > 0 ? Math.round((s.count / prev) * 100) : 0;
-          return (
-            <div key={s.label} className="flex items-center gap-2 text-xs">
-              <span className="w-24 shrink-0 text-muted-foreground text-right">{s.label}</span>
-              <div className="flex-1 bg-muted rounded h-5 overflow-hidden relative">
-                <div
-                  className="h-full bg-primary/70 rounded"
-                  style={{ width: `${Math.max(pctOfTop, s.count > 0 ? 2 : 0)}%` }}
-                />
-                <span className="absolute inset-y-0 left-1.5 flex items-center text-[0.6rem] tabular-nums text-foreground/80">
-                  {s.count} · {Math.round(pctOfTop)}%
-                </span>
-              </div>
-              <span className="w-16 shrink-0 tabular-nums text-muted-foreground text-right">
-                {i > 0 ? `→ ${conv}%` : 'top'}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-      {introTotal > 0 && (
-        <div className="text-[0.65rem] text-muted-foreground">
-          Of {introTotal} who saw the intro:{' '}
-          <span className="text-foreground">
-            {introCta} chose starters ({Math.round((introCta / introTotal) * 100)}%)
-          </span>
-          ,{' '}
-          <span className="text-foreground">
-            {introDismiss} dismissed ({Math.round((introDismiss / introTotal) * 100)}%)
-          </span>
-          .
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Pre/post cohort comparison with a date slider. Splits users by firstTs into
- *  "before" and "on/after" the cutoff, and compares the % who reached each
- *  threshold — an observational before/after read on onboarding, using data
- *  (firstTs, peak count) that predates it. Not a randomized A/B test. */
-function PrePostCohort({
-  cohort,
-  launchTs,
-}: {
-  cohort: [number, number, number, 0 | 1, 0 | 1][];
-  launchTs?: number;
-}) {
-  const minTs = Math.min(...cohort.map((c) => c[0]));
-  const maxTs = Math.max(...cohort.map((c) => c[0]));
-  const dayMs = 86_400_000;
-  const minDay = Math.floor(minTs / dayMs);
-  const maxDay = Math.floor(maxTs / dayMs) + 1;
-  // Default the cutoff to the onboarding launch date (clamped into range) so it
-  // lands on the real pre/post boundary; fall back to the latest signup.
-  const [cutoffDay, setCutoffDay] = useState(() => {
-    const launchDay = launchTs ? Math.floor(launchTs / dayMs) : maxDay;
-    return Math.min(maxDay, Math.max(minDay, launchDay));
-  });
-  const cutoff = cutoffDay * dayMs;
-
-  const metrics = [
-    { label: 'Reached 25', test: (c: (typeof cohort)[number]) => c[1] >= 25 },
-    { label: 'Reached 100', test: (c: (typeof cohort)[number]) => c[1] >= 100 },
-    { label: 'Completed 151', test: (c: (typeof cohort)[number]) => c[3] === 1 || c[1] >= 151 },
-    { label: 'Exported', test: (c: (typeof cohort)[number]) => c[4] === 1 },
-  ];
-  const before = cohort.filter((c) => c[0] < cutoff);
-  const after = cohort.filter((c) => c[0] >= cutoff);
-  const rate = (arm: typeof cohort, test: (c: (typeof cohort)[number]) => boolean) =>
-    arm.length ? (arm.filter(test).length / arm.length) * 100 : 0;
-
-  const cutoffLabel = new Date(cutoff).toLocaleDateString();
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-2 text-xs">
-        <span className="text-muted-foreground shrink-0">Cutoff</span>
-        <input
-          type="range"
-          min={minDay}
-          max={maxDay}
-          value={cutoffDay}
-          onChange={(e) => setCutoffDay(Number(e.target.value))}
-          className="flex-1"
-        />
-        <span className="tabular-nums font-medium shrink-0">{cutoffLabel}</span>
-        {launchTs && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="shrink-0"
-            onClick={() => setCutoffDay(Math.min(maxDay, Math.max(minDay, Math.floor(launchTs / dayMs))))}
-          >
-            ↺ launch
-          </Button>
-        )}
-      </div>
-      <div className="text-[0.65rem] text-muted-foreground">
-        Before: <span className="text-foreground">{before.length} users</span> · On/after:{' '}
-        <span className="text-foreground">{after.length} users</span>
-        {launchTs && cutoff === Math.floor(launchTs / dayMs) * dayMs && ' · onboarding launch'}
-      </div>
-      <div className="flex flex-col gap-2">
-        {metrics.map((m) => {
-          const rb = rate(before, m.test);
-          const ra = rate(after, m.test);
-          const delta = ra - rb;
-          return (
-            <div key={m.label} className="text-xs">
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-muted-foreground">{m.label}</span>
-                <span className={cn('tabular-nums', delta >= 0 ? 'text-green-600' : 'text-destructive')}>
-                  {delta >= 0 ? '+' : ''}
-                  {Math.round(delta)}pp
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-12 shrink-0 text-right text-muted-foreground">before</span>
-                <div className="flex-1 bg-muted rounded h-3 overflow-hidden">
-                  <div className="h-full bg-foreground/40" style={{ width: `${rb}%` }} />
-                </div>
-                <span className="w-16 shrink-0 tabular-nums">{Math.round(rb)}% ({before.filter(m.test).length})</span>
-              </div>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="w-12 shrink-0 text-right text-muted-foreground">after</span>
-                <div className="flex-1 bg-muted rounded h-3 overflow-hidden">
-                  <div className="h-full bg-primary/70" style={{ width: `${ra}%` }} />
-                </div>
-                <span className="w-16 shrink-0 tabular-nums">{Math.round(ra)}% ({after.filter(m.test).length})</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <p className="text-[0.6rem] text-muted-foreground">
-        Observational before/after (not randomized). Small cohorts are noisy — treat differences as
-        directional until each arm has a few hundred users.
-      </p>
-    </div>
-  );
-}
-
-/** Lightweight modal overlay (no dependency). Click backdrop or ✕ to close. */
-function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
-      <div
-        className="bg-card rounded-lg shadow-elevated w-full max-w-2xl max-h-[85dvh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <span className="text-sm font-semibold">{title}</span>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            ✕
-          </Button>
-        </div>
-        <div className="overflow-y-auto p-4">{children}</div>
-      </div>
-    </div>
-  );
-}
-
 /** Grid of small sprites with the pick-count beneath — ~9-10 per row. */
 function PopularGrid({ rows }: { rows: [string, number][] }) {
   if (rows.length === 0) return <p className="text-xs text-muted-foreground">No data yet.</p>;
@@ -1188,63 +628,6 @@ function PopularGrid({ rows }: { rows: [string, number][] }) {
 /** A preview grid (top N) with a "View all" modal. An optional "By section"
  *  toggle (shown only when section data exists) groups picks under the section
  *  users actually placed them in, in the build page's current order. */
-function PopularPanel({
-  title,
-  rows,
-  bySection,
-  minCount,
-  preview = 30,
-}: {
-  title: string;
-  rows: [string, number][];
-  bySection?: Record<string, [string, number][]>;
-  minCount?: number;
-  preview?: number;
-}) {
-  const [open, setOpen] = useState(false);
-  const [grouped, setGrouped] = useState(false);
-  const hasSections = !!bySection && Object.keys(bySection).length > 0;
-  return (
-    <div className="shadow-elevated rounded-lg p-3 bg-card">
-      <div className="flex items-center justify-between mb-2 gap-2">
-        <span className="text-sm font-medium">
-          {title}
-          {minCount && minCount > 1 ? (
-            <span className="text-muted-foreground font-normal"> · in ≥{minCount} dexes (above avg)</span>
-          ) : null}
-        </span>
-        <div className="flex items-center gap-1 shrink-0">
-          {hasSections && (
-            <Button variant={grouped ? 'default' : 'ghost'} size="sm" onClick={() => setGrouped((v) => !v)}>
-              By section
-            </Button>
-          )}
-          {!grouped && rows.length > preview && (
-            <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
-              View all ({rows.length})
-            </Button>
-          )}
-        </div>
-      </div>
-      {grouped && bySection ? (
-        <SectionGroupedGrids bySection={bySection} />
-      ) : (
-        <>
-          <PopularGrid rows={rows.slice(0, preview)} />
-          {open && (
-            <Modal title={title} onClose={() => setOpen(false)}>
-              <PopularGrid rows={rows} />
-            </Modal>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
-/** Renders one PopularGrid per build section, in the build page's current
- *  order; sections not in BUILD_GROUPS (e.g. removed later) sort to the end and
- *  show their raw id. Pure display from raw section ids → never needs a wipe. */
 function SectionGroupedGrids({ bySection }: { bySection: Record<string, [string, number][]> }) {
   const order = BUILD_GROUPS.map((g) => g.id);
   const sids = Object.keys(bySection).sort((a, b) => {
@@ -1276,260 +659,6 @@ function SectionGroupedGrids({ bySection }: { bySection: Record<string, [string,
  *  steepest segment = where users churn. Renders an SVG line with a shaded
  *  area, gridlines, and the biggest single-step drop highlighted. `fmtX`
  *  formats the x-axis (seconds → time, or a raw count). */
-function Survival({
-  points,
-  fmtX,
-  xLabel,
-}: {
-  points: { t: number; s: number }[];
-  fmtX: (t: number) => string;
-  xLabel: string;
-}) {
-  const [cursor, setCursor] = useState<number | null>(null); // index into points
-  const areaRef = useRef<HTMLDivElement>(null);
-
-  if (points.length < 2 || points[0].s === 0) {
-    return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
-  }
-  const W = 320;
-  const H = 120;
-  const padL = 28;
-  const padB = 16;
-  const padT = 6;
-  const padR = 6;
-  const xMax = points[points.length - 1].t || 1;
-  const plotLeft = padL / W; // plot area as fractions of total width
-  const plotW = (W - padL - padR) / W;
-  const px = (t: number) => padL + ((W - padL - padR) * t) / xMax;
-  const py = (s: number) => padT + (H - padT - padB) * (1 - s);
-
-  // Steepest drop between consecutive samples (the churn cliff).
-  let dropIdx = -1;
-  let dropAmt = 0;
-  for (let i = 1; i < points.length; i++) {
-    const d = points[i - 1].s - points[i].s;
-    if (d > dropAmt) {
-      dropAmt = d;
-      dropIdx = i;
-    }
-  }
-
-  const line = points.map((p) => `${px(p.t)},${py(p.s)}`).join(' ');
-  const area = `${padL},${py(0)} ${line} ${px(xMax)},${py(0)}`;
-
-  // Map a pointer's clientX → nearest sample index (press-and-hold crosshair).
-  const updateCursor = (clientX: number) => {
-    const el = areaRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const frac = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    // Convert full-width fraction → fraction within the plot area → t.
-    const plotFrac = Math.min(1, Math.max(0, (frac - plotLeft) / plotW));
-    const t = plotFrac * xMax;
-    // nearest point by t
-    let best = 0;
-    let bestD = Infinity;
-    for (let i = 0; i < points.length; i++) {
-      const d = Math.abs(points[i].t - t);
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
-    }
-    setCursor(best);
-  };
-
-  const cur = cursor !== null ? points[cursor] : null;
-  const curLeftPct = cur ? (px(cur.t) / W) * 100 : 0;
-
-  return (
-    <div className="w-full">
-      <div
-        ref={areaRef}
-        className="relative w-full touch-none select-none cursor-crosshair"
-        onPointerDown={(e) => {
-          e.currentTarget.setPointerCapture(e.pointerId);
-          updateCursor(e.clientX);
-        }}
-        onPointerMove={(e) => {
-          if (cursor !== null) updateCursor(e.clientX);
-        }}
-        onPointerUp={() => setCursor(null)}
-        onPointerLeave={() => setCursor(null)}
-        onPointerCancel={() => setCursor(null)}
-      >
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" style={{ height: 'auto' }} preserveAspectRatio="none">
-          {[0, 0.25, 0.5, 0.75, 1].map((g) => (
-            <g key={g}>
-              <line x1={padL} y1={py(g)} x2={W - padR} y2={py(g)} stroke="var(--color-muted)" strokeWidth={1} />
-              <text x={2} y={py(g) + 3} fontSize={7} fill="var(--color-muted-foreground)">
-                {Math.round(g * 100)}%
-              </text>
-            </g>
-          ))}
-          <polygon points={area} fill="rgba(220,38,38,0.12)" />
-          <polyline points={line} fill="none" stroke="rgb(220,38,38)" strokeWidth={1.5} />
-          {dropIdx > 0 && dropAmt > 0.01 && cursor === null && (
-            <line
-              x1={px(points[dropIdx - 1].t)}
-              y1={py(points[dropIdx - 1].s)}
-              x2={px(points[dropIdx].t)}
-              y2={py(points[dropIdx].s)}
-              stroke="rgb(220,38,38)"
-              strokeWidth={4}
-            />
-          )}
-          {cur && <line x1={px(cur.t)} y1={padT} x2={px(cur.t)} y2={H - padB} stroke="var(--color-foreground)" strokeWidth={1} />}
-        </svg>
-        {/* crosshair dot + readout, in HTML so it isn't distorted by the SVG scale */}
-        {cur && (
-          <>
-            <div
-              className="absolute w-2 h-2 -ml-1 -mt-1 rounded-full bg-foreground pointer-events-none"
-              style={{ left: `${curLeftPct}%`, top: `${(py(cur.s) / H) * 100}%` }}
-            />
-            <div
-              className="absolute -translate-x-1/2 -top-1 pointer-events-none whitespace-nowrap rounded bg-foreground text-background text-[0.6rem] px-1 py-0.5"
-              style={{ left: `${Math.min(85, Math.max(15, curLeftPct))}%` }}
-            >
-              {fmtX(cur.t)} · {Math.round(cur.s * 100)}% left
-            </div>
-          </>
-        )}
-      </div>
-      <div className="flex justify-between text-[0.6rem] text-muted-foreground px-1 mt-0.5">
-        <span>0</span>
-        <span>{xLabel}</span>
-        <span>{fmtX(xMax)}</span>
-      </div>
-      {dropIdx > 0 && dropAmt > 0.01 && (
-        <p className="text-xs text-muted-foreground mt-1">
-          Sharpest drop-off around <span className="font-medium text-foreground">{fmtX(points[dropIdx].t)}</span>{' '}
-          (−{Math.round(dropAmt * 100)}%). <span className="opacity-70">Press &amp; hold the chart to inspect.</span>
-        </p>
-      )}
-    </div>
-  );
-}
-
-/** "50% by 1m · 75% by 4m · 90% by 12m" readout from p50/p75/p90 stats. */
-function ChurnReadout({ stats, fmt }: { stats: { p50: number; p75: number; p90: number }; fmt: (n: number) => string }) {
-  return (
-    <p className="text-xs text-muted-foreground mt-1">
-      Half drop off by <span className="font-medium text-foreground">{fmt(stats.p50)}</span> · 75% by{' '}
-      <span className="font-medium text-foreground">{fmt(stats.p75)}</span> · 90% by{' '}
-      <span className="font-medium text-foreground">{fmt(stats.p90)}</span>
-    </p>
-  );
-}
-
-export type SurvivalCurve = { survival: { t: number; s: number }[]; stats: { p50: number; p75: number; p90: number }; n: number };
-
-/** Drop-off card with a configurable basis toggle. `tabs` lists the available
- *  bases (key/label/note); `curves` maps each key to its survival curve. Falls
- *  back to a flat surface if `curves` is absent (older deploy). */
-function BasisDropoffCard<K extends string>({
-  title,
-  curves,
-  tabs,
-  fallback,
-  fmtX,
-  xLabel,
-  hint,
-  extra,
-}: {
-  title: string;
-  curves?: Partial<Record<K, SurvivalCurve>>;
-  tabs: { key: K; label: string; note: string }[];
-  fallback: SurvivalCurve;
-  fmtX: (n: number) => string;
-  xLabel: string;
-  hint?: string;
-  /** Optional extra control row (e.g. a metric toggle) rendered under the title. */
-  extra?: React.ReactNode;
-}) {
-  const [basis, setBasis] = useState<K>(tabs[0].key);
-  const curve = curves?.[basis] ?? fallback;
-  const active = tabs.find((t) => t.key === basis) ?? tabs[0];
-  return (
-    <div className="shadow-elevated rounded-lg p-3 bg-card">
-      <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-        <span className="text-sm font-medium">{title}</span>
-        {curves && (
-          <div className="flex items-center gap-1 shrink-0 flex-wrap">
-            {tabs.map((t) => (
-              <Button
-                key={t.key}
-                variant={basis === t.key ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setBasis(t.key)}
-              >
-                {t.label}
-              </Button>
-            ))}
-          </div>
-        )}
-      </div>
-      {extra && <div className="flex items-center gap-1 mb-2 flex-wrap">{extra}</div>}
-      <Survival points={curve.survival} fmtX={fmtX} xLabel={xLabel} />
-      <ChurnReadout stats={curve.stats} fmt={fmtX} />
-      {curves && (
-        <p className="text-[0.65rem] text-muted-foreground mt-0.5">
-          {active.note} (n={curve.n}).{hint ? ` ${hint}` : ''}
-        </p>
-      )}
-    </div>
-  );
-}
-
-/**
- * How far a league gets. Two metrics, because a league can be wide (every
- * card holding one line) or deep (a few cards holding six), and the two fail
- * in different places.
- *
- * Built from Survival directly rather than through BasisDropoffCard: that card
- * exists for a session-basis toggle, and a league has only one basis. Passing
- * it a one-entry tab list renders a button that changes nothing.
- */
-function LeagueDepthCard({ curves, users }: { curves: NonNullable<ApiResponse['leagueCurves']>; users: number }) {
-  const [metric, setMetric] = useState<'cards' | 'seats'>('cards');
-  const curve = curves[metric];
-  const unit = (n: number) => (metric === 'cards' ? (n === 1 ? 'card' : 'cards') : n === 1 ? 'seat' : 'seats');
-  // The thresholds a league is actually built around: one card, a starter set,
-  // the eight gyms, and every trainer. The seat marks are their line
-  // equivalents, so both rows read against the same shape of league.
-  const marks = metric === 'cards' ? [1, 4, 8, CARD_COUNT] : [1, 6, 24, SEAT_MAX];
-  const shareAt = (t: number) => curve.survival.find((p) => p.t === t)?.s ?? 0;
-  return (
-    <div className="shadow-elevated rounded-lg p-3 bg-card">
-      <div className="flex items-center justify-between mb-2 gap-2 flex-wrap">
-        <span className="text-sm font-medium">League depth (how far a league gets)</span>
-        <div className="flex items-center gap-1 shrink-0 flex-wrap">
-          <span className="text-[0.65rem] text-muted-foreground mr-1">Measure:</span>
-          <Button variant={metric === 'cards' ? 'default' : 'ghost'} size="sm" onClick={() => setMetric('cards')}>
-            Cards (of {CARD_COUNT})
-          </Button>
-          <Button variant={metric === 'seats' ? 'default' : 'ghost'} size="sm" onClick={() => setMetric('seats')}>
-            Seats (of {SEAT_MAX})
-          </Button>
-        </div>
-      </div>
-      <div className="flex items-center gap-1 mb-2 flex-wrap">
-        {marks.map((m) => (
-          <span key={m} className="text-xs rounded bg-muted px-2 py-1 tabular-nums">
-            {m} {unit(m)}: {Math.round(shareAt(m) * 100)}%
-          </span>
-        ))}
-      </div>
-      <Survival points={curve.survival} fmtX={(n) => `${n} ${unit(n)}`} xLabel={unit(2)} />
-      <ChurnReadout stats={curve.stats} fmt={(n) => `${n} ${unit(n)}`} />
-      <p className="text-[0.65rem] text-muted-foreground mt-0.5">
-        Peak {unit(2)} ever reached, across {users} league user{users === 1 ? '' : 's'} (n={curve.n}).
-      </p>
-    </div>
-  );
-}
-
 function SpriteRow({ ids }: { ids: number[] }) {
   return (
     <div className="flex flex-wrap gap-0.5">
@@ -1561,14 +690,6 @@ function SpriteRow({ ids }: { ids: number[] }) {
   );
 }
 
-function tallyRows(counts: Record<string, number>, withFlag = false) {
-  return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([k, n]) => ({ label: withFlag ? `${flag(k)} ${k}` : k, count: n }));
-}
-
-/** Fold the country tally into regions, largest first, each keeping its own
- *  countries as members. */
 function regionGroups(countries: Record<string, number>): BarGroup[] {
   const byRegion = new Map<string, { label: string; count: number }[]>();
   for (const [cc, n] of Object.entries(countries)) {
@@ -1595,70 +716,6 @@ function regionGroups(countries: Record<string, number>): BarGroup[] {
  * we ship folds to its primary subtag instead and is marked — those rows are
  * the localisation backlog, ranked by how many users are waiting in it.
  */
-function languageRows(languages: Record<string, number>) {
-  const shipped = new Map<string, number>();
-  const missing = new Map<string, number>();
-  for (const [tag, n] of Object.entries(languages)) {
-    const match = matchLocale(tag);
-    if (match) {
-      shipped.set(match, (shipped.get(match) ?? 0) + n);
-    } else {
-      const base = tag.split('-')[0].toLowerCase();
-      missing.set(base, (missing.get(base) ?? 0) + n);
-    }
-  }
-  return [
-    ...[...shipped].map(([code, count]) => ({ code, count, isShipped: true })),
-    ...[...missing].map(([code, count]) => ({ code, count, isShipped: false })),
-  ].sort((a, b) => b.count - a.count);
-}
-
-/** Users per language, flagging the ones the app does not yet ship. */
-function LanguageBars({ languages }: { languages: Record<string, number> }) {
-  const rows = languageRows(languages);
-  if (!rows.length) return <p className="text-xs text-muted-foreground">No data yet.</p>;
-  const max = Math.max(1, ...rows.map((r) => r.count));
-  const unshipped = rows.filter((r) => !r.isShipped).reduce((sum, r) => sum + r.count, 0);
-  return (
-    <div className="flex flex-col gap-1">
-      {rows.map((r) => (
-        <div key={r.code} className="flex items-center gap-2 text-xs">
-          <span className="w-32 shrink-0 text-muted-foreground truncate">{langLabel(r.code)}</span>
-          <div className="flex-1 bg-muted rounded h-4 overflow-hidden">
-            <div
-              className="h-full"
-              style={{
-                width: `${(r.count / max) * 100}%`,
-                backgroundColor: r.isShipped ? 'var(--color-primary)' : 'rgb(217,119,6)',
-                opacity: 0.75,
-              }}
-            />
-          </div>
-          <span className="w-8 shrink-0 tabular-nums text-right">{r.count}</span>
-        </div>
-      ))}
-      <p className="text-[0.6rem] text-muted-foreground mt-1 leading-snug">
-        <span
-          className="inline-block w-2 h-2 rounded-[2px] align-middle mr-1"
-          style={{ backgroundColor: 'rgb(217,119,6)', opacity: 0.75 }}
-        />
-        Not shipped — {unshipped} {unshipped === 1 ? 'user' : 'users'}. From the browser's
-        Accept-Language header, which is a preference, not proof of what we served.
-      </p>
-    </div>
-  );
-}
-
-const SORT_LABELS: Record<string, string> = {
-  'build-order': 'Build Order',
-  regional: 'Regional',
-  national: 'National',
-  type: 'Type',
-  custom: 'Custom',
-};
-
-/** Compact summary of the View settings used for an export, e.g.
- *  "Build Order · outlines · specials grouped". */
 function fmtExportSettings(s: NonNullable<ClientRecord['exportSettings']>): string {
   const parts = [SORT_LABELS[s.sort] ?? s.sort];
   if (s.outlines) parts.push('outlines');
@@ -2569,74 +1626,84 @@ function LeagueUserCard({
   );
 }
 
-function HourDetail({
-  hour,
-  dow,
-  records,
-  loadedAll,
-  onClose,
+function WhatPeoplePick({
+  most,
+  off,
+  bySection,
+  n,
 }: {
-  hour: number;
-  dow?: number;
-  records: ClientRecord[];
-  loadedAll: boolean;
-  onClose: () => void;
+  most: [string, number][];
+  off: [string, number][];
+  bySection: Record<string, [string, number][]>;
+  n: number;
 }) {
-  // hour === -1 → all hours of a day; dow === -1 → all days at an hour.
-  const anyHour = hour < 0;
-  const anyDay = dow === undefined || dow < 0;
-  const inHour = records.filter((r) => {
-    const slot = localSlotOf(r);
-    if (slot === null) return false;
-    return (anyHour || slot.hour === hour) && (anyDay || slot.dow === dow);
-  });
-  // Sub-bucket by minute within the hour (0–59) using the user's own clock.
-  const minuteOf = (r: ClientRecord): number | null => {
-    if (!r.tz) return null;
-    try {
-      const m = new Intl.DateTimeFormat('en-US', { timeZone: r.tz, minute: 'numeric' }).format(r.lastTs);
-      const n = parseInt(m, 10);
-      return Number.isFinite(n) ? n : null;
-    } catch {
-      return null;
-    }
-  };
-  const slotOf = (r: ClientRecord) => localSlotOf(r);
-  const sorted = inHour
-    .map((r) => ({ r, slot: slotOf(r), min: minuteOf(r) }))
-    // Order by hour then minute (so an all-day view reads chronologically).
-    .sort((a, b) => (a.slot?.hour ?? 0) - (b.slot?.hour ?? 0) || (a.min ?? 0) - (b.min ?? 0));
-
-  const dayPart = anyDay ? 'All days' : DOW_FULL[dow!];
-  const hourPart = anyHour ? 'all hours' : hour12(hour);
+  const [view, setView] = useState<'most' | 'off' | 'section'>('most');
   return (
-    <Modal title={`${dayPart} · ${hourPart} (users' local time)`} onClose={onClose}>
-      {!loadedAll && (
-        <p className="text-xs text-muted-foreground mb-2">
-          Based on the {records.length} loaded users — “Load more” for the full set.
-        </p>
-      )}
-      {sorted.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No loaded users in this slot.</p>
+    <Panel
+      title="What people pick"
+      sub={[`of ${n} dexes`]}
+      actions={
+        <Seg
+          ariaLabel="Picks metric"
+          options={[
+            { key: 'most', label: 'Most picked' },
+            { key: 'off', label: 'Off-section' },
+            { key: 'section', label: 'By section' },
+          ]}
+          value={view}
+          onChange={setView}
+        />
+      }
+    >
+      {view === 'section' ? (
+        <SectionGroupedGrids bySection={bySection} />
+      ) : view === 'off' ? (
+        off.length ? (
+          <PopularGrid rows={off.slice(0, 45)} />
+        ) : (
+          <p className="text-xs text-muted-foreground">No off-section picks.</p>
+        )
       ) : (
-        <div className="flex flex-col gap-1">
-          {sorted.map(({ r, slot, min }) => {
-            const local = localTime(r.lastTs, r.tz);
-            return (
-              <div key={r.cid} className="flex items-center gap-3 text-xs border-b py-1">
-                <span className="w-20 shrink-0 tabular-nums font-medium">
-                  {slot ? hour12(slot.hour, min ?? 0) : '—'}
-                </span>
-                <span className="w-16 shrink-0">
-                  {r.country ? `${flag(r.country)} ${r.country}` : '—'}
-                </span>
-                <span className="text-muted-foreground truncate">{local ?? r.lastAt}</span>
-              </div>
-            );
-          })}
-        </div>
+        <PopularGrid rows={most.slice(0, 45)} />
       )}
-    </Modal>
+    </Panel>
+  );
+}
+
+export type AdminNavKey = ToolSlice | 'feedback';
+
+/** Section nav: a bottom bar on mobile, an inline row on desktop. Splits the
+ *  dashboard into All / Dex / League analytics and the Feedback page. */
+function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: AdminNavKey) => void }) {
+  const items: { key: AdminNavKey; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'dex', label: 'Dex' },
+    { key: 'league', label: 'League' },
+    { key: 'feedback', label: 'Feedback' },
+  ];
+  return (
+    <nav
+      aria-label="Admin section"
+      className="fixed inset-x-0 bottom-0 z-[90] flex justify-around gap-1 border-t border-border bg-card/95 px-2 py-2 backdrop-blur md:sticky md:top-0 md:mx-auto md:max-w-5xl md:justify-start md:border-t-0 md:border-b md:bg-card md:px-4 md:py-2 md:backdrop-blur-none"
+    >
+      {items.map((it) => {
+        const on = it.key === value;
+        return (
+          <button
+            key={it.key}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(it.key)}
+            className={cn(
+              'flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors md:flex-none',
+              on ? 'bg-foreground text-card' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {it.label}
+          </button>
+        );
+      })}
+    </nav>
   );
 }
 
@@ -2653,8 +1720,10 @@ export function AdminPage() {
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<ApiResponse | null>(null);
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
-  const [depthMetric, setDepthMetric] = useState<'mon' | 'lines'>('mon');
-  const [slotDetail, setSlotDetail] = useState<{ dow: number; hour: number } | null>(null);
+  const [page, setPage] = useState<'analytics' | 'feedback'>('analytics');
+  const [depthDevice, setDepthDevice] = useState<'all' | 'mobile' | 'desktop'>('all');
+  const [cohort, setCohort] = useState<'built' | 'incomplete' | 'completed'>('built');
+  const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
   const [expandedCid, setExpandedCid] = useState<string | null>(null);
   const [expandedLeagueCid, setExpandedLeagueCid] = useState<string | null>(null);
   const [authed, setAuthed] = useState(false);
@@ -2764,18 +1833,16 @@ export function AdminPage() {
     setTokenInput('');
   }, []);
 
-  const { offPickRows, offPickBySection } = useMemo(() => {
+  const offPickRows = useMemo<[string, number][]>(() => {
     const bySec = data?.picksBySectionAll;
-    if (!bySec) return { offPickRows: [] as [string, number][], offPickBySection: {} as Record<string, [string, number][]> };
-    const perSection: Record<string, [string, number][]> = {};
+    if (!bySec) return [];
     const totals: Record<string, number> = {};
     for (const [sid, entries] of Object.entries(bySec)) {
-      const off = entries.filter(([id]) => isOffSection(Number(id), sid));
-      if (off.length > 0) perSection[sid] = off;
-      for (const [id, n] of off) totals[id] = (totals[id] ?? 0) + n;
+      for (const [id, n] of entries.filter(([id]) => isOffSection(Number(id), sid))) {
+        totals[id] = (totals[id] ?? 0) + n;
+      }
     }
-    const rows: [string, number][] = Object.entries(totals).sort((a, b) => b[1] - a[1]);
-    return { offPickRows: rows, offPickBySection: perSection };
+    return Object.entries(totals).sort((a, b) => b[1] - a[1]);
   }, [data?.picksBySectionAll]);
 
   if (!authed) {
@@ -2809,11 +1876,21 @@ export function AdminPage() {
     );
   }
 
+  const navKey: AdminNavKey = page === 'feedback' ? 'feedback' : tool;
+  const onNav = (k: AdminNavKey) => {
+    if (k === 'feedback') {
+      setPage('feedback');
+    } else {
+      setPage('analytics');
+      pickTool(k);
+    }
+  };
+
   return (
-    <div className="min-h-dvh flex flex-col bg-background">
-      <header ref={pageHeaderRef} className="border-b bg-card sticky top-0 z-[100]">
-        <div className="max-w-5xl mx-auto w-full flex items-center justify-between gap-2 px-4 py-3">
-          <h1 className="text-lg font-bold whitespace-nowrap">
+    <div className="flex min-h-dvh flex-col bg-background">
+      <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-3">
+          <h1 className="whitespace-nowrap text-lg font-bold">
             <span className="text-primary">my151</span> · Analytics
           </h1>
           <div className="flex items-center gap-1">
@@ -2827,18 +1904,18 @@ export function AdminPage() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-5xl mx-auto w-full p-4 flex flex-col gap-4">
+      <AdminNav value={navKey} onChange={onNav} />
+
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 pb-24 pt-4 md:pb-8">
         {error && <p className="text-sm text-destructive">{error}</p>}
 
-        {/* Above the dashboard: it is the only thing here that someone else
-            wrote, and the only thing that goes stale if it is not read. */}
-        {token && <FeedbackCard token={token} />}
+        {page === 'feedback' &&
+          (token ? <FeedbackCard token={token} /> : <p className="text-sm text-muted-foreground">Sign in to read feedback.</p>)}
 
-        {data && (() => {
+        {page === 'analytics' && data && (() => {
           const slice = sliceOf(data, tool);
           const showDex = tool !== 'league';
 
-          // MECE usage funnel (dex): every stage's inflow is fully accounted.
           const f = data.funnel;
           const built = data.tools?.dex ?? f.users;
           const sawIntro = f.users;
@@ -2847,16 +1924,14 @@ export function AdminPage() {
           const keptPrivate = Math.max(0, f.completed - f.exported);
           const pctOf = (num: number, den: number) => (den > 0 ? Math.round((num / den) * 100) : 0);
 
-          // Data window from the activity series, for the summary line.
           const act = data.activity ?? slice.activity;
           const fmtDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-          const dateRange = act.length ? `${fmtDate(act[0].day)} – ${fmtDate(act[act.length - 1].day)}` : '';
+          const dateRange = act.length ? `${fmtDate(act[0].day)} – ${fmtDate(act[act.length - 1].day)} · as of ${fmtDate(act[act.length - 1].day)}` : '';
 
-          // Cross-tool identity (league-side numbers are small — flag n).
           const xt = data.tools;
           const xtTotal = xt ? xt.dexOnly + xt.both + xt.leagueOnly : 0;
 
-          // Who rollups from the selected slice (real per-tool breakdowns).
+          // Rollup helpers.
           const toRollup = (rec: Record<string, number>, max = 6): RollupRow[] => {
             const total = Object.values(rec).reduce((a, b) => a + b, 0) || 1;
             return Object.entries(rec)
@@ -2864,52 +1939,49 @@ export function AdminPage() {
               .slice(0, max)
               .map(([label, n]) => ({ label, pct: Math.round((n / total) * 100) }));
           };
-          const regionRollup: RollupRow[] = (() => {
-            const groups = regionGroups(slice.countries);
+          const regionRollup = (countries: Record<string, number>): RollupRow[] => {
+            const groups = regionGroups(countries);
             const total = groups.reduce((s, g) => s + g.count, 0) || 1;
             return groups.slice(0, 5).map((g) => ({ label: g.label, pct: Math.round((g.count / total) * 100) }));
-          })();
+          };
 
-          // Build-depth curve for the selected metric (real data).
+          // Who: use cohort breakdowns when the endpoint provides them, else the
+          // slice's own rollups (league, or an older deploy).
+          const cohorts = showDex ? data.cohorts : undefined;
+          const whoSrc = cohorts ? cohorts[cohort] : { devices: slice.devices, countries: slice.countries, browsers: slice.browsers, users: slice.users };
+          const whoBuilt = cohorts?.built;
+          const deltaVs = (rows: RollupRow[], baseRows: RollupRow[] | null): RollupRow[] =>
+            !baseRows ? rows : rows.map((r) => {
+              const b = baseRows.find((x) => x.label === r.label);
+              return { ...r, delta: b ? r.pct - b.pct : undefined };
+            });
+          const baseDev = whoBuilt ? toRollup(whoBuilt.devices, 3) : null;
+          const baseGeo = whoBuilt ? regionRollup(whoBuilt.countries) : null;
+          const baseBr = whoBuilt ? toRollup(whoBuilt.browsers, 5) : null;
+          const showDelta = !!cohorts && cohort !== 'built';
+
+          // Build depth: device split when available, else the slice total.
           const depthCurve =
-            depthMetric === 'lines'
-              ? data.lineCurves?.total ?? data.depthCurves?.total
-              : data.monCurves?.total ?? data.depthCurves?.total;
+            (showDex && data.depthByDevice?.[depthDevice]) ?? data.monCurves?.total ?? data.depthCurves?.total ??
+            (tool === 'league' ? data.leagueCurves?.cards : undefined);
 
           return (
           <>
-            {/* Summary line — the headline counts as data, no prose. */}
             <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
               <span className="text-sm">
-                <b className="tabular-nums">{sawIntro}</b>{' '}
-                <span className="text-muted-foreground">saw intro</span>
+                <b className="tabular-nums">{sawIntro}</b> <span className="text-muted-foreground">saw intro</span>
               </span>
               <span className="text-sm">
                 <b className="tabular-nums">{built}</b> <span className="text-muted-foreground">built a dex</span>
               </span>
               {xt && (
                 <span className="text-sm">
-                  <b className="tabular-nums">{xt.league}</b>{' '}
-                  <span className="text-muted-foreground">league</span>
+                  <b className="tabular-nums">{xt.league}</b> <span className="text-muted-foreground">league</span>
                 </span>
               )}
-              {dateRange && (
-                <span className="text-[0.7rem] font-semibold text-muted-foreground">
-                  {dateRange} · as of {fmtDate(act[act.length - 1].day)}
-                </span>
-              )}
+              {dateRange && <span className="text-[0.7rem] font-semibold text-muted-foreground">{dateRange}</span>}
             </div>
 
-            {/* The tool switch (ink selection). Every card reads the selected
-                slice; "All" is one record per browser with both tools merged. */}
-            <Seg
-              ariaLabel="Tool"
-              options={TOOL_TABS.map((t) => ({ key: t.key, label: t.label }))}
-              value={tool}
-              onChange={pickTool}
-            />
-
-            {/* Hero — the weekly active-browsers trend leads the page. */}
             {slice.activity.length > 0 && (
               <Panel title="Active browsers" sub={['weekly']}>
                 <TrendChart series={slice.activity} />
@@ -2917,52 +1989,40 @@ export function AdminPage() {
             )}
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {/* Headline outcome + sub-KPIs. Denominators ride as data. */}
-              <Panel
-                title={showDex ? 'Completed a dex' : 'League activity'}
-                sub={[showDex ? `of ${built} built` : `${slice.users} browsers`]}
-              >
-                {showDex ? (
-                  <>
-                    <Kpi
-                      emphasis
-                      value={f.completed}
-                      label="Completed 151"
-                      denom={`${f.completed} / ${built} built · ${pctOf(f.completed, built)}%`}
-                    />
-                    <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
-                      <Kpi value={slice.retention.activeLast7} label="Active · 7d" denom={`/ ${built}`} />
-                      <Kpi value={slice.retention.returning} label="Returning · 30d" denom={`/ ${built}`} />
-                      <Kpi value={f.exported} label="Exported" denom={`/ ${f.completed}`} />
-                      <Kpi value={bounced} label="Bounced" denom={`/ ${sawIntro}`} />
-                    </div>
-                  </>
-                ) : (
+              {showDex ? (
+                <Panel title="Completed a dex" sub={[`of ${built} built`]}>
+                  <Kpi
+                    emphasis
+                    value={f.completed}
+                    label="Completed 151"
+                    denom={`${f.completed} / ${built} built · ${pctOf(f.completed, built)}%`}
+                  />
+                  <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
+                    <Kpi value={slice.retention.activeLast7} label="Active · 7d" denom={`/ ${built}`} />
+                    <Kpi value={slice.retention.returning} label="Returning · 30d" denom={`/ ${built}`} />
+                    <Kpi value={f.exported} label="Exported" denom={`/ ${f.completed}`} />
+                    <Kpi value={bounced} label="Bounced" denom={`/ ${sawIntro}`} />
+                  </div>
+                  <BeaconDropNotice events={data.funnelEvents} />
+                </Panel>
+              ) : (
+                <Panel title="League activity" sub={[`${slice.users} browsers`]}>
                   <div className="flex flex-wrap gap-x-6 gap-y-3">
                     <Kpi emphasis value={slice.users} label="Browsers" />
                     <Kpi value={slice.retention.activeLast7} label="Active · 7d" />
                     <Kpi value={slice.retention.returning} label="Returning" />
                     {data.league && (
-                      <Kpi
-                        value={data.league.exportedCard + data.league.exportedLeague}
-                        label="League exports"
-                      />
+                      <Kpi value={data.league.exportedCard + data.league.exportedLeague} label="Exports" />
                     )}
                   </div>
-                )}
-                <BeaconDropNotice events={data.funnelEvents} />
-              </Panel>
+                </Panel>
+              )}
 
-              {/* Cross-tool identity. League-side counts are small — n flagged. */}
               {xt && (
                 <Panel
                   title="Cross-tool"
                   sub={['dex & league']}
-                  actions={
-                    <span className="text-[0.7rem] font-semibold text-muted-foreground tabular-nums">
-                      {xtTotal} browsers
-                    </span>
-                  }
+                  actions={<span className="text-[0.7rem] font-semibold tabular-nums text-muted-foreground">{xtTotal} browsers</span>}
                 >
                   <div className="flex flex-wrap gap-x-6 gap-y-3">
                     <Kpi value={xt.dexOnly} label="Dex only" />
@@ -2980,9 +2040,7 @@ export function AdminPage() {
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-muted-foreground">Dex → League</span>
-                        <span className="font-bold tabular-nums">
-                          {data.journeys.dexFirst} / {built}
-                        </span>
+                        <span className="font-bold tabular-nums">{data.journeys.dexFirst} / {built}</span>
                       </div>
                     </div>
                   )}
@@ -2990,12 +2048,40 @@ export function AdminPage() {
               )}
             </div>
 
-            {/* Flows — MECE usage funnel, every inflow accounted for. */}
             {showDex && built > 0 && (
-              <Panel title="Flows" sub={['usage funnel', tool === 'all' ? 'all tools' : 'dex']}>
-                <FlowSankey
-                  nodes={
-                    [
+              <Panel
+                title="Flows"
+                sub={[flowView === 'referrer' ? 'referrer → landing' : 'usage funnel', tool === 'all' ? 'all tools' : 'dex']}
+                actions={
+                  data.referrerFlow && data.referrerFlow.length > 0 ? (
+                    <Seg
+                      ariaLabel="Flow"
+                      options={[
+                        { key: 'usage', label: 'Usage funnel' },
+                        { key: 'referrer', label: 'Referrer → landing' },
+                      ]}
+                      value={flowView}
+                      onChange={setFlowView}
+                    />
+                  ) : undefined
+                }
+              >
+                {flowView === 'referrer' && data.referrerFlow && data.referrerFlow.length > 0 ? (
+                  <FlowSankey
+                    nodes={[
+                      ...data.referrerFlow.map((r) => ({ name: r.host, role: 'neutral' as const })),
+                      { name: 'Dex', role: 'success' as const },
+                      { name: 'League', role: 'priv' as const },
+                    ]}
+                    links={data.referrerFlow.flatMap((r) => [
+                      ...(r.dex > 0 ? [{ source: r.host, target: 'Dex', value: r.dex, role: 'success' as const }] : []),
+                      ...(r.league > 0 ? [{ source: r.host, target: 'League', value: r.league, role: 'priv' as const }] : []),
+                    ])}
+                    ariaLabel={`Referrer to landing: ${data.referrerFlow.length} referring hosts split into dex and league landings.`}
+                  />
+                ) : (
+                  <FlowSankey
+                    nodes={[
                       { name: 'Saw intro', role: 'neutral' },
                       { name: 'Built', role: 'neutral' },
                       { name: 'Bounced', role: 'sink' },
@@ -3003,258 +2089,129 @@ export function AdminPage() {
                       { name: 'Completed', role: 'success' },
                       { name: 'Exported', role: 'success' },
                       { name: 'Kept private', role: 'priv' },
-                    ] satisfies SankeyNode[]
-                  }
-                  links={
-                    [
+                    ]}
+                    links={[
                       { source: 'Saw intro', target: 'Built', value: built, role: 'neutral' },
                       { source: 'Saw intro', target: 'Bounced', value: bounced, role: 'sink' },
                       { source: 'Built', target: 'Completed', value: f.completed, role: 'success' },
                       { source: 'Built', target: 'Incomplete', value: incomplete, role: 'sink' },
                       { source: 'Completed', target: 'Exported', value: f.exported, role: 'success' },
                       { source: 'Completed', target: 'Kept private', value: keptPrivate, role: 'priv' },
-                    ] satisfies SankeyLink[]
-                  }
-                  ariaLabel={`Usage funnel: ${sawIntro} saw intro, of which ${built} built and ${bounced} bounced; of ${built} built, ${f.completed} completed and ${incomplete} left incomplete; of ${f.completed} completed, ${f.exported} exported and ${keptPrivate} kept private.`}
-                />
+                    ]}
+                    ariaLabel={`Usage funnel: ${sawIntro} saw intro, ${built} built, ${bounced} bounced; of ${built} built, ${f.completed} completed and ${incomplete} incomplete; of ${f.completed} completed, ${f.exported} exported and ${keptPrivate} kept private.`}
+                  />
+                )}
               </Panel>
             )}
 
-            {/* League tool: its own funnel and recent users. */}
-            {!showDex && data.tools && data.league && (
-              <ToolsCard tools={data.tools} league={data.league} events={data.funnelEvents} />
-            )}
-
-            {token && <HubCard token={token} />}
-
-            {/* Build depth — where builders stop, as an un-smoothed step curve. */}
-            {showDex && depthCurve && (
+            {depthCurve && (
               <Panel
                 title="Build depth"
                 sub={['where builders stop', `of ${depthCurve.n}`]}
                 actions={
-                  <Seg
-                    ariaLabel="Build-depth metric"
-                    options={[
-                      { key: 'mon', label: 'Pokémon' },
-                      { key: 'lines', label: 'Evo lines' },
-                    ]}
-                    value={depthMetric}
-                    onChange={setDepthMetric}
-                  />
+                  showDex && data.depthByDevice ? (
+                    <Seg
+                      ariaLabel="Device"
+                      options={[
+                        { key: 'all', label: 'All' },
+                        { key: 'mobile', label: 'Mobile' },
+                        { key: 'desktop', label: 'Desktop' },
+                      ]}
+                      value={depthDevice}
+                      onChange={setDepthDevice}
+                    />
+                  ) : undefined
                 }
               >
                 <BuildDepthChart
                   curve={depthCurve}
-                  xLabel={depthMetric === 'lines' ? 'lines' : 'Pokémon'}
-                  ariaLabel="Build depth: browsers still building by dex size"
+                  xLabel={tool === 'league' ? 'cards' : 'Pokémon'}
+                  ariaLabel="Build depth: browsers still building by size"
                 />
               </Panel>
             )}
 
-            {/* Who — device, region and browser rollups for the slice. */}
-            <Panel title="Who" sub={[TOOL_TABS.find((t) => t.key === tool)?.label ?? '', String(slice.users)]}>
+            <Panel
+              title="Who"
+              sub={cohorts ? [cohort, String(whoSrc.users ?? slice.users)] : [TOOL_TABS.find((t) => t.key === tool)?.label ?? '', String(slice.users)]}
+              actions={
+                cohorts ? (
+                  <Seg
+                    ariaLabel="Cohort"
+                    options={[
+                      { key: 'built', label: 'Built' },
+                      { key: 'incomplete', label: 'Incomplete' },
+                      { key: 'completed', label: 'Completed' },
+                    ]}
+                    value={cohort}
+                    onChange={setCohort}
+                  />
+                ) : undefined
+              }
+            >
               <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-3">
                 <div>
-                  <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
-                    Device
-                  </div>
-                  <Rollup rows={toRollup(slice.devices, 3)} />
+                  <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Device</div>
+                  <Rollup rows={showDelta ? deltaVs(toRollup(whoSrc.devices, 3), baseDev) : toRollup(whoSrc.devices, 3)} />
                 </div>
                 <div>
-                  <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
-                    Region
-                  </div>
-                  <Rollup rows={regionRollup} />
+                  <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Region</div>
+                  <Rollup rows={showDelta ? deltaVs(regionRollup(whoSrc.countries), baseGeo) : regionRollup(whoSrc.countries)} />
                 </div>
                 <div>
-                  <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
-                    Browser
-                  </div>
-                  <Rollup rows={toRollup(slice.browsers, 5)} />
+                  <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Browser</div>
+                  <Rollup rows={showDelta ? deltaVs(toRollup(whoSrc.browsers, 5), baseBr) : toRollup(whoSrc.browsers, 5)} />
                 </div>
               </div>
             </Panel>
 
-            {/* Dex-only: every row is an intro, milestone or View event the gym
-                leader maker never sends. */}
-            {showDex && data.funnelEvents && Object.keys(data.funnelEvents).length > 0 && (
-              <Card title="Dex builder engagement funnel (distinct browsers)">
-                <FunnelChart events={data.funnelEvents} />
-              </Card>
-            )}
-
-            {showDex && data.cohort && data.cohort.length > 0 && (
-              <Card title="Before / after by signup date (pre-post)">
-                <PrePostCohort cohort={data.cohort} launchTs={data.onboardingLaunchTs} />
-              </Card>
-            )}
-
-            {showDex && data.exportSettings && data.exportSettings.tracked > 0 && (
-              <Card title={`Export settings (${data.exportSettings.tracked} export${data.exportSettings.tracked === 1 ? '' : 's'} tracked)`}>
-                {(() => {
-                  const es = data.exportSettings!;
-                  const pct = (n: number) => `${Math.round((n / es.tracked) * 100)}%`;
-                  const sortRows = Object.entries(es.sorts).sort((a, b) => b[1] - a[1]);
-                  return (
-                    <div className="flex flex-col gap-3">
-                      <div className="flex flex-wrap gap-2">
-                        <Stat value={`${es.outlines} (${pct(es.outlines)})`} label="With outlines" />
-                        <Stat value={`${es.groupSpecial} (${pct(es.groupSpecial)})`} label="Specials grouped" />
-                        <Stat value={`${es.showStats ?? 0} (${pct(es.showStats ?? 0)})`} label="With stats" />
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground mb-1">Sort order used</div>
-                        <div className="flex flex-wrap gap-2">
-                          {sortRows.map(([sort, n]) => (
-                            <span key={sort} className="text-xs rounded bg-muted px-2 py-1">
-                              {SORT_LABELS[sort] ?? sort} · {n} ({pct(n)})
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </Card>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <BasisDropoffCard
-                title="Session drop-off (when users churn by time)"
-                curves={slice.timeCurves}
-                tabs={[
-                  { key: 'longest', label: 'Longest', note: "Each user's longest session" },
-                  { key: 'first', label: 'First', note: "Each user's first session" },
-                  { key: 'all', label: 'All', note: 'Every session pooled' },
-                ]}
-                fallback={{ survival: data.timeSurvival, stats: data.timeStats, n: 0 }}
-                fmtX={fmtSecs}
-                xLabel="session length"
-              />
-              {tool !== 'dex' && data.leagueCurves && data.league && (
-                <LeagueDepthCard curves={data.leagueCurves} users={data.league.users} />
-              )}
-            </div>
-
             {showDex && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <PopularPanel
-                title="Most-picked (final dex, all users)"
-                rows={data.popularFinal}
-                bySection={data.popularBySection}
-                minCount={data.popularMin}
-              />
-              <PopularPanel
-                title="Most tried then dropped"
-                rows={data.mostDropped}
-                bySection={data.droppedBySection}
-                minCount={data.droppedMin}
-              />
-            </div>
+              <WhatPeoplePick most={data.popularFinal} off={offPickRows} bySection={data.popularBySection} n={built} />
             )}
 
-            {showDex && offPickRows.length > 0 && (
-              <PopularPanel
-                title="Most off-section picks"
-                rows={offPickRows}
-                bySection={offPickBySection}
-              />
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card title="By region">
-                {Object.keys(slice.countries).length ? (
-                  (() => {
-                    const groups = regionGroups(slice.countries);
-                    const total = groups.reduce((sum, g) => sum + g.count, 0);
-                    return (
-                      <>
-                        <ShareBar rows={groups} total={total} />
-                        <GroupedBars groups={groups} />
-                        <p className="text-[0.6rem] text-muted-foreground mt-1">
-                          Tap a region for its countries.
-                        </p>
-                      </>
-                    );
-                  })()
-                ) : (
-                  <p className="text-xs text-muted-foreground">No data yet.</p>
-                )}
-              </Card>
-              <Card title="By language">
-                <LanguageBars languages={slice.languages} />
-              </Card>
-              <Card title="By device">
-                <Bars rows={tallyRows(slice.devices)} />
-              </Card>
-              <Card title="By OS">
-                <Bars rows={tallyRows(slice.os)} />
-              </Card>
-            </div>
-
-            <Card title="When users build (local day × hour) — click a cell for detail">
-              <Heatmap matrix={slice.heatmap} onCell={(dow, hour) => setSlotDetail({ dow, hour })} />
-            </Card>
-
-            <span className="text-sm font-medium">
-              {showDex
-                ? `Dex users (${data.totalUsers})`
-                : `Gym leader maker users (${data.totalLeagueUsers ?? 0})`}
-            </span>
-
-            {showDex && data.records.length === 0 && !loading && (
-              <p className="text-sm text-muted-foreground">No users yet.</p>
-            )}
-            <div className="flex flex-col -mt-4">
-              {showDex && data.records.map((rec, i) => (
-                <UserCard
-                  key={rec.cid}
-                  rec={rec}
-                  league={data.leagueByCid?.[rec.cid]}
-                  onDelete={deleteUser}
-                  expanded={expandedCid === rec.cid}
-                  onToggle={() => setExpandedCid((prev) => (prev === rec.cid ? null : rec.cid))}
-                  zIndex={data.records.length - i}
-                  stickyOffset={pageHeaderH}
-                />
-              ))}
-            </div>
-            {!showDex && data.leagueUsers && (
-              <div className="flex flex-col -mt-4">
-                {data.leagueUsers.map((rec, i) => (
-                  <LeagueUserCard
-                    key={rec.cid}
-                    rec={rec}
-                    expanded={expandedLeagueCid === rec.cid}
-                    onToggle={() =>
-                      setExpandedLeagueCid((prev) => (prev === rec.cid ? null : rec.cid))
-                    }
-                    zIndex={data.leagueUsers!.length - i}
-                    stickyOffset={pageHeaderH}
-                  />
-                ))}
-              </div>
-            )}
-            {!showDex && (data.leagueUsers?.length ?? 0) === 0 && !loading && (
-              <p className="text-sm text-muted-foreground">No league users yet.</p>
-            )}
-
-            {showDex && data.records.length < data.totalUsers && (
-              <Button variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
-                {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${data.totalUsers})`}
-              </Button>
-            )}
-
-            {slotDetail !== null && (
-              <HourDetail
-                hour={slotDetail.hour}
-                dow={slotDetail.dow}
-                records={data.records}
-                loadedAll={data.records.length >= data.totalUsers}
-                onClose={() => setSlotDetail(null)}
-              />
-            )}
+            <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
+              {showDex && data.records.length === 0 && !loading && (
+                <p className="text-sm text-muted-foreground">No users yet.</p>
+              )}
+              {showDex && (
+                <div className="-mt-2 flex flex-col">
+                  {data.records.map((rec, i) => (
+                    <UserCard
+                      key={rec.cid}
+                      rec={rec}
+                      league={data.leagueByCid?.[rec.cid]}
+                      onDelete={deleteUser}
+                      expanded={expandedCid === rec.cid}
+                      onToggle={() => setExpandedCid((prev) => (prev === rec.cid ? null : rec.cid))}
+                      zIndex={data.records.length - i}
+                      stickyOffset={pageHeaderH}
+                    />
+                  ))}
+                </div>
+              )}
+              {!showDex && data.leagueUsers && (
+                <div className="-mt-2 flex flex-col">
+                  {data.leagueUsers.map((rec, i) => (
+                    <LeagueUserCard
+                      key={rec.cid}
+                      rec={rec}
+                      expanded={expandedLeagueCid === rec.cid}
+                      onToggle={() => setExpandedLeagueCid((prev) => (prev === rec.cid ? null : rec.cid))}
+                      zIndex={data.leagueUsers!.length - i}
+                      stickyOffset={pageHeaderH}
+                    />
+                  ))}
+                </div>
+              )}
+              {!showDex && (data.leagueUsers?.length ?? 0) === 0 && !loading && (
+                <p className="text-sm text-muted-foreground">No league users yet.</p>
+              )}
+              {showDex && data.records.length < data.totalUsers && (
+                <Button className="mt-3" variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
+                  {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${data.totalUsers})`}
+                </Button>
+              )}
+            </Panel>
           </>
           );
         })()}

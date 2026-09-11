@@ -1,4 +1,4 @@
-import { useECharts, cssVar, type EChartsOption } from './useECharts';
+import { useECharts, cssVar, tooltipStyle, type EChartsOption } from './useECharts';
 
 export interface SankeyNode {
   name: string;
@@ -32,7 +32,6 @@ export function FlowSankey({
     (el): EChartsOption => {
       const ink = cssVar(el, '--color-foreground', '#0a0a0a');
       const faint = cssVar(el, '--color-muted-foreground', '#737373');
-      const surface = cssVar(el, '--color-card', '#ffffff');
       const success = cssVar(el, '--color-success', '#0b7a54');
       const sink = cssVar(el, '--color-sink', '#8b8b93');
       const priv = cssVar(el, '--color-priv', '#3f5b8a');
@@ -45,10 +44,8 @@ export function FlowSankey({
       return {
         animation: false,
         tooltip: {
+          ...tooltipStyle(el),
           trigger: 'item',
-          backgroundColor: ink,
-          borderWidth: 0,
-          textStyle: { color: surface, fontSize: 11 },
           formatter: (p: unknown) => {
             const d = p as { dataType: string; name?: string; value?: number; data?: { source?: string; target?: string } };
             if (d.dataType === 'edge' && d.data) return `${d.data.source} → ${d.data.target}<br/><b>${d.value}</b>`;
@@ -62,9 +59,13 @@ export function FlowSankey({
             right: 10,
             top: 14,
             bottom: 14,
-            nodeGap: 16,
+            nodeGap: 18,
             nodeWidth: 12,
             draggable: false,
+            // Keep the declared node order so ribbons read top-to-bottom in
+            // funnel order instead of echarts reflowing them into crossings.
+            layoutIterations: 0,
+            nodeAlign: 'justify',
             emphasis: { focus: 'adjacency' },
             label: { color: ink, fontSize: 11, fontWeight: 600, formatter: '{b} {c}' },
             data: nodes.map((n) => ({

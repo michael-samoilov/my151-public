@@ -113,6 +113,29 @@ export function buildDepthCurve(vals: number[]): SurvivalCurve {
 }
 
 /**
+ * Depth survival split by device.
+ *
+ * `all` uses every value; `mobile` and `desktop` use only the values from an
+ * entry whose device is that type. Any other device (Tablet, absent) still
+ * contributes to `all`, just not to either split. The caller supplies one
+ * `value` per record — whatever depth metric it wants split — so this stays
+ * agnostic to what a "depth" is.
+ */
+export function depthByDevice(
+  entries: { device?: string; value: number }[],
+): Record<'all' | 'mobile' | 'desktop', SurvivalCurve> {
+  const all: number[] = [];
+  const mobile: number[] = [];
+  const desktop: number[] = [];
+  for (const e of entries) {
+    all.push(e.value);
+    if (e.device === 'Mobile') mobile.push(e.value);
+    else if (e.device === 'Desktop') desktop.push(e.value);
+  }
+  return { all: buildDepthCurve(all), mobile: buildDepthCurve(mobile), desktop: buildDepthCurve(desktop) };
+}
+
+/**
  * Each session's duration in seconds. Prefers the per-session list; falls back
  * to the first-to-last span as one session, which is all a legacy record can
  * offer.
@@ -278,6 +301,76 @@ export function aggregate(records: SessionRecord[], now: number): Aggregates {
     hours: hm.hours,
     heatmap: hm.matrix,
   };
+}
+
+/** One cohort's size and device/country/browser mix — the built/incomplete/
+ *  completed toggle on the dashboard tallies the same three fields three
+ *  times, once per slice. */
+export interface Cohort {
+  users: number;
+  devices: Record<string, number>;
+  countries: Record<string, number>;
+  browsers: Record<string, number>;
+}
+
+/** Tally one slice of records into a `Cohort`. The caller decides what the
+ *  slice is (all records, or filtered by some record-type-specific field like
+ *  `completed`); this only knows how to count what is already in the slice. */
+export function tallyCohort(records: SessionRecord[]): Cohort {
+  return {
+    users: records.length,
+    devices: tallies(records, 'device'),
+    countries: tallies(records, 'country'),
+    browsers: tallies(records, 'browser'),
+  };
+}
+
+/** What `referrerFlow` needs from a record: its browser id and, when known,
+ *  the host that first sent it here. Both `ClientRecord` and `LeagueRecord`
+ *  satisfy it. */
+export interface Referrable {
+  cid: string;
+  firstReferrer?: string;
+}
+
+/** One acquisition host's reach across both tools. */
+export interface ReferrerFlowEntry {
+  host: string;
+  total: number;
+  dex: number;
+  league: number;
+}
+
+/**
+ * Referrer hosts ranked by distinct browsers reached, across both stores.
+ *
+ * `firstReferrer` is forward-only (see api/_leagueRecord.ts), so records
+ * written before it existed carry no host and are skipped rather than
+ * counted as "direct". A dex record's cid is split the same way `mergeByCid`
+ * does, so a country-split record still counts as one browser. Capped at the
+ * top 8 hosts by total reach.
+ */
+export function referrerFlow(dexRecords: Referrable[], leagueRecords: Referrable[]): ReferrerFlowEntry[] {
+  const byHost = (records: Referrable[]) => {
+    const out = new Map<string, Set<string>>();
+    for (const r of records) {
+      if (!r.firstReferrer) continue;
+      const cid = r.cid.split('::')[0];
+      const set = out.get(r.firstReferrer) ?? new Set<string>();
+      set.add(cid);
+      out.set(r.firstReferrer, set);
+    }
+    return out;
+  };
+  const dexByHost = byHost(dexRecords);
+  const leagueByHost = byHost(leagueRecords);
+  const hosts = new Set([...dexByHost.keys(), ...leagueByHost.keys()]);
+  const rows = [...hosts].map((host) => {
+    const dexCids = dexByHost.get(host) ?? new Set<string>();
+    const leagueCids = leagueByHost.get(host) ?? new Set<string>();
+    return { host, total: new Set([...dexCids, ...leagueCids]).size, dex: dexCids.size, league: leagueCids.size };
+  });
+  return rows.sort((a, b) => b.total - a.total).slice(0, 8);
 }
 
 /**
