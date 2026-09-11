@@ -21,9 +21,13 @@ export function BuildDepthChart({
   xLabel: string;
   ariaLabel: string;
 }) {
-  const pts = curve.survival.filter((p) => p.t >= 1).map((p) => [p.t, Math.round(p.s * curve.n)] as [number, number]);
-  const startCount = pts.length ? pts[0][1] : 0;
-  const endCount = pts.length ? pts[pts.length - 1][1] : 0;
+  // Plot the surviving share as a percentage of the base, so the y-axis reads
+  // in %. The raw count stays available (share × n) for the tooltip.
+  const pts = curve.survival
+    .filter((p) => p.t >= 1)
+    .map((p) => [p.t, Math.round(p.s * 1000) / 10] as [number, number]);
+  const startCount = pts.length ? Math.round((pts[0][1] / 100) * curve.n) : 0;
+  const endCount = pts.length ? Math.round((pts[pts.length - 1][1] / 100) * curve.n) : 0;
   const xMax = pts.length ? pts[pts.length - 1][0] : 1;
 
   const ref = useECharts(
@@ -43,8 +47,8 @@ export function BuildDepthChart({
             const arr = params as { data: [number, number] }[];
             const d = arr[0]?.data;
             if (!d) return '';
-            const pct = curve.n ? Math.round((d[1] / curve.n) * 100) : 0;
-            return `≥ ${d[0]} ${xLabel}<br/><b>${d[1]}</b> still building (${pct}% of ${curve.n})`;
+            const count = Math.round((d[1] / 100) * curve.n);
+            return `≥ ${d[0]} ${xLabel}<br/><b>${d[1]}%</b> still building (${count} of ${curve.n})`;
           },
         },
         xAxis: {
@@ -53,14 +57,17 @@ export function BuildDepthChart({
           max: xMax,
           axisLine: { lineStyle: { color: grid } },
           axisTick: { show: false },
+          // No vertical gridlines — the step curve carries the x reading.
+          splitLine: { show: false },
           axisLabel: { color: faint, fontSize: 9 },
         },
         yAxis: {
           type: 'value',
           min: 0,
-          max: curve.n,
-          axisLabel: { color: faint, fontSize: 9 },
-          splitLine: { lineStyle: { color: grid } },
+          max: 100,
+          // No horizontal gridlines; the axis labels alone place the level.
+          splitLine: { show: false },
+          axisLabel: { color: faint, fontSize: 9, formatter: '{value}%' },
         },
         series: [
           {
@@ -68,8 +75,7 @@ export function BuildDepthChart({
             data: pts,
             step: 'end',
             smooth: false,
-            symbol: 'circle',
-            symbolSize: 3,
+            symbol: 'none',
             lineStyle: { color: ink, width: 2 },
             itemStyle: { color: ink },
             areaStyle: { color: band, opacity: 0.1 },
@@ -80,7 +86,7 @@ export function BuildDepthChart({
               fontSize: 9,
               fontWeight: 700,
               formatter: (o: { dataIndex: number; data: [number, number] }) =>
-                o.dataIndex === pts.length - 1 ? String(o.data[1]) : '',
+                o.dataIndex === pts.length - 1 ? `${o.data[1]}%` : '',
             },
           },
         ],

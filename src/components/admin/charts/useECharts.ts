@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import * as echarts from 'echarts/core';
 import { LineChart, SankeyChart, BarChart, CustomChart } from 'echarts/charts';
 import {
@@ -67,19 +67,29 @@ export function cssVar(el: HTMLElement | null, name: string, fallback = ''): str
 export function useECharts(
   build: (el: HTMLDivElement) => EChartsOption,
   deps: unknown[],
-): React.RefObject<HTMLDivElement | null> {
-  const ref = useRef<HTMLDivElement | null>(null);
+): (el: HTMLDivElement | null) => void {
+  const elRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
-  // Keep the latest builder without re-subscribing the ResizeObserver each
-  // render. Assigned in an effect (not during render), and this effect is
-  // declared first so it runs before the init effect on mount.
+  const roRef = useRef<ResizeObserver | null>(null);
+  // Keep the latest builder without re-subscribing anything each render.
   const buildRef = useRef(build);
   useEffect(() => {
     buildRef.current = build;
   });
 
-  useEffect(() => {
-    const el = ref.current;
+  // A callback ref, so the instance follows the DOM node. A conditional render
+  // (a "not enough data" fallback, or a hidden tab) detaches the node and then
+  // re-attaches a fresh one; init and dispose must track that, or the chart
+  // binds to a stale, detached node and paints nothing after the node returns.
+  const setNode = useCallback((el: HTMLDivElement | null) => {
+    if (el === elRef.current) return;
+    if (chartRef.current) {
+      roRef.current?.disconnect();
+      roRef.current = null;
+      chartRef.current.dispose();
+      chartRef.current = null;
+    }
+    elRef.current = el;
     if (!el) return;
     const chart = echarts.init(el, undefined, { renderer: 'canvas' });
     chartRef.current = chart;
@@ -91,22 +101,18 @@ export function useECharts(
       chart.setOption(buildRef.current(el), true);
     });
     ro.observe(el);
-    return () => {
-      ro.disconnect();
-      chart.dispose();
-      chartRef.current = null;
-    };
+    roRef.current = ro;
   }, []);
 
   // Redraw when the caller's data changes. `deps` is the caller's own list, so
   // it cannot be an array literal here — that's the design of the hook.
   useEffect(() => {
     const chart = chartRef.current;
-    const el = ref.current;
+    const el = elRef.current;
     if (!chart || !el) return;
     chart.setOption(buildRef.current(el), true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 
-  return ref;
+  return setNode;
 }

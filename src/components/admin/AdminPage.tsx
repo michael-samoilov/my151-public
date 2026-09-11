@@ -16,6 +16,8 @@ import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beacon
 import { CARD_COUNT } from '../../../api/_leagueRecord';
 import { slotKind, SLOT_COUNT } from '@/league/model/constants';
 import { TYPE_COLORS } from '@/data/type-colors';
+import { typeIconPath } from '@/data/type-ids';
+import type { TypeName } from '@/types/pokemon';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 
@@ -755,6 +757,16 @@ function slotAbbr(i: number): string {
 }
 
 const typeColorOf = (t?: string) => (t && (TYPE_COLORS as Record<string, string>)[t]) || 'var(--color-sink)';
+const isTypeName = (t?: string): t is TypeName => !!t && t in TYPE_COLORS;
+
+/** The slot's type marker: the real Gen IX type icon (white symbol on a colored
+ *  square, like the base image) when the card has a type, else a plain swatch. */
+function TypeMark({ t }: { t?: string }) {
+  if (isTypeName(t)) {
+    return <img src={typeIconPath(t)} alt={t} title={t} className="h-[15px] w-[15px] rounded-[3px]" style={{ imageRendering: 'auto' }} />;
+  }
+  return <div className="h-[15px] w-[15px] rounded-[3px]" style={{ background: typeColorOf(t) }} title={t ?? 'untyped'} />;
+}
 
 /** One 15px seat sprite; the ace gets a red ring around the tile, as the mockup
  *  marks it (no badge). */
@@ -776,17 +788,22 @@ function MiniTile({ id, ace }: { id: number; ace?: boolean }) {
 }
 
 /**
- * The whole league at one moment: a 2-column grid of the 14 slots (Gym 1-8,
- * Elite Four, Champion, Endgame Boss). A filled slot is a mini staircase — a
- * glyph column (badge + type swatch) then one column per evo line, lines sorted
- * shortest-first so the columns rise to the bottom-right; the ace is ringed.
- * An empty slot is a muted label. Ported from the mockup's league board.
+ * The whole league at one moment: the 14 slots (Gym 1-8, Elite Four, Champion,
+ * Endgame Boss) in two columns that read top-to-bottom then left-to-right, so
+ * Gym 2 sits below Gym 1. A filled slot has a glyph column (badge + type icon) on
+ * the left and, hugging the bottom-right, one column per evo line — right-aligned
+ * so a lone line sits at the right edge and bottom-aligned so lines build up from
+ * the floor. The ace tile is ringed. An empty slot is a muted label.
  */
 function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
   const bySlot = new Map<number, LeagueCard>();
   for (const c of cards) bySlot.set(c.i, c);
+  const rows = Math.ceil(SLOT_COUNT / 2);
   return (
-    <div className="grid grid-cols-2 gap-[5px]">
+    <div
+      className="grid gap-[5px]"
+      style={{ gridTemplateColumns: '1fr 1fr', gridTemplateRows: `repeat(${rows}, auto)`, gridAutoFlow: 'column' }}
+    >
       {Array.from({ length: SLOT_COUNT }, (_, i) => {
         const card = bySlot.get(i);
         if (!card || card.l.length === 0) {
@@ -804,19 +821,22 @@ function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
           );
         }
         const color = typeColorOf(card.t);
+        // Shortest first, left to right; the block is right-aligned, so the
+        // tallest line lands at the bottom-right corner — the staircase.
         const lines = [...card.l].sort((a, b) => a.b.length - b.b.length);
         return (
-          <div key={i} className="rounded-lg border border-border px-[7px] py-[4px]" style={{ borderLeftWidth: 3, borderLeftColor: color }}>
-            <div className="flex items-end gap-[2px]">
-              {/* glyph column: badge + type swatch, top-aligned */}
-              <div className="mr-[3px] flex flex-col gap-[1px] self-start">
-                <div className="flex h-[15px] w-[15px] items-center justify-center text-[8.5px] font-extrabold text-muted-foreground">
-                  {slotBadge(i)}
-                </div>
-                <div className="h-[15px] w-[15px] rounded-[3px]" style={{ background: color }} title={card.t ?? 'untyped'} />
+          <div key={i} className="flex rounded-lg border border-border px-[7px] py-[4px]" style={{ borderLeftWidth: 3, borderLeftColor: color }}>
+            {/* glyph column: slot badge + type icon, top-left */}
+            <div className="mr-[3px] flex flex-col gap-[1px] self-start">
+              <div className="flex h-[15px] w-[15px] items-center justify-center text-[8.5px] font-extrabold text-muted-foreground">
+                {slotBadge(i)}
               </div>
+              <TypeMark t={card.t} />
+            </div>
+            {/* evo lines: right-aligned block, columns bottom-aligned */}
+            <div className="ml-auto flex items-end justify-end gap-[2px]">
               {lines.map((line, li) => (
-                <div key={li} className="flex flex-col gap-[1px]">
+                <div key={li} className="flex flex-col justify-end gap-[1px]">
                   {line.b.map((id, stage) => (
                     <MiniTile key={`${id}-${stage}`} id={id} ace={id === card.aceId} />
                   ))}
@@ -1242,44 +1262,42 @@ function LeagueUserCard({
 }
 
 function WhatPeoplePick({
-  most,
-  off,
-  bySection,
+  mostBySection,
+  offBySection,
   n,
 }: {
-  most: [string, number][];
-  off: [string, number][];
-  bySection: Record<string, [string, number][]>;
+  mostBySection: Record<string, [string, number][]>;
+  offBySection: Record<string, [string, number][]>;
   n: number;
 }) {
-  const [view, setView] = useState<'most' | 'off' | 'section'>('most');
+  // The card is always grouped per section; the toggle only flips which picks
+  // each section shows — the most-picked, or the ones placed off their section.
+  const [view, setView] = useState<'most' | 'off'>('most');
+  const hasOff = Object.keys(offBySection).length > 0;
   return (
     <Panel
       title="What people pick"
-      sub={[`of ${n} dexes`]}
+      sub={[`of ${n} dexes`, view === 'off' ? 'off-section, per section' : 'most picked, per section']}
       actions={
         <Seg
           ariaLabel="Picks metric"
           options={[
             { key: 'most', label: 'Most picked' },
             { key: 'off', label: 'Off-section' },
-            { key: 'section', label: 'By section' },
           ]}
           value={view}
           onChange={setView}
         />
       }
     >
-      {view === 'section' ? (
-        <SectionGroupedGrids bySection={bySection} />
-      ) : view === 'off' ? (
-        off.length ? (
-          <PopularGrid rows={off.slice(0, 45)} />
+      {view === 'off' ? (
+        hasOff ? (
+          <SectionGroupedGrids bySection={offBySection} />
         ) : (
           <p className="text-xs text-muted-foreground">No off-section picks.</p>
         )
       ) : (
-        <PopularGrid rows={most.slice(0, 45)} />
+        <SectionGroupedGrids bySection={mostBySection} />
       )}
     </Panel>
   );
@@ -1448,16 +1466,18 @@ export function AdminPage() {
     setTokenInput('');
   }, []);
 
-  const offPickRows = useMemo<[string, number][]>(() => {
+  // Off-section picks kept grouped by the section they landed in, so the picks
+  // card can show them per section — the mirror of the most-picked-per-section
+  // view. A section with no off-section picks is dropped.
+  const offBySection = useMemo<Record<string, [string, number][]>>(() => {
     const bySec = data?.picksBySectionAll;
-    if (!bySec) return [];
-    const totals: Record<string, number> = {};
+    if (!bySec) return {};
+    const out: Record<string, [string, number][]> = {};
     for (const [sid, entries] of Object.entries(bySec)) {
-      for (const [id, n] of entries.filter(([id]) => isOffSection(Number(id), sid))) {
-        totals[id] = (totals[id] ?? 0) + n;
-      }
+      const offs = entries.filter(([id]) => isOffSection(Number(id), sid)).sort((a, b) => b[1] - a[1]);
+      if (offs.length) out[sid] = offs;
     }
-    return Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    return out;
   }, [data?.picksBySectionAll]);
 
   if (!authed) {
@@ -1549,7 +1569,6 @@ export function AdminPage() {
           const bounced = Math.max(0, sawIntro - built);
           const incomplete = Math.max(0, built - f.completed);
           const keptPrivate = Math.max(0, f.completed - f.exported);
-          const pctOf = (num: number, den: number) => (den > 0 ? Math.round((num / den) * 100) : 0);
 
           const act = data.activity ?? slice.activity;
           const fmtDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -1610,29 +1629,15 @@ export function AdminPage() {
             </div>
 
             {slice.activity.length > 0 && (
-              <Panel title="Active browsers" sub={['weekly']}>
-                <TrendChart series={slice.activity} />
+              <Panel title="Active browsers" sub={['daily', '7-day sum']}>
+                <TrendChart key={tool} series={slice.activity} />
               </Panel>
             )}
 
+            {showDex && <BeaconDropNotice events={data.funnelEvents} />}
+
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {showDex ? (
-                <Panel title="Completed a dex" sub={[`of ${built} built`]}>
-                  <Kpi
-                    emphasis
-                    value={f.completed}
-                    label="Completed 151"
-                    denom={`${f.completed} / ${built} built · ${pctOf(f.completed, built)}%`}
-                  />
-                  <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
-                    <Kpi value={slice.retention.activeLast7} label="Active · 7d" denom={`/ ${built}`} />
-                    <Kpi value={slice.retention.returning} label="Returning · 30d" denom={`/ ${built}`} />
-                    <Kpi value={f.exported} label="Exported" denom={`/ ${f.completed}`} />
-                    <Kpi value={bounced} label="Bounced" denom={`/ ${sawIntro}`} />
-                  </div>
-                  <BeaconDropNotice events={data.funnelEvents} />
-                </Panel>
-              ) : (
+              {!showDex && (
                 <Panel title="League activity" sub={[`${slice.users} browsers`]}>
                   <div className="flex flex-wrap gap-x-6 gap-y-3">
                     <Kpi emphasis value={slice.users} label="Browsers" />
@@ -1708,12 +1713,15 @@ export function AdminPage() {
                   />
                 ) : (
                   <FlowSankey
+                    // Order per depth: survivor first (top), sink after (bottom),
+                    // so the trunk runs straight along the top and every
+                    // drop-off peels downward without crossing.
                     nodes={[
                       { name: 'Saw intro', role: 'neutral' },
                       { name: 'Built', role: 'neutral' },
                       { name: 'Bounced', role: 'sink' },
-                      { name: 'Incomplete', role: 'sink' },
                       { name: 'Completed', role: 'success' },
+                      { name: 'Incomplete', role: 'sink' },
                       { name: 'Exported', role: 'success' },
                       { name: 'Kept private', role: 'priv' },
                     ]}
@@ -1793,7 +1801,7 @@ export function AdminPage() {
             </Panel>
 
             {showDex && (
-              <WhatPeoplePick most={data.popularFinal} off={offPickRows} bySection={data.popularBySection} n={built} />
+              <WhatPeoplePick mostBySection={data.popularBySection} offBySection={offBySection} n={built} />
             )}
 
             <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>

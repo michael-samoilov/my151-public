@@ -65,7 +65,11 @@ export function FlowSankey({
             // Keep the declared node order so ribbons read top-to-bottom in
             // funnel order instead of echarts reflowing them into crossings.
             layoutIterations: 0,
-            nodeAlign: 'justify',
+            // Place each node at its distance from the source, so a sink stays in
+            // its own stage column (a drop-off peels straight down) instead of
+            // being justified to the far right, which drags its ribbon across the
+            // trunk.
+            nodeAlign: 'left',
             emphasis: { focus: 'adjacency' },
             label: { color: ink, fontSize: 11, fontWeight: 600, formatter: '{b} {c}' },
             data: nodes.map((n) => ({
