@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { TrendChart } from '@/components/admin/charts/TrendChart';
@@ -14,8 +14,8 @@ import { cn, displayName } from '@/lib/utils';
 import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
-import { slotLabel, SLOT_COUNT } from '@/league/model/constants';
-import { defaultBoundaries } from '@/league/model/engine';
+import { slotKind, SLOT_COUNT } from '@/league/model/constants';
+import { TYPE_COLORS } from '@/data/type-colors';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 
@@ -436,6 +436,45 @@ function langLabel(tag?: string): string | undefined {
   return tag;
 }
 
+/** Language name only, no tag: "es-ES" → "Spanish". Falls back to the tag. */
+function langName(tag?: string): string | undefined {
+  if (!tag) return undefined;
+  if (langNames === undefined) {
+    try {
+      langNames = new Intl.DisplayNames(['en'], { type: 'language' });
+    } catch {
+      langNames = null;
+    }
+  }
+  try {
+    const name = langNames?.of(tag.split('-')[0]);
+    if (name) return name;
+  } catch {
+    /* unresolvable subtag */
+  }
+  return tag;
+}
+
+/** Country name from an ISO code: "CZ" → "Czechia". Falls back to the code. */
+let regionNames: Intl.DisplayNames | null | undefined;
+function countryName(code?: string): string | undefined {
+  if (!code) return undefined;
+  if (regionNames === undefined) {
+    try {
+      regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
+    } catch {
+      regionNames = null;
+    }
+  }
+  try {
+    const name = regionNames?.of(code.toUpperCase());
+    if (name) return name;
+  } catch {
+    /* unresolvable code */
+  }
+  return code;
+}
+
 /** Same primary language subtag, ignoring script/region — so a served
  *  "zh-Hans" is not reported as disagreeing with a browser's "zh-CN". */
 function sameBaseLang(a: string, b: string): boolean {
@@ -683,28 +722,107 @@ function SpriteRow({ ids }: { ids: number[] }) {
   );
 }
 
-/** The whole league at one moment: every slot (Gym 1-8, Elite Four, Champion,
- *  Endgame Boss), empty or filled with its seated evolution lines and ace. */
+const CROWN_SVG = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={13} height={13} aria-label="Champion">
+    <path d="M12 6l4 6l5 -4l-2 10h-14l-2 -10l5 4l4 -6" />
+  </svg>
+);
+const POKEBALL_SVG = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" width={13} height={13} aria-label="Endgame boss">
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h6M15 12h6" />
+    <circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+/** The short badge a filled slot's glyph column carries: G1-G8, E1-E4, a crown
+ *  for champion, a poké ball for the boss. */
+function slotBadge(i: number): React.ReactNode {
+  const kind = slotKind(i);
+  if (kind === 'champion') return CROWN_SVG;
+  if (kind === 'boss') return POKEBALL_SVG;
+  if (kind === 'elite') return `E${i - 7}`;
+  return `G${i + 1}`;
+}
+
+/** Short slot code: G1-G8, E1-E4, CH, BOSS. */
+function slotAbbr(i: number): string {
+  const kind = slotKind(i);
+  if (kind === 'champion') return 'CH';
+  if (kind === 'boss') return 'BOSS';
+  if (kind === 'elite') return `E${i - 7}`;
+  return `G${i + 1}`;
+}
+
+const typeColorOf = (t?: string) => (t && (TYPE_COLORS as Record<string, string>)[t]) || 'var(--color-sink)';
+
+/** One 15px seat sprite; the ace gets a red ring around the tile, as the mockup
+ *  marks it (no badge). */
+function MiniTile({ id, ace }: { id: number; ace?: boolean }) {
+  const p = getPokemonById(id);
+  return (
+    <div
+      className="flex h-[15px] w-[15px] items-center justify-center overflow-hidden rounded-[3px] bg-card"
+      title={p ? `#${id} ${displayName(p.name)}${ace ? ' · ace' : ''}` : `#${id}`}
+      style={ace ? { boxShadow: '0 0 0 2px var(--color-primary)', background: 'rgba(220,38,38,0.10)' } : undefined}
+    >
+      {p ? (
+        <img src={p.sprite} alt={p.name} className="h-full w-full object-contain" style={{ imageRendering: 'pixelated' }} loading="lazy" />
+      ) : (
+        <span className="text-[0.45rem] text-muted-foreground">#{id}</span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The whole league at one moment: a 2-column grid of the 14 slots (Gym 1-8,
+ * Elite Four, Champion, Endgame Boss). A filled slot is a mini staircase — a
+ * glyph column (badge + type swatch) then one column per evo line, lines sorted
+ * shortest-first so the columns rise to the bottom-right; the ace is ringed.
+ * An empty slot is a muted label. Ported from the mockup's league board.
+ */
 function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
   const bySlot = new Map<number, LeagueCard>();
   for (const c of cards) bySlot.set(c.i, c);
   return (
-    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+    <div className="grid grid-cols-2 gap-[5px]">
       {Array.from({ length: SLOT_COUNT }, (_, i) => {
         const card = bySlot.get(i);
-        return (
-          <div key={i} className="rounded-lg border border-border px-2.5 py-2">
-            <div className="mb-1 flex items-center gap-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
-              {slotLabel(i)}
-              {!card && <span className="font-medium normal-case text-muted-foreground/70">· empty</span>}
-            </div>
-            {card && (
-              <div className="flex flex-wrap gap-1">
-                {card.l.map((line, li) => (
-                  <LeagueLineRow key={li} line={line} ace={card.ace === li ? card.aceId : undefined} />
-                ))}
+        if (!card || card.l.length === 0) {
+          return (
+            <div
+              key={i}
+              className="flex min-h-[22px] flex-col justify-center rounded-lg border border-border px-[7px] opacity-55"
+              style={{ borderLeftWidth: 3, borderLeftColor: 'var(--color-border)' }}
+            >
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[9px] font-extrabold text-muted-foreground">{slotAbbr(i)}</span>
+                <span className="text-[10px] font-semibold text-muted-foreground/70">empty</span>
               </div>
-            )}
+            </div>
+          );
+        }
+        const color = typeColorOf(card.t);
+        const lines = [...card.l].sort((a, b) => a.b.length - b.b.length);
+        return (
+          <div key={i} className="rounded-lg border border-border px-[7px] py-[4px]" style={{ borderLeftWidth: 3, borderLeftColor: color }}>
+            <div className="flex items-end gap-[2px]">
+              {/* glyph column: badge + type swatch, top-aligned */}
+              <div className="mr-[3px] flex flex-col gap-[1px] self-start">
+                <div className="flex h-[15px] w-[15px] items-center justify-center text-[8.5px] font-extrabold text-muted-foreground">
+                  {slotBadge(i)}
+                </div>
+                <div className="h-[15px] w-[15px] rounded-[3px]" style={{ background: color }} title={card.t ?? 'untyped'} />
+              </div>
+              {lines.map((line, li) => (
+                <div key={li} className="flex flex-col gap-[1px]">
+                  {line.b.map((id, stage) => (
+                    <MiniTile key={`${id}-${stage}`} id={id} ace={id === card.aceId} />
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         );
       })}
@@ -712,17 +830,46 @@ function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
   );
 }
 
-/** Facts chips shared by the two detail pages: geo, device, language. */
+/** Facts chips shared by the two detail pages: geo, device, OS, browser, and the
+ *  browser → served language. One chip each, mirroring the mockup. */
 function DetailFacts({ rec }: { rec: { country?: string; region?: string; device?: string; os?: string; browser?: string; locale?: string; lang?: string } }) {
-  const chips = [
-    rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? ' · ' + rec.region : ''}`,
-    [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
-    rec.locale ? `🗣 ${langLabel(rec.locale)}` : rec.lang && `🗣 ${langLabel(rec.lang)} · browser`,
-  ].filter(Boolean) as string[];
+  // Browser preference on the left; the language the app actually served on the
+  // right, shown only when it differs. Older records carry a served locale but
+  // no browser preference, so fall back to whichever is present.
+  const browserLang = rec.lang && langName(rec.lang);
+  const servedLang = rec.locale && langName(rec.locale);
+  let langChip: React.ReactNode = null;
+  if (browserLang && servedLang && rec.lang && rec.locale && !sameBaseLang(rec.lang, rec.locale)) {
+    langChip = (
+      <>
+        lang <b className="font-semibold">{browserLang}</b> → <b className="font-semibold">{servedLang}</b>
+      </>
+    );
+  } else if (browserLang || servedLang) {
+    langChip = (
+      <>
+        lang <b className="font-semibold">{browserLang ?? servedLang}</b>
+      </>
+    );
+  }
+
+  const chips: React.ReactNode[] = [
+    rec.country && (
+      <>
+        <b className="font-semibold">{countryName(rec.country)}</b>
+        {rec.region ? ` · ${rec.region}` : ''}
+      </>
+    ),
+    rec.device,
+    rec.os,
+    rec.browser,
+    langChip,
+  ].filter(Boolean);
+
   return (
     <div className="flex flex-wrap gap-1.5">
       {chips.map((c, i) => (
-        <span key={i} className="rounded-full bg-muted px-2.5 py-1 text-xs font-medium">
+        <span key={i} className="rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium">
           {c}
         </span>
       ))}
@@ -734,7 +881,7 @@ function Stat3({ items }: { items: { n: React.ReactNode; l: string }[] }) {
   return (
     <div className="grid grid-cols-3 gap-2">
       {items.map((it, i) => (
-        <div key={i} className="rounded-lg bg-muted/60 px-3 py-2">
+        <div key={i} className="rounded-lg border border-border bg-card px-3 py-2">
           <div className="text-2xl font-bold leading-none tabular-nums">{it.n}</div>
           <div className="mt-1 text-[0.7rem] text-muted-foreground">{it.l}</div>
         </div>
@@ -757,7 +904,7 @@ function DetailHeader({ cid, onBack }: { cid: string; onBack: () => void }) {
 
 /** Dex user detail page: session timeline + the build at the scrubbed moment,
  *  drawn with the real section outlines. */
-function DexDetailPage({ rec, league, onBack }: { rec: ClientRecord; league?: LeagueUser; onBack: () => void }) {
+function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void }) {
   const log = rec.sessionLog ?? [];
   const [i, setI] = useState(Math.max(0, log.length - 1));
   const points: TimelinePoint[] = log.map((s, k) => ({
@@ -792,7 +939,7 @@ function DexDetailPage({ rec, league, onBack }: { rec: ClientRecord; league?: Le
       ) : (
         <p className="text-xs text-muted-foreground">No session history.</p>
       )}
-      <div className="text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Build at this moment</div>
+      <div className="text-sm font-bold">Build at this moment</div>
       {sections && Object.keys(sections).length > 0 ? (
         <OutlinedDex sections={sections} presentIds={presentIds} />
       ) : presentIds.length > 0 ? (
@@ -801,19 +948,13 @@ function DexDetailPage({ rec, league, onBack }: { rec: ClientRecord; league?: Le
         <p className="text-xs text-muted-foreground">Empty at this point.</p>
       )}
       {offIds.length > 0 && (
-        <div>
-          <div className="mb-1 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
-            Other sections · {offIds.length}
+        <div className="rounded-lg border border-dashed border-[var(--color-off)]/60 p-3">
+          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
+            <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: 'var(--color-border)' }} />
+            Other sections
+            <span className="text-muted-foreground/70">{offIds.length}</span>
           </div>
           <SpriteRow ids={offIds} />
-        </div>
-      )}
-      {league && (
-        <div className="border-t border-border pt-3">
-          <div className="mb-2 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
-            🏅 League · {league.maxCards}/{CARD_COUNT} cards
-          </div>
-          <LeagueDetailBody league={league} />
         </div>
       )}
     </div>
@@ -836,6 +977,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   const idx = Math.min(i, Math.max(0, log.length - 1));
   const cur = log[idx];
   const peak = Math.max(0, ...points.map((p) => p.magnitude));
+  const linesSeated = cur ? linesOf(cur.cards, cur.summary.seats) : 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -844,7 +986,8 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
       ) : (
         <p className="text-xs text-muted-foreground">No session history.</p>
       )}
-      <div className="text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">Whole league at this moment</div>
+      {cur && <div className="text-sm text-muted-foreground">{linesSeated} lines seated</div>}
+      <div className="text-sm font-bold">Whole league at this moment</div>
       {cur?.cards && cur.cards.length > 0 ? (
         <LeagueBoardSnapshot cards={cur.cards} />
       ) : league.latestCards && league.latestCards.length > 0 ? (
@@ -871,10 +1014,6 @@ function LeagueDetailPage({ rec, onBack }: { rec: LeagueUser; onBack: () => void
         ]}
       />
       <LeagueDetailBody league={rec} />
-      <p className="border-t border-border pt-2 text-[0.65rem] text-muted-foreground">
-        Structure only. Badge names, card themes and the league name stay in the user&rsquo;s browser and are
-        never sent — see describeLeague in src/league/model/leagueSummary.ts.
-      </p>
     </div>
   );
 }
@@ -1033,61 +1172,6 @@ function countLabel(n: number, one: string, many: string): string {
   return `${n} ${Math.abs(n) === 1 ? one : many}`;
 }
 
-/** How far this browser got, in one line. */
-function movedStages(line: LeagueLine): Set<number> {
-  if (!line.bd) return new Set();
-  const fallback = defaultBoundaries(line.b);
-  const out = new Set<number>();
-  line.bd.forEach((row, stage) => {
-    if (row !== fallback[stage]) out.add(stage);
-  });
-  return out;
-}
-
-/** One evolution line, as sprites with the stage the user pulled marked. */
-function LeagueLineRow({ line, ace }: { line: LeagueLine; ace?: number }) {
-  const moved = movedStages(line);
-  return (
-    <span className="inline-flex items-center gap-0.5 rounded bg-muted/60 px-1 py-0.5">
-      {line.b.map((id, stage) => {
-        const p = getPokemonById(id);
-        const isMoved = moved.has(stage);
-        return (
-          <Fragment key={`${id}-${stage}`}>
-            {stage > 0 && <span className="text-[0.55rem] text-muted-foreground">›</span>}
-            <span
-              title={
-                p
-                  ? `#${id} ${displayName(p.name)}${
-                      isMoved ? ` · moved to row ${line.bd?.[stage]} (default ${defaultBoundaries(line.b)[stage]})` : ''
-                    }`
-                  : `#${id}`
-              }
-              className={`w-6 h-6 shrink-0 flex items-center justify-center ${isMoved ? 'ring-1 ring-amber-500 rounded' : ''}`}
-            >
-              {p ? (
-                <img
-                  src={p.sprite}
-                  alt={p.name}
-                  width={24}
-                  height={24}
-                  loading="lazy"
-                  decoding="async"
-                  style={{ imageRendering: 'pixelated' }}
-                />
-              ) : (
-                <span className="text-[0.5rem] text-muted-foreground">#{id}</span>
-              )}
-            </span>
-          </Fragment>
-        );
-      })}
-      {ace !== undefined && <span title="Ace" className="text-[0.6rem]">⭐</span>}
-    </span>
-  );
-}
-
-/** A single Pokemon with a label, for the ace, partner and legendaries. */
 function LeagueUserCard({
   rec,
   onOpen,
@@ -1207,7 +1291,7 @@ export type AdminNavKey = ToolSlice | 'feedback';
  *  dashboard into All / Dex / League analytics and the Feedback page. */
 function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: AdminNavKey) => void }) {
   const items: { key: AdminNavKey; label: string }[] = [
-    { key: 'all', label: 'All' },
+    { key: 'all', label: 'Suite' },
     { key: 'dex', label: 'Dex' },
     { key: 'league', label: 'League' },
     { key: 'feedback', label: 'Feedback' },
@@ -1445,7 +1529,7 @@ export function AdminPage() {
           if (detail.kind === 'dex') {
             const rec = data.records.find((r) => r.cid === detail.cid);
             if (!rec) return null;
-            return <DexDetailPage rec={rec} league={data.leagueByCid?.[rec.cid]} onBack={() => setDetail(null)} />;
+            return <DexDetailPage rec={rec} onBack={() => setDetail(null)} />;
           }
           const rec = data.leagueUsers?.find((r) => r.cid === detail.cid);
           if (!rec) return null;
