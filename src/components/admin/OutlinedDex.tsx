@@ -59,7 +59,10 @@ export function OutlinedDex({
       }
     }
     const sortedP = orderedIds.map((id) => getPokemonById(id)).filter((p): p is NonNullable<typeof p> => !!p);
-    const totalSlots = Math.max(GRID_COLS, Math.ceil(sortedP.length / GRID_COLS) * GRID_COLS);
+    // Use the real tile count, not a full-row multiple. Padding up to a multiple
+    // makes the layout treat a hanging final row as a full left-aligned row, so
+    // its section outline is drawn from the left while the tiles render centered.
+    const totalSlots = Math.max(1, sortedP.length);
     return { sorted: sortedP, layout: computeOutlineLayout(sortedP, sections, totalSlots, GRID_COLS) };
   }, [sections]);
 
