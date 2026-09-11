@@ -30,6 +30,21 @@ echarts.use([
 export { echarts };
 export type EChartsOption = EChartsCoreOption;
 
+/** A light, confined tooltip shared by the admin charts. Surface background
+ *  with a hairline border and soft shadow — never a large black box, and
+ *  `confine` keeps it inside the chart so it can't cover the cards beneath. */
+export function tooltipStyle(el: HTMLElement | null) {
+  return {
+    confine: true,
+    backgroundColor: cssVar(el, '--color-card', '#ffffff'),
+    borderColor: cssVar(el, '--color-border', '#e5e5e5'),
+    borderWidth: 1,
+    padding: [6, 8] as [number, number],
+    textStyle: { color: cssVar(el, '--color-foreground', '#0a0a0a'), fontSize: 11 },
+    extraCssText: 'border-radius:8px;box-shadow:0 4px 14px rgba(9,9,15,0.10);',
+  };
+}
+
 /** Read a CSS custom property off an element, trimmed. Charts pull their colors
  *  from the app's design tokens so they track the theme instead of hardcoding
  *  hex values. Falls back to the given default when the property is unset. */

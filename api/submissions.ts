@@ -14,10 +14,14 @@ import {
   aggregate,
   buildDepthCurve,
   dayStart,
+  depthByDevice,
   mergeByCid,
   quantile,
+  referrerFlow,
   sessionSeconds,
+  tallyCohort,
   type Aggregates,
+  type Cohort,
 } from './_aggregate.js';
 
 /** Distinct evolution lines represented by a set of ids (unknown ids count as
@@ -383,6 +387,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // tuple per user [firstTs, peakMon, peakLines, completed(0/1), exported(0/1)].
     // firstTs + peakMon predate onboarding, so the whole history is comparable.
     const cohort: [number, number, number, 0 | 1, 0 | 1][] = [];
+    // Peak Pokemon count per record, paired with its device, for the
+    // depth-by-device survival curves. This is the exact same value
+    // monVals.total collects, so depthByDevice's `all` matches the existing
+    // total curve.
+    const monPeakEntries: { device?: string; value: number }[] = [];
     // Tally the View settings exporters actually used (forward-only — only
     // exports captured since settings-tracking shipped contribute).
     const exportSettingsAgg = {
@@ -427,6 +436,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const peakMon = Math.max(0, ...monEnds);
       const peakLines = Math.max(0, ...lineEnds);
       cohort.push([r.firstTs, peakMon, peakLines, r.completed ? 1 : 0, r.exported ? 1 : 0]);
+      monPeakEntries.push({ device: r.device, value: peakMon });
 
       // Popularity across every user's final/current dex (one vote each), so it
       // reflects everyone — not just the few who finish a full 151.
@@ -500,6 +510,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const depthSurvival = lineCurves.total.survival;
     const depthStats = lineCurves.total.stats;
 
+    // Dex cohorts for the built/incomplete/completed toggle: same three
+    // fields (users, devices, countries, browsers) tallied over three
+    // non-overlapping slices of `records`. No "bounced" cohort — a browser
+    // that never sent a beacon has no ClientRecord, so its device, country
+    // and browser are unknowable.
+    const cohorts: Record<'built' | 'incomplete' | 'completed', Cohort> = {
+      built: tallyCohort(records),
+      completed: tallyCohort(records.filter((r) => r.completed === true)),
+      incomplete: tallyCohort(records.filter((r) => r.completed !== true)),
+    };
+
+    // Build-depth survival by device, on the same per-record peak-Pokemon
+    // value monVals.total uses — `all` is that same curve, split further by
+    // device for `mobile` and `desktop`.
+    const depthByDeviceCurves = depthByDevice(monPeakEntries);
+
+    // Acquisition hosts ranked by reach across both tools. Empty until a
+    // referrer is actually recorded — the field is forward-only.
+    const referrerRows = referrerFlow(records, leagueRecords);
+
     // League depth: how far a league gets, on the dex builder's pattern. Two
     // metrics, because a league can be wide (11 cards, one line each) or deep
     // (a few cards, six lines each) and the two fail differently.
@@ -572,6 +602,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       heatmap: dexAgg.heatmap,
       byTool,
       journeys,
+      cohorts,
+      depthByDevice: depthByDeviceCurves,
+      referrerFlow: referrerRows,
       leagueCurves,
       leagueByCid,
       leagueUsers,

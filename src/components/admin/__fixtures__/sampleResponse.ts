@@ -143,6 +143,23 @@ const byTool: Record<ToolSlice, Aggregates> = {
   league: aggregate('league'),
 };
 
+// Fixed country distribution reused across cohorts (region rollup maps codes).
+const cohortCountries = (base: number): Record<string, number> =>
+  tally(['US', 'GB', 'DE', 'IT', 'CA', 'FR', 'SE', 'JP', 'AU', 'Other'], [33, 11, 9, 7, 6, 6, 5, 4, 4, 15], base);
+
+// Dex cohorts: built (all), incomplete, completed. Completers skew desktop.
+const cohort = (base: number, dev: number[], br: number[]) => ({
+  users: base,
+  devices: tally(DEV_LABELS, dev, base),
+  countries: cohortCountries(base),
+  browsers: tally(BR_LABELS, br, base),
+});
+const cohorts = {
+  built: cohort(388, [63, 31, 6], [52, 27, 9, 8, 4]),
+  incomplete: cohort(323, [55, 39, 6], [50, 29, 9, 8, 4]),
+  completed: cohort(65, [72, 23, 5], [55, 25, 8, 8, 4]),
+};
+
 // A handful of per-user records mirroring the mockup's "Newest browsers" list.
 type NewestSeed = {
   cid: string;
@@ -298,6 +315,25 @@ const lineFullCurves = {
   longest: curveRec(linePts, 388),
   all: curveRec(linePts, 388),
 };
+// Build depth by device: mobile drops off sooner, desktop goes deeper.
+const mobilePts: [number, number][] = [
+  [1, 120], [10, 82], [20, 60], [40, 40], [60, 26], [80, 18], [100, 13], [120, 10], [151, 8],
+];
+const desktopPts: [number, number][] = [
+  [1, 244], [10, 205], [20, 178], [40, 148], [60, 116], [80, 95], [100, 82], [120, 71], [151, 55],
+];
+const depthByDevice = {
+  all: curveRec(depthPts, 388),
+  mobile: curveRec(mobilePts, 120),
+  desktop: curveRec(desktopPts, 244),
+};
+const referrerFlow = [
+  { host: 'google.com', total: 182, dex: 171, league: 13 },
+  { host: 'reddit.com', total: 96, dex: 88, league: 9 },
+  { host: 'youtube.com', total: 41, dex: 39, league: 2 },
+  { host: 't.co', total: 24, dex: 21, league: 4 },
+  { host: 'bing.com', total: 15, dex: 14, league: 1 },
+];
 
 export const sampleResponse: ApiResponse = {
   totalUsers: 388,
@@ -380,6 +416,9 @@ export const sampleResponse: ApiResponse = {
   droppedBySection: bySection(mostDropped),
   picksBySectionAll: bySection(popularFinal),
   byTool,
+  cohorts,
+  depthByDevice,
+  referrerFlow,
   journeys: {
     both: 4,
     dexFirst: 3,

@@ -1,4 +1,4 @@
-import { useECharts, cssVar, type EChartsOption } from './useECharts';
+import { useECharts, cssVar, tooltipStyle, type EChartsOption } from './useECharts';
 
 interface Curve {
   survival: { t: number; s: number }[];
@@ -32,16 +32,13 @@ export function BuildDepthChart({
       const faint = cssVar(el, '--color-muted-foreground', '#737373');
       const grid = cssVar(el, '--color-muted', '#f5f5f5');
       const band = cssVar(el, '--color-sink', '#8b8b93');
-      const surface = cssVar(el, '--color-card', '#ffffff');
 
       return {
         animation: false,
         grid: { left: 34, right: 14, top: 12, bottom: 22 },
         tooltip: {
+          ...tooltipStyle(el),
           trigger: 'axis',
-          backgroundColor: ink,
-          borderWidth: 0,
-          textStyle: { color: surface, fontSize: 11 },
           formatter: (params: unknown) => {
             const arr = params as { data: [number, number] }[];
             const d = arr[0]?.data;
