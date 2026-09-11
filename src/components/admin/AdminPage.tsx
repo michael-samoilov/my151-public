@@ -3,6 +3,9 @@ import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { HubCard } from '@/components/admin/HubCard';
 import { TrendChart } from '@/components/admin/charts/TrendChart';
+import { FlowSankey, type SankeyNode, type SankeyLink } from '@/components/admin/charts/FlowSankey';
+import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
+import { Panel, Seg, Kpi, Delta, Rollup, type RollupRow } from '@/components/admin/ui';
 import { Input } from '@/components/ui/input';
 import { getAllPokemon, getPokemonById } from '@/hooks/usePokemonData';
 import { BUILD_GROUPS } from '@/data/slot-template';
@@ -785,8 +788,8 @@ function BeaconDropNotice({ events }: { events?: Record<string, number> }) {
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="shadow-elevated rounded-lg p-3 bg-card">
-      <div className="text-sm font-medium mb-2">{title}</div>
+    <div className="rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(9,9,15,0.05)]">
+      <div className="mb-3 text-sm font-bold leading-tight">{title}</div>
       {children}
     </div>
   );
@@ -1476,130 +1479,6 @@ function BasisDropoffCard<K extends string>({
         </p>
       )}
     </div>
-  );
-}
-
-/** Build drop-off card with a metric toggle (# Pokemon vs # evolution lines)
- *  layered on top of the session-basis toggle. Defaults to # Pokemon. */
-function BuildDropoffCard({ data }: { data: ApiResponse }) {
-  const [metric, setMetric] = useState<'mon' | 'line'>('mon');
-  const curves = metric === 'mon' ? data.monCurves : data.lineCurves;
-  const unit = metric === 'mon' ? 'Pokémon' : 'lines';
-  const metricToggle = (
-    <>
-      <span className="text-[0.65rem] text-muted-foreground mr-1">Measure:</span>
-      <Button variant={metric === 'mon' ? 'default' : 'ghost'} size="sm" onClick={() => setMetric('mon')}>
-        # Pokémon
-      </Button>
-      <Button variant={metric === 'line' ? 'default' : 'ghost'} size="sm" onClick={() => setMetric('line')}>
-        # Evo lines
-      </Button>
-    </>
-  );
-  return (
-    <BasisDropoffCard
-      title="Build drop-off (how far users get)"
-      curves={curves}
-      tabs={[
-        { key: 'total', label: 'Total', note: `Peak ${unit} ever reached` },
-        { key: 'first', label: 'First', note: `${unit} added in the first session` },
-        { key: 'longest', label: 'Longest', note: `${unit} added in the longest session` },
-        { key: 'all', label: 'All', note: `${unit} added per session, pooled` },
-      ]}
-      fallback={{ survival: data.depthSurvival, stats: data.depthStats, n: 0 }}
-      fmtX={(n) => `${n} ${unit}`}
-      xLabel={unit}
-      extra={metricToggle}
-      hint={
-        data.multiSession === 0
-          ? 'All users are single-session so far, so First/Longest/All match Total — they diverge once a user builds across 2+ visits.'
-          : `${data.multiSession} multi-session user${data.multiSession === 1 ? '' : 's'} differentiate these views.`
-      }
-    />
-  );
-}
-
-/**
- * The number the launch was for: does one tool feed the other?
- *
- * Two tables. The first is the standing picture — of the browsers that used
- * both tools, which one they met first and how long the second took. The
- * second is the rate over time: of each week's new users of one tool, the
- * share that opened the other within 7 days. The rate is what a change to the
- * hub or the callout should move; the standing picture is not, because it
- * mixes every week since launch.
- */
-function JourneysCard({ j }: { j: NonNullable<ApiResponse['journeys']> }) {
-  const pct = (n: number, of: number) => (of > 0 ? `${Math.round((n / of) * 100)}%` : '–');
-  if (j.both === 0) {
-    return (
-      <Card title="Cross-tool journeys">
-        <p className="text-xs text-muted-foreground">
-          No browser has used both tools yet. This card fills in from the first one that does.
-        </p>
-      </Card>
-    );
-  }
-  // Newest weeks first, and only weeks that gained someone.
-  const weeks = [...j.weekly].reverse().filter((w) => w.newDex > 0 || w.newLeague > 0);
-  return (
-    <Card title="Cross-tool journeys (browsers with a record in both stores)">
-      <div className="flex flex-wrap gap-2">
-        <Stat value={j.both} label="Used both" />
-        <Stat value={`${j.dexFirst} (${pct(j.dexFirst, j.both)})`} label="Dex first" />
-        <Stat value={`${j.leagueFirst} (${pct(j.leagueFirst, j.both)})`} label="League first" />
-        <Stat value={`${j.sameDay} (${pct(j.sameDay, j.both)})`} label="Same day" />
-        <Stat value={`${j.medianGapDays}d`} label="Median gap" />
-        <Stat value={`${j.p75GapDays}d`} label="75th percentile gap" />
-      </div>
-      <p className="text-[0.65rem] text-muted-foreground mt-1">
-        Order and gap come from each store&rsquo;s first beacon for that browser, so they reach back to
-        each tool&rsquo;s launch. &ldquo;Same day&rdquo; means under 24 hours apart — normally finding the
-        second tool from the first one&rsquo;s page.
-      </p>
-
-      {weeks.length > 0 && (
-        <div className="mt-3 overflow-x-auto">
-          <div className="text-xs text-muted-foreground mb-1">
-            Crossover within 7 days, by the week the browser first arrived
-          </div>
-          <table className="text-xs w-full">
-            <thead className="text-muted-foreground">
-              <tr className="text-left">
-                <th className="pr-2 font-medium">Week of</th>
-                <th className="pr-2 font-medium">New dex</th>
-                <th className="pr-2 font-medium">→ League in 7d</th>
-                <th className="pr-2 font-medium">New league</th>
-                <th className="font-medium">→ Dex in 7d</th>
-              </tr>
-            </thead>
-            <tbody>
-              {weeks.map((w) => (
-                <tr key={w.week} className="border-t border-border/50">
-                  <td className="pr-2 py-1 whitespace-nowrap">
-                    {new Date(w.week).toISOString().slice(0, 10)}
-                  </td>
-                  <td className="pr-2 tabular-nums">{w.newDex}</td>
-                  <td className="pr-2 tabular-nums">
-                    {w.dexToLeague7d}{' '}
-                    <span className="text-muted-foreground">({pct(w.dexToLeague7d, w.newDex)})</span>
-                  </td>
-                  <td className="pr-2 tabular-nums">{w.newLeague}</td>
-                  <td className="tabular-nums">
-                    {w.leagueToDex7d}{' '}
-                    <span className="text-muted-foreground">({pct(w.leagueToDex7d, w.newLeague)})</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="text-[0.65rem] text-muted-foreground mt-1">
-            A browser counts as crossing over only when the second tool&rsquo;s first beacon comes after
-            the first tool&rsquo;s and inside 7 days. Someone who already used both is not a conversion.
-          </p>
-        </div>
-      )}
-    </Card>
   );
 }
 
@@ -2774,6 +2653,7 @@ export function AdminPage() {
   const [tokenInput, setTokenInput] = useState('');
   const [data, setData] = useState<ApiResponse | null>(null);
   const [tool, setTool] = useState<ToolSlice>(() => loadToolSlice());
+  const [depthMetric, setDepthMetric] = useState<'mon' | 'lines'>('mon');
   const [slotDetail, setSlotDetail] = useState<{ dow: number; hour: number } | null>(null);
   const [expandedCid, setExpandedCid] = useState<string | null>(null);
   const [expandedLeagueCid, setExpandedLeagueCid] = useState<string | null>(null);
@@ -2957,61 +2837,244 @@ export function AdminPage() {
         {data && (() => {
           const slice = sliceOf(data, tool);
           const showDex = tool !== 'league';
+
+          // MECE usage funnel (dex): every stage's inflow is fully accounted.
+          const f = data.funnel;
+          const built = data.tools?.dex ?? f.users;
+          const sawIntro = f.users;
+          const bounced = Math.max(0, sawIntro - built);
+          const incomplete = Math.max(0, built - f.completed);
+          const keptPrivate = Math.max(0, f.completed - f.exported);
+          const pctOf = (num: number, den: number) => (den > 0 ? Math.round((num / den) * 100) : 0);
+
+          // Data window from the activity series, for the summary line.
+          const act = data.activity ?? slice.activity;
+          const fmtDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+          const dateRange = act.length ? `${fmtDate(act[0].day)} – ${fmtDate(act[act.length - 1].day)}` : '';
+
+          // Cross-tool identity (league-side numbers are small — flag n).
+          const xt = data.tools;
+          const xtTotal = xt ? xt.dexOnly + xt.both + xt.leagueOnly : 0;
+
+          // Who rollups from the selected slice (real per-tool breakdowns).
+          const toRollup = (rec: Record<string, number>, max = 6): RollupRow[] => {
+            const total = Object.values(rec).reduce((a, b) => a + b, 0) || 1;
+            return Object.entries(rec)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, max)
+              .map(([label, n]) => ({ label, pct: Math.round((n / total) * 100) }));
+          };
+          const regionRollup: RollupRow[] = (() => {
+            const groups = regionGroups(slice.countries);
+            const total = groups.reduce((s, g) => s + g.count, 0) || 1;
+            return groups.slice(0, 5).map((g) => ({ label: g.label, pct: Math.round((g.count / total) * 100) }));
+          })();
+
+          // Build-depth curve for the selected metric (real data).
+          const depthCurve =
+            depthMetric === 'lines'
+              ? data.lineCurves?.total ?? data.depthCurves?.total
+              : data.monCurves?.total ?? data.depthCurves?.total;
+
           return (
           <>
-            {/* The tool switch. Every card that reads per-browser records reads
-                the selected slice; "All" is one record per browser with both
-                tools' sessions merged, so a person who used both is one user. */}
-            <div role="group" aria-label="Tool" className="flex items-center gap-1 flex-wrap">
-              <span className="text-xs text-muted-foreground mr-1" aria-hidden="true">
-                Tool:
+            {/* Summary line — the headline counts as data, no prose. */}
+            <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+              <span className="text-sm">
+                <b className="tabular-nums">{sawIntro}</b>{' '}
+                <span className="text-muted-foreground">saw intro</span>
               </span>
-              {TOOL_TABS.map((t) => (
-                <Button
-                  key={t.key}
-                  variant={tool === t.key ? 'default' : 'ghost'}
-                  size="sm"
-                  aria-pressed={tool === t.key}
-                  onClick={() => pickTool(t.key)}
-                >
-                  {t.label}
-                </Button>
-              ))}
+              <span className="text-sm">
+                <b className="tabular-nums">{built}</b> <span className="text-muted-foreground">built a dex</span>
+              </span>
+              {xt && (
+                <span className="text-sm">
+                  <b className="tabular-nums">{xt.league}</b>{' '}
+                  <span className="text-muted-foreground">league</span>
+                </span>
+              )}
+              {dateRange && (
+                <span className="text-[0.7rem] font-semibold text-muted-foreground">
+                  {dateRange} · as of {fmtDate(act[act.length - 1].day)}
+                </span>
+              )}
             </div>
 
-            <Card title={`Overview · ${TOOL_TABS.find((t) => t.key === tool)?.label} (since June 15)`}>
-              <div className="flex flex-wrap gap-2">
-                <Stat value={slice.users} label="Users" />
-                {showDex && <Stat value={data.funnel.completed} label="Completed (151)" />}
-                {showDex && <Stat value={data.funnel.exported} label="Exported" />}
-                {tool !== 'dex' && data.league && (
-                  <Stat value={data.league.exportedCard + data.league.exportedLeague} label="League exports" />
-                )}
-                <Stat value={slice.retention.returning} label="Returning" />
-                <Stat value={slice.retention.activeLast7} label="Active 7d" />
-              </div>
-              {tool === 'all' && (
-                <p className="text-[0.65rem] text-muted-foreground mt-1">
-                  Users counts each browser once across both tools; Completed and Exported are the dex
-                  builder&rsquo;s own milestones.
-                </p>
-              )}
-              <BeaconDropNotice events={data.funnelEvents} />
-            </Card>
+            {/* The tool switch (ink selection). Every card reads the selected
+                slice; "All" is one record per browser with both tools merged. */}
+            <Seg
+              ariaLabel="Tool"
+              options={TOOL_TABS.map((t) => ({ key: t.key, label: t.label }))}
+              value={tool}
+              onChange={pickTool}
+            />
 
-            {data.tools && data.league && (
+            {/* Hero — the weekly active-browsers trend leads the page. */}
+            {slice.activity.length > 0 && (
+              <Panel title="Active browsers" sub={['weekly']}>
+                <TrendChart series={slice.activity} />
+              </Panel>
+            )}
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {/* Headline outcome + sub-KPIs. Denominators ride as data. */}
+              <Panel
+                title={showDex ? 'Completed a dex' : 'League activity'}
+                sub={[showDex ? `of ${built} built` : `${slice.users} browsers`]}
+              >
+                {showDex ? (
+                  <>
+                    <Kpi
+                      emphasis
+                      value={f.completed}
+                      label="Completed 151"
+                      denom={`${f.completed} / ${built} built · ${pctOf(f.completed, built)}%`}
+                    />
+                    <div className="mt-4 flex flex-wrap gap-x-6 gap-y-3">
+                      <Kpi value={slice.retention.activeLast7} label="Active · 7d" denom={`/ ${built}`} />
+                      <Kpi value={slice.retention.returning} label="Returning · 30d" denom={`/ ${built}`} />
+                      <Kpi value={f.exported} label="Exported" denom={`/ ${f.completed}`} />
+                      <Kpi value={bounced} label="Bounced" denom={`/ ${sawIntro}`} />
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex flex-wrap gap-x-6 gap-y-3">
+                    <Kpi emphasis value={slice.users} label="Browsers" />
+                    <Kpi value={slice.retention.activeLast7} label="Active · 7d" />
+                    <Kpi value={slice.retention.returning} label="Returning" />
+                    {data.league && (
+                      <Kpi
+                        value={data.league.exportedCard + data.league.exportedLeague}
+                        label="League exports"
+                      />
+                    )}
+                  </div>
+                )}
+                <BeaconDropNotice events={data.funnelEvents} />
+              </Panel>
+
+              {/* Cross-tool identity. League-side counts are small — n flagged. */}
+              {xt && (
+                <Panel
+                  title="Cross-tool"
+                  sub={['dex & league']}
+                  actions={
+                    <span className="text-[0.7rem] font-semibold text-muted-foreground tabular-nums">
+                      {xtTotal} browsers
+                    </span>
+                  }
+                >
+                  <div className="flex flex-wrap gap-x-6 gap-y-3">
+                    <Kpi value={xt.dexOnly} label="Dex only" />
+                    <Kpi value={xt.both} label="Both" denom={`n=${xt.league}`} />
+                    <Kpi value={xt.leagueOnly} label="League only" denom={`n=${xt.league}`} />
+                  </div>
+                  {data.journeys && (
+                    <div className="mt-4 flex flex-col gap-1.5 text-xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">League → Dex</span>
+                        <span className="flex items-center gap-1.5 font-bold tabular-nums">
+                          {data.journeys.leagueFirst} / {xt.league}
+                          {xt.league <= 5 && <Delta>n={xt.league} · too few to trend</Delta>}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">Dex → League</span>
+                        <span className="font-bold tabular-nums">
+                          {data.journeys.dexFirst} / {built}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </Panel>
+              )}
+            </div>
+
+            {/* Flows — MECE usage funnel, every inflow accounted for. */}
+            {showDex && built > 0 && (
+              <Panel title="Flows" sub={['usage funnel', tool === 'all' ? 'all tools' : 'dex']}>
+                <FlowSankey
+                  nodes={
+                    [
+                      { name: 'Saw intro', role: 'neutral' },
+                      { name: 'Built', role: 'neutral' },
+                      { name: 'Bounced', role: 'sink' },
+                      { name: 'Incomplete', role: 'sink' },
+                      { name: 'Completed', role: 'success' },
+                      { name: 'Exported', role: 'success' },
+                      { name: 'Kept private', role: 'priv' },
+                    ] satisfies SankeyNode[]
+                  }
+                  links={
+                    [
+                      { source: 'Saw intro', target: 'Built', value: built, role: 'neutral' },
+                      { source: 'Saw intro', target: 'Bounced', value: bounced, role: 'sink' },
+                      { source: 'Built', target: 'Completed', value: f.completed, role: 'success' },
+                      { source: 'Built', target: 'Incomplete', value: incomplete, role: 'sink' },
+                      { source: 'Completed', target: 'Exported', value: f.exported, role: 'success' },
+                      { source: 'Completed', target: 'Kept private', value: keptPrivate, role: 'priv' },
+                    ] satisfies SankeyLink[]
+                  }
+                  ariaLabel={`Usage funnel: ${sawIntro} saw intro, of which ${built} built and ${bounced} bounced; of ${built} built, ${f.completed} completed and ${incomplete} left incomplete; of ${f.completed} completed, ${f.exported} exported and ${keptPrivate} kept private.`}
+                />
+              </Panel>
+            )}
+
+            {/* League tool: its own funnel and recent users. */}
+            {!showDex && data.tools && data.league && (
               <ToolsCard tools={data.tools} league={data.league} events={data.funnelEvents} />
             )}
 
             {token && <HubCard token={token} />}
 
-            {data.journeys && <JourneysCard j={data.journeys} />}
-
-            {slice.activity.length > 0 && (
-              <Card title="Active browsers · weekly">
-                <TrendChart series={slice.activity} />
-              </Card>
+            {/* Build depth — where builders stop, as an un-smoothed step curve. */}
+            {showDex && depthCurve && (
+              <Panel
+                title="Build depth"
+                sub={['where builders stop', `of ${depthCurve.n}`]}
+                actions={
+                  <Seg
+                    ariaLabel="Build-depth metric"
+                    options={[
+                      { key: 'mon', label: 'Pokémon' },
+                      { key: 'lines', label: 'Evo lines' },
+                    ]}
+                    value={depthMetric}
+                    onChange={setDepthMetric}
+                  />
+                }
+              >
+                <BuildDepthChart
+                  curve={depthCurve}
+                  xLabel={depthMetric === 'lines' ? 'lines' : 'Pokémon'}
+                  ariaLabel="Build depth: browsers still building by dex size"
+                />
+              </Panel>
             )}
+
+            {/* Who — device, region and browser rollups for the slice. */}
+            <Panel title="Who" sub={[TOOL_TABS.find((t) => t.key === tool)?.label ?? '', String(slice.users)]}>
+              <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-3">
+                <div>
+                  <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
+                    Device
+                  </div>
+                  <Rollup rows={toRollup(slice.devices, 3)} />
+                </div>
+                <div>
+                  <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
+                    Region
+                  </div>
+                  <Rollup rows={regionRollup} />
+                </div>
+                <div>
+                  <div className="mb-1.5 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
+                    Browser
+                  </div>
+                  <Rollup rows={toRollup(slice.browsers, 5)} />
+                </div>
+              </div>
+            </Panel>
 
             {/* Dex-only: every row is an intro, milestone or View event the gym
                 leader maker never sends. */}
@@ -3069,7 +3132,6 @@ export function AdminPage() {
                 fmtX={fmtSecs}
                 xLabel="session length"
               />
-              {showDex && <BuildDropoffCard data={data} />}
               {tool !== 'dex' && data.leagueCurves && data.league && (
                 <LeagueDepthCard curves={data.leagueCurves} users={data.league.users} />
               )}
