@@ -376,7 +376,13 @@ function PokemonCell({ cardIndex, datum, pokemonId, form, powerupKind, onPowerup
   return (
     <div
       ref={setDropRef}
-      className="relative flex h-full items-center justify-center"
+      // The wrapper fills the whole column track, so its `data-seat` drives the
+      // column-hover wash across the gaps around the cell, and a `cursor-pointer`
+      // plus a click here make the gap read and act as part of the column: a
+      // click that lands beside the cell (not on it) runs the cell's own tap.
+      data-seat={datum.seat}
+      onClick={(e) => { if (e.target === e.currentTarget) onTap(); }}
+      className="relative flex h-full cursor-pointer items-center justify-center"
     >
       {/* The carried column is not drawn twice. The seat under it opens, and
           the column itself lifts off the card at full strength — so the copy
@@ -1814,14 +1820,15 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
 
   // Which column (seat) the pointer is over, so the whole column's white cells
   // wash to the gym's own tint — the hover state the theme's `hover` shade was
-  // cut for. Read off the cell under the pointer via a delegated handler, so it
-  // clears the moment the pointer crosses into a gap. Off during a drag: the
-  // gesture speaks for itself and a wash under it only muddies the read.
+  // cut for. Read off the cell's full-height wrapper (`data-seat`), not the
+  // cell itself, so the wash holds while the pointer is in the gaps between and
+  // around the cells, not only dead on one. Off during a drag: the gesture
+  // speaks for itself and a wash under it only muddies the read.
   const [hoverSeat, setHoverSeat] = useState<number | null>(null);
   const onGridHover = useCallback((e: React.MouseEvent) => {
-    const cell = (e.target as HTMLElement).closest('[data-testid^="card-cell-"]');
-    const seat = cell?.getAttribute('data-testid')?.split('-')[3];
-    setHoverSeat(seat !== undefined ? Number(seat) : null);
+    const wrap = (e.target as HTMLElement).closest('[data-seat]');
+    const seat = wrap?.getAttribute('data-seat');
+    setHoverSeat(seat !== null && seat !== undefined ? Number(seat) : null);
   }, []);
 
   // During a reorder drag the grid renders the arrangement as it would land:
