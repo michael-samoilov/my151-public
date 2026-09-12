@@ -78,12 +78,20 @@ export function OutlinedDex({
   const gridWidth = GRID_COLS * tileSize + (GRID_COLS - 1) * gap;
   const gridPokemon = sorted.slice(0, gridSlots);
   const lastRowPokemon = sorted.slice(gridSlots);
-  const totalGridRows = Math.ceil(gridSlots / GRID_COLS) || 1;
+  // A build under one row (gridSlots === 0) has no grid rows: the whole build is
+  // the centered last row. Never floor this at 1 — a phantom empty grid row
+  // pushes the tiles down a row while the outline stays at the top, so the
+  // sprites render outside their own outline. buildOutlines puts the last row at
+  // blockTop[0] === 0 in that case, so the flex above it takes no leading gap.
+  const totalGridRows = Math.ceil(gridSlots / GRID_COLS);
   const gridRowTemplate = Array.from({ length: totalGridRows }, (_, r) =>
     gridStartRows.has(r) ? `${headroom + tileSize}px` : `${tileSize}px`,
   ).join(' ');
   const gridBlockHeight =
     totalGridRows * tileSize + gridStartRows.size * headroom + Math.max(totalGridRows - 1, 0) * gap;
+  // The row gap sits between the grid and the centered last row. With no grid, it
+  // must be 0 so the last row aligns with the outline's top edge.
+  const lastRowGap = totalGridRows > 0 ? gap : 0;
   const lastRowHeight = tileSize + (lastRowStartRows.size > 0 ? headroom : 0);
   const allStartRows = new Set<number>([...gridStartRows, ...lastRowStartRows]);
 
@@ -99,12 +107,17 @@ export function OutlinedDex({
         <div className="relative">
           <div
             className="grid items-end"
-            style={{ gridTemplateColumns: `repeat(${GRID_COLS}, ${tileSize}px)`, columnGap: gap, rowGap: gap, gridTemplateRows: gridRowTemplate }}
+            style={{
+              gridTemplateColumns: `repeat(${GRID_COLS}, ${tileSize}px)`,
+              columnGap: gap,
+              rowGap: gap,
+              ...(gridRowTemplate ? { gridTemplateRows: gridRowTemplate } : { gridAutoRows: `${tileSize}px` }),
+            }}
           >
             {gridPokemon.map(tile)}
           </div>
           {lastRowPokemon.length > 0 && (
-            <div className="flex items-end justify-center" style={{ height: lastRowHeight, columnGap: gap, marginTop: gap }}>
+            <div className="flex items-end justify-center" style={{ height: lastRowHeight, columnGap: gap, marginTop: lastRowGap }}>
               {lastRowPokemon.map(tile)}
             </div>
           )}
@@ -117,7 +130,7 @@ export function OutlinedDex({
               headroom={headroom}
               gap={gap}
               pad={pad}
-              totalHeight={gridBlockHeight + (lastRowPokemon.length > 0 ? gap + lastRowHeight : 0)}
+              totalHeight={gridBlockHeight + (lastRowPokemon.length > 0 ? lastRowGap + lastRowHeight : 0)}
               lastRow={lastRowGeom}
             />
           )}
