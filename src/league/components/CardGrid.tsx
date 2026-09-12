@@ -1550,7 +1550,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           // sibling: an empty inline span is zero-wide, which leaves nothing
           // to tap and nowhere obvious for the caret to sit.
           data-badge-field
-          data-placeholder="Badge Name"
+          data-placeholder="Name"
           className="outline-none"
         />
         {name ? <span> Badge</span> : null}
