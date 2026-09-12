@@ -212,29 +212,40 @@ test.describe('home page responsive sweep', () => {
           if (e.scrollWidth - e.clientWidth > 0.5) fail.push(`hero text ${i} overruns its measure`);
         });
 
-        // 13. On desktop the row sizes each card to the design's four-up width
-        // and left-aligns however many ship today, instead of stretching three
-        // cards across the whole page. The grid carries one track per the max of
-        // the tool count and four, so three tools keep the four-up size and leave
-        // a trailing empty column. A regression to one-track-per-tool stretches
-        // them, which reads plausible to every ratio check above but is the bug
-        // this page was reported for.
+        // 13. On desktop the row carries one track per tool and fills the width:
+        // the three cards spread to where a fourth card's right edge would sit,
+        // rather than sitting four-up with an empty trailing column. One track
+        // per tool, the first card flush to the grid's left and the last flush to
+        // its right, is the shape.
         if (desktop && grid) {
           const tracks = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean);
-          const wantCols = Math.max(cardCount, 4);
-          if (tracks.length !== wantCols) {
-            fail.push(`desktop grid has ${tracks.length} columns, expected ${wantCols}`);
+          if (tracks.length !== cardCount) {
+            fail.push(`desktop grid has ${tracks.length} columns, expected ${cardCount}`);
           }
-          // Left-aligned: with fewer cards than columns, the last card ends at
-          // least most of a track short of the grid's right edge.
-          if (cardCount < wantCols && cards.length) {
+          if (cards.length) {
+            const g = R(grid);
+            const firstLeft = Math.min(...cards.map((c) => R(c).left));
             const lastRight = Math.max(...cards.map((c) => R(c).right));
-            const trackW = R(cards[0]).width;
-            const slack = R(grid).right - lastRight;
-            if (slack < trackW * 0.6) {
-              fail.push(`desktop row fills the width: ${slack.toFixed(1)}px slack, track ~${trackW.toFixed(0)}px`);
-            }
+            if (Math.abs(firstLeft - g.left) > 1) fail.push(`row not flush left: ${(firstLeft - g.left).toFixed(1)}px`);
+            if (Math.abs(g.right - lastRight) > 1) fail.push(`row not flush right: ${(g.right - lastRight).toFixed(1)}px`);
           }
+        }
+
+        // 14. Desktop cards are the wide low band, not a tall block: each panel is
+        // clearly wider than it is tall. This is what keeps the red from
+        // dominating, and it is invisible to every ratio check above (they scale
+        // with the panel). The screenshots do not depend on it — they size off
+        // their own stage — so a panel that reverted to the tall proportion would
+        // pass everything else while burying the page in red.
+        if (desktop) {
+          cards.forEach((cell, i) => {
+            const panel = cell.querySelector('[data-card-panel]');
+            if (!panel) return;
+            const c = R(panel);
+            if (c.width < c.height * 2) {
+              fail.push(`card ${i} panel is ${c.width.toFixed(0)}x${c.height.toFixed(0)}, not a wide band`);
+            }
+          });
         }
 
         return fail;

@@ -147,7 +147,9 @@ const SPAN = 'col-span-2';
 function Card({ tool, onPress, wide, reserve }: CardProps) {
   const panel = 'relative block w-full text-left bg-primary text-white no-underline';
   const body = wide ? <WideBody tool={tool} /> : <TallBody tool={tool} />;
-  const style = wide ? undefined : { aspectRatio: PANEL_ASPECT, borderRadius: RADIUS };
+  // `--panel-ar` is set on the grid: the tall proportion on a phone, a wide low
+  // band on desktop (see `.hub-grid` in index.css). PANEL_ASPECT is the fallback.
+  const style = wide ? undefined : { aspectRatio: `var(--panel-ar, ${PANEL_ASPECT})`, borderRadius: RADIUS };
   const wideStyle = { borderRadius: `min(${U(14)}, 18px)` };
   const inner = onPress ? (
     <button
@@ -325,6 +327,14 @@ function Artwork({ tool }: { tool: Tool }) {
   // ghost of the whole card, which reads as one merged image.
   return (
     <span data-artwork data-float={floated ?? undefined} style={{ display: 'contents' }}>
+      {/* The stage. A fixed-size box pinned to the panel's bottom-right that owns
+          the screenshots' size: everything inside is a share of the STAGE's
+          width, not the card's, so widening or shortening the red panel around it
+          moves and resizes nothing here. Full width (= the panel) on a phone;
+          narrower on desktop (see `.hub-stage`), so the card can grow wide and
+          short while the screenshots keep the size and bottom-right position they
+          have now. */}
+      <span className="hub-stage">
       {/* Shadows. Masked so they fade out near the top break-out rather than
           ending on a straight line at the clip edge. Each rides its own shot's
           `--hf`, so a shadow floats with the shot it belongs to. */}
@@ -398,6 +408,7 @@ function Artwork({ tool }: { tool: Tool }) {
           </span>
         ))}
       </span>
+      </span>
     </span>
   );
 }
@@ -453,13 +464,13 @@ export function HomePage() {
         },
       }
     : null;
-  // Desktop lays the tools on one row, but sizes each card as if the design's
-  // four tools were present and left-aligns however many exist today. Three
-  // cards keep the four-up card size and leave the last column empty, instead
-  // of stretching to a third of the page each. A fourth tool fills that column;
-  // a fifth or more widens the row. On a phone it is two up, which leaves the
-  // last card alone when the count is odd — that is the card that spans instead.
-  const desktopCols = Math.max(tools.length, 4);
+  // Desktop lays the tools on one row that fills the width: three cards spread
+  // to where a fourth card's right edge would sit. The cards go wide and short
+  // so the red reads as a low band, not a block; the screenshots do not change,
+  // because each renders in a fixed-size stage pinned to its card's bottom-right
+  // (see `.hub-stage`). On a phone it is two up, which leaves the last card alone
+  // when the count is odd — that is the card that spans instead.
+  const desktopCols = tools.length;
   const gridStyle = { '--tool-cols': desktopCols } as React.CSSProperties;
   // The wide bar is a phone shape only, and the two shapes are different markup
   // rather than different CSS, so exactly one of them mounts. That is what
@@ -540,7 +551,7 @@ export function HomePage() {
                 `sm:` then beats its own `md:` override above 1024px. Bounding the
                 tablet rules at md means the two bands cannot overlap at all. */}
             <div
-              className="grid grid-cols-2 md:grid-cols-[repeat(var(--tool-cols),minmax(0,1fr))] gap-x-3.5 gap-y-6 sm:max-md:gap-x-7 md:gap-x-6 [--art:0.92]"
+              className="hub-grid grid grid-cols-2 md:grid-cols-[repeat(var(--tool-cols),minmax(0,1fr))] gap-x-3.5 gap-y-6 sm:max-md:gap-x-7 md:gap-x-6 [--art:0.92]"
               style={gridStyle}
             >
               {tools.map((tool, i) => (
