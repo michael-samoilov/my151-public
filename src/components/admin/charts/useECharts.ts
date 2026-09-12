@@ -138,15 +138,65 @@ export function useECharts(
       // it. It only hides on release. Pairs with a `touch-none` container so
       // the drag never scrolls the page.
       let scrubbing = false;
+
+      // A custom axis line for the off-plot case. When a drag runs off the
+      // container, echarts fires globalout and drops its own axis pointer, even
+      // though alwaysShowContent keeps the tooltip. This line stands in at the
+      // clamped (reporting) x so the reading still has a vertical marker. It
+      // stays hidden while the pointer is inside the plot, where echarts draws
+      // its own line.
+      if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
+      const line = document.createElement('div');
+      line.style.cssText =
+        'position:absolute;width:1px;top:0;bottom:0;pointer-events:none;display:none;z-index:1;';
+      line.style.background = cssVar(el, '--color-muted-foreground', '#737373');
+      line.style.opacity = '0.5';
+      el.appendChild(line);
+
+      // The plot rect, so the line spans the same band as echarts' own axis
+      // pointer. Internal API, so guard it and fall back to the full height.
+      const gridRect = (): { y: number; height: number } | null => {
+        try {
+          // getModel is internal, so reach it through an untyped view.
+          const model = (chart as unknown as { getModel(): { getComponent(t: string, i: number): unknown } }).getModel();
+          const cs = (
+            model.getComponent('grid', 0) as
+              | { coordinateSystem?: { getRect?: () => { y: number; height: number } } }
+              | undefined
+          )?.coordinateSystem;
+          return cs?.getRect?.() ?? null;
+        } catch {
+          return null;
+        }
+      };
+
       const showAt = (clientX: number, clientY: number, clamp: boolean) => {
         const r = el.getBoundingClientRect();
-        let x = clientX - r.left;
-        let y = clientY - r.top;
+        const rawX = clientX - r.left;
+        const rawY = clientY - r.top;
+        let x = rawX;
+        let y = rawY;
         if (clamp) {
-          x = Math.max(1, Math.min(x, r.width - 1));
-          y = Math.max(1, Math.min(y, r.height - 1));
+          x = Math.max(1, Math.min(rawX, r.width - 1));
+          y = Math.max(1, Math.min(rawY, r.height - 1));
         }
         chart.dispatchAction({ type: 'showTip', x, y });
+        // The pointer left the container, so echarts dropped its line: draw ours
+        // at the clamped x. Inside the container, echarts owns the line.
+        const off =
+          clamp && (rawX < 1 || rawX > r.width - 1 || rawY < 1 || rawY > r.height - 1);
+        if (off) {
+          const rect = gridRect();
+          line.style.left = `${x}px`;
+          if (rect) {
+            line.style.top = `${rect.y}px`;
+            line.style.height = `${rect.height}px`;
+            line.style.bottom = 'auto';
+          }
+          line.style.display = 'block';
+        } else {
+          line.style.display = 'none';
+        }
       };
       const onDown = (e: PointerEvent) => {
         scrubbing = true;
@@ -163,13 +213,17 @@ export function useECharts(
         if (scrubbing) e.preventDefault();
       };
       const onLeave = () => {
-        if (!scrubbing) chart.dispatchAction({ type: 'hideTip' });
+        if (!scrubbing) {
+          chart.dispatchAction({ type: 'hideTip' });
+          line.style.display = 'none';
+        }
       };
       const onUp = () => {
         if (!scrubbing) return;
         scrubbing = false;
         chart.setOption({ tooltip: { alwaysShowContent: false } });
         chart.dispatchAction({ type: 'hideTip' });
+        line.style.display = 'none';
       };
       el.addEventListener('pointerdown', onDown);
       el.addEventListener('pointermove', onMove);
@@ -182,6 +236,7 @@ export function useECharts(
         el.removeEventListener('pointerleave', onLeave);
         window.removeEventListener('pointerup', onUp);
         window.removeEventListener('pointercancel', onUp);
+        line.remove();
       };
     }
   }, [scrub]);
