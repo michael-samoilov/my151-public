@@ -1315,7 +1315,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     >
       {!move && <EmptyOutline />}
       <span
-        className="flex shrink-0 flex-col items-center"
+        className="flex shrink-0 flex-col items-center justify-center"
         style={{ width: MARK_COL }}
       >
         {/* The disc wears the move's own type, not the gym's — a TM is the
@@ -1368,8 +1368,8 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
               viewport the box cannot hold the longest of them however far
               left the text starts. */}
           <span
-            className="min-w-0 max-w-full truncate text-left text-[0.6875rem] leading-[1.15]"
-            style={{ paddingRight: MARK_TRAIL }}
+            className={cn('min-w-0 max-w-full truncate text-left', NAME_CLASS)}
+            style={{ paddingRight: MARK_TRAIL, color: cardShades(move.type).band }}
           >
             {move.name}
           </span>
@@ -1480,7 +1480,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       {/* The same column the TM slot uses, so the hexagon sits under the disc
           and the word under the word. */}
       <span
-        className="flex shrink-0 flex-col items-center"
+        className="flex shrink-0 flex-col items-center justify-center"
         style={{ width: MARK_COL }}
       >
         {/* Drawn the way the TM disc is drawn: an outline in the type's own
@@ -1510,24 +1510,33 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             strokeWidth={name ? 2.4 : 8 / 3}
           />
         </svg>
+        {/* The name ends in "Badge", so this word is redundant the moment a
+            name is typed. It collapses away then — a grid row eased from 1fr
+            to 0fr takes its height smoothly whatever it measures — and the
+            hexagon, centred in the column, eases into the space it leaves. */}
         <span
-          className={cn('-mt-[0.0625rem]', MARK_LABEL_CLASS)}
-          style={{ color: name ? 'var(--lg-band)' : 'var(--lg-hint)' }}
+          className="grid w-full justify-items-center transition-[grid-template-rows] duration-300 ease-out"
+          style={{ gridTemplateRows: name ? '0fr' : '1fr' }}
         >
-          BADGE
+          <span
+            className={cn('-mt-[0.0625rem] overflow-hidden transition-opacity duration-300 ease-out', MARK_LABEL_CLASS)}
+            style={{ color: 'var(--lg-hint)', opacity: name ? 0 : 1, minHeight: 0 }}
+          >
+            BADGE
+          </span>
         </span>
       </span>
       <div
         ref={textRef}
         // Three lines. The box is 1.5 rows -- 4.3125rem -- and three lines of
-        // this size come to 2.46rem, so the height is not what limits the
-        // name; the width beside the hexagon is. Capping at two lines threw
-        // away a third of the room for nothing, and at a 320px viewport that
-        // left six characters. The height is still fixed rather than free, so
+        // this all-caps size come to ~2.23rem, so the height is not what limits
+        // the name; the width beside the hexagon is. Capping at two lines threw
+        // away a third of the room for nothing, and at a narrow width that left
+        // six characters. The height is still fixed rather than free, so
         // `scrollHeight` has something to exceed and a name cannot grow past
         // the box.
-        className="min-w-0 flex-1 overflow-hidden pr-[0.25rem] text-left text-[0.65625rem] leading-tight"
-        style={{ maxHeight: `${3 * 0.65625 * 1.25}rem` }}
+        className={cn('min-w-0 flex-1 overflow-hidden pr-[0.25rem] text-left', NAME_CLASS)}
+        style={{ maxHeight: `${3 * 0.53125 * 1.4}rem`, color: 'var(--lg-band)' }}
       >
         <span
           ref={fieldRef}
