@@ -1076,10 +1076,10 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
         <div className="rounded-lg border border-dashed border-[var(--color-off)]/60 p-3">
           <div className="mb-0.5 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
             <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: 'var(--color-border)' }} />
-            Not in a section
+            Section not captured
             <span className="text-muted-foreground/70">{offIds.length}</span>
           </div>
-          <p className="mb-1.5 text-[0.7rem] text-muted-foreground/80">In the build at this moment, but not placed under any of the sections above.</p>
+          <p className="mb-1.5 text-[0.7rem] text-muted-foreground/80">These sit in this session's recorded build, but their section was not captured. Older sessions and exports from before a recent update can omit it. In the app, every Pokémon is in a section.</p>
           <SpriteRow ids={offIds} />
         </div>
       )}
