@@ -84,8 +84,9 @@ function postBeacon(
   // events buffered for the next progress/completion beacon.
   const events = kind === 'export' ? undefined : takePendingEvents();
   // `sections` (groupId -> placed ids) captures WHERE the user put each Pokemon
-  // on the build page — the real placement, including non-default choices. Only
-  // sent for build beacons (progress/completion), not the flat export view.
+  // on the build page — the real placement, including non-default choices. Build
+  // beacons always send it; an export sends the live map too so its `ids` and
+  // `sections` are snapshotted together (see sendExportBeacon).
   // `exportSettings` records the View settings used for an export (sort/outlines).
   // The locale the app is actually rendering in — which is not the same as the
   // Accept-Language header the server sees. A `?lang=` or a manual pick in the
@@ -185,10 +186,17 @@ export function useCompletionBeacon() {
 }
 
 /** Fire a one-shot export beacon with the current list and the View settings
- *  that produced the exported image. */
-export function sendExportBeacon(ids: number[], settings?: ExportSettings) {
+ *  that produced the exported image. `sections` is the live placement map, sent
+ *  so the export snapshots `ids` and `sections` together — without it the server
+ *  keeps the last build beacon's (older) section map while overwriting `ids`, so
+ *  Pokemon placed since that beacon read as "not in a section" in the admin. */
+export function sendExportBeacon(
+  ids: number[],
+  settings?: ExportSettings,
+  sections?: Record<string, number[]>,
+) {
   if (ids.length === 0) return;
-  postBeacon(ids, 'export', undefined, settings);
+  postBeacon(ids, 'export', sections, settings);
 }
 
 const EVENT_SENT_PREFIX = 'p151-ev-';

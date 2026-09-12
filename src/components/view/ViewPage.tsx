@@ -1113,12 +1113,18 @@ export function ViewPage() {
     // Fire the export beacon up front. On iOS the share sheet ("Save Image")
     // suspends the page, and a sendBeacon issued after navigator.share resolves
     // often never leaves the device — so record the export before opening it.
-    sendExportBeacon(sorted.map((p) => p.id), {
-      sort: sortOption,
-      outlines: showSectionOverlays,
-      groupSpecial: groupSpecialAtEnd,
-      showStats: showStatsPanel,
-    });
+    sendExportBeacon(
+      sorted.map((p) => p.id),
+      {
+        sort: sortOption,
+        outlines: showSectionOverlays,
+        groupSpecial: groupSpecialAtEnd,
+        showStats: showStatsPanel,
+      },
+      // The live placement map, so the export snapshots ids and sections
+      // together and nothing reads as "not in a section" in the admin.
+      sections,
+    );
     try {
       // The detailed-stats panel is redrawn natively onto the export canvas (see
       // exportStats.ts) — NOT rasterized from the DOM. html-to-image relies on an
