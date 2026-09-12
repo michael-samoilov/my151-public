@@ -147,7 +147,9 @@ const SPAN = 'col-span-2';
 function Card({ tool, onPress, wide, reserve }: CardProps) {
   const panel = 'relative block w-full text-left bg-primary text-white no-underline';
   const body = wide ? <WideBody tool={tool} /> : <TallBody tool={tool} />;
-  const style = wide ? undefined : { aspectRatio: PANEL_ASPECT, borderRadius: RADIUS };
+  // `--panel-ar` is set on the grid: the tall proportion on a phone, a wide low
+  // band on desktop (see `.hub-grid` in index.css). PANEL_ASPECT is the fallback.
+  const style = wide ? undefined : { aspectRatio: `var(--panel-ar, ${PANEL_ASPECT})`, borderRadius: RADIUS };
   const wideStyle = { borderRadius: `min(${U(14)}, 18px)` };
   const inner = onPress ? (
     <button
@@ -176,9 +178,14 @@ function Card({ tool, onPress, wide, reserve }: CardProps) {
     </div>
   );
 
+  // `hub-card` is the hover trigger and stays put. On hover only the screenshots
+  // inside the panel float up and settle back — the red panel and the caption do
+  // not move. The motion is on the artwork (`.hub-float`), so a stationary
+  // trigger keeps the pointer from chasing a target that slides out from under
+  // it, and there is no hover flicker. The float lives in `index.css`.
   return (
     <div
-      className={`flex flex-col ${wide ? SPAN : ''}`}
+      className={`hub-card flex flex-col ${wide ? SPAN : ''}`}
       style={{ containerType: 'inline-size' }}
     >
       <div style={{ paddingTop: reserve ? `calc(${U(POP_TOP)} * var(--art))` : 0 }}>{inner}</div>
@@ -273,6 +280,18 @@ function Caption({ tool }: { tool: Tool }) {
  * an image the browser has already fetched.
  */
 function Artwork({ tool }: { tool: Tool }) {
+  // Which shot is floating, or none. Driven by pointer events on the stationary
+  // hit twins below, not by `:has(:hover)`: the CSS approach silently no-ops on
+  // older Chrome and pre-16.4 iOS Safari, so this drives it in JS instead. The
+  // guard is unchanged — the handlers sit on the twins, which never move, so a
+  // floating shot can never move out from under the pointer and toggle itself.
+  const [floated, setFloated] = useState<number | null>(null);
+  // Both clip boxes reach far past the panel's top-left edge, mostly over empty
+  // space. That whole rectangle used to be part of the link, so a click well
+  // above or beside the artwork still navigated. `pointerEvents: 'none'` here
+  // hands those transparent margins back to the page; the screenshots below
+  // re-enable events on themselves, so the link's hit target is the panel and
+  // the two screenshots, nothing more.
   const box = {
     position: 'absolute',
     top: `calc((${U(POP_TOP)} * var(--art) + ${BLEED}) * -1)`,
@@ -280,21 +299,45 @@ function Artwork({ tool }: { tool: Tool }) {
     right: 0,
     bottom: 0,
     overflow: 'hidden',
+    pointerEvents: 'none',
   } as const;
-  const place = (i: number) => {
+  // The rest geometry of a shot: where it sits and how it tilts, with no float.
+  const geom = (i: number) => {
     const f = FAN[i];
     return {
       position: 'absolute' as const,
       left: `calc(${BLEED} + ${U(f.offset)})`,
       top: `calc(${BLEED} + ${U(SHOT_TOP)} + ${U(f.drop)})`,
       width: `calc(${U(SHOT_W)} * var(--art))`,
-      transform: `rotate(${f.tilt}deg)`,
-      transformOrigin: '0 0',
+      transformOrigin: '0 0' as const,
       borderRadius: `calc(${U(SHOT_W)} * var(--art) * ${PHONE_RADIUS})`,
     };
   };
+  // The floating shots carry `--hf`, the per-shot hover float that `index.css`
+  // sets to 0 at rest and a lift on hover. It sits ahead of the rotate, so the
+  // shot rises straight up in screen space whatever its tilt. The clip box does
+  // not move, so the shot slides up inside it and reveals the part of itself
+  // that sits hidden below the card's bottom edge.
+  const floatTransform = (i: number) => `translateY(var(--hf, 0px)) rotate(${FAN[i].tilt}deg)`;
+  const restTransform = (i: number) => `rotate(${FAN[i].tilt}deg)`;
+  // `data-float` names the floating shot; `index.css` reads it to set `--hf`.
+  // `display: contents` keeps this wrapper out of the box tree, so the clip
+  // boxes still position against the panel. Images are `draggable={false}` so a
+  // drag grabs nothing — otherwise the browser drags the card link and shows a
+  // ghost of the whole card, which reads as one merged image.
   return (
-    <>
+    <span data-artwork data-float={floated ?? undefined} style={{ display: 'contents' }}>
+      {/* The stage. A fixed-size box pinned to the panel's bottom-left that owns
+          the screenshots' size: everything inside is a share of the STAGE's
+          width, not the card's, so widening or shortening the red panel around it
+          moves and resizes nothing here. Full width (= the panel) on a phone;
+          narrower on desktop (see `.hub-stage`), so the card can grow wide and
+          short while the screenshots keep the size and left-edge position they
+          have now — the extra width becomes red to their right. */}
+      <span className="hub-stage">
+      {/* Shadows. Masked so they fade out near the top break-out rather than
+          ending on a straight line at the clip edge. Each rides its own shot's
+          `--hf`, so a shadow floats with the shot it belongs to. */}
       <span
         style={{
           ...box,
@@ -306,32 +349,67 @@ function Artwork({ tool }: { tool: Tool }) {
           <span
             key={f.tilt}
             aria-hidden
-            className="block"
-            style={{ ...place(i), boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)' }}
+            data-shot={i}
+            className="hub-float-shot block"
+            style={{ ...geom(i), transform: floatTransform(i), boxShadow: '0 8px 20px -6px rgba(10, 10, 10, 0.35)' }}
           >
-            <img src={tool.shots![i]} alt="" className="block w-full invisible" />
+            <img src={tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
           </span>
         ))}
       </span>
+      {/* The visible shots. They float, so they carry no pointer events — the
+          stationary hit layer below owns hovering and clicking. */}
       <span style={box}>
         {FAN.map((f, i) => (
           <span
             key={f.tilt}
-            className="block overflow-hidden border border-neutral-300 bg-background"
-            style={place(i)}
+            data-shot={i}
+            className="hub-float-shot block overflow-hidden border border-neutral-300 bg-background"
+            style={{ ...geom(i), transform: floatTransform(i) }}
           >
             {/* Not lazy: every card sits in the first viewport at every
                 width, and these are the page's largest paint. */}
             <img
               src={tool.shots![i]}
               alt={tool.alts?.[i] ?? ''}
+              draggable={false}
               decoding="async"
               className="block w-full"
             />
           </span>
         ))}
       </span>
-    </>
+      {/* The hit layer: one transparent twin per shot, at the shot's REST
+          footprint, and it never moves. Its pointer handlers float that one shot
+          and drop it again. Because the thing you hover stays put while the shot
+          lifts, the shot can never rise out from under the pointer and toggle
+          itself — the guard against hover flicker. The twins are the click
+          target too, so a click on a screenshot still follows the card's link;
+          the front twin sits last, so it wins the overlap. */}
+      <span style={box}>
+        {FAN.map((f, i) => (
+          <span
+            key={f.tilt}
+            data-shot={i}
+            data-hit
+            className="hub-hit block"
+            style={{ ...geom(i), transform: restTransform(i), pointerEvents: 'auto' }}
+            // Float for a mouse or pen, never a touch tap (which would set the
+            // state and, with no matching leave, leave a shot stuck up). This
+            // replaces a CSS `(hover: hover) and (pointer: fine)` gate, which a
+            // touchscreen laptop fails even when a mouse is in use.
+            onPointerEnter={(e) => { if (e.pointerType !== 'touch') setFloated(i); }}
+            onPointerLeave={() => setFloated((prev) => (prev === i ? null : prev))}
+          >
+            {/* An invisible copy of the shot gives the twin the shot's exact
+                height, so the hit area matches the screenshot's footprint. The
+                browser has already decoded this image, so it costs no fetch. */}
+            <img src={tool.shots![i]} alt="" draggable={false} className="block w-full invisible" />
+          </span>
+        ))}
+      </span>
+      </span>
+    </span>
   );
 }
 
@@ -386,17 +464,21 @@ export function HomePage() {
         },
       }
     : null;
-  // Desktop gives every tool its own column, so the rail is one row whatever
-  // the count. On a phone it is two up, which leaves the last card alone when
-  // the count is odd — that is the card that spans instead.
-  const gridStyle = { '--tool-cols': tools.length } as React.CSSProperties;
+  // Desktop lays the tools on one row that fills the width: three cards spread
+  // to where a fourth card's right edge would sit. The cards go wide and short
+  // so the red reads as a low band, not a block; the screenshots do not change,
+  // because each renders in a fixed-size stage pinned to its card's bottom-left
+  // (see `.hub-stage`). On a phone it is two up, which leaves the last card alone
+  // when the count is odd — that is the card that spans instead.
+  const desktopCols = tools.length;
+  const gridStyle = { '--tool-cols': desktopCols } as React.CSSProperties;
   // The wide bar is a phone shape only, and the two shapes are different markup
   // rather than different CSS, so exactly one of them mounts. That is what
   // `useIsDesktop` is for elsewhere in this app; the alternative is rendering
   // both and hiding one, which duplicates the call to action's button.
   const isDesktop = useIsDesktop();
   const spansOnPhone = !isDesktop && tools.length % 2 === 1;
-  const reserves = reserveByRow(tools, isDesktop ? tools.length : 2);
+  const reserves = reserveByRow(tools, isDesktop ? desktopCols : 2);
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -469,7 +551,7 @@ export function HomePage() {
                 `sm:` then beats its own `md:` override above 1024px. Bounding the
                 tablet rules at md means the two bands cannot overlap at all. */}
             <div
-              className="grid grid-cols-2 md:grid-cols-[repeat(var(--tool-cols),minmax(0,1fr))] gap-x-3.5 gap-y-6 sm:max-md:gap-x-7 md:gap-x-6 [--art:0.92]"
+              className="hub-grid grid grid-cols-2 md:grid-cols-[repeat(var(--tool-cols),minmax(0,1fr))] gap-x-3.5 gap-y-6 sm:max-md:gap-x-7 md:gap-x-6 [--art:0.92]"
               style={gridStyle}
             >
               {tools.map((tool, i) => (
