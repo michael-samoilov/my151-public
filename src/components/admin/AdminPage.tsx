@@ -974,30 +974,36 @@ function DetailHeader({ rec, onBack }: { rec: HeaderRec; onBack: () => void }) {
 }
 
 /** Two compact, fixed-width stat chips that flank the scrubber rail (or, for a
- *  single-session browser, split the width where the scrubber would be). */
-function railChipStyle(full?: boolean): string {
-  return `flex h-9 flex-col justify-center rounded-lg border border-border bg-card px-2 text-center tabular-nums ${full ? 'flex-1' : ''}`;
+ *  single-session browser, split the width where the scrubber would be). Both
+ *  share one two-row layout with fixed row heights, so the top values and the
+ *  bottom captions line up across the pair. */
+function RailStat({ top, bottom, width, full }: { top: React.ReactNode; bottom: React.ReactNode; width: string; full?: boolean }) {
+  return (
+    <div className={`flex h-9 flex-col items-center justify-center rounded-lg border border-border bg-card px-2 text-center tabular-nums ${full ? 'flex-1' : width}`}>
+      <div className="flex h-[16px] items-center leading-none">{top}</div>
+      <div className="flex h-[11px] items-center text-[0.6rem] leading-none text-muted-foreground">{bottom}</div>
+    </div>
+  );
 }
 function SessionsChip({ sessions, days, full }: { sessions: number; days: number; full?: boolean }) {
   return (
-    <div className={`${railChipStyle(full)} ${full ? '' : 'w-[82px]'}`}>
-      <div className="leading-none">
-        <span className="text-sm font-bold">{sessions}</span> <span className="text-[0.6rem] text-muted-foreground">{sessions === 1 ? 'session' : 'sessions'}</span>
-      </div>
-      <div className="text-[0.6rem] text-muted-foreground">{days === 1 ? '1 day' : `${days} days`}</div>
-    </div>
+    <RailStat
+      width="w-[82px]"
+      full={full}
+      top={
+        <>
+          <span className="text-sm font-bold">{sessions}</span>&nbsp;<span className="text-[0.6rem] text-muted-foreground">{sessions === 1 ? 'session' : 'sessions'}</span>
+        </>
+      }
+      bottom={days === 1 ? '1 day' : `${days} days`}
+    />
   );
 }
 function TimeChip({ ms, full }: { ms: number; full?: boolean }) {
   const mins = Math.round(ms / 60000);
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return (
-    <div className={`${railChipStyle(full)} ${full ? '' : 'w-[72px]'}`}>
-      <div className="text-[0.8rem] font-bold leading-none">{h > 0 ? `${h}h ${m}m` : `${m}m`}</div>
-      <div className="text-[0.6rem] text-muted-foreground">time spent</div>
-    </div>
-  );
+  return <RailStat width="w-[72px]" full={full} top={<span className="text-[0.8rem] font-bold">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>} bottom="time spent" />;
 }
 
 /** Dex user detail page: session timeline + the build at the scrubbed moment,
