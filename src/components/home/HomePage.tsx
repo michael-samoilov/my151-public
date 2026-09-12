@@ -327,13 +327,13 @@ function Artwork({ tool }: { tool: Tool }) {
   // ghost of the whole card, which reads as one merged image.
   return (
     <span data-artwork data-float={floated ?? undefined} style={{ display: 'contents' }}>
-      {/* The stage. A fixed-size box pinned to the panel's bottom-right that owns
+      {/* The stage. A fixed-size box pinned to the panel's bottom-left that owns
           the screenshots' size: everything inside is a share of the STAGE's
           width, not the card's, so widening or shortening the red panel around it
           moves and resizes nothing here. Full width (= the panel) on a phone;
           narrower on desktop (see `.hub-stage`), so the card can grow wide and
-          short while the screenshots keep the size and bottom-right position they
-          have now. */}
+          short while the screenshots keep the size and left-edge position they
+          have now — the extra width becomes red to their right. */}
       <span className="hub-stage">
       {/* Shadows. Masked so they fade out near the top break-out rather than
           ending on a straight line at the clip edge. Each rides its own shot's
@@ -467,7 +467,7 @@ export function HomePage() {
   // Desktop lays the tools on one row that fills the width: three cards spread
   // to where a fourth card's right edge would sit. The cards go wide and short
   // so the red reads as a low band, not a block; the screenshots do not change,
-  // because each renders in a fixed-size stage pinned to its card's bottom-right
+  // because each renders in a fixed-size stage pinned to its card's bottom-left
   // (see `.hub-stage`). On a phone it is two up, which leaves the last card alone
   // when the count is odd — that is the card that spans instead.
   const desktopCols = tools.length;

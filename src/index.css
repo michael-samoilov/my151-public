@@ -397,7 +397,7 @@ img {
 
 /* Desktop card shape. The three cards fill the row and go wide and short, so the
  * red reads as a low band rather than a block. The screenshots do not change:
- * `.hub-stage` is a fixed-size box pinned to each card's bottom-right, and every
+ * `.hub-stage` is a fixed-size box pinned to each card's bottom-left, and every
  * screenshot measurement is a share of the stage, not the card. On a phone the
  * stage is the whole card and the card keeps its tall proportion, so nothing
  * moves there. `--panel-ar` is the panel's aspect ratio; the stage keeps the
@@ -407,7 +407,7 @@ img {
 }
 .hub-stage {
   position: absolute;
-  right: 0;
+  left: 0;
   bottom: 0;
   width: 100%;
   aspect-ratio: 166 / 100;
