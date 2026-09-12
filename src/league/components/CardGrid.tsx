@@ -62,6 +62,10 @@ const INSET_X = 0.1875; // 3px
 /** Cell sprite size; larger than the cell on purpose, as on the boards. */
 const SPRITE_REM = 3.25;
 
+/** The pokemon art's own resolution, in px. A sprite drawn at this size is 1x —
+ *  one image pixel per CSS pixel — so it stays crisp; past it, it upscales. */
+const SPRITE_NATIVE = 96;
+
 /**
  * How far a carried column lifts off the card.
  *
@@ -763,7 +767,7 @@ function PowerupButton({ kind, active, onPress, side }: {
  * it, which is a different layout wearing the same name.
  */
 function SlotHalf({
-  place, testId, half, heading, mirrored, pokemon, nameClass,
+  place, testId, half, heading, mirrored, pokemon,
   headClass, onPick, onRemove,
 }: {
   place: Placed | null;
@@ -773,7 +777,6 @@ function SlotHalf({
   /** The partner's block is the ace's turned over: name, sprite, heading. */
   mirrored: boolean;
   pokemon: ReturnType<typeof getPokemonById>;
-  nameClass: string;
   headClass: string;
   onPick: () => void;
   onRemove: () => void;
@@ -874,17 +877,20 @@ function SlotHalf({
       )}
     </span>
   );
-  // Blank when empty, but it still takes its line: that is what holds the
-  // heading where it sits once a Pokemon is chosen.
+  // The name in the heading's own all-caps, a size smaller than it used to be,
+  // so even the longest names clear the seam without truncating. Held to the
+  // sprite's width all the same — the two names are the runs either side of the
+  // seam, so one allowed to grow the block grows it into the other half.
   const name = (
-    // Held to the sprite's width. The two names are the runs either side of
-    // the seam, so a name allowed to grow the block grows it into the other
-    // half — at 320px that put one name through the other.
     <span
-      className={cn('relative block truncate leading-tight', nameClass)}
-      style={{ maxWidth: size, top: `${place?.nameShift ?? 0}px` }}
+      className={cn('relative block truncate', NAME_CLASS)}
+      style={{
+        maxWidth: size,
+        top: `${place?.nameShift ?? 0}px`,
+        color: pokemon ? 'var(--lg-band)' : undefined,
+      }}
     >
-      {pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : '\u00a0'}
+      {pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : ' '}
     </span>
   );
   return (
@@ -995,6 +1001,12 @@ function EmptyOutline() {
 const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
 const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
 const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
+// The name wears the heading's all-caps, weight and size, so it reads as part
+// of the same label. Its tracking is tighter, though: the heading is two short
+// words that a wide track sets off, while the name is one long word that the
+// same track would push past the seam — a ten-letter starter like Charmander
+// clears the box at this spacing and clips at the heading's.
+const NAME_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.02em] leading-[1.4] uppercase';
 
 /**
  * A heading, one line per run, drawn the same way in the slot and in the probe.
@@ -1019,13 +1031,6 @@ function HeadRuns({ lines, className, style, ...rest }: {
     </span>
   );
 }
-// The name is held to the sprite's width and truncates past it (see
-// `slotLayout.ts`), so its size is what decides how many letters clear the
-// seam. At 0.8125rem an eight-letter name filled the box to the last pixel and
-// a 2x display's subpixel rounding still clipped it; 0.75rem buys a few
-// letters' margin without reading as small.
-const ACE_NAME_CLASS = 'text-[0.75rem] font-medium';
-const PARTNER_NAME_CLASS = 'text-[0.75rem] font-medium';
 
 /**
  * Measure the slot, then solve both halves against what it actually is.
@@ -1083,9 +1088,14 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
       const key = [w, h, ace.head, ace.name, partner.head, partner.name].join('|');
       if (key === last) return;
       last = key;
-      // The lab picks the size by hand; the card solves for it.
+      // The lab picks the size by hand; the card solves for it. With the names
+      // gone the sprite would grow past its own art's 96px, so the card caps it
+      // there — a 1x draw, crisp, rather than a blurry fractional upscale.
       const lab = useSlotLab.getState();
-      setLayout({ ...placeSlot(w, h, ace, partner, lab.enabled ? lab.sprite : undefined), box: [w, h] });
+      setLayout({
+        ...placeSlot(w, h, ace, partner, lab.enabled ? lab.sprite : undefined, lab.enabled ? undefined : SPRITE_NATIVE),
+        box: [w, h],
+      });
       // The lab reads offsets as fractions of the slot, so it needs the slot.
       // Setting it always costs one shallow compare; the store ignores a
       // repeat of the same size.
@@ -1132,9 +1142,9 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
 function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setSignatureSeat = useLeagueStore((s) => s.setSignatureSeat);
   const setPartner = useLeagueStore((s) => s.setPartner);
-  // `pokemonLabel` reads the name store without subscribing to it, so the
-  // slot has to subscribe itself. Without this the name under the sprite did
-  // not follow a language change.
+  // `pokemonLabel` reads the name store without subscribing to it, so the slot
+  // subscribes itself: without this the name under the sprite did not follow a
+  // language change.
   useNamesVersion();
   const { card } = view;
   const line = card.signatureSeat !== null ? card.lines[card.signatureSeat - 1] : undefined;
@@ -1168,12 +1178,12 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap"
       >
         <HeadRuns lines={ACE_HEAD.lines} className={HEAD_CLASS} data-probe="ace-head" />
-        <span data-probe="ace-name" className={cn('inline-block leading-tight', ACE_NAME_CLASS)}>
-          {ace ? pokemonLabel(ace.id, ace.name).name : '\u00a0'}
+        <span data-probe="ace-name" className={cn('inline-block', NAME_CLASS)}>
+          {ace ? pokemonLabel(ace.id, ace.name).name : ' '}
         </span>
         <HeadRuns lines={PARTNER_HEAD.lines} className={HEAD_CLASS} data-probe="partner-head" />
-        <span data-probe="partner-name" className={cn('inline-block leading-tight', PARTNER_NAME_CLASS)}>
-          {partner ? pokemonLabel(partner.id, partner.name).name : '\u00a0'}
+        <span data-probe="partner-name" className={cn('inline-block', NAME_CLASS)}>
+          {partner ? pokemonLabel(partner.id, partner.name).name : ' '}
         </span>
       </span>
       {/* The seam is a drawn line, not a wall: a block's far corner is allowed
@@ -1202,7 +1212,6 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         heading={ACE_HEAD}
         mirrored={false}
         pokemon={ace}
-        nameClass={ACE_NAME_CLASS}
         headClass={HEAD_CLASS}
         onPick={() => openLeagueBrowser(cardIndex, 'signature')}
         onRemove={() => setSignatureSeat(cardIndex, null, null)}
@@ -1214,7 +1223,6 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         heading={PARTNER_HEAD}
         mirrored
         pokemon={partner}
-        nameClass={PARTNER_NAME_CLASS}
         headClass={HEAD_CLASS}
         onPick={() => openLeagueBrowser(cardIndex, 'partner')}
         onRemove={() => setPartner(cardIndex, null)}
@@ -1307,7 +1315,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     >
       {!move && <EmptyOutline />}
       <span
-        className="flex shrink-0 flex-col items-center"
+        className="flex shrink-0 flex-col items-center justify-center"
         style={{ width: MARK_COL }}
       >
         {/* The disc wears the move's own type, not the gym's — a TM is the
@@ -1360,8 +1368,8 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
               viewport the box cannot hold the longest of them however far
               left the text starts. */}
           <span
-            className="min-w-0 max-w-full truncate text-left text-[0.6875rem] leading-[1.15]"
-            style={{ paddingRight: MARK_TRAIL }}
+            className={cn('min-w-0 max-w-full truncate text-left', NAME_CLASS)}
+            style={{ paddingRight: MARK_TRAIL, color: cardShades(move.type).band }}
           >
             {move.name}
           </span>
@@ -1472,7 +1480,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       {/* The same column the TM slot uses, so the hexagon sits under the disc
           and the word under the word. */}
       <span
-        className="flex shrink-0 flex-col items-center"
+        className="flex shrink-0 flex-col items-center justify-center"
         style={{ width: MARK_COL }}
       >
         {/* Drawn the way the TM disc is drawn: an outline in the type's own
@@ -1502,24 +1510,33 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             strokeWidth={name ? 2.4 : 8 / 3}
           />
         </svg>
+        {/* The name ends in "Badge", so this word is redundant the moment a
+            name is typed. It collapses away then — a grid row eased from 1fr
+            to 0fr takes its height smoothly whatever it measures — and the
+            hexagon, centred in the column, eases into the space it leaves. */}
         <span
-          className={cn('-mt-[0.0625rem]', MARK_LABEL_CLASS)}
-          style={{ color: name ? 'var(--lg-band)' : 'var(--lg-hint)' }}
+          className="grid w-full justify-items-center transition-[grid-template-rows] duration-300 ease-out"
+          style={{ gridTemplateRows: name ? '0fr' : '1fr' }}
         >
-          BADGE
+          <span
+            className={cn('-mt-[0.0625rem] overflow-hidden transition-opacity duration-300 ease-out', MARK_LABEL_CLASS)}
+            style={{ color: 'var(--lg-hint)', opacity: name ? 0 : 1, minHeight: 0 }}
+          >
+            BADGE
+          </span>
         </span>
       </span>
       <div
         ref={textRef}
         // Three lines. The box is 1.5 rows -- 4.3125rem -- and three lines of
-        // this size come to 2.46rem, so the height is not what limits the
-        // name; the width beside the hexagon is. Capping at two lines threw
-        // away a third of the room for nothing, and at a 320px viewport that
-        // left six characters. The height is still fixed rather than free, so
+        // this all-caps size come to ~2.23rem, so the height is not what limits
+        // the name; the width beside the hexagon is. Capping at two lines threw
+        // away a third of the room for nothing, and at a narrow width that left
+        // six characters. The height is still fixed rather than free, so
         // `scrollHeight` has something to exceed and a name cannot grow past
         // the box.
-        className="min-w-0 flex-1 overflow-hidden pr-[0.25rem] text-left text-[0.65625rem] leading-tight"
-        style={{ maxHeight: `${3 * 0.65625 * 1.25}rem` }}
+        className={cn('min-w-0 flex-1 overflow-hidden pr-[0.25rem] text-left', NAME_CLASS)}
+        style={{ maxHeight: `${3 * 0.53125 * 1.4}rem`, color: 'var(--lg-band)' }}
       >
         <span
           ref={fieldRef}
@@ -1533,7 +1550,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           // sibling: an empty inline span is zero-wide, which leaves nothing
           // to tap and nowhere obvious for the caret to sit.
           data-badge-field
-          data-placeholder="Badge Name"
+          data-placeholder="Name"
           className="outline-none"
         />
         {name ? <span> Badge</span> : null}
