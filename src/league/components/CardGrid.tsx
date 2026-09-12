@@ -14,7 +14,7 @@ import {
 } from '@dnd-kit/core';
 import { ArrowLeftRight, ArrowUpDown, Plus } from 'lucide-react';
 import { getPokemonById } from '@/hooks/usePokemonData';
-import { useNamesVersion } from '@/i18n';
+import { pokemonLabel, useNamesVersion } from '@/i18n';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -877,6 +877,22 @@ function SlotHalf({
       )}
     </span>
   );
+  // The name in the heading's own all-caps, a size smaller than it used to be,
+  // so even the longest names clear the seam without truncating. Held to the
+  // sprite's width all the same — the two names are the runs either side of the
+  // seam, so one allowed to grow the block grows it into the other half.
+  const name = (
+    <span
+      className={cn('relative block truncate', NAME_CLASS)}
+      style={{
+        maxWidth: size,
+        top: `${place?.nameShift ?? 0}px`,
+        color: pokemon ? 'var(--lg-band)' : undefined,
+      }}
+    >
+      {pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : ' '}
+    </span>
+  );
   return (
     <button
       type="button"
@@ -909,7 +925,7 @@ function SlotHalf({
         outlineColor: lab ? 'rgba(37,99,235,0.5)' : undefined,
       }}
     >
-      {mirrored ? <>{art}{label}</> : <>{label}{art}</>}
+      {mirrored ? <>{name}{art}{label}</> : <>{label}{art}{name}</>}
     </button>
   );
 }
@@ -985,6 +1001,12 @@ function EmptyOutline() {
 const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
 const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
 const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
+// The name wears the heading's all-caps, weight and size, so it reads as part
+// of the same label. Its tracking is tighter, though: the heading is two short
+// words that a wide track sets off, while the name is one long word that the
+// same track would push past the seam — a ten-letter starter like Charmander
+// clears the box at this spacing and clips at the heading's.
+const NAME_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.02em] leading-[1.4] uppercase';
 
 /**
  * A heading, one line per run, drawn the same way in the slot and in the probe.
@@ -1056,10 +1078,8 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
         const r = probe.querySelector<HTMLElement>(sel)!.getBoundingClientRect();
         return [r.width / zoom, r.height / zoom];
       };
-      // The ace and partner show no name, so the solver reserves no room for
-      // one: the sprite and its heading centre in the half by themselves.
-      const ace: Runs = { head: run('[data-probe="ace-head"]'), name: [0, 0] };
-      const partner: Runs = { head: run('[data-probe="partner-head"]'), name: [0, 0] };
+      const ace: Runs = { head: run('[data-probe="ace-head"]'), name: run('[data-probe="ace-name"]') };
+      const partner: Runs = { head: run('[data-probe="partner-head"]'), name: run('[data-probe="partner-name"]') };
       // The key covers the text as well as the box. Keying on the box alone
       // meant the first measurement — taken before the webfont had swapped —
       // was the only one that ever ran: the box never changed afterwards, so
@@ -1122,6 +1142,10 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
 function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setSignatureSeat = useLeagueStore((s) => s.setSignatureSeat);
   const setPartner = useLeagueStore((s) => s.setPartner);
+  // `pokemonLabel` reads the name store without subscribing to it, so the slot
+  // subscribes itself: without this the name under the sprite did not follow a
+  // language change.
+  useNamesVersion();
   const { card } = view;
   const line = card.signatureSeat !== null ? card.lines[card.signatureSeat - 1] : undefined;
   const shown = signatureMember(line, card.signatureId ?? null);
@@ -1145,17 +1169,22 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
       }}
     >
       {!(ace || partner) && <EmptyOutline />}
-      {/* The two headings the solver needs the size of, drawn once and never
+      {/* The four text runs the solver needs the size of, drawn once and never
           shown. Measuring them beats assuming them: they are text, so their
-          widths move with the font, the language and the root font size. The
-          names are gone, so only the headings are measured now. */}
+          widths move with the font, the language and the root font size. */}
       <span
         data-slot-probe
         aria-hidden="true"
         className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap"
       >
         <HeadRuns lines={ACE_HEAD.lines} className={HEAD_CLASS} data-probe="ace-head" />
+        <span data-probe="ace-name" className={cn('inline-block', NAME_CLASS)}>
+          {ace ? pokemonLabel(ace.id, ace.name).name : ' '}
+        </span>
         <HeadRuns lines={PARTNER_HEAD.lines} className={HEAD_CLASS} data-probe="partner-head" />
+        <span data-probe="partner-name" className={cn('inline-block', NAME_CLASS)}>
+          {partner ? pokemonLabel(partner.id, partner.name).name : ' '}
+        </span>
       </span>
       {/* The seam is a drawn line, not a wall: a block's far corner is allowed
           a few pixels past it, because that corner holds a sprite's
