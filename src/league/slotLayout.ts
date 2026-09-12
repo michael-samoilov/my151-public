@@ -231,7 +231,7 @@ const hold = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(v, Mat
  * them to buy an alignment is the wrong trade — and the two names take half
  * the difference each instead.
  */
-export function placeSlot(w: number, h: number, ace: Runs, partner: Runs, fixed?: number): Slot {
+export function placeSlot(w: number, h: number, ace: Runs, partner: Runs, fixed?: number, max?: number): Slot {
   const nameH = Math.max(ace.name[1], partner.name[1]);
   const headH = Math.max(ace.head[1], partner.head[1]);
   const floor = Math.round((TEAM_SPRITE / SLOT_H) * h);
@@ -246,7 +246,11 @@ export function placeSlot(w: number, h: number, ace: Runs, partner: Runs, fixed?
    * line is a gap between a sprite and its name, and reads as a mistake. So
    * the sprite gives up the last few pixels instead.
    */
-  const maxShift = nameH / 6;
+  // The shift budget exists only to pull the two names onto one baseline. With
+  // no name (nameH 0), there is no baseline to meet, so the block is free to sit
+  // where its sprite and heading want it, and the sprite is not shrunk to buy an
+  // alignment that no longer matters.
+  const maxShift = nameH > 0 ? nameH / 6 : Infinity;
 
   /** Where the ace's sprite centre goes, and what it costs the names. */
   const solve = (sprite: number) => {
@@ -269,7 +273,12 @@ export function placeSlot(w: number, h: number, ace: Runs, partner: Runs, fixed?
     return { y, x: hold(tx, xLo, xHi), shift, fits: xLo <= xHi && Math.abs(shift) <= maxShift };
   };
 
+  // `max` caps the sprite at its own art's native size, so a slot with room to
+  // spare (a nameless one) draws the sprite 1:1 rather than upscaling it past
+  // 1x into a blurry fractional zoom. It binds only when the fit would exceed
+  // it; a smaller slot still solves for the largest sprite that fits.
   let sprite = fixed ?? Math.round((STANDARD_SPRITE / SLOT_H) * h);
+  if (max !== undefined) sprite = Math.min(sprite, max);
   if (fixed === undefined) {
     while (sprite > floor && !solve(sprite).fits) sprite -= 1;
   }

@@ -14,7 +14,7 @@ import {
 } from '@dnd-kit/core';
 import { ArrowLeftRight, ArrowUpDown, Plus } from 'lucide-react';
 import { getPokemonById } from '@/hooks/usePokemonData';
-import { pokemonLabel, useNamesVersion } from '@/i18n';
+import { useNamesVersion } from '@/i18n';
 import { RedXIcon } from '@/components/browser/EvoLineCard';
 import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
@@ -61,6 +61,10 @@ const INSET_Y = 0.375; // 6px
 const INSET_X = 0.1875; // 3px
 /** Cell sprite size; larger than the cell on purpose, as on the boards. */
 const SPRITE_REM = 3.25;
+
+/** The pokemon art's own resolution, in px. A sprite drawn at this size is 1x —
+ *  one image pixel per CSS pixel — so it stays crisp; past it, it upscales. */
+const SPRITE_NATIVE = 96;
 
 /**
  * How far a carried column lifts off the card.
@@ -763,7 +767,7 @@ function PowerupButton({ kind, active, onPress, side }: {
  * it, which is a different layout wearing the same name.
  */
 function SlotHalf({
-  place, testId, half, heading, mirrored, pokemon, nameClass,
+  place, testId, half, heading, mirrored, pokemon,
   headClass, onPick, onRemove,
 }: {
   place: Placed | null;
@@ -773,7 +777,6 @@ function SlotHalf({
   /** The partner's block is the ace's turned over: name, sprite, heading. */
   mirrored: boolean;
   pokemon: ReturnType<typeof getPokemonById>;
-  nameClass: string;
   headClass: string;
   onPick: () => void;
   onRemove: () => void;
@@ -874,19 +877,6 @@ function SlotHalf({
       )}
     </span>
   );
-  // Blank when empty, but it still takes its line: that is what holds the
-  // heading where it sits once a Pokemon is chosen.
-  const name = (
-    // Held to the sprite's width. The two names are the runs either side of
-    // the seam, so a name allowed to grow the block grows it into the other
-    // half — at 320px that put one name through the other.
-    <span
-      className={cn('relative block truncate leading-tight', nameClass)}
-      style={{ maxWidth: size, top: `${place?.nameShift ?? 0}px` }}
-    >
-      {pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : '\u00a0'}
-    </span>
-  );
   return (
     <button
       type="button"
@@ -919,7 +909,7 @@ function SlotHalf({
         outlineColor: lab ? 'rgba(37,99,235,0.5)' : undefined,
       }}
     >
-      {mirrored ? <>{name}{art}{label}</> : <>{label}{art}{name}</>}
+      {mirrored ? <>{art}{label}</> : <>{label}{art}</>}
     </button>
   );
 }
@@ -1019,13 +1009,6 @@ function HeadRuns({ lines, className, style, ...rest }: {
     </span>
   );
 }
-// The name is held to the sprite's width and truncates past it (see
-// `slotLayout.ts`), so its size is what decides how many letters clear the
-// seam. At 0.8125rem an eight-letter name filled the box to the last pixel and
-// a 2x display's subpixel rounding still clipped it; 0.75rem buys a few
-// letters' margin without reading as small.
-const ACE_NAME_CLASS = 'text-[0.75rem] font-medium';
-const PARTNER_NAME_CLASS = 'text-[0.75rem] font-medium';
 
 /**
  * Measure the slot, then solve both halves against what it actually is.
@@ -1073,8 +1056,10 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
         const r = probe.querySelector<HTMLElement>(sel)!.getBoundingClientRect();
         return [r.width / zoom, r.height / zoom];
       };
-      const ace: Runs = { head: run('[data-probe="ace-head"]'), name: run('[data-probe="ace-name"]') };
-      const partner: Runs = { head: run('[data-probe="partner-head"]'), name: run('[data-probe="partner-name"]') };
+      // The ace and partner show no name, so the solver reserves no room for
+      // one: the sprite and its heading centre in the half by themselves.
+      const ace: Runs = { head: run('[data-probe="ace-head"]'), name: [0, 0] };
+      const partner: Runs = { head: run('[data-probe="partner-head"]'), name: [0, 0] };
       // The key covers the text as well as the box. Keying on the box alone
       // meant the first measurement — taken before the webfont had swapped —
       // was the only one that ever ran: the box never changed afterwards, so
@@ -1083,9 +1068,14 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
       const key = [w, h, ace.head, ace.name, partner.head, partner.name].join('|');
       if (key === last) return;
       last = key;
-      // The lab picks the size by hand; the card solves for it.
+      // The lab picks the size by hand; the card solves for it. With the names
+      // gone the sprite would grow past its own art's 96px, so the card caps it
+      // there — a 1x draw, crisp, rather than a blurry fractional upscale.
       const lab = useSlotLab.getState();
-      setLayout({ ...placeSlot(w, h, ace, partner, lab.enabled ? lab.sprite : undefined), box: [w, h] });
+      setLayout({
+        ...placeSlot(w, h, ace, partner, lab.enabled ? lab.sprite : undefined, lab.enabled ? undefined : SPRITE_NATIVE),
+        box: [w, h],
+      });
       // The lab reads offsets as fractions of the slot, so it needs the slot.
       // Setting it always costs one shallow compare; the store ignores a
       // repeat of the same size.
@@ -1132,10 +1122,6 @@ function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
 function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setSignatureSeat = useLeagueStore((s) => s.setSignatureSeat);
   const setPartner = useLeagueStore((s) => s.setPartner);
-  // `pokemonLabel` reads the name store without subscribing to it, so the
-  // slot has to subscribe itself. Without this the name under the sprite did
-  // not follow a language change.
-  useNamesVersion();
   const { card } = view;
   const line = card.signatureSeat !== null ? card.lines[card.signatureSeat - 1] : undefined;
   const shown = signatureMember(line, card.signatureId ?? null);
@@ -1159,22 +1145,17 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
       }}
     >
       {!(ace || partner) && <EmptyOutline />}
-      {/* The four text runs the solver needs the size of, drawn once and never
+      {/* The two headings the solver needs the size of, drawn once and never
           shown. Measuring them beats assuming them: they are text, so their
-          widths move with the font, the language and the root font size. */}
+          widths move with the font, the language and the root font size. The
+          names are gone, so only the headings are measured now. */}
       <span
         data-slot-probe
         aria-hidden="true"
         className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap"
       >
         <HeadRuns lines={ACE_HEAD.lines} className={HEAD_CLASS} data-probe="ace-head" />
-        <span data-probe="ace-name" className={cn('inline-block leading-tight', ACE_NAME_CLASS)}>
-          {ace ? pokemonLabel(ace.id, ace.name).name : '\u00a0'}
-        </span>
         <HeadRuns lines={PARTNER_HEAD.lines} className={HEAD_CLASS} data-probe="partner-head" />
-        <span data-probe="partner-name" className={cn('inline-block leading-tight', PARTNER_NAME_CLASS)}>
-          {partner ? pokemonLabel(partner.id, partner.name).name : '\u00a0'}
-        </span>
       </span>
       {/* The seam is a drawn line, not a wall: a block's far corner is allowed
           a few pixels past it, because that corner holds a sprite's
@@ -1202,7 +1183,6 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         heading={ACE_HEAD}
         mirrored={false}
         pokemon={ace}
-        nameClass={ACE_NAME_CLASS}
         headClass={HEAD_CLASS}
         onPick={() => openLeagueBrowser(cardIndex, 'signature')}
         onRemove={() => setSignatureSeat(cardIndex, null, null)}
@@ -1214,7 +1194,6 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         heading={PARTNER_HEAD}
         mirrored
         pokemon={partner}
-        nameClass={PARTNER_NAME_CLASS}
         headClass={HEAD_CLASS}
         onPick={() => openLeagueBrowser(cardIndex, 'partner')}
         onRemove={() => setPartner(cardIndex, null)}
