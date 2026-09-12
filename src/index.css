@@ -387,15 +387,12 @@ img {
  * names the hovered shot's index; the pointer handlers on the twins set it only
  * for a mouse or pen, so this needs no `:has()` and no hover/pointer media
  * query — both of which suppress the float on hybrid touch devices in use with
- * a mouse. Reduced motion keeps the reveal but drops the animation. */
+ * a mouse. The float always eases, by the owner's choice: the reveal is a small
+ * 12px rise that reads better animated, and snapping it under reduced motion was
+ * a worse experience than the gentle ease. */
 .hub-float-shot {
   transition: transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
   will-change: transform;
-}
-@media (prefers-reduced-motion: reduce) {
-  .hub-float-shot {
-    transition: none;
-  }
 }
 [data-artwork][data-float='0'] [data-shot='0'] {
   --hf: -12px;
