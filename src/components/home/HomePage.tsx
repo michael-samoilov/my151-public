@@ -41,7 +41,11 @@ const U = (n: number) => `${((n / 166) * 100).toFixed(3)}cqw`;
 
 /** Shorter than the artboard's 104: the copy no longer lives inside the panel. */
 const PANEL_ASPECT = '166 / 100';
-const RADIUS = U(14);
+// Capped in px so the wide desktop band does not take a huge rounded corner:
+// the radius is a share of the card's width, and a third-of-the-page card would
+// otherwise round ~34px, whose bottom-left curve exposes the screenshot behind
+// it. See `--shot-nudge`, which shifts the shots clear of this corner.
+const RADIUS = `min(${U(14)}, 14px)`;
 /** Caption type. Capped in px so a full-width card does not balloon it. */
 const TITLE = `min(${U(9.1)}, 19px)`;
 const BLURB = `min(${U(7.6)}, 15.6px)`;
@@ -306,7 +310,10 @@ function Artwork({ tool }: { tool: Tool }) {
     const f = FAN[i];
     return {
       position: 'absolute' as const,
-      left: `calc(${BLEED} + ${U(f.offset)})`,
+      // `--shot-nudge` (0 by default, a desktop value in `.hub-grid`) shifts the
+      // fan right so its bottom-left clears the card's rounded corner. Without it
+      // the shots break past that corner on the wide desktop band.
+      left: `calc(${BLEED} + ${U(f.offset)} + var(--shot-nudge, 0px))`,
       top: `calc(${BLEED} + ${U(SHOT_TOP)} + ${U(f.drop)})`,
       width: `calc(${U(SHOT_W)} * var(--art))`,
       transformOrigin: '0 0' as const,

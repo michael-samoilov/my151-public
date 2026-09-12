@@ -476,6 +476,7 @@ img {
  * phone proportion so the screenshots render at their current size. */
 .hub-grid {
   --panel-ar: 166 / 100;
+  --shot-nudge: 0px;
 }
 .hub-stage {
   position: absolute;
@@ -488,6 +489,7 @@ img {
 @media (min-width: 1024px) {
   .hub-grid {
     --panel-ar: 166 / 57;
+    --shot-nudge: 30px;
   }
   .hub-stage {
     width: 72%;
