@@ -263,19 +263,23 @@ function record(s: NewestSeed): ClientRecord {
 
 const records = NEWEST.map(record);
 
-// Build n trainer cards, each with a few seated evolution lines of real ids,
-// so the league scrubber shows a real board at each session.
-const LINE_POOL = [
-  [1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12], [13, 14, 15], [16, 17, 18],
-  [25, 26], [63, 64, 65], [92, 93, 94], [147, 148, 149],
-];
+// Build n trainer cards, each with distinct seated members (three lines of
+// 3, 3, 2 stages), so the league scrubber shows a real board and the seated
+// count grows with the cards — like real leagues, where members don't repeat.
 const CARD_TYPES = ['fire', 'water', 'grass', 'electric', 'psychic', 'rock', 'dragon', 'fairy', 'ghost', 'steel', 'ground', 'ice', 'bug', 'poison'];
+const SEATS_PER_CARD = 8; // 3 + 3 + 2
 function mkCards(n: number): import('../AdminPage').LeagueCard[] {
+  let id = 1;
+  const next = () => {
+    const v = id;
+    id = (id % 151) + 1; // stay within Kanto ids that have sprites
+    return v;
+  };
   return Array.from({ length: n }, (_, i) => {
     const l = [
-      { b: LINE_POOL[(i * 3) % LINE_POOL.length] },
-      { b: LINE_POOL[(i * 3 + 1) % LINE_POOL.length] },
-      { b: LINE_POOL[(i * 3 + 2) % LINE_POOL.length] },
+      { b: [next(), next(), next()] },
+      { b: [next(), next(), next()] },
+      { b: [next(), next()] },
     ];
     const card: import('../AdminPage').LeagueCard = {
       i,
@@ -283,9 +287,8 @@ function mkCards(n: number): import('../AdminPage').LeagueCard[] {
       t: CARD_TYPES[i % CARD_TYPES.length],
       l,
     };
-    // Most trainers mark an ace. Cycle the chosen line and use its final
-    // evolution, so the ring lands on varied lines and stages — never a fixed
-    // grid position. Skip roughly every third card.
+    // Most trainers mark an ace: the final evolution of a varied line. Skip
+    // roughly every third card.
     if (i % 3 !== 2) {
       const line = l[i % 3].b;
       card.aceId = line[line.length - 1];
@@ -298,7 +301,7 @@ function mkCards(n: number): import('../AdminPage').LeagueCard[] {
 function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAgo: number, hasDex: boolean): LeagueUser {
   const lastTs = NOW - hoursAgo * 3_600_000;
   const firstTs = lastTs - sess * DAY;
-  const latest = { cards, seats: cards * 6, typed: cards, named: cards, aces: cards, leagueNamed: cards >= 8 };
+  const latest = { cards, seats: cards * SEATS_PER_CARD, typed: cards, named: cards, aces: cards, leagueNamed: cards >= 8 };
   const region = c === 'US' || c === 'CA' ? 'N. America' : c === 'AU' ? 'Oceania' : 'Europe';
   const lang = c === 'IT' ? 'it-IT' : c === 'FR' ? 'fr-FR' : c === 'AU' ? 'en-AU' : 'en-US';
   return {
@@ -320,25 +323,29 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
     sessions: sess,
     maxSessionMs: 300_000,
     maxCards: cards,
-    maxSeats: cards * 6,
+    maxSeats: cards * SEATS_PER_CARD,
     latest,
     latestCards: mkCards(cards),
     exportsCard: cards >= 8 ? 1 : 0,
     exportsLeague: cards >= 11 ? 1 : 0,
     sessionLog: Array.from({ length: sess }, (_, i) => {
-      const c2 = Math.round((cards * (i + 1)) / sess);
+      const c2 = Math.max(1, Math.round((cards * (i + 1)) / sess));
+      // Older beacons carried only summary counts, no card structure. Model that
+      // for the earliest sessions, so the diff chart's structure-less fallback
+      // is exercised (bars from the seat-count delta, a consistent size line).
+      const hasStructure = i >= Math.floor(sess / 2);
       return {
         ts: firstTs + i * DAY,
         summary: {
           cards: c2,
-          seats: c2 * 6,
+          seats: c2 * SEATS_PER_CARD,
           typed: c2,
           named: c2,
           aces: c2,
           leagueNamed: false,
         },
         country: c,
-        cards: mkCards(c2),
+        cards: hasStructure ? mkCards(c2) : undefined,
       };
     }),
     order: hasDex ? 'dex-first' : undefined,
