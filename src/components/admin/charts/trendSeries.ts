@@ -3,13 +3,7 @@ import { DAY_MS, dayStart } from '../../../../api/_aggregate';
 export interface DailyPoint {
   day: number;
   dau: number;
-}
-
-export function rollingSum7(vals: number[]): (number | null)[] {
-  return vals.map((_, i) => {
-    if (i < 6) return null;
-    return vals.slice(i - 6, i + 1).reduce((a, b) => a + b, 0);
-  });
+  rolling7: number;
 }
 
 export function extendThroughToday(series: DailyPoint[], nowMs: number): DailyPoint[] {
@@ -19,7 +13,7 @@ export function extendThroughToday(series: DailyPoint[], nowMs: number): DailyPo
   if (last >= today) return series;
   const out = series.slice();
   for (let d = last + DAY_MS; d <= today; d += DAY_MS) {
-    out.push({ day: d, dau: 0 });
+    out.push({ day: d, dau: 0, rolling7: 0 });
   }
   return out;
 }
@@ -43,11 +37,11 @@ export function splitProvisional(
   };
 }
 
-/** Last-24h ≈ today's calendar DAU; last-7d ≈ sum of the last 7 calendar DAUs. */
+/** Last-24h is today's unique DAU. Last-7d is API unique WAU (`rolling7`). */
 export function windowCounts(series: DailyPoint[]): { hours24: number; days7: number | null } {
   if (series.length === 0) return { hours24: 0, days7: null };
-  const weekly = rollingSum7(series.map((p) => p.dau));
-  return { hours24: series[series.length - 1].dau, days7: weekly[weekly.length - 1] };
+  const last = series[series.length - 1];
+  return { hours24: last.dau, days7: last.rolling7 };
 }
 
 /**

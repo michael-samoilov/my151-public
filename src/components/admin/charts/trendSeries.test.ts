@@ -4,7 +4,6 @@ import {
   countLabelLayout,
   extendThroughToday,
   monthLabelTicks,
-  rollingSum7,
   splitProvisional,
   weekLineIndices,
   windowCounts,
@@ -12,27 +11,22 @@ import {
 
 const day = (n: number) => Date.UTC(2026, 8, n);
 
-describe('rollingSum7', () => {
-  it('stays null until a full 7-day window exists', () => {
-    expect(rollingSum7([1, 1, 1, 1, 1, 1, 2])).toEqual([null, null, null, null, null, null, 8]);
-  });
-});
-
 describe('extendThroughToday', () => {
   it('pads zero days from the last point through today', () => {
     const series = extendThroughToday(
       [
-        { day: day(10), dau: 4 },
-        { day: day(11), dau: 5 },
+        { day: day(10), dau: 4, rolling7: 4 },
+        { day: day(11), dau: 5, rolling7: 6 },
       ],
       day(13) + 18 * 3600_000,
     );
     expect(series.map((p) => p.day)).toEqual([day(10), day(11), day(12), day(13)]);
     expect(series.map((p) => p.dau)).toEqual([4, 5, 0, 0]);
+    expect(series.map((p) => p.rolling7)).toEqual([4, 6, 0, 0]);
   });
 
   it('leaves a series that already includes today alone', () => {
-    const src = [{ day: day(13), dau: 3 }];
+    const src = [{ day: day(13), dau: 3, rolling7: 8 }];
     expect(extendThroughToday(src, day(13) + 1000)).toEqual(src);
   });
 });
@@ -92,9 +86,13 @@ describe('splitProvisional', () => {
 });
 
 describe('windowCounts', () => {
-  it('reads today as 24h and the trailing 7-day sum as 7d', () => {
-    const series = Array.from({ length: 7 }, (_, i) => ({ day: day(7) + i * DAY_MS, dau: i + 1 }));
-    expect(windowCounts(series)).toEqual({ hours24: 7, days7: 28 });
+  it('reads today as 24h DAU and 7d as API unique WAU, not a DAU sum', () => {
+    const series = Array.from({ length: 7 }, (_, i) => ({
+      day: day(7) + i * DAY_MS,
+      dau: i + 1,
+      rolling7: 10 + i,
+    }));
+    expect(windowCounts(series)).toEqual({ hours24: 7, days7: 16 });
   });
 });
 

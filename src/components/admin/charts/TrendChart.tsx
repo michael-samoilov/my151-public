@@ -5,7 +5,6 @@ import {
   extendThroughToday,
   lastPointIsToday,
   monthLabelTicks,
-  rollingSum7,
   splitProvisional,
   weekLineIndices,
   windowCounts,
@@ -54,7 +53,7 @@ function LegendSwatch({ color }: { color: string }) {
 function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) {
   const days = series.map((p) => p.day);
   const daily = series.map((p) => p.dau);
-  const weekly = rollingSum7(daily);
+  const weekly = series.map((p) => p.rolling7);
   const labels = days.map(fmtDay);
   const provisional = lastPointIsToday(series, nowMs);
   const dailySplit = splitProvisional(daily, provisional);
@@ -210,7 +209,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
       ref={ref}
       className="h-[180px] w-full touch-none md:h-[220px]"
       role="img"
-      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}, with a trailing 7-day rolling sum. Last 24 hours ${counts.hours24}${counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}.`}
+      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}, with trailing 7-day unique active users. Last 24 hours ${counts.hours24}${counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}.`}
     />
   );
 }
