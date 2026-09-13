@@ -31,15 +31,8 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
       const faint = cssVar(el, '--color-muted-foreground', '#737373');
       const grid = cssVar(el, '--color-muted', '#f5f5f5');
       const red = cssVar(el, '--color-primary', '#dc2626');
-
-      const weekLines = {
-        silent: true,
-        symbol: 'none' as const,
-        animation: false,
-        label: { show: false },
-        lineStyle: { color: faint, width: 1, type: 'solid' as const, opacity: 0.35 },
-        data: weekMarks.map((i) => ({ xAxis: i })),
-      };
+      const weekSet = new Set(weekMarks);
+      const gridLine = { color: grid };
 
       return {
         animation: false,
@@ -62,6 +55,11 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
           axisPointer: { show: false },
           axisLine: { lineStyle: { color: grid } },
           axisTick: { show: false },
+          splitLine: {
+            show: true,
+            interval: (idx: number) => weekSet.has(idx),
+            lineStyle: gridLine,
+          },
           axisLabel: {
             color: faint,
             fontSize: 9,
@@ -76,7 +74,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
           type: 'value',
           min: 0,
           axisLabel: { color: faint, fontSize: 9 },
-          splitLine: { lineStyle: { color: grid } },
+          splitLine: { lineStyle: gridLine },
         },
         series: [
           {
@@ -87,7 +85,6 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             itemStyle: { color: faint },
             symbol: 'none',
             z: 2,
-            markLine: weekLines,
           },
           {
             name: 'daily today',
