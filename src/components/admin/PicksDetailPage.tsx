@@ -26,7 +26,7 @@ const STARTER_LABEL: Record<StarterType, string> = {
   other: 'Other',
 };
 
-type Cell = { member: LineMember; index: number; key: string };
+type Cell = { member: LineMember; index: number; linePicks: number; key: string };
 
 function packLineRows(lines: RankedLine[], cols = PICKS_COLS): { cells: Cell[]; spacers: number }[] {
   const rows: { cells: Cell[]; spacers: number }[] = [];
@@ -42,7 +42,12 @@ function packLineRows(lines: RankedLine[], cols = PICKS_COLS): { cells: Cell[]; 
       const piece = line.members.slice(at, at + cols);
       if (col > 0 && col + piece.length > cols) close(cols - col);
       for (const member of piece) {
-        current.push({ member, index: line.index, key: `${line.key}-${member.id}` });
+        current.push({
+          member,
+          index: line.index,
+          linePicks: line.picks,
+          key: `${line.key}-${member.id}`,
+        });
       }
       col += piece.length;
       if (col === cols) close(0);
@@ -52,30 +57,34 @@ function packLineRows(lines: RankedLine[], cols = PICKS_COLS): { cells: Cell[]; 
   return rows;
 }
 
-function SpriteCell({ member, index }: { member: LineMember; index: number }) {
+function SpriteCell({
+  member,
+  index,
+  linePicks,
+}: {
+  member: LineMember;
+  index: number;
+  linePicks: number;
+}) {
   const label = displayName(member.name);
   const title = `${label}: ${member.picks} dexes · ${formatIndex(index)} expected`;
+  const dropped = member.picks === 0 || member.picks < linePicks * 0.5;
   return (
-    <div
-      className={cn('flex min-w-0 flex-col items-center', member.picks === 0 && 'opacity-40')}
-      title={title}
-    >
-      <div className="flex aspect-square w-full items-center justify-center">
+    <div className={cn('flex min-w-0 flex-col items-center overflow-hidden', dropped && 'opacity-40')} title={title}>
+      <div className="flex aspect-square w-full min-w-0 items-center justify-center">
         {member.sprite ? (
           <img
             src={member.sprite}
             alt={title}
-            width={32}
-            height={32}
             loading="lazy"
-            className="h-full w-full object-contain"
+            className="max-h-full max-w-full object-contain"
             style={{ imageRendering: 'pixelated' }}
           />
         ) : (
           <span className="text-[0.5rem] text-muted-foreground">#{member.id}</span>
         )}
       </div>
-      <span className="text-[0.55rem] tabular-nums leading-none">{formatIndex(index)}</span>
+      <span className="max-w-full truncate text-[0.5rem] tabular-nums leading-none">{formatIndex(index)}</span>
     </div>
   );
 }
@@ -88,12 +97,17 @@ function LineGrid({ lines }: { lines: RankedLine[] }) {
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
       {rows.map((row, i) => (
-        <div key={i} className="grid grid-cols-6 gap-0.5">
+        <div key={i} className="grid min-w-0 grid-cols-6 gap-0.5">
           {row.cells.map((cell) => (
-            <SpriteCell key={cell.key} member={cell.member} index={cell.index} />
+            <SpriteCell
+              key={cell.key}
+              member={cell.member}
+              index={cell.index}
+              linePicks={cell.linePicks}
+            />
           ))}
           {Array.from({ length: row.spacers }, (_, s) => (
-            <div key={`s-${s}`} />
+            <div key={`s-${s}`} className="min-w-0" />
           ))}
         </div>
       ))}
@@ -103,12 +117,12 @@ function LineGrid({ lines }: { lines: RankedLine[] }) {
 
 function DualGrids({ columns }: { columns: DualColumn }) {
   return (
-    <div className="grid min-w-0 grid-cols-2 gap-x-2">
-      <div className="min-w-0">
+    <div className="grid min-w-0 grid-cols-2 gap-x-1.5">
+      <div className="min-w-0 overflow-hidden">
         <div className="mb-1 text-[0.65rem] font-semibold">Most</div>
         <LineGrid lines={columns.most} />
       </div>
-      <div className="min-w-0 border-l border-border pl-2">
+      <div className="min-w-0 overflow-hidden border-l border-border pl-1.5">
         <div className="mb-1 text-[0.65rem] font-semibold">Least</div>
         <LineGrid lines={columns.least} />
       </div>
@@ -173,12 +187,12 @@ export function PicksDetailPage({
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-4">
       <div
-        className="sticky z-[95] -mx-4 border-b border-border bg-background/95 px-4 py-2 backdrop-blur"
+        className="sticky z-[95] -mx-4 border-b border-border bg-background px-4 py-2"
         style={{ top: stickyOffset }}
       >
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <button
             type="button"
             onClick={onBack}
@@ -186,8 +200,8 @@ export function PicksDetailPage({
           >
             ‹ Back
           </button>
-          <span className="text-sm font-bold">What people pick</span>
-          <span className="text-xs text-muted-foreground">of {n} dexes</span>
+          <span className="min-w-0 flex-1 truncate text-center text-sm font-bold">What people pick</span>
+          <span className="hidden shrink-0 text-xs text-muted-foreground md:inline">of {n} dexes</span>
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <Seg
@@ -205,7 +219,7 @@ export function PicksDetailPage({
               aria-pressed={excludeOneOffs}
               onClick={() => setExcludeOneOffs((v) => !v)}
               className={cn(
-                'h-7 rounded-full border px-2.5 text-xs font-medium',
+                'h-7 shrink-0 rounded-full border px-2.5 text-xs font-medium',
                 excludeOneOffs
                   ? 'border-primary bg-primary text-primary-foreground'
                   : 'border-border bg-card text-muted-foreground hover:text-foreground',
@@ -218,7 +232,7 @@ export function PicksDetailPage({
         <p className="mt-1.5 text-[0.65rem] leading-snug text-muted-foreground">
           {offSection
             ? 'Placed off their default section. Evil-team chain mates (Rhyhorn with Rhydon) stay in-section.'
-            : "1.0× is the rate if picks were random among this section's evo lines. Left = most, right = least."}
+            : `1.0× = random rate among this section's evo lines. Left = most, right = least.`}
         </p>
       </div>
       {sections.length === 0 ? (

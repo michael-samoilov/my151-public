@@ -1625,7 +1625,7 @@ export function AdminPage() {
 
       <main
         className={cn(
-          'mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 pt-4 md:pb-8',
+          'mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col gap-4 px-4 pt-4 md:pb-8',
           detail?.kind === 'picks' ? 'pb-8' : 'pb-24',
         )}
       >
