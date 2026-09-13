@@ -6,6 +6,7 @@ import {
   inclusive,
   intersection,
   layoutCircles,
+  placeCircleLabels,
   placeRegionLabels,
 } from './vennAreas';
 
@@ -33,9 +34,13 @@ export function ToolVenn({
 
   const height = Math.round(Math.max(152, Math.min(width * 0.52, 220)));
   const areas = useMemo(() => areasFromRegions(era.regions, catalog), [era.regions, catalog]);
-  const circles = useMemo(() => layoutCircles(areas, width, height), [areas, width, height]);
+  const circles = useMemo(() => layoutCircles(areas, width, height, 28), [areas, width, height]);
   const labels = useMemo(
     () => placeRegionLabels(era.regions, catalog, circles, width, height),
+    [era.regions, catalog, circles, width, height],
+  );
+  const circleLabels = useMemo(
+    () => placeCircleLabels(era.regions, catalog, circles, width, height),
     [era.regions, catalog, circles, width, height],
   );
   const present = catalog.filter((t) => inclusive(t.id, era.regions) > 0);
@@ -115,6 +120,32 @@ export function ToolVenn({
                   {l.count}
                 </text>
               </g>
+            );
+          })}
+          {circleLabels.map((l) => {
+            const i = present.findIndex((t) => t.id === l.id);
+            return (
+              <text
+                key={l.id}
+                data-testid="cross-tool-circle-label"
+                x={l.x}
+                y={l.y}
+                textAnchor={l.anchor}
+                dominantBaseline="middle"
+                fontSize={12}
+                fontWeight={700}
+                fill={colorOf(l.id, i < 0 ? 0 : i)}
+                stroke="rgb(255, 255, 255)"
+                strokeWidth={3}
+                paintOrder="stroke"
+              >
+                <tspan x={l.x} dy="-0.55em">
+                  {l.short}{' '}
+                </tspan>
+                <tspan x={l.x} dy="1.2em" className="tabular-nums">
+                  {l.count}
+                </tspan>
+              </text>
             );
           })}
         </svg>

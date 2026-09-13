@@ -82,6 +82,17 @@ export type VennRegionLabel = {
   hitR: number;
 };
 
+export type VennCircleLabel = {
+  id: string;
+  short: string;
+  count: number;
+  x: number;
+  y: number;
+  anchor: 'start' | 'middle' | 'end';
+};
+
+const CIRCLE_LABEL_GAP = 10;
+
 function dist(a: { x: number; y: number }, b: { x: number; y: number }): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
@@ -165,9 +176,57 @@ function outsideNear(
 }
 
 /**
- * Exclusive-region counts for the painted circles. Inclusive circle sizes
- * belong in the legend. Tiny pairwise overlap gets an outside count plus a
- * leader. Three-set regions use the same exclusive / pairwise / triple keys.
+ * Inclusive name + size, parked on the outer side of each circle.
+ * Two tools sit left/right; three sit on the ray away from the others.
+ */
+export function placeCircleLabels(
+  regions: Record<string, number>,
+  catalog: ToolDef[],
+  circles: Record<string, VennCircle>,
+  width: number,
+  height: number,
+): VennCircleLabel[] {
+  const present = catalog.filter((t) => inclusive(t.id, regions) > 0);
+  const labels: VennCircleLabel[] = [];
+  for (const t of present) {
+    const own = circles[t.short];
+    if (!own) continue;
+    const others = present
+      .filter((o) => o.id !== t.id)
+      .map((o) => circles[o.short])
+      .filter((c): c is VennCircle => c !== undefined);
+    let ux = 1;
+    let uy = 0;
+    if (others.length > 0) {
+      const other = others.length === 1 ? others[0] : { ...centroid(others), radius: 0 };
+      const away = toward(other, own);
+      if (away.d > 0) {
+        ux = away.x;
+        uy = away.y;
+      }
+    }
+    const reach = own.radius + CIRCLE_LABEL_GAP;
+    const raw = { x: own.x + ux * reach, y: own.y + uy * reach };
+    const pad = 10;
+    const x = Math.min(width - pad, Math.max(pad, raw.x));
+    const y = Math.min(height - pad, Math.max(pad, raw.y));
+    const anchor: VennCircleLabel['anchor'] = ux < -0.35 ? 'end' : ux > 0.35 ? 'start' : 'middle';
+    labels.push({
+      id: t.id,
+      short: t.short,
+      count: inclusive(t.id, regions),
+      x,
+      y,
+      anchor,
+    });
+  }
+  return labels;
+}
+
+/**
+ * Exclusive-region counts for the painted circles. Inclusive name and
+ * size sit beside each circle. Tiny pairwise overlap gets an outside
+ * count plus a leader. Three-set regions use exclusive / pairwise / triple keys.
  */
 export function placeRegionLabels(
   regions: Record<string, number>,

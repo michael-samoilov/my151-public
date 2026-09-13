@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { venn } from 'venn.js';
-import { areasFromRegions, layoutCircles, placeRegionLabels } from './vennAreas';
+import { areasFromRegions, layoutCircles, placeCircleLabels, placeRegionLabels } from './vennAreas';
 
 const catalog = [
   { id: 'dex', label: 'Dex builder', short: 'Dex', launchedAt: 0 },
@@ -85,5 +85,43 @@ describe('placeRegionLabels', () => {
     const labels = placeRegionLabels(regions, three, circles, 240, 200);
     expect(labels.some((l) => l.key === 'dex')).toBe(true);
     expect(labels.some((l) => l.key === 'fav')).toBe(true);
+  });
+});
+
+describe('placeCircleLabels', () => {
+  const box = { w: 358, h: 186 };
+
+  it('parks each inclusive label on the outer side of its circle', () => {
+    const regions = { dex: 23, league: 14, 'dex+league': 8 };
+    const circles = layoutCircles(areasFromRegions(regions, catalog), box.w, box.h, 28);
+    const labels = placeCircleLabels(regions, catalog, circles, box.w, box.h);
+    const byId = Object.fromEntries(labels.map((l) => [l.id, l]));
+    expect(byId.dex).toMatchObject({ short: 'Dex', count: 31, anchor: 'end' });
+    expect(byId.league).toMatchObject({ short: 'League', count: 22, anchor: 'start' });
+    expect(byId.dex.x).toBeLessThan(circles.Dex.x);
+    expect(byId.league.x).toBeGreaterThan(circles.League.x);
+    for (const l of labels) {
+      const c = circles[l.short];
+      expect(Math.hypot(l.x - c.x, l.y - c.y)).toBeGreaterThan(c.radius);
+    }
+  });
+
+  it('labels all three circles on a three-tool Venn', () => {
+    const three = [
+      ...catalog,
+      { id: 'fav', label: 'Favourites', short: 'Fav', launchedAt: 2 },
+    ];
+    const regions = {
+      dex: 10,
+      league: 4,
+      fav: 3,
+      'dex+league': 5,
+      'dex+fav': 2,
+      'league+fav': 1,
+      'dex+league+fav': 2,
+    };
+    const circles = layoutCircles(areasFromRegions(regions, three), 240, 200, 28);
+    const labels = placeCircleLabels(regions, three, circles, 240, 200);
+    expect(labels.map((l) => l.id).sort()).toEqual(['dex', 'fav', 'league']);
   });
 });
