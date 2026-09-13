@@ -15,14 +15,9 @@ import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
 import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
-import { slotKind } from '@/league/model/constants';
-import { defaultBoundaries, visibleMembers } from '@/league/model/engine';
-import { starPath } from '@/lib/sectionOutlines';
-import { TYPE_COLORS } from '@/data/type-colors';
-import { typeIconPath } from '@/data/type-ids';
-import type { TypeName } from '@/types/pokemon';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
+import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import { Globe, Languages } from 'lucide-react';
 
@@ -733,167 +728,6 @@ function SpriteRow({ ids }: { ids: number[] }) {
   );
 }
 
-const CROWN_SVG = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={13} height={13} aria-label="Champion">
-    <path d="M12 6l4 6l5 -4l-2 10h-14l-2 -10l5 4l4 -6" />
-  </svg>
-);
-const POKEBALL_SVG = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" width={13} height={13} aria-label="Endgame boss">
-    <circle cx="12" cy="12" r="9" />
-    <path d="M3 12h6M15 12h6" />
-    <circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none" />
-  </svg>
-);
-
-/** The short badge a filled slot's first cell carries: G1-G8, E1-E4, a crown
- *  for champion, a poké ball for the boss. */
-function slotBadge(i: number): React.ReactNode {
-  const kind = slotKind(i);
-  if (kind === 'champion') return CROWN_SVG;
-  if (kind === 'boss') return POKEBALL_SVG;
-  if (kind === 'elite') return `E${i - 7}`;
-  return `G${i + 1}`;
-}
-
-/** Short slot code: G1-G8, E1-E4, CH, BOSS. */
-function slotAbbr(i: number): string {
-  const kind = slotKind(i);
-  if (kind === 'champion') return 'CH';
-  if (kind === 'boss') return 'BOSS';
-  if (kind === 'elite') return `E${i - 7}`;
-  return `G${i + 1}`;
-}
-
-const typeColorOf = (t?: string) => (t && (TYPE_COLORS as Record<string, string>)[t]) || 'var(--color-sink)';
-const isTypeName = (t?: string): t is TypeName => !!t && t in TYPE_COLORS;
-
-/** The slot's type marker: the real Gen IX type icon (white symbol on a colored
- *  square, like the base image) when the card has a type, else a plain swatch.
- *  Fills its grid cell so the board scales with width. */
-function TypeMark({ t }: { t?: string }) {
-  if (t === 'none') {
-    return (
-      <svg viewBox="0 0 22 22" className="aspect-square w-full rounded-[3px]" aria-label="No type" role="img">
-        <rect width="22" height="22" rx="5" fill="#9CA3AF" />
-        <path d={starPath(11, 11, 7)} fill="#ffffff" />
-      </svg>
-    );
-  }
-  if (isTypeName(t)) {
-    return <img src={typeIconPath(t)} alt={t} title={t} className="aspect-square w-full rounded-[3px]" style={{ imageRendering: 'auto' }} />;
-  }
-  return <div className="aspect-square w-full rounded-[3px]" style={{ background: typeColorOf(t) }} title={t ?? 'untyped'} />;
-}
-
-/** One seat sprite that fills its grid cell; the ace gets a red ring around the
- *  tile, as the mockup marks it (no badge). */
-function MiniTile({ id, ace }: { id: number; ace?: boolean }) {
-  const p = getPokemonById(id);
-  return (
-    <div
-      className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-[3px] bg-card"
-      title={p ? `#${id} ${displayName(p.name)}${ace ? ' · ace' : ''}` : `#${id}`}
-      style={ace ? { boxShadow: '0 0 0 2px var(--color-primary)', background: 'rgba(220,38,38,0.10)' } : undefined}
-    >
-      {p ? (
-        <img src={p.sprite} alt={p.name} className="h-full w-full object-contain" style={{ imageRendering: 'pixelated' }} loading="lazy" />
-      ) : (
-        <span className="text-[0.45rem] text-muted-foreground">#{id}</span>
-      )}
-    </div>
-  );
-}
-
-/**
- * The whole league at one moment: the 14 slots in a 3-column grid so champion
- * and boss stay the same width as the gyms. Each card is a 6×3 tile grid.
- * The stage badge and type icon take the first two cells of the first row;
- * evo seats fill the rest, bottom-aligned, seat 6 on the left. A sprite that
- * would land on those two cells is omitted so type and stage always win.
- * Seat 6 only has two template rows, so `visibleMembers` never dumps a
- * three-stage line into that column.
- */
-function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
-  const bySlot = new Map<number, LeagueCard>();
-  for (const c of cards) bySlot.set(c.i, c);
-  const ROWS = 3;
-  const SEATS = 6;
-
-  const slot = (i: number) => {
-    const card = bySlot.get(i);
-    if (!card || card.l.length === 0) {
-      return (
-        <div
-          key={i}
-          className="flex min-h-[22px] flex-col justify-center rounded-lg border border-border px-[7px] opacity-55"
-          style={{ borderLeftWidth: 3, borderLeftColor: 'var(--color-border)' }}
-        >
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-[9px] font-extrabold text-muted-foreground">{slotAbbr(i)}</span>
-            <span className="text-[10px] font-semibold text-muted-foreground/70">empty</span>
-          </div>
-        </div>
-      );
-    }
-    const color = typeColorOf(card.t);
-    return (
-      <div key={i} className="rounded-lg border border-border px-[5px] py-[3px]" style={{ borderLeftWidth: 3, borderLeftColor: color }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
-            gridTemplateRows: `repeat(${ROWS}, auto)`,
-            gap: '1px',
-          }}
-        >
-          <div style={{ gridColumn: 1, gridRow: 1 }} className="flex aspect-square items-center justify-center text-[8px] font-extrabold text-muted-foreground">
-            {slotBadge(i)}
-          </div>
-          <div style={{ gridColumn: 2, gridRow: 1 }}>
-            <TypeMark t={card.t} />
-          </div>
-          {Array.from({ length: SEATS }, (_, col) => {
-            const seat = SEATS - col;
-            const line = card.l[seat - 1];
-            if (!line) return null;
-            const placed = {
-              branch: line.b,
-              boundaries: line.bd && line.bd.length === line.b.length ? line.bd : defaultBoundaries(line.b),
-            };
-            const members = visibleMembers(placed, seat).slice(-ROWS);
-            const gridCol = col + 1;
-            return members.map((id, stage) => {
-              const gridRow = ROWS - members.length + stage + 1;
-              if (gridRow === 1 && gridCol <= 2) return null;
-              return (
-                <div key={`${seat}-${id}-${stage}`} style={{ gridColumn: gridCol, gridRow }}>
-                  <MiniTile id={id} ace={id === card.aceId} />
-                </div>
-              );
-            });
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="flex max-w-[460px] flex-col gap-[4px]">
-      <div
-        className="grid gap-[4px]"
-        style={{ gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(4, auto)', gridAutoFlow: 'column' }}
-      >
-        {Array.from({ length: 12 }, (_, i) => slot(i))}
-      </div>
-      <div className="grid grid-cols-3 gap-[4px]">
-        {slot(12)}
-        {slot(13)}
-      </div>
-    </div>
-  );
-}
-
 /** Facts a detail header renders: id plus geo, platform, and languages. */
 interface HeaderRec {
   cid: string;
@@ -916,6 +750,14 @@ function middleId(cid: string): string {
 
 const KIND_WORD = { browser: 'Browser', served: 'Served', switched: 'Switched' } as const;
 const langAbbr = (tag: string) => tag.split('-')[0].toUpperCase();
+
+const POKEBALL_SVG = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" width={13} height={13} aria-hidden>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h6M15 12h6" />
+    <circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none" />
+  </svg>
+);
 
 /** The languages chip, abbreviated with a press/hover tooltip. Three sources —
  *  the browser default (globe), the language we served (poké ball), and any
@@ -1066,19 +908,19 @@ function DetailHeader({
 function RailStat({ top, bottom, width, full }: { top: React.ReactNode; bottom: React.ReactNode; width: string; full?: boolean }) {
   return (
     <div className={`flex h-9 flex-col items-center justify-center rounded-lg border border-border bg-card px-2 text-center tabular-nums ${full ? 'flex-1' : width}`}>
-      <div className="flex h-[16px] items-center leading-none">{top}</div>
-      <div className="flex h-[11px] items-center text-[0.6rem] leading-none text-muted-foreground">{bottom}</div>
+      <div className="flex h-[16px] items-center leading-none whitespace-nowrap">{top}</div>
+      <div className="flex h-[11px] items-center whitespace-nowrap text-[0.6rem] leading-none text-muted-foreground">{bottom}</div>
     </div>
   );
 }
 function SessionsChip({ sessions, days, full }: { sessions: number; days: number; full?: boolean }) {
   return (
     <RailStat
-      width="w-[82px]"
+      width="w-[82px] md:w-[8.5rem]"
       full={full}
       top={
         <>
-          <span className="text-sm font-bold">{sessions}</span>&nbsp;<span className="text-[0.6rem] text-muted-foreground">{sessions === 1 ? 'session' : 'sessions'}</span>
+          <span className="text-sm font-bold leading-none">{sessions}</span>&nbsp;<span className="text-[0.6rem] leading-none text-muted-foreground">{sessions === 1 ? 'session' : 'sessions'}</span>
         </>
       }
       bottom={days === 1 ? '1 day' : `${days} days`}
@@ -1089,43 +931,7 @@ function TimeChip({ ms, full }: { ms: number; full?: boolean }) {
   const mins = Math.round(ms / 60000);
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return <RailStat width="w-[72px]" full={full} top={<span className="text-[0.8rem] font-bold">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>} bottom="time spent" />;
-}
-
-function FitToHeight({ children, signature }: { children: React.ReactNode; signature: string | number }) {
-  const outerRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const outer = outerRef.current;
-    const inner = innerRef.current;
-    if (!outer || !inner) return;
-    let raf = 0;
-    const apply = () => {
-      inner.style.zoom = '1';
-      const avail = outer.clientHeight;
-      const need = inner.offsetHeight;
-      if (avail <= 0 || need <= 0) return;
-      if (need > avail + 1) inner.style.zoom = String(Math.max(0.5, avail / need));
-    };
-    const schedule = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(apply);
-    };
-    schedule();
-    const ro = new ResizeObserver(schedule);
-    ro.observe(outer);
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-    };
-  }, [signature]);
-  return (
-    <div ref={outerRef} className="min-h-0 flex-1 overflow-hidden">
-      <div ref={innerRef} className="max-w-[460px]">
-        {children}
-      </div>
-    </div>
-  );
+  return <RailStat width="w-[72px] md:w-[7rem]" full={full} top={<span className="text-[0.8rem] font-bold leading-none">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>} bottom="time spent" />;
 }
 
 function tidySessions<T extends { ts: number }>(
@@ -1299,13 +1105,9 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
 
   const board =
     cur?.cards && cur.cards.length > 0 ? (
-      <FitToHeight signature={idx}>
-        <LeagueBoardSnapshot cards={cur.cards} />
-      </FitToHeight>
+      <LeagueVisitBoard cards={cur.cards} />
     ) : league.latestCards && league.latestCards.length > 0 ? (
-      <FitToHeight signature="latest">
-        <LeagueBoardSnapshot cards={league.latestCards} />
-      </FitToHeight>
+      <LeagueVisitBoard cards={league.latestCards} />
     ) : (
       <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
     );
