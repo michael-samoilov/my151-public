@@ -90,16 +90,32 @@ export function isSubsetRegression(incoming: Iterable<number>, latest: Iterable<
   return n > 0 && n < have.size;
 }
 
+export type SessionCounts = { cards: number; seats: number };
+
+/** Neighbour agreement when we only have counts, not member ids. */
+function countAgreement(a: SessionCounts, b: SessionCounts): number {
+  const cardMax = Math.max(a.cards, b.cards);
+  const seatMax = Math.max(a.seats, b.seats);
+  if (cardMax === 0 || seatMax === 0) return 0;
+  return Math.min(Math.min(a.cards, b.cards) / cardMax, Math.min(a.seats, b.seats) / seatMax);
+}
+
 /**
  * Drop a middle session that is a strict subset of both neighbours when those
  * neighbours agree with each other. That is the stored shape of a delayed
  * first-sitting keepalive that arrived between two fuller sittings — the
  * admin's drop-then-restore. A real rebuild that lands on different ids is
  * kept.
+ *
+ * Older league beacons stored `summary.cards` / `summary.seats` but no member
+ * ids. When the middle sitting has no ids, fall back to those counts so a
+ * 13→1→14 card dip still drops. Callers that omit `countsOf` keep the
+ * id-only behavior.
  */
 export function withoutDropRestorePhantoms<T>(
   items: readonly T[],
   idsOf: (item: T) => readonly number[],
+  countsOf?: (item: T) => SessionCounts,
 ): T[] {
   if (items.length < 3) return items.slice();
   return items.filter((item, i) => {
@@ -107,13 +123,22 @@ export function withoutDropRestorePhantoms<T>(
     const prev = idsOf(items[i - 1]);
     const next = idsOf(items[i + 1]);
     const cur = idsOf(item);
-    if (!isSubsetRegression(cur, prev) || !isSubsetRegression(cur, next)) return true;
-    const prevSet = new Set(prev);
-    const nextSet = new Set(next);
-    let overlap = 0;
-    for (const id of prevSet) if (nextSet.has(id)) overlap += 1;
-    const union = prevSet.size + nextSet.size - overlap;
-    const jaccard = union === 0 ? 1 : overlap / union;
-    return jaccard < 0.8;
+    if (cur.length > 0) {
+      if (!isSubsetRegression(cur, prev) || !isSubsetRegression(cur, next)) return true;
+      const prevSet = new Set(prev);
+      const nextSet = new Set(next);
+      let overlap = 0;
+      for (const id of prevSet) if (nextSet.has(id)) overlap += 1;
+      const union = prevSet.size + nextSet.size - overlap;
+      const jaccard = union === 0 ? 1 : overlap / union;
+      return jaccard < 0.8;
+    }
+    if (!countsOf) return true;
+    const prevC = countsOf(items[i - 1]);
+    const nextC = countsOf(items[i + 1]);
+    const curC = countsOf(item);
+    if (curC.cards >= prevC.cards || curC.cards >= nextC.cards) return true;
+    if (curC.seats >= prevC.seats || curC.seats >= nextC.seats) return true;
+    return countAgreement(prevC, nextC) < 0.8;
   });
 }

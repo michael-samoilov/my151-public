@@ -14,7 +14,7 @@ import { cn, displayName } from '@/lib/utils';
 import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
-import { sortSessions, withoutDropRestorePhantoms } from '../../../api/_sessionize';
+import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
 import { slotKind } from '@/league/model/constants';
 import { defaultBoundaries, visibleMembers } from '@/league/model/engine';
 import { starPath } from '@/lib/sectionOutlines';
@@ -1061,9 +1061,10 @@ function tidySessions<T extends { ts: number }>(
   raw: T[],
   sessionMs: number[] | undefined,
   idsOf: (s: T) => number[],
+  countsOf?: (s: T) => SessionCounts,
 ): { log: T[]; ms: number[] } {
   const sorted = sortSessions(raw, sessionMs ?? []);
-  const kept = withoutDropRestorePhantoms(sorted.log, idsOf);
+  const kept = withoutDropRestorePhantoms(sorted.log, idsOf, countsOf);
   const keep = new Set(kept);
   return {
     log: kept,
@@ -1157,7 +1158,12 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
 /** The league timeline + board, reused as a page and as the dex page's league
  *  section. */
 function LeagueDetailBody({ league }: { league: LeagueUser }) {
-  const { log, ms } = tidySessions(league.sessionLog ?? [], league.sessionMs, leagueSessionIds);
+  const { log, ms } = tidySessions(
+    league.sessionLog ?? [],
+    league.sessionMs,
+    leagueSessionIds,
+    (s) => s.summary,
+  );
   const [i, setI] = useState(Math.max(0, log.length - 1));
   const memberSet = (cards?: LeagueCard[]) => new Set((cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b)));
   const cardsOf = (k: number) => {
@@ -1224,7 +1230,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
           peakLabel={`${peak} seated`}
           milestones={milestones}
           tz={league.tz}
-          leftChip={<SessionsChip sessions={league.sessions} days={days} full={log.length <= 1} />}
+          leftChip={<SessionsChip sessions={log.length} days={days} full={log.length <= 1} />}
           rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
         />
         </div>

@@ -361,6 +361,21 @@ const leagueUsers: LeagueUser[] = [
   leagueUser('9d19…10', 'FR', 1, 1, 50, false),
 ];
 
+// Delayed keepalive with no member ids, between two agreeing full sittings —
+// the live 13→1→14 shape. Display tidy must drop it so the scrubber has 3
+// sessions, not 4.
+{
+  const u = leagueUsers[0];
+  const last = u.sessionLog[u.sessionLog.length - 1];
+  const prev = u.sessionLog[u.sessionLog.length - 2];
+  prev.summary = { ...last.summary };
+  u.sessionLog.splice(u.sessionLog.length - 1, 0, {
+    ts: Math.round((prev.ts + last.ts) / 2),
+    summary: { cards: 1, seats: 1, typed: 0, named: 0, aces: 0, leagueNamed: false },
+    country: last.country,
+  });
+}
+
 // Popular / dropped picks — a slice of the mockup's grid, real Pokémon ids.
 const popularFinal: [string, number][] = [
   ['25', 84], ['1', 80], ['4', 73], ['7', 72], ['133', 70], ['6', 66], ['9', 65],

@@ -124,4 +124,34 @@ describe('withoutDropRestorePhantoms', () => {
     ];
     expect(withoutDropRestorePhantoms(log, ids)).toEqual(log);
   });
+
+  it('drops a count-only 13→1→14 dip when the middle sitting has no ids', () => {
+    const log = [
+      { ids: [] as number[], cards: 13, seats: 74 },
+      { ids: [], cards: 1, seats: 1 },
+      { ids: [1, 2, 3], cards: 14, seats: 84 },
+    ];
+    const counts = (s: { cards: number; seats: number }) => ({ cards: s.cards, seats: s.seats });
+    expect(withoutDropRestorePhantoms(log, ids, counts)).toEqual([log[0], log[2]]);
+  });
+
+  it('keeps a 1-card sitting with different ids even when counts look like a dip', () => {
+    const log = [
+      { ids: [1, 2, 3, 4], cards: 12, seats: 70 },
+      { ids: [99], cards: 1, seats: 1 },
+      { ids: [1, 2, 3, 4], cards: 12, seats: 70 },
+    ];
+    const counts = (s: { cards: number; seats: number }) => ({ cards: s.cards, seats: s.seats });
+    expect(withoutDropRestorePhantoms(log, ids, counts)).toEqual(log);
+  });
+
+  it('keeps an empty-id dip when the neighbours disagree on size', () => {
+    const log = [
+      { ids: [] as number[], cards: 13, seats: 74 },
+      { ids: [], cards: 1, seats: 1 },
+      { ids: [], cards: 3, seats: 8 },
+    ];
+    const counts = (s: { cards: number; seats: number }) => ({ cards: s.cards, seats: s.seats });
+    expect(withoutDropRestorePhantoms(log, ids, counts)).toEqual(log);
+  });
 });
