@@ -393,7 +393,23 @@ describe('leagueUsageFunnel', () => {
     expect(f.fullLeague).toBe(2);
     expect(f.exportedLeague).toBe(1);
     expect(f.exportedCard).toBe(2);
+    expect(f.keptPrivate).toBe(0);
     expect(f.gymBuckets.reduce((s, p) => s + p.count, 0)).toBe(f.oneGymFull);
+  });
+
+  it('counts full-league non-exporters as kept private', () => {
+    const f = leagueUsageFunnel(
+      [row(14, { exportsLeague: 1 }), row(14), row(3, { exportsCard: 1 })],
+      3,
+    );
+    expect(f.fullLeague).toBe(2);
+    expect(f.keptPrivate).toBe(1);
+    expect(f.gymBuckets.find((b) => b.label === 'Full league')).toEqual({
+      label: 'Full league',
+      count: 2,
+      exportedLeague: 1,
+      exportedCard: 0,
+    });
   });
 
   it('counts exports from an unfinished gym bucket', () => {

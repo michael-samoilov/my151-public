@@ -5,7 +5,8 @@
  * not a staircase. Through and success sit at the top of a column;
  * drop-offs sit under them. Incomplete buckets that exported grow a
  * branch into the existing export node. They do not grow a "not
- * exported" peel.
+ * exported" peel. Full league peels non-exporters to Kept private,
+ * same as Completed on the dex funnel.
  */
 import type {
   DexSizeBucket,
@@ -82,7 +83,6 @@ function addFan(
     addLink(links, { source: from, target: item.name, value: item.value, role: item.role });
   }
 
-  const hasLeague = present.some((i) => (i.exportedLeague ?? 0) > 0);
   for (const item of present) {
     if ((item.exported ?? 0) > 0 && item.exportName) {
       addNode(nodes, seen, { name: item.exportName, role: 'success', label: 'top' });
@@ -94,7 +94,8 @@ function addFan(
       });
     }
     if (item.leftoverName) {
-      const left = item.value - (item.exported ?? 0);
+      const left =
+        item.value - (item.exported ?? 0) - (item.exportedLeague ?? 0) - (item.exportedCard ?? 0);
       if (left > 0) {
         addNode(nodes, seen, {
           name: item.leftoverName,
@@ -124,7 +125,7 @@ function addFan(
       addNode(nodes, seen, {
         name: 'Exported card',
         role: 'success',
-        label: hasLeague ? 'bottom' : 'right',
+        label: 'right',
       });
       addLink(links, {
         source: item.name,
@@ -170,6 +171,8 @@ function gymFan(buckets: LeagueGymBucket[]): FanItem[] {
     role: b.label === 'Full league' ? 'success' : 'sink',
     exportedLeague: b.exportedLeague,
     exportedCard: b.exportedCard,
+    leftoverName: b.label === 'Full league' ? 'Kept private' : undefined,
+    leftoverRole: 'priv',
   }));
 }
 
@@ -238,7 +241,7 @@ export function leagueFunnelSankey(f: LeagueUsageFunnel): FunnelSankey {
   return orderSankeyForLayout(
     nodes,
     links,
-    `League usage funnel: ${f.opened} opened, ${f.placed} placed a Pokémon, ${f.bounced} bounced; of ${f.placed} placed, ${f.oneGymFull} filled a gym and ${f.cardNotFinished} did not finish a card; gyms: ${gymBits}; ${f.exportedLeague} exported a league, ${f.exportedCard} exported a card only.`,
+    `League usage funnel: ${f.opened} opened, ${f.placed} placed a Pokémon, ${f.bounced} bounced; of ${f.placed} placed, ${f.oneGymFull} filled a gym and ${f.cardNotFinished} did not finish a card; gyms: ${gymBits}; ${f.exportedLeague} exported a league, ${f.exportedCard} exported a card only; of ${f.fullLeague} full league, ${f.keptPrivate} kept private.`,
   );
 }
 

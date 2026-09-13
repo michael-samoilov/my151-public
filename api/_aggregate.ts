@@ -402,8 +402,8 @@ export interface DexSizeBucket {
 }
 
 /** League gym-completion bucket. Export counts are of people in this bucket
- *  who exported a league (or both) vs a card only. Non-exporters stay in
- *  the bucket; there is no "not exported" peel. */
+ *  who exported a league (or both) vs a card only. Incomplete buckets keep
+ *  non-exporters in the bucket. Full league peels them to Kept private. */
 export interface LeagueGymBucket {
   label: string;
   count: number;
@@ -423,7 +423,8 @@ export interface DexUsageFunnel {
 }
 
 /** Gym leader maker usage funnel: open → placed a Pokémon → one gym full →
- *  in-line gym-completion buckets → export. */
+ *  in-line gym-completion buckets → export. Full league also peels
+ *  non-exporters to Kept private. */
 export interface LeagueUsageFunnel {
   opened: number;
   placed: number;
@@ -434,6 +435,7 @@ export interface LeagueUsageFunnel {
   fullLeague: number;
   exportedLeague: number;
   exportedCard: number;
+  keptPrivate: number;
 }
 
 export interface SizeTier {
@@ -552,7 +554,8 @@ export function dexUsageFunnel(rows: DexFunnelRow[], openedHint: number): DexUsa
  * Pokémon), placed a Pokémon vs bounced, one gym full vs card not finished,
  * then in-line gym-count buckets. Exports (league, card-only, or both)
  * leave each gym bucket toward the export nodes. Both-export counts as a
- * league export, same as before.
+ * league export, same as before. Full-league people who exported neither
+ * peel to Kept private. Incomplete gym buckets do not.
  */
 export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): LeagueUsageFunnel {
   const placedRows = rows.filter(placedAPokemon);
@@ -566,7 +569,9 @@ export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): 
     const inBucket = gymRows.filter((r) => inTier(r.fullGyms, t));
     return { label: t.label, count: inBucket.length, ...leagueExportSplit(inBucket) };
   }).filter((b) => b.count > 0);
-  const fullLeague = gymRows.filter((r) => r.fullGyms >= CARD_COUNT).length;
+  const fullLeagueRows = gymRows.filter((r) => r.fullGyms >= CARD_COUNT);
+  const fullLeague = fullLeagueRows.length;
+  const keptPrivate = fullLeagueRows.filter((r) => r.exportsLeague === 0 && r.exportsCard === 0).length;
   const { exportedLeague, exportedCard } = leagueExportSplit(gymRows);
   return {
     opened,
@@ -578,6 +583,7 @@ export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): 
     fullLeague,
     exportedLeague,
     exportedCard,
+    keptPrivate,
   };
 }
 

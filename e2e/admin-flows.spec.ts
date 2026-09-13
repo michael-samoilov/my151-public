@@ -42,6 +42,7 @@ test.describe('admin flows', () => {
     expect(label).toMatch(/placed a pokémon/i);
     expect(label).toMatch(/1–4 gyms|5–8 gyms|9–12 gyms/);
     expect(label).toMatch(/full league/i);
+    expect(label).toMatch(/kept private/i);
   });
 
   test('phone dex funnel is a Sankey that stays in the column', async ({ page }, info) => {

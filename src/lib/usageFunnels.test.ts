@@ -118,6 +118,7 @@ describe('leagueFunnelSankey', () => {
         { maxCards: 6, maxSeats: 12, fullGyms: 6, exportsCard: 1, exportsLeague: 0 },
         { maxCards: 11, maxSeats: 40, fullGyms: 11, exportsCard: 0, exportsLeague: 0 },
         { maxCards: 14, maxSeats: 70, fullGyms: 14, exportsCard: 1, exportsLeague: 1 },
+        { maxCards: 14, maxSeats: 70, fullGyms: 14, exportsCard: 0, exportsLeague: 0 },
       ],
       8,
     ),
@@ -131,16 +132,20 @@ describe('leagueFunnelSankey', () => {
     expect(nodeDepth('Full league', sankey.links)).toBe(parent + 1);
   });
 
-  it('sends bucket exporters to the shared export nodes', () => {
-    expect(targetsFrom(sankey, 'Full league')).toEqual(['Exported league']);
+  it('peels Kept private from Full league only', () => {
+    expect(targetsFrom(sankey, 'Full league')).toEqual(['Exported league', 'Kept private']);
     expect(targetsFrom(sankey, '5–8 gyms')).toEqual(['Exported card']);
     expect(targetsFrom(sankey, '1–4 gyms')).toEqual([]);
-    expect(namesOf(sankey)).not.toContain('Kept private');
+    expect(targetsFrom(sankey, '9–12 gyms')).toEqual([]);
+    expect(sankey.links.filter((l) => l.target === 'Kept private').map((l) => l.source)).toEqual([
+      'Full league',
+    ]);
   });
 
-  it('conserves placed and one-gym-full inflow', () => {
+  it('conserves placed, one-gym-full, and Full league inflow', () => {
     expect(flowOut(sankey, 'Placed a Pokémon')).toBe(flowInto(sankey, 'Placed a Pokémon'));
     expect(flowOut(sankey, 'One gym full')).toBe(flowInto(sankey, 'One gym full'));
+    expect(flowOut(sankey, 'Full league')).toBe(flowInto(sankey, 'Full league'));
   });
 
   it('stacks Full league above earlier gym drop-offs', () => {
@@ -148,6 +153,7 @@ describe('leagueFunnelSankey', () => {
     expect(names.indexOf('Full league')).toBeLessThan(names.indexOf('9–12 gyms'));
     expect(names.indexOf('9–12 gyms')).toBeLessThan(names.indexOf('1–4 gyms'));
     expect(names.indexOf('Exported league')).toBeLessThan(names.indexOf('Exported card'));
+    expect(names.indexOf('Exported league')).toBeLessThan(names.indexOf('Kept private'));
     const fromGym = targetsFrom(sankey, 'One gym full');
     expect(fromGym[0]).toBe('Full league');
   });
@@ -155,6 +161,11 @@ describe('leagueFunnelSankey', () => {
   it('peels bounced and unfinished cards before the gym fan', () => {
     expect(targetsFrom(sankey, 'Opened')).toEqual(['Placed a Pokémon', 'Bounced']);
     expect(targetsFrom(sankey, 'Placed a Pokémon').sort()).toEqual(['Card not finished', 'One gym full']);
+  });
+
+  it('names kept private of full league in the accessible label', () => {
+    expect(sankey.ariaLabel).toMatch(/kept private/i);
+    expect(sankey.ariaLabel).toMatch(/full league/i);
   });
 });
 
