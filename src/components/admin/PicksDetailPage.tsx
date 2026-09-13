@@ -87,11 +87,11 @@ function IndexBarRow({
           src={member.sprite}
           alt={title}
           loading="lazy"
-          className="h-5 w-5 shrink-0 object-contain"
+          className="h-6 w-6 shrink-0 object-contain"
           style={{ imageRendering: 'pixelated' }}
         />
       ) : (
-        <span className="w-5 shrink-0 text-center text-[0.5rem] text-muted-foreground">#{member.id}</span>
+        <span className="w-6 shrink-0 text-center text-[0.5rem] text-muted-foreground">#{member.id}</span>
       )}
       <div
         className="h-2 min-w-0 flex-1 overflow-hidden rounded-full"
@@ -105,7 +105,7 @@ function IndexBarRow({
         />
       </div>
       <span
-        className="w-[1.75rem] shrink-0 text-right text-[0.5rem] tabular-nums leading-none"
+        className="w-[2rem] shrink-0 text-right text-[0.625rem] tabular-nums leading-none"
         style={{ color }}
       >
         {formatIndex(line.index)}
@@ -118,10 +118,12 @@ function BarSide({
   lines,
   max,
   color,
+  fromBottom = false,
 }: {
   lines: RankedLine[];
   max: number;
   color: string;
+  fromBottom?: boolean;
 }) {
   if (lines.length === 0) {
     return <p className="text-[0.65rem] text-muted-foreground">None in this cap.</p>;
@@ -130,7 +132,11 @@ function BarSide({
   return (
     <div className={cn('grid min-w-0 gap-x-1.5', cols.length > 1 ? 'grid-cols-2' : 'grid-cols-1')}>
       {cols.map((col, i) => (
-        <div key={i} className="flex min-w-0 flex-col gap-1" data-bar-col>
+        <div
+          key={i}
+          data-bar-col
+          className={cn('flex min-w-0 flex-col gap-1', fromBottom && i > 0 && 'h-full justify-end')}
+        >
           {col.map((line) => (
             <IndexBarRow key={line.key} line={line} max={max} color={color} />
           ))}
@@ -156,6 +162,7 @@ function DualBars({
   if (!leastOn) {
     return (
       <div className="min-w-0" data-picks-side="most">
+        {showLeast ? <div className="mb-1 text-[0.65rem] font-semibold">Most</div> : null}
         <BarSide lines={columns.most} max={max} color={barColor} />
       </div>
     );
@@ -168,7 +175,7 @@ function DualBars({
       </div>
       <div className="min-w-0 border-l border-border/60 pl-1.5" data-picks-side="least">
         <div className="mb-1 text-[0.65rem] font-semibold">Least</div>
-        <BarSide lines={columns.least} max={max} color={barColor} />
+        <BarSide lines={columns.least} max={max} color={barColor} fromBottom />
       </div>
     </div>
   );

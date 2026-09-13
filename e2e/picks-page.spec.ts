@@ -63,4 +63,23 @@ test.describe('admin picks page', () => {
     await expect(evil.locator('[data-picks-side="least"]')).toHaveCount(0);
     await expect(evil.getByText('Least', { exact: true })).toHaveCount(0);
   });
+
+  test('least-picked bottom-aligns the lowest index in the second bar column', async ({ page }) => {
+    await openPicks(page);
+    const least = page.locator('[data-picks-side="least"]').first();
+    await expect(least).toBeVisible();
+    const cols = least.locator('[data-bar-col]');
+    const colCount = await cols.count();
+    if (colCount < 2) {
+      test.info().annotations.push({ type: 'skip-reason', description: 'demo least fits in one column' });
+      return;
+    }
+    const leftLast = cols.nth(0).locator('[data-index-meter]').last();
+    const rightLast = cols.nth(1).locator('[data-index-meter]').last();
+    const left = await leftLast.boundingBox();
+    const right = await rightLast.boundingBox();
+    expect(left).toBeTruthy();
+    expect(right).toBeTruthy();
+    expect(Math.abs((left!.y + left!.height) - (right!.y + right!.height))).toBeLessThan(6);
+  });
 });
