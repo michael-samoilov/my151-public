@@ -41,7 +41,11 @@ export interface Preview { url: string; stop: () => void; }
 // stop() kills the group by pid; killing `npm` alone leaves `vite` holding the
 // port, which collides with the next preview on the same port.
 export async function startPreview(dir: string, port: number): Promise<Preview> {
-  const proc = spawn('npm', ['run', 'preview', '--', '--port', String(port), '--strictPort'], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+  const proc = spawn(
+    'npm',
+    ['run', 'preview', '--', '--port', String(port), '--strictPort', '--host', '127.0.0.1'],
+    { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'], detached: true },
+  );
   await waitForPort(port, 60000);
   return {
     url: `http://127.0.0.1:${port}`,
