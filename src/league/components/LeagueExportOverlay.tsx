@@ -12,11 +12,7 @@ import {
   exportGymCard,
   exportLeagueHome,
 } from '../export/exportLeague';
-import {
-  DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT,
-  type LeagueHomeExportLayout,
-  parseLeagueHomeExportLayout,
-} from '../export/exportOptions';
+import { type LeagueHomeExportLayout, parseLeagueHomeExportLayout } from '../export/exportOptions';
 import { incrementLeagueExportCount } from '../export/exportPersonalization';
 import { sendLeagueExportBeacon } from '../hooks/useLeagueBeacon';
 import { useLeagueStore } from '../store/useLeagueStore';
@@ -106,7 +102,6 @@ function SettingsPanel({
 }
 
 export function LeagueExportOverlay() {
-  const exportOpen = useLeagueUi((s) => s.exportOpen);
   const exportCardIndex = useLeagueUi((s) => s.exportCardIndex);
   const exportPhase = useLeagueUi((s) => s.exportPhase);
   const closeLeagueExport = useLeagueUi((s) => s.closeLeagueExport);
@@ -116,7 +111,9 @@ export function LeagueExportOverlay() {
   const isLeague = exportCardIndex === null;
   const exportKind = isLeague ? 'league' : 'card';
 
-  const [layout, setLayout] = useState<LeagueHomeExportLayout>(DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT);
+  const [layout, setLayout] = useState<LeagueHomeExportLayout>(() =>
+    parseLeagueHomeExportLayout(window.location.search),
+  );
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
@@ -151,16 +148,7 @@ export function LeagueExportOverlay() {
   }, [exportCardIndex, isLeague, layout, revokePreview]);
 
   useEffect(() => {
-    if (!exportOpen) {
-      revokePreview();
-      return;
-    }
-    setLayout(parseLeagueHomeExportLayout(window.location.search));
-    setExportPhase('settings');
-  }, [exportOpen, revokePreview, setExportPhase]);
-
-  useEffect(() => {
-    if (!exportOpen || exportPhase !== 'settings') return;
+    if (exportPhase !== 'settings') return;
     if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
       debounceRef.current = null;
@@ -169,11 +157,16 @@ export function LeagueExportOverlay() {
     return () => {
       if (debounceRef.current !== null) window.clearTimeout(debounceRef.current);
     };
-  }, [exportOpen, exportPhase, layout, renderPreview]);
+  }, [exportPhase, layout, renderPreview]);
 
   useEffect(() => {
-    return () => revokePreview();
-  }, [revokePreview]);
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = null;
+      }
+    };
+  }, []);
 
   const runExport = useCallback(async () => {
     if (exportBusy) return;
@@ -195,8 +188,6 @@ export function LeagueExportOverlay() {
       setExportBusy(false);
     }
   }, [exportBusy, exportCardIndex, exportKind, isLeague, layout, setExportPhase]);
-
-  if (!exportOpen) return null;
 
   const title = exportPhase === 'settings' ? 'Export' : 'Quick question';
   const paneBody =
