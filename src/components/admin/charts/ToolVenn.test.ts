@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { venn } from 'venn.js';
-import { areasFromRegions } from './vennAreas';
+import { areasFromRegions, layoutCircles, placeRegionLabels } from './vennAreas';
 
 const catalog = [
   { id: 'dex', label: 'Dex builder', short: 'Dex', launchedAt: 0 },
@@ -29,5 +29,38 @@ describe('venn.js layout', () => {
       { sets: ['Dex', 'League'], size: 3 },
     ]);
     expect(circles.Dex.radius).toBeGreaterThan(circles.League.radius * 3);
+  });
+});
+
+describe('placeRegionLabels', () => {
+  const box = { w: 168, h: 148 };
+
+  it('puts exclusive and both counts on the pre-launch speck Venn', () => {
+    const regions = { dex: 336, 'dex+league': 3 };
+    const circles = layoutCircles(areasFromRegions(regions, catalog), box.w, box.h);
+    const labels = placeRegionLabels(regions, catalog, circles, box.w, box.h);
+    const byKey = Object.fromEntries(labels.map((l) => [l.key, l]));
+    expect(byKey.dex.count).toBe(336);
+    expect(byKey['dex+league'].count).toBe(3);
+    expect(byKey.league).toBeUndefined();
+    for (const l of labels) {
+      expect(l.x).toBeGreaterThanOrEqual(8);
+      expect(l.x).toBeLessThanOrEqual(box.w - 8);
+      expect(l.y).toBeGreaterThanOrEqual(8);
+      expect(l.y).toBeLessThanOrEqual(box.h - 8);
+    }
+    const both = byKey['dex+league'];
+    expect(both.hitR).toBeGreaterThanOrEqual(12);
+    if (circles.League.radius < 14) {
+      expect(both.placement).toBe('outside');
+    }
+  });
+
+  it('labels all three exclusive regions after launch', () => {
+    const regions = { dex: 48, league: 1, 'dex+league': 1 };
+    const circles = layoutCircles(areasFromRegions(regions, catalog), box.w, box.h);
+    const labels = placeRegionLabels(regions, catalog, circles, box.w, box.h);
+    expect(labels.map((l) => l.key).sort()).toEqual(['dex', 'dex+league', 'league']);
+    expect(labels.every((l) => l.count > 0)).toBe(true);
   });
 });

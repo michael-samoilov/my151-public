@@ -43,6 +43,8 @@ export interface LabeledRate {
 export interface EraOverlap {
   key: string;
   label: string;
+  /** One-line caption for the tile (`Before 8 Sep`). `label` stays the full phrase. */
+  shortLabel: string;
   since: number | null;
   until: number | null;
   browsers: number;
@@ -85,13 +87,25 @@ function bareCid(cid: string): string {
   return cid.split('::')[0] ?? cid;
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
+
 function utcDay(ts: number): string {
-  return new Date(ts).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
+  const d = new Date(ts);
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+function utcDayShort(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+}
+
+function shortEraLabel(since: number | null, until: number | null): string {
+  if (since === null && until !== null) return `Before ${utcDayShort(until)}`;
+  if (until === null && since !== null) return `After ${utcDayShort(since)}`;
+  if (since !== null && until !== null) {
+    return `${utcDayShort(since)} to ${utcDayShort(until)}`;
+  }
+  return '';
 }
 
 function rate(n: number, of: number): Pick<LabeledRate, 'n' | 'of' | 'pct'> {
@@ -130,6 +144,7 @@ export function eraBounds(catalog: readonly ToolDef[]): Omit<EraOverlap, 'browse
     out.push({
       key: `before-${cuts[i].id}`,
       label: since === null ? `Arrived before ${utcDay(until)}` : `Arrived ${utcDay(since)} to ${utcDay(until)}`,
+      shortLabel: shortEraLabel(since, until),
       since,
       until,
     });
@@ -138,6 +153,7 @@ export function eraBounds(catalog: readonly ToolDef[]): Omit<EraOverlap, 'browse
   out.push({
     key: `since-${last.id}`,
     label: `Arrived after ${utcDay(last.launchedAt)}`,
+    shortLabel: shortEraLabel(last.launchedAt, null),
     since: last.launchedAt,
     until: null,
   });

@@ -47,6 +47,7 @@ describe('eraBounds', () => {
   it('cuts once per tool after the first', () => {
     const bounds = eraBounds(TOOL_CATALOG);
     expect(bounds.map((b) => b.key)).toEqual(['before-league', 'since-league']);
+    expect(bounds.map((b) => b.shortLabel)).toEqual(['Before 8 Sep', 'After 8 Sep']);
     expect(bounds[0].until).toBe(LAUNCH);
     expect(bounds[1].since).toBe(LAUNCH);
   });
@@ -61,6 +62,11 @@ describe('eraBounds', () => {
       'before-league',
       'before-fav',
       'since-fav',
+    ]);
+    expect(eraBounds(catalog).map((b) => b.shortLabel)).toEqual([
+      'Before 8 Sep',
+      '8 Sep to 1 Nov',
+      'After 1 Nov',
     ]);
   });
 });

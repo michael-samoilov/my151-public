@@ -667,6 +667,7 @@ export const sampleResponse: ApiResponse = {
       {
         key: 'before-league',
         label: 'Arrived before 8 Sep 2026',
+        shortLabel: 'Before 8 Sep',
         since: null,
         until: Date.UTC(2026, 8, 8),
         browsers: 339,
@@ -675,6 +676,7 @@ export const sampleResponse: ApiResponse = {
       {
         key: 'since-league',
         label: 'Arrived after 8 Sep 2026',
+        shortLabel: 'After 8 Sep',
         since: Date.UTC(2026, 8, 8),
         until: null,
         browsers: 50,
