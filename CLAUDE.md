@@ -106,6 +106,13 @@ When the tier is unclear, treat the change as tier 2 and ask. A change sitting o
 
 **Check whether a change is user-visible before calling it invisible.** `theme-color` tints mobile browser chrome; markup inside `#root` renders until React mounts. The app currently runs in **light** mode — the `.dark` block in `index.css` exists but nothing ever applies the class — so dark-themed additions will mismatch the live UI.
 
+## Cursor Cloud specific instructions
+
+Development happens through Cloud Agents, often from the mobile Cursor app. Two consequences follow.
+
+- **Do not verify on localhost.** The mobile client cannot reach the agent's `localhost`, so a running dev server is not evidence a reviewer can see. Verify with the `verify-my151` harness (`.claude/skills/verify-my151`, three engines) and the branch's Vercel preview deployment. Capture screenshots or recordings as walkthrough artifacts.
+- **The Cloud Agent environment arrives ready.** Its build bakes in dependencies and all three browser engines (Blink, WebKit, Gecko). `npm ci`, `npx playwright install chromium`, and the verify-my151 engine setup run at build time, so a booted agent can build, test, and drive browsers without setup. `npm run test:e2e` and the verify-my151 harness each start their own servers, so neither needs the `start` dev server.
+
 ## pstack
 
 This repo vendors [open-pstack](https://github.com/ericlitman/open-pstack), a
