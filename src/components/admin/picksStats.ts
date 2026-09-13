@@ -23,9 +23,10 @@
  * not the whole dex.
  *
  * Most-picked ranks default lines only, and only lines above 1.10×, except
- * Starters, which list first-stage Pokémon and ignore that cutoff. Regional
- * starter variants (Hisuian Decidueye with Rowlet) share one first-stage bar.
- * Off-section has no least-picked column.
+ * Starters, which list first-stage Pokémon and ignore that cutoff. Least-picked
+ * is only lines below 0.90×. Regional starter variants (Hisuian Decidueye with
+ * Rowlet) share one first-stage face. Off-section has no least column and
+ * shows raw dex counts instead of the × index.
  */
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
@@ -38,11 +39,11 @@ import {
 } from '@/hooks/usePokemonData';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
-export const BAR_COL_ROWS = 6;
-export const BAR_COL_COUNT = 2;
-export const PICKS_BAR_CAP = BAR_COL_ROWS * BAR_COL_COUNT;
+export const PICKS_COLS = 6;
+export const PICKS_MAX_ROWS = 4;
+export const PICKS_GRID_CAP = { maxRows: PICKS_MAX_ROWS, cols: PICKS_COLS } as const;
 export const MOST_MIN_INDEX = 1.1;
-export const STARTER_LINES_PER_TYPE = PICKS_BAR_CAP;
+export const LEAST_MAX_INDEX = 0.9;
 export const STARTER_TYPES = ['grass', 'fire', 'water'] as const;
 
 export type StarterType = (typeof STARTER_TYPES)[number] | 'other';
@@ -191,36 +192,69 @@ function sortMembers(ids: number[]): Pokemon[] {
   return mons;
 }
 
+/** How many 6-wide rows `lines` occupy, packing like the sprite grid. */
+export function rowsUsed(lines: { members: readonly unknown[] }[], cols = PICKS_COLS): number {
+  let rows = 0;
+  let col = 0;
+  const close = () => {
+    rows += 1;
+    col = 0;
+  };
+  for (const line of lines) {
+    let remaining = line.members.length;
+    if (remaining === 0) continue;
+    while (remaining > 0) {
+      const piece = Math.min(remaining, cols);
+      if (col > 0 && col + piece > cols) close();
+      col += piece;
+      remaining -= piece;
+      if (col === cols) close();
+    }
+  }
+  if (col > 0) rows += 1;
+  return rows;
+}
+
+type GridCap = { maxRows: number; cols: number } | { maxLines: number };
+
+function takeUntilCap<T extends { key: string; members: readonly unknown[] }>(
+  lines: T[],
+  cap: GridCap,
+): T[] {
+  if ('maxLines' in cap) return lines.slice(0, cap.maxLines);
+  const kept: T[] = [];
+  for (const line of lines) {
+    const next = [...kept, line];
+    if (rowsUsed(next, cap.cols) > cap.maxRows) break;
+    kept.push(line);
+  }
+  return kept;
+}
+
 /**
- * Split ranked-desc lines into most and least bar lists.
+ * Split ranked-desc lines into most and least sprite-grid lists.
  *
- * `most` is the highest-index lines, capped at `cap`. When `minMostIndex` is
- * set, a line must sit strictly above that index to appear in most.
- * `least` is the lowest-index lines that are not in most, ordered so the
- * lowest sits last (bottom of the bar list). Empty least stays empty; the
- * UI hides that column. Off-section passes `includeLeast: false`.
+ * `most` is the highest-index lines that fit the cap. When `minMostIndex` is
+ * set, a line must sit strictly above that index. `least` is the lowest-index
+ * lines that are not in most, strictly below `maxLeastIndex` when set, ordered
+ * so the lowest sits last. Off-section passes `includeLeast: false`.
  */
-export function splitMostLeast<T extends { key: string; index: number }>(
+export function splitMostLeast<T extends { key: string; index: number; members: readonly unknown[] }>(
   rankedDesc: T[],
-  cap: number,
-  opts: { minMostIndex?: number; includeLeast?: boolean } = {},
+  cap: GridCap,
+  opts: { minMostIndex?: number; maxLeastIndex?: number; includeLeast?: boolean } = {},
 ): { most: T[]; least: T[] } {
   const includeLeast = opts.includeLeast !== false;
   const minMost = opts.minMostIndex;
+  const maxLeast = opts.maxLeastIndex;
   const over = minMost == null ? rankedDesc : rankedDesc.filter((l) => l.index > minMost);
-  const most = over.slice(0, cap);
+  const most = takeUntilCap(over, cap);
   if (!includeLeast) return { most, least: [] };
   const mostKeys = new Set(most.map((l) => l.key));
-  const rest = rankedDesc.filter((l) => !mostKeys.has(l.key));
-  const least = rest.slice(-cap);
+  let rest = rankedDesc.filter((l) => !mostKeys.has(l.key));
+  if (maxLeast != null) rest = rest.filter((l) => l.index < maxLeast);
+  const least = takeUntilCap(rest.toReversed(), cap).toReversed();
   return { most, least };
-}
-
-/** Split a side's lines into `BAR_COL_COUNT` columns of `BAR_COL_ROWS`. */
-export function barColumns<T>(items: T[], rows = BAR_COL_ROWS): T[][] {
-  const cols: T[][] = [];
-  for (let i = 0; i < items.length; i += rows) cols.push(items.slice(i, i + rows));
-  return cols;
 }
 
 function countsFrom(rows: [string, number][]): Map<number, number> {
@@ -339,6 +373,7 @@ export function sectionPicksView(
 
   const splitOpts = {
     minMostIndex: starters || opts.offSection ? undefined : MOST_MIN_INDEX,
+    maxLeastIndex: opts.offSection ? undefined : LEAST_MAX_INDEX,
     includeLeast: !opts.offSection,
   };
 
@@ -347,7 +382,7 @@ export function sectionPicksView(
     for (const type of [...STARTER_TYPES, 'other'] as const) {
       const slice = ranked.filter((l) => l.starterType === type);
       if (slice.length === 0) continue;
-      const columns = splitMostLeast(slice, STARTER_LINES_PER_TYPE, splitOpts);
+      const columns = splitMostLeast(slice, PICKS_GRID_CAP, splitOpts);
       groups.push({ type, ...columns });
     }
     if (groups.length === 0) return null;
@@ -357,7 +392,7 @@ export function sectionPicksView(
   return {
     kind: 'plain',
     sectionId,
-    columns: splitMostLeast(ranked, PICKS_BAR_CAP, splitOpts),
+    columns: splitMostLeast(ranked, PICKS_GRID_CAP, splitOpts),
   };
 }
 

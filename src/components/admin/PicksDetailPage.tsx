@@ -5,10 +5,10 @@ import { sectionName } from '@/i18n';
 import { sectionColor } from '@/lib/sectionColors';
 import { cn, displayName } from '@/lib/utils';
 import {
-  barColumns,
   formatIndex,
   indexBarPct,
   isStarterTypeName,
+  PICKS_COLS,
   viewsForPicks,
   type DualColumn,
   type LineMember,
@@ -16,6 +16,37 @@ import {
   type SectionPicksView,
   type StarterType,
 } from './picksStats';
+
+type Cell = { member: LineMember; index: number; linePicks: number; key: string };
+
+function packLineRows(lines: RankedLine[], cols = PICKS_COLS): { cells: Cell[]; spacers: number }[] {
+  const rows: { cells: Cell[]; spacers: number }[] = [];
+  let current: Cell[] = [];
+  let col = 0;
+  const close = (spacers: number) => {
+    rows.push({ cells: current, spacers });
+    current = [];
+    col = 0;
+  };
+  for (const line of lines) {
+    for (let at = 0; at < line.members.length; at += cols) {
+      const piece = line.members.slice(at, at + cols);
+      if (col > 0 && col + piece.length > cols) close(cols - col);
+      for (const member of piece) {
+        current.push({
+          member,
+          index: line.index,
+          linePicks: line.picks,
+          key: `${line.key}-${member.id}`,
+        });
+      }
+      col += piece.length;
+      if (col === cols) close(0);
+    }
+  }
+  if (current.length > 0) close(cols - col);
+  return rows;
+}
 
 function maxIndex(lines: RankedLine[]): number {
   let max = 0;
@@ -25,12 +56,14 @@ function maxIndex(lines: RankedLine[]): number {
   return max;
 }
 
-function faceOf(line: RankedLine): LineMember {
-  let best = line.members[0];
-  for (const m of line.members) {
-    if (m.picks > best.picks) best = m;
+function maxPicks(lines: RankedLine[]): number {
+  let max = 0;
+  for (const line of lines) {
+    for (const m of line.members) {
+      if (m.picks > max) max = m.picks;
+    }
   }
-  return best;
+  return max;
 }
 
 function SectionBox({
@@ -61,84 +94,104 @@ function SectionBox({
   );
 }
 
-function IndexBarRow({
-  line,
+function SpriteCell({
+  member,
+  index,
+  linePicks,
   max,
-  color,
+  barColor,
+  countMode,
 }: {
-  line: RankedLine;
+  member: LineMember;
+  index: number;
+  linePicks: number;
   max: number;
-  color: string;
+  barColor: string;
+  countMode: boolean;
 }) {
-  const member = faceOf(line);
   const label = displayName(member.name);
-  const title = `${label}: ${line.picks} dexes · ${formatIndex(line.index)} expected`;
-  const pct = indexBarPct(line.index, max);
-  const faded = line.picks === 0;
+  const value = countMode ? member.picks : index;
+  const shown = countMode ? String(member.picks) : formatIndex(index);
+  const title = countMode
+    ? `${label}: ${member.picks} dexes`
+    : `${label}: ${member.picks} dexes · ${formatIndex(index)} expected`;
+  const dropped = member.picks === 0 || member.picks < linePicks * 0.5;
+  const pct = indexBarPct(value, max);
   return (
     <div
-      className={cn('flex min-w-0 items-center gap-1', faded && 'opacity-40')}
+      className={cn('flex min-w-0 flex-col items-center overflow-hidden', dropped && 'opacity-40')}
       title={title}
-      data-index-meter={formatIndex(line.index)}
       data-face-id={member.id}
     >
-      {member.sprite ? (
-        <img
-          src={member.sprite}
-          alt={title}
-          loading="lazy"
-          className="h-6 w-6 shrink-0 object-contain"
-          style={{ imageRendering: 'pixelated' }}
-        />
-      ) : (
-        <span className="w-6 shrink-0 text-center text-[0.5rem] text-muted-foreground">#{member.id}</span>
-      )}
-      <div
-        className="h-2 min-w-0 flex-1 overflow-hidden rounded-full"
-        style={{ backgroundColor: `${color}22` }}
-        aria-hidden
-      >
+      <div className="relative aspect-square w-full min-w-0">
+        <div className="flex h-full w-full items-center justify-center pb-[5px]">
+          {member.sprite ? (
+            <img
+              src={member.sprite}
+              alt={title}
+              loading="lazy"
+              className="max-h-full max-w-full object-contain"
+              style={{ imageRendering: 'pixelated' }}
+            />
+          ) : (
+            <span className="text-[0.5rem] text-muted-foreground">#{member.id}</span>
+          )}
+        </div>
         <div
-          data-index-fill
-          className="h-full rounded-full"
-          style={{ width: `${pct}%`, backgroundColor: color }}
-        />
+          className="absolute inset-x-0 bottom-0 h-[3px] overflow-hidden rounded-full"
+          style={{ backgroundColor: `${barColor}22` }}
+          aria-hidden
+          data-index-meter={shown}
+        >
+          <div
+            data-index-fill
+            className="h-full rounded-full"
+            style={{ width: `${pct}%`, backgroundColor: barColor }}
+          />
+        </div>
       </div>
       <span
-        className="w-[2rem] shrink-0 text-right text-[0.625rem] tabular-nums leading-none"
-        style={{ color }}
+        className="mt-0.5 max-w-full truncate text-[0.5rem] tabular-nums leading-none"
+        style={{ color: barColor }}
       >
-        {formatIndex(line.index)}
+        {shown}
       </span>
     </div>
   );
 }
 
-function BarSide({
+function LineGrid({
   lines,
   max,
-  color,
-  fromBottom = false,
+  barColor,
+  countMode,
 }: {
   lines: RankedLine[];
   max: number;
-  color: string;
-  fromBottom?: boolean;
+  barColor: string;
+  countMode: boolean;
 }) {
   if (lines.length === 0) {
     return <p className="text-[0.65rem] text-muted-foreground">None in this cap.</p>;
   }
-  const cols = barColumns(lines);
+  const rows = packLineRows(lines);
   return (
-    <div className={cn('grid min-w-0 gap-x-1.5', cols.length > 1 ? 'grid-cols-2' : 'grid-cols-1')}>
-      {cols.map((col, i) => (
-        <div
-          key={i}
-          data-bar-col
-          className={cn('flex min-w-0 flex-col gap-1', fromBottom && i > 0 && 'h-full justify-end')}
-        >
-          {col.map((line) => (
-            <IndexBarRow key={line.key} line={line} max={max} color={color} />
+    <div className="flex min-w-0 flex-col gap-1">
+      {rows.map((row, i) => (
+        <div key={i} className="grid min-w-0 grid-cols-6 gap-0.5">
+          {row.cells.map((cell) => (
+            <SpriteCell
+              key={cell.key}
+              member={cell.member}
+              index={cell.index}
+              linePicks={cell.linePicks}
+              max={max}
+              barColor={barColor}
+              countMode={countMode}
+            />
+          ))}
+          {Array.from({ length: row.spacers }, (_, s) => (
+            <div key={`s-${s}`} className="min-w-0" />
           ))}
         </div>
       ))}
@@ -146,24 +199,28 @@ function BarSide({
   );
 }
 
-function DualBars({
+function DualGrids({
   columns,
   barColor,
   showLeast,
+  countMode,
 }: {
   columns: DualColumn;
   barColor: string;
   showLeast: boolean;
+  countMode: boolean;
 }) {
   const leastOn = showLeast && columns.least.length > 0;
-  const max = leastOn
-    ? Math.max(maxIndex(columns.most), maxIndex(columns.least))
-    : maxIndex(columns.most);
+  const max = countMode
+    ? Math.max(maxPicks(columns.most), leastOn ? maxPicks(columns.least) : 0)
+    : leastOn
+      ? Math.max(maxIndex(columns.most), maxIndex(columns.least))
+      : maxIndex(columns.most);
   if (!leastOn) {
     return (
       <div className="min-w-0" data-picks-side="most">
         {showLeast ? <div className="mb-1 text-[0.65rem] font-semibold">Most</div> : null}
-        <BarSide lines={columns.most} max={max} color={barColor} />
+        <LineGrid lines={columns.most} max={max} barColor={barColor} countMode={countMode} />
       </div>
     );
   }
@@ -171,11 +228,11 @@ function DualBars({
     <div className="grid min-w-0 grid-cols-2 gap-x-1.5">
       <div className="min-w-0" data-picks-side="most">
         <div className="mb-1 text-[0.65rem] font-semibold">Most</div>
-        <BarSide lines={columns.most} max={max} color={barColor} />
+        <LineGrid lines={columns.most} max={max} barColor={barColor} countMode={countMode} />
       </div>
       <div className="min-w-0 border-l border-border/60 pl-1.5" data-picks-side="least">
         <div className="mb-1 text-[0.65rem] font-semibold">Least</div>
-        <BarSide lines={columns.least} max={max} color={barColor} fromBottom />
+        <LineGrid lines={columns.least} max={max} barColor={barColor} countMode={countMode} />
       </div>
     </div>
   );
@@ -199,9 +256,11 @@ function StarterTypeHeading({ type }: { type: StarterType }) {
 function SectionBlock({
   view,
   showLeast,
+  countMode,
 }: {
   view: SectionPicksView;
   showLeast: boolean;
+  countMode: boolean;
 }) {
   const { stroke } = sectionColor(view.sectionId);
   return (
@@ -211,12 +270,17 @@ function SectionBlock({
           {view.groups.map((g) => (
             <div key={g.type}>
               <StarterTypeHeading type={g.type} />
-              <DualBars columns={g} barColor={stroke} showLeast={showLeast} />
+              <DualGrids columns={g} barColor={stroke} showLeast={showLeast} countMode={countMode} />
             </div>
           ))}
         </div>
       ) : (
-        <DualBars columns={view.columns} barColor={stroke} showLeast={showLeast} />
+        <DualGrids
+          columns={view.columns}
+          barColor={stroke}
+          showLeast={showLeast}
+          countMode={countMode}
+        />
       )}
     </SectionBox>
   );
@@ -286,8 +350,8 @@ export function PicksDetailPage({
         </div>
         <p className="mt-1.5 text-[0.65rem] leading-snug text-muted-foreground">
           {offSection
-            ? 'Placed off their default section. Evil-team chain mates (Rhyhorn with Rhydon) stay in-section.'
-            : '1.0× = random rate among this section\'s evo lines. Most is over 1.10×. Least sits at the bottom of its list.'}
+            ? 'Placed off their default section. Numbers are dex counts. Evil-team chain mates (Rhyhorn with Rhydon) stay in-section.'
+            : '1.0× = random rate among this section\'s evo lines. Most is over 1.10×. Least is under 0.90×.'}
         </p>
       </div>
       {sections.length === 0 ? (
@@ -301,7 +365,7 @@ export function PicksDetailPage({
       ) : (
         <div className="flex flex-col gap-3">
           {sections.map((s) => (
-            <SectionBlock key={s.sectionId} view={s} showLeast={!offSection} />
+            <SectionBlock key={s.sectionId} view={s} showLeast={!offSection} countMode={offSection} />
           ))}
         </div>
       )}
