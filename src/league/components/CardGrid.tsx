@@ -789,6 +789,7 @@ function SlotHalf({
     <HeadRuns
       lines={heading.lines}
       className={headClass}
+      maxWidth={place?.width}
       style={{ color: pokemon ? 'var(--lg-band)' : 'var(--lg-hint)' }}
     />
   );
@@ -999,8 +1000,11 @@ function EmptyOutline() {
 }
 
 const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
-const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
+/** Mid-word break so no run is wider than the partner triangle's base. */
+const PARTNER_HEAD: Heading = { lines: ['PARTNER / SHOUL', 'DERMON'], label: 'PARTNER' };
 const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
+/** Slightly smaller than the ace heading so every run stays inside the partner pane. */
+const PARTNER_HEAD_CLASS = 'text-[0.5rem] font-extrabold tracking-[0.05em] leading-[1.35]';
 // The name wears the heading's all-caps, weight and size, so it reads as part
 // of the same label. Its tracking is tighter, though: the heading is two short
 // words that a wide track sets off, while the name is one long word that the
@@ -1016,15 +1020,21 @@ const NAME_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.02em] leading-[
  * in the slot would be placed as though it had two -- which is why each line
  * refuses to wrap rather than the heading as a whole.
  */
-function HeadRuns({ lines, className, style, ...rest }: {
+function HeadRuns({ lines, className, style, maxWidth, ...rest }: {
   lines: readonly string[];
   className?: string;
   style?: React.CSSProperties;
+  /** Clips runs that would paint past a half's block width. */
+  maxWidth?: number;
   /** Set on the probe copies, which the solver looks them up by. */
   'data-probe'?: string;
 }) {
   return (
-    <span {...rest} className={cn('inline-block text-center', className)} style={style}>
+    <span
+      {...rest}
+      className={cn('inline-block max-w-full overflow-hidden text-center', className)}
+      style={{ ...style, ...(maxWidth ? { maxWidth: `${maxWidth}px` } : undefined) }}
+    >
       {lines.map((line) => (
         <span key={line} className="block whitespace-nowrap">{line}</span>
       ))}
@@ -1181,7 +1191,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         <span data-probe="ace-name" className={cn('inline-block', NAME_CLASS)}>
           {ace ? pokemonLabel(ace.id, ace.name).name : ' '}
         </span>
-        <HeadRuns lines={PARTNER_HEAD.lines} className={HEAD_CLASS} data-probe="partner-head" />
+        <HeadRuns lines={PARTNER_HEAD.lines} className={PARTNER_HEAD_CLASS} data-probe="partner-head" />
         <span data-probe="partner-name" className={cn('inline-block', NAME_CLASS)}>
           {partner ? pokemonLabel(partner.id, partner.name).name : ' '}
         </span>
@@ -1223,7 +1233,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         heading={PARTNER_HEAD}
         mirrored
         pokemon={partner}
-        headClass={HEAD_CLASS}
+        headClass={PARTNER_HEAD_CLASS}
         onPick={() => openLeagueBrowser(cardIndex, 'partner')}
         onRemove={() => setPartner(cardIndex, null)}
       />
@@ -1375,7 +1385,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           </span>
         </span>
       ) : (
-        <span className="min-w-0 text-left text-[0.6875rem] leading-[1.15]" style={{ color: 'var(--lg-hint)' }}>
+        <span className={cn('min-w-0 text-left', MARK_LABEL_CLASS)} style={{ color: 'var(--lg-hint)' }}>
           Pick a move
         </span>
       )}
@@ -1401,6 +1411,33 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
  * ceiling behind it so a paste cannot put a novel in the store.
  */
 const BADGE_NAME_CEILING = 60;
+const BADGE_SUFFIX = ' Badge';
+
+function badgeSuffixEl(field: HTMLElement): HTMLElement | null {
+  return field.querySelector<HTMLElement>('[data-badge-suffix]');
+}
+
+function makeBadgeSuffix(): HTMLElement {
+  const suffix = document.createElement('span');
+  suffix.dataset.badgeSuffix = '';
+  suffix.setAttribute('contenteditable', 'false');
+  suffix.textContent = BADGE_SUFFIX;
+  return suffix;
+}
+
+function badgeNameFromField(field: HTMLElement): string {
+  const suffix = badgeSuffixEl(field);
+  const raw = field.textContent ?? '';
+  if (!suffix) return raw;
+  return raw.endsWith(BADGE_SUFFIX) ? raw.slice(0, -BADGE_SUFFIX.length) : raw;
+}
+
+function writeBadgeField(field: HTMLElement, next: string) {
+  field.replaceChildren();
+  if (next) {
+    field.append(document.createTextNode(next), makeBadgeSuffix());
+  }
+}
 
 function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setBadgeName = useLeagueStore((s) => s.setBadgeName);
@@ -1421,16 +1458,22 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   useLayoutEffect(() => {
     const el = fieldRef.current;
     if (!el || document.activeElement === el) return;
-    if (el.textContent !== name) el.textContent = name;
+    writeBadgeField(el, name);
     accepted.current = name;
   }, [name]);
 
   const putCaretAtEnd = () => {
     const el = fieldRef.current;
     if (!el) return;
+    const suffix = badgeSuffixEl(el);
     const range = document.createRange();
-    range.selectNodeContents(el);
-    range.collapse(false);
+    if (suffix) {
+      range.setEndBefore(suffix);
+      range.collapse(false);
+    } else {
+      range.selectNodeContents(el);
+      range.collapse(false);
+    }
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
@@ -1440,23 +1483,29 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     const el = fieldRef.current;
     const box = textRef.current;
     if (!el || !box) return;
+    let next = badgeNameFromField(el);
+    if (next && !badgeSuffixEl(el)) {
+      el.appendChild(makeBadgeSuffix());
+      next = badgeNameFromField(el);
+    }
+    if (!next && badgeSuffixEl(el)) writeBadgeField(el, '');
     // Stored exactly as the field holds it. Normalizing here — collapsing
     // runs of space, say — makes the store and the DOM disagree on the very
     // next render, and the only way to reconcile that is to rewrite the
     // field, which throws the caret back to the start. A browser inserts a
     // non-breaking space for a trailing one, so a normalizing field
     // scrambles its own text the moment you type two words.
-    const next = el.textContent ?? '';
     // The suffix is already in the box by the second character, so the box
     // measures the phrase the reader will see, not just the name.
     const fits = next.length <= BADGE_NAME_CEILING && box.scrollHeight <= box.clientHeight + 1;
     if (!fits) {
-      el.textContent = accepted.current;
+      writeBadgeField(el, accepted.current);
       putCaretAtEnd();
       return;
     }
     accepted.current = next;
     setBadgeName(cardIndex, next);
+    requestAnimationFrame(putCaretAtEnd);
   };
 
   return (
@@ -1546,6 +1595,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           aria-label="Badge name"
           spellCheck={false}
           onInput={onInput}
+          onFocus={putCaretAtEnd}
           // The placeholder is the field's own `::before` rather than a
           // sibling: an empty inline span is zero-wide, which leaves nothing
           // to tap and nowhere obvious for the caret to sit.
@@ -1553,7 +1603,6 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           data-placeholder="Name"
           className="outline-none"
         />
-        {name ? <span> Badge</span> : null}
       </div>
       {name && (
         <SlotRemove
@@ -1561,7 +1610,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           onRemove={() => {
             setBadgeName(cardIndex, '');
             const field = fieldRef.current;
-            if (field) field.textContent = '';
+            if (field) writeBadgeField(field, '');
           }}
         />
       )}

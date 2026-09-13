@@ -317,7 +317,8 @@ test.describe('gym card slots', () => {
       const box = el.parentElement!;
       return { field: el.textContent, phrase: box.textContent };
     });
-    expect(short.field).toBe('Thunder');
+    // The suffix lives inside the field now so wrap and caret stay one phrase.
+    expect(short.field).toBe('Thunder Badge');
     expect(short.phrase).toBe('Thunder Badge');
   });
 
@@ -360,7 +361,7 @@ test.describe('gym card slots', () => {
     // for is that everything before that point survives *in order*, which is
     // what a field rewriting itself mid-keystroke destroys.
     const typed = 'Thunder Cascade Marsh Rainbow Soul Volcano Earth Boulder Zephyr Glacier';
-    const kept = state.rendered.replace(/\u00a0/g, ' ');
+    const kept = state.rendered.replace(/\u00a0/g, ' ').replace(/\s*Badge$/, '').trimEnd();
     let common = 0;
     while (common < kept.length && kept[common] === typed[common]) common++;
     // Everything but the tail is the head of what was typed, in order. The
@@ -372,7 +373,7 @@ test.describe('gym card slots', () => {
     expect(common, `"${kept}" is the head of what was typed`)
       .toBeGreaterThanOrEqual(kept.length - 2);
     expect(common, 'and enough of it to show the order held').toBeGreaterThan(4);
-    expect(state.stored).toBe(state.rendered);
+    expect(state.stored.replace(/\u00a0/g, ' ').trimEnd()).toBe(kept);
   });
 });
 

@@ -438,6 +438,10 @@ img {
 [data-badge-field]:empty::before {
   content: attr(data-placeholder);
   color: var(--lg-hint);
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 /* Each screenshot floats up on its own when the pointer is over THAT screenshot,
