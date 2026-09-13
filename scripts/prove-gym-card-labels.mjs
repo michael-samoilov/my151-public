@@ -49,7 +49,8 @@ async function metrics(page) {
       return { t, past: b && slot ? b.right - slot.right : 0 };
     });
     const mark = (root, word) => {
-      const el = [...root?.querySelectorAll('span') ?? []].find((s) => s.textContent?.trim() === word);
+      const el = root?.querySelector('[data-mark-label]')
+        || [...root?.querySelectorAll('span') ?? []].find((s) => s.textContent?.trim() === word);
       if (!el) return null;
       const b = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
@@ -157,7 +158,7 @@ const ok =
   after.badge?.w > 18 &&
   after.tm?.w > 18 &&
   (after.discW ?? 99) < 22 &&
-  (after.shoulderPastSlot ?? 99) <= 2 &&
+  (after.shoulderPastSlot ?? 99) <= -2 &&
   after.pick?.fontSize === '8px' &&
   before.pick?.fontSize !== '8px' &&
   !after.caret.inSuffix;

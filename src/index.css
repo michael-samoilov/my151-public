@@ -438,7 +438,7 @@ img {
 [data-badge-field]:empty::before {
   content: attr(data-placeholder);
   color: var(--lg-hint);
-  font-size: 0.5rem;
+  font-size: 0.4rem;
   font-weight: 800;
   font-variant: all-small-caps;
   letter-spacing: normal;

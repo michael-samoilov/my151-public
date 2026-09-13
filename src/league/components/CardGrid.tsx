@@ -789,7 +789,7 @@ function SlotHalf({
     <HeadRuns
       lines={heading.lines}
       className={headClass}
-      maxWidth={place?.width}
+      data-slot-head={half}
       style={{ color: pokemon ? 'var(--lg-band)' : 'var(--lg-hint)' }}
     />
   );
@@ -1003,7 +1003,7 @@ const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
 const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
 const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
 /** Slightly smaller than the ace heading so every run stays inside the partner pane. */
-const PARTNER_HEAD_CLASS = 'text-[0.4rem] font-extrabold tracking-[0.01em] leading-[1.15]';
+const PARTNER_HEAD_CLASS = 'pb-3 text-[0.4rem] font-extrabold tracking-[0.01em] leading-[1.15]';
 // The name wears the heading's all-caps, weight and size, so it reads as part
 // of the same label. Its tracking is tighter, though: the heading is two short
 // words that a wide track sets off, while the name is one long word that the
@@ -1019,23 +1019,18 @@ const NAME_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.02em] leading-[
  * in the slot would be placed as though it had two -- which is why each line
  * refuses to wrap rather than the heading as a whole.
  */
-function HeadRuns({ lines, className, style, maxWidth, ...rest }: {
+function HeadRuns({ lines, className, style, ...rest }: {
   lines: readonly string[];
   className?: string;
   style?: React.CSSProperties;
-  /** Clips runs that would paint past a half's block width. */
-  maxWidth?: number;
   /** Set on the probe copies, which the solver looks them up by. */
   'data-probe'?: string;
+  'data-slot-head'?: string;
 }) {
   return (
-    <span
-      {...rest}
-      className={cn('inline-block max-w-full overflow-hidden text-center', className)}
-      style={{ ...style, ...(maxWidth ? { maxWidth: `${maxWidth}px` } : undefined) }}
-    >
+    <span {...rest} className={cn('inline-block text-center', className)} style={style}>
       {lines.map((line) => (
-        <span key={line} className="mx-auto block w-max max-w-full whitespace-nowrap">{line}</span>
+        <span key={line} className="block whitespace-nowrap">{line}</span>
       ))}
     </span>
   );
@@ -1171,7 +1166,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   return (
     <div
       ref={slotRef}
-      className="absolute z-[5] overflow-hidden rounded-lg"
+      className="absolute z-[5] rounded-lg"
       style={{
         ...pos,
         background: ace || partner ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
@@ -1298,7 +1293,7 @@ const MARK_TRAIL = '0.0625rem';
 // resolves against the column, so repeating the box fraction here multiplies
 // the two and collapses the glyph to a few pixels.
 const MARK_GLYPH = '72%';
-const MARK_LABEL_CLASS = 'whitespace-nowrap text-[0.5rem] font-extrabold tracking-[0.02em]';
+const MARK_LABEL_CLASS = 'shrink-0 whitespace-nowrap text-[0.4rem] font-extrabold tracking-normal';
 
 function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
@@ -1324,13 +1319,11 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     >
       {!move && <EmptyOutline />}
       <span
-        className="flex shrink-0 flex-col items-center justify-center overflow-visible"
+        className="flex shrink-0 flex-col items-center justify-center"
         style={{ width: MARK_COL }}
       >
-        {/* The disc wears the move's own type, not the gym's — a TM is the
-            move, and the gym's colour is already the whole card. Empty, it
-            matches the badge hexagon's stroke rather than the cell fill. */}
-        {/* The disc takes the column's width so it tracks the same cap. */}
+        {/* Glyph size is capped in rem so a wider label column cannot grow
+            the disc. 1.375rem is 72% of the 2.75rem column production used. */}
         <span className="w-full" style={{ aspectRatio: '1', maxWidth: MARK_GLYPH }}>
           <TmDisc colour={move ? TYPE_COLORS[move.type] : 'var(--lg-dash)'} size="100%" />
         </span>
@@ -1343,7 +1336,8 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             move; the hexagon and BADGE answer to the gym. So the word here
             reads the move's own band rather than the card's `--lg-band`. */}
         <span
-          className={cn('-mt-[0.0625rem] w-max max-w-full', MARK_LABEL_CLASS)}
+          className={cn('-mt-[0.0625rem]', MARK_LABEL_CLASS)}
+          data-mark-label="tm"
           style={{ color: move ? cardShades(move.type).band : 'var(--lg-hint)', whiteSpace: 'nowrap' }}
         >
           TM
@@ -1531,7 +1525,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       {/* The same column the TM slot uses, so the hexagon sits under the disc
           and the word under the word. */}
       <span
-        className="flex shrink-0 flex-col items-center justify-center overflow-visible"
+        className="flex shrink-0 flex-col items-center justify-center"
         style={{ width: MARK_COL }}
       >
         {/* Drawn the way the TM disc is drawn: an outline in the type's own
@@ -1570,7 +1564,8 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           style={{ gridTemplateRows: name ? '0fr' : '1fr' }}
         >
           <span
-            className={cn('-mt-[0.0625rem] w-max max-w-full transition-opacity duration-300 ease-out', MARK_LABEL_CLASS)}
+            className={cn('-mt-[0.0625rem] transition-opacity duration-300 ease-out', MARK_LABEL_CLASS)}
+            data-mark-label="badge"
             style={{ color: 'var(--lg-hint)', opacity: name ? 0 : 1, minHeight: 0, whiteSpace: 'nowrap' }}
           >
             BADGE
