@@ -1,6 +1,12 @@
 import { Check, Download, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { LeagueHomeExportLayout } from '../export/exportOptions';
+import type { LeagueHomeExportLayout, LeagueHomeTeamMode } from '../export/exportOptions';
+
+const TEAM_OPTIONS: { mode: LeagueHomeTeamMode; label: string }[] = [
+  { mode: 'story', label: 'Story' },
+  { mode: 'rematch', label: 'Rematch' },
+  { mode: 'both', label: 'Story and Rematch' },
+];
 
 export function LeagueExportSettingsPane({
   isLeague,
@@ -19,10 +25,6 @@ export function LeagueExportSettingsPane({
   onClose: () => void;
   mobileSheet?: boolean;
 }) {
-  const toggle = (key: keyof Pick<LeagueHomeExportLayout, 'gymDetails' | 'sideBySide'>) => {
-    onLayout({ ...layout, [key]: !layout[key] });
-  };
-
   return (
     <div className="relative flex h-full w-full flex-col bg-background">
       {!mobileSheet && (
@@ -43,28 +45,31 @@ export function LeagueExportSettingsPane({
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {isLeague ? (
-          <div className="px-3 pt-3 pb-2">
-            <h3 className="mb-2 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
-              Layout
-            </h3>
-            <div className="space-y-1">
-              <LayoutToggle
-                on={layout.gymDetails}
-                title="Gym details column"
-                desc="Theme, TM, and badge beside each row. Widens the export horizontally."
-                onClick={() => toggle('gymDetails')}
-              />
-              <LayoutToggle
-                on={layout.sideBySide}
-                title="Story and rematch side by side"
-                desc="Gym leaders only; adds a second team block with the same spacing as the first."
-                onClick={() => toggle('sideBySide')}
-              />
+          <div className="space-y-4 px-3 pt-3 pb-2">
+            <LayoutToggle
+              on={layout.gymDetails}
+              title="Gym details (theme, TM, badge)"
+              onClick={() => onLayout({ ...layout, gymDetails: !layout.gymDetails })}
+            />
+            <div>
+              <h3 className="mb-2 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                Teams
+              </h3>
+              <div className="space-y-1">
+                {TEAM_OPTIONS.map(({ mode, label }) => (
+                  <TeamModeOption
+                    key={mode}
+                    selected={layout.teamMode === mode}
+                    label={label}
+                    onClick={() => onLayout({ ...layout, teamMode: mode })}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         ) : (
           <p className="px-3 py-3 text-sm text-muted-foreground">
-            Trainer card exports match the card on screen. League summary exports can add optional columns.
+            Trainer card exports match the card on screen.
           </p>
         )}
       </div>
@@ -94,12 +99,10 @@ export function LeagueExportSettingsPane({
 function LayoutToggle({
   on,
   title,
-  desc,
   onClick,
 }: {
   on: boolean;
   title: string;
-  desc: string;
   onClick: () => void;
 }) {
   return (
@@ -120,7 +123,35 @@ function LayoutToggle({
         </span>
         <span className={`text-sm ${on ? 'font-medium text-primary' : 'text-foreground'}`}>{title}</span>
       </div>
-      <p className="ml-6 mt-1 text-xs leading-snug text-muted-foreground">{desc}</p>
+    </button>
+  );
+}
+
+function TeamModeOption({
+  selected,
+  label,
+  onClick,
+}: {
+  selected: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${
+        selected ? 'bg-primary/10 font-medium text-primary' : 'text-foreground hover:bg-muted'
+      }`}
+    >
+      <span
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+          selected ? 'border-primary' : 'border-muted-foreground/40'
+        }`}
+      >
+        {selected && <span className="h-2 w-2 rounded-full bg-primary" />}
+      </span>
+      {label}
     </button>
   );
 }

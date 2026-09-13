@@ -303,7 +303,7 @@ export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / SEAT_COUNT;
  */
 export const HOME_DETAILS_COL = 132 * K2;
 /** Air between story and rematch blocks when both show on one row. */
-export const HOME_SIDE_GAP = 12 * K2;
+export const HOME_SIDE_GAP = 20 * K2;
 
 /** Home-export label and body sizes that mirror the gym card's TM/badge marks. */
 export const HOME_MARK_LABEL_PX = 8 * K2;
@@ -373,9 +373,16 @@ export const CARD_IMG_H = TITLE_BLOCK_H + gridHeight() + FOOT + FRAME;
  * The league: its padding, the name line if there is one, four bands with
  * their gaps, fourteen rows, and the credit.
  */
-export function homeImgH(named: boolean): number {
+export function homeImgH(named: boolean, bothTeamColumns = false): number {
+  const teamHeaderBand = bothTeamColumns ? BAND2 + 2 : 0;
   return Math.ceil(
-    homeTopPad(named) + (named ? HOME_HDR_H : 0) + 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT,
+    homeTopPad(named) +
+      (named ? HOME_HDR_H : 0) +
+      14 * ROW2 +
+      4 * BAND2 +
+      3 * 2 +
+      teamHeaderBand +
+      FOOT,
   );
 }
 

@@ -34,8 +34,8 @@ function ExportScrim({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0" style={{ zIndex: SCRIM_Z }} data-export-scrim data-overlay>
       <div
         aria-hidden
-        className="absolute inset-0 bg-slate-950/40 backdrop-blur-2xl"
-        style={{ WebkitBackdropFilter: 'blur(24px)', backdropFilter: 'blur(24px)' }}
+        className="absolute inset-0 bg-slate-950/35 backdrop-blur-md"
+        style={{ WebkitBackdropFilter: 'blur(10px)', backdropFilter: 'blur(10px)' }}
       />
       <button
         type="button"
@@ -66,13 +66,15 @@ function ExportPreviewLayer({
         'pointer-events-none fixed flex items-center justify-center',
         dimmed && 'opacity-40',
         isDesktop
-          ? 'inset-0 p-6 pr-[min(26rem,calc(100vw-1rem))] md:p-10'
-          : 'inset-x-0 top-14 bottom-[min(46vh,22rem)] px-3',
+          ? 'inset-0 p-4 pr-[min(26rem,calc(100vw-1rem))] md:p-8'
+          : 'inset-x-0 top-12 bottom-[min(58vh,28rem)] px-2',
       )}
       style={{ zIndex: PREVIEW_Z }}
       data-export-preview-layer
     >
-      <div className="pointer-events-auto max-h-full max-w-full">{children}</div>
+      <div className="pointer-events-auto flex h-full w-full max-h-full max-w-full items-center justify-center">
+        {children}
+      </div>
     </div>,
     document.body,
   );
@@ -199,7 +201,7 @@ export function LeagueExportOverlay() {
       src={previewUrl}
       alt={isLeague ? 'League export preview' : 'Trainer card export preview'}
       busy={previewBusy}
-      className="mx-auto max-h-full max-w-[min(92vw,22rem)] md:max-h-[min(70vh,32rem)] md:max-w-[min(40vw,28rem)]"
+      className="max-h-full max-w-full"
     />
   );
 
