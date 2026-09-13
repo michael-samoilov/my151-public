@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatWhen,
+  fmtChipDuration,
   fmtDuration,
   leagueExported,
   matchesArchiveFilter,
   matchesToolFilter,
-  sessionChipLabel,
+  mergedSessionStats,
+  previewLanguage,
+  sessionChipParts,
   sessionTotalMs,
   toolKind,
 } from './userPreview';
@@ -55,9 +58,47 @@ describe('leagueExported', () => {
   });
 });
 
-describe('sessionChipLabel', () => {
-  it('fits a triple-digit session count with double-digit hours and minutes', () => {
-    expect(sessionChipLabel(999, 5999 * 60 * 1000)).toBe('999 sessions · 99h 59m');
+describe('fmtChipDuration', () => {
+  it('reports 0m under 45 seconds', () => {
+    expect(fmtChipDuration(0)).toBe('0m');
+    expect(fmtChipDuration(44_000)).toBe('0m');
+  });
+
+  it('fits double-digit hours and minutes', () => {
+    expect(fmtChipDuration(5999 * 60 * 1000)).toBe('99h 59m');
+  });
+});
+
+describe('sessionChipParts', () => {
+  it('always includes a duration', () => {
+    expect(sessionChipParts(1, 0)).toEqual({ count: 1, unit: 'session', duration: '0m' });
+    expect(sessionChipParts(999, 5999 * 60 * 1000)).toEqual({
+      count: 999,
+      unit: 'sessions',
+      duration: '99h 59m',
+    });
+  });
+});
+
+describe('mergedSessionStats', () => {
+  it('adds dex and league sessions and time', () => {
+    expect(
+      mergedSessionStats({ sessions: 1, sessionMs: [] }, { sessions: 2, sessionMs: [60_000, 120_000] }),
+    ).toEqual({ sessions: 3, totalMs: 180_000 });
+  });
+});
+
+describe('previewLanguage', () => {
+  it('uses the served language when it matches the browser', () => {
+    expect(previewLanguage('en-US', 'en', undefined)).toEqual({ kind: 'served', tag: 'en' });
+  });
+
+  it('uses the browser language when we could not serve it', () => {
+    expect(previewLanguage('el-GR', 'en', undefined)).toEqual({ kind: 'unsupported', tag: 'el-GR' });
+  });
+
+  it('uses the switched language when the user picked one', () => {
+    expect(previewLanguage('en-US', 'en', 'ja')).toEqual({ kind: 'switched', tag: 'ja' });
   });
 });
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { PicksDetailPage } from '@/components/admin/PicksDetailPage';
@@ -24,14 +24,15 @@ import {
   leagueExported,
   matchesArchiveFilter,
   matchesToolFilter,
-  sessionChipLabel,
-  sessionTotalMs,
+  mergedSessionStats,
+  previewLanguage,
+  sessionChipParts,
   toolKind,
   type ArchiveFilter,
   type ToolFilter,
 } from '@/components/admin/userPreview';
 import { FitNowrap } from '@/components/admin/FitNowrap';
-import { Archive, ArchiveRestore, Download, Globe, Languages } from 'lucide-react';
+import { Archive, ArchiveRestore, Camera, Globe, Languages } from 'lucide-react';
 
 // Human labels for the onboarding/funnel events shown per session.
 
@@ -742,8 +743,40 @@ function UserToolSeg({
   );
 }
 
+function PreviewLanguageChip({ lang, locale, switched }: { lang?: string; locale?: string; switched?: string }) {
+  const preview = previewLanguage(lang, locale, switched);
+  if (!preview) return null;
+  const name = langName(preview.tag) ?? preview.tag;
+  const icon =
+    preview.kind === 'switched' ? (
+      <Languages className="h-[13px] w-[13px]" />
+    ) : preview.kind === 'unsupported' ? (
+      <Globe className="h-[13px] w-[13px]" />
+    ) : (
+      <span className="[&>svg]:h-[13px] [&>svg]:w-[13px]" aria-hidden>
+        {POKEBALL_SVG}
+      </span>
+    );
+  const kindLabel =
+    preview.kind === 'switched' ? 'Switched' : preview.kind === 'unsupported' ? 'Browser' : 'Served';
+  return (
+    <InfoChip label={`${kindLabel} ${name}`}>
+      {icon}
+      <span className="text-xs font-medium">{langAbbr(preview.tag)}</span>
+    </InfoChip>
+  );
+}
+
 /** Geo / platform / language chips. Icons disclose their name on press or hover. */
-function PlatformChips({ rec, className }: { rec: HeaderRec; className?: string }) {
+function PlatformChips({
+  rec,
+  className,
+  compactLang,
+}: {
+  rec: HeaderRec;
+  className?: string;
+  compactLang?: boolean;
+}) {
   return (
     <TooltipScope>
       <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
@@ -767,7 +800,11 @@ function PlatformChips({ rec, className }: { rec: HeaderRec; className?: string 
             <BrowserIcon value={rec.browser} />
           </InfoChip>
         )}
-        <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+        {compactLang ? (
+          <PreviewLanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+        ) : (
+          <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+        )}
       </div>
     </TooltipScope>
   );
@@ -1140,22 +1177,24 @@ function MetricChip({
   exported,
   metric,
   className,
+  children,
 }: {
-  label: string;
+  label?: string;
   exported?: boolean;
   metric: 'session' | 'dex' | 'league';
   className?: string;
+  children?: ReactNode;
 }) {
   return (
     <span
       data-metric={metric}
       className={cn(
-        'inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-xs font-medium tabular-nums',
+        'inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-1.5 text-xs font-medium tabular-nums md:px-2',
         className,
       )}
     >
-      {label}
-      {exported ? <Download className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="exported" /> : null}
+      {children ?? label}
+      {exported ? <Camera className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="exported" /> : null}
     </span>
   );
 }
@@ -1169,14 +1208,18 @@ function UserPreviewCard({
   onArchive,
 }: {
   rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
-  dex?: { depth: number; exported: boolean };
-  league?: { cards: number; exported: boolean };
+  dex?: { depth: number; exported: boolean; sessions?: number; sessionMs?: number[] };
+  league?: { cards: number; exported: boolean; sessions?: number; sessionMs?: number[] };
   archived: boolean;
   onOpen: () => void;
   onArchive: (next: boolean) => void;
 }) {
-  const sessions = rec.sessions ?? rec.sessionMs?.length ?? 0;
-  const totalMs = sessionTotalMs(rec.sessionMs);
+  const { sessions, totalMs } = mergedSessionStats(
+    { sessions: rec.sessions, sessionMs: rec.sessionMs },
+    dex?.sessions != null || dex?.sessionMs ? dex : undefined,
+    league?.sessions != null || league?.sessionMs ? league : undefined,
+  );
+  const sessionParts = sessionChipParts(sessions, totalMs);
 
   return (
     <div
@@ -1216,7 +1259,7 @@ function UserPreviewCard({
             type="button"
             variant="ghost"
             size="sm"
-            className="relative h-7 w-7 p-0 text-muted-foreground hover:text-foreground before:absolute before:-inset-2 before:content-['']"
+            className="relative h-7 w-7 p-0 text-red-600 hover:text-red-700 before:absolute before:-inset-2 before:content-['']"
             aria-label={archived ? 'Unarchive user' : 'Archive user'}
             onClick={() => onArchive(!archived)}
           >
@@ -1225,15 +1268,16 @@ function UserPreviewCard({
         </div>
       </div>
       <FitNowrap className="md:col-start-3 md:row-start-1 md:min-w-0 md:justify-self-stretch">
-        <PlatformChips rec={rec} className="flex-nowrap gap-1" />
+        <PlatformChips rec={rec} className="flex-nowrap gap-1" compactLang />
       </FitNowrap>
       <div className="min-w-0 md:contents">
         <FitNowrap contentsOnMd>
-          <MetricChip
-            metric="session"
-            className="md:col-start-4 md:row-start-1 md:justify-self-start"
-            label={sessionChipLabel(sessions, totalMs)}
-          />
+          <MetricChip metric="session" className="md:col-start-4 md:row-start-1 md:justify-self-start">
+            <span className="font-bold text-foreground tabular-nums">{sessionParts.count}</span>
+            <span className="font-medium text-muted-foreground">{sessionParts.unit}</span>
+            <span className="text-muted-foreground">·</span>
+            <span className="font-medium tabular-nums">{sessionParts.duration}</span>
+          </MetricChip>
           {dex ? (
             <MetricChip
               metric="dex"
@@ -1248,7 +1292,7 @@ function UserPreviewCard({
             <MetricChip
               metric="league"
               className="md:col-start-6 md:row-start-1 md:justify-self-start"
-              label={`${league.cards}/${CARD_COUNT} cards`}
+              label={`${league.cards}/${CARD_COUNT}`}
               exported={league.exported}
             />
           ) : (
@@ -1868,15 +1912,16 @@ export function AdminPage() {
                 type Row = {
                   cid: string;
                   rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
-                  dex?: { depth: number; exported: boolean };
-                  league?: { cards: number; exported: boolean };
+                  dex?: { depth: number; exported: boolean; sessions?: number; sessionMs?: number[] };
+                  league?: { cards: number; exported: boolean; sessions?: number; sessionMs?: number[] };
                   archived: boolean;
                   open: Detail;
                 };
                 const rows: Row[] = [];
                 if (showDex) {
                   for (const rec of data.records) {
-                    const league = data.leagueByCid?.[rec.cid];
+                    const league =
+                      data.leagueByCid?.[rec.cid] ?? data.leagueByCid?.[bareCid(rec.cid)];
                     const kind = toolKind(true, !!league);
                     if (!kind) continue;
                     const archived = archivedOf(rec.cid, rec.archived);
@@ -1890,6 +1935,8 @@ export function AdminPage() {
                         ? {
                             cards: league.maxCards,
                             exported: leagueExported(league.exportsCard, league.exportsLeague),
+                            sessions: league.sessions,
+                            sessionMs: league.sessionMs,
                           }
                         : undefined,
                       archived,
@@ -1908,7 +1955,14 @@ export function AdminPage() {
                     rows.push({
                       cid: rec.cid,
                       rec,
-                      dex: dex ? { depth: dex.maxDepth, exported: dex.exported } : undefined,
+                      dex: dex
+                        ? {
+                            depth: dex.maxDepth,
+                            exported: dex.exported,
+                            sessions: dex.sessions,
+                            sessionMs: dex.sessionMs,
+                          }
+                        : undefined,
                       league: {
                         cards: rec.maxCards,
                         exported: leagueExported(rec.exportsCard, rec.exportsLeague),

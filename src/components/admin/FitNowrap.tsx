@@ -53,7 +53,7 @@ export function FitNowrap({
     <div ref={hostRef} className={cn('min-w-0 overflow-x-clip', contentsOnMd && 'md:contents', className)}>
       <div
         ref={innerRef}
-        className={cn('flex w-max flex-nowrap items-center gap-1.5', contentsOnMd && 'md:contents')}
+        className={cn('flex w-max flex-nowrap items-center gap-1', contentsOnMd && 'md:contents')}
         style={{ zoom }}
       >
         {children}

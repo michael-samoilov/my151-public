@@ -180,6 +180,8 @@ type NewestSeed = {
   hoursAgo: number;
   archived?: boolean;
   sessionMs?: number[];
+  locale?: string;
+  switched?: string;
 };
 const TZ: Record<string, string> = {
   US: 'America/New_York',
@@ -208,10 +210,10 @@ const NEWEST: NewestSeed[] = [
   { cid: '74d5…68', c: 'US', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'en-US', sess: 11, dex: 151, comp: true, exp: false, hoursAgo: 2 },
   { cid: '70cd…a7', c: 'IT', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'it-IT', sess: 6, dex: 90, comp: false, exp: false, hoursAgo: 4 },
   { cid: '14c0…85', c: 'IT', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'it-IT', sess: 1, dex: 139, comp: true, exp: true, hoursAgo: 5 },
-  { cid: 'bea3…4e', c: 'US', dev: 'Mobile', os: 'iOS', browser: 'Safari', lang: 'en-US', sess: 9, dex: 151, comp: true, exp: false, hoursAgo: 6 },
+  { cid: 'bea3…4e', c: 'US', dev: 'Mobile', os: 'iOS', browser: 'Safari', lang: 'en-US', sess: 9, dex: 151, comp: true, exp: false, hoursAgo: 6, switched: 'ja' },
   { cid: '0f91…4a', c: 'SE', dev: 'Desktop', os: 'macOS', browser: 'Safari', lang: 'sv-SE', sess: 3, dex: 68, comp: false, exp: false, hoursAgo: 8 },
   { cid: 'f269…9a', c: 'CA', dev: 'Mobile', os: 'Android', browser: 'Chrome', lang: 'en-CA', sess: 4, dex: 9, comp: false, exp: false, hoursAgo: 26, archived: true },
-  { cid: '4eab…af', c: 'GB', dev: 'Desktop', os: 'Windows', browser: 'Edge', lang: 'en-GB', sess: 1, dex: 3, comp: false, exp: false, hoursAgo: 27 },
+  { cid: '4eab…af', c: 'GB', dev: 'Desktop', os: 'Windows', browser: 'Edge', lang: 'el-GR', locale: 'en', sess: 1, dex: 3, comp: false, exp: false, hoursAgo: 27 },
 ];
 
 // Bucket a run of ids into a few real build sections so the scrubber shows a
@@ -279,7 +281,8 @@ function record(s: NewestSeed): ClientRecord {
     tz: TZ[s.c],
 
     lang: s.lang,
-    locale: s.lang.split('-')[0],
+    locale: s.locale ?? s.lang.split('-')[0],
+    switched: s.switched,
     device: s.dev,
     os: s.os,
     browser: s.browser,

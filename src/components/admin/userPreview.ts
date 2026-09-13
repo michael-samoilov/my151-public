@@ -5,6 +5,9 @@ export { bareCid };
 export type ArchiveFilter = 'active' | 'archived' | 'all';
 export type ToolFilter = 'any' | 'dex' | 'league' | 'both';
 export type ToolKind = 'dex' | 'league' | 'both';
+export type PreviewLangKind = 'served' | 'unsupported' | 'switched';
+
+export type SessionSlice = { sessions?: number; sessionMs?: number[] };
 
 export function toolKind(hasDex: boolean, hasLeague: boolean): ToolKind | null {
   if (hasDex && hasLeague) return 'both';
@@ -23,10 +26,60 @@ export function matchesArchiveFilter(archived: boolean, filter: ArchiveFilter): 
   return filter === 'archived' ? archived : !archived;
 }
 
-export function sessionChipLabel(sessions: number, totalMs: number): string {
-  const sess = `${sessions} session${sessions === 1 ? '' : 's'}`;
-  if (totalMs <= 0) return sess;
-  return `${sess} · ${fmtDuration(totalMs)}`;
+export function sameBaseLang(a: string, b: string): boolean {
+  return a.split('-')[0].toLowerCase() === b.split('-')[0].toLowerCase();
+}
+
+/** One language for a preview card. Detail still shows the full path. */
+export function previewLanguage(
+  lang?: string,
+  locale?: string,
+  switched?: string,
+): { kind: PreviewLangKind; tag: string } | null {
+  if (switched) return { kind: 'switched', tag: switched };
+  if (lang && locale && !sameBaseLang(lang, locale)) return { kind: 'unsupported', tag: lang };
+  const tag = locale || lang;
+  if (!tag) return null;
+  return { kind: 'served', tag };
+}
+
+export function sessionTotalMs(sessionMs?: number[]): number {
+  return (sessionMs ?? []).reduce((a, b) => a + b, 0);
+}
+
+export function mergedSessionStats(...parts: Array<SessionSlice | undefined>): {
+  sessions: number;
+  totalMs: number;
+} {
+  let sessions = 0;
+  let totalMs = 0;
+  for (const p of parts) {
+    if (!p) continue;
+    const ms = p.sessionMs ?? [];
+    totalMs += sessionTotalMs(ms);
+    sessions += p.sessions ?? ms.length;
+  }
+  return { sessions, totalMs };
+}
+
+/** Minutes for a preview chip. Under 45s is 0m, so a card always shows time. */
+export function fmtChipDuration(ms: number): string {
+  if (ms < 45_000) return '0m';
+  const m = Math.round(ms / 60_000);
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  return `${h}h${m % 60 ? ` ${m % 60}m` : ''}`;
+}
+
+export function sessionChipParts(
+  sessions: number,
+  totalMs: number,
+): { count: number; unit: string; duration: string } {
+  return {
+    count: sessions,
+    unit: sessions === 1 ? 'session' : 'sessions',
+    duration: fmtChipDuration(totalMs),
+  };
 }
 
 /** Last-seen time in the user's timezone, with no seconds. Falls back to the
@@ -46,10 +99,6 @@ export function formatWhen(when: number, tz?: string, locale?: string): string {
     }
   }
   return new Intl.DateTimeFormat(locale, opts).format(when);
-}
-
-export function sessionTotalMs(sessionMs?: number[]): number {
-  return (sessionMs ?? []).reduce((a, b) => a + b, 0);
 }
 
 /** Compact duration: 45s, 3m, 1h 5m. */
