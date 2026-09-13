@@ -4,10 +4,16 @@ import {
   dexFunnelSankey,
   leagueFunnelSankey,
   nodeDepth,
-  phoneFunnelRows,
-  phoneReferrerRows,
   referrerFlowSankey,
 } from './usageFunnels';
+
+function namesOf(sankey: { nodes: { name: string }[] }): string[] {
+  return sankey.nodes.map((n) => n.name);
+}
+
+function targetsFrom(sankey: { links: { source: string; target: string }[] }, source: string): string[] {
+  return sankey.links.filter((l) => l.source === source).map((l) => l.target);
+}
 
 describe('dexFunnelSankey', () => {
   const sankey = dexFunnelSankey(
@@ -47,6 +53,29 @@ describe('dexFunnelSankey', () => {
     expect(emptyPeel.nodes.map((n) => n.name)).not.toContain('31–60');
     expect(emptyPeel.nodes.map((n) => n.name)).toContain('1–30');
   });
+
+  it('lists the through-node before the peel in each column', () => {
+    const names = namesOf(sankey);
+    const pairs: [string, string][] = [
+      ['Built', 'Bounced'],
+      ['31+', '1–30'],
+      ['61+', '31–60'],
+      ['91+', '61–90'],
+      ['121+', '91–120'],
+      ['Completed', '121–150'],
+      ['Exported', 'Kept private'],
+    ];
+    for (const [through, peel] of pairs) {
+      expect(names.indexOf(through), `${through} above ${peel}`).toBeLessThan(names.indexOf(peel));
+    }
+  });
+
+  it('attaches the through ribbon before the peel from the same parent', () => {
+    const fromBuilt = targetsFrom(sankey, 'Built');
+    expect(fromBuilt.indexOf('31+')).toBeLessThan(fromBuilt.indexOf('1–30'));
+    const fromIntro = targetsFrom(sankey, 'Saw intro');
+    expect(fromIntro.indexOf('Built')).toBeLessThan(fromIntro.indexOf('Bounced'));
+  });
 });
 
 describe('leagueFunnelSankey', () => {
@@ -79,6 +108,16 @@ describe('leagueFunnelSankey', () => {
     const outSeated = sankey.links.filter((l) => l.source === 'Seated').reduce((s, l) => s + l.value, 0);
     expect(intoSeated).toBe(outSeated);
   });
+
+  it('lists the through-node before the peel in each column', () => {
+    const names = namesOf(sankey);
+    expect(names.indexOf('4+ cards')).toBeLessThan(names.indexOf('1–3 cards'));
+    expect(names.indexOf('8+ cards')).toBeLessThan(names.indexOf('4–7 cards'));
+    expect(names.indexOf('12+ cards')).toBeLessThan(names.indexOf('8–11 cards'));
+    expect(names.indexOf('Exported league')).toBeLessThan(names.indexOf('Exported card'));
+    const fromSeated = targetsFrom(sankey, 'Seated');
+    expect(fromSeated.indexOf('4+ cards')).toBeLessThan(fromSeated.indexOf('1–3 cards'));
+  });
 });
 
 describe('referrerFlowSankey', () => {
@@ -90,50 +129,13 @@ describe('referrerFlowSankey', () => {
     expect(s.ariaLabel).toContain('referrer not known');
     expect(s.nodes.map((n) => n.name)).toContain('referrer not known');
   });
-});
 
-describe('phoneFunnelRows', () => {
-  const sankey = dexFunnelSankey(
-    dexUsageFunnel(
-      [
-        { cid: 'a', peakMon: 10, completed: false, exported: false },
-        { cid: 'b', peakMon: 40, completed: false, exported: false },
-        { cid: 'c', peakMon: 80, completed: false, exported: false },
-        { cid: 'd', peakMon: 110, completed: false, exported: false },
-        { cid: 'e', peakMon: 140, completed: false, exported: false },
-        { cid: 'f', peakMon: 151, completed: true, exported: true },
-        { cid: 'g', peakMon: 151, completed: true, exported: false },
-      ],
-      12,
-    ),
-  );
-  const names = phoneFunnelRows(sankey.nodes, sankey.links).map((r) => r.name);
-
-  it('lists each peel under its parent, earlier drop-off first', () => {
-    expect(names.indexOf('Saw intro')).toBe(0);
-    expect(names.indexOf('Bounced')).toBeLessThan(names.indexOf('Built'));
-    expect(names.indexOf('1–30')).toBeLessThan(names.indexOf('31+'));
-    expect(names.indexOf('31–60')).toBeLessThan(names.indexOf('61+'));
-    expect(names.indexOf('61–90')).toBeLessThan(names.indexOf('91+'));
-    expect(names.indexOf('91–120')).toBeLessThan(names.indexOf('121+'));
-    expect(names.indexOf('121–150')).toBeLessThan(names.indexOf('Completed'));
-  });
-
-  it('keeps export outcomes after Completed', () => {
-    expect(names.indexOf('Completed')).toBeLessThan(names.indexOf('Exported'));
-    expect(names.indexOf('Exported')).toBeLessThan(names.indexOf('Kept private'));
-  });
-});
-
-describe('phoneReferrerRows', () => {
-  it('keeps Dex as a shared target across hosts', () => {
+  it('keeps Dex above League', () => {
     const s = referrerFlowSankey([
       { host: 'reddit.com', total: 2, dex: 2, league: 0 },
       { host: 'referrer not known', total: 4, dex: 3, league: 1 },
     ]);
-    expect(phoneReferrerRows(s.links)).toEqual([
-      { host: 'reddit.com', dex: 2, league: 0 },
-      { host: 'referrer not known', dex: 3, league: 1 },
-    ]);
+    const names = namesOf(s);
+    expect(names.indexOf('Dex')).toBeLessThan(names.indexOf('League'));
   });
 });

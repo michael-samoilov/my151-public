@@ -1,7 +1,6 @@
 import { useECharts, cssVar, tooltipStyle, type EChartsOption } from './useECharts';
 import { type FunnelLink, type FunnelNode } from '@/lib/usageFunnels';
-import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { PhoneFunnel, PhoneReferrer } from './PhoneFlow';
+import { sankeyGeometry } from '@/lib/sankeyGeometry';
 
 export type SankeyNode = FunnelNode;
 export type SankeyLink = FunnelLink;
@@ -18,16 +17,42 @@ function chartHeight(nodes: SankeyNode[], links: SankeyLink[]): number {
   return Math.max(360, Math.min(580, columnStack(nodes, links) * 42 + 80));
 }
 
-function DesktopSankey({
+function nodeLabel(
+  n: SankeyNode,
+  compact: boolean,
+  isLeft: boolean,
+  isRight: boolean,
+  kind: 'funnel' | 'referrer',
+) {
+  if (!compact) return { position: n.label };
+  if (kind === 'referrer' && isLeft) {
+    return { position: 'left' as const, width: 72, overflow: 'break' as const, lineHeight: 12 };
+  }
+  if (isLeft) return { position: 'top' as const, align: 'left' as const };
+  const align = isRight ? ('right' as const) : ('center' as const);
+  if (n.role === 'sink' || n.role === 'priv') return { position: 'bottom' as const, align };
+  return { position: 'top' as const, align };
+}
+
+/**
+ * MECE usage funnel as a Sankey at every width. On a phone the plot pads and
+ * type shrink, and stage labels sit above or below their nodes, so an
+ * 8-column funnel stays inside ~390px without a sideways pan.
+ */
+export function FlowSankey({
   nodes,
   links,
   ariaLabel,
+  kind = 'funnel',
 }: {
   nodes: SankeyNode[];
   links: SankeyLink[];
   ariaLabel: string;
+  kind?: 'funnel' | 'referrer';
 }) {
   const height = chartHeight(nodes, links);
+  const sources = new Set(links.map((l) => l.source));
+  const targets = new Set(links.map((l) => l.target));
   const ref = useECharts(
     (el): EChartsOption => {
       const ink = cssVar(el, '--color-foreground', '#0a0a0a');
@@ -37,6 +62,7 @@ function DesktopSankey({
       const priv = cssVar(el, '--color-priv', '#3f5b8a');
       const roleColor = (role?: string) =>
         role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
+      const g = sankeyGeometry(el.clientWidth || 360, kind);
 
       return {
         animation: false,
@@ -52,27 +78,28 @@ function DesktopSankey({
         series: [
           {
             type: 'sankey',
-            left: 108,
-            right: 96,
-            top: 28,
-            bottom: 28,
-            nodeGap: 22,
-            nodeWidth: 12,
+            left: g.left,
+            right: g.right,
+            top: g.top,
+            bottom: g.bottom,
+            nodeGap: g.nodeGap,
+            nodeWidth: g.nodeWidth,
             draggable: false,
             layoutIterations: 0,
             nodeAlign: 'left',
             emphasis: { focus: 'adjacency' },
             label: {
               color: ink,
-              fontSize: 11,
+              fontSize: g.fontSize,
               fontWeight: 600,
-              formatter: '{b} {c}',
+              formatter: g.compact ? '{b}\n{c}' : '{b} {c}',
+              lineHeight: g.fontSize + 2,
             },
             labelLayout: { hideOverlap: false, moveOverlap: 'shiftY' },
             data: nodes.map((n) => ({
               name: n.name,
               itemStyle: { color: roleColor(n.role), borderColor: roleColor(n.role) },
-              label: { position: n.label ?? 'right' },
+              label: nodeLabel(n, g.compact, !targets.has(n.name), !sources.has(n.name), kind),
             })),
             links: links.map((l) => ({
               source: l.source,
@@ -85,52 +112,16 @@ function DesktopSankey({
         ],
       };
     },
-    [nodes, links],
+    [nodes, links, kind],
   );
 
   return (
     <div
       ref={ref}
       style={{ height }}
-      className="w-full min-w-0"
+      className="w-full min-w-0 overflow-hidden"
       role="img"
       aria-label={ariaLabel}
     />
   );
-}
-
-/**
- * MECE usage funnel. On desktop this is a Sankey: earlier peels sit further
- * left, labels sit on their own node. On a phone the same data is a wrapping
- * labeled-bar list, because an 8-column Sankey cannot keep those labels
- * readable at ~390px without sideways pan.
- */
-export function FlowSankey({
-  nodes,
-  links,
-  ariaLabel,
-  kind = 'funnel',
-}: {
-  nodes: SankeyNode[];
-  links: SankeyLink[];
-  ariaLabel: string;
-  kind?: 'funnel' | 'referrer';
-}) {
-  const isDesktop = useIsDesktop();
-  if (!isDesktop) {
-    if (kind === 'referrer') {
-      return (
-        <div className="min-w-0 w-full">
-          <PhoneReferrer links={links} ariaLabel={ariaLabel} />
-        </div>
-      );
-    }
-    return (
-      <div className="min-w-0 w-full">
-        <PhoneFunnel nodes={nodes} links={links} ariaLabel={ariaLabel} />
-      </div>
-    );
-  }
-
-  return <DesktopSankey nodes={nodes} links={links} ariaLabel={ariaLabel} />;
 }

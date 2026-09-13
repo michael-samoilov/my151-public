@@ -2,8 +2,9 @@
  * Turn a staged usage funnel into Sankey nodes and links.
  *
  * The trunk is a chain of "still in" nodes so each incomplete peel sits in
- * its own column: earlier drop-off is further left. Survivor nodes are listed
- * before the peel in the same column so the ribbon runs along the top.
+ * its own column: earlier drop-off is further left. Through-nodes and success
+ * outcomes are listed before peels in the same column so a user who stays
+ * on the path runs along the top ribbon, and every peel sits on the bottom.
  */
 import type { DexUsageFunnel, FunnelPeel, LeagueUsageFunnel, ReferrerFlowEntry } from '../../api/_aggregate';
 
@@ -70,10 +71,7 @@ function stagedSankey(opts: {
     const next = opts.through[i];
     if (!next) break;
     const isLast = i === opts.through.length - 1;
-    if (peel && peel.count > 0) {
-      addNode(nodes, seen, { name: peel.label, role: 'sink', label: 'bottom' });
-      addLink(links, { source: src, target: peel.label, value: peel.count, role: 'sink' });
-    }
+    const from = src;
     if (next.count > 0) {
       addNode(nodes, seen, {
         name: next.label,
@@ -81,12 +79,16 @@ function stagedSankey(opts: {
         label: 'top',
       });
       addLink(links, {
-        source: src,
+        source: from,
         target: next.label,
         value: next.count,
         role: isLast ? 'success' : 'neutral',
       });
       src = next.label;
+    }
+    if (peel && peel.count > 0) {
+      addNode(nodes, seen, { name: peel.label, role: 'sink', label: 'bottom' });
+      addLink(links, { source: from, target: peel.label, value: peel.count, role: 'sink' });
     }
   }
 
@@ -98,7 +100,7 @@ function stagedSankey(opts: {
     addLink(links, { source: src, target: o.name, value: o.count, role: o.role });
   });
 
-  return { nodes, links, ariaLabel: opts.ariaLabel };
+  return orderSankeyForLayout(nodes, links, opts.ariaLabel);
 }
 
 export function dexFunnelSankey(f: DexUsageFunnel): FunnelSankey {
@@ -146,6 +148,44 @@ export function nodeDepth(name: string, links: FunnelLink[]): number {
   return 1 + Math.max(...incoming.map((l) => nodeDepth(l.source, links)));
 }
 
+/** Vertical order inside a Sankey column. Through-nodes first (top ribbon),
+ *  then success, then private, then peels. echarts with `layoutIterations: 0`
+ *  stacks a column in node-list order. */
+const ROLE_STACK: Record<FunnelRole, number> = {
+  success: 0,
+  neutral: 1,
+  priv: 2,
+  sink: 3,
+};
+
+export function orderSankeyForLayout(nodes: FunnelNode[], links: FunnelLink[], ariaLabel: string): FunnelSankey {
+  const byName = new Map(nodes.map((n) => [n.name, n]));
+  const outgoing = new Set(links.map((l) => l.source));
+  const rank = (name: string): number => {
+    const n = byName.get(name);
+    if (!n) return 99;
+    if (outgoing.has(name) && n.role !== 'sink') return -1;
+    return ROLE_STACK[n.role];
+  };
+  const orderedNodes = [...nodes].sort(
+    (a, b) => nodeDepth(a.name, links) - nodeDepth(b.name, links) || rank(a.name) - rank(b.name),
+  );
+  const seen = new Set<string>();
+  const orderedLinks: FunnelLink[] = [];
+  for (const n of orderedNodes) {
+    const from = links
+      .filter((l) => l.source === n.name)
+      .sort((a, b) => rank(a.target) - rank(b.target));
+    for (const l of from) {
+      const key = `${l.source}\0${l.target}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      orderedLinks.push(l);
+    }
+  }
+  return { nodes: orderedNodes, links: orderedLinks, ariaLabel };
+}
+
 export function referrerFlowSankey(rows: ReferrerFlowEntry[]): FunnelSankey {
   const nodes: FunnelNode[] = [
     ...rows.map((r) => ({ name: r.host, role: 'neutral' as const, label: 'left' as const })),
@@ -156,91 +196,9 @@ export function referrerFlowSankey(rows: ReferrerFlowEntry[]): FunnelSankey {
     ...(r.dex > 0 ? [{ source: r.host, target: 'Dex', value: r.dex, role: 'success' as const }] : []),
     ...(r.league > 0 ? [{ source: r.host, target: 'League', value: r.league, role: 'priv' as const }] : []),
   ]);
-  return {
+  return orderSankeyForLayout(
     nodes,
     links,
-    ariaLabel: `Referrer to landing: ${rows.map((r) => r.host).join(', ')} split into dex and league landings.`,
-  };
-}
-
-/** One row in the phone funnel: a node, its depth, and its inflow. */
-export interface PhoneFunnelRow {
-  name: string;
-  role: FunnelRole;
-  depth: number;
-  value: number;
-}
-
-/**
- * Flatten a staged funnel for a phone: parent, then that stage's peels, then
- * the continuation. Earlier drop-off sits higher on the list, matching
- * "further left" on the desktop Sankey.
- */
-export function phoneFunnelRows(nodes: FunnelNode[], links: FunnelLink[]): PhoneFunnelRow[] {
-  const byName = new Map(nodes.map((n) => [n.name, n]));
-  const outgoing = new Map<string, FunnelLink[]>();
-  for (const l of links) {
-    const arr = outgoing.get(l.source) ?? [];
-    arr.push(l);
-    outgoing.set(l.source, arr);
-  }
-  const hasIncoming = new Set(links.map((l) => l.target));
-  const valueOf = (name: string) => {
-    const ins = links.filter((l) => l.target === name);
-    if (ins.length) return ins.reduce((s, l) => s + l.value, 0);
-    return (outgoing.get(name) ?? []).reduce((s, l) => s + l.value, 0);
-  };
-  const peelRank = (name: string) => {
-    const r = byName.get(name)?.role;
-    if (r === 'sink') return 0;
-    if (r === 'success') return 1;
-    if (r === 'priv') return 2;
-    return 3;
-  };
-  const rows: PhoneFunnelRow[] = [];
-  const seen = new Set<string>();
-  const walk = (name: string, depth: number) => {
-    if (seen.has(name)) return;
-    seen.add(name);
-    const node = byName.get(name);
-    if (!node) return;
-    rows.push({ name: node.name, role: node.role, depth, value: valueOf(name) });
-    const kids = outgoing.get(name) ?? [];
-    const peels: FunnelLink[] = [];
-    const throughs: FunnelLink[] = [];
-    for (const k of kids) {
-      if ((outgoing.get(k.target) ?? []).length > 0) throughs.push(k);
-      else peels.push(k);
-    }
-    peels.sort((a, b) => peelRank(a.target) - peelRank(b.target));
-    for (const p of peels) walk(p.target, depth + 1);
-    for (const t of throughs) walk(t.target, depth + 1);
-  };
-  for (const n of nodes) {
-    if (!hasIncoming.has(n.name)) walk(n.name, 0);
-  }
-  return rows;
-}
-
-/** One referring host's split into the two landings, for the phone list. */
-export interface PhoneReferrerRow {
-  host: string;
-  dex: number;
-  league: number;
-}
-
-export function phoneReferrerRows(links: FunnelLink[]): PhoneReferrerRow[] {
-  const byHost = new Map<string, PhoneReferrerRow>();
-  const order: string[] = [];
-  for (const l of links) {
-    if (!byHost.has(l.source)) {
-      byHost.set(l.source, { host: l.source, dex: 0, league: 0 });
-      order.push(l.source);
-    }
-    const row = byHost.get(l.source);
-    if (!row) continue;
-    if (l.target === 'Dex') row.dex += l.value;
-    else if (l.target === 'League') row.league += l.value;
-  }
-  return order.map((h) => byHost.get(h)).filter((r): r is PhoneReferrerRow => r != null);
+    `Referrer to landing: ${rows.map((r) => r.host).join(', ')} split into dex and league landings.`,
+  );
 }

@@ -5,8 +5,8 @@ import { expect, test, type Locator } from '@playwright/test';
  *
  * Locks the three promises of this slice: unknown referrers stay on the
  * referrer chart, the dex incomplete peel is five size tiers, and the gym
- * leader maker has its own usage funnel. On phone and narrow viewports the
- * funnels are labeled HTML bars, so peels stay readable without a sideways pan.
+ * leader maker has its own usage funnel. The chart is an echarts Sankey at
+ * every width; on phone and narrow viewports it must not need a sideways pan.
  */
 test.describe('admin flows', () => {
   test.beforeEach(async ({ page }) => {
@@ -43,32 +43,29 @@ test.describe('admin flows', () => {
     expect(label).toMatch(/full league/i);
   });
 
-  test('phone dex funnel shows peel labels without a sideways pan', async ({ page }, info) => {
-    test.skip(info.project.name === 'desktop', 'desktop keeps the Sankey');
+  test('phone dex funnel is a Sankey that stays in the column', async ({ page }, info) => {
+    test.skip(info.project.name === 'desktop', 'desktop width is not the pan risk');
     const funnel = page.getByRole('img', { name: /Dex usage funnel/ });
     await expect(funnel).toBeVisible();
-    await expect(funnel.getByText('1–30', { exact: true })).toBeVisible();
-    await expect(funnel.getByText('31–60', { exact: true })).toBeVisible();
-    await expect(funnel.getByText('121–150', { exact: true })).toBeVisible();
+    await expect(funnel.locator('canvas')).toBeVisible();
     await expectNoSidewaysPan(funnel);
   });
 
-  test('phone league funnel shows card peels without a sideways pan', async ({ page }, info) => {
-    test.skip(info.project.name === 'desktop', 'desktop keeps the Sankey');
+  test('phone league funnel is a Sankey that stays in the column', async ({ page }, info) => {
+    test.skip(info.project.name === 'desktop', 'desktop width is not the pan risk');
     await page.getByRole('button', { name: 'League', exact: true }).click();
     const funnel = page.getByRole('img', { name: /League usage funnel/ });
     await expect(funnel).toBeVisible();
-    await expect(funnel.getByText('1–3 cards', { exact: true })).toBeVisible();
-    await expect(funnel.getByText('Full league', { exact: true })).toBeVisible();
+    await expect(funnel.locator('canvas')).toBeVisible();
     await expectNoSidewaysPan(funnel);
   });
 
-  test('phone referrer list wraps host names without a sideways pan', async ({ page }, info) => {
-    test.skip(info.project.name === 'desktop', 'desktop keeps the Sankey');
+  test('phone referrer Sankey stays in the column', async ({ page }, info) => {
+    test.skip(info.project.name === 'desktop', 'desktop width is not the pan risk');
     await page.getByRole('button', { name: 'Referrer → landing' }).click();
     const chart = page.getByRole('img', { name: /Referrer to landing/ });
     await expect(chart).toBeVisible();
-    await expect(chart.getByText('referrer not known', { exact: true })).toBeVisible();
+    await expect(chart.locator('canvas')).toBeVisible();
     await expectNoSidewaysPan(chart);
   });
 });
