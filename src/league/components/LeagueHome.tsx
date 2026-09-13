@@ -78,7 +78,7 @@ const SECTION_BEFORE: Record<number, string> = {
 function SlotGlyph({ index, cell }: { index: number; cell: string }) {
   const kind = slotKind(index);
   if (kind === 'gym') return <GymBadges n={index + 1} />;
-  if (kind === 'elite') return <Stars n={index - 7} size={9} wrap={index - 7 === 4} />;
+  if (kind === 'elite') return <Stars n={index - 7} size={9} />;
   if (kind === 'champion') return <Crown size={13} />;
   return <BossBall cell={cell} size={15} />;
 }

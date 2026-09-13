@@ -248,7 +248,7 @@ export function drawDiamonds(
   }
 }
 
-/** N stars, on one line or wrapped two wide, centred on (cx, cy). */
+/** N stars: one to three on one row; four as 2×2. Centred on (cx, cy). */
 export function drawStars(
   ctx: CanvasRenderingContext2D,
   n: number,
@@ -256,9 +256,8 @@ export function drawStars(
   cx: number,
   cy: number,
   gap: number,
-  wrap = false,
 ): void {
-  const perLine = wrap ? 2 : n;
+  const perLine = n === 4 ? 2 : n;
   const rows = Math.ceil(n / perLine);
   const blockW = perLine * size + (perLine - 1) * gap;
   const blockH = rows * size + (rows - 1) * gap;
@@ -267,10 +266,9 @@ export function drawStars(
   for (let i = 0; i < n; i++) {
     const r = Math.floor(i / perLine);
     const c = i % perLine;
-    // A wrapped last row that is short centres itself, the way the flex row does.
     const inRow = Math.min(perLine, n - r * perLine);
     const rowW = inRow * size + (inRow - 1) * gap;
-    const rowLeft = wrap ? cx - rowW / 2 : left;
+    const rowLeft = n === 4 ? cx - rowW / 2 : left;
     inBox(ctx, rowLeft + c * (size + gap), top + r * (size + gap), size, 12, () => {
       ctx.fillStyle = '#ffffff';
       ctx.fill(path('star'));
