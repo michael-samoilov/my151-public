@@ -30,7 +30,7 @@ import {
   type ArchiveFilter,
   type ToolFilter,
 } from '@/components/admin/userPreview';
-import { FitNowrap, FitScale } from '@/components/admin/FitNowrap';
+import { FitNowrap } from '@/components/admin/FitNowrap';
 import { Archive, ArchiveRestore, Download, Globe, Languages } from 'lucide-react';
 
 // Human labels for the onboarding/funnel events shown per session.
@@ -1139,15 +1139,20 @@ function MetricChip({
   label,
   exported,
   metric,
+  className,
 }: {
   label: string;
   exported?: boolean;
   metric: 'session' | 'dex' | 'league';
+  className?: string;
 }) {
   return (
     <span
       data-metric={metric}
-      className="inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-xs font-medium tabular-nums"
+      className={cn(
+        'inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-xs font-medium tabular-nums',
+        className,
+      )}
     >
       {label}
       {exported ? <Download className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="exported" /> : null}
@@ -1180,8 +1185,8 @@ function UserPreviewCard({
       data-user-preview
       aria-label={`Open user ${middleId(rec.cid)}`}
       className={cn(
-        'flex min-w-0 cursor-pointer flex-col gap-1 overflow-x-clip rounded-lg bg-card px-2.5 py-2 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        'md:col-span-full md:grid md:grid-cols-subgrid md:items-center md:gap-x-3 md:py-1.5',
+        'flex min-w-0 cursor-pointer flex-col gap-1 rounded-lg bg-card px-2.5 py-2 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'md:col-span-full md:grid md:grid-cols-subgrid md:grid-rows-1 md:items-center md:gap-x-3 md:py-1.5',
         archived && 'opacity-70',
       )}
       onClick={onOpen}
@@ -1195,13 +1200,15 @@ function UserPreviewCard({
     >
       <div className="flex min-w-0 items-center gap-1 md:contents">
         <FitNowrap contentsOnMd className="min-w-0 flex-1">
-          <span className="whitespace-nowrap text-sm font-semibold tabular-nums">
+          <span className="whitespace-nowrap text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1 md:justify-self-start">
             {formatWhen(rec.lastTs, rec.tz)}
           </span>
-          <span className="whitespace-nowrap text-sm text-muted-foreground">{relativeTime(rec.lastTs)}</span>
+          <span className="whitespace-nowrap text-sm text-muted-foreground md:col-start-2 md:row-start-1 md:justify-self-start">
+            {relativeTime(rec.lastTs)}
+          </span>
         </FitNowrap>
         <div
-          className="shrink-0 md:col-start-7"
+          className="shrink-0 md:col-start-7 md:row-start-1 md:justify-self-end"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
@@ -1217,21 +1224,35 @@ function UserPreviewCard({
           </Button>
         </div>
       </div>
-      <FitNowrap>
+      <FitNowrap className="md:col-start-3 md:row-start-1 md:min-w-0 md:justify-self-stretch">
         <PlatformChips rec={rec} className="flex-nowrap gap-1" />
       </FitNowrap>
       <div className="min-w-0 md:contents">
         <FitNowrap contentsOnMd>
-          <MetricChip metric="session" label={sessionChipLabel(sessions, totalMs)} />
+          <MetricChip
+            metric="session"
+            className="md:col-start-4 md:row-start-1 md:justify-self-start"
+            label={sessionChipLabel(sessions, totalMs)}
+          />
           {dex ? (
-            <MetricChip metric="dex" label={`${dex.depth} Pokémon`} exported={dex.exported} />
+            <MetricChip
+              metric="dex"
+              className="md:col-start-5 md:row-start-1 md:justify-self-start"
+              label={`${dex.depth} Pokémon`}
+              exported={dex.exported}
+            />
           ) : (
-            <span className="hidden md:block" aria-hidden />
+            <span className="hidden md:col-start-5 md:row-start-1 md:block" aria-hidden />
           )}
           {league ? (
-            <MetricChip metric="league" label={`${league.cards}/${CARD_COUNT} cards`} exported={league.exported} />
+            <MetricChip
+              metric="league"
+              className="md:col-start-6 md:row-start-1 md:justify-self-start"
+              label={`${league.cards}/${CARD_COUNT} cards`}
+              exported={league.exported}
+            />
           ) : (
-            <span className="hidden md:block" aria-hidden />
+            <span className="hidden md:col-start-6 md:row-start-1 md:block" aria-hidden />
           )}
         </FitNowrap>
       </div>
@@ -1932,8 +1953,7 @@ export function AdminPage() {
                     {!emptyList && rows.length === 0 && !loading && (
                       <p className="text-sm text-muted-foreground">No users match these filters.</p>
                     )}
-                    <FitScale>
-                      <div className="flex w-full flex-col gap-2 md:grid md:w-max md:grid-cols-[auto_auto_minmax(0,1fr)_auto_auto_auto_auto] md:gap-x-3 md:gap-y-2">
+                    <div className="flex w-full flex-col gap-2 md:grid md:grid-cols-[auto_auto_minmax(0,1fr)_auto_auto_auto_auto] md:gap-x-3 md:gap-y-2">
                         {rows.map((row) => (
                           <UserPreviewCard
                             key={row.cid}
@@ -1946,7 +1966,6 @@ export function AdminPage() {
                           />
                         ))}
                       </div>
-                    </FitScale>
                     {showDex && data.records.length < totalListed && (
                       <Button className="mt-3" variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
                         {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${totalListed})`}
