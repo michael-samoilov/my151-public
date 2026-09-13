@@ -31,7 +31,7 @@ export function ToolVenn({
     return () => ro.disconnect();
   }, []);
 
-  const height = Math.round(Math.max(136, Math.min(width * 0.88, 196)));
+  const height = Math.round(Math.max(152, Math.min(width * 0.52, 220)));
   const areas = useMemo(() => areasFromRegions(era.regions, catalog), [era.regions, catalog]);
   const circles = useMemo(() => layoutCircles(areas, width, height), [areas, width, height]);
   const labels = useMemo(

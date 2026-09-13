@@ -63,4 +63,27 @@ describe('placeRegionLabels', () => {
     expect(labels.map((l) => l.key).sort()).toEqual(['dex', 'dex+league', 'league']);
     expect(labels.every((l) => l.count > 0)).toBe(true);
   });
+
+  it('lays out three tools without dropping a set', () => {
+    const three = [
+      ...catalog,
+      { id: 'fav', label: 'Favourites', short: 'Fav', launchedAt: 2 },
+    ];
+    const regions = {
+      dex: 10,
+      league: 4,
+      fav: 3,
+      'dex+league': 5,
+      'dex+fav': 2,
+      'league+fav': 1,
+      'dex+league+fav': 2,
+    };
+    const areas = areasFromRegions(regions, three);
+    expect(areas.some((a) => a.sets.length === 3)).toBe(true);
+    const circles = layoutCircles(areas, 240, 200);
+    expect(Object.keys(circles).sort()).toEqual(['Dex', 'Fav', 'League']);
+    const labels = placeRegionLabels(regions, three, circles, 240, 200);
+    expect(labels.some((l) => l.key === 'dex')).toBe(true);
+    expect(labels.some((l) => l.key === 'fav')).toBe(true);
+  });
 });

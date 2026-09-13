@@ -107,20 +107,30 @@ function clamp(x: number, y: number, width: number, height: number): { x: number
   };
 }
 
-function exclusivePoint(own: VennCircle, other: VennCircle | undefined): { x: number; y: number } | null {
-  if (!other) return { x: own.x, y: own.y };
-  if (fullyInside(own, other)) return null;
+function centroid(cs: VennCircle[]): { x: number; y: number } {
+  const n = Math.max(1, cs.length);
+  return {
+    x: cs.reduce((s, c) => s + c.x, 0) / n,
+    y: cs.reduce((s, c) => s + c.y, 0) / n,
+  };
+}
+
+function exclusivePoint(own: VennCircle, others: VennCircle[]): { x: number; y: number } | null {
+  if (others.some((o) => fullyInside(own, o))) return null;
+  if (others.length === 0) return { x: own.x, y: own.y };
+  const other = others.length === 1 ? others[0] : { ...centroid(others), radius: 0 };
   const away = toward(other, own);
   if (away.d === 0) return { x: own.x, y: own.y - own.radius * 0.4 };
-  const mag = fullyInside(other, own)
+  const contained = others.length === 1 && fullyInside(others[0], own);
+  const mag = contained
     ? Math.min(own.radius * 0.62, Math.max(own.radius * 0.42, own.radius - MIN_INSIDE_R))
     : own.radius * 0.42;
   let p = { x: own.x + away.x * mag, y: own.y + away.y * mag };
-  if (inCircle(p, other, 1)) {
+  if (others.some((o) => inCircle(p, o, 1))) {
     const far = Math.max(8, own.radius - 8);
     p = { x: own.x + away.x * far, y: own.y + away.y * far };
   }
-  if (inCircle(p, other, 1) || !inCircle(p, own, 0)) return null;
+  if (others.some((o) => inCircle(p, o, 1)) || !inCircle(p, own, 0)) return null;
   return p;
 }
 
@@ -155,8 +165,9 @@ function outsideNear(
 }
 
 /**
- * Exclusive-region counts for the painted circles. Tiny overlap gets an
- * outside count plus a leader, so a 3-browser speck still has a number.
+ * Exclusive-region counts for the painted circles. Inclusive circle sizes
+ * belong in the legend. Tiny pairwise overlap gets an outside count plus a
+ * leader. Three-set regions use the same exclusive / pairwise / triple keys.
  */
 export function placeRegionLabels(
   regions: Record<string, number>,
@@ -168,86 +179,70 @@ export function placeRegionLabels(
   const present = catalog.filter((t) => inclusive(t.id, regions) > 0);
   const labels: VennRegionLabel[] = [];
 
-  if (present.length === 1) {
-    const t = present[0];
-    const c = circles[t.short];
-    const count = regions[t.id] ?? inclusive(t.id, regions);
-    if (!c || count <= 0) return [];
-    return [{
-      key: t.id,
-      count,
-      x: c.x,
-      y: c.y,
-      placement: 'inside',
-      fromX: c.x,
-      fromY: c.y,
-      hitR: Math.max(12, Math.min(c.radius, 18)),
-    }];
-  }
+  for (const [key, count] of Object.entries(regions)) {
+    if (count <= 0) continue;
+    const ids = key.split('+').filter((id) => present.some((t) => t.id === id));
+    if (ids.length === 0) continue;
+    const interior = ids
+      .map((id) => {
+        const tool = present.find((t) => t.id === id);
+        return tool ? circles[tool.short] : undefined;
+      })
+      .filter((c): c is VennCircle => c !== undefined);
+    if (interior.length !== ids.length) continue;
+    const exterior = present
+      .filter((t) => !ids.includes(t.id))
+      .map((t) => circles[t.short])
+      .filter((c): c is VennCircle => c !== undefined);
 
-  if (present.length !== 2) {
-    return present.flatMap((t) => {
-      const c = circles[t.short];
-      const count = inclusive(t.id, regions);
-      if (!c || count <= 0) return [];
-      return [{
-        key: t.id,
-        count,
-        x: c.x,
-        y: c.y,
-        placement: 'inside' as const,
-        fromX: c.x,
-        fromY: c.y,
-        hitR: 12,
-      }];
-    });
-  }
+    let placed: { x: number; y: number } | null = null;
+    let from = { x: 0, y: 0 };
+    let placement: 'inside' | 'outside' = 'inside';
+    let hitR = 12;
 
-  const [a, b] = present;
-  const ca = circles[a.short];
-  const cb = circles[b.short];
-  if (!ca || !cb) return [];
-  const small = ca.radius <= cb.radius ? ca : cb;
-  const large = ca.radius <= cb.radius ? cb : ca;
-
-  const pushExclusive = (tool: ToolDef, own: VennCircle, other: VennCircle) => {
-    const count = regions[tool.id] ?? 0;
-    if (count <= 0) return;
-    const p = exclusivePoint(own, other);
-    if (!p) return;
-    labels.push({
-      key: tool.id,
-      count,
-      x: p.x,
-      y: p.y,
-      placement: 'inside',
-      fromX: p.x,
-      fromY: p.y,
-      hitR: 12,
-    });
-  };
-  pushExclusive(a, ca, cb);
-  pushExclusive(b, cb, ca);
-
-  const bothKey = [a.id, b.id].sort().join('+');
-  const both = regions[bothKey] ?? 0;
-  if (both > 0) {
-    const anchor = overlapAnchor(ca, cb);
-    if (anchor) {
-      const clearance = overlapClearance(ca, cb);
-      const tiny = clearance < MIN_INSIDE_R;
-      const outside = tiny ? outsideNear(small, large, width, height) : anchor;
-      labels.push({
-        key: bothKey,
-        count: both,
-        x: outside.x,
-        y: outside.y,
-        placement: tiny ? 'outside' : 'inside',
-        fromX: anchor.x,
-        fromY: anchor.y,
-        hitR: Math.max(12, Math.min(clearance, 16)),
-      });
+    if (interior.length === 1) {
+      placed = exclusivePoint(interior[0], exterior);
+      if (placed) from = placed;
+    } else if (interior.length === 2) {
+      const [a, b] = interior;
+      const anchor = overlapAnchor(a, b);
+      if (!anchor) continue;
+      from = anchor;
+      const inThird = exterior.some((e) => inCircle(anchor, e, 0));
+      if (inThird) {
+        const third = exterior[0];
+        const away = toward(third, { ...anchor, radius: 0 });
+        const stepped = { x: anchor.x + away.x * 10, y: anchor.y + away.y * 10 };
+        if (exterior.some((e) => inCircle(stepped, e, 0))) continue;
+        placed = stepped;
+      } else {
+        const clearance = overlapClearance(a, b);
+        const tiny = clearance < MIN_INSIDE_R;
+        const small = a.radius <= b.radius ? a : b;
+        const large = a.radius <= b.radius ? b : a;
+        placed = tiny ? outsideNear(small, large, width, height) : anchor;
+        placement = tiny ? 'outside' : 'inside';
+        hitR = Math.max(12, Math.min(clearance, 16));
+      }
+    } else {
+      const c = centroid(interior);
+      if (interior.every((i) => inCircle(c, i)) && exterior.every((e) => !inCircle(c, e, 0))) {
+        placed = c;
+        from = c;
+      }
     }
+
+    if (!placed) continue;
+    labels.push({
+      key,
+      count,
+      x: placed.x,
+      y: placed.y,
+      placement,
+      fromX: from.x,
+      fromY: from.y,
+      hitR,
+    });
   }
 
   const outs = labels.filter((l) => l.placement === 'outside');

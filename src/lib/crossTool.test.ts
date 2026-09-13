@@ -4,6 +4,7 @@ import {
   TOOL_CATALOG,
   buildCrossTool,
   eraBounds,
+  multiToolEras,
   leagueIsDexNative,
   seatedPokemonIds,
   type DexLike,
@@ -68,6 +69,20 @@ describe('eraBounds', () => {
       '8 Sep to 1 Nov',
       'After 1 Nov',
     ]);
+  });
+});
+
+describe('multiToolEras', () => {
+  it('drops the era before a second tool existed', () => {
+    expect(multiToolEras(eraBounds(TOOL_CATALOG)).map((b) => b.key)).toEqual(['since-league']);
+  });
+
+  it('keeps every cut after the second tool, so a third tool gets two Venns', () => {
+    const catalog: ToolDef[] = [
+      ...TOOL_CATALOG,
+      { id: 'fav', label: 'Favourites', short: 'Fav', launchedAt: Date.UTC(2026, 10, 1) },
+    ];
+    expect(multiToolEras(eraBounds(catalog)).map((b) => b.key)).toEqual(['before-fav', 'since-fav']);
   });
 });
 

@@ -133,6 +133,15 @@ function regionKey(ids: string[]): string {
   return [...ids].sort().join('+');
 }
 
+/**
+ * Eras that start at or after the second tool. Before that, only one tool
+ * existed, so a cross-tool Venn is not a question. A later tool (favourites)
+ * adds another visible cut: 8 Sep to launch, then after launch.
+ */
+export function multiToolEras<T extends { since: number | null }>(eras: readonly T[]): T[] {
+  return eras.filter((e) => e.since !== null);
+}
+
 export function eraBounds(catalog: readonly ToolDef[]): Omit<EraOverlap, 'browsers' | 'regions'>[] {
   const sorted = [...catalog].sort((a, b) => a.launchedAt - b.launchedAt);
   const cuts = sorted.slice(1);
