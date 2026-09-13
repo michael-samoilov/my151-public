@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { DAY_MS } from '../../../../api/_aggregate';
 import {
+  countLabelLayout,
   extendThroughToday,
-  headerCounts,
+  monthLabelTicks,
   rollingSum7,
-  shouldShowXTick,
   splitProvisional,
-  sundayMidnightIndices,
+  weekLineIndices,
+  windowCounts,
 } from './trendSeries';
 
 const day = (n: number) => Date.UTC(2026, 8, n);
@@ -36,18 +37,41 @@ describe('extendThroughToday', () => {
   });
 });
 
-describe('sundayMidnightIndices', () => {
-  it('marks UTC Sunday midnights including the first day', () => {
-    const sat12 = day(12);
-    const sun13 = day(13);
-    const mon14 = day(14);
-    const sat19 = day(19);
-    const sun20 = day(20);
-    expect(sundayMidnightIndices([sat12, sun13, mon14, sat19, sun20])).toEqual([1, 4]);
+describe('weekLineIndices', () => {
+  it('places the rightmost line exactly 7d before now', () => {
+    const origin = Date.UTC(2026, 8, 1);
+    const days = Array.from({ length: 13 }, (_, i) => origin + i * DAY_MS);
+    const now = Date.UTC(2026, 8, 13, 18, 0, 0);
+    const lines = weekLineIndices(days, now);
+    expect(lines[0]).toBeCloseTo((now - 7 * DAY_MS - origin) / DAY_MS);
+    expect(lines[0]).toBeCloseTo(5.75);
+    expect(lines.every((i) => i > 0 && i < days.length - 1)).toBe(true);
   });
 
-  it('includes index 0 when the series starts on Sunday', () => {
-    expect(sundayMidnightIndices([day(13), day(14)])).toEqual([0]);
+  it('steps back in 7-day increments across a longer series', () => {
+    const origin = Date.UTC(2026, 5, 16);
+    const last = Date.UTC(2026, 8, 13);
+    const days: number[] = [];
+    for (let d = origin; d <= last; d += DAY_MS) days.push(d);
+    const now = Date.UTC(2026, 8, 13, 18, 0, 0);
+    const lines = weekLineIndices(days, now);
+    expect(lines.length).toBeGreaterThan(8);
+    expect(lines[1]).toBeCloseTo(lines[0] - 7);
+  });
+
+  it('does not draw on the first or last category', () => {
+    const days = [day(1), day(2), day(3)];
+    expect(weekLineIndices(days, day(3) + 12 * 3600_000).every((i) => i > 0 && i < 2)).toBe(true);
+  });
+});
+
+describe('monthLabelTicks', () => {
+  it('centers one short-month label on each visible month', () => {
+    const days: number[] = [];
+    for (let d = Date.UTC(2026, 5, 16); d <= Date.UTC(2026, 8, 13); d += DAY_MS) days.push(d);
+    const ticks = monthLabelTicks(days);
+    expect(ticks.map((t) => t.label)).toEqual(['Jun', 'Jul', 'Aug', 'Sep']);
+    expect(ticks[0].idx).toBe(Math.floor(14 / 2));
   });
 });
 
@@ -67,20 +91,33 @@ describe('splitProvisional', () => {
   });
 });
 
-describe('headerCounts', () => {
-  it('reads today daily and the trailing 7-day sum', () => {
+describe('windowCounts', () => {
+  it('reads today as 24h and the trailing 7-day sum as 7d', () => {
     const series = Array.from({ length: 7 }, (_, i) => ({ day: day(7) + i * DAY_MS, dau: i + 1 }));
-    expect(headerCounts(series)).toEqual({ daily: 7, weekly: 28 });
+    expect(windowCounts(series)).toEqual({ hours24: 7, days7: 28 });
   });
 });
 
-describe('shouldShowXTick', () => {
-  it('keeps the last date even when a 14-day tick is close', () => {
-    const last = 89;
-    expect(shouldShowXTick(0, last)).toBe(true);
-    expect(shouldShowXTick(last, last)).toBe(true);
-    expect(shouldShowXTick(84, last)).toBe(false);
-    expect(shouldShowXTick(70, last)).toBe(true);
-    expect(shouldShowXTick(1, last)).toBe(false);
+describe('countLabelLayout', () => {
+  it('sits between the last two points and above a wide daily/weekly gap', () => {
+    const daily = [10, 12, 14];
+    const weekly = [null, 70, 80];
+    const layout = countLabelLayout(daily, weekly, 80);
+    expect(layout).not.toBeNull();
+    expect(layout!.x).toBe(1.5);
+    expect(layout!.side).toBe('above');
+    expect(layout!.dailyY).toBe(14);
+    expect(layout!.weeklyY).toBe(80);
+    expect(layout!.weeklyY).toBeGreaterThan(layout!.dailyY);
+  });
+
+  it('stacks both labels above the peak when the daily/weekly gap is tight', () => {
+    const daily = [90, 95];
+    const weekly = [96, 98];
+    const layout = countLabelLayout(daily, weekly, 98);
+    expect(layout).not.toBeNull();
+    expect(layout!.side).toBe('above');
+    expect(layout!.weeklyY).toBeGreaterThan(98);
+    expect(layout!.dailyY).toBe(98);
   });
 });

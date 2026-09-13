@@ -29,14 +29,6 @@ export function lastPointIsToday(series: DailyPoint[], nowMs: number): boolean {
   return last != null && last.day === dayStart(nowMs);
 }
 
-export function sundayMidnightIndices(days: number[]): number[] {
-  const out: number[] = [];
-  for (let i = 0; i < days.length; i++) {
-    if (new Date(days[i]).getUTCDay() === 0) out.push(i);
-  }
-  return out;
-}
-
 export function splitProvisional(
   values: (number | null)[],
   provisionalLast: boolean,
@@ -51,16 +43,76 @@ export function splitProvisional(
   };
 }
 
-export function headerCounts(series: DailyPoint[]): { daily: number; weekly: number | null } {
-  if (series.length === 0) return { daily: 0, weekly: null };
+/** Last-24h ≈ today's calendar DAU; last-7d ≈ sum of the last 7 calendar DAUs. */
+export function windowCounts(series: DailyPoint[]): { hours24: number; days7: number | null } {
+  if (series.length === 0) return { hours24: 0, days7: null };
   const weekly = rollingSum7(series.map((p) => p.dau));
-  return { daily: series[series.length - 1].dau, weekly: weekly[weekly.length - 1] };
+  return { hours24: series[series.length - 1].dau, days7: weekly[weekly.length - 1] };
 }
 
-/** Keep first and last x ticks. Skip a regular tick that sits too close to
- *  the last date so hideOverlap cannot drop today on a narrow chart. */
-export function shouldShowXTick(idx: number, last: number, step = 14): boolean {
-  if (idx === 0 || idx === last) return true;
-  if (idx % step !== 0) return false;
-  return last - idx >= step;
+/**
+ * Fractional category indices for week separators, stepping back 7d from now.
+ * The rightmost line is exactly one week before `nowMs`.
+ */
+export function weekLineIndices(days: number[], nowMs: number): number[] {
+  if (days.length < 2) return [];
+  const origin = days[0];
+  const lastIdx = days.length - 1;
+  const out: number[] = [];
+  for (let t = nowMs - 7 * DAY_MS; ; t -= 7 * DAY_MS) {
+    const idx = (t - origin) / DAY_MS;
+    if (idx <= 0) break;
+    if (idx < lastIdx) out.push(idx);
+  }
+  return out;
+}
+
+export function monthLabelTicks(days: number[]): { idx: number; label: string }[] {
+  if (days.length === 0) return [];
+  const groups: { start: number; end: number; label: string }[] = [];
+  for (let i = 0; i < days.length; i++) {
+    const label = new Date(days[i]).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+    const last = groups[groups.length - 1];
+    if (last && last.label === label) last.end = i;
+    else groups.push({ start: i, end: i, label });
+  }
+  return groups.map((g) => ({ idx: Math.floor((g.start + g.end) / 2), label: g.label }));
+}
+
+export type CountLabelSide = 'above' | 'below';
+
+export interface CountLabelLayout {
+  x: number;
+  side: CountLabelSide;
+  dailyY: number;
+  weeklyY: number;
+  yMax: number;
+}
+
+/** Place 24h/7d labels between the last two points, off the lines. */
+export function countLabelLayout(
+  daily: number[],
+  weekly: (number | null)[],
+  dataMax: number,
+): CountLabelLayout | null {
+  const last = daily.length - 1;
+  if (last < 1) return null;
+  const d0 = daily[last - 1];
+  const d1 = daily[last];
+  const w0 = weekly[last - 1];
+  const w1 = weekly[last];
+  const pair = [d0, d1, w0, w1].filter((v): v is number => v != null);
+  if (pair.length === 0) return null;
+  const dHi = Math.max(d0, d1);
+  const wNums = [w0, w1].filter((v): v is number => v != null);
+  const wHi = wNums.length ? Math.max(...wNums) : dHi;
+  const wLo = wNums.length ? Math.min(...wNums) : dHi;
+  const span = Math.max(dataMax, wHi, dHi, 1);
+  const pad = span * 0.08;
+  const gap = wLo - dHi;
+  const x = last - 0.5;
+  if (gap >= pad * 1.5) {
+    return { x, side: 'above', dailyY: dHi, weeklyY: wHi, yMax: span };
+  }
+  return { x, side: 'above', dailyY: wHi, weeklyY: wHi + pad, yMax: wHi + pad * 1.6 };
 }
