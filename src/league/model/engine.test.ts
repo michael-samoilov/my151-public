@@ -13,6 +13,7 @@ import {
   deriveRow,
   deriveRows,
   makePlacedLine,
+  moveLeagueSlots,
   moveSeat,
   setBoundary,
   signatureMember,
@@ -207,5 +208,42 @@ describe('signatureMember', () => {
 
   it('has nothing to show without a line', () => {
     expect(signatureMember(undefined, 74)).toBeNull();
+  });
+});
+
+describe('moveLeagueSlots', () => {
+  const empty = '';
+  const isEmpty = (s: string) => s === empty;
+  const blank = () => empty;
+  const slots = () => Array.from({ length: 14 }, () => empty);
+
+  it('places into an empty row without shifting unrelated trainers', () => {
+    const start = slots();
+    start[8] = 'e4-1';
+    start[9] = 'e4-2';
+    start[10] = 'e4-3';
+    start[11] = 'e4-4';
+    const next = moveLeagueSlots(start, 11, 7, isEmpty, blank);
+    expect(next[7]).toBe('e4-4');
+    expect(next[8]).toBe('e4-1');
+    expect(next[9]).toBe('e4-2');
+    expect(next[10]).toBe('e4-3');
+    expect(next[11]).toBe(empty);
+  });
+
+  it('bumps the occupant into the next empty row below', () => {
+    const start = slots();
+    start[6] = 'gym-7';
+    start[8] = 'e4-1';
+    start[9] = 'e4-2';
+    start[10] = 'e4-3';
+    start[11] = 'e4-4';
+    const next = moveLeagueSlots(start, 11, 6, isEmpty, blank);
+    expect(next[6]).toBe('e4-4');
+    expect(next[7]).toBe('gym-7');
+    expect(next[8]).toBe('e4-1');
+    expect(next[9]).toBe('e4-2');
+    expect(next[10]).toBe('e4-3');
+    expect(next[11]).toBe(empty);
   });
 });

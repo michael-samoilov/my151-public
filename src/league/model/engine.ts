@@ -184,3 +184,55 @@ export function moveSeat<T>(items: T[], fromSeat: number, toSeat: number): T[] {
   next.splice(toSeat - 1, 0, moved);
   return next;
 }
+
+/** Whether a league summary row has no trainer placed yet. */
+export function leagueSlotIsEmpty(card: {
+  lines: { length: number };
+  type: unknown;
+  theme: string;
+  badgeName: string;
+}): boolean {
+  return card.lines.length === 0 && !card.type && !card.theme && !card.badgeName;
+}
+
+/**
+ * Move a league slot on the home summary.
+ *
+ * Dropping onto an empty row only moves the dragged trainer. Dropping onto a
+ * filled row bumps that trainer into the next empty row below, one step at a
+ * time, without closing gaps through unrelated trainers above the gap.
+ */
+export function moveLeagueSlots<T>(
+  slots: readonly T[],
+  from: number,
+  to: number,
+  isEmpty: (slot: T) => boolean,
+  blank: () => T,
+): T[] {
+  if (from === to || from < 0 || to < 0 || from >= slots.length || to >= slots.length) {
+    return [...slots];
+  }
+  const next = slots.slice();
+  const moved = next[from];
+
+  if (isEmpty(next[to])) {
+    next[to] = moved;
+    next[from] = blank();
+    return next;
+  }
+
+  next[from] = blank();
+  let carrying = moved;
+  for (let pos = to; pos < next.length; pos++) {
+    if (pos === from) continue;
+    const here = next[pos];
+    if (isEmpty(here)) {
+      next[pos] = carrying;
+      return next;
+    }
+    next[pos] = carrying;
+    carrying = here;
+  }
+  if (isEmpty(next[from])) next[from] = carrying;
+  return next;
+}
