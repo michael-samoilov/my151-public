@@ -36,7 +36,8 @@ function SettingsPanel({
   onClose: () => void;
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-1">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pt-1">
       {isLeague && (
         <div className="space-y-3">
           <p className="text-sm font-semibold">Layout</p>
@@ -79,7 +80,8 @@ function SettingsPanel({
         </p>
       )}
 
-      <div className="mt-auto flex flex-col gap-2 pt-2">
+      </div>
+      <div className="flex shrink-0 flex-col gap-2 border-t border-border/60 bg-card px-4 pb-4 pt-2">
         <Button type="button" disabled={busy} onClick={onExport} data-league-export-confirm>
           {busy ? (
             <>
@@ -214,17 +216,16 @@ export function LeagueExportOverlay() {
   );
 
   if (!isDesktop) {
-    const topGap = Math.round(window.innerHeight * 0.38);
     return (
       <BottomSheet
         onClose={closeLeagueExport}
         title={title}
         closeLabel={title}
         size="full"
-        topGap={topGap}
+        topGap={56}
       >
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex max-h-[38vh] shrink-0 items-center justify-center overflow-hidden border-b border-border/60 bg-muted/30 px-3 py-3">
+        <div className="flex h-full min-h-0 flex-col">
+          <div className="flex max-h-[22vh] shrink-0 items-center justify-center overflow-hidden border-b border-border/60 bg-muted/30 px-3 py-2">
             {preview}
           </div>
           <div className="flex min-h-0 flex-1 flex-col">{paneBody}</div>

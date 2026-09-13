@@ -854,43 +854,65 @@ function drawHomeGymDetails(
 ): void {
   const move = card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId);
   const moveShades = move ? cardShades(move.type as TypeName) : shades;
-  const lineH = L.ROW2 / 3;
-  const bodyX = x;
-  const cy1 = y + lineH / 2;
-  const cy2 = y + lineH + lineH / 2;
-  const cy3 = y + 2 * lineH + lineH / 2;
-  const disc = 10 * L.K2;
-  const iconColX = bodyX + disc + 3 * L.K2;
+  const padY = 3 * L.K2;
+  const bandH = (L.ROW2 - 2 * padY) / 3;
+  const bodyX = x + 2 * L.K2;
+  const bandTop = (i: number) => y + padY + i * bandH;
+  const bandBaseline = (i: number) => bandTop(i) + bandH - 3 * L.K2;
+  const disc = 11 * L.K2;
+  const iconColX = bodyX + disc + 4 * L.K2;
   const typeSq = 11 * L.K2;
   const chipW = 0.9375 * 16 * L.K2;
   const chipH = 0.6875 * 16 * L.K2;
+  const moveTrack = 0.02 * L.HOME_MOVE_PX;
 
-  // --- theme: smallcaps label, then the gym-page theme weight ---
   ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, w, L.ROW2);
+  ctx.clip();
+
+  // --- theme: smallcaps label, then gym-page theme weight on the same band ---
+  const themeBase = bandBaseline(0);
+  ctx.textBaseline = 'alphabetic';
   ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
   ctx.fillStyle = shades.band;
-  ctx.textBaseline = 'middle';
   const themeLabel = 'theme';
-  fillTracked(ctx, themeLabel, bodyX, cy1, L.HOME_MARK_TRACK);
+  fillTracked(ctx, themeLabel, bodyX, themeBase, L.HOME_MARK_TRACK);
   const themeLabelW = trackedWidth(ctx, themeLabel, L.HOME_MARK_TRACK);
-  ctx.font = font(L.HOME_THEME_TEXT_PX, card.theme ? 700 : 500);
+  const themeX = bodyX + themeLabelW + 5 * L.K2;
+  const themeW = x + w - themeX;
+  const themeText = card.theme || "What is this gym's theme?";
+  const themePx = fitFontSize(
+    ctx,
+    themeText,
+    themeW,
+    L.HOME_THEME_TEXT_PX,
+    9 * L.K2,
+    card.theme ? 700 : 500,
+  );
+  ctx.font = font(themePx, card.theme ? 700 : 500);
   ctx.fillStyle = card.theme ? FG : shades.hint;
-  const themeRoom = w - themeLabelW - 4 * L.K2;
-  ctx.fillText(ellipsize(ctx, card.theme || "What is this gym's theme?", themeRoom), bodyX + themeLabelW + 4 * L.K2, cy1);
-  ctx.restore();
+  const themeLineH = themePx * 1.08;
+  const themeMaxLines = Math.max(1, Math.floor((bandH - 2 * L.K2) / themeLineH));
+  const themeLines = wrapLines(ctx, themeText, themeW, themeMaxLines);
+  themeLines.forEach((line, i) => {
+    ctx.fillText(line, themeX, themeBase - (themeLines.length - 1 - i) * themeLineH);
+  });
 
-  // --- TM: disc, 1×1 type icon, category chip, move name ---
+  // --- TM: disc, 1×1 type icon, category chip, move name (smallcaps) ---
+  const tmMidY = bandTop(1) + bandH / 2;
+  const discCy = tmMidY - disc * 0.1;
   if (move) {
-    drawTmDisc(ctx, TYPE_COLORS[move.type as TypeName], disc, bodyX + disc / 2, cy2);
+    drawTmDisc(ctx, TYPE_COLORS[move.type as TypeName], disc, bodyX + disc / 2, discCy + disc / 2);
   } else {
-    drawTmDisc(ctx, shades.dash, disc, bodyX + disc / 2, cy2);
+    drawTmDisc(ctx, shades.dash, disc, bodyX + disc / 2, discCy + disc / 2);
   }
 
+  const tmBase = bandBaseline(1);
   if (move) {
-    drawTypeMark(ctx, move.type as TypeName, images, iconColX, cy2 - typeSq / 2, typeSq, L.HOME_R);
-    const chipX = iconColX + typeSq + 2 * L.K2;
-    const chipY = cy2 - chipH / 2;
-    ctx.save();
+    drawTypeMark(ctx, move.type as TypeName, images, iconColX, discCy, typeSq, L.HOME_R);
+    const chipX = iconColX + typeSq + 3 * L.K2;
+    const chipY = discCy + (typeSq - chipH) / 2;
     ctx.fillStyle = CATEGORY_COLORS[move.category];
     roundRect(ctx, chipX, chipY, chipW, chipH, 4 * L.K2);
     ctx.fill();
@@ -904,44 +926,46 @@ function drawHomeGymDetails(
       ctx.imageSmoothingEnabled = true;
       ctx.drawImage(catIcon, chipX + (chipW - iw) / 2, chipY + (chipH - ih) / 2, iw, ih);
     }
-    ctx.restore();
-    const nameX = chipX + chipW + 2 * L.K2;
+    const nameX = chipX + chipW + 3 * L.K2;
     const nameW = x + w - nameX;
-    const namePx = fitFontSize(ctx, move.name, nameW, L.HOME_MOVE_PX, L.HOME_MOVE_MIN_PX, 800);
-    ctx.save();
+    const moveUpper = move.name.toUpperCase();
+    const namePx = fitFontSize(ctx, moveUpper, nameW, L.HOME_MOVE_PX, L.HOME_MOVE_MIN_PX, 800);
     ctx.font = font(namePx, 800);
     ctx.fillStyle = moveShades.band;
-    ctx.textBaseline = 'middle';
-    ctx.fillText(ellipsize(ctx, move.name.toUpperCase(), nameW), nameX, cy2);
-    ctx.restore();
+    fillTracked(ctx, moveUpper, nameX, tmBase, moveTrack);
   } else {
-    ctx.save();
     ctx.font = font(L.HOME_MOVE_PX, 500);
     ctx.fillStyle = shades.hint;
-    ctx.textBaseline = 'middle';
-    ctx.fillText('Pick a move', iconColX, cy2);
-    ctx.restore();
+    ctx.fillText('Pick a move', iconColX, tmBase);
   }
 
-  // --- badge: hex with TM disc, name shares the type icon's left edge ---
+  // --- badge: hex in line with TM disc; name shares the type icon's left edge ---
+  const badgeMidY = bandTop(2) + bandH / 2;
   drawHexagon(
     ctx,
     card.badgeName ? shades.type : shades.dash,
     !!card.badgeName,
     disc,
     bodyX + disc / 2,
-    cy3,
+    badgeMidY,
   );
   if (card.badgeName) {
-    ctx.save();
-    const badgePx = L.HOME_MOVE_PX;
+    const badgeBase = bandBaseline(2);
+    const badgePx = fitFontSize(
+      ctx,
+      `${card.badgeName} Badge`,
+      x + w - iconColX,
+      L.HOME_MOVE_PX,
+      L.HOME_MOVE_MIN_PX,
+      800,
+    );
     ctx.font = font(badgePx, 800);
     ctx.fillStyle = shades.band;
-    ctx.textBaseline = 'middle';
     const badgeText = `${card.badgeName} Badge`.toUpperCase();
-    ctx.fillText(ellipsize(ctx, badgeText, x + w - iconColX), iconColX, cy3);
-    ctx.restore();
+    fillTracked(ctx, badgeText, iconColX, badgeBase, moveTrack);
   }
+
+  ctx.restore();
 }
 
 function drawHomeRow(

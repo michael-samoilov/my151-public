@@ -297,8 +297,13 @@ export const SEAT_COUNT = 6;
  */
 export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / SEAT_COUNT;
 
-/** Gym-detail column: theme, TM, and badge lines between type and teams. */
-export const HOME_DETAILS_COL = 72 * K2;
+/**
+ * Gym-detail column: theme, TM, and badge on three lines. Wide enough for a
+ * TM row (disc, type icon, category chip, move name) without chopping names.
+ */
+export const HOME_DETAILS_COL = 132 * K2;
+/** Extra picture width when the details column is on, so team seats stay legible. */
+export const HOME_GYM_DETAILS_EXTRA_W = 80 * K2;
 /** Air between story and rematch blocks when both show on one row. */
 export const HOME_SIDE_GAP = 12 * K2;
 
@@ -322,12 +327,15 @@ export interface HomeExportGeometry {
 /** Picture width and team column width for the chosen export permutations. */
 export function homeExportGeometry(gymDetails: boolean, sideBySide: boolean): HomeExportGeometry {
   const detailsCol = gymDetails ? HOME_DETAILS_COL : 0;
+  const detailsExtra = gymDetails ? HOME_GYM_DETAILS_EXTRA_W : 0;
   const sideGap = sideBySide ? HOME_SIDE_GAP : 0;
   const blocks = sideBySide ? 2 : 1;
-  const teamBudget = HOME_INNER - GLYPH_COL - TYPE_COL - detailsCol;
+  const inner = HOME_INNER + detailsExtra;
+  const teamBudget = inner - GLYPH_COL - TYPE_COL - detailsCol;
   const blockWidth = (teamBudget - sideGap) / blocks;
   const seatCol = blockWidth / SEAT_COUNT;
-  const extraW = sideBySide ? blockWidth + sideGap : 0;
+  const sideExtra = sideBySide ? blockWidth + sideGap : 0;
+  const extraW = sideExtra + detailsExtra;
   return {
     homeW: HOME_W + extraW,
     homeInner: HOME_INNER + extraW,
