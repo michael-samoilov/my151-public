@@ -2,15 +2,11 @@
 
 The league export button draws a PNG from `src/league/export/exportLeague.ts`. The default picture matches the on-screen Story/Rematch toggle and uses six team columns so sprites are not crowded against the type mark.
 
-Optional layouts are controlled with URL query flags until the export-settings pane ships:
+Use **Export** in the tool bar. The overlay shows a live preview and layout checkboxes:
 
-| Flag | Effect |
+| Setting | Effect |
 | --- | --- |
-| `exportGymDetails=1` | Adds a gym-details column (theme, TM, badge) between the type icon and the team sprites on every row. |
-| `exportSideBySide=1` | On gym-leader rows only, draws story and rematch teams in two blocks with a gap between them. The **GYM LEADERS** spacer also shows right-aligned `story teams` and `rematch teams` labels over each block. |
+| Gym details column | Theme, TM, and badge between the type icon and team sprites on every row. |
+| Story and rematch side by side | Gym-leader rows only: two team blocks and `story teams` / `rematch teams` on the **GYM LEADERS** spacer. |
 
-Flags combine. Example preview URL:
-
-`/league?exportGymDetails=1&exportSideBySide=1`
-
-Open the league builder with those parameters, then use **Export league** in the tool bar.
+URL query flags (`exportGymDetails=1`, `exportSideBySide=1`) still seed the checkboxes when the overlay opens.

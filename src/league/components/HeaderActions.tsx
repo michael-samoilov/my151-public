@@ -1,17 +1,7 @@
-import { useCallback, useState } from 'react';
-import { Download, Loader2 } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { shareOrDownload } from '@/lib/exportImage';
-import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
-import { sendLeagueExportBeacon } from '../hooks/useLeagueBeacon';
 import { useLeagueStore, type LeagueView } from '../store/useLeagueStore';
-import {
-  CARD_FILENAME,
-  HOME_FILENAME,
-  exportGymCard,
-  exportLeagueHome,
-} from '../export/exportLeague';
-import { parseLeagueHomeExportLayout } from '../export/exportOptions';
+import { useLeagueUi } from '../store/useLeagueUi';
 
 /**
  * The summary's two readings, as a pair of buttons.
@@ -80,43 +70,17 @@ export function LeagueViewToggle() {
  * cards would re-render it on every keystroke in a theme field.
  */
 export function LeagueExportButton({ cardIndex }: { cardIndex?: number }) {
-  const [busy, setBusy] = useState(false);
-
-  const run = useCallback(async () => {
-    if (busy) return;
-    setBusy(true);
-    const isCard = cardIndex !== undefined;
-    // Before the share sheet, not after. On iOS the sheet suspends the page,
-    // and a beacon issued once it resolves often never leaves the device.
-    sendEventBeacon(isCard ? 'league-export-card' : 'league-export-league');
-    sendLeagueExportBeacon(isCard ? 'card' : 'league');
-    try {
-      const { name, cards, view } = useLeagueStore.getState();
-      const exportLayout = parseLeagueHomeExportLayout(window.location.search);
-      const blob = isCard
-        ? await exportGymCard(cards[cardIndex])
-        : await exportLeagueHome(name, cards, view, exportLayout);
-      await shareOrDownload(blob, isCard ? CARD_FILENAME : HOME_FILENAME);
-    } catch (err) {
-      // Dismissing the iOS share sheet aborts the promise; that is a choice,
-      // not a failure.
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      console.error('League export failed:', err);
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, cardIndex]);
+  const openLeagueExport = useLeagueUi((s) => s.openLeagueExport);
 
   return (
     <button
       type="button"
-      onClick={run}
-      disabled={busy}
+      onClick={() => openLeagueExport(cardIndex)}
       aria-label={cardIndex === undefined ? 'Export league' : 'Export trainer card'}
       data-league-export
-      className="shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground disabled:cursor-default disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-primary"
+      className="shrink-0 cursor-pointer rounded-md border border-border p-1.5 text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
     >
-      {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+      <Download className="h-4 w-4" />
     </button>
   );
 }
