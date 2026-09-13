@@ -6,13 +6,18 @@ import { expect, test } from '@playwright/test';
  *
  * League must fit the viewport (no page scroll). The demo's first league
  * user carries a count-only drop-then-restore phantom; tidy must hide it
- * so the scrubber has 3 sessions, not 4. Dex may scroll — the 151 grid is
- * allowed to — but the timeline and a build snapshot have to render.
+ * so the scrubber has 3 sessions, not 4. Dex may scroll inside its pane.
+ * The Dex / League toggle is always present; a tool the browser never
+ * used is greyed.
  */
 
 async function openDemo(page: import('@playwright/test').Page) {
   await page.goto('/?admin&demo');
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+}
+
+function userTools(page: import('@playwright/test').Page) {
+  return page.getByRole('group', { name: "This browser's tools" });
 }
 
 test.describe('admin user pages', () => {
@@ -40,6 +45,11 @@ test.describe('admin user pages', () => {
         return { scrollH: de.scrollHeight, innerH: window.innerHeight };
       });
       expect(overflow.scrollH).toBeLessThanOrEqual(overflow.innerH + 2);
+
+      const box = await scrub.boundingBox();
+      const vh = page.viewportSize()?.height ?? 0;
+      expect(box).toBeTruthy();
+      expect(box!.y).toBeGreaterThan(vh * 0.55);
     }
   });
 
@@ -50,5 +60,29 @@ test.describe('admin user pages', () => {
     await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
     await expect(page.getByRole('slider', { name: 'Scrub sessions' })).toBeVisible();
     await expect(page.getByText(/of 151/)).toBeVisible();
+    await expect(userTools(page).getByRole('button', { name: 'Dex' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('a user page toggles between dex and league', async ({ page }) => {
+    await openDemo(page);
+    await page.getByRole('button', { name: 'League' }).click();
+    await page.getByRole('button', { name: 'Visits' }).first().click();
+    const tools = userTools(page);
+    await expect(tools.getByRole('button', { name: 'League' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(tools.getByRole('button', { name: 'Dex' })).toBeEnabled();
+    await tools.getByRole('button', { name: 'Dex' }).click();
+    await expect(page.getByText(/of 151/)).toBeVisible();
+    await expect(tools.getByRole('button', { name: 'Dex' })).toHaveAttribute('aria-pressed', 'true');
+    await tools.getByRole('button', { name: 'League' }).click();
+    await expect(page.getByRole('slider', { name: 'Scrub sessions' })).toHaveAttribute('max', '2');
+  });
+
+  test('an unused tool stays visible and is not pressable', async ({ page }) => {
+    await openDemo(page);
+    await page.getByRole('button', { name: 'League' }).click();
+    await page.getByRole('button', { name: 'Visits' }).last().click();
+    const tools = userTools(page);
+    await expect(tools.getByRole('button', { name: 'League' })).toBeEnabled();
+    await expect(tools.getByRole('button', { name: 'Dex' })).toBeDisabled();
   });
 });

@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 import {
   fmtDay,
   formatSessionMeta,
@@ -39,6 +40,7 @@ export function SessionTimeline({
   rightChip,
   milestones = [],
   tz,
+  children,
 }: {
   points: TimelinePoint[];
   index: number;
@@ -51,6 +53,10 @@ export function SessionTimeline({
   rightChip?: ReactNode;
   milestones?: { t: number; label: string; tone?: 'export' | 'muted' }[];
   tz?: string;
+  /** Snapshot under the chart. On a phone the scrubber docks under this so a
+   *  thumb on the slider does not cover the build. Desktop keeps the slider
+   *  under the chart. */
+  children?: ReactNode;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [W, setW] = useState(320);
@@ -64,7 +70,14 @@ export function SessionTimeline({
     return () => ro.disconnect();
   }, [points.length]);
 
-  if (points.length === 0) return <p className="text-xs text-muted-foreground">No sessions yet.</p>;
+  if (points.length === 0) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col gap-1.5">
+        <p className="text-xs text-muted-foreground">No sessions yet.</p>
+        {children && <div className="min-h-0 flex-1 overflow-auto">{children}</div>}
+      </div>
+    );
+  }
 
   const padL = 6;
   const padR = 6;
@@ -109,14 +122,13 @@ export function SessionTimeline({
     }
   }
 
-  return (
-    <div className="flex flex-col gap-1.5">
+  const chart = (
+    <>
       <div className="flex items-baseline justify-between text-[0.65rem] tabular-nums text-muted-foreground">
         <span>{fmtDay(t0, tz)}</span>
         {peakLabel && <span className="font-semibold">{peakLabel}</span>}
         <span>{fmtDay(t1, tz)}</span>
       </div>
-
       <div ref={wrapRef}>
       <svg viewBox={`0 0 ${W} ${svgH}`} className="block w-full" style={{ height: svgH }} role="img" aria-label="Session diff history; drag the slider to scrub.">
         {midnights.map((ts, i) => (
@@ -180,73 +192,103 @@ export function SessionTimeline({
         <line x1={cx.toFixed(1)} x2={cx.toFixed(1)} y1={2} y2={svgH - 2} stroke="var(--color-primary)" strokeWidth={1.5} />
       </svg>
       </div>
+    </>
+  );
 
-      {points.length <= 1 ? (
-        <div className="flex items-stretch gap-2">
-          {leftChip}
-          {rightChip}
-        </div>
-      ) : (
+  const scrub =
+    points.length <= 1 ? (
+      <div className="flex items-stretch gap-2">
+        {leftChip}
+        {rightChip}
+      </div>
+    ) : (
       <div className="flex items-center gap-2">
         {leftChip}
         <div className="relative flex-1 px-3">
-        <div className="pointer-events-none absolute inset-y-0 left-3 right-3">
-          <div
-            className="absolute left-0 right-0 top-1/2 h-[7px] -translate-y-1/2 rounded-full"
-            style={{ background: 'var(--color-muted)' }}
-          />
-          {points.length > 1 &&
-            points.map((_, i) => (
+          <div className="pointer-events-none absolute inset-y-0 left-3 right-3">
+            <div
+              className="absolute left-0 right-0 top-1/2 h-[7px] -translate-y-1/2 rounded-full"
+              style={{ background: 'var(--color-muted)' }}
+            />
+            {points.map((_, i) => (
               <span
                 key={i}
                 className="absolute top-1/2 h-[4px] w-[4px] -translate-x-1/2 -translate-y-1/2 rounded-full"
                 style={{ left: `calc(11px + ${i / (points.length - 1)} * (100% - 22px))`, background: 'var(--color-muted-foreground)' }}
               />
             ))}
-        </div>
-        <input
-          type="range"
-          min={0}
-          max={points.length - 1}
-          step={1}
-          value={Math.min(index, points.length - 1)}
-          onChange={(e) => onIndex(Number(e.target.value))}
-          className="admin-scrub relative w-full touch-none"
-          aria-label="Scrub sessions"
-          aria-valuetext={`${fmtDay(cur.t, tz)}: ${cur.count} ${countUnit}`}
-        />
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={points.length - 1}
+            step={1}
+            value={Math.min(index, points.length - 1)}
+            onChange={(e) => onIndex(Number(e.target.value))}
+            className="admin-scrub relative w-full touch-none"
+            aria-label="Scrub sessions"
+            aria-valuetext={`${fmtDay(cur.t, tz)}: ${cur.count} ${countUnit}`}
+          />
         </div>
         {rightChip}
       </div>
-      )}
+    );
 
-      <div className="flex flex-nowrap items-baseline gap-x-1 whitespace-nowrap text-[0.65rem] tabular-nums leading-none">
-        <b className="text-[0.9rem] font-bold">{cur.count}</b>
-        <span className="shrink-0 text-muted-foreground">{countUnit}</span>
-        <span className="text-muted-foreground">·</span>
-        <span className="font-semibold">{fmtDay(cur.t, tz)}</span>
-        {meta.window && (
-          <>
-            <span className="text-muted-foreground">·</span>
-            <span className="font-semibold">{meta.window}</span>
-          </>
+  const readout = (
+    <div className="flex flex-nowrap items-baseline gap-x-1 whitespace-nowrap text-[0.65rem] tabular-nums leading-none">
+      <b className="text-[0.9rem] font-bold">{cur.count}</b>
+      <span className="shrink-0 text-muted-foreground">{countUnit}</span>
+      <span className="text-muted-foreground">·</span>
+      <span className="font-semibold">{fmtDay(cur.t, tz)}</span>
+      {meta.window && (
+        <>
+          <span className="text-muted-foreground">·</span>
+          <span className="font-semibold">{meta.window}</span>
+        </>
+      )}
+      {meta.diff && (
+        <>
+          <span className="text-muted-foreground">·</span>
+          {meta.added != null && (
+            <span className="font-bold text-[var(--color-success)]">
+              +{meta.added}
+              {deltaUnit}
+            </span>
+          )}
+          {meta.removed != null && (
+            <span className="font-bold text-[var(--color-primary)]">
+              {meta.added != null ? ' ' : ''}−{meta.removed}
+              {deltaUnit}
+            </span>
+          )}
+        </>
+      )}
+      {extra && <span className="text-muted-foreground">· {extra}</span>}
+    </div>
+  );
+
+  if (children == null) {
+    return (
+      <div className="flex flex-col gap-1.5">
+        {chart}
+        {scrub}
+        {readout}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col gap-1.5">
+      <div className="order-1 shrink-0">{chart}</div>
+      <div className="order-2 shrink-0 md:order-3">{readout}</div>
+      <div className="order-3 flex min-h-0 flex-1 flex-col overflow-auto md:order-4">{children}</div>
+      <div
+        className={cn(
+          'order-4 shrink-0 md:order-2',
+          'max-md:sticky max-md:bottom-14 max-md:z-20 max-md:-mx-4 max-md:border-t max-md:bg-card/95 max-md:px-4 max-md:py-1.5 max-md:backdrop-blur',
         )}
-        {meta.diff && (
-          <>
-            <span className="text-muted-foreground">·</span>
-            {meta.added != null && (
-              <span className="font-bold text-[var(--color-success)]">
-                +{meta.added}{deltaUnit}
-              </span>
-            )}
-            {meta.removed != null && (
-              <span className="font-bold text-[var(--color-primary)]">
-                {meta.added != null ? ' ' : ''}−{meta.removed}{deltaUnit}
-              </span>
-            )}
-          </>
-        )}
-        {extra && <span className="text-muted-foreground">· {extra}</span>}
+      >
+        {scrub}
       </div>
     </div>
   );

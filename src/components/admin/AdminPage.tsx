@@ -375,6 +375,8 @@ export interface ApiResponse {
   };
   /** How far a league gets: cards with a line, and seats. */
   leagueCurves?: { cards: SurvivalCurve; seats: SurvivalCurve };
+  /** The dex record for each browser on this page of league users. */
+  dexByCid?: Record<string, ClientRecord>;
   /** The league record for each browser on this page of dex users. */
   leagueByCid?: Record<string, LeagueUser>;
   /** The gym leader maker's own user list, paged like `records`. */
@@ -744,7 +746,7 @@ const POKEBALL_SVG = (
   </svg>
 );
 
-/** The short badge a filled slot's glyph column carries: G1-G8, E1-E4, a crown
+/** The short badge a filled slot's first cell carries: G1-G8, E1-E4, a crown
  *  for champion, a poké ball for the boss. */
 function slotBadge(i: number): React.ReactNode {
   const kind = slotKind(i);
@@ -805,10 +807,12 @@ function MiniTile({ id, ace }: { id: number; ace?: boolean }) {
 
 /**
  * The whole league at one moment: the 14 slots in a 3-column grid so champion
- * and boss stay the same width as the gyms. Glyphs live in their own column.
- * Each evo column shows only the members that seat actually draws — seat 6
- * (leftmost) has two template rows, so a three-stage line cannot dump all
- * three sprites there.
+ * and boss stay the same width as the gyms. Each card is a 6×3 tile grid.
+ * The stage badge and type icon take the first two cells of the first row;
+ * evo seats fill the rest, bottom-aligned, seat 6 on the left. A sprite that
+ * would land on those two cells is omitted so type and stage always win.
+ * Seat 6 only has two template rows, so `visibleMembers` never dumps a
+ * three-stage line into that column.
  */
 function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
   const bySlot = new Map<number, LeagueCard>();
@@ -838,7 +842,7 @@ function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+            gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
             gridTemplateRows: `repeat(${ROWS}, auto)`,
             gap: '1px',
           }}
@@ -846,7 +850,7 @@ function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
           <div style={{ gridColumn: 1, gridRow: 1 }} className="flex aspect-square items-center justify-center text-[8px] font-extrabold text-muted-foreground">
             {slotBadge(i)}
           </div>
-          <div style={{ gridColumn: 1, gridRow: 2 }}>
+          <div style={{ gridColumn: 2, gridRow: 1 }}>
             <TypeMark t={card.t} />
           </div>
           {Array.from({ length: SEATS }, (_, col) => {
@@ -858,14 +862,16 @@ function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
               boundaries: line.bd && line.bd.length === line.b.length ? line.bd : defaultBoundaries(line.b),
             };
             const members = visibleMembers(placed, seat).slice(-ROWS);
-            return members.map((id, stage) => (
-              <div
-                key={`${seat}-${id}-${stage}`}
-                style={{ gridColumn: col + 2, gridRow: ROWS - members.length + stage + 1 }}
-              >
-                <MiniTile id={id} ace={id === card.aceId} />
-              </div>
-            ));
+            const gridCol = col + 1;
+            return members.map((id, stage) => {
+              const gridRow = ROWS - members.length + stage + 1;
+              if (gridRow === 1 && gridCol <= 2) return null;
+              return (
+                <div key={`${seat}-${id}-${stage}`} style={{ gridColumn: gridCol, gridRow }}>
+                  <MiniTile id={id} ace={id === card.aceId} />
+                </div>
+              );
+            });
           })}
         </div>
       </div>
@@ -947,17 +953,78 @@ function LanguageChip({ lang, locale, switched }: { lang?: string; locale?: stri
   );
 }
 
-/** Consolidated detail header: Back, the middle-truncated id, and the geo /
- *  platform / language chips on one rail (icons disclose their name on press or
- *  hover), so the identity takes one row instead of three. */
-function DetailHeader({ rec, onBack }: { rec: HeaderRec; onBack: () => void }) {
+/** Dex / League switch on a user page. A tool the browser never used stays
+ *  visible and greyed, so the control's shape does not jump. */
+function UserToolSeg({
+  value,
+  onChange,
+  hasDex,
+  hasLeague,
+}: {
+  value: 'dex' | 'league';
+  onChange: (k: 'dex' | 'league') => void;
+  hasDex: boolean;
+  hasLeague: boolean;
+}) {
+  const opts = [
+    { key: 'dex' as const, label: 'Dex', on: hasDex },
+    { key: 'league' as const, label: 'League', on: hasLeague },
+  ];
   return (
+    <div role="group" aria-label="This browser's tools" className="flex shrink-0 items-center gap-0.5">
+      {opts.map((o) => {
+        const pressed = value === o.key;
+        return (
+          <button
+            key={o.key}
+            type="button"
+            aria-pressed={pressed}
+            disabled={!o.on}
+            title={o.on ? undefined : `No ${o.label.toLowerCase()} for this browser`}
+            onClick={() => o.on && onChange(o.key)}
+            className={cn(
+              'rounded-full border px-2 py-0.5 text-[0.65rem] font-semibold',
+              !o.on && 'cursor-not-allowed opacity-40',
+              o.on && pressed && 'border-foreground bg-foreground text-card',
+              o.on && !pressed && 'border-border text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Consolidated detail header: Back, the middle-truncated id, the dex/league
+ *  toggle, and the geo / platform / language chips on one rail. */
+function DetailHeader({
+  rec,
+  onBack,
+  tool,
+  onTool,
+  hasDex,
+  hasLeague,
+}: {
+  rec: HeaderRec;
+  onBack: () => void;
+  tool: 'dex' | 'league';
+  onTool: (k: 'dex' | 'league') => void;
+  hasDex: boolean;
+  hasLeague: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
     <div className="flex flex-nowrap items-center gap-x-2 overflow-hidden">
       <button type="button" onClick={onBack} className="flex shrink-0 items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
         ‹ Back
       </button>
       <span className="shrink-0 text-sm font-bold tabular-nums" title={rec.cid}>
         {middleId(rec.cid)}
+      </span>
+      <span className="hidden md:inline-flex">
+        <UserToolSeg value={tool} onChange={onTool} hasDex={hasDex} hasLeague={hasLeague} />
       </span>
       <TooltipScope>
         <div className="ml-auto flex min-w-0 flex-nowrap items-center justify-end gap-1.5 overflow-x-auto">
@@ -984,6 +1051,10 @@ function DetailHeader({ rec, onBack }: { rec: HeaderRec; onBack: () => void }) {
           <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
         </div>
       </TooltipScope>
+    </div>
+    <div className="md:hidden">
+      <UserToolSeg value={tool} onChange={onTool} hasDex={hasDex} hasLeague={hasLeague} />
+    </div>
     </div>
   );
 }
@@ -1076,9 +1147,8 @@ function leagueSessionIds(s: { cards?: LeagueCard[] }): number[] {
   return (s.cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b));
 }
 
-/** Dex user detail page: session timeline + the build at the scrubbed moment,
- *  drawn with the real section outlines. */
-function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void }) {
+/** Dex user body: session timeline + the build at the scrubbed moment. */
+function DexDetailBody({ rec }: { rec: ClientRecord }) {
   const { log, ms } = tidySessions(rec.sessionLog ?? [], rec.sessionMs, (s) => s.ids);
   const [i, setI] = useState(Math.max(0, log.length - 1));
   const points: TimelinePoint[] = log.map((s, k) => {
@@ -1115,24 +1185,8 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
         ? [{ t: t1, label: 'no exports', tone: 'muted' }]
         : [];
 
-  return (
-    <div className="flex flex-col gap-2">
-      <DetailHeader rec={rec} onBack={onBack} />
-      {points.length > 0 ? (
-        <SessionTimeline
-          points={points}
-          index={idx}
-          onIndex={setI}
-          countUnit="of 151"
-          peakLabel={`${peak} / 151`}
-          milestones={milestones}
-          tz={rec.tz}
-          leftChip={<SessionsChip sessions={rec.sessions ?? log.length} days={activeDayCount(rec)} full={log.length <= 1} />}
-          rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
-        />
-      ) : (
-        <p className="text-xs text-muted-foreground">No session history.</p>
-      )}
+  const snapshot = (
+    <>
       {sections && Object.keys(sections).length > 0 ? (
         <OutlinedDex sections={sections} presentIds={presentIds} />
       ) : presentIds.length > 0 ? (
@@ -1151,7 +1205,32 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
           <SpriteRow ids={offIds} />
         </div>
       )}
-    </div>
+    </>
+  );
+
+  if (points.length === 0) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col gap-1.5">
+        <p className="text-xs text-muted-foreground">No session history.</p>
+        <div className="min-h-0 flex-1 overflow-auto">{snapshot}</div>
+      </div>
+    );
+  }
+
+  return (
+    <SessionTimeline
+      points={points}
+      index={idx}
+      onIndex={setI}
+      countUnit="of 151"
+      peakLabel={`${peak} / 151`}
+      milestones={milestones}
+      tz={rec.tz}
+      leftChip={<SessionsChip sessions={rec.sessions ?? log.length} days={activeDayCount(rec)} full={log.length <= 1} />}
+      rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
+    >
+      {snapshot}
+    </SessionTimeline>
   );
 }
 
@@ -1218,48 +1297,84 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
     milestones.push({ t: t1, label: 'no exports', tone: 'muted' });
   }
 
-  return (
-    <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
-      {points.length > 0 ? (
-        <div className="shrink-0">
-        <SessionTimeline
-          points={points}
-          index={idx}
-          onIndex={setI}
-          countUnit={`of ${CARD_COUNT}`}
-          peakLabel={`${peak} seated`}
-          milestones={milestones}
-          tz={league.tz}
-          leftChip={<SessionsChip sessions={log.length} days={days} full={log.length <= 1} />}
-          rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
-        />
-        </div>
-      ) : (
+  const board =
+    cur?.cards && cur.cards.length > 0 ? (
+      <FitToHeight signature={idx}>
+        <LeagueBoardSnapshot cards={cur.cards} />
+      </FitToHeight>
+    ) : league.latestCards && league.latestCards.length > 0 ? (
+      <FitToHeight signature="latest">
+        <LeagueBoardSnapshot cards={league.latestCards} />
+      </FitToHeight>
+    ) : (
+      <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
+    );
+
+  if (points.length === 0) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
         <p className="text-xs text-muted-foreground">No session history.</p>
-      )}
-      {cur?.cards && cur.cards.length > 0 ? (
-        <FitToHeight signature={idx}>
-          <LeagueBoardSnapshot cards={cur.cards} />
-        </FitToHeight>
-      ) : league.latestCards && league.latestCards.length > 0 ? (
-        <FitToHeight signature="latest">
-          <LeagueBoardSnapshot cards={league.latestCards} />
-        </FitToHeight>
-      ) : (
-        <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
-      )}
-    </div>
+        {board}
+      </div>
+    );
+  }
+
+  return (
+    <SessionTimeline
+      points={points}
+      index={idx}
+      onIndex={setI}
+      countUnit={`of ${CARD_COUNT}`}
+      peakLabel={`${peak} seated`}
+      milestones={milestones}
+      tz={league.tz}
+      leftChip={<SessionsChip sessions={log.length} days={days} full={log.length <= 1} />}
+      rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
+    >
+      {board}
+    </SessionTimeline>
   );
 }
 
-/** League user detail page. */
-function LeagueDetailPage({ rec, onBack }: { rec: LeagueUser; onBack: () => void }) {
+function headerFrom(dex?: ClientRecord, league?: LeagueUser): HeaderRec | null {
+  const src = dex ?? league;
+  if (!src) return null;
+  return {
+    cid: src.cid,
+    country: src.country,
+    region: src.region,
+    device: src.device,
+    os: src.os,
+    browser: src.browser,
+    lang: src.lang,
+    locale: src.locale,
+    switched: src.switched,
+  };
+}
+
+/** One browser: header, tool toggle, then that tool's timeline. */
+function UserDetailPage({
+  tool,
+  onTool,
+  dex,
+  league,
+  onBack,
+}: {
+  tool: 'dex' | 'league';
+  onTool: (k: 'dex' | 'league') => void;
+  dex?: ClientRecord;
+  league?: LeagueUser;
+  onBack: () => void;
+}) {
+  const rec = headerFrom(dex, league);
+  if (!rec) return null;
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
       <div className="shrink-0">
-        <DetailHeader rec={rec} onBack={onBack} />
+        <DetailHeader rec={rec} onBack={onBack} tool={tool} onTool={onTool} hasDex={!!dex} hasLeague={!!league} />
       </div>
-      <LeagueDetailBody league={rec} />
+      {tool === 'dex' && dex && <DexDetailBody rec={dex} />}
+      {tool === 'league' && league && <LeagueDetailBody league={league} />}
     </div>
   );
 }
@@ -1826,10 +1941,10 @@ export function AdminPage() {
       pickTool(k);
     }
   };
-  const lockLeague = detail?.kind === 'league';
+  const lockUser = detail?.kind === 'dex' || detail?.kind === 'league';
 
   return (
-    <div className={cn('flex flex-col bg-background', lockLeague ? 'h-dvh overflow-hidden' : 'min-h-dvh')}>
+    <div className={cn('flex flex-col bg-background', lockUser ? 'h-dvh overflow-hidden' : 'min-h-dvh')}>
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-3">
           <h1 className="whitespace-nowrap text-lg font-bold">
@@ -1851,27 +1966,37 @@ export function AdminPage() {
       <main
         className={cn(
           'mx-auto flex w-full max-w-5xl flex-1 flex-col px-4',
-          lockLeague ? 'min-h-0 gap-2 overflow-hidden pb-20 pt-2 md:pb-8' : 'gap-4 pb-24 pt-4 md:pb-8',
+          lockUser ? 'min-h-0 gap-2 overflow-hidden pb-20 pt-2 md:pb-8' : 'gap-4 pb-24 pt-4 md:pb-8',
         )}
       >
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         {/* A clicked preview opens a full detail page; Back returns here. */}
         {detail && data && (
-          <div className={cn(detail.kind === 'league' && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
+          <div className={cn((detail.kind === 'league' || detail.kind === 'dex') && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
           {(() => {
           if (detail.kind === 'picks') {
             const nDex = data.tools?.dex ?? data.funnel.users;
             return <PicksDetailPage mostBySection={data.popularBySection} offBySection={offBySection} n={nDex} onBack={() => setDetail(null)} />;
           }
-          if (detail.kind === 'dex') {
-            const rec = data.records.find((r) => r.cid === detail.cid);
-            if (!rec) return null;
-            return <DexDetailPage rec={rec} onBack={() => setDetail(null)} />;
-          }
-          const rec = data.leagueUsers?.find((r) => r.cid === detail.cid);
-          if (!rec) return null;
-          return <LeagueDetailPage rec={rec} onBack={() => setDetail(null)} />;
+          const bare = detail.cid.split('::')[0];
+          const dex =
+            data.records.find((r) => r.cid === detail.cid || r.cid.split('::')[0] === bare) ??
+            data.dexByCid?.[detail.cid] ??
+            data.dexByCid?.[bare];
+          const league =
+            data.leagueByCid?.[detail.cid] ??
+            data.leagueByCid?.[bare] ??
+            data.leagueUsers?.find((r) => r.cid === detail.cid || r.cid === bare);
+          return (
+            <UserDetailPage
+              tool={detail.kind}
+              onTool={(k) => setDetail({ kind: k, cid: detail.cid })}
+              dex={dex}
+              league={league}
+              onBack={() => setDetail(null)}
+            />
+          );
           })()}
           </div>
         )}

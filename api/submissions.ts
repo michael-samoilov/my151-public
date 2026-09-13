@@ -575,6 +575,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .slice(offset, offset + limit)
       .map((r) => leagueUser(r, dexFirstTs.get(r.cid)));
 
+    // The dex record for each browser on this page of league users, so the
+    // user page can toggle tools without a second fetch. Only this page's
+    // cids, so the payload does not carry the whole dex store twice.
+    const dexByCidAll = new Map(records.map((r) => [r.cid.split('::')[0], r]));
+    const dexByCid: Record<string, ClientRecord> = {};
+    for (const u of leagueUsers) {
+      const dr = dexByCidAll.get(u.cid);
+      if (dr) dexByCid[u.cid] = dr;
+    }
+
     // Self-scaling qualification thresholds: median per-Pokemon count per list.
     const popularMin = tailThreshold(picksFinal);
     const droppedMin = tailThreshold(droppedCounts);
@@ -623,6 +633,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       referrerFlow: referrerRows,
       leagueCurves,
       leagueByCid,
+      dexByCid,
       leagueUsers,
       totalLeagueUsers: leagueRecords.length,
       // Full ranked lists; the admin UI previews the top N and expands the rest.
