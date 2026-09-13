@@ -9,10 +9,43 @@ import {
   splitProvisional,
   weekLineIndices,
   windowCounts,
+  type CountLabelSide,
   type DailyPoint,
 } from './trendSeries';
 
 const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+/** Left-aligned one-line labels sit this many px left of today's x, so they stay in the plot. */
+const COUNT_LABEL_PX = 54;
+
+function countLabel(
+  kind: '24h' | '7d',
+  count: number,
+  color: string,
+  x: number,
+  y: number,
+  side: CountLabelSide,
+) {
+  const face = 'ui-sans-serif, system-ui, sans-serif';
+  return {
+    type: 'text' as const,
+    x,
+    y,
+    style: {
+      text: `{k|${kind}: }{n|${count}}`,
+      fill: color,
+      fontSize: 10,
+      fontWeight: 400,
+      fontFamily: face,
+      textAlign: 'left' as const,
+      textVerticalAlign: side === 'above' ? 'bottom' : 'top',
+      rich: {
+        k: { fontSize: 10, fontWeight: 400, fill: color, fontFamily: face },
+        n: { fontSize: 10, fontWeight: 700, fill: color, fontFamily: face },
+      },
+    },
+  };
+}
 
 function LegendSwatch({ color }: { color: string }) {
   return <span className="block h-[2px] w-3 shrink-0" style={{ backgroundColor: color }} />;
@@ -145,38 +178,14 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
                     },
                   ) => {
                     const last = daily.length - 1;
-                    const midX = (api.coord([last - 1, 0])[0] + api.coord([last, 0])[0]) / 2;
+                    const x = api.coord([last, 0])[0] - COUNT_LABEL_PX;
                     const y24 = api.coord([last, layout.dailyY])[1];
                     const y7 = api.coord([last, layout.weeklyY])[1];
-                    const children: Record<string, unknown>[] = [
-                      {
-                        type: 'text',
-                        x: midX,
-                        y: y24,
-                        style: {
-                          text: `${counts.hours24}\n24h`,
-                          fill: faint,
-                          font: '600 10px ui-sans-serif, system-ui, sans-serif',
-                          textAlign: 'center',
-                          textVerticalAlign: layout.side === 'above' ? 'bottom' : 'top',
-                          lineHeight: 12,
-                        },
-                      },
+                    const children = [
+                      countLabel('24h', counts.hours24, faint, x, y24, layout.side),
                     ];
                     if (counts.days7 != null) {
-                      children.push({
-                        type: 'text',
-                        x: midX,
-                        y: y7,
-                        style: {
-                          text: `${counts.days7}\n7d`,
-                          fill: red,
-                          font: '600 10px ui-sans-serif, system-ui, sans-serif',
-                          textAlign: 'center',
-                          textVerticalAlign: layout.side === 'above' ? 'bottom' : 'top',
-                          lineHeight: 12,
-                        },
-                      });
+                      children.push(countLabel('7d', counts.days7, red, x, y7, layout.side));
                     }
                     return { type: 'group', children };
                   },
