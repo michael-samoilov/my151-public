@@ -56,3 +56,11 @@ export function headerCounts(series: DailyPoint[]): { daily: number; weekly: num
   const weekly = rollingSum7(series.map((p) => p.dau));
   return { daily: series[series.length - 1].dau, weekly: weekly[weekly.length - 1] };
 }
+
+/** Keep first and last x ticks. Skip a regular tick that sits too close to
+ *  the last date so hideOverlap cannot drop today on a narrow chart. */
+export function shouldShowXTick(idx: number, last: number, step = 14): boolean {
+  if (idx === 0 || idx === last) return true;
+  if (idx % step !== 0) return false;
+  return last - idx >= step;
+}

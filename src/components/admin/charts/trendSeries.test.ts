@@ -4,6 +4,7 @@ import {
   extendThroughToday,
   headerCounts,
   rollingSum7,
+  shouldShowXTick,
   splitProvisional,
   sundayMidnightIndices,
 } from './trendSeries';
@@ -70,5 +71,16 @@ describe('headerCounts', () => {
   it('reads today daily and the trailing 7-day sum', () => {
     const series = Array.from({ length: 7 }, (_, i) => ({ day: day(7) + i * DAY_MS, dau: i + 1 }));
     expect(headerCounts(series)).toEqual({ daily: 7, weekly: 28 });
+  });
+});
+
+describe('shouldShowXTick', () => {
+  it('keeps the last date even when a 14-day tick is close', () => {
+    const last = 89;
+    expect(shouldShowXTick(0, last)).toBe(true);
+    expect(shouldShowXTick(last, last)).toBe(true);
+    expect(shouldShowXTick(84, last)).toBe(false);
+    expect(shouldShowXTick(70, last)).toBe(true);
+    expect(shouldShowXTick(1, last)).toBe(false);
   });
 });

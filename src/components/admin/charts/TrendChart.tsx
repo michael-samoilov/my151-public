@@ -5,6 +5,7 @@ import {
   headerCounts,
   lastPointIsToday,
   rollingSum7,
+  shouldShowXTick,
   splitProvisional,
   sundayMidnightIndices,
   type DailyPoint,
@@ -67,7 +68,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             alignMinLabel: 'left',
             alignMaxLabel: 'right',
             overflow: 'none',
-            interval: (idx: number) => idx === 0 || idx === labels.length - 1 || idx % 14 === 0,
+            interval: (idx: number) => shouldShowXTick(idx, labels.length - 1),
           },
         },
         yAxis: {
