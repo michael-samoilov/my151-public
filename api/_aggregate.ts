@@ -342,24 +342,34 @@ export interface ReferrerFlowEntry {
   league: number;
 }
 
+/** Label for records with no `firstReferrer`: legacy rows, direct visits, and
+ *  internal navigation. Kept as a host string so the Sankey treats it like any
+ *  other source node. */
+export const UNKNOWN_REFERRER_HOST = 'referrer not known';
+
+/** Named known hosts shown on the referrer Sankey. The unknown bucket is
+ *  always appended when it has anyone, so it never competes for a slot. */
+const TOP_REFERRER_HOSTS = 8;
+
 /**
  * Referrer hosts ranked by distinct browsers reached, across both stores.
  *
- * `firstReferrer` is forward-only (see api/_leagueRecord.ts), so records
- * written before it existed carry no host and are skipped rather than
- * counted as "direct". A dex record's cid is split the same way `mergeByCid`
- * does, so a country-split record still counts as one browser. Capped at the
- * top 8 hosts by total reach.
+ * Records with no `firstReferrer` (the field is forward-only; see
+ * api/_leagueRecord.ts) count as {@link UNKNOWN_REFERRER_HOST} rather than
+ * disappearing from the Sankey. A dex record's cid is split the same way
+ * `mergeByCid` does, so a country-split record still counts as one browser.
+ * The top 8 named hosts by total reach are kept; the unknown bucket is always
+ * included when it has anyone.
  */
 export function referrerFlow(dexRecords: Referrable[], leagueRecords: Referrable[]): ReferrerFlowEntry[] {
   const byHost = (records: Referrable[]) => {
     const out = new Map<string, Set<string>>();
     for (const r of records) {
-      if (!r.firstReferrer) continue;
+      const host = r.firstReferrer || UNKNOWN_REFERRER_HOST;
       const cid = r.cid.split('::')[0];
-      const set = out.get(r.firstReferrer) ?? new Set<string>();
+      const set = out.get(host) ?? new Set<string>();
       set.add(cid);
-      out.set(r.firstReferrer, set);
+      out.set(host, set);
     }
     return out;
   };
@@ -371,7 +381,201 @@ export function referrerFlow(dexRecords: Referrable[], leagueRecords: Referrable
     const leagueCids = leagueByHost.get(host) ?? new Set<string>();
     return { host, total: new Set([...dexCids, ...leagueCids]).size, dex: dexCids.size, league: leagueCids.size };
   });
-  return rows.sort((a, b) => b.total - a.total).slice(0, 8);
+  const unknown = rows.find((r) => r.host === UNKNOWN_REFERRER_HOST);
+  const known = rows
+    .filter((r) => r.host !== UNKNOWN_REFERRER_HOST)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, TOP_REFERRER_HOSTS);
+  if (unknown && unknown.total > 0) known.push(unknown);
+  return known;
+}
+
+/** One incomplete-size bucket on a usage funnel. */
+export interface FunnelPeel {
+  label: string;
+  count: number;
+}
+
+/** Dex builder usage funnel: intro → built → size peels → completed → export. */
+export interface DexUsageFunnel {
+  opened: number;
+  built: number;
+  bounced: number;
+  peels: FunnelPeel[];
+  through: FunnelPeel[];
+  completed: number;
+  exported: number;
+  keptPrivate: number;
+}
+
+/** Gym leader maker usage funnel: open → seated → card peels → full → export. */
+export interface LeagueUsageFunnel {
+  opened: number;
+  seated: number;
+  bounced: number;
+  peels: FunnelPeel[];
+  through: FunnelPeel[];
+  fullLeague: number;
+  exportedLeague: number;
+  exportedCardOnly: number;
+  keptPrivate: number;
+}
+
+export interface SizeTier {
+  label: string;
+  min: number;
+  max: number;
+}
+
+/** Incomplete dex sizes, in Pokémon. The last bucket also takes a 151 that
+ *  never flipped `completed`. */
+export const DEX_INCOMPLETE_TIERS: readonly SizeTier[] = [
+  { label: '1–30', min: 0, max: 30 },
+  { label: '31–60', min: 31, max: 60 },
+  { label: '61–90', min: 61, max: 90 },
+  { label: '91–120', min: 91, max: 120 },
+  { label: '121–150', min: 121, max: Number.POSITIVE_INFINITY },
+];
+
+/** Incomplete league sizes, in trainer cards. Full is 14. */
+export const LEAGUE_INCOMPLETE_TIERS: readonly SizeTier[] = [
+  { label: '1–3 cards', min: 0, max: 3 },
+  { label: '4–7 cards', min: 4, max: 7 },
+  { label: '8–11 cards', min: 8, max: 11 },
+  { label: '12–13 cards', min: 12, max: 13 },
+];
+
+const DEX_THROUGH_LABELS = ['31+', '61+', '91+', '121+', 'Completed'] as const;
+const LEAGUE_THROUGH_LABELS = ['4+ cards', '8+ cards', '12+ cards', 'Full league'] as const;
+
+export interface DexFunnelRow {
+  cid: string;
+  peakMon: number;
+  completed: boolean;
+  exported: boolean;
+}
+
+export interface LeagueFunnelRow {
+  maxCards: number;
+  exportsCard: number;
+  exportsLeague: number;
+}
+
+function mergeDexFunnelRows(rows: DexFunnelRow[]): Omit<DexFunnelRow, 'cid'>[] {
+  const byCid = new Map<string, Omit<DexFunnelRow, 'cid'>>();
+  for (const r of rows) {
+    const cid = r.cid.split('::')[0];
+    const prev = byCid.get(cid);
+    if (!prev) {
+      byCid.set(cid, { peakMon: r.peakMon, completed: r.completed, exported: r.exported });
+      continue;
+    }
+    byCid.set(cid, {
+      peakMon: Math.max(prev.peakMon, r.peakMon),
+      completed: prev.completed || r.completed,
+      exported: prev.exported || r.exported,
+    });
+  }
+  return [...byCid.values()];
+}
+
+function stagePeels(
+  incompleteValues: number[],
+  completedCount: number,
+  tiers: readonly SizeTier[],
+  throughLabels: readonly string[],
+): { peels: FunnelPeel[]; through: FunnelPeel[] } {
+  const peels = tiers.map((t) => ({
+    label: t.label,
+    count: incompleteValues.filter((v) => v >= t.min && v <= t.max).length,
+  }));
+  const assigned = peels.reduce((s, p) => s + p.count, 0);
+  if (assigned < incompleteValues.length && peels.length > 0) {
+    peels[peels.length - 1].count += incompleteValues.length - assigned;
+  }
+  let remaining = incompleteValues.length + completedCount;
+  const through: FunnelPeel[] = [];
+  for (let i = 0; i < tiers.length; i++) {
+    remaining -= peels[i]?.count ?? 0;
+    through.push({ label: throughLabels[i] ?? `${tiers[i].max + 1}+`, count: Math.max(0, remaining) });
+  }
+  return { peels, through };
+}
+
+/**
+ * Dex usage funnel from per-record peaks. `opened` is the top of funnel
+ * (intro shown, or built when the event count is missing or smaller).
+ */
+export function dexUsageFunnel(rows: DexFunnelRow[], openedHint: number): DexUsageFunnel {
+  const merged = mergeDexFunnelRows(rows);
+  const built = merged.length;
+  const opened = Math.max(openedHint, built);
+  const bounced = Math.max(0, opened - built);
+  const completedRows = merged.filter((r) => r.completed);
+  const completed = completedRows.length;
+  const exported = completedRows.filter((r) => r.exported).length;
+  const incompleteValues = merged.filter((r) => !r.completed).map((r) => r.peakMon);
+  const { peels, through } = stagePeels(incompleteValues, completed, DEX_INCOMPLETE_TIERS, DEX_THROUGH_LABELS);
+  return {
+    opened,
+    built,
+    bounced,
+    peels,
+    through,
+    completed,
+    exported,
+    keptPrivate: Math.max(0, completed - exported),
+  };
+}
+
+/**
+ * League usage funnel from per-record card peaks.
+ *
+ * Stages follow the gym leader maker's real path: opened (league-open event),
+ * seated (a record exists; the first beacon needs a line), card-count peels
+ * that match gym / Elite Four progress, full 14-card league, then export.
+ * Export is a full-league outcome, same as the dex chart: a gym-card export
+ * from an unfinished league stays in its card-count peel.
+ */
+export function leagueUsageFunnel(
+  rows: LeagueFunnelRow[],
+  openedHint: number,
+  fullCards: number,
+): LeagueUsageFunnel {
+  const seated = rows.length;
+  const opened = Math.max(openedHint, seated);
+  const bounced = Math.max(0, opened - seated);
+  const fullRows = rows.filter((r) => r.maxCards >= fullCards);
+  const fullLeague = fullRows.length;
+  const exportedLeague = fullRows.filter((r) => r.exportsLeague > 0).length;
+  const exportedCardOnly = fullRows.filter((r) => r.exportsLeague === 0 && r.exportsCard > 0).length;
+  const keptPrivate = fullRows.filter((r) => r.exportsLeague === 0 && r.exportsCard === 0).length;
+  const incompleteValues = rows.filter((r) => r.maxCards < fullCards).map((r) => r.maxCards);
+  const { peels, through } = stagePeels(
+    incompleteValues,
+    fullLeague,
+    LEAGUE_INCOMPLETE_TIERS,
+    LEAGUE_THROUGH_LABELS,
+  );
+  return {
+    opened,
+    seated,
+    bounced,
+    peels,
+    through,
+    fullLeague,
+    exportedLeague,
+    exportedCardOnly,
+    keptPrivate,
+  };
+}
+
+/** Count a funnel event under either hyphen or underscore keys. */
+export function funnelEventCount(events: Record<string, number> | undefined, name: string): number {
+  if (!events) return 0;
+  const underscored = name.replace(/-/g, '_');
+  const n = events[name] ?? events[underscored];
+  return typeof n === 'number' && Number.isFinite(n) ? n : 0;
 }
 
 /**

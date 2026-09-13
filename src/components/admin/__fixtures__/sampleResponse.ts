@@ -3,11 +3,13 @@
 // It renders the redesign without a live token, so a preview deploy shows the
 // whole page and the design can be reviewed on the real app instead of a
 // mockup. Every number is fabricated but self-consistent: the funnel stages
-// sum (646 = 388 built + 258 bounced; 388 = 65 completed + 323 incomplete;
-// 65 = 17 exported + 48 kept private), and each cohort's per-segment counts sum
-// to its base. The cids are obviously fake. This module is dynamically imported
-// only when the `demo` query flag is present, so it never ships in the real
-// admin bundle.
+// sum (646 = 388 built + 258 bounced; 388 = 65 completed + 323 incomplete
+// across 1–30 / 31–60 / 61–90 / 91–120 / 121–150; 65 = 17 exported + 48 kept
+// private), the league funnel sums (8 opened = 5 seated + 3 left; 5 = 2 at
+// 1–3 cards + 1 at 4–7 + 1 at 8–11 + 1 full), and each cohort's per-segment
+// counts sum to its base. The cids are obviously fake. This module is
+// dynamically imported only when the `demo` query flag is present, so it never
+// ships in the real admin bundle.
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import type {
@@ -503,6 +505,7 @@ const referrerFlow = [
   { host: 'youtube.com', total: 41, dex: 39, league: 2 },
   { host: 't.co', total: 24, dex: 21, league: 4 },
   { host: 'bing.com', total: 15, dex: 14, league: 1 },
+  { host: 'referrer not known', total: 90, dex: 85, league: 6 },
 ];
 
 export const sampleResponse: ApiResponse = {
@@ -510,7 +513,57 @@ export const sampleResponse: ApiResponse = {
   offset: 0,
   limit: records.length,
   funnel: { users: 646, completed: 65, exported: 17 },
-  funnelEvents: { intro_shown: 646, intro_cta: 512, builder_open: 420, milestone_50: 240, milestone_100: 150 },
+  funnelEvents: {
+    intro_shown: 646,
+    intro_cta: 512,
+    builder_open: 420,
+    milestone_50: 240,
+    milestone_100: 150,
+    'league-open': 8,
+  },
+  dexFunnel: {
+    opened: 646,
+    built: 388,
+    bounced: 258,
+    peels: [
+      { label: '1–30', count: 140 },
+      { label: '31–60', count: 80 },
+      { label: '61–90', count: 50 },
+      { label: '91–120', count: 33 },
+      { label: '121–150', count: 20 },
+    ],
+    through: [
+      { label: '31+', count: 248 },
+      { label: '61+', count: 168 },
+      { label: '91+', count: 118 },
+      { label: '121+', count: 85 },
+      { label: 'Completed', count: 65 },
+    ],
+    completed: 65,
+    exported: 17,
+    keptPrivate: 48,
+  },
+  leagueFunnel: {
+    opened: 8,
+    seated: 5,
+    bounced: 3,
+    peels: [
+      { label: '1–3 cards', count: 2 },
+      { label: '4–7 cards', count: 1 },
+      { label: '8–11 cards', count: 1 },
+      { label: '12–13 cards', count: 0 },
+    ],
+    through: [
+      { label: '4+ cards', count: 3 },
+      { label: '8+ cards', count: 2 },
+      { label: '12+ cards', count: 1 },
+      { label: 'Full league', count: 1 },
+    ],
+    fullLeague: 1,
+    exportedLeague: 1,
+    exportedCardOnly: 0,
+    keptPrivate: 0,
+  },
   tools: {
     dex: 388,
     league: 5,

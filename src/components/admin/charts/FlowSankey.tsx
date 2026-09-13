@@ -1,23 +1,41 @@
 import { useECharts, cssVar, tooltipStyle, type EChartsOption } from './useECharts';
+import { nodeDepth, type FunnelLink, type FunnelNode } from '@/lib/usageFunnels';
 
-export interface SankeyNode {
-  name: string;
-  /** Semantic role → color. Omit for the neutral ink default. */
-  role?: 'success' | 'sink' | 'priv' | 'neutral';
+export type SankeyNode = FunnelNode;
+export type SankeyLink = FunnelLink;
+
+function columnStack(nodes: SankeyNode[], links: SankeyLink[]): number {
+  const sources = new Set(links.map((l) => l.source));
+  const targets = new Set(links.map((l) => l.target));
+  const leftmost = nodes.filter((n) => !targets.has(n.name)).length;
+  const rightmost = nodes.filter((n) => !sources.has(n.name)).length;
+  return Math.max(2, leftmost, rightmost);
 }
-export interface SankeyLink {
-  source: string;
-  target: string;
-  value: number;
-  role?: 'success' | 'sink' | 'priv' | 'neutral';
+
+function columnCount(nodes: SankeyNode[], links: SankeyLink[]): number {
+  if (links.length === 0) return 1;
+  return 1 + Math.max(...nodes.map((n) => nodeDepth(n.name, links)));
+}
+
+function chartHeight(nodes: SankeyNode[], links: SankeyLink[]): number {
+  return Math.max(360, Math.min(580, columnStack(nodes, links) * 42 + 80));
+}
+
+function chartMinWidth(nodes: SankeyNode[], links: SankeyLink[]): number | undefined {
+  const cols = columnCount(nodes, links);
+  if (cols < 6) return undefined;
+  return cols * 110;
 }
 
 /**
- * MECE usage-funnel Sankey, matching the reviewed design. Every inflow is
- * accounted for by named sinks, so the ribbon widths conserve at each node.
- * Colors carry outcome meaning: gains are success-green, attrition and
- * kept-private are muted, the trunk stays neutral ink. No red — that is
- * reserved for data-movement elsewhere.
+ * MECE usage-funnel Sankey. Every inflow is accounted for by named sinks, so
+ * the ribbon widths conserve at each node. Colors carry outcome meaning: gains
+ * are success-green, attrition and kept-private are muted, the trunk stays
+ * neutral ink. No red — that is reserved for data-movement elsewhere.
+ *
+ * Labels sit on the outside of the first and last columns, and above/below
+ * the bar in middle columns, so a label stays next to its own node instead of
+ * colliding in the gutter between columns.
  */
 export function FlowSankey({
   nodes,
@@ -28,6 +46,8 @@ export function FlowSankey({
   links: SankeyLink[];
   ariaLabel: string;
 }) {
+  const height = chartHeight(nodes, links);
+  const minWidth = chartMinWidth(nodes, links);
   const ref = useECharts(
     (el): EChartsOption => {
       const ink = cssVar(el, '--color-foreground', '#0a0a0a');
@@ -35,11 +55,12 @@ export function FlowSankey({
       const success = cssVar(el, '--color-success', '#0b7a54');
       const sink = cssVar(el, '--color-sink', '#8b8b93');
       const priv = cssVar(el, '--color-priv', '#3f5b8a');
+      const w = el.clientWidth;
+      const leftPad = w < 500 ? 72 : 108;
+      const rightPad = w < 500 ? 64 : 96;
+      const fontSize = w < 500 ? 10 : 11;
       const roleColor = (role?: string) =>
         role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
-      // Terminal nodes (never a link source) label to their left so the text
-      // stays inside the canvas; upstream nodes label to their right.
-      const sources = new Set(links.map((l) => l.source));
 
       return {
         animation: false,
@@ -55,27 +76,27 @@ export function FlowSankey({
         series: [
           {
             type: 'sankey',
-            left: 10,
-            right: 10,
-            top: 14,
-            bottom: 14,
-            nodeGap: 18,
+            left: leftPad,
+            right: rightPad,
+            top: 28,
+            bottom: 28,
+            nodeGap: 22,
             nodeWidth: 12,
             draggable: false,
-            // Keep the declared node order so ribbons read top-to-bottom in
-            // funnel order instead of echarts reflowing them into crossings.
             layoutIterations: 0,
-            // Place each node at its distance from the source, so a sink stays in
-            // its own stage column (a drop-off peels straight down) instead of
-            // being justified to the far right, which drags its ribbon across the
-            // trunk.
             nodeAlign: 'left',
             emphasis: { focus: 'adjacency' },
-            label: { color: ink, fontSize: 11, fontWeight: 600, formatter: '{b} {c}' },
+            label: {
+              color: ink,
+              fontSize,
+              fontWeight: 600,
+              formatter: '{b} {c}',
+            },
+            labelLayout: { hideOverlap: false, moveOverlap: 'shiftY' },
             data: nodes.map((n) => ({
               name: n.name,
               itemStyle: { color: roleColor(n.role), borderColor: roleColor(n.role) },
-              label: { position: sources.has(n.name) ? 'right' : 'left' },
+              label: { position: n.label ?? 'right' },
             })),
             links: links.map((l) => ({
               source: l.source,
@@ -91,5 +112,15 @@ export function FlowSankey({
     [nodes, links],
   );
 
-  return <div ref={ref} className="h-[260px] w-full md:h-[300px]" role="img" aria-label={ariaLabel} />;
+  return (
+    <div className="w-full overflow-x-auto">
+      <div
+        ref={ref}
+        style={{ height, minWidth }}
+        className="w-full"
+        role="img"
+        aria-label={ariaLabel}
+      />
+    </div>
+  );
 }

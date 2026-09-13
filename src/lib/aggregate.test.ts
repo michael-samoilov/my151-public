@@ -12,6 +12,10 @@ import {
   sessionCurves,
   tallies,
   tallyCohort,
+  dexUsageFunnel,
+  leagueUsageFunnel,
+  funnelEventCount,
+  UNKNOWN_REFERRER_HOST,
   type Referrable,
   type SessionRecord,
 } from '../../api/_aggregate';
@@ -256,8 +260,26 @@ describe('referrerFlow', () => {
     expect(rows).toEqual([{ host: 'reddit.com', total: 1, dex: 1, league: 0 }]);
   });
 
-  it('skips records with no referrer and returns nothing when none exist', () => {
-    expect(referrerFlow([{ cid: 'aaaa' }], [{ cid: 'bbbb' }])).toEqual([]);
+  it('counts records with no referrer as referrer not known', () => {
+    const rows = referrerFlow([{ cid: 'aaaa' }], [{ cid: 'bbbb' }]);
+    expect(rows).toEqual([
+      { host: UNKNOWN_REFERRER_HOST, total: 2, dex: 1, league: 1 },
+    ]);
+  });
+
+  it('keeps the unknown bucket even when it is not in the top 8 named hosts', () => {
+    const dexRecords = Array.from({ length: 9 }, (_, i) =>
+      withReferrer(`cid-${i}`, `host-${i}.com`),
+    );
+    dexRecords.push({ cid: 'no-ref' });
+    const rows = referrerFlow(dexRecords, []);
+    expect(rows).toHaveLength(9);
+    expect(rows[rows.length - 1]).toEqual({
+      host: UNKNOWN_REFERRER_HOST,
+      total: 1,
+      dex: 1,
+      league: 0,
+    });
   });
 
   it('sorts by total reach descending and caps at the top 8 hosts', () => {
@@ -270,5 +292,92 @@ describe('referrerFlow', () => {
     expect(rows).toHaveLength(8);
     expect(rows[0].host).toBe('host-0.com');
     expect(rows[0].total).toBe(2);
+  });
+});
+
+describe('funnelEventCount', () => {
+  it('reads hyphen and underscore keys', () => {
+    expect(funnelEventCount({ 'intro-shown': 10 }, 'intro-shown')).toBe(10);
+    expect(funnelEventCount({ intro_shown: 7 }, 'intro-shown')).toBe(7);
+    expect(funnelEventCount({}, 'intro-shown')).toBe(0);
+  });
+});
+
+describe('dexUsageFunnel', () => {
+  const row = (cid: string, peakMon: number, completed = false, exported = false) => ({
+    cid,
+    peakMon,
+    completed,
+    exported,
+  });
+
+  it('splits incomplete builds into size tiers and keeps completed out of peels', () => {
+    const f = dexUsageFunnel(
+      [
+        row('a', 12),
+        row('b', 40),
+        row('c', 70),
+        row('d', 100),
+        row('e', 130),
+        row('f', 151, true, true),
+        row('g', 151, true, false),
+      ],
+      10,
+    );
+    expect(f.opened).toBe(10);
+    expect(f.built).toBe(7);
+    expect(f.bounced).toBe(3);
+    expect(f.peels.map((p) => p.count)).toEqual([1, 1, 1, 1, 1]);
+    expect(f.completed).toBe(2);
+    expect(f.exported).toBe(1);
+    expect(f.keptPrivate).toBe(1);
+    expect(f.through.map((t) => t.count)).toEqual([6, 5, 4, 3, 2]);
+    expect(f.peels.reduce((s, p) => s + p.count, 0) + f.completed).toBe(f.built);
+  });
+
+  it('puts a peak of 0 in the first incomplete tier and folds a country-split cid', () => {
+    const f = dexUsageFunnel([row('aaaa::FR', 0), row('aaaa', 20)], 0);
+    expect(f.built).toBe(1);
+    expect(f.peels[0].count).toBe(1);
+    expect(f.peels[0].label).toBe('1–30');
+  });
+});
+
+describe('leagueUsageFunnel', () => {
+  const row = (maxCards: number, exportsCard = 0, exportsLeague = 0) => ({
+    maxCards,
+    exportsCard,
+    exportsLeague,
+  });
+
+  it('peels unfinished leagues by card count and splits full-league export', () => {
+    const f = leagueUsageFunnel(
+      [
+        row(1),
+        row(3),
+        row(6),
+        row(8, 1, 0),
+        row(14, 1, 1),
+        row(14, 1, 0),
+        row(14, 0, 0),
+      ],
+      12,
+      14,
+    );
+    expect(f.opened).toBe(12);
+    expect(f.seated).toBe(7);
+    expect(f.bounced).toBe(5);
+    expect(f.peels.map((p) => p.count)).toEqual([2, 1, 1, 0]);
+    expect(f.fullLeague).toBe(3);
+    expect(f.exportedLeague).toBe(1);
+    expect(f.exportedCardOnly).toBe(1);
+    expect(f.keptPrivate).toBe(1);
+    expect(f.peels.reduce((s, p) => s + p.count, 0) + f.fullLeague).toBe(f.seated);
+  });
+
+  it('floors opened at seated when the open event undercounts', () => {
+    const f = leagueUsageFunnel([row(2), row(14, 0, 1)], 0, 14);
+    expect(f.opened).toBe(2);
+    expect(f.bounced).toBe(0);
   });
 });
