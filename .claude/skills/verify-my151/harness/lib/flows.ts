@@ -688,3 +688,42 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
   checks.push(ok('league-change:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
   return checks;
 }
+
+// PR #32: moving the fourth Elite Four row into empty gym 8 must not shift the
+// other three Elite Four rows. Desktop Blink only — the drive is a mouse drag.
+const E4_ONLY_LEAGUE =
+  "JSON.stringify({state:{name:'Verify',cards:(()=>{const e=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null,powerups:{},signatureId:null,partnerId:null,legends:[]});const c=Array.from({length:14},e);const m=(t,b)=>({...e(),type:t,badgeName:b,lines:[{branch:[25],boundaries:[1]}]});c[8]=m('electric','E4-1');c[9]=m('fire','E4-2');c[10]=m('grass','E4-3');c[11]=m('psychic','E4-4');return c;})()},version:1})";
+
+async function readSlotBadges(s: Session, indices: number[]): Promise<string[]> {
+  return s.evalJson(`const d=JSON.parse(localStorage.getItem(${JSON.stringify(LEAGUE_KEY)})||'{}');
+    const cards=d.state?.cards||[];
+    return ${JSON.stringify(indices)}.map((i)=>cards[i]?.badgeName??'');`);
+}
+
+export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  if (persona) return checks;
+  const url = ctx.base + LEAGUE_PATH;
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'league-home:e4-to-gym8-preserves-e4', status: 'skip', detail: 'league home never hydrated' });
+    return checks;
+  }
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${E4_ONLY_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'league-home:e4-to-gym8-preserves-e4', status: 'skip', detail: 'league home never hydrated after seed' });
+    return checks;
+  }
+  await s.dragPointer('[data-testid="league-slot-11"]', '[data-testid="league-slot-7"]');
+  await sleep(500);
+  await s.screenshot(ctx.shot('league-e4-to-gym8-after-drop'));
+  const badges = await readSlotBadges(s, [8, 9, 10, 7, 11]);
+  const preserved = badges[0] === 'E4-1' && badges[1] === 'E4-2' && badges[2] === 'E4-3';
+  checks.push(ok(
+    'league-home:e4-to-gym8-preserves-e4',
+    preserved,
+    `badges at 8–10: ${badges.slice(0, 3).join(', ')}; slot 7=${badges[3]} slot 11=${badges[4]}`,
+  ));
+  return checks;
+}

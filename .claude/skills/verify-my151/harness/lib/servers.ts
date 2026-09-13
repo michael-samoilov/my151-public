@@ -25,9 +25,11 @@ export async function buildIn(dir: string): Promise<void> {
 
 function waitForPort(port: number, timeoutMs: number): Promise<void> {
   const deadline = Date.now() + timeoutMs;
+  // Vite preview often listens on ::1 only; polling 127.0.0.1 spuriously times out.
+  const host = 'localhost';
   return new Promise((resolve, reject) => {
     const poll = () => {
-      const req = http.get({ host: '127.0.0.1', port, path: '/' }, (res) => { res.destroy(); resolve(); });
+      const req = http.get({ host, port, path: '/' }, (res) => { res.destroy(); resolve(); });
       req.on('error', () => { if (Date.now() > deadline) reject(new Error(`port ${port} never answered`)); else setTimeout(poll, 400); });
     };
     poll();
@@ -44,7 +46,7 @@ export async function startPreview(dir: string, port: number): Promise<Preview> 
   const proc = spawn('npm', ['run', 'preview', '--', '--port', String(port), '--strictPort'], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
   await waitForPort(port, 60000);
   return {
-    url: `http://127.0.0.1:${port}`,
+    url: `http://localhost:${port}`,
     stop: () => { if (proc.pid) { try { process.kill(-proc.pid, 'SIGKILL'); return; } catch { /* fall back */ } } proc.kill('SIGKILL'); },
   };
 }
