@@ -17,6 +17,7 @@ import {
   setBoundary,
   signatureMember,
   stageAt,
+  visibleMembers,
 } from './engine';
 import { arrivalLevel } from './impliedLevels';
 import { getPokemonById } from '@/hooks/usePokemonData';
@@ -207,5 +208,25 @@ describe('signatureMember', () => {
 
   it('has nothing to show without a line', () => {
     expect(signatureMember(undefined, 74)).toBeNull();
+  });
+});
+
+describe('visibleMembers', () => {
+  it('cannot put all three stages of a line into seat 6', () => {
+    // Seat 6 only exists on rows 10–11. Even if every stage claims row 1,
+    // those two rows still show the same final member.
+    const covered = { branch: [1, 2, 3], boundaries: [1, 1, 1] };
+    expect(visibleMembers(covered, 6).length).toBeLessThan(3);
+    expect(visibleMembers(covered, 6)).toEqual([3]);
+  });
+
+  it('shows at most two members in seat 6 when the user split the last two rows', () => {
+    const split = { branch: [1, 2, 3], boundaries: [1, 10, 11] };
+    expect(visibleMembers(split, 6)).toEqual([2, 3]);
+  });
+
+  it('can show three members in seat 1, which exists on every row', () => {
+    const spread = { branch: [1, 2, 3], boundaries: [1, 4, 8] };
+    expect(visibleMembers(spread, 1)).toEqual([1, 2, 3]);
   });
 });

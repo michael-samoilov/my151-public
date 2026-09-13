@@ -73,6 +73,7 @@ function postBeacon(
   kind: BeaconKind,
   sections?: Record<string, number[]>,
   exportSettings?: ExportSettings,
+  capturedAt?: number,
 ) {
   // Demo mode never reports to analytics — keep the sample dex out of admin stats.
   if (DEMO_MODE || isOptedOut() || ids.length === 0) return;
@@ -103,9 +104,8 @@ function postBeacon(
     exportSettings,
     locale: getLocale(),
     events: events && events.length ? events : undefined,
-    // External referrer host, if any — the server stores it forward-only, so
-    // sending it on every beacon is harmless; '' (direct/internal) is omitted.
     ref: externalReferrerHost() || undefined,
+    ts: capturedAt ?? Date.now(),
   });
   // fetch+keepalive (not navigator.sendBeacon): iOS WebKit silently drops
   // sendBeacon in several cases (after the share sheet, non-CORS-safelisted
@@ -159,8 +159,9 @@ export function useCompletionBeacon() {
     // a latency cap: continuous editing (never a quiet gap) still reports at
     // least every PROGRESS_MAX_WAIT_MS instead of starving until the user
     // stops. No cleanup here — pending work survives re-renders by design.
+    const capturedAt = Date.now();
     if (allIds.length >= MIN_PROGRESS_IDS) {
-      debouncer.schedule(() => postBeacon(allIds, 'progress', sections));
+      debouncer.schedule(() => postBeacon(allIds, 'progress', sections, undefined, capturedAt));
     }
   }, [sections, debouncer]);
 

@@ -14,7 +14,10 @@ import { cn, displayName } from '@/lib/utils';
 import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
+import { sortSessions, withoutDropRestorePhantoms } from '../../../api/_sessionize';
 import { slotKind } from '@/league/model/constants';
+import { defaultBoundaries, visibleMembers } from '@/league/model/engine';
+import { starPath } from '@/lib/sectionOutlines';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
@@ -767,6 +770,14 @@ const isTypeName = (t?: string): t is TypeName => !!t && t in TYPE_COLORS;
  *  square, like the base image) when the card has a type, else a plain swatch.
  *  Fills its grid cell so the board scales with width. */
 function TypeMark({ t }: { t?: string }) {
+  if (t === 'none') {
+    return (
+      <svg viewBox="0 0 22 22" className="aspect-square w-full rounded-[3px]" aria-label="No type" role="img">
+        <rect width="22" height="22" rx="5" fill="#9CA3AF" />
+        <path d={starPath(11, 11, 7)} fill="#ffffff" />
+      </svg>
+    );
+  }
   if (isTypeName(t)) {
     return <img src={typeIconPath(t)} alt={t} title={t} className="aspect-square w-full rounded-[3px]" style={{ imageRendering: 'auto' }} />;
   }
@@ -793,16 +804,17 @@ function MiniTile({ id, ace }: { id: number; ace?: boolean }) {
 }
 
 /**
- * The whole league at one moment: the 14 slots (Gym 1-8, Elite Four, Champion,
- * Endgame Boss) in two columns that read top-to-bottom then left-to-right, so
- * Gym 2 sits below Gym 1. A filled slot has a glyph column (badge + type icon) on
- * the left and, hugging the bottom-right, one column per evo line — right-aligned
- * so a lone line sits at the right edge and bottom-aligned so lines build up from
- * the floor. The ace tile is ringed. An empty slot is a muted label.
+ * The whole league at one moment: the 14 slots in a 3-column grid so champion
+ * and boss stay the same width as the gyms. Glyphs live in their own column.
+ * Each evo column shows only the members that seat actually draws — seat 6
+ * (leftmost) has two template rows, so a three-stage line cannot dump all
+ * three sprites there.
  */
 function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
   const bySlot = new Map<number, LeagueCard>();
   for (const c of cards) bySlot.set(c.i, c);
+  const ROWS = 3;
+  const SEATS = 6;
 
   const slot = (i: number) => {
     const card = bySlot.get(i);
@@ -821,30 +833,36 @@ function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
       );
     }
     const color = typeColorOf(card.t);
-    // Shortest first, so the short lines land in the left columns whose top
-    // cells the stage badge and type icon occupy — keeping those cells clear
-    // in the common case, and the tallest line at the bottom-right corner.
-    const lines = [...card.l].sort((a, b) => a.b.length - b.b.length);
-    const n = lines.length;
-    // A 6×3 tile grid (6 evo lines, up to 3 stages). The stage badge sits in
-    // the first cell and the type icon in the cell to its right; evo lines are
-    // right-aligned (columns fill from the right) and bottom-aligned (a line's
-    // final stage rests on the floor row). Folding the badge and type into the
-    // grid keeps a card six columns wide, not seven, so three fit a phone.
     return (
-      <div key={i} className="rounded-lg border border-border px-[6px] py-[4px]" style={{ borderLeftWidth: 3, borderLeftColor: color }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '1px' }}>
+      <div key={i} className="rounded-lg border border-border px-[5px] py-[3px]" style={{ borderLeftWidth: 3, borderLeftColor: color }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+            gridTemplateRows: `repeat(${ROWS}, auto)`,
+            gap: '1px',
+          }}
+        >
           <div style={{ gridColumn: 1, gridRow: 1 }} className="flex aspect-square items-center justify-center text-[8px] font-extrabold text-muted-foreground">
             {slotBadge(i)}
           </div>
-          <div style={{ gridColumn: 2, gridRow: 1 }}>
+          <div style={{ gridColumn: 1, gridRow: 2 }}>
             <TypeMark t={card.t} />
           </div>
-          {lines.map((line, li) => {
-            const col = Math.max(1, 6 - n + li + 1);
-            const len = line.b.length;
-            return line.b.map((id, stage) => (
-              <div key={`${li}-${id}-${stage}`} style={{ gridColumn: col, gridRow: 4 - len + stage }}>
+          {Array.from({ length: SEATS }, (_, col) => {
+            const seat = SEATS - col;
+            const line = card.l[seat - 1];
+            if (!line) return null;
+            const placed = {
+              branch: line.b,
+              boundaries: line.bd && line.bd.length === line.b.length ? line.bd : defaultBoundaries(line.b),
+            };
+            const members = visibleMembers(placed, seat).slice(-ROWS);
+            return members.map((id, stage) => (
+              <div
+                key={`${seat}-${id}-${stage}`}
+                style={{ gridColumn: col + 2, gridRow: ROWS - members.length + stage + 1 }}
+              >
                 <MiniTile id={id} ace={id === card.aceId} />
               </div>
             ));
@@ -854,18 +872,15 @@ function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
     );
   };
 
-  // Three columns of four — gyms 1-4, gyms 5-8, elite four — read top-to-bottom
-  // per column, then a full-width row for the champion and endgame boss. This
-  // keeps the whole board short enough to sit under the scrubber at once.
   return (
-    <div className="flex max-w-[460px] flex-col gap-[5px]">
+    <div className="flex max-w-[460px] flex-col gap-[4px]">
       <div
-        className="grid gap-[5px]"
+        className="grid gap-[4px]"
         style={{ gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(4, auto)', gridAutoFlow: 'column' }}
       >
         {Array.from({ length: 12 }, (_, i) => slot(i))}
       </div>
-      <div className="grid grid-cols-2 gap-[5px]">
+      <div className="grid grid-cols-3 gap-[4px]">
         {slot(12)}
         {slot(13)}
       </div>
@@ -937,7 +952,7 @@ function LanguageChip({ lang, locale, switched }: { lang?: string; locale?: stri
  *  hover), so the identity takes one row instead of three. */
 function DetailHeader({ rec, onBack }: { rec: HeaderRec; onBack: () => void }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+    <div className="flex flex-nowrap items-center gap-x-2 overflow-hidden">
       <button type="button" onClick={onBack} className="flex shrink-0 items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
         ‹ Back
       </button>
@@ -945,7 +960,7 @@ function DetailHeader({ rec, onBack }: { rec: HeaderRec; onBack: () => void }) {
         {middleId(rec.cid)}
       </span>
       <TooltipScope>
-        <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
+        <div className="ml-auto flex min-w-0 flex-nowrap items-center justify-end gap-1.5 overflow-x-auto">
           {rec.country && (
             <InfoChip label={`${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}`}>
               <FlagIcon country={rec.country} />
@@ -1006,10 +1021,71 @@ function TimeChip({ ms, full }: { ms: number; full?: boolean }) {
   return <RailStat width="w-[72px]" full={full} top={<span className="text-[0.8rem] font-bold">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>} bottom="time spent" />;
 }
 
+function FitToHeight({ children, signature }: { children: React.ReactNode; signature: string | number }) {
+  const outerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const outer = outerRef.current;
+    const inner = innerRef.current;
+    if (!outer || !inner) return;
+    let raf = 0;
+    const apply = () => {
+      inner.style.width = '100%';
+      const avail = outer.clientHeight;
+      const need = inner.offsetHeight;
+      if (avail <= 0 || need <= 0) return;
+      if (need > avail + 1) {
+        inner.style.width = `${Math.max(52, (avail / need) * 100)}%`;
+        const need2 = inner.offsetHeight;
+        if (need2 > avail + 1) {
+          const pct = parseFloat(inner.style.width) || 100;
+          inner.style.width = `${Math.max(52, (avail / need2) * pct)}%`;
+        }
+      }
+    };
+    const schedule = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(apply);
+    };
+    schedule();
+    const ro = new ResizeObserver(schedule);
+    ro.observe(outer);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [signature]);
+  return (
+    <div ref={outerRef} className="min-h-0 flex-1 overflow-hidden">
+      <div ref={innerRef} className="max-w-[460px]">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function tidySessions<T extends { ts: number }>(
+  raw: T[],
+  sessionMs: number[] | undefined,
+  idsOf: (s: T) => number[],
+): { log: T[]; ms: number[] } {
+  const sorted = sortSessions(raw, sessionMs ?? []);
+  const kept = withoutDropRestorePhantoms(sorted.log, idsOf);
+  const keep = new Set(kept);
+  return {
+    log: kept,
+    ms: sorted.log.flatMap((s, i) => (keep.has(s) ? [sorted.ms[i]] : [])),
+  };
+}
+
+function leagueSessionIds(s: { cards?: LeagueCard[] }): number[] {
+  return (s.cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b));
+}
+
 /** Dex user detail page: session timeline + the build at the scrubbed moment,
  *  drawn with the real section outlines. */
 function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void }) {
-  const log = rec.sessionLog ?? [];
+  const { log, ms } = tidySessions(rec.sessionLog ?? [], rec.sessionMs, (s) => s.ids);
   const [i, setI] = useState(Math.max(0, log.length - 1));
   const points: TimelinePoint[] = log.map((s, k) => {
     const prev = k ? new Set(log[k - 1].ids) : new Set<number>();
@@ -1022,7 +1098,7 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
       net: s.ids.length,
       added,
       removed,
-      dur: rec.sessionMs?.[k] != null ? rec.sessionMs[k] / 1000 : undefined,
+      dur: ms[k] != null ? ms[k] / 1000 : undefined,
       ev: s.events,
     };
   });
@@ -1033,13 +1109,11 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
   const sectionedSet = new Set(Object.values(sections ?? {}).flat());
   const offIds = presentIds.filter((id) => !sectionedSet.has(id));
   const peak = Math.max(0, ...points.map((p) => p.count));
-  const totalMs = (rec.sessionMs ?? []).reduce((a, b) => a + b, 0);
+  const totalMs = ms.reduce((a, b) => a + b, 0);
 
   const t0 = log.length ? log[0].ts : 0;
   const t1 = log.length ? log[log.length - 1].ts : 0;
   const clampT = (t: number) => Math.max(t0, Math.min(t1, t));
-  // Exports are milestones on the timeline; a browser that never exported gets a
-  // "no exports" marker at its most recent session, so the absence still reads.
   const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] =
     rec.exported && rec.exportedAt
       ? [{ t: clampT(Date.parse(rec.exportedAt)), label: 'export', tone: 'export' }]
@@ -1048,7 +1122,7 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
         : [];
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2">
       <DetailHeader rec={rec} onBack={onBack} />
       {points.length > 0 ? (
         <SessionTimeline
@@ -1058,13 +1132,13 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
           countUnit="of 151"
           peakLabel={`${peak} / 151`}
           milestones={milestones}
+          tz={rec.tz}
           leftChip={<SessionsChip sessions={rec.sessions ?? log.length} days={activeDayCount(rec)} full={log.length <= 1} />}
           rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
         />
       ) : (
         <p className="text-xs text-muted-foreground">No session history.</p>
       )}
-      <div className="text-sm font-bold">Build at this moment</div>
       {sections && Object.keys(sections).length > 0 ? (
         <OutlinedDex sections={sections} presentIds={presentIds} />
       ) : presentIds.length > 0 ? (
@@ -1090,13 +1164,8 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
 /** The league timeline + board, reused as a page and as the dex page's league
  *  section. */
 function LeagueDetailBody({ league }: { league: LeagueUser }) {
-  const log = league.sessionLog ?? [];
+  const { log, ms } = tidySessions(league.sessionLog ?? [], league.sessionMs, leagueSessionIds);
   const [i, setI] = useState(Math.max(0, log.length - 1));
-  // Size and diff are both in seated Pokemon, so the line and the bars always
-  // agree. When a session captured its card structure we diff the actual member
-  // set (so a swap shows as both an add and a remove); when it didn't (older
-  // beacons carry only the summary counts), we fall back to the seat-count
-  // delta, so the bars still track the line rather than vanishing.
   const memberSet = (cards?: LeagueCard[]) => new Set((cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b)));
   const cardsOf = (k: number) => {
     const c = log[k]?.cards;
@@ -1128,52 +1197,55 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
       net: nets[k],
       added,
       removed,
-      dur: league.sessionMs?.[k] != null ? league.sessionMs[k] / 1000 : undefined,
+      dur: ms[k] != null ? ms[k] / 1000 : undefined,
     };
   });
   const idx = Math.min(i, Math.max(0, log.length - 1));
   const cur = log[idx];
   const peak = Math.max(0, ...points.map((p) => p.net));
-  const seated = nets[idx] ?? 0;
-  const totalMs = (league.sessionMs ?? []).reduce((a, b) => a + b, 0);
+  const totalMs = ms.reduce((a, b) => a + b, 0);
   const t0 = log.length ? log[0].ts : 0;
   const t1 = log.length ? log[log.length - 1].ts : 0;
+  const clampT = (t: number) => Math.max(t0, Math.min(t1, t));
   const days = Math.max(1, Math.round((t1 - t0) / 86_400_000) + 1);
-  const exported = (league.exportsCard ?? 0) + (league.exportsLeague ?? 0) > 0;
-  const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] = exported
-    ? [{ t: t1, label: 'export', tone: 'export' }]
-    : log.length
-      ? [{ t: t1, label: 'no exports', tone: 'muted' }]
-      : [];
+  const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] = [];
+  if (league.exportedCardAt) {
+    milestones.push({ t: clampT(Date.parse(league.exportedCardAt)), label: 'card', tone: 'export' });
+  }
+  if (league.exportedLeagueAt) {
+    milestones.push({ t: clampT(Date.parse(league.exportedLeagueAt)), label: 'league', tone: 'export' });
+  }
+  if (milestones.length === 0 && log.length) {
+    milestones.push({ t: t1, label: 'no exports', tone: 'muted' });
+  }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
       {points.length > 0 ? (
+        <div className="shrink-0">
         <SessionTimeline
           points={points}
           index={idx}
           onIndex={setI}
-          countUnit={`of ${CARD_COUNT} cards`}
+          countUnit={`of ${CARD_COUNT}`}
           peakLabel={`${peak} seated`}
           milestones={milestones}
+          tz={league.tz}
           leftChip={<SessionsChip sessions={league.sessions} days={days} full={log.length <= 1} />}
           rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
         />
+        </div>
       ) : (
         <p className="text-xs text-muted-foreground">No session history.</p>
       )}
-      {cur && <div className="text-sm text-muted-foreground">{seated} Pokémon seated</div>}
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <span className="text-sm font-bold">Whole league at this moment</span>
-        <span className="flex items-center gap-1 text-[0.7rem] text-muted-foreground">
-          <span className="inline-block h-[11px] w-[11px] rounded-[3px]" style={{ boxShadow: '0 0 0 2px var(--color-primary)', background: 'rgba(220,38,38,0.10)' }} />
-          marks each card&rsquo;s ace
-        </span>
-      </div>
       {cur?.cards && cur.cards.length > 0 ? (
-        <LeagueBoardSnapshot cards={cur.cards} />
+        <FitToHeight signature={idx}>
+          <LeagueBoardSnapshot cards={cur.cards} />
+        </FitToHeight>
       ) : league.latestCards && league.latestCards.length > 0 ? (
-        <LeagueBoardSnapshot cards={league.latestCards} />
+        <FitToHeight signature="latest">
+          <LeagueBoardSnapshot cards={league.latestCards} />
+        </FitToHeight>
       ) : (
         <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
       )}
@@ -1184,8 +1256,10 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
 /** League user detail page. */
 function LeagueDetailPage({ rec, onBack }: { rec: LeagueUser; onBack: () => void }) {
   return (
-    <div className="flex flex-col gap-4">
-      <DetailHeader rec={rec} onBack={onBack} />
+    <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
+      <div className="shrink-0">
+        <DetailHeader rec={rec} onBack={onBack} />
+      </div>
       <LeagueDetailBody league={rec} />
     </div>
   );
@@ -1753,9 +1827,10 @@ export function AdminPage() {
       pickTool(k);
     }
   };
+  const lockLeague = detail?.kind === 'league';
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className={cn('flex flex-col bg-background', lockLeague ? 'h-dvh overflow-hidden' : 'min-h-dvh')}>
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-3">
           <h1 className="whitespace-nowrap text-lg font-bold">
@@ -1774,11 +1849,18 @@ export function AdminPage() {
 
       <AdminNav value={navKey} onChange={onNav} />
 
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 pb-24 pt-4 md:pb-8">
+      <main
+        className={cn(
+          'mx-auto flex w-full max-w-5xl flex-1 flex-col px-4',
+          lockLeague ? 'min-h-0 gap-2 overflow-hidden pb-20 pt-2 md:pb-8' : 'gap-4 pb-24 pt-4 md:pb-8',
+        )}
+      >
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         {/* A clicked preview opens a full detail page; Back returns here. */}
-        {detail && data && (() => {
+        {detail && data && (
+          <div className={cn(detail.kind === 'league' && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
+          {(() => {
           if (detail.kind === 'picks') {
             const nDex = data.tools?.dex ?? data.funnel.users;
             return <PicksDetailPage mostBySection={data.popularBySection} offBySection={offBySection} n={nDex} onBack={() => setDetail(null)} />;
@@ -1791,7 +1873,9 @@ export function AdminPage() {
           const rec = data.leagueUsers?.find((r) => r.cid === detail.cid);
           if (!rec) return null;
           return <LeagueDetailPage rec={rec} onBack={() => setDetail(null)} />;
-        })()}
+          })()}
+          </div>
+        )}
 
         {!detail && page === 'feedback' &&
           (token ? <FeedbackCard token={token} /> : <p className="text-sm text-muted-foreground">Sign in to read feedback.</p>)}

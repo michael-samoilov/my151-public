@@ -20,6 +20,7 @@ import {
   type BeaconKind,
   type ClientRecord,
 } from './_shared.js';
+import { alignSessionMs, isSubsetRegression, parseCapturedAt, sessionTarget } from './_sessionize.js';
 
 const MAX_POKEMON_ID = 1025;
 
@@ -168,6 +169,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ref?: unknown;
       tool?: unknown;
       page?: unknown;
+      ts?: unknown;
     };
 
     // Client id: a UUID minted once per browser. Length-bounded to avoid abuse.
@@ -231,7 +233,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(429).json({ error: 'Too many requests' });
     }
 
-    const now = Date.now();
+    const receivedAt = Date.now();
+    const captured = parseCapturedAt(body.ts, receivedAt);
+    const now = captured ?? receivedAt;
+    const capturedKnown = captured !== null;
     const at = new Date(now).toISOString();
     const geo = getGeo(req);
     const ua = getClient(req);
@@ -262,114 +267,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         exported: false,
       };
 
-      // Sessionize: a gap > SESSION_GAP_MS since the previous beacon starts a new
-      // session; otherwise we're still in the same sitting and extend it.
-      const gap = existing ? now - existing.lastTs : 0;
-      let newSession: boolean;
-      if (!existing) {
-        rec.sessions = 1;
-        rec.curSessionStart = now;
-        rec.sessionMs = [];
-        newSession = true;
-      } else if (rec.sessions === undefined) {
-        const legacySpan = Math.max(0, existing.lastTs - existing.firstTs);
-        rec.sessionMs = [legacySpan];
-        if (gap > SESSION_GAP_MS) {
-          rec.sessions = 2;
-          rec.curSessionStart = now;
-          newSession = true;
-        } else {
-          rec.sessions = 1;
-          rec.curSessionStart = existing.firstTs;
-          newSession = false;
-        }
-      } else if (gap > SESSION_GAP_MS) {
-        rec.sessions += 1;
-        rec.curSessionStart = now;
-        newSession = true;
-      } else {
-        newSession = false;
-      }
-
-      const curSessionMs = Math.max(0, now - (rec.curSessionStart ?? now));
-      rec.maxSessionMs = Math.max(rec.maxSessionMs ?? 0, curSessionMs);
-      const list = rec.sessionMs ?? [];
-      if (newSession) list.push(curSessionMs);
-      else if (list.length > 0) list[list.length - 1] = curSessionMs;
-      else list.push(curSessionMs);
-      rec.sessionMs = list.slice(-MAX_SESSIONS_TRACKED);
-      const depthList = rec.sessionDepth ?? [];
-      if (newSession || depthList.length === 0) depthList.push(depth);
-      else depthList[depthList.length - 1] = depth;
-      rec.sessionDepth = depthList.slice(-MAX_SESSIONS_TRACKED);
-      const log = rec.sessionLog ?? [];
-      // Carry the current session's events forward: a new session starts fresh;
-      // otherwise keep the events already logged this session, then union in any
-      // newly-buffered ones. This preserves session-tagged onboarding events
-      // across the within-session progress updates that rewrite the entry.
-      const prevEvents = newSession || log.length === 0 ? [] : log[log.length - 1].events ?? [];
-      const mergedEvents = [...prevEvents];
-      for (const e of newEvents) if (!mergedEvents.includes(e)) mergedEvents.push(e);
-      // Stamp each session with the client that sent it. One cid is normally
-      // one browser, so this never varies — which is exactly why it earns its
-      // bytes: a record whose sessions alternate between, say, Windows·Edge and
-      // iOS·Safari is two people behind one cid (shared or synced browser), and
-      // this makes that visible in the dashboard instead of unfalsifiable.
-      const devStamp = [ua.device, ua.os, ua.browser].filter((p) => p && p !== 'Unknown').join(' · ');
-      // Snapshot the section placement per session, carried forward within a
-      // session the way events are: a beacon that omits sections (an export)
-      // keeps the section map an earlier build beacon logged, rather than
-      // blanking it. This is what lets the admin scrubber reconstruct the
-      // grouped build at a past point, not just the flat id list. Absent on
-      // sessions from before the field, and on any session with no build beacon.
-      const prevSecs = newSession || log.length === 0 ? undefined : log[log.length - 1].sections;
-      const sessionSecs = secs ?? prevSecs;
-      const entry = {
-        ts: now,
-        ids,
-        country: geo.country,
-        ...(page ? { page } : {}),
-        ...(devStamp ? { dev: devStamp } : {}),
-        ...(mergedEvents.length ? { events: mergedEvents } : {}),
-        ...(sessionSecs ? { sections: sessionSecs } : {}),
-      };
-      if (newSession || log.length === 0) log.push(entry);
-      else log[log.length - 1] = entry;
-      rec.sessionLog = log.slice(-MAX_SESSIONS_TRACKED);
-
-      rec.lastTs = now;
-      rec.lastAt = at;
       rec.submits += 1;
       rec.maxDepth = Math.max(rec.maxDepth, depth);
-      rec.localHour = localHourIn(geo.tz, now);
-      rec.localDow = localDowIn(geo.tz, now);
-      rec.latestIds = ids;
+      rec.country = geo.country;
+      rec.region = geo.region;
+      rec.tz = geo.tz;
+      rec.lang = getLang(req);
+      if (locale) rec.locale = locale;
+      if (ref && !rec.firstReferrer) rec.firstReferrer = ref;
+      rec.device = ua.device;
+      rec.os = ua.os;
+      rec.browser = ua.browser;
+      rec.everIds = Array.from(new Set([...(rec.everIds ?? []), ...ids])).sort((a, b) => a - b);
       if (secs) {
-        rec.latestSections = secs;
         const ever = rec.everSections ?? {};
         for (const [sid, sIds] of Object.entries(secs)) {
           ever[sid] = Array.from(new Set([...(ever[sid] ?? []), ...sIds])).slice(0, 200);
         }
         rec.everSections = ever;
       }
-      rec.everIds = Array.from(new Set([...(rec.everIds ?? []), ...ids])).sort((a, b) => a - b);
-      rec.country = geo.country;
-      rec.region = geo.region;
-      rec.tz = geo.tz;
-      rec.lang = getLang(req);
-      // Only overwrite when the client sent one, so a beacon from a client that
-      // predates locale reporting doesn't blank an already-recorded locale.
-      if (locale) rec.locale = locale;
-      // Acquisition source, set once and never overwritten: the first referrer
-      // is the one that brought the browser here. A later beacon (which always
-      // has this origin as its referrer, or none) must not clobber it.
-      if (ref && !rec.firstReferrer) rec.firstReferrer = ref;
-      rec.device = ua.device;
-      rec.os = ua.os;
-      rec.browser = ua.browser;
-
-      // Completion/export flags are sticky: once true they stay true, so a later
-      // progress beacon can never un-set them.
       if (kind === 'completion') {
         rec.completed = true;
         rec.completedAt = at;
@@ -379,6 +295,100 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         rec.exportedAt = at;
         rec.exportedIds = ids;
         if (settings) rec.exportSettings = settings;
+      }
+
+      if (existing && rec.sessions === undefined) {
+        rec.sessionMs = [Math.max(0, existing.lastTs - existing.firstTs)];
+        rec.sessionLog = rec.sessionLog ?? [{ ts: existing.lastTs, ids: existing.latestIds }];
+        rec.sessions = 1;
+        rec.curSessionStart = existing.firstTs;
+      }
+
+      const log = [...(rec.sessionLog ?? [])];
+      const ms = alignSessionMs(log.length, rec.sessionMs ?? []);
+      const depths = alignSessionMs(log.length, rec.sessionDepth ?? []);
+      const devStamp = [ua.device, ua.os, ua.browser].filter((p) => p && p !== 'Unknown').join(' · ');
+
+      const makeEntry = (ts: number, prev?: (typeof log)[number]) => {
+        const mergedEvents = [...(prev?.events ?? [])];
+        for (const e of newEvents) if (!mergedEvents.includes(e)) mergedEvents.push(e);
+        const sessionSecs = secs ?? prev?.sections;
+        return {
+          ts,
+          ids,
+          country: geo.country,
+          ...(page ? { page } : {}),
+          ...(devStamp ? { dev: devStamp } : {}),
+          ...(mergedEvents.length ? { events: mergedEvents } : {}),
+          ...(sessionSecs ? { sections: sessionSecs } : {}),
+        };
+      };
+
+      if (log.length === 0) {
+        log.push(makeEntry(now));
+        ms.push(0);
+        depths.push(depth);
+        rec.sessions = 1;
+        rec.curSessionStart = now;
+      } else {
+        const target = sessionTarget(
+          log.map((s) => s.ts),
+          ms,
+          now,
+          SESSION_GAP_MS,
+        );
+        if (
+          target.kind === 'insert' &&
+          !capturedKnown &&
+          existing &&
+          isSubsetRegression(ids, rec.latestIds ?? [])
+        ) {
+          rec.sessionLog = log;
+          rec.sessionMs = ms;
+          rec.sessionDepth = depths;
+          if (now > rec.lastTs) {
+            rec.lastTs = now;
+            rec.lastAt = at;
+            rec.localHour = localHourIn(geo.tz, now);
+            rec.localDow = localDowIn(geo.tz, now);
+          }
+          return rec;
+        }
+        if (target.kind === 'join') {
+          const i = target.index;
+          if (now >= log[i].ts) {
+            const start = log[i].ts - ms[i];
+            const newEnd = Math.max(log[i].ts, now);
+            ms[i] = Math.max(0, newEnd - start);
+            depths[i] = depth;
+            log[i] = makeEntry(newEnd, log[i]);
+          }
+        } else {
+          log.splice(target.index, 0, makeEntry(now));
+          ms.splice(target.index, 0, 0);
+          depths.splice(target.index, 0, depth);
+          rec.sessions = (rec.sessions ?? 0) + 1;
+        }
+      }
+
+      const overflow = log.length - MAX_SESSIONS_TRACKED;
+      rec.sessionLog = overflow > 0 ? log.slice(overflow) : log;
+      rec.sessionMs = overflow > 0 ? ms.slice(overflow) : ms;
+      rec.sessionDepth = overflow > 0 ? depths.slice(overflow) : depths;
+      rec.maxSessionMs = rec.sessionMs.reduce((m, n) => Math.max(m, n), rec.maxSessionMs ?? 0);
+
+      if (now >= rec.lastTs) {
+        rec.lastTs = now;
+        rec.lastAt = at;
+        rec.latestIds = ids;
+        rec.localHour = localHourIn(geo.tz, now);
+        rec.localDow = localDowIn(geo.tz, now);
+        if (secs) rec.latestSections = secs;
+        const last = rec.sessionLog.length - 1;
+        rec.curSessionStart = rec.sessionLog[last].ts - rec.sessionMs[last];
+      } else {
+        rec.firstTs = Math.min(rec.firstTs, now);
+        rec.firstAt = new Date(rec.firstTs).toISOString();
       }
       return rec;
     };
