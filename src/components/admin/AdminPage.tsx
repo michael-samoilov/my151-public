@@ -18,8 +18,20 @@ import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineM
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
-import { formatWhen, fmtDuration, leagueExported, sessionTotalMs } from '@/components/admin/userPreview';
-import { Globe, Languages } from 'lucide-react';
+import {
+  bareCid,
+  formatWhen,
+  leagueExported,
+  matchesArchiveFilter,
+  matchesToolFilter,
+  sessionChipLabel,
+  sessionTotalMs,
+  toolKind,
+  type ArchiveFilter,
+  type ToolFilter,
+} from '@/components/admin/userPreview';
+import { FitNowrap, FitScale } from '@/components/admin/FitNowrap';
+import { Archive, ArchiveRestore, Download, Globe, Languages } from 'lucide-react';
 
 // Human labels for the onboarding/funnel events shown per session.
 
@@ -129,6 +141,8 @@ export interface ClientRecord {
     groupSpecial: boolean;
     showStats?: boolean;
   };
+  /** Dropped from dashboard aggregates; still listed when the archive filter asks. */
+  archived?: boolean;
 }
 
 /** One tool's slice of every aggregate that does not care which tool it came
@@ -181,6 +195,7 @@ export interface LeagueUser {
   sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string; cards?: LeagueCard[] }[];
   order?: 'dex-first' | 'league-first' | 'same-day';
   gapDays?: number;
+  archived?: boolean;
 }
 
 /** One seated evolution line: member ids, and the per-stage first row when the
@@ -217,6 +232,8 @@ export interface LeagueSummary {
 
 export interface ApiResponse {
   totalUsers: number;
+  /** Dex records in the store, including archived. Used for list pagination. */
+  totalDexRecords?: number;
   offset: number;
   limit: number;
   funnel: { users: number; completed: number; exported: number };
@@ -1118,11 +1135,22 @@ function regionGroups(countries: Record<string, number>): BarGroup[] {
     .sort((a, b) => b.count - a.count);
 }
 
-function MetricChip({ label, exported }: { label: string; exported?: boolean }) {
+function MetricChip({
+  label,
+  exported,
+  metric,
+}: {
+  label: string;
+  exported?: boolean;
+  metric: 'session' | 'dex' | 'league';
+}) {
   return (
-    <span className="inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-xs font-medium">
+    <span
+      data-metric={metric}
+      className="inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-xs font-medium tabular-nums"
+    >
       {label}
-      {exported ? <span className="font-normal text-muted-foreground">exported</span> : null}
+      {exported ? <Download className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="exported" /> : null}
     </span>
   );
 }
@@ -1131,24 +1159,17 @@ function UserPreviewCard({
   rec,
   dex,
   league,
+  archived,
   onOpen,
-  onDelete,
+  onArchive,
 }: {
   rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
   dex?: { depth: number; exported: boolean };
   league?: { cards: number; exported: boolean };
+  archived: boolean;
   onOpen: () => void;
-  onDelete?: () => void;
+  onArchive: (next: boolean) => void;
 }) {
-  // Two-step delete: first click arms, second confirms. Auto-disarms after a
-  // few seconds so a forgotten armed button can't be hit later by accident.
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  useEffect(() => {
-    if (!confirmingDelete) return;
-    const t = setTimeout(() => setConfirmingDelete(false), 4000);
-    return () => clearTimeout(t);
-  }, [confirmingDelete]);
-
   const sessions = rec.sessions ?? rec.sessionMs?.length ?? 0;
   const totalMs = sessionTotalMs(rec.sessionMs);
 
@@ -1156,8 +1177,13 @@ function UserPreviewCard({
     <div
       role="link"
       tabIndex={0}
+      data-user-preview
       aria-label={`Open user ${middleId(rec.cid)}`}
-      className="cursor-pointer rounded-lg bg-card px-2.5 py-2 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className={cn(
+        'flex min-w-0 cursor-pointer flex-col gap-1 overflow-x-clip rounded-lg bg-card px-2.5 py-2 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'md:col-span-full md:grid md:grid-cols-subgrid md:items-center md:gap-x-3 md:py-1.5',
+        archived && 'opacity-70',
+      )}
       onClick={onOpen}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;
@@ -1167,63 +1193,48 @@ function UserPreviewCard({
         }
       }}
     >
-      <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-3">
-        <div className="flex items-start justify-between gap-2 md:contents">
-          <p className="min-w-0 text-sm leading-snug md:shrink-0">
-            <span className="font-semibold">{formatWhen(rec.lastTs, rec.tz)}</span>
-            <span className="text-muted-foreground"> · {relativeTime(rec.lastTs)}</span>
-          </p>
-          {onDelete && !confirmingDelete && (
-            <div
-              className="shrink-0 md:order-last md:ml-auto"
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="relative text-destructive hover:text-destructive before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']"
-                onClick={() => setConfirmingDelete(true)}
-              >
-                Delete
-              </Button>
-            </div>
-          )}
-        </div>
-        <PlatformChips rec={rec} className="gap-1" />
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          <span className="whitespace-nowrap text-xs text-muted-foreground">
-            {sessions} session{sessions === 1 ? '' : 's'}
-            {totalMs > 0 ? ` · ${fmtDuration(totalMs)}` : ''}
+      <div className="flex min-w-0 items-center gap-1 md:contents">
+        <FitNowrap contentsOnMd className="min-w-0 flex-1">
+          <span className="whitespace-nowrap text-sm font-semibold tabular-nums">
+            {formatWhen(rec.lastTs, rec.tz)}
           </span>
-          {dex && <MetricChip label={`${dex.depth} Pokémon`} exported={dex.exported} />}
-          {league && (
-            <MetricChip label={`${league.cards}/${CARD_COUNT} cards`} exported={league.exported} />
-          )}
-        </div>
-      </div>
-      {onDelete && confirmingDelete && (
+          <span className="whitespace-nowrap text-sm text-muted-foreground">{relativeTime(rec.lastTs)}</span>
+        </FitNowrap>
         <div
-          className="mt-1.5 flex gap-2"
+          className="shrink-0 md:col-start-7"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
-          <Button className="flex-1" variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
-            Cancel
-          </Button>
           <Button
-            className="flex-1"
-            variant="destructive"
+            type="button"
+            variant="ghost"
             size="sm"
-            onClick={() => {
-              setConfirmingDelete(false);
-              onDelete();
-            }}
+            className="relative h-7 w-7 p-0 text-muted-foreground hover:text-foreground before:absolute before:-inset-2 before:content-['']"
+            aria-label={archived ? 'Unarchive user' : 'Archive user'}
+            onClick={() => onArchive(!archived)}
           >
-            Confirm delete
+            {archived ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
           </Button>
         </div>
-      )}
+      </div>
+      <FitNowrap>
+        <PlatformChips rec={rec} className="flex-nowrap gap-1" />
+      </FitNowrap>
+      <div className="min-w-0 md:contents">
+        <FitNowrap contentsOnMd>
+          <MetricChip metric="session" label={sessionChipLabel(sessions, totalMs)} />
+          {dex ? (
+            <MetricChip metric="dex" label={`${dex.depth} Pokémon`} exported={dex.exported} />
+          ) : (
+            <span className="hidden md:block" aria-hidden />
+          )}
+          {league ? (
+            <MetricChip metric="league" label={`${league.cards}/${CARD_COUNT} cards`} exported={league.exported} />
+          ) : (
+            <span className="hidden md:block" aria-hidden />
+          )}
+        </FitNowrap>
+      </div>
     </div>
   );
 }
@@ -1342,6 +1353,9 @@ export function AdminPage() {
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
   // Clicking a preview opens a full detail page ({kind, cid}); Back clears it.
   const [detail, setDetail] = useState<Detail | null>(null);
+  const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>('active');
+  const [toolFilter, setToolFilter] = useState<ToolFilter>('any');
+  const [archiveOverride, setArchiveOverride] = useState<Record<string, boolean>>({});
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -1420,28 +1434,35 @@ export function AdminPage() {
     }
   }, [token, data]);
 
-  const deleteUser = useCallback(
-    async (rec: ClientRecord) => {
-      // Guarded by the two-step arm/confirm in UserPreviewCard; this just performs it.
+  const setArchived = useCallback(
+    async (cid: string, next: boolean) => {
+      const key = bareCid(cid);
+      setArchiveOverride((prev) => ({ ...prev, [key]: next }));
       if (!token) return;
       setError(null);
       try {
-        const res = await fetch('/api/delete-entry', {
+        const res = await fetch('/api/archive-entry', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ cid: rec.cid }),
+          body: JSON.stringify({ cid, archived: next }),
         });
-        if (!res.ok) throw new Error(`Delete failed (${res.status}).`);
-        setData((prev) =>
-          prev
-            ? { ...prev, totalUsers: Math.max(0, prev.totalUsers - 1), records: prev.records.filter((r) => r.cid !== rec.cid) }
-            : prev,
-        );
+        if (!res.ok) throw new Error(`Archive failed (${res.status}).`);
+        await load(token, data?.records.length ?? PAGE_SIZE);
+        setArchiveOverride((prev) => {
+          const copy = { ...prev };
+          delete copy[key];
+          return copy;
+        });
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Delete failed.');
+        setArchiveOverride((prev) => {
+          const copy = { ...prev };
+          delete copy[key];
+          return copy;
+        });
+        setError(e instanceof Error ? e.message : 'Archive failed.');
       }
     },
-    [token],
+    [token, data, load],
   );
 
   const pickTool = useCallback((next: ToolSlice) => {
@@ -1820,60 +1841,120 @@ export function AdminPage() {
             )}
 
             <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
-              {showDex && data.records.length === 0 && !loading && (
-                <p className="text-sm text-muted-foreground">No users yet.</p>
-              )}
-              {showDex && (
-                <div className="flex flex-col gap-2">
-                  {data.records.map((rec) => {
+              {(() => {
+                const archivedOf = (cid: string, flag?: boolean) =>
+                  archiveOverride[bareCid(cid)] ?? flag ?? false;
+                type Row = {
+                  cid: string;
+                  rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
+                  dex?: { depth: number; exported: boolean };
+                  league?: { cards: number; exported: boolean };
+                  archived: boolean;
+                  open: Detail;
+                };
+                const rows: Row[] = [];
+                if (showDex) {
+                  for (const rec of data.records) {
                     const league = data.leagueByCid?.[rec.cid];
-                    return (
-                      <UserPreviewCard
-                        key={rec.cid}
-                        rec={rec}
-                        dex={{ depth: rec.maxDepth, exported: rec.exported }}
-                        league={
-                          league
-                            ? {
-                                cards: league.maxCards,
-                                exported: leagueExported(league.exportsCard, league.exportsLeague),
-                              }
-                            : undefined
-                        }
-                        onDelete={() => void deleteUser(rec)}
-                        onOpen={() => openDetail({ kind: 'dex', cid: rec.cid })}
+                    const kind = toolKind(true, !!league);
+                    if (!kind) continue;
+                    const archived = archivedOf(rec.cid, rec.archived);
+                    if (!matchesArchiveFilter(archived, archiveFilter)) continue;
+                    if (!matchesToolFilter(kind, toolFilter)) continue;
+                    rows.push({
+                      cid: rec.cid,
+                      rec,
+                      dex: { depth: rec.maxDepth, exported: rec.exported },
+                      league: league
+                        ? {
+                            cards: league.maxCards,
+                            exported: leagueExported(league.exportsCard, league.exportsLeague),
+                          }
+                        : undefined,
+                      archived,
+                      open: { kind: 'dex', cid: rec.cid },
+                    });
+                  }
+                } else {
+                  for (const rec of data.leagueUsers ?? []) {
+                    const dex = data.records.find((r) => r.cid === rec.cid || r.cid.split('::')[0] === rec.cid);
+                    const hasDex = !!dex || rec.hasDex;
+                    const kind = toolKind(hasDex, true);
+                    if (!kind) continue;
+                    const archived = archivedOf(rec.cid, rec.archived);
+                    if (!matchesArchiveFilter(archived, archiveFilter)) continue;
+                    if (!matchesToolFilter(kind, toolFilter)) continue;
+                    rows.push({
+                      cid: rec.cid,
+                      rec,
+                      dex: dex ? { depth: dex.maxDepth, exported: dex.exported } : undefined,
+                      league: {
+                        cards: rec.maxCards,
+                        exported: leagueExported(rec.exportsCard, rec.exportsLeague),
+                      },
+                      archived,
+                      open: { kind: 'league', cid: rec.cid },
+                    });
+                  }
+                }
+                const emptyList = showDex ? data.records.length === 0 : (data.leagueUsers?.length ?? 0) === 0;
+                const totalListed = data.totalDexRecords ?? data.totalUsers;
+                return (
+                  <>
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <Seg
+                        ariaLabel="Archive filter"
+                        options={[
+                          { key: 'active', label: 'Active' },
+                          { key: 'archived', label: 'Archived' },
+                          { key: 'all', label: 'All' },
+                        ]}
+                        value={archiveFilter}
+                        onChange={setArchiveFilter}
                       />
-                    );
-                  })}
-                </div>
-              )}
-              {!showDex && data.leagueUsers && (
-                <div className="flex flex-col gap-2">
-                  {data.leagueUsers.map((rec) => {
-                    const dex = data.records.find((r) => r.cid === rec.cid);
-                    return (
-                      <UserPreviewCard
-                        key={rec.cid}
-                        rec={rec}
-                        dex={dex ? { depth: dex.maxDepth, exported: dex.exported } : undefined}
-                        league={{
-                          cards: rec.maxCards,
-                          exported: leagueExported(rec.exportsCard, rec.exportsLeague),
-                        }}
-                        onOpen={() => openDetail({ kind: 'league', cid: rec.cid })}
+                      <Seg
+                        ariaLabel="Tool filter"
+                        options={[
+                          { key: 'any', label: 'Any' },
+                          { key: 'dex', label: 'Only dex' },
+                          { key: 'league', label: 'Only league' },
+                          { key: 'both', label: 'Only both' },
+                        ]}
+                        value={toolFilter}
+                        onChange={setToolFilter}
                       />
-                    );
-                  })}
-                </div>
-              )}
-              {!showDex && (data.leagueUsers?.length ?? 0) === 0 && !loading && (
-                <p className="text-sm text-muted-foreground">No league users yet.</p>
-              )}
-              {showDex && data.records.length < data.totalUsers && (
-                <Button className="mt-3" variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
-                  {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${data.totalUsers})`}
-                </Button>
-              )}
+                    </div>
+                    {emptyList && !loading && (
+                      <p className="text-sm text-muted-foreground">
+                        {showDex ? 'No users yet.' : 'No league users yet.'}
+                      </p>
+                    )}
+                    {!emptyList && rows.length === 0 && !loading && (
+                      <p className="text-sm text-muted-foreground">No users match these filters.</p>
+                    )}
+                    <FitScale>
+                      <div className="flex w-full flex-col gap-2 md:grid md:w-max md:grid-cols-[auto_auto_minmax(0,1fr)_auto_auto_auto_auto] md:gap-x-3 md:gap-y-2">
+                        {rows.map((row) => (
+                          <UserPreviewCard
+                            key={row.cid}
+                            rec={row.rec}
+                            dex={row.dex}
+                            league={row.league}
+                            archived={row.archived}
+                            onArchive={(next) => void setArchived(row.cid, next)}
+                            onOpen={() => openDetail(row.open)}
+                          />
+                        ))}
+                      </div>
+                    </FitScale>
+                    {showDex && data.records.length < totalListed && (
+                      <Button className="mt-3" variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
+                        {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${totalListed})`}
+                      </Button>
+                    )}
+                  </>
+                );
+              })()}
             </Panel>
           </>
           );

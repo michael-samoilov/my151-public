@@ -1,3 +1,34 @@
+import { bareCid } from '../../../api/_archive';
+
+export { bareCid };
+
+export type ArchiveFilter = 'active' | 'archived' | 'all';
+export type ToolFilter = 'any' | 'dex' | 'league' | 'both';
+export type ToolKind = 'dex' | 'league' | 'both';
+
+export function toolKind(hasDex: boolean, hasLeague: boolean): ToolKind | null {
+  if (hasDex && hasLeague) return 'both';
+  if (hasDex) return 'dex';
+  if (hasLeague) return 'league';
+  return null;
+}
+
+export function matchesToolFilter(kind: ToolKind, filter: ToolFilter): boolean {
+  if (filter === 'any') return true;
+  return kind === filter;
+}
+
+export function matchesArchiveFilter(archived: boolean, filter: ArchiveFilter): boolean {
+  if (filter === 'all') return true;
+  return filter === 'archived' ? archived : !archived;
+}
+
+export function sessionChipLabel(sessions: number, totalMs: number): string {
+  const sess = `${sessions} session${sessions === 1 ? '' : 's'}`;
+  if (totalMs <= 0) return sess;
+  return `${sess} · ${fmtDuration(totalMs)}`;
+}
+
 /** Last-seen time in the user's timezone, with no seconds. Falls back to the
  *  viewer's timezone when `tz` is missing or not a valid IANA zone. */
 export function formatWhen(when: number, tz?: string, locale?: string): string {

@@ -178,6 +178,8 @@ type NewestSeed = {
   comp: boolean;
   exp: boolean;
   hoursAgo: number;
+  archived?: boolean;
+  sessionMs?: number[];
 };
 const TZ: Record<string, string> = {
   US: 'America/New_York',
@@ -189,12 +191,26 @@ const TZ: Record<string, string> = {
   FR: 'Europe/Paris',
 };
 const NEWEST: NewestSeed[] = [
+  {
+    cid: 'c0de…ff',
+    c: 'US',
+    dev: 'Mobile',
+    os: 'iOS',
+    browser: 'Safari',
+    lang: 'en-US',
+    sess: 999,
+    dex: 1025,
+    comp: true,
+    exp: true,
+    hoursAgo: 1,
+    sessionMs: [5999 * 60 * 1000],
+  },
   { cid: '74d5…68', c: 'US', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'en-US', sess: 11, dex: 151, comp: true, exp: false, hoursAgo: 2 },
   { cid: '70cd…a7', c: 'IT', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'it-IT', sess: 6, dex: 90, comp: false, exp: false, hoursAgo: 4 },
   { cid: '14c0…85', c: 'IT', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'it-IT', sess: 1, dex: 139, comp: true, exp: true, hoursAgo: 5 },
   { cid: 'bea3…4e', c: 'US', dev: 'Mobile', os: 'iOS', browser: 'Safari', lang: 'en-US', sess: 9, dex: 151, comp: true, exp: false, hoursAgo: 6 },
   { cid: '0f91…4a', c: 'SE', dev: 'Desktop', os: 'macOS', browser: 'Safari', lang: 'sv-SE', sess: 3, dex: 68, comp: false, exp: false, hoursAgo: 8 },
-  { cid: 'f269…9a', c: 'CA', dev: 'Mobile', os: 'Android', browser: 'Chrome', lang: 'en-CA', sess: 4, dex: 9, comp: false, exp: false, hoursAgo: 26 },
+  { cid: 'f269…9a', c: 'CA', dev: 'Mobile', os: 'Android', browser: 'Chrome', lang: 'en-CA', sess: 4, dex: 9, comp: false, exp: false, hoursAgo: 26, archived: true },
   { cid: '4eab…af', c: 'GB', dev: 'Desktop', os: 'Windows', browser: 'Edge', lang: 'en-GB', sess: 1, dex: 3, comp: false, exp: false, hoursAgo: 27 },
 ];
 
@@ -216,8 +232,8 @@ function sectionsOf(ids: number[]): Record<string, number[]> {
 function record(s: NewestSeed): ClientRecord {
   const lastTs = NOW - s.hoursAgo * 3_600_000;
   const firstTs = lastTs - (s.sess + 2) * DAY;
-  const ids = Array.from({ length: s.dex }, (_, i) => i + 1);
-  const sessionMs = Array.from({ length: s.sess }, (_, i) => 180_000 + ((i * 73) % 12) * 60_000);
+  const ids = Array.from({ length: Math.min(s.dex, 151) }, (_, i) => i + 1);
+  const sessionMs = s.sessionMs ?? Array.from({ length: s.sess }, (_, i) => 180_000 + ((i * 73) % 12) * 60_000);
   return {
     cid: s.cid,
     firstTs,
@@ -255,7 +271,7 @@ function record(s: NewestSeed): ClientRecord {
         sections: sectionsOf(upto),
       };
     }),
-    maxDepth: Math.min(151, s.dex),
+    maxDepth: s.dex,
     localHour: 20,
     localDow: 3,
     country: s.c,
@@ -275,6 +291,7 @@ function record(s: NewestSeed): ClientRecord {
     exported: s.exp,
     exportedAt: s.exp ? iso(lastTs) : undefined,
     exportedIds: s.exp ? ids : undefined,
+    archived: s.archived,
   };
 }
 
@@ -371,6 +388,7 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
   };
 }
 const leagueUsers: LeagueUser[] = [
+  leagueUser('c0de…ff', 'US', 14, 2, 1, true),
   leagueUser('70cd…a7', 'IT', 14, 3, 3, true),
   leagueUser('74d5…68', 'US', 8, 2, 5, true),
   leagueUser('bea3…4e', 'US', 6, 1, 9, true),
@@ -602,7 +620,8 @@ export const sampleResponse: ApiResponse = {
     records.filter((r) => leagueUsers.some((u) => u.cid === r.cid)).map((r) => [r.cid, r]),
   ),
   leagueUsers,
-  totalLeagueUsers: 5,
+  totalLeagueUsers: 6,
+  totalDexRecords: records.length,
   records,
 };
 

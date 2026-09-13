@@ -23,6 +23,7 @@ import {
   type Aggregates,
   type Cohort,
 } from './_aggregate.js';
+import { ARCHIVED_KEY, asArchivedSet, isArchived, withoutArchived } from './_archive.js';
 
 /** Distinct evolution lines represented by a set of ids (unknown ids count as
  *  their own line). Mirrors the client's countEvoLines so server-derived depth
@@ -148,6 +149,8 @@ interface LeagueUser {
   firstReferrer?: string;
   /** Whether this browser also has a dex record. */
   hasDex: boolean;
+  /** True when this browser is archived and dropped from aggregates. */
+  archived?: boolean;
   /** Absent when this browser has no dex record to be ordered against. */
   order?: ToolOrder;
   /** Signed days from the first dex beacon to the first league one. */
@@ -286,9 +289,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const offset = Math.max(Number.isNaN(rawOffset) ? 0 : rawOffset, 0);
 
     const all = (await redis.hgetall(CLIENTS_KEY)) as Record<string, unknown> | null;
-    const records: ClientRecord[] = Object.values(all ?? {})
+    const allRecords: ClientRecord[] = Object.values(all ?? {})
       .map(parseRecord)
       .filter((r): r is ClientRecord => r !== null);
+    const archivedSet = asArchivedSet(await redis.smembers(ARCHIVED_KEY));
+    // Aggregates skip archived browsers. The paged lists still carry them,
+    // flagged, so the admin can open or un-archive a card.
+    const records = withoutArchived(allRecords, archivedSet);
 
     // Funnel event counters (from api/event.ts) — top-of-funnel signals that
     // fire with zero placements, so they live outside the per-user records.
@@ -304,9 +311,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // both tools is one cid present in both, so overlap is a set
     // intersection at read time — retroactive by construction.
     const leagueAll = (await redis.hgetall(LEAGUE_CLIENTS_KEY)) as Record<string, unknown> | null;
-    const leagueRecords: LeagueRecord[] = Object.values(leagueAll ?? {})
+    const allLeagueRecords: LeagueRecord[] = Object.values(leagueAll ?? {})
       .map(parseLeagueRecord)
       .filter((r): r is LeagueRecord => r !== null);
+    const leagueRecords = withoutArchived(allLeagueRecords, archivedSet);
     const dexCids = new Set(records.map((r) => r.cid.split('::')[0]));
     const leagueCids = new Set(leagueRecords.map((r) => r.cid));
     const both = [...leagueCids].filter((c) => dexCids.has(c));
@@ -372,8 +380,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         })),
     };
 
-    // Newest-active first.
-    records.sort((a, b) => b.lastTs - a.lastTs);
+    // Newest-active first. Sort the full list so archived cards keep their
+    // place when the admin filters them back in.
+    allRecords.sort((a, b) => b.lastTs - a.lastTs);
 
     // Depth (evolution-line) drop-off, four bases:
     //  total   = peak lines ever reached (overall breadth) — the default view.
@@ -555,25 +564,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     const totalUsers = records.length;
-    const page = records.slice(offset, offset + limit);
+    const totalDexRecords = allRecords.length;
+    const page = allRecords.slice(offset, offset + limit).map((r) => ({
+      ...r,
+      archived: isArchived(r.cid, archivedSet),
+    }));
 
     // The league record for each browser on this page of dex users, so the
     // per-user card can show that person's other tool. Only the page's cids,
     // so the payload does not carry the whole league store twice.
-    const leagueByCidAll = new Map(leagueRecords.map((r) => [r.cid, r]));
+    const leagueByCidAll = new Map(allLeagueRecords.map((r) => [r.cid, r]));
     const leagueByCid: Record<string, LeagueUser> = {};
     for (const r of page) {
       const lr = leagueByCidAll.get(r.cid.split('::')[0]);
-      if (lr) leagueByCid[r.cid] = leagueUser(lr, r.firstTs);
+      if (lr) {
+        leagueByCid[r.cid] = {
+          ...leagueUser(lr, r.firstTs),
+          archived: isArchived(r.cid, archivedSet),
+        };
+      }
     }
 
     // The league's own user list, newest-active first and paged like the dex
     // one. A browser that only ever used the gym leader maker has no dex
     // record, so this is the only place it appears as a person.
-    const leagueUsers = [...leagueRecords]
+    const leagueUsers = [...allLeagueRecords]
       .sort((a, b) => b.lastTs - a.lastTs)
       .slice(offset, offset + limit)
-      .map((r) => leagueUser(r, dexFirstTs.get(r.cid)));
+      .map((r) => ({
+        ...leagueUser(r, dexFirstTs.get(r.cid)),
+        archived: isArchived(r.cid, archivedSet),
+      }));
 
     // The dex record for each browser on this page of league users, so the
     // user page can toggle tools without a second fetch. Only this page's
@@ -598,6 +619,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({
       totalUsers,
+      totalDexRecords,
       offset,
       limit,
       funnel: { users: totalUsers, completed, exported },
@@ -635,7 +657,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       leagueByCid,
       dexByCid,
       leagueUsers,
-      totalLeagueUsers: leagueRecords.length,
+      totalLeagueUsers: allLeagueRecords.length,
       // Full ranked lists; the admin UI previews the top N and expands the rest.
       // Qualification threshold = the median per-Pokemon count for that list, so
       // it self-scales with the data. No cap, so evo lines aren't cut off.
