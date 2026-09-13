@@ -22,10 +22,10 @@
  * `0×`. The Other catch-all uses lines that were actually placed there,
  * not the whole dex.
  *
- * Most-picked ranks default lines only. Off-section is the other tab.
- *
- * Evil Team listed members are often one stage (Rhydon). Other members of
- * that chain (Rhyhorn, Rhyperior) are in-section, not off-section.
+ * Most-picked ranks default lines only, and only lines above 1.10×, except
+ * Starters, which list first-stage Pokémon and ignore that cutoff. Regional
+ * starter variants (Hisuian Decidueye with Rowlet) share one first-stage bar.
+ * Off-section has no least-picked column.
  */
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
@@ -38,9 +38,11 @@ import {
 } from '@/hooks/usePokemonData';
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
-export const PICKS_COLS = 6;
-export const PICKS_MAX_ROWS = 4;
-export const STARTER_LINES_PER_TYPE = 4;
+export const BAR_COL_ROWS = 6;
+export const BAR_COL_COUNT = 2;
+export const PICKS_BAR_CAP = BAR_COL_ROWS * BAR_COL_COUNT;
+export const MOST_MIN_INDEX = 1.1;
+export const STARTER_LINES_PER_TYPE = PICKS_BAR_CAP;
 export const STARTER_TYPES = ['grass', 'fire', 'water'] as const;
 
 export type StarterType = (typeof STARTER_TYPES)[number] | 'other';
@@ -156,64 +158,69 @@ function memberOf(p: Pokemon, picks: number): LineMember {
   return { id: p.id, name: p.name, sprite: p.sprite, picks };
 }
 
+function firstStageOf(ids: number[]): Pokemon | null {
+  const seed = ids.find((id) => getPokemonById(id));
+  if (seed == null) return null;
+  const chain = getEvolutionChainIds(seed);
+  const mons = chain.map((id) => getPokemonById(id)).filter((p): p is Pokemon => !!p);
+  const roots = mons.filter((p) => p.evolvesFrom == null);
+  const pool = (roots.length > 0 ? roots : mons).slice();
+  pool.sort((a, b) => a.evolutionStage - b.evolutionStage || a.id - b.id);
+  return pool[0] ?? null;
+}
+
+function groupByChain(ids: Iterable<number>): Map<string, number[]> {
+  const groups = new Map<string, number[]>();
+  for (const id of ids) {
+    const p = getPokemonById(id);
+    if (!p) continue;
+    const key = `chain:${p.evolutionChainId}`;
+    const list = groups.get(key);
+    if (list) {
+      if (!list.includes(id)) list.push(id);
+    } else {
+      groups.set(key, [id]);
+    }
+  }
+  return groups;
+}
+
 function sortMembers(ids: number[]): Pokemon[] {
   const mons = ids.map((id) => getPokemonById(id)).filter((p): p is Pokemon => !!p);
   mons.sort((a, b) => a.evolutionStage - b.evolutionStage || a.id - b.id);
   return mons;
 }
 
-/** How many 6-wide rows `lines` occupy, packing like the sprite grid. */
-export function rowsUsed(lines: { members: readonly unknown[] }[], cols = PICKS_COLS): number {
-  let rows = 0;
-  let col = 0;
-  const close = () => {
-    rows += 1;
-    col = 0;
-  };
-  for (const line of lines) {
-    let remaining = line.members.length;
-    if (remaining === 0) continue;
-    while (remaining > 0) {
-      const piece = Math.min(remaining, cols);
-      if (col > 0 && col + piece > cols) close();
-      col += piece;
-      remaining -= piece;
-      if (col === cols) close();
-    }
-  }
-  if (col > 0) rows += 1;
-  return rows;
-}
-
-function takeUntilCap<T extends { key: string; members: readonly unknown[] }>(
-  lines: T[],
-  cap: { maxRows: number; cols: number } | { maxLines: number },
-): T[] {
-  if ('maxLines' in cap) return lines.slice(0, cap.maxLines);
-  const kept: T[] = [];
-  for (const line of lines) {
-    const next = [...kept, line];
-    if (rowsUsed(next, cap.cols) > cap.maxRows) break;
-    kept.push(line);
-  }
-  return kept;
-}
-
-/** Highest-index lines on the left, lowest on the right. No line in both. */
-export function splitMostLeast<T extends { key: string; members: readonly unknown[] }>(
+/**
+ * Split ranked-desc lines into most and least bar lists.
+ *
+ * `most` is the highest-index lines, capped at `cap`. When `minMostIndex` is
+ * set, a line must sit strictly above that index to appear in most.
+ * `least` is the lowest-index lines that are not in most, ordered so the
+ * lowest sits last (bottom of the bar list). Empty least stays empty; the
+ * UI hides that column. Off-section passes `includeLeast: false`.
+ */
+export function splitMostLeast<T extends { key: string; index: number }>(
   rankedDesc: T[],
-  cap: { maxRows: number; cols: number } | { maxLines: number },
+  cap: number,
+  opts: { minMostIndex?: number; includeLeast?: boolean } = {},
 ): { most: T[]; least: T[] } {
-  const most = takeUntilCap(rankedDesc, cap);
+  const includeLeast = opts.includeLeast !== false;
+  const minMost = opts.minMostIndex;
+  const over = minMost == null ? rankedDesc : rankedDesc.filter((l) => l.index > minMost);
+  const most = over.slice(0, cap);
+  if (!includeLeast) return { most, least: [] };
   const mostKeys = new Set(most.map((l) => l.key));
   const rest = rankedDesc.filter((l) => !mostKeys.has(l.key));
-  let least = takeUntilCap(rest.toReversed(), cap);
-  if (least.length === 0 && most.length > 1) {
-    const mid = Math.ceil(most.length / 2);
-    least = most.slice(mid).toReversed();
-    return { most: most.slice(0, mid), least };
-  }
+  const least = rest.slice(-cap);
   return { most, least };
+}
+
+/** Split a side's lines into `BAR_COL_COUNT` columns of `BAR_COL_ROWS`. */
+export function barColumns<T>(items: T[], rows = BAR_COL_ROWS): T[][] {
+  const cols: T[][] = [];
+  for (let i = 0; i < items.length; i += rows) cols.push(items.slice(i, i + rows));
+  return cols;
 }
 
 function countsFrom(rows: [string, number][]): Map<number, number> {
@@ -245,6 +252,7 @@ export function indexGroups(
   groups: Map<string, number[]>,
   counts: Map<number, number>,
   universe: Map<string, number[]>,
+  opts: { firstStageOnly?: boolean } = {},
 ): RankedLine[] {
   let S = 0;
   let L = 0;
@@ -255,17 +263,27 @@ export function indexGroups(
   const expected = L > 0 && S > 0 ? S / L : null;
   const ranked: RankedLine[] = [];
   for (const [key, memberIds] of groups) {
-    const mons = sortMembers(memberIds);
-    if (mons.length === 0) continue;
-    const members = mons.map((p) => memberOf(p, counts.get(p.id) ?? 0));
     const picks = linePicks(memberIds, counts);
     const index = expected === null ? (picks > 0 ? 1 : 0) : picks / expected;
+    let members: LineMember[];
+    let typeId: number;
+    if (opts.firstStageOnly) {
+      const face = firstStageOf(memberIds);
+      if (!face) continue;
+      members = [memberOf(face, picks)];
+      typeId = face.id;
+    } else {
+      const mons = sortMembers(memberIds);
+      if (mons.length === 0) continue;
+      members = mons.map((p) => memberOf(p, counts.get(p.id) ?? 0));
+      typeId = mons[0].id;
+    }
     ranked.push({
       key,
       members,
       picks,
       index,
-      starterType: starterTypeOf(mons[0].id),
+      starterType: starterTypeOf(typeId),
     });
   }
   ranked.sort((a, b) => b.index - a.index || b.picks - a.picks || a.members[0].id - b.members[0].id);
@@ -296,7 +314,9 @@ export function sectionPicksView(
   const group = BUILD_GROUPS.find((g) => g.id === sectionId);
   const catchAll = group?.filterType === null;
   const pool = catchAll ? [...counts.keys()] : [...poolIdsForSection(sectionId)];
-  const universe = groupByLine(pool);
+  const starters = sectionId === 'starter';
+  const grouper = starters ? groupByChain : groupByLine;
+  const universe = grouper(pool);
   if (universe.size === 0) return null;
 
   let focusIds: number[];
@@ -311,18 +331,23 @@ export function sectionPicksView(
     focusIds = pool;
   }
 
-  const focus = groupByLine(focusIds);
+  const focus = grouper(focusIds);
   if (focus.size === 0) return null;
-  const ranked = indexGroups(focus, counts, universe);
+  const ranked = indexGroups(focus, counts, universe, { firstStageOnly: starters });
   if (ranked.length === 0) return null;
   if (!opts.offSection && ranked.every((l) => l.picks === 0)) return null;
 
-  if (sectionId === 'starter') {
+  const splitOpts = {
+    minMostIndex: starters || opts.offSection ? undefined : MOST_MIN_INDEX,
+    includeLeast: !opts.offSection,
+  };
+
+  if (starters) {
     const groups: StarterGroup[] = [];
     for (const type of [...STARTER_TYPES, 'other'] as const) {
       const slice = ranked.filter((l) => l.starterType === type);
       if (slice.length === 0) continue;
-      const columns = splitMostLeast(slice, { maxLines: STARTER_LINES_PER_TYPE });
+      const columns = splitMostLeast(slice, STARTER_LINES_PER_TYPE, splitOpts);
       groups.push({ type, ...columns });
     }
     if (groups.length === 0) return null;
@@ -332,7 +357,7 @@ export function sectionPicksView(
   return {
     kind: 'plain',
     sectionId,
-    columns: splitMostLeast(ranked, { maxRows: PICKS_MAX_ROWS, cols: PICKS_COLS }),
+    columns: splitMostLeast(ranked, PICKS_BAR_CAP, splitOpts),
   };
 }
 

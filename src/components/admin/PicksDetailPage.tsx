@@ -5,10 +5,10 @@ import { sectionName } from '@/i18n';
 import { sectionColor } from '@/lib/sectionColors';
 import { cn, displayName } from '@/lib/utils';
 import {
+  barColumns,
   formatIndex,
   indexBarPct,
   isStarterTypeName,
-  PICKS_COLS,
   viewsForPicks,
   type DualColumn,
   type LineMember,
@@ -17,43 +17,20 @@ import {
   type StarterType,
 } from './picksStats';
 
-type Cell = { member: LineMember; index: number; linePicks: number; key: string };
-
-function packLineRows(lines: RankedLine[], cols = PICKS_COLS): { cells: Cell[]; spacers: number }[] {
-  const rows: { cells: Cell[]; spacers: number }[] = [];
-  let current: Cell[] = [];
-  let col = 0;
-  const close = (spacers: number) => {
-    rows.push({ cells: current, spacers });
-    current = [];
-    col = 0;
-  };
-  for (const line of lines) {
-    for (let at = 0; at < line.members.length; at += cols) {
-      const piece = line.members.slice(at, at + cols);
-      if (col > 0 && col + piece.length > cols) close(cols - col);
-      for (const member of piece) {
-        current.push({
-          member,
-          index: line.index,
-          linePicks: line.picks,
-          key: `${line.key}-${member.id}`,
-        });
-      }
-      col += piece.length;
-      if (col === cols) close(0);
-    }
-  }
-  if (current.length > 0) close(cols - col);
-  return rows;
-}
-
 function maxIndex(lines: RankedLine[]): number {
   let max = 0;
   for (const line of lines) {
     if (line.index > max) max = line.index;
   }
   return max;
+}
+
+function faceOf(line: RankedLine): LineMember {
+  let best = line.members[0];
+  for (const m of line.members) {
+    if (m.picks > best.picks) best = m;
+  }
+  return best;
 }
 
 function SectionBox({
@@ -74,7 +51,7 @@ function SectionBox({
       }}
     >
       <div
-        className="px-1.5 text-right text-xs font-semibold uppercase tracking-wide"
+        className="px-1.5 text-left text-xs font-semibold uppercase tracking-wide"
         style={{ color: stroke, paddingTop: 4, paddingBottom: 2 }}
       >
         {sectionName(sectionId)}
@@ -84,91 +61,78 @@ function SectionBox({
   );
 }
 
-function SpriteCell({
-  member,
-  index,
-  linePicks,
+function IndexBarRow({
+  line,
   max,
-  barColor,
+  color,
 }: {
-  member: LineMember;
-  index: number;
-  linePicks: number;
+  line: RankedLine;
   max: number;
-  barColor: string;
+  color: string;
 }) {
+  const member = faceOf(line);
   const label = displayName(member.name);
-  const title = `${label}: ${member.picks} dexes · ${formatIndex(index)} expected`;
-  const dropped = member.picks === 0 || member.picks < linePicks * 0.5;
-  const pct = indexBarPct(index, max);
+  const title = `${label}: ${line.picks} dexes · ${formatIndex(line.index)} expected`;
+  const pct = indexBarPct(line.index, max);
+  const faded = line.picks === 0;
   return (
-    <div className={cn('flex min-w-0 flex-col items-center overflow-hidden', dropped && 'opacity-40')} title={title}>
-      <div className="relative aspect-square w-full min-w-0">
-        <div className="flex h-full w-full items-center justify-center pb-[5px]">
-          {member.sprite ? (
-            <img
-              src={member.sprite}
-              alt={title}
-              loading="lazy"
-              className="max-h-full max-w-full object-contain"
-              style={{ imageRendering: 'pixelated' }}
-            />
-          ) : (
-            <span className="text-[0.5rem] text-muted-foreground">#{member.id}</span>
-          )}
-        </div>
+    <div
+      className={cn('flex min-w-0 items-center gap-1', faded && 'opacity-40')}
+      title={title}
+      data-index-meter={formatIndex(line.index)}
+      data-face-id={member.id}
+    >
+      {member.sprite ? (
+        <img
+          src={member.sprite}
+          alt={title}
+          loading="lazy"
+          className="h-5 w-5 shrink-0 object-contain"
+          style={{ imageRendering: 'pixelated' }}
+        />
+      ) : (
+        <span className="w-5 shrink-0 text-center text-[0.5rem] text-muted-foreground">#{member.id}</span>
+      )}
+      <div
+        className="h-2 min-w-0 flex-1 overflow-hidden rounded-full"
+        style={{ backgroundColor: `${color}22` }}
+        aria-hidden
+      >
         <div
-          className="absolute inset-x-0 bottom-0 h-[3px] overflow-hidden rounded-full"
-          style={{ backgroundColor: `${barColor}22` }}
-          aria-hidden
-          data-index-meter={formatIndex(index)}
-        >
-          <div
-            data-index-fill
-            className="h-full rounded-full"
-            style={{ width: `${pct}%`, backgroundColor: barColor }}
-          />
-        </div>
+          data-index-fill
+          className="h-full rounded-full"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
       </div>
       <span
-        className="mt-0.5 max-w-full truncate text-[0.5rem] tabular-nums leading-none"
-        style={{ color: barColor }}
+        className="w-[1.75rem] shrink-0 text-right text-[0.5rem] tabular-nums leading-none"
+        style={{ color }}
       >
-        {formatIndex(index)}
+        {formatIndex(line.index)}
       </span>
     </div>
   );
 }
 
-function LineGrid({
+function BarSide({
   lines,
   max,
-  barColor,
+  color,
 }: {
   lines: RankedLine[];
   max: number;
-  barColor: string;
+  color: string;
 }) {
   if (lines.length === 0) {
     return <p className="text-[0.65rem] text-muted-foreground">None in this cap.</p>;
   }
-  const rows = packLineRows(lines);
+  const cols = barColumns(lines);
   return (
-    <div className="flex min-w-0 flex-col gap-1">
-      {rows.map((row, i) => (
-        <div key={i} className="grid min-w-0 grid-cols-6 gap-0.5">
-          {row.cells.map((cell) => (
-            <SpriteCell
-              key={cell.key}
-              member={cell.member}
-              index={cell.index}
-              linePicks={cell.linePicks}
-              max={max}
-              barColor={barColor}
-            />
-          ))}
-          {Array.from({ length: row.spacers }, (_, s) => (
-            <div key={`s-${s}`} className="min-w-0" />
+    <div className={cn('grid min-w-0 gap-x-1.5', cols.length > 1 ? 'grid-cols-2' : 'grid-cols-1')}>
+      {cols.map((col, i) => (
+        <div key={i} className="flex min-w-0 flex-col gap-1" data-bar-col>
+          {col.map((line) => (
+            <IndexBarRow key={line.key} line={line} max={max} color={color} />
           ))}
         </div>
       ))}
@@ -176,17 +140,35 @@ function LineGrid({
   );
 }
 
-function DualGrids({ columns, barColor }: { columns: DualColumn; barColor: string }) {
-  const max = Math.max(maxIndex(columns.most), maxIndex(columns.least));
+function DualBars({
+  columns,
+  barColor,
+  showLeast,
+}: {
+  columns: DualColumn;
+  barColor: string;
+  showLeast: boolean;
+}) {
+  const leastOn = showLeast && columns.least.length > 0;
+  const max = leastOn
+    ? Math.max(maxIndex(columns.most), maxIndex(columns.least))
+    : maxIndex(columns.most);
+  if (!leastOn) {
+    return (
+      <div className="min-w-0" data-picks-side="most">
+        <BarSide lines={columns.most} max={max} color={barColor} />
+      </div>
+    );
+  }
   return (
     <div className="grid min-w-0 grid-cols-2 gap-x-1.5">
-      <div className="min-w-0 overflow-hidden">
+      <div className="min-w-0" data-picks-side="most">
         <div className="mb-1 text-[0.65rem] font-semibold">Most</div>
-        <LineGrid lines={columns.most} max={max} barColor={barColor} />
+        <BarSide lines={columns.most} max={max} color={barColor} />
       </div>
-      <div className="min-w-0 overflow-hidden border-l border-border/60 pl-1.5">
+      <div className="min-w-0 border-l border-border/60 pl-1.5" data-picks-side="least">
         <div className="mb-1 text-[0.65rem] font-semibold">Least</div>
-        <LineGrid lines={columns.least} max={max} barColor={barColor} />
+        <BarSide lines={columns.least} max={max} color={barColor} />
       </div>
     </div>
   );
@@ -207,7 +189,13 @@ function StarterTypeHeading({ type }: { type: StarterType }) {
   );
 }
 
-function SectionBlock({ view }: { view: SectionPicksView }) {
+function SectionBlock({
+  view,
+  showLeast,
+}: {
+  view: SectionPicksView;
+  showLeast: boolean;
+}) {
   const { stroke } = sectionColor(view.sectionId);
   return (
     <SectionBox sectionId={view.sectionId}>
@@ -216,12 +204,12 @@ function SectionBlock({ view }: { view: SectionPicksView }) {
           {view.groups.map((g) => (
             <div key={g.type}>
               <StarterTypeHeading type={g.type} />
-              <DualGrids columns={g} barColor={stroke} />
+              <DualBars columns={g} barColor={stroke} showLeast={showLeast} />
             </div>
           ))}
         </div>
       ) : (
-        <DualGrids columns={view.columns} barColor={stroke} />
+        <DualBars columns={view.columns} barColor={stroke} showLeast={showLeast} />
       )}
     </SectionBox>
   );
@@ -292,7 +280,7 @@ export function PicksDetailPage({
         <p className="mt-1.5 text-[0.65rem] leading-snug text-muted-foreground">
           {offSection
             ? 'Placed off their default section. Evil-team chain mates (Rhyhorn with Rhydon) stay in-section.'
-            : `1.0× = random rate among this section's evo lines. Left = most, right = least.`}
+            : '1.0× = random rate among this section\'s evo lines. Most is over 1.10×. Least sits at the bottom of its list.'}
         </p>
       </div>
       {sections.length === 0 ? (
@@ -304,7 +292,11 @@ export function PicksDetailPage({
             : 'No picks yet.'}
         </p>
       ) : (
-        <div className="flex flex-col gap-3">{sections.map((s) => <SectionBlock key={s.sectionId} view={s} />)}</div>
+        <div className="flex flex-col gap-3">
+          {sections.map((s) => (
+            <SectionBlock key={s.sectionId} view={s} showLeast={!offSection} />
+          ))}
+        </div>
       )}
     </div>
   );

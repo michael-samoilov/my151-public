@@ -3,10 +3,9 @@ import { expect, test, type Page } from '@playwright/test';
 /**
  * The admin "What people pick" page. Demo fixture, no token.
  *
- * Two layout contracts: each section uses the builder's rounded outline with
- * the name inside at the top-right, and each sprite carries an index bar whose
- * length tracks that line's over/under-index. The 6+6 most/least grid must
- * stay inside the viewport, including the 320px narrow project.
+ * Layout: builder chrome with the section name at the top-left; most/least
+ * as two pairs of 6-row bar columns (sprite label, horizontal index bar).
+ * Off-section has no least column. Starters show first-stage faces only.
  */
 
 async function openPicks(page: Page) {
@@ -39,19 +38,29 @@ test.describe('admin picks page', () => {
       return { radius: s.borderRadius, labelAlign: getComputedStyle(el.firstElementChild as HTMLElement).textAlign };
     });
     expect(Number.parseFloat(box.radius)).toBeGreaterThan(0);
-    expect(box.labelAlign).toBe('right');
+    expect(box.labelAlign).toBe('left');
+
+    const faceIds = await starters.locator('[data-face-id]').evaluateAll((els) =>
+      els.map((el) => Number(el.getAttribute('data-face-id'))),
+    );
+    expect(faceIds).toContain(1);
+    expect(faceIds).not.toContain(2);
+    expect(faceIds).not.toContain(3);
+    expect(faceIds).not.toContain(6);
 
     await expect.poll(async () =>
       starters.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
     ).toBe(true);
   });
 
-  test('off-section tab keeps the same chrome', async ({ page }) => {
+  test('off-section tab keeps chrome and omits least-picked', async ({ page }) => {
     await openPicks(page);
     await page.getByRole('button', { name: 'Off-section' }).click();
     const evil = page.locator('[data-section-id="evil-team"]');
     await expect(evil).toBeVisible();
     await expect(evil.getByText('Evil Team', { exact: true })).toBeVisible();
     await expect(evil.locator('[data-index-meter]').first()).toBeVisible();
+    await expect(evil.locator('[data-picks-side="least"]')).toHaveCount(0);
+    await expect(evil.getByText('Least', { exact: true })).toHaveCount(0);
   });
 });
