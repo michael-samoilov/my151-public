@@ -1120,7 +1120,7 @@ function regionGroups(countries: Record<string, number>): BarGroup[] {
 
 function MetricChip({ label, exported }: { label: string; exported?: boolean }) {
   return (
-    <span className="inline-flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-xs font-medium">
+    <span className="inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-2 text-xs font-medium">
       {label}
       {exported ? <span className="font-normal text-muted-foreground">exported</span> : null}
     </span>
@@ -1157,7 +1157,7 @@ function UserPreviewCard({
       role="link"
       tabIndex={0}
       aria-label={`Open user ${middleId(rec.cid)}`}
-      className="cursor-pointer rounded-lg bg-card p-3 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="cursor-pointer rounded-lg bg-card px-2.5 py-2 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       onClick={onOpen}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;
@@ -1167,59 +1167,61 @@ function UserPreviewCard({
         }
       }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 text-sm">
-          <span className="font-semibold">{formatWhen(rec.lastTs, rec.tz)}</span>
-          <span className="text-muted-foreground"> · {relativeTime(rec.lastTs)}</span>
-        </div>
-        {onDelete && (
-          <div
-            className="flex shrink-0 items-center gap-1"
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-          >
-            {confirmingDelete ? (
-              <>
-                <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    setConfirmingDelete(false);
-                    onDelete();
-                  }}
-                >
-                  Confirm delete
-                </Button>
-              </>
-            ) : (
+      <div className="flex flex-col gap-1.5 md:flex-row md:items-center md:gap-3">
+        <div className="flex items-start justify-between gap-2 md:contents">
+          <p className="min-w-0 text-sm leading-snug md:shrink-0">
+            <span className="font-semibold">{formatWhen(rec.lastTs, rec.tz)}</span>
+            <span className="text-muted-foreground"> · {relativeTime(rec.lastTs)}</span>
+          </p>
+          {onDelete && !confirmingDelete && (
+            <div
+              className="shrink-0 md:order-last md:ml-auto"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-destructive hover:text-destructive"
+                className="relative text-destructive hover:text-destructive before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']"
                 onClick={() => setConfirmingDelete(true)}
               >
                 Delete
               </Button>
-            )}
-          </div>
-        )}
-      </div>
-      <div className="mt-1.5">
-        <PlatformChips rec={rec} />
-      </div>
-      <div className="mt-1.5 text-xs text-muted-foreground">
-        {sessions} session{sessions === 1 ? '' : 's'}
-        {totalMs > 0 ? ` · ${fmtDuration(totalMs)}` : ''}
-      </div>
-      {(dex || league) && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+            </div>
+          )}
+        </div>
+        <PlatformChips rec={rec} className="gap-1" />
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <span className="whitespace-nowrap text-xs text-muted-foreground">
+            {sessions} session{sessions === 1 ? '' : 's'}
+            {totalMs > 0 ? ` · ${fmtDuration(totalMs)}` : ''}
+          </span>
           {dex && <MetricChip label={`${dex.depth} Pokémon`} exported={dex.exported} />}
           {league && (
             <MetricChip label={`${league.cards}/${CARD_COUNT} cards`} exported={league.exported} />
           )}
+        </div>
+      </div>
+      {onDelete && confirmingDelete && (
+        <div
+          className="mt-1.5 flex gap-2"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <Button className="flex-1" variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
+            Cancel
+          </Button>
+          <Button
+            className="flex-1"
+            variant="destructive"
+            size="sm"
+            onClick={() => {
+              setConfirmingDelete(false);
+              onDelete();
+            }}
+          >
+            Confirm delete
+          </Button>
         </div>
       )}
     </div>

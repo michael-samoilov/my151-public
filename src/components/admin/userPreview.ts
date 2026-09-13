@@ -4,7 +4,6 @@ export function formatWhen(when: number, tz?: string, locale?: string): string {
   const opts: Intl.DateTimeFormatOptions = {
     month: 'short',
     day: 'numeric',
-    year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
   };

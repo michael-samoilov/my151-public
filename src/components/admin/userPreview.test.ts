@@ -4,9 +4,10 @@ import { formatWhen, fmtDuration, leagueExported, sessionTotalMs } from './userP
 describe('formatWhen', () => {
   const ts = Date.UTC(2026, 8, 10, 16, 5, 45);
 
-  it('omits seconds', () => {
+  it('omits seconds and the year', () => {
     const s = formatWhen(ts, 'UTC', 'en-US');
     expect(s).not.toMatch(/\d:\d{2}:\d{2}/);
+    expect(s).not.toMatch(/2026/);
     expect(s).toMatch(/4:05\sPM/);
   });
 
