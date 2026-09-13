@@ -141,8 +141,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
   );
 }
 
-export function ActiveUsersPanel({ series }: { series: DailyPoint[] }) {
-  const nowMs = Date.now();
+export function ActiveUsersPanel({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) {
   const padded = extendThroughToday(series, nowMs);
   const { daily, weekly } = headerCounts(padded);
   const faint = 'var(--color-muted-foreground)';

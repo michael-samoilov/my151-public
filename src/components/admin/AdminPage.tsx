@@ -1603,6 +1603,7 @@ export function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const pageHeaderRef = useRef<HTMLElement>(null);
   const [pageHeaderH, setPageHeaderH] = useState(0);
+  const [loadedAt, setLoadedAt] = useState(0);
 
   useLayoutEffect(() => {
     if (pageHeaderRef.current) setPageHeaderH(pageHeaderRef.current.offsetHeight);
@@ -1626,6 +1627,7 @@ export function AdminPage() {
     try {
       const resp = await fetchDashboard(tok, limit, 0);
       setData(resp);
+      setLoadedAt(Date.now());
       setAuthed(true);
       setToken(tok);
       try {
@@ -1649,6 +1651,7 @@ export function AdminPage() {
     if (new URLSearchParams(window.location.search).has('demo')) {
       void import('./__fixtures__/sampleResponse').then((m) => {
         setData(m.sampleResponse);
+        setLoadedAt(Date.now());
         setAuthed(true);
       });
       return;
@@ -1882,7 +1885,7 @@ export function AdminPage() {
               {dateRange && <span className="text-[0.7rem] font-semibold text-muted-foreground">{dateRange}</span>}
             </div>
 
-            {slice.activity.length > 0 && <ActiveUsersPanel key={tool} series={slice.activity} />}
+            {slice.activity.length > 0 && <ActiveUsersPanel key={tool} series={slice.activity} nowMs={loadedAt} />}
 
             {showDex && <BeaconDropNotice events={data.funnelEvents} />}
 
