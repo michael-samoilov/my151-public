@@ -440,14 +440,9 @@ img {
   color: var(--lg-hint);
   font-size: 0.5rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-variant: all-small-caps;
+  letter-spacing: normal;
   white-space: nowrap;
-}
-
-[data-badge-field]:empty {
-  display: inline-block;
-  min-width: 2.75rem;
 }
 
 /* Each screenshot floats up on its own when the pointer is over THAT screenshot,

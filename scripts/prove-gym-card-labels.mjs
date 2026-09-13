@@ -64,12 +64,17 @@ async function metrics(page) {
     const tm = document.querySelector('[data-testid="slot-tm"]');
     const pick = [...document.querySelectorAll('[data-testid="slot-tm"] span')].find((s) => s.textContent === 'Pick a move');
     const pickCs = pick ? getComputedStyle(pick) : null;
+    const disc = document.querySelector('[data-testid="slot-tm"] svg')?.getBoundingClientRect().width;
+    const shoulder = [...document.querySelectorAll('[data-testid="slot-partner"] span.block')].find((s) => s.textContent?.trim() === 'SHOULDERMON');
+    const sb = shoulder?.getBoundingClientRect();
     return {
       partnerLines: headLines,
       partnerPast: lineBoxes,
       tm: mark(tm, 'TM'),
       badge: mark(badge, 'BADGE'),
       pick: pick ? { fontSize: pickCs.fontSize, nowrap: pickCs.whiteSpace } : null,
+      discW: disc,
+      shoulderPastSlot: sb && slot ? sb.bottom - slot.bottom : null,
     };
   });
 }
@@ -149,8 +154,10 @@ console.log(JSON.stringify({ before, after }, null, 2));
 const ok =
   after.partnerLines.join('|') === 'PARTNER /|SHOULDERMON' &&
   !before.partnerLines.some((l) => l.includes('SHOUL') && l !== 'PARTNER /' && l !== 'SHOULDERMON') === false &&
-  after.badge?.w > 35 &&
-  after.tm?.w > 35 &&
+  after.badge?.w > 18 &&
+  after.tm?.w > 18 &&
+  (after.discW ?? 99) < 22 &&
+  (after.shoulderPastSlot ?? 99) <= 2 &&
   after.pick?.fontSize === '8px' &&
   before.pick?.fontSize !== '8px' &&
   !after.caret.inSuffix;

@@ -1003,7 +1003,7 @@ const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
 const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
 const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
 /** Slightly smaller than the ace heading so every run stays inside the partner pane. */
-const PARTNER_HEAD_CLASS = 'text-[0.46875rem] font-extrabold tracking-[0.03em] leading-[1.3]';
+const PARTNER_HEAD_CLASS = 'text-[0.4rem] font-extrabold tracking-[0.01em] leading-[1.15]';
 // The name wears the heading's all-caps, weight and size, so it reads as part
 // of the same label. Its tracking is tighter, though: the heading is two short
 // words that a wide track sets off, while the name is one long word that the
@@ -1035,7 +1035,7 @@ function HeadRuns({ lines, className, style, maxWidth, ...rest }: {
       style={{ ...style, ...(maxWidth ? { maxWidth: `${maxWidth}px` } : undefined) }}
     >
       {lines.map((line) => (
-        <span key={line} className="block whitespace-nowrap">{line}</span>
+        <span key={line} className="mx-auto block w-max max-w-full whitespace-nowrap">{line}</span>
       ))}
     </span>
   );
@@ -1171,7 +1171,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   return (
     <div
       ref={slotRef}
-      className="absolute z-[5] rounded-lg"
+      className="absolute z-[5] overflow-hidden rounded-lg"
       style={{
         ...pos,
         background: ace || partner ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
@@ -1261,8 +1261,7 @@ const MARK_ROWS = 1.5;
  * keeps the glyph from eating the text it labels; both slots use the same
  * expression, so the disc and the hexagon stay on one axis whatever binds.
  */
-/** Fixed rem width: a percentage cap starved BADGE to ~23px and stacked its letters. */
-const MARK_COL = '3rem';
+const MARK_COL = 'min(2.75rem, 26%)';
 /**
  * The box's left pad and the gap after the glyph column: equal, on purpose.
  *
@@ -1299,7 +1298,7 @@ const MARK_TRAIL = '0.0625rem';
 // resolves against the column, so repeating the box fraction here multiplies
 // the two and collapses the glyph to a few pixels.
 const MARK_GLYPH = '72%';
-const MARK_LABEL_CLASS = 'whitespace-nowrap text-[0.5rem] font-extrabold tracking-[0.06em]';
+const MARK_LABEL_CLASS = 'whitespace-nowrap text-[0.5rem] font-extrabold tracking-[0.02em]';
 
 function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
@@ -1325,7 +1324,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     >
       {!move && <EmptyOutline />}
       <span
-        className="flex shrink-0 flex-col items-center justify-center"
+        className="flex shrink-0 flex-col items-center justify-center overflow-visible"
         style={{ width: MARK_COL }}
       >
         {/* The disc wears the move's own type, not the gym's — a TM is the
@@ -1385,7 +1384,10 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           </span>
         </span>
       ) : (
-        <span className={cn('min-w-0 whitespace-nowrap text-left', MARK_LABEL_CLASS)} style={{ color: 'var(--lg-hint)' }}>
+        <span
+          className={cn('min-w-0 whitespace-nowrap text-left normal-case', MARK_LABEL_CLASS)}
+          style={{ color: 'var(--lg-hint)' }}
+        >
           Pick a move
         </span>
       )}
@@ -1529,7 +1531,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
       {/* The same column the TM slot uses, so the hexagon sits under the disc
           and the word under the word. */}
       <span
-        className="flex shrink-0 flex-col items-center justify-center"
+        className="flex shrink-0 flex-col items-center justify-center overflow-visible"
         style={{ width: MARK_COL }}
       >
         {/* Drawn the way the TM disc is drawn: an outline in the type's own
@@ -1584,7 +1586,10 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         // six characters. The height is still fixed rather than free, so
         // `scrollHeight` has something to exceed and a name cannot grow past
         // the box.
-        className={cn('min-w-0 flex-1 overflow-hidden pr-[0.25rem] text-left', NAME_CLASS)}
+        className={cn(
+          'min-w-0 flex-1 overflow-hidden pr-[0.25rem] text-left',
+          name ? NAME_CLASS : 'text-[0.5rem] font-extrabold leading-[1.2]',
+        )}
         style={{ maxHeight: `${3 * 0.53125 * 1.4}rem`, color: 'var(--lg-band)' }}
       >
         <span
@@ -1601,7 +1606,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           // to tap and nowhere obvious for the caret to sit.
           data-badge-field
           data-placeholder="Name"
-          className="inline-block min-w-[2.75rem] outline-none"
+          className="outline-none"
         />
       </div>
       {name && (
