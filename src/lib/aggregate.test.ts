@@ -82,6 +82,12 @@ describe('dailyActive', () => {
   it('returns nothing for no records', () => {
     expect(dailyActive([])).toEqual([]);
   });
+
+  it('extends through the given now day when that day has no activity', () => {
+    const series = dailyActive([dex()], T0 + 5 * DAY_MS);
+    expect(series.map((p) => p.dau)).toEqual([1, 0, 1, 0, 0, 0]);
+    expect(series[series.length - 1].day).toBe(Date.UTC(2026, 8, 6));
+  });
 });
 
 describe('retention', () => {

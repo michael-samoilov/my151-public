@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
-import { TrendChart } from '@/components/admin/charts/TrendChart';
+import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
 import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
 import { Panel, Seg, Kpi, Delta, Rollup, type RollupRow } from '@/components/admin/ui';
@@ -935,41 +935,54 @@ function LanguageChip({ lang, locale, switched }: { lang?: string; locale?: stri
 /** Consolidated detail header: Back, the middle-truncated id, and the geo /
  *  platform / language chips on one rail (icons disclose their name on press or
  *  hover), so the identity takes one row instead of three. */
-function DetailHeader({ rec, onBack }: { rec: HeaderRec; onBack: () => void }) {
+function StickyBar({ top, children }: { top: number; children: React.ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-      <button type="button" onClick={onBack} className="flex shrink-0 items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
-        ‹ Back
-      </button>
-      <span className="shrink-0 text-sm font-bold tabular-nums" title={rec.cid}>
-        {middleId(rec.cid)}
-      </span>
-      <TooltipScope>
-        <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
-          {rec.country && (
-            <InfoChip label={`${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}`}>
-              <FlagIcon country={rec.country} />
-            </InfoChip>
-          )}
-          {rec.device && (
-            <InfoChip label={rec.device}>
-              <DeviceIcon value={rec.device} />
-            </InfoChip>
-          )}
-          {rec.os && (
-            <InfoChip label={rec.os}>
-              <OsIcon value={rec.os} />
-            </InfoChip>
-          )}
-          {rec.browser && (
-            <InfoChip label={rec.browser}>
-              <BrowserIcon value={rec.browser} />
-            </InfoChip>
-          )}
-          <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
-        </div>
-      </TooltipScope>
+    <div
+      className="sticky z-[95] -mx-4 border-b border-border bg-background/95 px-4 py-1.5 backdrop-blur"
+      style={{ top }}
+    >
+      {children}
     </div>
+  );
+}
+
+function DetailHeader({ rec, onBack, stickyOffset }: { rec: HeaderRec; onBack: () => void; stickyOffset: number }) {
+  return (
+    <StickyBar top={stickyOffset}>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+        <button type="button" onClick={onBack} className="flex shrink-0 items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
+          ‹ Back
+        </button>
+        <span className="shrink-0 text-sm font-bold tabular-nums" title={rec.cid}>
+          {middleId(rec.cid)}
+        </span>
+        <TooltipScope>
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
+            {rec.country && (
+              <InfoChip label={`${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}`}>
+                <FlagIcon country={rec.country} />
+              </InfoChip>
+            )}
+            {rec.device && (
+              <InfoChip label={rec.device}>
+                <DeviceIcon value={rec.device} />
+              </InfoChip>
+            )}
+            {rec.os && (
+              <InfoChip label={rec.os}>
+                <OsIcon value={rec.os} />
+              </InfoChip>
+            )}
+            {rec.browser && (
+              <InfoChip label={rec.browser}>
+                <BrowserIcon value={rec.browser} />
+              </InfoChip>
+            )}
+            <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+          </div>
+        </TooltipScope>
+      </div>
+    </StickyBar>
   );
 }
 
@@ -1008,7 +1021,7 @@ function TimeChip({ ms, full }: { ms: number; full?: boolean }) {
 
 /** Dex user detail page: session timeline + the build at the scrubbed moment,
  *  drawn with the real section outlines. */
-function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void }) {
+function DexDetailPage({ rec, onBack, stickyOffset }: { rec: ClientRecord; onBack: () => void; stickyOffset: number }) {
   const log = rec.sessionLog ?? [];
   const [i, setI] = useState(Math.max(0, log.length - 1));
   const points: TimelinePoint[] = log.map((s, k) => {
@@ -1049,7 +1062,7 @@ function DexDetailPage({ rec, onBack }: { rec: ClientRecord; onBack: () => void 
 
   return (
     <div className="flex flex-col gap-4">
-      <DetailHeader rec={rec} onBack={onBack} />
+      <DetailHeader rec={rec} onBack={onBack} stickyOffset={stickyOffset} />
       {points.length > 0 ? (
         <SessionTimeline
           points={points}
@@ -1182,10 +1195,10 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
 }
 
 /** League user detail page. */
-function LeagueDetailPage({ rec, onBack }: { rec: LeagueUser; onBack: () => void }) {
+function LeagueDetailPage({ rec, onBack, stickyOffset }: { rec: LeagueUser; onBack: () => void; stickyOffset: number }) {
   return (
     <div className="flex flex-col gap-4">
-      <DetailHeader rec={rec} onBack={onBack} />
+      <DetailHeader rec={rec} onBack={onBack} stickyOffset={stickyOffset} />
       <LeagueDetailBody league={rec} />
     </div>
   );
@@ -1453,11 +1466,13 @@ function PicksDetailPage({
   offBySection,
   n,
   onBack,
+  stickyOffset,
 }: {
   mostBySection: Record<string, [string, number][]>;
   offBySection: Record<string, [string, number][]>;
   n: number;
   onBack: () => void;
+  stickyOffset: number;
 }) {
   const [view, setView] = useState<'most' | 'off'>('most');
   const [excludeOneOffs, setExcludeOneOffs] = useState(false);
@@ -1475,13 +1490,15 @@ function PicksDetailPage({
   const offHasAny = Object.keys(offShown).length > 0;
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
-          ‹ Back
-        </button>
-        <span className="text-sm font-bold">What people pick</span>
-        <span className="text-xs text-muted-foreground">of {n} dexes</span>
-      </div>
+      <StickyBar top={stickyOffset}>
+        <div className="flex items-center justify-between gap-2">
+          <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
+            ‹ Back
+          </button>
+          <span className="text-sm font-bold">What people pick</span>
+          <span className="text-xs text-muted-foreground">of {n} dexes</span>
+        </div>
+      </StickyBar>
       <div className="flex flex-wrap items-center gap-2">
         <Seg
           ariaLabel="Picks metric"
@@ -1757,15 +1774,15 @@ export function AdminPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-3">
-          <h1 className="whitespace-nowrap text-lg font-bold">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-1">
+          <h1 className="whitespace-nowrap text-sm font-bold">
             <span className="text-primary">my151</span> · Analytics
           </h1>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={() => token && void load(token)} disabled={loading}>
+          <div className="flex items-center gap-0.5">
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token)} disabled={loading}>
               {loading ? 'Refreshing…' : 'Refresh'}
             </Button>
-            <Button variant="ghost" size="sm" onClick={signOut}>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={signOut}>
               Sign out
             </Button>
           </div>
@@ -1781,16 +1798,16 @@ export function AdminPage() {
         {detail && data && (() => {
           if (detail.kind === 'picks') {
             const nDex = data.tools?.dex ?? data.funnel.users;
-            return <PicksDetailPage mostBySection={data.popularBySection} offBySection={offBySection} n={nDex} onBack={() => setDetail(null)} />;
+            return <PicksDetailPage mostBySection={data.popularBySection} offBySection={offBySection} n={nDex} onBack={() => setDetail(null)} stickyOffset={pageHeaderH} />;
           }
           if (detail.kind === 'dex') {
             const rec = data.records.find((r) => r.cid === detail.cid);
             if (!rec) return null;
-            return <DexDetailPage rec={rec} onBack={() => setDetail(null)} />;
+            return <DexDetailPage rec={rec} onBack={() => setDetail(null)} stickyOffset={pageHeaderH} />;
           }
           const rec = data.leagueUsers?.find((r) => r.cid === detail.cid);
           if (!rec) return null;
-          return <LeagueDetailPage rec={rec} onBack={() => setDetail(null)} />;
+          return <LeagueDetailPage rec={rec} onBack={() => setDetail(null)} stickyOffset={pageHeaderH} />;
         })()}
 
         {!detail && page === 'feedback' &&
@@ -1865,11 +1882,7 @@ export function AdminPage() {
               {dateRange && <span className="text-[0.7rem] font-semibold text-muted-foreground">{dateRange}</span>}
             </div>
 
-            {slice.activity.length > 0 && (
-              <Panel title="Active browsers" sub={['daily', '7-day sum']}>
-                <TrendChart key={tool} series={slice.activity} />
-              </Panel>
-            )}
+            {slice.activity.length > 0 && <ActiveUsersPanel key={tool} series={slice.activity} />}
 
             {showDex && <BeaconDropNotice events={data.funnelEvents} />}
 

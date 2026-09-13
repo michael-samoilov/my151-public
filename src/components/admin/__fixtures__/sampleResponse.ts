@@ -51,7 +51,9 @@ function tally(labels: string[], pct: number[], base: number): Record<string, nu
 // Daily active series: ~90 days that rise from the low 30s to the mid 50s, with
 // weekday texture, so the weekly rollup in the hero trend reads like the mockup.
 function activitySeries(): { day: number; dau: number; rolling7: number }[] {
-  const days = Math.round((NOW - FIRST) / DAY);
+  const today = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate());
+  const end = Math.max(NOW, today);
+  const days = Math.round((end - FIRST) / DAY);
   const raw: { day: number; dau: number }[] = [];
   for (let i = 0; i <= days; i += 1) {
     const day = FIRST + i * DAY;
