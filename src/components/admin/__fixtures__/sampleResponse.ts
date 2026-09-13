@@ -200,8 +200,8 @@ const NEWEST: NewestSeed[] = [
     os: 'iOS',
     browser: 'Safari',
     lang: 'en-US',
-    sess: 999,
-    dex: 1025,
+    sess: 99,
+    dex: 999,
     comp: true,
     exp: true,
     hoursAgo: 1,
@@ -391,7 +391,7 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
   };
 }
 const leagueUsers: LeagueUser[] = [
-  leagueUser('c0de…ff', 'US', 14, 2, 1, true),
+  leagueUser('c0de…ff', 'US', 14, 0, 1, true),
   leagueUser('70cd…a7', 'IT', 14, 3, 3, true),
   leagueUser('74d5…68', 'US', 8, 2, 5, true),
   leagueUser('bea3…4e', 'US', 6, 1, 9, true),
@@ -403,7 +403,8 @@ const leagueUsers: LeagueUser[] = [
 // the live 13→1→14 shape. Display tidy must drop it so the scrubber has 3
 // sessions, not 4.
 {
-  const u = leagueUsers[0];
+  const u = leagueUsers.find((row) => row.cid === '70cd…a7');
+  if (!u) throw new Error('missing 70cd league fixture');
   const last = u.sessionLog[u.sessionLog.length - 1];
   const prev = u.sessionLog[u.sessionLog.length - 2];
   prev.summary = { ...last.summary };

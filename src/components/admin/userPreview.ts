@@ -71,13 +71,25 @@ export function fmtChipDuration(ms: number): string {
   return `${h}h${m % 60 ? ` ${m % 60}m` : ''}`;
 }
 
+export const PREVIEW_DEX_NOUN = 'Dex';
+export const PREVIEW_SESSION_UNIT = { one: 'sesh', many: 'sesh' } as const;
+export const PREVIEW_LEAGUE_NOUN = 'gyms';
+
+export function dexChipLabel(count: number): string {
+  return `${count} ${PREVIEW_DEX_NOUN}`;
+}
+
+export function leagueChipLabel(count: number, of: number): string {
+  return `${count}/${of} ${PREVIEW_LEAGUE_NOUN}`;
+}
+
 export function sessionChipParts(
   sessions: number,
   totalMs: number,
 ): { count: number; unit: string; duration: string } {
   return {
     count: sessions,
-    unit: sessions === 1 ? 'session' : 'sessions',
+    unit: sessions === 1 ? PREVIEW_SESSION_UNIT.one : PREVIEW_SESSION_UNIT.many,
     duration: fmtChipDuration(totalMs),
   };
 }

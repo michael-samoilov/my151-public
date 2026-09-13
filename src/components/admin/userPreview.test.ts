@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  dexChipLabel,
   formatWhen,
   fmtChipDuration,
   fmtDuration,
+  leagueChipLabel,
   leagueExported,
   matchesArchiveFilter,
   matchesToolFilter,
@@ -69,12 +71,14 @@ describe('fmtChipDuration', () => {
   });
 });
 
-describe('sessionChipParts', () => {
-  it('always includes a duration', () => {
-    expect(sessionChipParts(1, 0)).toEqual({ count: 1, unit: 'session', duration: '0m' });
-    expect(sessionChipParts(999, 5999 * 60 * 1000)).toEqual({
-      count: 999,
-      unit: 'sessions',
+describe('preview chip labels', () => {
+  it('names Dex, sesh, and gyms', () => {
+    expect(dexChipLabel(999)).toBe('999 Dex');
+    expect(leagueChipLabel(14, 14)).toBe('14/14 gyms');
+    expect(sessionChipParts(1, 0)).toEqual({ count: 1, unit: 'sesh', duration: '0m' });
+    expect(sessionChipParts(99, 5999 * 60 * 1000)).toEqual({
+      count: 99,
+      unit: 'sesh',
       duration: '99h 59m',
     });
   });

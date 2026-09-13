@@ -20,7 +20,9 @@ import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import {
   bareCid,
+  dexChipLabel,
   formatWhen,
+  leagueChipLabel,
   leagueExported,
   matchesArchiveFilter,
   matchesToolFilter,
@@ -1189,7 +1191,7 @@ function MetricChip({
     <span
       data-metric={metric}
       className={cn(
-        'inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-1.5 text-xs font-medium tabular-nums md:px-2',
+        'inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-1 text-xs font-medium tabular-nums md:px-2',
         className,
       )}
     >
@@ -1267,22 +1269,22 @@ function UserPreviewCard({
           </Button>
         </div>
       </div>
-      <FitNowrap className="md:col-start-3 md:row-start-1 md:min-w-0 md:justify-self-stretch">
+      <FitNowrap className="md:col-start-3 md:row-start-1 md:min-w-0 md:justify-self-start">
         <PlatformChips rec={rec} className="flex-nowrap gap-1" compactLang />
       </FitNowrap>
       <div className="min-w-0 md:contents">
         <FitNowrap contentsOnMd>
           <MetricChip metric="session" className="md:col-start-4 md:row-start-1 md:justify-self-start">
             <span className="font-bold text-foreground tabular-nums">{sessionParts.count}</span>
-            <span className="font-medium text-muted-foreground">{sessionParts.unit}</span>
-            <span className="text-muted-foreground">·</span>
-            <span className="font-medium tabular-nums">{sessionParts.duration}</span>
+            <span className="font-medium tabular-nums text-muted-foreground">
+              {sessionParts.unit} · {sessionParts.duration}
+            </span>
           </MetricChip>
           {dex ? (
             <MetricChip
               metric="dex"
               className="md:col-start-5 md:row-start-1 md:justify-self-start"
-              label={`${dex.depth} Pokémon`}
+              label={dexChipLabel(dex.depth)}
               exported={dex.exported}
             />
           ) : (
@@ -1292,7 +1294,7 @@ function UserPreviewCard({
             <MetricChip
               metric="league"
               className="md:col-start-6 md:row-start-1 md:justify-self-start"
-              label={`${league.cards}/${CARD_COUNT}`}
+              label={leagueChipLabel(league.cards, CARD_COUNT)}
               exported={league.exported}
             />
           ) : (
@@ -2007,7 +2009,7 @@ export function AdminPage() {
                     {!emptyList && rows.length === 0 && !loading && (
                       <p className="text-sm text-muted-foreground">No users match these filters.</p>
                     )}
-                    <div className="flex w-full flex-col gap-2 md:grid md:grid-cols-[auto_auto_minmax(0,1fr)_auto_auto_auto_auto] md:gap-x-3 md:gap-y-2">
+                    <div className="flex w-full flex-col gap-2 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_1fr] md:gap-x-3 md:gap-y-2">
                         {rows.map((row) => (
                           <UserPreviewCard
                             key={row.cid}
