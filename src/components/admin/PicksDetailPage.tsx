@@ -218,7 +218,7 @@ function DualGrids({
       : maxIndex(columns.most);
   if (!showLeast) {
     return (
-      <div className="min-w-0" data-picks-side="most">
+      <div className="min-w-0 w-full md:max-w-[50%]" data-picks-side="most">
         <LineGrid lines={columns.most} max={max} barColor={barColor} countMode={countMode} />
       </div>
     );
