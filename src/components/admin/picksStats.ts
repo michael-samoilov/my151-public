@@ -143,10 +143,17 @@ export function starterTypeOf(id: number): StarterType {
   return 'other';
 }
 
+export function roundedIndex(index: number): number {
+  if (!Number.isFinite(index) || index <= 0) return 0;
+  if (index >= 10) return Math.round(index);
+  return Math.round(index * 10) / 10;
+}
+
 export function formatIndex(index: number): string {
-  if (!Number.isFinite(index) || index <= 0) return '0×';
-  if (index >= 10) return `${Math.round(index)}×`;
-  return `${(Math.round(index * 10) / 10).toFixed(1)}×`;
+  const r = roundedIndex(index);
+  if (r <= 0) return '0×';
+  if (r >= 10) return `${r}×`;
+  return `${r.toFixed(1)}×`;
 }
 
 /** Fill percent for an index bar scaled to `max` in the same most/least pair. */
@@ -247,12 +254,13 @@ export function splitMostLeast<T extends { key: string; index: number; members: 
   const includeLeast = opts.includeLeast !== false;
   const minMost = opts.minMostIndex;
   const maxLeast = opts.maxLeastIndex;
-  const over = minMost == null ? rankedDesc : rankedDesc.filter((l) => l.index > minMost);
+  let over = minMost == null ? rankedDesc : rankedDesc.filter((l) => roundedIndex(l.index) > minMost);
+  if (maxLeast != null) over = over.filter((l) => roundedIndex(l.index) >= maxLeast);
   const most = takeUntilCap(over, cap);
   if (!includeLeast) return { most, least: [] };
   const mostKeys = new Set(most.map((l) => l.key));
   let rest = rankedDesc.filter((l) => !mostKeys.has(l.key));
-  if (maxLeast != null) rest = rest.filter((l) => l.index < maxLeast);
+  if (maxLeast != null) rest = rest.filter((l) => roundedIndex(l.index) < maxLeast);
   const least = takeUntilCap(rest.toReversed(), cap).toReversed();
   return { most, least };
 }

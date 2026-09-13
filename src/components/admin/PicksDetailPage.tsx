@@ -210,16 +210,15 @@ function DualGrids({
   showLeast: boolean;
   countMode: boolean;
 }) {
-  const leastOn = showLeast && columns.least.length > 0;
+  const leastOn = showLeast;
   const max = countMode
     ? Math.max(maxPicks(columns.most), leastOn ? maxPicks(columns.least) : 0)
     : leastOn
       ? Math.max(maxIndex(columns.most), maxIndex(columns.least))
       : maxIndex(columns.most);
-  if (!leastOn) {
+  if (!showLeast) {
     return (
       <div className="min-w-0" data-picks-side="most">
-        {showLeast ? <div className="mb-1 text-[0.65rem] font-semibold">Most</div> : null}
         <LineGrid lines={columns.most} max={max} barColor={barColor} countMode={countMode} />
       </div>
     );

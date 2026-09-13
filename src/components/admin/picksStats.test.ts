@@ -62,6 +62,8 @@ describe('lineKey', () => {
 describe('formatIndex', () => {
   it('prints one decimal below 10 and none at 10+', () => {
     expect(formatIndex(0)).toBe('0×');
+    expect(formatIndex(0.84)).toBe('0.8×');
+    expect(formatIndex(0.86)).toBe('0.9×');
     expect(formatIndex(1)).toBe('1.0×');
     expect(formatIndex(2.44)).toBe('2.4×');
     expect(formatIndex(12.4)).toBe('12×');
@@ -182,11 +184,11 @@ describe('splitMostLeast', () => {
   it('omits most at or below 1.10× and least at or above 0.90×', () => {
     const ranked = [
       line('hot', 2.4),
-      line('warm', 1.11),
+      line('warm', 1.2),
       line('edge', 1.1),
       line('mid', 1.0),
       line('cool', 0.9),
-      line('cold', 0.2),
+      line('cold', 0.84),
       line('zero', 0),
     ];
     const { most, least } = splitMostLeast(ranked, cap12, {
