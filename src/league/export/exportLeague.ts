@@ -31,6 +31,10 @@ import { getMoveById, CATEGORY_COLORS, type Move } from '../moves';
 import { placeSlot, seamEnds, type Runs } from '../slotLayout';
 import * as L from './layout';
 import {
+  DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT,
+  type LeagueHomeExportLayout,
+} from './exportOptions';
+import {
   drawBossBall,
   drawCrown,
   drawDiamonds,
@@ -165,16 +169,35 @@ function cardImageUrls(card: GymCard): string[] {
   return urls;
 }
 
+function homeRowsForCard(
+  index: number,
+  view: LeagueView,
+  layout: LeagueHomeExportLayout,
+): number[] {
+  const challenge = slotRow(index);
+  const rematch = L.BOSS_ROW;
+  if (layout.sideBySide && slotKind(index) === 'gym') return [challenge, rematch];
+  return [view === 'rematch' ? rematch : challenge];
+}
+
 /** Every image the league home needs. */
-function homeImageUrls(cards: GymCard[], view: LeagueView): string[] {
+function homeImageUrls(cards: GymCard[], view: LeagueView, layout: LeagueHomeExportLayout): string[] {
   const urls: string[] = [];
   cards.forEach((card, index) => {
     if (card.type && card.type !== 'none') urls.push(typeIconPath(card.type));
+    if (layout.gymDetails) {
+      const move = card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId);
+      if (move) {
+        urls.push(typeIconPath(move.type as TypeName));
+        urls.push(`/sprites/moves/${move.category}.png`);
+      }
+    }
     if (card.lines.length === 0) return;
-    const row = view === 'rematch' ? L.BOSS_ROW : slotRow(index);
-    for (const cell of exportRow(card, row)) {
-      const url = spriteUrl(cell.pokemonId, cell.form);
-      if (url) urls.push(url);
+    for (const row of homeRowsForCard(index, view, layout)) {
+      for (const cell of exportRow(card, row)) {
+        const url = spriteUrl(cell.pokemonId, cell.form);
+        if (url) urls.push(url);
+      }
     }
   });
   return urls;
@@ -801,11 +824,133 @@ export function vacantRow(card: GymCard): boolean {
   return card.lines.length === 0 && (!card.type || card.type === 'none');
 }
 
+function drawHomeTeamSprites(
+  ctx: CanvasRenderingContext2D,
+  cells: ExportCell[],
+  images: Images,
+  seatsX: number,
+  seatCol: number,
+  y: number,
+): void {
+  const lead = L.SEAT_COUNT - cells.length;
+  cells.forEach((c, i) => {
+    const cx = seatsX + (lead + i + 0.5) * seatCol;
+    const cy = y + L.ROW2 / 2;
+    const url = spriteUrl(c.pokemonId, c.form);
+    const img = url ? images.get(url) : undefined;
+    if (img) drawSprite(ctx, img, cx, cy, 96);
+    else drawEmptyBall(ctx, 18 * L.K2, cx, cy);
+  });
+}
+
+function drawHomeGymDetails(
+  ctx: CanvasRenderingContext2D,
+  card: GymCard,
+  shades: CardShades,
+  images: Images,
+  x: number,
+  y: number,
+  w: number,
+): void {
+  const move = card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId);
+  const moveShades = move ? cardShades(move.type as TypeName) : shades;
+  const lineH = L.ROW2 / 3;
+  const bodyX = x;
+  const cy1 = y + lineH / 2;
+  const cy2 = y + lineH + lineH / 2;
+  const cy3 = y + 2 * lineH + lineH / 2;
+  const disc = 10 * L.K2;
+  const iconColX = bodyX + disc + 3 * L.K2;
+  const typeSq = 11 * L.K2;
+  const chipW = 0.9375 * 16 * L.K2;
+  const chipH = 0.6875 * 16 * L.K2;
+
+  // --- theme: smallcaps label, then the gym-page theme weight ---
+  ctx.save();
+  ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
+  ctx.fillStyle = shades.band;
+  ctx.textBaseline = 'middle';
+  const themeLabel = 'theme';
+  fillTracked(ctx, themeLabel, bodyX, cy1, L.HOME_MARK_TRACK);
+  const themeLabelW = trackedWidth(ctx, themeLabel, L.HOME_MARK_TRACK);
+  ctx.font = font(L.HOME_THEME_TEXT_PX, card.theme ? 700 : 500);
+  ctx.fillStyle = card.theme ? FG : shades.hint;
+  const themeRoom = w - themeLabelW - 4 * L.K2;
+  ctx.fillText(ellipsize(ctx, card.theme || "What is this gym's theme?", themeRoom), bodyX + themeLabelW + 4 * L.K2, cy1);
+  ctx.restore();
+
+  // --- TM: disc, 1×1 type icon, category chip, move name ---
+  if (move) {
+    drawTmDisc(ctx, TYPE_COLORS[move.type as TypeName], disc, bodyX + disc / 2, cy2);
+  } else {
+    drawTmDisc(ctx, shades.dash, disc, bodyX + disc / 2, cy2);
+  }
+
+  if (move) {
+    drawTypeMark(ctx, move.type as TypeName, images, iconColX, cy2 - typeSq / 2, typeSq, L.HOME_R);
+    const chipX = iconColX + typeSq + 2 * L.K2;
+    const chipY = cy2 - chipH / 2;
+    ctx.save();
+    ctx.fillStyle = CATEGORY_COLORS[move.category];
+    roundRect(ctx, chipX, chipY, chipW, chipH, 4 * L.K2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.5 * L.K2;
+    ctx.stroke();
+    const catIcon = images.get(`/sprites/moves/${move.category}.png`);
+    if (catIcon) {
+      const iw = chipW * 0.62;
+      const ih = (catIcon.naturalHeight / (catIcon.naturalWidth || 1)) * iw;
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(catIcon, chipX + (chipW - iw) / 2, chipY + (chipH - ih) / 2, iw, ih);
+    }
+    ctx.restore();
+    const nameX = chipX + chipW + 2 * L.K2;
+    const nameW = x + w - nameX;
+    const namePx = fitFontSize(ctx, move.name, nameW, L.HOME_MOVE_PX, L.HOME_MOVE_MIN_PX, 800);
+    ctx.save();
+    ctx.font = font(namePx, 800);
+    ctx.fillStyle = moveShades.band;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(ellipsize(ctx, move.name.toUpperCase(), nameW), nameX, cy2);
+    ctx.restore();
+  } else {
+    ctx.save();
+    ctx.font = font(L.HOME_MOVE_PX, 500);
+    ctx.fillStyle = shades.hint;
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Pick a move', iconColX, cy2);
+    ctx.restore();
+  }
+
+  // --- badge: hex with TM disc, name shares the type icon's left edge ---
+  drawHexagon(
+    ctx,
+    card.badgeName ? shades.type : shades.dash,
+    !!card.badgeName,
+    disc,
+    bodyX + disc / 2,
+    cy3,
+  );
+  if (card.badgeName) {
+    ctx.save();
+    const badgePx = L.HOME_MOVE_PX;
+    ctx.font = font(badgePx, 800);
+    ctx.fillStyle = shades.band;
+    ctx.textBaseline = 'middle';
+    const badgeText = `${card.badgeName} Badge`.toUpperCase();
+    ctx.fillText(ellipsize(ctx, badgeText, x + w - iconColX), iconColX, cy3);
+    ctx.restore();
+  }
+}
+
 function drawHomeRow(
   ctx: CanvasRenderingContext2D,
   card: GymCard,
   index: number,
   view: LeagueView,
+  layout: LeagueHomeExportLayout,
+  geom: L.HomeExportGeometry,
   images: Images,
   x: number,
   y: number,
@@ -814,16 +959,19 @@ function drawHomeRow(
   // app, rather than a grey of its own.
   const shades = cardShades(card.type);
   const cell = shades.cell;
-  const row = view === 'rematch' ? L.BOSS_ROW : slotRow(index);
-  const cells = exportRow(card, row);
   const filled = card.lines.length > 0;
+  const sideBySide = layout.sideBySide && slotKind(index) === 'gym';
+  const challengeRow = slotRow(index);
+  const rematchRow = L.BOSS_ROW;
+  const primaryRow = view === 'rematch' ? rematchRow : challengeRow;
+  const cells = exportRow(card, primaryRow);
 
   ctx.save();
   ctx.fillStyle = shades.base;
-  roundRect(ctx, x, y, L.HOME_INNER, L.ROW2, L.HOME_R);
+  roundRect(ctx, x, y, geom.homeInner, L.ROW2, L.HOME_R);
   ctx.fill();
   ctx.fillStyle = HOME_LINE;
-  ctx.fillRect(x, y, L.HOME_INNER, L.K2);
+  ctx.fillRect(x, y, geom.homeInner, L.K2);
   ctx.restore();
 
   // The glyph cell, on the rail.
@@ -861,7 +1009,12 @@ function drawHomeRow(
     drawTypeMark(ctx, card.type, images, sqX, sqY, sq, L.HOME_R);
   }
 
-  const seatsX = x + L.GLYPH_COL + L.TYPE_COL;
+  const detailsX = x + L.GLYPH_COL + L.TYPE_COL;
+  if (layout.gymDetails) {
+    drawHomeGymDetails(ctx, card, shades, images, detailsX, y, geom.detailsCol);
+  }
+
+  const teamBaseX = detailsX + geom.detailsCol;
   if (!filled) {
     // An empty row says which seat is open, in the league's own words.
     ctx.save();
@@ -869,21 +1022,24 @@ function drawHomeRow(
     ctx.fillStyle = GREY;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    ctx.fillText(L.VACANCY[kind], seatsX + 7 * L.SEAT_COL - 6 * L.K2, y + L.ROW2 / 2);
+    const vacancyRight = sideBySide
+      ? teamBaseX + 2 * geom.blockWidth + geom.sideGap
+      : teamBaseX + L.SEAT_COUNT * geom.seatCol;
+    ctx.fillText(L.VACANCY[kind], vacancyRight - 6 * L.K2, y + L.ROW2 / 2);
     ctx.restore();
     return;
   }
 
-  // The spare columns sit on the left, so teams stay right-aligned.
-  const lead = 7 - cells.length;
-  cells.forEach((c, i) => {
-    const cx = seatsX + (lead + i + 0.5) * L.SEAT_COL;
-    const cy = y + L.ROW2 / 2;
-    const url = spriteUrl(c.pokemonId, c.form);
-    const img = url ? images.get(url) : undefined;
-    if (img) drawSprite(ctx, img, cx, cy, 96);
-    else drawEmptyBall(ctx, 18 * L.K2, cx, cy);
-  });
+  if (sideBySide) {
+    const storyCells = exportRow(card, challengeRow);
+    const rematchCells = exportRow(card, rematchRow);
+    drawHomeTeamSprites(ctx, storyCells, images, teamBaseX, geom.seatCol, y);
+    const rematchX = teamBaseX + geom.blockWidth + geom.sideGap;
+    drawHomeTeamSprites(ctx, rematchCells, images, rematchX, geom.seatCol, y);
+    return;
+  }
+
+  drawHomeTeamSprites(ctx, cells, images, teamBaseX, geom.seatCol, y);
 }
 
 function drawLeagueHome(
@@ -891,11 +1047,13 @@ function drawLeagueHome(
   name: string,
   cards: GymCard[],
   view: LeagueView,
+  layout: LeagueHomeExportLayout,
+  geom: L.HomeExportGeometry,
   images: Images,
 ): void {
   // The picture is the league's content on white, edge to edge.
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, L.HOME_W, L.homeImgH(!!name));
+  ctx.fillRect(0, 0, geom.homeW, L.homeImgH(!!name));
 
   const ox = L.HPADX;
   // An unnamed league opens on its first band, so the band takes the gutter
@@ -914,7 +1072,7 @@ function drawLeagueHome(
     ctx.font = font(big, 700);
     ctx.fillStyle = FG;
     const base = y + L.HOME_HDR_H / 2 + capHeight(ctx) / 2;
-    const room = L.HOME_INNER - 2 * L.HOME_RAIL;
+    const room = geom.homeInner - 2 * L.HOME_RAIL;
     ctx.fillText(ellipsize(ctx, name, room), ox + L.HOME_RAIL, base);
     ctx.restore();
     y += L.HOME_HDR_H;
@@ -929,21 +1087,38 @@ function drawLeagueHome(
       // the league's name and the glyph cells. The overhang is the radius.
       ctx.fillStyle = RED;
       const bandX = ox + L.HOME_RAIL - L.HOME_R;
-      const bandW = L.HOME_INNER - 2 * L.HOME_RAIL + 2 * L.HOME_R;
+      const bandW = geom.homeInner - 2 * L.HOME_RAIL + 2 * L.HOME_R;
       roundRect(ctx, bandX, y, bandW, L.BAND2, L.HOME_R);
       ctx.fill();
       ctx.fillStyle = '#ffffff';
       ctx.font = font(9 * L.K2, 800);
       ctx.textBaseline = 'middle';
       fillTracked(ctx, section, bandX + L.HOME_R, y + L.BAND2 / 2, 0.07 * 9 * L.K2);
+      if (layout.sideBySide && index === 0) {
+        const teamBaseX = ox + L.GLYPH_COL + L.TYPE_COL + geom.detailsCol;
+        const storyRight = teamBaseX + geom.blockWidth;
+        const rematchRight = teamBaseX + 2 * geom.blockWidth + geom.sideGap;
+        const labelSize = 7.5 * L.K2;
+        const labelTrack = 0.07 * labelSize;
+        ctx.font = font(labelSize, 800);
+        ctx.textBaseline = 'middle';
+        const cy = y + L.BAND2 / 2;
+        for (const [label, right] of [
+          ['story teams', storyRight],
+          ['rematch teams', rematchRight],
+        ] as const) {
+          const w = trackedWidth(ctx, label, labelTrack);
+          fillTracked(ctx, label, right - w, cy, labelTrack);
+        }
+      }
       ctx.restore();
       y += L.BAND2;
     }
-    drawHomeRow(ctx, cards[index], index, view, images, ox, y);
+    drawHomeRow(ctx, cards[index], index, view, layout, geom, images, ox, y);
     y += L.ROW2;
   }
 
-  drawCredit(ctx, L.HOME_W / 2, y + L.FOOT / 2, L.CREDIT_PX, L.HOME_CREDIT_PREFIX);
+  drawCredit(ctx, geom.homeW / 2, y + L.FOOT / 2, L.CREDIT_PX, L.HOME_CREDIT_PREFIX);
 }
 
 // ---------- assembling a PNG ----------
@@ -998,7 +1173,11 @@ export async function exportLeagueHome(
   name: string,
   cards: GymCard[],
   view: LeagueView,
+  layout: LeagueHomeExportLayout = DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT,
 ): Promise<Blob> {
-  const images = await loadAll(homeImageUrls(cards, view));
-  return render(L.HOME_W, L.homeImgH(!!name), (ctx) => drawLeagueHome(ctx, name, cards, view, images));
+  const geom = L.homeExportGeometry(layout.gymDetails, layout.sideBySide);
+  const images = await loadAll(homeImageUrls(cards, view, layout));
+  return render(geom.homeW, L.homeImgH(!!name), (ctx) =>
+    drawLeagueHome(ctx, name, cards, view, layout, geom, images),
+  );
 }

@@ -11,6 +11,7 @@ import {
   exportGymCard,
   exportLeagueHome,
 } from '../export/exportLeague';
+import { parseLeagueHomeExportLayout } from '../export/exportOptions';
 
 /**
  * The summary's two readings, as a pair of buttons.
@@ -91,9 +92,10 @@ export function LeagueExportButton({ cardIndex }: { cardIndex?: number }) {
     sendLeagueExportBeacon(isCard ? 'card' : 'league');
     try {
       const { name, cards, view } = useLeagueStore.getState();
+      const exportLayout = parseLeagueHomeExportLayout(window.location.search);
       const blob = isCard
         ? await exportGymCard(cards[cardIndex])
-        : await exportLeagueHome(name, cards, view);
+        : await exportLeagueHome(name, cards, view, exportLayout);
       await shareOrDownload(blob, isCard ? CARD_FILENAME : HOME_FILENAME);
     } catch (err) {
       // Dismissing the iOS share sheet aborts the promise; that is a choice,

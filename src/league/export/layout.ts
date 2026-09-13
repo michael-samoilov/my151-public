@@ -288,8 +288,55 @@ export function homeTopPad(named: boolean): number {
 
 export const HOME_W = BOX_W;
 export const HOME_INNER = HOME_W - 2 * HPADX;
-/** The seven seats share what the glyph and type columns leave. */
-export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / 7;
+/** Team seats per row — six wide, matching the largest team the template holds. */
+export const SEAT_COUNT = 6;
+/**
+ * Default team column width at the standard picture width, with no optional
+ * columns. Six seats share what the glyph and type columns leave; the old
+ * seven-column grid left a dead column between the type mark and the team.
+ */
+export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / SEAT_COUNT;
+
+/** Gym-detail column: theme, TM, and badge lines between type and teams. */
+export const HOME_DETAILS_COL = 72 * K2;
+/** Air between story and rematch blocks when both show on one row. */
+export const HOME_SIDE_GAP = 12 * K2;
+
+/** Home-export label and body sizes that mirror the gym card's TM/badge marks. */
+export const HOME_MARK_LABEL_PX = 8 * K2;
+export const HOME_MARK_TRACK = 0.06 * HOME_MARK_LABEL_PX;
+export const HOME_THEME_TEXT_PX = 14 * K2;
+export const HOME_TM_BADGE_W = 2.2 * 16 * K2;
+export const HOME_MOVE_PX = 11 * K2;
+export const HOME_MOVE_MIN_PX = 9 * K2;
+
+export interface HomeExportGeometry {
+  homeW: number;
+  homeInner: number;
+  seatCol: number;
+  detailsCol: number;
+  sideGap: number;
+  blockWidth: number;
+}
+
+/** Picture width and team column width for the chosen export permutations. */
+export function homeExportGeometry(gymDetails: boolean, sideBySide: boolean): HomeExportGeometry {
+  const detailsCol = gymDetails ? HOME_DETAILS_COL : 0;
+  const sideGap = sideBySide ? HOME_SIDE_GAP : 0;
+  const blocks = sideBySide ? 2 : 1;
+  const teamBudget = HOME_INNER - GLYPH_COL - TYPE_COL - detailsCol;
+  const blockWidth = (teamBudget - sideGap) / blocks;
+  const seatCol = blockWidth / SEAT_COUNT;
+  const extraW = sideBySide ? blockWidth + sideGap : 0;
+  return {
+    homeW: HOME_W + extraW,
+    homeInner: HOME_INNER + extraW,
+    seatCol,
+    detailsCol,
+    sideGap,
+    blockWidth,
+  };
+}
 
 /** The section band drawn before a slot index. */
 export const SECTION_BEFORE: Record<number, string> = {

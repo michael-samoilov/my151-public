@@ -199,7 +199,14 @@ describe('export layout', () => {
   });
 
   it('spans the home row across its glyph, type and seat columns', () => {
-    expect(L.HOME_INNER).toBeCloseTo(L.GLYPH_COL + L.TYPE_COL + 7 * L.SEAT_COL, 6);
+    expect(L.HOME_INNER).toBeCloseTo(L.GLYPH_COL + L.TYPE_COL + L.SEAT_COUNT * L.SEAT_COL, 6);
+  });
+
+  it('widens the picture when story and rematch export side by side', () => {
+    const base = L.homeExportGeometry(false, false);
+    const wide = L.homeExportGeometry(false, true);
+    expect(wide.homeW).toBeGreaterThan(base.homeW);
+    expect(wide.seatCol).toBeLessThan(base.seatCol);
   });
 
   it('sets the credit at about six points on a phone', () => {
