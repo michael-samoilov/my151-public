@@ -1522,6 +1522,12 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
     if (!el) return;
     const apply = () => {
       document.documentElement.style.setProperty('--admin-nav-h', `${el.getBoundingClientRect().height}px`);
+      const buttons = el.querySelectorAll('button');
+      if (buttons.length > 0) {
+        const a = buttons[0].getBoundingClientRect();
+        const b = buttons[buttons.length - 1].getBoundingClientRect();
+        document.documentElement.style.setProperty('--admin-nav-tabs-w', `${Math.round(b.right - a.left)}px`);
+      }
     };
     apply();
     const ro = new ResizeObserver(apply);
@@ -1529,6 +1535,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
     return () => {
       ro.disconnect();
       document.documentElement.style.removeProperty('--admin-nav-h');
+      document.documentElement.style.removeProperty('--admin-nav-tabs-w');
     };
   }, []);
   const items: { key: AdminNavKey; label: string }[] = [

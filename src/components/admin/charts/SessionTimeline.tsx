@@ -203,31 +203,33 @@ export function SessionTimeline({
     ) : (
       <div className="flex items-center gap-2">
         {leftChip}
-        <div className="relative flex-1 px-3">
-          <div className="pointer-events-none absolute inset-y-0 left-3 right-3">
-            <div
-              className="absolute left-0 right-0 top-1/2 h-[7px] -translate-y-1/2 rounded-full"
-              style={{ background: 'var(--color-muted)' }}
-            />
-            {points.map((_, i) => (
-              <span
-                key={i}
-                className="absolute top-1/2 h-[4px] w-[4px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-                style={{ left: `calc(11px + ${i / (points.length - 1)} * (100% - 22px))`, background: 'var(--color-muted-foreground)' }}
+        <div className="flex min-w-0 flex-1 justify-center">
+          <div className="relative w-full md:w-[var(--admin-nav-tabs-w,22rem)] md:flex-none">
+            <div className="pointer-events-none absolute inset-y-0 left-3 right-3">
+              <div
+                className="absolute left-0 right-0 top-1/2 h-[7px] -translate-y-1/2 rounded-full"
+                style={{ background: 'var(--color-muted)' }}
               />
-            ))}
+              {points.map((_, i) => (
+                <span
+                  key={i}
+                  className="absolute top-1/2 h-[4px] w-[4px] -translate-x-1/2 -translate-y-1/2 rounded-full"
+                  style={{ left: `calc(11px + ${i / (points.length - 1)} * (100% - 22px))`, background: 'var(--color-muted-foreground)' }}
+                />
+              ))}
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={points.length - 1}
+              step={1}
+              value={Math.min(index, points.length - 1)}
+              onChange={(e) => onIndex(Number(e.target.value))}
+              className="admin-scrub relative w-full touch-none"
+              aria-label="Scrub sessions"
+              aria-valuetext={`${fmtDay(cur.t, tz)}: ${cur.count} ${countUnit}`}
+            />
           </div>
-          <input
-            type="range"
-            min={0}
-            max={points.length - 1}
-            step={1}
-            value={Math.min(index, points.length - 1)}
-            onChange={(e) => onIndex(Number(e.target.value))}
-            className="admin-scrub relative w-full touch-none"
-            aria-label="Scrub sessions"
-            aria-valuetext={`${fmtDay(cur.t, tz)}: ${cur.count} ${countUnit}`}
-          />
         </div>
         {rightChip}
       </div>

@@ -77,6 +77,22 @@ test.describe('admin user pages', () => {
       const first = page.getByTestId('admin-gym-card').first();
       const late = first.locator('[data-row="10"], [data-row="11"]');
       await expect(late.first()).toBeVisible();
+      await expect(first.getByTestId('admin-gym-stage-row')).toBeVisible();
+      const row1 = await first.locator('[data-row="1"]').first().boundingBox();
+      const cardBox = await first.boundingBox();
+      expect(row1 && cardBox).toBeTruthy();
+      expect(row1!.x).toBeGreaterThan(cardBox!.x + cardBox!.width * 0.4);
+      const rail = await page.getByRole('slider', { name: 'Scrub sessions' }).boundingBox();
+      const tabW = await page.evaluate(() => {
+        const nav = document.querySelector('nav[aria-label="Admin section"]');
+        const buttons = [...(nav?.querySelectorAll('button') ?? [])];
+        if (buttons.length === 0) return 0;
+        const a = buttons[0].getBoundingClientRect();
+        const b = buttons[buttons.length - 1].getBoundingClientRect();
+        return b.right - a.left;
+      });
+      expect(rail).toBeTruthy();
+      expect(Math.abs(rail!.width - tabW)).toBeLessThan(80);
       const last = await page.getByTestId('admin-gym-card').nth(13).boundingBox();
       const vh = page.viewportSize()?.height ?? 0;
       expect(last).toBeTruthy();

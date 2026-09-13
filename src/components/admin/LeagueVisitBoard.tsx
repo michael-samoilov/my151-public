@@ -6,7 +6,7 @@ import { starPath } from '@/lib/sectionOutlines';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
-import { ROW_COUNT, slotKind } from '@/league/model/constants';
+import { ROW_COUNT, TEAM_SIZES, slotKind, slotRow } from '@/league/model/constants';
 import { defaultBoundaries, deriveRows, visibleMembers, type PlacedLine } from '@/league/model/engine';
 import { cardShades } from '@/league/theme';
 
@@ -22,6 +22,15 @@ interface VisitCard {
 /** 14-across only when each card is wide enough that a row still reads. */
 const MIN_CARD_W = 90;
 const MIN_ROW_PX = 12;
+const COLS = 6;
+
+function slotStageText(i: number): string {
+  const kind = slotKind(i);
+  if (kind === 'champion') return 'CH';
+  if (kind === 'boss') return 'B';
+  if (kind === 'elite') return `E${i - 7}`;
+  return `G${i + 1}`;
+}
 
 const CROWN_SVG = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={12} height={12} aria-label="Champion">
@@ -70,12 +79,13 @@ function TypeMark({ t }: { t?: string }) {
   return <div className="aspect-square w-full rounded-[3px]" style={{ background: typeColorOf(t) }} title={t ?? 'untyped'} />;
 }
 
-function MiniTile({ id, ace, fill }: { id: number; ace?: boolean; fill?: boolean }) {
+function MiniTile({ id, ace, fill, wash }: { id: number; ace?: boolean; fill?: boolean; wash?: boolean }) {
   const p = getPokemonById(id);
   return (
     <div
       className={cn(
-        'flex items-center justify-center overflow-hidden rounded-[3px] bg-card',
+        'flex items-center justify-center overflow-hidden rounded-[3px]',
+        wash ? 'bg-transparent' : 'bg-card',
         fill ? 'h-full w-full min-h-0' : 'aspect-square w-full',
       )}
       title={p ? `#${id} ${displayName(p.name)}${ace ? ' · ace' : ''}` : `#${id}`}
@@ -111,6 +121,9 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
   const shades = shadesOf(card?.t);
   const { lines, legends } = placedOf(card);
   const rows = deriveRows(lines, legends);
+  const stageRow = slotRow(index);
+  const stageSize = TEAM_SIZES[stageRow - 1];
+  const stageColStart = COLS - stageSize + 1;
 
   return (
     <div
@@ -119,34 +132,50 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
       className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg p-0.5"
       style={{ background: shades.base }}
     >
-      <div className="absolute right-0.5 top-0.5 z-10 flex items-center gap-px rounded bg-black/25 p-px text-white">
-        <div className="size-3.5 shrink-0">
-          <TypeMark t={card?.t} />
-        </div>
-        <div className="flex size-3.5 items-center justify-center text-[0.55rem] font-extrabold leading-none">
-          {slotBadge(index)}
-        </div>
-      </div>
       <div
         className="grid min-h-0 flex-1"
         style={{
-          gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+          gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${ROW_COUNT}, minmax(0, 1fr))`,
           gap: 1,
         }}
       >
+        <div
+          data-testid="admin-gym-stage-row"
+          className="rounded-[3px]"
+          style={{
+            gridColumn: `${stageColStart} / span ${stageSize}`,
+            gridRow: stageRow,
+            background: shades.cell,
+          }}
+        />
+        <div className="relative z-[1] min-h-0 p-px" style={{ gridColumn: 1, gridRow: 1 }}>
+          <TypeMark t={card?.t} />
+        </div>
+        <div
+          className="relative z-[1] flex min-h-0 items-center justify-center text-[0.55rem] font-extrabold leading-none"
+          style={{ gridColumn: 2, gridRow: 1 }}
+        >
+          {slotStageText(index)}
+        </div>
         {rows.map((cells, i) => {
           const row = i + 1;
+          const colStart = COLS - cells.length;
           return cells.map((cell, col) => {
             if (cell.pokemonId === null) return null;
             return (
               <div
                 key={`${row}-${cell.seat}`}
                 data-row={row}
-                className="min-h-0"
-                style={{ gridColumn: col + 1, gridRow: row }}
+                className="relative z-[1] min-h-0"
+                style={{ gridColumn: colStart + col + 1, gridRow: row }}
               >
-                <MiniTile id={cell.pokemonId} ace={cell.pokemonId === card?.aceId} fill />
+                <MiniTile
+                  id={cell.pokemonId}
+                  ace={cell.pokemonId === card?.aceId}
+                  fill
+                  wash={row === stageRow}
+                />
               </div>
             );
           });
