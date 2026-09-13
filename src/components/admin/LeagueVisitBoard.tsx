@@ -6,10 +6,9 @@ import { starPath } from '@/lib/sectionOutlines';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
-import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, TEAM_SIZES, slotKind, slotLabel } from '@/league/model/constants';
+import { ROW_COUNT, slotKind } from '@/league/model/constants';
 import { defaultBoundaries, deriveRows, visibleMembers, type PlacedLine } from '@/league/model/engine';
 import { cardShades } from '@/league/theme';
-import { BossBall, Crown, GymBadges, Stars } from '@/league/components/glyphs';
 
 /** The fields a visit board reads. Matches `LeagueCard` on AdminPage. */
 interface VisitCard {
@@ -20,24 +19,17 @@ interface VisitCard {
   lg?: [number, number][];
 }
 
-const PAD_X = 0.32;
-const PAD_Y = 0.4;
-const GLYPH_SPAN: Record<number, number> = { 1: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2 };
-const BAND_BEFORE: Record<number, string> = {
-  [ELITE_ROW]: 'ELITE FOUR & CHAMPION',
-  [BOSS_ROW]: 'ENDGAME BOSS',
-};
 /** 14-across only when each card is wide enough that a row still reads. */
 const MIN_CARD_W = 90;
-const MIN_ROW_PX = 14;
+const MIN_ROW_PX = 12;
 
 const CROWN_SVG = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={13} height={13} aria-label="Champion">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={12} height={12} aria-label="Champion">
     <path d="M12 6l4 6l5 -4l-2 10h-14l-2 -10l5 4l4 -6" />
   </svg>
 );
 const POKEBALL_SVG = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" width={13} height={13} aria-label="Endgame boss">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" width={12} height={12} aria-label="Endgame boss">
     <circle cx="12" cy="12" r="9" />
     <path d="M3 12h6M15 12h6" />
     <circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none" />
@@ -115,74 +107,51 @@ function shadesOf(t?: string) {
   return cardShades(null);
 }
 
-function RowGlyph({ row, cell }: { row: number; cell: string }) {
-  if (row <= 8) return <GymBadges n={row} size={row <= 4 ? 8 : 6} />;
-  if (row === ELITE_ROW) return <Stars n={4} size={7} />;
-  if (row === CHAMPION_ROW) return <Crown size={11} />;
-  return <BossBall cell={cell} size={12} />;
-}
-
 function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefined }) {
   const shades = shadesOf(card?.t);
   const { lines, legends } = placedOf(card);
   const rows = deriveRows(lines, legends);
-  const vars = { '--lg-cell': shades.cell, '--lg-band': shades.band } as CSSProperties;
 
   return (
     <div
       data-testid="admin-gym-card"
       data-slot={index}
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg"
-      style={{ ...vars, background: shades.base, padding: `${PAD_Y}rem ${PAD_X}rem` }}
+      className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg p-0.5"
+      style={{ background: shades.base }}
     >
-      <div
-        className="flex h-[0.85rem] shrink-0 items-center rounded-[0.2rem] px-1 text-white"
-        style={{ background: 'var(--lg-band)' }}
-      >
-        <b className="truncate text-[0.5rem] font-extrabold tracking-[0.06em]">{slotLabel(index).toUpperCase()}</b>
+      <div className="absolute right-0.5 top-0.5 z-10 flex items-center gap-px rounded bg-black/25 p-px text-white">
+        <div className="size-3.5 shrink-0">
+          <TypeMark t={card?.t} />
+        </div>
+        <div className="flex size-3.5 items-center justify-center text-[0.55rem] font-extrabold leading-none">
+          {slotBadge(index)}
+        </div>
       </div>
-      {rows.map((cells, i) => {
-        const row = i + 1;
-        const size = TEAM_SIZES[row - 1];
-        const span = GLYPH_SPAN[row] ?? 1;
-        const lead = 7 - size - span;
-        const band = BAND_BEFORE[row];
-        return (
-          <div key={row} className="flex min-h-0 flex-1 flex-col">
-            {band && (
+      <div
+        className="grid min-h-0 flex-1"
+        style={{
+          gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
+          gridTemplateRows: `repeat(${ROW_COUNT}, minmax(0, 1fr))`,
+          gap: 1,
+        }}
+      >
+        {rows.map((cells, i) => {
+          const row = i + 1;
+          return cells.map((cell, col) => {
+            if (cell.pokemonId === null) return null;
+            return (
               <div
-                className="flex h-[0.7rem] shrink-0 items-center rounded-[0.2rem] px-1 text-white"
-                style={{ background: 'var(--lg-band)' }}
+                key={`${row}-${cell.seat}`}
+                data-row={row}
+                className="min-h-0"
+                style={{ gridColumn: col + 1, gridRow: row }}
               >
-                <b className="truncate text-[0.45rem] font-extrabold tracking-[0.06em]">{band}</b>
+                <MiniTile id={cell.pokemonId} ace={cell.pokemonId === card?.aceId} fill />
               </div>
-            )}
-            <div className="grid min-h-0 flex-1 grid-cols-7 items-center">
-              {Array.from({ length: lead }, (_, k) => (
-                <div key={`lead-${k}`} />
-              ))}
-              <div
-                className={cn('mx-px flex h-[80%] items-center justify-center self-center overflow-hidden rounded-[0.2rem]', span === 2 && 'col-span-2')}
-                style={{ background: 'var(--lg-cell)' }}
-              >
-                <RowGlyph row={row} cell={shades.cell} />
-              </div>
-              {cells.map((cell) => {
-                const id = cell.pokemonId;
-                return (
-                  <div key={`${row}-${cell.seat}`} className="flex h-full min-h-0 items-center justify-center px-px">
-                    {id !== null ? (
-                      <MiniTile id={id} ace={id === card?.aceId} fill />
-                    ) : (
-                      <div className="h-[80%] w-full rounded-[3px] bg-white/50" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
+            );
+          });
+        })}
+      </div>
     </div>
   );
 }
@@ -190,7 +159,7 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
 function colsThatFit(availW: number, availH: number): 14 | 7 {
   const gap = 6;
   const cardW = (availW - 13 * gap) / 14;
-  const rowPx = availH / 14;
+  const rowPx = availH / ROW_COUNT;
   return cardW >= MIN_CARD_W && rowPx >= MIN_ROW_PX ? 14 : 7;
 }
 
@@ -244,7 +213,7 @@ function MobileSlot({ i, card }: { i: number; card: VisitCard | undefined }) {
     return (
       <div
         data-testid={`admin-slot-${i}`}
-        className="flex h-full min-h-0 flex-col items-center justify-center rounded-lg border border-border px-[7px] opacity-55"
+        className="flex flex-col items-center justify-center rounded-lg border border-border px-[7px] py-2 opacity-55"
         style={{ borderLeftWidth: 3, borderLeftColor: 'var(--color-border)' }}
       >
         <div className="flex items-baseline gap-1.5">
@@ -258,14 +227,14 @@ function MobileSlot({ i, card }: { i: number; card: VisitCard | undefined }) {
   return (
     <div
       data-testid={`admin-slot-${i}`}
-      className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border px-[5px] py-[3px]"
+      className="flex flex-col overflow-hidden rounded-lg border border-border px-[5px] py-[3px]"
       style={{ borderLeftWidth: 3, borderLeftColor: color }}
     >
       <div
-        className="grid min-h-0 flex-1"
+        className="grid"
         style={{
           gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
-          gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
+          gridTemplateRows: `repeat(${ROWS}, auto)`,
           gap: '1px',
         }}
       >
@@ -290,7 +259,7 @@ function MobileSlot({ i, card }: { i: number; card: VisitCard | undefined }) {
             if (gridRow === 1 && gridCol <= 2) return null;
             return (
               <div key={`${seat}-${id}-${stage}`} className="min-h-0" style={{ gridColumn: gridCol, gridRow }}>
-                <MiniTile id={id} ace={id === card.aceId} fill />
+                <MiniTile id={id} ace={id === card.aceId} />
               </div>
             );
           });
@@ -319,14 +288,14 @@ function MobileLeagueBoard({ cards }: { cards: VisitCard[] }) {
   return (
     <div
       data-testid="league-visit-board"
-      className="grid h-full min-h-0 w-full flex-1 gap-1"
+      className="grid w-full gap-1"
       style={{
         gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
-        gridTemplateRows: 'repeat(5, minmax(0, 1fr))',
+        gridTemplateRows: 'repeat(5, auto)',
       }}
     >
       {Array.from({ length: 14 }, (_, i) => (
-        <div key={i} className="min-h-0" style={slotCellStyle(i)}>
+        <div key={i} style={slotCellStyle(i)}>
           <MobileSlot i={i} card={bySlot.get(i)} />
         </div>
       ))}
@@ -334,8 +303,8 @@ function MobileLeagueBoard({ cards }: { cards: VisitCard[] }) {
   );
 }
 
-/** The league at one moment: full gym cards on desktop, a 3×4 + 2 compact
- *  board on a phone. Both fill the pane they sit in. */
+/** The league at one moment: Pokémon-only gym cards on desktop, a compact
+ *  3×4 + 2 board on a phone. Cards keep their own height. */
 export function LeagueVisitBoard({ cards }: { cards: VisitCard[] }) {
   const desktop = useIsDesktop();
   if (desktop) return <DesktopGymStrip cards={cards} />;

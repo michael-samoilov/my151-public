@@ -1516,6 +1516,21 @@ export type AdminNavKey = ToolSlice | 'feedback';
 /** Section nav: a bottom bar on mobile, an inline row on desktop. Splits the
  *  dashboard into All / Dex / League analytics and the Feedback page. */
 function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: AdminNavKey) => void }) {
+  const navRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const apply = () => {
+      document.documentElement.style.setProperty('--admin-nav-h', `${el.getBoundingClientRect().height}px`);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      document.documentElement.style.removeProperty('--admin-nav-h');
+    };
+  }, []);
   const items: { key: AdminNavKey; label: string }[] = [
     { key: 'all', label: 'Suite' },
     { key: 'dex', label: 'Dex' },
@@ -1524,6 +1539,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
   ];
   return (
     <nav
+      ref={navRef}
       aria-label="Admin section"
       className="fixed inset-x-0 bottom-0 z-[90] flex justify-around gap-1 border-t border-border bg-card/95 px-2 py-2 backdrop-blur md:sticky md:top-0 md:mx-auto md:max-w-5xl md:justify-start md:border-t-0 md:border-b md:bg-card md:px-4 md:py-2 md:backdrop-blur-none"
     >
@@ -1768,7 +1784,7 @@ export function AdminPage() {
       <main
         className={cn(
           'mx-auto flex w-full max-w-5xl flex-1 flex-col px-4',
-          lockUser ? 'min-h-0 gap-2 overflow-hidden pb-20 pt-2 md:pb-8' : 'gap-4 pb-24 pt-4 md:pb-8',
+          lockUser ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-nav-h,5rem)] md:pb-8' : 'gap-4 pb-24 pt-4 md:pb-8',
         )}
       >
         {error && <p className="text-sm text-destructive">{error}</p>}

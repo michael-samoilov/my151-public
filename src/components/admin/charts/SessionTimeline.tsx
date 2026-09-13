@@ -53,9 +53,8 @@ export function SessionTimeline({
   rightChip?: ReactNode;
   milestones?: { t: number; label: string; tone?: 'export' | 'muted' }[];
   tz?: string;
-  /** Snapshot under the chart. On a phone the scrubber docks under this so a
-   *  thumb on the slider does not cover the build. Desktop keeps the slider
-   *  under the chart. */
+  /** Snapshot under the chart. On a phone the scrubber docks flush with the
+   *  bottom nav. Desktop keeps the slider under the chart. */
   children?: ReactNode;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -283,9 +282,10 @@ export function SessionTimeline({
       <div className="order-2 shrink-0 md:order-3">{readout}</div>
       <div className="order-3 flex min-h-0 flex-1 flex-col overflow-auto md:order-4">{children}</div>
       <div
+        data-testid="session-scrubber-dock"
         className={cn(
           'order-4 shrink-0 md:order-2',
-          'max-md:sticky max-md:bottom-14 max-md:z-20 max-md:-mx-4 max-md:border-t max-md:bg-card/95 max-md:px-4 max-md:py-1.5 max-md:backdrop-blur',
+          'max-md:sticky max-md:bottom-0 max-md:z-20 max-md:-mx-4 max-md:border-t max-md:bg-card/95 max-md:px-4 max-md:py-1.5 max-md:backdrop-blur',
         )}
       >
         {scrub}

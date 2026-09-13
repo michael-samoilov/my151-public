@@ -52,19 +52,21 @@ test.describe('admin user pages', () => {
       expect(box!.y).toBeGreaterThan(vh * 0.55);
 
       const gap = await page.evaluate(() => {
-        const board = document.querySelector('[data-testid="league-visit-board"]')?.getBoundingClientRect();
-        const slider = document.querySelector('[aria-label="Scrub sessions"]')?.getBoundingClientRect();
-        if (!board || !slider) return 999;
-        return slider.top - board.bottom;
+        const dock = document.querySelector('[data-testid="session-scrubber-dock"]')?.getBoundingClientRect();
+        const nav = document.querySelector('nav[aria-label="Admin section"]')?.getBoundingClientRect();
+        if (!dock || !nav) return 999;
+        return nav.top - dock.bottom;
       });
-      expect(gap).toBeLessThan(24);
+      expect(gap).toBeGreaterThanOrEqual(-2);
+      expect(gap).toBeLessThan(6);
 
       const gym = await page.getByTestId('admin-slot-0').boundingBox();
       const champ = await page.getByTestId('admin-slot-12').boundingBox();
       const boss = await page.getByTestId('admin-slot-13').boundingBox();
-      expect(gym && champ && boss).toBeTruthy();
-      expect(Math.abs(champ!.height - gym!.height)).toBeLessThan(3);
-      expect(Math.abs(boss!.height - gym!.height)).toBeLessThan(3);
+      const navBox = await page.getByRole('navigation', { name: 'Admin section' }).boundingBox();
+      expect(gym && champ && boss && navBox).toBeTruthy();
+      expect(champ!.y + champ!.height).toBeLessThanOrEqual(navBox!.y + 2);
+      expect(boss!.y + boss!.height).toBeLessThanOrEqual(navBox!.y + 2);
       expect(champ!.width).toBeGreaterThan(gym!.width * 1.2);
       expect(Math.abs(champ!.width - boss!.width)).toBeLessThan(4);
     } else {
@@ -72,6 +74,9 @@ test.describe('admin user pages', () => {
       await expect(board).toBeVisible();
       await expect(board).toHaveAttribute('data-cols', /^(7|14)$/);
       await expect(page.getByTestId('admin-gym-card')).toHaveCount(14);
+      const first = page.getByTestId('admin-gym-card').first();
+      const late = first.locator('[data-row="10"], [data-row="11"]');
+      await expect(late.first()).toBeVisible();
       const last = await page.getByTestId('admin-gym-card').nth(13).boundingBox();
       const vh = page.viewportSize()?.height ?? 0;
       expect(last).toBeTruthy();
