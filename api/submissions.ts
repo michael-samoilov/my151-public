@@ -8,7 +8,13 @@ import {
   type ClientRecord,
 } from './_shared.js';
 import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
-import { CARD_COUNT, LEAGUE_CLIENTS_KEY, parseLeagueRecord, type LeagueRecord } from './_leagueRecord.js';
+import {
+  CARD_COUNT,
+  LEAGUE_CLIENTS_KEY,
+  parseLeagueRecord,
+  peakFullGyms,
+  type LeagueRecord,
+} from './_leagueRecord.js';
 import {
   DAY_MS,
   aggregate,
@@ -580,11 +586,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const leagueFunnel = leagueUsageFunnel(
       leagueRecords.map((r) => ({
         maxCards: r.maxCards,
+        maxSeats: r.maxSeats,
+        fullGyms: peakFullGyms(r),
         exportsCard: r.exportsCard,
         exportsLeague: r.exportsLeague,
       })),
       funnelEventCount(funnelEvents, 'league-open'),
-      CARD_COUNT,
     );
     const page = allRecords.slice(offset, offset + limit).map((r) => ({
       ...r,

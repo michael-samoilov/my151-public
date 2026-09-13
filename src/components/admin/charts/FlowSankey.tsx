@@ -1,24 +1,40 @@
 import { useECharts, cssVar, tooltipStyle, type EChartsOption } from './useECharts';
-import { type FunnelLink, type FunnelNode } from '@/lib/usageFunnels';
+import { nodeDepth, type FunnelLink, type FunnelNode } from '@/lib/usageFunnels';
 import { sankeyGeometry } from '@/lib/sankeyGeometry';
 
 export type SankeyNode = FunnelNode;
 export type SankeyLink = FunnelLink;
 
-function columnStack(nodes: SankeyNode[], links: SankeyLink[]): number {
-  const sources = new Set(links.map((l) => l.source));
-  const targets = new Set(links.map((l) => l.target));
-  const leftmost = nodes.filter((n) => !targets.has(n.name)).length;
-  const rightmost = nodes.filter((n) => !sources.has(n.name)).length;
-  return Math.max(2, leftmost, rightmost);
+function fattestColumn(nodes: SankeyNode[], links: SankeyLink[]): number {
+  const counts = new Map<number, number>();
+  for (const n of nodes) {
+    const d = nodeDepth(n.name, links);
+    counts.set(d, (counts.get(d) ?? 0) + 1);
+  }
+  return Math.max(2, ...counts.values());
+}
+
+function fatColumnNames(nodes: SankeyNode[], links: SankeyLink[]): Set<string> {
+  const byDepth = new Map<number, string[]>();
+  for (const n of nodes) {
+    const d = nodeDepth(n.name, links);
+    const arr = byDepth.get(d) ?? [];
+    arr.push(n.name);
+    byDepth.set(d, arr);
+  }
+  const fat = new Set<string>();
+  for (const arr of byDepth.values()) {
+    if (arr.length >= 4) for (const name of arr) fat.add(name);
+  }
+  return fat;
 }
 
 function chartHeight(nodes: SankeyNode[], links: SankeyLink[], kind: 'funnel' | 'referrer'): number {
+  const stack = fattestColumn(nodes, links);
   if (kind === 'referrer') {
-    return Math.max(360, Math.min(520, columnStack(nodes, links) * 36 + 80));
+    return Math.max(360, Math.min(520, stack * 36 + 80));
   }
-  const peels = nodes.filter((n) => n.role === 'sink').length;
-  return Math.max(500, Math.min(640, 360 + peels * 28));
+  return Math.max(520, Math.min(740, 200 + stack * 80));
 }
 
 function nodeLabel(
@@ -27,6 +43,7 @@ function nodeLabel(
   isLeft: boolean,
   isRight: boolean,
   kind: 'funnel' | 'referrer',
+  fat: boolean,
 ) {
   const countFmt = compact ? '{b}\n{c}' : '{b} {c}';
   if (!compact) return { position: n.label };
@@ -39,10 +56,6 @@ function nodeLabel(
       formatter: countFmt,
     };
   }
-  // Intermediate through-nodes (Built, 31+, 4+ cards, …) skip labels on a
-  // phone so adjacent top captions do not collide. Peels, start, and
-  // outcomes keep their names.
-  if (n.role === 'neutral' && !isLeft) return { show: false };
   if (isLeft) {
     return {
       position: 'top' as const,
@@ -57,6 +70,15 @@ function nodeLabel(
     return {
       position: n.role === 'priv' || n.role === 'sink' ? ('bottom' as const) : ('right' as const),
       width: 76,
+      overflow: 'break' as const,
+      lineHeight: 11,
+      formatter: countFmt,
+    };
+  }
+  if (fat) {
+    return {
+      position: 'right' as const,
+      width: 64,
       overflow: 'break' as const,
       lineHeight: 11,
       formatter: countFmt,
@@ -82,8 +104,9 @@ function nodeLabel(
 
 /**
  * MECE usage funnel as a Sankey at every width. On a phone the plot pads and
- * type shrink, and stage labels sit above or below their nodes, so an
- * 8-column funnel stays inside ~390px without a sideways pan.
+ * type shrink, and a stacked fan of buckets labels to the right of the
+ * nodes, so a 4- or 5-column funnel stays inside ~390px without a sideways
+ * pan.
  */
 export function FlowSankey({
   nodes,
@@ -99,6 +122,7 @@ export function FlowSankey({
   const height = chartHeight(nodes, links, kind);
   const sources = new Set(links.map((l) => l.source));
   const targets = new Set(links.map((l) => l.target));
+  const fat = fatColumnNames(nodes, links);
   const ref = useECharts(
     (el): EChartsOption => {
       const ink = cssVar(el, '--color-foreground', '#0a0a0a');
@@ -145,7 +169,7 @@ export function FlowSankey({
             data: nodes.map((n) => ({
               name: n.name,
               itemStyle: { color: roleColor(n.role), borderColor: roleColor(n.role) },
-              label: nodeLabel(n, g.compact, !targets.has(n.name), !sources.has(n.name), kind),
+              label: nodeLabel(n, g.compact, !targets.has(n.name), !sources.has(n.name), kind, fat.has(n.name)),
             })),
             links: links.map((l) => ({
               source: l.source,

@@ -1,5 +1,5 @@
 /** Insets and type that fit the chart's own width. Compact kicks in when
- *  desktop pads would leave an 8-column funnel too little plot. */
+ *  desktop pads would leave a 5-column funnel too little plot. */
 export function sankeyGeometry(width: number, kind: 'funnel' | 'referrer') {
   const compact = width < 600;
   if (kind === 'referrer') {

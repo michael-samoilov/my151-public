@@ -15,6 +15,14 @@ function targetsFrom(sankey: { links: { source: string; target: string }[] }, so
   return sankey.links.filter((l) => l.source === source).map((l) => l.target);
 }
 
+function flowInto(sankey: { links: { target: string; value: number }[] }, name: string): number {
+  return sankey.links.filter((l) => l.target === name).reduce((s, l) => s + l.value, 0);
+}
+
+function flowOut(sankey: { links: { source: string; value: number }[] }, name: string): number {
+  return sankey.links.filter((l) => l.source === name).reduce((s, l) => s + l.value, 0);
+}
+
 describe('dexFunnelSankey', () => {
   const sankey = dexFunnelSankey(
     dexUsageFunnel(
@@ -32,21 +40,21 @@ describe('dexFunnelSankey', () => {
   );
 
   it('conserves flow at Built and Completed', () => {
-    const into = (name: string) => sankey.links.filter((l) => l.target === name).reduce((s, l) => s + l.value, 0);
-    const out = (name: string) => sankey.links.filter((l) => l.source === name).reduce((s, l) => s + l.value, 0);
-    expect(out('Saw intro')).toBe(into('Saw intro') + 12);
-    expect(out('Built')).toBe(into('Built'));
-    expect(out('Completed')).toBe(into('Completed'));
+    expect(flowOut(sankey, 'Saw intro')).toBe(flowInto(sankey, 'Saw intro') + 12);
+    expect(flowOut(sankey, 'Built')).toBe(flowInto(sankey, 'Built'));
+    expect(flowOut(sankey, 'Completed')).toBe(flowInto(sankey, 'Completed'));
   });
 
-  it('places earlier size peels further left than later ones', () => {
-    expect(nodeDepth('1–30', sankey.links)).toBeLessThan(nodeDepth('31–60', sankey.links));
-    expect(nodeDepth('31–60', sankey.links)).toBeLessThan(nodeDepth('61–90', sankey.links));
-    expect(nodeDepth('61–90', sankey.links)).toBeLessThan(nodeDepth('91–120', sankey.links));
-    expect(nodeDepth('91–120', sankey.links)).toBeLessThan(nodeDepth('121–150', sankey.links));
+  it('puts every size bucket in the same column as Completed', () => {
+    const done = nodeDepth('Completed', sankey.links);
+    expect(nodeDepth('1–30', sankey.links)).toBe(done);
+    expect(nodeDepth('31–60', sankey.links)).toBe(done);
+    expect(nodeDepth('61–90', sankey.links)).toBe(done);
+    expect(nodeDepth('91–120', sankey.links)).toBe(done);
+    expect(nodeDepth('121–150', sankey.links)).toBe(done);
   });
 
-  it('omits empty peel nodes', () => {
+  it('omits empty bucket nodes', () => {
     const emptyPeel = dexFunnelSankey(
       dexUsageFunnel([{ cid: 'a', peakMon: 10, completed: false, exported: false }], 1),
     );
@@ -54,27 +62,50 @@ describe('dexFunnelSankey', () => {
     expect(emptyPeel.nodes.map((n) => n.name)).toContain('1–30');
   });
 
-  it('lists the through-node before the peel in each column', () => {
+  it('stacks Completed above later drop-offs, with 1–30 at the bottom', () => {
     const names = namesOf(sankey);
-    const pairs: [string, string][] = [
-      ['Built', 'Bounced'],
-      ['31+', '1–30'],
-      ['61+', '31–60'],
-      ['91+', '61–90'],
-      ['121+', '91–120'],
-      ['Completed', '121–150'],
-      ['Exported', 'Kept private'],
-    ];
-    for (const [through, peel] of pairs) {
-      expect(names.indexOf(through), `${through} above ${peel}`).toBeLessThan(names.indexOf(peel));
-    }
+    expect(names.indexOf('Completed')).toBeLessThan(names.indexOf('121–150'));
+    expect(names.indexOf('121–150')).toBeLessThan(names.indexOf('1–30'));
+    expect(names.indexOf('Built')).toBeLessThan(names.indexOf('Bounced'));
+    expect(names.indexOf('Exported')).toBeLessThan(names.indexOf('Kept private'));
   });
 
-  it('attaches the through ribbon before the peel from the same parent', () => {
+  it('fans every bucket off Built, Completed first', () => {
     const fromBuilt = targetsFrom(sankey, 'Built');
-    expect(fromBuilt.indexOf('31+')).toBeLessThan(fromBuilt.indexOf('1–30'));
+    expect(fromBuilt[0]).toBe('Completed');
+    expect(fromBuilt.indexOf('121–150')).toBeLessThan(fromBuilt.indexOf('1–30'));
     const fromIntro = targetsFrom(sankey, 'Saw intro');
     expect(fromIntro.indexOf('Built')).toBeLessThan(fromIntro.indexOf('Bounced'));
+  });
+
+  it('joins an incomplete exporter to Exported without a not-exported peel', () => {
+    const withExport = dexFunnelSankey(
+      dexUsageFunnel(
+        [
+          { cid: 'a', peakMon: 10, completed: false, exported: true },
+          { cid: 'b', peakMon: 10, completed: false, exported: false },
+        ],
+        2,
+      ),
+    );
+    expect(targetsFrom(withExport, '1–30')).toEqual(['Exported']);
+    expect(flowOut(withExport, '1–30')).toBe(1);
+    expect(flowInto(withExport, '1–30')).toBe(2);
+    expect(namesOf(withExport)).not.toContain('Kept private');
+    expect(namesOf(withExport)).not.toContain('1–30 not exported');
+  });
+
+  it('keeps an exporting size bucket under Completed', () => {
+    const s = dexFunnelSankey(
+      dexUsageFunnel(
+        [
+          { cid: 'a', peakMon: 10, completed: false, exported: true },
+          { cid: 'b', peakMon: 151, completed: true, exported: true },
+        ],
+        2,
+      ),
+    );
+    expect(namesOf(s).indexOf('Completed')).toBeLessThan(namesOf(s).indexOf('1–30'));
   });
 });
 
@@ -82,41 +113,48 @@ describe('leagueFunnelSankey', () => {
   const sankey = leagueFunnelSankey(
     leagueUsageFunnel(
       [
-        { maxCards: 2, exportsCard: 0, exportsLeague: 0 },
-        { maxCards: 6, exportsCard: 0, exportsLeague: 0 },
-        { maxCards: 10, exportsCard: 1, exportsLeague: 0 },
-        { maxCards: 14, exportsCard: 1, exportsLeague: 1 },
-        { maxCards: 14, exportsCard: 1, exportsLeague: 0 },
+        { maxCards: 1, maxSeats: 1, fullGyms: 0, exportsCard: 0, exportsLeague: 0 },
+        { maxCards: 2, maxSeats: 4, fullGyms: 2, exportsCard: 0, exportsLeague: 0 },
+        { maxCards: 6, maxSeats: 12, fullGyms: 6, exportsCard: 1, exportsLeague: 0 },
+        { maxCards: 11, maxSeats: 40, fullGyms: 11, exportsCard: 0, exportsLeague: 0 },
+        { maxCards: 14, maxSeats: 70, fullGyms: 14, exportsCard: 1, exportsLeague: 1 },
       ],
       8,
-      14,
     ),
   );
 
-  it('places earlier card peels further left', () => {
-    expect(nodeDepth('1–3 cards', sankey.links)).toBeLessThan(nodeDepth('4–7 cards', sankey.links));
-    expect(nodeDepth('4–7 cards', sankey.links)).toBeLessThan(nodeDepth('8–11 cards', sankey.links));
+  it('puts gym buckets in one column off One gym full', () => {
+    const parent = nodeDepth('One gym full', sankey.links);
+    expect(nodeDepth('1–4 gyms', sankey.links)).toBe(parent + 1);
+    expect(nodeDepth('5–8 gyms', sankey.links)).toBe(parent + 1);
+    expect(nodeDepth('9–12 gyms', sankey.links)).toBe(parent + 1);
+    expect(nodeDepth('Full league', sankey.links)).toBe(parent + 1);
   });
 
-  it('splits full-league export kinds off Full league', () => {
-    const fromFull = sankey.links.filter((l) => l.source === 'Full league');
-    expect(fromFull.map((l) => l.target).sort()).toEqual(['Exported card', 'Exported league']);
+  it('sends bucket exporters to the shared export nodes', () => {
+    expect(targetsFrom(sankey, 'Full league')).toEqual(['Exported league']);
+    expect(targetsFrom(sankey, '5–8 gyms')).toEqual(['Exported card']);
+    expect(targetsFrom(sankey, '1–4 gyms')).toEqual([]);
+    expect(namesOf(sankey)).not.toContain('Kept private');
   });
 
-  it('conserves seated inflow', () => {
-    const intoSeated = sankey.links.filter((l) => l.target === 'Seated').reduce((s, l) => s + l.value, 0);
-    const outSeated = sankey.links.filter((l) => l.source === 'Seated').reduce((s, l) => s + l.value, 0);
-    expect(intoSeated).toBe(outSeated);
+  it('conserves placed and one-gym-full inflow', () => {
+    expect(flowOut(sankey, 'Placed a Pokémon')).toBe(flowInto(sankey, 'Placed a Pokémon'));
+    expect(flowOut(sankey, 'One gym full')).toBe(flowInto(sankey, 'One gym full'));
   });
 
-  it('lists the through-node before the peel in each column', () => {
+  it('stacks Full league above earlier gym drop-offs', () => {
     const names = namesOf(sankey);
-    expect(names.indexOf('4+ cards')).toBeLessThan(names.indexOf('1–3 cards'));
-    expect(names.indexOf('8+ cards')).toBeLessThan(names.indexOf('4–7 cards'));
-    expect(names.indexOf('12+ cards')).toBeLessThan(names.indexOf('8–11 cards'));
+    expect(names.indexOf('Full league')).toBeLessThan(names.indexOf('9–12 gyms'));
+    expect(names.indexOf('9–12 gyms')).toBeLessThan(names.indexOf('1–4 gyms'));
     expect(names.indexOf('Exported league')).toBeLessThan(names.indexOf('Exported card'));
-    const fromSeated = targetsFrom(sankey, 'Seated');
-    expect(fromSeated.indexOf('4+ cards')).toBeLessThan(fromSeated.indexOf('1–3 cards'));
+    const fromGym = targetsFrom(sankey, 'One gym full');
+    expect(fromGym[0]).toBe('Full league');
+  });
+
+  it('peels bounced and unfinished cards before the gym fan', () => {
+    expect(targetsFrom(sankey, 'Opened')).toEqual(['Placed a Pokémon', 'Bounced']);
+    expect(targetsFrom(sankey, 'Placed a Pokémon').sort()).toEqual(['Card not finished', 'One gym full']);
   });
 });
 

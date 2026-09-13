@@ -5,11 +5,12 @@
 // mockup. Every number is fabricated but self-consistent: the funnel stages
 // sum (646 = 388 built + 258 bounced; 388 = 65 completed + 323 incomplete
 // across 1–30 / 31–60 / 61–90 / 91–120 / 121–150; 65 = 17 exported + 48 kept
-// private), the league funnel sums (8 opened = 5 seated + 3 left; 5 = 2 at
-// 1–3 cards + 1 at 4–7 + 1 at 8–11 + 1 full), and each cohort's per-segment
-// counts sum to its base. The cids are obviously fake. This module is
-// dynamically imported only when the `demo` query flag is present, so it never
-// ships in the real admin bundle.
+// private; 23 incomplete builders also exported), the league funnel sums
+// (8 opened = 5 placed a Pokémon + 3 bounced; 5 = 1 card not finished + 4
+// with a full gym; 4 = 1 at 1–4 + 1 at 5–8 + 1 at 9–12 + 1 full league),
+// and each cohort's per-segment counts sum to its base. The cids are
+// obviously fake. This module is dynamically imported only when the `demo`
+// query flag is present, so it never ships in the real admin bundle.
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import type {
@@ -525,19 +526,12 @@ export const sampleResponse: ApiResponse = {
     opened: 646,
     built: 388,
     bounced: 258,
-    peels: [
-      { label: '1–30', count: 140 },
-      { label: '31–60', count: 80 },
-      { label: '61–90', count: 50 },
-      { label: '91–120', count: 33 },
-      { label: '121–150', count: 20 },
-    ],
-    through: [
-      { label: '31+', count: 248 },
-      { label: '61+', count: 168 },
-      { label: '91+', count: 118 },
-      { label: '121+', count: 85 },
-      { label: 'Completed', count: 65 },
+    buckets: [
+      { label: '1–30', count: 140, exported: 8 },
+      { label: '31–60', count: 80, exported: 6 },
+      { label: '61–90', count: 50, exported: 4 },
+      { label: '91–120', count: 33, exported: 3 },
+      { label: '121–150', count: 20, exported: 2 },
     ],
     completed: 65,
     exported: 17,
@@ -545,24 +539,19 @@ export const sampleResponse: ApiResponse = {
   },
   leagueFunnel: {
     opened: 8,
-    seated: 5,
+    placed: 5,
     bounced: 3,
-    peels: [
-      { label: '1–3 cards', count: 2 },
-      { label: '4–7 cards', count: 1 },
-      { label: '8–11 cards', count: 1 },
-      { label: '12–13 cards', count: 0 },
-    ],
-    through: [
-      { label: '4+ cards', count: 3 },
-      { label: '8+ cards', count: 2 },
-      { label: '12+ cards', count: 1 },
-      { label: 'Full league', count: 1 },
+    oneGymFull: 4,
+    cardNotFinished: 1,
+    gymBuckets: [
+      { label: '1–4 gyms', count: 1, exportedLeague: 0, exportedCard: 0 },
+      { label: '5–8 gyms', count: 1, exportedLeague: 0, exportedCard: 1 },
+      { label: '9–12 gyms', count: 1, exportedLeague: 0, exportedCard: 0 },
+      { label: 'Full league', count: 1, exportedLeague: 1, exportedCard: 0 },
     ],
     fullLeague: 1,
     exportedLeague: 1,
-    exportedCardOnly: 0,
-    keptPrivate: 0,
+    exportedCard: 1,
   },
   tools: {
     dex: 388,

@@ -311,7 +311,7 @@ describe('dexUsageFunnel', () => {
     exported,
   });
 
-  it('splits incomplete builds into size tiers and keeps completed out of peels', () => {
+  it('splits incomplete builds into size tiers and keeps completed out of buckets', () => {
     const f = dexUsageFunnel(
       [
         row('a', 12),
@@ -327,57 +327,99 @@ describe('dexUsageFunnel', () => {
     expect(f.opened).toBe(10);
     expect(f.built).toBe(7);
     expect(f.bounced).toBe(3);
-    expect(f.peels.map((p) => p.count)).toEqual([1, 1, 1, 1, 1]);
+    expect(f.buckets.map((p) => p.count)).toEqual([1, 1, 1, 1, 1]);
     expect(f.completed).toBe(2);
     expect(f.exported).toBe(1);
     expect(f.keptPrivate).toBe(1);
-    expect(f.through.map((t) => t.count)).toEqual([6, 5, 4, 3, 2]);
-    expect(f.peels.reduce((s, p) => s + p.count, 0) + f.completed).toBe(f.built);
+    expect(f.buckets.reduce((s, p) => s + p.count, 0) + f.completed).toBe(f.built);
   });
 
   it('puts a peak of 0 in the first incomplete tier and folds a country-split cid', () => {
     const f = dexUsageFunnel([row('aaaa::FR', 0), row('aaaa', 20)], 0);
     expect(f.built).toBe(1);
-    expect(f.peels[0].count).toBe(1);
-    expect(f.peels[0].label).toBe('1–30');
+    expect(f.buckets[0].count).toBe(1);
+    expect(f.buckets[0].label).toBe('1–30');
+  });
+
+  it('counts an incomplete exporter on their size bucket, not on Completed', () => {
+    const f = dexUsageFunnel(
+      [
+        row('a', 25, false, true),
+        row('b', 151, true, true),
+      ],
+      2,
+    );
+    expect(f.exported).toBe(1);
+    expect(f.buckets).toEqual([{ label: '1–30', count: 1, exported: 1 }]);
   });
 });
 
 describe('leagueUsageFunnel', () => {
-  const row = (maxCards: number, exportsCard = 0, exportsLeague = 0) => ({
-    maxCards,
-    exportsCard,
-    exportsLeague,
+  const row = (
+    fullGyms: number,
+    over: { maxCards?: number; maxSeats?: number; exportsCard?: number; exportsLeague?: number } = {},
+  ) => ({
+    maxCards: over.maxCards ?? Math.max(fullGyms, 1),
+    maxSeats: over.maxSeats ?? Math.max(fullGyms, 1),
+    fullGyms,
+    exportsCard: over.exportsCard ?? 0,
+    exportsLeague: over.exportsLeague ?? 0,
   });
 
-  it('peels unfinished leagues by card count and splits full-league export', () => {
+  it('splits placed users into unfinished cards and in-line gym buckets', () => {
     const f = leagueUsageFunnel(
       [
-        row(1),
-        row(3),
-        row(6),
-        row(8, 1, 0),
-        row(14, 1, 1),
-        row(14, 1, 0),
-        row(14, 0, 0),
+        row(0, { maxCards: 1, maxSeats: 1 }),
+        row(2),
+        row(6, { exportsCard: 1 }),
+        row(11),
+        row(13),
+        row(14, { exportsLeague: 1, exportsCard: 1 }),
+        row(14, { exportsCard: 1 }),
       ],
       12,
-      14,
     );
     expect(f.opened).toBe(12);
-    expect(f.seated).toBe(7);
+    expect(f.placed).toBe(7);
     expect(f.bounced).toBe(5);
-    expect(f.peels.map((p) => p.count)).toEqual([2, 1, 1, 0]);
-    expect(f.fullLeague).toBe(3);
+    expect(f.cardNotFinished).toBe(1);
+    expect(f.oneGymFull).toBe(6);
+    expect(f.gymBuckets.map((p) => ({ label: p.label, count: p.count }))).toEqual([
+      { label: '1–4 gyms', count: 1 },
+      { label: '5–8 gyms', count: 1 },
+      { label: '9–12 gyms', count: 2 },
+      { label: 'Full league', count: 2 },
+    ]);
+    expect(f.fullLeague).toBe(2);
     expect(f.exportedLeague).toBe(1);
-    expect(f.exportedCardOnly).toBe(1);
-    expect(f.keptPrivate).toBe(1);
-    expect(f.peels.reduce((s, p) => s + p.count, 0) + f.fullLeague).toBe(f.seated);
+    expect(f.exportedCard).toBe(2);
+    expect(f.gymBuckets.reduce((s, p) => s + p.count, 0)).toBe(f.oneGymFull);
   });
 
-  it('floors opened at seated when the open event undercounts', () => {
-    const f = leagueUsageFunnel([row(2), row(14, 0, 1)], 0, 14);
+  it('counts exports from an unfinished gym bucket', () => {
+    const f = leagueUsageFunnel([row(3, { exportsCard: 1 }), row(3, { exportsLeague: 1 })], 2);
+    expect(f.gymBuckets).toEqual([
+      { label: '1–4 gyms', count: 2, exportedLeague: 1, exportedCard: 1 },
+    ]);
+    expect(f.exportedLeague).toBe(1);
+    expect(f.exportedCard).toBe(1);
+  });
+
+  it('floors opened at placed when the open event undercounts', () => {
+    const f = leagueUsageFunnel([row(0, { maxSeats: 2, maxCards: 1 }), row(14, { exportsLeague: 1 })], 0);
     expect(f.opened).toBe(2);
+    expect(f.placed).toBe(2);
     expect(f.bounced).toBe(0);
+    expect(f.cardNotFinished).toBe(1);
+  });
+
+  it('does not count a zero-seat record as placed', () => {
+    const f = leagueUsageFunnel(
+      [row(0, { maxCards: 0, maxSeats: 0 }), row(2)],
+      5,
+    );
+    expect(f.placed).toBe(1);
+    expect(f.opened).toBe(5);
+    expect(f.bounced).toBe(4);
   });
 });

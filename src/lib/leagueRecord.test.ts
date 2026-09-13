@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   CARD_COUNT,
+  CARD_TEAM_SIZES,
   SEAT_MAX,
   parseCards,
   LEAGUE_SESSION_GAP_MS,
   mergeLeagueRecord,
   parseSummary,
+  peakFullGyms,
   type LeagueBeaconInput,
   type LeagueSummary,
 } from '../../api/_leagueRecord';
-import { SLOT_COUNT } from '../league/model/constants';
+import { SLOT_COUNT, TEAM_SIZES, slotRow } from '../league/model/constants';
 
 const summary = (over: Partial<LeagueSummary> = {}): LeagueSummary => ({
   cards: 1, seats: 1, typed: 1, named: 0, aces: 0, leagueNamed: false, ...over,
@@ -334,5 +336,89 @@ describe('mergeLeagueRecord and the card structure', () => {
     const first = mergeLeagueRecord(null, beacon({ cards: [{ i: 0, l: [{ b: [1] }] }] }));
     const second = mergeLeagueRecord(first, beacon({ now: 2_000_000 }));
     expect(second.latestCards).toEqual([{ i: 0, l: [{ b: [1] }] }]);
+  });
+});
+
+function lines(n: number) {
+  return Array.from({ length: n }, (_, i) => ({ b: [i + 1] }));
+}
+
+describe('peakFullGyms', () => {
+  it('matches the card row team size for every league slot', () => {
+    expect(CARD_TEAM_SIZES).toHaveLength(SLOT_COUNT);
+    for (let i = 0; i < SLOT_COUNT; i++) {
+      expect(CARD_TEAM_SIZES[i], `slot ${i}`).toBe(TEAM_SIZES[slotRow(i) - 1]);
+    }
+  });
+
+  it('counts a gym as full when its lines meet the slot team size', () => {
+    const rec = mergeLeagueRecord(
+      null,
+      beacon({ summary: summary({ cards: 1, seats: 2 }), cards: [{ i: 0, l: lines(2) }] }),
+    );
+    expect(peakFullGyms(rec)).toBe(1);
+  });
+
+  it('does not count a partial gym, and does not fall back to maxCards when structure exists', () => {
+    const rec = mergeLeagueRecord(
+      null,
+      beacon({
+        summary: summary({ cards: 3, seats: 3 }),
+        cards: [
+          { i: 0, l: lines(1) },
+          { i: 1, l: lines(1) },
+          { i: 2, l: lines(1) },
+        ],
+      }),
+    );
+    expect(rec.maxCards).toBe(3);
+    expect(peakFullGyms(rec)).toBe(0);
+  });
+
+  it('falls back to maxCards when no card structure was ever stored', () => {
+    const rec = mergeLeagueRecord(null, beacon({ summary: summary({ cards: 4, seats: 8 }) }));
+    expect(rec.latestCards).toBeUndefined();
+    expect(peakFullGyms(rec)).toBe(4);
+  });
+
+  it('treats an empty stored league as zero full gyms', () => {
+    const rec = mergeLeagueRecord(null, beacon({ summary: summary({ cards: 2, seats: 2 }), cards: [] }));
+    expect(rec.latestCards).toEqual([]);
+    expect(peakFullGyms(rec)).toBe(0);
+  });
+
+  it('takes the peak across sessions', () => {
+    let rec = mergeLeagueRecord(
+      null,
+      beacon({
+        summary: summary({ cards: 2, seats: 5 }),
+        cards: [
+          { i: 0, l: lines(2) },
+          { i: 1, l: lines(3) },
+        ],
+      }),
+    );
+    rec = mergeLeagueRecord(
+      rec,
+      beacon({
+        now: 1_000_000 + LEAGUE_SESSION_GAP_MS + 1,
+        summary: summary({ cards: 1, seats: 2 }),
+        cards: [{ i: 0, l: lines(2) }],
+      }),
+    );
+    expect(peakFullGyms(rec)).toBe(2);
+  });
+
+  it("uses each slot's card-row team size", () => {
+    const eliteFull = mergeLeagueRecord(
+      null,
+      beacon({ summary: summary({ cards: 1, seats: 5 }), cards: [{ i: 8, l: lines(5) }] }),
+    );
+    expect(peakFullGyms(eliteFull)).toBe(1);
+    const eliteShort = mergeLeagueRecord(
+      null,
+      beacon({ summary: summary({ cards: 1, seats: 4 }), cards: [{ i: 8, l: lines(4) }] }),
+    );
+    expect(peakFullGyms(eliteShort)).toBe(0);
   });
 });

@@ -259,9 +259,9 @@ export interface ApiResponse {
   limit: number;
   funnel: { users: number; completed: number; exported: number };
   funnelEvents?: Record<string, number>;
-  /** Dex usage funnel with incomplete size peels. */
+  /** Dex usage funnel with in-line size buckets. */
   dexFunnel?: DexUsageFunnel;
-  /** Gym leader maker usage funnel with card-count peels. */
+  /** Gym leader maker usage funnel with in-line gym-completion buckets. */
   leagueFunnel?: LeagueUsageFunnel;
   /** Cross-tool identity, from the intersection of the two record hashes. */
   tools?: {
@@ -1836,7 +1836,7 @@ export function AdminPage() {
           const incomplete = Math.max(0, built - f.completed);
           const keptPrivate = Math.max(0, f.completed - f.exported);
           const showDexFunnel = tool !== 'league' && (data.dexFunnel ? data.dexFunnel.built > 0 : built > 0);
-          const showLeagueFunnel = tool !== 'dex' && (data.leagueFunnel?.seated ?? 0) > 0;
+          const showLeagueFunnel = tool !== 'dex' && (data.leagueFunnel?.placed ?? 0) > 0;
           const showReferrer = (data.referrerFlow?.length ?? 0) > 0;
           const showFlows = flowView === 'referrer' ? showReferrer : showDexFunnel || showLeagueFunnel;
           const dexSankey = data.dexFunnel
@@ -1845,8 +1845,7 @@ export function AdminPage() {
                 opened: sawIntro,
                 built,
                 bounced,
-                peels: [{ label: 'Incomplete', count: incomplete }],
-                through: [{ label: 'Completed', count: f.completed }],
+                buckets: incomplete > 0 ? [{ label: 'Incomplete', count: incomplete, exported: 0 }] : [],
                 completed: f.completed,
                 exported: f.exported,
                 keptPrivate,

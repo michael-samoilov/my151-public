@@ -4,9 +4,10 @@ import { expect, test, type Locator } from '@playwright/test';
  * Admin Flows Sankey, driven against `/?admin&demo` so it needs no token.
  *
  * Locks the three promises of this slice: unknown referrers stay on the
- * referrer chart, the dex incomplete peel is five size tiers, and the gym
- * leader maker has its own usage funnel. The chart is an echarts Sankey at
- * every width; on phone and narrow viewports it must not need a sideways pan.
+ * referrer chart, the dex incomplete peel is five size tiers in one column,
+ * and the gym leader maker has its own usage funnel. The chart is an
+ * echarts Sankey at every width; on phone and narrow viewports it must not
+ * need a sideways pan.
  */
 test.describe('admin flows', () => {
   test.beforeEach(async ({ page }) => {
@@ -38,8 +39,8 @@ test.describe('admin flows', () => {
     await expect(funnel).toBeVisible();
     const label = await funnel.getAttribute('aria-label');
     expect(label).toMatch(/opened/i);
-    expect(label).toMatch(/seated/i);
-    expect(label).toMatch(/1–3 cards|4–7 cards|8–11 cards/);
+    expect(label).toMatch(/placed a pokémon/i);
+    expect(label).toMatch(/1–4 gyms|5–8 gyms|9–12 gyms/);
     expect(label).toMatch(/full league/i);
   });
 

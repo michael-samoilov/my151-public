@@ -1,12 +1,19 @@
 /**
  * Turn a staged usage funnel into Sankey nodes and links.
  *
- * The trunk is a chain of "still in" nodes so each incomplete peel sits in
- * its own column: earlier drop-off is further left. Through-nodes and success
- * outcomes are listed before peels in the same column so a user who stays
- * on the path runs along the top ribbon, and every peel sits on the bottom.
+ * Size / gym buckets fan out of one parent so they sit in one column,
+ * not a staircase. Through and success sit at the top of a column;
+ * drop-offs sit under them. Incomplete buckets that exported grow a
+ * branch into the existing export node. They do not grow a "not
+ * exported" peel.
  */
-import type { DexUsageFunnel, FunnelPeel, LeagueUsageFunnel, ReferrerFlowEntry } from '../../api/_aggregate';
+import type {
+  DexSizeBucket,
+  DexUsageFunnel,
+  LeagueGymBucket,
+  LeagueUsageFunnel,
+  ReferrerFlowEntry,
+} from '../../api/_aggregate';
 
 export type FunnelRole = 'success' | 'sink' | 'priv' | 'neutral';
 export type FunnelLabelSide = 'left' | 'right' | 'top' | 'bottom';
@@ -38,119 +45,216 @@ function addNode(nodes: FunnelNode[], seen: Set<string>, node: FunnelNode) {
 
 function addLink(links: FunnelLink[], link: FunnelLink) {
   if (link.value <= 0) return;
+  const existing = links.find((l) => l.source === link.source && l.target === link.target);
+  if (existing) {
+    existing.value += link.value;
+    return;
+  }
   links.push(link);
 }
 
-function stagedSankey(opts: {
-  startName: string;
-  builtName: string;
-  bouncedName: string;
-  opened: number;
-  built: number;
-  bounced: number;
-  peels: FunnelPeel[];
-  through: FunnelPeel[];
-  outcomes: { name: string; count: number; role: FunnelRole }[];
-  ariaLabel: string;
-}): FunnelSankey {
+interface FanItem {
+  name: string;
+  value: number;
+  role: FunnelRole;
+  exported?: number;
+  exportName?: string;
+  leftoverName?: string;
+  leftoverRole?: FunnelRole;
+  exportedLeague?: number;
+  exportedCard?: number;
+}
+
+function addFan(
+  nodes: FunnelNode[],
+  links: FunnelLink[],
+  seen: Set<string>,
+  from: string,
+  items: FanItem[],
+) {
+  const present = items.filter((i) => i.value > 0);
+  for (const item of present) {
+    addNode(nodes, seen, {
+      name: item.name,
+      role: item.role,
+      label: item.role === 'success' ? 'top' : 'right',
+    });
+    addLink(links, { source: from, target: item.name, value: item.value, role: item.role });
+  }
+
+  const hasLeague = present.some((i) => (i.exportedLeague ?? 0) > 0);
+  for (const item of present) {
+    if ((item.exported ?? 0) > 0 && item.exportName) {
+      addNode(nodes, seen, { name: item.exportName, role: 'success', label: 'top' });
+      addLink(links, {
+        source: item.name,
+        target: item.exportName,
+        value: item.exported ?? 0,
+        role: 'success',
+      });
+    }
+    if (item.leftoverName) {
+      const left = item.value - (item.exported ?? 0);
+      if (left > 0) {
+        addNode(nodes, seen, {
+          name: item.leftoverName,
+          role: item.leftoverRole ?? 'priv',
+          label: 'bottom',
+        });
+        addLink(links, {
+          source: item.name,
+          target: item.leftoverName,
+          value: left,
+          role: item.leftoverRole ?? 'priv',
+        });
+      }
+    }
+    if ((item.exportedLeague ?? 0) > 0) {
+      addNode(nodes, seen, { name: 'Exported league', role: 'success', label: 'top' });
+      addLink(links, {
+        source: item.name,
+        target: 'Exported league',
+        value: item.exportedLeague ?? 0,
+        role: 'success',
+      });
+    }
+  }
+  for (const item of present) {
+    if ((item.exportedCard ?? 0) > 0) {
+      addNode(nodes, seen, {
+        name: 'Exported card',
+        role: 'success',
+        label: hasLeague ? 'bottom' : 'right',
+      });
+      addLink(links, {
+        source: item.name,
+        target: 'Exported card',
+        value: item.exportedCard ?? 0,
+        role: 'success',
+      });
+    }
+  }
+}
+
+function sizeFan(completed: number, exported: number, keptPrivate: number, buckets: DexSizeBucket[]): FanItem[] {
+  const items: FanItem[] = [];
+  if (completed > 0) {
+    items.push({
+      name: 'Completed',
+      value: completed,
+      role: 'success',
+      exported,
+      exportName: 'Exported',
+      leftoverName: keptPrivate > 0 ? 'Kept private' : undefined,
+      leftoverRole: 'priv',
+    });
+  }
+  // High sizes first so they stack under Completed, early drop-offs at the
+  // bottom of the same column.
+  for (const b of [...buckets].reverse()) {
+    items.push({
+      name: b.label,
+      value: b.count,
+      role: 'sink',
+      exported: b.exported,
+      exportName: 'Exported',
+    });
+  }
+  return items;
+}
+
+function gymFan(buckets: LeagueGymBucket[]): FanItem[] {
+  return [...buckets].reverse().map((b) => ({
+    name: b.label,
+    value: b.count,
+    role: b.label === 'Full league' ? 'success' : 'sink',
+    exportedLeague: b.exportedLeague,
+    exportedCard: b.exportedCard,
+  }));
+}
+
+export function dexFunnelSankey(f: DexUsageFunnel): FunnelSankey {
   const nodes: FunnelNode[] = [];
   const links: FunnelLink[] = [];
   const seen = new Set<string>();
 
-  addNode(nodes, seen, { name: opts.startName, role: 'neutral', label: 'left' });
-  addNode(nodes, seen, { name: opts.builtName, role: 'neutral', label: 'top' });
-  addLink(links, { source: opts.startName, target: opts.builtName, value: opts.built, role: 'neutral' });
-  if (opts.bounced > 0) {
-    addNode(nodes, seen, { name: opts.bouncedName, role: 'sink', label: 'bottom' });
-    addLink(links, { source: opts.startName, target: opts.bouncedName, value: opts.bounced, role: 'sink' });
+  addNode(nodes, seen, { name: 'Saw intro', role: 'neutral', label: 'left' });
+  addNode(nodes, seen, { name: 'Built', role: 'neutral', label: 'top' });
+  addLink(links, { source: 'Saw intro', target: 'Built', value: f.built, role: 'neutral' });
+  if (f.bounced > 0) {
+    addNode(nodes, seen, { name: 'Bounced', role: 'sink', label: 'bottom' });
+    addLink(links, { source: 'Saw intro', target: 'Bounced', value: f.bounced, role: 'sink' });
   }
+  addFan(nodes, links, seen, 'Built', sizeFan(f.completed, f.exported, f.keptPrivate, f.buckets));
 
-  let src = opts.builtName;
-  for (let i = 0; i < opts.through.length; i++) {
-    const peel = opts.peels[i];
-    const next = opts.through[i];
-    if (!next) break;
-    const isLast = i === opts.through.length - 1;
-    const from = src;
-    if (next.count > 0) {
-      addNode(nodes, seen, {
-        name: next.label,
-        role: isLast ? 'success' : 'neutral',
-        label: 'top',
-      });
-      addLink(links, {
-        source: from,
-        target: next.label,
-        value: next.count,
-        role: isLast ? 'success' : 'neutral',
-      });
-      src = next.label;
-    }
-    if (peel && peel.count > 0) {
-      addNode(nodes, seen, { name: peel.label, role: 'sink', label: 'bottom' });
-      addLink(links, { source: from, target: peel.label, value: peel.count, role: 'sink' });
-    }
-  }
-
-  const presentOutcomes = opts.outcomes.filter((o) => o.count > 0);
-  presentOutcomes.forEach((o, i) => {
-    const label: FunnelLabelSide =
-      presentOutcomes.length === 1 ? 'right' : i === 0 ? 'top' : i === presentOutcomes.length - 1 ? 'bottom' : 'right';
-    addNode(nodes, seen, { name: o.name, role: o.role, label });
-    addLink(links, { source: src, target: o.name, value: o.count, role: o.role });
-  });
-
-  return orderSankeyForLayout(nodes, links, opts.ariaLabel);
-}
-
-export function dexFunnelSankey(f: DexUsageFunnel): FunnelSankey {
-  return stagedSankey({
-    startName: 'Saw intro',
-    builtName: 'Built',
-    bouncedName: 'Bounced',
-    opened: f.opened,
-    built: f.built,
-    bounced: f.bounced,
-    peels: f.peels,
-    through: f.through,
-    outcomes: [
-      { name: 'Exported', count: f.exported, role: 'success' },
-      { name: 'Kept private', count: f.keptPrivate, role: 'priv' },
-    ],
-    ariaLabel: `Dex usage funnel: ${f.opened} saw intro, ${f.built} built, ${f.bounced} bounced; of ${f.built} built, ${f.completed} completed and ${f.peels.map((p) => `${p.count} stopped at ${p.label}`).join(', ')}; of ${f.completed} completed, ${f.exported} exported and ${f.keptPrivate} kept private.`,
-  });
+  const bucketBits = f.buckets.map((b) => `${b.count} at ${b.label}`).join(', ');
+  const incompleteExported = f.buckets.reduce((s, b) => s + b.exported, 0);
+  const extra =
+    incompleteExported > 0 ? `; ${incompleteExported} incomplete builders also exported` : '';
+  return orderSankeyForLayout(
+    nodes,
+    links,
+    `Dex usage funnel: ${f.opened} saw intro, ${f.built} built, ${f.bounced} bounced; of ${f.built} built, ${f.completed} completed and ${bucketBits}; of ${f.completed} completed, ${f.exported} exported and ${f.keptPrivate} kept private${extra}.`,
+  );
 }
 
 export function leagueFunnelSankey(f: LeagueUsageFunnel): FunnelSankey {
-  return stagedSankey({
-    startName: 'Opened',
-    builtName: 'Seated',
-    bouncedName: 'Left',
-    opened: f.opened,
-    built: f.seated,
-    bounced: f.bounced,
-    peels: f.peels,
-    through: f.through,
-    outcomes: [
-      { name: 'Exported league', count: f.exportedLeague, role: 'success' },
-      { name: 'Exported card', count: f.exportedCardOnly, role: 'success' },
-      { name: 'Kept private', count: f.keptPrivate, role: 'priv' },
-    ],
-    ariaLabel: `League usage funnel: ${f.opened} opened, ${f.seated} seated, ${f.bounced} left; of ${f.seated} seated, ${f.fullLeague} filled a full league and ${f.peels.map((p) => `${p.count} stopped at ${p.label}`).join(', ')}; of ${f.fullLeague} full, ${f.exportedLeague} exported a league, ${f.exportedCardOnly} exported a card only, ${f.keptPrivate} kept private.`,
-  });
+  const nodes: FunnelNode[] = [];
+  const links: FunnelLink[] = [];
+  const seen = new Set<string>();
+
+  addNode(nodes, seen, { name: 'Opened', role: 'neutral', label: 'left' });
+  if (f.placed > 0) {
+    addNode(nodes, seen, { name: 'Placed a Pokémon', role: 'neutral', label: 'top' });
+    addLink(links, { source: 'Opened', target: 'Placed a Pokémon', value: f.placed, role: 'neutral' });
+  }
+  if (f.bounced > 0) {
+    addNode(nodes, seen, { name: 'Bounced', role: 'sink', label: 'bottom' });
+    addLink(links, { source: 'Opened', target: 'Bounced', value: f.bounced, role: 'sink' });
+  }
+  if (f.oneGymFull > 0) {
+    addNode(nodes, seen, { name: 'One gym full', role: 'neutral', label: 'top' });
+    addLink(links, {
+      source: 'Placed a Pokémon',
+      target: 'One gym full',
+      value: f.oneGymFull,
+      role: 'neutral',
+    });
+  }
+  if (f.cardNotFinished > 0) {
+    addNode(nodes, seen, { name: 'Card not finished', role: 'sink', label: 'bottom' });
+    addLink(links, {
+      source: 'Placed a Pokémon',
+      target: 'Card not finished',
+      value: f.cardNotFinished,
+      role: 'sink',
+    });
+  }
+  if (f.oneGymFull > 0) {
+    addFan(nodes, links, seen, 'One gym full', gymFan(f.gymBuckets));
+  }
+
+  const gymBits = f.gymBuckets.map((b) => `${b.count} at ${b.label}`).join(', ');
+  return orderSankeyForLayout(
+    nodes,
+    links,
+    `League usage funnel: ${f.opened} opened, ${f.placed} placed a Pokémon, ${f.bounced} bounced; of ${f.placed} placed, ${f.oneGymFull} filled a gym and ${f.cardNotFinished} did not finish a card; gyms: ${gymBits}; ${f.exportedLeague} exported a league, ${f.exportedCard} exported a card only.`,
+  );
 }
 
-/** Distance along the trunk from the start node. Used to assert earlier peels
- *  sit further left than later ones. */
+/** Distance along the trunk from the start node. Used to assert buckets
+ *  that share a parent sit in the same column. */
 export function nodeDepth(name: string, links: FunnelLink[]): number {
   const incoming = links.filter((l) => l.target === name);
   if (incoming.length === 0) return 0;
   return 1 + Math.max(...incoming.map((l) => nodeDepth(l.source, links)));
 }
 
-/** Vertical order inside a Sankey column. Through-nodes first (top ribbon),
- *  then success, then private, then peels. echarts with `layoutIterations: 0`
- *  stacks a column in node-list order. */
+/** Vertical order inside a Sankey column. Success first (top ribbon), then
+ *  through, then private, then drop-offs. Outgoing export links do not
+ *  promote a size bucket into the through rank, or exporting 1–30 would
+ *  sit next to Completed. echarts with `layoutIterations: 0` stacks a
+ *  column in node-list order. */
 const ROLE_STACK: Record<FunnelRole, number> = {
   success: 0,
   neutral: 1,
@@ -160,11 +264,9 @@ const ROLE_STACK: Record<FunnelRole, number> = {
 
 export function orderSankeyForLayout(nodes: FunnelNode[], links: FunnelLink[], ariaLabel: string): FunnelSankey {
   const byName = new Map(nodes.map((n) => [n.name, n]));
-  const outgoing = new Set(links.map((l) => l.source));
   const rank = (name: string): number => {
     const n = byName.get(name);
     if (!n) return 99;
-    if (outgoing.has(name) && n.role !== 'sink') return -1;
     return ROLE_STACK[n.role];
   };
   const orderedNodes = [...nodes].sort(
