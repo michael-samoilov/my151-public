@@ -271,7 +271,7 @@ function capHeight(ctx: CanvasRenderingContext2D): number {
 // ---------- the gym card ----------
 
 const ACE_HEAD = ['ACE', 'POKÉMON'];
-const PARTNER_HEAD = ['PARTNER / SHOUL', 'DERMON'];
+const PARTNER_HEAD = ['PARTNER /', 'SHOULDERMON'];
 const SIG_HEAD = ['SIGNATURE', 'POKÉMON'];
 
 /** The width of a two-line heading run, at the heading's own size. */

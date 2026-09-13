@@ -1000,11 +1000,10 @@ function EmptyOutline() {
 }
 
 const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
-/** Mid-word break so no run is wider than the partner triangle's base. */
-const PARTNER_HEAD: Heading = { lines: ['PARTNER / SHOUL', 'DERMON'], label: 'PARTNER' };
+const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
 const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
 /** Slightly smaller than the ace heading so every run stays inside the partner pane. */
-const PARTNER_HEAD_CLASS = 'text-[0.5rem] font-extrabold tracking-[0.05em] leading-[1.35]';
+const PARTNER_HEAD_CLASS = 'text-[0.46875rem] font-extrabold tracking-[0.03em] leading-[1.3]';
 // The name wears the heading's all-caps, weight and size, so it reads as part
 // of the same label. Its tracking is tighter, though: the heading is two short
 // words that a wide track sets off, while the name is one long word that the
@@ -1262,7 +1261,8 @@ const MARK_ROWS = 1.5;
  * keeps the glyph from eating the text it labels; both slots use the same
  * expression, so the disc and the hexagon stay on one axis whatever binds.
  */
-const MARK_COL = 'min(2.75rem, 26%)';
+/** Fixed rem width: a percentage cap starved BADGE to ~23px and stacked its letters. */
+const MARK_COL = '3rem';
 /**
  * The box's left pad and the gap after the glyph column: equal, on purpose.
  *
@@ -1299,7 +1299,7 @@ const MARK_TRAIL = '0.0625rem';
 // resolves against the column, so repeating the box fraction here multiplies
 // the two and collapses the glyph to a few pixels.
 const MARK_GLYPH = '72%';
-const MARK_LABEL_CLASS = 'text-[0.5rem] font-extrabold tracking-[0.06em]';
+const MARK_LABEL_CLASS = 'whitespace-nowrap text-[0.5rem] font-extrabold tracking-[0.06em]';
 
 function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
@@ -1344,8 +1344,8 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             move; the hexagon and BADGE answer to the gym. So the word here
             reads the move's own band rather than the card's `--lg-band`. */}
         <span
-          className={cn('-mt-[0.0625rem]', MARK_LABEL_CLASS)}
-          style={{ color: move ? cardShades(move.type).band : 'var(--lg-hint)' }}
+          className={cn('-mt-[0.0625rem] w-max max-w-full', MARK_LABEL_CLASS)}
+          style={{ color: move ? cardShades(move.type).band : 'var(--lg-hint)', whiteSpace: 'nowrap' }}
         >
           TM
         </span>
@@ -1385,7 +1385,7 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           </span>
         </span>
       ) : (
-        <span className={cn('min-w-0 text-left', MARK_LABEL_CLASS)} style={{ color: 'var(--lg-hint)' }}>
+        <span className={cn('min-w-0 whitespace-nowrap text-left', MARK_LABEL_CLASS)} style={{ color: 'var(--lg-hint)' }}>
           Pick a move
         </span>
       )}
@@ -1568,8 +1568,8 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           style={{ gridTemplateRows: name ? '0fr' : '1fr' }}
         >
           <span
-            className={cn('-mt-[0.0625rem] overflow-hidden transition-opacity duration-300 ease-out', MARK_LABEL_CLASS)}
-            style={{ color: 'var(--lg-hint)', opacity: name ? 0 : 1, minHeight: 0 }}
+            className={cn('-mt-[0.0625rem] w-max max-w-full transition-opacity duration-300 ease-out', MARK_LABEL_CLASS)}
+            style={{ color: 'var(--lg-hint)', opacity: name ? 0 : 1, minHeight: 0, whiteSpace: 'nowrap' }}
           >
             BADGE
           </span>
@@ -1601,7 +1601,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           // to tap and nowhere obvious for the caret to sit.
           data-badge-field
           data-placeholder="Name"
-          className="outline-none"
+          className="inline-block min-w-[2.75rem] outline-none"
         />
       </div>
       {name && (
