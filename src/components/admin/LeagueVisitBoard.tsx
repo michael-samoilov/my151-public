@@ -6,7 +6,7 @@ import { starPath } from '@/lib/sectionOutlines';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
-import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, slotKind, slotLabel } from '@/league/model/constants';
+import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, TEAM_SIZES, slotKind, slotLabel } from '@/league/model/constants';
 import { defaultBoundaries, deriveRows, visibleMembers, type PlacedLine } from '@/league/model/engine';
 import { cardShades } from '@/league/theme';
 import { BossBall, Crown, GymBadges, Stars } from '@/league/components/glyphs';
@@ -20,21 +20,15 @@ interface VisitCard {
   lg?: [number, number][];
 }
 
-/** Compact gym-card geometry, in rem. Sized so two rows of seven fit a
- *  1280×800 admin pane; the strip then zooms down if the pane is shorter. */
-const ROW_H = 1.15;
-const BAND_H = 0.9;
-const PAD_X = 0.28;
-const PAD_Y = 0.28;
-const CARD_W = 11;
-const GAP_REM = 0.35;
-const GLYPH_SPAN: Record<number, number> = { 1: 2, 8: 2, 9: 2 };
+const PAD_X = 0.32;
+const PAD_Y = 0.4;
+const GLYPH_SPAN: Record<number, number> = { 1: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2 };
 const BAND_BEFORE: Record<number, string> = {
   [ELITE_ROW]: 'ELITE FOUR & CHAMPION',
   [BOSS_ROW]: 'ENDGAME BOSS',
 };
-const CARD_H = PAD_Y * 2 + BAND_H + ROW_COUNT * ROW_H + Object.keys(BAND_BEFORE).length * BAND_H;
-/** After zoom, a row shorter than this (px) is no longer a gym card. */
+/** 14-across only when each card is wide enough that a row still reads. */
+const MIN_CARD_W = 90;
 const MIN_ROW_PX = 14;
 
 const CROWN_SVG = (
@@ -96,7 +90,7 @@ function MiniTile({ id, ace, fill }: { id: number; ace?: boolean; fill?: boolean
       style={ace ? { boxShadow: '0 0 0 2px var(--color-primary)', background: 'rgba(220,38,38,0.10)' } : undefined}
     >
       {p ? (
-        <img src={p.sprite} alt={p.name} className="h-full w-full object-contain" style={{ imageRendering: 'pixelated' }} loading="lazy" />
+        <img src={p.sprite} alt={p.name} className="max-h-full max-w-full object-contain" style={{ imageRendering: 'pixelated' }} loading="lazy" />
       ) : (
         <span className="text-[0.45rem] text-muted-foreground">#{id}</span>
       )}
@@ -138,20 +132,14 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
     <div
       data-testid="admin-gym-card"
       data-slot={index}
-      className="overflow-hidden rounded-lg"
-      style={{
-        ...vars,
-        width: `${CARD_W}rem`,
-        height: `${CARD_H}rem`,
-        background: shades.base,
-        padding: `${PAD_Y}rem ${PAD_X}rem`,
-      }}
+      className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg"
+      style={{ ...vars, background: shades.base, padding: `${PAD_Y}rem ${PAD_X}rem` }}
     >
       <div
-        className="flex items-center rounded-[0.2rem] px-1 text-white"
-        style={{ height: `${BAND_H}rem`, background: 'var(--lg-band)' }}
+        className="flex h-[0.85rem] shrink-0 items-center rounded-[0.2rem] px-1 text-white"
+        style={{ background: 'var(--lg-band)' }}
       >
-        <b className="truncate text-[0.55rem] font-extrabold tracking-[0.06em]">{slotLabel(index).toUpperCase()}</b>
+        <b className="truncate text-[0.5rem] font-extrabold tracking-[0.06em]">{slotLabel(index).toUpperCase()}</b>
       </div>
       {rows.map((cells, i) => {
         const row = i + 1;
@@ -160,22 +148,22 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
         const lead = 7 - size - span;
         const band = BAND_BEFORE[row];
         return (
-          <div key={row}>
+          <div key={row} className="flex min-h-0 flex-1 flex-col">
             {band && (
               <div
-                className="flex items-center rounded-[0.2rem] px-1 text-white"
-                style={{ height: `${BAND_H}rem`, background: 'var(--lg-band)' }}
+                className="flex h-[0.7rem] shrink-0 items-center rounded-[0.2rem] px-1 text-white"
+                style={{ background: 'var(--lg-band)' }}
               >
-                <b className="truncate text-[0.5rem] font-extrabold tracking-[0.06em]">{band}</b>
+                <b className="truncate text-[0.45rem] font-extrabold tracking-[0.06em]">{band}</b>
               </div>
             )}
-            <div className="grid grid-cols-7 items-center" style={{ height: `${ROW_H}rem` }}>
+            <div className="grid min-h-0 flex-1 grid-cols-7 items-center">
               {Array.from({ length: lead }, (_, k) => (
                 <div key={`lead-${k}`} />
               ))}
               <div
-                className={cn('mx-px flex items-center justify-center self-center rounded-[0.2rem]', span === 2 && 'col-span-2')}
-                style={{ height: `${ROW_H - 0.2}rem`, background: 'var(--lg-cell)' }}
+                className={cn('mx-px flex h-[80%] items-center justify-center self-center overflow-hidden rounded-[0.2rem]', span === 2 && 'col-span-2')}
+                style={{ background: 'var(--lg-cell)' }}
               >
                 <RowGlyph row={row} cell={shades.cell} />
               </div>
@@ -186,7 +174,7 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
                     {id !== null ? (
                       <MiniTile id={id} ace={id === card?.aceId} fill />
                     ) : (
-                      <div className="h-[85%] w-full rounded-[3px] bg-white/70" />
+                      <div className="h-[80%] w-full rounded-[3px] bg-white/50" />
                     )}
                   </div>
                 );
@@ -199,68 +187,46 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
   );
 }
 
-function colsThatFit(availW: number, availH: number, root: number): 14 | 7 {
-  const cardW = CARD_W * root;
-  const cardH = CARD_H * root;
-  const gap = GAP_REM * root;
-  const scale14 = Math.min(availW / (14 * cardW + 13 * gap), availH / cardH);
-  return ROW_H * root * scale14 >= MIN_ROW_PX ? 14 : 7;
+function colsThatFit(availW: number, availH: number): 14 | 7 {
+  const gap = 6;
+  const cardW = (availW - 13 * gap) / 14;
+  const rowPx = availH / 14;
+  return cardW >= MIN_CARD_W && rowPx >= MIN_ROW_PX ? 14 : 7;
 }
 
 function DesktopGymStrip({ cards }: { cards: VisitCard[] }) {
   const bySlot = new Map<number, VisitCard>();
   for (const c of cards) bySlot.set(c.i, c);
   const hostRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState<14 | 7>(7);
 
   useLayoutEffect(() => {
     const host = hostRef.current;
-    const inner = innerRef.current;
-    if (!host || !inner) return;
-    let raf = 0;
+    if (!host) return;
     const apply = () => {
-      inner.style.zoom = '1';
-      const availW = host.clientWidth;
-      const availH = host.clientHeight;
-      if (availW <= 0 || availH <= 0) return;
-      const root = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-      const next = colsThatFit(availW, availH, root);
-      if (next !== cols) {
-        setCols(next);
-        return;
-      }
-      const needW = inner.offsetWidth;
-      const needH = inner.offsetHeight;
-      if (needW <= 0 || needH <= 0) return;
-      inner.style.zoom = String(Math.max(0.2, Math.min(availW / needW, availH / needH, 1)));
+      if (host.clientWidth <= 0 || host.clientHeight <= 0) return;
+      const next = colsThatFit(host.clientWidth, host.clientHeight);
+      setCols((cur) => (cur === next ? cur : next));
     };
-    const schedule = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(apply);
-    };
-    schedule();
-    const ro = new ResizeObserver(schedule);
+    apply();
+    const ro = new ResizeObserver(apply);
     ro.observe(host);
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-    };
-  }, [cols, cards]);
+    return () => ro.disconnect();
+  }, [cards]);
 
   return (
     <div
       ref={hostRef}
       data-testid="league-visit-board"
       data-cols={cols}
-      className="flex h-full min-h-0 w-full flex-1 items-center justify-center overflow-hidden"
+      className="h-full min-h-0 w-full flex-1 overflow-hidden"
     >
       <div
-        ref={innerRef}
-        className="grid"
+        className="grid h-full min-h-0 w-full"
         style={{
-          gridTemplateColumns: `repeat(${cols}, ${CARD_W}rem)`,
-          gap: `${GAP_REM}rem`,
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+          gridTemplateRows: cols === 14 ? '1fr' : '1fr 1fr',
+          gap: '0.35rem',
         }}
       >
         {Array.from({ length: 14 }, (_, i) => (
