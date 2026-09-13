@@ -18,6 +18,7 @@ import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineM
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
+import { formatWhen, fmtDuration, leagueExported, sessionTotalMs } from '@/components/admin/userPreview';
 import { Globe, Languages } from 'lucide-react';
 
 // Human labels for the onboarding/funnel events shown per session.
@@ -45,13 +46,6 @@ interface BarGroup {
   children: { label: string; count: number }[];
 }
 
-const SORT_LABELS: Record<string, string> = {
-  'build-order': 'Build Order',
-  regional: 'Regional',
-  national: 'National',
-  type: 'Type',
-  custom: 'Custom',
-};
 const TOOL_TABS: { key: ToolSlice; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'dex', label: 'Dex builder' },
@@ -359,7 +353,6 @@ function relativeTime(ts: number): string {
   return `${Math.round(h / 24)}d ago`;
 }
 
-/** Format a whole-seconds value as a compact duration: 45s, 3m, 1h 5m. */
 function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; lastTs: number; tz?: string }): number {
   const stamps = (rec.sessionLog ?? []).map((s) => s.ts);
   if (stamps.length === 0) {
@@ -368,16 +361,6 @@ function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; l
   return distinctCalendarDays(stamps, rec.tz);
 }
 
-function fmtDuration(ms: number): string {
-  const s = Math.round(ms / 1000);
-  if (s < 60) return `${s}s`;
-  const m = Math.round(s / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  return `${h}h${m % 60 ? ` ${m % 60}m` : ''}`;
-}
-
-
 function flag(country?: string): string {
   if (!country || country.length !== 2) return '';
   const cc = country.toUpperCase();
@@ -385,31 +368,8 @@ function flag(country?: string): string {
   return String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
 }
 
-/** Human-readable language for a BCP-47 tag: "es-ES" → "Spanish (es-ES)".
- *  This is the browser's Accept-Language preference — i.e. the language the
- *  app would auto-detect for this user — not an in-app selection. Falls back
- *  to the raw tag when Intl can't resolve the subtag. */
-let langNames: Intl.DisplayNames | null | undefined;
-function langLabel(tag?: string): string | undefined {
-  if (!tag) return undefined;
-  if (langNames === undefined) {
-    try {
-      langNames = new Intl.DisplayNames(['en'], { type: 'language' });
-    } catch {
-      langNames = null;
-    }
-  }
-  const base = tag.split('-')[0];
-  try {
-    const name = langNames?.of(base);
-    if (name && name.toLowerCase() !== base.toLowerCase()) return `${name} (${tag})`;
-  } catch {
-    /* unresolvable subtag — fall through to the raw tag */
-  }
-  return tag;
-}
-
 /** Language name only, no tag: "es-ES" → "Spanish". Falls back to the tag. */
+let langNames: Intl.DisplayNames | null | undefined;
 function langName(tag?: string): string | undefined {
   if (!tag) return undefined;
   if (langNames === undefined) {
@@ -452,15 +412,6 @@ function countryName(code?: string): string | undefined {
  *  "zh-Hans" is not reported as disagreeing with a browser's "zh-CN". */
 function sameBaseLang(a: string, b: string): boolean {
   return a.split('-')[0].toLowerCase() === b.split('-')[0].toLowerCase();
-}
-
-function localTime(when: number, tz?: string): string | null {
-  if (!tz) return null;
-  try {
-    return new Intl.DateTimeFormat(undefined, { timeZone: tz, dateStyle: 'medium', timeStyle: 'short' }).format(when);
-  } catch {
-    return null;
-  }
 }
 
 async function fetchDashboard(token: string, limit: number, offset: number): Promise<ApiResponse> {
@@ -771,6 +722,37 @@ function UserToolSeg({
         );
       })}
     </div>
+  );
+}
+
+/** Geo / platform / language chips. Icons disclose their name on press or hover. */
+function PlatformChips({ rec, className }: { rec: HeaderRec; className?: string }) {
+  return (
+    <TooltipScope>
+      <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
+        {rec.country && (
+          <InfoChip label={`${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}`}>
+            <FlagIcon country={rec.country} />
+          </InfoChip>
+        )}
+        {rec.device && (
+          <InfoChip label={rec.device}>
+            <DeviceIcon value={rec.device} />
+          </InfoChip>
+        )}
+        {rec.os && (
+          <InfoChip label={rec.os}>
+            <OsIcon value={rec.os} />
+          </InfoChip>
+        )}
+        {rec.browser && (
+          <InfoChip label={rec.browser}>
+            <BrowserIcon value={rec.browser} />
+          </InfoChip>
+        )}
+        <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+      </div>
+    </TooltipScope>
   );
 }
 
@@ -1136,24 +1118,28 @@ function regionGroups(countries: Record<string, number>): BarGroup[] {
     .sort((a, b) => b.count - a.count);
 }
 
-/**
- * Fold raw Accept-Language tags into one row per language.
- *
- * Tags run through the app's own negotiation, so `en-GB`, `en-CA` and `en-US`
- * land on the single locale they would actually be served, and `zh-CN` lands on
- * `zh-Hans` rather than being lumped with `zh-Hant`. A tag that matches nothing
- * we ship folds to its primary subtag instead and is marked — those rows are
- * the localisation backlog, ranked by how many users are waiting in it.
- */
-function fmtExportSettings(s: NonNullable<ClientRecord['exportSettings']>): string {
-  const parts = [SORT_LABELS[s.sort] ?? s.sort];
-  if (s.outlines) parts.push('outlines');
-  parts.push(s.groupSpecial ? 'specials grouped' : 'specials inline');
-  if (s.showStats) parts.push('stats');
-  return parts.join(' · ');
+function MetricChip({ label, exported }: { label: string; exported?: boolean }) {
+  return (
+    <span className="inline-flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-xs font-medium">
+      {label}
+      {exported ? <span className="font-normal text-muted-foreground">exported</span> : null}
+    </span>
+  );
 }
 
-function UserCard({ rec, league, onDelete, onOpen, zIndex, stickyOffset }: { rec: ClientRecord; league?: LeagueUser; onDelete: (rec: ClientRecord) => void; onOpen: () => void; zIndex: number; stickyOffset: number }) {
+function UserPreviewCard({
+  rec,
+  dex,
+  league,
+  onOpen,
+  onDelete,
+}: {
+  rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
+  dex?: { depth: number; exported: boolean };
+  league?: { cards: number; exported: boolean };
+  onOpen: () => void;
+  onDelete?: () => void;
+}) {
   // Two-step delete: first click arms, second confirms. Auto-disarms after a
   // few seconds so a forgotten armed button can't be hit later by accident.
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -1162,183 +1148,81 @@ function UserCard({ rec, league, onDelete, onOpen, zIndex, stickyOffset }: { rec
     const t = setTimeout(() => setConfirmingDelete(false), 4000);
     return () => clearTimeout(t);
   }, [confirmingDelete]);
-  const cardRef = useRef<HTMLElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
-  const userLocal = localTime(rec.lastTs, rec.tz);
-  const ctx = [
-    rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
-    [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
-    // What the app actually rendered in. Records predating locale reporting
-    // have only the Accept-Language header, which is labelled as such so a
-    // browser preference is never misread as the language we served.
-    rec.locale ? `🗣 ${langLabel(rec.locale)}` : rec.lang && `🗣 ${langLabel(rec.lang)} · browser`,
-    // When the browser asked for something else, the difference is the user's
-    // own choice — a picker selection or a ?lang= link.
-    rec.locale && rec.lang && !sameBaseLang(rec.locale, rec.lang)
-      ? `browser: ${langLabel(rec.lang)}`
-      : undefined,
-  ].filter(Boolean);
+
+  const sessions = rec.sessions ?? rec.sessionMs?.length ?? 0;
+  const totalMs = sessionTotalMs(rec.sessionMs);
 
   return (
-    <section ref={cardRef} style={{ zIndex, scrollMarginTop: stickyOffset }}>
-      <div ref={headerRef} className="sticky z-[5]" style={{ top: stickyOffset }}>
-        <div className="h-4 bg-background" />
-        <div className="rounded-lg bg-card p-3 shadow-elevated">
-          <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-            <div className="text-sm">
-              <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
-              <span className="text-muted-foreground">
-                {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'} · depth {rec.maxDepth}
-              </span>
-              {(rec.sessionMs?.length || rec.sessions) && (
-                <span className="block text-xs text-muted-foreground">
-                  {rec.sessions ?? rec.sessionMs?.length} session
-                  {(rec.sessions ?? rec.sessionMs?.length) === 1 ? '' : 's'}
-                  {/* Distinct calendar days this record was active on. Vercel
-                      counts a *daily* unique visitor, so one person returning
-                      over N days is roughly N visitors there and exactly one
-                      user here — the single most confusing gap between the two
-                      dashboards. Printing the day count makes the two numbers
-                      reconcilable instead of contradictory. */}
-                  {(() => {
-                    const days = activeDayCount(rec);
-                    return days > 1 ? ` across ${days} days` : '';
-                  })()}
-                  {rec.sessionMs?.length ? `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}` : ''}
-                </span>
-              )}
-              <span className="block text-xs text-muted-foreground">
-                {rec.completed && <span className="text-primary font-medium">✓ completed </span>}
-                {rec.exported && (
-                  <span>
-                    📷 exported
-                    {rec.exportSettings && (
-                      <span className="text-muted-foreground"> ({fmtExportSettings(rec.exportSettings)})</span>
-                    )}{' '}
-                  </span>
-                )}
-                {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning</span>}
-                {league && (
-                  <span className="text-primary"> · 🏅 league ({league.maxCards}/{CARD_COUNT})</span>
-                )}
-                {userLocal && <> · their {userLocal}</>}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" onClick={onOpen}>
-                Builds ›
-              </Button>
-              {confirmingDelete ? (
-                <>
-                  <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      setConfirmingDelete(false);
-                      onDelete(rec);
-                    }}
-                  >
-                    Confirm delete
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => setConfirmingDelete(true)}
-                >
-                  Delete
+    <div
+      role="link"
+      tabIndex={0}
+      aria-label={`Open user ${middleId(rec.cid)}`}
+      className="cursor-pointer rounded-lg bg-card p-3 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 text-sm">
+          <span className="font-semibold">{formatWhen(rec.lastTs, rec.tz)}</span>
+          <span className="text-muted-foreground"> · {relativeTime(rec.lastTs)}</span>
+        </div>
+        {onDelete && (
+          <div
+            className="flex shrink-0 items-center gap-1"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            {confirmingDelete ? (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
+                  Cancel
                 </Button>
-              )}
-            </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    setConfirmingDelete(false);
+                    onDelete();
+                  }}
+                >
+                  Confirm delete
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={() => setConfirmingDelete(true)}
+              >
+                Delete
+              </Button>
+            )}
           </div>
-          {ctx.length > 0 && (
-            <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
-              {ctx.map((c, i) => (
-                <span key={i}>{c}</span>
-              ))}
-            </div>
+        )}
+      </div>
+      <div className="mt-1.5">
+        <PlatformChips rec={rec} />
+      </div>
+      <div className="mt-1.5 text-xs text-muted-foreground">
+        {sessions} session{sessions === 1 ? '' : 's'}
+        {totalMs > 0 ? ` · ${fmtDuration(totalMs)}` : ''}
+      </div>
+      {(dex || league) && (
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {dex && <MetricChip label={`${dex.depth} Pokémon`} exported={dex.exported} />}
+          {league && (
+            <MetricChip label={`${league.cards}/${CARD_COUNT} cards`} exported={league.exported} />
           )}
         </div>
-      </div>
-    </section>
-  );
-}
-
-function countLabel(n: number, one: string, many: string): string {
-  return `${n} ${Math.abs(n) === 1 ? one : many}`;
-}
-
-function LeagueUserCard({
-  rec,
-  onOpen,
-  zIndex,
-  stickyOffset,
-}: {
-  rec: LeagueUser;
-  onOpen: () => void;
-  zIndex: number;
-  stickyOffset: number;
-}) {
-  const cardRef = useRef<HTMLElement>(null);
-  const userLocal = localTime(rec.lastTs, rec.tz);
-  const ctx = [
-    rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
-    [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
-    rec.locale ? `🗣 ${langLabel(rec.locale)}` : rec.lang && `🗣 ${langLabel(rec.lang)} · browser`,
-  ].filter(Boolean);
-
-  return (
-    <section ref={cardRef} style={{ zIndex, scrollMarginTop: stickyOffset }}>
-      <div className="sticky z-[5]" style={{ top: stickyOffset }}>
-        <div className="h-4 bg-background" />
-        <div className="rounded-lg bg-card p-3 shadow-elevated">
-          <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-            <div className="text-sm">
-              <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
-              <span className="text-muted-foreground">
-                {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'}
-              </span>
-              <span className="block text-xs text-muted-foreground">
-                {countLabel(rec.maxCards, 'trainer card', 'trainer cards')} filled of {CARD_COUNT} ·{' '}
-                {countLabel(rec.maxSeats, 'seat', 'seats')} · {rec.sessions} session
-                {rec.sessions === 1 ? '' : 's'}
-                {rec.sessionMs.length > 0 && `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}`}
-              </span>
-              <span className="block text-xs text-muted-foreground">
-                {rec.maxCards >= CARD_COUNT && (
-                  <span className="text-primary font-medium">✓ full league </span>
-                )}
-                {(rec.exportsCard > 0 || rec.exportsLeague > 0) && (
-                  <span>📷 exported </span>
-                )}
-                {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning </span>}
-                {rec.hasDex ? (
-                  <span className="text-primary">· 📕 has a dex</span>
-                ) : (
-                  <span>· league only</span>
-                )}
-                {userLocal && <> · their {userLocal}</>}
-              </span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={onOpen}>
-              Visits ›
-            </Button>
-          </div>
-          {ctx.length > 0 && (
-            <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
-              {ctx.map((c, i) => (
-                <span key={i}>{c}</span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
+      )}
+    </div>
   );
 }
 
@@ -1468,6 +1352,7 @@ export function AdminPage() {
     if (pageHeaderRef.current) setPageHeaderH(pageHeaderRef.current.offsetHeight);
   });
 
+
   // Open a detail page from the dashboard, remembering the scroll position so
   // Back returns the reader to exactly where they were, not the top.
   const dashScrollRef = useRef(0);
@@ -1535,7 +1420,7 @@ export function AdminPage() {
 
   const deleteUser = useCallback(
     async (rec: ClientRecord) => {
-      // Guarded by the two-step arm/confirm in UserCard; this just performs it.
+      // Guarded by the two-step arm/confirm in UserPreviewCard; this just performs it.
       if (!token) return;
       setError(null);
       try {
@@ -1625,6 +1510,7 @@ export function AdminPage() {
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-1">
           <h1 className="whitespace-nowrap text-sm font-bold">
+
             <span className="text-primary">my151</span> · Analytics
           </h1>
           <div className="flex items-center gap-0.5">
@@ -1936,31 +1822,46 @@ export function AdminPage() {
                 <p className="text-sm text-muted-foreground">No users yet.</p>
               )}
               {showDex && (
-                <div className="-mt-2 flex flex-col">
-                  {data.records.map((rec, i) => (
-                    <UserCard
-                      key={rec.cid}
-                      rec={rec}
-                      league={data.leagueByCid?.[rec.cid]}
-                      onDelete={deleteUser}
-                      onOpen={() => openDetail({ kind: 'dex', cid: rec.cid })}
-                      zIndex={data.records.length - i}
-                      stickyOffset={pageHeaderH}
-                    />
-                  ))}
+                <div className="flex flex-col gap-2">
+                  {data.records.map((rec) => {
+                    const league = data.leagueByCid?.[rec.cid];
+                    return (
+                      <UserPreviewCard
+                        key={rec.cid}
+                        rec={rec}
+                        dex={{ depth: rec.maxDepth, exported: rec.exported }}
+                        league={
+                          league
+                            ? {
+                                cards: league.maxCards,
+                                exported: leagueExported(league.exportsCard, league.exportsLeague),
+                              }
+                            : undefined
+                        }
+                        onDelete={() => void deleteUser(rec)}
+                        onOpen={() => openDetail({ kind: 'dex', cid: rec.cid })}
+                      />
+                    );
+                  })}
                 </div>
               )}
               {!showDex && data.leagueUsers && (
-                <div className="-mt-2 flex flex-col">
-                  {data.leagueUsers.map((rec, i) => (
-                    <LeagueUserCard
-                      key={rec.cid}
-                      rec={rec}
-                      onOpen={() => openDetail({ kind: 'league', cid: rec.cid })}
-                      zIndex={data.leagueUsers!.length - i}
-                      stickyOffset={pageHeaderH}
-                    />
-                  ))}
+                <div className="flex flex-col gap-2">
+                  {data.leagueUsers.map((rec) => {
+                    const dex = data.records.find((r) => r.cid === rec.cid);
+                    return (
+                      <UserPreviewCard
+                        key={rec.cid}
+                        rec={rec}
+                        dex={dex ? { depth: dex.maxDepth, exported: dex.exported } : undefined}
+                        league={{
+                          cards: rec.maxCards,
+                          exported: leagueExported(rec.exportsCard, rec.exportsLeague),
+                        }}
+                        onOpen={() => openDetail({ kind: 'league', cid: rec.cid })}
+                      />
+                    );
+                  })}
                 </div>
               )}
               {!showDex && (data.leagueUsers?.length ?? 0) === 0 && !loading && (

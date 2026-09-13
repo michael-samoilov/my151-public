@@ -179,6 +179,15 @@ type NewestSeed = {
   exp: boolean;
   hoursAgo: number;
 };
+const TZ: Record<string, string> = {
+  US: 'America/New_York',
+  IT: 'Europe/Rome',
+  SE: 'Europe/Stockholm',
+  CA: 'America/Toronto',
+  GB: 'Europe/London',
+  AU: 'Australia/Sydney',
+  FR: 'Europe/Paris',
+};
 const NEWEST: NewestSeed[] = [
   { cid: '74d5…68', c: 'US', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'en-US', sess: 11, dex: 151, comp: true, exp: false, hoursAgo: 2 },
   { cid: '70cd…a7', c: 'IT', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'it-IT', sess: 6, dex: 90, comp: false, exp: false, hoursAgo: 4 },
@@ -208,7 +217,7 @@ function record(s: NewestSeed): ClientRecord {
   const lastTs = NOW - s.hoursAgo * 3_600_000;
   const firstTs = lastTs - (s.sess + 2) * DAY;
   const ids = Array.from({ length: s.dex }, (_, i) => i + 1);
-  const sessionMs = Array.from({ length: s.sess }, () => 120_000 + Math.round(Math.random() * 600_000));
+  const sessionMs = Array.from({ length: s.sess }, (_, i) => 180_000 + ((i * 73) % 12) * 60_000);
   return {
     cid: s.cid,
     firstTs,
@@ -251,7 +260,8 @@ function record(s: NewestSeed): ClientRecord {
     localDow: 3,
     country: s.c,
     region: s.c === 'US' || s.c === 'CA' ? 'N. America' : 'Europe',
-    tz: 'America/New_York',
+    tz: TZ[s.c],
+
     lang: s.lang,
     locale: s.lang.split('-')[0],
     device: s.dev,
@@ -314,6 +324,7 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
     sessionMs: Array.from({ length: sess }, () => 300_000),
     country: c,
     region,
+    tz: TZ[c],
     lang,
     locale: lang.split('-')[0],
     device: 'Desktop',
