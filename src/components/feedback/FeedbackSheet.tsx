@@ -219,6 +219,11 @@ function FeedbackForm({
           disagree with it. */}
       <label htmlFor="feedback-message" className="text-xs font-medium">
         {t('feedback.message.label')}
+        {(category === 'bug' || category === 'idea') && (
+          <span className="mt-0.5 block font-normal text-muted-foreground">
+            {t('feedback.message.readEverything')}
+          </span>
+        )}
       </label>
       <textarea
         id="feedback-message"

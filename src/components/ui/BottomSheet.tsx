@@ -19,6 +19,8 @@ interface BottomSheetProps {
   size?: 'full' | 'content';
   /** px left below the viewport top so the grab handle is always reachable. */
   topGap?: number;
+  /** Stacking order for the portalled overlay. Default 50. */
+  layerZIndex?: number;
   children: React.ReactNode;
 }
 
@@ -43,6 +45,7 @@ export function BottomSheet({
   closeLabel,
   size = 'content',
   topGap = 56,
+  layerZIndex = 50,
   children,
 }: BottomSheetProps) {
   const [dragY, setDragY] = useState(0);
@@ -263,7 +266,7 @@ export function BottomSheet({
     <div
       ref={overlayRef}
       data-overlay
-      className="fixed inset-x-0 z-50 flex flex-col justify-end md:hidden"
+      className="fixed inset-x-0 flex flex-col justify-end md:hidden"
       // Bounded to the visible area rather than `inset-0`, so "the bottom" is
       // the top of the keyboard when one is open and the bottom of the screen
       // when it is not.
@@ -273,8 +276,8 @@ export function BottomSheet({
             // element is a long-standing iOS Safari minefield — it can promote
             // the element to a layer positioned against the document rather
             // than the viewport, which is the opposite of what is wanted here.
-            { top: `${viewport.top}px`, height: `${viewport.height}px` }
-          : { top: 0, bottom: 0 }
+            { zIndex: layerZIndex, top: `${viewport.top}px`, height: `${viewport.height}px` }
+          : { zIndex: layerZIndex, top: 0, bottom: 0 }
       }
     >
       <div

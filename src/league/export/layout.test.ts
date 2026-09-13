@@ -205,8 +205,16 @@ describe('export layout', () => {
   it('widens the picture when story and rematch export side by side', () => {
     const base = L.homeExportGeometry(false, false);
     const wide = L.homeExportGeometry(false, true);
-    expect(wide.homeW).toBeGreaterThan(base.homeW);
-    expect(wide.seatCol).toBeLessThan(base.seatCol);
+    const teamBlock = L.SEAT_COUNT * L.SEAT_COL;
+    expect(wide.homeW).toBeCloseTo(base.homeW + teamBlock + L.HOME_SIDE_GAP, 6);
+    expect(wide.seatCol).toBe(base.seatCol);
+  });
+
+  it('widens the picture for gym details without shrinking seats', () => {
+    const base = L.homeExportGeometry(false, false);
+    const detailed = L.homeExportGeometry(true, false);
+    expect(detailed.homeW).toBe(base.homeW + L.HOME_DETAILS_COL);
+    expect(detailed.seatCol).toBe(base.seatCol);
   });
 
   it('sets the credit at about six points on a phone', () => {

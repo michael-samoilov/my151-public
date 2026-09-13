@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Download, Loader2, X } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { Button } from '@/components/ui/button';
 import { shareOrDownload } from '@/lib/exportImage';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
@@ -18,90 +16,9 @@ import { sendLeagueExportBeacon } from '../hooks/useLeagueBeacon';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { ExportPreview3D } from './ExportPreview3D';
+import { LeagueExportSettingsPane } from './LeagueExportSettingsPane';
 import { LeagueExportSurvey } from './LeagueExportSurvey';
-
-function SettingsPanel({
-  isLeague,
-  layout,
-  onLayout,
-  busy,
-  onExport,
-  onClose,
-}: {
-  isLeague: boolean;
-  layout: LeagueHomeExportLayout;
-  onLayout: (next: LeagueHomeExportLayout) => void;
-  busy: boolean;
-  onExport: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pt-1">
-      {isLeague && (
-        <div className="space-y-3">
-          <p className="text-sm font-semibold">Layout</p>
-          <div className="space-y-2">
-            <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border px-3 py-2.5">
-              <input
-                type="checkbox"
-                className="mt-0.5 size-4 shrink-0 accent-primary"
-                checked={layout.gymDetails}
-                onChange={(e) => onLayout({ ...layout, gymDetails: e.target.checked })}
-              />
-              <span className="min-w-0">
-                <span className="block text-sm font-medium">Gym details column</span>
-                <span className="block text-xs text-muted-foreground">
-                  Theme, TM, and badge beside each row
-                </span>
-              </span>
-            </label>
-            <label className="flex cursor-pointer items-start gap-3 rounded-md border border-border px-3 py-2.5">
-              <input
-                type="checkbox"
-                className="mt-0.5 size-4 shrink-0 accent-primary"
-                checked={layout.sideBySide}
-                onChange={(e) => onLayout({ ...layout, sideBySide: e.target.checked })}
-              />
-              <span className="min-w-0">
-                <span className="block text-sm font-medium">Story and rematch side by side</span>
-                <span className="block text-xs text-muted-foreground">
-                  Gym leaders only; uses the story/rematch teams from your league
-                </span>
-              </span>
-            </label>
-          </div>
-        </div>
-      )}
-
-      {!isLeague && (
-        <p className="text-sm text-muted-foreground">
-          Trainer card exports match the card on screen. League summary exports can add optional columns.
-        </p>
-      )}
-
-      </div>
-      <div className="flex shrink-0 flex-col gap-2 border-t border-border/60 bg-card px-4 pb-4 pt-2">
-        <Button type="button" disabled={busy} onClick={onExport} data-league-export-confirm>
-          {busy ? (
-            <>
-              <Loader2 className="mr-2 size-4 animate-spin" />
-              Preparing…
-            </>
-          ) : (
-            <>
-              <Download className="mr-2 size-4" />
-              Save image
-            </>
-          )}
-        </Button>
-        <Button type="button" variant="ghost" onClick={onClose}>
-          Cancel
-        </Button>
-      </div>
-    </div>
-  );
-}
+import { LeagueExportSurveyIntro } from './LeagueExportSurveyIntro';
 
 export function LeagueExportOverlay() {
   const exportCardIndex = useLeagueUi((s) => s.exportCardIndex);
@@ -182,7 +99,7 @@ export function LeagueExportOverlay() {
         : await exportGymCard(cards[exportCardIndex!]);
       await shareOrDownload(blob, isLeague ? HOME_FILENAME : CARD_FILENAME);
       incrementLeagueExportCount();
-      setExportPhase('survey');
+      setExportPhase('surveyIntro');
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('League export failed:', err);
@@ -191,16 +108,29 @@ export function LeagueExportOverlay() {
     }
   }, [exportBusy, exportCardIndex, exportKind, isLeague, layout, setExportPhase]);
 
-  const title = exportPhase === 'settings' ? 'Export' : 'Quick question';
+  const paneTitle =
+    exportPhase === 'settings'
+      ? 'Export'
+      : exportPhase === 'surveyIntro'
+        ? 'Your export'
+        : 'Quick question';
+
   const paneBody =
     exportPhase === 'settings' ? (
-      <SettingsPanel
+      <LeagueExportSettingsPane
         isLeague={isLeague}
         layout={layout}
         onLayout={setLayout}
         busy={exportBusy || previewBusy}
         onExport={() => void runExport()}
         onClose={closeLeagueExport}
+        mobileSheet={!isDesktop}
+      />
+    ) : exportPhase === 'surveyIntro' ? (
+      <LeagueExportSurveyIntro
+        exportKind={exportKind}
+        onContinue={() => setExportPhase('survey')}
+        onSkip={closeLeagueExport}
       />
     ) : (
       <LeagueExportSurvey exportKind={exportKind} onDone={closeLeagueExport} />
@@ -211,59 +141,62 @@ export function LeagueExportOverlay() {
       src={previewUrl}
       alt={isLeague ? 'League export preview' : 'Trainer card export preview'}
       busy={previewBusy}
-      className="mx-auto"
+      className="mx-auto max-h-[min(42vh,20rem)] md:max-h-[min(70vh,32rem)]"
     />
+  );
+
+  const backdrop = (
+    <button
+      type="button"
+      className="absolute inset-0 bg-black/60 backdrop-blur-md"
+      aria-label="Close export"
+      onClick={closeLeagueExport}
+    />
+  );
+
+  const previewLayer = (
+    <div
+      className={cn(
+        'pointer-events-none absolute inset-0 z-[1] flex items-center justify-center p-4 pb-28 md:p-10 md:pb-10',
+        exportPhase !== 'settings' && 'opacity-40',
+      )}
+    >
+      <div className="pointer-events-auto">{preview}</div>
+    </div>
   );
 
   if (!isDesktop) {
     return (
-      <BottomSheet
-        onClose={closeLeagueExport}
-        title={title}
-        closeLabel={title}
-        size="full"
-        topGap={56}
-      >
-        <div className="flex h-full min-h-0 flex-col">
-          <div className="flex max-h-[22vh] shrink-0 items-center justify-center overflow-hidden border-b border-border/60 bg-muted/30 px-3 py-2">
-            {preview}
-          </div>
-          <div className="flex min-h-0 flex-1 flex-col">{paneBody}</div>
-        </div>
-      </BottomSheet>
+      <div className="fixed inset-0 z-[205] md:hidden" data-overlay data-export-overlay>
+        <div className="absolute inset-0 z-0">{backdrop}</div>
+        {exportPhase === 'settings' && (
+          <div className="absolute inset-0 z-[1]">{previewLayer}</div>
+        )}
+        <BottomSheet
+          onClose={closeLeagueExport}
+          title={paneTitle}
+          closeLabel={paneTitle}
+          size="content"
+          topGap={56}
+          layerZIndex={210}
+        >
+          {paneBody}
+        </BottomSheet>
+      </div>
     );
   }
 
   return (
     <div className="fixed inset-0 z-[200] flex" data-overlay data-export-overlay>
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/70"
-        aria-label="Close export"
-        onClick={closeLeagueExport}
-      />
-      <div className="relative z-[1] flex min-w-0 flex-1 items-center justify-center p-6 md:p-10">
-        {preview}
-      </div>
+      {backdrop}
+      {previewLayer}
       <aside
         role="dialog"
-        aria-label={title}
+        aria-label={paneTitle}
         className={cn(
-          'relative z-[1] flex w-[24rem] max-w-[calc(100vw-1.5rem)] flex-col border-l bg-card shadow-xl',
-          'max-h-full',
+          'relative z-[2] ml-auto flex w-[min(24rem,calc(100vw-1.5rem))] max-h-full flex-col border-l bg-card shadow-xl',
         )}
       >
-        <div className="flex items-start justify-between gap-2 border-b px-4 py-3">
-          <span className="text-sm font-semibold">{title}</span>
-          <button
-            type="button"
-            onClick={closeLeagueExport}
-            aria-label="Close export"
-            className="-me-1 cursor-pointer rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <X className="size-4" />
-          </button>
-        </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{paneBody}</div>
       </aside>
     </div>

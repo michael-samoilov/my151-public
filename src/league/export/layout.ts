@@ -302,18 +302,17 @@ export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / SEAT_COUNT;
  * TM row (disc, type icon, category chip, move name) without chopping names.
  */
 export const HOME_DETAILS_COL = 132 * K2;
-/** Extra picture width when the details column is on, so team seats stay legible. */
-export const HOME_GYM_DETAILS_EXTRA_W = 80 * K2;
 /** Air between story and rematch blocks when both show on one row. */
 export const HOME_SIDE_GAP = 12 * K2;
 
 /** Home-export label and body sizes that mirror the gym card's TM/badge marks. */
 export const HOME_MARK_LABEL_PX = 8 * K2;
 export const HOME_MARK_TRACK = 0.06 * HOME_MARK_LABEL_PX;
-export const HOME_THEME_TEXT_PX = 14 * K2;
-export const HOME_TM_BADGE_W = 2.2 * 16 * K2;
 export const HOME_MOVE_PX = 11 * K2;
 export const HOME_MOVE_MIN_PX = 9 * K2;
+/** Matches move/badge cap height; reads slightly larger than the smallcaps label. */
+export const HOME_THEME_TEXT_PX = HOME_MOVE_PX;
+export const HOME_TM_BADGE_W = 2.2 * 16 * K2;
 
 export interface HomeExportGeometry {
   homeW: number;
@@ -324,18 +323,17 @@ export interface HomeExportGeometry {
   blockWidth: number;
 }
 
-/** Picture width and team column width for the chosen export permutations. */
+/**
+ * Picture width for export permutations. Team seats keep the default
+ * `SEAT_COL`; optional columns and side-by-side blocks add width only.
+ */
 export function homeExportGeometry(gymDetails: boolean, sideBySide: boolean): HomeExportGeometry {
   const detailsCol = gymDetails ? HOME_DETAILS_COL : 0;
-  const detailsExtra = gymDetails ? HOME_GYM_DETAILS_EXTRA_W : 0;
+  const seatCol = SEAT_COL;
+  const blockWidth = SEAT_COUNT * seatCol;
   const sideGap = sideBySide ? HOME_SIDE_GAP : 0;
-  const blocks = sideBySide ? 2 : 1;
-  const inner = HOME_INNER + detailsExtra;
-  const teamBudget = inner - GLYPH_COL - TYPE_COL - detailsCol;
-  const blockWidth = (teamBudget - sideGap) / blocks;
-  const seatCol = blockWidth / SEAT_COUNT;
   const sideExtra = sideBySide ? blockWidth + sideGap : 0;
-  const extraW = sideExtra + detailsExtra;
+  const extraW = detailsCol + sideExtra;
   return {
     homeW: HOME_W + extraW,
     homeInner: HOME_INNER + extraW,
