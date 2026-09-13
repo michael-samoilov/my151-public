@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { shareOrDownload } from '@/lib/exportImage';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
@@ -19,6 +20,63 @@ import { ExportPreview3D } from './ExportPreview3D';
 import { LeagueExportSettingsPane } from './LeagueExportSettingsPane';
 import { LeagueExportSurvey } from './LeagueExportSurvey';
 import { LeagueExportSurveyIntro } from './LeagueExportSurveyIntro';
+
+const SCRIM_Z = 200;
+const PREVIEW_Z = 201;
+const PANE_Z = 210;
+
+/**
+ * Frosted scrim over the live league UI. Portalled to `document.body` so
+ * `backdrop-filter` samples the app behind the overlay, not an empty ancestor.
+ */
+function ExportScrim({ onClose }: { onClose: () => void }) {
+  return createPortal(
+    <div className="fixed inset-0" style={{ zIndex: SCRIM_Z }} data-export-scrim data-overlay>
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-slate-950/40 backdrop-blur-2xl"
+        style={{ WebkitBackdropFilter: 'blur(24px)', backdropFilter: 'blur(24px)' }}
+      />
+      <button
+        type="button"
+        className="absolute inset-0 cursor-default bg-transparent"
+        aria-label="Close export"
+        onClick={onClose}
+      />
+    </div>,
+    document.body,
+  );
+}
+
+function ExportPreviewLayer({
+  show,
+  dimmed,
+  isDesktop,
+  children,
+}: {
+  show: boolean;
+  dimmed: boolean;
+  isDesktop: boolean;
+  children: ReactNode;
+}) {
+  if (!show) return null;
+  return createPortal(
+    <div
+      className={cn(
+        'pointer-events-none fixed flex items-center justify-center',
+        dimmed && 'opacity-40',
+        isDesktop
+          ? 'inset-0 p-6 pr-[min(26rem,calc(100vw-1rem))] md:p-10'
+          : 'inset-x-0 top-14 bottom-[min(46vh,22rem)] px-3',
+      )}
+      style={{ zIndex: PREVIEW_Z }}
+      data-export-preview-layer
+    >
+      <div className="pointer-events-auto max-h-full max-w-full">{children}</div>
+    </div>,
+    document.body,
+  );
+}
 
 export function LeagueExportOverlay() {
   const exportCardIndex = useLeagueUi((s) => s.exportCardIndex);
@@ -141,64 +199,46 @@ export function LeagueExportOverlay() {
       src={previewUrl}
       alt={isLeague ? 'League export preview' : 'Trainer card export preview'}
       busy={previewBusy}
-      className="mx-auto max-h-[min(42vh,20rem)] md:max-h-[min(70vh,32rem)]"
+      className="mx-auto max-h-full max-w-[min(92vw,22rem)] md:max-h-[min(70vh,32rem)] md:max-w-[min(40vw,28rem)]"
     />
   );
 
-  const backdrop = (
-    <button
-      type="button"
-      className="absolute inset-0 bg-black/60 backdrop-blur-md"
-      aria-label="Close export"
-      onClick={closeLeagueExport}
-    />
-  );
+  const showPreview = exportPhase === 'settings';
 
-  const previewLayer = (
-    <div
-      className={cn(
-        'pointer-events-none absolute inset-0 z-[1] flex items-center justify-center p-4 pb-28 md:p-10 md:pb-10',
-        exportPhase !== 'settings' && 'opacity-40',
-      )}
-    >
-      <div className="pointer-events-auto">{preview}</div>
-    </div>
-  );
-
-  if (!isDesktop) {
-    return (
-      <div className="fixed inset-0 z-[205] md:hidden" data-overlay data-export-overlay>
-        <div className="absolute inset-0 z-0">{backdrop}</div>
-        {exportPhase === 'settings' && (
-          <div className="absolute inset-0 z-[1]">{previewLayer}</div>
-        )}
-        <BottomSheet
-          onClose={closeLeagueExport}
-          title={paneTitle}
-          closeLabel={paneTitle}
-          size="content"
-          topGap={56}
-          layerZIndex={210}
-        >
-          {paneBody}
-        </BottomSheet>
-      </div>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 z-[200] flex" data-overlay data-export-overlay>
-      {backdrop}
-      {previewLayer}
+  const settingsPane = isDesktop ? (
+    createPortal(
       <aside
         role="dialog"
         aria-label={paneTitle}
-        className={cn(
-          'relative z-[2] ml-auto flex w-[min(24rem,calc(100vw-1.5rem))] max-h-full flex-col border-l bg-card shadow-xl',
-        )}
+        className="fixed inset-y-0 right-0 flex w-[min(24rem,calc(100vw-1.5rem))] max-h-full flex-col border-l bg-card shadow-xl"
+        style={{ zIndex: PANE_Z }}
+        data-export-overlay
       >
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{paneBody}</div>
-      </aside>
-    </div>
+      </aside>,
+      document.body,
+    )
+  ) : (
+    <BottomSheet
+      onClose={closeLeagueExport}
+      title={paneTitle}
+      closeLabel={paneTitle}
+      size="content"
+      topGap={56}
+      layerZIndex={PANE_Z}
+      showScrim={false}
+    >
+      {paneBody}
+    </BottomSheet>
+  );
+
+  return (
+    <>
+      <ExportScrim onClose={closeLeagueExport} />
+      <ExportPreviewLayer show={showPreview} dimmed={exportPhase !== 'settings'} isDesktop={isDesktop}>
+        {preview}
+      </ExportPreviewLayer>
+      {settingsPane}
+    </>
   );
 }

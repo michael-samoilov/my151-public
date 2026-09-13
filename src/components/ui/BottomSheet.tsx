@@ -21,6 +21,8 @@ interface BottomSheetProps {
   topGap?: number;
   /** Stacking order for the portalled overlay. Default 50. */
   layerZIndex?: number;
+  /** When false, omit the full-screen dimmer (caller supplies its own scrim). */
+  showScrim?: boolean;
   children: React.ReactNode;
 }
 
@@ -46,6 +48,7 @@ export function BottomSheet({
   size = 'content',
   topGap = 56,
   layerZIndex = 50,
+  showScrim = true,
   children,
 }: BottomSheetProps) {
   const [dragY, setDragY] = useState(0);
@@ -280,11 +283,13 @@ export function BottomSheet({
           : { zIndex: layerZIndex, top: 0, bottom: 0 }
       }
     >
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-        style={{ opacity: Math.max(0, 1 - dragY / (DISMISS_THRESHOLD * 3)) }}
-      />
+      {showScrim && (
+        <div
+          className="absolute inset-0 bg-black/50"
+          onClick={onClose}
+          style={{ opacity: Math.max(0, 1 - dragY / (DISMISS_THRESHOLD * 3)) }}
+        />
+      )}
       <div
         role="dialog"
         aria-label={closeLabel}
