@@ -1,5 +1,7 @@
 import { useECharts, cssVar, tooltipStyle, type EChartsOption } from './useECharts';
-import { nodeDepth, type FunnelLink, type FunnelNode } from '@/lib/usageFunnels';
+import { type FunnelLink, type FunnelNode } from '@/lib/usageFunnels';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { PhoneFunnel, PhoneReferrer } from './PhoneFlow';
 
 export type SankeyNode = FunnelNode;
 export type SankeyLink = FunnelLink;
@@ -12,32 +14,11 @@ function columnStack(nodes: SankeyNode[], links: SankeyLink[]): number {
   return Math.max(2, leftmost, rightmost);
 }
 
-function columnCount(nodes: SankeyNode[], links: SankeyLink[]): number {
-  if (links.length === 0) return 1;
-  return 1 + Math.max(...nodes.map((n) => nodeDepth(n.name, links)));
-}
-
 function chartHeight(nodes: SankeyNode[], links: SankeyLink[]): number {
   return Math.max(360, Math.min(580, columnStack(nodes, links) * 42 + 80));
 }
 
-function chartMinWidth(nodes: SankeyNode[], links: SankeyLink[]): number | undefined {
-  const cols = columnCount(nodes, links);
-  if (cols < 6) return undefined;
-  return cols * 110;
-}
-
-/**
- * MECE usage-funnel Sankey. Every inflow is accounted for by named sinks, so
- * the ribbon widths conserve at each node. Colors carry outcome meaning: gains
- * are success-green, attrition and kept-private are muted, the trunk stays
- * neutral ink. No red — that is reserved for data-movement elsewhere.
- *
- * Labels sit on the outside of the first and last columns, and above/below
- * the bar in middle columns, so a label stays next to its own node instead of
- * colliding in the gutter between columns.
- */
-export function FlowSankey({
+function DesktopSankey({
   nodes,
   links,
   ariaLabel,
@@ -47,7 +28,6 @@ export function FlowSankey({
   ariaLabel: string;
 }) {
   const height = chartHeight(nodes, links);
-  const minWidth = chartMinWidth(nodes, links);
   const ref = useECharts(
     (el): EChartsOption => {
       const ink = cssVar(el, '--color-foreground', '#0a0a0a');
@@ -55,10 +35,6 @@ export function FlowSankey({
       const success = cssVar(el, '--color-success', '#0b7a54');
       const sink = cssVar(el, '--color-sink', '#8b8b93');
       const priv = cssVar(el, '--color-priv', '#3f5b8a');
-      const w = el.clientWidth;
-      const leftPad = w < 500 ? 72 : 108;
-      const rightPad = w < 500 ? 64 : 96;
-      const fontSize = w < 500 ? 10 : 11;
       const roleColor = (role?: string) =>
         role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
 
@@ -76,8 +52,8 @@ export function FlowSankey({
         series: [
           {
             type: 'sankey',
-            left: leftPad,
-            right: rightPad,
+            left: 108,
+            right: 96,
             top: 28,
             bottom: 28,
             nodeGap: 22,
@@ -88,7 +64,7 @@ export function FlowSankey({
             emphasis: { focus: 'adjacency' },
             label: {
               color: ink,
-              fontSize,
+              fontSize: 11,
               fontWeight: 600,
               formatter: '{b} {c}',
             },
@@ -113,14 +89,48 @@ export function FlowSankey({
   );
 
   return (
-    <div className="w-full overflow-x-auto">
-      <div
-        ref={ref}
-        style={{ height, minWidth }}
-        className="w-full"
-        role="img"
-        aria-label={ariaLabel}
-      />
-    </div>
+    <div
+      ref={ref}
+      style={{ height }}
+      className="w-full min-w-0"
+      role="img"
+      aria-label={ariaLabel}
+    />
   );
+}
+
+/**
+ * MECE usage funnel. On desktop this is a Sankey: earlier peels sit further
+ * left, labels sit on their own node. On a phone the same data is a wrapping
+ * labeled-bar list, because an 8-column Sankey cannot keep those labels
+ * readable at ~390px without sideways pan.
+ */
+export function FlowSankey({
+  nodes,
+  links,
+  ariaLabel,
+  kind = 'funnel',
+}: {
+  nodes: SankeyNode[];
+  links: SankeyLink[];
+  ariaLabel: string;
+  kind?: 'funnel' | 'referrer';
+}) {
+  const isDesktop = useIsDesktop();
+  if (!isDesktop) {
+    if (kind === 'referrer') {
+      return (
+        <div className="min-w-0 w-full">
+          <PhoneReferrer links={links} ariaLabel={ariaLabel} />
+        </div>
+      );
+    }
+    return (
+      <div className="min-w-0 w-full">
+        <PhoneFunnel nodes={nodes} links={links} ariaLabel={ariaLabel} />
+      </div>
+    );
+  }
+
+  return <DesktopSankey nodes={nodes} links={links} ariaLabel={ariaLabel} />;
 }

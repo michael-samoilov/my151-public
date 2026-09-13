@@ -162,3 +162,85 @@ export function referrerFlowSankey(rows: ReferrerFlowEntry[]): FunnelSankey {
     ariaLabel: `Referrer to landing: ${rows.map((r) => r.host).join(', ')} split into dex and league landings.`,
   };
 }
+
+/** One row in the phone funnel: a node, its depth, and its inflow. */
+export interface PhoneFunnelRow {
+  name: string;
+  role: FunnelRole;
+  depth: number;
+  value: number;
+}
+
+/**
+ * Flatten a staged funnel for a phone: parent, then that stage's peels, then
+ * the continuation. Earlier drop-off sits higher on the list, matching
+ * "further left" on the desktop Sankey.
+ */
+export function phoneFunnelRows(nodes: FunnelNode[], links: FunnelLink[]): PhoneFunnelRow[] {
+  const byName = new Map(nodes.map((n) => [n.name, n]));
+  const outgoing = new Map<string, FunnelLink[]>();
+  for (const l of links) {
+    const arr = outgoing.get(l.source) ?? [];
+    arr.push(l);
+    outgoing.set(l.source, arr);
+  }
+  const hasIncoming = new Set(links.map((l) => l.target));
+  const valueOf = (name: string) => {
+    const ins = links.filter((l) => l.target === name);
+    if (ins.length) return ins.reduce((s, l) => s + l.value, 0);
+    return (outgoing.get(name) ?? []).reduce((s, l) => s + l.value, 0);
+  };
+  const peelRank = (name: string) => {
+    const r = byName.get(name)?.role;
+    if (r === 'sink') return 0;
+    if (r === 'success') return 1;
+    if (r === 'priv') return 2;
+    return 3;
+  };
+  const rows: PhoneFunnelRow[] = [];
+  const seen = new Set<string>();
+  const walk = (name: string, depth: number) => {
+    if (seen.has(name)) return;
+    seen.add(name);
+    const node = byName.get(name);
+    if (!node) return;
+    rows.push({ name: node.name, role: node.role, depth, value: valueOf(name) });
+    const kids = outgoing.get(name) ?? [];
+    const peels: FunnelLink[] = [];
+    const throughs: FunnelLink[] = [];
+    for (const k of kids) {
+      if ((outgoing.get(k.target) ?? []).length > 0) throughs.push(k);
+      else peels.push(k);
+    }
+    peels.sort((a, b) => peelRank(a.target) - peelRank(b.target));
+    for (const p of peels) walk(p.target, depth + 1);
+    for (const t of throughs) walk(t.target, depth + 1);
+  };
+  for (const n of nodes) {
+    if (!hasIncoming.has(n.name)) walk(n.name, 0);
+  }
+  return rows;
+}
+
+/** One referring host's split into the two landings, for the phone list. */
+export interface PhoneReferrerRow {
+  host: string;
+  dex: number;
+  league: number;
+}
+
+export function phoneReferrerRows(links: FunnelLink[]): PhoneReferrerRow[] {
+  const byHost = new Map<string, PhoneReferrerRow>();
+  const order: string[] = [];
+  for (const l of links) {
+    if (!byHost.has(l.source)) {
+      byHost.set(l.source, { host: l.source, dex: 0, league: 0 });
+      order.push(l.source);
+    }
+    const row = byHost.get(l.source);
+    if (!row) continue;
+    if (l.target === 'Dex') row.dex += l.value;
+    else if (l.target === 'League') row.league += l.value;
+  }
+  return order.map((h) => byHost.get(h)).filter((r): r is PhoneReferrerRow => r != null);
+}

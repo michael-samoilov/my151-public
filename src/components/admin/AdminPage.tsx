@@ -1962,6 +1962,7 @@ export function AdminPage() {
 
             {showFlows && (
               <Panel
+                className="min-w-0"
                 title="Flows"
                 sub={[
                   flowView === 'referrer' ? 'referrer → landing' : 'usage funnel',
@@ -1982,7 +1983,7 @@ export function AdminPage() {
                 }
               >
                 {flowView === 'referrer' && referrerSankey ? (
-                  <FlowSankey nodes={referrerSankey.nodes} links={referrerSankey.links} ariaLabel={referrerSankey.ariaLabel} />
+                  <FlowSankey kind="referrer" nodes={referrerSankey.nodes} links={referrerSankey.links} ariaLabel={referrerSankey.ariaLabel} />
                 ) : (
                   <div className="flex flex-col gap-6">
                     {showDexFunnel && (
