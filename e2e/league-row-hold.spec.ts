@@ -6,9 +6,9 @@ import { expect, test } from '@playwright/test';
  * Four things that has to mean, and none of them is visible in the markup:
  *
  * 1. the row is in hand after the hold alone, with the thumb still;
- * 2. the row in hand is drawn *in the slot it would fill*, centred on it —
- *    on the first frame that is the row it came from, and after that whichever
- *    row it is over;
+ * 2. the row in hand sits on a point above the thumb (~64px), not under it;
+ *    on the first frame that is still the trainer it came from, and after
+ *    that whichever slot the thumb is over;
  * 3. the copy is shorter than the row it came from, or it reaches a full row
  *    either side of the thumb and reads as displacing the row above as well;
  * 4. while held it shows the glyph and team size of the slot it is over, not
@@ -31,33 +31,33 @@ test.describe('holding a league row', () => {
 
       const row = (await page.locator('[data-testid="league-slot-0"]').boundingBox())!;
       const target = (await page.locator('[data-testid="league-slot-3"]').boundingBox())!;
-      const held = () =>
-        page.evaluate(() => {
+      const LIFT_PX = 64;
+      const held = (thumbY: number) =>
+        page.evaluate(({ lift, thumbY: ty }) => {
           const el = document.querySelector('[data-drag-held]');
           if (!el) return null;
-          const slot = el.closest('[data-testid^="league-slot-"]')!;
           const c = el.getBoundingClientRect();
-          const s = slot.getBoundingClientRect();
+          const centerY = c.top + c.height / 2;
           return {
-            offCentre: Math.abs((c.top + c.height / 2) - (s.top + s.height / 2)),
+            offLift: Math.abs(centerY - (ty - lift)),
+            placement: el.getAttribute('data-placement'),
             height: c.height,
-            slotHeight: s.height,
             seats: el.querySelectorAll('img').length,
           };
-        });
+        }, { lift: LIFT_PX, thumbY });
 
       const cdp = await page.context().newCDPSession(page);
       const x = row.x + row.width / 2;
       const y = row.y + row.height / 2;
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
 
-      // 1, 2 and 3: in hand on the hold alone, centred in its own slot, and
-      // shorter than that slot.
+      // 1, 2 and 3: in hand on the hold alone, above the thumb, and shorter.
       await page.waitForTimeout(450);
-      const still = await held();
+      const still = await held(y);
       expect(still, 'the row is in hand after the hold, with no movement').not.toBeNull();
-      expect(still!.offCentre, 'centred in the slot it would fill, from the first frame')
-        .toBeLessThan(1.5);
+      expect(still!.placement, 'carried above the thumb on touch').toBe('above-thumb');
+      expect(still!.offLift, 'sits on the point above the thumb, from the first frame')
+        .toBeLessThan(18);
       expect(still!.height, 'the copy is shorter than the row').toBeLessThan(row.height - 2);
 
       // 4: over a later slot it wears that slot's team size.
@@ -65,8 +65,9 @@ test.describe('holding a league row', () => {
         type: 'touchMove', touchPoints: [{ x, y: target.y + target.height / 2 }],
       });
       await page.waitForTimeout(300);
-      const over = await held();
-      expect(over!.offCentre, 'still centred, now on the row it is over').toBeLessThan(1.5);
+      const thumbY = target.y + target.height / 2;
+      const over = await held(thumbY);
+      expect(over!.offLift, 'still above the thumb on the row it is over').toBeLessThan(18);
       expect(over!.seats, 'it wears the team the slot it is over would give it')
         .toBeGreaterThan(still!.seats);
 

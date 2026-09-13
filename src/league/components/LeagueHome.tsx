@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import {
   DndContext,
+  DragOverlay,
   useDraggable,
   useDroppable,
   type DragEndEvent,
@@ -14,6 +15,7 @@ import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
 import {
   createEffectiveCursorCollision,
+  createSnapCenterToPointer,
   dragInputIsTouch,
   dragPointerRef,
   isTouchDrag,
@@ -63,17 +65,17 @@ const TEAM_COLS = 6;
  */
 const HIT_LIFT_PX = 64;
 
-/** How far the copy is lifted off the slot it would fill. */
 const rowCollision = createEffectiveCursorCollision(HIT_LIFT_PX);
+/** On touch the copy tracks a point above the thumb, not the thumb itself. */
+const heldAboveThumb = createSnapCenterToPointer(HIT_LIFT_PX);
 
 /**
- * Which slot the drag is over, from the thumb — not the lifted hit point.
+ * Reorder index from the thumb on touch (lift is visual only).
  *
- * Touch lifts collision above the finger so the drop target stays visible, but
- * reorder preview must track the thumb. Otherwise a hold on gym 7 reads as gym
- * 5 and every label shifts before the finger moves.
+ * Collision reads a point above the finger so the held row can sit clear of
+ * it, but gym numbers must not jump until the thumb crosses a neighbour.
  */
-function insertIndexFromVisual(): number | undefined {
+function insertIndexFromThumb(): number | undefined {
   const y = dragPointerRef.current?.y;
   if (y === undefined) return undefined;
 
@@ -92,14 +94,6 @@ function insertIndexFromVisual(): number | undefined {
   }
   return best;
 }
-/**
- * The copy sits *on* the row it would be placed in, not above it.
- *
- * `snapOverlayToTarget` anchors it to the target row's own rect, so no offset
- * is what centres it there — and before the thumb travels the target is the
- * row it came from, which is also where the thumb is. One rule covers both.
- */
-
 const SECTION_BEFORE: Record<number, string> = {
   0: 'GYM LEADERS',
   8: 'ELITE FOUR',
@@ -227,12 +221,37 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
  * The copy in hand already shows that team, so drawing it here too would
  * draw it twice. The gap says "this is the place" and nothing more.
  */
+function HeldRowCopy({
+  position,
+  card,
+  placement,
+}: {
+  position: number;
+  card: GymCard;
+  placement: 'on' | 'above-thumb';
+}) {
+  return (
+    <div
+      data-drag-held
+      data-placement={placement}
+      className="origin-center overflow-hidden rounded-[0.3125rem] shadow-lg ring-1 ring-black/10"
+      style={{ transform: `scale(${HELD_ROW_SCALE})` }}
+    >
+      <SlotRowFace position={position} card={card} />
+    </div>
+  );
+}
+
 /** The row as the league renders it: a drop target that drags and opens. */
-function SlotRow({ position, cardIndex, held }: {
+function SlotRow({ position, cardIndex, held, dimmed, gap }: {
   position: number;
   cardIndex: number;
-  /** This row is where the carried one would land, so it draws it in hand. */
+  /** Desktop: the carried row is drawn in the slot it would fill. */
   held: boolean;
+  /** Touch: the row it came from, receded in place. */
+  dimmed: boolean;
+  /** Touch: open slot at the drop target so the overlay is not drawn twice. */
+  gap: boolean;
 }) {
   const card = useLeagueStore((s) => s.cards[cardIndex]);
   const openCardPage = useLeagueUi((s) => s.openCardPage);
@@ -256,23 +275,20 @@ function SlotRow({ position, cardIndex, held }: {
         // app's, and these rows are the whole summary, so a pinch anywhere on
         // it did nothing. The press-and-hold the sensor now requires is what
         // separates a drag from a pinch, not a blanket claim on touch.
-        style={{ touchAction: 'pan-y pinch-zoom' }}
+        style={{
+          touchAction: 'pan-y pinch-zoom',
+          opacity: dimmed ? 0.25 : 1,
+        }}
       >
-        {held ? (
-          // The carried row is drawn *here*, in the slot it would fill, rather
-          // than in a drag overlay positioned over it. An overlay cannot be
-          // aligned to this row reliably: its modifier runs before React has
-          // committed the reorder, so every rect it can read is a frame stale
-          // — measured, that left the copy exactly one row past its slot. The
-          // row it would become has no such problem, because it *is* the row.
+        {gap ? (
           <div
-            data-drag-held
-            data-placement="on"
-            className="origin-center overflow-hidden rounded-[0.3125rem] shadow-lg ring-1 ring-black/10"
-            style={{ transform: `scale(${HELD_ROW_SCALE})` }}
-          >
-            <SlotRowFace position={position} card={card} />
-          </div>
+            data-drag-gap
+            aria-hidden
+            className="rounded-[0.3125rem] border border-dashed border-border/60"
+            style={{ height: `${ROW_H * HELD_ROW_SCALE}rem` }}
+          />
+        ) : held ? (
+          <HeldRowCopy position={position} card={card} placement="on" />
         ) : (
           <SlotRowFace position={position} card={card} />
         )}
@@ -297,6 +313,9 @@ export function LeagueHome() {
     isDesktop ? { baseWidthRem: 26, spriteRem: 2.625, targetSpritePx: 96 } : undefined,
   );
   const [preview, setPreview] = useState<{ from: number; to: number } | null>(null);
+  const [dragRowWidth, setDragRowWidth] = useState<number | null>(null);
+  /** Finger carry on a narrow viewport: overlay above the thumb, not in the list. */
+  const mobileCarry = preview !== null && !isDesktop;
   const cards = useLeagueStore((s) => s.cards);
   // Nothing placed anywhere: a row's tap can only mean "add a trainer", so
   // the hint says that instead of naming a card that does not exist yet. A
@@ -310,19 +329,24 @@ export function LeagueHome() {
     // Only a finger needs the lift; a mouse cursor covers nothing. This is a
     // PointerSensor, so the activator is a PointerEvent and never a
     // TouchEvent — read `pointerType`, or the lift never applies on a phone.
-    dragInputIsTouch.current = isTouchDrag(e.activatorEvent);
+    // Lift collision on a phone; on a narrow viewport treat finger drags as touch
+    // even when the harness surfaces a non-Touch activator (CDP injection).
+    const touch = isTouchDrag(e.activatorEvent) || !isDesktop;
+    dragInputIsTouch.current = touch;
     const position = (e.active.data.current as { index: number } | undefined)?.index;
     if (position === undefined) return;
+    const row = document.querySelector(`[data-testid="league-slot-${position}"]`);
+    setDragRowWidth(row?.getBoundingClientRect().width ?? null);
     // Seeded at pickup: the row is over itself before it travels, so the very
     // first frame already draws it in hand rather than showing an untouched
     // row for a frame and then swapping.
     setPreview({ from: position, to: position });
-  }, []);
+  }, [isDesktop]);
 
   const onDragOver = useCallback((e: DragOverEvent) => {
     const from = (e.active.data.current as { index: number } | undefined)?.index;
     const to =
-      insertIndexFromVisual()
+      insertIndexFromThumb()
       ?? (e.over?.data.current as { index: number } | undefined)?.index;
     if (from === undefined || to === undefined) return;
     setPreview((cur) => (cur && cur.to === to && cur.from === from ? cur : { from, to }));
@@ -330,12 +354,13 @@ export function LeagueHome() {
 
   const onDragEnd = useCallback(
     (e: DragEndEvent) => {
-      dragInputIsTouch.current = false;
-      setPreview(null);
       const from = (e.active.data.current as { index: number } | undefined)?.index;
       const to =
-        insertIndexFromVisual()
+        insertIndexFromThumb()
         ?? (e.over?.data.current as { index: number } | undefined)?.index;
+      dragInputIsTouch.current = false;
+      setDragRowWidth(null);
+      setPreview(null);
       if (from === undefined || to === undefined || from === to) return;
       moveSlot(from, to);
     },
@@ -360,7 +385,11 @@ export function LeagueHome() {
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
       onDragStart={onDragStart}
-      onDragCancel={() => { dragInputIsTouch.current = false; setPreview(null); }}
+      onDragCancel={() => {
+        dragInputIsTouch.current = false;
+        setDragRowWidth(null);
+        setPreview(null);
+      }}
     >
       <div ref={fitRef} style={fitStyle(fit)}>
         {/* Uniform 0.6875rem gutter on all four sides, and an outer radius of
@@ -383,7 +412,14 @@ export function LeagueHome() {
               <SlotRow
                 position={position}
                 cardIndex={cardIndex}
-                held={preview !== null && position === preview.to}
+                held={!mobileCarry && preview !== null && position === preview.to}
+                dimmed={mobileCarry && preview !== null && position === preview.from}
+                gap={
+                  mobileCarry
+                  && preview !== null
+                  && position === preview.to
+                  && preview.to !== preview.from
+                }
               />
             </div>
           ))}
@@ -420,8 +456,17 @@ export function LeagueHome() {
           </div>
         </div>
       </div>
-      {/* The copy in hand: the row that was grabbed, at the width it was
-          grabbed at, drawn by the same component as the row itself. */}
+      <DragOverlay dropAnimation={null} modifiers={mobileCarry ? [heldAboveThumb] : undefined}>
+        {mobileCarry && preview ? (
+          <div style={{ width: dragRowWidth ?? undefined }}>
+            <HeldRowCopy
+              position={preview.to}
+              card={cards[preview.from]}
+              placement="above-thumb"
+            />
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }
