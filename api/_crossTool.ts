@@ -284,7 +284,7 @@ function dexNativeKpi(browsers: Browser[], leagueByCid: Map<string, LeagueLike>)
   const { n, of, pct } = rate(native, known);
   return {
     key: 'league-from-dex',
-    label: 'League ⊂ dex',
+    label: 'Only dex Pokémon',
     hint:
       unknown > 0
         ? `${n} of ${of} known dual-tool leagues; ${unknown} missing a stored team`

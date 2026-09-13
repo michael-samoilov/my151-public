@@ -656,7 +656,7 @@ export const sampleResponse: ApiResponse = {
       },
       {
         key: 'league-from-dex',
-        label: 'League ⊂ dex',
+        label: 'Only dex Pokémon',
         hint: 'of dual-tool leagues with a stored team',
         n: 3,
         of: 4,

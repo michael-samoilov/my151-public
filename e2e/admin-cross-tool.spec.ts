@@ -14,7 +14,7 @@ test.describe('admin cross-tool tile', () => {
     await expect(tile.getByText('4 / 50')).toBeVisible();
     await expect(tile.getByText('League has a dex')).toBeVisible();
     await expect(tile.getByText('80%')).toBeVisible();
-    await expect(tile.getByText('League ⊂ dex')).toBeVisible();
+    await expect(tile.getByText('Only dex Pokémon')).toBeVisible();
     await expect(tile.getByText('75%')).toBeVisible();
     await expect(tile.getByText(/of dex users active after 8 Sep 2026/)).toBeVisible();
     await expect(tile.getByText('Arrived before 8 Sep 2026')).toBeVisible();
