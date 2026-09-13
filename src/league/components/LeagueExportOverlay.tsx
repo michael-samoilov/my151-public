@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { shareOrDownload } from '@/lib/exportImage';
@@ -12,7 +12,11 @@ import {
   exportLeagueHome,
 } from '../export/exportLeague';
 import { type LeagueHomeExportLayout, parseLeagueHomeExportLayout } from '../export/exportOptions';
-import { incrementLeagueExportCount } from '../export/exportPersonalization';
+import {
+  exportPokemonIds,
+  incrementLeagueExportCount,
+  type ExportHighlight,
+} from '../export/exportPersonalization';
 import { sendLeagueExportBeacon } from '../hooks/useLeagueBeacon';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
@@ -25,10 +29,6 @@ const SCRIM_Z = 200;
 const PREVIEW_Z = 201;
 const PANE_Z = 210;
 
-/**
- * Frosted scrim over the live league UI. Portalled to `document.body` so
- * `backdrop-filter` samples the app behind the overlay, not an empty ancestor.
- */
 function ExportScrim({ onClose }: { onClose: () => void }) {
   return createPortal(
     <div className="fixed inset-0" style={{ zIndex: SCRIM_Z }} data-export-scrim data-overlay>
@@ -48,31 +48,64 @@ function ExportScrim({ onClose }: { onClose: () => void }) {
   );
 }
 
+function useExportChrome(isDesktop: boolean) {
+  const [chrome, setChrome] = useState({ w: 384, h: 320 });
+  useLayoutEffect(() => {
+    let ro: ResizeObserver | null = null;
+    const observe = (): boolean => {
+      const el = document.querySelector('[data-export-chrome]');
+      if (!el) return false;
+      const apply = () => {
+        const r = el.getBoundingClientRect();
+        setChrome({ w: r.width, h: r.height });
+      };
+      apply();
+      ro = new ResizeObserver(apply);
+      ro.observe(el);
+      return true;
+    };
+    if (observe()) return () => ro?.disconnect();
+    const mo = new MutationObserver(() => {
+      if (observe()) mo.disconnect();
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      mo.disconnect();
+      ro?.disconnect();
+    };
+  }, [isDesktop]);
+  return chrome;
+}
+
 function ExportPreviewLayer({
   show,
   dimmed,
   isDesktop,
+  chromeW,
+  chromeH,
   children,
 }: {
   show: boolean;
   dimmed: boolean;
   isDesktop: boolean;
+  chromeW: number;
+  chromeH: number;
   children: ReactNode;
 }) {
   if (!show) return null;
   return createPortal(
     <div
-      className={cn(
-        'pointer-events-none fixed flex items-center justify-center',
-        dimmed && 'opacity-40',
-        isDesktop
-          ? 'inset-0 p-4 pr-[min(26rem,calc(100vw-1rem))] md:p-8'
-          : 'inset-x-0 top-12 bottom-[min(58vh,28rem)] px-2',
-      )}
-      style={{ zIndex: PREVIEW_Z }}
+      className={cn('pointer-events-none fixed flex items-center justify-center p-3', dimmed && 'opacity-40')}
+      style={{
+        zIndex: PREVIEW_Z,
+        top: 0,
+        left: 0,
+        right: isDesktop ? chromeW : 0,
+        bottom: isDesktop ? 0 : chromeH,
+      }}
       data-export-preview-layer
     >
-      <div className="pointer-events-auto flex h-full w-full max-h-full max-w-full items-center justify-center">
+      <div className="pointer-events-auto flex h-full w-full min-h-0 min-w-0 items-center justify-center">
         {children}
       </div>
     </div>,
@@ -89,6 +122,7 @@ export function LeagueExportOverlay() {
   const isDesktop = useViewportAtLeast(1024);
   const isLeague = exportCardIndex === null;
   const exportKind = isLeague ? 'league' : 'card';
+  const chrome = useExportChrome(isDesktop);
 
   const [layout, setLayout] = useState<LeagueHomeExportLayout>(() =>
     parseLeagueHomeExportLayout(window.location.search),
@@ -96,6 +130,7 @@ export function LeagueExportOverlay() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
+  const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   const debounceRef = useRef<number | null>(null);
 
@@ -151,9 +186,11 @@ export function LeagueExportOverlay() {
     if (exportBusy) return;
     setExportBusy(true);
     sendEventBeacon(isLeague ? 'league-export-league' : 'league-export-card');
-    sendLeagueExportBeacon(exportKind);
     try {
       const { name, cards, view } = useLeagueStore.getState();
+      const ids = exportPokemonIds(isLeague ? cards : [cards[exportCardIndex!]]);
+      const nextHighlight = await sendLeagueExportBeacon(exportKind, ids);
+      setHighlight(nextHighlight);
       const blob = isLeague
         ? await exportLeagueHome(name, cards, view, layout)
         : await exportGymCard(cards[exportCardIndex!]);
@@ -188,7 +225,7 @@ export function LeagueExportOverlay() {
       />
     ) : exportPhase === 'surveyIntro' ? (
       <LeagueExportSurveyIntro
-        exportKind={exportKind}
+        highlight={highlight}
         onContinue={() => setExportPhase('survey')}
         onSkip={closeLeagueExport}
       />
@@ -201,7 +238,6 @@ export function LeagueExportOverlay() {
       src={previewUrl}
       alt={isLeague ? 'League export preview' : 'Trainer card export preview'}
       busy={previewBusy}
-      className="max-h-full max-w-full"
     />
   );
 
@@ -215,6 +251,7 @@ export function LeagueExportOverlay() {
         className="fixed inset-y-0 right-0 flex w-[min(24rem,calc(100vw-1.5rem))] max-h-full flex-col border-l bg-card shadow-xl"
         style={{ zIndex: PANE_Z }}
         data-export-overlay
+        data-export-chrome
       >
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{paneBody}</div>
       </aside>,
@@ -229,6 +266,7 @@ export function LeagueExportOverlay() {
       topGap={56}
       layerZIndex={PANE_Z}
       showScrim={false}
+      exportChrome
     >
       {paneBody}
     </BottomSheet>
@@ -237,7 +275,13 @@ export function LeagueExportOverlay() {
   return (
     <>
       <ExportScrim onClose={closeLeagueExport} />
-      <ExportPreviewLayer show={showPreview} dimmed={exportPhase !== 'settings'} isDesktop={isDesktop}>
+      <ExportPreviewLayer
+        show={showPreview}
+        dimmed={exportPhase !== 'settings'}
+        isDesktop={isDesktop}
+        chromeW={chrome.w}
+        chromeH={chrome.h}
+      >
         {preview}
       </ExportPreviewLayer>
       {settingsPane}

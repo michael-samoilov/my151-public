@@ -12,6 +12,7 @@ import {
 } from '@/lib/beaconScheduler';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import type { LeagueCardShape, LeagueExportKind, LeagueSummary } from '../../../api/_leagueRecord';
+import type { ExportHighlight } from '../export/exportPersonalization';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { describeLeague, summarizeLeague } from '../model/leagueSummary';
 
@@ -28,14 +29,16 @@ function postLeagueBeacon(
   summary: LeagueSummary,
   cards: LeagueCardShape[],
   exportKind?: LeagueExportKind,
-) {
-  if (DEMO_MODE || isOptedOut()) return;
+  pokemonIds?: number[],
+): Promise<ExportHighlight | null> {
+  if (DEMO_MODE || isOptedOut()) return Promise.resolve(null);
   const payload = JSON.stringify({
     cid: getClientId(),
     tool: 'league',
     page: currentPage(),
     kind,
     exportKind,
+    pokemonIds,
     summary,
     // Structure only — no badge name, theme or league name. See describeLeague.
     cards,
@@ -43,14 +46,18 @@ function postLeagueBeacon(
     // External referrer host, if any — stored forward-only by the server.
     ref: externalReferrerHost() || undefined,
   });
-  void fetch('/api/league', {
+  return fetch('/api/league', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: payload,
     keepalive: true,
-  }).catch(() => {
-    // best-effort analytics
-  });
+  })
+    .then(async (res) => {
+      if (!res.ok) return null;
+      const data = (await res.json()) as { highlight?: ExportHighlight };
+      return data.highlight ?? null;
+    })
+    .catch(() => null);
 }
 
 export function useLeagueBeacon() {
@@ -66,7 +73,9 @@ export function useLeagueBeacon() {
     if (summary.seats === 0) return;
     sendEventBeacon('league-first-seat', { once: true });
     if (summary.named > 0) sendEventBeacon('league-card-named', { once: true });
-    debouncer.schedule(() => postLeagueBeacon('progress', summary, describeLeague(cards)));
+    debouncer.schedule(() => {
+      void postLeagueBeacon('progress', summary, describeLeague(cards));
+    });
   }, [name, cards, debouncer]);
 
   useEffect(() => {
@@ -85,7 +94,16 @@ export function useLeagueBeacon() {
 }
 
 /** One-shot export report, with the league as it was exported. */
-export function sendLeagueExportBeacon(exportKind: LeagueExportKind) {
+export function sendLeagueExportBeacon(
+  exportKind: LeagueExportKind,
+  pokemonIds: number[],
+): Promise<ExportHighlight | null> {
   const { name, cards } = useLeagueStore.getState();
-  postLeagueBeacon('export', summarizeLeague(name, cards), describeLeague(cards), exportKind);
+  return postLeagueBeacon(
+    'export',
+    summarizeLeague(name, cards),
+    describeLeague(cards),
+    exportKind,
+    pokemonIds,
+  );
 }

@@ -1,10 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-const MAX_TILT = 14;
+const MAX_TILT = 20;
 
 /**
- * Live export preview with a gentle pointer-driven tilt, like a card on a desk.
+ * Live export preview with a pointer-driven tilt, like a card on a desk.
+ * Tilt is measured against the image box, not the leftover viewport, so
+ * the centre of the picture is rest and the edges hit MAX_TILT.
  */
 export function ExportPreview3D({
   src,
@@ -17,65 +19,84 @@ export function ExportPreview3D({
   busy?: boolean;
   className?: string;
 }) {
-  const rootRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLImageElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
 
-  const onPointerMove = useCallback((e: React.PointerEvent) => {
-    const el = rootRef.current;
+  const applyPointer = useCallback((clientX: number, clientY: number) => {
+    const el = cardRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    const px = (e.clientX - r.left) / r.width - 0.5;
-    const py = (e.clientY - r.top) / r.height - 0.5;
-    setTilt({ x: -py * MAX_TILT, y: px * MAX_TILT });
+    if (r.width === 0 || r.height === 0) return;
+    const px = (clientX - r.left) / r.width - 0.5;
+    const py = (clientY - r.top) / r.height - 0.5;
+    setTilt({
+      x: clamp(-py * MAX_TILT * 2, -MAX_TILT, MAX_TILT),
+      y: clamp(px * MAX_TILT * 2, -MAX_TILT, MAX_TILT),
+    });
   }, []);
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLImageElement>) => {
+      e.preventDefault();
+      e.currentTarget.setPointerCapture(e.pointerId);
+      applyPointer(e.clientX, e.clientY);
+    },
+    [applyPointer],
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLImageElement>) => {
+      if (e.pointerType === 'mouse' || e.buttons > 0 || e.currentTarget.hasPointerCapture(e.pointerId)) {
+        applyPointer(e.clientX, e.clientY);
+      }
+    },
+    [applyPointer],
+  );
 
   const resetTilt = useCallback(() => setTilt({ x: 0, y: 0 }), []);
 
-  const onPointerDown = useCallback((e: React.PointerEvent) => {
-    rootRef.current?.setPointerCapture(e.pointerId);
-  }, []);
-
   return (
     <div
-      ref={rootRef}
-      className={cn('relative h-full w-full max-h-full max-w-full touch-none', className)}
-      style={{ perspective: '1200px' }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerLeave={resetTilt}
-      onPointerUp={resetTilt}
-      onPointerCancel={resetTilt}
-      data-export-preview
+      className={cn('relative flex h-full w-full items-center justify-center', className)}
+      style={{ perspective: '900px' }}
     >
-      <div
-        className="flex h-full w-full items-center justify-center transition-transform duration-150 ease-out will-change-transform"
-        style={{
-          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-          transformStyle: 'preserve-3d',
-        }}
-      >
+      {src ? (
+        <img
+          ref={cardRef}
+          src={src}
+          alt={alt}
+          className="block touch-none rounded-lg bg-white object-contain ring-1 ring-white/20 select-none"
+          style={{
+            maxHeight: '100%',
+            maxWidth: '100%',
+            width: 'auto',
+            height: 'auto',
+            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateZ(16px)`,
+            transformOrigin: 'center center',
+            boxShadow: '0 24px 48px rgba(0,0,0,0.35)',
+          }}
+          draggable={false}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerLeave={resetTilt}
+          onPointerCancel={resetTilt}
+          data-export-preview
+          data-tilt-x={tilt.x.toFixed(1)}
+          data-tilt-y={tilt.y.toFixed(1)}
+        />
+      ) : (
         <div
-          className="max-h-full max-w-full overflow-hidden rounded-lg bg-white shadow-2xl ring-1 ring-white/20"
-          style={{ boxShadow: '0 24px 48px rgba(0,0,0,0.35)' }}
+          className="flex h-48 w-64 items-center justify-center rounded-lg bg-muted text-sm text-muted-foreground md:h-64 md:w-80"
+          aria-busy={busy}
+          data-export-preview
         >
-          {src ? (
-            <img
-              src={src}
-              alt={alt}
-              className="block max-h-full max-w-full object-contain"
-              style={{ maxHeight: 'min(100%, 72dvh)', maxWidth: 'min(100%, 92vw)' }}
-              draggable={false}
-            />
-          ) : (
-            <div
-              className="flex h-48 w-64 items-center justify-center bg-muted text-sm text-muted-foreground md:h-64 md:w-80"
-              aria-busy={busy}
-            >
-              {busy ? 'Rendering preview…' : 'Preview unavailable'}
-            </div>
-          )}
+          {busy ? 'Rendering preview…' : 'Preview unavailable'}
         </div>
-      </div>
+      )}
     </div>
   );
+}
+
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
 }

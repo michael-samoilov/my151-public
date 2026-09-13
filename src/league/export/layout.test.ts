@@ -217,6 +217,30 @@ describe('export layout', () => {
     expect(detailed.seatCol).toBe(base.seatCol);
   });
 
+  it('gives gym details room for a 12-letter TM and a long theme', () => {
+    const tmIcons =
+      L.HOME_DETAIL_ICON +
+      L.HOME_DETAIL_GAP +
+      L.HOME_DETAIL_TYPE +
+      L.HOME_DETAIL_GAP +
+      L.HOME_DETAIL_CHIP_W +
+      L.HOME_DETAIL_GAP;
+    const twelveCaps = L.HOME_MARK_LABEL_PX * 7.2 + L.HOME_MARK_TRACK * 12;
+    expect(L.HOME_DETAILS_COL).toBeGreaterThan(tmIcons + twelveCaps);
+    const themeLabel = L.HOME_MARK_LABEL_PX * 5.2;
+    const themeChars = L.HOME_THEME_TEXT_PX * 0.55 * 28;
+    expect(L.HOME_DETAILS_COL).toBeGreaterThan(themeLabel + 5 * L.K2 + themeChars);
+  });
+
+  it('keeps gym-detail marks inside one third of a row and square, not circular', () => {
+    const bandH = (L.ROW2 - 2 * L.HOME_DETAIL_PAD_Y) / 3;
+    expect(L.HOME_DETAIL_ICON).toBeLessThan(bandH);
+    expect(L.HOME_DETAIL_TYPE).toBeLessThan(bandH);
+    const radius = L.homeTypeMarkRadius(L.HOME_DETAIL_TYPE);
+    expect(radius).toBeCloseTo(L.HOME_DETAIL_TYPE * (L.HOME_R / L.HOME_TYPE_MARK));
+    expect(radius).toBeLessThan(L.HOME_DETAIL_TYPE * 0.35);
+  });
+
   it('sets the credit at about six points on a phone', () => {
     // A 393pt-wide screen shows the picture fitted to its width.
     const onScreenPt = (L.CREDIT_PX / L.CARD_IMG_W) * 393;

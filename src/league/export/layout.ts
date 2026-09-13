@@ -298,12 +298,36 @@ export const SEAT_COUNT = 6;
 export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / SEAT_COUNT;
 
 /**
- * Gym-detail column: theme, TM, and badge on three lines. Wide enough for a
- * TM row (disc, type icon, category chip, move name) without chopping names.
+ * Gym-detail column: theme, TM, and badge on three lines. Sized for a
+ * THEME label plus ~28 characters of theme, and for a TM row (disc, 1×1
+ * type square, category chip, 12-letter move at the smallcaps mark size)
+ * without clipping.
  */
-export const HOME_DETAILS_COL = 132 * K2;
+export const HOME_DETAILS_COL = 220 * K2;
 /** Air between story and rematch blocks when both show on one row. */
 export const HOME_SIDE_GAP = 20 * K2;
+
+/** Type square on a league row. Gym-detail type marks scale from this. */
+export const HOME_TYPE_MARK = 22 * K2;
+/**
+ * Corner radius for a type mark of `size`, matching the row square's
+ * `HOME_R / HOME_TYPE_MARK` ratio. Using `HOME_R` on a smaller square
+ * turns the mark into a circle.
+ */
+export function homeTypeMarkRadius(size: number): number {
+  return (size / HOME_TYPE_MARK) * HOME_R;
+}
+
+/**
+ * TM disc, type square, and badge hex inside one third of a home row.
+ * Larger than this and the three lines overlap each other.
+ */
+export const HOME_DETAIL_ICON = 9 * K2;
+export const HOME_DETAIL_TYPE = 9 * K2;
+export const HOME_DETAIL_GAP = 4 * K2;
+export const HOME_DETAIL_CHIP_H = 8 * K2;
+export const HOME_DETAIL_CHIP_W = HOME_DETAIL_CHIP_H * (0.9375 / 0.6875);
+export const HOME_DETAIL_PAD_Y = 3 * K2;
 
 /** Home-export label and body sizes that mirror the gym card's TM/badge marks. */
 export const HOME_MARK_LABEL_PX = 8 * K2;
@@ -373,16 +397,9 @@ export const CARD_IMG_H = TITLE_BLOCK_H + gridHeight() + FOOT + FRAME;
  * The league: its padding, the name line if there is one, four bands with
  * their gaps, fourteen rows, and the credit.
  */
-export function homeImgH(named: boolean, bothTeamColumns = false): number {
-  const teamHeaderBand = bothTeamColumns ? BAND2 + 2 : 0;
+export function homeImgH(named: boolean): number {
   return Math.ceil(
-    homeTopPad(named) +
-      (named ? HOME_HDR_H : 0) +
-      14 * ROW2 +
-      4 * BAND2 +
-      3 * 2 +
-      teamHeaderBand +
-      FOOT,
+    homeTopPad(named) + (named ? HOME_HDR_H : 0) + 14 * ROW2 + 4 * BAND2 + 3 * 2 + FOOT,
   );
 }
 

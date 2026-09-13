@@ -1,38 +1,31 @@
-import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { buildExportUniquenessHighlights } from '../export/exportPersonalization';
-import { useLeagueStore } from '../store/useLeagueStore';
+import {
+  earlyExportLine,
+  firstPokemonLine,
+  pokemonDisplayName,
+  type ExportHighlight,
+} from '../export/exportPersonalization';
 
 export function LeagueExportSurveyIntro({
-  exportKind,
+  highlight,
   onContinue,
   onSkip,
 }: {
-  exportKind: 'league' | 'card';
+  highlight: ExportHighlight | null;
   onContinue: () => void;
   onSkip: () => void;
 }) {
-  const cards = useLeagueStore((s) => s.cards);
-  const highlights = buildExportUniquenessHighlights(cards, exportKind);
+  const early = highlight ? earlyExportLine(highlight.ordinal, highlight.tool) : null;
+  const pokeName = highlight?.firstPokemonId != null ? pokemonDisplayName(highlight.firstPokemonId) : null;
+  const firstPoke =
+    pokeName && highlight ? firstPokemonLine(pokeName, highlight.tool) : null;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-1">
-      <div className="flex items-start gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-3">
-        <Sparkles className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
-        <div className="space-y-2 text-sm leading-relaxed">
-          <p className="font-semibold text-foreground">Your export is one of a kind</p>
-          {highlights.length > 0 ? (
-            <ul className="list-disc space-y-1.5 ps-4 text-muted-foreground">
-              {highlights.map((h) => (
-                <li key={h.text}>{h.text}</li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted-foreground">
-              The teams, themes, and Pokémon you chose are what make this image yours.
-            </p>
-          )}
-        </div>
+      <div className="space-y-2 text-sm leading-relaxed">
+        <p className="text-base font-bold text-primary">You&apos;re here early!</p>
+        {early && <p className="text-foreground">{early}</p>}
+        {firstPoke && <p className="text-foreground">{firstPoke}</p>}
       </div>
 
       <p className="text-sm leading-relaxed text-foreground">

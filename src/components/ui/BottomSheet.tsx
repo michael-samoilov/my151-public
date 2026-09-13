@@ -23,6 +23,8 @@ interface BottomSheetProps {
   layerZIndex?: number;
   /** When false, omit the full-screen dimmer (caller supplies its own scrim). */
   showScrim?: boolean;
+  /** Optional marker so a caller can measure this sheet (export preview area). */
+  exportChrome?: boolean;
   children: React.ReactNode;
 }
 
@@ -49,6 +51,7 @@ export function BottomSheet({
   topGap = 56,
   layerZIndex = 50,
   showScrim = true,
+  exportChrome = false,
   children,
 }: BottomSheetProps) {
   const [dragY, setDragY] = useState(0);
@@ -293,6 +296,7 @@ export function BottomSheet({
       <div
         role="dialog"
         aria-label={closeLabel}
+        data-export-chrome={exportChrome ? '' : undefined}
         className="relative bg-background rounded-t-2xl shadow-2xl flex flex-col"
         style={{
           // `100dvh` accounts for browser chrome but not the keyboard, so the

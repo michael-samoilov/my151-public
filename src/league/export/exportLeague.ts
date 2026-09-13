@@ -47,6 +47,7 @@ import {
   drawStars,
   drawTmDisc,
   ellipsize,
+  ellipsizeTracked,
   fitFontSize,
   fillTracked,
   fillTrackedCentered,
@@ -846,25 +847,6 @@ function drawHomeTeamSprites(
   });
 }
 
-const HOME_DETAIL_LABEL_W = 10 * L.K2;
-
-function drawHomeDetailLabel(
-  ctx: CanvasRenderingContext2D,
-  word: string,
-  x: number,
-  midY: number,
-  colour: string,
-): number {
-  ctx.save();
-  ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
-  ctx.fillStyle = colour;
-  ctx.textBaseline = 'middle';
-  fillTracked(ctx, word, x, midY, L.HOME_MARK_TRACK);
-  const w = trackedWidth(ctx, word, L.HOME_MARK_TRACK);
-  ctx.restore();
-  return w;
-}
-
 function drawHomeGymDetails(
   ctx: CanvasRenderingContext2D,
   card: GymCard,
@@ -879,19 +861,31 @@ function drawHomeGymDetails(
   const themeText = card.theme?.trim() ?? '';
   const move = card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId);
   const badgeName = card.badgeName?.trim() ?? '';
-  const rows: Array<(midY: number, bodyX: number) => void> = [];
+  const rows: Array<(midY: number) => void> = [];
+  const bodyX = x + 2 * L.K2;
+  const right = x + w - 2 * L.K2;
+  const typeR = L.homeTypeMarkRadius(L.HOME_DETAIL_TYPE);
 
   if (themeText) {
-    rows.push((midY, bodyX) => {
-      const labelEnd = bodyX + HOME_DETAIL_LABEL_W;
-      drawHomeDetailLabel(ctx, 'THEME', bodyX, midY, shades.band);
-      const valueX = labelEnd + 4 * L.K2;
-      const valueW = x + w - valueX;
-      const themePx = fitFontSize(ctx, themeText, valueW, L.HOME_THEME_TEXT_PX, 9 * L.K2, 700);
+    rows.push((midY) => {
       ctx.save();
+      ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
+      ctx.fillStyle = shades.band;
+      ctx.textBaseline = 'middle';
+      fillTracked(ctx, 'THEME', bodyX, midY, L.HOME_MARK_TRACK);
+      const labelW = trackedWidth(ctx, 'THEME', L.HOME_MARK_TRACK);
+      const valueX = bodyX + labelW + 5 * L.K2;
+      const valueW = Math.max(8, right - valueX);
+      const themePx = fitFontSize(
+        ctx,
+        themeText,
+        valueW,
+        L.HOME_THEME_TEXT_PX,
+        L.HOME_MARK_LABEL_PX,
+        700,
+      );
       ctx.font = font(themePx, 700);
       ctx.fillStyle = FG;
-      ctx.textBaseline = 'middle';
       ctx.fillText(ellipsize(ctx, themeText, valueW), valueX, midY);
       ctx.restore();
     });
@@ -899,130 +893,159 @@ function drawHomeGymDetails(
 
   if (move) {
     const moveShades = cardShades(move.type as TypeName);
-    rows.push((midY, bodyX) => {
-      const labelEnd = bodyX + HOME_DETAIL_LABEL_W;
-      drawHomeDetailLabel(ctx, 'TM', bodyX, midY, moveShades.band);
-      const disc = 11 * L.K2;
-      const discX = labelEnd + 2 * L.K2;
-      drawTmDisc(ctx, TYPE_COLORS[move.type as TypeName], disc, discX, midY - disc / 2);
-      const typeSq = 11 * L.K2;
-      const iconX = discX + disc + 3 * L.K2;
-      drawTypeMark(ctx, move.type as TypeName, images, iconX, midY - typeSq / 2, typeSq, L.HOME_R);
-      const chipW = 0.9375 * 16 * L.K2;
-      const chipH = 0.6875 * 16 * L.K2;
-      const chipX = iconX + typeSq + 3 * L.K2;
-      const chipY = midY - chipH / 2;
+    rows.push((midY) => {
+      const iconY = midY - L.HOME_DETAIL_ICON / 2;
+      drawTmDisc(ctx, TYPE_COLORS[move.type as TypeName], L.HOME_DETAIL_ICON, bodyX, iconY);
+      const typeX = bodyX + L.HOME_DETAIL_ICON + L.HOME_DETAIL_GAP;
+      drawTypeMark(
+        ctx,
+        move.type as TypeName,
+        images,
+        typeX,
+        midY - L.HOME_DETAIL_TYPE / 2,
+        L.HOME_DETAIL_TYPE,
+        typeR,
+      );
+      const chipX = typeX + L.HOME_DETAIL_TYPE + L.HOME_DETAIL_GAP;
+      const chipY = midY - L.HOME_DETAIL_CHIP_H / 2;
       ctx.save();
       ctx.fillStyle = CATEGORY_COLORS[move.category];
-      roundRect(ctx, chipX, chipY, chipW, chipH, 4 * L.K2);
+      roundRect(ctx, chipX, chipY, L.HOME_DETAIL_CHIP_W, L.HOME_DETAIL_CHIP_H, 2 * L.K2);
       ctx.fill();
       ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.5 * L.K2;
+      ctx.lineWidth = 1.2 * L.K2;
       ctx.stroke();
       const catIcon = images.get(`/sprites/moves/${move.category}.png`);
       if (catIcon) {
-        const iw = chipW * 0.62;
+        const iw = L.HOME_DETAIL_CHIP_W * 0.62;
         const ih = (catIcon.naturalHeight / (catIcon.naturalWidth || 1)) * iw;
         ctx.imageSmoothingEnabled = true;
-        ctx.drawImage(catIcon, chipX + (chipW - iw) / 2, chipY + (chipH - ih) / 2, iw, ih);
+        ctx.drawImage(
+          catIcon,
+          chipX + (L.HOME_DETAIL_CHIP_W - iw) / 2,
+          chipY + (L.HOME_DETAIL_CHIP_H - ih) / 2,
+          iw,
+          ih,
+        );
       }
       ctx.restore();
-      const nameX = chipX + chipW + 3 * L.K2;
-      const nameW = x + w - nameX;
+      const nameX = chipX + L.HOME_DETAIL_CHIP_W + L.HOME_DETAIL_GAP;
+      const nameW = Math.max(8, right - nameX);
       const moveUpper = move.name.toUpperCase();
-      const namePx = fitFontSize(ctx, moveUpper, nameW, L.HOME_MOVE_PX, L.HOME_MOVE_MIN_PX, 800);
       ctx.save();
-      ctx.font = font(namePx, 800);
+      ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
       ctx.fillStyle = moveShades.band;
       ctx.textBaseline = 'middle';
-      fillTracked(ctx, moveUpper, nameX, midY, 0.02 * namePx);
+      fillTracked(
+        ctx,
+        ellipsizeTracked(ctx, moveUpper, nameW, L.HOME_MARK_TRACK),
+        nameX,
+        midY,
+        L.HOME_MARK_TRACK,
+      );
       ctx.restore();
     });
   }
 
   if (badgeName) {
-    rows.push((midY, bodyX) => {
-      const labelEnd = bodyX + HOME_DETAIL_LABEL_W;
-      drawHomeDetailLabel(ctx, 'BADGE', bodyX, midY, shades.band);
-      const disc = 11 * L.K2;
-      const discX = labelEnd + 2 * L.K2;
-      drawHexagon(ctx, shades.type, true, disc, discX, midY - disc / 2);
-      const textX = discX + disc + 4 * L.K2;
-      const textW = x + w - textX;
+    rows.push((midY) => {
+      drawHexagon(ctx, shades.type, true, L.HOME_DETAIL_ICON, bodyX, midY - L.HOME_DETAIL_ICON / 2);
+      const textX = bodyX + L.HOME_DETAIL_ICON + L.HOME_DETAIL_GAP;
+      const textW = Math.max(8, right - textX);
       const badgeText = `${badgeName} Badge`.toUpperCase();
-      const badgePx = fitFontSize(ctx, badgeText, textW, L.HOME_MOVE_PX, L.HOME_MOVE_MIN_PX, 800);
       ctx.save();
-      ctx.font = font(badgePx, 800);
+      ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
       ctx.fillStyle = shades.band;
       ctx.textBaseline = 'middle';
-      fillTracked(ctx, badgeText, textX, midY, 0.02 * badgePx);
+      fillTracked(
+        ctx,
+        ellipsizeTracked(ctx, badgeText, textW, L.HOME_MARK_TRACK),
+        textX,
+        midY,
+        L.HOME_MARK_TRACK,
+      );
       ctx.restore();
     });
   }
 
   if (rows.length === 0) return;
 
-  const padY = 3 * L.K2;
-  const innerH = L.ROW2 - 2 * padY;
-  const bandH = innerH / rows.length;
-  const bodyX = x + 2 * L.K2;
+  const innerH = L.ROW2 - 2 * L.HOME_DETAIL_PAD_Y;
+  const bandH = innerH / 3;
+  const usedH = rows.length * bandH;
+  const startY = y + L.HOME_DETAIL_PAD_Y + (innerH - usedH) / 2;
 
   ctx.save();
   ctx.beginPath();
   ctx.rect(x, y, w, L.ROW2);
   ctx.clip();
-
   rows.forEach((draw, i) => {
-    const midY = y + padY + i * bandH + bandH / 2;
-    draw(midY, bodyX);
+    draw(startY + i * bandH + bandH / 2);
   });
-
   ctx.restore();
 }
 
-function drawSectionBand(
+function paintSectionPill(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  label: string | null,
+  align: 'left' | 'right',
+): void {
+  ctx.save();
+  ctx.fillStyle = RED;
+  roundRect(ctx, x, y, w, L.BAND2, L.HOME_R);
+  ctx.fill();
+  if (label) {
+    const size = 9 * L.K2;
+    const track = 0.07 * size;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = font(size, 800);
+    ctx.textBaseline = 'middle';
+    const tw = trackedWidth(ctx, label, track);
+    const inset = L.HOME_R;
+    const tx = align === 'right' ? x + w - inset - tw : x + inset;
+    fillTracked(ctx, label, tx, y + L.BAND2 / 2, track);
+  }
+  ctx.restore();
+}
+
+function drawSectionRow(
   ctx: CanvasRenderingContext2D,
   ox: number,
   y: number,
   geom: L.HomeExportGeometry,
-  label: string,
+  title: string,
+  bothTeams: boolean,
+  labelTeams: boolean,
 ): void {
-  ctx.save();
-  ctx.fillStyle = RED;
   const bandX = ox + L.HOME_RAIL - L.HOME_R;
-  const bandW = geom.homeInner - 2 * L.HOME_RAIL + 2 * L.HOME_R;
-  roundRect(ctx, bandX, y, bandW, L.BAND2, L.HOME_R);
-  ctx.fill();
-  ctx.fillStyle = '#ffffff';
-  ctx.font = font(9 * L.K2, 800);
-  ctx.textBaseline = 'middle';
-  fillTracked(ctx, label, bandX + L.HOME_R, y + L.BAND2 / 2, 0.07 * 9 * L.K2);
-  ctx.restore();
-}
-
-/** Story and rematch each get a red band over their team columns only. */
-function drawTeamColumnBands(ctx: CanvasRenderingContext2D, ox: number, y: number, geom: L.HomeExportGeometry): void {
+  const bandRight = ox + geom.homeInner - L.HOME_RAIL + L.HOME_R;
+  if (!bothTeams) {
+    paintSectionPill(ctx, bandX, y, bandRight - bandX, title, 'left');
+    return;
+  }
   const teamBaseX = ox + L.GLYPH_COL + L.TYPE_COL + geom.detailsCol;
   const rematchX = teamBaseX + geom.blockWidth + geom.sideGap;
-  const labelSize = 7.5 * L.K2;
-  const labelTrack = 0.07 * labelSize;
-  const cy = y + L.BAND2 / 2;
-
-  for (const [label, left, width] of [
-    ['story teams', teamBaseX, geom.blockWidth],
-    ['rematch teams', rematchX, geom.blockWidth],
-  ] as const) {
-    ctx.save();
-    ctx.fillStyle = RED;
-    roundRect(ctx, left, y, width, L.BAND2, L.HOME_R);
-    ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.font = font(labelSize, 800);
-    ctx.textBaseline = 'middle';
-    const tw = trackedWidth(ctx, label, labelTrack);
-    fillTracked(ctx, label, left + (width - tw) / 2, cy, labelTrack);
-    ctx.restore();
-  }
+  const pillGap = 3 * L.K2;
+  paintSectionPill(ctx, bandX, y, Math.max(0, teamBaseX - pillGap - bandX), title, 'left');
+  paintSectionPill(
+    ctx,
+    teamBaseX,
+    y,
+    geom.blockWidth,
+    labelTeams ? 'STORY TEAMS' : null,
+    'right',
+  );
+  paintSectionPill(
+    ctx,
+    rematchX,
+    y,
+    Math.max(0, bandRight - rematchX),
+    labelTeams ? 'REMATCH TEAMS' : null,
+    'right',
+  );
 }
 
 function drawHomeRow(
@@ -1075,7 +1098,7 @@ function drawHomeRow(
   else drawBossBall(ctx, cell, 15 * L.K2, gcx, gcy);
 
   // The type square, or the dashed square of an open seat.
-  const sq = 22 * L.K2;
+  const sq = L.HOME_TYPE_MARK;
   const sqX = x + L.GLYPH_COL + (L.TYPE_COL - sq) / 2;
   const sqY = y + (L.ROW2 - sq) / 2;
   if (vacantRow(card)) {
@@ -1167,13 +1190,8 @@ function drawLeagueHome(
     const section = L.SECTION_BEFORE[index];
     if (section) {
       if (index !== 0) y += 2;
-      drawSectionBand(ctx, ox, y, geom, section);
+      drawSectionRow(ctx, ox, y, geom, section, bothTeamColumns, index === 0);
       y += L.BAND2;
-      if (bothTeamColumns && index === 0) {
-        y += 2;
-        drawTeamColumnBands(ctx, ox, y, geom);
-        y += L.BAND2;
-      }
     }
     drawHomeRow(ctx, cards[index], index, view, layout, geom, images, ox, y);
     y += L.ROW2;
@@ -1239,7 +1257,7 @@ export async function exportLeagueHome(
   const both = layoutShowsBothTeams(layout);
   const geom = L.homeExportGeometry(layout.gymDetails, both);
   const images = await loadAll(homeImageUrls(cards, view, layout));
-  return render(geom.homeW, L.homeImgH(!!name, both), (ctx) =>
+  return render(geom.homeW, L.homeImgH(!!name), (ctx) =>
     drawLeagueHome(ctx, name, cards, view, layout, geom, images),
   );
 }

@@ -2,10 +2,10 @@ import { Check, Download, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { LeagueHomeExportLayout, LeagueHomeTeamMode } from '../export/exportOptions';
 
-const TEAM_OPTIONS: { mode: LeagueHomeTeamMode; label: string }[] = [
-  { mode: 'story', label: 'Story' },
-  { mode: 'rematch', label: 'Rematch' },
-  { mode: 'both', label: 'Story and Rematch' },
+const TEAM_OPTIONS: { mode: LeagueHomeTeamMode; label: string; fill: 'left' | 'right' | 'both' }[] = [
+  { mode: 'story', label: 'Story', fill: 'left' },
+  { mode: 'rematch', label: 'Rematch', fill: 'right' },
+  { mode: 'both', label: 'Story and Rematch', fill: 'both' },
 ];
 
 export function LeagueExportSettingsPane({
@@ -55,12 +55,13 @@ export function LeagueExportSettingsPane({
               <h3 className="mb-2 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
                 Teams
               </h3>
-              <div className="space-y-1">
-                {TEAM_OPTIONS.map(({ mode, label }) => (
+              <div className="grid grid-cols-3 gap-1">
+                {TEAM_OPTIONS.map(({ mode, label, fill }) => (
                   <TeamModeOption
                     key={mode}
                     selected={layout.teamMode === mode}
                     label={label}
+                    fill={fill}
                     onClick={() => onLayout({ ...layout, teamMode: mode })}
                   />
                 ))}
@@ -127,30 +128,55 @@ function LayoutToggle({
   );
 }
 
+function TeamModeGlyph({ fill }: { fill: 'left' | 'right' | 'both' }) {
+  const left = fill === 'left' || fill === 'both';
+  const right = fill === 'right' || fill === 'both';
+  return (
+    <svg viewBox="0 0 32 20" className="h-4 w-7" aria-hidden>
+      <rect
+        x="1.25"
+        y="1.25"
+        width="13.5"
+        height="17.5"
+        rx="2"
+        fill={left ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+      <rect
+        x="17.25"
+        y="1.25"
+        width="13.5"
+        height="17.5"
+        rx="2"
+        fill={right ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
 function TeamModeOption({
   selected,
   label,
+  fill,
   onClick,
 }: {
   selected: boolean;
   label: string;
+  fill: 'left' | 'right' | 'both';
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors ${
+      className={`flex cursor-pointer flex-col items-center gap-1 rounded-md px-1 py-2 text-center text-[0.6875rem] leading-tight transition-colors ${
         selected ? 'bg-primary/10 font-medium text-primary' : 'text-foreground hover:bg-muted'
       }`}
     >
-      <span
-        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-          selected ? 'border-primary' : 'border-muted-foreground/40'
-        }`}
-      >
-        {selected && <span className="h-2 w-2 rounded-full bg-primary" />}
-      </span>
+      <TeamModeGlyph fill={fill} />
       {label}
     </button>
   );
