@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatIndex,
+  indexBarPct,
   isOffSection,
   lineKey,
   poolIdsForSection,
@@ -59,6 +60,16 @@ describe('formatIndex', () => {
     expect(formatIndex(1)).toBe('1.0×');
     expect(formatIndex(2.44)).toBe('2.4×');
     expect(formatIndex(12.4)).toBe('12×');
+  });
+});
+
+describe('indexBarPct', () => {
+  it('scales to the pair max and leaves 0× empty', () => {
+    expect(indexBarPct(0, 2)).toBe(0);
+    expect(indexBarPct(1, 2)).toBe(50);
+    expect(indexBarPct(2, 2)).toBe(100);
+    expect(indexBarPct(4, 2)).toBe(100);
+    expect(indexBarPct(1, 0)).toBe(0);
   });
 });
 

@@ -146,6 +146,12 @@ export function formatIndex(index: number): string {
   return `${(Math.round(index * 10) / 10).toFixed(1)}×`;
 }
 
+/** Fill percent for an index bar scaled to `max` in the same most/least pair. */
+export function indexBarPct(index: number, max: number): number {
+  if (!(max > 0) || !(index > 0)) return 0;
+  return Math.min(100, (index / max) * 100);
+}
+
 function memberOf(p: Pokemon, picks: number): LineMember {
   return { id: p.id, name: p.name, sprite: p.sprite, picks };
 }

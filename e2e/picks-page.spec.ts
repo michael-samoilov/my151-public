@@ -1,0 +1,57 @@
+import { expect, test, type Page } from '@playwright/test';
+
+/**
+ * The admin "What people pick" page. Demo fixture, no token.
+ *
+ * Two layout contracts: each section uses the builder's rounded outline with
+ * the name inside at the top-right, and each sprite carries an index bar whose
+ * length tracks that line's over/under-index. The 6+6 most/least grid must
+ * stay inside the viewport, including the 320px narrow project.
+ */
+
+async function openPicks(page: Page) {
+  await page.route('**/api/event', (route) => route.fulfill({ status: 200, body: '{}' }));
+  await page.goto('/?admin&demo');
+  await expect(page.getByRole('heading', { name: /Analytics/ })).toBeVisible();
+  await page.getByRole('button', { name: /Most picked/ }).click();
+  await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
+}
+
+test.describe('admin picks page', () => {
+  test('wraps sections in builder chrome and shows index bars', async ({ page }) => {
+    await openPicks(page);
+
+    const starters = page.locator('[data-section-id="starter"]');
+    await expect(starters).toBeVisible();
+    await expect(starters.getByText('Starters', { exact: true })).toBeVisible();
+    await expect(starters.locator('[data-type="grass"]')).toBeVisible();
+    await expect(starters.locator('[data-type="fire"]')).toBeVisible();
+    await expect(starters.locator('[data-type="water"]')).toBeVisible();
+
+    const meter = starters.locator('[data-index-meter]').first();
+    await expect(meter).toBeVisible();
+    const width = await meter.locator('[data-index-fill]').evaluate((el) => (el as HTMLElement).style.width);
+    expect(width.endsWith('%')).toBe(true);
+    expect(Number.parseFloat(width)).toBeGreaterThan(0);
+
+    const box = await starters.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { radius: s.borderRadius, labelAlign: getComputedStyle(el.firstElementChild as HTMLElement).textAlign };
+    });
+    expect(Number.parseFloat(box.radius)).toBeGreaterThan(0);
+    expect(box.labelAlign).toBe('right');
+
+    await expect.poll(async () =>
+      starters.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
+    ).toBe(true);
+  });
+
+  test('off-section tab keeps the same chrome', async ({ page }) => {
+    await openPicks(page);
+    await page.getByRole('button', { name: 'Off-section' }).click();
+    const evil = page.locator('[data-section-id="evil-team"]');
+    await expect(evil).toBeVisible();
+    await expect(evil.getByText('Evil Team', { exact: true })).toBeVisible();
+    await expect(evil.locator('[data-index-meter]').first()).toBeVisible();
+  });
+});

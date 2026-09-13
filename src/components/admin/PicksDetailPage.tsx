@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Seg } from '@/components/admin/ui';
-import { BUILD_GROUPS } from '@/data/slot-template';
-import { typeIconPath } from '@/data/type-ids';
+import { TypeBadge } from '@/components/shared/TypeBadge';
+import { sectionName } from '@/i18n';
+import { sectionColor } from '@/lib/sectionColors';
 import { cn, displayName } from '@/lib/utils';
 import {
   formatIndex,
+  indexBarPct,
   isStarterTypeName,
   PICKS_COLS,
   viewsForPicks,
@@ -14,17 +16,6 @@ import {
   type SectionPicksView,
   type StarterType,
 } from './picksStats';
-
-const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
-  BUILD_GROUPS.map((g) => [g.id, { name: g.name, color: g.color }]),
-);
-
-const STARTER_LABEL: Record<StarterType, string> = {
-  grass: 'Grass',
-  fire: 'Fire',
-  water: 'Water',
-  other: 'Other',
-};
 
 type Cell = { member: LineMember; index: number; linePicks: number; key: string };
 
@@ -57,45 +48,113 @@ function packLineRows(lines: RankedLine[], cols = PICKS_COLS): { cells: Cell[]; 
   return rows;
 }
 
+function maxIndex(lines: RankedLine[]): number {
+  let max = 0;
+  for (const line of lines) {
+    if (line.index > max) max = line.index;
+  }
+  return max;
+}
+
+function SectionBox({
+  sectionId,
+  children,
+}: {
+  sectionId: string;
+  children: ReactNode;
+}) {
+  const { fill, stroke } = sectionColor(sectionId);
+  return (
+    <section
+      data-section-id={sectionId}
+      className="min-w-0 rounded-lg"
+      style={{
+        backgroundColor: `${fill}10`,
+        border: `1px solid ${stroke}30`,
+      }}
+    >
+      <div
+        className="px-1.5 text-right text-xs font-semibold uppercase tracking-wide"
+        style={{ color: stroke, paddingTop: 4, paddingBottom: 2 }}
+      >
+        {sectionName(sectionId)}
+      </div>
+      <div className="min-w-0 px-1.5 pb-1.5">{children}</div>
+    </section>
+  );
+}
+
 function SpriteCell({
   member,
   index,
   linePicks,
+  max,
+  barColor,
 }: {
   member: LineMember;
   index: number;
   linePicks: number;
+  max: number;
+  barColor: string;
 }) {
   const label = displayName(member.name);
   const title = `${label}: ${member.picks} dexes · ${formatIndex(index)} expected`;
   const dropped = member.picks === 0 || member.picks < linePicks * 0.5;
+  const pct = indexBarPct(index, max);
   return (
     <div className={cn('flex min-w-0 flex-col items-center overflow-hidden', dropped && 'opacity-40')} title={title}>
-      <div className="flex aspect-square w-full min-w-0 items-center justify-center">
-        {member.sprite ? (
-          <img
-            src={member.sprite}
-            alt={title}
-            loading="lazy"
-            className="max-h-full max-w-full object-contain"
-            style={{ imageRendering: 'pixelated' }}
+      <div className="relative aspect-square w-full min-w-0">
+        <div className="flex h-full w-full items-center justify-center pb-[5px]">
+          {member.sprite ? (
+            <img
+              src={member.sprite}
+              alt={title}
+              loading="lazy"
+              className="max-h-full max-w-full object-contain"
+              style={{ imageRendering: 'pixelated' }}
+            />
+          ) : (
+            <span className="text-[0.5rem] text-muted-foreground">#{member.id}</span>
+          )}
+        </div>
+        <div
+          className="absolute inset-x-0 bottom-0 h-[3px] overflow-hidden rounded-full"
+          style={{ backgroundColor: `${barColor}22` }}
+          aria-hidden
+          data-index-meter={formatIndex(index)}
+        >
+          <div
+            data-index-fill
+            className="h-full rounded-full"
+            style={{ width: `${pct}%`, backgroundColor: barColor }}
           />
-        ) : (
-          <span className="text-[0.5rem] text-muted-foreground">#{member.id}</span>
-        )}
+        </div>
       </div>
-      <span className="max-w-full truncate text-[0.5rem] tabular-nums leading-none">{formatIndex(index)}</span>
+      <span
+        className="mt-0.5 max-w-full truncate text-[0.5rem] tabular-nums leading-none"
+        style={{ color: barColor }}
+      >
+        {formatIndex(index)}
+      </span>
     </div>
   );
 }
 
-function LineGrid({ lines }: { lines: RankedLine[] }) {
+function LineGrid({
+  lines,
+  max,
+  barColor,
+}: {
+  lines: RankedLine[];
+  max: number;
+  barColor: string;
+}) {
   if (lines.length === 0) {
     return <p className="text-[0.65rem] text-muted-foreground">None in this cap.</p>;
   }
   const rows = packLineRows(lines);
   return (
-    <div className="flex min-w-0 flex-col gap-0.5">
+    <div className="flex min-w-0 flex-col gap-1">
       {rows.map((row, i) => (
         <div key={i} className="grid min-w-0 grid-cols-6 gap-0.5">
           {row.cells.map((cell) => (
@@ -104,6 +163,8 @@ function LineGrid({ lines }: { lines: RankedLine[] }) {
               member={cell.member}
               index={cell.index}
               linePicks={cell.linePicks}
+              max={max}
+              barColor={barColor}
             />
           ))}
           {Array.from({ length: row.spacers }, (_, s) => (
@@ -115,55 +176,54 @@ function LineGrid({ lines }: { lines: RankedLine[] }) {
   );
 }
 
-function DualGrids({ columns }: { columns: DualColumn }) {
+function DualGrids({ columns, barColor }: { columns: DualColumn; barColor: string }) {
+  const max = Math.max(maxIndex(columns.most), maxIndex(columns.least));
   return (
     <div className="grid min-w-0 grid-cols-2 gap-x-1.5">
       <div className="min-w-0 overflow-hidden">
         <div className="mb-1 text-[0.65rem] font-semibold">Most</div>
-        <LineGrid lines={columns.most} />
+        <LineGrid lines={columns.most} max={max} barColor={barColor} />
       </div>
-      <div className="min-w-0 overflow-hidden border-l border-border pl-1.5">
+      <div className="min-w-0 overflow-hidden border-l border-border/60 pl-1.5">
         <div className="mb-1 text-[0.65rem] font-semibold">Least</div>
-        <LineGrid lines={columns.least} />
+        <LineGrid lines={columns.least} max={max} barColor={barColor} />
       </div>
     </div>
   );
 }
 
 function StarterTypeHeading({ type }: { type: StarterType }) {
+  if (!isStarterTypeName(type)) {
+    return (
+      <div className="mb-1 text-[0.65rem] font-semibold uppercase tracking-wide text-muted-foreground">
+        Other
+      </div>
+    );
+  }
   return (
-    <div className="mb-1 flex items-center gap-1 text-[0.7rem] font-semibold">
-      {isStarterTypeName(type) ? (
-        <img src={typeIconPath(type)} alt="" className="h-3.5 w-3.5 rounded-[2px]" />
-      ) : (
-        <span className="inline-block h-2 w-2 rounded-sm bg-muted-foreground" />
-      )}
-      {STARTER_LABEL[type]}
+    <div className="mb-1">
+      <TypeBadge type={type} className="w-[5.625rem] max-w-full" />
     </div>
   );
 }
 
 function SectionBlock({ view }: { view: SectionPicksView }) {
-  const meta = SECTION_META[view.sectionId];
+  const { stroke } = sectionColor(view.sectionId);
   return (
-    <section>
-      <div className="mb-1 flex items-center gap-1 text-xs font-medium">
-        <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: meta?.color ?? '#9ca3af' }} />
-        {meta?.name ?? view.sectionId}
-      </div>
+    <SectionBox sectionId={view.sectionId}>
       {view.kind === 'starter' ? (
-        <div className="flex flex-col">
+        <div className="flex flex-col gap-2">
           {view.groups.map((g) => (
-            <div key={g.type} className="mt-2 first:mt-0">
+            <div key={g.type}>
               <StarterTypeHeading type={g.type} />
-              <DualGrids columns={g} />
+              <DualGrids columns={g} barColor={stroke} />
             </div>
           ))}
         </div>
       ) : (
-        <DualGrids columns={view.columns} />
+        <DualGrids columns={view.columns} barColor={stroke} />
       )}
-    </section>
+    </SectionBox>
   );
 }
 
@@ -187,7 +247,7 @@ export function PicksDetailPage({
   );
 
   return (
-    <div className="flex min-w-0 flex-col gap-4">
+    <div className="flex min-w-0 flex-col gap-3">
       <div
         className="sticky z-[95] -mx-4 border-b border-border bg-background px-4 py-2"
         style={{ top: stickyOffset }}
@@ -244,7 +304,7 @@ export function PicksDetailPage({
             : 'No picks yet.'}
         </p>
       ) : (
-        <div className="flex flex-col gap-4">{sections.map((s) => <SectionBlock key={s.sectionId} view={s} />)}</div>
+        <div className="flex flex-col gap-3">{sections.map((s) => <SectionBlock key={s.sectionId} view={s} />)}</div>
       )}
     </div>
   );
