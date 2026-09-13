@@ -19,6 +19,7 @@ import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/S
 import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
+import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import {
   ARCHIVE_FILTER_OPTIONS,
@@ -53,6 +54,7 @@ import { PreviewFilterMenu } from '@/components/admin/PreviewFilterMenu';
 import { FitNowrap, PreviewChipZoomProvider } from '@/components/admin/FitNowrap';
 import { useHostZoom } from '@/components/admin/previewChipZoom';
 import { Archive, ArchiveRestore, Camera, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
+import type { CrossToolSnapshot } from '../../../api/_crossTool';
 
 // Human labels for the onboarding/funnel events shown per session.
 
@@ -363,6 +365,8 @@ export interface ApiResponse {
   /** Acquisition: referring host → dex / league landings. Forward-only, so
    *  empty until referrers accumulate. */
   referrerFlow?: { host: string; total: number; dex: number; league: number }[];
+  /** Opportunity conversion, companion share, league⊂dex, and arrival-era overlap. */
+  crossTool?: CrossToolSnapshot;
   /** Cross-tool order and weekly crossover, for browsers in both stores. */
   journeys?: {
     both: number;
@@ -1858,7 +1862,6 @@ export function AdminPage() {
           const dateRange = act.length ? `${fmtDate(act[0].day)} – ${fmtDate(act[act.length - 1].day)} · as of ${fmtDate(act[act.length - 1].day)}` : '';
 
           const xt = data.tools;
-          const xtTotal = xt ? xt.dexOnly + xt.both + xt.leagueOnly : 0;
 
           // Rollup helpers.
           const toRollup = (rec: Record<string, number>, max = 6): RollupRow[] => {
@@ -1915,49 +1918,20 @@ export function AdminPage() {
 
             {showDex && <BeaconDropNotice events={data.funnelEvents} />}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {!showDex && (
-                <Panel title="League activity" sub={[`${slice.users} browsers`]}>
-                  <div className="flex flex-wrap gap-x-6 gap-y-3">
-                    <Kpi emphasis value={slice.users} label="Browsers" />
-                    <Kpi value={slice.retention.activeLast7} label="Active · 7d" />
-                    <Kpi value={slice.retention.returning} label="Returning" />
-                    {data.league && (
-                      <Kpi value={data.league.exportedCard + data.league.exportedLeague} label="Exports" />
-                    )}
-                  </div>
-                </Panel>
-              )}
-
-              {xt && (
-                <Panel
-                  title="Cross-tool"
-                  sub={['dex & league']}
-                  actions={<span className="text-[0.7rem] font-semibold tabular-nums text-muted-foreground">{xtTotal} browsers</span>}
-                >
-                  <div className="flex flex-wrap gap-x-6 gap-y-3">
-                    <Kpi value={xt.dexOnly} label="Dex only" />
-                    <Kpi value={xt.both} label="Both" denom={`n=${xt.league}`} />
-                    <Kpi value={xt.leagueOnly} label="League only" denom={`n=${xt.league}`} />
-                  </div>
-                  {data.journeys && (
-                    <div className="mt-4 flex flex-col gap-1.5 text-xs">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-muted-foreground">League → Dex</span>
-                        <span className="flex items-center gap-1.5 font-bold tabular-nums">
-                          {data.journeys.leagueFirst} / {xt.league}
-                          {xt.league <= 5 && <Delta>n={xt.league} · too few to trend</Delta>}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-muted-foreground">Dex → League</span>
-                        <span className="font-bold tabular-nums">{data.journeys.dexFirst} / {built}</span>
-                      </div>
-                    </div>
+            {!showDex && (
+              <Panel title="League activity" sub={[`${slice.users} browsers`]}>
+                <div className="flex flex-wrap gap-x-6 gap-y-3">
+                  <Kpi emphasis value={slice.users} label="Browsers" />
+                  <Kpi value={slice.retention.activeLast7} label="Active · 7d" />
+                  <Kpi value={slice.retention.returning} label="Returning" />
+                  {data.league && (
+                    <Kpi value={data.league.exportedCard + data.league.exportedLeague} label="Exports" />
                   )}
-                </Panel>
-              )}
-            </div>
+                </div>
+              </Panel>
+            )}
+
+            {data.crossTool && <CrossToolCard data={data.crossTool} />}
 
             {showFlows && (
               <Panel
