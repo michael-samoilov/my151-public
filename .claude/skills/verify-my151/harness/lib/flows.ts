@@ -234,6 +234,8 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
 
   // Boot on a clean origin.
   await s.navigate(ctx.base + DEX_PATH);
+  await s.evalJson(`try{localStorage.setItem('p151-league-promo-seen','1');localStorage.setItem('p151-moved-notice-seen','1');}catch{} return true;`);
+  await s.navigate(ctx.base + DEX_PATH);
   const booted = await waitForApp(s);
   checks.push(ok('boot:react-mounted', booted));
   await s.screenshot(ctx.shot('boot'));
@@ -686,5 +688,73 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
 
   const errs = await s.errors();
   checks.push(ok('league-change:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
+  return checks;
+}
+
+/** Cells in a seat column wearing the gym hover gradient wash. */
+async function columnWashCount(s: Session, seat: number): Promise<number> {
+  return s.evalJson<number>(`const cells=[...document.querySelectorAll('[data-testid^="card-cell-"][data-testid$="-${seat}"]')];
+    return cells.filter((c)=>getComputedStyle(c).background.includes('linear-gradient')).length;`).catch(() => 0);
+}
+
+/** Close the league browser sheet the way the overlays spec does. */
+async function dismissLeagueBrowser(s: Session): Promise<boolean> {
+  const closed = await s.evalJson<boolean>(`const desktop=window.matchMedia('(min-width: 1024px)').matches;
+    if(desktop){
+      const h=[...document.querySelectorAll('h2')].find((x)=>(x.textContent||'').includes('Adding to'));
+      const b=h?.parentElement?.querySelector('button[type="button"]');
+      if(!b) return false;
+      b.click();
+      return true;
+    }
+    const back=[...document.querySelectorAll('div')].find((d)=>typeof d.className==='string'&&d.className.includes('bg-black/50'));
+    if(!back) return false;
+    back.click();
+    return true;`).catch(() => false);
+  await sleep(400);
+  return closed;
+}
+
+/** Move a fine pointer over a column so the grid records hoverSeat. */
+async function pointerOverColumn(s: Session, testId: string): Promise<void> {
+  await s.hover(`[data-testid="${testId}"]`);
+}
+
+/**
+ * PR #31: column hover must not stick on touch after the browser closes; desktop
+ * pointer hover still washes the column. Structural reads only (computed style).
+ */
+export async function runLeagueColumnHoverSuite(s: Session, persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + LEAGUE_PATH;
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'league-hover:drive', status: 'skip', detail: 'league home never hydrated' });
+    return checks;
+  }
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${BLANK_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await openLeagueCard(s, 0))) {
+    checks.push({ name: 'league-hover:drive', status: 'skip', detail: 'card never opened' });
+    return checks;
+  }
+
+  await s.click('[data-testid="card-cell-1-1"]');
+  await sleep(600);
+  const dismissed = await dismissLeagueBrowser(s);
+  checks.push(ok('league-hover:browser-dismissed', dismissed, dismissed ? 'backdrop click' : 'no backdrop found'));
+  const sticky = await columnWashCount(s, 1);
+  await s.screenshot(ctx.shot('league-hover-after-browser-close'));
+
+  if (persona !== null) {
+    checks.push(ok('league-hover:mobile-no-sticky-wash', sticky === 0, `washed cells in seat 1: ${sticky}`));
+    return checks;
+  }
+
+  checks.push(ok('league-hover:mobile-no-sticky-wash', sticky === 0, `washed cells in seat 1 after dismiss: ${sticky}`));
+  await pointerOverColumn(s, 'card-cell-5-2');
+  const washed = await columnWashCount(s, 2);
+  checks.push(ok('league-hover:desktop-column-wash', washed >= 8, `washed cells in seat 2: ${washed}`));
+  await s.screenshot(ctx.shot('league-hover-desktop-column'));
   return checks;
 }
