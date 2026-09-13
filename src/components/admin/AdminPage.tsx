@@ -938,7 +938,7 @@ function LanguageChip({ lang, locale, switched }: { lang?: string; locale?: stri
 function StickyBar({ top, children }: { top: number; children: React.ReactNode }) {
   return (
     <div
-      className="sticky z-[95] -mx-4 border-b border-border bg-background/95 px-4 py-1.5 backdrop-blur"
+      className="sticky z-[95] -mx-4 border-b border-border bg-background px-4 py-1.5"
       style={{ top }}
     >
       {children}
@@ -1792,7 +1792,7 @@ export function AdminPage() {
         </div>
       </header>
 
-      <AdminNav value={navKey} onChange={onNav} />
+      {!detail && <AdminNav value={navKey} onChange={onNav} />}
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 pb-24 pt-4 md:pb-8">
         {error && <p className="text-sm text-destructive">{error}</p>}

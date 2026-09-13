@@ -37,7 +37,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
         symbol: 'none' as const,
         animation: false,
         label: { show: false },
-        lineStyle: { color: faint, width: 1, type: 'solid' as const, opacity: 0.22 },
+        lineStyle: { color: faint, width: 1, type: 'solid' as const, opacity: 0.35 },
         data: weekMarks.map((i) => ({ xAxis: i })),
       };
 
