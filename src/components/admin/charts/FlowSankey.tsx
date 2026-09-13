@@ -13,8 +13,12 @@ function columnStack(nodes: SankeyNode[], links: SankeyLink[]): number {
   return Math.max(2, leftmost, rightmost);
 }
 
-function chartHeight(nodes: SankeyNode[], links: SankeyLink[]): number {
-  return Math.max(360, Math.min(580, columnStack(nodes, links) * 42 + 80));
+function chartHeight(nodes: SankeyNode[], links: SankeyLink[], kind: 'funnel' | 'referrer'): number {
+  if (kind === 'referrer') {
+    return Math.max(360, Math.min(520, columnStack(nodes, links) * 36 + 80));
+  }
+  const peels = nodes.filter((n) => n.role === 'sink').length;
+  return Math.max(500, Math.min(640, 360 + peels * 28));
 }
 
 function nodeLabel(
@@ -24,14 +28,56 @@ function nodeLabel(
   isRight: boolean,
   kind: 'funnel' | 'referrer',
 ) {
+  const countFmt = compact ? '{b}\n{c}' : '{b} {c}';
   if (!compact) return { position: n.label };
   if (kind === 'referrer' && isLeft) {
-    return { position: 'left' as const, width: 72, overflow: 'break' as const, lineHeight: 12 };
+    return {
+      position: 'left' as const,
+      width: 88,
+      overflow: 'break' as const,
+      lineHeight: 11,
+      formatter: countFmt,
+    };
   }
-  if (isLeft) return { position: 'top' as const, align: 'left' as const };
-  const align = isRight ? ('right' as const) : ('center' as const);
-  if (n.role === 'sink' || n.role === 'priv') return { position: 'bottom' as const, align };
-  return { position: 'top' as const, align };
+  // Intermediate through-nodes (Built, 31+, 4+ cards, …) skip labels on a
+  // phone so adjacent top captions do not collide. Peels, start, and
+  // outcomes keep their names.
+  if (n.role === 'neutral' && !isLeft) return { show: false };
+  if (isLeft) {
+    return {
+      position: 'top' as const,
+      align: 'left' as const,
+      width: 72,
+      overflow: 'break' as const,
+      lineHeight: 11,
+      formatter: countFmt,
+    };
+  }
+  if (isRight) {
+    return {
+      position: n.role === 'priv' || n.role === 'sink' ? ('bottom' as const) : ('right' as const),
+      width: 76,
+      overflow: 'break' as const,
+      lineHeight: 11,
+      formatter: countFmt,
+    };
+  }
+  if (n.role === 'sink' || n.role === 'priv') {
+    return {
+      position: 'bottom' as const,
+      width: 64,
+      overflow: 'break' as const,
+      lineHeight: 11,
+      formatter: countFmt,
+    };
+  }
+  return {
+    position: 'top' as const,
+    width: 72,
+    overflow: 'break' as const,
+    lineHeight: 11,
+    formatter: countFmt,
+  };
 }
 
 /**
@@ -50,7 +96,7 @@ export function FlowSankey({
   ariaLabel: string;
   kind?: 'funnel' | 'referrer';
 }) {
-  const height = chartHeight(nodes, links);
+  const height = chartHeight(nodes, links, kind);
   const sources = new Set(links.map((l) => l.source));
   const targets = new Set(links.map((l) => l.target));
   const ref = useECharts(
