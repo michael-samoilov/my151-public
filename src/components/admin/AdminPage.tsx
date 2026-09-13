@@ -1030,18 +1030,11 @@ function FitToHeight({ children, signature }: { children: React.ReactNode; signa
     if (!outer || !inner) return;
     let raf = 0;
     const apply = () => {
-      inner.style.width = '100%';
+      inner.style.zoom = '1';
       const avail = outer.clientHeight;
       const need = inner.offsetHeight;
       if (avail <= 0 || need <= 0) return;
-      if (need > avail + 1) {
-        inner.style.width = `${Math.max(52, (avail / need) * 100)}%`;
-        const need2 = inner.offsetHeight;
-        if (need2 > avail + 1) {
-          const pct = parseFloat(inner.style.width) || 100;
-          inner.style.width = `${Math.max(52, (avail / need2) * pct)}%`;
-        }
-      }
+      if (need > avail + 1) inner.style.zoom = String(Math.max(0.5, avail / need));
     };
     const schedule = () => {
       cancelAnimationFrame(raf);

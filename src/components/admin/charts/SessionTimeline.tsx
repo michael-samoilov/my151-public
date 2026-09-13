@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import {
   fmtDay,
   formatSessionMeta,
@@ -52,9 +52,20 @@ export function SessionTimeline({
   milestones?: { t: number; label: string; tone?: 'export' | 'muted' }[];
   tz?: string;
 }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [W, setW] = useState(320);
+  useLayoutEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const apply = () => setW(Math.max(160, Math.round(el.clientWidth)));
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [points.length]);
+
   if (points.length === 0) return <p className="text-xs text-muted-foreground">No sessions yet.</p>;
 
-  const W = 320;
   const padL = 6;
   const padR = 6;
   const topY = 16;
@@ -85,6 +96,18 @@ export function SessionTimeline({
   const cur = points[Math.min(index, points.length - 1)];
   const cx = x(cur.t);
   const meta = formatSessionMeta(cur, tz);
+  const marks: { t: number; label: string; tone?: 'export' | 'muted'; bx: number }[] = [];
+  for (const m of milestones) {
+    const bx = x(m.t);
+    const prev = marks[marks.length - 1];
+    if (prev && Math.abs(bx - prev.bx) < 36) {
+      prev.label = `${prev.label} · ${m.label}`;
+      prev.bx = (prev.bx + bx) / 2;
+      if (m.tone === 'export') prev.tone = 'export';
+    } else {
+      marks.push({ ...m, bx });
+    }
+  }
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -94,7 +117,8 @@ export function SessionTimeline({
         <span>{fmtDay(t1, tz)}</span>
       </div>
 
-      <svg viewBox={`0 0 ${W} ${svgH}`} className="block w-full" style={{ height: 'auto' }} role="img" aria-label="Session diff history; drag the slider to scrub.">
+      <div ref={wrapRef}>
+      <svg viewBox={`0 0 ${W} ${svgH}`} className="block w-full" style={{ height: svgH }} role="img" aria-label="Session diff history; drag the slider to scrub.">
         {midnights.map((ts, i) => (
           <line
             key={`d-${i}`}
@@ -139,8 +163,8 @@ export function SessionTimeline({
             </g>
           );
         })}
-        {milestones.map((m, i) => {
-          const bx = x(m.t);
+        {marks.map((m, i) => {
+          const bx = m.bx;
           const color = m.tone === 'muted' ? 'var(--color-muted-foreground)' : 'var(--color-success)';
           const anchor = bx < 24 ? 'start' : bx > W - 24 ? 'end' : 'middle';
           const lx = bx < 24 ? bx - 2 : bx > W - 24 ? bx + 2 : bx;
@@ -155,6 +179,7 @@ export function SessionTimeline({
         })}
         <line x1={cx.toFixed(1)} x2={cx.toFixed(1)} y1={2} y2={svgH - 2} stroke="var(--color-primary)" strokeWidth={1.5} />
       </svg>
+      </div>
 
       {points.length <= 1 ? (
         <div className="flex items-stretch gap-2">
