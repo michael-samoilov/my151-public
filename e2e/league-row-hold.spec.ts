@@ -72,4 +72,43 @@ test.describe('holding a league row', () => {
 
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
     });
+
+  test('does not reorder neighbours on a hold alone', async ({ page, browserName }, testInfo) => {
+    test.skip(browserName !== 'chromium', 'CDP touch injection');
+    test.skip(testInfo.project.name === 'desktop', 'the hold is a touch affordance');
+
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-6"]');
+    await page.waitForTimeout(500);
+
+    const rowTops = () =>
+      page.evaluate(() => {
+        const tops: number[] = [];
+        for (let i = 0; i < 14; i++) {
+          const el = document.querySelector(`[data-testid="league-slot-${i}"]`);
+          tops.push(el?.getBoundingClientRect().top ?? 0);
+        }
+        return tops;
+      });
+
+    const before = await rowTops();
+    const row = (await page.locator('[data-testid="league-slot-6"]').boundingBox())!;
+    const cdp = await page.context().newCDPSession(page);
+    const x = row.x + row.width / 2;
+    const y = row.y + row.height / 2;
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y }] });
+    await page.waitForTimeout(450);
+    const during = await rowTops();
+    expect(await page.locator('[data-drag-held]').count(), 'row is in hand').toBe(1);
+
+    for (let i = 0; i < 14; i++) {
+      if (i === 6) continue;
+      expect(
+        Math.abs(during[i] - before[i]),
+        `slot ${i} should not shift on hold alone`,
+      ).toBeLessThan(1);
+    }
+
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  });
 });

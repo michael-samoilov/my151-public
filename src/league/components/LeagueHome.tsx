@@ -12,7 +12,12 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { formAt } from '../model/powerups';
 import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
-import { createEffectiveCursorCollision, dragInputIsTouch, isTouchDrag } from '@/lib/dragCollision';
+import {
+  createEffectiveCursorCollision,
+  dragInputIsTouch,
+  dragPointerRef,
+  isTouchDrag,
+} from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
 import { useDragSensors } from '@/lib/dragSensors';
 import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
@@ -60,6 +65,33 @@ const HIT_LIFT_PX = 64;
 
 /** How far the copy is lifted off the slot it would fill. */
 const rowCollision = createEffectiveCursorCollision(HIT_LIFT_PX);
+
+/**
+ * Which slot the drag is over, from the thumb — not the lifted hit point.
+ *
+ * Touch lifts collision above the finger so the drop target stays visible, but
+ * reorder preview must track the thumb. Otherwise a hold on gym 7 reads as gym
+ * 5 and every label shifts before the finger moves.
+ */
+function insertIndexFromVisual(): number | undefined {
+  const y = dragPointerRef.current?.y;
+  if (y === undefined) return undefined;
+
+  let best: number | undefined;
+  let bestD2 = Infinity;
+  for (let i = 0; i < SLOT_COUNT; i++) {
+    const el = document.querySelector(`[data-testid="league-slot-${i}"]`);
+    if (!el) continue;
+    const r = el.getBoundingClientRect();
+    const cy = r.top + r.height / 2;
+    const d2 = (cy - y) ** 2;
+    if (d2 < bestD2) {
+      bestD2 = d2;
+      best = i;
+    }
+  }
+  return best;
+}
 /**
  * The copy sits *on* the row it would be placed in, not above it.
  *
@@ -289,7 +321,9 @@ export function LeagueHome() {
 
   const onDragOver = useCallback((e: DragOverEvent) => {
     const from = (e.active.data.current as { index: number } | undefined)?.index;
-    const to = (e.over?.data.current as { index: number } | undefined)?.index;
+    const to =
+      insertIndexFromVisual()
+      ?? (e.over?.data.current as { index: number } | undefined)?.index;
     if (from === undefined || to === undefined) return;
     setPreview((cur) => (cur && cur.to === to && cur.from === from ? cur : { from, to }));
   }, []);
@@ -299,7 +333,9 @@ export function LeagueHome() {
       dragInputIsTouch.current = false;
       setPreview(null);
       const from = (e.active.data.current as { index: number } | undefined)?.index;
-      const to = (e.over?.data.current as { index: number } | undefined)?.index;
+      const to =
+        insertIndexFromVisual()
+        ?? (e.over?.data.current as { index: number } | undefined)?.index;
       if (from === undefined || to === undefined || from === to) return;
       moveSlot(from, to);
     },
