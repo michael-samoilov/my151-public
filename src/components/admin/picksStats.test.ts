@@ -45,6 +45,12 @@ const TEPIG = 498;
 const OSHAWOTT = 501;
 const TYPHLOSION = 157;
 const HISUIAN_TYPHLOSION = 10233;
+const LITWICK = 607;
+const LAMPENT = 608;
+const CHANDELURE = 609;
+const APPLIN = 840;
+const DIPPLIN = 1011;
+const HYDRAPPLE = 1019;
 
 const count = (id: number, n: number): [string, number] => [String(id), n];
 
@@ -298,6 +304,47 @@ describe('sectionPicksView starters', () => {
 });
 
 describe('sectionPicksView off-section', () => {
+  it('keeps off-section starters as one list with every placed stage', () => {
+    const view = sectionPicksView(
+      'starter',
+      [
+        count(BULBASAUR, 90),
+        count(IVYSAUR, 88),
+        count(VENUSAUR, 85),
+        count(MAGIKARP, 5),
+        count(GYARADOS, 3),
+        count(LITWICK, 4),
+        count(LAMPENT, 2),
+        count(CHANDELURE, 1),
+        count(APPLIN, 3),
+        count(DIPPLIN, 2),
+        count(HYDRAPPLE, 1),
+      ],
+      { offSection: true },
+    );
+    expect(view?.kind).toBe('plain');
+    if (view?.kind !== 'plain') return;
+    expect(view.columns.least).toEqual([]);
+    const ids = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    expect(ids).not.toContain(BULBASAUR);
+    expect(ids).not.toContain(IVYSAUR);
+    expect(ids).not.toContain(VENUSAUR);
+    const magikarp = view.columns.most.find((l) => l.members.some((m) => m.id === MAGIKARP));
+    expect(magikarp?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual([MAGIKARP, GYARADOS]);
+    const litwick = view.columns.most.find((l) => l.members.some((m) => m.id === LITWICK));
+    expect(litwick?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual([
+      LITWICK,
+      LAMPENT,
+      CHANDELURE,
+    ]);
+    const applin = view.columns.most.find((l) => l.members.some((m) => m.id === APPLIN));
+    expect(applin?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual([
+      APPLIN,
+      DIPPLIN,
+      HYDRAPPLE,
+    ]);
+  });
+
   it('lists Magikarp in evil-team and omits Rhyhorn', () => {
     const view = sectionPicksView(
       'evil-team',

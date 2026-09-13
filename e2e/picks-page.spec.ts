@@ -5,7 +5,8 @@ import { expect, test, type Page } from '@playwright/test';
  *
  * Layout: builder chrome with the section name at the top-left; most/least
  * as 6-col sprite grids with an index bar under each sprite. Off-section has
- * no least column and shows dex counts. Starters show first-stage faces only.
+ * no least column and shows dex counts. In-section Starters show first-stage
+ * faces only and split by grass / fire / water. Off-section Starters do not.
  */
 
 async function openPicks(page: Page) {
@@ -65,5 +66,16 @@ test.describe('admin picks page', () => {
     const shown = await evil.locator('[data-index-meter]').first().getAttribute('data-index-meter');
     expect(shown).toBeTruthy();
     expect(shown).not.toMatch(/×$/);
+
+    const starters = page.locator('[data-section-id="starter"]');
+    await expect(starters).toBeVisible();
+    await expect(starters.locator('[data-type="grass"]')).toHaveCount(0);
+    await expect(starters.locator('[data-type="fire"]')).toHaveCount(0);
+    await expect(starters.locator('[data-type="water"]')).toHaveCount(0);
+    const faceIds = await starters.locator('[data-face-id]').evaluateAll((els) =>
+      els.map((el) => Number(el.getAttribute('data-face-id'))),
+    );
+    expect(faceIds).toContain(172);
+    expect(faceIds).toContain(25);
   });
 });

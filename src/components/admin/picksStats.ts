@@ -23,10 +23,11 @@
  * not the whole dex.
  *
  * Most-picked ranks default lines only, and only lines above 1.10×, except
- * Starters, which list first-stage Pokémon and ignore that cutoff. Least-picked
- * is only lines below 0.90×. Regional starter variants (Hisuian Decidueye with
- * Rowlet) share one first-stage face. Off-section has no least column and
- * shows raw dex counts instead of the × index.
+ * in-section Starters, which list first-stage Pokémon, split grass / fire /
+ * water, and ignore that cutoff. Least-picked is only lines below 0.90×.
+ * Regional starter variants (Hisuian Decidueye with Rowlet) share one
+ * first-stage face. Off-section has no least column, shows raw dex counts,
+ * and never uses the starter type split or first-stage-only faces.
  */
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
@@ -357,6 +358,7 @@ export function sectionPicksView(
   const catchAll = group?.filterType === null;
   const pool = catchAll ? [...counts.keys()] : [...poolIdsForSection(sectionId)];
   const starters = sectionId === 'starter';
+  const inSectionStarters = starters && !opts.offSection;
   const grouper = starters ? groupByChain : groupByLine;
   const universe = grouper(pool);
   if (universe.size === 0) return null;
@@ -375,7 +377,7 @@ export function sectionPicksView(
 
   const focus = grouper(focusIds);
   if (focus.size === 0) return null;
-  const ranked = indexGroups(focus, counts, universe, { firstStageOnly: starters });
+  const ranked = indexGroups(focus, counts, universe, { firstStageOnly: inSectionStarters });
   if (ranked.length === 0) return null;
   if (!opts.offSection && ranked.every((l) => l.picks === 0)) return null;
 
@@ -385,7 +387,7 @@ export function sectionPicksView(
     includeLeast: !opts.offSection,
   };
 
-  if (starters) {
+  if (inSectionStarters) {
     const groups: StarterGroup[] = [];
     for (const type of [...STARTER_TYPES, 'other'] as const) {
       const slice = ranked.filter((l) => l.starterType === type);
