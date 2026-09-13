@@ -839,7 +839,7 @@ function drawHomeRow(
   const gap = 2 * L.K2;
   const kind = slotKind(index);
   if (kind === 'gym') drawDiamonds(ctx, index + 1, 7 * L.K2, gcx, gcy, gap);
-  else if (kind === 'elite') drawStars(ctx, index - 7, 9 * L.K2, gcx, gcy, gap, index - 7 === 4);
+  else if (kind === 'elite') drawStars(ctx, index - 7, 9 * L.K2, gcx, gcy, gap);
   else if (kind === 'champion') drawCrown(ctx, 13 * L.K2, gcx, gcy);
   else drawBossBall(ctx, cell, 15 * L.K2, gcx, gcy);
 

@@ -3,49 +3,81 @@
  * come from the design canvas (docs/future-tools/league-builder/canvas).
  */
 
-/** N−1 filled square diamonds plus one outline. Wraps after four; from four
- *  diamonds up, lines left-align so the marks stack as a block. */
-export function GymBadges({ n, size = 7 }: { n: number; size?: number }) {
-  const marks = Array.from({ length: n }, (_, i) => (
-    <svg key={i} viewBox="0 0 12 12" style={{ width: size, height: size }}>
-      {i < n - 1 ? (
+const GAP_PX = 2;
+
+function starMark(size: number, key: number) {
+  return (
+    <svg key={key} viewBox="0 0 12 12" className="shrink-0" style={{ width: size, height: size }}>
+      <path
+        d="M6 0.5 L7.5 4.4 L11.6 4.4 L8.3 6.9 L9.6 10.9 L6 8.5 L2.4 10.9 L3.7 6.9 L0.4 4.4 L4.5 4.4 Z"
+        fill="#ffffff"
+      />
+    </svg>
+  );
+}
+
+function diamondMark(size: number, key: number, filled: boolean) {
+  return (
+    <svg key={key} viewBox="0 0 12 12" className="shrink-0" style={{ width: size, height: size }}>
+      {filled ? (
         <path d="M6 0 L12 6 L6 12 L0 6 Z" fill="#ffffff" />
       ) : (
         <path d="M6 1 L11 6 L6 11 L1 6 Z" fill="none" stroke="#ffffff" strokeWidth="1.8" />
       )}
     </svg>
-  ));
-  if (n <= 4) return <span className="flex items-center gap-[2px]">{marks}</span>;
+  );
+}
+
+/** N−1 filled square diamonds plus one outline. Four or fewer sit on one line;
+ *  more stack in a fixed four-wide grid so the count never reflows. */
+export function GymBadges({ n, size = 7 }: { n: number; size?: number }) {
+  const marks = Array.from({ length: n }, (_, i) => diamondMark(size, i, i < n - 1));
+  if (n <= 4) {
+    return (
+      <span className="inline-flex shrink-0 items-center" style={{ gap: GAP_PX }}>
+        {marks}
+      </span>
+    );
+  }
+  const cols = 4;
+  const width = cols * size + (cols - 1) * GAP_PX;
   return (
     <span
-      className="flex flex-wrap content-center justify-start gap-[2px]"
-      style={{ width: 4 * size + 6 }}
+      className="inline-grid shrink-0 grid-cols-4 content-center justify-items-start"
+      style={{ width, gap: GAP_PX }}
     >
       {marks}
     </span>
   );
 }
 
-export function Stars({ n, size = 10, wrap = false }: { n: number; size?: number; wrap?: boolean }) {
-  const marks = Array.from({ length: n }, (_, i) => (
-    <svg key={i} viewBox="0 0 12 12" style={{ width: size, height: size }}>
-      <path
-        d="M6 0.5 L7.5 4.4 L11.6 4.4 L8.3 6.9 L9.6 10.9 L6 8.5 L2.4 10.9 L3.7 6.9 L0.4 4.4 L4.5 4.4 Z"
-        fill="#ffffff"
-      />
-    </svg>
-  ));
-  if (wrap) {
+/** Elite Four stars: one or two on a line; three as two-over-one; four as 2×2. */
+export function Stars({ n, size = 10 }: { n: number; size?: number }) {
+  const marks = Array.from({ length: n }, (_, i) => starMark(size, i));
+  if (n <= 2) {
     return (
-      <span
-        className="flex flex-wrap content-center justify-center gap-[2px]"
-        style={{ width: 2 * size + 2 }}
-      >
+      <span className="inline-flex shrink-0 items-center" style={{ gap: GAP_PX }}>
         {marks}
       </span>
     );
   }
-  return <span className="flex items-center gap-[2px]">{marks}</span>;
+  if (n === 3) {
+    return (
+      <span className="inline-flex shrink-0 flex-col items-center" style={{ gap: GAP_PX }}>
+        <span className="inline-flex shrink-0" style={{ gap: GAP_PX }}>
+          {marks.slice(0, 2)}
+        </span>
+        {marks[2]}
+      </span>
+    );
+  }
+  const cols = 2;
+  const width = cols * size + (cols - 1) * GAP_PX;
+  return (
+    <span className="inline-grid shrink-0 grid-cols-2" style={{ width, gap: GAP_PX }}>
+      {marks}
+    </span>
+  );
 }
 
 export function Crown({ size = 15 }: { size?: number }) {
