@@ -14,6 +14,8 @@ import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { hasSeenExportSurvey } from '@/lib/exportSurvey';
 import { ExportSurveyHost } from '@/components/export/ExportSurveyHost';
+import { DEMO_MODE } from '@/lib/demoMode';
+import { previewExportHighlight, type ExportHighlight } from '@/league/export/exportPersonalization';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -894,9 +896,14 @@ export function ViewPage() {
   }, [statsRevealed, isDesktop]);
 
   const [exporting, setExporting] = useState(false);
-  const [exportSurvey, setExportSurvey] = useState<{ open: boolean; openedAt: number }>({
+  const [exportSurvey, setExportSurvey] = useState<{
+    open: boolean;
+    openedAt: number;
+    highlight: ExportHighlight | null;
+  }>({
     open: false,
     openedAt: 0,
+    highlight: null,
   });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
@@ -1119,8 +1126,9 @@ export function ViewPage() {
     // Fire the export beacon up front. On iOS the share sheet ("Save Image")
     // suspends the page, and a sendBeacon issued after navigator.share resolves
     // often never leaves the device — so record the export before opening it.
+    const ids = sorted.map((p) => p.id);
     sendExportBeacon(
-      sorted.map((p) => p.id),
+      ids,
       {
         sort: sortOption,
         outlines: showSectionOverlays,
@@ -1141,7 +1149,13 @@ export function ViewPage() {
         stats: showStatsPanel ? { data: statsData, heights: DEFAULT_STATS_HEIGHTS } : null,
       });
       await shareOrDownload(blob, `my151.png`);
-      if (!hasSeenExportSurvey()) setExportSurvey({ open: true, openedAt: Date.now() });
+      if (!hasSeenExportSurvey()) {
+        setExportSurvey({
+          open: true,
+          openedAt: Date.now(),
+          highlight: DEMO_MODE ? previewExportHighlight('pokedex', ids) : null,
+        });
+      }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('Export failed:', err);
@@ -1428,9 +1442,9 @@ export function ViewPage() {
       {exportSurvey.open && (
         <ExportSurveyHost
           tool="pokedex"
-          highlight={null}
+          highlight={exportSurvey.highlight}
           openedAt={exportSurvey.openedAt}
-          onClose={() => setExportSurvey({ open: false, openedAt: 0 })}
+          onClose={() => setExportSurvey({ open: false, openedAt: 0, highlight: null })}
         />
       )}
 

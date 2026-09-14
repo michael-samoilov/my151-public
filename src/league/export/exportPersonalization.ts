@@ -65,6 +65,32 @@ export function firstPokemonLine(pokemonName: string, tool: ExportTool): string 
 }
 
 /**
+ * Preview and local testing still show the early-export copy, but they must
+ * not consume production uniqueness. 151 is a generation milestone, so the
+ * intro includes the "Lucky you!" line; the first seated id stands in for a
+ * first-Pokémon highlight.
+ */
+export function previewExportHighlight(tool: ExportTool, pokemonIds: number[]): ExportHighlight {
+  const firstPokemonId = pokemonIds.find((id) => Number.isInteger(id) && id > 0) ?? null;
+  return { ordinal: 151, tool, firstPokemonId };
+}
+
+/**
+ * Demo / preview clients never POST an export beacon. They still need the
+ * intro copy, so an export in demo mode uses `previewExportHighlight` instead
+ * of the network. Progress beacons stay silent.
+ */
+export function exportBeaconPlan(opts: {
+  demo: boolean;
+  optedOut: boolean;
+  kind: 'progress' | 'export';
+}): 'skip' | 'preview' | 'network' {
+  if (opts.optedOut) return 'skip';
+  if (!opts.demo) return 'network';
+  return opts.kind === 'export' ? 'preview' : 'skip';
+}
+
+/**
  * Of Pokémon in this export that have never appeared in any export, pick the
  * one most often placed across Pokedex Builder entries. National-dex order
  * breaks ties.

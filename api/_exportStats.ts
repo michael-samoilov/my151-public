@@ -50,7 +50,22 @@ function seenFlag(v: unknown): boolean {
   return v === 1 || v === true || v === '1';
 }
 
+/** Writes uniqueness only on the live site. Preview, local, and any other
+ *  `VERCEL_ENV` must not increment `export:counts` or add to `export:seen-pokemon`. */
+export function canRecordToolExport(env: string | undefined = process.env.VERCEL_ENV): boolean {
+  return env === 'production';
+}
+
+/** Same shape the live recorder returns, without touching Redis. */
+export function previewExportHighlight(tool: ExportTool, pokemonIds: number[]): ExportHighlight {
+  const firstPokemonId = pokemonIds.find((id) => Number.isInteger(id) && id > 0 && id < 100_000) ?? null;
+  return { ordinal: 151, tool, firstPokemonId };
+}
+
 export async function recordToolExport(tool: ExportTool, pokemonIds: number[]): Promise<ExportHighlight | null> {
+  if (!canRecordToolExport()) {
+    return previewExportHighlight(tool, pokemonIds);
+  }
   try {
     const unique = [...new Set(pokemonIds.filter((id) => Number.isInteger(id) && id > 0 && id < 100_000))];
     const ordinal = await redis.hincrby(EXPORT_COUNTS_KEY, tool, 1);

@@ -12,7 +12,11 @@ import {
 } from '@/lib/beaconScheduler';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import type { LeagueCardShape, LeagueExportKind, LeagueSummary } from '../../../api/_leagueRecord';
-import type { ExportHighlight } from '../export/exportPersonalization';
+import {
+  exportBeaconPlan,
+  previewExportHighlight,
+  type ExportHighlight,
+} from '../export/exportPersonalization';
 import { useLeagueStore } from '../store/useLeagueStore';
 import { describeLeague, summarizeLeague } from '../model/leagueSummary';
 
@@ -31,7 +35,16 @@ function postLeagueBeacon(
   exportKind?: LeagueExportKind,
   pokemonIds?: number[],
 ): Promise<ExportHighlight | null> {
-  if (DEMO_MODE || isOptedOut()) return Promise.resolve(null);
+  const plan = exportBeaconPlan({
+    demo: DEMO_MODE,
+    optedOut: isOptedOut(),
+    kind,
+  });
+  if (plan === 'skip') return Promise.resolve(null);
+  if (plan === 'preview') {
+    const tool = exportKind === 'card' ? 'card' : 'league';
+    return Promise.resolve(previewExportHighlight(tool, pokemonIds ?? []));
+  }
   const payload = JSON.stringify({
     cid: getClientId(),
     tool: 'league',

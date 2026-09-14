@@ -3,6 +3,7 @@ import type { IconType } from 'react-icons';
 import { Search, Send, UserRound } from 'lucide-react';
 import { SiBluesky, SiDiscord, SiReddit, SiTumblr, SiX } from 'react-icons/si';
 import { Button } from '@/components/ui/button';
+import { useSheetKeyboard } from '@/components/ui/sheetKeyboard';
 import { sendFeedback, collectFeedbackContext } from '@/lib/feedbackContext';
 import {
   exportSurveyFeedbackRoute,
@@ -55,6 +56,16 @@ export function LeagueExportSurvey({
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const otherInputRef = useRef<HTMLInputElement>(null);
+  const otherRowRef = useRef<HTMLDivElement>(null);
+  const tight = useSheetKeyboard();
+
+  const revealOtherField = () => {
+    queueMicrotask(() => {
+      const input = otherInputRef.current;
+      input?.focus();
+      otherRowRef.current?.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+  };
 
   const toggleHeard = (id: string) => {
     setHeard((prev) => {
@@ -86,7 +97,7 @@ export function LeagueExportSurvey({
       setHeardOther('');
     } else {
       selectOther();
-      queueMicrotask(() => otherInputRef.current?.focus());
+      revealOtherField();
     }
   };
 
@@ -137,13 +148,42 @@ export function LeagueExportSurvey({
 
   return (
     <div
-      className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-1"
+      className={`flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 pt-1 ${tight ? 'gap-2 pb-2' : 'gap-4 pb-4'}`}
       data-export-survey
     >
       <fieldset className="space-y-2 border-0 p-0">
         <legend className="text-sm font-semibold">How did you hear about my151?</legend>
         <p className="text-xs text-muted-foreground">Select all that apply.</p>
-        <div className="flex flex-col gap-1">
+        <div className="flex w-full items-stretch gap-1 scroll-mt-3 scroll-mb-24" data-export-other-row ref={otherRowRef}>
+          <button
+            type="button"
+            className={`inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-sm font-medium transition-colors ${chipClass(otherOn)}`}
+            onClick={toggleOther}
+            aria-pressed={otherOn}
+            data-export-other
+          >
+            <Send className="size-4 shrink-0" aria-hidden />
+            Other
+          </button>
+          <input
+            ref={otherInputRef}
+            value={heardOther}
+            onChange={(e) => {
+              selectOther();
+              setHeardOther(e.target.value);
+            }}
+            onFocus={() => {
+              selectOther();
+              otherRowRef.current?.scrollIntoView({ block: 'center', inline: 'nearest' });
+            }}
+            onPointerDown={selectOther}
+            placeholder="Where?"
+            aria-label="How you heard about the site"
+            data-export-other-input
+            className="min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-1">
           {HEARD.filter((h) => h.id !== 'other').map(({ id, label, Icon }) => {
             const on = heard.has(id);
             return (
@@ -156,36 +196,10 @@ export function LeagueExportSurvey({
                 <span className="flex h-5 w-5 items-center justify-center">
                   <Icon className="size-4 shrink-0" aria-hidden />
                 </span>
-                <span>{label}</span>
+                <span className="truncate">{label}</span>
               </button>
             );
           })}
-          <div className="flex w-full items-stretch gap-1" data-export-other-row>
-            <button
-              type="button"
-              className={`inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-md border px-2.5 py-2 text-sm font-medium transition-colors ${chipClass(otherOn)}`}
-              onClick={toggleOther}
-              aria-pressed={otherOn}
-              data-export-other
-            >
-              <Send className="size-4 shrink-0" aria-hidden />
-              Other
-            </button>
-            <input
-              ref={otherInputRef}
-              value={heardOther}
-              onChange={(e) => {
-                selectOther();
-                setHeardOther(e.target.value);
-              }}
-              onFocus={selectOther}
-              onPointerDown={selectOther}
-              placeholder="Where?"
-              aria-label="How you heard about the site"
-              data-export-other-input
-              className="min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            />
-          </div>
         </div>
       </fieldset>
 

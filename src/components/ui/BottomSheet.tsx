@@ -153,6 +153,10 @@ export function BottomSheet({
    * exists while a sheet is open rather than for the life of the page.
    */
   const [viewport, setViewport] = useState<{ height: number; top: number } | null>(null);
+  /** iOS does not always shrink visualViewport when the keyboard opens (in-app
+   *  browsers especially). A focused field is itself the signal that a keyboard
+   *  is coming, so the sheet expands immediately and the field sits at the top. */
+  const [textFocus, setTextFocus] = useState(false);
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -256,7 +260,8 @@ export function BottomSheet({
    * keyboard, so the difference between the two *is* the keyboard. 80px of
    * slack keeps browser-chrome collapse from reading as one.
    */
-  const keyboardOpen = viewport !== null && viewport.height < window.innerHeight - 80;
+  const keyboardOpen =
+    textFocus || (viewport !== null && viewport.height < window.innerHeight - 80);
   const gap = keyboardOpen ? Math.min(topGap, 8) : topGap;
   const viewportMax = viewport ? Math.max(0, viewport.height - gap) : null;
   const maxHeightPx =
@@ -286,6 +291,23 @@ export function BottomSheet({
       ref={overlayRef}
       data-overlay
       className="pointer-events-none fixed inset-x-0 flex flex-col justify-end md:hidden"
+      onFocusCapture={(e) => {
+        const t = e.target;
+        if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) {
+          setTextFocus(true);
+        }
+      }}
+      onBlurCapture={(e) => {
+        const next = e.relatedTarget;
+        if (
+          next instanceof HTMLElement &&
+          e.currentTarget.contains(next) &&
+          (next.tagName === 'INPUT' || next.tagName === 'TEXTAREA')
+        ) {
+          return;
+        }
+        setTextFocus(false);
+      }}
       // Bounded to the visible area rather than `inset-0`, so "the bottom" is
       // the top of the keyboard when one is open and the bottom of the screen
       // when it is not.
@@ -311,6 +333,7 @@ export function BottomSheet({
         aria-label={closeLabel}
         data-export-chrome={exportChrome ? '' : undefined}
         className="relative flex max-h-full min-h-0 flex-col rounded-t-2xl bg-background shadow-2xl pointer-events-auto"
+        data-sheet-keyboard={keyboardOpen ? '' : undefined}
         style={{
           // `100dvh` accounts for browser chrome but not the keyboard, so the
           // visible height wins whenever the visual viewport has reported one.

@@ -16,8 +16,9 @@ const SHINE_DEAD_DEG = 3.5;
  * Live export preview with a pointer-driven tilt, like a foil card on a desk.
  *
  * Tilt lives on this wrapper, not on the image, so a new blob URL does not
- * reset the path. A small idle orbit runs with no input so the card is
- * obviously tiltable. A tap parks it straight-on; a second tap resumes.
+ * reset the path. A slow idle orbit runs with no input. A tap parks the card
+ * straight-on and stops that orbit; pointer and hover still tilt it. A second
+ * tap starts the orbit again.
  */
 export function ExportPreview3D({
   src,
@@ -49,8 +50,12 @@ export function ExportPreview3D({
     el.style.transform = `rotateX(${x}deg) rotateY(${y}deg) translateZ(16px)`;
     const px = 50 + (y / MAX_TILT) * 50;
     const py = 50 - (x / MAX_TILT) * 50;
+    const fromCenter = Math.min(1, Math.hypot(px - 50, py - 50) / 50);
     el.style.setProperty('--pointer-x', `${px}%`);
     el.style.setProperty('--pointer-y', `${py}%`);
+    el.style.setProperty('--pointer-from-center', fromCenter.toFixed(3));
+    el.style.setProperty('--pointer-from-top', (py / 100).toFixed(3));
+    el.style.setProperty('--pointer-from-left', (px / 100).toFixed(3));
     const mag = Math.hypot(x, y);
     const foil =
       mag <= SHINE_DEAD_DEG ? 0 : Math.min(1, (mag - SHINE_DEAD_DEG) / (MAX_TILT - SHINE_DEAD_DEG));
@@ -134,7 +139,6 @@ export function ExportPreview3D({
 
   const onPointerMove = useCallback(
     (e: React.PointerEvent<HTMLDivElement>) => {
-      if (pausedRef.current) return;
       const down = downRef.current;
       if (down && !down.dragged) {
         const dist = Math.hypot(e.clientX - down.x, e.clientY - down.y);
@@ -162,7 +166,6 @@ export function ExportPreview3D({
     if (tap) {
       interactingRef.current = false;
       pausedRef.current = !pausedRef.current;
-      hoverArmedRef.current = false;
       if (pausedRef.current) {
         releaseRef.current = { from: { ...lastTiltRef.current }, to: { x: 0, y: 0 }, t0: performance.now() };
       } else {
@@ -174,10 +177,6 @@ export function ExportPreview3D({
 
     if (!interactingRef.current) return;
     interactingRef.current = false;
-    if (pausedRef.current) {
-      releaseRef.current = { from: { ...pointerTiltRef.current }, to: { x: 0, y: 0 }, t0: performance.now() };
-      return;
-    }
     releaseRef.current = {
       from: { ...pointerTiltRef.current },
       to: { x: 0, y: 0 },
@@ -188,11 +187,6 @@ export function ExportPreview3D({
   const onPointerLeave = useCallback(() => {
     downRef.current = null;
     hoverArmedRef.current = true;
-    if (pausedRef.current) {
-      interactingRef.current = false;
-      releaseRef.current = { from: { ...lastTiltRef.current }, to: { x: 0, y: 0 }, t0: performance.now() };
-      return;
-    }
     if (!interactingRef.current) return;
     interactingRef.current = false;
     releaseRef.current = {
@@ -204,8 +198,11 @@ export function ExportPreview3D({
 
   return (
     <div
-      className={cn('relative flex h-full w-full cursor-pointer items-center justify-center touch-none', className)}
-      style={{ perspective: '900px' }}
+      className={cn(
+        'relative flex h-full w-full min-h-0 min-w-0 cursor-pointer items-center justify-center touch-none',
+        className,
+      )}
+      style={{ perspective: '900px', containerType: 'size' }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -216,12 +213,14 @@ export function ExportPreview3D({
       {src ? (
         <div
           ref={cardRef}
-          className="export-foil pointer-events-none max-h-full max-w-full min-h-0 min-w-0 cursor-pointer rounded-lg bg-white ring-1 ring-white/20 select-none"
+          className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer rounded-lg bg-white ring-1 ring-white/20 select-none"
           style={{
             transformOrigin: 'center center',
             boxShadow: '0 24px 48px rgba(0,0,0,0.35)',
-            maxHeight: '100%',
-            maxWidth: '100%',
+            maxHeight: '100cqh',
+            maxWidth: '100cqw',
+            width: 'auto',
+            height: 'auto',
           }}
           data-export-preview
         >
@@ -230,11 +229,12 @@ export function ExportPreview3D({
             src={src}
             alt={alt}
             className="pointer-events-none block h-auto w-auto rounded-lg object-contain"
-            style={{ maxHeight: '100%', maxWidth: '100%' }}
+            style={{ maxHeight: '100cqh', maxWidth: '100cqw', width: 'auto', height: 'auto' }}
             draggable={false}
           />
           <div className="export-foil-glare" aria-hidden />
           <div className="export-foil-shine" aria-hidden />
+          <div className="export-foil-sparkle" aria-hidden />
         </div>
       ) : (
         <div

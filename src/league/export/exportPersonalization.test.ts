@@ -3,8 +3,10 @@ import { emptyCard } from '../store/useLeagueStore';
 import {
   countDistinctPokemonInLeague,
   earlyExportLine,
+  exportBeaconPlan,
   firstPokemonLine,
   pickFirstExportPokemon,
+  previewExportHighlight,
   ordinalSuffix,
 } from './exportPersonalization';
 import { makePlacedLine } from '../model/engine';
@@ -38,6 +40,26 @@ describe('export personalization', () => {
     );
     expect(ordinalSuffix(12)).toBe('12th');
     expect(ordinalSuffix(23)).toBe('23rd');
+  });
+
+  it('builds a preview highlight without consuming uniqueness', () => {
+    expect(previewExportHighlight('league', [95, 25])).toEqual({
+      ordinal: 151,
+      tool: 'league',
+      firstPokemonId: 95,
+    });
+    expect(previewExportHighlight('card', [])).toEqual({
+      ordinal: 151,
+      tool: 'card',
+      firstPokemonId: null,
+    });
+  });
+
+  it('keeps demo exports local and silent on progress', () => {
+    expect(exportBeaconPlan({ demo: true, optedOut: false, kind: 'export' })).toBe('preview');
+    expect(exportBeaconPlan({ demo: true, optedOut: false, kind: 'progress' })).toBe('skip');
+    expect(exportBeaconPlan({ demo: false, optedOut: false, kind: 'export' })).toBe('network');
+    expect(exportBeaconPlan({ demo: false, optedOut: true, kind: 'export' })).toBe('skip');
   });
 
   it('picks the never-exported pokemon with the highest dex frequency', () => {

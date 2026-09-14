@@ -122,7 +122,10 @@ function ExportPreviewLayer({
   if (!show) return null;
   return createPortal(
     <div
-      className={cn('pointer-events-none fixed flex items-center justify-center p-3 md:p-12', dimmed && 'opacity-40')}
+      className={cn(
+        'pointer-events-none fixed flex min-h-0 min-w-0 items-center justify-center overflow-hidden p-3 md:p-12',
+        dimmed && 'opacity-40',
+      )}
       style={{
         zIndex: PREVIEW_Z,
         top: 0,
@@ -132,7 +135,7 @@ function ExportPreviewLayer({
       }}
       data-export-preview-layer
     >
-      <div className="pointer-events-auto flex h-full w-full min-h-0 min-w-0 items-center justify-center">
+      <div className="pointer-events-auto grid h-full w-full min-h-0 min-w-0 place-items-center">
         {children}
       </div>
     </div>,
