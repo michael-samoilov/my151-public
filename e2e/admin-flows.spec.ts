@@ -51,6 +51,7 @@ test.describe('admin flows', () => {
     await expect(funnel).toBeVisible();
     await expect(funnel.locator('canvas')).toBeVisible();
     await expectNoSidewaysPan(funnel);
+    await expectFitsPhoneHeight(funnel);
   });
 
   test('phone league funnel is a Sankey that stays in the column', async ({ page }, info) => {
@@ -60,6 +61,7 @@ test.describe('admin flows', () => {
     await expect(funnel).toBeVisible();
     await expect(funnel.locator('canvas')).toBeVisible();
     await expectNoSidewaysPan(funnel);
+    await expectFitsPhoneHeight(funnel);
   });
 
   test('phone referrer Sankey stays in the column', async ({ page }, info) => {
@@ -87,4 +89,9 @@ async function expectNoSidewaysPan(chart: Locator) {
   expect(metrics.elOverflow, 'chart scrolls sideways').toBeLessThanOrEqual(1);
   expect(metrics.widerThanViewport, 'chart wider than viewport').toBeLessThanOrEqual(2);
   expect(metrics.pastRight, 'chart extends past the right edge').toBeLessThanOrEqual(2);
+}
+
+async function expectFitsPhoneHeight(chart: Locator) {
+  const h = await chart.evaluate((el) => el.getBoundingClientRect().height);
+  expect(h, 'funnel taller than a phone can show with Who').toBeLessThan(360);
 }

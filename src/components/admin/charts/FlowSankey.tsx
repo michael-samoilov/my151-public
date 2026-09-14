@@ -1,6 +1,6 @@
 import { useECharts, cssVar, tooltipStyle, type EChartsOption, echarts } from './useECharts';
 import { nodeDepth, type FunnelLink, type FunnelNode, type FunnelRole } from '@/lib/usageFunnels';
-import { sankeyGeometry } from '@/lib/sankeyGeometry';
+import { sankeyGeometry, sankeyHeightCss } from '@/lib/sankeyGeometry';
 
 export type SankeyNode = FunnelNode;
 export type SankeyLink = FunnelLink;
@@ -29,14 +29,6 @@ function fatColumnNames(nodes: SankeyNode[], links: SankeyLink[]): Set<string> {
   return fat;
 }
 
-function chartHeight(nodes: SankeyNode[], links: SankeyLink[], kind: 'funnel' | 'referrer'): number {
-  const stack = fattestColumn(nodes, links);
-  if (kind === 'referrer') {
-    return Math.max(360, Math.min(520, stack * 36 + 80));
-  }
-  return Math.max(520, Math.min(740, 200 + stack * 80));
-}
-
 function nodeLabel(
   n: SankeyNode,
   compact: boolean,
@@ -45,8 +37,7 @@ function nodeLabel(
   kind: 'funnel' | 'referrer',
   fat: boolean,
 ) {
-  if (!compact) return { position: n.label, formatter: '{b}' };
-  if (kind === 'referrer' && isLeft) {
+  if (kind === 'referrer' && compact && isLeft) {
     return {
       position: 'left' as const,
       width: 88,
@@ -55,46 +46,19 @@ function nodeLabel(
       formatter: '{b}',
     };
   }
-  if (isLeft) {
+  if (!compact) return { position: n.label, formatter: '{b}' };
+  if (fat) {
     return {
-      position: 'top' as const,
-      align: 'left' as const,
+      position: 'right' as const,
       width: 72,
       overflow: 'break' as const,
       lineHeight: 11,
       formatter: '{b}',
     };
   }
-  if (isRight) {
-    return {
-      position: n.label,
-      width: 76,
-      overflow: 'break' as const,
-      lineHeight: 11,
-      formatter: '{b}',
-    };
-  }
-  if (fat) {
-    return {
-      position: 'right' as const,
-      width: 64,
-      overflow: 'break' as const,
-      lineHeight: 11,
-      formatter: '{b}',
-    };
-  }
-  if (n.role === 'sink' || n.role === 'priv') {
-    return {
-      position: 'bottom' as const,
-      width: 64,
-      overflow: 'break' as const,
-      lineHeight: 11,
-      formatter: '{b}',
-    };
-  }
   return {
-    position: 'top' as const,
-    width: 72,
+    position: n.label,
+    width: isLeft ? 56 : isRight ? 72 : 64,
     overflow: 'break' as const,
     lineHeight: 11,
     formatter: '{b}',
@@ -175,9 +139,10 @@ function paintCountChips(
 }
 
 /**
- * MECE usage funnel as a Sankey at every width. On a phone the plot pads and
- * type shrink, and counts sit in tight color chips on the bars, so a 4- or
- * 5-column funnel stays inside ~390px without a sideways pan.
+ * MECE usage funnel as a Sankey at every width. Height scales with width so
+ * a phone chart keeps desktop landscape proportions and fits on one screen.
+ * Counts sit in color chips on the bars. A 4- or 5-column funnel stays
+ * inside ~390px without a sideways pan.
  */
 export function FlowSankey({
   nodes,
@@ -190,7 +155,7 @@ export function FlowSankey({
   ariaLabel: string;
   kind?: 'funnel' | 'referrer';
 }) {
-  const height = chartHeight(nodes, links, kind);
+  const stack = fattestColumn(nodes, links);
   const sources = new Set(links.map((l) => l.source));
   const targets = new Set(links.map((l) => l.target));
   const fat = fatColumnNames(nodes, links);
@@ -269,12 +234,14 @@ export function FlowSankey({
   );
 
   return (
-    <div
-      ref={ref}
-      style={{ height }}
-      className="w-full min-w-0 overflow-hidden"
-      role="img"
-      aria-label={ariaLabel}
-    />
+    <div className="w-full min-w-0" style={{ containerType: 'inline-size' }}>
+      <div
+        ref={ref}
+        style={{ height: sankeyHeightCss(stack, kind) }}
+        className="w-full min-w-0 overflow-hidden"
+        role="img"
+        aria-label={ariaLabel}
+      />
+    </div>
   );
 }
