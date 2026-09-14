@@ -15,10 +15,12 @@ export interface TimelinePoint {
 
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+/** `tz` is the viewed app user's IANA zone. Missing tz is UTC — never the
+ *  admin browser's local zone. */
 export function fmtDay(t: number, tz?: string): string {
   const d = new Date(t);
-  if (!tz) return `${MON[d.getUTCMonth()]} ${d.getUTCDate()}`;
-  const parts = new Intl.DateTimeFormat('en-US', { timeZone: tz, month: 'short', day: 'numeric' }).formatToParts(d);
+  const zone = tz || 'UTC';
+  const parts = new Intl.DateTimeFormat('en-US', { timeZone: zone, month: 'short', day: 'numeric' }).formatToParts(d);
   const month = parts.find((p) => p.type === 'month')?.value ?? MON[d.getUTCMonth()];
   const day = parts.find((p) => p.type === 'day')?.value ?? String(d.getUTCDate());
   return `${month} ${day}`;
@@ -88,6 +90,29 @@ export function weekBoundaries(t0: number, t1: number, tz?: string): number[] {
   const days = midnightBoundaries(t0, t1, tz);
   if (!tz) return days.filter((ts) => new Date(ts).getUTCDay() === 0);
   return days.filter((ts) => zonedClock(ts, tz).weekday === 'Sun');
+}
+
+/** True when the span does not cover two Sunday midnights — it never reaches
+ *  from one week to the week two weeks later. Day midnights then fill in
+ *  chronological scale. */
+export function showDayLines(t0: number, t1: number, tz?: string): boolean {
+  return weekBoundaries(t0, t1, tz).length < 2;
+}
+
+/** Calendar date in the viewed user's zone. Missing `tz` is UTC. */
+export function calendarDayKey(t: number, tz?: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz || 'UTC',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(t));
+}
+
+/** Distinct calendar days in the viewed user's zone. */
+export function distinctCalendarDays(timestamps: number[], tz?: string): number {
+  const keys = new Set(timestamps.map((t) => calendarDayKey(t, tz)));
+  return keys.size || (timestamps.length === 0 ? 0 : 1);
 }
 
 /** Compact one-line meta after the count: date, window, length, diff. */

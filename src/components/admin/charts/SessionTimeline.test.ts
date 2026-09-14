@@ -4,6 +4,8 @@ import {
   formatSessionMeta,
   midnightBoundaries,
   weekBoundaries,
+  showDayLines,
+  distinctCalendarDays,
   type TimelinePoint,
 } from './sessionTimelineMath';
 
@@ -47,6 +49,31 @@ describe('midnightBoundaries', () => {
     const ist = midnightBoundaries(t0, t1, 'Asia/Kolkata');
     // 2026-09-11 00:00 in IST is 2026-09-10 18:30 UTC.
     expect(ist).toContain(Date.parse('2026-09-10T18:30:00Z'));
+  });
+});
+
+describe('showDayLines', () => {
+  it('shows day midnights when the span does not cover two week boundaries', () => {
+    const t0 = Date.parse('2026-09-09T12:00:00Z');
+    const t1 = Date.parse('2026-09-13T12:00:00Z');
+    expect(showDayLines(t0, t1, 'UTC')).toBe(true);
+    expect(weekBoundaries(t0, t1, 'UTC').length).toBeLessThan(2);
+  });
+
+  it('hides day midnights once the span reaches from one week to the week two weeks later', () => {
+    const t0 = Date.parse('2026-09-01T12:00:00Z');
+    const t1 = Date.parse('2026-09-20T12:00:00Z');
+    expect(weekBoundaries(t0, t1, 'UTC').length).toBeGreaterThanOrEqual(2);
+    expect(showDayLines(t0, t1, 'UTC')).toBe(false);
+  });
+});
+
+describe('distinctCalendarDays', () => {
+  it('counts days in the viewed user zone, not UTC and not the viewer zone', () => {
+    const a = Date.parse('2026-09-10T02:00:00Z');
+    const b = Date.parse('2026-09-10T10:00:00Z');
+    expect(distinctCalendarDays([a, b], 'UTC')).toBe(1);
+    expect(distinctCalendarDays([a, b], 'America/New_York')).toBe(2);
   });
 });
 

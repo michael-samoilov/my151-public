@@ -9,6 +9,7 @@ import type { TypeName } from '@/types/pokemon';
 import { ROW_COUNT, TEAM_SIZES, slotKind, slotRow } from '@/league/model/constants';
 import { defaultBoundaries, deriveRows, visibleMembers, type PlacedLine } from '@/league/model/engine';
 import { cardShades } from '@/league/theme';
+import { BossBall, Crown } from '@/league/components/glyphs';
 
 /** The fields a visit board reads. Matches `LeagueCard` on AdminPage. */
 interface VisitCard {
@@ -24,10 +25,10 @@ const MIN_CARD_W = 90;
 const MIN_ROW_PX = 12;
 const COLS = 6;
 
-function slotStageText(i: number): string {
+function slotStageGlyph(i: number, cell: string): ReactNode {
   const kind = slotKind(i);
-  if (kind === 'champion') return 'CH';
-  if (kind === 'boss') return 'B';
+  if (kind === 'champion') return <Crown size={11} />;
+  if (kind === 'boss') return <BossBall cell={cell} size={12} />;
   if (kind === 'elite') return `E${i - 7}`;
   return `G${i + 1}`;
 }
@@ -146,17 +147,25 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
           style={{
             gridColumn: `${stageColStart} / span ${stageSize}`,
             gridRow: stageRow,
-            background: shades.cell,
+            background: `linear-gradient(${shades.hover}, ${shades.hover}), #ffffff`,
           }}
         />
-        <div className="relative z-[1] min-h-0 p-px" style={{ gridColumn: 1, gridRow: 1 }}>
-          <TypeMark t={card?.t} />
+        <div className="relative z-[1] flex min-h-0 items-center justify-center p-px" style={{ gridColumn: 1, gridRow: 1 }}>
+          <div className="aspect-square h-full max-w-full overflow-hidden rounded-[3px]">
+            <TypeMark t={card?.t} />
+          </div>
         </div>
         <div
-          className="relative z-[1] flex min-h-0 items-center justify-center text-[0.55rem] font-extrabold leading-none"
+          data-testid="admin-gym-stage-badge"
+          className="relative z-[1] flex min-h-0 items-center justify-center p-px"
           style={{ gridColumn: 2, gridRow: 1 }}
         >
-          {slotStageText(index)}
+          <div
+            className="flex aspect-square h-full max-w-full items-center justify-center overflow-hidden rounded-[3px] text-[0.55rem] font-extrabold leading-none text-white"
+            style={{ background: shades.cell }}
+          >
+            {slotStageGlyph(index, shades.cell)}
+          </div>
         </div>
         {rows.map((cells, i) => {
           const row = i + 1;

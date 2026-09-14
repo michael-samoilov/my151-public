@@ -16,6 +16,7 @@ import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beacon
 import { CARD_COUNT } from '../../../api/_leagueRecord';
 import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
+import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
@@ -391,14 +392,12 @@ function relativeTime(ts: number): string {
 }
 
 /** Format a whole-seconds value as a compact duration: 45s, 3m, 1h 5m. */
-function activeDayCount(rec: ClientRecord): number {
-  const days = new Set<string>();
-  for (const s of rec.sessionLog ?? []) days.add(new Date(s.ts).toDateString());
-  if (days.size === 0) {
-    days.add(new Date(rec.firstTs).toDateString());
-    days.add(new Date(rec.lastTs).toDateString());
+function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; lastTs: number; tz?: string }): number {
+  const stamps = (rec.sessionLog ?? []).map((s) => s.ts);
+  if (stamps.length === 0) {
+    stamps.push(rec.firstTs, rec.lastTs);
   }
-  return days.size;
+  return distinctCalendarDays(stamps, rec.tz);
 }
 
 function fmtDuration(ms: number): string {
@@ -907,7 +906,10 @@ function DetailHeader({
  *  bottom captions line up across the pair. */
 function RailStat({ top, bottom, width, full }: { top: React.ReactNode; bottom: React.ReactNode; width: string; full?: boolean }) {
   return (
-    <div className={`flex h-9 flex-col items-center justify-center rounded-lg border border-border bg-card px-2 text-center tabular-nums ${full ? 'flex-1' : width}`}>
+    <div
+      data-testid="admin-rail-chip"
+      className={`flex h-9 shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-card px-2 text-center tabular-nums ${full ? 'flex-1' : width}`}
+    >
       <div className="flex h-[16px] items-center leading-none whitespace-nowrap">{top}</div>
       <div className="flex h-[11px] items-center whitespace-nowrap text-[0.6rem] leading-none text-muted-foreground">{bottom}</div>
     </div>
@@ -931,7 +933,7 @@ function TimeChip({ ms, full }: { ms: number; full?: boolean }) {
   const mins = Math.round(ms / 60000);
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return <RailStat width="w-[72px] md:w-[7rem]" full={full} top={<span className="text-[0.8rem] font-bold leading-none">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>} bottom="time spent" />;
+  return <RailStat width="w-[82px] md:w-[8.5rem]" full={full} top={<span className="text-[0.8rem] font-bold leading-none">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>} bottom="time spent" />;
 }
 
 function tidySessions<T extends { ts: number }>(
@@ -1091,7 +1093,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   const t0 = log.length ? log[0].ts : 0;
   const t1 = log.length ? log[log.length - 1].ts : 0;
   const clampT = (t: number) => Math.max(t0, Math.min(t1, t));
-  const days = Math.max(1, Math.round((t1 - t0) / 86_400_000) + 1);
+  const days = Math.max(1, distinctCalendarDays(log.map((s) => s.ts), league.tz));
   const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] = [];
   if (league.exportedCardAt) {
     milestones.push({ t: clampT(Date.parse(league.exportedCardAt)), label: 'card', tone: 'export' });

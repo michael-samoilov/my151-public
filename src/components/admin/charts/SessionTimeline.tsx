@@ -4,11 +4,15 @@ import {
   fmtDay,
   formatSessionMeta,
   midnightBoundaries,
+  showDayLines,
   weekBoundaries,
   type TimelinePoint,
 } from './sessionTimelineMath';
 
 export type { TimelinePoint };
+
+/** Native range thumb size. Dot centers use half of this so they sit under the thumb. */
+const SCRUB_THUMB_PX = 22;
 
 const EV_LABEL: Record<string, string> = {
   'intro-shown': 'intro',
@@ -101,8 +105,11 @@ export function SessionTimeline({
   const maxDur = Math.max(1, ...points.map((p) => p.dur ?? 0));
   const barW = (dur?: number) => 2.5 + ((dur ?? 0) / maxDur) * 9.5;
 
-  const midnights = midnightBoundaries(t0, t1, tz);
-  const weeks = new Set(weekBoundaries(t0, t1, tz));
+  const weekTs = weekBoundaries(t0, t1, tz);
+  const weekSet = new Set(weekTs);
+  const dayTs = showDayLines(t0, t1, tz)
+    ? midnightBoundaries(t0, t1, tz).filter((ts) => !weekSet.has(ts))
+    : [];
   const netPath = points.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${yPix(p.net).toFixed(1)}`).join(' ');
 
   const cur = points[Math.min(index, points.length - 1)];
@@ -130,7 +137,19 @@ export function SessionTimeline({
       </div>
       <div ref={wrapRef}>
       <svg viewBox={`0 0 ${W} ${svgH}`} className="block w-full" style={{ height: svgH }} role="img" aria-label="Session diff history; drag the slider to scrub.">
-        {midnights.map((ts, i) => (
+        {weekTs.map((ts, i) => (
+          <line
+            key={`w-${i}`}
+            x1={x(ts).toFixed(1)}
+            x2={x(ts).toFixed(1)}
+            y1={topY - 2}
+            y2={botY}
+            stroke="var(--color-muted-foreground)"
+            strokeWidth={1}
+            opacity={0.28}
+          />
+        ))}
+        {dayTs.map((ts, i) => (
           <line
             key={`d-${i}`}
             x1={x(ts).toFixed(1)}
@@ -138,9 +157,8 @@ export function SessionTimeline({
             y1={topY - 2}
             y2={botY}
             stroke="var(--color-muted-foreground)"
-            strokeWidth={weeks.has(ts) ? 0.8 : 0.4}
-            strokeDasharray={weeks.has(ts) ? '2 2' : '1 3'}
-            opacity={weeks.has(ts) ? 0.45 : 0.22}
+            strokeWidth={1}
+            opacity={0.12}
           />
         ))}
         {points.map((p, i) => {
@@ -201,11 +219,10 @@ export function SessionTimeline({
         {rightChip}
       </div>
     ) : (
-      <div className="flex items-center gap-2">
+      <div className="flex w-full items-center justify-center gap-2">
         {leftChip}
-        <div className="flex min-w-0 flex-1 justify-center">
-          <div className="relative w-full md:w-[var(--admin-nav-tabs-w,22rem)] md:flex-none">
-            <div className="pointer-events-none absolute inset-y-0 left-3 right-3">
+        <div className="relative min-w-0 flex-1 md:w-[var(--admin-nav-tabs-w,22rem)] md:flex-none">
+            <div className="pointer-events-none absolute inset-0">
               <div
                 className="absolute left-0 right-0 top-1/2 h-[7px] -translate-y-1/2 rounded-full"
                 style={{ background: 'var(--color-muted)' }}
@@ -213,8 +230,12 @@ export function SessionTimeline({
               {points.map((_, i) => (
                 <span
                   key={i}
+                  data-testid="admin-scrub-dot"
                   className="absolute top-1/2 h-[4px] w-[4px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-                  style={{ left: `calc(11px + ${i / (points.length - 1)} * (100% - 22px))`, background: 'var(--color-muted-foreground)' }}
+                  style={{
+                    left: `calc(${SCRUB_THUMB_PX / 2}px + ${i / (points.length - 1)} * (100% - ${SCRUB_THUMB_PX}px))`,
+                    background: 'var(--color-muted-foreground)',
+                  }}
                 />
               ))}
             </div>
@@ -229,7 +250,6 @@ export function SessionTimeline({
               aria-label="Scrub sessions"
               aria-valuetext={`${fmtDay(cur.t, tz)}: ${cur.count} ${countUnit}`}
             />
-          </div>
         </div>
         {rightChip}
       </div>
