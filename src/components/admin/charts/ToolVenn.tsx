@@ -34,7 +34,7 @@ export function ToolVenn({
 
   const height = Math.round(Math.max(152, Math.min(width * 0.52, 220)));
   const areas = useMemo(() => areasFromRegions(era.regions, catalog), [era.regions, catalog]);
-  const circles = useMemo(() => layoutCircles(areas, width, height, 28), [areas, width, height]);
+  const circles = useMemo(() => layoutCircles(areas, width, height, 20), [areas, width, height]);
   const labels = useMemo(
     () => placeRegionLabels(era.regions, catalog, circles, width, height),
     [era.regions, catalog, circles, width, height],
@@ -132,19 +132,15 @@ export function ToolVenn({
                 y={l.y}
                 textAnchor={l.anchor}
                 dominantBaseline="middle"
-                fontSize={12}
+                fontSize={13}
                 fontWeight={700}
                 fill={colorOf(l.id, i < 0 ? 0 : i)}
                 stroke="rgb(255, 255, 255)"
                 strokeWidth={3}
                 paintOrder="stroke"
+                aria-label={`${l.short} ${l.count}`}
               >
-                <tspan x={l.x} dy="-0.55em">
-                  {l.short}{' '}
-                </tspan>
-                <tspan x={l.x} dy="1.2em" className="tabular-nums">
-                  {l.count}
-                </tspan>
+                {l.short}
               </text>
             );
           })}

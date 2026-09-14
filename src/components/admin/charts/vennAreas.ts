@@ -91,7 +91,7 @@ export type VennCircleLabel = {
   anchor: 'start' | 'middle' | 'end';
 };
 
-const CIRCLE_LABEL_GAP = 10;
+const CIRCLE_LABEL_GAP = 4;
 
 function dist(a: { x: number; y: number }, b: { x: number; y: number }): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
@@ -176,15 +176,16 @@ function outsideNear(
 }
 
 /**
- * Inclusive name + size, parked on the outer side of each circle.
- * Two tools sit left/right; three sit on the ray away from the others.
+ * Set name, parked on the rim of its circle. Two tools sit left/right;
+ * three sit on the ray away from the others. Not a legend: the word is
+ * the label of that circle.
  */
 export function placeCircleLabels(
   regions: Record<string, number>,
   catalog: ToolDef[],
   circles: Record<string, VennCircle>,
-  width: number,
-  height: number,
+  _width: number,
+  _height: number,
 ): VennCircleLabel[] {
   const present = catalog.filter((t) => inclusive(t.id, regions) > 0);
   const labels: VennCircleLabel[] = [];
@@ -206,17 +207,13 @@ export function placeCircleLabels(
       }
     }
     const reach = own.radius + CIRCLE_LABEL_GAP;
-    const raw = { x: own.x + ux * reach, y: own.y + uy * reach };
-    const pad = 10;
-    const x = Math.min(width - pad, Math.max(pad, raw.x));
-    const y = Math.min(height - pad, Math.max(pad, raw.y));
     const anchor: VennCircleLabel['anchor'] = ux < -0.35 ? 'end' : ux > 0.35 ? 'start' : 'middle';
     labels.push({
       id: t.id,
       short: t.short,
       count: inclusive(t.id, regions),
-      x,
-      y,
+      x: own.x + ux * reach,
+      y: own.y + uy * reach,
       anchor,
     });
   }
@@ -224,9 +221,9 @@ export function placeCircleLabels(
 }
 
 /**
- * Exclusive-region counts for the painted circles. Inclusive name and
- * size sit beside each circle. Tiny pairwise overlap gets an outside
- * count plus a leader. Three-set regions use exclusive / pairwise / triple keys.
+ * Exclusive-region counts for the painted circles. Each circle's name sits
+ * on its rim. Tiny pairwise overlap gets an outside count plus a leader.
+ * Three-set regions use exclusive / pairwise / triple keys.
  */
 export function placeRegionLabels(
   regions: Record<string, number>,

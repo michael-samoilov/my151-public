@@ -91,18 +91,20 @@ describe('placeRegionLabels', () => {
 describe('placeCircleLabels', () => {
   const box = { w: 358, h: 186 };
 
-  it('parks each inclusive label on the outer side of its circle', () => {
+  it('parks each set name on the outer rim of its circle', () => {
     const regions = { dex: 23, league: 14, 'dex+league': 8 };
-    const circles = layoutCircles(areasFromRegions(regions, catalog), box.w, box.h, 28);
+    const circles = layoutCircles(areasFromRegions(regions, catalog), box.w, box.h, 20);
     const labels = placeCircleLabels(regions, catalog, circles, box.w, box.h);
     const byId = Object.fromEntries(labels.map((l) => [l.id, l]));
-    expect(byId.dex).toMatchObject({ short: 'Dex', count: 31, anchor: 'end' });
-    expect(byId.league).toMatchObject({ short: 'League', count: 22, anchor: 'start' });
+    expect(byId.dex).toMatchObject({ short: 'Dex', anchor: 'end' });
+    expect(byId.league).toMatchObject({ short: 'League', anchor: 'start' });
     expect(byId.dex.x).toBeLessThan(circles.Dex.x);
     expect(byId.league.x).toBeGreaterThan(circles.League.x);
     for (const l of labels) {
       const c = circles[l.short];
-      expect(Math.hypot(l.x - c.x, l.y - c.y)).toBeGreaterThan(c.radius);
+      const gap = Math.hypot(l.x - c.x, l.y - c.y) - c.radius;
+      expect(gap).toBeGreaterThan(0);
+      expect(gap).toBeLessThan(8);
     }
   });
 
@@ -120,7 +122,7 @@ describe('placeCircleLabels', () => {
       'league+fav': 1,
       'dex+league+fav': 2,
     };
-    const circles = layoutCircles(areasFromRegions(regions, three), 240, 200, 28);
+    const circles = layoutCircles(areasFromRegions(regions, three), 240, 200, 20);
     const labels = placeCircleLabels(regions, three, circles, 240, 200);
     expect(labels.map((l) => l.id).sort()).toEqual(['dex', 'fav', 'league']);
   });
