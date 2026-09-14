@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { venn } from 'venn.js';
-import { areasFromRegions, layoutCircles, placeCircleLabels, placeRegionLabels } from './vennAreas';
+import {
+  areasFromRegions,
+  CIRCLE_LABEL_GAP,
+  layoutCircles,
+  placeCircleLabels,
+  placeRegionLabels,
+  vennCanvas,
+} from './vennAreas';
 
 const catalog = [
   { id: 'dex', label: 'Dex builder', short: 'Dex', launchedAt: 0 },
@@ -88,13 +95,20 @@ describe('placeRegionLabels', () => {
   });
 });
 
+describe('vennCanvas', () => {
+  it('hugs the circles on a wide card instead of stretching the SVG', () => {
+    expect(vennCanvas(1280)).toEqual({ width: 688, height: 320, scale: 2 });
+    expect(vennCanvas(360)).toEqual({ width: 360, height: 168, scale: 1 });
+  });
+});
+
 describe('placeCircleLabels', () => {
   const box = { w: 358, h: 186 };
 
   it('parks each inclusive label on the outer side of its circle', () => {
     const regions = { dex: 23, league: 14, 'dex+league': 8 };
-    const circles = layoutCircles(areasFromRegions(regions, catalog), box.w, box.h, 28);
-    const labels = placeCircleLabels(regions, catalog, circles, box.w, box.h);
+    const circles = layoutCircles(areasFromRegions(regions, catalog), box.w, box.h, 12);
+    const labels = placeCircleLabels(regions, catalog, circles);
     const byId = Object.fromEntries(labels.map((l) => [l.id, l]));
     expect(byId.dex).toMatchObject({ short: 'Dex', count: 31, anchor: 'end' });
     expect(byId.league).toMatchObject({ short: 'League', count: 22, anchor: 'start' });
@@ -102,7 +116,8 @@ describe('placeCircleLabels', () => {
     expect(byId.league.x).toBeGreaterThan(circles.League.x);
     for (const l of labels) {
       const c = circles[l.short];
-      expect(Math.hypot(l.x - c.x, l.y - c.y)).toBeGreaterThan(c.radius);
+      const reach = Math.hypot(l.x - c.x, l.y - c.y);
+      expect(reach).toBeCloseTo(c.radius + CIRCLE_LABEL_GAP, 5);
     }
   });
 
@@ -120,8 +135,8 @@ describe('placeCircleLabels', () => {
       'league+fav': 1,
       'dex+league+fav': 2,
     };
-    const circles = layoutCircles(areasFromRegions(regions, three), 240, 200, 28);
-    const labels = placeCircleLabels(regions, three, circles, 240, 200);
+    const circles = layoutCircles(areasFromRegions(regions, three), 240, 200, 12);
+    const labels = placeCircleLabels(regions, three, circles);
     expect(labels.map((l) => l.id).sort()).toEqual(['dex', 'fav', 'league']);
   });
 });

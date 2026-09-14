@@ -8,6 +8,7 @@ import {
   layoutCircles,
   placeCircleLabels,
   placeRegionLabels,
+  vennCanvas,
 } from './vennAreas';
 
 function captionOf(era: EraOverlap): string {
@@ -32,16 +33,22 @@ export function ToolVenn({
     return () => ro.disconnect();
   }, []);
 
-  const height = Math.round(Math.max(152, Math.min(width * 0.52, 220)));
+  const canvas = vennCanvas(width);
+  const { width: svgWidth, height, scale } = canvas;
+  const fontSize = Math.round(12 * scale);
+  const halo = Math.max(3, Math.round(2.5 * scale));
   const areas = useMemo(() => areasFromRegions(era.regions, catalog), [era.regions, catalog]);
-  const circles = useMemo(() => layoutCircles(areas, width, height, 28), [areas, width, height]);
+  const circles = useMemo(
+    () => layoutCircles(areas, svgWidth, height, Math.round(12 * scale)),
+    [areas, svgWidth, height, scale],
+  );
   const labels = useMemo(
-    () => placeRegionLabels(era.regions, catalog, circles, width, height),
-    [era.regions, catalog, circles, width, height],
+    () => placeRegionLabels(era.regions, catalog, circles, svgWidth, height),
+    [era.regions, catalog, circles, svgWidth, height],
   );
   const circleLabels = useMemo(
-    () => placeCircleLabels(era.regions, catalog, circles, width, height),
-    [era.regions, catalog, circles, width, height],
+    () => placeCircleLabels(era.regions, catalog, circles),
+    [era.regions, catalog, circles],
   );
   const present = catalog.filter((t) => inclusive(t.id, era.regions) > 0);
   const both = present.length === 2 ? intersection(present.map((t) => t.id), era.regions) : 0;
@@ -60,10 +67,11 @@ export function ToolVenn({
         <p className="text-xs text-muted-foreground">No browsers in this era.</p>
       ) : (
         <svg
-          width={width}
+          width={svgWidth}
           height={height}
-          viewBox={`0 0 ${width} ${height}`}
+          viewBox={`0 0 ${svgWidth} ${height}`}
           overflow="visible"
+          className="mx-auto block"
           role="img"
           aria-label={`${era.label}: ${summary}. ${era.browsers} browsers.`}
         >
@@ -108,11 +116,11 @@ export function ToolVenn({
                   y={l.y}
                   textAnchor="middle"
                   dominantBaseline="middle"
-                  fontSize={12}
+                  fontSize={fontSize}
                   fontWeight={700}
                   fill="rgb(15, 23, 42)"
                   stroke="rgb(255, 255, 255)"
-                  strokeWidth={3}
+                  strokeWidth={halo}
                   paintOrder="stroke"
                   className="tabular-nums"
                 >
@@ -132,11 +140,11 @@ export function ToolVenn({
                 y={l.y}
                 textAnchor={l.anchor}
                 dominantBaseline="middle"
-                fontSize={12}
+                fontSize={fontSize}
                 fontWeight={700}
                 fill={colorOf(l.id, i < 0 ? 0 : i)}
                 stroke="rgb(255, 255, 255)"
-                strokeWidth={3}
+                strokeWidth={halo}
                 paintOrder="stroke"
               >
                 <tspan x={l.x} dy="-0.55em">

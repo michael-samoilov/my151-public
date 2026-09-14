@@ -24,8 +24,17 @@ test.describe('admin cross-tool tile', () => {
     await expect(names).toHaveCount(2);
     await expect(names.filter({ hasText: 'Dex 49' })).toBeVisible();
     await expect(names.filter({ hasText: 'League 2' })).toBeVisible();
-    await expect(tile.locator('svg[role="img"]')).toHaveCount(1);
+    const svg = tile.locator('svg[role="img"]');
+    await expect(svg).toHaveCount(1);
     await expect(tile.locator('svg text', { hasText: '48' })).toBeVisible();
     await expect(tile.locator('svg text', { hasText: '336' })).toHaveCount(0);
+    const viewport = page.viewportSize();
+    if (viewport && viewport.width >= 1024) {
+      const tileBox = await tile.boundingBox();
+      const svgBox = await svg.boundingBox();
+      expect(tileBox, 'cross-tool tile is on screen').toBeTruthy();
+      expect(svgBox, 'Venn SVG is on screen').toBeTruthy();
+      expect(svgBox!.width).toBeLessThan(tileBox!.width - 80);
+    }
   });
 });

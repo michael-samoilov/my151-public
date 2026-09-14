@@ -91,7 +91,23 @@ export type VennCircleLabel = {
   anchor: 'start' | 'middle' | 'end';
 };
 
-const CIRCLE_LABEL_GAP = 10;
+/** Gap from the rim to the name+count so the label stays on the circle, not in the card. */
+export const CIRCLE_LABEL_GAP = 8;
+
+/**
+ * Compact canvas for a 2-set Venn: height follows the card, width hugs the
+ * circles so Dex/League sit on the rims instead of in a wide empty field.
+ */
+export function vennCanvas(containerWidth: number): {
+  width: number;
+  height: number;
+  scale: number;
+} {
+  const scale = containerWidth > 0 ? Math.max(1, Math.min(containerWidth / 360, 2)) : 1;
+  const height = Math.round(Math.min(320, 168 * scale));
+  const width = Math.max(1, Math.min(containerWidth, Math.round(height * 2.15)));
+  return { width, height, scale };
+}
 
 function dist(a: { x: number; y: number }, b: { x: number; y: number }): number {
   return Math.hypot(a.x - b.x, a.y - b.y);
@@ -178,13 +194,12 @@ function outsideNear(
 /**
  * Inclusive name + size, parked on the outer side of each circle.
  * Two tools sit left/right; three sit on the ray away from the others.
+ * Do not clamp into the SVG box: that pulls the words into the corners.
  */
 export function placeCircleLabels(
   regions: Record<string, number>,
   catalog: ToolDef[],
   circles: Record<string, VennCircle>,
-  width: number,
-  height: number,
 ): VennCircleLabel[] {
   const present = catalog.filter((t) => inclusive(t.id, regions) > 0);
   const labels: VennCircleLabel[] = [];
@@ -206,17 +221,13 @@ export function placeCircleLabels(
       }
     }
     const reach = own.radius + CIRCLE_LABEL_GAP;
-    const raw = { x: own.x + ux * reach, y: own.y + uy * reach };
-    const pad = 10;
-    const x = Math.min(width - pad, Math.max(pad, raw.x));
-    const y = Math.min(height - pad, Math.max(pad, raw.y));
     const anchor: VennCircleLabel['anchor'] = ux < -0.35 ? 'end' : ux > 0.35 ? 'start' : 'middle';
     labels.push({
       id: t.id,
       short: t.short,
       count: inclusive(t.id, regions),
-      x,
-      y,
+      x: own.x + ux * reach,
+      y: own.y + uy * reach,
       anchor,
     });
   }
