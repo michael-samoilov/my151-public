@@ -7,7 +7,6 @@ import {
   monthDividerIndices,
   monthLabelTicks,
   splitProvisional,
-  weekLineIndices,
   windowCounts,
   type CountLabelSide,
   type DailyPoint,
@@ -15,10 +14,15 @@ import {
 
 const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
-/** Left-aligned one-line labels sit this many px left of today's x, so they stay in the plot. */
-const COUNT_LABEL_PX = 54;
+/** Right gutter for 24h/7d counts. Narrower on a small plot so June still fits. */
+function gridRightPx(plotW: number): number {
+  return plotW < 600 ? 46 : 64;
+}
+
 /** X-axis label ribbon under the plot. Month partitions live only in this band. */
 const GRID_BOTTOM = 22;
+/** Gap from the last plotted x into the gutter. */
+const LABEL_INSET = 10;
 
 function countLabel(
   kind: '24h' | '7d',
@@ -27,23 +31,25 @@ function countLabel(
   x: number,
   y: number,
   side: CountLabelSide,
+  numSize: number,
 ) {
   const face = 'ui-sans-serif, system-ui, sans-serif';
+  const sub = Math.max(7, Math.round(numSize * 0.55));
   return {
     type: 'text' as const,
     x,
     y,
     style: {
-      text: `{k|${kind}: }{n|${count}}`,
+      text: `{n|${count}}{k|${kind}}`,
       fill: color,
-      fontSize: 10,
-      fontWeight: 400,
+      fontSize: numSize,
+      fontWeight: 700,
       fontFamily: face,
       textAlign: 'left' as const,
       textVerticalAlign: side === 'above' ? 'bottom' : 'top',
       rich: {
-        k: { fontSize: 10, fontWeight: 400, fill: color, fontFamily: face },
-        n: { fontSize: 10, fontWeight: 700, fill: color, fontFamily: face },
+        n: { fontSize: numSize, fontWeight: 700, fill: color, fontFamily: face },
+        k: { fontSize: sub, fontWeight: 400, fill: color, fontFamily: face, padding: [Math.round(numSize * 0.45), 0, 0, 2] },
       },
     },
   };
@@ -61,7 +67,6 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
   const provisional = lastPointIsToday(series, nowMs);
   const dailySplit = splitProvisional(daily, provisional);
   const weeklySplit = splitProvisional(weekly, provisional);
-  const weekMarks = weekLineIndices(days, nowMs);
   const monthDividers = monthDividerIndices(days);
   const monthTicks = monthLabelTicks(days);
   const monthAt = new Map(monthTicks.map((t) => [t.idx, t.label]));
@@ -76,10 +81,13 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
       const grid = cssVar(el, '--color-muted', '#f5f5f5');
       const red = cssVar(el, '--color-primary', '#dc2626');
       const gridLine = { color: grid, width: 1 };
+      const right = gridRightPx(el.clientWidth);
+      const axisFont = el.clientWidth < 600 ? 8 : 9;
+      const numSize = el.clientWidth < 600 ? 14 : 16;
 
       return {
         animation: false,
-        grid: { left: 36, right: 14, top: 36, bottom: GRID_BOTTOM },
+        grid: { left: 36, right, top: 36, bottom: GRID_BOTTOM },
         tooltip: {
           ...topTooltip(el),
           trigger: 'axis',
@@ -102,7 +110,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
           splitLine: { show: false },
           axisLabel: {
             color: faint,
-            fontSize: 9,
+            fontSize: axisFont,
             hideOverlap: false,
             align: 'left',
             alignMinLabel: 'left',
@@ -131,25 +139,16 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             renderItem: (params: { coordSys: { x: number; y: number; width: number; height: number } }) => {
               const { x, y, width, height } = params.coordSys;
               const last = Math.max(daily.length - 1, 1);
-              const xAt = (idx: number) => x + (idx / last) * width;
-              const weeks = weekMarks.map((idx) => {
-                const px = xAt(idx);
-                return {
-                  type: 'line' as const,
-                  shape: { x1: px, y1: y, x2: px, y2: y + height },
-                  style: { stroke: grid, lineWidth: 1, fill: 'none' },
-                };
-              });
               const ribbonTop = y + height;
-              const months = monthDividers.map((idx) => {
-                const px = xAt(idx);
+              const children = monthDividers.map((idx) => {
+                const px = x + (idx / last) * width;
                 return {
                   type: 'line' as const,
                   shape: { x1: px, y1: ribbonTop, x2: px, y2: ribbonTop + GRID_BOTTOM },
-                  style: { stroke: faint, lineWidth: 1, fill: 'none' },
+                  style: { stroke: grid, lineWidth: 1, fill: 'none' },
                 };
               });
-              return { type: 'group', children: [...weeks, ...months] };
+              return { type: 'group', children };
             },
           },
           {
@@ -212,14 +211,14 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
                     },
                   ) => {
                     const last = daily.length - 1;
-                    const x = api.coord([last, 0])[0] - COUNT_LABEL_PX;
+                    const x = api.coord([last, 0])[0] + LABEL_INSET;
                     const y24 = api.coord([last, layout.dailyY])[1];
                     const y7 = api.coord([last, layout.weeklyY])[1];
                     const children = [
-                      countLabel('24h', counts.hours24, faint, x, y24, layout.side),
+                      countLabel('24h', counts.hours24, faint, x, y24, layout.side, numSize),
                     ];
                     if (counts.days7 != null) {
-                      children.push(countLabel('7d', counts.days7, red, x, y7, layout.side));
+                      children.push(countLabel('7d', counts.days7, red, x, y7, layout.side, numSize));
                     }
                     return { type: 'group', children };
                   },

@@ -108,7 +108,7 @@ export interface CountLabelLayout {
   yMax: number;
 }
 
-/** Place 24h/7d labels between the last two points, off the lines. */
+/** Place 24h/7d labels at the last point's y, stacked if the daily/weekly gap is tight. */
 export function countLabelLayout(
   daily: number[],
   weekly: (number | null)[],
