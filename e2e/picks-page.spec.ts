@@ -6,8 +6,9 @@ import { expect, test, type Page } from '@playwright/test';
  * Layout: builder chrome with the section name at the top-left; most/least
  * as 6-col sprite grids with an index bar under each sprite. Off-section has
  * no least column, no row cap, and shows dex counts. In-section Starters
- * list every first-stage face across the full row, split by grass / fire /
- * water, with no most/least. Off-section Starters do not.
+ * list every first-stage face across the full row at most|least tile size,
+ * split by grass / fire / water, with no most/least. Nine faces fit one row.
+ * Off-section Starters do not.
  */
 
 async function openPicks(page: Page) {
@@ -52,11 +53,19 @@ test.describe('admin picks page', () => {
 
     await expect(starters.getByText('Most', { exact: true })).toHaveCount(0);
     await expect(starters.getByText('Least', { exact: true })).toHaveCount(0);
-    const expectedCols = test.info().project.name === 'desktop' ? 12 : 6;
     await expect(starters.locator('[data-picks-side="most"]').first()).toHaveAttribute(
       'data-picks-cols',
-      String(expectedCols),
+      '12',
     );
+    const grassGrid = starters.locator('[data-picks-side="most"]').first().locator('.grid');
+    await expect(grassGrid).toHaveCount(1);
+    expect(await grassGrid.locator('[data-face-id]').count()).toBeGreaterThanOrEqual(9);
+
+    const starterCell = starters.locator('[data-face-id]').first();
+    const pairCell = page.locator('[data-section-id="early-bug"] [data-picks-side="most"] [data-face-id]').first();
+    const starterW = await starterCell.evaluate((el) => el.getBoundingClientRect().width);
+    const pairW = await pairCell.evaluate((el) => el.getBoundingClientRect().width);
+    expect(Math.abs(starterW - pairW)).toBeLessThan(8);
 
     await expect.poll(async () =>
       starters.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),

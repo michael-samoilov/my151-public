@@ -9,6 +9,7 @@ import {
   lineKey,
   picksGridCap,
   picksGridCols,
+  picksStarterCols,
   poolIdsForSection,
   rowsUsed,
   sectionPicksView,
@@ -241,6 +242,12 @@ describe('rowsUsed', () => {
       ),
     ).toBe(1);
   });
+
+  it('packs nine first-stage faces onto one 12-col row', () => {
+    const lines = Array.from({ length: 9 }, () => ({ members: [0] }));
+    expect(rowsUsed(lines, 6)).toBe(2);
+    expect(rowsUsed(lines, 12)).toBe(1);
+  });
 });
 
 describe('picksGridCols', () => {
@@ -248,6 +255,7 @@ describe('picksGridCols', () => {
     expect(picksGridCols(false, true)).toBe(6);
     expect(picksGridCols(true, false)).toBe(6);
     expect(picksGridCols(true, true)).toBe(12);
+    expect(picksStarterCols()).toBe(12);
     expect(picksGridCap(true, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 12 });
     expect(picksGridCap(true, false)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 6 });
     expect(picksGridCap(false, true)).toEqual({ maxRows: 4, cols: 6 });

@@ -25,12 +25,14 @@
  * Most-picked ranks default lines only, and only lines above 1.10×.
  * Least-picked is only lines below 0.90×. In-section Starters list every
  * first-stage Pokémon across the full row, split grass / fire / water, with
- * no most/least split and no 1.10× cutoff. Regional starter variants
- * (Hisuian Decidueye with Rowlet) share one first-stage face. Off-section
- * has no least column, shows raw dex counts, never uses the starter type
- * split or first-stage-only faces, lays the sprite grid across the full
- * width (12 columns on desktop, 6 on mobile), and does not cap rows. One-off
- * off-section placements stay visible unless Exclude one-offs is on.
+ * no most/least split and no 1.10× cutoff. The starter grid is 12 columns
+ * on phone and desktop so tiles match a most|least pair and nine first-stage
+ * faces fit one row. Regional starter variants (Hisuian Decidueye with
+ * Rowlet) share one first-stage face. Off-section has no least column, shows
+ * raw dex counts, never uses the starter type split or first-stage-only
+ * faces, lays the sprite grid across the full width (12 columns on desktop,
+ * 6 on mobile), and does not cap rows. One-off off-section placements stay
+ * visible unless Exclude one-offs is on.
  */
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
@@ -44,13 +46,20 @@ import {
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
 export const PICKS_COLS = 6;
-export const PICKS_OFF_DESKTOP_COLS = 12;
+/** 12 columns across the section: same tile size as a most|least pair. */
+export const PICKS_PAIR_COLS = 12;
+export const PICKS_OFF_DESKTOP_COLS = PICKS_PAIR_COLS;
 export const PICKS_MAX_ROWS = 4;
 export const PICKS_GRID_CAP = { maxRows: PICKS_MAX_ROWS, cols: PICKS_COLS } as const;
 
 /** Desktop uses a full-width 12-col grid when there is no least column. */
 export function picksGridCols(wide: boolean, desktop: boolean): number {
-  return wide && desktop ? PICKS_OFF_DESKTOP_COLS : PICKS_COLS;
+  return wide && desktop ? PICKS_PAIR_COLS : PICKS_COLS;
+}
+
+/** In-section starters always use pair density, including on a phone. */
+export function picksStarterCols(): number {
+  return PICKS_PAIR_COLS;
 }
 
 export function picksGridCap(offSection: boolean, desktop: boolean): { maxRows: number; cols: number } {

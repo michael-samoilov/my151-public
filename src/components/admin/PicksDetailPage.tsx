@@ -10,9 +10,10 @@ import {
   indexBarPct,
   isStarterTypeName,
   PICKS_COLS,
-  PICKS_OFF_DESKTOP_COLS,
+  PICKS_PAIR_COLS,
   picksGridCap,
   picksGridCols,
+  picksStarterCols,
   viewsForPicks,
   type DualColumn,
   type LineMember,
@@ -181,7 +182,7 @@ function LineGrid({
     return <p className="text-[0.65rem] text-muted-foreground">None in this cap.</p>;
   }
   const rows = packLineRows(lines, cols);
-  const colClass = cols === PICKS_OFF_DESKTOP_COLS ? 'grid-cols-12' : 'grid-cols-6';
+  const colClass = cols === PICKS_PAIR_COLS ? 'grid-cols-12' : 'grid-cols-6';
   return (
     <div className="flex min-w-0 flex-col gap-1">
       {rows.map((row, i) => (
@@ -211,14 +212,16 @@ function DualGrids({
   barColor,
   showLeast,
   countMode,
+  pairDensity,
 }: {
   columns: DualColumn;
   barColor: string;
   showLeast: boolean;
   countMode: boolean;
+  pairDensity?: boolean;
 }) {
   const isDesktop = useIsDesktop();
-  const cols = picksGridCols(!showLeast, isDesktop);
+  const cols = pairDensity ? picksStarterCols() : picksGridCols(!showLeast, isDesktop);
   const leastOn = showLeast;
   const max = countMode
     ? Math.max(maxPicks(columns.most), leastOn ? maxPicks(columns.least) : 0)
@@ -278,7 +281,13 @@ function SectionBlock({
           {view.groups.map((g) => (
             <div key={g.type}>
               <StarterTypeHeading type={g.type} />
-              <DualGrids columns={g} barColor={stroke} showLeast={showLeast} countMode={countMode} />
+              <DualGrids
+                columns={g}
+                barColor={stroke}
+                showLeast={showLeast}
+                countMode={countMode}
+                pairDensity
+              />
             </div>
           ))}
         </div>
