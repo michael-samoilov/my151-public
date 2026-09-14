@@ -9,6 +9,11 @@ import {
   matchesArchiveFilter,
   matchesToolFilter,
   mergedSessionStats,
+  uniqueFacetValues,
+  matchesFacetFilters,
+  facetValue,
+  facetLabel,
+  FACET_UNKNOWN,
   previewLanguage,
   sessionChipParts,
   sessionTotalMs,
@@ -23,6 +28,13 @@ describe('formatWhen', () => {
     expect(s).not.toMatch(/\d:\d{2}:\d{2}/);
     expect(s).not.toMatch(/2026/);
     expect(s).toMatch(/4:05\sPM/);
+  });
+
+  it('puts the short timezone after AM/PM', () => {
+    const utc = formatWhen(ts, 'UTC', 'en-US');
+    expect(utc).toMatch(/4:05\sPM\s+(UTC|GMT)/);
+    const ny = formatWhen(ts, 'America/New_York', 'en-US');
+    expect(ny).toMatch(/12:05\sPM\s+EDT/);
   });
 
   it('uses the user timezone', () => {
@@ -128,5 +140,25 @@ describe('preview filters', () => {
     expect(matchesToolFilter('dex', 'dex')).toBe(true);
     expect(matchesToolFilter('dex', 'league')).toBe(false);
     expect(matchesToolFilter('both', 'both')).toBe(true);
+  });
+
+  it('matches a facet against the displayed platform fields', () => {
+    const rec = {
+      country: 'US',
+      device: 'Desktop',
+      os: 'Windows',
+      browser: 'Chrome',
+      lang: 'en-US',
+      locale: 'en',
+    };
+    expect(facetValue(rec, 'country')).toBe('US');
+    expect(facetValue(rec, 'language')).toBe('en');
+    expect(matchesFacetFilters(rec, {})).toBe(true);
+    expect(matchesFacetFilters(rec, { country: 'US' })).toBe(true);
+    expect(matchesFacetFilters(rec, { country: 'IT' })).toBe(false);
+    expect(matchesFacetFilters({ lang: 'el-GR', locale: 'en' }, { language: 'el' })).toBe(true);
+    expect(facetValue({}, 'country')).toBe(FACET_UNKNOWN);
+    expect(facetLabel('country', 'US')).toBe('United States');
+    expect(uniqueFacetValues([rec, { country: 'IT' }, {}], 'country')).toEqual(['IT', 'US', FACET_UNKNOWN]);
   });
 });

@@ -19,23 +19,37 @@ import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import {
+  ARCHIVE_FILTER_OPTIONS,
   bareCid,
+  countryName,
   dexChipLabel,
+  FACET_KEYS,
+  FACET_LABEL,
+  FACET_UNKNOWN,
+  facetLabel,
   formatWhen,
+  langName,
   leagueChipLabel,
   leagueExported,
   matchesArchiveFilter,
+  matchesFacetFilters,
   matchesToolFilter,
   mergedSessionStats,
   previewLanguage,
   PREVIEW_FIT,
+  sameBaseLang,
   sessionChipParts,
+  TOOL_FILTER_OPTIONS,
   toolKind,
+  uniqueFacetValues,
   type ArchiveFilter,
+  type FacetFilters,
+  type FacetKey,
   type ToolFilter,
 } from '@/components/admin/userPreview';
+import { PreviewFilterMenu } from '@/components/admin/PreviewFilterMenu';
 import { FitNowrap, PreviewChipZoomProvider, useHostZoom } from '@/components/admin/FitNowrap';
-import { Archive, ArchiveRestore, Camera, Globe, Languages } from 'lucide-react';
+import { Archive, ArchiveRestore, Camera, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
 
 // Human labels for the onboarding/funnel events shown per session.
 
@@ -387,52 +401,6 @@ function flag(country?: string): string {
   const cc = country.toUpperCase();
   if (!/^[A-Z]{2}$/.test(cc)) return '';
   return String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
-}
-
-/** Language name only, no tag: "es-ES" → "Spanish". Falls back to the tag. */
-let langNames: Intl.DisplayNames | null | undefined;
-function langName(tag?: string): string | undefined {
-  if (!tag) return undefined;
-  if (langNames === undefined) {
-    try {
-      langNames = new Intl.DisplayNames(['en'], { type: 'language' });
-    } catch {
-      langNames = null;
-    }
-  }
-  try {
-    const name = langNames?.of(tag.split('-')[0]);
-    if (name) return name;
-  } catch {
-    /* unresolvable subtag */
-  }
-  return tag;
-}
-
-/** Country name from an ISO code: "CZ" → "Czechia". Falls back to the code. */
-let regionNames: Intl.DisplayNames | null | undefined;
-function countryName(code?: string): string | undefined {
-  if (!code) return undefined;
-  if (regionNames === undefined) {
-    try {
-      regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
-    } catch {
-      regionNames = null;
-    }
-  }
-  try {
-    const name = regionNames?.of(code.toUpperCase());
-    if (name) return name;
-  } catch {
-    /* unresolvable code */
-  }
-  return code;
-}
-
-/** Same primary language subtag, ignoring script/region — so a served
- *  "zh-Hans" is not reported as disagreeing with a browser's "zh-CN". */
-function sameBaseLang(a: string, b: string): boolean {
-  return a.split('-')[0].toLowerCase() === b.split('-')[0].toLowerCase();
 }
 
 async function fetchDashboard(token: string, limit: number, offset: number): Promise<ApiResponse> {
@@ -1251,6 +1219,139 @@ function PreviewMetricScale({ children }: { children: ReactNode }) {
   );
 }
 
+const PREVIEW_TABLE =
+  'relative flex w-full flex-col gap-2 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_auto_auto_auto_1fr] md:gap-x-2 md:gap-y-2';
+
+const FACET_COL: Record<FacetKey, string> = {
+  country: 'md:col-start-3',
+  device: 'md:col-start-4',
+  os: 'md:col-start-5',
+  browser: 'md:col-start-6',
+  language: 'md:col-start-7',
+};
+
+const FACET_ANY = '__any__';
+
+function facetIcon(key: FacetKey, value: string): ReactNode {
+  if (value === FACET_UNKNOWN) return facetLeadIcon(key);
+  if (key === 'country') return <FlagIcon country={value} />;
+  if (key === 'device') return <DeviceIcon value={value} />;
+  if (key === 'os') return <OsIcon value={value} />;
+  if (key === 'browser') return <BrowserIcon value={value} />;
+  return <Globe className="h-3 w-3" />;
+}
+
+function facetLeadIcon(key: FacetKey): ReactNode {
+  const cls = 'h-3.5 w-3.5';
+  if (key === 'country') return <Globe className={cls} />;
+  if (key === 'device') return <DeviceIcon value="Desktop" />;
+  if (key === 'os') return <Monitor className={cls} />;
+  if (key === 'browser') return <AppWindow className={cls} />;
+  return <Languages className={cls} />;
+}
+
+function PreviewFacetMenus({
+  listed,
+  facets,
+  setFacets,
+}: {
+  listed: { rec: HeaderRec }[];
+  facets: FacetFilters;
+  setFacets: (next: FacetFilters | ((prev: FacetFilters) => FacetFilters)) => void;
+}) {
+  return (
+    <>
+      {FACET_KEYS.map((key) => {
+        const recs = listed
+          .filter((row) => matchesFacetFilters(row.rec, { ...facets, [key]: undefined }))
+          .map((row) => row.rec);
+        return (
+          <PreviewFilterMenu
+            key={key}
+            name={FACET_LABEL[key]}
+            className={cn('md:justify-self-start', FACET_COL[key], 'md:row-start-1')}
+            value={facets[key] ?? FACET_ANY}
+            anyKey={FACET_ANY}
+            clearable
+            compactMd
+            leadIcon={facetLeadIcon(key)}
+            options={[
+              { key: FACET_ANY, label: 'Any' },
+              ...uniqueFacetValues(recs, key).map((v) => ({
+                key: v,
+                label: facetLabel(key, v),
+                chipLabel: key === 'country' || key === 'language' ? (v === FACET_UNKNOWN ? 'Unknown' : v.toUpperCase()) : facetLabel(key, v),
+                icon: facetIcon(key, v),
+              })),
+            ]}
+            onChange={(next) => {
+              setFacets((prev) => {
+                const out = { ...prev };
+                if (next === FACET_ANY) delete out[key];
+                else out[key] = next;
+                return out;
+              });
+            }}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+function PreviewStatusMenus({
+  archiveFilter,
+  setArchiveFilter,
+  toolFilter,
+  setToolFilter,
+}: {
+  archiveFilter: ArchiveFilter;
+  setArchiveFilter: (v: ArchiveFilter) => void;
+  toolFilter: ToolFilter;
+  setToolFilter: (v: ToolFilter) => void;
+}) {
+  return (
+    <>
+      <PreviewFilterMenu
+        name="Status"
+        className="md:col-start-11 md:row-start-1 md:justify-self-end"
+        value={archiveFilter}
+        options={ARCHIVE_FILTER_OPTIONS}
+        onChange={setArchiveFilter}
+        ariaLabel="Archive filter"
+      />
+      <PreviewFilterMenu
+        name="Tools"
+        className="md:col-start-9 md:col-span-2 md:row-start-1 md:justify-self-start"
+        value={toolFilter}
+        anyKey="any"
+        clearable
+        options={TOOL_FILTER_OPTIONS}
+        onChange={setToolFilter}
+        ariaLabel="Tool filter"
+      />
+    </>
+  );
+}
+
+function PreviewPlatformSlot({
+  colClass,
+  empty,
+  label,
+  children,
+}: {
+  colClass: string;
+  empty?: boolean;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <span className={cn('inline-flex', colClass, 'md:row-start-1 md:justify-self-start', empty && 'opacity-40')}>
+      <InfoChip label={label}>{children}</InfoChip>
+    </span>
+  );
+}
+
 function UserPreviewCard({
   rec,
   dex,
@@ -1271,6 +1372,7 @@ function UserPreviewCard({
     dex?.sessions != null || dex?.sessionMs ? dex : undefined,
     league?.sessions != null || league?.sessionMs ? league : undefined,
   );
+  const langPreview = previewLanguage(rec.lang, rec.locale, rec.switched);
 
   return (
     <div
@@ -1302,7 +1404,7 @@ function UserPreviewCard({
           </span>
         </FitNowrap>
         <div
-          className="shrink-0 md:col-start-7 md:row-start-1 md:justify-self-end"
+          className="shrink-0 md:col-start-11 md:row-start-1 md:justify-self-end"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
@@ -1318,27 +1420,65 @@ function UserPreviewCard({
           </Button>
         </div>
       </div>
-      <FitNowrap className="md:col-start-3 md:row-start-1 md:min-w-0 md:justify-self-start">
-        <PlatformChips rec={rec} className="flex-nowrap gap-1" compactLang />
-      </FitNowrap>
+      <div className="min-w-0 md:contents">
+        <FitNowrap contentsOnMd className="min-w-0">
+          <PreviewPlatformSlot
+            colClass={FACET_COL.country}
+            empty={!rec.country}
+            label={rec.country ? `${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}` : 'Unknown'}
+          >
+            {rec.country ? <FlagIcon country={rec.country} /> : <Globe className="h-[13px] w-[13px]" />}
+          </PreviewPlatformSlot>
+          <PreviewPlatformSlot
+            colClass={FACET_COL.device}
+            empty={!rec.device}
+            label={rec.device ?? 'Unknown'}
+          >
+            <DeviceIcon value={rec.device} />
+          </PreviewPlatformSlot>
+          <PreviewPlatformSlot
+            colClass={FACET_COL.os}
+            empty={!rec.os}
+            label={rec.os ?? 'Unknown'}
+          >
+            <OsIcon value={rec.os} />
+          </PreviewPlatformSlot>
+          <PreviewPlatformSlot
+            colClass={FACET_COL.browser}
+            empty={!rec.browser}
+            label={rec.browser ?? 'Unknown'}
+          >
+            <BrowserIcon value={rec.browser} />
+          </PreviewPlatformSlot>
+          <span className={cn(FACET_COL.language, 'inline-flex md:row-start-1 md:justify-self-start', !langPreview && 'opacity-40')}>
+            {langPreview ? (
+              <PreviewLanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+            ) : (
+              <InfoChip label="Unknown">
+                <Globe className="h-[13px] w-[13px]" />
+              </InfoChip>
+            )}
+          </span>
+        </FitNowrap>
+      </div>
       <div className="min-w-0 md:contents">
         <FitNowrap contentsOnMd lockZoom>
           <SessionMetricChip
             sessions={sessions}
             totalMs={totalMs}
-            className="md:col-start-4 md:row-start-1 md:justify-self-start"
+            className="md:col-start-8 md:row-start-1 md:justify-self-start"
           />
           <MetricChip
             metric="dex"
             empty={!dex}
-            className="md:col-start-5 md:row-start-1 md:justify-self-start"
+            className="md:col-start-9 md:row-start-1 md:justify-self-start"
             label={dexChipLabel(dex?.depth ?? 0)}
             exported={dex?.exported}
           />
           <MetricChip
             metric="league"
             empty={!league}
-            className="md:col-start-6 md:row-start-1 md:justify-self-start"
+            className="md:col-start-10 md:row-start-1 md:justify-self-start"
             label={leagueChipLabel(league?.cards ?? 0, CARD_COUNT)}
             exported={league?.exported}
           />
@@ -1464,6 +1604,7 @@ export function AdminPage() {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>('active');
   const [toolFilter, setToolFilter] = useState<ToolFilter>('any');
+  const [facetFilters, setFacetFilters] = useState<FacetFilters>({});
   const [archiveOverride, setArchiveOverride] = useState<Record<string, boolean>>({});
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -1961,7 +2102,7 @@ export function AdminPage() {
                   archived: boolean;
                   open: Detail;
                 };
-                const rows: Row[] = [];
+                const listed: Row[] = [];
                 if (showDex) {
                   for (const rec of data.records) {
                     const league =
@@ -1971,7 +2112,7 @@ export function AdminPage() {
                     const archived = archivedOf(rec.cid, rec.archived);
                     if (!matchesArchiveFilter(archived, archiveFilter)) continue;
                     if (!matchesToolFilter(kind, toolFilter)) continue;
-                    rows.push({
+                    listed.push({
                       cid: rec.cid,
                       rec,
                       dex: { depth: rec.maxDepth, exported: rec.exported },
@@ -1996,7 +2137,7 @@ export function AdminPage() {
                     const archived = archivedOf(rec.cid, rec.archived);
                     if (!matchesArchiveFilter(archived, archiveFilter)) continue;
                     if (!matchesToolFilter(kind, toolFilter)) continue;
-                    rows.push({
+                    listed.push({
                       cid: rec.cid,
                       rec,
                       dex: dex
@@ -2016,33 +2157,11 @@ export function AdminPage() {
                     });
                   }
                 }
+                const rows = listed.filter((row) => matchesFacetFilters(row.rec, facetFilters));
                 const emptyList = showDex ? data.records.length === 0 : (data.leagueUsers?.length ?? 0) === 0;
                 const totalListed = data.totalDexRecords ?? data.totalUsers;
                 return (
                   <>
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <Seg
-                        ariaLabel="Archive filter"
-                        options={[
-                          { key: 'active', label: 'Active' },
-                          { key: 'archived', label: 'Archived' },
-                          { key: 'all', label: 'All' },
-                        ]}
-                        value={archiveFilter}
-                        onChange={setArchiveFilter}
-                      />
-                      <Seg
-                        ariaLabel="Tool filter"
-                        options={[
-                          { key: 'any', label: 'Any' },
-                          { key: 'dex', label: 'Only dex' },
-                          { key: 'league', label: 'Only league' },
-                          { key: 'both', label: 'Only both' },
-                        ]}
-                        value={toolFilter}
-                        onChange={setToolFilter}
-                      />
-                    </div>
                     {emptyList && !loading && (
                       <p className="text-sm text-muted-foreground">
                         {showDex ? 'No users yet.' : 'No league users yet.'}
@@ -2051,7 +2170,22 @@ export function AdminPage() {
                     {!emptyList && rows.length === 0 && !loading && (
                       <p className="text-sm text-muted-foreground">No users match these filters.</p>
                     )}
-                    <div className="relative flex w-full flex-col gap-2 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_1fr] md:gap-x-3 md:gap-y-2">
+                    <div className={PREVIEW_TABLE}>
+                      <div
+                        data-preview-header
+                        className="mb-2 flex flex-wrap items-center gap-1.5 md:col-span-full md:mb-0 md:grid md:grid-cols-subgrid md:items-end md:border-b md:border-border md:pb-1.5"
+                      >
+                        <PreviewStatusMenus
+                          archiveFilter={archiveFilter}
+                          setArchiveFilter={setArchiveFilter}
+                          toolFilter={toolFilter}
+                          setToolFilter={setToolFilter}
+                        />
+                        <div className="hidden md:col-start-1 md:row-start-1 md:block text-[0.7rem] font-semibold text-muted-foreground">When</div>
+                        <div className="hidden md:col-start-2 md:row-start-1 md:block text-[0.7rem] font-semibold text-muted-foreground">Ago</div>
+                        <PreviewFacetMenus listed={listed} facets={facetFilters} setFacets={setFacetFilters} />
+                        <div className="hidden md:col-start-8 md:row-start-1 md:block text-[0.7rem] font-semibold text-muted-foreground">Sessions</div>
+                      </div>
                       <PreviewMetricScale>
                         {rows.map((row) => (
                           <UserPreviewCard
