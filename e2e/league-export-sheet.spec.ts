@@ -25,6 +25,16 @@ async function waitPreviewReady(page: Page) {
   await img.waitFor({ timeout: 45_000 });
 }
 
+async function parkPreview(page: Page) {
+  const foil = page.locator('[data-export-preview]');
+  if ((await foil.getAttribute('data-paused')) === '1') return;
+  const box = await page.locator('[data-export-tilt-hit]').boundingBox();
+  if (!box) return;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
+  await page.waitForTimeout(450);
+}
+
 function previewFitsBand(page: Page, viewportHeight: number) {
   return page.evaluate((vh) => {
     const img = document.querySelector<HTMLElement>('[data-export-preview-layer] img');
@@ -65,9 +75,7 @@ test.describe('mobile export sheet', () => {
     for (const mode of ['story', 'rematch', 'both'] as const) {
       await page.locator(`[data-export-team="${mode}"]`).click();
       await waitPreviewReady(page);
-      // Layout debounce (280ms) plus canvas. The confirm button enables when
-      // the new blob is on the img, but the size query can lag one frame.
-      await page.waitForTimeout(200);
+      await parkPreview(page);
       const fit = await previewFitsBand(page, MOBILE.height);
       expect(fit.ok, `${mode}: ${fit.reason}`).toBe(true);
     }
