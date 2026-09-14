@@ -53,6 +53,8 @@ test.describe('admin picks page', () => {
 
     await expect(starters.getByText('Most', { exact: true })).toHaveCount(0);
     await expect(starters.getByText('Least', { exact: true })).toHaveCount(0);
+    await expect(page.getByText(/Most is over/)).toHaveCount(0);
+    await expect(page.getByText(/1\.0× = random rate/)).toBeVisible();
     await expect(starters.locator('[data-picks-side="most"]').first()).toHaveAttribute(
       'data-picks-cols',
       '12',

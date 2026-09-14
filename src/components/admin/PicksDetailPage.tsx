@@ -370,7 +370,7 @@ export function PicksDetailPage({
         <p className="mt-1.5 text-[0.65rem] leading-snug text-muted-foreground">
           {offSection
             ? 'Placed off their default section. Numbers are dex counts. Evil-team chain mates (Rhyhorn with Rhydon) stay in-section.'
-            : '1.0× = random rate among this section\'s evo lines. Most is over 1.10×. Least is under 0.90×.'}
+            : '1.0× = random rate among this section\'s evo lines.'}
         </p>
       </div>
       {sections.length === 0 ? (
