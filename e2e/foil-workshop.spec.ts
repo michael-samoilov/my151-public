@@ -16,6 +16,8 @@ test.describe('export foil workshop', () => {
     await expect
       .poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 })
       .toBe('1');
+    await expect(page.locator('[data-foil-layer]')).toHaveCount(5);
+    await expect(page.locator('[data-foil-control]')).toHaveCount(10);
     await expect
       .poll(
         async () => {
@@ -28,6 +30,8 @@ test.describe('export foil workshop', () => {
       .toBeGreaterThan(3.5);
 
     await page.locator('[data-foil-solo="holographic"]').click();
+    await expect(page.locator('[data-foil-layer]')).toHaveCount(1);
+    await expect(page.locator('[data-foil-layer="holographic"]')).toHaveCount(1);
     await expect
       .poll(async () =>
         foil.evaluate((el) => getComputedStyle(el).getPropertyValue('--foil-holographic').trim()),

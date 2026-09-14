@@ -85,29 +85,39 @@ export const FOIL_LAYER_META = {
 export const FOIL_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-recipe';
 
 const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
-  pointLight: { on: true, amount: 0.62 },
-  ambient: { on: true, amount: 0.45 },
-  specular: { on: true, amount: 0.62 },
-  rim: { on: true, amount: 0.52 },
-  holographic: { on: true, amount: 0.58 },
-  iridescence: { on: true, amount: 0.42 },
-  emboss: { on: true, amount: 0.6 },
-  parallax: { on: true, amount: 0.5 },
+  pointLight: { on: true, amount: 1 },
+  ambient: { on: false, amount: 0 },
+  specular: { on: false, amount: 0 },
+  rim: { on: false, amount: 0 },
+  holographic: { on: true, amount: 0.75 },
+  iridescence: { on: true, amount: 0.15 },
+  emboss: { on: false, amount: 0 },
+  parallax: { on: false, amount: 0 },
   sparkle: { on: true, amount: 0.52 },
   bloom: { on: true, amount: 0.36 },
 };
 
-/** Live overlay default. Idle tilt clears the shine dead zone. */
+/** Live overlay default. Off layers stay off so they never paint. */
 export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
-  idleTilt: 8.5,
-  idleMsX: 11000,
-  idleMsY: 16000,
-  deadDeg: 3.5,
+  idleTilt: 10,
+  idleMsX: 14000,
+  idleMsY: 14000,
+  deadDeg: 3,
   maxTilt: 20,
-  parallaxPx: 7,
-  bloomBlurPx: 14,
-  specSize: 0.3,
+  parallaxPx: 0,
+  bloomBlurPx: 34,
+  specSize: 0.5,
   layers: DEFAULT_LAYERS,
+};
+
+const SAT_MASK_LAYERS: readonly FoilLayerId[] = ['holographic', 'iridescence', 'parallax'];
+const EDGE_MASK_LAYERS: readonly FoilLayerId[] = ['emboss', 'rim'];
+const GLOSS_MASK_LAYERS: readonly FoilLayerId[] = ['specular', 'sparkle', 'bloom'];
+
+export type FoilMapNeed = {
+  sat: boolean;
+  edge: boolean;
+  gloss: boolean;
 };
 
 export function isFoilLayerId(value: unknown): value is FoilLayerId {
@@ -182,6 +192,19 @@ export function foilRecipeSearch(recipe: FoilRecipe): string {
 export function foilLayerAmount(recipe: FoilRecipe, id: FoilLayerId): number {
   const layer = recipe.layers[id];
   return layer.on ? layer.amount : 0;
+}
+
+export function activeFoilLayerIds(recipe: FoilRecipe): FoilLayerId[] {
+  return FOIL_LAYER_IDS.filter((id) => foilLayerAmount(recipe, id) > 0);
+}
+
+export function foilMapsNeeded(recipe: FoilRecipe): FoilMapNeed {
+  const on = (ids: readonly FoilLayerId[]) => ids.some((id) => foilLayerAmount(recipe, id) > 0);
+  return {
+    sat: on(SAT_MASK_LAYERS),
+    edge: on(EDGE_MASK_LAYERS),
+    gloss: on(GLOSS_MASK_LAYERS),
+  };
 }
 
 /** CSS custom properties the preview card reads each frame. */

@@ -76,7 +76,11 @@ test.describe('mobile export sheet', () => {
     const foil = page.locator('[data-export-preview]');
     await expect(foil).toHaveAttribute('data-paused', '0');
 
-    await expect(page.locator('[data-foil-layer]')).toHaveCount(10);
+    await expect(page.locator('[data-foil-layer]')).toHaveCount(5);
+    await expect(page.locator('[data-foil-layer="holographic"]')).toHaveCount(1);
+    await expect(page.locator('[data-foil-layer="sparkle"]')).toHaveCount(1);
+    await expect(page.locator('[data-foil-layer="ambient"]')).toHaveCount(0);
+    await expect(page.locator('[data-foil-layer="emboss"]')).toHaveCount(0);
     const idleA = Number(await foil.getAttribute('data-tilt-x'));
     await expect
       .poll(async () => Number(await foil.getAttribute('data-tilt-x')), { timeout: 2500 })

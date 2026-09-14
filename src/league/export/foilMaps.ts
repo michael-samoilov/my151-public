@@ -1,3 +1,5 @@
+import type { FoilMapNeed } from './foilRecipe';
+
 /**
  * Alpha maps derived from an export PNG so lighting can follow the print.
  *
@@ -28,6 +30,7 @@ export type FoilMaskUrls = {
 };
 
 const CHROMA_FLOOR = 12;
+const ALL_MAPS: FoilMapNeed = { sat: true, edge: true, gloss: true };
 
 function luma(r: number, g: number, b: number): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -52,51 +55,57 @@ function sampleLum(lum: Float32Array, width: number, height: number, x: number, 
 }
 
 /** Pure map derivation. Node tests call this with a hand-built buffer. */
-export function deriveFoilMaps(src: RgbaBitmap): FoilMaps {
+export function deriveFoilMaps(src: RgbaBitmap, need: FoilMapNeed = ALL_MAPS): FoilMaps {
   const { width, height, data } = src;
   const count = width * height;
-  const lum = new Float32Array(count);
+  const lum = need.edge ? new Float32Array(count) : null;
   const sat = blank(width, height);
   const gloss = blank(width, height);
   const edge = blank(width, height);
 
-  for (let i = 0; i < count; i++) {
-    const o = i * 4;
-    const r = data[o]!;
-    const g = data[o + 1]!;
-    const b = data[o + 2]!;
-    const a = data[o + 3]!;
-    const y = luma(r, g, b);
-    lum[i] = y;
-    const maxc = Math.max(r, g, b);
-    const minc = Math.min(r, g, b);
-    const chroma = maxc - minc;
-    const sat01 = a === 0 || chroma < CHROMA_FLOOR || maxc === 0 ? 0 : chroma / maxc;
-    const satA = Math.round(Math.min(255, Math.pow(sat01, 0.72) * 255));
-    const mid = 1 - Math.abs(y - 168) / 168;
-    const glossA = Math.round(satA * Math.max(0, mid));
-    writeMaskPixel(sat.data, i, satA);
-    writeMaskPixel(gloss.data, i, glossA);
+  if (need.sat || need.gloss || need.edge) {
+    for (let i = 0; i < count; i++) {
+      const o = i * 4;
+      const r = data[o]!;
+      const g = data[o + 1]!;
+      const b = data[o + 2]!;
+      const a = data[o + 3]!;
+      const y = luma(r, g, b);
+      if (lum) lum[i] = y;
+      if (!need.sat && !need.gloss) continue;
+      const maxc = Math.max(r, g, b);
+      const minc = Math.min(r, g, b);
+      const chroma = maxc - minc;
+      const sat01 = a === 0 || chroma < CHROMA_FLOOR || maxc === 0 ? 0 : chroma / maxc;
+      const satA = Math.round(Math.min(255, Math.pow(sat01, 0.72) * 255));
+      if (need.sat) writeMaskPixel(sat.data, i, satA);
+      if (need.gloss) {
+        const mid = 1 - Math.abs(y - 168) / 168;
+        writeMaskPixel(gloss.data, i, Math.round(satA * Math.max(0, mid)));
+      }
+    }
   }
 
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const gx =
-        -sampleLum(lum, width, height, x - 1, y - 1) +
-        sampleLum(lum, width, height, x + 1, y - 1) +
-        -2 * sampleLum(lum, width, height, x - 1, y) +
-        2 * sampleLum(lum, width, height, x + 1, y) +
-        -sampleLum(lum, width, height, x - 1, y + 1) +
-        sampleLum(lum, width, height, x + 1, y + 1);
-      const gy =
-        -sampleLum(lum, width, height, x - 1, y - 1) +
-        -2 * sampleLum(lum, width, height, x, y - 1) +
-        -sampleLum(lum, width, height, x + 1, y - 1) +
-        sampleLum(lum, width, height, x - 1, y + 1) +
-        2 * sampleLum(lum, width, height, x, y + 1) +
-        sampleLum(lum, width, height, x + 1, y + 1);
-      const mag = Math.hypot(gx, gy) / 8;
-      writeMaskPixel(edge.data, y * width + x, Math.round(Math.min(255, mag)));
+  if (need.edge && lum) {
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const gx =
+          -sampleLum(lum, width, height, x - 1, y - 1) +
+          sampleLum(lum, width, height, x + 1, y - 1) +
+          -2 * sampleLum(lum, width, height, x - 1, y) +
+          2 * sampleLum(lum, width, height, x + 1, y) +
+          -sampleLum(lum, width, height, x - 1, y + 1) +
+          sampleLum(lum, width, height, x + 1, y + 1);
+        const gy =
+          -sampleLum(lum, width, height, x - 1, y - 1) +
+          -2 * sampleLum(lum, width, height, x, y - 1) +
+          -sampleLum(lum, width, height, x + 1, y - 1) +
+          sampleLum(lum, width, height, x - 1, y + 1) +
+          2 * sampleLum(lum, width, height, x, y + 1) +
+          sampleLum(lum, width, height, x + 1, y + 1);
+        const mag = Math.hypot(gx, gy) / 8;
+        writeMaskPixel(edge.data, y * width + x, Math.round(Math.min(255, mag)));
+      }
     }
   }
 
@@ -125,7 +134,14 @@ function bitmapToPngUrl(bmp: RgbaBitmap): string {
 }
 
 /** Downsample the preview PNG and return CSS mask data URLs. */
-export async function foilMaskUrlsFromImage(src: string, maxEdge = 384): Promise<FoilMaskUrls> {
+export async function foilMaskUrlsFromImage(
+  src: string,
+  need: FoilMapNeed = ALL_MAPS,
+  maxEdge = 384,
+): Promise<FoilMaskUrls> {
+  if (!need.sat && !need.edge && !need.gloss) {
+    return { sat: '', edge: '', gloss: '' };
+  }
   const img = await loadImage(src);
   const nw = img.naturalWidth || img.width;
   const nh = img.naturalHeight || img.height;
@@ -141,11 +157,11 @@ export async function foilMaskUrlsFromImage(src: string, maxEdge = 384): Promise
   }
   ctx.drawImage(img, 0, 0, width, height);
   const imageData = ctx.getImageData(0, 0, width, height);
-  const maps = deriveFoilMaps({ width, height, data: imageData.data });
+  const maps = deriveFoilMaps({ width, height, data: imageData.data }, need);
   return {
-    sat: bitmapToPngUrl(maps.sat),
-    edge: bitmapToPngUrl(maps.edge),
-    gloss: bitmapToPngUrl(maps.gloss),
+    sat: need.sat ? bitmapToPngUrl(maps.sat) : '',
+    edge: need.edge ? bitmapToPngUrl(maps.edge) : '',
+    gloss: need.gloss ? bitmapToPngUrl(maps.gloss) : '',
   };
 }
 

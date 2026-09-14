@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import {
   DEFAULT_FOIL_RECIPE,
-  FOIL_LAYER_IDS,
+  activeFoilLayerIds,
   foilLayerClassName,
+  foilMapsNeeded,
   foilRecipeCssVars,
   type FoilRecipe,
 } from '../export/foilRecipe';
@@ -50,6 +51,8 @@ export function ExportPreview3D({
   const downRef = useRef<{ t: number; x: number; y: number; dragged: boolean } | null>(null);
   const hoverArmedRef = useRef(true);
   const recipeRef = useRef(recipe);
+  const layerIds = activeFoilLayerIds(recipe);
+  const { sat: needSat, edge: needEdge, gloss: needGloss } = foilMapsNeeded(recipe);
 
   const applyRecipeVars = useCallback((el: HTMLDivElement) => {
     const vars = foilRecipeCssVars(recipeRef.current);
@@ -147,12 +150,16 @@ export function ExportPreview3D({
   useEffect(() => {
     const el = cardRef.current;
     if (!el || !src) return;
-    el.dataset.foilMaps = '0';
     el.style.setProperty('--foil-sat-mask', 'none');
     el.style.setProperty('--foil-edge-mask', 'none');
     el.style.setProperty('--foil-gloss-mask', 'none');
+    if (!needSat && !needEdge && !needGloss) {
+      el.dataset.foilMaps = '1';
+      return;
+    }
+    el.dataset.foilMaps = '0';
     let cancelled = false;
-    void foilMaskUrlsFromImage(src)
+    void foilMaskUrlsFromImage(src, { sat: needSat, edge: needEdge, gloss: needGloss })
       .then((maps) => {
         if (cancelled) return;
         const card = cardRef.current;
@@ -163,12 +170,12 @@ export function ExportPreview3D({
         card.dataset.foilMaps = '1';
       })
       .catch(() => {
-        /* Point light and ambient still run without maps. */
+        /* Point light still runs without maps. Masked layers stay hidden. */
       });
     return () => {
       cancelled = true;
     };
-  }, [src]);
+  }, [src, needSat, needEdge, needGloss]);
 
   const applyPointer = useCallback(
     (clientX: number, clientY: number) => {
@@ -291,7 +298,7 @@ export function ExportPreview3D({
             style={{ maxHeight: '100cqh', maxWidth: '100cqw', width: 'auto', height: 'auto' }}
             draggable={false}
           />
-          {FOIL_LAYER_IDS.map((id) => (
+          {layerIds.map((id) => (
             <div
               key={id}
               className={cn('export-foil-layer', foilLayerClassName(id))}

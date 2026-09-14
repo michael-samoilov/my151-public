@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_FOIL_RECIPE,
   FOIL_LAYER_IDS,
+  activeFoilLayerIds,
   cloneFoilRecipe,
   foilLayerAmount,
   foilLayerClassName,
+  foilMapsNeeded,
   foilRecipeCssVars,
   foilRecipeSearch,
   isFoilLayerId,
@@ -24,6 +26,26 @@ describe('foil recipe', () => {
 
   it('idle tilt clears the shine dead zone', () => {
     expect(DEFAULT_FOIL_RECIPE.idleTilt).toBeGreaterThan(DEFAULT_FOIL_RECIPE.deadDeg);
+  });
+
+  it('live default paints five layers and skips the edge map', () => {
+    expect(activeFoilLayerIds(DEFAULT_FOIL_RECIPE)).toEqual([
+      'pointLight',
+      'holographic',
+      'iridescence',
+      'sparkle',
+      'bloom',
+    ]);
+    expect(foilMapsNeeded(DEFAULT_FOIL_RECIPE)).toEqual({
+      sat: true,
+      edge: false,
+      gloss: true,
+    });
+    expect(DEFAULT_FOIL_RECIPE.layers.ambient.on).toBe(false);
+    expect(DEFAULT_FOIL_RECIPE.layers.emboss.on).toBe(false);
+    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(0.75);
+    const withEmboss = withFoilLayer(DEFAULT_FOIL_RECIPE, 'emboss', { on: true, amount: 0.6 });
+    expect(foilMapsNeeded(withEmboss).edge).toBe(true);
   });
 
   it('drops unknown keys and clamps amounts at the parse boundary', () => {
