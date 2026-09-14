@@ -193,6 +193,7 @@ function TeamModeOption({
     <button
       type="button"
       onClick={onClick}
+      data-export-team={fill === 'both' ? 'both' : fill === 'left' ? 'story' : 'rematch'}
       className={`flex cursor-pointer flex-col items-center gap-1 rounded-md px-1 py-2 text-center text-[0.6875rem] leading-tight transition-colors ${
         selected ? 'bg-primary/10 font-medium text-primary' : 'text-foreground hover:bg-muted'
       }`}

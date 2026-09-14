@@ -172,14 +172,15 @@ function cardImageUrls(card: GymCard): string[] {
   return urls;
 }
 
-function homeRowsForCard(
+/** Story and rematch rows a slot paints. Rematch is always the endgame row. */
+export function homeRowsForCard(
   index: number,
   view: LeagueView,
   layout: LeagueHomeExportLayout,
 ): number[] {
   const challenge = slotRow(index);
   const rematch = L.BOSS_ROW;
-  if (layoutShowsBothTeams(layout) && slotKind(index) === 'gym') return [challenge, rematch];
+  if (layoutShowsBothTeams(layout)) return [challenge, rematch];
   const effectiveView =
     layout.teamMode === 'rematch' ? 'rematch' : layout.teamMode === 'story' ? 'challenge' : view;
   return [effectiveView === 'rematch' ? rematch : challenge];
@@ -531,23 +532,33 @@ function drawTmSlot(
   const chipW = 0.9375 * 16 * L.K;
   const chipH = 0.6875 * 16 * L.K;
   const gap = 2 * L.K;
-  // The name at the app's own size, and never cut. A two-word move wraps; a
-  // single word too wide for the box comes down in size until it fits,
-  // because "Flamethro…" is not a move anyone recognises. The box holds the
-  // longest single word in the data with room, so the shrink is a guard.
-  const namePx = fitFontSize(ctx, move.name, bodyW, L.MOVE_PX, L.MOVE_MIN_PX, 400);
+  // Name shares the badge slot's left edge. Type and category grow after it.
+  const trailing = L.TM_BADGE_W + 3 * L.K + chipW;
+  const nameMax = Math.max(8, bodyW - trailing - gap);
+  const namePx = fitFontSize(ctx, move.name, nameMax, L.MOVE_PX, L.MOVE_MIN_PX, 400);
   ctx.font = font(namePx, 400);
-  const nameLines = wrapLines(ctx, move.name, bodyW, 2);
-  const nameLineH = namePx * 1.15;
-  const nameH = nameLines.length * nameLineH;
-  const total = badgeH + gap + nameH;
-  const top = cy - total / 2;
+  const name = ellipsize(ctx, move.name, nameMax);
+  const nameW = ctx.measureText(name).width;
 
-  drawTypeBadge(ctx, move.type as TypeName, images.get(typeGlyphPath(move.type as TypeName)) ?? null, bodyX, top, badgeH);
+  ctx.save();
+  ctx.font = font(namePx, 400);
+  ctx.fillStyle = FG;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(name, bodyX, cy);
+  ctx.restore();
 
-  // The category chip: a white-ringed square, the same one the picker shows.
-  const chipX = bodyX + L.TM_BADGE_W + 3 * L.K;
-  const chipY = top + (badgeH - chipH) / 2;
+  const typeX = bodyX + nameW + gap;
+  drawTypeBadge(
+    ctx,
+    move.type as TypeName,
+    images.get(typeGlyphPath(move.type as TypeName)) ?? null,
+    typeX,
+    cy - badgeH / 2,
+    badgeH,
+  );
+
+  const chipX = typeX + L.TM_BADGE_W + 3 * L.K;
+  const chipY = cy - chipH / 2;
   ctx.save();
   ctx.fillStyle = CATEGORY_COLORS[move.category];
   roundRect(ctx, chipX, chipY, chipW, chipH, 4 * L.K);
@@ -562,15 +573,6 @@ function drawTmSlot(
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(icon, chipX + (chipW - iw) / 2, chipY + (chipH - ih) / 2, iw, ih);
   }
-  ctx.restore();
-
-  ctx.save();
-  ctx.font = font(namePx, 400);
-  ctx.fillStyle = FG;
-  ctx.textBaseline = 'middle';
-  nameLines.forEach((line, i) => {
-    ctx.fillText(line, bodyX, top + badgeH + gap + (i + 0.5) * nameLineH);
-  });
   ctx.restore();
 }
 
@@ -1019,25 +1021,9 @@ function drawSectionRow(
   title: string,
   splitTeams: boolean,
 ): void {
-  const bandX = ox + L.HOME_RAIL - L.HOME_R;
-  const bandRight = ox + geom.homeInner - L.HOME_RAIL + L.HOME_R;
-  if (!splitTeams) {
-    paintSectionPill(ctx, bandX, y, bandRight - bandX, title, 'left');
-    return;
+  for (const pill of L.homeSectionPills(ox, geom, title, splitTeams)) {
+    paintSectionPill(ctx, pill.x, y, pill.w, pill.label, pill.align);
   }
-  const teamBaseX = ox + L.GLYPH_COL + L.TYPE_COL + geom.detailsCol + geom.leadGap;
-  const rematchX = teamBaseX + geom.blockWidth + geom.sideGap;
-  const pillGap = geom.sideGap;
-  paintSectionPill(ctx, bandX, y, Math.max(0, teamBaseX - pillGap - bandX), title, 'left');
-  paintSectionPill(ctx, teamBaseX, y, geom.blockWidth, 'STORY TEAMS', 'right');
-  paintSectionPill(
-    ctx,
-    rematchX,
-    y,
-    Math.max(0, bandRight - rematchX),
-    'REMATCH TEAMS',
-    'right',
-  );
 }
 
 function drawHomeRow(
@@ -1056,7 +1042,7 @@ function drawHomeRow(
   const shades = cardShades(card.type);
   const cell = shades.cell;
   const filled = card.lines.length > 0;
-  const sideBySide = layoutShowsBothTeams(layout) && slotKind(index) === 'gym';
+  const sideBySide = layoutShowsBothTeams(layout);
   const challengeRow = slotRow(index);
   const rematchRow = L.BOSS_ROW;
   const effectiveView =
@@ -1112,7 +1098,7 @@ function drawHomeRow(
     drawHomeGymDetails(ctx, card, shades, images, detailsX, y, geom.detailsCol, layout);
   }
 
-  const teamBaseX = detailsX + geom.detailsCol + geom.leadGap;
+  const teamBaseX = L.homeTeamOriginX(x, geom);
   if (!filled) {
     // An empty row says which seat is open, in the league's own words.
     ctx.save();
@@ -1120,9 +1106,7 @@ function drawHomeRow(
     ctx.fillStyle = GREY;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
-    const vacancyRight = sideBySide
-      ? teamBaseX + 2 * geom.blockWidth + geom.sideGap
-      : teamBaseX + L.SEAT_COUNT * geom.seatCol;
+    const vacancyRight = L.homeVacancyAnchorX(x, geom, sideBySide);
     ctx.fillText(L.VACANCY[kind], vacancyRight - 6 * L.K2, y + L.ROW2 / 2);
     ctx.restore();
     return;

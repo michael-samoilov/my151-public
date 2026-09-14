@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { createPortal } from 'react-dom';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { shareOrDownload } from '@/lib/exportImage';
+import { hasSeenExportSurvey, markExportSurveySeen } from '@/lib/exportSurvey';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { cn } from '@/lib/utils';
@@ -133,6 +134,7 @@ export function LeagueExportOverlay() {
   const [highlight, setHighlight] = useState<ExportHighlight | null>(null);
   const previewUrlRef = useRef<string | null>(null);
   const debounceRef = useRef<number | null>(null);
+  const [surveyOpenedAt, setSurveyOpenedAt] = useState(0);
 
   const revokePreview = useCallback(() => {
     if (previewUrlRef.current) {
@@ -196,6 +198,12 @@ export function LeagueExportOverlay() {
         : await exportGymCard(cards[exportCardIndex!]);
       await shareOrDownload(blob, isLeague ? HOME_FILENAME : CARD_FILENAME);
       incrementLeagueExportCount();
+      if (hasSeenExportSurvey()) {
+        closeLeagueExport();
+        return;
+      }
+      markExportSurveySeen();
+      setSurveyOpenedAt(Date.now());
       setExportPhase('surveyIntro');
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -203,7 +211,7 @@ export function LeagueExportOverlay() {
     } finally {
       setExportBusy(false);
     }
-  }, [exportBusy, exportCardIndex, exportKind, isLeague, layout, setExportPhase]);
+  }, [closeLeagueExport, exportBusy, exportCardIndex, exportKind, isLeague, layout, setExportPhase]);
 
   const paneTitle =
     exportPhase === 'settings'
@@ -225,12 +233,17 @@ export function LeagueExportOverlay() {
       />
     ) : exportPhase === 'surveyIntro' ? (
       <LeagueExportSurveyIntro
+        tool={exportKind}
         highlight={highlight}
         onContinue={() => setExportPhase('survey')}
         onSkip={closeLeagueExport}
       />
     ) : (
-      <LeagueExportSurvey exportKind={exportKind} onDone={closeLeagueExport} />
+      <LeagueExportSurvey
+        exportKind={exportKind}
+        openedAt={surveyOpenedAt}
+        onDone={closeLeagueExport}
+      />
     );
 
   const preview = (

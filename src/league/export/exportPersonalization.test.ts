@@ -27,10 +27,11 @@ describe('export personalization', () => {
     expect(earlyExportLine(40, 'card')).toBe(
       "You're among the first 50 users to export a Gym Leader Card.",
     );
-    expect(earlyExportLine(151, 'pokedex')).toContain('151st');
-    expect(earlyExportLine(151, 'pokedex')).toContain('Generation 1');
-    expect(earlyExportLine(151, 'pokedex')).not.toContain('—');
-    expect(earlyExportLine(1025, 'league')).toContain('Generation 9');
+    expect(earlyExportLine(151, 'pokedex')).toBe(
+      "You're the 151st person to export a Pokedex. Coincidentally, that's the size of the national dex after Generation 1. Lucky you!",
+    );
+    expect(earlyExportLine(1025, 'league')).toContain('national dex after Generation 9');
+    expect(earlyExportLine(1025, 'league')).toContain('Lucky you!');
     expect(earlyExportLine(2000, 'league')).toBeNull();
     expect(firstPokemonLine('Pikachu', 'league')).toBe(
       "You're also the first person to have Pikachu in an exported Pokemon League.",

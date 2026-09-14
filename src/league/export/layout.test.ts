@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import * as L from './layout';
-import { showcasePair, exportRow, vacantRow } from './exportLeague';
+import { showcasePair, exportRow, vacantRow, homeRowsForCard } from './exportLeague';
 import { emptyCard, type GymCard } from '../store/useLeagueStore';
 import { makePlacedLine } from '../model/engine';
-import { TEAM_SIZES, slotKind, slotRow } from '../model/constants';
+import { TEAM_SIZES, slotRow } from '../model/constants';
 import { kantoCards } from '../data/kantoLeague';
 import { placeSlot } from '../slotLayout';
+import { DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT } from './exportOptions';
 
 /**
  * The export's geometry is arithmetic, not layout: nothing here reads the DOM,
@@ -227,6 +228,34 @@ describe('export layout', () => {
     expect(g.sideGap).toBe(L.HOME_SIDE_GAP);
   });
 
+  it('splits only the gym-leader band, with equal gaps and equal team pills', () => {
+    const geom = L.homeExportGeometry(true, true);
+    const gym = L.homeSectionPills(0, geom, 'GYM LEADERS', true);
+    expect(gym).toHaveLength(3);
+    const gap12 = gym[1].x - (gym[0].x + gym[0].w);
+    const gap23 = gym[2].x - (gym[1].x + gym[1].w);
+    expect(gap12).toBeCloseTo(L.HOME_SIDE_GAP, 6);
+    expect(gap23).toBeCloseTo(L.HOME_SIDE_GAP, 6);
+    expect(gym[1].w).toBeCloseTo(gym[2].w, 6);
+    expect(gym[1].w).toBeCloseTo(geom.blockWidth, 6);
+
+    for (const title of ['ELITE FOUR', 'CHAMPION', 'ENDGAME BOSS']) {
+      const pills = L.homeSectionPills(0, geom, title, false);
+      expect(pills).toHaveLength(1);
+      expect(pills[0].w).toBeGreaterThan(geom.blockWidth * 2);
+    }
+  });
+
+  it('pins vacancy copy to the rematch block in both-teams mode', () => {
+    const geom = L.homeExportGeometry(true, true);
+    const origin = L.homeTeamOriginX(0, geom);
+    expect(L.homeVacancyAnchorX(0, geom, true)).toBeCloseTo(
+      origin + 2 * geom.blockWidth + geom.sideGap,
+      6,
+    );
+    expect(L.homeVacancyAnchorX(0, geom, false)).toBeCloseTo(origin + geom.blockWidth, 6);
+  });
+
   it('gives gym details room for a 12-letter TM and a long theme', () => {
     const tmIcons =
       L.HOME_DETAIL_ICON +
@@ -339,16 +368,23 @@ describe('reading a card for export', () => {
     expect(vacantRow(cardWith({ lines: [makePlacedLine([1, 2, 3])], type: 'none' }))).toBe(false);
   });
 
-  it('gives a filled gym a rematch team whenever it has a story team', () => {
+  it('loads rematch sprites for every slot in both-teams mode', () => {
+    const both = { ...DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT, teamMode: 'both' as const };
+    expect(homeRowsForCard(0, 'challenge', both)).toEqual([1, L.BOSS_ROW]);
+    expect(homeRowsForCard(8, 'challenge', both)).toEqual([L.ELITE_ROW, L.BOSS_ROW]);
+    expect(homeRowsForCard(12, 'challenge', both)).toEqual([L.CHAMPION_ROW, L.BOSS_ROW]);
+    expect(homeRowsForCard(13, 'challenge', both)).toEqual([L.BOSS_ROW, L.BOSS_ROW]);
+  });
+
+  it('gives a filled trainer a rematch team whenever it has a story team', () => {
     const cards = kantoCards();
     for (let i = 0; i < cards.length; i++) {
-      if (slotKind(i) !== 'gym') continue;
       const card = cards[i];
       if (card.lines.length === 0) continue;
       const story = exportRow(card, slotRow(i));
       const rematch = exportRow(card, L.BOSS_ROW);
-      expect(story.some((c) => c.pokemonId != null)).toBe(true);
-      expect(rematch.some((c) => c.pokemonId != null)).toBe(true);
+      expect(story.some((c) => c.pokemonId != null), `slot ${i} story`).toBe(true);
+      expect(rematch.some((c) => c.pokemonId != null), `slot ${i} rematch`).toBe(true);
     }
   });
 });

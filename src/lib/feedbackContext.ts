@@ -41,6 +41,10 @@ export interface FeedbackContext {
   search: boolean;
   filters: string[];
   demo: boolean;
+  /** True when this report came from the post-export survey. */
+  exportSurvey?: boolean;
+  /** Which export tool opened the survey. */
+  exportTool?: 'pokedex' | 'league' | 'card';
   /** For a translation report: the key and both sides of it. */
   message?: { key: string; localeValue: string; sourceValue: string };
   /** For a crash report. */

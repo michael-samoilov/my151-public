@@ -4,6 +4,10 @@ import { Search, Send, UserRound } from 'lucide-react';
 import { SiBluesky, SiDiscord, SiReddit, SiTumblr, SiX } from 'react-icons/si';
 import { Button } from '@/components/ui/button';
 import { sendFeedback, collectFeedbackContext } from '@/lib/feedbackContext';
+import {
+  exportSurveyFeedbackRoute,
+  type ExportSurveyTool,
+} from '@/lib/exportSurvey';
 
 /**
  * 4chan mark from Simple Icons (CC0).
@@ -38,9 +42,11 @@ function chipClass(on: boolean) {
 
 export function LeagueExportSurvey({
   exportKind,
+  openedAt,
   onDone,
 }: {
-  exportKind: 'league' | 'card';
+  exportKind: ExportSurveyTool;
+  openedAt: number;
   onDone: () => void;
 }) {
   const [heard, setHeard] = useState<Set<string>>(() => new Set());
@@ -87,13 +93,19 @@ export function LeagueExportSurvey({
   const submit = async () => {
     setSending(true);
     try {
-      const context = collectFeedbackContext('/custom-gym-leader');
+      const elapsed = Date.now() - openedAt;
+      if (elapsed < 2000) {
+        await new Promise((r) => window.setTimeout(r, 2000 - elapsed));
+      }
+      const context = collectFeedbackContext(exportSurveyFeedbackRoute(exportKind));
+      context.exportSurvey = true;
+      context.exportTool = exportKind;
       const heardLabels = [...heard].map((id) => {
         if (id === 'other') return heardOther.trim() ? `Other: ${heardOther.trim()}` : 'Other';
         return HEARD.find((h) => h.id === id)?.label ?? id;
       });
       const body = [
-        'League export follow-up',
+        'Export follow-up',
         `export: ${exportKind}`,
         `heard: ${heardLabels.join(', ') || '—'}`,
         `ideas: ${ideas.trim() || '—'}`,
@@ -102,7 +114,7 @@ export function LeagueExportSurvey({
         category: 'idea',
         message: body,
         context,
-        dwellMs: 0,
+        dwellMs: Math.max(Date.now() - openedAt, 2000),
       });
       if (ok) {
         setSent(true);
@@ -124,7 +136,10 @@ export function LeagueExportSurvey({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-1">
+    <div
+      className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-4 pb-4 pt-1"
+      data-export-survey
+    >
       <fieldset className="space-y-2 border-0 p-0">
         <legend className="text-sm font-semibold">How did you hear about my151?</legend>
         <p className="text-xs text-muted-foreground">Select all that apply.</p>

@@ -1,11 +1,25 @@
-/* Foil shine for the export preview, after simeydotme's pokemon-cards-css
-   and hover-tilt glare: a pointer-tracking radial glare plus a holographic
-   rainbow that color-dodges the picture. */
+/* Foil shine for the export preview.
+ *
+ * Adapted from simeydotme's pokemon-cards-css and hover-tilt, not copied
+ * from their source files. Parameters we kept:
+ *
+ *   --pointer-x / --pointer-y   glare and rainbow track the pointer
+ *   --pointer-from-center       we encode this as --foil-opacity from tilt
+ *   glare: radial-gradient(farthest-corner circle at pointer,
+ *          white ~8%, mid ~28%, dark ~90%), mix-blend-mode: overlay
+ *   shine: 125° repeating rainbow (hsl 2, 53, 93, 176, 228, 283) plus a
+ *          −55° white sheen, background-size 280%/220%, mix-blend-mode:
+ *          color-dodge, filter brightness/contrast/saturate
+ *   hover-tilt: rotateX/rotateY from pointer, custom glare gradient
+ *
+ * Straight-on (tilt inside 3.5°) sets --foil-opacity to 0 so the picture
+ * stays readable. Shine ramps in only as the card tips.
+ */
 
 .export-foil {
   --pointer-x: 50%;
   --pointer-y: 50%;
-  --foil-opacity: 0.42;
+  --foil-opacity: 0;
   position: relative;
   transform-style: preserve-3d;
   isolation: isolate;
@@ -28,7 +42,7 @@
     hsla(0, 0%, 0%, 0.42) 90%
   );
   mix-blend-mode: overlay;
-  opacity: 0.62;
+  opacity: calc(0.62 * var(--foil-opacity));
 }
 
 .export-foil-shine {
@@ -55,13 +69,13 @@
     calc(var(--pointer-x) * 1.4 - 20%) calc(var(--pointer-y) * 1.2 - 10%),
     var(--pointer-x) var(--pointer-y);
   mix-blend-mode: color-dodge;
-  opacity: 0.38;
+  opacity: calc(0.38 * var(--foil-opacity));
   filter: brightness(0.92) contrast(1.55) saturate(0.8);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .export-foil-shine,
   .export-foil-glare {
-    opacity: 0.12;
+    opacity: 0;
   }
 }

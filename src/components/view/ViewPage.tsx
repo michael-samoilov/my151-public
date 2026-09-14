@@ -12,6 +12,8 @@ import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
+import { hasSeenExportSurvey } from '@/lib/exportSurvey';
+import { ExportSurveyHost } from '@/components/export/ExportSurveyHost';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -892,6 +894,10 @@ export function ViewPage() {
   }, [statsRevealed, isDesktop]);
 
   const [exporting, setExporting] = useState(false);
+  const [exportSurvey, setExportSurvey] = useState<{ open: boolean; openedAt: number }>({
+    open: false,
+    openedAt: 0,
+  });
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
@@ -1135,6 +1141,7 @@ export function ViewPage() {
         stats: showStatsPanel ? { data: statsData, heights: DEFAULT_STATS_HEIGHTS } : null,
       });
       await shareOrDownload(blob, `my151.png`);
+      if (!hasSeenExportSurvey()) setExportSurvey({ open: true, openedAt: Date.now() });
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('Export failed:', err);
@@ -1417,6 +1424,15 @@ export function ViewPage() {
 
       {/* Settings sheet — bottom sheet on mobile (mirrors MobileSheet) */}
       {settingsOpen && <ViewSettingsSheet onClose={() => setSettingsOpen(false)} />}
+
+      {exportSurvey.open && (
+        <ExportSurveyHost
+          tool="pokedex"
+          highlight={null}
+          openedAt={exportSurvey.openedAt}
+          onClose={() => setExportSurvey({ open: false, openedAt: 0 })}
+        />
+      )}
 
       {/* Follow-up nudges from the milestone celebrations, pointing at where
           the promised feature actually lives (one tap further than "Open View"). */}

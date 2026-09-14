@@ -90,6 +90,11 @@ function sanitizeContext(raw: unknown): Record<string, unknown> {
     demo: c.demo === true,
   };
 
+  if (c.exportSurvey === true) out.exportSurvey = true;
+  if (c.exportTool === 'pokedex' || c.exportTool === 'league' || c.exportTool === 'card') {
+    out.exportTool = c.exportTool;
+  }
+
   const msg = (c.message ?? null) as Record<string, unknown> | null;
   if (msg && typeof msg === 'object') {
     const key = str(msg.key, 120);

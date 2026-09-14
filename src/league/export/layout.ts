@@ -377,6 +377,62 @@ export function homeExportGeometry(gymDetails: boolean, sideBySide: boolean): Ho
   };
 }
 
+/** Left edge of the first team block (story, or the only team). */
+export function homeTeamOriginX(ox: number, geom: HomeExportGeometry): number {
+  return ox + GLYPH_COL + TYPE_COL + geom.detailsCol + geom.leadGap;
+}
+
+/**
+ * Right edge vacancy copy aligns to. Combined story/rematch exports pin
+ * that edge to the rematch block, not the leftover air after it.
+ */
+export function homeVacancyAnchorX(
+  ox: number,
+  geom: HomeExportGeometry,
+  bothTeams: boolean,
+): number {
+  const teamBaseX = homeTeamOriginX(ox, geom);
+  if (bothTeams) return teamBaseX + 2 * geom.blockWidth + geom.sideGap;
+  return teamBaseX + geom.blockWidth;
+}
+
+export interface HomeSectionPill {
+  x: number;
+  w: number;
+  label: string | null;
+  align: 'left' | 'right';
+}
+
+/**
+ * Section-band pills. Gym leaders in both-teams mode split into three
+ * equal-gapped pills (title, story, rematch). Every later band stays one
+ * full-width pill.
+ */
+export function homeSectionPills(
+  ox: number,
+  geom: HomeExportGeometry,
+  title: string,
+  splitTeams: boolean,
+): HomeSectionPill[] {
+  const bandX = ox + HOME_RAIL - HOME_R;
+  const bandRight = ox + geom.homeInner - HOME_RAIL + HOME_R;
+  if (!splitTeams) {
+    return [{ x: bandX, w: bandRight - bandX, label: title, align: 'left' }];
+  }
+  const teamBaseX = homeTeamOriginX(ox, geom);
+  const rematchX = teamBaseX + geom.blockWidth + geom.sideGap;
+  return [
+    {
+      x: bandX,
+      w: Math.max(0, teamBaseX - geom.sideGap - bandX),
+      label: title,
+      align: 'left',
+    },
+    { x: teamBaseX, w: geom.blockWidth, label: 'STORY TEAMS', align: 'right' },
+    { x: rematchX, w: geom.blockWidth, label: 'REMATCH TEAMS', align: 'right' },
+  ];
+}
+
 /** The section band drawn before a slot index. */
 export const SECTION_BEFORE: Record<number, string> = {
   0: 'GYM LEADERS',
