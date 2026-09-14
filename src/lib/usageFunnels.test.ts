@@ -67,7 +67,7 @@ describe('dexFunnelSankey', () => {
     expect(names.indexOf('Completed')).toBeLessThan(names.indexOf('121–150'));
     expect(names.indexOf('121–150')).toBeLessThan(names.indexOf('1–30'));
     expect(names.indexOf('Built')).toBeLessThan(names.indexOf('Bounced'));
-    expect(names.indexOf('Exported')).toBeLessThan(names.indexOf('Kept private'));
+    expect(names.indexOf('Kept private')).toBeLessThan(names.indexOf('Exported'));
   });
 
   it('fans every bucket off Built, Completed first', () => {
@@ -76,6 +76,11 @@ describe('dexFunnelSankey', () => {
     expect(fromBuilt.indexOf('121–150')).toBeLessThan(fromBuilt.indexOf('1–30'));
     const fromIntro = targetsFrom(sankey, 'Saw intro');
     expect(fromIntro.indexOf('Built')).toBeLessThan(fromIntro.indexOf('Bounced'));
+  });
+
+  it('puts Kept private above Exported on the last hop', () => {
+    expect(targetsFrom(sankey, 'Completed')[0]).toBe('Kept private');
+    expect(targetsFrom(sankey, 'Completed')).toContain('Exported');
   });
 
   it('joins an incomplete exporter to Exported without a not-exported peel', () => {
@@ -133,7 +138,7 @@ describe('leagueFunnelSankey', () => {
   });
 
   it('peels Kept private from Full league only', () => {
-    expect(targetsFrom(sankey, 'Full league')).toEqual(['Exported league', 'Kept private']);
+    expect(targetsFrom(sankey, 'Full league')).toEqual(['Kept private', 'Exported league']);
     expect(targetsFrom(sankey, '5–8 gyms')).toEqual(['Exported card']);
     expect(targetsFrom(sankey, '1–4 gyms')).toEqual([]);
     expect(targetsFrom(sankey, '9–12 gyms')).toEqual([]);
@@ -152,8 +157,8 @@ describe('leagueFunnelSankey', () => {
     const names = namesOf(sankey);
     expect(names.indexOf('Full league')).toBeLessThan(names.indexOf('9–12 gyms'));
     expect(names.indexOf('9–12 gyms')).toBeLessThan(names.indexOf('1–4 gyms'));
+    expect(names.indexOf('Kept private')).toBeLessThan(names.indexOf('Exported league'));
     expect(names.indexOf('Exported league')).toBeLessThan(names.indexOf('Exported card'));
-    expect(names.indexOf('Exported league')).toBeLessThan(names.indexOf('Kept private'));
     const fromGym = targetsFrom(sankey, 'One gym full');
     expect(fromGym[0]).toBe('Full league');
   });

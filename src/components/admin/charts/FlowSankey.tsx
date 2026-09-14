@@ -1,6 +1,6 @@
-import { useECharts, cssVar, tooltipStyle, type EChartsOption } from './useECharts';
-import { nodeDepth, type FunnelLink, type FunnelNode } from '@/lib/usageFunnels';
-import { sankeyGeometry } from '@/lib/sankeyGeometry';
+import { useECharts, cssVar, tooltipStyle, type EChartsOption, echarts } from './useECharts';
+import { nodeDepth, type FunnelLink, type FunnelNode, type FunnelRole } from '@/lib/usageFunnels';
+import { sankeyColumnXs, sankeyGeometry } from '@/lib/sankeyGeometry';
 
 export type SankeyNode = FunnelNode;
 export type SankeyLink = FunnelLink;
@@ -45,15 +45,14 @@ function nodeLabel(
   kind: 'funnel' | 'referrer',
   fat: boolean,
 ) {
-  const countFmt = compact ? '{b}\n{c}' : '{b} {c}';
-  if (!compact) return { position: n.label };
+  if (!compact) return { position: n.label, formatter: '{b}' };
   if (kind === 'referrer' && isLeft) {
     return {
       position: 'left' as const,
       width: 88,
       overflow: 'break' as const,
       lineHeight: 11,
-      formatter: countFmt,
+      formatter: '{b}',
     };
   }
   if (isLeft) {
@@ -63,16 +62,16 @@ function nodeLabel(
       width: 72,
       overflow: 'break' as const,
       lineHeight: 11,
-      formatter: countFmt,
+      formatter: '{b}',
     };
   }
   if (isRight) {
     return {
-      position: n.role === 'priv' || n.role === 'sink' ? ('bottom' as const) : ('right' as const),
+      position: n.label,
       width: 76,
       overflow: 'break' as const,
       lineHeight: 11,
-      formatter: countFmt,
+      formatter: '{b}',
     };
   }
   if (fat) {
@@ -81,7 +80,7 @@ function nodeLabel(
       width: 64,
       overflow: 'break' as const,
       lineHeight: 11,
-      formatter: countFmt,
+      formatter: '{b}',
     };
   }
   if (n.role === 'sink' || n.role === 'priv') {
@@ -90,7 +89,7 @@ function nodeLabel(
       width: 64,
       overflow: 'break' as const,
       lineHeight: 11,
-      formatter: countFmt,
+      formatter: '{b}',
     };
   }
   return {
@@ -98,14 +97,76 @@ function nodeLabel(
     width: 72,
     overflow: 'break' as const,
     lineHeight: 11,
-    formatter: countFmt,
+    formatter: '{b}',
   };
+}
+
+type SankeyNodeData = {
+  each: (cb: (idx: number) => void) => void;
+  getName: (idx: number) => string;
+  getItemLayout: (idx: number) => { value?: number } | undefined;
+  getItemGraphicEl: (idx: number) => {
+    shape?: { x: number; y: number; width: number; height: number };
+    parent?: { x?: number; y?: number };
+  } | undefined;
+};
+
+const chipKeys = new WeakMap<echarts.ECharts, string>();
+
+function paintCountChips(
+  chart: echarts.ECharts,
+  nodes: SankeyNode[],
+  roleColor: (role?: FunnelRole) => string,
+  fontSize: number,
+) {
+  const model = (chart as unknown as { getModel(): { getSeriesByIndex(i: number): unknown } }).getModel();
+  const series = model.getSeriesByIndex(0) as
+    | { getData(): SankeyNodeData; layoutInfo?: { x: number; y: number } }
+    | undefined;
+  if (!series) return;
+  const nodeData = series.getData();
+  const originX = series.layoutInfo?.x ?? 0;
+  const originY = series.layoutInfo?.y ?? 0;
+  const byName = new Map(nodes.map((n) => [n.name, n]));
+  const elements: Array<Record<string, unknown>> = [];
+  nodeData.each((idx) => {
+    const name = nodeData.getName(idx);
+    const node = byName.get(name);
+    const value = nodeData.getItemLayout(idx)?.value;
+    const el = nodeData.getItemGraphicEl(idx);
+    if (value == null || !el?.shape) return;
+    const x = (el.parent?.x ?? originX) + el.shape.x + el.shape.width / 2;
+    const y = (el.parent?.y ?? originY) + el.shape.y + el.shape.height / 2;
+    const fill = roleColor(node?.role);
+    elements.push({
+      type: 'text',
+      id: `count-${name}`,
+      silent: true,
+      z: 100,
+      x,
+      y,
+      style: {
+        text: String(Math.round(value)),
+        fill: node?.role === 'sink' ? '#171717' : '#ffffff',
+        fontSize,
+        fontWeight: 600,
+        backgroundColor: fill,
+        padding: [0, 2],
+        align: 'center',
+        verticalAlign: 'middle',
+      },
+    });
+  });
+  const key = elements.map((e) => `${String(e.id)}:${String(e.x)}:${String(e.y)}`).join('|');
+  if (chipKeys.get(chart) === key) return;
+  chipKeys.set(chart, key);
+  chart.setOption({ graphic: elements }, { replaceMerge: ['graphic'] });
 }
 
 /**
  * MECE usage funnel as a Sankey at every width. On a phone the plot pads and
- * type shrink, and a stacked fan of buckets labels to the right of the
- * nodes, so a 4- or 5-column funnel stays inside ~390px without a sideways
+ * type shrink, early hops sit closer, and counts sit in tight color chips on
+ * the bars so a 4- or 5-column funnel stays inside ~390px without a sideways
  * pan.
  */
 export function FlowSankey({
@@ -133,6 +194,10 @@ export function FlowSankey({
       const roleColor = (role?: string) =>
         role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
       const g = sankeyGeometry(el.clientWidth || 360, kind);
+      const plotWidth = Math.max(1, (el.clientWidth || 360) - g.left - g.right);
+      const depths = nodes.map((n) => nodeDepth(n.name, links));
+      const maxDepth = Math.max(0, ...depths);
+      const xs = sankeyColumnXs(maxDepth, plotWidth, g.nodeWidth, g.compact && kind === 'funnel');
 
       return {
         animation: false,
@@ -162,12 +227,13 @@ export function FlowSankey({
               color: ink,
               fontSize: g.fontSize,
               fontWeight: 600,
-              formatter: g.compact ? '{b}\n{c}' : '{b} {c}',
+              formatter: '{b}',
               lineHeight: g.fontSize + 2,
             },
             labelLayout: { hideOverlap: false, moveOverlap: 'shiftY' },
             data: nodes.map((n) => ({
               name: n.name,
+              localX: g.compact && kind === 'funnel' ? xs[nodeDepth(n.name, links)] / plotWidth : undefined,
               itemStyle: { color: roleColor(n.role), borderColor: roleColor(n.role) },
               label: nodeLabel(n, g.compact, !targets.has(n.name), !sources.has(n.name), kind, fat.has(n.name)),
             })),
@@ -183,6 +249,18 @@ export function FlowSankey({
       };
     },
     [nodes, links, kind],
+    {
+      afterRender: (chart, el) => {
+        const ink = cssVar(el, '--color-foreground', '#0a0a0a');
+        const success = cssVar(el, '--color-success', '#0b7a54');
+        const sink = cssVar(el, '--color-sink', '#8b8b93');
+        const priv = cssVar(el, '--color-priv', '#3f5b8a');
+        const roleColor = (role?: FunnelRole) =>
+          role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
+        const g = sankeyGeometry(el.clientWidth || 360, kind);
+        paintCountChips(chart, nodes, roleColor, g.fontSize);
+      },
+    },
   );
 
   return (

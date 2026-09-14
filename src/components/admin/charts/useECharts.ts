@@ -3,6 +3,7 @@ import * as echarts from 'echarts/core';
 import { LineChart, SankeyChart, BarChart, CustomChart } from 'echarts/charts';
 import {
   GridComponent,
+  GraphicComponent,
   TooltipComponent,
   MarkLineComponent,
   MarkAreaComponent,
@@ -20,6 +21,7 @@ echarts.use([
   BarChart,
   CustomChart,
   GridComponent,
+  GraphicComponent,
   TooltipComponent,
   MarkLineComponent,
   MarkAreaComponent,
@@ -91,7 +93,11 @@ export function cssVar(el: HTMLElement | null, name: string, fallback = ''): str
 export function useECharts(
   build: (el: HTMLDivElement) => EChartsOption,
   deps: unknown[],
-  opts: { scrub?: boolean; overlayPointer?: boolean } = {},
+  opts: {
+    scrub?: boolean;
+    overlayPointer?: boolean;
+    afterRender?: (chart: echarts.ECharts, el: HTMLDivElement) => void;
+  } = {},
 ): (el: HTMLDivElement | null) => void {
   const elRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
@@ -101,8 +107,10 @@ export function useECharts(
   const overlayPointer = opts.overlayPointer ?? false;
   // Keep the latest builder without re-subscribing anything each render.
   const buildRef = useRef(build);
+  const afterRenderRef = useRef(opts.afterRender);
   useEffect(() => {
     buildRef.current = build;
+    afterRenderRef.current = opts.afterRender;
   });
 
   // A callback ref, so the instance follows the DOM node. A conditional render
@@ -123,6 +131,10 @@ export function useECharts(
     if (!el) return;
     const chart = echarts.init(el, undefined, { renderer: 'canvas' });
     chartRef.current = chart;
+    const onFinished = () => {
+      afterRenderRef.current?.(chart, el);
+    };
+    chart.on('finished', onFinished);
     chart.setOption(buildRef.current(el), true);
     const ro = new ResizeObserver(() => {
       chart.resize();
@@ -233,6 +245,11 @@ export function useECharts(
         line.remove();
       };
     }
+    const prevCleanup = cleanupRef.current;
+    cleanupRef.current = () => {
+      chart.off('finished', onFinished);
+      prevCleanup?.();
+    };
   }, [scrub, overlayPointer]);
 
   // Redraw when the caller's data changes. `deps` is the caller's own list, so

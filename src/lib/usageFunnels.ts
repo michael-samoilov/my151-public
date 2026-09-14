@@ -100,7 +100,7 @@ function addFan(
         addNode(nodes, seen, {
           name: item.leftoverName,
           role: item.leftoverRole ?? 'priv',
-          label: 'bottom',
+          label: 'top',
         });
         addLink(links, {
           source: item.name,
@@ -253,11 +253,12 @@ export function nodeDepth(name: string, links: FunnelLink[]): number {
   return 1 + Math.max(...incoming.map((l) => nodeDepth(l.source, links)));
 }
 
-/** Vertical order inside a Sankey column. Success first (top ribbon), then
- *  through, then private, then drop-offs. Outgoing export links do not
- *  promote a size bucket into the through rank, or exporting 1–30 would
- *  sit next to Completed. echarts with `layoutIterations: 0` stacks a
- *  column in node-list order. */
+/** Vertical order inside a Sankey column. Kept private sits above
+ *  success so its last-hop ribbon stays on top and does not cross the
+ *  bucket stack. Then success, through, other private, drop-offs.
+ *  Outgoing export links do not promote a size bucket into the through
+ *  rank, or exporting 1–30 would sit next to Completed. echarts with
+ *  `layoutIterations: 0` stacks a column in node-list order. */
 const ROLE_STACK: Record<FunnelRole, number> = {
   success: 0,
   neutral: 1,
@@ -265,13 +266,15 @@ const ROLE_STACK: Record<FunnelRole, number> = {
   sink: 3,
 };
 
+function stackRank(name: string, role: FunnelRole | undefined): number {
+  if (name === 'Kept private') return -1;
+  if (!role) return 99;
+  return ROLE_STACK[role];
+}
+
 export function orderSankeyForLayout(nodes: FunnelNode[], links: FunnelLink[], ariaLabel: string): FunnelSankey {
   const byName = new Map(nodes.map((n) => [n.name, n]));
-  const rank = (name: string): number => {
-    const n = byName.get(name);
-    if (!n) return 99;
-    return ROLE_STACK[n.role];
-  };
+  const rank = (name: string): number => stackRank(name, byName.get(name)?.role);
   const orderedNodes = [...nodes].sort(
     (a, b) => nodeDepth(a.name, links) - nodeDepth(b.name, links) || rank(a.name) - rank(b.name),
   );
