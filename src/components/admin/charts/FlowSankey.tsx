@@ -137,8 +137,11 @@ function paintCountChips(
     const value = nodeData.getItemLayout(idx)?.value;
     const el = nodeData.getItemGraphicEl(idx);
     if (value == null || !el?.shape) return;
-    const x = (el.parent?.x ?? originX) + el.shape.x + el.shape.width / 2;
-    const y = (el.parent?.y ?? originY) + el.shape.y + el.shape.height / 2;
+    const ox = el.parent?.x ?? originX;
+    const oy = el.parent?.y ?? originY;
+    const x =
+      node?.label === 'left' ? ox + el.shape.x + el.shape.width : ox + el.shape.x + el.shape.width / 2;
+    const y = oy + el.shape.y + el.shape.height / 2;
     const fill = roleColor(node?.role);
     elements.push({
       type: 'text',
