@@ -124,11 +124,15 @@ if [ -x "$AB_BIN" ]; then
   echo "  present: $("$AB_BIN" --version 2>/dev/null | head -1)"
 else
   sudo mkdir -p "$AB_DIR"
-  if sudo npm install --silent --prefix "$AB_DIR" agent-browser >/tmp/verify-ab.log 2>&1 && [ -x "$AB_BIN" ]; then
+  # sudo resets PATH to a secure_path with no node or npm on it: they live under
+  # nvm or a shim dir the login shell added, so a bare `sudo npm` is "command not
+  # found" and the install never runs. Carry this shell's PATH through so root
+  # runs the same npm the caller already resolved, wherever the image put it.
+  if sudo env "PATH=$PATH" npm install --silent --prefix "$AB_DIR" agent-browser >/tmp/verify-ab.log 2>&1 && [ -x "$AB_BIN" ]; then
     echo "  installed: $("$AB_BIN" --version 2>/dev/null | head -1)"
   else
     echo "  BLOCKED: could not install agent-browser (see /tmp/verify-ab.log); Blink falls back to Playwright"
-    grep -iE '403|forbidden|not in allowlist|could not resolve|404|ETIMEDOUT' /tmp/verify-ab.log 2>/dev/null | head -3
+    grep -iE '403|forbidden|not in allowlist|could not resolve|404|ETIMEDOUT|command not found' /tmp/verify-ab.log 2>/dev/null | head -3
   fi
 fi
 
