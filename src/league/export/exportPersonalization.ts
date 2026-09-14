@@ -53,7 +53,7 @@ export function earlyExportLine(ordinal: number, tool: ExportTool): string | nul
   const label = EXPORT_TOOL_LABEL[tool];
   const milestone = GEN_EXPORT_MILESTONES.find((m) => m.n === ordinal);
   if (milestone) {
-    return `You're the ${ordinalSuffix(ordinal)} person to export a ${label} — that's the Pokédex after Generation ${milestone.gen}.`;
+    return `You're the ${ordinalSuffix(ordinal)} person to export a ${label}. That's the Pokédex after Generation ${milestone.gen}.`;
   }
   const bucket = EARLY_EXPORT_BUCKETS.find((n) => ordinal <= n);
   if (!bucket) return null;
@@ -61,7 +61,7 @@ export function earlyExportLine(ordinal: number, tool: ExportTool): string | nul
 }
 
 export function firstPokemonLine(pokemonName: string, tool: ExportTool): string {
-  return `You're the first person to have ${pokemonName} in an exported ${EXPORT_TOOL_LABEL[tool]}.`;
+  return `You're also the first person to have ${pokemonName} in an exported ${EXPORT_TOOL_LABEL[tool]}.`;
 }
 
 /**

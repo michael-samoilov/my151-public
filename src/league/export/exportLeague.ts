@@ -33,6 +33,7 @@ import * as L from './layout';
 import {
   DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT,
   layoutShowsBothTeams,
+  layoutShowsGymDetails,
   type LeagueHomeExportLayout,
 } from './exportOptions';
 import {
@@ -189,7 +190,7 @@ function homeImageUrls(cards: GymCard[], view: LeagueView, layout: LeagueHomeExp
   const urls: string[] = [];
   cards.forEach((card, index) => {
     if (card.type && card.type !== 'none') urls.push(typeIconPath(card.type));
-    if (layout.gymDetails) {
+    if (layout.showTmReward) {
       const move = card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId);
       if (move) {
         urls.push(typeIconPath(move.type as TypeName));
@@ -855,16 +856,19 @@ function drawHomeGymDetails(
   x: number,
   y: number,
   w: number,
+  layout: LeagueHomeExportLayout,
 ): void {
   if (vacantRow(card)) return;
 
-  const themeText = card.theme?.trim() ?? '';
-  const move = card.tmMoveId === null ? undefined : getMoveById(card.tmMoveId);
-  const badgeName = card.badgeName?.trim() ?? '';
+  const themeText = layout.showTheme ? (card.theme?.trim() ?? '') : '';
+  const move =
+    layout.showTmReward && card.tmMoveId !== null ? getMoveById(card.tmMoveId) : undefined;
+  const badgeName = layout.showBadgeName ? (card.badgeName?.trim() ?? '') : '';
   const rows: Array<(midY: number) => void> = [];
   const bodyX = x + 2 * L.K2;
   const right = x + w - 2 * L.K2;
   const typeR = L.homeTypeMarkRadius(L.HOME_DETAIL_TYPE);
+  const markX = bodyX + L.HOME_DETAIL_ICON + L.HOME_DETAIL_GAP;
 
   if (themeText) {
     rows.push((midY) => {
@@ -881,7 +885,7 @@ function drawHomeGymDetails(
         themeText,
         valueW,
         L.HOME_THEME_TEXT_PX,
-        L.HOME_MARK_LABEL_PX,
+        L.HOME_MARK_LABEL_PX * 0.85,
         700,
       );
       ctx.font = font(themePx, 700);
@@ -896,7 +900,18 @@ function drawHomeGymDetails(
     rows.push((midY) => {
       const iconY = midY - L.HOME_DETAIL_ICON / 2;
       drawTmDisc(ctx, TYPE_COLORS[move.type as TypeName], L.HOME_DETAIL_ICON, bodyX, iconY);
-      const typeX = bodyX + L.HOME_DETAIL_ICON + L.HOME_DETAIL_GAP;
+      const trailing =
+        L.HOME_DETAIL_TYPE + L.HOME_DETAIL_GAP + L.HOME_DETAIL_CHIP_W;
+      const nameW = Math.max(8, right - trailing - L.HOME_DETAIL_GAP - markX);
+      const moveUpper = move.name.toUpperCase();
+      ctx.save();
+      ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
+      ctx.fillStyle = moveShades.band;
+      ctx.textBaseline = 'middle';
+      const name = ellipsizeTracked(ctx, moveUpper, nameW, L.HOME_MARK_TRACK);
+      fillTracked(ctx, name, markX, midY, L.HOME_MARK_TRACK);
+      const typeX = markX + trackedWidth(ctx, name, L.HOME_MARK_TRACK) + L.HOME_DETAIL_GAP;
+      ctx.restore();
       drawTypeMark(
         ctx,
         move.type as TypeName,
@@ -929,28 +944,13 @@ function drawHomeGymDetails(
         );
       }
       ctx.restore();
-      const nameX = chipX + L.HOME_DETAIL_CHIP_W + L.HOME_DETAIL_GAP;
-      const nameW = Math.max(8, right - nameX);
-      const moveUpper = move.name.toUpperCase();
-      ctx.save();
-      ctx.font = font(L.HOME_MARK_LABEL_PX, 800);
-      ctx.fillStyle = moveShades.band;
-      ctx.textBaseline = 'middle';
-      fillTracked(
-        ctx,
-        ellipsizeTracked(ctx, moveUpper, nameW, L.HOME_MARK_TRACK),
-        nameX,
-        midY,
-        L.HOME_MARK_TRACK,
-      );
-      ctx.restore();
     });
   }
 
   if (badgeName) {
     rows.push((midY) => {
       drawHexagon(ctx, shades.type, true, L.HOME_DETAIL_ICON, bodyX, midY - L.HOME_DETAIL_ICON / 2);
-      const textX = bodyX + L.HOME_DETAIL_ICON + L.HOME_DETAIL_GAP;
+      const textX = markX;
       const textW = Math.max(8, right - textX);
       const badgeText = `${badgeName} Badge`.toUpperCase();
       ctx.save();
@@ -1017,33 +1017,25 @@ function drawSectionRow(
   y: number,
   geom: L.HomeExportGeometry,
   title: string,
-  bothTeams: boolean,
-  labelTeams: boolean,
+  splitTeams: boolean,
 ): void {
   const bandX = ox + L.HOME_RAIL - L.HOME_R;
   const bandRight = ox + geom.homeInner - L.HOME_RAIL + L.HOME_R;
-  if (!bothTeams) {
+  if (!splitTeams) {
     paintSectionPill(ctx, bandX, y, bandRight - bandX, title, 'left');
     return;
   }
-  const teamBaseX = ox + L.GLYPH_COL + L.TYPE_COL + geom.detailsCol;
+  const teamBaseX = ox + L.GLYPH_COL + L.TYPE_COL + geom.detailsCol + geom.leadGap;
   const rematchX = teamBaseX + geom.blockWidth + geom.sideGap;
-  const pillGap = 3 * L.K2;
+  const pillGap = geom.sideGap;
   paintSectionPill(ctx, bandX, y, Math.max(0, teamBaseX - pillGap - bandX), title, 'left');
-  paintSectionPill(
-    ctx,
-    teamBaseX,
-    y,
-    geom.blockWidth,
-    labelTeams ? 'STORY TEAMS' : null,
-    'right',
-  );
+  paintSectionPill(ctx, teamBaseX, y, geom.blockWidth, 'STORY TEAMS', 'right');
   paintSectionPill(
     ctx,
     rematchX,
     y,
     Math.max(0, bandRight - rematchX),
-    labelTeams ? 'REMATCH TEAMS' : null,
+    'REMATCH TEAMS',
     'right',
   );
 }
@@ -1116,11 +1108,11 @@ function drawHomeRow(
   }
 
   const detailsX = x + L.GLYPH_COL + L.TYPE_COL;
-  if (layout.gymDetails) {
-    drawHomeGymDetails(ctx, card, shades, images, detailsX, y, geom.detailsCol);
+  if (layoutShowsGymDetails(layout)) {
+    drawHomeGymDetails(ctx, card, shades, images, detailsX, y, geom.detailsCol, layout);
   }
 
-  const teamBaseX = detailsX + geom.detailsCol;
+  const teamBaseX = detailsX + geom.detailsCol + geom.leadGap;
   if (!filled) {
     // An empty row says which seat is open, in the league's own words.
     ctx.save();
@@ -1190,7 +1182,7 @@ function drawLeagueHome(
     const section = L.SECTION_BEFORE[index];
     if (section) {
       if (index !== 0) y += 2;
-      drawSectionRow(ctx, ox, y, geom, section, bothTeamColumns, index === 0);
+      drawSectionRow(ctx, ox, y, geom, section, bothTeamColumns && index === 0);
       y += L.BAND2;
     }
     drawHomeRow(ctx, cards[index], index, view, layout, geom, images, ox, y);
@@ -1255,9 +1247,10 @@ export async function exportLeagueHome(
   layout: LeagueHomeExportLayout = DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT,
 ): Promise<Blob> {
   const both = layoutShowsBothTeams(layout);
-  const geom = L.homeExportGeometry(layout.gymDetails, both);
+  const geom = L.homeExportGeometry(layoutShowsGymDetails(layout), both);
   const images = await loadAll(homeImageUrls(cards, view, layout));
-  return render(geom.homeW, L.homeImgH(!!name), (ctx) =>
-    drawLeagueHome(ctx, name, cards, view, layout, geom, images),
+  const named = Boolean(name) && layout.showLeagueName;
+  return render(geom.homeW, L.homeImgH(named), (ctx) =>
+    drawLeagueHome(ctx, named ? name : '', cards, view, layout, geom, images),
   );
 }

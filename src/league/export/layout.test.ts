@@ -3,7 +3,8 @@ import * as L from './layout';
 import { showcasePair, exportRow, vacantRow } from './exportLeague';
 import { emptyCard, type GymCard } from '../store/useLeagueStore';
 import { makePlacedLine } from '../model/engine';
-import { TEAM_SIZES } from '../model/constants';
+import { TEAM_SIZES, slotKind, slotRow } from '../model/constants';
+import { kantoCards } from '../data/kantoLeague';
 import { placeSlot } from '../slotLayout';
 
 /**
@@ -206,15 +207,24 @@ describe('export layout', () => {
     const base = L.homeExportGeometry(false, false);
     const wide = L.homeExportGeometry(false, true);
     const teamBlock = L.SEAT_COUNT * L.SEAT_COL;
-    expect(wide.homeW).toBeCloseTo(base.homeW + teamBlock + L.HOME_SIDE_GAP, 6);
+    expect(wide.homeW).toBeCloseTo(base.homeW + teamBlock + 2 * L.HOME_SIDE_GAP, 6);
+    expect(wide.leadGap).toBe(L.HOME_SIDE_GAP);
+    expect(wide.sideGap).toBe(L.HOME_SIDE_GAP);
     expect(wide.seatCol).toBe(base.seatCol);
   });
 
   it('widens the picture for gym details without shrinking seats', () => {
     const base = L.homeExportGeometry(false, false);
     const detailed = L.homeExportGeometry(true, false);
-    expect(detailed.homeW).toBe(base.homeW + L.HOME_DETAILS_COL);
+    expect(detailed.homeW).toBeCloseTo(base.homeW + L.HOME_DETAILS_COL + L.HOME_SIDE_GAP, 6);
+    expect(detailed.leadGap).toBe(L.HOME_SIDE_GAP);
     expect(detailed.seatCol).toBe(base.seatCol);
+  });
+
+  it('keeps a uniform gap between details, story, and rematch', () => {
+    const g = L.homeExportGeometry(true, true);
+    expect(g.leadGap).toBe(L.HOME_SIDE_GAP);
+    expect(g.sideGap).toBe(L.HOME_SIDE_GAP);
   });
 
   it('gives gym details room for a 12-letter TM and a long theme', () => {
@@ -230,6 +240,13 @@ describe('export layout', () => {
     const themeLabel = L.HOME_MARK_LABEL_PX * 5.2;
     const themeChars = L.HOME_THEME_TEXT_PX * 0.55 * 28;
     expect(L.HOME_DETAILS_COL).toBeGreaterThan(themeLabel + 5 * L.K2 + themeChars);
+  });
+
+  it('sets theme x-height just under the smallcaps cap height', () => {
+    const themeXHeight = L.HOME_THEME_TEXT_PX * 0.53;
+    const smallcapsCap = L.HOME_MARK_LABEL_PX * 0.72;
+    expect(themeXHeight).toBeLessThan(smallcapsCap);
+    expect(themeXHeight).toBeGreaterThan(smallcapsCap * 0.8);
   });
 
   it('keeps gym-detail marks inside one third of a row and square, not circular', () => {
@@ -320,5 +337,18 @@ describe('reading a card for export', () => {
     expect(vacantRow(cardWith({ type: 'fire' }))).toBe(false);
     expect(vacantRow(cardWith({ lines: [makePlacedLine([1, 2, 3])] }))).toBe(false);
     expect(vacantRow(cardWith({ lines: [makePlacedLine([1, 2, 3])], type: 'none' }))).toBe(false);
+  });
+
+  it('gives a filled gym a rematch team whenever it has a story team', () => {
+    const cards = kantoCards();
+    for (let i = 0; i < cards.length; i++) {
+      if (slotKind(i) !== 'gym') continue;
+      const card = cards[i];
+      if (card.lines.length === 0) continue;
+      const story = exportRow(card, slotRow(i));
+      const rematch = exportRow(card, L.BOSS_ROW);
+      expect(story.some((c) => c.pokemonId != null)).toBe(true);
+      expect(rematch.some((c) => c.pokemonId != null)).toBe(true);
+    }
   });
 });

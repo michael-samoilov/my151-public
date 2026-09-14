@@ -3,6 +3,7 @@ import { emptyCard } from '../store/useLeagueStore';
 import {
   countDistinctPokemonInLeague,
   earlyExportLine,
+  firstPokemonLine,
   pickFirstExportPokemon,
   ordinalSuffix,
 } from './exportPersonalization';
@@ -28,7 +29,12 @@ describe('export personalization', () => {
     );
     expect(earlyExportLine(151, 'pokedex')).toContain('151st');
     expect(earlyExportLine(151, 'pokedex')).toContain('Generation 1');
+    expect(earlyExportLine(151, 'pokedex')).not.toContain('—');
+    expect(earlyExportLine(1025, 'league')).toContain('Generation 9');
     expect(earlyExportLine(2000, 'league')).toBeNull();
+    expect(firstPokemonLine('Pikachu', 'league')).toBe(
+      "You're also the first person to have Pikachu in an exported Pokemon League.",
+    );
     expect(ordinalSuffix(12)).toBe('12th');
     expect(ordinalSuffix(23)).toBe('23rd');
   });

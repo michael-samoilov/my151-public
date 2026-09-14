@@ -34,7 +34,7 @@ function ExportScrim({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0" style={{ zIndex: SCRIM_Z }} data-export-scrim data-overlay>
       <div
         aria-hidden
-        className="absolute inset-0 bg-slate-950/35 backdrop-blur-md"
+        className="absolute inset-0 bg-slate-950/50 backdrop-blur-md"
         style={{ WebkitBackdropFilter: 'blur(10px)', backdropFilter: 'blur(10px)' }}
       />
       <button
@@ -95,7 +95,7 @@ function ExportPreviewLayer({
   if (!show) return null;
   return createPortal(
     <div
-      className={cn('pointer-events-none fixed flex items-center justify-center p-3', dimmed && 'opacity-40')}
+      className={cn('pointer-events-none fixed flex items-center justify-center p-8 md:p-12', dimmed && 'opacity-40')}
       style={{
         zIndex: PREVIEW_Z,
         top: 0,
@@ -149,8 +149,8 @@ export function LeagueExportOverlay() {
       const blob = isLeague
         ? await exportLeagueHome(name, cards, view, layout)
         : await exportGymCard(cards[exportCardIndex!]);
-      revokePreview();
       const url = URL.createObjectURL(blob);
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
       previewUrlRef.current = url;
       setPreviewUrl(url);
     } catch (err) {

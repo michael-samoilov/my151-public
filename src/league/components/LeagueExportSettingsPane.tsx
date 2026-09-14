@@ -8,6 +8,16 @@ const TEAM_OPTIONS: { mode: LeagueHomeTeamMode; label: string; fill: 'left' | 'r
   { mode: 'both', label: 'Story and Rematch', fill: 'both' },
 ];
 
+const DETAIL_OPTIONS: {
+  key: 'showLeagueName' | 'showTheme' | 'showTmReward' | 'showBadgeName';
+  title: string;
+}[] = [
+  { key: 'showLeagueName', title: 'League Name' },
+  { key: 'showTheme', title: 'Theme' },
+  { key: 'showTmReward', title: 'TM Reward' },
+  { key: 'showBadgeName', title: 'Badge Name' },
+];
+
 export function LeagueExportSettingsPane({
   isLeague,
   layout,
@@ -46,11 +56,21 @@ export function LeagueExportSettingsPane({
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {isLeague ? (
           <div className="space-y-4 px-3 pt-3 pb-2">
-            <LayoutToggle
-              on={layout.gymDetails}
-              title="Gym details (theme, TM, badge)"
-              onClick={() => onLayout({ ...layout, gymDetails: !layout.gymDetails })}
-            />
+            <div>
+              <h3 className="mb-2 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
+                Details
+              </h3>
+              <div className="space-y-1">
+                {DETAIL_OPTIONS.map(({ key, title }) => (
+                  <LayoutToggle
+                    key={key}
+                    on={layout[key]}
+                    title={title}
+                    onClick={() => onLayout({ ...layout, [key]: !layout[key] })}
+                  />
+                ))}
+              </div>
+            </div>
             <div>
               <h3 className="mb-2 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
                 Teams
@@ -110,6 +130,7 @@ function LayoutToggle({
     <button
       type="button"
       onClick={onClick}
+      data-export-detail={title}
       className={`w-full cursor-pointer rounded-md px-3 py-2 text-left transition-colors ${
         on ? 'bg-primary/10' : 'hover:bg-muted'
       }`}

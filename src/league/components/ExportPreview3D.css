@@ -1,0 +1,67 @@
+/* Foil shine for the export preview, after simeydotme's pokemon-cards-css
+   and hover-tilt glare: a pointer-tracking radial glare plus a holographic
+   rainbow that color-dodges the picture. */
+
+.export-foil {
+  --pointer-x: 50%;
+  --pointer-y: 50%;
+  --foil-opacity: 0.42;
+  position: relative;
+  transform-style: preserve-3d;
+  isolation: isolate;
+}
+
+.export-foil-glare,
+.export-foil-shine {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.export-foil-glare {
+  z-index: 2;
+  background: radial-gradient(
+    farthest-corner circle at var(--pointer-x) var(--pointer-y),
+    hsla(0, 0%, 100%, 0.85) 8%,
+    hsla(0, 0%, 100%, 0.22) 28%,
+    hsla(0, 0%, 0%, 0.42) 90%
+  );
+  mix-blend-mode: overlay;
+  opacity: var(--foil-opacity);
+}
+
+.export-foil-shine {
+  z-index: 3;
+  background-image:
+    repeating-linear-gradient(
+      125deg,
+      hsl(2, 100%, 73%) 0%,
+      hsl(53, 100%, 69%) 7%,
+      hsl(93, 100%, 69%) 13%,
+      hsl(176, 100%, 76%) 20%,
+      hsl(228, 100%, 74%) 27%,
+      hsl(283, 100%, 73%) 34%,
+      hsl(2, 100%, 73%) 42%
+    ),
+    repeating-linear-gradient(
+      -55deg,
+      transparent 0%,
+      hsla(0, 0%, 100%, 0.18) 12%,
+      transparent 28%
+    );
+  background-size: 280% 280%, 220% 220%;
+  background-position:
+    calc(var(--pointer-x) * 1.4 - 20%) calc(var(--pointer-y) * 1.2 - 10%),
+    var(--pointer-x) var(--pointer-y);
+  mix-blend-mode: color-dodge;
+  opacity: 0.26;
+  filter: brightness(0.92) contrast(1.55) saturate(0.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .export-foil-shine,
+  .export-foil-glare {
+    opacity: 0.12;
+  }
+}

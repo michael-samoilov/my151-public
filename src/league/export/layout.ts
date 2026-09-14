@@ -299,12 +299,16 @@ export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / SEAT_COUNT;
 
 /**
  * Gym-detail column: theme, TM, and badge on three lines. Sized for a
- * THEME label plus ~28 characters of theme, and for a TM row (disc, 1×1
- * type square, category chip, 12-letter move at the smallcaps mark size)
+ * THEME label plus ~28 characters of theme, and for a TM row (disc, 12-letter
+ * move at the smallcaps mark size, 1×1 type square, category chip)
  * without clipping.
  */
 export const HOME_DETAILS_COL = 220 * K2;
-/** Air between story and rematch blocks when both show on one row. */
+/**
+ * Air between the details column, story teams, and rematch teams — and
+ * between the spacers that sit on those blocks. One number, so the gaps
+ * stay uniform when the gym-leader spacer splits.
+ */
 export const HOME_SIDE_GAP = 20 * K2;
 
 /** Type square on a league row. Gym-detail type marks scale from this. */
@@ -332,10 +336,12 @@ export const HOME_DETAIL_PAD_Y = 3 * K2;
 /** Home-export label and body sizes that mirror the gym card's TM/badge marks. */
 export const HOME_MARK_LABEL_PX = 8 * K2;
 export const HOME_MARK_TRACK = 0.06 * HOME_MARK_LABEL_PX;
-export const HOME_MOVE_PX = 11 * K2;
-export const HOME_MOVE_MIN_PX = 9 * K2;
-/** Matches move/badge cap height; reads slightly larger than the smallcaps label. */
-export const HOME_THEME_TEXT_PX = HOME_MOVE_PX;
+/**
+ * Sentence-case theme. Inter's x-height is ~0.53em; smallcaps cap-height is
+ * ~0.72em at `HOME_MARK_LABEL_PX`. At 9.5 the x-height sits just under that
+ * smallcaps height, instead of matching the old 11px move size.
+ */
+export const HOME_THEME_TEXT_PX = 9.5 * K2;
 export const HOME_TM_BADGE_W = 2.2 * 16 * K2;
 
 export interface HomeExportGeometry {
@@ -343,26 +349,29 @@ export interface HomeExportGeometry {
   homeInner: number;
   seatCol: number;
   detailsCol: number;
+  /** Gap after the details (or type) column, before the first team block. */
+  leadGap: number;
   sideGap: number;
   blockWidth: number;
 }
 
 /**
  * Picture width for export permutations. Team seats keep the default
- * `SEAT_COL`; optional columns and side-by-side blocks add width only.
+ * `SEAT_COL`; optional columns, lead gaps, and side-by-side blocks add width only.
  */
 export function homeExportGeometry(gymDetails: boolean, sideBySide: boolean): HomeExportGeometry {
   const detailsCol = gymDetails ? HOME_DETAILS_COL : 0;
   const seatCol = SEAT_COL;
   const blockWidth = SEAT_COUNT * seatCol;
+  const leadGap = gymDetails || sideBySide ? HOME_SIDE_GAP : 0;
   const sideGap = sideBySide ? HOME_SIDE_GAP : 0;
-  const sideExtra = sideBySide ? blockWidth + sideGap : 0;
-  const extraW = detailsCol + sideExtra;
+  const extraW = detailsCol + leadGap + (sideBySide ? blockWidth + sideGap : 0);
   return {
     homeW: HOME_W + extraW,
     homeInner: HOME_INNER + extraW,
     seatCol,
     detailsCol,
+    leadGap,
     sideGap,
     blockWidth,
   };
