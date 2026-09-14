@@ -1,6 +1,6 @@
 import { useECharts, cssVar, tooltipStyle, type EChartsOption, echarts } from './useECharts';
 import { nodeDepth, type FunnelLink, type FunnelNode, type FunnelRole } from '@/lib/usageFunnels';
-import { sankeyColumnXs, sankeyGeometry } from '@/lib/sankeyGeometry';
+import { sankeyGeometry } from '@/lib/sankeyGeometry';
 
 export type SankeyNode = FunnelNode;
 export type SankeyLink = FunnelLink;
@@ -111,7 +111,8 @@ type SankeyNodeData = {
   } | undefined;
 };
 
-const chipKeys = new WeakMap<echarts.ECharts, string>();
+const chipTimers = new WeakMap<echarts.ECharts, number>();
+const paintingGraphic = new WeakSet<echarts.ECharts>();
 
 function paintCountChips(
   chart: echarts.ECharts,
@@ -119,6 +120,7 @@ function paintCountChips(
   roleColor: (role?: FunnelRole) => string,
   fontSize: number,
 ) {
+  if (paintingGraphic.has(chart)) return;
   const model = (chart as unknown as { getModel(): { getSeriesByIndex(i: number): unknown } }).getModel();
   const series = model.getSeriesByIndex(0) as
     | { getData(): SankeyNodeData; layoutInfo?: { x: number; y: number } }
@@ -157,17 +159,22 @@ function paintCountChips(
       },
     });
   });
-  const key = elements.map((e) => `${String(e.id)}:${String(e.x)}:${String(e.y)}`).join('|');
-  if (chipKeys.get(chart) === key) return;
-  chipKeys.set(chart, key);
-  chart.setOption({ graphic: elements }, { replaceMerge: ['graphic'] });
+  if (elements.length === 0) return;
+  const prev = chipTimers.get(chart);
+  if (prev) window.clearTimeout(prev);
+  const id = window.setTimeout(() => {
+    chipTimers.delete(chart);
+    paintingGraphic.add(chart);
+    chart.setOption({ graphic: elements });
+    window.setTimeout(() => paintingGraphic.delete(chart), 0);
+  }, 50);
+  chipTimers.set(chart, id);
 }
 
 /**
  * MECE usage funnel as a Sankey at every width. On a phone the plot pads and
- * type shrink, early hops sit closer, and counts sit in tight color chips on
- * the bars so a 4- or 5-column funnel stays inside ~390px without a sideways
- * pan.
+ * type shrink, and counts sit in tight color chips on the bars, so a 4- or
+ * 5-column funnel stays inside ~390px without a sideways pan.
  */
 export function FlowSankey({
   nodes,
@@ -194,10 +201,6 @@ export function FlowSankey({
       const roleColor = (role?: string) =>
         role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
       const g = sankeyGeometry(el.clientWidth || 360, kind);
-      const plotWidth = Math.max(1, (el.clientWidth || 360) - g.left - g.right);
-      const depths = nodes.map((n) => nodeDepth(n.name, links));
-      const maxDepth = Math.max(0, ...depths);
-      const xs = sankeyColumnXs(maxDepth, plotWidth, g.nodeWidth, g.compact && kind === 'funnel');
 
       return {
         animation: false,
@@ -233,7 +236,6 @@ export function FlowSankey({
             labelLayout: { hideOverlap: false, moveOverlap: 'shiftY' },
             data: nodes.map((n) => ({
               name: n.name,
-              localX: g.compact && kind === 'funnel' ? xs[nodeDepth(n.name, links)] / plotWidth : undefined,
               itemStyle: { color: roleColor(n.role), borderColor: roleColor(n.role) },
               label: nodeLabel(n, g.compact, !targets.has(n.name), !sources.has(n.name), kind, fat.has(n.name)),
             })),
