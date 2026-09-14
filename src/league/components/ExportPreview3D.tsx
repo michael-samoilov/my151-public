@@ -204,24 +204,25 @@ export function ExportPreview3D({
 
   return (
     <div
-      className={cn('relative flex h-full w-full items-center justify-center', className)}
+      className={cn('relative flex h-full w-full cursor-pointer items-center justify-center touch-none', className)}
       style={{ perspective: '900px' }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerLeave}
+      onPointerLeave={onPointerLeave}
+      data-export-tilt-hit
     >
       {src ? (
         <div
           ref={cardRef}
-          className="export-foil max-h-full max-w-full min-h-0 min-w-0 cursor-pointer touch-none rounded-lg bg-white ring-1 ring-white/20 select-none"
+          className="export-foil pointer-events-none max-h-full max-w-full min-h-0 min-w-0 cursor-pointer rounded-lg bg-white ring-1 ring-white/20 select-none"
           style={{
             transformOrigin: 'center center',
             boxShadow: '0 24px 48px rgba(0,0,0,0.35)',
             maxHeight: '100%',
             maxWidth: '100%',
           }}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerLeave}
-          onPointerLeave={onPointerLeave}
           data-export-preview
         >
           <img
