@@ -65,15 +65,22 @@ describe('monthLabelTicks', () => {
     const days: number[] = [];
     for (let d = Date.UTC(2026, 5, 16); d <= Date.UTC(2026, 8, 13); d += DAY_MS) days.push(d);
     const ticks = monthLabelTicks(days);
-    expect(ticks.map((t) => t.label)).toEqual(['Jun 2026', 'Jul', 'Aug', 'Sep']);
-    expect(ticks[0].idx).toBe(0);
-    expect(ticks[1].idx).toBe(days.findIndex((d) => new Date(d).getUTCMonth() === 6));
+    expect(ticks).toEqual([
+      { idx: 0, abbr: 'Jun', year: 2026 },
+      { idx: days.findIndex((d) => new Date(d).getUTCMonth() === 6), abbr: 'Jul', year: null },
+      { idx: days.findIndex((d) => new Date(d).getUTCMonth() === 7), abbr: 'Aug', year: null },
+      { idx: days.findIndex((d) => new Date(d).getUTCMonth() === 8), abbr: 'Sep', year: null },
+    ]);
   });
 
   it('years every January as well as the first month', () => {
     const days: number[] = [];
     for (let d = Date.UTC(2026, 11, 20); d <= Date.UTC(2027, 1, 5); d += DAY_MS) days.push(d);
-    expect(monthLabelTicks(days).map((t) => t.label)).toEqual(['Dec 2026', 'Jan 2027', 'Feb']);
+    expect(monthLabelTicks(days)).toEqual([
+      { idx: 0, abbr: 'Dec', year: 2026 },
+      { idx: days.findIndex((d) => new Date(d).getUTCMonth() === 0), abbr: 'Jan', year: 2027 },
+      { idx: days.findIndex((d) => new Date(d).getUTCMonth() === 1), abbr: 'Feb', year: null },
+    ]);
   });
 });
 

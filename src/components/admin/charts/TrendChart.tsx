@@ -1,28 +1,23 @@
 import { Panel } from '@/components/admin/ui';
 import { useECharts, cssVar, topTooltip, type EChartsOption } from './useECharts';
 import {
-  countLabelLayout,
   extendThroughToday,
   lastPointIsToday,
   monthDividerIndices,
   monthLabelTicks,
   splitProvisional,
   windowCounts,
-  type CountLabelSide,
   type DailyPoint,
 } from './trendSeries';
 
 const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
-/** Right gutter for 24h/7d counts. Narrower on a small plot so June still fits. */
-function gridRightPx(plotW: number): number {
-  return plotW < 600 ? 46 : 64;
-}
-
+/** Plot inset. Same on both sides so the right gutter matches the y-axis gutter. */
+const GRID_GUTTER = 36;
 /** X-axis label ribbon under the plot. Month partitions live only in this band. */
 const GRID_BOTTOM = 22;
 /** Gap from the last plotted x into the gutter. */
-const LABEL_INSET = 10;
+const LABEL_INSET = 4;
 
 function countLabel(
   kind: '24h' | '7d',
@@ -30,7 +25,6 @@ function countLabel(
   color: string,
   x: number,
   y: number,
-  side: CountLabelSide,
   numSize: number,
 ) {
   const face = 'ui-sans-serif, system-ui, sans-serif';
@@ -46,10 +40,17 @@ function countLabel(
       fontWeight: 700,
       fontFamily: face,
       textAlign: 'left' as const,
-      textVerticalAlign: side === 'above' ? 'bottom' : 'top',
+      textVerticalAlign: 'middle' as const,
       rich: {
         n: { fontSize: numSize, fontWeight: 700, fill: color, fontFamily: face },
-        k: { fontSize: sub, fontWeight: 400, fill: color, fontFamily: face, padding: [Math.round(numSize * 0.45), 0, 0, 2] },
+        k: {
+          fontSize: sub,
+          fontWeight: 400,
+          fill: color,
+          fontFamily: face,
+          padding: [0, 0, 0, 2],
+          verticalAlign: 'bottom' as const,
+        },
       },
     },
   };
@@ -69,11 +70,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
   const weeklySplit = splitProvisional(weekly, provisional);
   const monthDividers = monthDividerIndices(days);
   const monthTicks = monthLabelTicks(days);
-  const monthAt = new Map(monthTicks.map((t) => [t.idx, t.label]));
   const counts = windowCounts(series);
-  const finiteWeekly = weekly.filter((v): v is number => v != null);
-  const dataMax = Math.max(1, ...daily, ...finiteWeekly);
-  const layout = countLabelLayout(daily, weekly, dataMax);
 
   const ref = useECharts(
     (el): EChartsOption => {
@@ -81,13 +78,12 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
       const grid = cssVar(el, '--color-muted', '#f5f5f5');
       const red = cssVar(el, '--color-primary', '#dc2626');
       const gridLine = { color: grid, width: 1 };
-      const right = gridRightPx(el.clientWidth);
       const axisFont = el.clientWidth < 600 ? 8 : 9;
       const numSize = el.clientWidth < 600 ? 14 : 16;
 
       return {
         animation: false,
-        grid: { left: 36, right, top: 36, bottom: GRID_BOTTOM },
+        grid: { left: GRID_GUTTER, right: GRID_GUTTER, top: 36, bottom: GRID_BOTTOM },
         tooltip: {
           ...topTooltip(el),
           trigger: 'axis',
@@ -108,16 +104,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
           axisLine: { lineStyle: { color: grid } },
           axisTick: { show: false },
           splitLine: { show: false },
-          axisLabel: {
-            color: faint,
-            fontSize: axisFont,
-            hideOverlap: false,
-            align: 'left',
-            alignMinLabel: 'left',
-            overflow: 'none',
-            interval: (idx: number) => monthAt.has(idx),
-            formatter: (_value: string, idx: number) => monthAt.get(idx) ?? '',
-          },
+          axisLabel: { show: false },
         },
         yAxis: {
           type: 'value',
@@ -140,7 +127,9 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
               const { x, y, width, height } = params.coordSys;
               const last = Math.max(daily.length - 1, 1);
               const ribbonTop = y + height;
-              const children = monthDividers.map((idx) => {
+              const nameY = ribbonTop + 2;
+              const yearY = nameY + axisFont;
+              const dividers = monthDividers.map((idx) => {
                 const px = x + (idx / last) * width;
                 return {
                   type: 'line' as const,
@@ -148,7 +137,33 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
                   style: { stroke: grid, lineWidth: 1, fill: 'none' },
                 };
               });
-              return { type: 'group', children };
+              const names = monthTicks.map((tick) => ({
+                type: 'text' as const,
+                x: x + (tick.idx / last) * width,
+                y: nameY,
+                style: {
+                  text: tick.abbr,
+                  fill: faint,
+                  fontSize: axisFont,
+                  textAlign: 'left' as const,
+                  textVerticalAlign: 'top' as const,
+                },
+              }));
+              const years = monthTicks
+                .filter((tick) => tick.year != null)
+                .map((tick) => ({
+                  type: 'text' as const,
+                  x: x + (tick.idx / last) * width,
+                  y: yearY,
+                  style: {
+                    text: String(tick.year),
+                    fill: faint,
+                    fontSize: axisFont,
+                    textAlign: 'left' as const,
+                    textVerticalAlign: 'top' as const,
+                  },
+                }));
+              return { type: 'group', children: [...dividers, ...names, ...years] };
             },
           },
           {
@@ -193,38 +208,34 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             z: 3,
             zlevel: 1,
           },
-          ...(layout
-            ? [
-                {
-                  type: 'custom' as const,
-                  name: 'window counts',
-                  silent: true,
-                  clip: false,
-                  tooltip: { show: false },
-                  z: 5,
-                  zlevel: 1,
-                  data: [0],
-                  renderItem: (
-                    _params: unknown,
-                    api: {
-                      coord: (v: number[]) => number[];
-                    },
-                  ) => {
-                    const last = daily.length - 1;
-                    const x = api.coord([last, 0])[0] + LABEL_INSET;
-                    const y24 = api.coord([last, layout.dailyY])[1];
-                    const y7 = api.coord([last, layout.weeklyY])[1];
-                    const children = [
-                      countLabel('24h', counts.hours24, faint, x, y24, layout.side, numSize),
-                    ];
-                    if (counts.days7 != null) {
-                      children.push(countLabel('7d', counts.days7, red, x, y7, layout.side, numSize));
-                    }
-                    return { type: 'group', children };
-                  },
-                },
-              ]
-            : []),
+          {
+            type: 'custom' as const,
+            name: 'window counts',
+            silent: true,
+            clip: false,
+            tooltip: { show: false },
+            z: 5,
+            zlevel: 1,
+            data: [0],
+            renderItem: (
+              _params: unknown,
+              api: {
+                coord: (v: number[]) => number[];
+              },
+            ) => {
+              const last = daily.length - 1;
+              const x = api.coord([last, 0])[0] + LABEL_INSET;
+              const children = [
+                countLabel('24h', counts.hours24, faint, x, api.coord([last, daily[last]])[1], numSize),
+              ];
+              if (counts.days7 != null) {
+                children.push(
+                  countLabel('7d', counts.days7, red, x, api.coord([last, weekly[last]])[1], numSize),
+                );
+              }
+              return { type: 'group', children };
+            },
+          },
         ],
       };
     },

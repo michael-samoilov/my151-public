@@ -61,7 +61,14 @@ export function weekLineIndices(days: number[], nowMs: number): number[] {
   return out;
 }
 
-export function monthLabelTicks(days: number[]): { idx: number; label: string }[] {
+export interface MonthLabelTick {
+  idx: number;
+  abbr: string;
+  year: number | null;
+}
+
+/** First visible month, and every January, carry a year under the abbreviation. */
+export function monthLabelTicks(days: number[]): MonthLabelTick[] {
   if (days.length === 0) return [];
   const groups: { start: number; month: number; year: number }[] = [];
   for (let i = 0; i < days.length; i++) {
@@ -77,9 +84,8 @@ export function monthLabelTicks(days: number[]): { idx: number; label: string }[
       month: 'short',
       timeZone: 'UTC',
     });
-    // First visible month, and every January, carry the year in-line.
     const withYear = gi === 0 || g.month === 0;
-    return { idx: g.start, label: withYear ? `${abbr} ${g.year}` : abbr };
+    return { idx: g.start, abbr, year: withYear ? g.year : null };
   });
 }
 
