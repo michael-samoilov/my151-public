@@ -375,7 +375,12 @@ export function PicksDetailPage({
       ) : (
         <div className="flex flex-col gap-3">
           {sections.map((s) => (
-            <SectionBlock key={s.sectionId} view={s} showLeast={!offSection} countMode={offSection} />
+            <SectionBlock
+              key={s.sectionId}
+              view={s}
+              showLeast={!offSection && s.kind !== 'starter'}
+              countMode={offSection}
+            />
           ))}
         </div>
       )}

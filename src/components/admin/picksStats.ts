@@ -22,13 +22,15 @@
  * `0×`. The Other catch-all uses lines that were actually placed there,
  * not the whole dex.
  *
- * Most-picked ranks default lines only, and only lines above 1.10×, except
- * in-section Starters, which list first-stage Pokémon, split grass / fire /
- * water, and ignore that cutoff. Least-picked is only lines below 0.90×.
- * Regional starter variants (Hisuian Decidueye with Rowlet) share one
- * first-stage face. Off-section has no least column, shows raw dex counts,
- * never uses the starter type split or first-stage-only faces, and lays the
- * sprite grid across the full width (12 columns on desktop, 6 on mobile).
+ * Most-picked ranks default lines only, and only lines above 1.10×.
+ * Least-picked is only lines below 0.90×. In-section Starters list every
+ * first-stage Pokémon across the full row, split grass / fire / water, with
+ * no most/least split and no 1.10× cutoff. Regional starter variants
+ * (Hisuian Decidueye with Rowlet) share one first-stage face. Off-section
+ * has no least column, shows raw dex counts, never uses the starter type
+ * split or first-stage-only faces, lays the sprite grid across the full
+ * width (12 columns on desktop, 6 on mobile), and does not cap rows. One-off
+ * off-section placements stay visible unless Exclude one-offs is on.
  */
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
@@ -46,13 +48,16 @@ export const PICKS_OFF_DESKTOP_COLS = 12;
 export const PICKS_MAX_ROWS = 4;
 export const PICKS_GRID_CAP = { maxRows: PICKS_MAX_ROWS, cols: PICKS_COLS } as const;
 
-/** Off-section has no least column, so desktop uses a full-width 12-col grid. */
-export function picksGridCols(offSection: boolean, desktop: boolean): number {
-  return offSection && desktop ? PICKS_OFF_DESKTOP_COLS : PICKS_COLS;
+/** Desktop uses a full-width 12-col grid when there is no least column. */
+export function picksGridCols(wide: boolean, desktop: boolean): number {
+  return wide && desktop ? PICKS_OFF_DESKTOP_COLS : PICKS_COLS;
 }
 
 export function picksGridCap(offSection: boolean, desktop: boolean): { maxRows: number; cols: number } {
-  return { maxRows: PICKS_MAX_ROWS, cols: picksGridCols(offSection, desktop) };
+  return {
+    maxRows: offSection ? Number.POSITIVE_INFINITY : PICKS_MAX_ROWS,
+    cols: picksGridCols(offSection, desktop),
+  };
 }
 export const MOST_MIN_INDEX = 1.1;
 export const LEAST_MAX_INDEX = 0.9;
@@ -241,6 +246,7 @@ function takeUntilCap<T extends { key: string; members: readonly unknown[] }>(
   cap: GridCap,
 ): T[] {
   if ('maxLines' in cap) return lines.slice(0, cap.maxLines);
+  if (!Number.isFinite(cap.maxRows)) return [...lines];
   const kept: T[] = [];
   for (const line of lines) {
     const next = [...kept, line];
@@ -392,7 +398,9 @@ export function sectionPicksView(
   if (ranked.length === 0) return null;
   if (!opts.offSection && ranked.every((l) => l.picks === 0)) return null;
 
-  const cap = opts.cap ?? PICKS_GRID_CAP;
+  const cap = opts.offSection
+    ? { maxRows: Number.POSITIVE_INFINITY, cols: opts.cap?.cols ?? PICKS_COLS }
+    : (opts.cap ?? PICKS_GRID_CAP);
   const splitOpts = {
     minMostIndex: starters || opts.offSection ? undefined : MOST_MIN_INDEX,
     maxLeastIndex: opts.offSection ? undefined : LEAST_MAX_INDEX,
@@ -404,8 +412,7 @@ export function sectionPicksView(
     for (const type of [...STARTER_TYPES, 'other'] as const) {
       const slice = ranked.filter((l) => l.starterType === type);
       if (slice.length === 0) continue;
-      const columns = splitMostLeast(slice, cap, splitOpts);
-      groups.push({ type, ...columns });
+      groups.push({ type, most: slice, least: [] });
     }
     if (groups.length === 0) return null;
     return { kind: 'starter', sectionId, groups };

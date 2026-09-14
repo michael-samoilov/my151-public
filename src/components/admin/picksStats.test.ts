@@ -244,16 +244,18 @@ describe('rowsUsed', () => {
 });
 
 describe('picksGridCols', () => {
-  it('widens only desktop off-section', () => {
+  it('widens desktop only when the grid is full width', () => {
     expect(picksGridCols(false, true)).toBe(6);
     expect(picksGridCols(true, false)).toBe(6);
     expect(picksGridCols(true, true)).toBe(12);
-    expect(picksGridCap(true, true)).toEqual({ maxRows: 4, cols: 12 });
+    expect(picksGridCap(true, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 12 });
+    expect(picksGridCap(true, false)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 6 });
+    expect(picksGridCap(false, true)).toEqual({ maxRows: 4, cols: 6 });
   });
 });
 
 describe('sectionPicksView starters', () => {
-  it('splits grass / fire / water and lists first-stage only, including below 1.10×', () => {
+  it('lists every first-stage across grass / fire / water with no least column', () => {
     const rows: [string, number][] = [
       count(BULBASAUR, 90),
       count(IVYSAUR, 88),
@@ -284,22 +286,19 @@ describe('sectionPicksView starters', () => {
     expect(types).toEqual(expect.arrayContaining(['grass', 'fire', 'water']));
     for (const g of view.groups) {
       if (g.type === 'other') continue;
-      expect(g.most.length).toBeLessThanOrEqual(PICKS_GRID_CAP.maxRows * PICKS_GRID_CAP.cols);
-      expect(g.least.length).toBeLessThanOrEqual(PICKS_GRID_CAP.maxRows * PICKS_GRID_CAP.cols);
+      expect(g.least).toEqual([]);
       expect(g.most.every((l) => l.starterType === g.type)).toBe(true);
-      for (const line of [...g.most, ...g.least]) {
+      for (const line of g.most) {
         expect(line.members).toHaveLength(1);
       }
     }
     const grass = view.groups.find((g) => g.type === 'grass');
     expect(grass?.most[0]?.members.map((m) => m.id)).toEqual([BULBASAUR]);
     expect(grass?.most[0]?.picks).toBe(90);
-    const allGrass = [...(grass?.most ?? []), ...(grass?.least ?? [])];
-    expect(allGrass.some((l) => l.members.some((m) => m.id === VENUSAUR || m.id === IVYSAUR))).toBe(
+    expect(grass?.most.some((l) => l.members.some((m) => m.id === VENUSAUR || m.id === IVYSAUR))).toBe(
       false,
     );
-    const snivy = allGrass.find((l) => l.members[0]?.id === SNIVY);
-    expect(snivy).toBeTruthy();
+    expect(grass?.most.some((l) => l.members[0]?.id === SNIVY)).toBe(true);
   });
 
   it('groups Hisuian Typhlosion onto Cyndaquil at max picks', () => {
@@ -363,6 +362,38 @@ describe('sectionPicksView off-section', () => {
       DIPPLIN,
       HYDRAPPLE,
     ]);
+  });
+
+  it('keeps n=1 off-section lines unless excludeOneOffs is on', () => {
+    const rows: [string, number][] = [count(MAGIKARP, 15), count(CHARMANDER, 1), count(BULBASAUR, 4)];
+    const shown = sectionPicksView('evil-team', rows, { offSection: true, cap: PICKS_GRID_CAP });
+    expect(shown?.kind).toBe('plain');
+    if (shown?.kind !== 'plain') return;
+    const shownIds = shown.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    expect(shownIds).toContain(CHARMANDER);
+    expect(shownIds).toContain(MAGIKARP);
+    expect(shownIds).toContain(BULBASAUR);
+
+    const hidden = sectionPicksView('evil-team', rows, {
+      offSection: true,
+      excludeOneOffs: true,
+      cap: PICKS_GRID_CAP,
+    });
+    expect(hidden?.kind).toBe('plain');
+    if (hidden?.kind !== 'plain') return;
+    const hiddenIds = hidden.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    expect(hiddenIds).not.toContain(CHARMANDER);
+    expect(hiddenIds).toContain(MAGIKARP);
+    expect(hiddenIds).toContain(BULBASAUR);
+  });
+
+  it('does not drop off-section lines after four rows', () => {
+    const rows: [string, number][] = Array.from({ length: 40 }, (_, i) => count(i + 1, 1));
+    const view = sectionPicksView('evil-team', rows, { offSection: true, cap: PICKS_GRID_CAP });
+    expect(view?.kind).toBe('plain');
+    if (view?.kind !== 'plain') return;
+    const tiles = view.columns.most.reduce((n, l) => n + l.members.length, 0);
+    expect(tiles).toBeGreaterThan(PICKS_GRID_CAP.maxRows * PICKS_GRID_CAP.cols);
   });
 
   it('lists Magikarp in evil-team and omits Rhyhorn', () => {

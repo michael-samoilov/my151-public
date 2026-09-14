@@ -5,8 +5,9 @@ import { expect, test, type Page } from '@playwright/test';
  *
  * Layout: builder chrome with the section name at the top-left; most/least
  * as 6-col sprite grids with an index bar under each sprite. Off-section has
- * no least column and shows dex counts. In-section Starters show first-stage
- * faces only and split by grass / fire / water. Off-section Starters do not.
+ * no least column, no row cap, and shows dex counts. In-section Starters
+ * list every first-stage face across the full row, split by grass / fire /
+ * water, with no most/least. Off-section Starters do not.
  */
 
 async function openPicks(page: Page) {
@@ -49,6 +50,14 @@ test.describe('admin picks page', () => {
     expect(faceIds).not.toContain(3);
     expect(faceIds).not.toContain(6);
 
+    await expect(starters.getByText('Most', { exact: true })).toHaveCount(0);
+    await expect(starters.getByText('Least', { exact: true })).toHaveCount(0);
+    const expectedCols = test.info().project.name === 'desktop' ? 12 : 6;
+    await expect(starters.locator('[data-picks-side="most"]').first()).toHaveAttribute(
+      'data-picks-cols',
+      String(expectedCols),
+    );
+
     await expect.poll(async () =>
       starters.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
     ).toBe(true);
@@ -87,5 +96,18 @@ test.describe('admin picks page', () => {
       getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length,
     );
     expect(gridCols).toBe(expectedCols);
+  });
+
+  test('off-section includes one-offs until Exclude one-offs is on', async ({ page }) => {
+    await openPicks(page);
+    await page.getByRole('button', { name: 'Off-section' }).click();
+    const chip = page.getByRole('button', { name: 'Exclude one-offs' });
+    await expect(chip).toHaveAttribute('aria-pressed', 'false');
+    const evil = page.locator('[data-section-id="evil-team"]');
+    await expect(evil.locator('[data-face-id="4"]')).toHaveCount(1);
+    await chip.click();
+    await expect(chip).toHaveAttribute('aria-pressed', 'true');
+    await expect(evil.locator('[data-face-id="4"]')).toHaveCount(0);
+    await expect(evil.locator('[data-face-id="129"]')).toHaveCount(1);
   });
 });
