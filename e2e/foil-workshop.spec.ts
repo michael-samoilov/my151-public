@@ -10,6 +10,8 @@ test.describe('export foil workshop', () => {
 
     const img = page.locator('[data-export-tilt-hit] img');
     await img.waitFor({ timeout: 60_000 });
+    const box = await img.boundingBox();
+    expect(box?.height ?? 0).toBeGreaterThan(80);
     const foil = page.locator('[data-export-preview]');
     await expect
       .poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 })
@@ -49,5 +51,19 @@ test.describe('export foil workshop', () => {
         foil.evaluate((el) => getComputedStyle(el).getPropertyValue('--foil-holographic').trim()),
       )
       .toBe('0.910');
+  });
+});
+
+test.describe('export foil workshop on a phone', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('the tilting card has a real height above the controls', async ({ page }) => {
+    await page.goto('/foil-workshop');
+    const img = page.locator('[data-export-tilt-hit] img');
+    await img.waitFor({ timeout: 60_000 });
+    const box = await img.boundingBox();
+    expect(box?.height ?? 0, 'workshop card collapsed on a phone').toBeGreaterThan(80);
+    const hit = await page.locator('[data-export-tilt-hit]').boundingBox();
+    expect(hit?.height ?? 0).toBeGreaterThan(80);
   });
 });

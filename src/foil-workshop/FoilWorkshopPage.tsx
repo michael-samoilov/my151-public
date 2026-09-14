@@ -104,7 +104,7 @@ export function FoilWorkshopPage() {
       className="flex min-h-svh flex-col bg-zinc-950 text-zinc-100 md:h-svh md:grid md:grid-cols-[minmax(0,1fr)_24rem] md:grid-rows-1"
       data-foil-workshop
     >
-      <section className="relative flex min-h-[42svh] flex-1 flex-col md:min-h-0">
+      <section className="relative h-[42svh] w-full shrink-0 md:h-full">
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-3 text-[0.7rem] leading-snug text-zinc-400">
           <div>
             <h1 className="text-sm font-semibold text-zinc-50">Export foil workshop</h1>
@@ -116,7 +116,7 @@ export function FoilWorkshopPage() {
             League builder
           </a>
         </div>
-        <div className="min-h-0 flex-1 px-3 pb-3 pt-14">
+        <div className="absolute inset-0 px-3 pb-3 pt-14">
           <ExportPreview3D src={src} alt="League export foil workshop" busy={busy} recipe={previewRecipe} />
         </div>
       </section>
