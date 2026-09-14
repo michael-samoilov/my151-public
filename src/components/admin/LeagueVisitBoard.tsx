@@ -6,7 +6,7 @@ import { starPath } from '@/lib/sectionOutlines';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
-import { ROW_COUNT, slotKind, slotRow } from '@/league/model/constants';
+import { ROW_COUNT, TEAM_SIZES, slotKind, slotRow } from '@/league/model/constants';
 import { defaultBoundaries, deriveRows, visibleMembers, type PlacedLine } from '@/league/model/engine';
 import { cardShades } from '@/league/theme';
 import { BossBall, Crown } from '@/league/components/glyphs';
@@ -123,6 +123,8 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
   const { lines, legends } = placedOf(card);
   const rows = deriveRows(lines, legends);
   const stageRow = slotRow(index);
+  const stageSize = TEAM_SIZES[stageRow - 1];
+  const washColStart = COLS - stageSize + 1;
 
   return (
     <div
@@ -141,9 +143,10 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
       >
         <div
           data-testid="admin-gym-stage-row"
+          data-span={stageSize}
           className="rounded-[3px]"
           style={{
-            gridColumn: '1 / span 6',
+            gridColumn: `${washColStart} / span ${stageSize}`,
             gridRow: stageRow,
             background: shades.hoverOnWhite,
           }}

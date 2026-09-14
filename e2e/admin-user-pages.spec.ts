@@ -78,6 +78,7 @@ test.describe('admin user pages', () => {
       const late = first.locator('[data-row="10"], [data-row="11"]');
       await expect(late.first()).toBeVisible();
       await expect(first.getByTestId('admin-gym-stage-row')).toBeVisible();
+      await expect(first.getByTestId('admin-gym-stage-row')).toHaveAttribute('data-span', '2');
       const washRgb = await first.getByTestId('admin-gym-stage-row').evaluate((el) => {
         const bg = getComputedStyle(el).backgroundColor;
         const m = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
@@ -87,8 +88,20 @@ test.describe('admin user pages', () => {
       expect(washRgb).toBeTruthy();
       expect((washRgb!.r + washRgb!.g + washRgb!.b) / 3).toBeGreaterThan(200);
       await expect(first.getByTestId('admin-gym-stage-badge')).toBeVisible();
-      const row1 = await first.locator('[data-row="1"]').first().boundingBox();
+      const washBox = await first.getByTestId('admin-gym-stage-row').boundingBox();
+      const badgeBox = await first.getByTestId('admin-gym-stage-badge').boundingBox();
       const cardBox = await first.boundingBox();
+      expect(washBox && badgeBox && cardBox).toBeTruthy();
+      expect(washBox!.width).toBeLessThan(cardBox!.width * 0.45);
+      expect(washBox!.x).toBeGreaterThan(badgeBox!.x + badgeBox!.width - 1);
+      expect(cardBox!.x + cardBox!.width - (washBox!.x + washBox!.width)).toBeLessThan(8);
+      const champ = page.getByTestId('admin-gym-card').nth(12);
+      await expect(champ.getByTestId('admin-gym-stage-row')).toHaveAttribute('data-span', '6');
+      const champWash = await champ.getByTestId('admin-gym-stage-row').boundingBox();
+      const champBox = await champ.boundingBox();
+      expect(champWash && champBox).toBeTruthy();
+      expect(champWash!.width).toBeGreaterThan(champBox!.width * 0.85);
+      const row1 = await first.locator('[data-row="1"]').first().boundingBox();
       expect(row1 && cardBox).toBeTruthy();
       expect(row1!.x).toBeGreaterThan(cardBox!.x + cardBox!.width * 0.4);
       const rail = await page.getByRole('slider', { name: 'Scrub sessions' }).boundingBox();
