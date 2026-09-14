@@ -4,6 +4,7 @@ import {
   countLabelLayout,
   extendThroughToday,
   lastPointIsToday,
+  monthDividerIndices,
   monthLabelTicks,
   splitProvisional,
   weekLineIndices,
@@ -59,8 +60,10 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
   const dailySplit = splitProvisional(daily, provisional);
   const weeklySplit = splitProvisional(weekly, provisional);
   const weekMarks = weekLineIndices(days, nowMs);
+  const monthDividers = monthDividerIndices(days);
   const monthTicks = monthLabelTicks(days);
   const monthAt = new Map(monthTicks.map((t) => [t.idx, t.label]));
+  const verticalGrid = [...weekMarks, ...monthDividers];
   const counts = windowCounts(series);
   const finiteWeekly = weekly.filter((v): v is number => v != null);
   const dataMax = Math.max(1, ...daily, ...finiteWeekly);
@@ -92,15 +95,16 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
           data: labels,
           boundaryGap: false,
           axisPointer: { show: false },
+          z: 0,
           axisLine: { lineStyle: { color: grid } },
           axisTick: { show: false },
           splitLine: { show: false },
           axisLabel: {
             color: faint,
             fontSize: 9,
-            hideOverlap: true,
+            hideOverlap: false,
+            align: 'left',
             alignMinLabel: 'left',
-            alignMaxLabel: 'right',
             overflow: 'none',
             interval: (idx: number) => monthAt.has(idx),
             formatter: (_value: string, idx: number) => monthAt.get(idx) ?? '',
@@ -109,10 +113,34 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
         yAxis: {
           type: 'value',
           min: 0,
+          z: 0,
           axisLabel: { color: faint, fontSize: 9 },
-          splitLine: { lineStyle: gridLine },
+          splitLine: { show: true, lineStyle: { ...gridLine, type: 'solid' } },
         },
         series: [
+          {
+            type: 'custom' as const,
+            name: 'gridlines',
+            silent: true,
+            clip: true,
+            tooltip: { show: false },
+            z: 0,
+            zlevel: 0,
+            data: [0],
+            renderItem: (params: { coordSys: { x: number; y: number; width: number; height: number } }) => {
+              const { x, y, width, height } = params.coordSys;
+              const last = Math.max(daily.length - 1, 1);
+              const children = verticalGrid.map((idx) => {
+                const px = x + (idx / last) * width;
+                return {
+                  type: 'line' as const,
+                  shape: { x1: px, y1: y, x2: px, y2: y + height },
+                  style: { stroke: grid, lineWidth: 1, fill: 'none' },
+                };
+              });
+              return { type: 'group', children };
+            },
+          },
           {
             name: 'daily',
             type: 'line',
@@ -121,15 +149,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             itemStyle: { color: faint },
             symbol: 'none',
             z: 2,
-            markLine: {
-              silent: true,
-              symbol: 'none',
-              animation: false,
-              label: { show: false },
-              lineStyle: gridLine,
-              data: weekMarks.map((x) => ({ xAxis: x })),
-              z: 1,
-            },
+            zlevel: 1,
           },
           {
             name: 'daily today',
@@ -139,6 +159,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             itemStyle: { color: faint },
             symbol: 'none',
             z: 2,
+            zlevel: 1,
           },
           {
             name: 'weekly',
@@ -149,6 +170,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             symbol: 'none',
             connectNulls: false,
             z: 3,
+            zlevel: 1,
           },
           {
             name: 'weekly today',
@@ -159,6 +181,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             symbol: 'none',
             connectNulls: false,
             z: 3,
+            zlevel: 1,
           },
           ...(layout
             ? [
@@ -169,6 +192,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
                   clip: false,
                   tooltip: { show: false },
                   z: 5,
+                  zlevel: 1,
                   data: [0],
                   renderItem: (
                     _params: unknown,

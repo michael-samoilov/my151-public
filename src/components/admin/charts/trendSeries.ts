@@ -63,14 +63,38 @@ export function weekLineIndices(days: number[], nowMs: number): number[] {
 
 export function monthLabelTicks(days: number[]): { idx: number; label: string }[] {
   if (days.length === 0) return [];
-  const groups: { start: number; end: number; label: string }[] = [];
+  const groups: { start: number; month: number; year: number }[] = [];
   for (let i = 0; i < days.length; i++) {
-    const label = new Date(days[i]).toLocaleDateString('en-US', { month: 'short', timeZone: 'UTC' });
+    const d = new Date(days[i]);
+    const month = d.getUTCMonth();
+    const year = d.getUTCFullYear();
     const last = groups[groups.length - 1];
-    if (last && last.label === label) last.end = i;
-    else groups.push({ start: i, end: i, label });
+    if (last && last.month === month && last.year === year) continue;
+    groups.push({ start: i, month, year });
   }
-  return groups.map((g) => ({ idx: Math.floor((g.start + g.end) / 2), label: g.label }));
+  return groups.map((g, gi) => {
+    const abbr = new Date(days[g.start]).toLocaleDateString('en-US', {
+      month: 'short',
+      timeZone: 'UTC',
+    });
+    // First visible month, and every January, carry the year in-line.
+    const withYear = gi === 0 || g.month === 0;
+    return { idx: g.start, label: withYear ? `${abbr} ${g.year}` : abbr };
+  });
+}
+
+/** Category indices halfway between the last day of a month and the first of the next. */
+export function monthDividerIndices(days: number[]): number[] {
+  if (days.length < 2) return [];
+  const out: number[] = [];
+  for (let i = 0; i < days.length - 1; i++) {
+    const a = new Date(days[i]);
+    const b = new Date(days[i + 1]);
+    if (a.getUTCMonth() !== b.getUTCMonth() || a.getUTCFullYear() !== b.getUTCFullYear()) {
+      out.push(i + 0.5);
+    }
+  }
+  return out;
 }
 
 export type CountLabelSide = 'above' | 'below';

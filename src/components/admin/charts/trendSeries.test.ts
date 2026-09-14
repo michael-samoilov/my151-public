@@ -3,6 +3,7 @@ import { DAY_MS } from '../../../../api/_aggregate';
 import {
   countLabelLayout,
   extendThroughToday,
+  monthDividerIndices,
   monthLabelTicks,
   splitProvisional,
   weekLineIndices,
@@ -60,12 +61,33 @@ describe('weekLineIndices', () => {
 });
 
 describe('monthLabelTicks', () => {
-  it('centers one short-month label on each visible month', () => {
+  it('left-aligns each month on its first day and years the first month', () => {
     const days: number[] = [];
     for (let d = Date.UTC(2026, 5, 16); d <= Date.UTC(2026, 8, 13); d += DAY_MS) days.push(d);
     const ticks = monthLabelTicks(days);
-    expect(ticks.map((t) => t.label)).toEqual(['Jun', 'Jul', 'Aug', 'Sep']);
-    expect(ticks[0].idx).toBe(Math.floor(14 / 2));
+    expect(ticks.map((t) => t.label)).toEqual(['Jun 2026', 'Jul', 'Aug', 'Sep']);
+    expect(ticks[0].idx).toBe(0);
+    expect(ticks[1].idx).toBe(days.findIndex((d) => new Date(d).getUTCMonth() === 6));
+  });
+
+  it('years every January as well as the first month', () => {
+    const days: number[] = [];
+    for (let d = Date.UTC(2026, 11, 20); d <= Date.UTC(2027, 1, 5); d += DAY_MS) days.push(d);
+    expect(monthLabelTicks(days).map((t) => t.label)).toEqual(['Dec 2026', 'Jan 2027', 'Feb']);
+  });
+});
+
+describe('monthDividerIndices', () => {
+  it('sits between the last day of a month and the first of the next', () => {
+    const days: number[] = [];
+    for (let d = Date.UTC(2026, 5, 16); d <= Date.UTC(2026, 8, 13); d += DAY_MS) days.push(d);
+    const lines = monthDividerIndices(days);
+    expect(lines).toHaveLength(3);
+    for (const x of lines) {
+      const i = Math.floor(x);
+      expect(x).toBe(i + 0.5);
+      expect(new Date(days[i]).getUTCMonth()).not.toBe(new Date(days[i + 1]).getUTCMonth());
+    }
   });
 });
 
