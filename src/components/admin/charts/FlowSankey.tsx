@@ -29,15 +29,28 @@ function fatColumnNames(nodes: SankeyNode[], links: SankeyLink[]): Set<string> {
   return fat;
 }
 
+function compactTopLabel() {
+  return {
+    position: 'top' as const,
+    align: 'left' as const,
+    verticalAlign: 'bottom' as const,
+    distance: 4,
+    width: 48,
+    overflow: 'break' as const,
+    lineHeight: 12,
+    formatter: '{b}',
+  };
+}
+
 function nodeLabel(
   n: SankeyNode,
   compact: boolean,
-  isLeft: boolean,
-  isRight: boolean,
+  isSource: boolean,
+  isLeaf: boolean,
   kind: 'funnel' | 'referrer',
   fat: boolean,
 ) {
-  if (kind === 'referrer' && compact && isLeft) {
+  if (kind === 'referrer' && compact && isSource) {
     return {
       position: 'left' as const,
       width: 88,
@@ -47,20 +60,41 @@ function nodeLabel(
     };
   }
   if (!compact) return { position: n.label, formatter: '{b}' };
+  if (isSource) return compactTopLabel();
+  if (isLeaf) {
+    if (n.role === 'sink') {
+      return {
+        position: 'bottom' as const,
+        width: 72,
+        overflow: 'break' as const,
+        lineHeight: 12,
+        formatter: '{b}',
+      };
+    }
+    return {
+      position: 'right' as const,
+      width: 80,
+      overflow: 'break' as const,
+      lineHeight: 12,
+      formatter: '{b}',
+    };
+  }
+  if (n.role === 'success') return compactTopLabel();
   if (fat) {
     return {
       position: 'right' as const,
       width: 72,
       overflow: 'break' as const,
-      lineHeight: 11,
+      lineHeight: 12,
       formatter: '{b}',
     };
   }
+  if (n.label === 'top' || n.label === 'left') return compactTopLabel();
   return {
     position: n.label,
-    width: isLeft ? 56 : isRight ? 72 : 64,
+    width: 72,
     overflow: 'break' as const,
-    lineHeight: 11,
+    lineHeight: 12,
     formatter: '{b}',
   };
 }
@@ -83,6 +117,7 @@ function paintCountChips(
   nodes: SankeyNode[],
   roleColor: (role?: FunnelRole) => string,
   fontSize: number,
+  compact: boolean,
 ) {
   if (paintingGraphic.has(chart)) return;
   const model = (chart as unknown as { getModel(): { getSeriesByIndex(i: number): unknown } }).getModel();
@@ -104,7 +139,9 @@ function paintCountChips(
     const ox = el.parent?.x ?? originX;
     const oy = el.parent?.y ?? originY;
     const x =
-      node?.label === 'left' ? ox + el.shape.x + el.shape.width : ox + el.shape.x + el.shape.width / 2;
+      node?.label === 'left' && !compact
+        ? ox + el.shape.x + el.shape.width
+        : ox + el.shape.x + el.shape.width / 2;
     const y = oy + el.shape.y + el.shape.height / 2;
     const fill = roleColor(node?.role);
     elements.push({
@@ -139,10 +176,10 @@ function paintCountChips(
 }
 
 /**
- * MECE usage funnel as a Sankey at every width. Height scales with width so
- * a phone chart keeps desktop landscape proportions and fits on one screen.
- * Counts sit in color chips on the bars. A 4- or 5-column funnel stays
- * inside ~390px without a sideways pan.
+ * MECE usage funnel as a Sankey at every width. On a phone the plot is
+ * wider than it is tall, first-stage names sit on the bar, column titles
+ * sit along the top, and leaf names sit to the right. Counts sit in color
+ * chips on the bars.
  */
 export function FlowSankey({
   nodes,
@@ -201,8 +238,8 @@ export function FlowSankey({
               formatter: '{b}',
               lineHeight: g.fontSize + 2,
             },
-            labelLayout: { hideOverlap: false, moveOverlap: 'shiftY' },
-            data: nodes.map((n) => ({
+              labelLayout: g.compact ? { hideOverlap: false } : { hideOverlap: false, moveOverlap: 'shiftY' },
+              data: nodes.map((n) => ({
               name: n.name,
               itemStyle: { color: roleColor(n.role), borderColor: roleColor(n.role) },
               label: nodeLabel(n, g.compact, !targets.has(n.name), !sources.has(n.name), kind, fat.has(n.name)),
@@ -228,7 +265,7 @@ export function FlowSankey({
         const roleColor = (role?: FunnelRole) =>
           role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
         const g = sankeyGeometry(el.clientWidth || 360, kind);
-        paintCountChips(chart, nodes, roleColor, g.fontSize);
+        paintCountChips(chart, nodes, roleColor, g.fontSize, g.compact);
       },
     },
   );
