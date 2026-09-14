@@ -123,7 +123,7 @@ function ExportPreviewLayer({
   return createPortal(
     <div
       className={cn(
-        'pointer-events-none fixed flex min-h-0 min-w-0 items-center justify-center overflow-hidden p-3 md:p-12',
+        'pointer-events-none fixed flex min-h-0 min-w-0 items-center justify-center overflow-hidden p-6 md:p-12',
         dimmed && 'opacity-40',
       )}
       style={{

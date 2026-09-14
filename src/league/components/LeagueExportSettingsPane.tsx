@@ -1,6 +1,5 @@
 import { Check, Download, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PRODUCTION_DEPLOY } from '@/lib/demoMode';
 import type { LeagueHomeExportLayout, LeagueHomeTeamMode } from '../export/exportOptions';
 
 const TEAM_OPTIONS: { mode: LeagueHomeTeamMode; label: string; fill: 'left' | 'right' | 'both' }[] = [
@@ -98,15 +97,6 @@ export function LeagueExportSettingsPane({
       </div>
 
       <div className={`flex shrink-0 flex-col gap-2 border-t pt-2 ${mobileSheet ? 'px-3 pb-3' : 'px-4 pb-4'}`}>
-        {!PRODUCTION_DEPLOY && (
-          <a
-            href="/foil-workshop"
-            className="text-center text-xs text-muted-foreground underline"
-            data-foil-workshop-link
-          >
-            Foil workshop
-          </a>
-        )}
         <Button type="button" disabled={busy} onClick={onExport} data-league-export-confirm>
           {busy ? (
             <>

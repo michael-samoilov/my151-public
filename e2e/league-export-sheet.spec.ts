@@ -39,6 +39,8 @@ function previewFitsBand(page: Page, viewportHeight: number) {
     if (i.right > l.right + pad) return { ok: false, reason: `right ${i.right} > ${l.right}` };
     if (i.top < l.top - pad) return { ok: false, reason: `top ${i.top} < ${l.top}` };
     if (i.bottom > l.bottom + pad) return { ok: false, reason: `bottom ${i.bottom} > ${l.bottom}` };
+    const gutter = Math.min(i.left - l.left, l.right - i.right, i.top - l.top, l.bottom - i.bottom);
+    if (gutter < 16) return { ok: false, reason: `tight gutter ${gutter}` };
     if (s && i.bottom > s.top + pad) return { ok: false, reason: `img under sheet ${i.bottom} > ${s.top}` };
     if (i.height < 80) return { ok: false, reason: `tiny img ${i.height}` };
     if (s && s.height > Math.round(vh * 0.45) + 8) {
@@ -124,7 +126,7 @@ test.describe('desktop export preview', () => {
 
   test('keeps the card inside the band left of the settings pane', async ({ page }) => {
     await openLeagueExport(page);
-    await expect(page.locator('[data-foil-workshop-link]')).toBeVisible();
+    await expect(page.locator('[data-foil-workshop-link]')).toHaveCount(0);
     for (const mode of ['story', 'rematch', 'both'] as const) {
       await page.locator(`[data-export-team="${mode}"]`).click();
       await waitPreviewReady(page);
