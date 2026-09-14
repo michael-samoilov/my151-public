@@ -6,7 +6,7 @@ import { starPath } from '@/lib/sectionOutlines';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { typeIconPath } from '@/data/type-ids';
 import type { TypeName } from '@/types/pokemon';
-import { ROW_COUNT, TEAM_SIZES, slotKind, slotRow } from '@/league/model/constants';
+import { ROW_COUNT, slotKind, slotRow } from '@/league/model/constants';
 import { defaultBoundaries, deriveRows, visibleMembers, type PlacedLine } from '@/league/model/engine';
 import { cardShades } from '@/league/theme';
 import { BossBall, Crown } from '@/league/components/glyphs';
@@ -123,8 +123,6 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
   const { lines, legends } = placedOf(card);
   const rows = deriveRows(lines, legends);
   const stageRow = slotRow(index);
-  const stageSize = TEAM_SIZES[stageRow - 1];
-  const stageColStart = COLS - stageSize + 1;
 
   return (
     <div
@@ -145,9 +143,9 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
           data-testid="admin-gym-stage-row"
           className="rounded-[3px]"
           style={{
-            gridColumn: `${stageColStart} / span ${stageSize}`,
+            gridColumn: '1 / span 6',
             gridRow: stageRow,
-            background: `linear-gradient(${shades.hover}, ${shades.hover}), #ffffff`,
+            background: shades.hoverOnWhite,
           }}
         />
         <div className="relative z-[1] flex min-h-0 items-center justify-center p-px" style={{ gridColumn: 1, gridRow: 1 }}>
@@ -176,7 +174,7 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
               <div
                 key={`${row}-${cell.seat}`}
                 data-row={row}
-                className="relative z-[1] min-h-0"
+                className={cn('relative z-[1] min-h-0', row === stageRow && 'p-px')}
                 style={{ gridColumn: colStart + col + 1, gridRow: row }}
               >
                 <MiniTile

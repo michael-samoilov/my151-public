@@ -78,6 +78,14 @@ test.describe('admin user pages', () => {
       const late = first.locator('[data-row="10"], [data-row="11"]');
       await expect(late.first()).toBeVisible();
       await expect(first.getByTestId('admin-gym-stage-row')).toBeVisible();
+      const washRgb = await first.getByTestId('admin-gym-stage-row').evaluate((el) => {
+        const bg = getComputedStyle(el).backgroundColor;
+        const m = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (!m) return null;
+        return { r: Number(m[1]), g: Number(m[2]), b: Number(m[3]) };
+      });
+      expect(washRgb).toBeTruthy();
+      expect((washRgb!.r + washRgb!.g + washRgb!.b) / 3).toBeGreaterThan(200);
       await expect(first.getByTestId('admin-gym-stage-badge')).toBeVisible();
       const row1 = await first.locator('[data-row="1"]').first().boundingBox();
       const cardBox = await first.boundingBox();
