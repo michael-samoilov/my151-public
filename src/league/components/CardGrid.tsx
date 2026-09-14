@@ -913,7 +913,7 @@ function SlotHalf({
         pokemon ? `${heading.label}: ${pokemon.name}` : `Choose a ${heading.label.toLowerCase()}`
       }
       className={cn(
-        'absolute z-[6] flex flex-col items-center text-center',
+        'absolute z-[6] flex flex-col items-center overflow-visible text-center',
         // The half opens a one-Pokémon picker on a tap, so it wears a pointer.
         // The slot lab overrides it with a grab handle for its drag-to-tune.
         lab ? 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2' : 'cursor-pointer',
@@ -1002,8 +1002,8 @@ function EmptyOutline() {
 const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
 const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
 const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
-/** Slightly smaller than the ace heading so every run stays inside the partner pane. */
-const PARTNER_HEAD_CLASS = 'pb-3 text-[0.4rem] font-extrabold tracking-[0.01em] leading-[1.15]';
+/** Same size as the ace heading. Tracking stays tight so SHOULDERMON is one word. */
+const PARTNER_HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-normal leading-[1.4]';
 // The name wears the heading's all-caps, weight and size, so it reads as part
 // of the same label. Its tracking is tighter, though: the heading is two short
 // words that a wide track sets off, while the name is one long word that the
@@ -1018,22 +1018,129 @@ const NAME_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.02em] leading-[
  * exact height the probe measures, so a heading that wrapped to a third line
  * in the slot would be placed as though it had two -- which is why each line
  * refuses to wrap rather than the heading as a whole.
+ *
+ * The partner heading is a longer word than the ace's, sitting in the same
+ * rounded corner. After the solver places it, this scales and shifts the
+ * painted glyphs so they stay inside that corner rather than clipping them.
  */
 function HeadRuns({ lines, className, style, ...rest }: {
   lines: readonly string[];
   className?: string;
   style?: React.CSSProperties;
-  /** Set on the probe copies, which the solver looks them up by. */
   'data-probe'?: string;
   'data-slot-head'?: string;
 }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const color = style?.color;
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || el.getAttribute('data-slot-head') !== 'partner') return;
+    const slot = el.closest<HTMLElement>('[data-ace-partner-slot]');
+    if (!slot) return;
+    const fit = () => fitPartnerHeadInk(el, slot);
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(slot);
+    let frames = 0;
+    let raf = 0;
+    const settle = () => {
+      fit();
+      if (++frames < 30) raf = requestAnimationFrame(settle);
+    };
+    raf = requestAnimationFrame(settle);
+    let alive = true;
+    void document.fonts?.ready.then(() => { if (alive) fit(); });
+    return () => {
+      alive = false;
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [lines, className, color]);
   return (
-    <span {...rest} className={cn('inline-block text-center', className)} style={style}>
+    <span
+      ref={ref}
+      {...rest}
+      className={cn('inline-block w-max shrink-0 text-center', className)}
+      style={style}
+    >
       {lines.map((line) => (
-        <span key={line} className="block whitespace-nowrap">{line}</span>
+        <span key={line} className="block shrink-0 whitespace-nowrap">{line}</span>
       ))}
     </span>
   );
+}
+
+/** Union of glyph boxes, not the element's padding box. */
+function inkUnion(el: HTMLElement): DOMRect {
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  const rects = [...range.getClientRects()];
+  if (rects.length === 0) return el.getBoundingClientRect();
+  let left = Infinity;
+  let top = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
+  for (const box of rects) {
+    left = Math.min(left, box.left);
+    top = Math.min(top, box.top);
+    right = Math.max(right, box.right);
+    bottom = Math.max(bottom, box.bottom);
+  }
+  return new DOMRect(left, top, right - left, bottom - top);
+}
+
+function cssRadiusPx(el: HTMLElement): number {
+  const raw = getComputedStyle(el).borderTopLeftRadius;
+  const n = parseFloat(raw);
+  if (!Number.isFinite(n) || n <= 0) return 8;
+  if (raw.includes('rem')) {
+    return n * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16);
+  }
+  return n;
+}
+
+/**
+ * Keep the partner heading's painted glyphs inside the slot's rounded dash.
+ *
+ * The solver places a rectangle. Extra-bold caps overflow that rectangle, and
+ * the outline is a rounded corner, so a box that is "inside" still paints
+ * through the dash. Scale and shift the ink, do not clip it.
+ */
+function fitPartnerHeadInk(head: HTMLElement, slot: HTMLElement) {
+  head.style.transform = 'none';
+  const box = slot.getBoundingClientRect();
+  const elBox = head.getBoundingClientRect();
+  const zoom = box.width / slot.offsetWidth || 1;
+  if (zoom <= 0 || box.width < 8) return;
+  const pad = (cssRadiusPx(slot) + 6) * zoom;
+  const inner = {
+    left: box.left + pad,
+    top: box.top + pad,
+    right: box.right - pad,
+    bottom: box.bottom - pad,
+  };
+  const ink = inkUnion(head);
+  const availW = Math.max(8, inner.right - inner.left);
+  const availH = Math.max(8, inner.bottom - inner.top);
+  const scale = Math.min(1, availW / Math.max(ink.width, 1), availH / Math.max(ink.height, 1));
+  const ex = (elBox.left + elBox.right) / 2;
+  const ey = (elBox.top + elBox.bottom) / 2;
+  const map = (v: number, origin: number) => origin + (v - origin) * scale;
+  const left = map(ink.left, ex);
+  const right = map(ink.right, ex);
+  const top = map(ink.top, ey);
+  const bottom = map(ink.bottom, ey);
+  let tsx = 0;
+  let tsy = 0;
+  if (left < inner.left) tsx += inner.left - left;
+  if (top < inner.top) tsy += inner.top - top;
+  if (right + tsx > inner.right) tsx -= right + tsx - inner.right;
+  if (bottom + tsy > inner.bottom) tsy -= bottom + tsy - inner.bottom;
+  const tx = tsx / zoom;
+  const ty = tsy / zoom;
+  if (Math.abs(tx) < 0.05 && Math.abs(ty) < 0.05 && scale > 0.995) return;
+  head.style.transformOrigin = 'center center';
+  head.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
 }
 
 /**
@@ -1166,6 +1273,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   return (
     <div
       ref={slotRef}
+      data-ace-partner-slot
       className="absolute z-[5] rounded-lg"
       style={{
         ...pos,

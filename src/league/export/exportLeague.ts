@@ -287,13 +287,18 @@ function drawHeading(
   cx: number,
   top: number,
   colour: string,
+  maxW?: number,
 ): void {
   ctx.save();
   ctx.font = font(L.HEAD_PX, 800);
+  const w = Math.max(...lines.map((line) => trackedWidth(ctx, line, L.HEAD_TRACK)));
+  const s = maxW && w > maxW ? maxW / w : 1;
   ctx.fillStyle = colour;
   ctx.textBaseline = 'middle';
+  ctx.translate(cx, top);
+  ctx.scale(s, s);
   lines.forEach((line, i) => {
-    fillTrackedCentered(ctx, line, cx, top + (i + 0.5) * L.HEAD_LINE, L.HEAD_TRACK);
+    fillTrackedCentered(ctx, line, 0, (i + 0.5) * L.HEAD_LINE, L.HEAD_TRACK);
   });
   ctx.restore();
 }
@@ -396,7 +401,7 @@ function drawShowcase(
       const { cx, cy } = centre(b);
       drawShowcaseArt(ctx, b.id, images, cx, cy, b.placed.sprite, 'sprite');
       const headTop = b.mirrored ? cy + b.placed.sprite / 2 : cy - b.placed.sprite / 2 - headH;
-      drawHeading(ctx, b.lines, cx, headTop, shades.band);
+      drawHeading(ctx, b.lines, cx, headTop, shades.band, b.placed.width);
     }
     return;
   }

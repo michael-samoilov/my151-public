@@ -378,6 +378,49 @@ test.describe('gym card slots', () => {
 });
 
 /**
+ * PARTNER / SHOULDERMON must sit inside the dashed rounded pane, as two
+ * whole words. The slot's outline is rounded-lg; a heading that is only
+ * inside the rectangular box still paints through the corner dash.
+ */
+test.describe('the partner heading', () => {
+  test('keeps both words inside the rounded pane', async ({ page }) => {
+    await openCard(page);
+    await page.waitForTimeout(400);
+    const got = await page.evaluate(() => {
+      const slot = document.querySelector('[data-ace-partner-slot]');
+      const head = document.querySelector('[data-slot-head="partner"]');
+      const lines = [...head?.querySelectorAll('span.block') ?? []]
+        .map((el) => (el.textContent ?? '').trim());
+      if (!(slot instanceof HTMLElement) || !head) return { lines, inside: false, detail: 'missing' };
+      const box = slot.getBoundingClientRect();
+      const zoom = box.width / slot.offsetWidth || 1;
+      const raw = getComputedStyle(slot).borderTopLeftRadius;
+      let radius = parseFloat(raw) || 8;
+      if (raw.includes('rem')) {
+        radius *= parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      }
+      const pad = (radius + 3) * zoom;
+      const range = document.createRange();
+      range.selectNodeContents(head);
+      const ink = range.getBoundingClientRect();
+      const inside =
+        ink.width > 0 &&
+        ink.left >= box.left + pad &&
+        ink.right <= box.right - pad &&
+        ink.top >= box.top + pad &&
+        ink.bottom <= box.bottom - pad;
+      return {
+        lines,
+        inside,
+        detail: `ink r=${(box.right - ink.right).toFixed(1)} b=${(box.bottom - ink.bottom).toFixed(1)} pad=${pad.toFixed(1)}`,
+      };
+    });
+    expect(got.lines, got.detail).toEqual(['PARTNER /', 'SHOULDERMON']);
+    expect(got.inside, got.detail).toBe(true);
+  });
+});
+
+/**
  * Filling a slot moves nothing inside it.
  *
  * An empty slot used to wear its dashed outline as a border, and a border is

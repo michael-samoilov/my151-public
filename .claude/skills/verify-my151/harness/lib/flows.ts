@@ -552,7 +552,7 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
       glyphDetail: string;
       badgeOneLine: boolean;
       badgeDetail: string;
-    }>(`const slot=document.querySelector('[data-testid="slot-partner"]')?.parentElement;
+    }>(`       const slot=document.querySelector('[data-ace-partner-slot]')||document.querySelector('[data-testid="slot-partner"]')?.parentElement;
        const head=document.querySelector('[data-slot-head="partner"]');
        const lines=[...head?.querySelectorAll('span.block')??[]];
        const last=lines[lines.length-1];
@@ -560,9 +560,18 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
        const disc=tm?.querySelector('svg');
        const badgeWord=document.querySelector('[data-mark-label="badge"]');
        const sr=slot?.getBoundingClientRect();
-       const hr=last?.getBoundingClientRect();
-       const inset=2;
-       const partnerInside=!!(sr&&hr)&&hr.left>=sr.left+inset&&hr.right<=sr.right-inset&&hr.top>=sr.top+inset&&hr.bottom<=sr.bottom-inset;
+       const zoom=sr&&slot?sr.width/slot.offsetWidth:1;
+       const raw=slot?getComputedStyle(slot).borderTopLeftRadius:'8px';
+       let radius=parseFloat(raw)||8;
+       if(raw.includes('rem')) radius*=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
+       const pad=(radius+3)*zoom;
+       const range=document.createRange();
+       if(last) range.selectNodeContents(last);
+       const hr=last?range.getBoundingClientRect():null;
+       const partnerInside=!!(sr&&hr)&&hr.width>0
+         &&hr.left>=sr.left+pad&&hr.right<=sr.right-pad
+         &&hr.top>=sr.top+pad&&hr.bottom<=sr.bottom-pad
+         &&lines.map(l=>(l.textContent||'').trim()).join('|')==='PARTNER /|SHOULDERMON';
        const root=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
        const tmR=tm?.getBoundingClientRect();
        const discW=disc?.getBoundingClientRect().width??0;
@@ -574,7 +583,7 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
        const badgeOneLine=bh>0&&bh<=fs*1.65;
        return {
          partnerInside,
-         partnerDetail: sr&&hr?('head['+Math.round(hr.left)+','+Math.round(hr.top)+' '+Math.round(hr.width)+'x'+Math.round(hr.height)+'] slot['+Math.round(sr.left)+','+Math.round(sr.top)+' '+Math.round(sr.width)+'x'+Math.round(sr.height)+']'):'missing',
+         partnerDetail: sr&&hr?('ink['+Math.round(hr.left)+','+Math.round(hr.top)+' '+Math.round(hr.width)+'x'+Math.round(hr.height)+'] slot['+Math.round(sr.left)+','+Math.round(sr.top)+' '+Math.round(sr.width)+'x'+Math.round(sr.height)+'] pad='+pad.toFixed(1)+' lines='+lines.map(l=>(l.textContent||'').trim()).join('|')):'missing',
          glyphOk,
          glyphDetail: 'discW='+discW.toFixed(1)+' cap='+cap.toFixed(1),
          badgeOneLine,

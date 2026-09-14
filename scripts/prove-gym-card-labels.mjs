@@ -39,14 +39,31 @@ async function openCard(page, baseUrl) {
 async function metrics(page) {
   return page.evaluate(() => {
     const partner = document.querySelector('[data-testid="slot-partner"]');
+    const slotEl = document.querySelector('[data-ace-partner-slot]') || partner?.parentElement;
     const headLines = [...partner?.querySelectorAll('span.block') ?? []]
       .map((el) => el.textContent?.trim() ?? '')
       .filter((t) => t && t !== '\u00a0' && t.length > 1);
-    const slot = partner?.parentElement?.getBoundingClientRect();
+    const slot = slotEl?.getBoundingClientRect();
+    const zoom = slot && slotEl ? slot.width / slotEl.offsetWidth : 1;
+    const raw = slotEl ? getComputedStyle(slotEl).borderTopLeftRadius : '8px';
+    let radius = parseFloat(raw) || 8;
+    if (raw.includes('rem')) {
+      radius *= parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    }
+    const pad = (radius + 3) * zoom;
+    const inkOf = (el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return range.getBoundingClientRect();
+    };
     const lineBoxes = headLines.map((t) => {
       const el = [...partner?.querySelectorAll('span.block') ?? []].find((n) => n.textContent?.trim() === t);
-      const b = el?.getBoundingClientRect();
-      return { t, past: b && slot ? b.right - slot.right : 0 };
+      const b = el ? inkOf(el) : null;
+      return {
+        t,
+        pastRight: b && slot ? b.right - (slot.right - pad) : 0,
+        pastBottom: b && slot ? b.bottom - (slot.bottom - pad) : 0,
+      };
     });
     const mark = (root, word) => {
       const el = root?.querySelector('[data-mark-label]')
@@ -66,8 +83,10 @@ async function metrics(page) {
     const pick = [...document.querySelectorAll('[data-testid="slot-tm"] span')].find((s) => s.textContent === 'Pick a move');
     const pickCs = pick ? getComputedStyle(pick) : null;
     const disc = document.querySelector('[data-testid="slot-tm"] svg')?.getBoundingClientRect().width;
+    const hex = document.querySelector('[data-testid="slot-badge"] svg')?.getBoundingClientRect().width;
     const shoulder = [...document.querySelectorAll('[data-testid="slot-partner"] span.block')].find((s) => s.textContent?.trim() === 'SHOULDERMON');
-    const sb = shoulder?.getBoundingClientRect();
+    const sb = shoulder ? inkOf(shoulder) : null;
+    const head = document.querySelector('[data-slot-head="partner"]');
     return {
       partnerLines: headLines,
       partnerPast: lineBoxes,
@@ -75,7 +94,13 @@ async function metrics(page) {
       badge: mark(badge, 'BADGE'),
       pick: pick ? { fontSize: pickCs.fontSize, nowrap: pickCs.whiteSpace } : null,
       discW: disc,
+      hexW: hex,
+      pad,
+      transform: head ? getComputedStyle(head).transform : null,
       shoulderPastSlot: sb && slot ? sb.bottom - slot.bottom : null,
+      shoulderPastRight: sb && slot ? sb.right - slot.right : null,
+      shoulderPastInnerRight: sb && slot ? sb.right - (slot.right - pad) : null,
+      shoulderPastInnerBottom: sb && slot ? sb.bottom - (slot.bottom - pad) : null,
     };
   });
 }
@@ -92,6 +117,11 @@ async function captureSet(page, baseUrl, prefix) {
     if (prefix === 'after') {
       await page.screenshot({ path: join(OUT, `${name}.png`), fullPage: true });
       await page.screenshot({ path: join(ART, `${name}.png`), fullPage: true });
+    }
+    if (prefix === 'after' && name === 'mobile-390') {
+      const pane = page.locator('[data-testid="slot-partner"]').locator('xpath=..');
+      await pane.screenshot({ path: join(OUT, 'after-partner-crop.png') });
+      await pane.screenshot({ path: join(ART, 'after-partner-crop.png') });
     }
   }
   await page.setViewportSize({ width: 390, height: 800 });
@@ -154,11 +184,12 @@ console.log(JSON.stringify({ before, after }, null, 2));
 
 const ok =
   after.partnerLines.join('|') === 'PARTNER /|SHOULDERMON' &&
-  !before.partnerLines.some((l) => l.includes('SHOUL') && l !== 'PARTNER /' && l !== 'SHOULDERMON') === false &&
   after.badge?.w > 18 &&
   after.tm?.w > 18 &&
   (after.discW ?? 99) < 22 &&
-  (after.shoulderPastSlot ?? 99) <= -2 &&
+  Math.abs((after.discW ?? 0) - (before.discW ?? 99)) < 1 &&
+  (after.shoulderPastInnerRight ?? 99) <= 0 &&
+  (after.shoulderPastInnerBottom ?? 99) <= 0 &&
   after.pick?.fontSize === '8px' &&
   before.pick?.fontSize !== '8px' &&
   !after.caret.inSuffix;
