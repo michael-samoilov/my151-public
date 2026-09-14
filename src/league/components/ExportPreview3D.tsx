@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import {
+  DEFAULT_FOIL_RECIPE,
+  FOIL_LAYER_IDS,
+  foilLayerClassName,
+  foilRecipeCssVars,
+  type FoilRecipe,
+} from '../export/foilRecipe';
+import { foilMaskCss, foilMaskUrlsFromImage } from '../export/foilMaps';
 import './ExportPreview3D.css';
 
-const MAX_TILT = 20;
-const IDLE_TILT = 1.55;
-const IDLE_MS_X = 5400;
-const IDLE_MS_Y = 7800;
 const RELEASE_MS = 420;
 const TAP_MS = 320;
 const TAP_PX = 10;
-/** Shine stays off inside this many degrees of straight-on. */
-const SHINE_DEAD_DEG = 3.5;
 
 /**
  * Live export preview with a pointer-driven tilt, like a foil card on a desk.
@@ -18,18 +20,21 @@ const SHINE_DEAD_DEG = 3.5;
  * Tilt lives on this wrapper, not on the image, so a new blob URL does not
  * reset the path. A slow idle orbit runs with no input. A tap parks the card
  * straight-on and stops that orbit; pointer and hover still tilt it. A second
- * tap starts the orbit again.
+ * tap starts the orbit again. Lighting follows a FoilRecipe; the overlay uses
+ * the default, and the workshop page passes a live one.
  */
 export function ExportPreview3D({
   src,
   alt,
   busy,
   className,
+  recipe = DEFAULT_FOIL_RECIPE,
 }: {
   src: string | null;
   alt: string;
   busy?: boolean;
   className?: string;
+  recipe?: FoilRecipe;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -38,40 +43,57 @@ export function ExportPreview3D({
   const pausedRef = useRef(false);
   const pointerTiltRef = useRef({ x: 0, y: 0 });
   const lastTiltRef = useRef({ x: 0, y: 0 });
-  const releaseRef = useRef<{ from: { x: number; y: number }; to: { x: number; y: number }; t0: number } | null>(null);
+  const releaseRef = useRef<{ from: { x: number; y: number }; to: { x: number; y: number }; t0: number } | null>(
+    null,
+  );
   const reducedMotionRef = useRef(false);
   const downRef = useRef<{ t: number; x: number; y: number; dragged: boolean } | null>(null);
   const hoverArmedRef = useRef(true);
+  const recipeRef = useRef(recipe);
 
-  const paint = useCallback((x: number, y: number) => {
-    const el = cardRef.current;
-    if (!el) return;
-    lastTiltRef.current = { x, y };
-    el.style.transform = `rotateX(${x}deg) rotateY(${y}deg) translateZ(16px)`;
-    const px = 50 + (y / MAX_TILT) * 50;
-    const py = 50 - (x / MAX_TILT) * 50;
-    const fromCenter = Math.min(1, Math.hypot(px - 50, py - 50) / 50);
-    el.style.setProperty('--pointer-x', `${px}%`);
-    el.style.setProperty('--pointer-y', `${py}%`);
-    el.style.setProperty('--pointer-from-center', fromCenter.toFixed(3));
-    el.style.setProperty('--pointer-from-top', (py / 100).toFixed(3));
-    el.style.setProperty('--pointer-from-left', (px / 100).toFixed(3));
-    const mag = Math.hypot(x, y);
-    const foil =
-      mag <= SHINE_DEAD_DEG ? 0 : Math.min(1, (mag - SHINE_DEAD_DEG) / (MAX_TILT - SHINE_DEAD_DEG));
-    el.style.setProperty('--foil-opacity', foil.toFixed(3));
-    el.dataset.tiltX = x.toFixed(1);
-    el.dataset.tiltY = y.toFixed(1);
-    el.dataset.paused = pausedRef.current ? '1' : '0';
+  const applyRecipeVars = useCallback((el: HTMLDivElement) => {
+    const vars = foilRecipeCssVars(recipeRef.current);
+    for (const [key, value] of Object.entries(vars)) {
+      el.style.setProperty(key, value);
+    }
   }, []);
+
+  const paint = useCallback(
+    (x: number, y: number) => {
+      const el = cardRef.current;
+      if (!el) return;
+      const recipeNow = recipeRef.current;
+      lastTiltRef.current = { x, y };
+      el.style.transform = `rotateX(${x}deg) rotateY(${y}deg) translateZ(16px)`;
+      const px = 50 + (y / recipeNow.maxTilt) * 50;
+      const py = 50 - (x / recipeNow.maxTilt) * 50;
+      const fromCenter = Math.min(1, Math.hypot(px - 50, py - 50) / 50);
+      el.style.setProperty('--pointer-x', `${px}%`);
+      el.style.setProperty('--pointer-y', `${py}%`);
+      el.style.setProperty('--pointer-from-center', fromCenter.toFixed(3));
+      el.style.setProperty('--pointer-from-top', (py / 100).toFixed(3));
+      el.style.setProperty('--pointer-from-left', (px / 100).toFixed(3));
+      const mag = Math.hypot(x, y);
+      const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
+      const foil = mag <= recipeNow.deadDeg ? 0 : Math.min(1, (mag - recipeNow.deadDeg) / span);
+      el.style.setProperty('--foil-opacity', foil.toFixed(3));
+      applyRecipeVars(el);
+      el.dataset.tiltX = x.toFixed(1);
+      el.dataset.tiltY = y.toFixed(1);
+      el.dataset.foilOpacity = foil.toFixed(3);
+      el.dataset.paused = pausedRef.current ? '1' : '0';
+    },
+    [applyRecipeVars],
+  );
 
   const idleAt = useCallback((now: number) => {
     if (reducedMotionRef.current) return { x: 0, y: 0 };
     if (originRef.current === null) originRef.current = now;
     const t = now - originRef.current;
+    const recipeNow = recipeRef.current;
     return {
-      x: Math.sin((t / IDLE_MS_X) * Math.PI * 2) * IDLE_TILT,
-      y: Math.sin((t / IDLE_MS_Y) * Math.PI * 2) * IDLE_TILT,
+      x: Math.sin((t / recipeNow.idleMsX) * Math.PI * 2) * recipeNow.idleTilt,
+      y: Math.sin((t / recipeNow.idleMsY) * Math.PI * 2) * recipeNow.idleTilt,
     };
   }, []);
 
@@ -115,21 +137,58 @@ export function ExportPreview3D({
     return () => cancelAnimationFrame(raf);
   }, [idleAt, paint]);
 
-  const applyPointer = useCallback((clientX: number, clientY: number) => {
-    const el = imgRef.current ?? cardRef.current;
+  useEffect(() => {
+    recipeRef.current = recipe;
+    const el = cardRef.current;
     if (!el) return;
-    const r = el.getBoundingClientRect();
-    if (r.width === 0 || r.height === 0) return;
-    const px = (clientX - r.left) / r.width - 0.5;
-    const py = (clientY - r.top) / r.height - 0.5;
-    pointerTiltRef.current = {
-      x: clamp(-py * MAX_TILT * 2, -MAX_TILT, MAX_TILT),
-      y: clamp(px * MAX_TILT * 2, -MAX_TILT, MAX_TILT),
+    applyRecipeVars(el);
+  }, [applyRecipeVars, recipe]);
+
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el || !src) return;
+    el.dataset.foilMaps = '0';
+    el.style.setProperty('--foil-sat-mask', 'none');
+    el.style.setProperty('--foil-edge-mask', 'none');
+    el.style.setProperty('--foil-gloss-mask', 'none');
+    let cancelled = false;
+    void foilMaskUrlsFromImage(src)
+      .then((maps) => {
+        if (cancelled) return;
+        const card = cardRef.current;
+        if (!card) return;
+        card.style.setProperty('--foil-sat-mask', foilMaskCss(maps.sat));
+        card.style.setProperty('--foil-edge-mask', foilMaskCss(maps.edge));
+        card.style.setProperty('--foil-gloss-mask', foilMaskCss(maps.gloss));
+        card.dataset.foilMaps = '1';
+      })
+      .catch(() => {
+        /* Point light and ambient still run without maps. */
+      });
+    return () => {
+      cancelled = true;
     };
-    interactingRef.current = true;
-    releaseRef.current = null;
-    paint(pointerTiltRef.current.x, pointerTiltRef.current.y);
-  }, [paint]);
+  }, [src]);
+
+  const applyPointer = useCallback(
+    (clientX: number, clientY: number) => {
+      const el = imgRef.current ?? cardRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) return;
+      const maxTilt = recipeRef.current.maxTilt;
+      const px = (clientX - r.left) / r.width - 0.5;
+      const py = (clientY - r.top) / r.height - 0.5;
+      pointerTiltRef.current = {
+        x: clamp(-py * maxTilt * 2, -maxTilt, maxTilt),
+        y: clamp(px * maxTilt * 2, -maxTilt, maxTilt),
+      };
+      interactingRef.current = true;
+      releaseRef.current = null;
+      paint(pointerTiltRef.current.x, pointerTiltRef.current.y);
+    },
+    [paint],
+  );
 
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -232,9 +291,14 @@ export function ExportPreview3D({
             style={{ maxHeight: '100cqh', maxWidth: '100cqw', width: 'auto', height: 'auto' }}
             draggable={false}
           />
-          <div className="export-foil-glare" aria-hidden />
-          <div className="export-foil-shine" aria-hidden />
-          <div className="export-foil-sparkle" aria-hidden />
+          {FOIL_LAYER_IDS.map((id) => (
+            <div
+              key={id}
+              className={cn('export-foil-layer', foilLayerClassName(id))}
+              aria-hidden
+              data-foil-layer={id}
+            />
+          ))}
         </div>
       ) : (
         <div

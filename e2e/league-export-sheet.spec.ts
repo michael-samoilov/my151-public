@@ -76,10 +76,25 @@ test.describe('mobile export sheet', () => {
     const foil = page.locator('[data-export-preview]');
     await expect(foil).toHaveAttribute('data-paused', '0');
 
+    await expect(page.locator('[data-foil-layer]')).toHaveCount(10);
     const idleA = Number(await foil.getAttribute('data-tilt-x'));
     await expect
       .poll(async () => Number(await foil.getAttribute('data-tilt-x')), { timeout: 2500 })
       .not.toBe(idleA);
+
+    await expect
+      .poll(
+        async () => {
+          const x = Number(await foil.getAttribute('data-tilt-x'));
+          const y = Number(await foil.getAttribute('data-tilt-y'));
+          return Math.hypot(x, y);
+        },
+        { timeout: 6000 },
+      )
+      .toBeGreaterThan(3.5);
+    await expect
+      .poll(async () => Number(await foil.getAttribute('data-foil-opacity')), { timeout: 6000 })
+      .toBeGreaterThan(0.05);
 
     const box = await foil.boundingBox();
     expect(box).toBeTruthy();
@@ -105,6 +120,7 @@ test.describe('desktop export preview', () => {
 
   test('keeps the card inside the band left of the settings pane', async ({ page }) => {
     await openLeagueExport(page);
+    await expect(page.locator('[data-foil-workshop-link]')).toBeVisible();
     for (const mode of ['story', 'rematch', 'both'] as const) {
       await page.locator(`[data-export-team="${mode}"]`).click();
       await waitPreviewReady(page);

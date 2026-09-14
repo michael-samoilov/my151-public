@@ -20,6 +20,7 @@ Disallow: /custom-gym-leader?demo=
 # production and carry noindex, so this only saves a crawl.
 Disallow: /evolution-levels
 Disallow: /slot-lab
+Disallow: /foil-workshop
 Allow: /
 
 User-agent: GPTBot

@@ -51,6 +51,39 @@ async function openSurveyForm(page: Page) {
 test.describe('league export survey', () => {
   test.use({ viewport: MOBILE });
 
+  test('preview still opens the survey when the seen key is already set', async ({ page }) => {
+    await seededLeague(page);
+    await page.addInitScript(() => {
+      window.localStorage.setItem('my151-export-survey-seen', '1');
+      Object.defineProperty(navigator, 'canShare', { value: () => false });
+    });
+    await page.route('**/api/league', async (route) => {
+      if (route.request().method() === 'POST') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            ok: true,
+            highlight: { ordinal: 151, tool: 'league', firstPokemonId: 25 },
+          }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+    await page.goto('/custom-gym-leader');
+    await page.locator('[data-testid="league-slot-0"]').waitFor();
+    await page.locator('[data-league-export]').first().click();
+    await page.locator('[data-export-preview-layer] img').waitFor({ timeout: 45_000 });
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 45_000 }).catch(() => null),
+      page.locator('[data-league-export-confirm]').click(),
+    ]);
+    await download?.cancel().catch(() => undefined);
+    await page.locator('[data-export-survey-intro]').waitFor({ timeout: 20_000 });
+    await expect(page.locator('[data-export-survey-intro]')).toContainText('Lucky you!');
+  });
+
   test('intro shows Lucky you and a first-Pokémon line', async ({ page }) => {
     await openSurveyForm(page);
     const intro = page.locator('[data-export-survey-intro]');

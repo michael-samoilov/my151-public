@@ -5,6 +5,8 @@ import {
   hasSeenExportSurvey,
   isExportSurveyTool,
   markExportSurveySeen,
+  persistExportSurveySeen,
+  surveySeenInThisEnvironment,
 } from './exportSurvey';
 
 function installStorageStub(): void {
@@ -28,10 +30,24 @@ describe('export survey gate', () => {
     localStorage.removeItem(EXPORT_SURVEY_SEEN_KEY);
   });
 
-  it('starts unseen and stays seen after the intro is shown', () => {
-    expect(hasSeenExportSurvey()).toBe(false);
+  it('on production, the seen key hides the survey', () => {
+    expect(surveySeenInThisEnvironment(true)).toBe(false);
+    persistExportSurveySeen(true);
+    expect(surveySeenInThisEnvironment(true)).toBe(true);
+    expect(localStorage.getItem(EXPORT_SURVEY_SEEN_KEY)).toBe('1');
+  });
+
+  it('off production, the seen key never hides the survey and is not written', () => {
+    persistExportSurveySeen(false);
+    expect(localStorage.getItem(EXPORT_SURVEY_SEEN_KEY)).toBeNull();
+    localStorage.setItem(EXPORT_SURVEY_SEEN_KEY, '1');
+    expect(surveySeenInThisEnvironment(false)).toBe(false);
+  });
+
+  it('public helpers follow PRODUCTION_DEPLOY, which is off in unit tests', () => {
     markExportSurveySeen();
-    expect(hasSeenExportSurvey()).toBe(true);
+    expect(hasSeenExportSurvey()).toBe(false);
+    expect(localStorage.getItem(EXPORT_SURVEY_SEEN_KEY)).toBeNull();
   });
 
   it('maps each tool to the admin route it already uses', () => {
