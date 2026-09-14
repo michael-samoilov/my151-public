@@ -108,7 +108,7 @@ export function FoilWorkshopPage() {
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-3 text-[0.7rem] leading-snug text-zinc-400">
           <div>
             <h1 className="text-sm font-semibold text-zinc-50">Export foil workshop</h1>
-            <p className="mt-0.5 max-w-[40rem]">
+            <p className="mt-0.5 hidden max-w-[40rem] md:block">
               Preview only. Drag the card. Tap it to park. Toggle layers, then copy the recipe.
             </p>
           </div>
@@ -116,7 +116,7 @@ export function FoilWorkshopPage() {
             League builder
           </a>
         </div>
-        <div className="absolute inset-0 px-3 pb-3 pt-14">
+        <div className="absolute inset-0 px-3 pb-4 pt-12 md:px-10 md:pb-10 md:pt-16">
           <ExportPreview3D src={src} alt="League export foil workshop" busy={busy} recipe={previewRecipe} />
         </div>
       </section>

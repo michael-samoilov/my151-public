@@ -120,7 +120,7 @@
     transparent 58%
   );
   mix-blend-mode: soft-light;
-  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.55 + 0.45 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.78 + 0.22 * var(--pointer-from-center)));
 }
 
 .export-foil-holographic {
@@ -150,7 +150,7 @@
   mix-blend-mode: overlay;
   filter: saturate(1.35);
   transform: translate3d(var(--foil-shift-x), var(--foil-shift-y), 2px);
-  opacity: calc(var(--foil-opacity) * var(--foil-holographic) * (0.45 + 0.55 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-holographic) * (0.82 + 0.18 * var(--pointer-from-center)));
 }
 
 .export-foil-iridescence {
@@ -163,7 +163,7 @@
   );
   mix-blend-mode: color;
   transform: translate3d(var(--foil-shift-x), var(--foil-shift-y), 3px);
-  opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.35 + 0.5 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--pointer-from-center)));
 }
 
 .export-foil-emboss {
@@ -187,7 +187,7 @@
     transparent 58%
   );
   mix-blend-mode: screen;
-  opacity: calc(var(--foil-opacity) * var(--foil-rim) * (0.4 + 0.6 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-rim) * (0.75 + 0.25 * var(--pointer-from-center)));
 }
 
 .export-foil-parallax {
@@ -216,7 +216,7 @@
     transparent calc(var(--foil-spec-size) * 95%)
   );
   mix-blend-mode: screen;
-  opacity: calc(var(--foil-opacity) * var(--foil-specular) * (0.35 + 0.65 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-specular) * (0.72 + 0.28 * var(--pointer-from-center)));
 }
 
 .export-foil-bloom {
@@ -229,7 +229,7 @@
   );
   mix-blend-mode: screen;
   filter: blur(var(--foil-bloom-blur));
-  opacity: calc(var(--foil-opacity) * var(--foil-bloom) * (0.25 + 0.5 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-bloom) * (0.7 + 0.3 * var(--pointer-from-center)));
 }
 
 .export-foil-sparkle {
@@ -275,7 +275,7 @@
     calc(25% + var(--pointer-from-left) * 65%) calc(var(--pointer-from-top) * 70%);
   mix-blend-mode: overlay;
   transform: translate3d(var(--foil-shift-x), var(--foil-shift-y), 6px);
-  opacity: calc(var(--foil-opacity) * var(--foil-sparkle) * (0.2 + 0.55 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-sparkle) * (0.65 + 0.35 * var(--pointer-from-center)));
   filter: brightness(1.12) contrast(1.12);
 }
 

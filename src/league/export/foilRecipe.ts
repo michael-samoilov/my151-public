@@ -85,16 +85,16 @@ export const FOIL_LAYER_META = {
 export const FOIL_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-recipe';
 
 const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
-  pointLight: { on: true, amount: 0.55 },
-  ambient: { on: true, amount: 0.4 },
-  specular: { on: true, amount: 0.5 },
-  rim: { on: true, amount: 0.45 },
-  holographic: { on: true, amount: 0.38 },
-  iridescence: { on: true, amount: 0.32 },
-  emboss: { on: true, amount: 0.55 },
-  parallax: { on: true, amount: 0.45 },
-  sparkle: { on: true, amount: 0.4 },
-  bloom: { on: true, amount: 0.28 },
+  pointLight: { on: true, amount: 0.62 },
+  ambient: { on: true, amount: 0.45 },
+  specular: { on: true, amount: 0.62 },
+  rim: { on: true, amount: 0.52 },
+  holographic: { on: true, amount: 0.58 },
+  iridescence: { on: true, amount: 0.42 },
+  emboss: { on: true, amount: 0.6 },
+  parallax: { on: true, amount: 0.5 },
+  sparkle: { on: true, amount: 0.52 },
+  bloom: { on: true, amount: 0.36 },
 };
 
 /** Live overlay default. Idle tilt clears the shine dead zone. */
