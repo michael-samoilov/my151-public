@@ -29,6 +29,32 @@ import { LeagueExportSurveyIntro } from './LeagueExportSurveyIntro';
 const SCRIM_Z = 200;
 const PREVIEW_Z = 201;
 const PANE_Z = 210;
+/** Mobile settings sheet: at most this fraction of the visual viewport. */
+const SETTINGS_SHEET_FRACTION = 0.45;
+
+function useSettingsSheetCap(active: boolean): number | undefined {
+  const [cap, setCap] = useState<number | undefined>(() => {
+    if (typeof window === 'undefined') return undefined;
+    return Math.round((window.visualViewport?.height ?? window.innerHeight) * SETTINGS_SHEET_FRACTION);
+  });
+  useLayoutEffect(() => {
+    if (!active) return;
+    const sync = () => {
+      const vv = window.visualViewport;
+      if (vv && Math.abs(vv.scale - 1) > 0.05) return;
+      setCap(Math.round((vv?.height ?? window.innerHeight) * SETTINGS_SHEET_FRACTION));
+    };
+    sync();
+    const vv = window.visualViewport;
+    vv?.addEventListener('resize', sync);
+    window.addEventListener('resize', sync);
+    return () => {
+      vv?.removeEventListener('resize', sync);
+      window.removeEventListener('resize', sync);
+    };
+  }, [active]);
+  return active ? cap : undefined;
+}
 
 function ExportScrim({ onClose }: { onClose: () => void }) {
   return createPortal(
@@ -96,7 +122,7 @@ function ExportPreviewLayer({
   if (!show) return null;
   return createPortal(
     <div
-      className={cn('pointer-events-none fixed flex items-center justify-center p-8 md:p-12', dimmed && 'opacity-40')}
+      className={cn('pointer-events-none fixed flex items-center justify-center p-3 md:p-12', dimmed && 'opacity-40')}
       style={{
         zIndex: PREVIEW_Z,
         top: 0,
@@ -121,6 +147,7 @@ export function LeagueExportOverlay() {
   const setExportPhase = useLeagueUi((s) => s.setExportPhase);
 
   const isDesktop = useViewportAtLeast(1024);
+  const sheetCap = useSettingsSheetCap(!isDesktop && exportPhase === 'settings');
   const isLeague = exportCardIndex === null;
   const exportKind = isLeague ? 'league' : 'card';
   const chrome = useExportChrome(isDesktop);
@@ -280,6 +307,7 @@ export function LeagueExportOverlay() {
       layerZIndex={PANE_Z}
       showScrim={false}
       exportChrome
+      capHeightPx={sheetCap}
     >
       {paneBody}
     </BottomSheet>

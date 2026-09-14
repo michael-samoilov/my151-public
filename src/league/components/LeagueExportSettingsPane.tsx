@@ -36,7 +36,7 @@ export function LeagueExportSettingsPane({
   mobileSheet?: boolean;
 }) {
   return (
-    <div className="relative flex h-full w-full flex-col bg-background">
+    <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-background">
       {!mobileSheet && (
         <div className="shrink-0 border-b">
           <div className="flex h-11 items-center justify-between px-3 py-2">
@@ -55,24 +55,25 @@ export function LeagueExportSettingsPane({
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         {isLeague ? (
-          <div className="space-y-4 px-3 pt-3 pb-2">
+          <div className={mobileSheet ? 'space-y-2 px-3 pb-2 pt-1' : 'space-y-4 px-3 pb-2 pt-3'}>
             <div>
               <h3 className="mb-2 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
                 Details
               </h3>
-              <div className="space-y-1">
+              <div className={mobileSheet ? 'grid grid-cols-2 gap-1' : 'space-y-1'}>
                 {DETAIL_OPTIONS.map(({ key, title }) => (
                   <LayoutToggle
                     key={key}
                     on={layout[key]}
                     title={title}
+                    compact={mobileSheet}
                     onClick={() => onLayout({ ...layout, [key]: !layout[key] })}
                   />
                 ))}
               </div>
             </div>
             <div>
-              <h3 className="mb-2 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
+              <h3 className="mb-1 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
                 Teams
               </h3>
               <div className="grid grid-cols-3 gap-1">
@@ -95,7 +96,7 @@ export function LeagueExportSettingsPane({
         )}
       </div>
 
-      <div className="flex shrink-0 flex-col gap-2 border-t px-4 pb-4 pt-2">
+      <div className={`flex shrink-0 flex-col gap-2 border-t pt-2 ${mobileSheet ? 'px-3 pb-3' : 'px-4 pb-4'}`}>
         <Button type="button" disabled={busy} onClick={onExport} data-league-export-confirm>
           {busy ? (
             <>
@@ -109,9 +110,11 @@ export function LeagueExportSettingsPane({
             </>
           )}
         </Button>
-        <Button type="button" variant="ghost" onClick={onClose}>
-          Cancel
-        </Button>
+        {!mobileSheet && (
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -121,19 +124,21 @@ function LayoutToggle({
   on,
   title,
   onClick,
+  compact = false,
 }: {
   on: boolean;
   title: string;
   onClick: () => void;
+  compact?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       data-export-detail={title}
-      className={`w-full cursor-pointer rounded-md px-3 py-2 text-left transition-colors ${
-        on ? 'bg-primary/10' : 'hover:bg-muted'
-      }`}
+      className={`w-full cursor-pointer rounded-md text-left transition-colors ${
+        compact ? 'px-2 py-1.5' : 'px-3 py-2'
+      } ${on ? 'bg-primary/10' : 'hover:bg-muted'}`}
     >
       <div className="flex items-center gap-2">
         <span
@@ -143,7 +148,9 @@ function LayoutToggle({
         >
           {on && <Check className="h-3 w-3 text-primary-foreground" />}
         </span>
-        <span className={`text-sm ${on ? 'font-medium text-primary' : 'text-foreground'}`}>{title}</span>
+        <span className={`text-sm leading-tight ${on ? 'font-medium text-primary' : 'text-foreground'}`}>
+          {title}
+        </span>
       </div>
     </button>
   );

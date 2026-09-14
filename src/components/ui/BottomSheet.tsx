@@ -25,6 +25,12 @@ interface BottomSheetProps {
   showScrim?: boolean;
   /** Optional marker so a caller can measure this sheet (export preview area). */
   exportChrome?: boolean;
+  /**
+   * Extra height cap in px. Combined with the viewport-minus-topGap max.
+   * The export overlay uses this so the live preview keeps a band of the
+   * screen instead of the sheet growing to its content.
+   */
+  capHeightPx?: number;
   children: React.ReactNode;
 }
 
@@ -52,6 +58,7 @@ export function BottomSheet({
   layerZIndex = 50,
   showScrim = true,
   exportChrome = false,
+  capHeightPx,
   children,
 }: BottomSheetProps) {
   const [dragY, setDragY] = useState(0);
@@ -251,6 +258,12 @@ export function BottomSheet({
    */
   const keyboardOpen = viewport !== null && viewport.height < window.innerHeight - 80;
   const gap = keyboardOpen ? Math.min(topGap, 8) : topGap;
+  const viewportMax = viewport ? Math.max(0, viewport.height - gap) : null;
+  const maxHeightPx =
+    capHeightPx != null && viewportMax != null
+      ? Math.min(viewportMax, capHeightPx)
+      : capHeightPx ?? viewportMax;
+
 
   /*
    * Portalled to the body, and that is the sheet's own job rather than each
@@ -272,7 +285,7 @@ export function BottomSheet({
     <div
       ref={overlayRef}
       data-overlay
-      className="fixed inset-x-0 flex flex-col justify-end md:hidden"
+      className="pointer-events-none fixed inset-x-0 flex flex-col justify-end md:hidden"
       // Bounded to the visible area rather than `inset-0`, so "the bottom" is
       // the top of the keyboard when one is open and the bottom of the screen
       // when it is not.
@@ -288,7 +301,7 @@ export function BottomSheet({
     >
       {showScrim && (
         <div
-          className="absolute inset-0 bg-black/50"
+          className="pointer-events-auto absolute inset-0 bg-black/50"
           onClick={onClose}
           style={{ opacity: Math.max(0, 1 - dragY / (DISMISS_THRESHOLD * 3)) }}
         />
@@ -297,7 +310,7 @@ export function BottomSheet({
         role="dialog"
         aria-label={closeLabel}
         data-export-chrome={exportChrome ? '' : undefined}
-        className="relative bg-background rounded-t-2xl shadow-2xl flex flex-col"
+        className="relative flex max-h-full min-h-0 flex-col rounded-t-2xl bg-background shadow-2xl pointer-events-auto"
         style={{
           // `100dvh` accounts for browser chrome but not the keyboard, so the
           // visible height wins whenever the visual viewport has reported one.
@@ -308,7 +321,12 @@ export function BottomSheet({
           // with `maxHeight` alone the chain stays `auto` and the form can only
           // overflow and scroll, which is the fold the tail was hiding behind.
           height: size === 'full' || keyboardOpen ? `calc(100% - ${gap}px)` : undefined,
-          maxHeight: viewport ? `${Math.max(0, viewport.height - gap)}px` : `calc(100dvh - ${gap}px)`,
+          maxHeight:
+            maxHeightPx != null
+              ? `${maxHeightPx}px`
+              : viewport
+                ? `${Math.max(0, viewport.height - gap)}px`
+                : `calc(100dvh - ${gap}px)`,
           transform: `translateY(${dragY}px)`,
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}
