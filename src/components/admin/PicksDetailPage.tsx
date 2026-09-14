@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Seg } from '@/components/admin/ui';
 import { TypeBadge } from '@/components/shared/TypeBadge';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { sectionName } from '@/i18n';
 import { sectionColor } from '@/lib/sectionColors';
 import { cn, displayName } from '@/lib/utils';
@@ -9,6 +10,9 @@ import {
   indexBarPct,
   isStarterTypeName,
   PICKS_COLS,
+  PICKS_OFF_DESKTOP_COLS,
+  picksGridCap,
+  picksGridCols,
   viewsForPicks,
   type DualColumn,
   type LineMember,
@@ -165,20 +169,23 @@ function LineGrid({
   max,
   barColor,
   countMode,
+  cols = PICKS_COLS,
 }: {
   lines: RankedLine[];
   max: number;
   barColor: string;
   countMode: boolean;
+  cols?: number;
 }) {
   if (lines.length === 0) {
     return <p className="text-[0.65rem] text-muted-foreground">None in this cap.</p>;
   }
-  const rows = packLineRows(lines);
+  const rows = packLineRows(lines, cols);
+  const colClass = cols === PICKS_OFF_DESKTOP_COLS ? 'grid-cols-12' : 'grid-cols-6';
   return (
     <div className="flex min-w-0 flex-col gap-1">
       {rows.map((row, i) => (
-        <div key={i} className="grid min-w-0 grid-cols-6 gap-0.5">
+        <div key={i} className={cn('grid min-w-0 gap-0.5', colClass)}>
           {row.cells.map((cell) => (
             <SpriteCell
               key={cell.key}
@@ -210,6 +217,8 @@ function DualGrids({
   showLeast: boolean;
   countMode: boolean;
 }) {
+  const isDesktop = useIsDesktop();
+  const cols = picksGridCols(!showLeast, isDesktop);
   const leastOn = showLeast;
   const max = countMode
     ? Math.max(maxPicks(columns.most), leastOn ? maxPicks(columns.least) : 0)
@@ -218,8 +227,8 @@ function DualGrids({
       : maxIndex(columns.most);
   if (!showLeast) {
     return (
-      <div className="min-w-0 w-full md:max-w-[50%]" data-picks-side="most">
-        <LineGrid lines={columns.most} max={max} barColor={barColor} countMode={countMode} />
+      <div className="min-w-0 w-full" data-picks-side="most" data-picks-cols={cols}>
+        <LineGrid lines={columns.most} max={max} barColor={barColor} countMode={countMode} cols={cols} />
       </div>
     );
   }
@@ -299,9 +308,11 @@ export function PicksDetailPage({
   const [view, setView] = useState<'most' | 'off'>('most');
   const [excludeOneOffs, setExcludeOneOffs] = useState(false);
   const offSection = view === 'off';
+  const isDesktop = useIsDesktop();
+  const cap = useMemo(() => picksGridCap(offSection, isDesktop), [offSection, isDesktop]);
   const sections = useMemo(
-    () => viewsForPicks(picksBySectionAll, { offSection, excludeOneOffs: offSection && excludeOneOffs }),
-    [picksBySectionAll, offSection, excludeOneOffs],
+    () => viewsForPicks(picksBySectionAll, { offSection, excludeOneOffs: offSection && excludeOneOffs, cap }),
+    [picksBySectionAll, offSection, excludeOneOffs, cap],
   );
 
   return (

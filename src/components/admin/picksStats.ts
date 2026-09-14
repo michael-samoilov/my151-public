@@ -27,7 +27,8 @@
  * water, and ignore that cutoff. Least-picked is only lines below 0.90×.
  * Regional starter variants (Hisuian Decidueye with Rowlet) share one
  * first-stage face. Off-section has no least column, shows raw dex counts,
- * and never uses the starter type split or first-stage-only faces.
+ * never uses the starter type split or first-stage-only faces, and lays the
+ * sprite grid across the full width (12 columns on desktop, 6 on mobile).
  */
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
@@ -41,8 +42,18 @@ import {
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
 export const PICKS_COLS = 6;
+export const PICKS_OFF_DESKTOP_COLS = 12;
 export const PICKS_MAX_ROWS = 4;
 export const PICKS_GRID_CAP = { maxRows: PICKS_MAX_ROWS, cols: PICKS_COLS } as const;
+
+/** Off-section has no least column, so desktop uses a full-width 12-col grid. */
+export function picksGridCols(offSection: boolean, desktop: boolean): number {
+  return offSection && desktop ? PICKS_OFF_DESKTOP_COLS : PICKS_COLS;
+}
+
+export function picksGridCap(offSection: boolean, desktop: boolean): { maxRows: number; cols: number } {
+  return { maxRows: PICKS_MAX_ROWS, cols: picksGridCols(offSection, desktop) };
+}
 export const MOST_MIN_INDEX = 1.1;
 export const LEAST_MAX_INDEX = 0.9;
 export const STARTER_TYPES = ['grass', 'fire', 'water'] as const;
@@ -345,7 +356,7 @@ function linePicks(memberIds: number[], counts: Map<number, number>): number {
 export function sectionPicksView(
   sectionId: string,
   rows: [string, number][],
-  opts: { offSection?: boolean; excludeOneOffs?: boolean } = {},
+  opts: { offSection?: boolean; excludeOneOffs?: boolean; cap?: { maxRows: number; cols: number } } = {},
 ): SectionPicksView | null {
   const raw = countsFrom(rows);
   const counts = new Map<number, number>();
@@ -381,6 +392,7 @@ export function sectionPicksView(
   if (ranked.length === 0) return null;
   if (!opts.offSection && ranked.every((l) => l.picks === 0)) return null;
 
+  const cap = opts.cap ?? PICKS_GRID_CAP;
   const splitOpts = {
     minMostIndex: starters || opts.offSection ? undefined : MOST_MIN_INDEX,
     maxLeastIndex: opts.offSection ? undefined : LEAST_MAX_INDEX,
@@ -392,7 +404,7 @@ export function sectionPicksView(
     for (const type of [...STARTER_TYPES, 'other'] as const) {
       const slice = ranked.filter((l) => l.starterType === type);
       if (slice.length === 0) continue;
-      const columns = splitMostLeast(slice, PICKS_GRID_CAP, splitOpts);
+      const columns = splitMostLeast(slice, cap, splitOpts);
       groups.push({ type, ...columns });
     }
     if (groups.length === 0) return null;
@@ -402,13 +414,13 @@ export function sectionPicksView(
   return {
     kind: 'plain',
     sectionId,
-    columns: splitMostLeast(ranked, PICKS_GRID_CAP, splitOpts),
+    columns: splitMostLeast(ranked, cap, splitOpts),
   };
 }
 
 export function viewsForPicks(
   bySection: Record<string, [string, number][]>,
-  opts: { offSection?: boolean; excludeOneOffs?: boolean } = {},
+  opts: { offSection?: boolean; excludeOneOffs?: boolean; cap?: { maxRows: number; cols: number } } = {},
 ): SectionPicksView[] {
   const out: SectionPicksView[] = [];
   for (const g of BUILD_GROUPS) {

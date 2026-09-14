@@ -77,5 +77,15 @@ test.describe('admin picks page', () => {
     );
     expect(faceIds).toContain(172);
     expect(faceIds).toContain(25);
+
+    const expectedCols = test.info().project.name === 'desktop' ? 12 : 6;
+    await expect(starters.locator('[data-picks-side="most"]')).toHaveAttribute(
+      'data-picks-cols',
+      String(expectedCols),
+    );
+    const gridCols = await starters.locator('[data-picks-side="most"] .grid').first().evaluate((el) =>
+      getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length,
+    );
+    expect(gridCols).toBe(expectedCols);
   });
 });

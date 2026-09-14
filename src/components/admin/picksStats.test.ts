@@ -7,6 +7,8 @@ import {
   indexBarPct,
   isOffSection,
   lineKey,
+  picksGridCap,
+  picksGridCols,
   poolIdsForSection,
   rowsUsed,
   sectionPicksView,
@@ -229,6 +231,24 @@ describe('rowsUsed', () => {
   it('caps 8 three-member lines at 4 rows', () => {
     const lines = Array.from({ length: 8 }, () => ({ members: [0, 0, 0] }));
     expect(rowsUsed(lines, 6)).toBe(4);
+  });
+
+  it('packs four 3-member lines onto one 12-wide row', () => {
+    expect(
+      rowsUsed(
+        [{ members: [0, 0, 0] }, { members: [0, 0, 0] }, { members: [0, 0, 0] }, { members: [0, 0, 0] }],
+        12,
+      ),
+    ).toBe(1);
+  });
+});
+
+describe('picksGridCols', () => {
+  it('widens only desktop off-section', () => {
+    expect(picksGridCols(false, true)).toBe(6);
+    expect(picksGridCols(true, false)).toBe(6);
+    expect(picksGridCols(true, true)).toBe(12);
+    expect(picksGridCap(true, true)).toEqual({ maxRows: 4, cols: 12 });
   });
 });
 
