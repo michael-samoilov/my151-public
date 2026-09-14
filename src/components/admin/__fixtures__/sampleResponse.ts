@@ -19,7 +19,7 @@ import type {
   ToolSlice,
 } from '../AdminPage';
 import { lineKey, poolIdsForSection } from '../picksStats';
-
+import { PREVIEW_FIT } from '../userPreview';
 const DAY = 86_400_000;
 // Anchor "now" to the data window's end so relative times read sensibly.
 const NOW = Date.UTC(2026, 8, 10, 18, 0, 0); // 2026-09-10
@@ -200,12 +200,12 @@ const NEWEST: NewestSeed[] = [
     os: 'iOS',
     browser: 'Safari',
     lang: 'en-US',
-    sess: 99,
-    dex: 999,
+    sess: PREVIEW_FIT.sessions,
+    dex: PREVIEW_FIT.dex,
     comp: true,
     exp: true,
     hoursAgo: 1,
-    sessionMs: [5999 * 60 * 1000],
+    sessionMs: [PREVIEW_FIT.totalMs],
   },
   { cid: '74d5…68', c: 'US', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'en-US', sess: 11, dex: 151, comp: true, exp: false, hoursAgo: 2 },
   { cid: '70cd…a7', c: 'IT', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'it-IT', sess: 6, dex: 90, comp: false, exp: false, hoursAgo: 4 },

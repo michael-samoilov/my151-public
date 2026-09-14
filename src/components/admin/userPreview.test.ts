@@ -72,13 +72,15 @@ describe('fmtChipDuration', () => {
 });
 
 describe('preview chip labels', () => {
-  it('names Dex, sesh, and gyms', () => {
+  it('names Dex, sessions, and Gyms', () => {
+    expect(dexChipLabel(0)).toBe('0 Dex');
     expect(dexChipLabel(999)).toBe('999 Dex');
-    expect(leagueChipLabel(14, 14)).toBe('14/14 gyms');
-    expect(sessionChipParts(1, 0)).toEqual({ count: 1, unit: 'sesh', duration: '0m' });
+    expect(leagueChipLabel(0, 14)).toBe('0/14 Gyms');
+    expect(leagueChipLabel(14, 14)).toBe('14/14 Gyms');
+    expect(sessionChipParts(1, 0)).toEqual({ count: 1, unit: 'session', duration: '0m' });
     expect(sessionChipParts(99, 5999 * 60 * 1000)).toEqual({
       count: 99,
-      unit: 'sesh',
+      unit: 'sessions',
       duration: '99h 59m',
     });
   });

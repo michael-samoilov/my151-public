@@ -72,8 +72,15 @@ export function fmtChipDuration(ms: number): string {
 }
 
 export const PREVIEW_DEX_NOUN = 'Dex';
-export const PREVIEW_SESSION_UNIT = { one: 'sesh', many: 'sesh' } as const;
-export const PREVIEW_LEAGUE_NOUN = 'gyms';
+export const PREVIEW_SESSION_UNIT = { one: 'session', many: 'sessions' } as const;
+export const PREVIEW_LEAGUE_NOUN = 'Gyms';
+
+export const PREVIEW_FIT = {
+  sessions: 99,
+  totalMs: 5999 * 60_000,
+  dex: 999,
+  league: 14,
+} as const;
 
 export function dexChipLabel(count: number): string {
   return `${count} ${PREVIEW_DEX_NOUN}`;

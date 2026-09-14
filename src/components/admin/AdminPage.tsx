@@ -28,12 +28,13 @@ import {
   matchesToolFilter,
   mergedSessionStats,
   previewLanguage,
+  PREVIEW_FIT,
   sessionChipParts,
   toolKind,
   type ArchiveFilter,
   type ToolFilter,
 } from '@/components/admin/userPreview';
-import { FitNowrap } from '@/components/admin/FitNowrap';
+import { FitNowrap, PreviewChipZoomProvider, useHostZoom } from '@/components/admin/FitNowrap';
 import { Archive, ArchiveRestore, Camera, Globe, Languages } from 'lucide-react';
 
 // Human labels for the onboarding/funnel events shown per session.
@@ -1178,11 +1179,13 @@ function MetricChip({
   label,
   exported,
   metric,
+  empty,
   className,
   children,
 }: {
   label?: string;
   exported?: boolean;
+  empty?: boolean;
   metric: 'session' | 'dex' | 'league';
   className?: string;
   children?: ReactNode;
@@ -1190,14 +1193,61 @@ function MetricChip({
   return (
     <span
       data-metric={metric}
+      data-empty={empty ? 'true' : undefined}
       className={cn(
         'inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-1 text-xs font-medium tabular-nums md:px-2',
+        empty && 'opacity-40',
         className,
       )}
     >
       {children ?? label}
-      {exported ? <Camera className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="exported" /> : null}
+      {exported && !empty ? <Camera className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="exported" /> : null}
     </span>
+  );
+}
+
+function SessionMetricChip({
+  sessions,
+  totalMs,
+  className,
+}: {
+  sessions: number;
+  totalMs: number;
+  className?: string;
+}) {
+  const parts = sessionChipParts(sessions, totalMs);
+  return (
+    <MetricChip metric="session" className={className}>
+      <span className="font-bold text-foreground tabular-nums">{parts.count}</span>
+      <span className="font-medium tabular-nums text-muted-foreground">
+        {parts.unit} · {parts.duration}
+      </span>
+    </MetricChip>
+  );
+}
+
+function PreviewMetricScale({ children }: { children: ReactNode }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const zoom = useHostZoom(hostRef, innerRef);
+  return (
+    <>
+      <div
+        aria-hidden
+        data-preview-chip-zoom={zoom}
+        className="pointer-events-none invisible absolute inset-x-0 px-2.5 md:hidden"
+        style={{ height: 0, overflow: 'hidden' }}
+      >
+        <div ref={hostRef} className="min-w-0 overflow-x-clip">
+          <div ref={innerRef} className="flex w-max flex-nowrap items-center gap-1">
+            <SessionMetricChip sessions={PREVIEW_FIT.sessions} totalMs={PREVIEW_FIT.totalMs} />
+            <MetricChip metric="dex" label={dexChipLabel(PREVIEW_FIT.dex)} exported />
+            <MetricChip metric="league" label={leagueChipLabel(PREVIEW_FIT.league, CARD_COUNT)} exported />
+          </div>
+        </div>
+      </div>
+      <PreviewChipZoomProvider zoom={zoom}>{children}</PreviewChipZoomProvider>
+    </>
   );
 }
 
@@ -1221,7 +1271,6 @@ function UserPreviewCard({
     dex?.sessions != null || dex?.sessionMs ? dex : undefined,
     league?.sessions != null || league?.sessionMs ? league : undefined,
   );
-  const sessionParts = sessionChipParts(sessions, totalMs);
 
   return (
     <div
@@ -1273,33 +1322,26 @@ function UserPreviewCard({
         <PlatformChips rec={rec} className="flex-nowrap gap-1" compactLang />
       </FitNowrap>
       <div className="min-w-0 md:contents">
-        <FitNowrap contentsOnMd>
-          <MetricChip metric="session" className="md:col-start-4 md:row-start-1 md:justify-self-start">
-            <span className="font-bold text-foreground tabular-nums">{sessionParts.count}</span>
-            <span className="font-medium tabular-nums text-muted-foreground">
-              {sessionParts.unit} · {sessionParts.duration}
-            </span>
-          </MetricChip>
-          {dex ? (
-            <MetricChip
-              metric="dex"
-              className="md:col-start-5 md:row-start-1 md:justify-self-start"
-              label={dexChipLabel(dex.depth)}
-              exported={dex.exported}
-            />
-          ) : (
-            <span className="hidden md:col-start-5 md:row-start-1 md:block" aria-hidden />
-          )}
-          {league ? (
-            <MetricChip
-              metric="league"
-              className="md:col-start-6 md:row-start-1 md:justify-self-start"
-              label={leagueChipLabel(league.cards, CARD_COUNT)}
-              exported={league.exported}
-            />
-          ) : (
-            <span className="hidden md:col-start-6 md:row-start-1 md:block" aria-hidden />
-          )}
+        <FitNowrap contentsOnMd lockZoom>
+          <SessionMetricChip
+            sessions={sessions}
+            totalMs={totalMs}
+            className="md:col-start-4 md:row-start-1 md:justify-self-start"
+          />
+          <MetricChip
+            metric="dex"
+            empty={!dex}
+            className="md:col-start-5 md:row-start-1 md:justify-self-start"
+            label={dexChipLabel(dex?.depth ?? 0)}
+            exported={dex?.exported}
+          />
+          <MetricChip
+            metric="league"
+            empty={!league}
+            className="md:col-start-6 md:row-start-1 md:justify-self-start"
+            label={leagueChipLabel(league?.cards ?? 0, CARD_COUNT)}
+            exported={league?.exported}
+          />
         </FitNowrap>
       </div>
     </div>
@@ -2009,7 +2051,8 @@ export function AdminPage() {
                     {!emptyList && rows.length === 0 && !loading && (
                       <p className="text-sm text-muted-foreground">No users match these filters.</p>
                     )}
-                    <div className="flex w-full flex-col gap-2 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_1fr] md:gap-x-3 md:gap-y-2">
+                    <div className="relative flex w-full flex-col gap-2 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_1fr] md:gap-x-3 md:gap-y-2">
+                      <PreviewMetricScale>
                         {rows.map((row) => (
                           <UserPreviewCard
                             key={row.cid}
@@ -2021,7 +2064,8 @@ export function AdminPage() {
                             onOpen={() => openDetail(row.open)}
                           />
                         ))}
-                      </div>
+                      </PreviewMetricScale>
+                    </div>
                     {showDex && data.records.length < totalListed && (
                       <Button className="mt-3" variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
                         {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${totalListed})`}
