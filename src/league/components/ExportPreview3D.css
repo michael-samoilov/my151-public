@@ -28,7 +28,7 @@
     hsla(0, 0%, 0%, 0.42) 90%
   );
   mix-blend-mode: overlay;
-  opacity: var(--foil-opacity);
+  opacity: 0.62;
 }
 
 .export-foil-shine {
@@ -55,7 +55,7 @@
     calc(var(--pointer-x) * 1.4 - 20%) calc(var(--pointer-y) * 1.2 - 10%),
     var(--pointer-x) var(--pointer-y);
   mix-blend-mode: color-dodge;
-  opacity: 0.26;
+  opacity: 0.38;
   filter: brightness(0.92) contrast(1.55) saturate(0.8);
 }
 

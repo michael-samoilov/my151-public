@@ -61,6 +61,15 @@ export function LeagueExportSurvey({
 
   const otherOn = heard.has('other');
 
+  const selectOther = () => {
+    setHeard((prev) => {
+      if (prev.has('other')) return prev;
+      const next = new Set(prev);
+      next.add('other');
+      return next;
+    });
+  };
+
   const toggleOther = () => {
     if (otherOn) {
       setHeard((prev) => {
@@ -70,13 +79,9 @@ export function LeagueExportSurvey({
       });
       setHeardOther('');
     } else {
-      setHeard((prev) => new Set(prev).add('other'));
+      selectOther();
       queueMicrotask(() => otherInputRef.current?.focus());
     }
-  };
-
-  const selectOther = () => {
-    if (!otherOn) setHeard((prev) => new Set(prev).add('other'));
   };
 
   const submit = async () => {
@@ -159,6 +164,7 @@ export function LeagueExportSurvey({
                 setHeardOther(e.target.value);
               }}
               onFocus={selectOther}
+              onPointerDown={selectOther}
               placeholder="Where?"
               aria-label="How you heard about the site"
               data-export-other-input
