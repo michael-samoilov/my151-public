@@ -83,7 +83,8 @@ export function monthLabelTicks(days: number[]): { idx: number; label: string }[
   });
 }
 
-/** Category indices halfway between the last day of a month and the first of the next. */
+/** Category indices halfway between the last day of a month and the first of the next.
+ *  Drawn only in the x-axis label ribbon, not through the plot. */
 export function monthDividerIndices(days: number[]): number[] {
   if (days.length < 2) return [];
   const out: number[] = [];

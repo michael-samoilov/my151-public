@@ -17,6 +17,8 @@ const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { mont
 
 /** Left-aligned one-line labels sit this many px left of today's x, so they stay in the plot. */
 const COUNT_LABEL_PX = 54;
+/** X-axis label ribbon under the plot. Month partitions live only in this band. */
+const GRID_BOTTOM = 22;
 
 function countLabel(
   kind: '24h' | '7d',
@@ -63,7 +65,6 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
   const monthDividers = monthDividerIndices(days);
   const monthTicks = monthLabelTicks(days);
   const monthAt = new Map(monthTicks.map((t) => [t.idx, t.label]));
-  const verticalGrid = [...weekMarks, ...monthDividers];
   const counts = windowCounts(series);
   const finiteWeekly = weekly.filter((v): v is number => v != null);
   const dataMax = Math.max(1, ...daily, ...finiteWeekly);
@@ -78,7 +79,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
 
       return {
         animation: false,
-        grid: { left: 36, right: 14, top: 36, bottom: 22 },
+        grid: { left: 36, right: 14, top: 36, bottom: GRID_BOTTOM },
         tooltip: {
           ...topTooltip(el),
           trigger: 'axis',
@@ -122,7 +123,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             type: 'custom' as const,
             name: 'gridlines',
             silent: true,
-            clip: true,
+            clip: false,
             tooltip: { show: false },
             z: 0,
             zlevel: 0,
@@ -130,15 +131,25 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             renderItem: (params: { coordSys: { x: number; y: number; width: number; height: number } }) => {
               const { x, y, width, height } = params.coordSys;
               const last = Math.max(daily.length - 1, 1);
-              const children = verticalGrid.map((idx) => {
-                const px = x + (idx / last) * width;
+              const xAt = (idx: number) => x + (idx / last) * width;
+              const weeks = weekMarks.map((idx) => {
+                const px = xAt(idx);
                 return {
                   type: 'line' as const,
                   shape: { x1: px, y1: y, x2: px, y2: y + height },
                   style: { stroke: grid, lineWidth: 1, fill: 'none' },
                 };
               });
-              return { type: 'group', children };
+              const ribbonTop = y + height;
+              const months = monthDividers.map((idx) => {
+                const px = xAt(idx);
+                return {
+                  type: 'line' as const,
+                  shape: { x1: px, y1: ribbonTop, x2: px, y2: ribbonTop + GRID_BOTTOM },
+                  style: { stroke: faint, lineWidth: 1, fill: 'none' },
+                };
+              });
+              return { type: 'group', children: [...weeks, ...months] };
             },
           },
           {
