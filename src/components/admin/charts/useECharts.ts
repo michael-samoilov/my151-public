@@ -91,13 +91,14 @@ export function cssVar(el: HTMLElement | null, name: string, fallback = ''): str
 export function useECharts(
   build: (el: HTMLDivElement) => EChartsOption,
   deps: unknown[],
-  opts: { scrub?: boolean } = {},
+  opts: { scrub?: boolean; overlayPointer?: boolean } = {},
 ): (el: HTMLDivElement | null) => void {
   const elRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
   const roRef = useRef<ResizeObserver | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
   const scrub = opts.scrub ?? false;
+  const overlayPointer = opts.overlayPointer ?? false;
   // Keep the latest builder without re-subscribing anything each render.
   const buildRef = useRef(build);
   useEffect(() => {
@@ -139,12 +140,6 @@ export function useECharts(
       // the drag never scrolls the page.
       let scrubbing = false;
 
-      // A custom axis line for the off-plot case. When a drag runs off the
-      // container, echarts fires globalout and drops its own axis pointer, even
-      // though alwaysShowContent keeps the tooltip. This line stands in at the
-      // clamped (reporting) x so the reading still has a vertical marker. It
-      // stays hidden while the pointer is inside the plot, where echarts draws
-      // its own line.
       if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
       const line = document.createElement('div');
       line.style.cssText =
@@ -181,11 +176,9 @@ export function useECharts(
           y = Math.max(1, Math.min(rawY, r.height - 1));
         }
         chart.dispatchAction({ type: 'showTip', x, y });
-        // The pointer left the container, so echarts dropped its line: draw ours
-        // at the clamped x. Inside the container, echarts owns the line.
         const off =
           clamp && (rawX < 1 || rawX > r.width - 1 || rawY < 1 || rawY > r.height - 1);
-        if (off) {
+        if ((overlayPointer && scrubbing) || off) {
           const rect = gridRect();
           line.style.left = `${x}px`;
           if (rect) {
@@ -197,6 +190,12 @@ export function useECharts(
         } else {
           line.style.display = 'none';
         }
+      };
+      const hidePointer = () => {
+        chart.setOption({ tooltip: { alwaysShowContent: false } });
+        chart.dispatchAction({ type: 'hideTip' });
+        chart.dispatchAction({ type: 'updateAxisPointer', currTrigger: 'leave' });
+        line.style.display = 'none';
       };
       const onDown = (e: PointerEvent) => {
         scrubbing = true;
@@ -213,17 +212,12 @@ export function useECharts(
         if (scrubbing) e.preventDefault();
       };
       const onLeave = () => {
-        if (!scrubbing) {
-          chart.dispatchAction({ type: 'hideTip' });
-          line.style.display = 'none';
-        }
+        if (!scrubbing) hidePointer();
       };
       const onUp = () => {
         if (!scrubbing) return;
         scrubbing = false;
-        chart.setOption({ tooltip: { alwaysShowContent: false } });
-        chart.dispatchAction({ type: 'hideTip' });
-        line.style.display = 'none';
+        hidePointer();
       };
       el.addEventListener('pointerdown', onDown);
       el.addEventListener('pointermove', onMove);
@@ -239,7 +233,7 @@ export function useECharts(
         line.remove();
       };
     }
-  }, [scrub]);
+  }, [scrub, overlayPointer]);
 
   // Redraw when the caller's data changes. `deps` is the caller's own list, so
   // it cannot be an array literal here — that's the design of the hook.

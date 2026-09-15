@@ -9,16 +9,19 @@ import { cn } from '@/lib/utils';
  */
 
 /** Card container with a caption row. `sub` items render as "· a · b" after
- *  the title; `actions` (usually a Seg) sit at the right of the header. */
+ *  the title; `legend` is a vertically centered row after the title with no
+ *  dots; `actions` (usually a Seg) sit at the right of the header. */
 export function Panel({
   title,
   sub,
+  legend,
   actions,
   children,
   className,
 }: {
   title: string;
   sub?: React.ReactNode[];
+  legend?: React.ReactNode;
   actions?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
@@ -30,9 +33,10 @@ export function Panel({
         className,
       )}
     >
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <h2 className="text-sm font-bold leading-tight">
+      <div className={cn('mb-3 flex justify-between gap-3', legend ? 'items-center' : 'items-start')}>
+        <h2 className={cn('text-sm font-bold leading-tight', legend && 'flex items-center gap-2.5')}>
           {title}
+          {legend}
           {sub?.map((s, i) => (
             <span key={i} className="ml-1.5 text-[0.7rem] font-semibold text-muted-foreground">
               · {s}
