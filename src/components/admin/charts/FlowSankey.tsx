@@ -1,6 +1,7 @@
 import { useECharts, cssVar, tooltipStyle, type EChartsOption, echarts } from './useECharts';
 import { nodeDepth, type FunnelLink, type FunnelNode, type FunnelRole } from '@/lib/usageFunnels';
 import { sankeyGeometry, sankeyHeightCss } from '@/lib/sankeyGeometry';
+import { compactFunnelLabelSide } from '@/lib/sankeyLabels';
 
 export type SankeyNode = FunnelNode;
 export type SankeyLink = FunnelLink;
@@ -12,21 +13,6 @@ function fattestColumn(nodes: SankeyNode[], links: SankeyLink[]): number {
     counts.set(d, (counts.get(d) ?? 0) + 1);
   }
   return Math.max(2, ...counts.values());
-}
-
-function fatColumnNames(nodes: SankeyNode[], links: SankeyLink[]): Set<string> {
-  const byDepth = new Map<number, string[]>();
-  for (const n of nodes) {
-    const d = nodeDepth(n.name, links);
-    const arr = byDepth.get(d) ?? [];
-    arr.push(n.name);
-    byDepth.set(d, arr);
-  }
-  const fat = new Set<string>();
-  for (const arr of byDepth.values()) {
-    if (arr.length >= 4) for (const name of arr) fat.add(name);
-  }
-  return fat;
 }
 
 function compactTopLabel() {
@@ -42,15 +28,44 @@ function compactTopLabel() {
   };
 }
 
+function compactLabel(side: ReturnType<typeof compactFunnelLabelSide>) {
+  if (side === 'top') return compactTopLabel();
+  if (side === 'bottom') {
+    return {
+      position: 'bottom' as const,
+      width: 72,
+      overflow: 'break' as const,
+      lineHeight: 12,
+      formatter: '{b}',
+    };
+  }
+  if (side === 'left') {
+    return {
+      position: 'left' as const,
+      width: 56,
+      overflow: 'break' as const,
+      lineHeight: 12,
+      formatter: '{b}',
+    };
+  }
+  return {
+    position: 'right' as const,
+    align: 'left' as const,
+    width: 80,
+    overflow: 'break' as const,
+    lineHeight: 12,
+    formatter: '{b}',
+  };
+}
+
 function nodeLabel(
   n: SankeyNode,
   compact: boolean,
-  isSource: boolean,
-  isLeaf: boolean,
   kind: 'funnel' | 'referrer',
-  fat: boolean,
+  nodes: SankeyNode[],
+  links: SankeyLink[],
 ) {
-  if (kind === 'referrer' && compact && isSource) {
+  if (kind === 'referrer' && compact && !links.some((l) => l.target === n.name)) {
     return {
       position: 'left' as const,
       width: 88,
@@ -60,43 +75,7 @@ function nodeLabel(
     };
   }
   if (!compact) return { position: n.label, formatter: '{b}' };
-  if (isSource) return compactTopLabel();
-  if (isLeaf) {
-    if (n.role === 'sink') {
-      return {
-        position: 'bottom' as const,
-        width: 72,
-        overflow: 'break' as const,
-        lineHeight: 12,
-        formatter: '{b}',
-      };
-    }
-    return {
-      position: 'right' as const,
-      width: 80,
-      overflow: 'break' as const,
-      lineHeight: 12,
-      formatter: '{b}',
-    };
-  }
-  if (n.role === 'success') return compactTopLabel();
-  if (fat) {
-    return {
-      position: 'right' as const,
-      width: 72,
-      overflow: 'break' as const,
-      lineHeight: 12,
-      formatter: '{b}',
-    };
-  }
-  if (n.label === 'top' || n.label === 'left') return compactTopLabel();
-  return {
-    position: n.label,
-    width: 72,
-    overflow: 'break' as const,
-    lineHeight: 12,
-    formatter: '{b}',
-  };
+  return compactLabel(compactFunnelLabelSide(n, nodes, links));
 }
 
 type SankeyNodeData = {
@@ -115,6 +94,7 @@ const paintingGraphic = new WeakSet<echarts.ECharts>();
 function paintCountChips(
   chart: echarts.ECharts,
   nodes: SankeyNode[],
+  links: SankeyLink[],
   roleColor: (role?: FunnelRole) => string,
   fontSize: number,
   compact: boolean,
@@ -135,15 +115,17 @@ function paintCountChips(
     const node = byName.get(name);
     const value = nodeData.getItemLayout(idx)?.value;
     const el = nodeData.getItemGraphicEl(idx);
-    if (value == null || !el?.shape) return;
+    if (value == null || !el?.shape || !node) return;
     const ox = el.parent?.x ?? originX;
     const oy = el.parent?.y ?? originY;
-    const x =
-      node?.label === 'left' && !compact
-        ? ox + el.shape.x + el.shape.width
-        : ox + el.shape.x + el.shape.width / 2;
+    const side = compact ? compactFunnelLabelSide(node, nodes, links) : node.label;
+    const barLeft = ox + el.shape.x;
+    const barRight = barLeft + el.shape.width;
+    const barMid = barLeft + el.shape.width / 2;
+    const x = side === 'right' ? barRight : side === 'left' ? barRight : barMid;
+    const align = side === 'right' ? 'right' : 'center';
     const y = oy + el.shape.y + el.shape.height / 2;
-    const fill = roleColor(node?.role);
+    const fill = roleColor(node.role);
     elements.push({
       type: 'text',
       id: `count-${name}`,
@@ -153,12 +135,12 @@ function paintCountChips(
       y,
       style: {
         text: String(Math.round(value)),
-        fill: node?.role === 'sink' ? '#171717' : '#ffffff',
+        fill: node.role === 'sink' ? '#171717' : '#ffffff',
         fontSize,
         fontWeight: 600,
         backgroundColor: fill,
         padding: [0, 2],
-        align: 'center',
+        align,
         verticalAlign: 'middle',
       },
     });
@@ -178,8 +160,8 @@ function paintCountChips(
 /**
  * MECE usage funnel as a Sankey at every width. On a phone the plot is
  * wider than it is tall, first-stage names sit on the bar, column titles
- * sit along the top, and leaf names sit to the right. Counts sit in color
- * chips on the bars.
+ * sit along the top, and stacked peers sit to the right so a short bar
+ * cannot drop a name onto the next one. Counts sit in color chips on the bars.
  */
 export function FlowSankey({
   nodes,
@@ -193,9 +175,6 @@ export function FlowSankey({
   kind?: 'funnel' | 'referrer';
 }) {
   const stack = fattestColumn(nodes, links);
-  const sources = new Set(links.map((l) => l.source));
-  const targets = new Set(links.map((l) => l.target));
-  const fat = fatColumnNames(nodes, links);
   const ref = useECharts(
     (el): EChartsOption => {
       const ink = cssVar(el, '--color-foreground', '#0a0a0a');
@@ -238,11 +217,11 @@ export function FlowSankey({
               formatter: '{b}',
               lineHeight: g.fontSize + 2,
             },
-              labelLayout: g.compact ? { hideOverlap: false } : { hideOverlap: false, moveOverlap: 'shiftY' },
-              data: nodes.map((n) => ({
+            labelLayout: { hideOverlap: false, moveOverlap: 'shiftY' },
+            data: nodes.map((n) => ({
               name: n.name,
               itemStyle: { color: roleColor(n.role), borderColor: roleColor(n.role) },
-              label: nodeLabel(n, g.compact, !targets.has(n.name), !sources.has(n.name), kind, fat.has(n.name)),
+              label: nodeLabel(n, g.compact, kind, nodes, links),
             })),
             links: links.map((l) => ({
               source: l.source,
@@ -265,7 +244,7 @@ export function FlowSankey({
         const roleColor = (role?: FunnelRole) =>
           role === 'success' ? success : role === 'sink' ? sink : role === 'priv' ? priv : ink;
         const g = sankeyGeometry(el.clientWidth || 360, kind);
-        paintCountChips(chart, nodes, roleColor, g.fontSize, g.compact);
+        paintCountChips(chart, nodes, links, roleColor, g.fontSize, g.compact);
       },
     },
   );
