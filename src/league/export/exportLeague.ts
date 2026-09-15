@@ -287,16 +287,41 @@ function drawHeading(
   cx: number,
   top: number,
   colour: string,
-  maxW?: number,
+  pane?: { x: number; y: number; w: number; h: number; r: number },
 ): void {
   ctx.save();
   ctx.font = font(L.HEAD_PX, 800);
   const w = Math.max(...lines.map((line) => trackedWidth(ctx, line, L.HEAD_TRACK)));
-  const s = maxW && w > maxW ? maxW / w : 1;
+  const h = lines.length * L.HEAD_LINE;
+  const bleed = 0.45 * L.HEAD_PX;
+  let dx = 0;
+  let dy = 0;
+  if (pane) {
+    const stroke = L.K;
+    const air = 12 * (pane.r / 8);
+    const right = cx + w / 2 + bleed;
+    const bottom = top + h + bleed;
+    const innerRight = pane.x + pane.w - stroke - air;
+    const innerBottom = pane.y + pane.h - stroke - air;
+    const r = Math.max(0, pane.r - stroke - air);
+    if (right > innerRight) dx -= right - innerRight;
+    if (bottom > innerBottom) dy -= bottom - innerBottom;
+    const ccx = innerRight - r;
+    const ccy = innerBottom - r;
+    const ir = right + dx;
+    const ib = bottom + dy;
+    if (r > 0 && ir > ccx && ib > ccy) {
+      const dist = Math.hypot(ir - ccx, ib - ccy);
+      if (dist > r) {
+        const pull = dist - r;
+        dx -= (pull * (ir - ccx)) / dist;
+        dy -= (pull * (ib - ccy)) / dist;
+      }
+    }
+  }
   ctx.fillStyle = colour;
   ctx.textBaseline = 'middle';
-  ctx.translate(cx, top);
-  ctx.scale(s, s);
+  ctx.translate(cx + dx, top + dy);
   lines.forEach((line, i) => {
     fillTrackedCentered(ctx, line, 0, (i + 0.5) * L.HEAD_LINE, L.HEAD_TRACK);
   });
@@ -401,7 +426,16 @@ function drawShowcase(
       const { cx, cy } = centre(b);
       drawShowcaseArt(ctx, b.id, images, cx, cy, b.placed.sprite, 'sprite');
       const headTop = b.mirrored ? cy + b.placed.sprite / 2 : cy - b.placed.sprite / 2 - headH;
-      drawHeading(ctx, b.lines, cx, headTop, shades.band, b.placed.width);
+      drawHeading(
+        ctx,
+        b.lines,
+        cx,
+        headTop,
+        shades.band,
+        b.mirrored
+          ? { x, y, w: box.width, h: box.height, r: L.SLOT_R }
+          : undefined,
+      );
     }
     return;
   }

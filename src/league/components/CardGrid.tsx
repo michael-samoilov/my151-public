@@ -1002,8 +1002,6 @@ function EmptyOutline() {
 const ACE_HEAD: Heading = { lines: ['ACE', 'POKÉMON'], label: 'ACE POKÉMON' };
 const PARTNER_HEAD: Heading = { lines: ['PARTNER /', 'SHOULDERMON'], label: 'PARTNER' };
 const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[1.4]';
-/** Same size as the ace heading. Tracking stays tight so SHOULDERMON is one word. */
-const PARTNER_HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-normal leading-[1.4]';
 // The name wears the heading's all-caps, weight and size, so it reads as part
 // of the same label. Its tracking is tighter, though: the heading is two short
 // words that a wide track sets off, while the name is one long word that the
@@ -1020,8 +1018,8 @@ const NAME_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.02em] leading-[
  * refuses to wrap rather than the heading as a whole.
  *
  * The partner heading is a longer word than the ace's, sitting in the same
- * rounded corner. After the solver places it, this scales and shifts the
- * painted glyphs so they stay inside that corner rather than clipping them.
+ * rounded corner. After the solver places it, this shifts the painted glyphs
+ * up and left so they clear that curve. Same type as ACE. No scale.
  */
 function HeadRuns({ lines, className, style, ...rest }: {
   lines: readonly string[];
@@ -1104,43 +1102,70 @@ function cssRadiusPx(el: HTMLElement): number {
  *
  * The solver places a rectangle. Extra-bold caps overflow that rectangle, and
  * the outline is a rounded corner, so a box that is "inside" still paints
- * through the dash. Scale and shift the ink, do not clip it.
+ * through the dash. Shift the ink up and left. Do not scale it, do not clip
+ * it, and do not trust line boxes: extra-bold paint sits past them.
+ *
+ * Air is in screen pixels so the gap next to the dash matches what a PNG of
+ * the corner shows. The heading keeps ACE's type. The sprite stays put: a
+ * vertical shift of the art lands on the name.
+ *
+ * Shift left first, so SHOULDERMON leaves the quarter-circle, then only as
+ * far up as the straight bottom dash needs.
  */
+const PARTNER_INK_BLEED_EM = 0.45;
+const PARTNER_CORNER_AIR_PX = 8;
+
 function fitPartnerHeadInk(head: HTMLElement, slot: HTMLElement) {
   head.style.transform = 'none';
+
   const box = slot.getBoundingClientRect();
-  const elBox = head.getBoundingClientRect();
   const zoom = box.width / slot.offsetWidth || 1;
   if (zoom <= 0 || box.width < 8) return;
-  const pad = (cssRadiusPx(slot) + 6) * zoom;
-  const inner = {
-    left: box.left + pad,
-    top: box.top + pad,
-    right: box.right - pad,
-    bottom: box.bottom - pad,
-  };
+
+  const outline = slot.querySelector<HTMLElement>('[data-empty-outline]');
+  const strokeCss = parseFloat(
+    getComputedStyle(outline ?? slot).borderTopWidth,
+  ) || 1;
+  const stroke = strokeCss * zoom;
+  const radius = cssRadiusPx(slot) * zoom;
+  const fs = parseFloat(getComputedStyle(head).fontSize) || 8.5;
+  const bleed = PARTNER_INK_BLEED_EM * fs * zoom;
+  const air = PARTNER_CORNER_AIR_PX;
+
   const ink = inkUnion(head);
-  const availW = Math.max(8, inner.right - inner.left);
-  const availH = Math.max(8, inner.bottom - inner.top);
-  const scale = Math.min(1, availW / Math.max(ink.width, 1), availH / Math.max(ink.height, 1));
-  const ex = (elBox.left + elBox.right) / 2;
-  const ey = (elBox.top + elBox.bottom) / 2;
-  const map = (v: number, origin: number) => origin + (v - origin) * scale;
-  const left = map(ink.left, ex);
-  const right = map(ink.right, ex);
-  const top = map(ink.top, ey);
-  const bottom = map(ink.bottom, ey);
+  const right = ink.right + bleed;
+  const bottom = ink.bottom + bleed;
+  const inCorner = bottom > box.bottom - radius;
+  const targetRight = inCorner
+    ? box.right - radius - Math.min(air, 6)
+    : box.right - stroke - air;
+  const targetBottom = box.bottom - stroke - air;
+
   let tsx = 0;
   let tsy = 0;
-  if (left < inner.left) tsx += inner.left - left;
-  if (top < inner.top) tsy += inner.top - top;
-  if (right + tsx > inner.right) tsx -= right + tsx - inner.right;
-  if (bottom + tsy > inner.bottom) tsy -= bottom + tsy - inner.bottom;
+  if (right > targetRight) tsx -= right - targetRight;
+  if (bottom > targetBottom) tsy -= bottom - targetBottom;
+
+  const innerRight = box.right - stroke - air;
+  const innerBottom = box.bottom - stroke - air;
+  const r = Math.max(0, radius - stroke - air);
+  const cx = innerRight - r;
+  const cy = innerBottom - r;
+  const ir = right + tsx;
+  const ib = bottom + tsy;
+  if (r > 0 && ir > cx && ib > cy) {
+    const dist = Math.hypot(ir - cx, ib - cy);
+    if (dist > r) {
+      const pull = dist - r;
+      tsx -= (pull * (ir - cx)) / dist;
+      tsy -= (pull * (ib - cy)) / dist;
+    }
+  }
+
   const tx = tsx / zoom;
   const ty = tsy / zoom;
-  if (Math.abs(tx) < 0.05 && Math.abs(ty) < 0.05 && scale > 0.995) return;
-  head.style.transformOrigin = 'center center';
-  head.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+  head.style.transformOrigin = '0 0';
+  head.style.transform = `translate(${tx}px, ${ty}px)`;
 }
 
 /**
@@ -1283,19 +1308,22 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
       {!(ace || partner) && <EmptyOutline />}
       {/* The four text runs the solver needs the size of, drawn once and never
           shown. Measuring them beats assuming them: they are text, so their
-          widths move with the font, the language and the root font size. */}
+          widths move with the font, the language and the root font size.
+          An empty name is the same nbsp the slot draws. A regular space here
+          measured 0, the slot still reserved a line, and the partner heading
+          hung out the pane. */}
       <span
         data-slot-probe
         aria-hidden="true"
         className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap"
       >
         <HeadRuns lines={ACE_HEAD.lines} className={HEAD_CLASS} data-probe="ace-head" />
-        <span data-probe="ace-name" className={cn('inline-block', NAME_CLASS)}>
-          {ace ? pokemonLabel(ace.id, ace.name).name : ' '}
+        <span data-probe="ace-name" className={cn('block', NAME_CLASS)}>
+          {ace ? pokemonLabel(ace.id, ace.name).name : '\u00a0'}
         </span>
-        <HeadRuns lines={PARTNER_HEAD.lines} className={PARTNER_HEAD_CLASS} data-probe="partner-head" />
-        <span data-probe="partner-name" className={cn('inline-block', NAME_CLASS)}>
-          {partner ? pokemonLabel(partner.id, partner.name).name : ' '}
+        <HeadRuns lines={PARTNER_HEAD.lines} className={HEAD_CLASS} data-probe="partner-head" />
+        <span data-probe="partner-name" className={cn('block', NAME_CLASS)}>
+          {partner ? pokemonLabel(partner.id, partner.name).name : '\u00a0'}
         </span>
       </span>
       {/* The seam is a drawn line, not a wall: a block's far corner is allowed
@@ -1335,7 +1363,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         heading={PARTNER_HEAD}
         mirrored
         pokemon={partner}
-        headClass={PARTNER_HEAD_CLASS}
+        headClass={HEAD_CLASS}
         onPick={() => openLeagueBrowser(cardIndex, 'partner')}
         onRemove={() => setPartner(cardIndex, null)}
       />
