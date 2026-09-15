@@ -793,6 +793,7 @@ function SlotHalf({
       style={{ color: pokemon ? 'var(--lg-band)' : 'var(--lg-hint)' }}
     />
   );
+  const halfRef = useRef<HTMLButtonElement>(null);
   const size = place ? `${place.sprite}px` : '0px';
   const lab = useSlotLab((st) => st.enabled);
   const slot = useSlotLab((st) => st.slot);
@@ -803,6 +804,32 @@ function SlotHalf({
   // a phone and a desktop; it becomes pixels only here, against the slot this
   // card actually has.
   const offset = slot ? { x: shift.dx * slot.w, y: shift.dy * slot.h } : { x: 0, y: 0 };
+
+  useLayoutEffect(() => {
+    if (half !== 'partner') return;
+    const el = halfRef.current;
+    if (!el) return;
+    const pane = el.closest<HTMLElement>('[data-ace-partner-slot]');
+    if (!pane) return;
+    const fit = () => fitPartnerCluster(el, pane);
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(pane);
+    let frames = 0;
+    let raf = 0;
+    const settle = () => {
+      fit();
+      if (++frames < 30) raf = requestAnimationFrame(settle);
+    };
+    raf = requestAnimationFrame(settle);
+    let alive = true;
+    void document.fonts?.ready.then(() => { if (alive) fit(); });
+    return () => {
+      alive = false;
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [half, place?.left, place?.top, place?.width, place?.sprite, heading.lines, pokemon?.id]);
 
   const onLabPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (!slot) return;
@@ -896,6 +923,7 @@ function SlotHalf({
   );
   return (
     <button
+      ref={halfRef}
       type="button"
       onClick={(e) => {
         // In the lab a press that travelled was a drag, not a tap. Everywhere
@@ -1016,10 +1044,6 @@ const NAME_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.02em] leading-[
  * exact height the probe measures, so a heading that wrapped to a third line
  * in the slot would be placed as though it had two -- which is why each line
  * refuses to wrap rather than the heading as a whole.
- *
- * The partner heading is a longer word than the ace's, sitting in the same
- * rounded corner. After the solver places it, this shifts the painted glyphs
- * up and left so they clear that curve. Same type as ACE. No scale.
  */
 function HeadRuns({ lines, className, style, ...rest }: {
   lines: readonly string[];
@@ -1028,35 +1052,8 @@ function HeadRuns({ lines, className, style, ...rest }: {
   'data-probe'?: string;
   'data-slot-head'?: string;
 }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const color = style?.color;
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el || el.getAttribute('data-slot-head') !== 'partner') return;
-    const slot = el.closest<HTMLElement>('[data-ace-partner-slot]');
-    if (!slot) return;
-    const fit = () => fitPartnerHeadInk(el, slot);
-    fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(slot);
-    let frames = 0;
-    let raf = 0;
-    const settle = () => {
-      fit();
-      if (++frames < 30) raf = requestAnimationFrame(settle);
-    };
-    raf = requestAnimationFrame(settle);
-    let alive = true;
-    void document.fonts?.ready.then(() => { if (alive) fit(); });
-    return () => {
-      alive = false;
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-    };
-  }, [lines, className, color]);
   return (
     <span
-      ref={ref}
       {...rest}
       className={cn('inline-block w-max shrink-0 text-center', className)}
       style={style}
@@ -1102,21 +1099,21 @@ function cssRadiusPx(el: HTMLElement): number {
  *
  * The solver places a rectangle. Extra-bold caps overflow that rectangle, and
  * the outline is a rounded corner, so a box that is "inside" still paints
- * through the dash. Shift the ink up and left. Do not scale it, do not clip
- * it, and do not trust line boxes: extra-bold paint sits past them.
+ * through the dash. Inset the partner half as a unit -- placeholder, name,
+ * heading -- so they stay centred on each other the way ACE is. Do not scale,
+ * do not clip, and do not shift the heading alone.
  *
  * Air is in screen pixels so the gap next to the dash matches what a PNG of
- * the corner shows. The heading keeps ACE's type. The sprite stays put: a
- * vertical shift of the art lands on the name.
- *
- * Shift left first, so SHOULDERMON leaves the quarter-circle, then only as
- * far up as the straight bottom dash needs.
+ * the corner shows. The heading keeps ACE's type.
  */
 const PARTNER_INK_BLEED_EM = 0.45;
 const PARTNER_CORNER_AIR_PX = 8;
 
-function fitPartnerHeadInk(head: HTMLElement, slot: HTMLElement) {
+function fitPartnerCluster(half: HTMLElement, slot: HTMLElement) {
+  const head = half.querySelector<HTMLElement>('[data-slot-head="partner"]');
+  if (!head) return;
   head.style.transform = 'none';
+  half.style.transform = 'none';
 
   const box = slot.getBoundingClientRect();
   const zoom = box.width / slot.offsetWidth || 1;
@@ -1164,8 +1161,8 @@ function fitPartnerHeadInk(head: HTMLElement, slot: HTMLElement) {
 
   const tx = tsx / zoom;
   const ty = tsy / zoom;
-  head.style.transformOrigin = '0 0';
-  head.style.transform = `translate(${tx}px, ${ty}px)`;
+  half.style.transformOrigin = '0 0';
+  half.style.transform = `translate(${tx}px, ${ty}px)`;
 }
 
 /**

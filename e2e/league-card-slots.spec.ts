@@ -417,6 +417,24 @@ test.describe('the partner heading', () => {
     });
     expect(got.lines, got.detail).toEqual(['PARTNER /', 'SHOULDERMON']);
     expect(got.inside, got.detail).toBe(true);
+    const align = await page.evaluate(() => {
+      const head = document.querySelector('[data-slot-head="partner"]');
+      const art = document.querySelector('[data-testid="slot-partner"] [data-slot-art]');
+      const aceHead = document.querySelector('[data-slot-head="ace"]');
+      const aceArt = document.querySelector('[data-testid="slot-ace"] [data-slot-art]');
+      if (!head || !art || !aceHead || !aceArt) return { ok: false, detail: 'missing' };
+      const mid = (el: Element) => {
+        const b = el.getBoundingClientRect();
+        return (b.left + b.right) / 2;
+      };
+      const partnerDrift = Math.abs(mid(head) - mid(art));
+      const aceDrift = Math.abs(mid(aceHead) - mid(aceArt));
+      return {
+        ok: partnerDrift <= 2 && aceDrift <= 2,
+        detail: `partner ${partnerDrift.toFixed(2)}px ace ${aceDrift.toFixed(2)}px`,
+      };
+    });
+    expect(align.ok, align.detail).toBe(true);
   });
 });
 

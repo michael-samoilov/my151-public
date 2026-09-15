@@ -287,45 +287,61 @@ function drawHeading(
   cx: number,
   top: number,
   colour: string,
-  pane?: { x: number; y: number; w: number; h: number; r: number },
 ): void {
   ctx.save();
   ctx.font = font(L.HEAD_PX, 800);
-  const w = Math.max(...lines.map((line) => trackedWidth(ctx, line, L.HEAD_TRACK)));
-  const h = lines.length * L.HEAD_LINE;
-  const bleed = 0.45 * L.HEAD_PX;
-  let dx = 0;
-  let dy = 0;
-  if (pane) {
-    const stroke = L.K;
-    const air = 12 * (pane.r / 8);
-    const right = cx + w / 2 + bleed;
-    const bottom = top + h + bleed;
-    const innerRight = pane.x + pane.w - stroke - air;
-    const innerBottom = pane.y + pane.h - stroke - air;
-    const r = Math.max(0, pane.r - stroke - air);
-    if (right > innerRight) dx -= right - innerRight;
-    if (bottom > innerBottom) dy -= bottom - innerBottom;
-    const ccx = innerRight - r;
-    const ccy = innerBottom - r;
-    const ir = right + dx;
-    const ib = bottom + dy;
-    if (r > 0 && ir > ccx && ib > ccy) {
-      const dist = Math.hypot(ir - ccx, ib - ccy);
-      if (dist > r) {
-        const pull = dist - r;
-        dx -= (pull * (ir - ccx)) / dist;
-        dy -= (pull * (ib - ccy)) / dist;
-      }
-    }
-  }
   ctx.fillStyle = colour;
   ctx.textBaseline = 'middle';
-  ctx.translate(cx + dx, top + dy);
+  ctx.translate(cx, top);
   lines.forEach((line, i) => {
     fillTrackedCentered(ctx, line, 0, (i + 0.5) * L.HEAD_LINE, L.HEAD_TRACK);
   });
   ctx.restore();
+}
+
+/**
+ * How far to inset the partner cluster so extra-bold ink clears the inner dash.
+ *
+ * Applied to the ball and the heading together, so they stay centred on each
+ * other. Same idea as the live card. No scale.
+ */
+function partnerClusterNudge(
+  headW: number,
+  headTop: number,
+  headH: number,
+  pane: { x: number; y: number; w: number; h: number; r: number },
+  cx: number,
+): { dx: number; dy: number } {
+  const bleed = 0.45 * L.HEAD_PX;
+  const stroke = L.K;
+  const air = 8 * (pane.r / 8);
+  const right = cx + headW / 2 + bleed;
+  const bottom = headTop + headH + bleed;
+  const inCorner = bottom > pane.y + pane.h - pane.r;
+  const targetRight = inCorner
+    ? pane.x + pane.w - pane.r - Math.min(air, 6)
+    : pane.x + pane.w - stroke - air;
+  const targetBottom = pane.y + pane.h - stroke - air;
+  let dx = 0;
+  let dy = 0;
+  if (right > targetRight) dx -= right - targetRight;
+  if (bottom > targetBottom) dy -= bottom - targetBottom;
+  const innerRight = pane.x + pane.w - stroke - air;
+  const innerBottom = pane.y + pane.h - stroke - air;
+  const r = Math.max(0, pane.r - stroke - air);
+  const ccx = innerRight - r;
+  const ccy = innerBottom - r;
+  const ir = right + dx;
+  const ib = bottom + dy;
+  if (r > 0 && ir > ccx && ib > ccy) {
+    const dist = Math.hypot(ir - ccx, ib - ccy);
+    if (dist > r) {
+      const pull = dist - r;
+      dx -= (pull * (ir - ccx)) / dist;
+      dy -= (pull * (ib - ccy)) / dist;
+    }
+  }
+  return { dx, dy };
 }
 
 /**
@@ -401,6 +417,20 @@ function drawShowcase(
       cx: x + b.placed.left + b.placed.width / 2,
       cy: y + b.placed.top + (b.mirrored ? b.placed.sprite / 2 : headH + b.placed.sprite / 2),
     });
+    const partnerBlock = blocks[1];
+    const partnerAt = centre(partnerBlock);
+    const partnerNudge = partnerClusterNudge(
+      headWidth(ctx, PARTNER_HEAD),
+      partnerAt.cy + partnerBlock.placed.sprite / 2,
+      headH,
+      { x, y, w: box.width, h: box.height, r: L.SLOT_R },
+      partnerAt.cx,
+    );
+    const placedCentre = (b: (typeof blocks)[number]) => {
+      const at = centre(b);
+      if (!b.mirrored) return at;
+      return { cx: at.cx + partnerNudge.dx, cy: at.cy + partnerNudge.dy };
+    };
 
     // Both balls, then the seam, then both sprites. A ball carries a solid
     // white outline, and drawing the seam under it left the outline crossing
@@ -409,7 +439,7 @@ function drawShowcase(
     // balls before either sprite also stops the partner's ball from covering
     // the ace: measured over every pair, that was 787px of the worst case.
     for (const b of blocks) {
-      const { cx, cy } = centre(b);
+      const { cx, cy } = placedCentre(b);
       drawShowcaseArt(ctx, b.id, images, cx, cy, b.placed.sprite, 'ball');
     }
 
@@ -423,19 +453,10 @@ function drawShowcase(
     ctx.restore();
 
     for (const b of blocks) {
-      const { cx, cy } = centre(b);
+      const { cx, cy } = placedCentre(b);
       drawShowcaseArt(ctx, b.id, images, cx, cy, b.placed.sprite, 'sprite');
       const headTop = b.mirrored ? cy + b.placed.sprite / 2 : cy - b.placed.sprite / 2 - headH;
-      drawHeading(
-        ctx,
-        b.lines,
-        cx,
-        headTop,
-        shades.band,
-        b.mirrored
-          ? { x, y, w: box.width, h: box.height, r: L.SLOT_R }
-          : undefined,
-      );
+      drawHeading(ctx, b.lines, cx, headTop, shades.band);
     }
     return;
   }

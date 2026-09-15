@@ -111,9 +111,19 @@ test.describe('the ace and partner slot', () => {
     const where = `in a slot ${slot.width.toFixed(0)}px wide`;
     // Turn the slot over and the two halves swap places. That is the whole
     // design: the seam runs corner to corner, so the halves are congruent and
-    // neither is the lesser one.
-    expect(Math.abs(ace.cx + partner.cx - 1), `across, ${where}`).toBeLessThanOrEqual(DRIFT);
-    expect(Math.abs(ace.cy + partner.cy - 1), `down, ${where}`).toBeLessThanOrEqual(DRIFT);
+    // neither is the lesser one. The partner cluster may sit inward of a
+    // perfect 180-degree mirror so SHOULDERMON clears the inner dash. It must
+    // not sit outward of that mirror, and the ace must not collapse toward
+    // the top-left (that was the CSS-zoom placement bug this spec exists to
+    // catch).
+    expect(ace.cx, `ace not pulled to the left, ${where}`).toBeGreaterThan(0.26);
+    expect(ace.cy, `ace not pulled to the top, ${where}`).toBeGreaterThan(0.2);
+    expect(partner.cx, `partner stays on the right, ${where}`).toBeGreaterThan(0.5);
+    expect(partner.cy, `partner stays on the bottom, ${where}`).toBeGreaterThan(0.5);
+    expect(partner.cx, `partner is not past the ace's mirror, ${where}`)
+      .toBeLessThanOrEqual(1 - ace.cx + DRIFT);
+    expect(partner.cy, `partner is not past the ace's mirror, ${where}`)
+      .toBeLessThanOrEqual(1 - ace.cy + DRIFT);
     for (const half of halves) {
       expect(half.outOfSlot, `${half.id} paints outside the slot`).toBeLessThanOrEqual(1);
     }
