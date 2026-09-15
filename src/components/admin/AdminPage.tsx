@@ -748,49 +748,6 @@ function PreviewLanguageChip({
   );
 }
 
-/** Geo / platform / language chips. Icons disclose their name on press or hover. */
-function PlatformChips({
-  rec,
-  className,
-  compactLang,
-}: {
-  rec: HeaderRec;
-  className?: string;
-  compactLang?: boolean;
-}) {
-  return (
-    <TooltipScope>
-      <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
-        {rec.country && (
-          <InfoChip label={`${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}`}>
-            <FlagIcon country={rec.country} />
-          </InfoChip>
-        )}
-        {rec.device && (
-          <InfoChip label={rec.device}>
-            <DeviceIcon value={rec.device} />
-          </InfoChip>
-        )}
-        {rec.os && (
-          <InfoChip label={rec.os}>
-            <OsIcon value={rec.os} />
-          </InfoChip>
-        )}
-        {rec.browser && (
-          <InfoChip label={rec.browser}>
-            <BrowserIcon value={rec.browser} />
-          </InfoChip>
-        )}
-        {compactLang ? (
-          <PreviewLanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
-        ) : (
-          <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
-        )}
-      </div>
-    </TooltipScope>
-  );
-}
-
 /** Consolidated detail header: Back, the middle-truncated id, the dex/league
  *  toggle, and the geo / platform / language chips on one rail. */
 function DetailHeader({

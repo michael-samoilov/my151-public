@@ -365,7 +365,6 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
     exportsLeague: cards >= 11 ? 1 : 0,
     exportedCardAt: cards >= 8 ? iso(lastTs - 3_600_000) : undefined,
     exportedLeagueAt: cards >= 11 ? iso(lastTs) : undefined,
-    tz: 'America/New_York',
     sessionLog: Array.from({ length: sess }, (_, i) => {
       const c2 = Math.max(1, Math.round((cards * (i + 1)) / sess));
       // Older beacons carried only summary counts, no card structure. Model that
