@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { PicksDetailPage } from '@/components/admin/PicksDetailPage';
@@ -18,7 +18,39 @@ import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineM
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
-import { Globe, Languages } from 'lucide-react';
+import {
+  ARCHIVE_FILTER_OPTIONS,
+  bareCid,
+  countryName,
+  dexChipLabel,
+  FACET_KEYS,
+  FACET_LABEL,
+  FACET_UNKNOWN,
+  facetLabel,
+  formatWhen,
+  langName,
+  leagueChipLabel,
+  leagueExported,
+  matchesArchiveFilter,
+  matchesFacetFilters,
+  matchesToolFilter,
+  mergedSessionStats,
+  previewLanguage,
+  PREVIEW_FIT,
+  sameBaseLang,
+  sessionChipParts,
+  TOOL_FILTER_OPTIONS,
+  toolKind,
+  uniqueFacetValues,
+  type ArchiveFilter,
+  type FacetFilters,
+  type FacetKey,
+  type ToolFilter,
+} from '@/components/admin/userPreview';
+import { PreviewFilterMenu } from '@/components/admin/PreviewFilterMenu';
+import { FitNowrap, PreviewChipZoomProvider } from '@/components/admin/FitNowrap';
+import { useHostZoom } from '@/components/admin/previewChipZoom';
+import { Archive, ArchiveRestore, Camera, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
 
 // Human labels for the onboarding/funnel events shown per session.
 
@@ -45,13 +77,6 @@ interface BarGroup {
   children: { label: string; count: number }[];
 }
 
-const SORT_LABELS: Record<string, string> = {
-  'build-order': 'Build Order',
-  regional: 'Regional',
-  national: 'National',
-  type: 'Type',
-  custom: 'Custom',
-};
 const TOOL_TABS: { key: ToolSlice; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'dex', label: 'Dex builder' },
@@ -135,6 +160,8 @@ export interface ClientRecord {
     groupSpecial: boolean;
     showStats?: boolean;
   };
+  /** Dropped from dashboard aggregates; still listed when the archive filter asks. */
+  archived?: boolean;
 }
 
 /** One tool's slice of every aggregate that does not care which tool it came
@@ -187,6 +214,7 @@ export interface LeagueUser {
   sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string; cards?: LeagueCard[] }[];
   order?: 'dex-first' | 'league-first' | 'same-day';
   gapDays?: number;
+  archived?: boolean;
 }
 
 /** One seated evolution line: member ids, and the per-stage first row when the
@@ -223,6 +251,8 @@ export interface LeagueSummary {
 
 export interface ApiResponse {
   totalUsers: number;
+  /** Dex records in the store, including archived. Used for list pagination. */
+  totalDexRecords?: number;
   offset: number;
   limit: number;
   funnel: { users: number; completed: number; exported: number };
@@ -359,7 +389,6 @@ function relativeTime(ts: number): string {
   return `${Math.round(h / 24)}d ago`;
 }
 
-/** Format a whole-seconds value as a compact duration: 45s, 3m, 1h 5m. */
 function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; lastTs: number; tz?: string }): number {
   const stamps = (rec.sessionLog ?? []).map((s) => s.ts);
   if (stamps.length === 0) {
@@ -368,99 +397,11 @@ function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; l
   return distinctCalendarDays(stamps, rec.tz);
 }
 
-function fmtDuration(ms: number): string {
-  const s = Math.round(ms / 1000);
-  if (s < 60) return `${s}s`;
-  const m = Math.round(s / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  return `${h}h${m % 60 ? ` ${m % 60}m` : ''}`;
-}
-
-
 function flag(country?: string): string {
   if (!country || country.length !== 2) return '';
   const cc = country.toUpperCase();
   if (!/^[A-Z]{2}$/.test(cc)) return '';
   return String.fromCodePoint(...[...cc].map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
-}
-
-/** Human-readable language for a BCP-47 tag: "es-ES" → "Spanish (es-ES)".
- *  This is the browser's Accept-Language preference — i.e. the language the
- *  app would auto-detect for this user — not an in-app selection. Falls back
- *  to the raw tag when Intl can't resolve the subtag. */
-let langNames: Intl.DisplayNames | null | undefined;
-function langLabel(tag?: string): string | undefined {
-  if (!tag) return undefined;
-  if (langNames === undefined) {
-    try {
-      langNames = new Intl.DisplayNames(['en'], { type: 'language' });
-    } catch {
-      langNames = null;
-    }
-  }
-  const base = tag.split('-')[0];
-  try {
-    const name = langNames?.of(base);
-    if (name && name.toLowerCase() !== base.toLowerCase()) return `${name} (${tag})`;
-  } catch {
-    /* unresolvable subtag — fall through to the raw tag */
-  }
-  return tag;
-}
-
-/** Language name only, no tag: "es-ES" → "Spanish". Falls back to the tag. */
-function langName(tag?: string): string | undefined {
-  if (!tag) return undefined;
-  if (langNames === undefined) {
-    try {
-      langNames = new Intl.DisplayNames(['en'], { type: 'language' });
-    } catch {
-      langNames = null;
-    }
-  }
-  try {
-    const name = langNames?.of(tag.split('-')[0]);
-    if (name) return name;
-  } catch {
-    /* unresolvable subtag */
-  }
-  return tag;
-}
-
-/** Country name from an ISO code: "CZ" → "Czechia". Falls back to the code. */
-let regionNames: Intl.DisplayNames | null | undefined;
-function countryName(code?: string): string | undefined {
-  if (!code) return undefined;
-  if (regionNames === undefined) {
-    try {
-      regionNames = new Intl.DisplayNames(['en'], { type: 'region' });
-    } catch {
-      regionNames = null;
-    }
-  }
-  try {
-    const name = regionNames?.of(code.toUpperCase());
-    if (name) return name;
-  } catch {
-    /* unresolvable code */
-  }
-  return code;
-}
-
-/** Same primary language subtag, ignoring script/region — so a served
- *  "zh-Hans" is not reported as disagreeing with a browser's "zh-CN". */
-function sameBaseLang(a: string, b: string): boolean {
-  return a.split('-')[0].toLowerCase() === b.split('-')[0].toLowerCase();
-}
-
-function localTime(when: number, tz?: string): string | null {
-  if (!tz) return null;
-  try {
-    return new Intl.DateTimeFormat(undefined, { timeZone: tz, dateStyle: 'medium', timeStyle: 'short' }).format(when);
-  } catch {
-    return null;
-  }
 }
 
 async function fetchDashboard(token: string, limit: number, offset: number): Promise<ApiResponse> {
@@ -771,6 +712,40 @@ function UserToolSeg({
         );
       })}
     </div>
+  );
+}
+
+function PreviewLanguageChip({
+  lang,
+  locale,
+  switched,
+  fillMd,
+}: {
+  lang?: string;
+  locale?: string;
+  switched?: string;
+  fillMd?: boolean;
+}) {
+  const preview = previewLanguage(lang, locale, switched);
+  if (!preview) return null;
+  const name = langName(preview.tag) ?? preview.tag;
+  const icon =
+    preview.kind === 'switched' ? (
+      <Languages className="h-[13px] w-[13px]" />
+    ) : preview.kind === 'unsupported' ? (
+      <Globe className="h-[13px] w-[13px]" />
+    ) : (
+      <span className="[&>svg]:h-[13px] [&>svg]:w-[13px]" aria-hidden>
+        {POKEBALL_SVG}
+      </span>
+    );
+  const kindLabel =
+    preview.kind === 'switched' ? 'Switched' : preview.kind === 'unsupported' ? 'Browser' : 'Served';
+  return (
+    <InfoChip fillMd={fillMd} label={`${kindLabel} ${name}`}>
+      {icon}
+      <span className="text-xs font-medium">{langAbbr(preview.tag)}</span>
+    </InfoChip>
   );
 }
 
@@ -1136,209 +1111,349 @@ function regionGroups(countries: Record<string, number>): BarGroup[] {
     .sort((a, b) => b.count - a.count);
 }
 
-/**
- * Fold raw Accept-Language tags into one row per language.
- *
- * Tags run through the app's own negotiation, so `en-GB`, `en-CA` and `en-US`
- * land on the single locale they would actually be served, and `zh-CN` lands on
- * `zh-Hans` rather than being lumped with `zh-Hant`. A tag that matches nothing
- * we ship folds to its primary subtag instead and is marked — those rows are
- * the localisation backlog, ranked by how many users are waiting in it.
- */
-function fmtExportSettings(s: NonNullable<ClientRecord['exportSettings']>): string {
-  const parts = [SORT_LABELS[s.sort] ?? s.sort];
-  if (s.outlines) parts.push('outlines');
-  parts.push(s.groupSpecial ? 'specials grouped' : 'specials inline');
-  if (s.showStats) parts.push('stats');
-  return parts.join(' · ');
-}
-
-function UserCard({ rec, league, onDelete, onOpen, zIndex, stickyOffset }: { rec: ClientRecord; league?: LeagueUser; onDelete: (rec: ClientRecord) => void; onOpen: () => void; zIndex: number; stickyOffset: number }) {
-  // Two-step delete: first click arms, second confirms. Auto-disarms after a
-  // few seconds so a forgotten armed button can't be hit later by accident.
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  useEffect(() => {
-    if (!confirmingDelete) return;
-    const t = setTimeout(() => setConfirmingDelete(false), 4000);
-    return () => clearTimeout(t);
-  }, [confirmingDelete]);
-  const cardRef = useRef<HTMLElement>(null);
-  const headerRef = useRef<HTMLDivElement>(null);
-  const userLocal = localTime(rec.lastTs, rec.tz);
-  const ctx = [
-    rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
-    [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
-    // What the app actually rendered in. Records predating locale reporting
-    // have only the Accept-Language header, which is labelled as such so a
-    // browser preference is never misread as the language we served.
-    rec.locale ? `🗣 ${langLabel(rec.locale)}` : rec.lang && `🗣 ${langLabel(rec.lang)} · browser`,
-    // When the browser asked for something else, the difference is the user's
-    // own choice — a picker selection or a ?lang= link.
-    rec.locale && rec.lang && !sameBaseLang(rec.locale, rec.lang)
-      ? `browser: ${langLabel(rec.lang)}`
-      : undefined,
-  ].filter(Boolean);
-
+function MetricChip({
+  label,
+  exported,
+  metric,
+  empty,
+  className,
+  children,
+}: {
+  label?: string;
+  exported?: boolean;
+  empty?: boolean;
+  metric: 'session' | 'dex' | 'league';
+  className?: string;
+  children?: ReactNode;
+}) {
   return (
-    <section ref={cardRef} style={{ zIndex, scrollMarginTop: stickyOffset }}>
-      <div ref={headerRef} className="sticky z-[5]" style={{ top: stickyOffset }}>
-        <div className="h-4 bg-background" />
-        <div className="rounded-lg bg-card p-3 shadow-elevated">
-          <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-            <div className="text-sm">
-              <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
-              <span className="text-muted-foreground">
-                {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'} · depth {rec.maxDepth}
-              </span>
-              {(rec.sessionMs?.length || rec.sessions) && (
-                <span className="block text-xs text-muted-foreground">
-                  {rec.sessions ?? rec.sessionMs?.length} session
-                  {(rec.sessions ?? rec.sessionMs?.length) === 1 ? '' : 's'}
-                  {/* Distinct calendar days this record was active on. Vercel
-                      counts a *daily* unique visitor, so one person returning
-                      over N days is roughly N visitors there and exactly one
-                      user here — the single most confusing gap between the two
-                      dashboards. Printing the day count makes the two numbers
-                      reconcilable instead of contradictory. */}
-                  {(() => {
-                    const days = activeDayCount(rec);
-                    return days > 1 ? ` across ${days} days` : '';
-                  })()}
-                  {rec.sessionMs?.length ? `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}` : ''}
-                </span>
-              )}
-              <span className="block text-xs text-muted-foreground">
-                {rec.completed && <span className="text-primary font-medium">✓ completed </span>}
-                {rec.exported && (
-                  <span>
-                    📷 exported
-                    {rec.exportSettings && (
-                      <span className="text-muted-foreground"> ({fmtExportSettings(rec.exportSettings)})</span>
-                    )}{' '}
-                  </span>
-                )}
-                {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning</span>}
-                {league && (
-                  <span className="text-primary"> · 🏅 league ({league.maxCards}/{CARD_COUNT})</span>
-                )}
-                {userLocal && <> · their {userLocal}</>}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" onClick={onOpen}>
-                Builds ›
-              </Button>
-              {confirmingDelete ? (
-                <>
-                  <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => {
-                      setConfirmingDelete(false);
-                      onDelete(rec);
-                    }}
-                  >
-                    Confirm delete
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => setConfirmingDelete(true)}
-                >
-                  Delete
-                </Button>
-              )}
-            </div>
-          </div>
-          {ctx.length > 0 && (
-            <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
-              {ctx.map((c, i) => (
-                <span key={i}>{c}</span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </section>
+    <span
+      data-metric={metric}
+      data-empty={empty ? 'true' : undefined}
+      className={cn(
+        'inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-1 text-xs font-medium tabular-nums md:justify-center md:px-2',
+        empty && 'opacity-40',
+        className,
+      )}
+    >
+      {children ?? label}
+      {exported && !empty ? <Camera className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="exported" /> : null}
+    </span>
   );
 }
 
-function countLabel(n: number, one: string, many: string): string {
-  return `${n} ${Math.abs(n) === 1 ? one : many}`;
+function SessionMetricChip({
+  sessions,
+  totalMs,
+  className,
+}: {
+  sessions: number;
+  totalMs: number;
+  className?: string;
+}) {
+  const parts = sessionChipParts(sessions, totalMs);
+  return (
+    <MetricChip metric="session" className={className}>
+      <span className="font-bold text-foreground tabular-nums">{parts.count}</span>
+      <span className="font-medium tabular-nums text-muted-foreground">
+        {parts.unit} · {parts.duration}
+      </span>
+    </MetricChip>
+  );
 }
 
-function LeagueUserCard({
-  rec,
-  onOpen,
-  zIndex,
-  stickyOffset,
-}: {
-  rec: LeagueUser;
-  onOpen: () => void;
-  zIndex: number;
-  stickyOffset: number;
-}) {
-  const cardRef = useRef<HTMLElement>(null);
-  const userLocal = localTime(rec.lastTs, rec.tz);
-  const ctx = [
-    rec.country && `${flag(rec.country)} ${rec.country}${rec.region ? '/' + rec.region : ''}`,
-    [rec.device, rec.os, rec.browser].filter(Boolean).join(' · '),
-    rec.locale ? `🗣 ${langLabel(rec.locale)}` : rec.lang && `🗣 ${langLabel(rec.lang)} · browser`,
-  ].filter(Boolean);
-
+function PreviewMetricScale({ children }: { children: ReactNode }) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  const zoom = useHostZoom(hostRef, innerRef);
   return (
-    <section ref={cardRef} style={{ zIndex, scrollMarginTop: stickyOffset }}>
-      <div className="sticky z-[5]" style={{ top: stickyOffset }}>
-        <div className="h-4 bg-background" />
-        <div className="rounded-lg bg-card p-3 shadow-elevated">
-          <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-            <div className="text-sm">
-              <span className="font-semibold">{new Date(rec.lastTs).toLocaleString()}</span>
-              <span className="text-muted-foreground">
-                {' '}· {relativeTime(rec.lastTs)} · {rec.submits} edit{rec.submits === 1 ? '' : 's'}
-              </span>
-              <span className="block text-xs text-muted-foreground">
-                {countLabel(rec.maxCards, 'trainer card', 'trainer cards')} filled of {CARD_COUNT} ·{' '}
-                {countLabel(rec.maxSeats, 'seat', 'seats')} · {rec.sessions} session
-                {rec.sessions === 1 ? '' : 's'}
-                {rec.sessionMs.length > 0 && `: ${rec.sessionMs.map((ms) => fmtDuration(ms)).join(', ')}`}
-              </span>
-              <span className="block text-xs text-muted-foreground">
-                {rec.maxCards >= CARD_COUNT && (
-                  <span className="text-primary font-medium">✓ full league </span>
-                )}
-                {(rec.exportsCard > 0 || rec.exportsLeague > 0) && (
-                  <span>📷 exported </span>
-                )}
-                {rec.lastTs - rec.firstTs >= 86_400_000 && <span>· returning </span>}
-                {rec.hasDex ? (
-                  <span className="text-primary">· 📕 has a dex</span>
-                ) : (
-                  <span>· league only</span>
-                )}
-                {userLocal && <> · their {userLocal}</>}
-              </span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={onOpen}>
-              Visits ›
-            </Button>
+    <>
+      <div
+        aria-hidden
+        data-preview-chip-zoom={zoom}
+        className="pointer-events-none invisible absolute inset-x-0 px-2.5 md:hidden"
+        style={{ height: 0, overflow: 'hidden' }}
+      >
+        <div ref={hostRef} className="min-w-0 overflow-x-clip">
+          <div ref={innerRef} className="flex w-max flex-nowrap items-center gap-1">
+            <SessionMetricChip sessions={PREVIEW_FIT.sessions} totalMs={PREVIEW_FIT.totalMs} />
+            <MetricChip metric="dex" label={dexChipLabel(PREVIEW_FIT.dex)} exported />
+            <MetricChip metric="league" label={leagueChipLabel(PREVIEW_FIT.league, CARD_COUNT)} exported />
           </div>
-          {ctx.length > 0 && (
-            <div className="text-xs text-muted-foreground mb-1 flex flex-wrap gap-x-2">
-              {ctx.map((c, i) => (
-                <span key={i}>{c}</span>
-              ))}
-            </div>
-          )}
         </div>
       </div>
-    </section>
+      <PreviewChipZoomProvider zoom={zoom}>{children}</PreviewChipZoomProvider>
+    </>
+  );
+}
+
+const PREVIEW_TABLE =
+  'relative flex w-full flex-col gap-2 md:grid md:grid-cols-[auto_auto_auto_auto_auto_auto_auto_auto_auto_auto_1fr] md:gap-x-2 md:gap-y-2';
+
+const FACET_COL: Record<FacetKey, string> = {
+  country: 'md:col-start-3',
+  device: 'md:col-start-4',
+  os: 'md:col-start-5',
+  browser: 'md:col-start-6',
+  language: 'md:col-start-7',
+};
+
+const FACET_ANY = '__any__';
+
+function facetIcon(key: FacetKey, value: string): ReactNode {
+  if (value === FACET_UNKNOWN) return facetLeadIcon(key);
+  if (key === 'country') return <FlagIcon country={value} />;
+  if (key === 'device') return <DeviceIcon value={value} />;
+  if (key === 'os') return <OsIcon value={value} />;
+  if (key === 'browser') return <BrowserIcon value={value} />;
+  return <Globe className="h-3 w-3" />;
+}
+
+function facetLeadIcon(key: FacetKey): ReactNode {
+  const cls = 'h-3.5 w-3.5';
+  if (key === 'country') return <Globe className={cls} />;
+  if (key === 'device') return <DeviceIcon value="Desktop" />;
+  if (key === 'os') return <Monitor className={cls} />;
+  if (key === 'browser') return <AppWindow className={cls} />;
+  return <Languages className={cls} />;
+}
+
+function PreviewFacetMenus({
+  listed,
+  facets,
+  setFacets,
+}: {
+  listed: { rec: HeaderRec }[];
+  facets: FacetFilters;
+  setFacets: (next: FacetFilters | ((prev: FacetFilters) => FacetFilters)) => void;
+}) {
+  return (
+    <>
+      {FACET_KEYS.map((key) => {
+        const recs = listed
+          .filter((row) => matchesFacetFilters(row.rec, { ...facets, [key]: undefined }))
+          .map((row) => row.rec);
+        return (
+          <PreviewFilterMenu
+            key={key}
+            name={FACET_LABEL[key]}
+            className={cn('md:justify-self-stretch', FACET_COL[key], 'md:row-start-1')}
+            value={facets[key] ?? FACET_ANY}
+            anyKey={FACET_ANY}
+            clearable
+            compactMd
+            fillMd
+            leadIcon={facetLeadIcon(key)}
+            options={[
+              { key: FACET_ANY, label: 'Any' },
+              ...uniqueFacetValues(recs, key).map((v) => ({
+                key: v,
+                label: facetLabel(key, v),
+                chipLabel: key === 'country' || key === 'language' ? (v === FACET_UNKNOWN ? 'Unknown' : v.toUpperCase()) : facetLabel(key, v),
+                icon: facetIcon(key, v),
+              })),
+            ]}
+            onChange={(next) => {
+              setFacets((prev) => {
+                const out = { ...prev };
+                if (next === FACET_ANY) delete out[key];
+                else out[key] = next;
+                return out;
+              });
+            }}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+function PreviewStatusMenus({
+  archiveFilter,
+  setArchiveFilter,
+  toolFilter,
+  setToolFilter,
+}: {
+  archiveFilter: ArchiveFilter;
+  setArchiveFilter: (v: ArchiveFilter) => void;
+  toolFilter: ToolFilter;
+  setToolFilter: (v: ToolFilter) => void;
+}) {
+  return (
+    <>
+      <PreviewFilterMenu
+        name="Status"
+        className="md:col-start-11 md:row-start-1 md:justify-self-end"
+        value={archiveFilter}
+        options={ARCHIVE_FILTER_OPTIONS}
+        onChange={setArchiveFilter}
+        ariaLabel="Archive filter"
+      />
+      <PreviewFilterMenu
+        name="Tools"
+        className="md:col-start-9 md:col-span-2 md:row-start-1 md:justify-self-start"
+        value={toolFilter}
+        anyKey="any"
+        clearable
+        options={TOOL_FILTER_OPTIONS}
+        onChange={setToolFilter}
+        ariaLabel="Tool filter"
+      />
+    </>
+  );
+}
+
+function PreviewPlatformSlot({
+  colClass,
+  empty,
+  label,
+  children,
+}: {
+  colClass: string;
+  empty?: boolean;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <span className={cn('inline-flex', colClass, 'md:row-start-1 md:justify-self-stretch', empty && 'opacity-40')}>
+      <InfoChip fillMd label={label}>{children}</InfoChip>
+    </span>
+  );
+}
+
+function UserPreviewCard({
+  rec,
+  dex,
+  league,
+  archived,
+  onOpen,
+  onArchive,
+}: {
+  rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
+  dex?: { depth: number; exported: boolean; sessions?: number; sessionMs?: number[] };
+  league?: { cards: number; exported: boolean; sessions?: number; sessionMs?: number[] };
+  archived: boolean;
+  onOpen: () => void;
+  onArchive: (next: boolean) => void;
+}) {
+  const { sessions, totalMs } = mergedSessionStats(
+    { sessions: rec.sessions, sessionMs: rec.sessionMs },
+    dex?.sessions != null || dex?.sessionMs ? dex : undefined,
+    league?.sessions != null || league?.sessionMs ? league : undefined,
+  );
+  const langPreview = previewLanguage(rec.lang, rec.locale, rec.switched);
+
+  return (
+    <div
+      role="link"
+      tabIndex={0}
+      data-user-preview
+      aria-label={`Open user ${middleId(rec.cid)}`}
+      className={cn(
+        'flex min-w-0 cursor-pointer flex-col gap-1 rounded-lg bg-card px-2.5 py-2 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'md:col-span-full md:grid md:grid-cols-subgrid md:grid-rows-1 md:items-center md:gap-x-2 md:py-1.5',
+        archived && 'opacity-70',
+      )}
+      onClick={onOpen}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen();
+        }
+      }}
+    >
+      <div className="flex min-w-0 items-center gap-1 md:contents">
+        <FitNowrap contentsOnMd className="min-w-0 flex-1">
+          <span className="whitespace-nowrap text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1">
+            {formatWhen(rec.lastTs, rec.tz)}
+          </span>
+          <span className="whitespace-nowrap text-sm text-muted-foreground md:col-start-2 md:row-start-1">
+            {relativeTime(rec.lastTs)}
+          </span>
+        </FitNowrap>
+        <div
+          className="shrink-0 md:col-start-11 md:row-start-1 md:justify-self-end"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="relative h-7 w-7 p-0 text-red-600 hover:text-red-700 before:absolute before:-inset-2 before:content-['']"
+            aria-label={archived ? 'Unarchive user' : 'Archive user'}
+            onClick={() => onArchive(!archived)}
+          >
+            {archived ? <ArchiveRestore className="h-3.5 w-3.5" /> : <Archive className="h-3.5 w-3.5" />}
+          </Button>
+        </div>
+      </div>
+      <div className="min-w-0 md:contents">
+        <FitNowrap contentsOnMd className="min-w-0">
+          <PreviewPlatformSlot
+            colClass={FACET_COL.country}
+            empty={!rec.country}
+            label={rec.country ? `${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}` : 'Unknown'}
+          >
+            {rec.country ? <FlagIcon country={rec.country} /> : <Globe className="h-[13px] w-[13px]" />}
+          </PreviewPlatformSlot>
+          <PreviewPlatformSlot
+            colClass={FACET_COL.device}
+            empty={!rec.device}
+            label={rec.device ?? 'Unknown'}
+          >
+            <DeviceIcon value={rec.device} />
+          </PreviewPlatformSlot>
+          <PreviewPlatformSlot
+            colClass={FACET_COL.os}
+            empty={!rec.os}
+            label={rec.os ?? 'Unknown'}
+          >
+            <OsIcon value={rec.os} />
+          </PreviewPlatformSlot>
+          <PreviewPlatformSlot
+            colClass={FACET_COL.browser}
+            empty={!rec.browser}
+            label={rec.browser ?? 'Unknown'}
+          >
+            <BrowserIcon value={rec.browser} />
+          </PreviewPlatformSlot>
+          <span className={cn(FACET_COL.language, 'inline-flex md:row-start-1 md:justify-self-stretch', !langPreview && 'opacity-40')}>
+            {langPreview ? (
+              <PreviewLanguageChip fillMd lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+            ) : (
+              <InfoChip fillMd label="Unknown">
+                <Globe className="h-[13px] w-[13px]" />
+              </InfoChip>
+            )}
+          </span>
+        </FitNowrap>
+      </div>
+      <div className="min-w-0 md:contents">
+        <FitNowrap contentsOnMd lockZoom>
+          <SessionMetricChip
+            sessions={sessions}
+            totalMs={totalMs}
+            className="md:col-start-8 md:row-start-1 md:justify-self-stretch"
+          />
+          <MetricChip
+            metric="dex"
+            empty={!dex}
+            className="md:col-start-9 md:row-start-1 md:justify-self-stretch"
+            label={dexChipLabel(dex?.depth ?? 0)}
+            exported={dex?.exported}
+          />
+          <MetricChip
+            metric="league"
+            empty={!league}
+            className="md:col-start-10 md:row-start-1 md:justify-self-stretch"
+            label={leagueChipLabel(league?.cards ?? 0, CARD_COUNT)}
+            exported={league?.exported}
+          />
+        </FitNowrap>
+      </div>
+    </div>
   );
 }
 
@@ -1456,6 +1571,10 @@ export function AdminPage() {
   const [flowView, setFlowView] = useState<'usage' | 'referrer'>('usage');
   // Clicking a preview opens a full detail page ({kind, cid}); Back clears it.
   const [detail, setDetail] = useState<Detail | null>(null);
+  const [archiveFilter, setArchiveFilter] = useState<ArchiveFilter>('active');
+  const [toolFilter, setToolFilter] = useState<ToolFilter>('any');
+  const [facetFilters, setFacetFilters] = useState<FacetFilters>({});
+  const [archiveOverride, setArchiveOverride] = useState<Record<string, boolean>>({});
   const [authed, setAuthed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -1468,6 +1587,7 @@ export function AdminPage() {
     if (pageHeaderRef.current) setPageHeaderH(pageHeaderRef.current.offsetHeight);
   });
 
+
   // Open a detail page from the dashboard, remembering the scroll position so
   // Back returns the reader to exactly where they were, not the top.
   const dashScrollRef = useRef(0);
@@ -1479,6 +1599,7 @@ export function AdminPage() {
   useLayoutEffect(() => {
     if (!detail) window.scrollTo(0, dashScrollRef.current);
   }, [detail]);
+  const openPicks = useCallback(() => openDetail({ kind: 'picks' }), [openDetail]);
 
   const load = useCallback(async (tok: string, limit = PAGE_SIZE) => {
     setLoading(true);
@@ -1533,28 +1654,35 @@ export function AdminPage() {
     }
   }, [token, data]);
 
-  const deleteUser = useCallback(
-    async (rec: ClientRecord) => {
-      // Guarded by the two-step arm/confirm in UserCard; this just performs it.
+  const setArchived = useCallback(
+    async (cid: string, next: boolean) => {
+      const key = bareCid(cid);
+      setArchiveOverride((prev) => ({ ...prev, [key]: next }));
       if (!token) return;
       setError(null);
       try {
-        const res = await fetch('/api/delete-entry', {
+        const res = await fetch('/api/archive-entry', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ cid: rec.cid }),
+          body: JSON.stringify({ cid, archived: next }),
         });
-        if (!res.ok) throw new Error(`Delete failed (${res.status}).`);
-        setData((prev) =>
-          prev
-            ? { ...prev, totalUsers: Math.max(0, prev.totalUsers - 1), records: prev.records.filter((r) => r.cid !== rec.cid) }
-            : prev,
-        );
+        if (!res.ok) throw new Error(`Archive failed (${res.status}).`);
+        await load(token, data?.records.length ?? PAGE_SIZE);
+        setArchiveOverride((prev) => {
+          const copy = { ...prev };
+          delete copy[key];
+          return copy;
+        });
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Delete failed.');
+        setArchiveOverride((prev) => {
+          const copy = { ...prev };
+          delete copy[key];
+          return copy;
+        });
+        setError(e instanceof Error ? e.message : 'Archive failed.');
       }
     },
-    [token],
+    [token, data, load],
   );
 
   const pickTool = useCallback((next: ToolSlice) => {
@@ -1625,6 +1753,7 @@ export function AdminPage() {
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-1">
           <h1 className="whitespace-nowrap text-sm font-bold">
+
             <span className="text-primary">my151</span> · Analytics
           </h1>
           <div className="flex items-center gap-0.5">
@@ -1928,49 +2057,127 @@ export function AdminPage() {
             </Panel>
 
             {showDex && (
-              <WhatPeoplePick mostBySection={data.popularBySection} n={built} onOpen={() => openDetail({ kind: 'picks' })} />
+              <WhatPeoplePick mostBySection={data.popularBySection} n={built} onOpen={openPicks} />
             )}
 
             <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
-              {showDex && data.records.length === 0 && !loading && (
-                <p className="text-sm text-muted-foreground">No users yet.</p>
-              )}
-              {showDex && (
-                <div className="-mt-2 flex flex-col">
-                  {data.records.map((rec, i) => (
-                    <UserCard
-                      key={rec.cid}
-                      rec={rec}
-                      league={data.leagueByCid?.[rec.cid]}
-                      onDelete={deleteUser}
-                      onOpen={() => openDetail({ kind: 'dex', cid: rec.cid })}
-                      zIndex={data.records.length - i}
-                      stickyOffset={pageHeaderH}
-                    />
-                  ))}
-                </div>
-              )}
-              {!showDex && data.leagueUsers && (
-                <div className="-mt-2 flex flex-col">
-                  {data.leagueUsers.map((rec, i) => (
-                    <LeagueUserCard
-                      key={rec.cid}
-                      rec={rec}
-                      onOpen={() => openDetail({ kind: 'league', cid: rec.cid })}
-                      zIndex={data.leagueUsers!.length - i}
-                      stickyOffset={pageHeaderH}
-                    />
-                  ))}
-                </div>
-              )}
-              {!showDex && (data.leagueUsers?.length ?? 0) === 0 && !loading && (
-                <p className="text-sm text-muted-foreground">No league users yet.</p>
-              )}
-              {showDex && data.records.length < data.totalUsers && (
-                <Button className="mt-3" variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
-                  {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${data.totalUsers})`}
-                </Button>
-              )}
+              {(() => {
+                const archivedOf = (cid: string, flag?: boolean) =>
+                  archiveOverride[bareCid(cid)] ?? flag ?? false;
+                type Row = {
+                  cid: string;
+                  rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
+                  dex?: { depth: number; exported: boolean; sessions?: number; sessionMs?: number[] };
+                  league?: { cards: number; exported: boolean; sessions?: number; sessionMs?: number[] };
+                  archived: boolean;
+                  open: Detail;
+                };
+                const listed: Row[] = [];
+                if (showDex) {
+                  for (const rec of data.records) {
+                    const league =
+                      data.leagueByCid?.[rec.cid] ?? data.leagueByCid?.[bareCid(rec.cid)];
+                    const kind = toolKind(true, !!league);
+                    if (!kind) continue;
+                    const archived = archivedOf(rec.cid, rec.archived);
+                    if (!matchesArchiveFilter(archived, archiveFilter)) continue;
+                    if (!matchesToolFilter(kind, toolFilter)) continue;
+                    listed.push({
+                      cid: rec.cid,
+                      rec,
+                      dex: { depth: rec.maxDepth, exported: rec.exported },
+                      league: league
+                        ? {
+                            cards: league.maxCards,
+                            exported: leagueExported(league.exportsCard, league.exportsLeague),
+                            sessions: league.sessions,
+                            sessionMs: league.sessionMs,
+                          }
+                        : undefined,
+                      archived,
+                      open: { kind: 'dex', cid: rec.cid },
+                    });
+                  }
+                } else {
+                  for (const rec of data.leagueUsers ?? []) {
+                    const dex = data.records.find((r) => r.cid === rec.cid || r.cid.split('::')[0] === rec.cid);
+                    const hasDex = !!dex || rec.hasDex;
+                    const kind = toolKind(hasDex, true);
+                    if (!kind) continue;
+                    const archived = archivedOf(rec.cid, rec.archived);
+                    if (!matchesArchiveFilter(archived, archiveFilter)) continue;
+                    if (!matchesToolFilter(kind, toolFilter)) continue;
+                    listed.push({
+                      cid: rec.cid,
+                      rec,
+                      dex: dex
+                        ? {
+                            depth: dex.maxDepth,
+                            exported: dex.exported,
+                            sessions: dex.sessions,
+                            sessionMs: dex.sessionMs,
+                          }
+                        : undefined,
+                      league: {
+                        cards: rec.maxCards,
+                        exported: leagueExported(rec.exportsCard, rec.exportsLeague),
+                      },
+                      archived,
+                      open: { kind: 'league', cid: rec.cid },
+                    });
+                  }
+                }
+                const rows = listed.filter((row) => matchesFacetFilters(row.rec, facetFilters));
+                const emptyList = showDex ? data.records.length === 0 : (data.leagueUsers?.length ?? 0) === 0;
+                const totalListed = data.totalDexRecords ?? data.totalUsers;
+                return (
+                  <>
+                    {emptyList && !loading && (
+                      <p className="text-sm text-muted-foreground">
+                        {showDex ? 'No users yet.' : 'No league users yet.'}
+                      </p>
+                    )}
+                    {!emptyList && rows.length === 0 && !loading && (
+                      <p className="text-sm text-muted-foreground">No users match these filters.</p>
+                    )}
+                    <div className={PREVIEW_TABLE}>
+                      <div
+                        data-preview-header
+                        className="mb-2 flex flex-wrap items-center gap-1.5 md:col-span-full md:mb-0 md:grid md:grid-cols-subgrid md:items-center md:gap-x-2 md:px-2.5 md:border-b md:border-border md:pb-1.5"
+                      >
+                        <PreviewStatusMenus
+                          archiveFilter={archiveFilter}
+                          setArchiveFilter={setArchiveFilter}
+                          toolFilter={toolFilter}
+                          setToolFilter={setToolFilter}
+                        />
+                        <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-1 md:row-start-1 md:flex">When</div>
+                        <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-2 md:row-start-1 md:flex">Ago</div>
+                        <PreviewFacetMenus listed={listed} facets={facetFilters} setFacets={setFacetFilters} />
+                        <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-8 md:row-start-1 md:flex">Sessions</div>
+                      </div>
+                      <PreviewMetricScale>
+                        {rows.map((row) => (
+                          <UserPreviewCard
+                            key={row.cid}
+                            rec={row.rec}
+                            dex={row.dex}
+                            league={row.league}
+                            archived={row.archived}
+                            onArchive={(next) => void setArchived(row.cid, next)}
+                            onOpen={() => openDetail(row.open)}
+                          />
+                        ))}
+                      </PreviewMetricScale>
+                    </div>
+                    {showDex && data.records.length < totalListed && (
+                      <Button className="mt-3" variant="outline" onClick={() => void loadMore()} disabled={loadingMore}>
+                        {loadingMore ? 'Loading…' : `Load more (${data.records.length} / ${totalListed})`}
+                      </Button>
+                    )}
+                  </>
+                );
+              })()}
             </Panel>
           </>
           );

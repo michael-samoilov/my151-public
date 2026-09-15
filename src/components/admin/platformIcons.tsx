@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useId, useState, type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 import {
   FaDesktop, FaMobileScreenButton, FaTabletScreenButton,
   FaWindows, FaApple, FaAndroid, FaLinux, FaUbuntu,
@@ -83,16 +84,27 @@ export function TooltipScope({ children }: { children: ReactNode }) {
  * Presses are coordinated by TooltipScope: opening one closes any other, and a
  * press anywhere else fades it.
  */
-export function InfoChip({ children, label }: { children: ReactNode; label: string }) {
+export function InfoChip({
+  children,
+  label,
+  fillMd,
+}: {
+  children: ReactNode;
+  label: string;
+  fillMd?: boolean;
+}) {
   const id = useId();
   const { openId, setOpenId } = useContext(TooltipCtx);
   const open = openId === id;
   return (
-    <span className="relative inline-flex" data-tooltip-chip>
+    <span className={cn('relative inline-flex', fillMd && 'md:w-full')} data-tooltip-chip>
       <button
         type="button"
         data-tooltip-chip
-        className="flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground"
+        className={cn(
+          'flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground',
+          fillMd && 'md:w-full md:justify-center',
+        )}
         aria-label={label}
         onClick={() => setOpenId(open ? null : id)}
         onPointerEnter={(e) => e.pointerType !== 'touch' && setOpenId(id)}

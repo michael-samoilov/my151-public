@@ -19,7 +19,7 @@ import type {
   ToolSlice,
 } from '../AdminPage';
 import { lineKey, poolIdsForSection } from '../picksStats';
-
+import { PREVIEW_FIT } from '../userPreview';
 const DAY = 86_400_000;
 // Anchor "now" to the data window's end so relative times read sensibly.
 const NOW = Date.UTC(2026, 8, 10, 18, 0, 0); // 2026-09-10
@@ -178,15 +178,42 @@ type NewestSeed = {
   comp: boolean;
   exp: boolean;
   hoursAgo: number;
+  archived?: boolean;
+  sessionMs?: number[];
+  locale?: string;
+  switched?: string;
+};
+const TZ: Record<string, string> = {
+  US: 'America/New_York',
+  IT: 'Europe/Rome',
+  SE: 'Europe/Stockholm',
+  CA: 'America/Toronto',
+  GB: 'Europe/London',
+  AU: 'Australia/Sydney',
+  FR: 'Europe/Paris',
 };
 const NEWEST: NewestSeed[] = [
+  {
+    cid: 'c0de…ff',
+    c: 'US',
+    dev: 'Mobile',
+    os: 'iOS',
+    browser: 'Safari',
+    lang: 'en-US',
+    sess: PREVIEW_FIT.sessions,
+    dex: PREVIEW_FIT.dex,
+    comp: true,
+    exp: true,
+    hoursAgo: 1,
+    sessionMs: [PREVIEW_FIT.totalMs],
+  },
   { cid: '74d5…68', c: 'US', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'en-US', sess: 11, dex: 151, comp: true, exp: false, hoursAgo: 2 },
   { cid: '70cd…a7', c: 'IT', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'it-IT', sess: 6, dex: 90, comp: false, exp: false, hoursAgo: 4 },
   { cid: '14c0…85', c: 'IT', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'it-IT', sess: 1, dex: 139, comp: true, exp: true, hoursAgo: 5 },
-  { cid: 'bea3…4e', c: 'US', dev: 'Mobile', os: 'iOS', browser: 'Safari', lang: 'en-US', sess: 9, dex: 151, comp: true, exp: false, hoursAgo: 6 },
+  { cid: 'bea3…4e', c: 'US', dev: 'Mobile', os: 'iOS', browser: 'Safari', lang: 'en-US', sess: 9, dex: 151, comp: true, exp: false, hoursAgo: 6, switched: 'ja' },
   { cid: '0f91…4a', c: 'SE', dev: 'Desktop', os: 'macOS', browser: 'Safari', lang: 'sv-SE', sess: 3, dex: 68, comp: false, exp: false, hoursAgo: 8 },
-  { cid: 'f269…9a', c: 'CA', dev: 'Mobile', os: 'Android', browser: 'Chrome', lang: 'en-CA', sess: 4, dex: 9, comp: false, exp: false, hoursAgo: 26 },
-  { cid: '4eab…af', c: 'GB', dev: 'Desktop', os: 'Windows', browser: 'Edge', lang: 'en-GB', sess: 1, dex: 3, comp: false, exp: false, hoursAgo: 27 },
+  { cid: 'f269…9a', c: 'CA', dev: 'Mobile', os: 'Android', browser: 'Chrome', lang: 'en-CA', sess: 4, dex: 9, comp: false, exp: false, hoursAgo: 26, archived: true },
+  { cid: '4eab…af', c: 'GB', dev: 'Desktop', os: 'Windows', browser: 'Edge', lang: 'el-GR', locale: 'en', sess: 1, dex: 3, comp: false, exp: false, hoursAgo: 27 },
 ];
 
 // Bucket a run of ids into a few real build sections so the scrubber shows a
@@ -207,8 +234,8 @@ function sectionsOf(ids: number[]): Record<string, number[]> {
 function record(s: NewestSeed): ClientRecord {
   const lastTs = NOW - s.hoursAgo * 3_600_000;
   const firstTs = lastTs - (s.sess + 2) * DAY;
-  const ids = Array.from({ length: s.dex }, (_, i) => i + 1);
-  const sessionMs = Array.from({ length: s.sess }, () => 120_000 + Math.round(Math.random() * 600_000));
+  const ids = Array.from({ length: Math.min(s.dex, 151) }, (_, i) => i + 1);
+  const sessionMs = s.sessionMs ?? Array.from({ length: s.sess }, (_, i) => 180_000 + ((i * 73) % 12) * 60_000);
   return {
     cid: s.cid,
     firstTs,
@@ -246,14 +273,16 @@ function record(s: NewestSeed): ClientRecord {
         sections: sectionsOf(upto),
       };
     }),
-    maxDepth: Math.min(151, s.dex),
+    maxDepth: s.dex,
     localHour: 20,
     localDow: 3,
     country: s.c,
     region: s.c === 'US' || s.c === 'CA' ? 'N. America' : 'Europe',
-    tz: 'America/New_York',
+    tz: TZ[s.c],
+
     lang: s.lang,
-    locale: s.lang.split('-')[0],
+    locale: s.locale ?? s.lang.split('-')[0],
+    switched: s.switched,
     device: s.dev,
     os: s.os,
     browser: s.browser,
@@ -265,6 +294,7 @@ function record(s: NewestSeed): ClientRecord {
     exported: s.exp,
     exportedAt: s.exp ? iso(lastTs) : undefined,
     exportedIds: s.exp ? ids : undefined,
+    archived: s.archived,
   };
 }
 
@@ -314,6 +344,7 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
     sessionMs: Array.from({ length: sess }, () => 300_000),
     country: c,
     region,
+    tz: TZ[c],
     lang,
     locale: lang.split('-')[0],
     device: 'Desktop',
@@ -334,7 +365,6 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
     exportsLeague: cards >= 11 ? 1 : 0,
     exportedCardAt: cards >= 8 ? iso(lastTs - 3_600_000) : undefined,
     exportedLeagueAt: cards >= 11 ? iso(lastTs) : undefined,
-    tz: 'America/New_York',
     sessionLog: Array.from({ length: sess }, (_, i) => {
       const c2 = Math.max(1, Math.round((cards * (i + 1)) / sess));
       // Older beacons carried only summary counts, no card structure. Model that
@@ -360,6 +390,7 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
   };
 }
 const leagueUsers: LeagueUser[] = [
+  leagueUser('c0de…ff', 'US', 14, 0, 1, true),
   leagueUser('70cd…a7', 'IT', 14, 3, 3, true),
   leagueUser('74d5…68', 'US', 8, 2, 5, true),
   leagueUser('bea3…4e', 'US', 6, 1, 9, true),
@@ -371,7 +402,8 @@ const leagueUsers: LeagueUser[] = [
 // the live 13→1→14 shape. Display tidy must drop it so the scrubber has 3
 // sessions, not 4.
 {
-  const u = leagueUsers[0];
+  const u = leagueUsers.find((row) => row.cid === '70cd…a7');
+  if (!u) throw new Error('missing 70cd league fixture');
   const last = u.sessionLog[u.sessionLog.length - 1];
   const prev = u.sessionLog[u.sessionLog.length - 2];
   prev.summary = { ...last.summary };
@@ -591,7 +623,8 @@ export const sampleResponse: ApiResponse = {
     records.filter((r) => leagueUsers.some((u) => u.cid === r.cid)).map((r) => [r.cid, r]),
   ),
   leagueUsers,
-  totalLeagueUsers: 5,
+  totalLeagueUsers: 6,
+  totalDexRecords: records.length,
   records,
 };
 

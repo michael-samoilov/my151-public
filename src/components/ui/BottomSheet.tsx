@@ -263,7 +263,7 @@ export function BottomSheet({
     <div
       ref={overlayRef}
       data-overlay
-      className="fixed inset-x-0 z-50 flex flex-col justify-end md:hidden"
+      className="fixed inset-x-0 z-[110] flex flex-col justify-end md:hidden"
       // Bounded to the visible area rather than `inset-0`, so "the bottom" is
       // the top of the keyboard when one is open and the bottom of the screen
       // when it is not.
