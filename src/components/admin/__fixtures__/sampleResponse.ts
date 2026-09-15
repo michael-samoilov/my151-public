@@ -3,11 +3,14 @@
 // It renders the redesign without a live token, so a preview deploy shows the
 // whole page and the design can be reviewed on the real app instead of a
 // mockup. Every number is fabricated but self-consistent: the funnel stages
-// sum (646 = 388 built + 258 bounced; 388 = 65 completed + 323 incomplete;
-// 65 = 17 exported + 48 kept private), and each cohort's per-segment counts sum
-// to its base. The cids are obviously fake. This module is dynamically imported
-// only when the `demo` query flag is present, so it never ships in the real
-// admin bundle.
+// sum (646 = 388 built + 258 bounced; 388 = 65 completed + 323 incomplete
+// across 1–30 / 31–60 / 61–90 / 91–120 / 121–150; 65 = 17 exported + 48 kept
+// private; 23 incomplete builders also exported), the league funnel sums
+// (8 opened = 5 placed a Pokémon + 3 bounced; 5 = 1 card not finished + 4
+// with a full gym; 4 = 1 at 1–4 + 1 at 5–8 + 1 at 9–12 + 1 full league),
+// and each cohort's per-segment counts sum to its base. The cids are
+// obviously fake. This module is dynamically imported only when the `demo`
+// query flag is present, so it never ships in the real admin bundle.
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import type {
@@ -503,6 +506,7 @@ const referrerFlow = [
   { host: 'youtube.com', total: 41, dex: 39, league: 2 },
   { host: 't.co', total: 24, dex: 21, league: 4 },
   { host: 'bing.com', total: 15, dex: 14, league: 1 },
+  { host: 'referrer not known', total: 90, dex: 85, league: 6 },
 ];
 
 export const sampleResponse: ApiResponse = {
@@ -510,7 +514,46 @@ export const sampleResponse: ApiResponse = {
   offset: 0,
   limit: records.length,
   funnel: { users: 646, completed: 65, exported: 17 },
-  funnelEvents: { intro_shown: 646, intro_cta: 512, builder_open: 420, milestone_50: 240, milestone_100: 150 },
+  funnelEvents: {
+    intro_shown: 646,
+    intro_cta: 512,
+    builder_open: 420,
+    milestone_50: 240,
+    milestone_100: 150,
+    'league-open': 8,
+  },
+  dexFunnel: {
+    opened: 646,
+    built: 388,
+    bounced: 258,
+    buckets: [
+      { label: '1–30', count: 140, exported: 8 },
+      { label: '31–60', count: 80, exported: 6 },
+      { label: '61–90', count: 50, exported: 4 },
+      { label: '91–120', count: 33, exported: 3 },
+      { label: '121–150', count: 20, exported: 2 },
+    ],
+    completed: 65,
+    exported: 17,
+    keptPrivate: 48,
+  },
+  leagueFunnel: {
+    opened: 9,
+    placed: 6,
+    bounced: 3,
+    oneGymFull: 5,
+    cardNotFinished: 1,
+    gymBuckets: [
+      { label: '1–4 gyms', count: 1, exportedLeague: 0, exportedCard: 0 },
+      { label: '5–8 gyms', count: 1, exportedLeague: 0, exportedCard: 1 },
+      { label: '9–12 gyms', count: 1, exportedLeague: 0, exportedCard: 0 },
+      { label: 'Full league', count: 2, exportedLeague: 1, exportedCard: 0 },
+    ],
+    fullLeague: 2,
+    exportedLeague: 1,
+    exportedCard: 1,
+    keptPrivate: 1,
+  },
   tools: {
     dex: 388,
     league: 5,

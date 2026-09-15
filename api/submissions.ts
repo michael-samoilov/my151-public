@@ -8,7 +8,13 @@ import {
   type ClientRecord,
 } from './_shared.js';
 import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
-import { CARD_COUNT, LEAGUE_CLIENTS_KEY, parseLeagueRecord, type LeagueRecord } from './_leagueRecord.js';
+import {
+  CARD_COUNT,
+  LEAGUE_CLIENTS_KEY,
+  parseLeagueRecord,
+  peakFullGyms,
+  type LeagueRecord,
+} from './_leagueRecord.js';
 import {
   DAY_MS,
   aggregate,
@@ -20,8 +26,12 @@ import {
   referrerFlow,
   sessionSeconds,
   tallyCohort,
+  dexUsageFunnel,
+  leagueUsageFunnel,
+  funnelEventCount,
   type Aggregates,
   type Cohort,
+  type DexFunnelRow,
 } from './_aggregate.js';
 import { ARCHIVED_KEY, asArchivedSet, isArchived, withoutArchived } from './_archive.js';
 
@@ -412,6 +422,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // tuple per user [firstTs, peakMon, peakLines, completed(0/1), exported(0/1)].
     // firstTs + peakMon predate onboarding, so the whole history is comparable.
     const cohort: [number, number, number, 0 | 1, 0 | 1][] = [];
+    const dexFunnelRows: DexFunnelRow[] = [];
     // Peak Pokemon count per record, paired with its device, for the
     // depth-by-device survival curves. This is the exact same value
     // monVals.total collects, so depthByDevice's `all` matches the existing
@@ -461,6 +472,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const peakMon = Math.max(0, ...monEnds);
       const peakLines = Math.max(0, ...lineEnds);
       cohort.push([r.firstTs, peakMon, peakLines, r.completed ? 1 : 0, r.exported ? 1 : 0]);
+      dexFunnelRows.push({
+        cid: r.cid,
+        peakMon,
+        completed: r.completed === true,
+        exported: r.exported === true,
+      });
       monPeakEntries.push({ device: r.device, value: peakMon });
 
       // Popularity across every user's final/current dex (one vote each), so it
@@ -551,8 +568,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // device for `mobile` and `desktop`.
     const depthByDeviceCurves = depthByDevice(monPeakEntries);
 
-    // Acquisition hosts ranked by reach across both tools. Empty until a
-    // referrer is actually recorded — the field is forward-only.
+    // Acquisition hosts ranked by reach across both tools. Records with no
+    // host count as "referrer not known" rather than dropping out.
     const referrerRows = referrerFlow(records, leagueRecords);
 
     // League depth: how far a league gets, on the dex builder's pattern. Two
@@ -565,6 +582,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const totalUsers = records.length;
     const totalDexRecords = allRecords.length;
+    const dexFunnel = dexUsageFunnel(dexFunnelRows, funnelEventCount(funnelEvents, 'intro-shown'));
+    const leagueFunnel = leagueUsageFunnel(
+      leagueRecords.map((r) => ({
+        maxCards: r.maxCards,
+        maxSeats: r.maxSeats,
+        fullGyms: peakFullGyms(r),
+        exportsCard: r.exportsCard,
+        exportsLeague: r.exportsLeague,
+      })),
+      funnelEventCount(funnelEvents, 'league-open'),
+    );
     const page = allRecords.slice(offset, offset + limit).map((r) => ({
       ...r,
       archived: isArchived(r.cid, archivedSet),
@@ -624,6 +652,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       limit,
       funnel: { users: totalUsers, completed, exported },
       funnelEvents,
+      dexFunnel,
+      leagueFunnel,
       tools,
       league,
       cohort,

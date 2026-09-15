@@ -12,6 +12,10 @@ import {
   sessionCurves,
   tallies,
   tallyCohort,
+  dexUsageFunnel,
+  leagueUsageFunnel,
+  funnelEventCount,
+  UNKNOWN_REFERRER_HOST,
   type Referrable,
   type SessionRecord,
 } from '../../api/_aggregate';
@@ -256,8 +260,26 @@ describe('referrerFlow', () => {
     expect(rows).toEqual([{ host: 'reddit.com', total: 1, dex: 1, league: 0 }]);
   });
 
-  it('skips records with no referrer and returns nothing when none exist', () => {
-    expect(referrerFlow([{ cid: 'aaaa' }], [{ cid: 'bbbb' }])).toEqual([]);
+  it('counts records with no referrer as referrer not known', () => {
+    const rows = referrerFlow([{ cid: 'aaaa' }], [{ cid: 'bbbb' }]);
+    expect(rows).toEqual([
+      { host: UNKNOWN_REFERRER_HOST, total: 2, dex: 1, league: 1 },
+    ]);
+  });
+
+  it('keeps the unknown bucket even when it is not in the top 8 named hosts', () => {
+    const dexRecords = Array.from({ length: 9 }, (_, i) =>
+      withReferrer(`cid-${i}`, `host-${i}.com`),
+    );
+    dexRecords.push({ cid: 'no-ref' });
+    const rows = referrerFlow(dexRecords, []);
+    expect(rows).toHaveLength(9);
+    expect(rows[rows.length - 1]).toEqual({
+      host: UNKNOWN_REFERRER_HOST,
+      total: 1,
+      dex: 1,
+      league: 0,
+    });
   });
 
   it('sorts by total reach descending and caps at the top 8 hosts', () => {
@@ -270,5 +292,150 @@ describe('referrerFlow', () => {
     expect(rows).toHaveLength(8);
     expect(rows[0].host).toBe('host-0.com');
     expect(rows[0].total).toBe(2);
+  });
+});
+
+describe('funnelEventCount', () => {
+  it('reads hyphen and underscore keys', () => {
+    expect(funnelEventCount({ 'intro-shown': 10 }, 'intro-shown')).toBe(10);
+    expect(funnelEventCount({ intro_shown: 7 }, 'intro-shown')).toBe(7);
+    expect(funnelEventCount({}, 'intro-shown')).toBe(0);
+  });
+});
+
+describe('dexUsageFunnel', () => {
+  const row = (cid: string, peakMon: number, completed = false, exported = false) => ({
+    cid,
+    peakMon,
+    completed,
+    exported,
+  });
+
+  it('splits incomplete builds into size tiers and keeps completed out of buckets', () => {
+    const f = dexUsageFunnel(
+      [
+        row('a', 12),
+        row('b', 40),
+        row('c', 70),
+        row('d', 100),
+        row('e', 130),
+        row('f', 151, true, true),
+        row('g', 151, true, false),
+      ],
+      10,
+    );
+    expect(f.opened).toBe(10);
+    expect(f.built).toBe(7);
+    expect(f.bounced).toBe(3);
+    expect(f.buckets.map((p) => p.count)).toEqual([1, 1, 1, 1, 1]);
+    expect(f.completed).toBe(2);
+    expect(f.exported).toBe(1);
+    expect(f.keptPrivate).toBe(1);
+    expect(f.buckets.reduce((s, p) => s + p.count, 0) + f.completed).toBe(f.built);
+  });
+
+  it('puts a peak of 0 in the first incomplete tier and folds a country-split cid', () => {
+    const f = dexUsageFunnel([row('aaaa::FR', 0), row('aaaa', 20)], 0);
+    expect(f.built).toBe(1);
+    expect(f.buckets[0].count).toBe(1);
+    expect(f.buckets[0].label).toBe('1–30');
+  });
+
+  it('counts an incomplete exporter on their size bucket, not on Completed', () => {
+    const f = dexUsageFunnel(
+      [
+        row('a', 25, false, true),
+        row('b', 151, true, true),
+      ],
+      2,
+    );
+    expect(f.exported).toBe(1);
+    expect(f.buckets).toEqual([{ label: '1–30', count: 1, exported: 1 }]);
+  });
+});
+
+describe('leagueUsageFunnel', () => {
+  const row = (
+    fullGyms: number,
+    over: { maxCards?: number; maxSeats?: number; exportsCard?: number; exportsLeague?: number } = {},
+  ) => ({
+    maxCards: over.maxCards ?? Math.max(fullGyms, 1),
+    maxSeats: over.maxSeats ?? Math.max(fullGyms, 1),
+    fullGyms,
+    exportsCard: over.exportsCard ?? 0,
+    exportsLeague: over.exportsLeague ?? 0,
+  });
+
+  it('splits placed users into unfinished cards and in-line gym buckets', () => {
+    const f = leagueUsageFunnel(
+      [
+        row(0, { maxCards: 1, maxSeats: 1 }),
+        row(2),
+        row(6, { exportsCard: 1 }),
+        row(11),
+        row(13),
+        row(14, { exportsLeague: 1, exportsCard: 1 }),
+        row(14, { exportsCard: 1 }),
+      ],
+      12,
+    );
+    expect(f.opened).toBe(12);
+    expect(f.placed).toBe(7);
+    expect(f.bounced).toBe(5);
+    expect(f.cardNotFinished).toBe(1);
+    expect(f.oneGymFull).toBe(6);
+    expect(f.gymBuckets.map((p) => ({ label: p.label, count: p.count }))).toEqual([
+      { label: '1–4 gyms', count: 1 },
+      { label: '5–8 gyms', count: 1 },
+      { label: '9–12 gyms', count: 2 },
+      { label: 'Full league', count: 2 },
+    ]);
+    expect(f.fullLeague).toBe(2);
+    expect(f.exportedLeague).toBe(1);
+    expect(f.exportedCard).toBe(2);
+    expect(f.keptPrivate).toBe(0);
+    expect(f.gymBuckets.reduce((s, p) => s + p.count, 0)).toBe(f.oneGymFull);
+  });
+
+  it('counts full-league non-exporters as kept private', () => {
+    const f = leagueUsageFunnel(
+      [row(14, { exportsLeague: 1 }), row(14), row(3, { exportsCard: 1 })],
+      3,
+    );
+    expect(f.fullLeague).toBe(2);
+    expect(f.keptPrivate).toBe(1);
+    expect(f.gymBuckets.find((b) => b.label === 'Full league')).toEqual({
+      label: 'Full league',
+      count: 2,
+      exportedLeague: 1,
+      exportedCard: 0,
+    });
+  });
+
+  it('counts exports from an unfinished gym bucket', () => {
+    const f = leagueUsageFunnel([row(3, { exportsCard: 1 }), row(3, { exportsLeague: 1 })], 2);
+    expect(f.gymBuckets).toEqual([
+      { label: '1–4 gyms', count: 2, exportedLeague: 1, exportedCard: 1 },
+    ]);
+    expect(f.exportedLeague).toBe(1);
+    expect(f.exportedCard).toBe(1);
+  });
+
+  it('floors opened at placed when the open event undercounts', () => {
+    const f = leagueUsageFunnel([row(0, { maxSeats: 2, maxCards: 1 }), row(14, { exportsLeague: 1 })], 0);
+    expect(f.opened).toBe(2);
+    expect(f.placed).toBe(2);
+    expect(f.bounced).toBe(0);
+    expect(f.cardNotFinished).toBe(1);
+  });
+
+  it('does not count a zero-seat record as placed', () => {
+    const f = leagueUsageFunnel(
+      [row(0, { maxCards: 0, maxSeats: 0 }), row(2)],
+      5,
+    );
+    expect(f.placed).toBe(1);
+    expect(f.opened).toBe(5);
+    expect(f.bounced).toBe(4);
   });
 });

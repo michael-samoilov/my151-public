@@ -29,12 +29,12 @@ export function Panel({
   return (
     <section
       className={cn(
-        'rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(9,9,15,0.05)]',
+        'min-w-0 rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(9,9,15,0.05)]',
         className,
       )}
     >
-      <div className={cn('mb-3 flex justify-between gap-3', legend ? 'items-center' : 'items-start')}>
-        <h2 className={cn('text-sm font-bold leading-tight', legend && 'flex items-center gap-2.5')}>
+      <div className={cn('mb-3 flex min-w-0 flex-wrap justify-between gap-3', legend ? 'items-center' : 'items-start')}>
+        <h2 className={cn('min-w-0 text-sm font-bold leading-tight', legend && 'flex items-center gap-2.5')}>
           {title}
           {legend}
           {sub?.map((s, i) => (

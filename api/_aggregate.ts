@@ -12,6 +12,8 @@
  * route.
  */
 
+import { CARD_COUNT } from './_leagueRecord.js';
+
 export const DAY_MS = 86_400_000;
 
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -342,24 +344,34 @@ export interface ReferrerFlowEntry {
   league: number;
 }
 
+/** Label for records with no `firstReferrer`: legacy rows, direct visits, and
+ *  internal navigation. Kept as a host string so the Sankey treats it like any
+ *  other source node. */
+export const UNKNOWN_REFERRER_HOST = 'referrer not known';
+
+/** Named known hosts shown on the referrer Sankey. The unknown bucket is
+ *  always appended when it has anyone, so it never competes for a slot. */
+const TOP_REFERRER_HOSTS = 8;
+
 /**
  * Referrer hosts ranked by distinct browsers reached, across both stores.
  *
- * `firstReferrer` is forward-only (see api/_leagueRecord.ts), so records
- * written before it existed carry no host and are skipped rather than
- * counted as "direct". A dex record's cid is split the same way `mergeByCid`
- * does, so a country-split record still counts as one browser. Capped at the
- * top 8 hosts by total reach.
+ * Records with no `firstReferrer` (the field is forward-only; see
+ * api/_leagueRecord.ts) count as {@link UNKNOWN_REFERRER_HOST} rather than
+ * disappearing from the Sankey. A dex record's cid is split the same way
+ * `mergeByCid` does, so a country-split record still counts as one browser.
+ * The top 8 named hosts by total reach are kept; the unknown bucket is always
+ * included when it has anyone.
  */
 export function referrerFlow(dexRecords: Referrable[], leagueRecords: Referrable[]): ReferrerFlowEntry[] {
   const byHost = (records: Referrable[]) => {
     const out = new Map<string, Set<string>>();
     for (const r of records) {
-      if (!r.firstReferrer) continue;
+      const host = r.firstReferrer || UNKNOWN_REFERRER_HOST;
       const cid = r.cid.split('::')[0];
-      const set = out.get(r.firstReferrer) ?? new Set<string>();
+      const set = out.get(host) ?? new Set<string>();
       set.add(cid);
-      out.set(r.firstReferrer, set);
+      out.set(host, set);
     }
     return out;
   };
@@ -371,7 +383,216 @@ export function referrerFlow(dexRecords: Referrable[], leagueRecords: Referrable
     const leagueCids = leagueByHost.get(host) ?? new Set<string>();
     return { host, total: new Set([...dexCids, ...leagueCids]).size, dex: dexCids.size, league: leagueCids.size };
   });
-  return rows.sort((a, b) => b.total - a.total).slice(0, 8);
+  const unknown = rows.find((r) => r.host === UNKNOWN_REFERRER_HOST);
+  const known = rows
+    .filter((r) => r.host !== UNKNOWN_REFERRER_HOST)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, TOP_REFERRER_HOSTS);
+  if (unknown && unknown.total > 0) known.push(unknown);
+  return known;
+}
+
+/** Incomplete dex size bucket. `exported` is builders in this bucket who
+ *  exported; they still count in `count`, and the chart draws a branch from
+ *  the bucket to Exported. Non-exporters stay in the bucket. */
+export interface DexSizeBucket {
+  label: string;
+  count: number;
+  exported: number;
+}
+
+/** League gym-completion bucket. Export counts are of people in this bucket
+ *  who exported a league (or both) vs a card only. Incomplete buckets keep
+ *  non-exporters in the bucket. Full league peels them to Kept private. */
+export interface LeagueGymBucket {
+  label: string;
+  count: number;
+  exportedLeague: number;
+  exportedCard: number;
+}
+
+/** Dex builder usage funnel: intro → built → in-line size buckets + completed. */
+export interface DexUsageFunnel {
+  opened: number;
+  built: number;
+  bounced: number;
+  buckets: DexSizeBucket[];
+  completed: number;
+  exported: number;
+  keptPrivate: number;
+}
+
+/** Gym leader maker usage funnel: open → placed a Pokémon → one gym full →
+ *  in-line gym-completion buckets → export. Full league also peels
+ *  non-exporters to Kept private. */
+export interface LeagueUsageFunnel {
+  opened: number;
+  placed: number;
+  bounced: number;
+  oneGymFull: number;
+  cardNotFinished: number;
+  gymBuckets: LeagueGymBucket[];
+  fullLeague: number;
+  exportedLeague: number;
+  exportedCard: number;
+  keptPrivate: number;
+}
+
+export interface SizeTier {
+  label: string;
+  min: number;
+  max: number;
+}
+
+/** Incomplete dex sizes, in Pokémon. The last bucket also takes a 151 that
+ *  never flipped `completed`. */
+export const DEX_SIZE_BUCKETS: readonly SizeTier[] = [
+  { label: '1–30', min: 0, max: 30 },
+  { label: '31–60', min: 31, max: 60 },
+  { label: '61–90', min: 61, max: 90 },
+  { label: '91–120', min: 91, max: 120 },
+  { label: '121–150', min: 121, max: Number.POSITIVE_INFINITY },
+];
+
+/** Full-gym counts, in-line from "one gym full". 13 full gyms sit in 9–12. */
+export const LEAGUE_GYM_BUCKETS: readonly SizeTier[] = [
+  { label: '1–4 gyms', min: 1, max: 4 },
+  { label: '5–8 gyms', min: 5, max: 8 },
+  { label: '9–12 gyms', min: 9, max: CARD_COUNT - 1 },
+  { label: 'Full league', min: CARD_COUNT, max: CARD_COUNT },
+];
+
+export interface DexFunnelRow {
+  cid: string;
+  peakMon: number;
+  completed: boolean;
+  exported: boolean;
+}
+
+export interface LeagueFunnelRow {
+  maxCards: number;
+  maxSeats: number;
+  fullGyms: number;
+  exportsCard: number;
+  exportsLeague: number;
+}
+
+function mergeDexFunnelRows(rows: DexFunnelRow[]): Omit<DexFunnelRow, 'cid'>[] {
+  const byCid = new Map<string, Omit<DexFunnelRow, 'cid'>>();
+  for (const r of rows) {
+    const cid = r.cid.split('::')[0];
+    const prev = byCid.get(cid);
+    if (!prev) {
+      byCid.set(cid, { peakMon: r.peakMon, completed: r.completed, exported: r.exported });
+      continue;
+    }
+    byCid.set(cid, {
+      peakMon: Math.max(prev.peakMon, r.peakMon),
+      completed: prev.completed || r.completed,
+      exported: prev.exported || r.exported,
+    });
+  }
+  return [...byCid.values()];
+}
+
+function inTier(value: number, tier: SizeTier): boolean {
+  return value >= tier.min && value <= tier.max;
+}
+
+function placedAPokemon(r: LeagueFunnelRow): boolean {
+  return r.maxSeats > 0 || r.maxCards > 0 || r.fullGyms > 0;
+}
+
+function leagueExportSplit(rows: LeagueFunnelRow[]): { exportedLeague: number; exportedCard: number } {
+  return {
+    exportedLeague: rows.filter((r) => r.exportsLeague > 0).length,
+    exportedCard: rows.filter((r) => r.exportsLeague === 0 && r.exportsCard > 0).length,
+  };
+}
+
+/**
+ * Dex usage funnel from per-record peaks. `opened` is the top of funnel
+ * (intro shown, or built when the event count is missing or smaller).
+ *
+ * Incomplete sizes fan out of Built in one column, next to Completed.
+ * An incomplete builder who exported still sits in their size bucket, with
+ * a branch from that bucket to Exported. Kept private stays a Completed
+ * outcome only.
+ */
+export function dexUsageFunnel(rows: DexFunnelRow[], openedHint: number): DexUsageFunnel {
+  const merged = mergeDexFunnelRows(rows);
+  const built = merged.length;
+  const opened = Math.max(openedHint, built);
+  const bounced = Math.max(0, opened - built);
+  const completedRows = merged.filter((r) => r.completed);
+  const completed = completedRows.length;
+  const exported = completedRows.filter((r) => r.exported).length;
+  const incomplete = merged.filter((r) => !r.completed);
+  const buckets = DEX_SIZE_BUCKETS.map((t) => {
+    const inBucket = incomplete.filter((r) => inTier(r.peakMon, t));
+    return {
+      label: t.label,
+      count: inBucket.length,
+      exported: inBucket.filter((r) => r.exported).length,
+    };
+  }).filter((b) => b.count > 0);
+  return {
+    opened,
+    built,
+    bounced,
+    buckets,
+    completed,
+    exported,
+    keptPrivate: Math.max(0, completed - exported),
+  };
+}
+
+/**
+ * League usage funnel from per-record gym peaks.
+ *
+ * Stages: opened (league-open event, floored at people who placed a
+ * Pokémon), placed a Pokémon vs bounced, one gym full vs card not finished,
+ * then in-line gym-count buckets. Exports (league, card-only, or both)
+ * leave each gym bucket toward the export nodes. Both-export counts as a
+ * league export, same as before. Full-league people who exported neither
+ * peel to Kept private. Incomplete gym buckets do not.
+ */
+export function leagueUsageFunnel(rows: LeagueFunnelRow[], openedHint: number): LeagueUsageFunnel {
+  const placedRows = rows.filter(placedAPokemon);
+  const placed = placedRows.length;
+  const opened = Math.max(openedHint, placed);
+  const bounced = Math.max(0, opened - placed);
+  const gymRows = placedRows.filter((r) => r.fullGyms >= 1);
+  const oneGymFull = gymRows.length;
+  const cardNotFinished = Math.max(0, placed - oneGymFull);
+  const gymBuckets = LEAGUE_GYM_BUCKETS.map((t) => {
+    const inBucket = gymRows.filter((r) => inTier(r.fullGyms, t));
+    return { label: t.label, count: inBucket.length, ...leagueExportSplit(inBucket) };
+  }).filter((b) => b.count > 0);
+  const fullLeagueRows = gymRows.filter((r) => r.fullGyms >= CARD_COUNT);
+  const fullLeague = fullLeagueRows.length;
+  const keptPrivate = fullLeagueRows.filter((r) => r.exportsLeague === 0 && r.exportsCard === 0).length;
+  const { exportedLeague, exportedCard } = leagueExportSplit(gymRows);
+  return {
+    opened,
+    placed,
+    bounced,
+    oneGymFull,
+    cardNotFinished,
+    gymBuckets,
+    fullLeague,
+    exportedLeague,
+    exportedCard,
+    keptPrivate,
+  };
+}
+
+/** Count a funnel event under either hyphen or underscore keys. */
+export function funnelEventCount(events: Record<string, number> | undefined, name: string): number {
+  if (!events) return 0;
+  const underscored = name.replace(/-/g, '_');
+  const n = events[name] ?? events[underscored];
+  return typeof n === 'number' && Number.isFinite(n) ? n : 0;
 }
 
 /**

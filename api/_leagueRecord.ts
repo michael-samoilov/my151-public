@@ -182,6 +182,45 @@ export const CARD_COUNT = 14;
 /** Six lines per card. */
 export const SEAT_MAX = 6 * CARD_COUNT;
 
+/**
+ * Team size of each league slot (0-based). Must equal
+ * `TEAM_SIZES[slotRow(i) - 1]` in src/league/model/constants.ts.
+ * src/lib/leagueRecord.test.ts pins the two together.
+ */
+export const CARD_TEAM_SIZES = [2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6] as const;
+
+function fullGymsInCards(cards: LeagueCardShape[] | undefined): number {
+  if (!cards || cards.length === 0) return 0;
+  const full = new Set<number>();
+  for (const card of cards) {
+    const need = CARD_TEAM_SIZES[card.i] ?? CARD_TEAM_SIZES[CARD_TEAM_SIZES.length - 1];
+    if (card.l.length >= need) full.add(card.i);
+  }
+  return full.size;
+}
+
+function hasCardStructure(record: LeagueRecord): boolean {
+  if (record.latestCards !== undefined) return true;
+  return record.sessionLog.some((s) => s.cards !== undefined);
+}
+
+/**
+ * Peak number of fully filled gyms this browser ever reached.
+ *
+ * A gym is full when its seated lines meet that slot's team size, not when
+ * the card merely holds a line (`maxCards`). Records stored before the
+ * beacon carried card structure fall back to `maxCards`.
+ */
+export function peakFullGyms(record: LeagueRecord): number {
+  if (!hasCardStructure(record)) return record.maxCards;
+  let peak = fullGymsInCards(record.latestCards);
+  for (const snap of record.sessionLog) {
+    const n = fullGymsInCards(snap.cards);
+    if (n > peak) peak = n;
+  }
+  return peak;
+}
+
 function clampInt(v: unknown, max: number): number | null {
   if (typeof v !== 'number' || !Number.isFinite(v)) return null;
   return Math.max(0, Math.min(max, Math.round(v)));

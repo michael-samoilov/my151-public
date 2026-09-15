@@ -4,6 +4,8 @@ import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { PicksDetailPage } from '@/components/admin/PicksDetailPage';
 import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
+import { dexFunnelSankey, leagueFunnelSankey, referrerFlowSankey } from '@/lib/usageFunnels';
+import type { DexUsageFunnel, LeagueUsageFunnel } from '../../../api/_aggregate';
 import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
 import { Panel, Seg, Kpi, Delta, Rollup, type RollupRow } from '@/components/admin/ui';
 import { Input } from '@/components/ui/input';
@@ -257,6 +259,10 @@ export interface ApiResponse {
   limit: number;
   funnel: { users: number; completed: number; exported: number };
   funnelEvents?: Record<string, number>;
+  /** Dex usage funnel with in-line size buckets. */
+  dexFunnel?: DexUsageFunnel;
+  /** Gym leader maker usage funnel with in-line gym-completion buckets. */
+  leagueFunnel?: LeagueUsageFunnel;
   /** Cross-tool identity, from the intersection of the two record hashes. */
   tools?: {
     dex: number;
@@ -1829,6 +1835,23 @@ export function AdminPage() {
           const bounced = Math.max(0, sawIntro - built);
           const incomplete = Math.max(0, built - f.completed);
           const keptPrivate = Math.max(0, f.completed - f.exported);
+          const showDexFunnel = tool !== 'league' && (data.dexFunnel ? data.dexFunnel.built > 0 : built > 0);
+          const showLeagueFunnel = tool !== 'dex' && (data.leagueFunnel?.placed ?? 0) > 0;
+          const showReferrer = (data.referrerFlow?.length ?? 0) > 0;
+          const showFlows = flowView === 'referrer' ? showReferrer : showDexFunnel || showLeagueFunnel;
+          const dexSankey = data.dexFunnel
+            ? dexFunnelSankey(data.dexFunnel)
+            : dexFunnelSankey({
+                opened: sawIntro,
+                built,
+                bounced,
+                buckets: incomplete > 0 ? [{ label: 'Incomplete', count: incomplete, exported: 0 }] : [],
+                completed: f.completed,
+                exported: f.exported,
+                keptPrivate,
+              });
+          const leagueSankey = data.leagueFunnel ? leagueFunnelSankey(data.leagueFunnel) : null;
+          const referrerSankey = data.referrerFlow?.length ? referrerFlowSankey(data.referrerFlow) : null;
 
           const act = data.activity ?? slice.activity;
           const fmtDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -1936,12 +1959,16 @@ export function AdminPage() {
               )}
             </div>
 
-            {showDex && built > 0 && (
+            {showFlows && (
               <Panel
+                className="min-w-0"
                 title="Flows"
-                sub={[flowView === 'referrer' ? 'referrer → landing' : 'usage funnel', tool === 'all' ? 'all tools' : 'dex']}
+                sub={[
+                  flowView === 'referrer' ? 'referrer → landing' : 'usage funnel',
+                  tool === 'all' ? 'all tools' : tool === 'league' ? 'league' : 'dex',
+                ]}
                 actions={
-                  data.referrerFlow && data.referrerFlow.length > 0 ? (
+                  showReferrer ? (
                     <Seg
                       ariaLabel="Flow"
                       options={[
@@ -1954,43 +1981,31 @@ export function AdminPage() {
                   ) : undefined
                 }
               >
-                {flowView === 'referrer' && data.referrerFlow && data.referrerFlow.length > 0 ? (
-                  <FlowSankey
-                    nodes={[
-                      ...data.referrerFlow.map((r) => ({ name: r.host, role: 'neutral' as const })),
-                      { name: 'Dex', role: 'success' as const },
-                      { name: 'League', role: 'priv' as const },
-                    ]}
-                    links={data.referrerFlow.flatMap((r) => [
-                      ...(r.dex > 0 ? [{ source: r.host, target: 'Dex', value: r.dex, role: 'success' as const }] : []),
-                      ...(r.league > 0 ? [{ source: r.host, target: 'League', value: r.league, role: 'priv' as const }] : []),
-                    ])}
-                    ariaLabel={`Referrer to landing: ${data.referrerFlow.length} referring hosts split into dex and league landings.`}
-                  />
+                {flowView === 'referrer' && referrerSankey ? (
+                  <FlowSankey kind="referrer" nodes={referrerSankey.nodes} links={referrerSankey.links} ariaLabel={referrerSankey.ariaLabel} />
                 ) : (
-                  <FlowSankey
-                    // Order per depth: survivor first (top), sink after (bottom),
-                    // so the trunk runs straight along the top and every
-                    // drop-off peels downward without crossing.
-                    nodes={[
-                      { name: 'Saw intro', role: 'neutral' },
-                      { name: 'Built', role: 'neutral' },
-                      { name: 'Bounced', role: 'sink' },
-                      { name: 'Completed', role: 'success' },
-                      { name: 'Incomplete', role: 'sink' },
-                      { name: 'Exported', role: 'success' },
-                      { name: 'Kept private', role: 'priv' },
-                    ]}
-                    links={[
-                      { source: 'Saw intro', target: 'Built', value: built, role: 'neutral' },
-                      { source: 'Saw intro', target: 'Bounced', value: bounced, role: 'sink' },
-                      { source: 'Built', target: 'Completed', value: f.completed, role: 'success' },
-                      { source: 'Built', target: 'Incomplete', value: incomplete, role: 'sink' },
-                      { source: 'Completed', target: 'Exported', value: f.exported, role: 'success' },
-                      { source: 'Completed', target: 'Kept private', value: keptPrivate, role: 'priv' },
-                    ]}
-                    ariaLabel={`Usage funnel: ${sawIntro} saw intro, ${built} built, ${bounced} bounced; of ${built} built, ${f.completed} completed and ${incomplete} incomplete; of ${f.completed} completed, ${f.exported} exported and ${keptPrivate} kept private.`}
-                  />
+                  <div className="flex flex-col gap-6">
+                    {showDexFunnel && (
+                      <div>
+                        {showLeagueFunnel && (
+                          <div className="mb-1 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
+                            Dex builder
+                          </div>
+                        )}
+                        <FlowSankey nodes={dexSankey.nodes} links={dexSankey.links} ariaLabel={dexSankey.ariaLabel} />
+                      </div>
+                    )}
+                    {showLeagueFunnel && leagueSankey && (
+                      <div>
+                        {showDexFunnel && (
+                          <div className="mb-1 text-[0.7rem] font-bold uppercase tracking-wide text-muted-foreground">
+                            Gym leader maker
+                          </div>
+                        )}
+                        <FlowSankey nodes={leagueSankey.nodes} links={leagueSankey.links} ariaLabel={leagueSankey.ariaLabel} />
+                      </div>
+                    )}
+                  </div>
                 )}
               </Panel>
             )}
