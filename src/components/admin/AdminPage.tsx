@@ -48,7 +48,8 @@ import {
   type ToolFilter,
 } from '@/components/admin/userPreview';
 import { PreviewFilterMenu } from '@/components/admin/PreviewFilterMenu';
-import { FitNowrap, PreviewChipZoomProvider, useHostZoom } from '@/components/admin/FitNowrap';
+import { FitNowrap, PreviewChipZoomProvider } from '@/components/admin/FitNowrap';
+import { useHostZoom } from '@/components/admin/previewChipZoom';
 import { Archive, ArchiveRestore, Camera, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
 
 // Human labels for the onboarding/funnel events shown per session.
@@ -1598,6 +1599,7 @@ export function AdminPage() {
   useLayoutEffect(() => {
     if (!detail) window.scrollTo(0, dashScrollRef.current);
   }, [detail]);
+  const openPicks = useCallback(() => openDetail({ kind: 'picks' }), [openDetail]);
 
   const load = useCallback(async (tok: string, limit = PAGE_SIZE) => {
     setLoading(true);
@@ -2055,7 +2057,7 @@ export function AdminPage() {
             </Panel>
 
             {showDex && (
-              <WhatPeoplePick mostBySection={data.popularBySection} n={built} onOpen={() => openDetail({ kind: 'picks' })} />
+              <WhatPeoplePick mostBySection={data.popularBySection} n={built} onOpen={openPicks} />
             )}
 
             <Panel title="Newest browsers" sub={[showDex ? 'dex' : 'league', 'newest first']}>
