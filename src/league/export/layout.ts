@@ -153,17 +153,11 @@ export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
 export const FRAME = 12;
 
 /**
- * The showcase sprite size: 2×, for a pair and for one.
- *
- * Pixel art only survives a whole multiple of its 96px source, so the choice
- * is 1× or 2× and nothing between. Two 2× blocks do not both fit clear of the
- * slot's 30° seam: placed by the solver they overlap by 49×105px at their
- * corners, where a sprite carries its transparent margin. Measured on the two
- * largest sprites, Hisuian Braviary and Celesteela, the ink overlaps in 38px,
- * and the pair was chosen at 2× with that known. The seam is drawn first, so
- * it runs behind both sprites.
+ * The pair's sprite edge is a fraction of the pane, same as the live CSS
+ * (`min(42cqw, 32cqh)`). Two 2× blocks overlapped: Hisuian Braviary and
+ * Celesteela ink crossed by 38px. The fraction keeps those squares apart.
+ * Solo still draws at 2×, with the whole slot and no seam to share.
  */
-export const PAIR_SPRITE = 192;
 export const SIG_SPRITE = 192;
 
 /** The slot heading runs: two lines, 0.53125rem extrabold, 1.4 line-height. */

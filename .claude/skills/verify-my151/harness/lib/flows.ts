@@ -561,16 +561,20 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
        const badgeWord=document.querySelector('[data-mark-label="badge"]');
        const sr=slot?.getBoundingClientRect();
        const zoom=sr&&slot?sr.width/slot.offsetWidth:1;
-       const raw=slot?getComputedStyle(slot).borderTopLeftRadius:'8px';
-       let radius=parseFloat(raw)||8;
-       if(raw.includes('rem')) radius*=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
-       const pad=(radius+3)*zoom;
+       const pad=1;
        const range=document.createRange();
        if(last) range.selectNodeContents(last);
        const hr=last?range.getBoundingClientRect():null;
-       const partnerInside=!!(sr&&hr)&&hr.width>0
-         &&hr.left>=sr.left+pad&&hr.right<=sr.right-pad
-         &&hr.top>=sr.top+pad&&hr.bottom<=sr.bottom-pad
+       const rawR=slot?getComputedStyle(slot).borderTopLeftRadius:'8px';
+       let radius=parseFloat(rawR)||8;
+       if(rawR.includes('rem')) radius*=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
+       radius*=zoom;
+       const pastRect=!(sr&&hr)||hr.left<sr.left-pad||hr.right>sr.right+pad||hr.top<sr.top-pad||hr.bottom>sr.bottom+pad;
+       let pastCorner=false;
+       if(sr&&hr&&hr.right>sr.right-radius&&hr.bottom>sr.bottom-radius&&radius>0){
+         pastCorner=Math.hypot(hr.right-(sr.right-radius),hr.bottom-(sr.bottom-radius))>radius+pad;
+       }
+       const partnerInside=!!(sr&&hr)&&hr.width>0&&!pastRect&&!pastCorner
          &&lines.map(l=>(l.textContent||'').trim()).join('|')==='PARTNER /|SHOULDERMON';
        const root=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
        const tmR=tm?.getBoundingClientRect();

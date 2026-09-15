@@ -1,29 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
-import { blankLeague } from './support/leagueSeed';
+import { blankLeague, pairLeague } from './support/leagueSeed';
 
 /**
  * The ace and the partner share the card's top-left slot, split by a diagonal.
  *
- * Where each one sits was measured, not derived: `slot-lab.html` opens the two
- * halves so they can be dragged on the real card, and `slotLayout.ts` holds
- * the reading that came back. So what this spec checks is that the running
- * card still lands on that reading — at every width, in the slot's own
- * proportions — because two things quietly move it. The card scales itself
- * with CSS `zoom`, so a placement measured on the screen box and applied in
- * the layout box comes out pulled toward the top-left corner by a quarter.
- * And the runs are text, so their size follows the font and the language.
+ * CSS pins ace top-left and partner bottom-right, same padding, partner
+ * column reversed. Sprite size is a fraction of the pane. This spec checks
+ * that layout, not a solver reading.
  */
-
-/**
- * How far a mirrored pair may drift apart.
- *
- * The two halves are a 180-degree rotation of each other about the slot's
- * middle, so their centres must sum to the slot. Wide enough for the pixel
- * rounding in a slot measured at three widths, and nowhere near wide enough
- * to pass the zoom bug this is here to catch: that one put the ace at 23% of
- * the slot instead of 30%, and moved the two halves by different amounts.
- */
-const DRIFT = 0.02;
 
 const openCard = async (page: Page) => {
   await page.goto('/custom-gym-leader');
@@ -109,21 +93,10 @@ test.describe('the ace and partner slot', () => {
     const ace = halves.find((h) => h.id === 'slot-ace')!;
     const partner = halves.find((h) => h.id === 'slot-partner')!;
     const where = `in a slot ${slot.width.toFixed(0)}px wide`;
-    // Turn the slot over and the two halves swap places. That is the whole
-    // design: the seam runs corner to corner, so the halves are congruent and
-    // neither is the lesser one. The partner cluster may sit inward of a
-    // perfect 180-degree mirror so SHOULDERMON clears the inner dash. It must
-    // not sit outward of that mirror, and the ace must not collapse toward
-    // the top-left (that was the CSS-zoom placement bug this spec exists to
-    // catch).
-    expect(ace.cx, `ace not pulled to the left, ${where}`).toBeGreaterThan(0.26);
-    expect(ace.cy, `ace not pulled to the top, ${where}`).toBeGreaterThan(0.2);
+    expect(ace.cx, `ace stays left, ${where}`).toBeLessThan(0.5);
+    expect(ace.cy, `ace stays top, ${where}`).toBeLessThan(0.5);
     expect(partner.cx, `partner stays on the right, ${where}`).toBeGreaterThan(0.5);
     expect(partner.cy, `partner stays on the bottom, ${where}`).toBeGreaterThan(0.5);
-    expect(partner.cx, `partner is not past the ace's mirror, ${where}`)
-      .toBeLessThanOrEqual(1 - ace.cx + DRIFT);
-    expect(partner.cy, `partner is not past the ace's mirror, ${where}`)
-      .toBeLessThanOrEqual(1 - ace.cy + DRIFT);
     for (const half of halves) {
       expect(half.outOfSlot, `${half.id} paints outside the slot`).toBeLessThanOrEqual(1);
     }
@@ -136,7 +109,7 @@ test.describe('the ace and partner slot', () => {
     // "It is fine if they cross a tiny bit" is the design, so the check is on
     // how much: a corner, not a bite out of either sprite.
     const area = halves[0].sprite ** 2;
-    expect(overlap / area, 'the sprites overlap').toBeLessThanOrEqual(0.1);
+    expect(overlap / area, 'the sprites overlap').toBeLessThanOrEqual(0.02);
   });
 
   test('the placeholder rings stop short of the seam', async ({ page }) => {
@@ -152,16 +125,23 @@ test.describe('the ace and partner slot', () => {
     }
   });
 
-  test('neither sprite is smaller than a team cell', async ({ page }) => {
+  test('the sprite is a fraction of the pane', async ({ page }) => {
+    await blankLeague(page);
     await openCard(page);
-    const { halves, team } = await slotGeometry(page);
-    expect(team, 'the seeded card has a team cell to compare against').not.toBeNull();
+    const { halves, slot } = await slotGeometry(page);
+    const expected = Math.min(0.42 * slot.width, 0.32 * slot.height);
     for (const half of halves) {
-      // The complaint this replaced a fitting solver over: the two halves had
-      // been sized to what could clear the seam, which put the card's most
-      // important sprite below the size of one of its team members.
-      expect(half.sprite, `${half.id} against a team cell`).toBeGreaterThanOrEqual(team! - 1);
+      expect(Math.abs(half.sprite - expected), `${half.id} against ${expected.toFixed(1)}`).toBeLessThanOrEqual(2);
     }
+  });
+
+  test('Hisuian Braviary and Celesteela do not overlap', async ({ page }) => {
+    await pairLeague(page, 10240, 797);
+    await openCard(page);
+    const { halves, overlap } = await slotGeometry(page);
+    const area = halves[0].sprite ** 2;
+    expect(halves[0].sprite, 'ace sprite is on the card').toBeGreaterThan(8);
+    expect(overlap / area, 'large sprites overlap').toBeLessThanOrEqual(0.02);
   });
 
   test('the empty state puts its heading where the filled one does', async ({ page }) => {

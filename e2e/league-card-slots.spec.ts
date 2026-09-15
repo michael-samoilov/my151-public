@@ -399,20 +399,27 @@ test.describe('the partner heading', () => {
       if (raw.includes('rem')) {
         radius *= parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
       }
-      const pad = (radius + 3) * zoom;
+      radius *= zoom;
       const range = document.createRange();
       range.selectNodeContents(head);
       const ink = range.getBoundingClientRect();
-      const inside =
-        ink.width > 0 &&
-        ink.left >= box.left + pad &&
-        ink.right <= box.right - pad &&
-        ink.top >= box.top + pad &&
-        ink.bottom <= box.bottom - pad;
+      const air = 1;
+      const pastRect =
+        ink.left < box.left - air ||
+        ink.right > box.right + air ||
+        ink.top < box.top - air ||
+        ink.bottom > box.bottom + air;
+      const cx = box.right - radius;
+      const cy = box.bottom - radius;
+      let pastCorner = false;
+      if (ink.right > cx && ink.bottom > cy && radius > 0) {
+        pastCorner = Math.hypot(ink.right - cx, ink.bottom - cy) > radius + air;
+      }
+      const inside = ink.width > 0 && !pastRect && !pastCorner;
       return {
         lines,
         inside,
-        detail: `ink r=${(box.right - ink.right).toFixed(1)} b=${(box.bottom - ink.bottom).toFixed(1)} pad=${pad.toFixed(1)}`,
+        detail: `ink r=${(box.right - ink.right).toFixed(1)} b=${(box.bottom - ink.bottom).toFixed(1)} corner=${pastCorner}`,
       };
     });
     expect(got.lines, got.detail).toEqual(['PARTNER /', 'SHOULDERMON']);
@@ -435,6 +442,25 @@ test.describe('the partner heading', () => {
       };
     });
     expect(align.ok, align.detail).toBe(true);
+    const type = await page.evaluate(() => {
+      const ace = document.querySelector('[data-slot-head="ace"]');
+      const partner = document.querySelector('[data-slot-head="partner"]');
+      if (!ace || !partner) return { ok: false, detail: 'missing' };
+      const a = getComputedStyle(ace);
+      const p = getComputedStyle(partner);
+      const scaled = (el: Element) => /scale\(/i.test(getComputedStyle(el).transform);
+      return {
+        ok: a.fontSize === p.fontSize
+          && a.letterSpacing === p.letterSpacing
+          && a.fontWeight === p.fontWeight
+          && !scaled(ace)
+          && !scaled(partner)
+          && a.transform === 'none'
+          && p.transform === 'none',
+        detail: `ace ${a.fontSize}/${a.letterSpacing}/${a.transform} partner ${p.fontSize}/${p.letterSpacing}/${p.transform}`,
+      };
+    });
+    expect(type.ok, type.detail).toBe(true);
   });
 });
 

@@ -31,6 +31,42 @@ export async function blankLeague(page: Page): Promise<void> {
   });
 }
 
+/** Start the league builder on a gym card with a chosen ace and partner. */
+export async function pairLeague(
+  page: Page,
+  aceId: number | null,
+  partnerId: number | null,
+): Promise<void> {
+  await page.addInitScript(({ aceId, partnerId }) => {
+    const empty = {
+      type: null as string | null,
+      theme: '',
+      lines: [] as { branch: number[]; boundaries: number[] }[],
+      signatureSeat: null as number | null,
+      signatureId: null as number | null,
+      partnerId: null as number | null,
+      tmMoveId: null as number | null,
+      badgeName: '',
+      legend: null,
+      powerup: null,
+    };
+    const cards = Array.from({ length: 14 }, () => ({ ...empty, lines: [] as typeof empty.lines }));
+    cards[0] = {
+      ...empty,
+      type: 'bug',
+      theme: 'Metamorphosis Bugs',
+      lines: aceId !== null ? [{ branch: [aceId], boundaries: [1] }] : [],
+      signatureSeat: aceId !== null ? 1 : null,
+      signatureId: aceId,
+      partnerId,
+    };
+    window.localStorage.setItem(
+      'league-builder',
+      JSON.stringify({ state: { name: '', cards }, version: 1 }),
+    );
+  }, { aceId, partnerId });
+}
+
 /** Start the league builder on the seeded Kanto league, whatever the visit. */
 export async function seededLeague(page: Page): Promise<void> {
   await page.addInitScript(() => window.localStorage.removeItem('league-builder'));

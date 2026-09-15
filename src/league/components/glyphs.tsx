@@ -71,7 +71,7 @@ export function BossBall({ cell, size = 17 }: { cell: string; size?: number }) {
 }
 
 /** The view page's empty-slot mark: a faint pokeball, turned 30°. */
-export function EmptySlotBall({ size = 26 }: { size?: number }) {
+export function EmptySlotBall({ size = 26 }: { size?: number | string }) {
   const c = 'rgba(10,10,10,0.14)';
   return (
     <svg viewBox="0 0 24 24" style={{ width: size, height: size, transform: 'rotate(-30deg)' }} fill="none">

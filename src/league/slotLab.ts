@@ -1,17 +1,7 @@
 import { create } from 'zustand';
-import { STANDARD_SPRITE } from './slotLayout';
 
 /**
  * The ace/partner slot, opened up so its two halves can be dragged by hand.
- *
- * This is where the numbers in `slotLayout.ts` came from, and how to change
- * them. A solver decides what fits; it cannot decide what the slot should
- * look like. So this lets a person move each half on the real card — with the
- * real pickers, the real empty states — and read off where they put it.
- *
- * Offsets are **fractions of the slot**, not pixels. The slot is a different
- * size on every device, so a pixel nudge means nothing away from the screen
- * it was made on; a fraction transfers.
  *
  * Off by default and off in production. `SlotLabPage` is the only thing that
  * turns it on, and that page does not mount on the live deploy.
@@ -24,8 +14,8 @@ export interface SlotOffset {
   dy: number;
 }
 
-/** The size the card itself gives both halves, so the lab starts on it. */
-export { STANDARD_SPRITE };
+/** Lab slider default, in the card's own pixels. */
+export const STANDARD_SPRITE = 92;
 
 interface SlotLabState {
   enabled: boolean;
