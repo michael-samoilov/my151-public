@@ -12,12 +12,11 @@ import { cn, displayName } from '@/lib/utils';
 import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
 import { CARD_COUNT } from '../../../api/_leagueRecord';
-import { slotKind } from '@/league/model/constants';
-import { TYPE_COLORS } from '@/data/type-colors';
-import { typeIconPath } from '@/data/type-ids';
-import type { TypeName } from '@/types/pokemon';
+import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
+import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
+import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import { Globe, Languages } from 'lucide-react';
 
@@ -340,6 +339,8 @@ export interface ApiResponse {
   };
   /** How far a league gets: cards with a line, and seats. */
   leagueCurves?: { cards: SurvivalCurve; seats: SurvivalCurve };
+  /** The dex record for each browser on this page of league users. */
+  dexByCid?: Record<string, ClientRecord>;
   /** The league record for each browser on this page of dex users. */
   leagueByCid?: Record<string, LeagueUser>;
   /** The gym leader maker's own user list, paged like `records`. */
@@ -359,14 +360,12 @@ function relativeTime(ts: number): string {
 }
 
 /** Format a whole-seconds value as a compact duration: 45s, 3m, 1h 5m. */
-function activeDayCount(rec: ClientRecord): number {
-  const days = new Set<string>();
-  for (const s of rec.sessionLog ?? []) days.add(new Date(s.ts).toDateString());
-  if (days.size === 0) {
-    days.add(new Date(rec.firstTs).toDateString());
-    days.add(new Date(rec.lastTs).toDateString());
+function activeDayCount(rec: { sessionLog?: { ts: number }[]; firstTs: number; lastTs: number; tz?: string }): number {
+  const stamps = (rec.sessionLog ?? []).map((s) => s.ts);
+  if (stamps.length === 0) {
+    stamps.push(rec.firstTs, rec.lastTs);
   }
-  return days.size;
+  return distinctCalendarDays(stamps, rec.tz);
 }
 
 function fmtDuration(ms: number): string {
@@ -666,151 +665,6 @@ function SpriteRow({ ids }: { ids: number[] }) {
   );
 }
 
-const CROWN_SVG = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width={13} height={13} aria-label="Champion">
-    <path d="M12 6l4 6l5 -4l-2 10h-14l-2 -10l5 4l4 -6" />
-  </svg>
-);
-const POKEBALL_SVG = (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" width={13} height={13} aria-label="Endgame boss">
-    <circle cx="12" cy="12" r="9" />
-    <path d="M3 12h6M15 12h6" />
-    <circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none" />
-  </svg>
-);
-
-/** The short badge a filled slot's glyph column carries: G1-G8, E1-E4, a crown
- *  for champion, a poké ball for the boss. */
-function slotBadge(i: number): React.ReactNode {
-  const kind = slotKind(i);
-  if (kind === 'champion') return CROWN_SVG;
-  if (kind === 'boss') return POKEBALL_SVG;
-  if (kind === 'elite') return `E${i - 7}`;
-  return `G${i + 1}`;
-}
-
-/** Short slot code: G1-G8, E1-E4, CH, BOSS. */
-function slotAbbr(i: number): string {
-  const kind = slotKind(i);
-  if (kind === 'champion') return 'CH';
-  if (kind === 'boss') return 'BOSS';
-  if (kind === 'elite') return `E${i - 7}`;
-  return `G${i + 1}`;
-}
-
-const typeColorOf = (t?: string) => (t && (TYPE_COLORS as Record<string, string>)[t]) || 'var(--color-sink)';
-const isTypeName = (t?: string): t is TypeName => !!t && t in TYPE_COLORS;
-
-/** The slot's type marker: the real Gen IX type icon (white symbol on a colored
- *  square, like the base image) when the card has a type, else a plain swatch.
- *  Fills its grid cell so the board scales with width. */
-function TypeMark({ t }: { t?: string }) {
-  if (isTypeName(t)) {
-    return <img src={typeIconPath(t)} alt={t} title={t} className="aspect-square w-full rounded-[3px]" style={{ imageRendering: 'auto' }} />;
-  }
-  return <div className="aspect-square w-full rounded-[3px]" style={{ background: typeColorOf(t) }} title={t ?? 'untyped'} />;
-}
-
-/** One seat sprite that fills its grid cell; the ace gets a red ring around the
- *  tile, as the mockup marks it (no badge). */
-function MiniTile({ id, ace }: { id: number; ace?: boolean }) {
-  const p = getPokemonById(id);
-  return (
-    <div
-      className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-[3px] bg-card"
-      title={p ? `#${id} ${displayName(p.name)}${ace ? ' · ace' : ''}` : `#${id}`}
-      style={ace ? { boxShadow: '0 0 0 2px var(--color-primary)', background: 'rgba(220,38,38,0.10)' } : undefined}
-    >
-      {p ? (
-        <img src={p.sprite} alt={p.name} className="h-full w-full object-contain" style={{ imageRendering: 'pixelated' }} loading="lazy" />
-      ) : (
-        <span className="text-[0.45rem] text-muted-foreground">#{id}</span>
-      )}
-    </div>
-  );
-}
-
-/**
- * The whole league at one moment: the 14 slots (Gym 1-8, Elite Four, Champion,
- * Endgame Boss) in two columns that read top-to-bottom then left-to-right, so
- * Gym 2 sits below Gym 1. A filled slot has a glyph column (badge + type icon) on
- * the left and, hugging the bottom-right, one column per evo line — right-aligned
- * so a lone line sits at the right edge and bottom-aligned so lines build up from
- * the floor. The ace tile is ringed. An empty slot is a muted label.
- */
-function LeagueBoardSnapshot({ cards }: { cards: LeagueCard[] }) {
-  const bySlot = new Map<number, LeagueCard>();
-  for (const c of cards) bySlot.set(c.i, c);
-
-  const slot = (i: number) => {
-    const card = bySlot.get(i);
-    if (!card || card.l.length === 0) {
-      return (
-        <div
-          key={i}
-          className="flex min-h-[22px] flex-col justify-center rounded-lg border border-border px-[7px] opacity-55"
-          style={{ borderLeftWidth: 3, borderLeftColor: 'var(--color-border)' }}
-        >
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-[9px] font-extrabold text-muted-foreground">{slotAbbr(i)}</span>
-            <span className="text-[10px] font-semibold text-muted-foreground/70">empty</span>
-          </div>
-        </div>
-      );
-    }
-    const color = typeColorOf(card.t);
-    // Shortest first, so the short lines land in the left columns whose top
-    // cells the stage badge and type icon occupy — keeping those cells clear
-    // in the common case, and the tallest line at the bottom-right corner.
-    const lines = [...card.l].sort((a, b) => a.b.length - b.b.length);
-    const n = lines.length;
-    // A 6×3 tile grid (6 evo lines, up to 3 stages). The stage badge sits in
-    // the first cell and the type icon in the cell to its right; evo lines are
-    // right-aligned (columns fill from the right) and bottom-aligned (a line's
-    // final stage rests on the floor row). Folding the badge and type into the
-    // grid keeps a card six columns wide, not seven, so three fit a phone.
-    return (
-      <div key={i} className="rounded-lg border border-border px-[6px] py-[4px]" style={{ borderLeftWidth: 3, borderLeftColor: color }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '1px' }}>
-          <div style={{ gridColumn: 1, gridRow: 1 }} className="flex aspect-square items-center justify-center text-[8px] font-extrabold text-muted-foreground">
-            {slotBadge(i)}
-          </div>
-          <div style={{ gridColumn: 2, gridRow: 1 }}>
-            <TypeMark t={card.t} />
-          </div>
-          {lines.map((line, li) => {
-            const col = Math.max(1, 6 - n + li + 1);
-            const len = line.b.length;
-            return line.b.map((id, stage) => (
-              <div key={`${li}-${id}-${stage}`} style={{ gridColumn: col, gridRow: 4 - len + stage }}>
-                <MiniTile id={id} ace={id === card.aceId} />
-              </div>
-            ));
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  // Three columns of four — gyms 1-4, gyms 5-8, elite four — read top-to-bottom
-  // per column, then a full-width row for the champion and endgame boss. This
-  // keeps the whole board short enough to sit under the scrubber at once.
-  return (
-    <div className="flex max-w-[460px] flex-col gap-[5px]">
-      <div
-        className="grid gap-[5px]"
-        style={{ gridTemplateColumns: 'repeat(3, 1fr)', gridTemplateRows: 'repeat(4, auto)', gridAutoFlow: 'column' }}
-      >
-        {Array.from({ length: 12 }, (_, i) => slot(i))}
-      </div>
-      <div className="grid grid-cols-2 gap-[5px]">
-        {slot(12)}
-        {slot(13)}
-      </div>
-    </div>
-  );
-}
-
 /** Facts a detail header renders: id plus geo, platform, and languages. */
 interface HeaderRec {
   cid: string;
@@ -833,6 +687,14 @@ function middleId(cid: string): string {
 
 const KIND_WORD = { browser: 'Browser', served: 'Served', switched: 'Switched' } as const;
 const langAbbr = (tag: string) => tag.split('-')[0].toUpperCase();
+
+const POKEBALL_SVG = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" width={13} height={13} aria-hidden>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h6M15 12h6" />
+    <circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none" />
+  </svg>
+);
 
 /** The languages chip, abbreviated with a press/hover tooltip. Three sources —
  *  the browser default (globe), the language we served (poké ball), and any
@@ -870,57 +732,107 @@ function LanguageChip({ lang, locale, switched }: { lang?: string; locale?: stri
   );
 }
 
-/** Consolidated detail header: Back, the middle-truncated id, and the geo /
- *  platform / language chips on one rail (icons disclose their name on press or
- *  hover), so the identity takes one row instead of three. */
-function StickyBar({ top, children }: { top: number; children: React.ReactNode }) {
+function UserToolSeg({
+  value,
+  onChange,
+  hasDex,
+  hasLeague,
+}: {
+  value: 'dex' | 'league';
+  onChange: (k: 'dex' | 'league') => void;
+  hasDex: boolean;
+  hasLeague: boolean;
+}) {
+  const opts = [
+    { key: 'dex' as const, label: 'Dex', on: hasDex },
+    { key: 'league' as const, label: 'League', on: hasLeague },
+  ];
   return (
-    <div
-      className="sticky z-[95] -mx-4 border-b border-border bg-background px-4 py-1.5"
-      style={{ top }}
-    >
-      {children}
+    <div role="group" aria-label="This browser's tools" className="flex shrink-0 items-center gap-0.5">
+      {opts.map((o) => {
+        const pressed = value === o.key;
+        return (
+          <button
+            key={o.key}
+            type="button"
+            aria-pressed={pressed}
+            disabled={!o.on}
+            title={o.on ? undefined : `No ${o.label.toLowerCase()} for this browser`}
+            onClick={() => o.on && onChange(o.key)}
+            className={cn(
+              'rounded-full border px-2 py-0.5 text-[0.65rem] font-semibold',
+              !o.on && 'cursor-not-allowed opacity-40',
+              o.on && pressed && 'border-foreground bg-foreground text-card',
+              o.on && !pressed && 'border-border text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {o.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-function DetailHeader({ rec, onBack, stickyOffset }: { rec: HeaderRec; onBack: () => void; stickyOffset: number }) {
+/** Consolidated detail header: Back, the middle-truncated id, the dex/league
+ *  toggle, and the geo / platform / language chips on one rail. */
+function DetailHeader({
+  rec,
+  onBack,
+  tool,
+  onTool,
+  hasDex,
+  hasLeague,
+}: {
+  rec: HeaderRec;
+  onBack: () => void;
+  tool: 'dex' | 'league';
+  onTool: (k: 'dex' | 'league') => void;
+  hasDex: boolean;
+  hasLeague: boolean;
+}) {
   return (
-    <StickyBar top={stickyOffset}>
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-        <button type="button" onClick={onBack} className="flex shrink-0 items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
-          ‹ Back
-        </button>
-        <span className="shrink-0 text-sm font-bold tabular-nums" title={rec.cid}>
-          {middleId(rec.cid)}
-        </span>
-        <TooltipScope>
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
-            {rec.country && (
-              <InfoChip label={`${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}`}>
-                <FlagIcon country={rec.country} />
-              </InfoChip>
-            )}
-            {rec.device && (
-              <InfoChip label={rec.device}>
-                <DeviceIcon value={rec.device} />
-              </InfoChip>
-            )}
-            {rec.os && (
-              <InfoChip label={rec.os}>
-                <OsIcon value={rec.os} />
-              </InfoChip>
-            )}
-            {rec.browser && (
-              <InfoChip label={rec.browser}>
-                <BrowserIcon value={rec.browser} />
-              </InfoChip>
-            )}
-            <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
-          </div>
-        </TooltipScope>
-      </div>
-    </StickyBar>
+    <div className="flex flex-col gap-1">
+    <div className="flex flex-nowrap items-center gap-x-2 overflow-hidden">
+      <button type="button" onClick={onBack} className="flex shrink-0 items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
+        ‹ Back
+      </button>
+      <span className="shrink-0 text-sm font-bold tabular-nums" title={rec.cid}>
+        {middleId(rec.cid)}
+      </span>
+      <span className="hidden md:inline-flex">
+        <UserToolSeg value={tool} onChange={onTool} hasDex={hasDex} hasLeague={hasLeague} />
+      </span>
+      <TooltipScope>
+        <div className="ml-auto flex min-w-0 flex-nowrap items-center justify-end gap-1.5 overflow-x-auto">
+          {rec.country && (
+            <InfoChip label={`${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}`}>
+              <FlagIcon country={rec.country} />
+            </InfoChip>
+          )}
+          {rec.device && (
+            <InfoChip label={rec.device}>
+              <DeviceIcon value={rec.device} />
+            </InfoChip>
+          )}
+          {rec.os && (
+            <InfoChip label={rec.os}>
+              <OsIcon value={rec.os} />
+            </InfoChip>
+          )}
+          {rec.browser && (
+            <InfoChip label={rec.browser}>
+              <BrowserIcon value={rec.browser} />
+            </InfoChip>
+          )}
+          <LanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+        </div>
+      </TooltipScope>
+    </div>
+    <div className="md:hidden">
+      <UserToolSeg value={tool} onChange={onTool} hasDex={hasDex} hasLeague={hasLeague} />
+    </div>
+    </div>
   );
 }
 
@@ -930,20 +842,23 @@ function DetailHeader({ rec, onBack, stickyOffset }: { rec: HeaderRec; onBack: (
  *  bottom captions line up across the pair. */
 function RailStat({ top, bottom, width, full }: { top: React.ReactNode; bottom: React.ReactNode; width: string; full?: boolean }) {
   return (
-    <div className={`flex h-9 flex-col items-center justify-center rounded-lg border border-border bg-card px-2 text-center tabular-nums ${full ? 'flex-1' : width}`}>
-      <div className="flex h-[16px] items-center leading-none">{top}</div>
-      <div className="flex h-[11px] items-center text-[0.6rem] leading-none text-muted-foreground">{bottom}</div>
+    <div
+      data-testid="admin-rail-chip"
+      className={`flex h-9 shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-card px-2 text-center tabular-nums ${full ? 'flex-1' : width}`}
+    >
+      <div className="flex h-[16px] items-center leading-none whitespace-nowrap">{top}</div>
+      <div className="flex h-[11px] items-center whitespace-nowrap text-[0.6rem] leading-none text-muted-foreground">{bottom}</div>
     </div>
   );
 }
 function SessionsChip({ sessions, days, full }: { sessions: number; days: number; full?: boolean }) {
   return (
     <RailStat
-      width="w-[82px]"
+      width="w-[82px] md:w-[8.5rem]"
       full={full}
       top={
         <>
-          <span className="text-sm font-bold">{sessions}</span>&nbsp;<span className="text-[0.6rem] text-muted-foreground">{sessions === 1 ? 'session' : 'sessions'}</span>
+          <span className="text-sm font-bold leading-none">{sessions}</span>&nbsp;<span className="text-[0.6rem] leading-none text-muted-foreground">{sessions === 1 ? 'session' : 'sessions'}</span>
         </>
       }
       bottom={days === 1 ? '1 day' : `${days} days`}
@@ -954,13 +869,31 @@ function TimeChip({ ms, full }: { ms: number; full?: boolean }) {
   const mins = Math.round(ms / 60000);
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  return <RailStat width="w-[72px]" full={full} top={<span className="text-[0.8rem] font-bold">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>} bottom="time spent" />;
+  return <RailStat width="w-[82px] md:w-[8.5rem]" full={full} top={<span className="text-[0.8rem] font-bold leading-none">{h > 0 ? `${h}h ${m}m` : `${m}m`}</span>} bottom="time spent" />;
 }
 
-/** Dex user detail page: session timeline + the build at the scrubbed moment,
- *  drawn with the real section outlines. */
-function DexDetailPage({ rec, onBack, stickyOffset }: { rec: ClientRecord; onBack: () => void; stickyOffset: number }) {
-  const log = rec.sessionLog ?? [];
+function tidySessions<T extends { ts: number }>(
+  raw: T[],
+  sessionMs: number[] | undefined,
+  idsOf: (s: T) => number[],
+  countsOf?: (s: T) => SessionCounts,
+): { log: T[]; ms: number[] } {
+  const sorted = sortSessions(raw, sessionMs ?? []);
+  const kept = withoutDropRestorePhantoms(sorted.log, idsOf, countsOf);
+  const keep = new Set(kept);
+  return {
+    log: kept,
+    ms: sorted.log.flatMap((s, i) => (keep.has(s) ? [sorted.ms[i]] : [])),
+  };
+}
+
+function leagueSessionIds(s: { cards?: LeagueCard[] }): number[] {
+  return (s.cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b));
+}
+
+/** Dex user body: session timeline + the build at the scrubbed moment. */
+function DexDetailBody({ rec }: { rec: ClientRecord }) {
+  const { log, ms } = tidySessions(rec.sessionLog ?? [], rec.sessionMs, (s) => s.ids);
   const [i, setI] = useState(Math.max(0, log.length - 1));
   const points: TimelinePoint[] = log.map((s, k) => {
     const prev = k ? new Set(log[k - 1].ids) : new Set<number>();
@@ -973,7 +906,7 @@ function DexDetailPage({ rec, onBack, stickyOffset }: { rec: ClientRecord; onBac
       net: s.ids.length,
       added,
       removed,
-      dur: rec.sessionMs?.[k] != null ? rec.sessionMs[k] / 1000 : undefined,
+      dur: ms[k] != null ? ms[k] / 1000 : undefined,
       ev: s.events,
     };
   });
@@ -984,13 +917,11 @@ function DexDetailPage({ rec, onBack, stickyOffset }: { rec: ClientRecord; onBac
   const sectionedSet = new Set(Object.values(sections ?? {}).flat());
   const offIds = presentIds.filter((id) => !sectionedSet.has(id));
   const peak = Math.max(0, ...points.map((p) => p.count));
-  const totalMs = (rec.sessionMs ?? []).reduce((a, b) => a + b, 0);
+  const totalMs = ms.reduce((a, b) => a + b, 0);
 
   const t0 = log.length ? log[0].ts : 0;
   const t1 = log.length ? log[log.length - 1].ts : 0;
   const clampT = (t: number) => Math.max(t0, Math.min(t1, t));
-  // Exports are milestones on the timeline; a browser that never exported gets a
-  // "no exports" marker at its most recent session, so the absence still reads.
   const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] =
     rec.exported && rec.exportedAt
       ? [{ t: clampT(Date.parse(rec.exportedAt)), label: 'export', tone: 'export' }]
@@ -998,24 +929,8 @@ function DexDetailPage({ rec, onBack, stickyOffset }: { rec: ClientRecord; onBac
         ? [{ t: t1, label: 'no exports', tone: 'muted' }]
         : [];
 
-  return (
-    <div className="flex flex-col gap-4">
-      <DetailHeader rec={rec} onBack={onBack} stickyOffset={stickyOffset} />
-      {points.length > 0 ? (
-        <SessionTimeline
-          points={points}
-          index={idx}
-          onIndex={setI}
-          countUnit="of 151"
-          peakLabel={`${peak} / 151`}
-          milestones={milestones}
-          leftChip={<SessionsChip sessions={rec.sessions ?? log.length} days={activeDayCount(rec)} full={log.length <= 1} />}
-          rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
-        />
-      ) : (
-        <p className="text-xs text-muted-foreground">No session history.</p>
-      )}
-      <div className="text-sm font-bold">Build at this moment</div>
+  const snapshot = (
+    <>
       {sections && Object.keys(sections).length > 0 ? (
         <OutlinedDex sections={sections} presentIds={presentIds} />
       ) : presentIds.length > 0 ? (
@@ -1034,20 +949,45 @@ function DexDetailPage({ rec, onBack, stickyOffset }: { rec: ClientRecord; onBac
           <SpriteRow ids={offIds} />
         </div>
       )}
-    </div>
+    </>
+  );
+
+  if (points.length === 0) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col gap-1.5">
+        <p className="text-xs text-muted-foreground">No session history.</p>
+        <div className="min-h-0 flex-1 overflow-auto">{snapshot}</div>
+      </div>
+    );
+  }
+
+  return (
+    <SessionTimeline
+      points={points}
+      index={idx}
+      onIndex={setI}
+      countUnit="of 151"
+      peakLabel={`${peak} / 151`}
+      milestones={milestones}
+      tz={rec.tz}
+      leftChip={<SessionsChip sessions={rec.sessions ?? log.length} days={activeDayCount(rec)} full={log.length <= 1} />}
+      rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
+    >
+      {snapshot}
+    </SessionTimeline>
   );
 }
 
 /** The league timeline + board, reused as a page and as the dex page's league
  *  section. */
 function LeagueDetailBody({ league }: { league: LeagueUser }) {
-  const log = league.sessionLog ?? [];
+  const { log, ms } = tidySessions(
+    league.sessionLog ?? [],
+    league.sessionMs,
+    leagueSessionIds,
+    (s) => s.summary,
+  );
   const [i, setI] = useState(Math.max(0, log.length - 1));
-  // Size and diff are both in seated Pokemon, so the line and the bars always
-  // agree. When a session captured its card structure we diff the actual member
-  // set (so a swap shows as both an add and a remove); when it didn't (older
-  // beacons carry only the summary counts), we fall back to the seat-count
-  // delta, so the bars still track the line rather than vanishing.
   const memberSet = (cards?: LeagueCard[]) => new Set((cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b)));
   const cardsOf = (k: number) => {
     const c = log[k]?.cards;
@@ -1079,65 +1019,102 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
       net: nets[k],
       added,
       removed,
-      dur: league.sessionMs?.[k] != null ? league.sessionMs[k] / 1000 : undefined,
+      dur: ms[k] != null ? ms[k] / 1000 : undefined,
     };
   });
   const idx = Math.min(i, Math.max(0, log.length - 1));
   const cur = log[idx];
   const peak = Math.max(0, ...points.map((p) => p.net));
-  const seated = nets[idx] ?? 0;
-  const totalMs = (league.sessionMs ?? []).reduce((a, b) => a + b, 0);
+  const totalMs = ms.reduce((a, b) => a + b, 0);
   const t0 = log.length ? log[0].ts : 0;
   const t1 = log.length ? log[log.length - 1].ts : 0;
-  const days = Math.max(1, Math.round((t1 - t0) / 86_400_000) + 1);
-  const exported = (league.exportsCard ?? 0) + (league.exportsLeague ?? 0) > 0;
-  const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] = exported
-    ? [{ t: t1, label: 'export', tone: 'export' }]
-    : log.length
-      ? [{ t: t1, label: 'no exports', tone: 'muted' }]
-      : [];
+  const clampT = (t: number) => Math.max(t0, Math.min(t1, t));
+  const days = Math.max(1, distinctCalendarDays(log.map((s) => s.ts), league.tz));
+  const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] = [];
+  if (league.exportedCardAt) {
+    milestones.push({ t: clampT(Date.parse(league.exportedCardAt)), label: 'card', tone: 'export' });
+  }
+  if (league.exportedLeagueAt) {
+    milestones.push({ t: clampT(Date.parse(league.exportedLeagueAt)), label: 'league', tone: 'export' });
+  }
+  if (milestones.length === 0 && log.length) {
+    milestones.push({ t: t1, label: 'no exports', tone: 'muted' });
+  }
+
+  const board =
+    cur?.cards && cur.cards.length > 0 ? (
+      <LeagueVisitBoard cards={cur.cards} />
+    ) : league.latestCards && league.latestCards.length > 0 ? (
+      <LeagueVisitBoard cards={league.latestCards} />
+    ) : (
+      <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
+    );
+
+  if (points.length === 0) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
+        <p className="text-xs text-muted-foreground">No session history.</p>
+        {board}
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col gap-4">
-      {points.length > 0 ? (
-        <SessionTimeline
-          points={points}
-          index={idx}
-          onIndex={setI}
-          countUnit={`of ${CARD_COUNT} cards`}
-          peakLabel={`${peak} seated`}
-          milestones={milestones}
-          leftChip={<SessionsChip sessions={league.sessions} days={days} full={log.length <= 1} />}
-          rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
-        />
-      ) : (
-        <p className="text-xs text-muted-foreground">No session history.</p>
-      )}
-      {cur && <div className="text-sm text-muted-foreground">{seated} Pokémon seated</div>}
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <span className="text-sm font-bold">Whole league at this moment</span>
-        <span className="flex items-center gap-1 text-[0.7rem] text-muted-foreground">
-          <span className="inline-block h-[11px] w-[11px] rounded-[3px]" style={{ boxShadow: '0 0 0 2px var(--color-primary)', background: 'rgba(220,38,38,0.10)' }} />
-          marks each card&rsquo;s ace
-        </span>
-      </div>
-      {cur?.cards && cur.cards.length > 0 ? (
-        <LeagueBoardSnapshot cards={cur.cards} />
-      ) : league.latestCards && league.latestCards.length > 0 ? (
-        <LeagueBoardSnapshot cards={league.latestCards} />
-      ) : (
-        <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
-      )}
-    </div>
+    <SessionTimeline
+      points={points}
+      index={idx}
+      onIndex={setI}
+      countUnit={`of ${CARD_COUNT}`}
+      peakLabel={`${peak} seated`}
+      milestones={milestones}
+      tz={league.tz}
+      leftChip={<SessionsChip sessions={log.length} days={days} full={log.length <= 1} />}
+      rightChip={<TimeChip ms={totalMs} full={log.length <= 1} />}
+    >
+      {board}
+    </SessionTimeline>
   );
 }
 
-/** League user detail page. */
-function LeagueDetailPage({ rec, onBack, stickyOffset }: { rec: LeagueUser; onBack: () => void; stickyOffset: number }) {
+function headerFrom(dex?: ClientRecord, league?: LeagueUser): HeaderRec | null {
+  const src = dex ?? league;
+  if (!src) return null;
+  return {
+    cid: src.cid,
+    country: src.country,
+    region: src.region,
+    device: src.device,
+    os: src.os,
+    browser: src.browser,
+    lang: src.lang,
+    locale: src.locale,
+    switched: src.switched,
+  };
+}
+
+/** One browser: header, tool toggle, then that tool's timeline. */
+function UserDetailPage({
+  tool,
+  onTool,
+  dex,
+  league,
+  onBack,
+}: {
+  tool: 'dex' | 'league';
+  onTool: (k: 'dex' | 'league') => void;
+  dex?: ClientRecord;
+  league?: LeagueUser;
+  onBack: () => void;
+}) {
+  const rec = headerFrom(dex, league);
+  if (!rec) return null;
   return (
-    <div className="flex flex-col gap-4">
-      <DetailHeader rec={rec} onBack={onBack} stickyOffset={stickyOffset} />
-      <LeagueDetailBody league={rec} />
+    <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden">
+      <div className="shrink-0">
+        <DetailHeader rec={rec} onBack={onBack} tool={tool} onTool={onTool} hasDex={!!dex} hasLeague={!!league} />
+      </div>
+      {tool === 'dex' && dex && <DexDetailBody rec={dex} />}
+      {tool === 'league' && league && <LeagueDetailBody league={league} />}
     </div>
   );
 }
@@ -1402,6 +1379,28 @@ export type AdminNavKey = ToolSlice | 'feedback';
 /** Section nav: a bottom bar on mobile, an inline row on desktop. Splits the
  *  dashboard into All / Dex / League analytics and the Feedback page. */
 function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: AdminNavKey) => void }) {
+  const navRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const apply = () => {
+      document.documentElement.style.setProperty('--admin-nav-h', `${el.getBoundingClientRect().height}px`);
+      const buttons = el.querySelectorAll('button');
+      if (buttons.length > 0) {
+        const a = buttons[0].getBoundingClientRect();
+        const b = buttons[buttons.length - 1].getBoundingClientRect();
+        document.documentElement.style.setProperty('--admin-nav-tabs-w', `${Math.round(b.right - a.left)}px`);
+      }
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      document.documentElement.style.removeProperty('--admin-nav-h');
+      document.documentElement.style.removeProperty('--admin-nav-tabs-w');
+    };
+  }, []);
   const items: { key: AdminNavKey; label: string }[] = [
     { key: 'all', label: 'Suite' },
     { key: 'dex', label: 'Dex' },
@@ -1410,6 +1409,7 @@ function AdminNav({ value, onChange }: { value: AdminNavKey; onChange: (k: Admin
   ];
   return (
     <nav
+      ref={navRef}
       aria-label="Admin section"
       className="fixed inset-x-0 bottom-0 z-[90] flex justify-around gap-1 border-t border-border bg-card/95 px-2 py-2 backdrop-blur md:sticky md:top-0 md:mx-auto md:max-w-5xl md:justify-start md:border-t-0 md:border-b md:bg-card md:px-4 md:py-2 md:backdrop-blur-none"
     >
@@ -1618,9 +1618,10 @@ export function AdminPage() {
       pickTool(k);
     }
   };
+  const lockUser = detail?.kind === 'dex' || detail?.kind === 'league';
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
+    <div className={cn('flex flex-col bg-background', lockUser ? 'h-dvh overflow-hidden' : 'min-h-dvh')}>
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-1">
           <h1 className="whitespace-nowrap text-sm font-bold">
@@ -1637,18 +1638,22 @@ export function AdminPage() {
         </div>
       </header>
 
-      {!detail && <AdminNav value={navKey} onChange={onNav} />}
+      {detail?.kind !== 'picks' && <AdminNav value={navKey} onChange={onNav} />}
 
       <main
         className={cn(
-          'mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col gap-4 px-4 pt-4 md:pb-8',
-          detail?.kind === 'picks' ? 'pb-8' : 'pb-24',
+          'mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col px-4',
+          lockUser
+            ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-nav-h,5rem)] md:pb-8'
+            : cn('gap-4 pt-4 md:pb-8', detail?.kind === 'picks' ? 'pb-8' : 'pb-24'),
         )}
       >
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         {/* A clicked preview opens a full detail page; Back returns here. */}
-        {detail && data && (() => {
+        {detail && data && (
+          <div className={cn((detail.kind === 'league' || detail.kind === 'dex') && 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
+          {(() => {
           if (detail.kind === 'picks') {
             const nDex = data.tools?.dex ?? data.funnel.users;
             return (
@@ -1660,15 +1665,27 @@ export function AdminPage() {
               />
             );
           }
-          if (detail.kind === 'dex') {
-            const rec = data.records.find((r) => r.cid === detail.cid);
-            if (!rec) return null;
-            return <DexDetailPage rec={rec} onBack={() => setDetail(null)} stickyOffset={pageHeaderH} />;
-          }
-          const rec = data.leagueUsers?.find((r) => r.cid === detail.cid);
-          if (!rec) return null;
-          return <LeagueDetailPage rec={rec} onBack={() => setDetail(null)} stickyOffset={pageHeaderH} />;
-        })()}
+          const bare = detail.cid.split('::')[0];
+          const dex =
+            data.records.find((r) => r.cid === detail.cid || r.cid.split('::')[0] === bare) ??
+            data.dexByCid?.[detail.cid] ??
+            data.dexByCid?.[bare];
+          const league =
+            data.leagueByCid?.[detail.cid] ??
+            data.leagueByCid?.[bare] ??
+            data.leagueUsers?.find((r) => r.cid === detail.cid || r.cid === bare);
+          return (
+            <UserDetailPage
+              tool={detail.kind}
+              onTool={(k) => setDetail({ kind: k, cid: detail.cid })}
+              dex={dex}
+              league={league}
+              onBack={() => setDetail(null)}
+            />
+          );
+          })()}
+          </div>
+        )}
 
         {!detail && page === 'feedback' &&
           (token ? <FeedbackCard token={token} /> : <p className="text-sm text-muted-foreground">Sign in to read feedback.</p>)}

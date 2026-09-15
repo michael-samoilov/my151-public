@@ -75,4 +75,12 @@ describe('card shades', () => {
     expect(cardShades('none')).toEqual(cardShades(null));
     expect(contrastWithWhite(cardShades('none').cell)).toBeGreaterThanOrEqual(CELL_MIN_CONTRAST);
   });
+
+  it('paints hover-on-white as a pale tint, not the glyph cell', () => {
+    for (const type of TYPE_NAMES) {
+      const s = cardShades(type);
+      expect(contrastWithWhite(s.hoverOnWhite), `${type} hoverOnWhite`).toBeLessThan(1.5);
+      expect(contrastWithWhite(s.cell)).toBeGreaterThan(contrastWithWhite(s.hoverOnWhite));
+    }
+  });
 });

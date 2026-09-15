@@ -27,7 +27,8 @@ function postLeagueBeacon(
   kind: 'progress' | 'export',
   summary: LeagueSummary,
   cards: LeagueCardShape[],
-  exportKind?: LeagueExportKind,
+  exportKind: LeagueExportKind | undefined,
+  capturedAt: number,
 ) {
   if (DEMO_MODE || isOptedOut()) return;
   const payload = JSON.stringify({
@@ -37,11 +38,10 @@ function postLeagueBeacon(
     kind,
     exportKind,
     summary,
-    // Structure only — no badge name, theme or league name. See describeLeague.
     cards,
     locale: getLocale(),
-    // External referrer host, if any — stored forward-only by the server.
     ref: externalReferrerHost() || undefined,
+    ts: capturedAt,
   });
   void fetch('/api/league', {
     method: 'POST',
@@ -62,11 +62,12 @@ export function useLeagueBeacon() {
 
   useEffect(() => {
     const summary = summarizeLeague(name, cards);
-    // An empty league is a page load, not a user: wait for the first seat.
     if (summary.seats === 0) return;
     sendEventBeacon('league-first-seat', { once: true });
     if (summary.named > 0) sendEventBeacon('league-card-named', { once: true });
-    debouncer.schedule(() => postLeagueBeacon('progress', summary, describeLeague(cards)));
+    const capturedAt = Date.now();
+    const shape = describeLeague(cards);
+    debouncer.schedule(() => postLeagueBeacon('progress', summary, shape, undefined, capturedAt));
   }, [name, cards, debouncer]);
 
   useEffect(() => {
@@ -87,5 +88,5 @@ export function useLeagueBeacon() {
 /** One-shot export report, with the league as it was exported. */
 export function sendLeagueExportBeacon(exportKind: LeagueExportKind) {
   const { name, cards } = useLeagueStore.getState();
-  postLeagueBeacon('export', summarizeLeague(name, cards), describeLeague(cards), exportKind);
+  postLeagueBeacon('export', summarizeLeague(name, cards), describeLeague(cards), exportKind, Date.now());
 }

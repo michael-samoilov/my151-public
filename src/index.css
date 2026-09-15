@@ -121,8 +121,9 @@ html {
   -webkit-appearance: none;
   appearance: none;
   box-sizing: border-box;
-  /* Center the 22px thumb on the 7px track (and thus on the breakpoint dots):
-     (track 7 − thumb 22) / 2. */
+  /* Horizontal travel matches the overlay dots: thumb center at min is
+     SCRUB_THUMB_PX/2 from the input's left edge. Keep that 22px in sync with
+     SessionTimeline.tsx. */
   margin-top: -7.5px;
   height: 22px;
   width: 22px;

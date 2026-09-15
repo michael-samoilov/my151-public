@@ -181,6 +181,7 @@ type NewestSeed = {
 };
 const NEWEST: NewestSeed[] = [
   { cid: '74d5…68', c: 'US', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'en-US', sess: 11, dex: 151, comp: true, exp: false, hoursAgo: 2 },
+  { cid: '70cd…a7', c: 'IT', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'it-IT', sess: 6, dex: 90, comp: false, exp: false, hoursAgo: 4 },
   { cid: '14c0…85', c: 'IT', dev: 'Desktop', os: 'Windows', browser: 'Chrome', lang: 'it-IT', sess: 1, dex: 139, comp: true, exp: true, hoursAgo: 5 },
   { cid: 'bea3…4e', c: 'US', dev: 'Mobile', os: 'iOS', browser: 'Safari', lang: 'en-US', sess: 9, dex: 151, comp: true, exp: false, hoursAgo: 6 },
   { cid: '0f91…4a', c: 'SE', dev: 'Desktop', os: 'macOS', browser: 'Safari', lang: 'sv-SE', sess: 3, dex: 68, comp: false, exp: false, hoursAgo: 8 },
@@ -250,6 +251,7 @@ function record(s: NewestSeed): ClientRecord {
     localDow: 3,
     country: s.c,
     region: s.c === 'US' || s.c === 'CA' ? 'N. America' : 'Europe',
+    tz: 'America/New_York',
     lang: s.lang,
     locale: s.lang.split('-')[0],
     device: s.dev,
@@ -268,32 +270,29 @@ function record(s: NewestSeed): ClientRecord {
 
 const records = NEWEST.map(record);
 
-// Build n trainer cards, each with distinct seated members (three lines of
-// 3, 3, 2 stages), so the league scrubber shows a real board and the seated
-// count grows with the cards — like real leagues, where members don't repeat.
+// Build n trainer cards, each with six three-stage lines, so the admin board
+// exercises seat 6's two-slot cap and the no-type star.
 const CARD_TYPES = ['fire', 'water', 'grass', 'electric', 'psychic', 'rock', 'dragon', 'fairy', 'ghost', 'steel', 'ground', 'ice', 'bug', 'poison'];
-const SEATS_PER_CARD = 8; // 3 + 3 + 2
+const SEATS_PER_CARD = 6;
 function mkCards(n: number): import('../AdminPage').LeagueCard[] {
   let id = 1;
   const next = () => {
     const v = id;
-    id = (id % 151) + 1; // stay within Kanto ids that have sprites
+    id = (id % 151) + 1;
     return v;
   };
   return Array.from({ length: n }, (_, i) => {
-    const l = [
-      { b: [next(), next(), next()] },
-      { b: [next(), next(), next()] },
-      { b: [next(), next()] },
-    ];
+    const l = Array.from({ length: 6 }, (_, si) => {
+      const b = [next(), next(), next()];
+      // Seat 6 (leftmost) only has two template rows. A three-stage line that
+      // splits those rows shows two members, never three.
+      return si === 5 ? { b, bd: [1, 10, 11] } : { b };
+    });
     const card: import('../AdminPage').LeagueCard = {
       i,
-      // A card carries a type theme, which tints the slot's swatch.
-      t: CARD_TYPES[i % CARD_TYPES.length],
+      t: i === 1 ? 'none' : CARD_TYPES[i % CARD_TYPES.length],
       l,
     };
-    // Most trainers mark an ace: the final evolution of a varied line. Skip
-    // roughly every third card.
     if (i % 3 !== 2) {
       const line = l[i % 3].b;
       card.aceId = line[line.length - 1];
@@ -333,6 +332,9 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
     latestCards: mkCards(cards),
     exportsCard: cards >= 8 ? 1 : 0,
     exportsLeague: cards >= 11 ? 1 : 0,
+    exportedCardAt: cards >= 8 ? iso(lastTs - 3_600_000) : undefined,
+    exportedLeagueAt: cards >= 11 ? iso(lastTs) : undefined,
+    tz: 'America/New_York',
     sessionLog: Array.from({ length: sess }, (_, i) => {
       const c2 = Math.max(1, Math.round((cards * (i + 1)) / sess));
       // Older beacons carried only summary counts, no card structure. Model that
@@ -358,12 +360,27 @@ function leagueUser(cid: string, c: string, cards: number, sess: number, hoursAg
   };
 }
 const leagueUsers: LeagueUser[] = [
-  leagueUser('70cd…a7', 'IT', 11, 3, 3, true),
+  leagueUser('70cd…a7', 'IT', 14, 3, 3, true),
   leagueUser('74d5…68', 'US', 8, 2, 5, true),
   leagueUser('bea3…4e', 'US', 6, 1, 9, true),
   leagueUser('1b2f…ea', 'AU', 3, 2, 28, true),
   leagueUser('9d19…10', 'FR', 1, 1, 50, false),
 ];
+
+// Delayed keepalive with no member ids, between two agreeing full sittings —
+// the live 13→1→14 shape. Display tidy must drop it so the scrubber has 3
+// sessions, not 4.
+{
+  const u = leagueUsers[0];
+  const last = u.sessionLog[u.sessionLog.length - 1];
+  const prev = u.sessionLog[u.sessionLog.length - 2];
+  prev.summary = { ...last.summary };
+  u.sessionLog.splice(u.sessionLog.length - 1, 0, {
+    ts: Math.round((prev.ts + last.ts) / 2),
+    summary: { cards: 1, seats: 1, typed: 0, named: 0, aces: 0, leagueNamed: false },
+    country: last.country,
+  });
+}
 
 // Popular / dropped picks — a slice of the mockup's grid, real Pokémon ids.
 const popularFinal: [string, number][] = [
@@ -570,6 +587,9 @@ export const sampleResponse: ApiResponse = {
     ),
   },
   leagueByCid: Object.fromEntries(leagueUsers.filter((u) => u.hasDex).map((u) => [u.cid, u])),
+  dexByCid: Object.fromEntries(
+    records.filter((r) => leagueUsers.some((u) => u.cid === r.cid)).map((r) => [r.cid, r]),
+  ),
   leagueUsers,
   totalLeagueUsers: 5,
   records,

@@ -176,6 +176,21 @@ export function placedIds(lines: PlacedLine[]): number[] {
   return lines.flatMap((l) => l.branch);
 }
 
+/**
+ * Members of one seated line that the card template actually draws in that
+ * seat. Seat 6 (leftmost) only exists on the champion and boss rows, so a
+ * three-stage line can show at most two Pokémon there — never the whole
+ * branch dumped into the column.
+ */
+export function visibleMembers(line: PlacedLine, seat: number): number[] {
+  const ids: number[] = [];
+  for (let row = joinRow(seat); row <= ROW_COUNT; row++) {
+    const id = line.branch[stageAt(line, row)];
+    if (id !== undefined && ids[ids.length - 1] !== id) ids.push(id);
+  }
+  return ids;
+}
+
 /** Reorder a seat, Excel-style: remove and reinsert, the rest close up. */
 export function moveSeat<T>(items: T[], fromSeat: number, toSeat: number): T[] {
   const next = [...items];

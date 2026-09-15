@@ -35,8 +35,10 @@ export interface CardShades {
   hint: string;
   /** The open league row, and the desktop flow. */
   open: string;
-  /** Hovered row/column wash (desktop). */
+  /** Hovered row/column wash (desktop). Translucent type over the slot. */
   hover: string;
+  /** `hover` composited on white — the opaque plate a hovered cell shows. */
+  hoverOnWhite: string;
 }
 
 /**
@@ -193,6 +195,7 @@ export function cardShades(type: TypeName | 'none' | null): CardShades {
     hint: overWhite(cell, 0.55),
     open: rgba(colour, 0.055),
     hover: rgba(colour, 0.18),
+    hoverOnWhite: overWhite(colour, 0.18),
   };
   cache.set(key, shades);
   return shades;

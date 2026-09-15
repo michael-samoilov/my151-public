@@ -113,6 +113,85 @@ describe('mergeLeagueRecord', () => {
   });
 });
 
+/**
+ * The drop-then-restore the admin showed: a league ~85% filled, then one evo
+ * line, then the gyms back. Two clocks could have caused it. These pin the
+ * one that actually does.
+ *
+ * Timezone cannot reverse board state. Session `ts` is epoch ms; sorting or
+ * placing by it is independent of UTC vs America/New_York labels. A delayed
+ * beacon can: the server used to stamp Date.now() at arrival, so a keepalive
+ * from the first sitting landed AFTER a later sitting and opened a new
+ * session whose board was the old one-line snapshot.
+ */
+describe('out-of-order league beacons', () => {
+  const T0 = 1_000_000;
+  const oneLine = parseCards([{ i: 0, l: [{ b: [1] }] }])!;
+  const nearlyFull = parseCards(
+    Array.from({ length: 12 }, (_, i) => ({ i, l: [{ b: [i + 1] }] })),
+  )!;
+  const one = summary({ cards: 1, seats: 1 });
+  const full = summary({ cards: 12, seats: 12 });
+
+  function filledThenReturned() {
+    let rec = mergeLeagueRecord(null, beacon({ now: T0, cards: oneLine, summary: one, capturedKnown: true }));
+    rec = mergeLeagueRecord(
+      rec,
+      beacon({ now: T0 + 10 * 60_000, cards: nearlyFull, summary: full, capturedKnown: true }),
+    );
+    rec = mergeLeagueRecord(
+      rec,
+      beacon({
+        now: T0 + 10 * 60_000 + LEAGUE_SESSION_GAP_MS + 1,
+        cards: nearlyFull,
+        summary: full,
+        capturedKnown: true,
+      }),
+    );
+    return rec;
+  }
+
+  it('does not open a regression session when a stale snapshot arrives late (old client, arrival stamp)', () => {
+    let rec = filledThenReturned();
+    const arrival = rec.lastTs + LEAGUE_SESSION_GAP_MS + 1;
+    rec = mergeLeagueRecord(
+      rec,
+      beacon({ now: arrival, cards: oneLine, summary: one, capturedKnown: false }),
+    );
+    expect(rec.sessionLog.map((s) => s.summary.cards)).toEqual([12, 12]);
+    expect(rec.latest.cards).toBe(12);
+    expect(rec.latestCards).toEqual(nearlyFull);
+  });
+
+  it('does not overwrite a later sitting when a delayed snapshot carries its captured time', () => {
+    let rec = filledThenReturned();
+    rec = mergeLeagueRecord(
+      rec,
+      beacon({ now: T0, cards: oneLine, summary: one, capturedKnown: true }),
+    );
+    expect(rec.sessionLog.map((s) => s.summary.cards)).toEqual([12, 12]);
+    expect(rec.sessionLog.map((s) => s.ts).every((t, i, a) => i === 0 || a[i - 1] <= t)).toBe(true);
+    expect(rec.latest.cards).toBe(12);
+    expect(rec.latestCards).toEqual(nearlyFull);
+  });
+
+  it('keeps a real later sitting that is smaller, when the ids are not a subset', () => {
+    let rec = filledThenReturned();
+    const other = parseCards([{ i: 3, l: [{ b: [99] }] }])!;
+    rec = mergeLeagueRecord(
+      rec,
+      beacon({
+        now: rec.lastTs + LEAGUE_SESSION_GAP_MS + 1,
+        cards: other,
+        summary: one,
+        capturedKnown: true,
+      }),
+    );
+    expect(rec.sessionLog.map((s) => s.summary.cards)).toEqual([12, 12, 1]);
+    expect(rec.latestCards).toEqual(other);
+  });
+});
+
 describe('parseSummary', () => {
   it('clamps and rejects junk', () => {
     expect(parseSummary({ cards: 99, seats: -3, typed: 2.6, named: 1, aces: 0, leagueNamed: 'yes' }))

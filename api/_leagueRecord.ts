@@ -9,6 +9,8 @@
  * serving this file as a route.
  */
 
+import { alignSessionMs, isSubsetRegression, sessionTarget } from './_sessionize.js';
+
 /** A quiet gap longer than this between two beacons starts a new session. */
 export const LEAGUE_SESSION_GAP_MS = 30 * 60_000;
 /** Keep at most this many sessions per record (most recent wins). */
@@ -311,12 +313,23 @@ export interface LeagueBeaconInput {
   page?: string;
   /** External referrer host, host-only, already validated. Stored forward-only. */
   referrer?: string;
+  /**
+   * True when `now` is the client's capture time. False (or omitted) when `now`
+   * is the server's arrival stamp — an old bundle that sent no `ts`. Arrival
+   * stamps are what turned a delayed first-sitting keepalive into a phantom
+   * later session.
+   */
+  capturedKnown?: boolean;
 }
 
 /**
  * Merge one beacon into a record (or seed one). Pure given `existing`, so it
  * can be re-run after a lost CAS race, and unit-tested without Redis.
  */
+function memberIds(cards?: LeagueCardShape[]): number[] {
+  return (cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b));
+}
+
 export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeaconInput): LeagueRecord {
   const at = new Date(b.now).toISOString();
   const rec: LeagueRecord = existing
@@ -340,44 +353,7 @@ export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeacon
         exportsLeague: 0,
       };
 
-  const gap = existing ? b.now - existing.lastTs : 0;
-  const newSession = !existing || gap > LEAGUE_SESSION_GAP_MS;
-  if (existing && newSession) {
-    rec.sessions += 1;
-    rec.curSessionStart = b.now;
-  }
-  const curSessionMs = Math.max(0, b.now - rec.curSessionStart);
-  rec.maxSessionMs = Math.max(rec.maxSessionMs, curSessionMs);
-  if (newSession || rec.sessionMs.length === 0) rec.sessionMs.push(curSessionMs);
-  else rec.sessionMs[rec.sessionMs.length - 1] = curSessionMs;
-  rec.sessionMs = rec.sessionMs.slice(-LEAGUE_MAX_SESSIONS);
-
-  const devStamp = [b.ua.device, b.ua.os, b.ua.browser].filter((p) => p && p !== 'Unknown').join(' · ');
-  // Carry the session's structure forward when a within-session beacon omits it
-  // (an export beacon can), the same reason the dex log carries events forward:
-  // rewriting the last entry must not blank a board an earlier beacon captured.
-  const prevCards =
-    !newSession && rec.sessionLog.length > 0 ? rec.sessionLog[rec.sessionLog.length - 1].cards : undefined;
-  const sessionCards = b.cards ?? prevCards;
-  const entry: LeagueSessionEntry = {
-    ts: b.now,
-    summary: b.summary,
-    ...(b.geo.country ? { country: b.geo.country } : {}),
-    ...(devStamp ? { dev: devStamp } : {}),
-    ...(b.page ? { page: b.page } : {}),
-    ...(sessionCards ? { cards: sessionCards } : {}),
-  };
-  if (newSession || rec.sessionLog.length === 0) rec.sessionLog.push(entry);
-  else rec.sessionLog[rec.sessionLog.length - 1] = entry;
-  rec.sessionLog = rec.sessionLog.slice(-LEAGUE_MAX_SESSIONS);
-
-  rec.lastTs = b.now;
-  rec.lastAt = at;
   rec.submits += 1;
-  rec.latest = b.summary;
-  // Only when the beacon carried one: a client that sends no structure must
-  // not erase the structure an earlier beacon stored.
-  if (b.cards) rec.latestCards = b.cards;
   rec.maxCards = Math.max(rec.maxCards, b.summary.cards);
   rec.maxSeats = Math.max(rec.maxSeats, b.summary.seats);
   if (b.kind === 'export') {
@@ -397,8 +373,84 @@ export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeacon
   rec.device = b.ua.device;
   rec.os = b.ua.os;
   rec.browser = b.ua.browser;
-  // Acquisition source, set once and never overwritten (forward-only).
   if (b.referrer && !rec.firstReferrer) rec.firstReferrer = b.referrer;
+
+  const devStamp = [b.ua.device, b.ua.os, b.ua.browser].filter((p) => p && p !== 'Unknown').join(' · ');
+  const makeEntry = (ts: number, cards: LeagueCardShape[] | undefined): LeagueSessionEntry => ({
+    ts,
+    summary: b.summary,
+    ...(b.geo.country ? { country: b.geo.country } : {}),
+    ...(devStamp ? { dev: devStamp } : {}),
+    ...(b.page ? { page: b.page } : {}),
+    ...(cards ? { cards } : {}),
+  });
+
+  const log = rec.sessionLog;
+  const ms = alignSessionMs(log.length, rec.sessionMs);
+
+  if (log.length === 0) {
+    log.push(makeEntry(b.now, b.cards));
+    ms.push(0);
+  } else {
+    const target = sessionTarget(
+      log.map((s) => s.ts),
+      ms,
+      b.now,
+      LEAGUE_SESSION_GAP_MS,
+    );
+
+    // Old client: arrival-stamped, would open a new sitting, board is a
+    // strict subset of the stored league. A delayed keepalive from the first
+    // sitting, not a user wiping their team.
+    if (
+      target.kind === 'insert' &&
+      !b.capturedKnown &&
+      existing &&
+      b.cards &&
+      rec.latestCards &&
+      isSubsetRegression(memberIds(b.cards), memberIds(rec.latestCards))
+    ) {
+      if (b.now > rec.lastTs) {
+        rec.lastTs = b.now;
+        rec.lastAt = at;
+      }
+      rec.sessionMs = ms;
+      rec.sessionLog = log;
+      return rec;
+    }
+
+    if (target.kind === 'join') {
+      const i = target.index;
+      if (b.now >= log[i].ts) {
+        const start = log[i].ts - ms[i];
+        const newEnd = Math.max(log[i].ts, b.now);
+        ms[i] = Math.max(0, newEnd - start);
+        log[i] = makeEntry(newEnd, b.cards ?? log[i].cards);
+      }
+    } else {
+      log.splice(target.index, 0, makeEntry(b.now, b.cards));
+      ms.splice(target.index, 0, 0);
+      rec.sessions += 1;
+    }
+  }
+
+  const overflow = log.length - LEAGUE_MAX_SESSIONS;
+  rec.sessionLog = overflow > 0 ? log.slice(overflow) : log;
+  rec.sessionMs = overflow > 0 ? ms.slice(overflow) : ms;
+  rec.maxSessionMs = rec.sessionMs.reduce((m, n) => Math.max(m, n), rec.maxSessionMs);
+
+  if (b.now >= rec.lastTs) {
+    rec.lastTs = b.now;
+    rec.lastAt = at;
+    rec.latest = b.summary;
+    if (b.cards) rec.latestCards = b.cards;
+    const last = rec.sessionLog.length - 1;
+    rec.curSessionStart = rec.sessionLog[last].ts - rec.sessionMs[last];
+  } else {
+    rec.firstTs = Math.min(rec.firstTs, b.now);
+    rec.firstAt = new Date(rec.firstTs).toISOString();
+  }
+
   return rec;
 }
 
