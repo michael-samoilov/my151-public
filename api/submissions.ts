@@ -34,7 +34,7 @@ import {
   type DexFunnelRow,
 } from './_aggregate.js';
 import { ARCHIVED_KEY, asArchivedSet, isArchived, withoutArchived } from './_archive.js';
-
+import { buildCrossTool } from './_crossTool.js';
 /** Distinct evolution lines represented by a set of ids (unknown ids count as
  *  their own line). Mirrors the client's countEvoLines so server-derived depth
  *  matches what the beacon reports. */
@@ -350,6 +350,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const leagueFirstTs = new Map(leagueRecords.map((r) => [r.cid, r.firstTs]));
     const journeys = crossToolJourneys(dexFirstTs, leagueFirstTs);
+    const crossTool = buildCrossTool(records, leagueRecords);
 
     // The league funnel, from the records: opened is a record at all (the
     // first beacon needs a seated line), then named, then exported.
@@ -655,6 +656,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       dexFunnel,
       leagueFunnel,
       tools,
+      crossTool,
       league,
       cohort,
       activity,

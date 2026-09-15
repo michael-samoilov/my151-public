@@ -632,6 +632,58 @@ export const sampleResponse: ApiResponse = {
   cohorts,
   depthByDevice,
   referrerFlow,
+  crossTool: {
+    catalog: [
+      { id: 'dex', label: 'Dex builder', short: 'Dex', launchedAt: 0 },
+      { id: 'league', label: 'Gym leader maker', short: 'League', launchedAt: Date.UTC(2026, 8, 8) },
+    ],
+    kpis: [
+      {
+        key: 'dex-to-league',
+        label: 'Dex → League',
+        hint: 'of dex users active after 8 Sep 2026',
+        n: 4,
+        of: 50,
+        pct: 8,
+      },
+      {
+        key: 'league-has-earlier',
+        label: 'League has a dex',
+        hint: 'of league browsers',
+        n: 4,
+        of: 5,
+        pct: 80,
+      },
+      {
+        key: 'league-from-dex',
+        label: 'Only dex Pokémon',
+        hint: 'of dual-tool leagues with a stored team',
+        n: 3,
+        of: 4,
+        pct: 75,
+      },
+    ],
+    eras: [
+      {
+        key: 'before-league',
+        label: 'Arrived before 8 Sep 2026',
+        shortLabel: 'Before 8 Sep',
+        since: null,
+        until: Date.UTC(2026, 8, 8),
+        browsers: 339,
+        regions: { dex: 336, 'dex+league': 3 },
+      },
+      {
+        key: 'since-league',
+        label: 'Arrived after 8 Sep 2026',
+        shortLabel: 'After 8 Sep',
+        since: Date.UTC(2026, 8, 8),
+        until: null,
+        browsers: 50,
+        regions: { dex: 48, league: 1, 'dex+league': 1 },
+      },
+    ],
+  },
   journeys: {
     both: 4,
     dexFirst: 3,
