@@ -7,7 +7,7 @@ import { FlowSankey } from '@/components/admin/charts/FlowSankey';
 import { dexFunnelSankey, leagueFunnelSankey, referrerFlowSankey } from '@/lib/usageFunnels';
 import type { DexUsageFunnel, LeagueUsageFunnel } from '../../../api/_aggregate';
 import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
-import { Panel, Seg, Kpi, Delta, Rollup, type RollupRow } from '@/components/admin/ui';
+import { Panel, Seg, Kpi, Rollup, type RollupRow } from '@/components/admin/ui';
 import { Input } from '@/components/ui/input';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { cn, displayName } from '@/lib/utils';
