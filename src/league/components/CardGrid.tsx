@@ -304,6 +304,18 @@ const OVERLAY_MEASURING = {
   dragOverlay: { measure: (element: HTMLElement) => getClientRect(element, { ignoreTransform: true }) },
 };
 
+/** Column wash follows the pointer only on devices with a real hover pointer. */
+const TRUE_HOVER =
+  typeof window !== 'undefined' && 'matchMedia' in window
+    ? window.matchMedia('(hover: hover) and (pointer: fine)')
+    : null;
+
+function pointerMayColumnHover(e: React.PointerEvent): boolean {
+  if (e.pointerType === 'touch') return false;
+  if (!TRUE_HOVER?.matches) return false;
+  return true;
+}
+
 /**
  * The wash a dragged stage's cells wear: the Pokémon's primary type at a
  * strength that reads as a tint over white, not as a type badge.
@@ -1847,7 +1859,17 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
   // around the cells, not only dead on one. Off during a drag: the gesture
   // speaks for itself and a wash under it only muddies the read.
   const [hoverSeat, setHoverSeat] = useState<number | null>(null);
-  const onGridHover = useCallback((e: React.MouseEvent) => {
+  const browserOpen = useLeagueUi((s) => s.browserOpen);
+  useEffect(() => {
+    let open = useLeagueUi.getState().browserOpen;
+    return useLeagueUi.subscribe((state) => {
+      if (state.browserOpen === open) return;
+      open = state.browserOpen;
+      setHoverSeat(null);
+    });
+  }, []);
+  const onGridPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!pointerMayColumnHover(e)) return;
     const wrap = (e.target as HTMLElement).closest('[data-seat]');
     const seat = wrap?.getAttribute('data-seat');
     setHoverSeat(seat !== null && seat !== undefined ? Number(seat) : null);
@@ -1946,8 +1968,8 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
         data-lg-card-root
         className="relative overflow-hidden rounded-2xl shadow-elevated"
         style={{ ...vars, background: shades.base, padding: `${PAD_Y}rem ${PAD_X}rem` }}
-        onMouseOver={onGridHover}
-        onMouseLeave={() => setHoverSeat(null)}
+        onPointerMove={onGridPointerMove}
+        onPointerLeave={() => setHoverSeat(null)}
       >
         <AcePartnerSlot cardIndex={cardIndex} view={view} />
         <TmSlot cardIndex={cardIndex} view={view} />
@@ -2006,7 +2028,7 @@ export function CardGrid({ cardIndex, view }: { cardIndex: number; view: CardVie
                       key={`${row}-${cell.seat}`}
                       cardIndex={cardIndex}
                       datum={datum}
-                      columnHovered={!inHand && stageDrag === null && !legendDrag && hoverSeat === cell.seat}
+                      columnHovered={!browserOpen && !inHand && stageDrag === null && !legendDrag && hoverSeat === cell.seat}
                       tint={tinted ? stageTint(line.branch[stageDrag.stage]) : undefined}
                       pokemonId={cell.pokemonId}
                       form={formAt(previewPowerups(row), row, cell.seat, cell.pokemonId)}

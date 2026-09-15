@@ -8,6 +8,8 @@
 // to its base. The cids are obviously fake. This module is dynamically imported
 // only when the `demo` query flag is present, so it never ships in the real
 // admin bundle.
+import { BUILD_GROUPS } from '@/data/slot-template';
+import { getPokemonById } from '@/hooks/usePokemonData';
 import type {
   ApiResponse,
   Aggregates,
@@ -16,6 +18,7 @@ import type {
   SurvivalCurve,
   ToolSlice,
 } from '../AdminPage';
+import { lineKey, poolIdsForSection } from '../picksStats';
 
 const DAY = 86_400_000;
 // Anchor "now" to the data window's end so relative times read sensibly.
@@ -51,7 +54,9 @@ function tally(labels: string[], pct: number[], base: number): Record<string, nu
 // Daily active series: ~90 days that rise from the low 30s to the mid 50s, with
 // weekday texture, so the weekly rollup in the hero trend reads like the mockup.
 function activitySeries(): { day: number; dau: number; rolling7: number }[] {
-  const days = Math.round((NOW - FIRST) / DAY);
+  const today = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate());
+  const end = Math.max(NOW, today);
+  const days = Math.round((end - FIRST) / DAY);
   const raw: { day: number; dau: number }[] = [];
   for (let i = 0; i <= days; i += 1) {
     const day = FIRST + i * DAY;
@@ -387,11 +392,43 @@ const mostDropped: [string, number][] = [
   ['821', 80], ['736', 70], ['587', 58], ['504', 44], ['659', 40], ['633', 36],
   ['401', 32], ['290', 28], ['172', 24], ['16', 20], ['777', 18], ['311', 14],
 ];
-const bySection = (rows: [string, number][]): Record<string, [string, number][]> => ({
-  starters: rows.slice(0, 5),
-  'route-1': rows.slice(5, 10),
-  caves: rows.slice(10, 15),
-});
+/** Per-section placement counts for demo. Line-aware: stage-1 is ~28% of the
+ *  fully-evolved count so the Pichu-dropped case is visible. */
+function demoPicksBySection(): Record<string, [string, number][]> {
+  const out: Record<string, [string, number][]> = {};
+  for (const g of BUILD_GROUPS) {
+    const pool = g.filterType === null ? [129, 130, 16, 17, 18, 143, 131] : [...poolIdsForSection(g.id)];
+    const byLine = new Map<string, number[]>();
+    for (const id of pool) {
+      const k = lineKey(id);
+      const list = byLine.get(k);
+      if (list) list.push(id);
+      else byLine.set(k, [id]);
+    }
+    const lines = [...byLine.values()];
+    const rows: [string, number][] = [];
+    lines.forEach((ids, i) => {
+      const peak = Math.max(1, Math.round(95 * (1 - i / Math.max(1, lines.length))));
+      const ordered = [...ids].sort(
+        (a, b) => (getPokemonById(a)?.evolutionStage ?? 1) - (getPokemonById(b)?.evolutionStage ?? 1) || a - b,
+      );
+      ordered.forEach((id, stage) => {
+        const factor = ordered.length > 1 && stage === 0 ? 0.28 : 1 - stage * 0.06;
+        rows.push([String(id), Math.max(0, Math.round(peak * factor))]);
+      });
+    });
+    if (g.id === 'evil-team') {
+      rows.push(['129', 19], ['130', 8], ['1', 4], ['4', 1]);
+    }
+    if (g.id === 'starter') {
+      rows.push(['25', 11], ['172', 2]);
+    }
+    out[g.id] = rows;
+  }
+  return out;
+}
+
+const picksBySectionAll = demoPicksBySection();
 
 function curveRec(points: [number, number][], n: number) {
   return curve(points, n);
@@ -513,9 +550,9 @@ export const sampleResponse: ApiResponse = {
   mostDropped,
   popularMin: 40,
   droppedMin: 14,
-  popularBySection: bySection(popularFinal),
-  droppedBySection: bySection(mostDropped),
-  picksBySectionAll: bySection(popularFinal),
+  popularBySection: picksBySectionAll,
+  droppedBySection: { 'early-bird': mostDropped },
+  picksBySectionAll,
   byTool,
   cohorts,
   depthByDevice,

@@ -92,12 +92,19 @@ class AgentBrowserSession implements Session {
   }
 
   async click(selector: string) {
-    // Playwright's click scrolls the element into view first; the CLI's does
-    // not, so a target below the fold was clicked at the wrong place and the
-    // action silently did nothing. This kept the Blink lane's real-placement
-    // check on `skip` while Playwright passed it. Scroll first, every time.
     await this.run(['scrollintoview', selector]);
     await this.run(['click', selector]);
+  }
+
+  async hover(selector: string) {
+    await this.run(['scrollintoview', selector]);
+    const r = await runCli(this.bin, this.env, ['--session', this.sessionName, 'hover', selector]).catch(() => null);
+    if (r?.success) return;
+    await this.evalJson(`const el=document.querySelector(${JSON.stringify(selector)});
+      if(!el) return false;
+      const rect=el.getBoundingClientRect();
+      el.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2,pointerType:'mouse',pointerId:1}));
+      return true;`);
   }
 
   async screenshot(file: string) { await this.run(['screenshot', file]); }

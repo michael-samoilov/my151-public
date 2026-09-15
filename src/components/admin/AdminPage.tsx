@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
-import { TrendChart } from '@/components/admin/charts/TrendChart';
+import { PicksDetailPage } from '@/components/admin/PicksDetailPage';
+import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
 import { BuildDepthChart } from '@/components/admin/charts/BuildDepthChart';
 import { Panel, Seg, Kpi, Delta, Rollup, type RollupRow } from '@/components/admin/ui';
 import { Input } from '@/components/ui/input';
-import { getAllPokemon, getPokemonById } from '@/hooks/usePokemonData';
-import { BUILD_GROUPS } from '@/data/slot-template';
-import { ARCHETYPES } from '@/data/archetypes';
-import { getCategoryById } from '@/data/categories';
+import { getPokemonById } from '@/hooks/usePokemonData';
 import { cn, displayName } from '@/lib/utils';
 import { regionOf, REGION_COLORS, type Region } from '@/lib/countryRegions';
 import { DROP_REASON_INFO, DROP_TOOL_LABEL, liveDropReasons } from '@/lib/beaconDrops';
@@ -22,37 +20,7 @@ import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import { Globe, Languages } from 'lucide-react';
 
-const SECTION_META: Record<string, { name: string; color: string }> = Object.fromEntries(
-  BUILD_GROUPS.map((g) => [g.id, { name: g.name, color: g.color }]),
-);
-
 // Human labels for the onboarding/funnel events shown per session.
-
-// Set of section ids each Pokemon is a DEFAULT option for (its archetype /
-// category memberships). Used only to FLAG when a user placed a Pokemon in a
-// section it isn't a default for — not to reassign or group anything.
-const DEFAULT_SECTIONS_OF = (() => {
-  const map = new Map<number, Set<string>>();
-  const archIds = new Map<string, Set<number>>();
-  for (const a of ARCHETYPES) archIds.set(a.id, new Set(a.pokemonIds));
-  for (const p of getAllPokemon()) {
-    const set = new Set<string>();
-    for (const g of BUILD_GROUPS) {
-      if (g.filterType === 'archetype' && g.filterId && archIds.get(g.filterId)?.has(p.id)) set.add(g.id);
-      else if (g.filterType === 'category' && g.filterId && getCategoryById(g.filterId)?.filter(p)) set.add(g.id);
-      else if (g.filterType === null) set.add(g.id); // 'other' catch-all accepts anything
-    }
-    map.set(p.id, set);
-  }
-  return map;
-})();
-
-/** True when the user placed this Pokemon in a section it is NOT a default
- *  option for — the signal of interest. The catch-all 'other' never counts. */
-function isOffSection(id: number, sectionId: string): boolean {
-  if (sectionId === 'other') return false;
-  return !(DEFAULT_SECTIONS_OF.get(id)?.has(sectionId) ?? false);
-}
 
 /**
  * Admin-only analytics dashboard. Reached at `my151.app/?admin` (gated in
@@ -662,36 +630,6 @@ function PopularGrid({ rows }: { rows: [string, number][] }) {
   );
 }
 
-/** A preview grid (top N) with a "View all" modal. An optional "By section"
- *  toggle (shown only when section data exists) groups picks under the section
- *  users actually placed them in, in the build page's current order. */
-function SectionGroupedGrids({ bySection }: { bySection: Record<string, [string, number][]> }) {
-  const order = BUILD_GROUPS.map((g) => g.id);
-  const sids = Object.keys(bySection).sort((a, b) => {
-    const ia = order.indexOf(a);
-    const ib = order.indexOf(b);
-    return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
-  });
-  return (
-    <div className="flex flex-col gap-3">
-      {sids.map((sid) => {
-        const meta = SECTION_META[sid];
-        const rows = bySection[sid];
-        const subtotal = rows.reduce((a, [, n]) => a + n, 0);
-        return (
-          <div key={sid}>
-            <div className="text-xs font-medium mb-1 flex items-center gap-1">
-              <span className="inline-block w-2 h-2 rounded-sm" style={{ backgroundColor: meta?.color ?? '#9ca3af' }} />
-              {meta?.name ?? sid} <span className="text-muted-foreground font-normal">· {subtotal}</span>
-            </div>
-            <PopularGrid rows={rows} />
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 /** Survival (drop-off) curve: % of sessions still active at each x. The
  *  steepest segment = where users churn. Renders an SVG line with a shaded
  *  area, gridlines, and the biggest single-step drop highlighted. `fmtX`
@@ -794,8 +732,6 @@ function LanguageChip({ lang, locale, switched }: { lang?: string; locale?: stri
   );
 }
 
-/** Dex / League switch on a user page. A tool the browser never used stays
- *  visible and greyed, so the control's shape does not jump. */
 function UserToolSeg({
   value,
   onChange,
@@ -1438,81 +1374,6 @@ function WhatPeoplePick({
   );
 }
 
-/** Full picks page: per-section grids, toggled between most-picked and the picks
- *  placed off their section. Reached from the dashboard entry. */
-function PicksDetailPage({
-  mostBySection,
-  offBySection,
-  n,
-  onBack,
-}: {
-  mostBySection: Record<string, [string, number][]>;
-  offBySection: Record<string, [string, number][]>;
-  n: number;
-  onBack: () => void;
-}) {
-  const [view, setView] = useState<'most' | 'off'>('most');
-  const [excludeOneOffs, setExcludeOneOffs] = useState(false);
-  const hasOff = Object.keys(offBySection).length > 0;
-  // Off-section picks with the single-occurrence noise dropped, when asked.
-  const offShown = useMemo<Record<string, [string, number][]>>(() => {
-    if (!excludeOneOffs) return offBySection;
-    const out: Record<string, [string, number][]> = {};
-    for (const [sid, rows] of Object.entries(offBySection)) {
-      const kept = rows.filter(([, c]) => c > 1);
-      if (kept.length) out[sid] = kept;
-    }
-    return out;
-  }, [offBySection, excludeOneOffs]);
-  const offHasAny = Object.keys(offShown).length > 0;
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <button type="button" onClick={onBack} className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground">
-          ‹ Back
-        </button>
-        <span className="text-sm font-bold">What people pick</span>
-        <span className="text-xs text-muted-foreground">of {n} dexes</span>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Seg
-          ariaLabel="Picks metric"
-          options={[
-            { key: 'most', label: 'Most picked' },
-            { key: 'off', label: 'Off-section' },
-          ]}
-          value={view}
-          onChange={setView}
-        />
-        {/* Only meaningful once off-section is chosen — disclosed then. */}
-        {view === 'off' && (
-          <button
-            type="button"
-            aria-pressed={excludeOneOffs}
-            onClick={() => setExcludeOneOffs((v) => !v)}
-            className={cn(
-              'h-7 rounded-full border px-2.5 text-xs font-medium',
-              excludeOneOffs ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground hover:text-foreground',
-            )}
-          >
-            Exclude one-offs
-          </button>
-        )}
-      </div>
-      <div className="text-xs text-muted-foreground">{view === 'off' ? 'Off-section picks, grouped by the section they landed in.' : 'Most-picked, grouped by section.'}</div>
-      {view === 'off' ? (
-        hasOff && offHasAny ? (
-          <SectionGroupedGrids bySection={offShown} />
-        ) : (
-          <p className="text-xs text-muted-foreground">{hasOff ? 'No off-section picks chosen more than once.' : 'No off-section picks.'}</p>
-        )
-      ) : (
-        <SectionGroupedGrids bySection={mostBySection} />
-      )}
-    </div>
-  );
-}
-
 export type AdminNavKey = ToolSlice | 'feedback';
 
 /** Section nav: a bottom bar on mobile, an inline row on desktop. Splits the
@@ -1601,6 +1462,7 @@ export function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const pageHeaderRef = useRef<HTMLElement>(null);
   const [pageHeaderH, setPageHeaderH] = useState(0);
+  const [loadedAt, setLoadedAt] = useState(0);
 
   useLayoutEffect(() => {
     if (pageHeaderRef.current) setPageHeaderH(pageHeaderRef.current.offsetHeight);
@@ -1624,6 +1486,7 @@ export function AdminPage() {
     try {
       const resp = await fetchDashboard(tok, limit, 0);
       setData(resp);
+      setLoadedAt(Date.now());
       setAuthed(true);
       setToken(tok);
       try {
@@ -1647,6 +1510,7 @@ export function AdminPage() {
     if (new URLSearchParams(window.location.search).has('demo')) {
       void import('./__fixtures__/sampleResponse').then((m) => {
         setData(m.sampleResponse);
+        setLoadedAt(Date.now());
         setAuthed(true);
       });
       return;
@@ -1714,20 +1578,6 @@ export function AdminPage() {
     setTokenInput('');
   }, []);
 
-  // Off-section picks kept grouped by the section they landed in, so the picks
-  // card can show them per section — the mirror of the most-picked-per-section
-  // view. A section with no off-section picks is dropped.
-  const offBySection = useMemo<Record<string, [string, number][]>>(() => {
-    const bySec = data?.picksBySectionAll;
-    if (!bySec) return {};
-    const out: Record<string, [string, number][]> = {};
-    for (const [sid, entries] of Object.entries(bySec)) {
-      const offs = entries.filter(([id]) => isOffSection(Number(id), sid)).sort((a, b) => b[1] - a[1]);
-      if (offs.length) out[sid] = offs;
-    }
-    return out;
-  }, [data?.picksBySectionAll]);
-
   if (!authed) {
     return (
       <div className="min-h-dvh flex items-center justify-center p-4 bg-background">
@@ -1773,27 +1623,29 @@ export function AdminPage() {
   return (
     <div className={cn('flex flex-col bg-background', lockUser ? 'h-dvh overflow-hidden' : 'min-h-dvh')}>
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-3">
-          <h1 className="whitespace-nowrap text-lg font-bold">
+        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-1">
+          <h1 className="whitespace-nowrap text-sm font-bold">
             <span className="text-primary">my151</span> · Analytics
           </h1>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={() => token && void load(token)} disabled={loading}>
+          <div className="flex items-center gap-0.5">
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => token && void load(token)} disabled={loading}>
               {loading ? 'Refreshing…' : 'Refresh'}
             </Button>
-            <Button variant="ghost" size="sm" onClick={signOut}>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={signOut}>
               Sign out
             </Button>
           </div>
         </div>
       </header>
 
-      <AdminNav value={navKey} onChange={onNav} />
+      {detail?.kind !== 'picks' && <AdminNav value={navKey} onChange={onNav} />}
 
       <main
         className={cn(
-          'mx-auto flex w-full max-w-5xl flex-1 flex-col px-4',
-          lockUser ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-nav-h,5rem)] md:pb-8' : 'gap-4 pb-24 pt-4 md:pb-8',
+          'mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col px-4',
+          lockUser
+            ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-nav-h,5rem)] md:pb-8'
+            : cn('gap-4 pt-4 md:pb-8', detail?.kind === 'picks' ? 'pb-8' : 'pb-24'),
         )}
       >
         {error && <p className="text-sm text-destructive">{error}</p>}
@@ -1804,7 +1656,14 @@ export function AdminPage() {
           {(() => {
           if (detail.kind === 'picks') {
             const nDex = data.tools?.dex ?? data.funnel.users;
-            return <PicksDetailPage mostBySection={data.popularBySection} offBySection={offBySection} n={nDex} onBack={() => setDetail(null)} />;
+            return (
+              <PicksDetailPage
+                picksBySectionAll={data.picksBySectionAll}
+                n={nDex}
+                onBack={() => setDetail(null)}
+                stickyOffset={pageHeaderH}
+              />
+            );
           }
           const bare = detail.cid.split('::')[0];
           const dex =
@@ -1900,11 +1759,7 @@ export function AdminPage() {
               {dateRange && <span className="text-[0.7rem] font-semibold text-muted-foreground">{dateRange}</span>}
             </div>
 
-            {slice.activity.length > 0 && (
-              <Panel title="Active browsers" sub={['daily', '7-day sum']}>
-                <TrendChart key={tool} series={slice.activity} />
-              </Panel>
-            )}
+            {slice.activity.length > 0 && <ActiveUsersPanel key={tool} series={slice.activity} nowMs={loadedAt} />}
 
             {showDex && <BeaconDropNotice events={data.funnelEvents} />}
 

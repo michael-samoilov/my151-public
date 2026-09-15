@@ -5,9 +5,11 @@ description: >-
   anything (code, config, docs, a deploy), close with the five-part report:
   Changed, Merge, Verified, Tradeoffs, You test. "You test" lists only what
   needs the user's own hands or judgment; anything you can run yourself goes
-  under Verified with before/after evidence, never handed to the user. Also
-  sets the verification standard the report depends on: measure changes, do
-  not infer them from code. Always on in this repo.
+  under Verified with before/after evidence, never handed to the user. Any
+  visual change (bugfix, feature, polish) must run verify-my151 and show the
+  same input on the old build, then the new build, with shots painted in the
+  thread. Also sets the verification standard the report depends on: measure
+  changes, do not infer them from code. Always on in this repo.
 ---
 
 # Work reports
@@ -52,6 +54,21 @@ instead of restating it.
   gap, not here as a chore for the user. Before writing a step here, run it
   through the hand-off test in `.claude/skills/verify-my151/SKILL.md`: name
   the engine capability that is missing, or drive the step yourself.
+
+### Visual work
+
+Do not ask Michael to retest a visual change, including features and polish.
+
+1. Drive the same input on the pre-change build (or production). Capture the
+   whole screen, or a video if the change is motion.
+2. Run `/verify-my151`:
+   `node_modules/.bin/tsx .claude/skills/verify-my151/harness/verify.ts diff --base <pre-change-ref>`.
+   Add `--video` when the change is motion.
+3. Drive that same input on the change.
+4. Paint the shots **in the chat**: `![alt](/absolute/path.png)` and Read each
+   PNG so the thread shows the pixels. A path list is not proof.
+5. Set **You test** to `Nothing`. Taste is a look at those shots already in
+   the thread, not a trip to the preview.
 
 ## Showing a defect
 

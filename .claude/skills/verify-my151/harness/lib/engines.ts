@@ -86,6 +86,7 @@ export interface Session {
   navigate(url: string): Promise<void>;
   evalJson<T = unknown>(body: string): Promise<T>;
   click(selector: string): Promise<void>;
+  hover(selector: string): Promise<void>;
   screenshot(file: string): Promise<void>;
   errors(): Promise<string[]>;
   close(): Promise<void>;
@@ -111,6 +112,7 @@ class BlinkSession implements Session {
     return JSON.parse(out as string) as T;
   }
   async click(selector: string) { await this.page.click(selector, { timeout: 10000 }); }
+  async hover(selector: string) { await this.page.locator(selector).hover({ timeout: 10000 }); }
   async screenshot(file: string) { await this.page.screenshot({ path: file }); }
   async errors() { return [...this.collected]; }
   async close() {
@@ -279,6 +281,15 @@ class WebKitSession implements Session {
     if (!id) throw new Error(`webkit: element not found: ${selector}`);
     await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/element/${id}/click`, {});
   }
+  async hover(selector: string) {
+    const el = await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/element`, { using: 'css selector', value: selector });
+    const id = (el.value as Record<string, string>)[W3C_ELEMENT];
+    if (!id) throw new Error(`webkit: element not found: ${selector}`);
+    await w3c('POST', ENGINE_PATHS.webkitPort, `/session/${this.sid}/actions`, {
+      actions: [{ type: 'pointer', id: 'mouse', parameters: { pointerType: 'mouse' }, actions: [{ type: 'pointerMove', origin: { [W3C_ELEMENT]: id }, x: 0, y: 0 }] }],
+    });
+    await sleep(150);
+  }
   async screenshot(file: string) {
     const r = await w3c('GET', ENGINE_PATHS.webkitPort, `/session/${this.sid}/screenshot`);
     fs.writeFileSync(file, Buffer.from(r.value as string, 'base64'));
@@ -368,6 +379,15 @@ class GeckoSession implements Session {
     const id = found.value[W3C_ELEMENT];
     if (!id) throw new Error(`gecko: element not found: ${selector}`);
     await this.cmd('WebDriver:ElementClick', { id });
+  }
+  async hover(selector: string) {
+    const found = await this.cmd<{ value: Record<string, string> }>('WebDriver:FindElement', { using: 'css selector', value: selector });
+    const id = found.value[W3C_ELEMENT];
+    if (!id) throw new Error(`gecko: element not found: ${selector}`);
+    await this.cmd('WebDriver:PerformActions', {
+      actions: [{ type: 'pointer', id: 'mouse', parameters: { pointerType: 'mouse' }, actions: [{ type: 'pointerMove', origin: { [W3C_ELEMENT]: id }, x: 0, y: 0 }] }],
+    });
+    await sleep(150);
   }
   async screenshot(file: string) {
     const r = await this.cmd<{ value: string }>('WebDriver:TakeScreenshot', { full: true });
