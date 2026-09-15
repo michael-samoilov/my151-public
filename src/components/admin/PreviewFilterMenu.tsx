@@ -28,6 +28,7 @@ export function PreviewFilterMenu<K extends string>({
   className,
   leadIcon,
   compactMd,
+  fillMd,
 }: {
   name: string;
   value: K;
@@ -39,6 +40,7 @@ export function PreviewFilterMenu<K extends string>({
   className?: string;
   leadIcon?: ReactNode;
   compactMd?: boolean;
+  fillMd?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -97,7 +99,7 @@ export function PreviewFilterMenu<K extends string>({
 
   return (
     <div ref={rootRef} className={cn('relative', className)}>
-      <span className="inline-flex items-center">
+      <span className={cn('inline-flex items-center', fillMd && 'md:flex md:w-full')}>
         <button
           type="button"
           data-preview-filter={name}
@@ -108,6 +110,9 @@ export function PreviewFilterMenu<K extends string>({
           className={cn(
             'inline-flex h-7 max-w-full items-center gap-1 rounded-full border px-2 text-xs font-semibold whitespace-nowrap transition-colors',
             compactMd && 'md:px-1.5',
+            fillMd && 'md:justify-center',
+            fillMd && !canClear && 'md:w-full',
+            fillMd && canClear && 'md:min-w-0 md:flex-1',
             isAny
               ? 'border-border text-muted-foreground hover:text-foreground'
               : 'border-foreground bg-foreground text-card',

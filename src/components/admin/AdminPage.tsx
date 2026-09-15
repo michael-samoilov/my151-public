@@ -714,7 +714,17 @@ function UserToolSeg({
   );
 }
 
-function PreviewLanguageChip({ lang, locale, switched }: { lang?: string; locale?: string; switched?: string }) {
+function PreviewLanguageChip({
+  lang,
+  locale,
+  switched,
+  fillMd,
+}: {
+  lang?: string;
+  locale?: string;
+  switched?: string;
+  fillMd?: boolean;
+}) {
   const preview = previewLanguage(lang, locale, switched);
   if (!preview) return null;
   const name = langName(preview.tag) ?? preview.tag;
@@ -731,7 +741,7 @@ function PreviewLanguageChip({ lang, locale, switched }: { lang?: string; locale
   const kindLabel =
     preview.kind === 'switched' ? 'Switched' : preview.kind === 'unsupported' ? 'Browser' : 'Served';
   return (
-    <InfoChip label={`${kindLabel} ${name}`}>
+    <InfoChip fillMd={fillMd} label={`${kindLabel} ${name}`}>
       {icon}
       <span className="text-xs font-medium">{langAbbr(preview.tag)}</span>
     </InfoChip>
@@ -1163,7 +1173,7 @@ function MetricChip({
       data-metric={metric}
       data-empty={empty ? 'true' : undefined}
       className={cn(
-        'inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-1 text-xs font-medium tabular-nums md:px-2',
+        'inline-flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-border bg-card px-1 text-xs font-medium tabular-nums md:justify-center md:px-2',
         empty && 'opacity-40',
         className,
       )}
@@ -1269,11 +1279,12 @@ function PreviewFacetMenus({
           <PreviewFilterMenu
             key={key}
             name={FACET_LABEL[key]}
-            className={cn('md:justify-self-start', FACET_COL[key], 'md:row-start-1')}
+            className={cn('md:justify-self-stretch', FACET_COL[key], 'md:row-start-1')}
             value={facets[key] ?? FACET_ANY}
             anyKey={FACET_ANY}
             clearable
             compactMd
+            fillMd
             leadIcon={facetLeadIcon(key)}
             options={[
               { key: FACET_ANY, label: 'Any' },
@@ -1346,8 +1357,8 @@ function PreviewPlatformSlot({
   children: ReactNode;
 }) {
   return (
-    <span className={cn('inline-flex', colClass, 'md:row-start-1 md:justify-self-start', empty && 'opacity-40')}>
-      <InfoChip label={label}>{children}</InfoChip>
+    <span className={cn('inline-flex', colClass, 'md:row-start-1 md:justify-self-stretch', empty && 'opacity-40')}>
+      <InfoChip fillMd label={label}>{children}</InfoChip>
     </span>
   );
 }
@@ -1382,7 +1393,7 @@ function UserPreviewCard({
       aria-label={`Open user ${middleId(rec.cid)}`}
       className={cn(
         'flex min-w-0 cursor-pointer flex-col gap-1 rounded-lg bg-card px-2.5 py-2 shadow-elevated hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-        'md:col-span-full md:grid md:grid-cols-subgrid md:grid-rows-1 md:items-center md:gap-x-3 md:py-1.5',
+        'md:col-span-full md:grid md:grid-cols-subgrid md:grid-rows-1 md:items-center md:gap-x-2 md:py-1.5',
         archived && 'opacity-70',
       )}
       onClick={onOpen}
@@ -1396,10 +1407,10 @@ function UserPreviewCard({
     >
       <div className="flex min-w-0 items-center gap-1 md:contents">
         <FitNowrap contentsOnMd className="min-w-0 flex-1">
-          <span className="whitespace-nowrap text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1 md:justify-self-start">
+          <span className="whitespace-nowrap text-sm font-semibold tabular-nums md:col-start-1 md:row-start-1">
             {formatWhen(rec.lastTs, rec.tz)}
           </span>
-          <span className="whitespace-nowrap text-sm text-muted-foreground md:col-start-2 md:row-start-1 md:justify-self-start">
+          <span className="whitespace-nowrap text-sm text-muted-foreground md:col-start-2 md:row-start-1">
             {relativeTime(rec.lastTs)}
           </span>
         </FitNowrap>
@@ -1450,11 +1461,11 @@ function UserPreviewCard({
           >
             <BrowserIcon value={rec.browser} />
           </PreviewPlatformSlot>
-          <span className={cn(FACET_COL.language, 'inline-flex md:row-start-1 md:justify-self-start', !langPreview && 'opacity-40')}>
+          <span className={cn(FACET_COL.language, 'inline-flex md:row-start-1 md:justify-self-stretch', !langPreview && 'opacity-40')}>
             {langPreview ? (
-              <PreviewLanguageChip lang={rec.lang} locale={rec.locale} switched={rec.switched} />
+              <PreviewLanguageChip fillMd lang={rec.lang} locale={rec.locale} switched={rec.switched} />
             ) : (
-              <InfoChip label="Unknown">
+              <InfoChip fillMd label="Unknown">
                 <Globe className="h-[13px] w-[13px]" />
               </InfoChip>
             )}
@@ -1466,19 +1477,19 @@ function UserPreviewCard({
           <SessionMetricChip
             sessions={sessions}
             totalMs={totalMs}
-            className="md:col-start-8 md:row-start-1 md:justify-self-start"
+            className="md:col-start-8 md:row-start-1 md:justify-self-stretch"
           />
           <MetricChip
             metric="dex"
             empty={!dex}
-            className="md:col-start-9 md:row-start-1 md:justify-self-start"
+            className="md:col-start-9 md:row-start-1 md:justify-self-stretch"
             label={dexChipLabel(dex?.depth ?? 0)}
             exported={dex?.exported}
           />
           <MetricChip
             metric="league"
             empty={!league}
-            className="md:col-start-10 md:row-start-1 md:justify-self-start"
+            className="md:col-start-10 md:row-start-1 md:justify-self-stretch"
             label={leagueChipLabel(league?.cards ?? 0, CARD_COUNT)}
             exported={league?.exported}
           />
@@ -2173,7 +2184,7 @@ export function AdminPage() {
                     <div className={PREVIEW_TABLE}>
                       <div
                         data-preview-header
-                        className="mb-2 flex flex-wrap items-center gap-1.5 md:col-span-full md:mb-0 md:grid md:grid-cols-subgrid md:items-end md:border-b md:border-border md:pb-1.5"
+                        className="mb-2 flex flex-wrap items-center gap-1.5 md:col-span-full md:mb-0 md:grid md:grid-cols-subgrid md:items-center md:gap-x-2 md:px-2.5 md:border-b md:border-border md:pb-1.5"
                       >
                         <PreviewStatusMenus
                           archiveFilter={archiveFilter}
@@ -2181,10 +2192,10 @@ export function AdminPage() {
                           toolFilter={toolFilter}
                           setToolFilter={setToolFilter}
                         />
-                        <div className="hidden md:col-start-1 md:row-start-1 md:block text-[0.7rem] font-semibold text-muted-foreground">When</div>
-                        <div className="hidden md:col-start-2 md:row-start-1 md:block text-[0.7rem] font-semibold text-muted-foreground">Ago</div>
+                        <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-1 md:row-start-1 md:flex">When</div>
+                        <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-2 md:row-start-1 md:flex">Ago</div>
                         <PreviewFacetMenus listed={listed} facets={facetFilters} setFacets={setFacetFilters} />
-                        <div className="hidden md:col-start-8 md:row-start-1 md:block text-[0.7rem] font-semibold text-muted-foreground">Sessions</div>
+                        <div className="hidden h-7 items-center text-[0.7rem] font-semibold text-muted-foreground md:col-start-8 md:row-start-1 md:flex">Sessions</div>
                       </div>
                       <PreviewMetricScale>
                         {rows.map((row) => (
