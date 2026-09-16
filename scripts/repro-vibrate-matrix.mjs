@@ -100,7 +100,7 @@ async function run(engineName, browserType, c) {
       document.addEventListener('DOMContentLoaded', () => {
         let on = false;
         const tick = () => {
-          const foot = document.querySelector('[data-lg-viewport]:not([inert]) footer, [data-lg-viewport]:not([inert]) [class*="footer"]');
+          const _foot = document.querySelector('[data-lg-viewport]:not([inert]) footer, [data-lg-viewport]:not([inert]) [class*="footer"]');
           const pane = document.querySelector('[data-lg-viewport]:not([inert])');
           if (pane) {
             on = !on;

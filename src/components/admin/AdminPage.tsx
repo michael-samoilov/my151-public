@@ -908,7 +908,9 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
   });
   const idx = Math.min(i, Math.max(0, log.length - 1));
   const cur = log[idx];
-  const sections = cur?.sections ?? rec.latestSections;
+  // Keep tile positions on the full assignment. Session `sections` would rebuild
+  // the grid on every scrub step. Presence still comes from this session's ids.
+  const sections = rec.latestSections ?? cur?.sections;
   const presentIds = cur?.ids ?? rec.latestIds ?? [];
   const sectionedSet = new Set(Object.values(sections ?? {}).flat());
   const offIds = presentIds.filter((id) => !sectionedSet.has(id));

@@ -2,7 +2,7 @@
  * Sample the league fit block's zoom/width every animation frame.
  * Flag oscillation: unique values > 2 across a short window, or high change rate.
  */
-import { chromium, firefox, webkit } from 'playwright';
+import { chromium, firefox } from 'playwright';
 
 const URL = process.env.URL || 'http://127.0.0.1:4180/custom-gym-leader';
 const VIEWPORTS = [

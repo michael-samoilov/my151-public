@@ -27,9 +27,9 @@ async function run(engine, browserType, opts) {
       el && el.nodeType === 1 && el.hasAttribute && el.hasAttribute('data-lg-viewport');
 
     // Store "raw" sizes before scrollbar theft
-    const rawSize = new WeakMap();
+    const _rawSize = new WeakMap();
 
-    function measureRaw(el) {
+    function _measureRaw(el) {
       // Read via getBoundingClientRect + style, avoiding our patches
       const r = HTMLElement.prototype.getBoundingClientRect.call(el);
       // Approximate client size = content box; use offsetWidth/Height as base
@@ -47,9 +47,9 @@ async function run(engine, browserType, opts) {
     const cwDesc = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
     const chDesc = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientHeight');
     const shDesc = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollHeight');
-    const swDesc = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollWidth');
+    const _swDesc = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollWidth');
 
-    function wouldVScroll(el) {
+    function _wouldVScroll(el) {
       const sh = shDesc.get.call(el);
       const chRaw = chDesc.get.call(el);
       // If already patched recursion — use a flag
@@ -97,7 +97,7 @@ async function run(engine, browserType, opts) {
       for (const pane of panes) {
         const sh = pane.scrollHeight;
         // Use offsetHeight as proxy for visible height
-        const visible = pane.clientHeight; // may be patched
+        const _visible = pane.clientHeight; // may be patched
         // Read unpatched:
         const chRaw = chDesc.get.call(pane);
         const overflowing = sh > chRaw + 1;

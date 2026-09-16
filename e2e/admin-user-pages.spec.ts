@@ -4,11 +4,10 @@ import { expect, test } from '@playwright/test';
  * Admin user-detail pages, driven through `/?admin&demo` so the production
  * bundle is the thing under test and no live token is required.
  *
- * League must fit the viewport (no page scroll). The demo's first league
- * user carries a count-only drop-then-restore phantom; tidy must hide it
- * so the scrubber has 3 sessions, not 4. Dex may scroll inside its pane.
- * The Dex / League toggle is always present; a tool the browser never
- * used is greyed.
+ * League must fit the viewport (no page scroll). Demo user 70cd carries a
+ * count-only drop-then-restore phantom; tidy must hide it so the scrubber
+ * has 3 sessions, not 4. Dex may scroll inside its pane. The Dex / League
+ * toggle is always present; a tool the browser never used is greyed.
  */
 
 async function openDemo(page: import('@playwright/test').Page) {
@@ -20,11 +19,15 @@ function userTools(page: import('@playwright/test').Page) {
   return page.getByRole('group', { name: "This browser's tools" });
 }
 
+function userCard(page: import('@playwright/test').Page, cidPrefix: string) {
+  return page.getByRole('link', { name: new RegExp(`Open user ${cidPrefix}`) });
+}
+
 test.describe('admin user pages', () => {
   test('league visits fit the viewport and hide a count-only phantom dip', async ({ page }, info) => {
     await openDemo(page);
     await page.getByRole('button', { name: 'League' }).click();
-    await page.getByRole('button', { name: 'Visits' }).first().click();
+    await userCard(page, '70cd').click();
     await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
 
     const scrub = page.getByRole('slider', { name: 'Scrub sessions' });
@@ -150,7 +153,7 @@ test.describe('admin user pages', () => {
   test('dex builds shows a timeline and a snapshot', async ({ page }) => {
     await openDemo(page);
     await page.getByRole('button', { name: 'Dex' }).click();
-    await page.getByRole('button', { name: 'Builds' }).first().click();
+    await userCard(page, '74d5').click();
     await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
     await expect(page.getByRole('slider', { name: 'Scrub sessions' })).toBeVisible();
     await expect(page.getByText(/of 151/)).toBeVisible();
@@ -160,7 +163,7 @@ test.describe('admin user pages', () => {
   test('a user page toggles between dex and league', async ({ page }) => {
     await openDemo(page);
     await page.getByRole('button', { name: 'League' }).click();
-    await page.getByRole('button', { name: 'Visits' }).first().click();
+    await userCard(page, '70cd').click();
     const tools = userTools(page);
     await expect(tools.getByRole('button', { name: 'League' })).toHaveAttribute('aria-pressed', 'true');
     await expect(tools.getByRole('button', { name: 'Dex' })).toBeEnabled();
@@ -174,7 +177,7 @@ test.describe('admin user pages', () => {
   test('an unused tool stays visible and is not pressable', async ({ page }) => {
     await openDemo(page);
     await page.getByRole('button', { name: 'League' }).click();
-    await page.getByRole('button', { name: 'Visits' }).last().click();
+    await userCard(page, '9d19').click();
     const tools = userTools(page);
     await expect(tools.getByRole('button', { name: 'League' })).toBeEnabled();
     await expect(tools.getByRole('button', { name: 'Dex' })).toBeDisabled();
