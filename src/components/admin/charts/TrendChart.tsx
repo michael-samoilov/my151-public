@@ -19,16 +19,20 @@ const GRID_BOTTOM = 22;
 /** Gap from the last plotted x into the gutter. */
 const LABEL_INSET = 6;
 /** Gap from the end of the longest window label to the canvas edge. */
-const LABEL_TAIL = 8;
+const LABEL_TAIL = 10;
 const LABEL_FACE = 'ui-sans-serif, system-ui, sans-serif';
+
+function subSize(numSize: number): number {
+  return Math.max(7, Math.round(numSize * 0.55));
+}
 
 function measureWindowLabelPx(kind: '7d' | '24h', count: number, numSize: number): number {
   const ctx = document.createElement('canvas').getContext('2d');
-  if (!ctx) return 80;
-  ctx.font = `400 ${numSize}px ${LABEL_FACE}`;
-  const prefix = ctx.measureText(`${kind}: `).width;
+  if (!ctx) return 56;
   ctx.font = `700 ${numSize}px ${LABEL_FACE}`;
-  return prefix + ctx.measureText(String(count)).width;
+  const n = ctx.measureText(String(count)).width;
+  ctx.font = `400 ${subSize(numSize)}px ${LABEL_FACE}`;
+  return n + 2 + ctx.measureText(kind).width;
 }
 
 function gridRightPx(counts: { hours24: number; days7: number | null }, numSize: number): number {
@@ -45,20 +49,29 @@ function countLabel(
   y: number,
   numSize: number,
 ) {
+  const sub = subSize(numSize);
   return {
     type: 'text' as const,
     x,
     y,
     style: {
-      text: `{k|${kind}: }{n|${count}}`,
+      text: `{n|${count}}{k|${kind}}`,
       fill: color,
       fontSize: numSize,
+      fontWeight: 700,
       fontFamily: LABEL_FACE,
       textAlign: 'left' as const,
       textVerticalAlign: 'middle' as const,
       rich: {
-        k: { fontSize: numSize, fontWeight: 400, fill: color, fontFamily: LABEL_FACE },
         n: { fontSize: numSize, fontWeight: 700, fill: color, fontFamily: LABEL_FACE },
+        k: {
+          fontSize: sub,
+          fontWeight: 400,
+          fill: color,
+          fontFamily: LABEL_FACE,
+          padding: [0, 0, 0, 2],
+          verticalAlign: 'bottom' as const,
+        },
       },
     },
   };
@@ -261,7 +274,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
   return (
     <div
       ref={ref}
-      className="h-[180px] w-full touch-none md:h-[220px]"
+      className="h-[180px] w-full touch-none overflow-visible md:h-[220px]"
       role="img"
       aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}, with trailing 7-day unique active users. Last 24 hours ${counts.hours24}${counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}.`}
     />
@@ -273,6 +286,7 @@ export function ActiveUsersPanel({ series, nowMs }: { series: DailyPoint[]; nowM
   const faint = 'var(--color-muted-foreground)';
   return (
     <Panel
+      className="overflow-visible"
       title="Active users"
       legend={
         <span className="flex items-center gap-3 text-[0.7rem] font-semibold text-muted-foreground">
