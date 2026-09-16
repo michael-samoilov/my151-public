@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { memo, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { cn, displayName } from '@/lib/utils';
@@ -75,7 +75,7 @@ function TypeMark({ t }: { t?: string }) {
     );
   }
   if (isTypeName(t)) {
-    return <img src={typeIconPath(t)} alt={t} title={t} className="aspect-square w-full rounded-[3px]" style={{ imageRendering: 'auto' }} />;
+    return <img src={typeIconPath(t)} alt={t} title={t} className="aspect-square w-full rounded-[3px]" style={{ imageRendering: 'auto' }} decoding="async" />;
   }
   return <div className="aspect-square w-full rounded-[3px]" style={{ background: typeColorOf(t) }} title={t ?? 'untyped'} />;
 }
@@ -84,6 +84,7 @@ function MiniTile({ id, ace, fill, wash }: { id: number; ace?: boolean; fill?: b
   const p = getPokemonById(id);
   return (
     <div
+      data-member-id={id}
       className={cn(
         'flex items-center justify-center overflow-hidden rounded-[3px]',
         wash ? 'bg-transparent' : 'bg-card',
@@ -93,12 +94,63 @@ function MiniTile({ id, ace, fill, wash }: { id: number; ace?: boolean; fill?: b
       style={ace ? { boxShadow: '0 0 0 2px var(--color-primary)', background: 'rgba(220,38,38,0.10)' } : undefined}
     >
       {p ? (
-        <img src={p.sprite} alt={p.name} className="max-h-full max-w-full object-contain" style={{ imageRendering: 'pixelated' }} loading="lazy" />
+        <img
+          src={p.sprite}
+          alt={p.name}
+          className="max-h-full max-w-full object-contain"
+          style={{ imageRendering: 'pixelated' }}
+          loading="lazy"
+          decoding="async"
+        />
       ) : (
         <span className="text-[0.45rem] text-muted-foreground">#{id}</span>
       )}
     </div>
   );
+}
+
+const ABSENT_OPACITY = '0.14';
+
+/** Fade tiles that are not in the scrubbed session. `present === null` shows every tile. */
+export function applyMemberPresence(root: ParentNode, present: ReadonlySet<number> | null): void {
+  for (const node of root.querySelectorAll('[data-member-id]')) {
+    const el = node as HTMLElement;
+    const id = Number(el.dataset.memberId);
+    el.style.opacity = !present || present.has(id) ? '1' : ABSENT_OPACITY;
+  }
+}
+
+function useMemberPresence(
+  rootRef: RefObject<HTMLElement | null>,
+  presentIds: number[] | undefined,
+  sessionMemberIds: (number[] | null)[] | undefined,
+) {
+  const present = useMemo(() => (presentIds ? new Set(presentIds) : null), [presentIds]);
+  const bySession = useMemo(
+    () => sessionMemberIds?.map((ids) => (ids ? new Set(ids) : null)),
+    [sessionMemberIds],
+  );
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    applyMemberPresence(root, present);
+  }, [present, rootRef]);
+
+  useLayoutEffect(() => {
+    if (!bySession) return;
+    const applyFromSlider = () => {
+      const root = rootRef.current;
+      const el = document.querySelector('input[aria-label="Scrub sessions"]');
+      if (!root || !(el instanceof HTMLInputElement)) return;
+      const i = Number(el.value);
+      if (!Number.isFinite(i) || i < 0 || i >= bySession.length) return;
+      applyMemberPresence(root, bySession[i] ?? null);
+    };
+    document.addEventListener('input', applyFromSlider, true);
+    applyFromSlider();
+    return () => document.removeEventListener('input', applyFromSlider, true);
+  }, [bySession, rootRef]);
 }
 
 function placedOf(card: VisitCard | undefined): { lines: PlacedLine[]; legends: { seat: number; pokemonId: number }[] } {
@@ -118,7 +170,7 @@ function shadesOf(t?: string) {
   return cardShades(null);
 }
 
-function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefined }) {
+const MiniGymCard = memo(function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefined }) {
   const shades = shadesOf(card?.t);
   const { lines, legends } = placedOf(card);
   const rows = deriveRows(lines, legends);
@@ -193,7 +245,7 @@ function MiniGymCard({ index, card }: { index: number; card: VisitCard | undefin
       </div>
     </div>
   );
-}
+});
 
 function colsThatFit(availW: number, availH: number): 14 | 7 {
   const gap = 6;
@@ -202,10 +254,18 @@ function colsThatFit(availW: number, availH: number): 14 | 7 {
   return cardW >= MIN_CARD_W && rowPx >= MIN_ROW_PX ? 14 : 7;
 }
 
-function DesktopGymStrip({ cards }: { cards: VisitCard[] }) {
-  const bySlot = new Map<number, VisitCard>();
-  for (const c of cards) bySlot.set(c.i, c);
-  const hostRef = useRef<HTMLDivElement>(null);
+const DesktopGymStrip = memo(function DesktopGymStrip({
+  cards,
+  hostRef,
+}: {
+  cards: VisitCard[];
+  hostRef: RefObject<HTMLDivElement | null>;
+}) {
+  const bySlot = useMemo(() => {
+    const next = new Map<number, VisitCard>();
+    for (const c of cards) next.set(c.i, c);
+    return next;
+  }, [cards]);
   const [cols, setCols] = useState<14 | 7>(7);
 
   useLayoutEffect(() => {
@@ -220,7 +280,7 @@ function DesktopGymStrip({ cards }: { cards: VisitCard[] }) {
     const ro = new ResizeObserver(apply);
     ro.observe(host);
     return () => ro.disconnect();
-  }, [cards]);
+  }, [hostRef]);
 
   return (
     <div
@@ -243,9 +303,9 @@ function DesktopGymStrip({ cards }: { cards: VisitCard[] }) {
       </div>
     </div>
   );
-}
+});
 
-function MobileSlot({ i, card }: { i: number; card: VisitCard | undefined }) {
+const MobileSlot = memo(function MobileSlot({ i, card }: { i: number; card: VisitCard | undefined }) {
   const ROWS = 3;
   const SEATS = 6;
   if (!card || card.l.length === 0) {
@@ -306,7 +366,7 @@ function MobileSlot({ i, card }: { i: number; card: VisitCard | undefined }) {
       </div>
     </div>
   );
-}
+});
 
 function slotCellStyle(i: number): CSSProperties {
   if (i < 12) {
@@ -321,11 +381,21 @@ function slotCellStyle(i: number): CSSProperties {
   };
 }
 
-function MobileLeagueBoard({ cards }: { cards: VisitCard[] }) {
-  const bySlot = new Map<number, VisitCard>();
-  for (const c of cards) bySlot.set(c.i, c);
+const MobileLeagueBoard = memo(function MobileLeagueBoard({
+  cards,
+  hostRef,
+}: {
+  cards: VisitCard[];
+  hostRef: RefObject<HTMLDivElement | null>;
+}) {
+  const bySlot = useMemo(() => {
+    const next = new Map<number, VisitCard>();
+    for (const c of cards) next.set(c.i, c);
+    return next;
+  }, [cards]);
   return (
     <div
+      ref={hostRef}
       data-testid="league-visit-board"
       className="grid w-full gap-1"
       style={{
@@ -340,12 +410,24 @@ function MobileLeagueBoard({ cards }: { cards: VisitCard[] }) {
       ))}
     </div>
   );
-}
+});
 
 /** The league at one moment: Pokémon-only gym cards on desktop, a compact
- *  3×4 + 2 board on a phone. Cards keep their own height. */
-export function LeagueVisitBoard({ cards }: { cards: VisitCard[] }) {
+ *  3×4 + 2 board on a phone. Layout stays on the latest cards so gyms do not
+ *  remount while you scrub. Session occupancy is a presence fade on
+ *  `[data-member-id]`, the same split OutlinedDex uses. */
+export const LeagueVisitBoard = memo(function LeagueVisitBoard({
+  cards,
+  presentIds,
+  sessionMemberIds,
+}: {
+  cards: VisitCard[];
+  presentIds?: number[];
+  sessionMemberIds?: (number[] | null)[];
+}) {
   const desktop = useIsDesktop();
-  if (desktop) return <DesktopGymStrip cards={cards} />;
-  return <MobileLeagueBoard cards={cards} />;
-}
+  const hostRef = useRef<HTMLDivElement>(null);
+  useMemberPresence(hostRef, presentIds, sessionMemberIds);
+  if (desktop) return <DesktopGymStrip cards={cards} hostRef={hostRef} />;
+  return <MobileLeagueBoard cards={cards} hostRef={hostRef} />;
+});
