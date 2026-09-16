@@ -79,12 +79,6 @@ export function SessionTimeline({
   const wRef = useRef(W);
   const tzRef = useRef(tz);
   const countUnitRef = useRef(countUnit);
-  useEffect(() => {
-    pointsRef.current = points;
-    wRef.current = W;
-    tzRef.current = tz;
-    countUnitRef.current = countUnit;
-  });
   const applyPlayhead = useCallback((next: number) => {
     const pts = pointsRef.current;
     const p = pts[next];
@@ -112,6 +106,10 @@ export function SessionTimeline({
     }
   }, []);
   useLayoutEffect(() => {
+    pointsRef.current = points;
+    wRef.current = W;
+    tzRef.current = tz;
+    countUnitRef.current = countUnit;
     applyPlayhead(playheadRef.current);
   });
   useLayoutEffect(() => {
