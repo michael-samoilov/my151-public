@@ -130,6 +130,19 @@ describe('layoutLabels', () => {
   });
 });
 
+describe('sliceGeometry', () => {
+  it('keeps every slice inside the bar', () => {
+    const slices = sliceGeometry(
+      { Windows: 49, iOS: 20, Android: 16, macOS: 12, Linux: 3 },
+      'os',
+      332,
+    );
+    for (const s of slices) {
+      expect(s.leftPx + s.widthPx).toBeLessThanOrEqual(332 + 0.01);
+    }
+  });
+});
+
 describe('inBarKind', () => {
   it('puts % only on the first slice that can hold a number', () => {
     const slices = sliceGeometry({ Chrome: 52, Safari: 27, Firefox: 9, Edge: 8 }, 'browser', 332);

@@ -130,16 +130,18 @@ export function sliceGeometry(
   for (let i = 0; i < keys.length; i++) {
     const key = keys[i];
     const n = counts[key];
-    const widthPx = i === keys.length - 1 ? Math.max(0, usable - x) : (n / total) * usable;
+    const raw = i === keys.length - 1 ? Math.max(0, usable - x) : (n / total) * usable;
+    const leftPx = x + i * BAR_GAP_PX;
+    const widthPx = Math.max(0, Math.min(raw, barWidthPx - leftPx));
     out.push({
       key,
       n,
       pct: Math.round((n / total) * 100),
-      leftPx: x + i * BAR_GAP_PX,
+      leftPx,
       widthPx,
       fill: brandFill(key),
     });
-    x += widthPx;
+    x += raw;
   }
   return out;
 }

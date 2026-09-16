@@ -89,7 +89,7 @@ function StackBar({
               aria-pressed={on}
               aria-label={`${s.key} ${s.pct}%`}
               onClick={() => canClamp && onToggle(s.key)}
-              className="absolute top-0 flex h-full cursor-pointer items-center overflow-hidden rounded-sm px-1.5 text-left text-xs font-bold tabular-nums transition-[left,width,background-color] duration-300 disabled:cursor-default disabled:opacity-100"
+              className="absolute top-0 flex h-full min-w-0 cursor-pointer items-center overflow-hidden rounded-sm border-0 px-1.5 text-left text-xs font-bold tabular-nums transition-[left,width,background-color] duration-300 disabled:cursor-default disabled:opacity-100"
               style={{
                 left: s.leftPx,
                 width: Math.max(0, s.widthPx),
