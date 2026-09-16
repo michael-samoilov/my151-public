@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
+import { proposeFit, stabilizeMeasure } from './fitScaleMath';
 
 /** How to draw the fitted block: the scale, and the width to hold it at. */
 export interface Fit {
@@ -39,10 +40,14 @@ export interface Fit {
  * it follows. And a transformed ancestor becomes the containing block for
  * `position: fixed` descendants, which the card's pickers are.
  *
- * The applied scale is divided out of `natural` so the loop is a fixed point,
- * not a spiral. The budget comes from the nearest `[data-lg-viewport]`
- * ancestor, so a pane that scrolls on its own is measured rather than the
- * window.
+ * Natural height is read from `offsetHeight`, which is the unzoomed layout
+ * size. Dividing a zoomed `getBoundingClientRect` by the last scale can chase
+ * its own zoom under ResizeObserver; offsetHeight does not. The settle step
+ * in `fitScaleMath` then deadbands small avail/room flicker so the observer
+ * loop reaches a fixed point instead of vibrating every frame.
+ *
+ * The budget comes from the nearest `[data-lg-viewport]` ancestor, so a pane
+ * that scrolls on its own is measured rather than the window.
  */
 /**
  * Desktop grow mode: instead of squashing to fit, the block lays out at a fixed
@@ -71,14 +76,21 @@ export function useFitScale(
   const [fit, setFit] = useState<Fit>({ scale: 1, width: 0 });
   const scaleRef = useRef(1);
   const widthRef = useRef(0);
+  const availRef = useRef(0);
+  const roomRef = useRef(0);
+  const naturalRef = useRef(0);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
     const viewport = el.closest('[data-lg-viewport]');
     const compute = () => {
-      const rect = el.getBoundingClientRect();
-      const natural = rect.height / scaleRef.current;
+      // Unzoomed layout height — not getBoundingClientRect()/scale. Zoomed
+      // rects re-enter this observer when zoom changes; offsetHeight does not.
+      // Hold wrap/font flicker the same way as avail/room.
+      const natural = stabilizeMeasure(el.offsetHeight, naturalRef.current);
+      naturalRef.current = natural;
       if (natural <= 0) return;
+      const rect = el.getBoundingClientRect();
       let avail: number;
       if (viewport instanceof HTMLElement) {
         const vp = viewport.getBoundingClientRect();
@@ -94,6 +106,9 @@ export function useFitScale(
       } else {
         avail = window.innerHeight - rect.top - 8;
       }
+      // Hold ±a few px of pane flicker so zoom/width cannot chase it every frame.
+      avail = stabilizeMeasure(avail, availRef.current);
+      availRef.current = avail;
       // The room the block is drawn in, measured on the parent because the
       // parent is not scaled.
       const host = el.parentElement;
@@ -107,6 +122,8 @@ export function useFitScale(
             - (parseFloat(pad.paddingRight) || 0),
         );
       }
+      room = stabilizeMeasure(room, roomRef.current);
+      roomRef.current = room;
       if (grow) {
         // Uniform grow-fit: the block is laid out at a fixed rem width and
         // zoomed as one, so the whole card — cells, sprites, text — scales
@@ -117,14 +134,21 @@ export function useFitScale(
         const rootFont = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
         const baseWidth = grow.baseWidthRem * rootFont;
         const spriteCeil = grow.targetSpritePx / (grow.spriteRem * rootFont);
-        const wScale = room / baseWidth;
-        const hScale = avail / natural;
-        const next = Math.max(floor, Math.min(wScale, hScale, spriteCeil));
-        if (Math.abs(next - scaleRef.current) > 0.003 || Math.abs(baseWidth - widthRef.current) > 0.5) {
-          scaleRef.current = next;
-          widthRef.current = baseWidth;
-          setFit({ scale: next, width: baseWidth });
-        }
+        const next = proposeFit({
+          mode: 'grow',
+          natural,
+          avail,
+          room,
+          floor,
+          baseWidth,
+          spriteCeil,
+          prevScale: scaleRef.current,
+          prevWidth: widthRef.current,
+        });
+        if (!next) return;
+        scaleRef.current = next.scale;
+        widthRef.current = next.width;
+        setFit(next);
         return;
       }
       // What the block would be scaled to if only its body had to fit. The
@@ -132,20 +156,21 @@ export function useFitScale(
       // width straight back and the squash costs it only height. What is left
       // over is the tail's, and that part is not given back.
       const tail = el.querySelector('[data-fit-tail]');
-      const body = Math.max(
-        1,
-        natural - (tail ? tail.getBoundingClientRect().height / scaleRef.current : 0),
-      );
-      const squash = Math.min(1, Math.max(floor, avail / body));
-      const width = room / squash;
-      const next = Math.min(1, Math.max(floor, avail / natural));
-      // 0.003 ≈ 2–3px at card height: tight enough to actually fit, loose
-      // enough not to churn on subpixel measurements.
-      if (Math.abs(next - scaleRef.current) > 0.003 || Math.abs(width - widthRef.current) > 0.5) {
-        scaleRef.current = next;
-        widthRef.current = width;
-        setFit({ scale: next, width });
-      }
+      const tailNatural = tail instanceof HTMLElement ? tail.offsetHeight : 0;
+      const next = proposeFit({
+        mode: 'squash',
+        natural,
+        tailNatural,
+        avail,
+        room,
+        floor,
+        prevScale: scaleRef.current,
+        prevWidth: widthRef.current,
+      });
+      if (!next) return;
+      scaleRef.current = next.scale;
+      widthRef.current = next.width;
+      setFit(next);
     };
     compute();
     // The parent as well as the block. Pinning the block's width is what
