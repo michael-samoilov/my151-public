@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useId, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useId, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import {
   FaDesktop, FaMobileScreenButton, FaTabletScreenButton,
@@ -79,6 +79,22 @@ export function TooltipScope({ children }: { children: ReactNode }) {
   return <TooltipCtx.Provider value={{ openId, setOpenId }}>{children}</TooltipCtx.Provider>;
 }
 
+export function useTooltipChip() {
+  const id = useId();
+  const { openId, setOpenId } = useContext(TooltipCtx);
+  const open = openId === id;
+  return {
+    open,
+    toggle: () => setOpenId(open ? null : id),
+    onPointerEnter: (e: ReactPointerEvent<HTMLElement>) => {
+      if (e.pointerType !== 'touch') setOpenId(id);
+    },
+    onPointerLeave: (e: ReactPointerEvent<HTMLElement>) => {
+      if (e.pointerType !== 'touch') setOpenId(null);
+    },
+  };
+}
+
 /**
  * A compact chip whose label is disclosed on press (mobile) and hover (desktop).
  * Presses are coordinated by TooltipScope: opening one closes any other, and a
@@ -93,9 +109,7 @@ export function InfoChip({
   label: string;
   fillMd?: boolean;
 }) {
-  const id = useId();
-  const { openId, setOpenId } = useContext(TooltipCtx);
-  const open = openId === id;
+  const { open, toggle, onPointerEnter, onPointerLeave } = useTooltipChip();
   return (
     <span className={cn('relative inline-flex', fillMd && 'md:w-full')} data-tooltip-chip>
       <button
@@ -106,9 +120,9 @@ export function InfoChip({
           fillMd && 'md:w-full md:justify-center',
         )}
         aria-label={label}
-        onClick={() => setOpenId(open ? null : id)}
-        onPointerEnter={(e) => e.pointerType !== 'touch' && setOpenId(id)}
-        onPointerLeave={(e) => e.pointerType !== 'touch' && setOpenId(null)}
+        onClick={toggle}
+        onPointerEnter={onPointerEnter}
+        onPointerLeave={onPointerLeave}
       >
         {children}
       </button>

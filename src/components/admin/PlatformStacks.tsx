@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { DeviceIcon, OsIcon, BrowserIcon } from '@/components/admin/platformIcons';
+import { DeviceIcon, OsIcon, BrowserIcon, TooltipScope, useTooltipChip } from '@/components/admin/platformIcons';
+import { cn } from '@/lib/utils';
 import {
   ICON_PX,
   dimTitle,
@@ -10,6 +11,7 @@ import {
   mixCounts,
   sliceFill,
   sliceGeometry,
+  type LabelLayout,
   type PlatformClamp,
   type PlatformDim,
   type PlatformJoint,
@@ -27,6 +29,70 @@ function measureFactory(el: HTMLSpanElement | null): (word: string) => number {
     el.textContent = word;
     return el.getBoundingClientRect().width;
   };
+}
+
+function LogoLabel({
+  lab,
+  dim,
+  barW,
+  canClamp,
+  onToggle,
+}: {
+  lab: LabelLayout;
+  dim: PlatformDim;
+  barW: number;
+  canClamp: boolean;
+  onToggle: (value: string) => void;
+}) {
+  const { open, toggle, onPointerEnter, onPointerLeave } = useTooltipChip();
+  const edge =
+    lab.align === 'end' || (barW > 0 && lab.leftPx > barW * 0.67)
+      ? 'end'
+      : lab.leftPx < 40
+        ? 'start'
+        : 'center';
+  return (
+    <button
+      type="button"
+      data-tooltip-chip
+      onClick={() => {
+        toggle();
+        if (canClamp) onToggle(lab.key);
+      }}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+      className="absolute top-0 flex h-[15px] cursor-pointer items-center gap-1 whitespace-nowrap text-xs font-semibold"
+      style={{
+        left: lab.align === 'end' ? undefined : lab.leftPx,
+        right: lab.align === 'end' ? 0 : undefined,
+        color: lab.color,
+      }}
+      aria-label={lab.key}
+    >
+      <span className="inline-flex h-[15px] w-[15px] shrink-0 items-center justify-center" style={{ width: ICON_PX, height: ICON_PX }}>
+        <Mark dim={dim} value={lab.key} />
+      </span>
+      {lab.showWord && (
+        <span className="inline-flex h-[15px] items-center leading-none" style={{ transform: 'translateY(1px)' }}>
+          {lab.key}
+        </span>
+      )}
+      {open && (
+        <span
+          role="tooltip"
+          data-who-logo-tip
+          className={cn(
+            'absolute bottom-full z-30 mb-1 max-w-[min(70vw,240px)] whitespace-nowrap rounded-md border border-border bg-card px-2 py-1 text-center text-[0.7rem] font-medium leading-snug text-foreground shadow-md',
+            edge === 'end' && 'right-0',
+            edge === 'start' && 'left-0',
+            edge === 'center' && 'left-1/2 -translate-x-1/2',
+          )}
+        >
+          {lab.key}
+        </span>
+      )}
+    </button>
+  );
 }
 
 function StackBar({
@@ -109,35 +175,21 @@ function StackBar({
           );
         })}
       </div>
-      <div className="relative mt-1.5 h-[22px]">
+      <div className="relative mt-1.5 h-[22px] overflow-visible">
         <span
           ref={measureRef}
           className="pointer-events-none invisible absolute whitespace-nowrap text-xs font-semibold"
           aria-hidden="true"
         />
         {labels.map((lab) => (
-          <button
+          <LogoLabel
             key={lab.key}
-            type="button"
-            disabled={!canClamp}
-            onClick={() => canClamp && onToggle(lab.key)}
-            className="absolute top-0 flex h-[15px] cursor-pointer items-center gap-1 whitespace-nowrap text-xs font-semibold disabled:cursor-default disabled:opacity-100"
-            style={{
-              left: lab.align === 'end' ? undefined : lab.leftPx,
-              right: lab.align === 'end' ? 0 : undefined,
-              color: lab.color,
-            }}
-            aria-label={lab.key}
-          >
-            <span className="inline-flex h-[15px] w-[15px] shrink-0 items-center justify-center" style={{ width: ICON_PX, height: ICON_PX }}>
-              <Mark dim={dim} value={lab.key} />
-            </span>
-            {lab.showWord && (
-              <span className="inline-flex h-[15px] items-center leading-none" style={{ transform: 'translateY(1px)' }}>
-                {lab.key}
-              </span>
-            )}
-          </button>
+            lab={lab}
+            dim={dim}
+            barW={barW}
+            canClamp={canClamp}
+            onToggle={onToggle}
+          />
         ))}
       </div>
     </div>
@@ -171,11 +223,13 @@ export function PlatformStacks({
   };
 
   return (
-    <div className="flex min-w-0 flex-col gap-3" data-who-platform>
-      <StackBar dim="device" counts={deviceCounts} clamp={clamp} canClamp={canClamp} onToggle={(v) => toggle('device', v)} />
-      <StackBar dim="os" counts={osCounts} clamp={clamp} canClamp={canClamp} onToggle={(v) => toggle('os', v)} />
-      <StackBar dim="browser" counts={browserCounts} clamp={clamp} canClamp={canClamp} onToggle={(v) => toggle('browser', v)} />
-    </div>
+    <TooltipScope>
+      <div className="flex min-w-0 flex-col gap-3" data-who-platform>
+        <StackBar dim="device" counts={deviceCounts} clamp={clamp} canClamp={canClamp} onToggle={(v) => toggle('device', v)} />
+        <StackBar dim="os" counts={osCounts} clamp={clamp} canClamp={canClamp} onToggle={(v) => toggle('os', v)} />
+        <StackBar dim="browser" counts={browserCounts} clamp={clamp} canClamp={canClamp} onToggle={(v) => toggle('browser', v)} />
+      </div>
+    </TooltipScope>
   );
 }
 
