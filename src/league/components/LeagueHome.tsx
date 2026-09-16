@@ -205,26 +205,28 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
 }
 
 /** The row as the league renders it: a drop target that drags and opens. */
-function SlotRow({ position, card, held }: {
+function SlotRow({ position, card, held, canDrag }: {
   position: number;
   card: GymCard;
   /** This row is where the carried one would land, so it draws it in hand. */
   held: boolean;
+  canDrag: boolean;
 }) {
   const openCardPage = useLeagueUi((s) => s.openCardPage);
   const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
     id: `slot-${position}`,
     data: { index: position },
+    disabled: !canDrag,
   });
   const { setNodeRef: setDropRef } = useDroppable({ id: `slotdrop-${position}`, data: { index: position } });
+  const dragProps = canDrag ? { ...listeners, ...attributes } : {};
 
   return (
     <div ref={setDropRef}>
       <button
         type="button"
         ref={setDragRef}
-        {...listeners}
-        {...attributes}
+        {...dragProps}
         data-testid={`league-slot-${position}`}
         onClick={() => openCardPage(position)}
         className="block w-full cursor-pointer"
@@ -333,6 +335,7 @@ export function LeagueHome() {
                 position={position}
                 card={card}
                 held={preview !== null && position === preview.to}
+                canDrag={!leagueSlotIsEmpty(cards[position])}
               />
             </div>
           ))}

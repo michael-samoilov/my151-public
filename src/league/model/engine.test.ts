@@ -216,34 +216,67 @@ describe('moveLeagueSlots', () => {
   const isEmpty = (s: string) => s === empty;
   const blank = () => empty;
   const slots = () => Array.from({ length: 14 }, () => empty);
-
-  it('places into an empty row without shifting unrelated trainers', () => {
+  const fill = (...pairs: Array<[number, string]>) => {
     const start = slots();
-    start[8] = 'e4-1';
-    start[9] = 'e4-2';
-    start[10] = 'e4-3';
-    start[11] = 'e4-4';
+    for (const [i, name] of pairs) start[i] = name;
+    return start;
+  };
+
+  it('moves into an empty row and leaves every other trainer', () => {
+    const start = fill([8, 'e4-1'], [9, 'e4-2'], [10, 'e4-3'], [11, 'e4-4']);
     const next = moveLeagueSlots(start, 11, 7, isEmpty, blank);
-    expect(next[7]).toBe('e4-4');
-    expect(next[8]).toBe('e4-1');
-    expect(next[9]).toBe('e4-2');
-    expect(next[10]).toBe('e4-3');
-    expect(next[11]).toBe(empty);
+    expect(next).toEqual(fill([7, 'e4-4'], [8, 'e4-1'], [9, 'e4-2'], [10, 'e4-3']));
   });
 
-  it('bumps the occupant into the next empty row below', () => {
-    const start = slots();
-    start[6] = 'gym-7';
-    start[8] = 'e4-1';
-    start[9] = 'e4-2';
-    start[10] = 'e4-3';
-    start[11] = 'e4-4';
-    const next = moveLeagueSlots(start, 11, 6, isEmpty, blank);
-    expect(next[6]).toBe('e4-4');
-    expect(next[7]).toBe('gym-7');
-    expect(next[8]).toBe('e4-1');
-    expect(next[9]).toBe('e4-2');
-    expect(next[10]).toBe('e4-3');
-    expect(next[11]).toBe(empty);
+  it('swaps adjacent occupied rows downward', () => {
+    const start = fill([5, 'a'], [6, 'b'], [7, 'c']);
+    const next = moveLeagueSlots(start, 5, 6, isEmpty, blank);
+    expect(next).toEqual(fill([5, 'b'], [6, 'a'], [7, 'c']));
+  });
+
+  it('swaps adjacent occupied rows upward', () => {
+    const start = fill([5, 'a'], [6, 'b'], [7, 'c']);
+    const next = moveLeagueSlots(start, 6, 5, isEmpty, blank);
+    expect(next).toEqual(fill([5, 'b'], [6, 'a'], [7, 'c']));
+  });
+
+  it('swaps distant occupied rows and leaves the rows between them', () => {
+    const start = fill([3, 'a'], [4, 'b'], [5, 'c'], [8, 'd']);
+    const next = moveLeagueSlots(start, 3, 8, isEmpty, blank);
+    expect(next).toEqual(fill([3, 'd'], [4, 'b'], [5, 'c'], [8, 'a']));
+  });
+
+  it('swaps with the last occupied row and does not wrap it into the hole', () => {
+    const start = fill([0, 'first'], [12, 'champ'], [13, 'boss']);
+    const next = moveLeagueSlots(start, 0, 13, isEmpty, blank);
+    expect(next).toEqual(fill([0, 'boss'], [12, 'champ'], [13, 'first']));
+  });
+
+  it('does not wrap the last row into the pickup hole when swapping with a middle row', () => {
+    const start = fill([0, 'first'], [12, 'champ'], [13, 'boss']);
+    const next = moveLeagueSlots(start, 0, 12, isEmpty, blank);
+    expect(next).toEqual(fill([0, 'champ'], [12, 'first'], [13, 'boss']));
+  });
+
+  it('leaves the list unchanged when the pickup row is empty', () => {
+    const start = fill([5, 'a']);
+    expect(moveLeagueSlots(start, 6, 5, isEmpty, blank)).toEqual(start);
+  });
+
+  it('does nothing when dropped on itself', () => {
+    const start = fill([4, 'a'], [5, 'b']);
+    expect(moveLeagueSlots(start, 4, 4, isEmpty, blank)).toEqual(start);
+  });
+
+  it('swaps across gym and elite-four slots', () => {
+    const start = fill([7, 'gym8'], [8, 'e4-1'], [9, 'e4-2']);
+    const next = moveLeagueSlots(start, 7, 8, isEmpty, blank);
+    expect(next).toEqual(fill([7, 'e4-1'], [8, 'gym8'], [9, 'e4-2']));
+  });
+
+  it('moves across sections into an empty elite-four slot', () => {
+    const start = fill([7, 'gym8'], [9, 'e4-2']);
+    const next = moveLeagueSlots(start, 7, 8, isEmpty, blank);
+    expect(next).toEqual(fill([8, 'gym8'], [9, 'e4-2']));
   });
 });

@@ -77,7 +77,7 @@ test.describe('holding a league row', () => {
     test.skip(testInfo.project.name === 'desktop', 'the hold is a touch affordance');
 
     await page.goto('/custom-gym-leader');
-    await page.waitForSelector('[data-testid="league-slot-6"]');
+    await page.waitForSelector('[data-testid="league-slot-5"]');
     await page.waitForTimeout(500);
 
     const rowTops = () =>
@@ -91,7 +91,7 @@ test.describe('holding a league row', () => {
       });
 
     const before = await rowTops();
-    const row = (await page.locator('[data-testid="league-slot-6"]').boundingBox())!;
+    const row = (await page.locator('[data-testid="league-slot-5"]').boundingBox())!;
     const cdp = await page.context().newCDPSession(page);
     const x = row.x + row.width / 2;
     const y = row.y + row.height / 2;
@@ -101,7 +101,7 @@ test.describe('holding a league row', () => {
     expect(await page.locator('[data-drag-held]').count(), 'row is in hand').toBe(1);
 
     for (let i = 0; i < 14; i++) {
-      if (i === 6) continue;
+      if (i === 5) continue;
       expect(
         Math.abs(during[i] - before[i]),
         `slot ${i} should not shift on hold alone`,
