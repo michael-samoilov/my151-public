@@ -79,7 +79,6 @@ export function TooltipScope({ children }: { children: ReactNode }) {
   return <TooltipCtx.Provider value={{ openId, setOpenId }}>{children}</TooltipCtx.Provider>;
 }
 
-/** Press (mobile) and hover (desktop) for one chip inside a TooltipScope. */
 export function useTooltipChip() {
   const id = useId();
   const { openId, setOpenId } = useContext(TooltipCtx);
