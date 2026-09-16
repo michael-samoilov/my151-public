@@ -12,12 +12,30 @@ import {
 
 const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
-/** Plot inset. Same on both sides so the right gutter matches the y-axis gutter. */
-const GRID_GUTTER = 36;
+/** Left plot inset. Holds the y-axis labels. */
+const GRID_LEFT = 36;
 /** X-axis label ribbon under the plot. Month partitions live only in this band. */
 const GRID_BOTTOM = 22;
 /** Gap from the last plotted x into the gutter. */
-const LABEL_INSET = 4;
+const LABEL_INSET = 6;
+/** Gap from the end of the longest window label to the canvas edge. */
+const LABEL_TAIL = 8;
+const LABEL_FACE = 'ui-sans-serif, system-ui, sans-serif';
+
+function measureWindowLabelPx(kind: '7d' | '24h', count: number, numSize: number): number {
+  const ctx = document.createElement('canvas').getContext('2d');
+  if (!ctx) return 80;
+  ctx.font = `400 ${numSize}px ${LABEL_FACE}`;
+  const prefix = ctx.measureText(`${kind}: `).width;
+  ctx.font = `700 ${numSize}px ${LABEL_FACE}`;
+  return prefix + ctx.measureText(String(count)).width;
+}
+
+function gridRightPx(counts: { hours24: number; days7: number | null }, numSize: number): number {
+  const w24 = measureWindowLabelPx('24h', counts.hours24, numSize);
+  const w7 = counts.days7 == null ? 0 : measureWindowLabelPx('7d', counts.days7, numSize);
+  return Math.ceil(LABEL_INSET + Math.max(w24, w7) + LABEL_TAIL);
+}
 
 function countLabel(
   kind: '24h' | '7d',
@@ -27,30 +45,20 @@ function countLabel(
   y: number,
   numSize: number,
 ) {
-  const face = 'ui-sans-serif, system-ui, sans-serif';
-  const sub = Math.max(7, Math.round(numSize * 0.55));
   return {
     type: 'text' as const,
     x,
     y,
     style: {
-      text: `{n|${count}}{k|${kind}}`,
+      text: `{k|${kind}: }{n|${count}}`,
       fill: color,
       fontSize: numSize,
-      fontWeight: 700,
-      fontFamily: face,
+      fontFamily: LABEL_FACE,
       textAlign: 'left' as const,
       textVerticalAlign: 'middle' as const,
       rich: {
-        n: { fontSize: numSize, fontWeight: 700, fill: color, fontFamily: face },
-        k: {
-          fontSize: sub,
-          fontWeight: 400,
-          fill: color,
-          fontFamily: face,
-          padding: [0, 0, 0, 2],
-          verticalAlign: 'bottom' as const,
-        },
+        k: { fontSize: numSize, fontWeight: 400, fill: color, fontFamily: LABEL_FACE },
+        n: { fontSize: numSize, fontWeight: 700, fill: color, fontFamily: LABEL_FACE },
       },
     },
   };
@@ -80,10 +88,11 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
       const gridLine = { color: grid, width: 1 };
       const axisFont = el.clientWidth < 600 ? 8 : 9;
       const numSize = el.clientWidth < 600 ? 14 : 16;
+      const right = gridRightPx(counts, numSize);
 
       return {
         animation: false,
-        grid: { left: GRID_GUTTER, right: GRID_GUTTER, top: 36, bottom: GRID_BOTTOM },
+        grid: { left: GRID_LEFT, right, top: 36, bottom: GRID_BOTTOM },
         tooltip: {
           ...topTooltip(el),
           trigger: 'axis',
