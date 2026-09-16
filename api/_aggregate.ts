@@ -283,6 +283,7 @@ export interface Aggregates {
   devices: Record<string, number>;
   os: Record<string, number>;
   browsers: Record<string, number>;
+  joints: PlatformJoint[];
   hours: number[];
   heatmap: number[][];
 }
@@ -301,19 +302,45 @@ export function aggregate(records: SessionRecord[], now: number): Aggregates {
     devices: tallies(records, 'device'),
     os: tallies(records, 'os'),
     browsers: tallies(records, 'browser'),
+    joints: tallyJoints(records),
     hours: hm.hours,
     heatmap: hm.matrix,
   };
 }
 
-/** One cohort's size and device/country/browser mix — the built/incomplete/
- *  completed toggle on the dashboard tallies the same three fields three
- *  times, once per slice. */
+export interface PlatformJoint {
+  device: string;
+  os: string;
+  browser: string;
+  n: number;
+}
+
+/** One cohort's size and platform/country mix — the built/incomplete/
+ *  completed toggle on the dashboard tallies the same fields three times,
+ *  once per slice. */
 export interface Cohort {
   users: number;
   devices: Record<string, number>;
+  os: Record<string, number>;
   countries: Record<string, number>;
   browsers: Record<string, number>;
+  joints: PlatformJoint[];
+}
+
+export function tallyJoints(
+  records: Array<{ device?: string; os?: string; browser?: string }>,
+): PlatformJoint[] {
+  const map = new Map<string, PlatformJoint>();
+  for (const r of records) {
+    const device = r.device || 'Unknown';
+    const os = r.os || 'Unknown';
+    const browser = r.browser || 'Unknown';
+    const k = `${device}\t${os}\t${browser}`;
+    const cur = map.get(k);
+    if (cur) cur.n += 1;
+    else map.set(k, { device, os, browser, n: 1 });
+  }
+  return [...map.values()];
 }
 
 /** Tally one slice of records into a `Cohort`. The caller decides what the
@@ -323,8 +350,10 @@ export function tallyCohort(records: SessionRecord[]): Cohort {
   return {
     users: records.length,
     devices: tallies(records, 'device'),
+    os: tallies(records, 'os'),
     countries: tallies(records, 'country'),
     browsers: tallies(records, 'browser'),
+    joints: tallyJoints(records),
   };
 }
 
