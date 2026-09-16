@@ -136,8 +136,6 @@ export function LeagueExportSurvey({
     }
   };
 
-  const skip = () => onDone();
-
   if (sent) {
     return (
       <p className="px-4 py-6 text-center text-sm text-muted-foreground" data-export-survey-sent>
@@ -222,9 +220,6 @@ export function LeagueExportSurvey({
       <div className="mt-auto flex flex-col gap-2 pt-2">
         <Button type="button" disabled={sending} onClick={() => void submit()}>
           {sending ? 'Sending…' : 'Send feedback'}
-        </Button>
-        <Button type="button" variant="ghost" onClick={skip}>
-          Skip
         </Button>
       </div>
     </div>

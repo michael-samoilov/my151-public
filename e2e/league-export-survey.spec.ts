@@ -91,6 +91,15 @@ test.describe('league export survey', () => {
     await expect(intro).toContainText('151st');
     await expect(intro).toContainText('Pikachu');
     await expect(intro).toContainText('first person to have');
+    await expect(page.getByRole('button', { name: /not now/i })).toBeVisible();
+  });
+
+  test('form offers send without Skip', async ({ page }) => {
+    await openSurveyForm(page);
+    await page.getByRole('button', { name: /sure, i'll help/i }).click();
+    await page.locator('[data-export-survey]').waitFor();
+    await expect(page.getByRole('button', { name: /send feedback/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^skip$/i })).toHaveCount(0);
   });
 
   test('Other input stays in the visible sheet above a keyboard', async ({ page }) => {
@@ -143,5 +152,23 @@ test.describe('league export survey', () => {
 
     const problems = await auditLayout(page, '[role="dialog"]');
     expect(problems.map((p) => `${p.kind}: ${p.detail}`)).toEqual([]);
+  });
+});
+
+test.describe('league export survey desktop', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test('last page has Send feedback, no Skip, and the scrim still closes', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await openSurveyForm(page);
+    await page.getByRole('button', { name: /sure, i'll help/i }).click();
+    await page.locator('[data-export-survey]').waitFor();
+    await expect(page.getByRole('button', { name: /send feedback/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^skip$/i })).toHaveCount(0);
+    await page.locator('[data-export-scrim] button[aria-label="Close export"]').click();
+    await expect(page.locator('[data-export-survey]')).toHaveCount(0);
+    await expect(page.locator('[data-export-overlay]')).toHaveCount(0);
   });
 });
