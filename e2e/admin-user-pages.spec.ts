@@ -42,6 +42,25 @@ test.describe('admin user pages', () => {
     expect(last).toBeTruthy();
     expect(first).not.toEqual(last);
 
+    const occupancy = await page.evaluate(() => {
+      const board = document.querySelector('[data-testid="league-visit-board"]');
+      const keep = board?.querySelector('[data-testid="admin-gym-card"], [data-testid^="admin-slot-"]') ?? null;
+      (board as HTMLElement & { __keep?: Element | null }).__keep = keep;
+      return { keep: !!keep };
+    });
+    expect(occupancy.keep).toBe(true);
+    await scrub.fill('1');
+    const mid = await page.evaluate(() => {
+      const board = document.querySelector('[data-testid="league-visit-board"]');
+      const keep = (board as HTMLElement & { __keep?: Element | null }).__keep;
+      const now = board?.querySelector('[data-testid="admin-gym-card"], [data-testid^="admin-slot-"]') ?? null;
+      const tiles = document.querySelectorAll('[data-member-id]').length;
+      return { sameNode: keep != null && keep === now, tiles };
+    });
+    expect(mid.sameNode).toBe(true);
+    expect(mid.tiles).toBeGreaterThan(0);
+    await scrub.fill('2');
+
     if (info.project.name !== 'desktop') {
       const overflow = await page.evaluate(() => {
         const de = document.documentElement;

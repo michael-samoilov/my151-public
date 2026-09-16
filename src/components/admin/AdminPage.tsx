@@ -983,47 +983,52 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
 /** The league timeline + board, reused as a page and as the dex page's league
  *  section. */
 function LeagueDetailBody({ league }: { league: LeagueUser }) {
-  const { log, ms } = tidySessions(
-    league.sessionLog ?? [],
-    league.sessionMs,
-    leagueSessionIds,
-    (s) => s.summary,
+  const { log, ms } = useMemo(
+    () =>
+      tidySessions(
+        league.sessionLog ?? [],
+        league.sessionMs,
+        leagueSessionIds,
+        (s) => s.summary,
+      ),
+    [league.sessionLog, league.sessionMs],
   );
   const [i, setI] = useState(Math.max(0, log.length - 1));
-  const memberSet = (cards?: LeagueCard[]) => new Set((cards ?? []).flatMap((c) => c.l.flatMap((line) => line.b)));
-  const cardsOf = (k: number) => {
-    const c = log[k]?.cards;
-    return c && c.length ? c : null;
-  };
-  const nets = log.map((s, k) => {
-    const c = cardsOf(k);
-    return c ? memberSet(c).size : s.summary.seats;
-  });
-  const points: TimelinePoint[] = log.map((s, k) => {
-    const nowCards = cardsOf(k);
-    const prevCards = k > 0 ? cardsOf(k - 1) : null;
-    let added = 0;
-    let removed = 0;
-    if (nowCards && prevCards) {
-      const now = memberSet(nowCards);
-      const prev = memberSet(prevCards);
-      added = [...now].filter((x) => !prev.has(x)).length;
-      removed = [...prev].filter((x) => !now.has(x)).length;
-    } else if (k === 0) {
-      added = nets[0];
-    } else {
-      added = Math.max(0, nets[k] - nets[k - 1]);
-      removed = Math.max(0, nets[k - 1] - nets[k]);
-    }
-    return {
-      t: s.ts,
-      count: s.summary.cards,
-      net: nets[k],
-      added,
-      removed,
-      dur: ms[k] != null ? ms[k] / 1000 : undefined,
+  const points: TimelinePoint[] = useMemo(() => {
+    const cardsOf = (k: number) => {
+      const c = log[k]?.cards;
+      return c && c.length ? c : null;
     };
-  });
+    const nets = log.map((s, k) => {
+      const c = cardsOf(k);
+      return c ? new Set(leagueSessionIds(s)).size : s.summary.seats;
+    });
+    return log.map((s, k) => {
+      const nowCards = cardsOf(k);
+      const prevCards = k > 0 ? cardsOf(k - 1) : null;
+      let added = 0;
+      let removed = 0;
+      if (nowCards && prevCards) {
+        const now = new Set(leagueSessionIds({ cards: nowCards }));
+        const prev = new Set(leagueSessionIds({ cards: prevCards }));
+        added = [...now].filter((x) => !prev.has(x)).length;
+        removed = [...prev].filter((x) => !now.has(x)).length;
+      } else if (k === 0) {
+        added = nets[0];
+      } else {
+        added = Math.max(0, nets[k] - nets[k - 1]);
+        removed = Math.max(0, nets[k - 1] - nets[k]);
+      }
+      return {
+        t: s.ts,
+        count: s.summary.cards,
+        net: nets[k],
+        added,
+        removed,
+        dur: ms[k] != null ? ms[k] / 1000 : undefined,
+      };
+    });
+  }, [log, ms]);
   const idx = Math.min(i, Math.max(0, log.length - 1));
   const cur = log[idx];
   const peak = Math.max(0, ...points.map((p) => p.net));
@@ -1043,14 +1048,23 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
     milestones.push({ t: t1, label: 'no exports', tone: 'muted' });
   }
 
-  const board =
-    cur?.cards && cur.cards.length > 0 ? (
-      <LeagueVisitBoard cards={cur.cards} />
-    ) : league.latestCards && league.latestCards.length > 0 ? (
-      <LeagueVisitBoard cards={league.latestCards} />
-    ) : (
-      <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
-    );
+  const sessionMemberIds = useMemo(
+    () => log.map((s) => (s.cards && s.cards.length > 0 ? leagueSessionIds(s) : null)),
+    [log],
+  );
+  const layoutCards =
+    league.latestCards && league.latestCards.length > 0
+      ? league.latestCards
+      : cur?.cards && cur.cards.length > 0
+        ? cur.cards
+        : null;
+  const presentIds = sessionMemberIds[idx] ?? undefined;
+
+  const board = layoutCards ? (
+    <LeagueVisitBoard cards={layoutCards} presentIds={presentIds} sessionMemberIds={sessionMemberIds} />
+  ) : (
+    <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
+  );
 
   if (points.length === 0) {
     return (
