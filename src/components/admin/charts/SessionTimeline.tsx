@@ -69,6 +69,9 @@ export function SessionTimeline({
   const playheadRef = useRef(index);
   const dragging = useRef(false);
   const snapRaf = useRef(0);
+  const lineRef = useRef<SVGLineElement>(null);
+  const countRef = useRef<HTMLElement>(null);
+  const dateRef = useRef<HTMLElement>(null);
   useEffect(() => () => cancelAnimationFrame(snapRaf.current), []);
   const queueSnapshot = (next: number) => {
     cancelAnimationFrame(snapRaf.current);
@@ -130,6 +133,25 @@ export function SessionTimeline({
   const cur = points[thumb];
   const cx = x(cur.t);
   const meta = formatSessionMeta(cur, tz);
+  const spanKey = `${points.length}:${t0}:${t1}`;
+  const applyPlayhead = (next: number) => {
+    const p = points[next];
+    if (!p) return;
+    const px = x(p.t).toFixed(1);
+    const line = lineRef.current;
+    if (line) {
+      line.setAttribute('x1', px);
+      line.setAttribute('x2', px);
+    }
+    if (countRef.current) countRef.current.textContent = String(p.count);
+    if (dateRef.current) dateRef.current.textContent = fmtDay(p.t, tz);
+  };
+  const endDrag = () => {
+    dragging.current = false;
+    const next = playheadRef.current;
+    setPlayhead(next);
+    queueSnapshot(next);
+  };
   const marks: { t: number; label: string; tone?: 'export' | 'muted'; bx: number }[] = [];
   for (const m of milestones) {
     const bx = x(m.t);
@@ -221,7 +243,7 @@ export function SessionTimeline({
             </g>
           );
         })}
-        <line x1={cx.toFixed(1)} x2={cx.toFixed(1)} y1={2} y2={svgH - 2} stroke="var(--color-primary)" strokeWidth={1.5} />
+        <line ref={lineRef} x1={cx.toFixed(1)} x2={cx.toFixed(1)} y1={2} y2={svgH - 2} stroke="var(--color-primary)" strokeWidth={1.5} />
       </svg>
       </div>
     </>
@@ -255,27 +277,32 @@ export function SessionTimeline({
               ))}
             </div>
             <input
+              key={spanKey}
               type="range"
               min={0}
               max={points.length - 1}
               step={1}
-              value={thumb}
+              defaultValue={index}
               onPointerDown={() => {
                 dragging.current = true;
               }}
-              onPointerUp={() => {
-                dragging.current = false;
-                queueSnapshot(playheadRef.current);
+              onMouseDown={() => {
+                dragging.current = true;
               }}
-              onPointerCancel={() => {
-                dragging.current = false;
-                queueSnapshot(playheadRef.current);
-              }}
+              onPointerUp={endDrag}
+              onMouseUp={endDrag}
+              onPointerCancel={endDrag}
               onChange={(e) => {
-                const next = Number(e.target.value);
+                const next = Number(e.currentTarget.value);
                 playheadRef.current = next;
+                applyPlayhead(next);
+                const held = dragging.current || e.currentTarget.matches(':active');
+                if (held) {
+                  dragging.current = true;
+                  return;
+                }
                 setPlayhead(next);
-                if (!dragging.current) queueSnapshot(next);
+                queueSnapshot(next);
               }}
               className="admin-scrub relative w-full touch-none"
               aria-label="Scrub sessions"
@@ -288,10 +315,10 @@ export function SessionTimeline({
 
   const readout = (
     <div className="flex flex-nowrap items-baseline gap-x-1 whitespace-nowrap text-[0.65rem] tabular-nums leading-none">
-      <b className="text-[0.9rem] font-bold">{cur.count}</b>
+      <b ref={countRef} className="text-[0.9rem] font-bold">{cur.count}</b>
       <span className="shrink-0 text-muted-foreground">{countUnit}</span>
       <span className="text-muted-foreground">·</span>
-      <span className="font-semibold">{fmtDay(cur.t, tz)}</span>
+      <span ref={dateRef} className="font-semibold">{fmtDay(cur.t, tz)}</span>
       {meta.window && (
         <>
           <span className="text-muted-foreground">·</span>
