@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   computeOutlineLayout,
   OUTLINE_GAP,
@@ -18,14 +18,12 @@ const GRID_COLS = 15;
 const DexTile = memo(function DexTile({
   pokemon,
   tileSize,
-  present,
 }: {
   pokemon: Pokemon;
   tileSize: number;
-  present: boolean;
 }) {
   return (
-    <div style={{ opacity: present ? 1 : 0.14 }}>
+    <div data-dex-id={pokemon.id}>
       <StaticViewTile pokemon={pokemon} tileSize={tileSize} />
     </div>
   );
@@ -60,6 +58,16 @@ export const OutlinedDex = memo(function OutlinedDex({
     setWidth(el.clientWidth);
     return () => ro.disconnect();
   }, []);
+
+  useLayoutEffect(() => {
+    const root = wrapRef.current;
+    if (!root) return;
+    for (const node of root.querySelectorAll('[data-dex-id]')) {
+      const el = node as HTMLElement;
+      const id = Number(el.dataset.dexId);
+      el.style.opacity = present.has(id) ? '1' : '0.14';
+    }
+  }, [present]);
 
   // Ordered list of every sectioned pokemon (build-group order), and the layout
   // it produces. Memoized on the section structure, not the scrubbed session.
@@ -130,13 +138,13 @@ export const OutlinedDex = memo(function OutlinedDex({
             }}
           >
             {gridPokemon.map((p) => (
-              <DexTile key={p.id} pokemon={p} tileSize={tileSize} present={present.has(p.id)} />
+              <DexTile key={p.id} pokemon={p} tileSize={tileSize} />
             ))}
           </div>
           {lastRowPokemon.length > 0 && (
             <div className="flex items-end justify-center" style={{ height: lastRowHeight, columnGap: gap, marginTop: lastRowGap }}>
               {lastRowPokemon.map((p) => (
-                <DexTile key={p.id} pokemon={p} tileSize={tileSize} present={present.has(p.id)} />
+                <DexTile key={p.id} pokemon={p} tileSize={tileSize} />
               ))}
             </div>
           )}

@@ -66,8 +66,16 @@ export function SessionTimeline({
   // Playhead follows the finger immediately. Snapshot `index` is a React
   // transition, so a heavy dex/league child cannot stall the thumb.
   const [playhead, setPlayhead] = useState(index);
+  const playheadRef = useRef(index);
+  const dragging = useRef(false);
   const snapRaf = useRef(0);
   useEffect(() => () => cancelAnimationFrame(snapRaf.current), []);
+  const queueSnapshot = (next: number) => {
+    cancelAnimationFrame(snapRaf.current);
+    snapRaf.current = requestAnimationFrame(() => {
+      startTransition(() => onIndex(next));
+    });
+  };
 
   useLayoutEffect(() => {
     const el = wrapRef.current;
@@ -252,13 +260,22 @@ export function SessionTimeline({
               max={points.length - 1}
               step={1}
               value={thumb}
+              onPointerDown={() => {
+                dragging.current = true;
+              }}
+              onPointerUp={() => {
+                dragging.current = false;
+                queueSnapshot(playheadRef.current);
+              }}
+              onPointerCancel={() => {
+                dragging.current = false;
+                queueSnapshot(playheadRef.current);
+              }}
               onChange={(e) => {
                 const next = Number(e.target.value);
+                playheadRef.current = next;
                 setPlayhead(next);
-                cancelAnimationFrame(snapRaf.current);
-                snapRaf.current = requestAnimationFrame(() => {
-                  startTransition(() => onIndex(next));
-                });
+                if (!dragging.current) queueSnapshot(next);
               }}
               className="admin-scrub relative w-full touch-none"
               aria-label="Scrub sessions"
