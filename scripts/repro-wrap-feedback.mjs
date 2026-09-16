@@ -24,10 +24,10 @@ async function run(engine, browserType, opts) {
         const tick = () => {
           const pane = document.querySelector('[data-lg-viewport]:not([inert])');
           if (pane) {
-            const sh = pane.scrollHeight;
-            const ch = pane.clientHeight;
+            const _sh = pane.scrollHeight;
+            const _ch = pane.clientHeight;
             // Use offsetHeight-based decision WITHOUT padding to avoid recursion:
-            const pr = pane.style.paddingRight;
+            const _pr = pane.style.paddingRight;
             pane.style.paddingRight = '';
             const ch0 = pane.clientHeight;
             const sh0 = pane.scrollHeight;

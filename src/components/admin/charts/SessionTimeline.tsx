@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { startTransition, useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import {
   fmtDay,
@@ -13,6 +13,8 @@ export type { TimelinePoint };
 
 /** Native range thumb size. Dot centers use half of this so they sit under the thumb. */
 const SCRUB_THUMB_PX = 22;
+const CHART_PAD_L = 6;
+const CHART_PAD_R = 6;
 
 const EV_LABEL: Record<string, string> = {
   'intro-shown': 'intro',
@@ -72,6 +74,53 @@ export function SessionTimeline({
   const lineRef = useRef<SVGLineElement>(null);
   const countRef = useRef<HTMLElement>(null);
   const dateRef = useRef<HTMLElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const pointsRef = useRef(points);
+  const wRef = useRef(W);
+  const tzRef = useRef(tz);
+  useEffect(() => {
+    pointsRef.current = points;
+    wRef.current = W;
+    tzRef.current = tz;
+  });
+  const applyPlayhead = useCallback((next: number) => {
+    const pts = pointsRef.current;
+    const p = pts[next];
+    if (!p) return;
+    const width = wRef.current;
+    const t0 = pts[0]?.t ?? 0;
+    const t1 = pts[pts.length - 1]?.t ?? t0;
+    const span = t1 - t0 || 1;
+    const px = (CHART_PAD_L + (width - CHART_PAD_L - CHART_PAD_R) * ((p.t - t0) / span)).toFixed(1);
+    const line = document.querySelector('[data-testid="session-playhead-line"]');
+    if (line) {
+      line.setAttribute('x1', px);
+      line.setAttribute('x2', px);
+    }
+    const count = document.querySelector('[data-testid="session-playhead-count"]');
+    if (count) count.textContent = String(p.count);
+    const date = document.querySelector('[data-testid="session-playhead-date"]');
+    if (date) date.textContent = fmtDay(p.t, tzRef.current);
+  }, []);
+  useLayoutEffect(() => {
+    applyPlayhead(playheadRef.current);
+  });
+  useLayoutEffect(() => {
+    const syncFromInput = () => {
+      const el = document.querySelector('input[aria-label="Scrub sessions"]');
+      if (!(el instanceof HTMLInputElement)) return;
+      const next = Number(el.value);
+      if (!Number.isFinite(next)) return;
+      playheadRef.current = next;
+      applyPlayhead(next);
+    };
+    document.addEventListener('input', syncFromInput, true);
+    document.addEventListener('pointermove', syncFromInput, true);
+    return () => {
+      document.removeEventListener('input', syncFromInput, true);
+      document.removeEventListener('pointermove', syncFromInput, true);
+    };
+  }, [applyPlayhead]);
   useEffect(() => () => cancelAnimationFrame(snapRaf.current), []);
   const queueSnapshot = (next: number) => {
     cancelAnimationFrame(snapRaf.current);
@@ -99,8 +148,8 @@ export function SessionTimeline({
     );
   }
 
-  const padL = 6;
-  const padR = 6;
+  const padL = CHART_PAD_L;
+  const padR = CHART_PAD_R;
   const topY = 16;
   const botY = 52;
   const railY = 10;
@@ -134,18 +183,6 @@ export function SessionTimeline({
   const cx = x(cur.t);
   const meta = formatSessionMeta(cur, tz);
   const spanKey = `${points.length}:${t0}:${t1}`;
-  const applyPlayhead = (next: number) => {
-    const p = points[next];
-    if (!p) return;
-    const px = x(p.t).toFixed(1);
-    const line = lineRef.current;
-    if (line) {
-      line.setAttribute('x1', px);
-      line.setAttribute('x2', px);
-    }
-    if (countRef.current) countRef.current.textContent = String(p.count);
-    if (dateRef.current) dateRef.current.textContent = fmtDay(p.t, tz);
-  };
   const endDrag = () => {
     dragging.current = false;
     const next = playheadRef.current;
@@ -243,7 +280,7 @@ export function SessionTimeline({
             </g>
           );
         })}
-        <line ref={lineRef} x1={cx.toFixed(1)} x2={cx.toFixed(1)} y1={2} y2={svgH - 2} stroke="var(--color-primary)" strokeWidth={1.5} />
+        <line data-testid="session-playhead-line" ref={lineRef} x1={cx.toFixed(1)} x2={cx.toFixed(1)} y1={2} y2={svgH - 2} stroke="var(--color-primary)" strokeWidth={1.5} />
       </svg>
       </div>
     </>
@@ -277,6 +314,7 @@ export function SessionTimeline({
               ))}
             </div>
             <input
+              ref={inputRef}
               key={spanKey}
               type="range"
               min={0}
@@ -315,10 +353,10 @@ export function SessionTimeline({
 
   const readout = (
     <div className="flex flex-nowrap items-baseline gap-x-1 whitespace-nowrap text-[0.65rem] tabular-nums leading-none">
-      <b ref={countRef} className="text-[0.9rem] font-bold">{cur.count}</b>
+      <b data-testid="session-playhead-count" ref={countRef} className="text-[0.9rem] font-bold">{cur.count}</b>
       <span className="shrink-0 text-muted-foreground">{countUnit}</span>
       <span className="text-muted-foreground">·</span>
-      <span ref={dateRef} className="font-semibold">{fmtDay(cur.t, tz)}</span>
+      <span data-testid="session-playhead-date" ref={dateRef} className="font-semibold">{fmtDay(cur.t, tz)}</span>
       {meta.window && (
         <>
           <span className="text-muted-foreground">·</span>
