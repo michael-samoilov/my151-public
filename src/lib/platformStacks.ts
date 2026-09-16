@@ -87,7 +87,7 @@ export function sliceFill(key: string, dim: PlatformDim, clamp: PlatformClamp | 
   return brandFill(key);
 }
 
-const SPELL_ALWAYS = new Set(['ios', 'macos', 'chromeos', 'unknown', 'samsung internet']);
+const SPELL_ALWAYS = new Set(['ios', 'macos']);
 
 export function keepWord(value: string): boolean {
   const v = value.toLowerCase();
@@ -176,16 +176,16 @@ export interface LabelLayout {
   color: string;
 }
 
-export function layoutLabels(
+function placeLabels(
   slices: SliceGeom[],
   barWidthPx: number,
   measureWord: (word: string) => number,
+  dropped: Set<string>,
 ): LabelLayout[] {
   const labels: LabelLayout[] = slices.map((s, i, all) => {
-    const must = keepWord(s.key);
     const wordW = measureWord(s.key);
     const fullW = ICON_PX + LABEL_GAP_PX + wordW;
-    const showWord = must || fullW <= s.widthPx;
+    const showWord = !dropped.has(s.key) && (keepWord(s.key) || fullW <= s.widthPx);
     const widthPx = showWord ? fullW : ICON_PX;
     const isTail = i === all.length - 1;
     let align: 'start' | 'end' = 'start';
@@ -217,24 +217,42 @@ export function layoutLabels(
       }
     }
   }
+  return labels;
+}
 
+export function labelsCollide(labels: LabelLayout[], barWidthPx: number): boolean {
+  if (labels.length === 0) return false;
+  for (let i = 1; i < labels.length; i++) {
+    const minLeft = labels[i - 1].leftPx + labels[i - 1].widthPx + LABEL_MIN_GAP_PX;
+    if (labels[i].leftPx < minLeft - 0.01) return true;
+  }
+  const last = labels[labels.length - 1];
+  return last.leftPx + last.widthPx > barWidthPx + 0.01;
+}
+
+export function layoutLabels(
+  slices: SliceGeom[],
+  barWidthPx: number,
+  measureWord: (word: string) => number,
+): LabelLayout[] {
+  const dropped = new Set<string>();
+  let labels = placeLabels(slices, barWidthPx, measureWord, dropped);
+  for (let n = 0; n < slices.length; n++) {
+    if (!labelsCollide(labels, barWidthPx)) return labels;
+    const victim = [...labels]
+      .reverse()
+      .find((l) => l.showWord && !keepWord(l.key) && !dropped.has(l.key));
+    if (!victim) break;
+    dropped.add(victim.key);
+    labels = placeLabels(slices, barWidthPx, measureWord, dropped);
+  }
   return labels;
 }
 
 export function dimTitle(dim: PlatformDim, clamp: PlatformClamp | null): string {
-  if (!clamp) {
-    if (dim === 'os') return 'OS · tap a slice or its label';
-    if (dim === 'device') return 'Device';
-    return 'Browser';
-  }
-  if (clamp.dim === dim) {
-    if (dim === 'os') return 'OS · still the full mix so you can change it';
-    if (dim === 'device') return 'Device · still the full mix so you can change it';
-    return 'Browser · still the full mix so you can change it';
-  }
-  if (dim === 'device') return `Device among ${clamp.value}`;
-  if (dim === 'os') return `OS among ${clamp.value}`;
-  return `Browser among ${clamp.value}`;
+  const name = dim === 'os' ? 'OS' : dim === 'device' ? 'Device' : 'Browser';
+  if (!clamp || clamp.dim === dim) return name;
+  return `${name} among ${clamp.value}`;
 }
 
 export function clampChipLabel(clamp: PlatformClamp): string {

@@ -3,8 +3,10 @@ import { tallyJoints } from '../../api/_aggregate';
 import {
   ICON_PX,
   clampedN,
+  dimTitle,
   inBarKind,
   keepWord,
+  labelsCollide,
   layoutLabels,
   mixCounts,
   muteFill,
@@ -74,6 +76,8 @@ describe('keepWord', () => {
     expect(keepWord('macOS')).toBe(true);
     expect(keepWord('Windows')).toBe(false);
     expect(keepWord('Edge')).toBe(false);
+    expect(keepWord('ChromeOS')).toBe(false);
+    expect(keepWord('Samsung Internet')).toBe(false);
   });
 });
 
@@ -128,6 +132,29 @@ describe('layoutLabels', () => {
     const linuxLab = labels.find((l) => l.key === 'Linux')!;
     expect(macLab.leftPx + macLab.widthPx + 5).toBeLessThanOrEqual(linuxLab.leftPx + 0.5);
   });
+
+  it('does not stack OS labels on a 326px Incomplete mix with ChromeOS', () => {
+    const slices = sliceGeometry(
+      { Windows: 193, iOS: 56, Android: 82, macOS: 26, Linux: 7, ChromeOS: 8 },
+      'os',
+      326,
+    );
+    const labels = layoutLabels(slices, 326, measure);
+    expect(labelsCollide(labels, 326)).toBe(false);
+    expect(labels.find((l) => l.key === 'iOS')!.showWord).toBe(true);
+    expect(labels.find((l) => l.key === 'macOS')!.showWord).toBe(true);
+    expect(labels.find((l) => l.key === 'ChromeOS')!.showWord).toBe(false);
+  });
+
+  it('does not stack browser labels on a 326px mix with Samsung Internet', () => {
+    const slices = sliceGeometry(
+      { Chrome: 156, Safari: 60, Firefox: 52, Edge: 97, Opera: 4, 'Samsung Internet': 12 },
+      'browser',
+      326,
+    );
+    const labels = layoutLabels(slices, 326, measure);
+    expect(labelsCollide(labels, 326)).toBe(false);
+  });
 });
 
 describe('sliceGeometry', () => {
@@ -163,5 +190,14 @@ describe('sliceFill', () => {
     expect(sliceFill('iOS', 'os', clamp)).toBe('#1d1d1f');
     expect(sliceFill('Windows', 'os', clamp)).toMatch(/^rgb\(/);
     expect(sliceFill('Mobile', 'device', clamp)).toBe('#2563eb');
+  });
+});
+
+describe('dimTitle', () => {
+  it('is only the dimension name, with among when another bar is the clamp', () => {
+    expect(dimTitle('os', null)).toBe('OS');
+    expect(dimTitle('os', { dim: 'os', value: 'iOS' })).toBe('OS');
+    expect(dimTitle('device', { dim: 'os', value: 'iOS' })).toBe('Device among iOS');
+    expect(dimTitle('browser', { dim: 'os', value: 'iOS' })).toBe('Browser among iOS');
   });
 });
