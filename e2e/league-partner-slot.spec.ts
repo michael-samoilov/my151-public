@@ -5,8 +5,8 @@ import { blankLeague, pairLeague } from './support/leagueSeed';
  * The ace and the partner share the card's top-left slot, split by a diagonal.
  *
  * CSS pins ace top-left and partner bottom-right, same padding, partner
- * column reversed. Sprite size is a fraction of the pane. This spec checks
- * that layout, not a solver reading.
+ * column reversed. Sprite size is 1× or 2× of the 96px source, never a
+ * pane fraction. This spec checks that layout, not a solver reading.
  */
 
 const openCard = async (page: Page) => {
@@ -125,14 +125,29 @@ test.describe('the ace and partner slot', () => {
     }
   });
 
-  test('the sprite is a fraction of the pane', async ({ page }) => {
+  test('the sprite is an integer device-pixel scale', async ({ page }) => {
     await blankLeague(page);
     await openCard(page);
     const { halves, slot } = await slotGeometry(page);
-    const expected = Math.min(0.42 * slot.width, 0.32 * slot.height);
+    const measured = await page.evaluate(() => {
+      const pane = document.querySelector<HTMLElement>('[data-ace-partner-slot]')!;
+      const art = pane.querySelector<HTMLElement>('[data-slot-art]')!;
+      return {
+        layout: art.offsetWidth,
+        attr: Number(pane.dataset.slotSprite),
+        dpr: window.devicePixelRatio,
+        style: getComputedStyle(art).width,
+      };
+    });
+    const one = Math.round(96 / measured.dpr);
+    const two = Math.round(192 / measured.dpr);
+    expect([one, two], `layout ${measured.layout} at dpr ${measured.dpr}`).toContain(measured.layout);
+    expect(measured.attr).toBe(measured.layout);
+    expect(measured.style).not.toContain('cqw');
     for (const half of halves) {
-      expect(Math.abs(half.sprite - expected), `${half.id} against ${expected.toFixed(1)}`).toBeLessThanOrEqual(2);
+      expect(half.sprite, `${half.id} painted`).toBeGreaterThan(8);
     }
+    expect(slot.width).toBeGreaterThan(8);
   });
 
   test('Hisuian Braviary and Celesteela do not overlap', async ({ page }) => {

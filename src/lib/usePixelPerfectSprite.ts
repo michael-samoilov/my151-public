@@ -1,6 +1,20 @@
 import { useSyncExternalStore } from 'react';
 import { getUnzoomedViewportWidth } from './viewport';
 
+/** Native sprite resolution (px). Pair sprites snap to 1× or 2× of this. */
+export const SPRITE_NATIVE = 96;
+
+/**
+ * CSS px that paints `scale` copies of the native sprite on this device.
+ *
+ * `image-rendering: pixelated` stays crisp when the CSS size is `n * 96 / dpr`
+ * (integer device pixels). A pane fraction such as `min(42cqw, 32cqh)` is not
+ * an integer scale and is the source of pair-sprite pixelation.
+ */
+export function pixelPerfectCssPx(scale: 1 | 2, dpr: number): number {
+  return Math.round((scale * SPRITE_NATIVE) / Math.max(dpr, 1));
+}
+
 /**
  * Shared viewport state — a single set of listeners for all hook consumers.
  * Recomputes on any *layout*-viewport change, notifying all subscribers.
@@ -126,5 +140,17 @@ export function useViewportAtLeast(minPx: number): boolean {
       return (typeof window === 'undefined' ? 1024 : getUnzoomedViewportWidth()) >= minPx;
     },
     () => true,
+  );
+}
+
+/** Device pixel ratio, on the same viewport subscription as the sprite hooks. */
+export function useDevicePixelRatio(): number {
+  return useSyncExternalStore(
+    subscribeFn,
+    () => {
+      void vpVersion;
+      return typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1;
+    },
+    () => 1,
   );
 }

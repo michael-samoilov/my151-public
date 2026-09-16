@@ -98,6 +98,7 @@ describe('export layout', () => {
     expect(aceTop).toBeGreaterThanOrEqual(0);
     expect(partnerBottom).toBeLessThanOrEqual(box.height);
     expect(partnerTop - aceBottom).toBeGreaterThan(0);
+    expect(sprite % 96).toBe(0);
     expect(sprite).toBeLessThan(box.width);
     expect(sprite).toBeLessThan(box.height);
   });

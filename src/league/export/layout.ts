@@ -153,10 +153,9 @@ export const TITLE_BLOCK_H = BAR_H + THEME_GAP + FIELD_H + HDR_GAP;
 export const FRAME = 12;
 
 /**
- * The pair's sprite edge is a fraction of the pane, same as the live CSS
- * (`min(42cqw, 32cqh)`). Two 2× blocks overlapped: Hisuian Braviary and
- * Celesteela ink crossed by 38px. The fraction keeps those squares apart.
- * Solo still draws at 2×, with the whole slot and no seam to share.
+ * Solo signature sprite is 2×. A pair uses `pairSprite`, which is 1× when
+ * two 2× squares do not fit (Hisuian Braviary and Celesteela). Never a
+ * pane fraction.
  */
 export const SIG_SPRITE = 192;
 

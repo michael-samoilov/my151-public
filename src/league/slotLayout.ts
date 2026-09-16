@@ -1,31 +1,77 @@
 /**
  * Ace and partner sit in opposite corners. CSS places the live card.
- * This file keeps the seam and the sprite fraction the export shares.
+ * This file keeps the seam and the pair sprite size the export shares.
  */
+
+import { pixelPerfectCssPx, SPRITE_NATIVE } from '@/lib/usePixelPerfectSprite';
 
 /** The seam's slope: 30°, the empty ball's own band. */
 const SEAM_TAN = Math.tan(Math.PI / 6);
 
-/**
- * Sprite edge as a share of the pane. CSS: `min(42cqw, 32cqh)`.
- *
- * Width share alone grows past the height on a squashed card (layout width
- * rises, height stays 12.75rem) and the two squares meet. Cap by height so
- * Braviary-H and Celesteela stay apart.
- */
-export const SPRITE_OF_PANE_W = 0.42;
-export const SPRITE_OF_PANE_H = 0.32;
-export const SLOT_SPRITE_CSS = 'min(42cqw, 32cqh)';
+export { SPRITE_NATIVE };
+
 /** Same padding on both clusters, in rem. Clears the rounded dash. */
 export const SLOT_PAD_REM = 0.5;
+
+/**
+ * Heading box used to test whether two squares fit. Matches HEAD_CLASS
+ * (`text-[0.53125rem] leading-[1.4]`, two lines) in CardGrid.
+ */
+export const SLOT_HEAD_REM = 0.53125;
+export const SLOT_HEAD_LEADING = 1.4;
+export const SLOT_HEAD_LINES = 2;
 
 /** Ball behind a chosen sprite, and the empty ring, as shares of the square. */
 export const BALL_OF_SPRITE = 1 / 1.2;
 export const RING_OF_SPRITE = 0.8 / 1.2;
 
-/** Sprite edge, in the pane's own pixels. */
-export function pairSprite(w: number, h: number): number {
-  return Math.min(SPRITE_OF_PANE_W * w, SPRITE_OF_PANE_H * h);
+export function slotHeadPx(remPx: number): number {
+  return SLOT_HEAD_REM * SLOT_HEAD_LEADING * SLOT_HEAD_LINES * remPx;
+}
+
+/**
+ * True when two opposite-corner squares of `sprite` CSS px do not intersect.
+ * Headings sit in the flow above/below each square. Names are not part of this
+ * test. 1× is always used when 2× fails; a 1× that still intersects is still 1×.
+ */
+export function pairSquaresFit(
+  w: number,
+  h: number,
+  sprite: number,
+  remPx: number = 16,
+): boolean {
+  const pad = SLOT_PAD_REM * remPx;
+  const headH = slotHeadPx(remPx);
+  const ace = { l: pad, t: pad + headH, r: pad + sprite, b: pad + headH + sprite };
+  const partner = {
+    l: w - pad - sprite,
+    t: h - pad - headH - sprite,
+    r: w - pad,
+    b: h - pad - headH,
+  };
+  const overlapX = Math.min(ace.r, partner.r) - Math.max(ace.l, partner.l);
+  const overlapY = Math.min(ace.b, partner.b) - Math.max(ace.t, partner.t);
+  return overlapX <= 0 || overlapY <= 0;
+}
+
+/** 2× when both squares fit the pane, else 1×. Never a fraction. */
+export function pairSpriteScale(
+  w: number,
+  h: number,
+  dpr: number = 1,
+  remPx: number = 16,
+): 1 | 2 {
+  return pairSquaresFit(w, h, pixelPerfectCssPx(2, dpr), remPx) ? 2 : 1;
+}
+
+/** Sprite edge in CSS px: `n * 96 / dpr`, rounded, n is 1 or 2. */
+export function pairSprite(
+  w: number,
+  h: number,
+  dpr: number = 1,
+  remPx: number = 16,
+): number {
+  return pixelPerfectCssPx(pairSpriteScale(w, h, dpr, remPx), dpr);
 }
 
 /**

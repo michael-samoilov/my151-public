@@ -20,6 +20,8 @@ import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { HeldItems } from '@/components/shared/dragHold';
 import { cn } from '@/lib/utils';
+import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
+import { useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
 import { useGridDragSensors } from '@/lib/dragSensors';
 import { warmImages } from '@/lib/warmImages';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
@@ -45,7 +47,7 @@ import {
   BALL_OF_SPRITE,
   RING_OF_SPRITE,
   SLOT_PAD_REM,
-  SLOT_SPRITE_CSS,
+  pairSprite,
   seamEnds,
 } from '../slotLayout';
 import { useSlotLab } from '../slotLab';
@@ -788,7 +790,6 @@ function SlotHalf({
   );
   const halfRef = useRef<HTMLButtonElement>(null);
   const lab = useSlotLab((st) => st.enabled);
-  const labSprite = useSlotLab((st) => (st.enabled ? st.sprite : 0));
   const slot = useSlotLab((st) => st.slot);
   const shift = useSlotLab((st) => st[half]);
   const nudge = useSlotLab((st) => st.nudge);
@@ -896,7 +897,6 @@ function SlotHalf({
       )}
       style={{
         padding: `${SLOT_PAD_REM}rem`,
-        ['--slot-sprite' as string]: labSprite > 0 ? `${labSprite}px` : SLOT_SPRITE_CSS,
         transform: offset.x || offset.y ? `translate(${offset.x}px, ${offset.y}px)` : undefined,
         outlineColor: lab ? 'rgba(37,99,235,0.5)' : undefined,
       }}
@@ -1037,6 +1037,11 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   const partner = card.partnerId != null ? getPokemonById(card.partnerId) : undefined;
   const slotRef = useRef<HTMLDivElement>(null);
   const box = useSlotBox(slotRef);
+  const dpr = useDevicePixelRatio();
+  const labSprite = useSlotLab((st) => (st.enabled ? st.sprite : 0));
+  const spritePx = labSprite > 0
+    ? labSprite
+    : pairSprite(box[0], box[1], dpr, getAppliedRootFontSizePx());
   const seam = seamEnds(box[0], box[1]);
   const pos = {
     ...slotX(1, 3),
@@ -1047,10 +1052,11 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
     <div
       ref={slotRef}
       data-ace-partner-slot
-      className="absolute z-[5] overflow-hidden rounded-lg [container-type:size]"
+      data-slot-sprite={spritePx}
+      className="absolute z-[5] overflow-hidden rounded-lg"
       style={{
         ...pos,
-        containerType: 'size',
+        ['--slot-sprite' as string]: `${spritePx}px`,
         background: ace || partner ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
