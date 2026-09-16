@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyMemberPresence } from './LeagueVisitBoard';
+import { applyMemberPresence } from './memberPresence';
 
 function tile(id: number) {
   return { dataset: { memberId: String(id) }, style: { opacity: '' } };
