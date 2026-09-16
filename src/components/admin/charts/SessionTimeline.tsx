@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { startTransition, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import {
   fmtDay,
@@ -63,6 +63,10 @@ export function SessionTimeline({
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [W, setW] = useState(320);
+  // Playhead follows the finger immediately. Snapshot `index` is a React
+  // transition, so a heavy dex/league child cannot stall the thumb.
+  const [playhead, setPlayhead] = useState(index);
+
   useLayoutEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
@@ -112,7 +116,8 @@ export function SessionTimeline({
     : [];
   const netPath = points.map((p, i) => `${i ? 'L' : 'M'}${x(p.t).toFixed(1)},${yPix(p.net).toFixed(1)}`).join(' ');
 
-  const cur = points[Math.min(index, points.length - 1)];
+  const thumb = Math.min(playhead, points.length - 1);
+  const cur = points[thumb];
   const cx = x(cur.t);
   const meta = formatSessionMeta(cur, tz);
   const marks: { t: number; label: string; tone?: 'export' | 'muted'; bx: number }[] = [];
@@ -244,8 +249,12 @@ export function SessionTimeline({
               min={0}
               max={points.length - 1}
               step={1}
-              value={Math.min(index, points.length - 1)}
-              onChange={(e) => onIndex(Number(e.target.value))}
+              value={thumb}
+              onChange={(e) => {
+                const next = Number(e.target.value);
+                setPlayhead(next);
+                startTransition(() => onIndex(next));
+              }}
               className="admin-scrub relative w-full touch-none"
               aria-label="Scrub sessions"
               aria-valuetext={`${fmtDay(cur.t, tz)}: ${cur.count} ${countUnit}`}

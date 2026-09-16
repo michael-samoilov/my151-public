@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import {
   computeOutlineLayout,
   OUTLINE_GAP,
@@ -8,11 +8,28 @@ import {
 import { SectionOverlays, StaticViewTile } from '@/components/view/ViewPage';
 import { BUILD_GROUP_IDS } from '@/data/slot-template';
 import { getPokemonById } from '@/hooks/usePokemonData';
+import type { Pokemon } from '@/types/pokemon';
 
 // The admin snapshot packs 15 per row, not the View page's 10, so a full 151
 // dex reads in ~11 rows and fits under the scrubber without a scroll. This is
 // local to the admin view — the shared COLS the real builder uses is unchanged.
 const GRID_COLS = 15;
+
+const DexTile = memo(function DexTile({
+  pokemon,
+  tileSize,
+  present,
+}: {
+  pokemon: Pokemon;
+  tileSize: number;
+  present: boolean;
+}) {
+  return (
+    <div style={{ opacity: present ? 1 : 0.14 }}>
+      <StaticViewTile pokemon={pokemon} tileSize={tileSize} />
+    </div>
+  );
+});
 
 /**
  * The dex at one moment, drawn with the real View-page section outlines. The
@@ -21,7 +38,7 @@ const GRID_COLS = 15;
  * ones fade. The whole grid scales to the container width, so it never exceeds
  * the viewport — no horizontal scroll, no canvas-style drag.
  */
-export function OutlinedDex({
+export const OutlinedDex = memo(function OutlinedDex({
   sections,
   presentIds,
 }: {
@@ -46,7 +63,7 @@ export function OutlinedDex({
 
   // Ordered list of every sectioned pokemon (build-group order), and the layout
   // it produces. Memoized on the section structure, not the scrubbed session.
-  const { sorted, layout } = useMemo(() => {
+  const { sorted, layout, allStartRows } = useMemo(() => {
     const orderedIds: number[] = [];
     const seen = new Set<number>();
     const groupIds = [...BUILD_GROUP_IDS, ...Object.keys(sections).filter((k) => !BUILD_GROUP_IDS.includes(k))];
@@ -63,7 +80,12 @@ export function OutlinedDex({
     // makes the layout treat a hanging final row as a full left-aligned row, so
     // its section outline is drawn from the left while the tiles render centered.
     const totalSlots = Math.max(1, sortedP.length);
-    return { sorted: sortedP, layout: computeOutlineLayout(sortedP, sections, totalSlots, GRID_COLS) };
+    const nextLayout = computeOutlineLayout(sortedP, sections, totalSlots, GRID_COLS);
+    return {
+      sorted: sortedP,
+      layout: nextLayout,
+      allStartRows: new Set<number>([...nextLayout.gridStartRows, ...nextLayout.lastRowStartRows]),
+    };
   }, [sections]);
 
   if (sorted.length === 0) {
@@ -93,16 +115,9 @@ export function OutlinedDex({
   // must be 0 so the last row aligns with the outline's top edge.
   const lastRowGap = totalGridRows > 0 ? gap : 0;
   const lastRowHeight = tileSize + (lastRowStartRows.size > 0 ? headroom : 0);
-  const allStartRows = new Set<number>([...gridStartRows, ...lastRowStartRows]);
-
-  const tile = (p: NonNullable<ReturnType<typeof getPokemonById>>) => (
-    <div key={p.id} style={{ opacity: present.has(p.id) ? 1 : 0.14 }}>
-      <StaticViewTile pokemon={p} tileSize={tileSize} />
-    </div>
-  );
 
   return (
-    <div ref={wrapRef} className="w-full">
+    <div ref={wrapRef} className="w-full" data-testid="admin-dex-snapshot" data-count={presentIds.length}>
       <div className="relative mx-auto" style={{ width: gridWidth, padding: pad }}>
         <div className="relative">
           <div
@@ -114,11 +129,15 @@ export function OutlinedDex({
               ...(gridRowTemplate ? { gridTemplateRows: gridRowTemplate } : { gridAutoRows: `${tileSize}px` }),
             }}
           >
-            {gridPokemon.map(tile)}
+            {gridPokemon.map((p) => (
+              <DexTile key={p.id} pokemon={p} tileSize={tileSize} present={present.has(p.id)} />
+            ))}
           </div>
           {lastRowPokemon.length > 0 && (
             <div className="flex items-end justify-center" style={{ height: lastRowHeight, columnGap: gap, marginTop: lastRowGap }}>
-              {lastRowPokemon.map(tile)}
+              {lastRowPokemon.map((p) => (
+                <DexTile key={p.id} pokemon={p} tileSize={tileSize} present={present.has(p.id)} />
+              ))}
             </div>
           )}
           {allRuns.length > 0 && (
@@ -138,4 +157,4 @@ export function OutlinedDex({
       </div>
     </div>
   );
-}
+});

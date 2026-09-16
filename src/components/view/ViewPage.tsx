@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useDragSensors } from '@/lib/dragSensors';
 import { createPortal } from 'react-dom';
 import { useToolbarSlot } from '@/components/layout/toolbarSlot';
@@ -315,7 +315,7 @@ export function StaticViewTile({ pokemon, tileSize }: { pokemon: Pokemon; tileSi
 
 // ---------- Section outlines (geometry in src/lib/sectionOutlines.ts) ----------
 
-export function SectionOverlays({
+export const SectionOverlays = memo(function SectionOverlays({
   runs,
   cols,
   tileSize,
@@ -496,7 +496,7 @@ export function SectionOverlays({
         })}
     </div>
   );
-}
+});
 
 // ---------- Main page ----------
 
