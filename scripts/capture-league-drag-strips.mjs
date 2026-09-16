@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Stitch live league-home drag previews into one filmstrip per layout.
+ * Write one ~390-wide PNG per live league-home drag preview state.
  *
  *   BASE_URL=http://127.0.0.1:4183 node scripts/capture-league-drag-strips.mjs
  */
-import { existsSync, mkdirSync, readdirSync, copyFileSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, copyFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from '@playwright/test';
 
@@ -13,6 +13,7 @@ const STORE_DIR =
   process.env.STORE_DIR ||
   '/cursor/stores/bc-90921133-efcd-47c7-a250-292e78a355ed/media/pr-32-drag';
 const ARTIFACT_DIR = process.env.ARTIFACT_DIR || '/opt/cursor/artifacts';
+const FRAME_W = 390;
 
 const CHROMIUM_LAYOUTS = [
   ['chrome-linux', 'chrome'],
@@ -60,6 +61,13 @@ function slotLabel(i) {
   if (i < 12) return `Elite Four ${i - 7}`;
   if (i === 12) return 'Champion';
   return 'Endgame Boss';
+}
+
+function slotSlug(i) {
+  if (i < 8) return `gym${i + 1}`;
+  if (i < 12) return `e4_${i - 7}`;
+  if (i === 12) return 'champion';
+  return 'endgame';
 }
 
 function leagueSeed(emptySlots) {
@@ -135,84 +143,58 @@ function writeUnique(storeName, srcPath) {
   return artifactPath;
 }
 
-async function stitch(browser, frames, title, tmpPath) {
-  const page = await browser.newPage({ viewport: { width: 420, height: 800 } });
-  const figs = frames.map((f, i) => {
-    const b64 = Buffer.from(f.png).toString('base64');
-    const w = f.w;
-    return `<figure style="margin:0;width:${w}px;background:#111">
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#1c1917">
-        <span style="flex:0 0 auto;font:700 13px/1.2 ui-sans-serif,system-ui,sans-serif;color:#fff;background:#991b1b;padding:4px 8px;border-radius:4px">${i + 1}/${frames.length}</span>
-        <span style="font:700 13px/1.25 ui-sans-serif,system-ui,sans-serif;color:#fff">${f.caption}</span>
-      </div>
-      <img src="data:image/png;base64,${b64}" width="${w}" height="${f.h}" style="display:block">
-    </figure>`;
-  }).join('');
+async function paintFrame(browser, png, caption, tmpPath) {
+  const page = await browser.newPage({ viewport: { width: FRAME_W, height: 200 } });
+  const b64 = Buffer.from(png).toString('base64');
   const html = `<!doctype html><html><head><meta charset="utf-8"></head>
-    <body style="margin:0;background:#111;width:max-content">
-      <div id="head" style="font:700 16px/1.3 ui-sans-serif,system-ui,sans-serif;color:#fff;padding:12px 12px 10px;background:#991b1b">
-        ${title}
-        <div style="font:600 13px/1.35 ui-sans-serif,system-ui,sans-serif;margin-top:6px;color:#fecaca">
-          Red outline = pickup slot (stars stay here). Blue = row under the pointer. Only those two faces should change.
-        </div>
+    <body style="margin:0;width:${FRAME_W}px;background:#111">
+      <div style="font:700 13px/1.3 ui-sans-serif,system-ui,sans-serif;color:#fff;background:#991b1b;padding:8px 10px">
+        ${caption}
       </div>
-      <div id="strip" style="display:flex;flex-direction:column;gap:10px;padding:10px 10px 14px">${figs}</div>
+      <img src="data:image/png;base64,${b64}" width="${FRAME_W}" style="display:block;width:${FRAME_W}px;height:auto">
     </body></html>`;
   await page.setContent(html, { waitUntil: 'load' });
-  const size = await page.evaluate(() => {
-    const w = Math.ceil(document.body.scrollWidth);
-    const h = Math.ceil(document.body.scrollHeight);
-    return { w, h };
-  });
-  await page.setViewportSize({
-    width: Math.min(Math.max(size.w, 360), 16000),
-    height: Math.min(Math.max(size.h, 200), 16000),
-  });
-  await page.screenshot({ path: tmpPath, fullPage: true, type: 'png' });
+  const h = await page.evaluate(() => Math.ceil(document.body.scrollHeight));
+  if (h > 1600) throw new Error(`frame too tall: ${h}px`);
+  await page.setViewportSize({ width: FRAME_W, height: Math.max(h, 200) });
+  await page.screenshot({ path: tmpPath, fullPage: false, type: 'png' });
   await page.close();
 }
 
 const STRIPS = [
   {
     id: 'all_occupied',
-    title: 'All occupied · pickup Gym 1 · drag down every row',
+    title: 'All occupied · pickup Gym 1',
     empty: [],
     from: 0,
     path: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-    viewports: [
-      { name: '390', width: 390, height: 900 },
-      { name: '1280', width: 1280, height: 900 },
-    ],
   },
   {
     id: 'hole_middle',
-    title: 'One hole (Gym 7 empty) · pickup Gym 5 · across the hole and after',
+    title: 'Hole at Gym 7 · pickup Gym 5',
     empty: [6],
     from: 4,
     path: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-    viewports: [{ name: '390', width: 390, height: 900 }],
   },
   {
     id: 'occ_empty_occ',
-    title: 'Occupied / empty / occupied · pickup Gym 1 · onto the hole and past it',
+    title: 'Occupied / empty / occupied · pickup Gym 1',
     empty: [1],
     from: 0,
     path: [0, 1, 2, 3, 4, 5, 6],
-    viewports: [{ name: '390', width: 390, height: 900 }],
   },
   {
     id: 'wrap_last',
-    title: 'Wrap case · pickup Gym 1 · every row down to the last occupied',
+    title: 'Wrap case · pickup Gym 1 onto last occupied',
     empty: [],
     from: 0,
     path: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
-    viewports: [{ name: '390', width: 390, height: 900 }],
   },
 ];
 
-async function captureStrip(browser, spec, vp) {
+async function captureFrames(browser, spec) {
   const context = await browser.newContext({
-    viewport: { width: vp.width, height: vp.height },
+    viewport: { width: FRAME_W, height: 844 },
     deviceScaleFactor: 1,
   });
   const page = await context.newPage();
@@ -222,6 +204,26 @@ async function captureStrip(browser, spec, vp) {
   await page.goto(`${BASE_URL}/custom-gym-leader`, { waitUntil: 'load', timeout: 30000 });
   await page.waitForSelector('[data-testid="league-slot-0"]');
   await page.waitForTimeout(500);
+  await page.evaluate(() => {
+    const freezeEl = (el) => {
+      el.scrollTop = 0;
+      el.scrollLeft = 0;
+      const stop = () => {
+        el.scrollTop = 0;
+        el.scrollLeft = 0;
+      };
+      el.addEventListener('scroll', stop, true);
+    };
+    freezeEl(document.documentElement);
+    freezeEl(document.body);
+    for (const el of document.querySelectorAll('[data-lg-viewport]')) {
+      el.style.overflow = 'hidden';
+      freezeEl(el);
+    }
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    window.scrollTo(0, 0);
+  });
 
   const slotBoxes = await boxes(page);
   const fromBox = slotBoxes[spec.from];
@@ -234,7 +236,8 @@ async function captureStrip(browser, spec, vp) {
   await page.waitForTimeout(350);
 
   const frames = [];
-  for (const over of spec.path) {
+  for (let i = 0; i < spec.path.length; i++) {
+    const over = spec.path[i];
     const overBox = slotBoxes[over];
     await page.mouse.move(
       overBox.x + overBox.width / 2,
@@ -243,26 +246,25 @@ async function captureStrip(browser, spec, vp) {
     );
     await page.waitForTimeout(280);
     await mark(page, spec.from, over);
-    const png = await page.locator('[data-lg-league-root]').screenshot({ type: 'png' });
-    const cap = over === spec.from
+    const png = await page.screenshot({ type: 'png', fullPage: false });
+    const step = `${i + 1}/${spec.path.length}`;
+    const where = over === spec.from
       ? `${slotLabel(over)} pickup`
       : `pointer on ${slotLabel(over)}`;
-    frames.push({ png, caption: cap, w: 0, h: 0 });
+    const slug = over === spec.from
+      ? `${slotSlug(over)}_pickup`
+      : slotSlug(over);
+    frames.push({
+      png,
+      nn: String(i + 1).padStart(2, '0'),
+      slug,
+      alt: `${spec.title}. ${step}. ${where}. Red pickup, blue pointer.`,
+      caption: `${spec.title} · ${step} · ${where} · red pickup · blue pointer`,
+    });
   }
   await page.mouse.up();
-
-  const sized = await Promise.all(frames.map(async (f) => {
-    const dim = await page.evaluate(async (b64) => {
-      const img = new Image();
-      img.src = `data:image/png;base64,${b64}`;
-      await img.decode();
-      return { w: img.naturalWidth, h: img.naturalHeight };
-    }, Buffer.from(f.png).toString('base64'));
-    return { ...f, w: dim.w, h: dim.h };
-  }));
-
   await context.close();
-  return sized;
+  return frames;
 }
 
 async function main() {
@@ -277,19 +279,22 @@ async function main() {
   const written = [];
   try {
     for (const spec of STRIPS) {
-      for (const vp of spec.viewports) {
-        console.log(`strip ${spec.id} ${vp.name}`);
-        const frames = await captureStrip(browser, spec, vp);
-        const tmp = join(STORE_DIR, `_pr32_film_${spec.id}_${vp.name}.png`);
-        await stitch(browser, frames, spec.title, tmp);
-        const name = `pr32_film_${spec.id}_${vp.name}.png`;
-        written.push(writeUnique(name, tmp));
+      console.log(`layout ${spec.id}`);
+      const frames = await captureFrames(browser, spec);
+      for (const f of frames) {
+        const name = `pr32_row_${spec.id}_${f.nn}_${f.slug}.png`;
+        const tmp = join(STORE_DIR, `_${name}`);
+        await paintFrame(browser, f.png, f.caption, tmp);
+        const path = writeUnique(name, tmp);
+        written.push({ path, alt: f.alt, layout: spec.id, nn: f.nn });
       }
     }
   } finally {
     await browser.close();
   }
-  for (const p of written) console.log(`wrote ${p}`);
+  const manifest = join(STORE_DIR, 'pr32_frame_manifest.json');
+  writeFileSync(manifest, `${JSON.stringify(written, null, 2)}\n`);
+  for (const w of written) console.log(`IMG ${w.alt} :: ${w.path}`);
 }
 
 await main();
