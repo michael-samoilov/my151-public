@@ -207,6 +207,10 @@ describe('aggregate', () => {
     expect(agg.users).toBe(2);
     expect(agg.devices).toEqual({ Desktop: 1, Mobile: 1 });
     expect(agg.os).toEqual({ macOS: 1, iOS: 1 });
+    expect(agg.joints).toEqual([
+      { device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1 },
+      { device: 'Mobile', os: 'iOS', browser: 'Safari', n: 1 },
+    ]);
     expect(agg.activity).toHaveLength(3);
     expect(agg.heatmap).toHaveLength(7);
     expect(agg.hours).toHaveLength(24);
@@ -220,6 +224,11 @@ describe('tallyCohort', () => {
     expect(cohort.devices).toEqual({ Desktop: 1, Mobile: 1 });
     expect(cohort.countries).toEqual({ US: 1, FR: 1 });
     expect(cohort.browsers).toEqual({ Chrome: 2 });
+    expect(cohort.os).toEqual({ macOS: 2 });
+    expect(cohort.joints).toEqual([
+      { device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 1 },
+      { device: 'Mobile', os: 'macOS', browser: 'Chrome', n: 1 },
+    ]);
   });
 
   it('reports zero users for an empty slice', () => {
