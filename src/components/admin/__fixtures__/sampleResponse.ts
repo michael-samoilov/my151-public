@@ -82,6 +82,40 @@ const ACTIVITY = activitySeries();
 const DEV_LABELS = ['Desktop', 'Mobile', 'Tablet'];
 const BR_LABELS = ['Chrome', 'Safari', 'Firefox', 'Edge', 'Other'];
 
+const DEX_JOINTS = [
+  { device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 150 },
+  { device: 'Desktop', os: 'Windows', browser: 'Edge', n: 31 },
+  { device: 'Desktop', os: 'macOS', browser: 'Chrome', n: 40 },
+  { device: 'Desktop', os: 'macOS', browser: 'Safari', n: 6 },
+  { device: 'Desktop', os: 'Linux', browser: 'Firefox', n: 12 },
+  { device: 'Mobile', os: 'iOS', browser: 'Safari', n: 70 },
+  { device: 'Mobile', os: 'iOS', browser: 'Chrome', n: 8 },
+  { device: 'Mobile', os: 'Android', browser: 'Chrome', n: 50 },
+  { device: 'Tablet', os: 'iOS', browser: 'Safari', n: 9 },
+  { device: 'Tablet', os: 'Android', browser: 'Chrome', n: 12 },
+];
+const LEAGUE_JOINTS = [
+  { device: 'Desktop', os: 'Windows', browser: 'Chrome', n: 3 },
+  { device: 'Mobile', os: 'iOS', browser: 'Safari', n: 1 },
+  { device: 'Desktop', os: 'macOS', browser: 'Edge', n: 1 },
+];
+
+function scaleJoints(src: typeof DEX_JOINTS, base: number): typeof DEX_JOINTS {
+  const total = src.reduce((s, j) => s + j.n, 0) || 1;
+  return src
+    .map((j) => ({ ...j, n: Math.round((j.n * base) / total) }))
+    .filter((j) => j.n > 0);
+}
+
+function mixFromJoints(joints: typeof DEX_JOINTS, key: 'device' | 'os' | 'browser'): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const j of joints) {
+    const k = j[key];
+    out[k] = (out[k] ?? 0) + j.n;
+  }
+  return out;
+}
+
 // Per-cohort share vectors from the mockup's Who card.
 const COHORTS = {
   dex: { base: 388, dev: [63, 31, 6], geo: [44, 33, 15, 8], br: [52, 27, 9, 8, 4] },
@@ -127,6 +161,7 @@ function aggregate(kind: 'all' | 'dex' | 'league'): Aggregates {
         ? { Windows: 3, iOS: 1, macOS: 1 }
         : { Windows: 190, iOS: 78, Android: 62, macOS: 46, Linux: 12 },
     browsers: tally(BR_LABELS, c.br, c.base),
+    joints: kind === 'league' ? LEAGUE_JOINTS : scaleJoints(DEX_JOINTS, c.base),
     hours: HOURS,
     heatmap: HEATMAP,
   };
@@ -156,12 +191,17 @@ const cohortCountries = (base: number): Record<string, number> =>
   tally(['US', 'GB', 'DE', 'IT', 'CA', 'FR', 'SE', 'JP', 'AU', 'Other'], [33, 11, 9, 7, 6, 6, 5, 4, 4, 15], base);
 
 // Dex cohorts: built (all), incomplete, completed. Completers skew desktop.
-const cohort = (base: number, dev: number[], br: number[]) => ({
-  users: base,
-  devices: tally(DEV_LABELS, dev, base),
-  countries: cohortCountries(base),
-  browsers: tally(BR_LABELS, br, base),
-});
+const cohort = (base: number, dev: number[], br: number[]) => {
+  const joints = scaleJoints(DEX_JOINTS, base);
+  return {
+    users: base,
+    devices: tally(DEV_LABELS, dev, base),
+    os: mixFromJoints(joints, 'os'),
+    countries: cohortCountries(base),
+    browsers: tally(BR_LABELS, br, base),
+    joints,
+  };
+};
 const cohorts = {
   built: cohort(388, [63, 31, 6], [52, 27, 9, 8, 4]),
   incomplete: cohort(323, [55, 39, 6], [50, 29, 9, 8, 4]),
