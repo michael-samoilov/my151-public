@@ -1,5 +1,6 @@
 import { Panel } from '@/components/admin/ui';
 import { useECharts, cssVar, topTooltip, type EChartsOption } from './useECharts';
+import { tipDataIndex } from './scrubPlot';
 import {
   extendThroughToday,
   lastPointIsToday,
@@ -92,6 +93,10 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
   const monthDividers = monthDividerIndices(days);
   const monthTicks = monthLabelTicks(days);
   const counts = windowCounts(series);
+  const scrubLabel = (i: number) => {
+    const w = weekly[i];
+    return `${labels[i]} · <b>${daily[i]}</b> daily${w != null ? ` · <b>${w}</b> weekly` : ''}`;
+  };
 
   const ref = useECharts(
     (el): EChartsOption => {
@@ -110,12 +115,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
           ...topTooltip(el),
           trigger: 'axis',
           axisPointer: { type: 'none' },
-          formatter: (params: unknown) => {
-            const arr = params as { dataIndex: number }[];
-            const i = arr[0]?.dataIndex ?? 0;
-            const w = weekly[i];
-            return `${labels[i]} · <b>${daily[i]}</b> daily${w != null ? ` · <b>${w}</b> weekly` : ''}`;
-          },
+          formatter: (params: unknown) => scrubLabel(tipDataIndex(params)),
         },
         xAxis: {
           type: 'category',
@@ -262,7 +262,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
       };
     },
     [series, nowMs],
-    { scrub: true, overlayPointer: true },
+    { scrub: true, overlayPointer: true, overlayLabel: scrubLabel },
   );
 
   if (series.length < 2) {

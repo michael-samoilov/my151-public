@@ -11,6 +11,7 @@ import {
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsCoreOption } from 'echarts/core';
+import { categoryIndexAtX, clampToRect, lineLeftInPlot, type PlotRect } from './scrubPlot';
 
 // Tree-shaken registration: only the chart types and components the admin
 // dashboard uses, so the admin bundle carries a fraction of full echarts. The
@@ -67,7 +68,7 @@ export function topTooltip(el: HTMLElement | null) {
       const x = Math.max(0, Math.min(point[0] - w / 2, size.viewSize[0] - w));
       return [x, 0];
     },
-    extraCssText: 'border-radius:8px;box-shadow:0 4px 14px rgba(9,9,15,0.10);white-space:nowrap;pointer-events:none;',
+    extraCssText: 'border-radius:8px;box-shadow:0 4px 14px rgba(9,9,15,0.10);white-space:nowrap;pointer-events:none;z-index:2;',
   };
 }
 
@@ -96,6 +97,8 @@ export function useECharts(
   opts: {
     scrub?: boolean;
     overlayPointer?: boolean;
+    /** HTML for the date+count readout that tracks a category-axis scrub. */
+    overlayLabel?: (dataIndex: number) => string;
     afterRender?: (chart: echarts.ECharts, el: HTMLDivElement) => void;
   } = {},
 ): (el: HTMLDivElement | null) => void {
@@ -108,9 +111,11 @@ export function useECharts(
   // Keep the latest builder without re-subscribing anything each render.
   const buildRef = useRef(build);
   const afterRenderRef = useRef(opts.afterRender);
+  const overlayLabelRef = useRef(opts.overlayLabel);
   useEffect(() => {
     buildRef.current = build;
     afterRenderRef.current = opts.afterRender;
+    overlayLabelRef.current = opts.overlayLabel;
   });
 
   // A callback ref, so the instance follows the DOM node. A conditional render
@@ -154,50 +159,124 @@ export function useECharts(
 
       if (getComputedStyle(el).position === 'static') el.style.position = 'relative';
       const line = document.createElement('div');
+      line.setAttribute('data-scrub-line', '1');
       line.style.cssText =
         'position:absolute;width:1px;top:0;bottom:0;pointer-events:none;display:none;z-index:1;';
       line.style.background = cssVar(el, '--color-muted-foreground', '#737373');
       line.style.opacity = '0.5';
       el.appendChild(line);
+      const readout = document.createElement('div');
+      readout.setAttribute('data-scrub-readout', '1');
+      readout.style.cssText = [
+        'position:absolute',
+        'top:0',
+        'left:0',
+        'display:none',
+        'z-index:2',
+        'pointer-events:none',
+        'white-space:nowrap',
+        'box-sizing:border-box',
+        'max-width:100%',
+        'border-radius:8px',
+        'box-shadow:0 4px 14px rgba(9,9,15,0.10)',
+        'padding:6px 8px',
+        'font-size:11px',
+        'line-height:1.2',
+        `background:${cssVar(el, '--color-card', '#ffffff')}`,
+        `border:1px solid ${cssVar(el, '--color-border', '#e5e5e5')}`,
+        `color:${cssVar(el, '--color-foreground', '#0a0a0a')}`,
+      ].join(';');
+      el.appendChild(readout);
 
-      // The plot rect, so the line spans the same band as echarts' own axis
-      // pointer. Internal API, so guard it and fall back to the full height.
-      const gridRect = (): { y: number; height: number } | null => {
+      // The plot rect, so the line spans the series band only, not the gutters.
+      const gridRect = (): PlotRect | null => {
         try {
           // getModel is internal, so reach it through an untyped view.
           const model = (chart as unknown as { getModel(): { getComponent(t: string, i: number): unknown } }).getModel();
           const cs = (
             model.getComponent('grid', 0) as
-              | { coordinateSystem?: { getRect?: () => { y: number; height: number } } }
+              | { coordinateSystem?: { getRect?: () => PlotRect } }
               | undefined
           )?.coordinateSystem;
-          return cs?.getRect?.() ?? null;
+          const rect = cs?.getRect?.();
+          if (!rect || rect.width <= 0 || rect.height <= 0) return null;
+          return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
         } catch {
           return null;
         }
+      };
+
+      const lineSeriesIndexAt = (dataIndex: number): number => {
+        const opt = chart.getOption();
+        const series = Array.isArray(opt.series) ? opt.series : [];
+        let firstLine = -1;
+        for (let i = 0; i < series.length; i++) {
+          const s = series[i];
+          if (s == null || typeof s !== 'object' || !('type' in s) || s.type !== 'line') continue;
+          if (firstLine < 0) firstLine = i;
+          const data = 'data' in s && Array.isArray(s.data) ? s.data : [];
+          if (data[dataIndex] != null) return i;
+        }
+        return firstLine < 0 ? 0 : firstLine;
+      };
+
+      const categoryCount = (): number => {
+        const opt = chart.getOption();
+        const raw = opt.xAxis;
+        const xAxis = Array.isArray(raw) ? raw[0] : raw;
+        if (!xAxis || typeof xAxis !== 'object' || !('data' in xAxis)) return 0;
+        return Array.isArray(xAxis.data) ? xAxis.data.length : 0;
+      };
+
+      const showTipAt = (plot: PlotRect, x: number, y: number) => {
+        const n = categoryCount();
+        if (n > 0) {
+          // Pixel showTip misses line series with `symbol: 'none'` and hits
+          // silent custom series instead, so name the category explicitly.
+          const dataIndex = categoryIndexAtX(x, plot, n - 1);
+          chart.dispatchAction({
+            type: 'showTip',
+            seriesIndex: lineSeriesIndexAt(dataIndex),
+            dataIndex,
+          });
+          return;
+        }
+        chart.dispatchAction({ type: 'showTip', x, y });
+      };
+
+      const placeReadout = (plot: PlotRect, pinnedX: number) => {
+        const html = overlayLabelRef.current;
+        const n = categoryCount();
+        if (!html || n <= 0) {
+          readout.style.display = 'none';
+          return;
+        }
+        readout.innerHTML = html(categoryIndexAtX(pinnedX, plot, n - 1));
+        readout.style.display = 'block';
+        const w = readout.offsetWidth;
+        const maxX = Math.max(el.clientWidth - w, 0);
+        readout.style.left = `${Math.max(0, Math.min(pinnedX - w / 2, maxX))}px`;
       };
 
       const showAt = (clientX: number, clientY: number, clamp: boolean) => {
         const r = el.getBoundingClientRect();
         const rawX = clientX - r.left;
         const rawY = clientY - r.top;
-        let x = rawX;
-        let y = rawY;
-        if (clamp) {
-          x = Math.max(1, Math.min(rawX, r.width - 1));
-          y = Math.max(1, Math.min(rawY, r.height - 1));
-        }
-        chart.dispatchAction({ type: 'showTip', x, y });
-        const off =
-          clamp && (rawX < 1 || rawX > r.width - 1 || rawY < 1 || rawY > r.height - 1);
-        if ((overlayPointer && scrubbing) || off) {
-          const rect = gridRect();
-          line.style.left = `${x}px`;
-          if (rect) {
-            line.style.top = `${rect.y}px`;
-            line.style.height = `${rect.height}px`;
-            line.style.bottom = 'auto';
-          }
+        const plot =
+          gridRect() ?? {
+            x: 1,
+            y: 1,
+            width: Math.max(r.width - 2, 1),
+            height: Math.max(r.height - 2, 1),
+          };
+        const pinned = clampToRect(rawX, rawY, plot);
+        placeReadout(plot, pinned.x);
+        if (!overlayLabelRef.current) showTipAt(plot, pinned.x, pinned.y);
+        if (overlayPointer && (scrubbing || clamp)) {
+          line.style.left = `${lineLeftInPlot(pinned.x, plot)}px`;
+          line.style.top = `${plot.y}px`;
+          line.style.height = `${plot.height}px`;
+          line.style.bottom = 'auto';
           line.style.display = 'block';
         } else {
           line.style.display = 'none';
@@ -208,6 +287,7 @@ export function useECharts(
         chart.dispatchAction({ type: 'hideTip' });
         chart.dispatchAction({ type: 'updateAxisPointer', currTrigger: 'leave' });
         line.style.display = 'none';
+        readout.style.display = 'none';
       };
       const onDown = (e: PointerEvent) => {
         scrubbing = true;
@@ -243,6 +323,7 @@ export function useECharts(
         window.removeEventListener('pointerup', onUp);
         window.removeEventListener('pointercancel', onUp);
         line.remove();
+        readout.remove();
       };
     }
     const prevCleanup = cleanupRef.current;
