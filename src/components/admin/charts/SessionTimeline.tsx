@@ -78,10 +78,12 @@ export function SessionTimeline({
   const pointsRef = useRef(points);
   const wRef = useRef(W);
   const tzRef = useRef(tz);
+  const countUnitRef = useRef(countUnit);
   useEffect(() => {
     pointsRef.current = points;
     wRef.current = W;
     tzRef.current = tz;
+    countUnitRef.current = countUnit;
   });
   const applyPlayhead = useCallback((next: number) => {
     const pts = pointsRef.current;
@@ -101,6 +103,13 @@ export function SessionTimeline({
     if (count) count.textContent = String(p.count);
     const date = document.querySelector('[data-testid="session-playhead-date"]');
     if (date) date.textContent = fmtDay(p.t, tzRef.current);
+    const slider = document.querySelector('input[aria-label="Scrub sessions"]');
+    if (slider instanceof HTMLInputElement) {
+      slider.setAttribute(
+        'aria-valuetext',
+        `${fmtDay(p.t, tzRef.current)}: ${p.count} ${countUnitRef.current}`,
+      );
+    }
   }, []);
   useLayoutEffect(() => {
     applyPlayhead(playheadRef.current);
@@ -334,11 +343,9 @@ export function SessionTimeline({
                 const next = Number(e.currentTarget.value);
                 playheadRef.current = next;
                 applyPlayhead(next);
-                const held = dragging.current || e.currentTarget.matches(':active');
-                if (held) {
-                  dragging.current = true;
-                  return;
-                }
+                // Keyboard and Playwright fill() have no pointer-down. Only a
+                // held pointer skips the snapshot so a drag cannot rebuild.
+                if (dragging.current) return;
                 setPlayhead(next);
                 queueSnapshot(next);
               }}
