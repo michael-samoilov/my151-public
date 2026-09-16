@@ -1,4 +1,4 @@
-import { startTransition, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { startTransition, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import {
   fmtDay,
@@ -66,6 +66,8 @@ export function SessionTimeline({
   // Playhead follows the finger immediately. Snapshot `index` is a React
   // transition, so a heavy dex/league child cannot stall the thumb.
   const [playhead, setPlayhead] = useState(index);
+  const snapRaf = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(snapRaf.current), []);
 
   useLayoutEffect(() => {
     const el = wrapRef.current;
@@ -253,7 +255,10 @@ export function SessionTimeline({
               onChange={(e) => {
                 const next = Number(e.target.value);
                 setPlayhead(next);
-                startTransition(() => onIndex(next));
+                cancelAnimationFrame(snapRaf.current);
+                snapRaf.current = requestAnimationFrame(() => {
+                  startTransition(() => onIndex(next));
+                });
               }}
               className="admin-scrub relative w-full touch-none"
               aria-label="Scrub sessions"
