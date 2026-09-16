@@ -1,4 +1,4 @@
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   computeOutlineLayout,
   OUTLINE_GAP,
@@ -9,11 +9,45 @@ import { SectionOverlays, StaticViewTile } from '@/components/view/ViewPage';
 import { BUILD_GROUP_IDS } from '@/data/slot-template';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import type { Pokemon } from '@/types/pokemon';
+import { applyDexPresence } from '@/components/admin/dexPresence';
 
 // The admin snapshot packs 15 per row, not the View page's 10, so a full 151
 // dex reads in ~11 rows and fits under the scrubber without a scroll. This is
 // local to the admin view — the shared COLS the real builder uses is unchanged.
 const GRID_COLS = 15;
+
+function useDexPresence(
+  rootRef: RefObject<HTMLDivElement | null>,
+  presentIds: number[],
+  sessionIds?: number[][],
+) {
+  const present = useMemo(() => new Set(presentIds), [presentIds]);
+  const bySession = useMemo(
+    () => sessionIds?.map((ids) => new Set(ids)),
+    [sessionIds],
+  );
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    applyDexPresence(root, present);
+  }, [present, rootRef]);
+
+  useLayoutEffect(() => {
+    if (!bySession) return;
+    const applyFromSlider = () => {
+      const root = rootRef.current;
+      const el = document.querySelector('input[aria-label="Scrub sessions"]');
+      if (!root || !(el instanceof HTMLInputElement)) return;
+      const i = Number(el.value);
+      if (!Number.isFinite(i) || i < 0 || i >= bySession.length) return;
+      applyDexPresence(root, bySession[i]);
+    };
+    document.addEventListener('input', applyFromSlider, true);
+    applyFromSlider();
+    return () => document.removeEventListener('input', applyFromSlider, true);
+  }, [bySession, rootRef]);
+}
 
 const DexTile = memo(function DexTile({
   pokemon,
@@ -39,16 +73,14 @@ const DexTile = memo(function DexTile({
 export const OutlinedDex = memo(function OutlinedDex({
   sections,
   presentIds,
+  sessionIds,
 }: {
   sections: Record<string, number[]>;
   presentIds: number[];
+  sessionIds?: number[][];
 }) {
-  const present = useMemo(() => new Set(presentIds), [presentIds]);
-
-  // Measure the container so the tile size makes 15 columns exactly fill the
-  // available width. The total width is tileSize·(COLS + (COLS−1)·GAP + 2·PAD),
-  // so invert that to get the tile size from the measured width.
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  useDexPresence(wrapRef, presentIds, sessionIds);
   const [width, setWidth] = useState(320);
   useEffect(() => {
     const el = wrapRef.current;
@@ -58,16 +90,6 @@ export const OutlinedDex = memo(function OutlinedDex({
     setWidth(el.clientWidth);
     return () => ro.disconnect();
   }, []);
-
-  useLayoutEffect(() => {
-    const root = wrapRef.current;
-    if (!root) return;
-    for (const node of root.querySelectorAll('[data-dex-id]')) {
-      const el = node as HTMLElement;
-      const id = Number(el.dataset.dexId);
-      el.style.opacity = present.has(id) ? '1' : '0.14';
-    }
-  }, [present]);
 
   // Ordered list of every sectioned pokemon (build-group order), and the layout
   // it produces. Memoized on the section structure, not the scrubbed session.

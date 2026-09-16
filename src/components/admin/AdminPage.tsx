@@ -889,8 +889,12 @@ function leagueSessionIds(s: { cards?: LeagueCard[] }): number[] {
 
 /** Dex user body: session timeline + the build at the scrubbed moment. */
 function DexDetailBody({ rec }: { rec: ClientRecord }) {
-  const { log, ms } = tidySessions(rec.sessionLog ?? [], rec.sessionMs, (s) => s.ids);
+  const { log, ms } = useMemo(
+    () => tidySessions(rec.sessionLog ?? [], rec.sessionMs, (s) => s.ids),
+    [rec.sessionLog, rec.sessionMs],
+  );
   const [i, setI] = useState(Math.max(0, log.length - 1));
+  const sessionIds = useMemo(() => log.map((s) => s.ids), [log]);
   const points: TimelinePoint[] = log.map((s, k) => {
     const prev = k ? new Set(log[k - 1].ids) : new Set<number>();
     const now = new Set(s.ids);
@@ -930,7 +934,7 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
   const snapshot = (
     <>
       {sections && Object.keys(sections).length > 0 ? (
-        <OutlinedDex sections={sections} presentIds={presentIds} />
+        <OutlinedDex sections={sections} presentIds={presentIds} sessionIds={sessionIds} />
       ) : presentIds.length > 0 ? (
         <SpriteRow ids={presentIds} />
       ) : (

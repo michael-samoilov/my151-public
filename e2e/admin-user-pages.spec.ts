@@ -158,6 +158,42 @@ test.describe('admin user pages', () => {
     await expect(page.getByRole('slider', { name: 'Scrub sessions' })).toBeVisible();
     await expect(page.getByText(/of 151/)).toBeVisible();
     await expect(userTools(page).getByRole('button', { name: 'Dex' })).toHaveAttribute('aria-pressed', 'true');
+
+    const snap = page.getByTestId('admin-dex-snapshot');
+    await expect(snap).toBeVisible();
+    const rest = await page.evaluate(() => {
+      const root = document.querySelector('[data-testid="admin-dex-snapshot"]');
+      const first = root?.querySelector('[data-dex-id]') ?? null;
+      (root as HTMLElement & { __keep?: Element | null }).__keep = first;
+      const faded = [...(root?.querySelectorAll('[data-dex-id]') ?? [])].filter(
+        (n) => (n as HTMLElement).style.opacity === '0.14',
+      ).length;
+      return { tiles: root?.querySelectorAll('[data-dex-id]').length ?? 0, faded, keep: !!first };
+    });
+    expect(rest.keep).toBe(true);
+    expect(rest.tiles).toBeGreaterThan(0);
+
+    const scrub = page.getByRole('slider', { name: 'Scrub sessions' });
+    await scrub.evaluate((el) => {
+      const input = el as HTMLInputElement;
+      input.value = '0';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    const dragged = await page.evaluate(() => {
+      const root = document.querySelector('[data-testid="admin-dex-snapshot"]');
+      const keep = (root as HTMLElement & { __keep?: Element | null } | null)?.__keep;
+      const now = root?.querySelector('[data-dex-id]') ?? null;
+      const faded = [...(root?.querySelectorAll('[data-dex-id]') ?? [])].filter(
+        (n) => (n as HTMLElement).style.opacity === '0.14',
+      ).length;
+      return {
+        sameNode: keep != null && keep === now,
+        faded,
+        count: root?.getAttribute('data-count'),
+      };
+    });
+    expect(dragged.sameNode).toBe(true);
+    expect(dragged.faded).toBeGreaterThan(rest.faded);
   });
 
   test('a user page toggles between dex and league', async ({ page }) => {
