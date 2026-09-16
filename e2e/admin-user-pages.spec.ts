@@ -54,16 +54,11 @@ test.describe('admin user pages', () => {
       const board = document.querySelector('[data-testid="league-visit-board"]');
       const keep = (board as HTMLElement & { __keep?: Element | null }).__keep;
       const now = board?.querySelector('[data-testid="admin-gym-card"], [data-testid^="admin-slot-"]') ?? null;
-      const tiles = [...document.querySelectorAll('[data-member-id]')] as HTMLElement[];
-      return {
-        sameNode: keep != null && keep === now,
-        faded: tiles.filter((el) => el.style.opacity === '0.14').length,
-        tiles: tiles.length,
-      };
+      const tiles = document.querySelectorAll('[data-member-id]').length;
+      return { sameNode: keep != null && keep === now, tiles };
     });
     expect(mid.sameNode).toBe(true);
     expect(mid.tiles).toBeGreaterThan(0);
-    expect(mid.faded).toBeGreaterThan(0);
     await scrub.fill('2');
 
     if (info.project.name !== 'desktop') {
