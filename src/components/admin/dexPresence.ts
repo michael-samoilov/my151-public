@@ -28,6 +28,7 @@ export function idsOutsideSections(
 export function keepMountedSections(
   latest: Record<string, number[]> | undefined,
   historicalMaps: readonly (Record<string, number[]> | undefined)[],
+  recordedIds: ReadonlySet<number>,
 ): Record<string, number[]> {
   const placed = new Set<number>();
   const out: Record<string, number[]> = {};
@@ -35,7 +36,7 @@ export function keepMountedSections(
     if (!map) return;
     for (const [sid, ids] of Object.entries(map)) {
       for (const id of ids) {
-        if (placed.has(id)) continue;
+        if (placed.has(id) || !recordedIds.has(id)) continue;
         placed.add(id);
         (out[sid] ??= []).push(id);
       }

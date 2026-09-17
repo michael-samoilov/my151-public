@@ -916,13 +916,19 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
     };
   });
   const idx = Math.min(i, Math.max(0, log.length - 1));
+  const recordedIds = useMemo(() => {
+    const ids = new Set<number>(rec.latestIds ?? []);
+    for (const s of log) for (const id of s.ids) ids.add(id);
+    return ids;
+  }, [rec.latestIds, log]);
   const mountedSections = useMemo(
     () =>
-      keepMountedSections(rec.latestSections ?? log[log.length - 1]?.sections, [
-        rec.everSections,
-        ...log.map((s) => s.sections),
-      ]),
-    [rec.latestSections, rec.everSections, log],
+      keepMountedSections(
+        rec.latestSections ?? log[log.length - 1]?.sections,
+        [rec.everSections, ...log.map((s) => s.sections)],
+        recordedIds,
+      ),
+    [rec.latestSections, rec.everSections, log, recordedIds],
   );
   const presentIds = useMemo(
     () => log[idx]?.ids ?? rec.latestIds ?? [],
