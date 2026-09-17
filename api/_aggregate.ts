@@ -157,6 +157,23 @@ export function activeTimestamps(r: SessionRecord): number[] {
   return [r.firstTs, r.lastTs];
 }
 
+/** Rolling unique `cid` counts at `now` for gutter / last chart point. */
+export function lastPointLabelCounts(
+  records: SessionRecord[],
+  now: number,
+): { label24h: number | null; label168h: number | null } {
+  const events: { ts: number; cid: string }[] = [];
+  for (const r of records) {
+    for (const ts of activeTimestamps(r)) events.push({ ts, cid: r.cid });
+  }
+  if (events.length === 0) return { label24h: null, label168h: null };
+  const firstTs = Math.min(...events.map((e) => e.ts));
+  return {
+    label24h: rollingUniqueAt(events, now, ROLLING_24H_MS, firstTs),
+    label168h: rollingUniqueAt(events, now, ROLLING_7D_MS, firstTs),
+  };
+}
+
 function rollingUniqueAt(
   events: { ts: number; cid: string }[],
   asOf: number,

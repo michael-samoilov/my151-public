@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { DAY_MS } from '../../../../api/_aggregate';
+import { dayStart } from '../../../../api/_aggregate';
 import {
   chartDailyValues,
   chartWeeklyValues,
   countLabelLayout,
+  applyActivityLabels,
   extendThroughToday,
   monthDividerIndices,
   monthLabelTicks,
@@ -113,6 +115,19 @@ describe('splitProvisional', () => {
       complete: [1, 2],
       provisional: [null, null],
     });
+  });
+});
+
+describe('applyActivityLabels', () => {
+  it('merges lastPointLabels onto today without changing calendar dau', () => {
+    const now = day(13) + 12 * 3600_000;
+    const series = applyActivityLabels([{ day: dayStart(now), dau: 99, rolling7: 50 }], now, {
+      label24h: 7,
+      label168h: 40,
+    });
+    expect(series[0].dau).toBe(99);
+    expect(series[0].label24h).toBe(7);
+    expect(series[0].label168h).toBe(40);
   });
 });
 

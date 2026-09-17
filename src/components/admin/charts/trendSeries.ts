@@ -33,7 +33,7 @@ export function splitProvisional(
   };
 }
 
-/** Calendar DAU; last point uses `label24h` when present (rolling 24h at now). */
+/** Calendar DAU; last point uses `label24h` when the API set it (rolling 24h at now). */
 export function chartDailyValues(series: DailyPoint[]): number[] {
   if (series.length === 0) return [];
   const last = series.length - 1;
@@ -43,7 +43,7 @@ export function chartDailyValues(series: DailyPoint[]): number[] {
   });
 }
 
-/** Calendar `rolling7`; last point uses `label168h` when present (rolling 168h at now). */
+/** Calendar `rolling7`; last point uses `label168h` when the API set it (rolling 168h at now). */
 export function chartWeeklyValues(series: DailyPoint[]): number[] {
   if (series.length === 0) return [];
   const last = series.length - 1;
@@ -51,6 +51,25 @@ export function chartWeeklyValues(series: DailyPoint[]): number[] {
     if (i === last && p.label168h != null) return p.label168h;
     return p.rolling7;
   });
+}
+
+/** Merge server rolling labels onto today's activity row (from `byTool.*.activity`). */
+export function applyActivityLabels(
+  series: DailyPoint[],
+  nowMs: number,
+  labels: { label24h?: number | null; label168h?: number | null },
+): DailyPoint[] {
+  if (series.length === 0 || !nowMs) return series;
+  const today = dayStart(nowMs);
+  const idx = series.findIndex((p) => p.day === today);
+  if (idx < 0) return series;
+  const out = series.slice();
+  out[idx] = {
+    ...out[idx],
+    label24h: labels.label24h ?? out[idx].label24h,
+    label168h: labels.label168h ?? out[idx].label168h,
+  };
+  return out;
 }
 
 /** Gutter counts: rolling at `now` when computed, else same as production (DAU / calendar week). */

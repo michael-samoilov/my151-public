@@ -21,6 +21,7 @@ import {
   buildDepthCurve,
   dayStart,
   depthByDevice,
+  lastPointLabelCounts,
   mergeByCid,
   quantile,
   referrerFlow,
@@ -642,6 +643,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // The dex builder's daily active-users series (see api/_aggregate.ts for
     // rolling24/rolling7 are trailing-hour unique counts; see dailyActive).
     const activity = dexAgg.activity;
+    const lastPointLabels = lastPointLabelCounts(mergeByCid([records, leagueRecords]), now);
 
     // Private data — never cache.
     res.setHeader('Cache-Control', 'no-store');
@@ -660,6 +662,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       league,
       cohort,
       activity,
+      lastPointLabels,
       onboardingLaunchTs: ONBOARDING_LAUNCH_TS,
       exportSettings: exportSettingsAgg,
       retention: dexAgg.retention,

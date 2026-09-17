@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { FeedbackCard } from '@/components/admin/FeedbackCard';
 import { PicksDetailPage } from '@/components/admin/PicksDetailPage';
 import { ActiveUsersPanel } from '@/components/admin/charts/TrendChart';
+import { applyActivityLabels } from '@/components/admin/charts/trendSeries';
 import { FlowSankey } from '@/components/admin/charts/FlowSankey';
 import { dexFunnelSankey, leagueFunnelSankey, referrerFlowSankey } from '@/lib/usageFunnels';
 import type { DexUsageFunnel, LeagueUsageFunnel } from '../../../api/_aggregate';
@@ -310,6 +311,8 @@ export interface ApiResponse {
   cohort?: [number, number, number, 0 | 1, 0 | 1][];
   /** Daily activity: per-day DAU and trailing-7-day rolling active count. */
   activity?: { day: number; dau: number; rolling7: number; label24h?: number | null; label168h?: number | null }[];
+  /** Rolling unique counts at `now` for the All-tool chart gutter (server-computed). */
+  lastPointLabels?: { label24h: number | null; label168h: number | null };
   /** Onboarding launch timestamp — the default cutoff for the pre/post slider. */
   onboardingLaunchTs?: number;
   exportSettings?: {
@@ -1950,7 +1953,17 @@ export function AdminPage() {
               {dateRange && <span className="text-[0.7rem] font-semibold text-muted-foreground">{dateRange}</span>}
             </div>
 
-            {slice.activity.length > 0 && <ActiveUsersPanel key={tool} series={slice.activity} nowMs={loadedAt} />}
+            {slice.activity.length > 0 && (
+              <ActiveUsersPanel
+                key={tool}
+                series={
+                  tool === 'all' && data.lastPointLabels
+                    ? applyActivityLabels(slice.activity, loadedAt, data.lastPointLabels)
+                    : slice.activity
+                }
+                nowMs={loadedAt}
+              />
+            )}
 
             {showDex && <BeaconDropNotice events={data.funnelEvents} />}
 
