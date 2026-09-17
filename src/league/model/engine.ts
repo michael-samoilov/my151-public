@@ -198,9 +198,9 @@ export function leagueSlotIsEmpty(card: {
 /**
  * Move a league slot on the home summary.
  *
- * Each row is a unique trainer slot. Dropping onto an empty row moves only
- * the dragged trainer and leaves a hole. Dropping onto a filled row swaps
- * those two trainers. Nobody else moves.
+ * Empty drop: only the dragged trainer moves into that hole. Empties are not
+ * boxes, so neighbours do not shift. Occupied drop: playlist `arrayMove` —
+ * passed trainers keep order and close the hole.
  */
 export function moveLeagueSlots<T>(
   slots: readonly T[],
@@ -214,8 +214,13 @@ export function moveLeagueSlots<T>(
   }
   const next = slots.slice();
   if (isEmpty(next[from])) return next;
-  const moved = next[from];
-  next[from] = isEmpty(next[to]) ? blank() : next[to];
-  next[to] = moved;
+  if (isEmpty(next[to])) {
+    const moved = next[from];
+    next[from] = blank();
+    next[to] = moved;
+    return next;
+  }
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
   return next;
 }

@@ -1,8 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
 /**
- * League home rows are unique trainer slots. Occupied drop swaps those two.
- * Empty drop moves one trainer. The tail never wraps into the pickup hole.
+ * League home: empty drop fills only that hole. Occupied drop is playlist
+ * arrayMove. Empties are not boxes.
  */
 
 const TYPES = [
@@ -93,7 +93,7 @@ async function dragSlot(page: Page, from: number, to: number) {
   await page.waitForTimeout(300);
 }
 
-test.describe('league home slot swap', () => {
+test.describe('league home slot move', () => {
   test('moves into an empty row and leaves everyone else', async ({ page, browserName }) => {
     test.skip(browserName !== 'chromium', 'mouse drag');
     await openSeeded(page);
@@ -103,7 +103,7 @@ test.describe('league home slot swap', () => {
     ]);
   });
 
-  test('swaps adjacent occupied rows downward', async ({ page }) => {
+  test('playlist-displaces adjacent occupied rows downward', async ({ page }) => {
     await openSeeded(page);
     await dragSlot(page, 4, 5);
     expect(await badges(page)).toEqual([
@@ -111,7 +111,7 @@ test.describe('league home slot swap', () => {
     ]);
   });
 
-  test('swaps adjacent occupied rows upward', async ({ page }) => {
+  test('playlist-displaces adjacent occupied rows upward', async ({ page }) => {
     await openSeeded(page);
     await dragSlot(page, 5, 4);
     expect(await badges(page)).toEqual([
@@ -119,19 +119,19 @@ test.describe('league home slot swap', () => {
     ]);
   });
 
-  test('swaps distant occupied rows and leaves the rows between them', async ({ page }) => {
+  test('playlist-displaces distant occupied rows and keeps passed order', async ({ page }) => {
     await openSeeded(page);
     await dragSlot(page, 0, 5);
     expect(await badges(page)).toEqual([
-      'F', 'B', 'C', 'D', 'E', 'A', '', 'G', 'H', '', 'I', 'J', 'K', 'L',
+      'B', 'C', 'D', 'E', 'F', 'A', '', 'G', 'H', '', 'I', 'J', 'K', 'L',
     ]);
   });
 
-  test('swaps with the last row and does not wrap it into the hole', async ({ page }) => {
+  test('playlist-displaces onto the last occupied row', async ({ page }) => {
     await openSeeded(page);
     await dragSlot(page, 0, 13);
     expect(await badges(page)).toEqual([
-      'L', 'B', 'C', 'D', 'E', 'F', '', 'G', 'H', '', 'I', 'J', 'K', 'A',
+      'B', 'C', 'D', 'E', 'F', '', 'G', 'H', '', 'I', 'J', 'K', 'L', 'A',
     ]);
   });
 
@@ -141,7 +141,7 @@ test.describe('league home slot swap', () => {
     expect(await badges(page)).toEqual(NAMES);
   });
 
-  test('swaps across gym and elite-four slots', async ({ page }) => {
+  test('playlist-displaces across gym and elite-four slots', async ({ page }) => {
     await openSeeded(page);
     await dragSlot(page, 7, 8);
     expect(await badges(page)).toEqual([
@@ -164,5 +164,57 @@ test.describe('league home slot swap', () => {
     await openSeeded(page);
     await page.click('[data-testid="league-slot-6"]');
     await page.waitForSelector('[data-testid="card-cell-1-1"]');
+  });
+});
+
+function blockSeed() {
+  const empty = (): SeedCard => ({
+    type: null,
+    theme: '',
+    lines: [],
+    signatureSeat: null,
+    tmMoveId: null,
+    badgeName: '',
+    legend: null,
+    powerup: null,
+    powerups: {},
+    signatureId: null,
+    partnerId: null,
+    legends: [],
+  });
+  const cards = Array.from({ length: 14 }, empty);
+  const packed: Array<[number, string, string, number]> = [
+    [4, 'electric', 'A', 25],
+    [5, 'fire', 'B', 6],
+    [6, 'water', 'C', 9],
+    [7, 'grass', 'D', 3],
+  ];
+  for (const [i, type, badgeName, mon] of packed) {
+    cards[i] = {
+      ...empty(),
+      type,
+      badgeName,
+      lines: [{ branch: [mon], boundaries: [1] }],
+    };
+  }
+  return JSON.stringify({ state: { name: 'BlockProof', cards }, version: 1 });
+}
+
+test.describe('league home four-in-the-middle', () => {
+  async function openBlock(page: Page) {
+    await page.addInitScript((raw) => {
+      window.localStorage.setItem('league-builder', raw);
+    }, blockSeed());
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.waitForTimeout(400);
+  }
+
+  test('parks D in a blank above the block and leaves A,B,C', async ({ page }) => {
+    await openBlock(page);
+    await dragSlot(page, 7, 3);
+    expect(await badges(page)).toEqual([
+      '', '', '', 'D', 'A', 'B', 'C', '', '', '', '', '', '', '',
+    ]);
   });
 });

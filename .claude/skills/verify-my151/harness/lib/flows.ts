@@ -689,7 +689,7 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
   return checks;
 }
 
-// PR #32: occupied home rows swap; empty rows fill; the tail never wraps.
+// PR #32: occupied home rows playlist-displace; empty rows fill only.
 const E4_ONLY_LEAGUE =
   "JSON.stringify({state:{name:'Verify',cards:(()=>{const e=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null,powerups:{},signatureId:null,partnerId:null,legends:[]});const c=Array.from({length:14},e);const m=(t,b)=>({...e(),type:t,badgeName:b,lines:[{branch:[25],boundaries:[1]}]});c[8]=m('electric','E4-1');c[9]=m('fire','E4-2');c[10]=m('grass','E4-3');c[11]=m('psychic','E4-4');return c;})()},version:1})";
 
@@ -732,12 +732,12 @@ export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaNam
 
   const swapCases: { name: string; from: number; to: number; expect: string[] }[] = [
     { name: 'league-home:empty-fill-only', from: 5, to: 6, expect: ['A', 'B', 'C', 'D', 'E', '', 'F', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
-    { name: 'league-home:adjacent-down-swap', from: 4, to: 5, expect: ['A', 'B', 'C', 'D', 'F', 'E', '', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
-    { name: 'league-home:adjacent-up-swap', from: 5, to: 4, expect: ['A', 'B', 'C', 'D', 'F', 'E', '', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
-    { name: 'league-home:distant-swap-no-cascade', from: 0, to: 5, expect: ['F', 'B', 'C', 'D', 'E', 'A', '', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
-    { name: 'league-home:last-row-swap-no-wrap', from: 0, to: 13, expect: ['L', 'B', 'C', 'D', 'E', 'F', '', 'G', 'H', '', 'I', 'J', 'K', 'A'] },
+    { name: 'league-home:adjacent-down-displace', from: 4, to: 5, expect: ['A', 'B', 'C', 'D', 'F', 'E', '', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
+    { name: 'league-home:adjacent-up-displace', from: 5, to: 4, expect: ['A', 'B', 'C', 'D', 'F', 'E', '', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
+    { name: 'league-home:distant-playlist', from: 0, to: 5, expect: ['B', 'C', 'D', 'E', 'F', 'A', '', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
+    { name: 'league-home:last-row-playlist', from: 0, to: 13, expect: ['B', 'C', 'D', 'E', 'F', '', 'G', 'H', '', 'I', 'J', 'K', 'L', 'A'] },
     { name: 'league-home:drop-on-self', from: 0, to: 0, expect: ['A', 'B', 'C', 'D', 'E', 'F', '', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
-    { name: 'league-home:across-section-swap', from: 7, to: 8, expect: ['A', 'B', 'C', 'D', 'E', 'F', '', 'H', 'G', '', 'I', 'J', 'K', 'L'] },
+    { name: 'league-home:across-section-displace', from: 7, to: 8, expect: ['A', 'B', 'C', 'D', 'E', 'F', '', 'H', 'G', '', 'I', 'J', 'K', 'L'] },
   ];
   for (const c of swapCases) {
     if (!(await seedLeagueHome(s, url, SWAP_LEAGUE))) {
