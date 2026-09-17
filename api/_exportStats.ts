@@ -54,13 +54,19 @@ export function parseNotmeFlag(v: unknown): boolean {
   return v === true;
 }
 
-/** Writes uniqueness only on the live site. Preview, local, and any other
- *  `VERCEL_ENV` must not increment `export:counts` or add to `export:seen-pokemon`. */
+export function isPreviewDeploy(env: string | undefined = process.env.VERCEL_ENV): boolean {
+  return env === 'preview';
+}
+
+/** Writes uniqueness only on the live site. A Vercel preview, local, any other
+ *  `VERCEL_ENV`, and an owner `notme` request must not increment
+ *  `export:counts` or add to `export:seen-pokemon`. */
 export function canRecordToolExport(
   env: string | undefined = process.env.VERCEL_ENV,
   notme = false,
 ): boolean {
-  return env === 'production' && !notme;
+  if (notme || isPreviewDeploy(env)) return false;
+  return env === 'production';
 }
 
 /** Same shape the live recorder returns, without touching Redis. */

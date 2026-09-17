@@ -73,19 +73,31 @@ describe('export survey gate', () => {
 
   it('always shows the overlay under notme, even after seen or ordinal 1000', () => {
     expect(
-      shouldShowExportSurvey({ optedOut: true, seen: true, ordinal: 1001 }),
+      shouldShowExportSurvey({ optedOut: true, preview: false, seen: true, ordinal: 1001 }),
     ).toBe(true);
     expect(
-      shouldShowExportSurvey({ optedOut: true, seen: false, ordinal: 5000 }),
+      shouldShowExportSurvey({ optedOut: true, preview: false, seen: false, ordinal: 5000 }),
+    ).toBe(true);
+  });
+
+  it('always shows the overlay on a Vercel preview, without notme', () => {
+    expect(
+      shouldShowExportSurvey({ optedOut: false, preview: true, seen: true, ordinal: 1001 }),
+    ).toBe(true);
+  });
+
+  it('on production without notme, respects the seen key and the 1000 cutoff', () => {
+    expect(
+      shouldShowExportSurvey({ optedOut: false, preview: false, seen: true, ordinal: 151 }),
+    ).toBe(false);
+    expect(
+      shouldShowExportSurvey({ optedOut: false, preview: false, seen: false, ordinal: 1001 }),
+    ).toBe(false);
+    expect(
+      shouldShowExportSurvey({ optedOut: false, preview: false, seen: false, ordinal: 151 }),
     ).toBe(true);
     expect(
-      shouldShowExportSurvey({ optedOut: false, seen: true, ordinal: 151 }),
-    ).toBe(false);
-    expect(
-      shouldShowExportSurvey({ optedOut: false, seen: false, ordinal: 1001 }),
-    ).toBe(false);
-    expect(
-      shouldShowExportSurvey({ optedOut: false, seen: false, ordinal: 151 }),
+      shouldShowExportSurvey({ optedOut: false, preview: false, seen: false, ordinal: 1000 }),
     ).toBe(true);
   });
 });

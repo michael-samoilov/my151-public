@@ -15,7 +15,7 @@ import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
 import { hasSeenExportSurvey, shouldShowExportSurvey } from '@/lib/exportSurvey';
 import { isOptedOut } from '@/lib/clientId';
 import { ExportSurveyHost } from '@/components/export/ExportSurveyHost';
-import { DEMO_MODE } from '@/lib/demoMode';
+import { DEMO_MODE, PREVIEW_DEPLOY } from '@/lib/demoMode';
 import { previewExportHighlight, type ExportHighlight } from '@/league/export/exportPersonalization';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
@@ -1155,6 +1155,7 @@ export function ViewPage() {
       if (
         shouldShowExportSurvey({
           optedOut: isOptedOut(),
+          preview: PREVIEW_DEPLOY,
           seen: hasSeenExportSurvey(),
           ordinal: highlight?.ordinal,
         })

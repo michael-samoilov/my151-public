@@ -59,10 +59,11 @@ export function shouldOfferExportSurvey(ordinal: number | null | undefined): boo
 
 export function shouldShowExportSurvey(opts: {
   optedOut: boolean;
+  preview: boolean;
   seen: boolean;
   ordinal: number | null | undefined;
 }): boolean {
-  if (opts.optedOut) return true;
+  if (opts.optedOut || opts.preview) return true;
   if (opts.seen) return false;
   return shouldOfferExportSurvey(opts.ordinal);
 }

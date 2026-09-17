@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 let canRecordToolExport: (env?: string, notme?: boolean) => boolean;
+let isPreviewDeploy: (env?: string) => boolean;
 let parseNotmeFlag: (v: unknown) => boolean;
 let previewExportHighlight: (
   tool: 'pokedex' | 'league' | 'card',
@@ -15,7 +16,7 @@ let recordToolExport: (
 beforeAll(async () => {
   process.env.UPSTASH_REDIS_REST_URL ||= 'https://example.upstash.io';
   process.env.UPSTASH_REDIS_REST_TOKEN ||= 'test-token';
-  ({ canRecordToolExport, parseNotmeFlag, previewExportHighlight, recordToolExport } = await import('../../../api/_exportStats'));
+  ({ canRecordToolExport, isPreviewDeploy, parseNotmeFlag, previewExportHighlight, recordToolExport } = await import('../../../api/_exportStats'));
 });
 
 describe('export uniqueness recording', () => {
@@ -36,6 +37,15 @@ describe('export uniqueness recording', () => {
     expect(parseNotmeFlag('true')).toBe(false);
     expect(parseNotmeFlag(1)).toBe(false);
     expect(canRecordToolExport('production', true)).toBe(false);
+  });
+
+  it('does not record on a Vercel preview, even without notme', () => {
+    expect(isPreviewDeploy('preview')).toBe(true);
+    expect(isPreviewDeploy('production')).toBe(false);
+    expect(canRecordToolExport('preview', false)).toBe(false);
+  });
+
+  it('records on production when notme is absent', () => {
     expect(canRecordToolExport('production', false)).toBe(true);
   });
 
