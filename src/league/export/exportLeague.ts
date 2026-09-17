@@ -28,7 +28,7 @@ import { formAt, type PowerupForm } from '../model/powerups';
 import { SLOT_COUNT, slotKind, slotRow } from '../model/constants';
 import { cardShades, type CardShades } from '../theme';
 import { getMoveById, CATEGORY_COLORS, type Move } from '../moves';
-import { placeSlot, seamEnds, type Runs } from '../slotLayout';
+import { pairSprite, seamEnds, SLOT_PAD_REM } from '../slotLayout';
 import * as L from './layout';
 import {
   drawBossBall,
@@ -292,8 +292,9 @@ function drawHeading(
   ctx.font = font(L.HEAD_PX, 800);
   ctx.fillStyle = colour;
   ctx.textBaseline = 'middle';
+  ctx.translate(cx, top);
   lines.forEach((line, i) => {
-    fillTrackedCentered(ctx, line, cx, top + (i + 0.5) * L.HEAD_LINE, L.HEAD_TRACK);
+    fillTrackedCentered(ctx, line, 0, (i + 0.5) * L.HEAD_LINE, L.HEAD_TRACK);
   });
   ctx.restore();
 }
@@ -335,7 +336,6 @@ function drawShowcase(
   const x = ox + box.left;
   const y = oy + box.top;
   const { ace, partner } = showcasePair(card);
-  const pair = ace !== null && partner !== null && ace !== partner;
   const solo = ace ?? partner;
   const filled = solo !== null;
   const headH = 2 * L.HEAD_LINE;
@@ -354,33 +354,35 @@ function drawShowcase(
   }
   ctx.restore();
 
-  if (pair) {
-    // The app's own solver, run with the name runs emptied and the sprite
-    // pinned: the headings still decide where the two blocks sit, and the
-    // sprite no longer has to earn its size from the room the names left.
-    const aceRuns: Runs = { head: [headWidth(ctx, ACE_HEAD), headH], name: [0, 0] };
-    const partnerRuns: Runs = { head: [headWidth(ctx, PARTNER_HEAD), headH], name: [0, 0] };
-    const slot = placeSlot(box.width, box.height, aceRuns, partnerRuns, L.PAIR_SPRITE);
+  if (ace !== null && partner !== null && ace !== partner) {
+    const pad = SLOT_PAD_REM * 16 * L.K;
+    const sprite = pairSprite(box.width, box.height);
     const seam = seamEnds(box.width, box.height);
-
+    const aceW = Math.max(headWidth(ctx, ACE_HEAD), sprite);
+    const partnerW = Math.max(headWidth(ctx, PARTNER_HEAD), sprite);
     const blocks = [
-      { placed: slot.ace, lines: ACE_HEAD, id: ace, mirrored: false },
-      { placed: slot.partner, lines: PARTNER_HEAD, id: partner, mirrored: true },
+      {
+        id: ace,
+        lines: ACE_HEAD,
+        cx: x + pad + aceW / 2,
+        cy: y + pad + headH + sprite / 2,
+        mirrored: false,
+      },
+      {
+        id: partner,
+        lines: PARTNER_HEAD,
+        cx: x + box.width - pad - partnerW / 2,
+        cy: y + box.height - pad - headH - sprite / 2,
+        mirrored: true,
+      },
     ];
-    const centre = (b: (typeof blocks)[number]) => ({
-      cx: x + b.placed.left + b.placed.width / 2,
-      cy: y + b.placed.top + (b.mirrored ? b.placed.sprite / 2 : headH + b.placed.sprite / 2),
-    });
 
-    // Both balls, then the seam, then both sprites. A ball carries a solid
-    // white outline, and drawing the seam under it left the outline crossing
-    // the seam wherever the two blocks meet. Painting the seam between the
-    // layers keeps the line whole and still under the sprites. Drawing both
-    // balls before either sprite also stops the partner's ball from covering
-    // the ace: measured over every pair, that was 787px of the worst case.
+    ctx.save();
+    roundRect(ctx, x, y, box.width, box.height, L.SLOT_R);
+    ctx.clip();
+
     for (const b of blocks) {
-      const { cx, cy } = centre(b);
-      drawShowcaseArt(ctx, b.id, images, cx, cy, b.placed.sprite, 'ball');
+      drawShowcaseArt(ctx, b.id, images, b.cx, b.cy, sprite, 'ball');
     }
 
     ctx.save();
@@ -393,10 +395,13 @@ function drawShowcase(
     ctx.restore();
 
     for (const b of blocks) {
-      const { cx, cy } = centre(b);
-      drawShowcaseArt(ctx, b.id, images, cx, cy, b.placed.sprite, 'sprite');
-      const headTop = b.mirrored ? cy + b.placed.sprite / 2 : cy - b.placed.sprite / 2 - headH;
-      drawHeading(ctx, b.lines, cx, headTop, shades.band);
+      drawShowcaseArt(ctx, b.id, images, b.cx, b.cy, sprite, 'sprite');
+    }
+    ctx.restore();
+
+    for (const b of blocks) {
+      const headTop = b.mirrored ? b.cy + sprite / 2 : b.cy - sprite / 2 - headH;
+      drawHeading(ctx, b.lines, b.cx, headTop, shades.band);
     }
     return;
   }

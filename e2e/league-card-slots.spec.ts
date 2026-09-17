@@ -317,7 +317,8 @@ test.describe('gym card slots', () => {
       const box = el.parentElement!;
       return { field: el.textContent, phrase: box.textContent };
     });
-    expect(short.field).toBe('Thunder');
+    // The suffix lives inside the field now so wrap and caret stay one phrase.
+    expect(short.field).toBe('Thunder Badge');
     expect(short.phrase).toBe('Thunder Badge');
   });
 
@@ -360,7 +361,7 @@ test.describe('gym card slots', () => {
     // for is that everything before that point survives *in order*, which is
     // what a field rewriting itself mid-keystroke destroys.
     const typed = 'Thunder Cascade Marsh Rainbow Soul Volcano Earth Boulder Zephyr Glacier';
-    const kept = state.rendered.replace(/\u00a0/g, ' ');
+    const kept = state.rendered.replace(/\u00a0/g, ' ').replace(/\s*Badge$/, '').trimEnd();
     let common = 0;
     while (common < kept.length && kept[common] === typed[common]) common++;
     // Everything but the tail is the head of what was typed, in order. The
@@ -372,7 +373,94 @@ test.describe('gym card slots', () => {
     expect(common, `"${kept}" is the head of what was typed`)
       .toBeGreaterThanOrEqual(kept.length - 2);
     expect(common, 'and enough of it to show the order held').toBeGreaterThan(4);
-    expect(state.stored).toBe(state.rendered);
+    expect(state.stored.replace(/\u00a0/g, ' ').trimEnd()).toBe(kept);
+  });
+});
+
+/**
+ * PARTNER / SHOULDERMON must sit inside the dashed rounded pane, as two
+ * whole words. The slot's outline is rounded-lg; a heading that is only
+ * inside the rectangular box still paints through the corner dash.
+ */
+test.describe('the partner heading', () => {
+  test('keeps both words inside the rounded pane', async ({ page }) => {
+    await openCard(page);
+    await page.waitForTimeout(400);
+    const got = await page.evaluate(() => {
+      const slot = document.querySelector('[data-ace-partner-slot]');
+      const head = document.querySelector('[data-slot-head="partner"]');
+      const lines = [...head?.querySelectorAll('span.block') ?? []]
+        .map((el) => (el.textContent ?? '').trim());
+      if (!(slot instanceof HTMLElement) || !head) return { lines, inside: false, detail: 'missing' };
+      const box = slot.getBoundingClientRect();
+      const zoom = box.width / slot.offsetWidth || 1;
+      const raw = getComputedStyle(slot).borderTopLeftRadius;
+      let radius = parseFloat(raw) || 8;
+      if (raw.includes('rem')) {
+        radius *= parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      }
+      radius *= zoom;
+      const range = document.createRange();
+      range.selectNodeContents(head);
+      const ink = range.getBoundingClientRect();
+      const air = 1;
+      const pastRect =
+        ink.left < box.left - air ||
+        ink.right > box.right + air ||
+        ink.top < box.top - air ||
+        ink.bottom > box.bottom + air;
+      const cx = box.right - radius;
+      const cy = box.bottom - radius;
+      let pastCorner = false;
+      if (ink.right > cx && ink.bottom > cy && radius > 0) {
+        pastCorner = Math.hypot(ink.right - cx, ink.bottom - cy) > radius + air;
+      }
+      const inside = ink.width > 0 && !pastRect && !pastCorner;
+      return {
+        lines,
+        inside,
+        detail: `ink r=${(box.right - ink.right).toFixed(1)} b=${(box.bottom - ink.bottom).toFixed(1)} corner=${pastCorner}`,
+      };
+    });
+    expect(got.lines, got.detail).toEqual(['PARTNER /', 'SHOULDERMON']);
+    expect(got.inside, got.detail).toBe(true);
+    const align = await page.evaluate(() => {
+      const head = document.querySelector('[data-slot-head="partner"]');
+      const art = document.querySelector('[data-testid="slot-partner"] [data-slot-art]');
+      const aceHead = document.querySelector('[data-slot-head="ace"]');
+      const aceArt = document.querySelector('[data-testid="slot-ace"] [data-slot-art]');
+      if (!head || !art || !aceHead || !aceArt) return { ok: false, detail: 'missing' };
+      const mid = (el: Element) => {
+        const b = el.getBoundingClientRect();
+        return (b.left + b.right) / 2;
+      };
+      const partnerDrift = Math.abs(mid(head) - mid(art));
+      const aceDrift = Math.abs(mid(aceHead) - mid(aceArt));
+      return {
+        ok: partnerDrift <= 2 && aceDrift <= 2,
+        detail: `partner ${partnerDrift.toFixed(2)}px ace ${aceDrift.toFixed(2)}px`,
+      };
+    });
+    expect(align.ok, align.detail).toBe(true);
+    const type = await page.evaluate(() => {
+      const ace = document.querySelector('[data-slot-head="ace"]');
+      const partner = document.querySelector('[data-slot-head="partner"]');
+      if (!ace || !partner) return { ok: false, detail: 'missing' };
+      const a = getComputedStyle(ace);
+      const p = getComputedStyle(partner);
+      const scaled = (el: Element) => /scale\(/i.test(getComputedStyle(el).transform);
+      return {
+        ok: a.fontSize === p.fontSize
+          && a.letterSpacing === p.letterSpacing
+          && a.fontWeight === p.fontWeight
+          && !scaled(ace)
+          && !scaled(partner)
+          && a.transform === 'none'
+          && p.transform === 'none',
+        detail: `ace ${a.fontSize}/${a.letterSpacing}/${a.transform} partner ${p.fontSize}/${p.letterSpacing}/${p.transform}`,
+      };
+    });
+    expect(type.ok, type.detail).toBe(true);
   });
 });
 

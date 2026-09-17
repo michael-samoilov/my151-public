@@ -20,6 +20,8 @@ import { TypeBadge } from '@/components/shared/TypeBadge';
 import { TYPE_COLORS } from '@/data/type-colors';
 import { HeldItems } from '@/components/shared/dragHold';
 import { cn } from '@/lib/utils';
+import { getAppliedRootFontSizePx } from '@/lib/layoutFontSize';
+import { useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
 import { useGridDragSensors } from '@/lib/dragSensors';
 import { warmImages } from '@/lib/warmImages';
 import { BOSS_ROW, CHAMPION_ROW, ELITE_ROW, ROW_COUNT, TEAM_SIZES, joinRow } from '../model/constants';
@@ -41,7 +43,13 @@ import { BossBall, Crown, EmptySlotBall, GymBadges, Stars, TmDisc } from './glyp
 import { PokeballBg } from '@/components/shared/PokeballBg';
 import { formAt, formsFor, isPowerupRow, type PowerupForm, type PowerupKind } from '../model/powerups';
 import { LaurelIcon } from './LaurelIcon';
-import { placeSlot, seamEnds, type Placed, type Runs } from '../slotLayout';
+import {
+  BALL_OF_SPRITE,
+  RING_OF_SPRITE,
+  SLOT_PAD_REM,
+  pairSprite,
+  seamEnds,
+} from '../slotLayout';
 import { useSlotLab } from '../slotLab';
 
 /**
@@ -61,10 +69,6 @@ const INSET_Y = 0.375; // 6px
 const INSET_X = 0.1875; // 3px
 /** Cell sprite size; larger than the cell on purpose, as on the boards. */
 const SPRITE_REM = 3.25;
-
-/** The pokemon art's own resolution, in px. A sprite drawn at this size is 1x —
- *  one image pixel per CSS pixel — so it stays crisp; past it, it upscales. */
-const SPRITE_NATIVE = 96;
 
 /**
  * How far a carried column lifts off the card.
@@ -771,48 +775,37 @@ function PowerupButton({ kind, active, onPress, side }: {
 }
 
 /**
- * One half of the ace/partner slot: heading, sprite, name.
+ * Ace/partner cluster: heading, sprite, name.
  *
- * The empty state is the filled state with the sprite taken out and its square
- * left in place, so the heading and the name keep the position they have once
- * a Pokemon lands there. Drawing the ring on its own moves the word up against
- * it, which is a different layout wearing the same name.
+ * Ace pins top-left. Partner pins bottom-right and reverses the column so
+ * the heading stays in the outer corner. Same padding. Empty keeps the
+ * sprite square and draws the ring inside it.
  */
 function SlotHalf({
-  place, testId, half, heading, mirrored, pokemon,
-  headClass, onPick, onRemove,
+  testId, half, heading, mirrored, pokemon, onPick, onRemove,
 }: {
-  place: Placed | null;
   testId: string;
   half: 'ace' | 'partner';
   heading: Heading;
-  /** The partner's block is the ace's turned over: name, sprite, heading. */
   mirrored: boolean;
   pokemon: ReturnType<typeof getPokemonById>;
-  headClass: string;
   onPick: () => void;
   onRemove: () => void;
 }) {
-  // The same two shades the TM and BADGE words wear: the hint while the
-  // half is empty, the band once it holds a Pokemon. Both are the gym's
-  // own, which is right here -- an ace or a partner has no type of its own
-  // the way a TM's move does.
   const label = (
     <HeadRuns
       lines={heading.lines}
-      className={headClass}
+      className={HEAD_CLASS}
+      data-slot-head={half}
       style={{ color: pokemon ? 'var(--lg-band)' : 'var(--lg-hint)' }}
     />
   );
-  const size = place ? `${place.sprite}px` : '0px';
+  const halfRef = useRef<HTMLButtonElement>(null);
   const lab = useSlotLab((st) => st.enabled);
   const slot = useSlotLab((st) => st.slot);
   const shift = useSlotLab((st) => st[half]);
   const nudge = useSlotLab((st) => st.nudge);
   const dragged = useRef(false);
-  // The stored offset is a fraction of the slot, so it means the same thing on
-  // a phone and a desktop; it becomes pixels only here, against the slot this
-  // card actually has.
   const offset = slot ? { x: shift.dx * slot.w, y: shift.dy * slot.h } : { x: 0, y: 0 };
 
   const onLabPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -822,11 +815,8 @@ function SlotHalf({
     el.setPointerCapture(e.pointerId);
     dragged.current = false;
     const from = { x: e.clientX, y: e.clientY };
-    // The card is scaled by CSS `zoom`, so a pointer moves more screen pixels
-    // than it does card pixels. Dividing by the slot's own scale keeps the
-    // half under the finger instead of running ahead of it.
     const rect = el.getBoundingClientRect();
-    const scale = rect.width > 0 && place ? rect.width / place.width : 1;
+    const scale = rect.width > 0 ? rect.width / el.offsetWidth : 1;
     const move = (ev: PointerEvent) => {
       const dx = (ev.clientX - from.x) / scale;
       const dy = (ev.clientY - from.y) / scale;
@@ -839,30 +829,28 @@ function SlotHalf({
       el.removeEventListener('pointermove', move);
       el.removeEventListener('pointerup', up);
       el.removeEventListener('pointercancel', up);
-      // Let the click that follows see the flag, then clear it.
       setTimeout(() => { dragged.current = false; }, 0);
     };
     el.addEventListener('pointermove', move);
     el.addEventListener('pointerup', up);
     el.addEventListener('pointercancel', up);
   };
-  // The square the geometry reserves, with the ball inside it. Filled, that
-  // is the two-tone ball the dex builder's tiles draw, with the sprite
-  // overhanging it; empty, it is the same outline the card's own team seats
-  // use. Both are sized by the solver, so the placeholder stands where the
-  // ball will be.
+
   const art = (
     <span
       data-slot-art
       className="relative flex shrink-0 items-center justify-center"
-      style={{ width: size, height: size }}
+      style={{ width: 'var(--slot-sprite)', height: 'var(--slot-sprite)' }}
     >
       {pokemon ? (
         <>
           <span
             aria-hidden="true"
             className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-            style={{ width: `${place?.ball ?? 0}px`, height: `${place?.ball ?? 0}px` }}
+            style={{
+              width: `calc(var(--slot-sprite) * ${BALL_OF_SPRITE})`,
+              height: `calc(var(--slot-sprite) * ${BALL_OF_SPRITE})`,
+            }}
           >
             <PokeballBg pokemon={pokemon} />
           </span>
@@ -870,47 +858,38 @@ function SlotHalf({
             key={pokemon.sprite}
             src={pokemon.sprite}
             alt={pokemon.name}
-            className="relative z-[1] max-w-none"
-            style={{ width: size, height: size, imageRendering: 'pixelated' }}
+            className="relative z-[1] h-full w-full max-w-none"
+            style={{ imageRendering: 'pixelated' }}
           />
-          {/* On the square, not on the block: the block's own corner is where
-              the heading and the name are, and a cross there sits on the
-              words. */}
           <SlotRemove label={`Remove ${heading.label.toLowerCase()}`} onRemove={onRemove} />
         </>
       ) : (
         <span
           data-slot-ring
           className="block"
-          style={{ width: `${place?.ring ?? 0}px`, height: `${place?.ring ?? 0}px` }}
+          style={{
+            width: `calc(var(--slot-sprite) * ${RING_OF_SPRITE})`,
+            height: `calc(var(--slot-sprite) * ${RING_OF_SPRITE})`,
+          }}
         >
-          <EmptySlotBall size={place?.ring ?? 0} />
+          <EmptySlotBall size="100%" />
         </span>
       )}
     </span>
   );
-  // The name in the heading's own all-caps, a size smaller than it used to be,
-  // so even the longest names clear the seam without truncating. Held to the
-  // sprite's width all the same — the two names are the runs either side of the
-  // seam, so one allowed to grow the block grows it into the other half.
   const name = (
     <span
-      className={cn('relative block truncate', NAME_CLASS)}
-      style={{
-        maxWidth: size,
-        top: `${place?.nameShift ?? 0}px`,
-        color: pokemon ? 'var(--lg-band)' : undefined,
-      }}
+      className={cn('relative block max-w-[var(--slot-sprite)] truncate', NAME_CLASS)}
+      style={{ color: pokemon ? 'var(--lg-band)' : undefined }}
     >
-      {pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : ' '}
+      {pokemon ? pokemonLabel(pokemon.id, pokemon.name).name : '\u00a0'}
     </span>
   );
   return (
     <button
+      ref={halfRef}
       type="button"
       onClick={(e) => {
-        // In the lab a press that travelled was a drag, not a tap. Everywhere
-        // else `dragged` is never set and this is the plain button it was.
         if (dragged.current) {
           e.preventDefault();
           return;
@@ -924,20 +903,19 @@ function SlotHalf({
         pokemon ? `${heading.label}: ${pokemon.name}` : `Choose a ${heading.label.toLowerCase()}`
       }
       className={cn(
-        'absolute z-[6] flex flex-col items-center text-center',
-        // The half opens a one-Pokémon picker on a tap, so it wears a pointer.
-        // The slot lab overrides it with a grab handle for its drag-to-tune.
+        'absolute z-[6] flex items-center text-center',
+        mirrored ? 'bottom-0 right-0 flex-col-reverse' : 'left-0 top-0 flex-col',
         lab ? 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2' : 'cursor-pointer',
       )}
       style={{
-        left: `${(place?.left ?? 0) + offset.x}px`,
-        top: `${(place?.top ?? 0) + offset.y}px`,
-        width: `${place?.width ?? 0}px`,
-        visibility: place ? undefined : 'hidden',
+        padding: `${SLOT_PAD_REM}rem`,
+        transform: offset.x || offset.y ? `translate(${offset.x}px, ${offset.y}px)` : undefined,
         outlineColor: lab ? 'rgba(37,99,235,0.5)' : undefined,
       }}
     >
-      {mirrored ? <>{name}{art}{label}</> : <>{label}{art}{name}</>}
+      {label}
+      {art}
+      {name}
     </button>
   );
 }
@@ -989,15 +967,8 @@ interface Heading {
  * An overlay rather than a border on the slot itself. A border is layout:
  * with `box-sizing: border-box` it takes its pixel from the inside, so every
  * slot's content sat one pixel further in while the slot was empty and
- * stepped back out the moment something was chosen -- measured at 1.07px
- * on a phone and 1.42px on desktop, in both axes, in all three panes. Nothing
- * here takes part in layout, so filling a slot moves nothing. It also makes
- * the placement solver's model true: it sizes the ace and partner against
- * `offsetWidth`, the outer box, and places them in the padding box, and
- * those are now the same box in both states.
- *
- * First among the children so the content paints over it, though the two
- * never meet: the outline is the outer pixel and the content is padded in.
+ * stepped back out the moment something was chosen. Nothing here takes part
+ * in layout, so filling a slot moves nothing.
  */
 function EmptyOutline() {
   return (
@@ -1021,142 +992,55 @@ const HEAD_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.08em] leading-[
 const NAME_CLASS = 'text-[0.53125rem] font-extrabold tracking-[0.02em] leading-[1.4] uppercase';
 
 /**
- * A heading, one line per run, drawn the same way in the slot and in the probe.
- *
- * One component for both so the two cannot drift. The solver budgets the
- * exact height the probe measures, so a heading that wrapped to a third line
- * in the slot would be placed as though it had two -- which is why each line
- * refuses to wrap rather than the heading as a whole.
+ * A heading, one line per run. Each line is nowrap so PARTNER / and
+ * SHOULDERMON stay two words.
  */
 function HeadRuns({ lines, className, style, ...rest }: {
   lines: readonly string[];
   className?: string;
   style?: React.CSSProperties;
-  /** Set on the probe copies, which the solver looks them up by. */
-  'data-probe'?: string;
+  'data-slot-head'?: string;
 }) {
   return (
-    <span {...rest} className={cn('inline-block text-center', className)} style={style}>
+    <span
+      {...rest}
+      className={cn('inline-block w-max shrink-0 text-center', className)}
+      style={style}
+    >
       {lines.map((line) => (
-        <span key={line} className="block whitespace-nowrap">{line}</span>
+        <span key={line} className="block shrink-0 whitespace-nowrap">{line}</span>
       ))}
     </span>
   );
 }
 
 /**
- * Measure the slot, then solve both halves against what it actually is.
- *
- * The run sizes come from the DOM rather than from constants: the heading and
- * the name are text, so their widths follow the font, the language and the
- * root font size, none of which this file gets to decide. A hidden copy of
- * each run is measured once per resize and handed to the solver.
+ * Slot size for the seam SVG and the slot lab. Not a placement solve: the
+ * clusters pin with CSS.
  */
-function useSlotLayout(ref: React.RefObject<HTMLDivElement | null>) {
-  const [layout, setLayout] = useState<
-    { ace: Placed; partner: Placed; box: [number, number] } | null
-  >(null);
-  const version = useNamesVersion();
-  // The lab's size is an input to the solve, so a change to it has to
-  // re-measure. Nothing else reads it, and on the card it never changes.
-  const labSprite = useSlotLab((s) => (s.enabled ? s.sprite : 0));
+function useSlotBox(ref: React.RefObject<HTMLDivElement | null>) {
+  const [box, setBox] = useState<[number, number]>([1, 1]);
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
-    // The card scales itself to fit the viewport's height, and that scale is
-    // recomputed from the card's own measured height. An observer that sets
-    // state on every fire joins that loop: re-render, re-measure, re-scale,
-    // fire again — and on a narrow screen, where the fit is already at its
-    // floor, it never settles. Nothing here is worth sub-pixel precision, so
-    // the box is rounded and an unchanged box does no work at all.
-    let last = '';
-    const measure = () => {
-      const box = el.getBoundingClientRect();
-      const probe = el.querySelector<HTMLElement>('[data-slot-probe]');
-      // The layout box, not the box on the screen. The card scales itself
-      // with CSS `zoom`, so a child placed at `left: 6px` is six *layout*
-      // pixels in and the zoom shrinks that to four or five on the glass.
-      // Solving against the screen box and applying the answer in the layout
-      // box is a placement scaled toward the top-left corner by the zoom —
-      // 24% of the slot on a short phone, which is where the pair being
-      // "not in the centre of mass of its segment" came from.
+    const read = () => {
       const w = el.offsetWidth;
       const h = el.offsetHeight;
-      if (!probe || w < 8 || h < 8 || box.width < 8) return;
-      // The runs are text, so they can only be measured on the screen. Take
-      // the zoom back out so they arrive in the same units as the slot.
-      const zoom = box.width / w;
-      const run = (sel: string): [number, number] => {
-        const r = probe.querySelector<HTMLElement>(sel)!.getBoundingClientRect();
-        return [r.width / zoom, r.height / zoom];
-      };
-      const ace: Runs = { head: run('[data-probe="ace-head"]'), name: run('[data-probe="ace-name"]') };
-      const partner: Runs = { head: run('[data-probe="partner-head"]'), name: run('[data-probe="partner-name"]') };
-      // The key covers the text as well as the box. Keying on the box alone
-      // meant the first measurement — taken before the webfont had swapped —
-      // was the only one that ever ran: the box never changed afterwards, so
-      // the placement stayed solved for metrics the card no longer had, and
-      // the partner ended up 18px through the seam on a desktop slot.
-      const key = [w, h, ace.head, ace.name, partner.head, partner.name].join('|');
-      if (key === last) return;
-      last = key;
-      // The lab picks the size by hand; the card solves for it. With the names
-      // gone the sprite would grow past its own art's 96px, so the card caps it
-      // there — a 1x draw, crisp, rather than a blurry fractional upscale.
-      const lab = useSlotLab.getState();
-      setLayout({
-        ...placeSlot(w, h, ace, partner, lab.enabled ? lab.sprite : undefined, lab.enabled ? undefined : SPRITE_NATIVE),
-        box: [w, h],
-      });
-      // The lab reads offsets as fractions of the slot, so it needs the slot.
-      // Setting it always costs one shallow compare; the store ignores a
-      // repeat of the same size.
+      if (w < 8 || h < 8) return;
+      setBox((prev) => (prev[0] === w && prev[1] === h ? prev : [w, h]));
       useSlotLab.getState().setSlot(w, h);
     };
-    measure();
-    // A ResizeObserver is not enough on its own. The card is scaled by CSS
-    // `zoom` on an ancestor, and that changes the box this slot *renders* at
-    // without resizing the slot in its own coordinate space — so the observer
-    // stays silent while the geometry underneath it moves, and the placement
-    // keeps answering to a box the card no longer has. Re-checking for a few
-    // frames after mount catches the fit settling; the key guard above means
-    // a frame where nothing moved costs one rect read.
-    let frames = 0;
-    let raf = 0;
-    const settle = () => {
-      measure();
-      if (++frames < 30) raf = requestAnimationFrame(settle);
-    };
-    raf = requestAnimationFrame(settle);
-    const ro = new ResizeObserver(measure);
+    read();
+    const ro = new ResizeObserver(read);
     ro.observe(el);
-    // And the 30 frames are not enough either. They cover a webfont that
-    // swaps within about half a second of mount; on a cold cache or a slow
-    // connection it swaps later, and then the placement is the one solved
-    // against the fallback metrics and nothing ever corrects it — the same
-    // trap `typeBadgeFit` keeps a generation counter for.
-    //
-    // Measuring again when the fonts resolve costs one rect read, and the
-    // key guard above makes it free when they resolved before mount.
-    let alive = true;
-    if (typeof document !== 'undefined' && document.fonts?.ready) {
-      void document.fonts.ready.then(() => { if (alive) measure(); });
-    }
-    return () => {
-      alive = false;
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-    };
-  }, [ref, version, labSprite]);
-  return layout;
+    return () => ro.disconnect();
+  }, [ref]);
+  return box;
 }
 
 function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setSignatureSeat = useLeagueStore((s) => s.setSignatureSeat);
   const setPartner = useLeagueStore((s) => s.setPartner);
-  // `pokemonLabel` reads the name store without subscribing to it, so the slot
-  // subscribes itself: without this the name under the sprite did not follow a
-  // language change.
   useNamesVersion();
   const { card } = view;
   const line = card.signatureSeat !== null ? card.lines[card.signatureSeat - 1] : undefined;
@@ -1164,8 +1048,13 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   const ace = shown !== null ? getPokemonById(shown) : undefined;
   const partner = card.partnerId != null ? getPokemonById(card.partnerId) : undefined;
   const slotRef = useRef<HTMLDivElement>(null);
-  const layout = useSlotLayout(slotRef);
-  const seam = seamEnds(layout?.box[0] ?? 1, layout?.box[1] ?? 1);
+  const box = useSlotBox(slotRef);
+  const dpr = useDevicePixelRatio();
+  const labSprite = useSlotLab((st) => (st.enabled ? st.sprite : 0));
+  const spritePx = labSprite > 0
+    ? labSprite
+    : pairSprite(box[0], box[1], dpr, getAppliedRootFontSizePx());
+  const seam = seamEnds(box[0], box[1]);
   const pos = {
     ...slotX(1, 3),
     top: `${rowTop(1) + INSET_Y}rem`,
@@ -1174,33 +1063,16 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   return (
     <div
       ref={slotRef}
-      className="absolute z-[5] rounded-lg"
+      data-ace-partner-slot
+      data-slot-sprite={spritePx}
+      className="absolute z-[5] overflow-hidden rounded-lg"
       style={{
         ...pos,
+        ['--slot-sprite' as string]: `${spritePx}px`,
         background: ace || partner ? 'var(--lg-slot)' : 'rgba(255,255,255,0.65)',
       }}
     >
       {!(ace || partner) && <EmptyOutline />}
-      {/* The four text runs the solver needs the size of, drawn once and never
-          shown. Measuring them beats assuming them: they are text, so their
-          widths move with the font, the language and the root font size. */}
-      <span
-        data-slot-probe
-        aria-hidden="true"
-        className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap"
-      >
-        <HeadRuns lines={ACE_HEAD.lines} className={HEAD_CLASS} data-probe="ace-head" />
-        <span data-probe="ace-name" className={cn('inline-block', NAME_CLASS)}>
-          {ace ? pokemonLabel(ace.id, ace.name).name : ' '}
-        </span>
-        <HeadRuns lines={PARTNER_HEAD.lines} className={HEAD_CLASS} data-probe="partner-head" />
-        <span data-probe="partner-name" className={cn('inline-block', NAME_CLASS)}>
-          {partner ? pokemonLabel(partner.id, partner.name).name : ' '}
-        </span>
-      </span>
-      {/* The seam is a drawn line, not a wall: a block's far corner is allowed
-          a few pixels past it, because that corner holds a sprite's
-          transparent margin rather than any ink. */}
       <svg
         className="pointer-events-none absolute inset-0 h-full w-full"
         viewBox="0 0 100 100"
@@ -1218,24 +1090,20 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         />
       </svg>
       <SlotHalf
-        place={layout?.ace ?? null}
         testId="slot-ace"
         half="ace"
         heading={ACE_HEAD}
         mirrored={false}
         pokemon={ace}
-        headClass={HEAD_CLASS}
         onPick={() => openLeagueBrowser(cardIndex, 'signature')}
         onRemove={() => setSignatureSeat(cardIndex, null, null)}
       />
       <SlotHalf
-        place={layout?.partner ?? null}
         testId="slot-partner"
         half="partner"
         heading={PARTNER_HEAD}
         mirrored
         pokemon={partner}
-        headClass={HEAD_CLASS}
         onPick={() => openLeagueBrowser(cardIndex, 'partner')}
         onRemove={() => setPartner(cardIndex, null)}
       />
@@ -1301,7 +1169,7 @@ const MARK_TRAIL = '0.0625rem';
 // resolves against the column, so repeating the box fraction here multiplies
 // the two and collapses the glyph to a few pixels.
 const MARK_GLYPH = '72%';
-const MARK_LABEL_CLASS = 'text-[0.5rem] font-extrabold tracking-[0.06em]';
+const MARK_LABEL_CLASS = 'shrink-0 whitespace-nowrap text-[0.4rem] font-extrabold tracking-normal';
 
 function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setMovePickerOpen = useLeagueUi((s) => s.setMovePickerOpen);
@@ -1330,10 +1198,8 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         className="flex shrink-0 flex-col items-center justify-center"
         style={{ width: MARK_COL }}
       >
-        {/* The disc wears the move's own type, not the gym's — a TM is the
-            move, and the gym's colour is already the whole card. Empty, it
-            matches the badge hexagon's stroke rather than the cell fill. */}
-        {/* The disc takes the column's width so it tracks the same cap. */}
+        {/* Glyph size is capped in rem so a wider label column cannot grow
+            the disc. 1.375rem is 72% of the 2.75rem column production used. */}
         <span className="w-full" style={{ aspectRatio: '1', maxWidth: MARK_GLYPH }}>
           <TmDisc colour={move ? TYPE_COLORS[move.type] : 'var(--lg-dash)'} size="100%" />
         </span>
@@ -1347,7 +1213,8 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
             reads the move's own band rather than the card's `--lg-band`. */}
         <span
           className={cn('-mt-[0.0625rem]', MARK_LABEL_CLASS)}
-          style={{ color: move ? cardShades(move.type).band : 'var(--lg-hint)' }}
+          data-mark-label="tm"
+          style={{ color: move ? cardShades(move.type).band : 'var(--lg-hint)', whiteSpace: 'nowrap' }}
         >
           TM
         </span>
@@ -1387,7 +1254,10 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           </span>
         </span>
       ) : (
-        <span className="min-w-0 text-left text-[0.6875rem] leading-[1.15]" style={{ color: 'var(--lg-hint)' }}>
+        <span
+          className={cn('min-w-0 whitespace-nowrap text-left normal-case', MARK_LABEL_CLASS)}
+          style={{ color: 'var(--lg-hint)' }}
+        >
           Pick a move
         </span>
       )}
@@ -1413,6 +1283,33 @@ function TmSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
  * ceiling behind it so a paste cannot put a novel in the store.
  */
 const BADGE_NAME_CEILING = 60;
+const BADGE_SUFFIX = ' Badge';
+
+function badgeSuffixEl(field: HTMLElement): HTMLElement | null {
+  return field.querySelector<HTMLElement>('[data-badge-suffix]');
+}
+
+function makeBadgeSuffix(): HTMLElement {
+  const suffix = document.createElement('span');
+  suffix.dataset.badgeSuffix = '';
+  suffix.setAttribute('contenteditable', 'false');
+  suffix.textContent = BADGE_SUFFIX;
+  return suffix;
+}
+
+function badgeNameFromField(field: HTMLElement): string {
+  const suffix = badgeSuffixEl(field);
+  const raw = field.textContent ?? '';
+  if (!suffix) return raw;
+  return raw.endsWith(BADGE_SUFFIX) ? raw.slice(0, -BADGE_SUFFIX.length) : raw;
+}
+
+function writeBadgeField(field: HTMLElement, next: string) {
+  field.replaceChildren();
+  if (next) {
+    field.append(document.createTextNode(next), makeBadgeSuffix());
+  }
+}
 
 function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   const setBadgeName = useLeagueStore((s) => s.setBadgeName);
@@ -1433,16 +1330,22 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
   useLayoutEffect(() => {
     const el = fieldRef.current;
     if (!el || document.activeElement === el) return;
-    if (el.textContent !== name) el.textContent = name;
+    writeBadgeField(el, name);
     accepted.current = name;
   }, [name]);
 
   const putCaretAtEnd = () => {
     const el = fieldRef.current;
     if (!el) return;
+    const suffix = badgeSuffixEl(el);
     const range = document.createRange();
-    range.selectNodeContents(el);
-    range.collapse(false);
+    if (suffix) {
+      range.setEndBefore(suffix);
+      range.collapse(false);
+    } else {
+      range.selectNodeContents(el);
+      range.collapse(false);
+    }
     const sel = window.getSelection();
     sel?.removeAllRanges();
     sel?.addRange(range);
@@ -1452,23 +1355,29 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
     const el = fieldRef.current;
     const box = textRef.current;
     if (!el || !box) return;
+    let next = badgeNameFromField(el);
+    if (next && !badgeSuffixEl(el)) {
+      el.appendChild(makeBadgeSuffix());
+      next = badgeNameFromField(el);
+    }
+    if (!next && badgeSuffixEl(el)) writeBadgeField(el, '');
     // Stored exactly as the field holds it. Normalizing here — collapsing
     // runs of space, say — makes the store and the DOM disagree on the very
     // next render, and the only way to reconcile that is to rewrite the
     // field, which throws the caret back to the start. A browser inserts a
     // non-breaking space for a trailing one, so a normalizing field
     // scrambles its own text the moment you type two words.
-    const next = el.textContent ?? '';
     // The suffix is already in the box by the second character, so the box
     // measures the phrase the reader will see, not just the name.
     const fits = next.length <= BADGE_NAME_CEILING && box.scrollHeight <= box.clientHeight + 1;
     if (!fits) {
-      el.textContent = accepted.current;
+      writeBadgeField(el, accepted.current);
       putCaretAtEnd();
       return;
     }
     accepted.current = next;
     setBadgeName(cardIndex, next);
+    requestAnimationFrame(putCaretAtEnd);
   };
 
   return (
@@ -1531,8 +1440,9 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           style={{ gridTemplateRows: name ? '0fr' : '1fr' }}
         >
           <span
-            className={cn('-mt-[0.0625rem] overflow-hidden transition-opacity duration-300 ease-out', MARK_LABEL_CLASS)}
-            style={{ color: 'var(--lg-hint)', opacity: name ? 0 : 1, minHeight: 0 }}
+            className={cn('-mt-[0.0625rem] transition-opacity duration-300 ease-out', MARK_LABEL_CLASS)}
+            data-mark-label="badge"
+            style={{ color: 'var(--lg-hint)', opacity: name ? 0 : 1, minHeight: 0, whiteSpace: 'nowrap' }}
           >
             BADGE
           </span>
@@ -1547,7 +1457,10 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
         // six characters. The height is still fixed rather than free, so
         // `scrollHeight` has something to exceed and a name cannot grow past
         // the box.
-        className={cn('min-w-0 flex-1 overflow-hidden pr-[0.25rem] text-left', NAME_CLASS)}
+        className={cn(
+          'min-w-0 flex-1 overflow-hidden pr-[0.25rem] text-left',
+          name ? NAME_CLASS : 'text-[0.5rem] font-extrabold leading-[1.2]',
+        )}
         style={{ maxHeight: `${3 * 0.53125 * 1.4}rem`, color: 'var(--lg-band)' }}
       >
         <span
@@ -1558,6 +1471,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           aria-label="Badge name"
           spellCheck={false}
           onInput={onInput}
+          onFocus={putCaretAtEnd}
           // The placeholder is the field's own `::before` rather than a
           // sibling: an empty inline span is zero-wide, which leaves nothing
           // to tap and nowhere obvious for the caret to sit.
@@ -1565,7 +1479,6 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           data-placeholder="Name"
           className="outline-none"
         />
-        {name ? <span> Badge</span> : null}
       </div>
       {name && (
         <SlotRemove
@@ -1573,7 +1486,7 @@ function BadgeSlot({ cardIndex, view }: { cardIndex: number; view: CardView }) {
           onRemove={() => {
             setBadgeName(cardIndex, '');
             const field = fieldRef.current;
-            if (field) field.textContent = '';
+            if (field) writeBadgeField(field, '');
           }}
         />
       )}

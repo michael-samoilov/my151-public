@@ -4,7 +4,7 @@ import { showcasePair, exportRow, vacantRow } from './exportLeague';
 import { emptyCard, type GymCard } from '../store/useLeagueStore';
 import { makePlacedLine } from '../model/engine';
 import { TEAM_SIZES } from '../model/constants';
-import { placeSlot } from '../slotLayout';
+import { pairSprite } from '../slotLayout';
 
 /**
  * The export's geometry is arithmetic, not layout: nothing here reads the DOM,
@@ -86,27 +86,21 @@ describe('export layout', () => {
     expect(L.BAR_H).toBeGreaterThan(L.TITLE_ROW_H);
   });
 
-  it('keeps both showcase blocks inside the slot at 2×', () => {
-    // The app's own solver, with the heading runs as the export measures
-    // them in Inter (ACE POKÉMON 91×44, PARTNER / SHOULDERMON 139×44) and no
-    // names. Pinned at 2× the two blocks overlap each other at their corners
-    // by design, but neither may leave the slot.
+  it('keeps both showcase blocks inside the slot', () => {
     const box = L.showcaseBox();
     const head = 2 * L.HEAD_LINE;
-    const slot = placeSlot(
-      box.width,
-      box.height,
-      { head: [91.2, head], name: [0, 0] },
-      { head: [138.5, head], name: [0, 0] },
-      L.PAIR_SPRITE,
-    );
-    for (const p of [slot.ace, slot.partner]) {
-      expect(p.sprite).toBe(L.PAIR_SPRITE);
-      expect(p.left).toBeGreaterThanOrEqual(0);
-      expect(p.top).toBeGreaterThanOrEqual(0);
-      expect(p.left + p.width).toBeLessThanOrEqual(box.width);
-      expect(p.top + head + p.sprite).toBeLessThanOrEqual(box.height);
-    }
+    const pad = 0.5 * 16 * L.K;
+    const sprite = pairSprite(box.width, box.height);
+    const aceTop = pad;
+    const aceBottom = pad + head + sprite;
+    const partnerTop = box.height - pad - head - sprite;
+    const partnerBottom = box.height - pad;
+    expect(aceTop).toBeGreaterThanOrEqual(0);
+    expect(partnerBottom).toBeLessThanOrEqual(box.height);
+    expect(partnerTop - aceBottom).toBeGreaterThan(0);
+    expect(sprite % 96).toBe(0);
+    expect(sprite).toBeLessThan(box.width);
+    expect(sprite).toBeLessThan(box.height);
   });
 
   it('gives the theme field room for its text and its label', () => {
@@ -142,8 +136,7 @@ describe('export layout', () => {
     expect(2 * L.HEAD_LINE + 12 + L.SIG_SPRITE).toBeLessThan(box.height);
   });
 
-  it('draws showcase sprites at a whole multiple of the source', () => {
-    expect(L.PAIR_SPRITE % 96).toBe(0);
+  it('draws the solo showcase sprite at a whole multiple of the source', () => {
     expect(L.SIG_SPRITE % 96).toBe(0);
   });
 

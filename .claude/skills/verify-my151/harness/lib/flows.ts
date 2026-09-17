@@ -545,9 +545,65 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
   checks.push(ok('league-change:blank-league', blank));
   if (!blank) return checks;
 
-  // 1. The ace picker names its slot, and its grid packs Eevee's nine tiles
-  //    without a gap in the rows after them.
   if (await openLeagueCard(s, CARD)) {
+    await sleep(s.engine === 'webkit' ? 1000 : 500);
+    const labels = await s.evalJson<{
+      partnerInside: boolean;
+      partnerDetail: string;
+      glyphOk: boolean;
+      glyphDetail: string;
+      badgeOneLine: boolean;
+      badgeDetail: string;
+    }>(`       const slot=document.querySelector('[data-ace-partner-slot]')||document.querySelector('[data-testid="slot-partner"]')?.parentElement;
+       const head=document.querySelector('[data-slot-head="partner"]');
+       const lines=[...head?.querySelectorAll('span.block')??[]];
+       const last=lines[lines.length-1];
+       const tm=document.querySelector('[data-testid="slot-tm"]');
+       const disc=tm?.querySelector('svg');
+       const badgeWord=document.querySelector('[data-mark-label="badge"]');
+       const sr=slot?.getBoundingClientRect();
+       const zoom=sr&&slot?sr.width/slot.offsetWidth:1;
+       const pad=1;
+       const range=document.createRange();
+       if(last) range.selectNodeContents(last);
+       const hr=last?range.getBoundingClientRect():null;
+       const rawR=slot?getComputedStyle(slot).borderTopLeftRadius:'8px';
+       let radius=parseFloat(rawR)||8;
+       if(rawR.includes('rem')) radius*=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
+       radius*=zoom;
+       const pastRect=!(sr&&hr)||hr.left<sr.left-pad||hr.right>sr.right+pad||hr.top<sr.top-pad||hr.bottom>sr.bottom+pad;
+       let pastCorner=false;
+       if(sr&&hr&&hr.right>sr.right-radius&&hr.bottom>sr.bottom-radius&&radius>0){
+         pastCorner=Math.hypot(hr.right-(sr.right-radius),hr.bottom-(sr.bottom-radius))>radius+pad;
+       }
+       const partnerInside=!!(sr&&hr)&&hr.width>0&&!pastRect&&!pastCorner
+         &&lines.map(l=>(l.textContent||'').trim()).join('|')==='PARTNER /|SHOULDERMON';
+       const root=parseFloat(getComputedStyle(document.documentElement).fontSize)||16;
+       const tmR=tm?.getBoundingClientRect();
+       const discW=disc?.getBoundingClientRect().width??0;
+       const colCap=Math.min(2.75*root, 0.26*(tmR?.width??0));
+       const cap=0.72*colCap+1.5;
+       const glyphOk=discW>4&&discW<=cap;
+       const bh=badgeWord?.getBoundingClientRect().height??0;
+       const fs=badgeWord?parseFloat(getComputedStyle(badgeWord).fontSize)||8:8;
+       const badgeOneLine=bh>0&&bh<=fs*1.65;
+       return {
+         partnerInside,
+         partnerDetail: sr&&hr?('ink['+Math.round(hr.left)+','+Math.round(hr.top)+' '+Math.round(hr.width)+'x'+Math.round(hr.height)+'] slot['+Math.round(sr.left)+','+Math.round(sr.top)+' '+Math.round(sr.width)+'x'+Math.round(sr.height)+'] pad='+pad.toFixed(1)+' lines='+lines.map(l=>(l.textContent||'').trim()).join('|')):'missing',
+         glyphOk,
+         glyphDetail: 'discW='+discW.toFixed(1)+' cap='+cap.toFixed(1),
+         badgeOneLine,
+         badgeDetail: 'h='+bh.toFixed(1)+' fs='+fs.toFixed(1),
+       };`).catch(() => null);
+    if (labels) {
+      checks.push(ok('league:partner-head-inside-slot', labels.partnerInside, labels.partnerDetail));
+      checks.push(ok('league:mark-glyph-not-oversized', labels.glyphOk, labels.glyphDetail));
+      checks.push(ok('league:badge-label-one-line', labels.badgeOneLine, labels.badgeDetail));
+      await s.screenshot(ctx.shot('league-card-labels'));
+    } else {
+      checks.push(ok('league:partner-head-inside-slot', false, 'eval failed'));
+    }
+
     await s.click('[data-testid="slot-ace"]');
     const pickerUp = await waitFor(s, '[data-filter-chip="my-dex"]');
     await sleep(600);
