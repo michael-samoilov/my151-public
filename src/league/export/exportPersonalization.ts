@@ -85,9 +85,9 @@ export function exportBeaconPlan(opts: {
   optedOut: boolean;
   kind: 'progress' | 'export';
 }): 'skip' | 'preview' | 'network' {
-  if (opts.optedOut) return 'skip';
-  if (!opts.demo) return 'network';
-  return opts.kind === 'export' ? 'preview' : 'skip';
+  if (opts.demo) return opts.kind === 'export' ? 'preview' : 'skip';
+  if (opts.optedOut) return opts.kind === 'export' ? 'network' : 'skip';
+  return 'network';
 }
 
 /**

@@ -75,8 +75,8 @@ function postBeacon(
   exportSettings?: ExportSettings,
   capturedAt?: number,
 ) {
-  // Demo mode never reports to analytics — keep the sample dex out of admin stats.
-  if (DEMO_MODE || isOptedOut() || ids.length === 0) return;
+  if (DEMO_MODE || ids.length === 0) return;
+  if (isOptedOut() && kind !== 'export') return;
   // Never null: getClientId falls back through sessionStorage to an in-memory
   // id, so restricted-storage browsers still report instead of vanishing.
   const cid = getClientId();
@@ -106,6 +106,7 @@ function postBeacon(
     events: events && events.length ? events : undefined,
     ref: externalReferrerHost() || undefined,
     ts: capturedAt ?? Date.now(),
+    notme: isOptedOut() || undefined,
   });
   // fetch+keepalive (not navigator.sendBeacon): iOS WebKit silently drops
   // sendBeacon in several cases (after the share sheet, non-CORS-safelisted

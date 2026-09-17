@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
-import { bumpDexPickFreq, recordToolExport } from './_exportStats.js';
+import { bumpDexPickFreq, parseNotmeFlag, recordToolExport } from './_exportStats.js';
 import { isFunnelEvent, parsePage, parseTool } from './_events.js';
 import {
   redis,
@@ -171,6 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tool?: unknown;
       page?: unknown;
       ts?: unknown;
+      notme?: unknown;
     };
 
     // Client id: a UUID minted once per browser. Length-bounded to avoid abuse.
@@ -188,6 +189,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!ids) return res.status(400).json({ error: 'Expected 1-151 Pokemon IDs' });
     if (kind === 'completion' && ids.length !== 151) {
       return res.status(400).json({ error: 'Completion requires exactly 151 Pokemon IDs' });
+    }
+
+    const notme = parseNotmeFlag(body.notme);
+    if (notme) {
+      if (kind === 'export') {
+        const highlight = await recordToolExport('pokedex', ids, { notme: true });
+        return res.status(200).json({ ok: true, highlight });
+      }
+      return res.status(200).json({ ok: true });
     }
 
     // Distinct evolution lines reached, computed client-side; clamp defensively.

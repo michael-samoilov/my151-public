@@ -14,7 +14,7 @@ import {
   parseLeagueRecord,
   parseSummary,
 } from './_leagueRecord.js';
-import { parsePokemonIds, recordToolExport } from './_exportStats.js';
+import { parseNotmeFlag, parsePokemonIds, recordToolExport } from './_exportStats.js';
 
 /**
  * The gym leader maker's build beacon: one record per anonymous browser in
@@ -65,6 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ref?: unknown;
       page?: unknown;
       ts?: unknown;
+      notme?: unknown;
     };
     if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
       return res.status(400).json({ error: 'invalid cid' });
@@ -80,6 +81,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const exportKind = body.kind === 'export' ? (isLeagueExportKind(body.exportKind) ? body.exportKind : undefined) : undefined;
     if (body.kind === 'export' && !exportKind) return res.status(400).json({ error: 'invalid exportKind' });
     const pokemonIds = body.kind === 'export' ? parsePokemonIds(body.pokemonIds) : [];
+    const notme = parseNotmeFlag(body.notme);
+    if (notme) {
+      if (exportKind) {
+        const highlight = await recordToolExport(
+          exportKind === 'card' ? 'card' : 'league',
+          pokemonIds,
+          { notme: true },
+        );
+        return res.status(200).json({ ok: true, highlight });
+      }
+      return res.status(200).json({ ok: true });
+    }
 
     const countDrop = async (reason: 'rate-limit-ip' | 'rate-limit-client' | 'cap' | 'contention') => {
       try {

@@ -8,6 +8,7 @@ import {
   markExportSurveySeen,
   persistExportSurveySeen,
   shouldOfferExportSurvey,
+  shouldShowExportSurvey,
   surveySeenInThisEnvironment,
 } from './exportSurvey';
 
@@ -68,5 +69,23 @@ describe('export survey gate', () => {
     expect(shouldOfferExportSurvey(1000)).toBe(true);
     expect(shouldOfferExportSurvey(1001)).toBe(false);
     expect(shouldOfferExportSurvey(151)).toBe(true);
+  });
+
+  it('always shows the overlay under notme, even after seen or ordinal 1000', () => {
+    expect(
+      shouldShowExportSurvey({ optedOut: true, seen: true, ordinal: 1001 }),
+    ).toBe(true);
+    expect(
+      shouldShowExportSurvey({ optedOut: true, seen: false, ordinal: 5000 }),
+    ).toBe(true);
+    expect(
+      shouldShowExportSurvey({ optedOut: false, seen: true, ordinal: 151 }),
+    ).toBe(false);
+    expect(
+      shouldShowExportSurvey({ optedOut: false, seen: false, ordinal: 1001 }),
+    ).toBe(false);
+    expect(
+      shouldShowExportSurvey({ optedOut: false, seen: false, ordinal: 151 }),
+    ).toBe(true);
   });
 });

@@ -58,6 +58,7 @@ function postLeagueBeacon(
     locale: getLocale(),
     ref: externalReferrerHost() || undefined,
     ts: capturedAt,
+    notme: isOptedOut() || undefined,
   });
   return fetch('/api/league', {
     method: 'POST',
