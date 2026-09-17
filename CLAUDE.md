@@ -30,7 +30,7 @@ The five rules are the summary. The full rule set is vendored at `.claude/skills
 
 Never drop these as tangents or preamble:
 
-- A request for approval before a tier 2 production merge (see Deployment).
+- A request for approval before merging public product UI, data-destruction, or a large or ambiguous product change (see Deployment).
 - A correction to an earlier statement that was wrong.
 - A defect or risk found in the work, including my own.
 
@@ -81,47 +81,46 @@ Vercel preview Ready/Error is the independent compile check. Visual review is wh
 
 ## Deployment
 
-**The app has real users. `claude/pokedex-region-builder-AviYF` is production.** The approval rule keeps an untested public-UI, data-destructive, or large change off the live app. Low-risk work that is already verified does not wait. Judge the change by what it does, not only by which folder the files sit in.
+**The app has real users. `claude/pokedex-region-builder-AviYF` is production.**
 
-### Tier 1: merge to production without asking
+Do not wait for Michael to ship low-risk, already-verified work. Merge it to `claude/pokedex-region-builder-AviYF`.
+The approval rule keeps an untested change that **end users** see out of the live app.
+Judge the change by what it does, not only by which folder the files sit in.
 
-A change is tier 1 when it is none of the tier 2 cases, and it is already verified (`npm run build`, `bash scripts/ci-local.sh`, and a test or other measured proof).
+Before every production push, run `npm run build` and `bash scripts/ci-local.sh`. GitHub Actions is not the deploy signal. Ignore a 2–3s red X. Vercel Ready is the compile and deploy signal.
 
-These paths are always tier 1:
+After every production push, check out the work branch again. A merge leaves you on production, so the next commit would land there. Run `git rev-parse --abbrev-ref HEAD` before any later commit.
 
-- `.claude/` and `.github/`
-- `docs/`, `e2e/`, `scripts/`, and `*.test.ts` files
-- `CLAUDE.md`, `README.md`, and other root Markdown
+### Merge to production without asking
 
-These are also tier 1 when the proof is in the work report:
+After the checks pass, merge into `claude/pokedex-region-builder-AviYF` and push. Do this as the last step of the work. Do not ask. Do not stop at the work branch. Report the merge in the work report.
 
-- Internal refactors, types, and dead-code removal with no user-noticeable behavior
-- Admin `/?admin` copy, counts, layout, and small bugfixes with a before/after or a test that failed then passed
+Ship without asking when the change is:
 
-A tier 1 change is not finished on the work branch. Finishing it means it reaches production. Run `npm run build`, then merge into `claude/pokedex-region-builder-AviYF`, push it, and check out the work branch again. Do this as the normal last step of the work. Do not ask, do not stop at the work branch, and do not call the production merge optional. Report the merge in the work report.
+- Docs, tests, scripts, `.claude/`, `.github/`, or other files a browser never receives.
+- Admin dashboard (`/?admin`) copy, counts, or small layout, when you already have a measured before/after or a test that failed then passed.
+- Internal refactors, types, and dead-code removal with no user-noticeable behavior.
 
-### Tier 2: ask first
+Admin is not public product UI. A verified admin Dex-chip count ships. A verified admin layout tweak ships.
 
-Ask in the current conversation when any of these is true:
+### Ask first
 
-1. Public user-facing product UI — pokedex builder, league, export, gym card, or any other surface end users see
-2. Data-destruction or irreversible production writes
-3. Large or ambiguous product changes, including build config and crawler-only files (`theme-color`, `robots.txt`, `sitemap.xml`) that reach users or indexers
+Ask in the current conversation before you merge when any of these apply:
 
-Approval is per-change: shipping one change is not standing permission for the next.
+1. **Public product UI.** The pokedex builder, league builder, or export that end users see. Admin `/?admin` copy, counts, or small verified layout is not this.
+2. **Data destruction or irreversible writes.** Deletes, schema drops, token or credential changes, anything a revert does not undo.
+3. **Large or ambiguous product changes.** Unclear scope, or a change big enough that Michael should see it first.
 
-Work a tier 2 change like this:
+When you are unsure, ask. A preview branch costs nothing.
 
-1. Commit to the work branch and push it (`git push -u origin <work-branch>`). Vercel builds a **preview deployment** for any pushed branch — that is where changes get verified.
-2. Report the preview to the user and let them look. Nothing in this tier reaches production on your own initiative.
-3. Merge into and push `claude/pokedex-region-builder-AviYF` **only after the user says to ship it.**
-4. **Check out the work branch again immediately after that push.** A merge leaves you on the production branch, so the next commit lands there silently — one `git push` away from an unapproved deploy. Run `git rev-parse --abbrev-ref HEAD` before any commit that follows a merge.
+Work an ask-first change like this:
 
-Step 4 applies to a tier 1 merge too. The branch you end on does not depend on the tier.
+1. Commit to the work branch and push it (`git push -u origin <work-branch>`). Vercel builds a preview deployment. Verify there.
+2. Report the preview. Do not merge to production until Michael says to ship it.
+3. After he says to ship it, merge into and push `claude/pokedex-region-builder-AviYF`.
+4. Check out the work branch again immediately after that push.
 
-When the tier is unclear, treat the change as tier 2 and ask. A change sitting on a preview branch costs nothing; an unapproved production deploy is seen by users.
-
-**Check whether a change is user-visible before calling it invisible.** `theme-color` tints mobile browser chrome; markup inside `#root` renders until React mounts. The app currently runs in **light** mode — the `.dark` block in `index.css` exists but nothing ever applies the class — so dark-themed additions will mismatch the live UI.
+**Check whether a change is user-visible before calling it invisible.** `theme-color` tints mobile browser chrome. Markup inside `#root` renders until React mounts. The app runs in **light** mode. The `.dark` block in `index.css` exists, but nothing applies the class, so dark-themed additions mismatch the live UI.
 
 ## Cursor Cloud specific instructions
 
@@ -159,9 +158,8 @@ Three notes on how pstack sits next to the rest of this file:
    pstack mandate.
 2. pstack's `prove it works` principle and the Work reports section agree:
    measure the result, do not infer it from the code.
-3. pstack does not change the Deployment tiers. A tier 2 change still needs
-   your approval, whatever skill produced it. A verified tier 1 change still
-   ships without asking.
+3. pstack does not change Deployment. Ask-first cases still need approval,
+   whatever skill produced them.
 
 ## Responsive sizing
 
