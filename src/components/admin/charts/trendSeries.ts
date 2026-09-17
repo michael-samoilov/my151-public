@@ -3,6 +3,7 @@ import { DAY_MS, dayStart } from '../../../../api/_aggregate';
 export interface DailyPoint {
   day: number;
   dau: number;
+  rolling24: number | null;
   rolling7: number | null;
 }
 
@@ -13,7 +14,7 @@ export function extendThroughToday(series: DailyPoint[], nowMs: number): DailyPo
   if (last >= today) return series;
   const out = series.slice();
   for (let d = last + DAY_MS; d <= today; d += DAY_MS) {
-    out.push({ day: d, dau: 0, rolling7: null });
+    out.push({ day: d, dau: 0, rolling24: null, rolling7: null });
   }
   return out;
 }
@@ -37,11 +38,11 @@ export function splitProvisional(
   };
 }
 
-/** Last-24h is today's unique DAU. Last-7d is API unique WAU (`rolling7`). */
-export function windowCounts(series: DailyPoint[]): { hours24: number; days7: number | null } {
-  if (series.length === 0) return { hours24: 0, days7: null };
+/** Gutter labels: trailing 24h and 168h unique counts at the last point. */
+export function windowCounts(series: DailyPoint[]): { hours24: number | null; days7: number | null } {
+  if (series.length === 0) return { hours24: null, days7: null };
   const last = series[series.length - 1];
-  return { hours24: last.dau, days7: last.rolling7 ?? null };
+  return { hours24: last.rolling24, days7: last.rolling7 };
 }
 
 /**

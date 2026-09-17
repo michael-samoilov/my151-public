@@ -640,7 +640,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const droppedMin = tailThreshold(droppedCounts);
 
     // The dex builder's daily active-users series (see api/_aggregate.ts for
-    // why rolling7 is a distinct-over-window count, not a sum of DAUs).
+    // rolling24/rolling7 are trailing-hour unique counts; see dailyActive).
     const activity = dexAgg.activity;
 
     // Private data — never cache.

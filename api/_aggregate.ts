@@ -15,6 +15,9 @@
 import { CARD_COUNT } from './_leagueRecord.js';
 
 export const DAY_MS = 86_400_000;
+const HOUR_MS = 3_600_000;
+const ROLLING_24H_MS = 24 * HOUR_MS;
+const ROLLING_7D_MS = 7 * DAY_MS;
 
 const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -154,40 +157,59 @@ export function activeTimestamps(r: SessionRecord): number[] {
   return [r.firstTs, r.lastTs];
 }
 
+function rollingUniqueAt(
+  events: { ts: number; cid: string }[],
+  asOf: number,
+  windowMs: number,
+  firstTs: number,
+): number | null {
+  if (asOf - firstTs < windowMs) return null;
+  const start = asOf - windowMs;
+  const roll = new Set<string>();
+  for (const e of events) {
+    if (e.ts > start && e.ts <= asOf) roll.add(e.cid);
+  }
+  return roll.size;
+}
+
 /**
- * Dense daily active-users series with a trailing-7-day rolling count.
+ * Dense daily active-users series with rolling 24h and 168h unique counts.
  *
- * `dau` is distinct browsers that day; `rolling7` is distinct browsers over
- * that day and the prior six — a WAU that updates daily, not a sum of DAUs, so
- * a browser active twice in a week counts once. `rolling7` is null until six
- * prior UTC days exist in the series (seven days total). Gaps are filled for
- * `dau`; the weekly line stays blank until the window is complete.
+ * `dau` is distinct browsers per UTC calendar day (for other metrics). Each point
+ * is evaluated at end-of-day UTC, or at `now` on today when given. `rolling24`
+ * and `rolling7` are distinct `cid` counts in the trailing 24h and 168h ending
+ * at that instant — not calendar buckets. Either rolling field is null until
+ * that much wall-clock history exists since the first session timestamp.
  */
-export function dailyActive(records: SessionRecord[], now?: number): { day: number; dau: number; rolling7: number | null }[] {
+export function dailyActive(
+  records: SessionRecord[],
+  now?: number,
+): { day: number; dau: number; rolling24: number | null; rolling7: number | null }[] {
   const sets: Record<number, Set<string>> = {};
+  const events: { ts: number; cid: string }[] = [];
   for (const r of records) {
-    for (const day of new Set(activeTimestamps(r).map(dayStart))) {
+    for (const ts of activeTimestamps(r)) {
+      events.push({ ts, cid: r.cid });
+      const day = dayStart(ts);
       (sets[day] ??= new Set()).add(r.cid);
     }
   }
   const dayKeys = Object.keys(sets).map(Number);
   if (dayKeys.length === 0) return [];
+  const firstTs = Math.min(...events.map((e) => e.ts));
   const firstDay = Math.min(...dayKeys);
   const lastActivity = Math.max(...dayKeys);
-  const lastDay = now != null ? Math.max(lastActivity, dayStart(now)) : lastActivity;
-  const out: { day: number; dau: number; rolling7: number | null }[] = [];
+  const todayStart = now != null ? dayStart(now) : null;
+  const lastDay = todayStart != null ? Math.max(lastActivity, todayStart) : lastActivity;
+  const out: { day: number; dau: number; rolling24: number | null; rolling7: number | null }[] = [];
   for (let day = firstDay; day <= lastDay; day += DAY_MS) {
-    const fullWindow = day - firstDay >= 6 * DAY_MS;
-    let rolling7: number | null = null;
-    if (fullWindow) {
-      const roll = new Set<string>();
-      for (let d = day - 6 * DAY_MS; d <= day; d += DAY_MS) {
-        const s = sets[d];
-        if (s) for (const cid of s) roll.add(cid);
-      }
-      rolling7 = roll.size;
-    }
-    out.push({ day, dau: sets[day]?.size ?? 0, rolling7 });
+    const asOf = todayStart !== null && day === todayStart && now != null ? now : day + DAY_MS - 1;
+    out.push({
+      day,
+      dau: sets[day]?.size ?? 0,
+      rolling24: rollingUniqueAt(events, asOf, ROLLING_24H_MS, firstTs),
+      rolling7: rollingUniqueAt(events, asOf, ROLLING_7D_MS, firstTs),
+    });
   }
   return out;
 }
@@ -280,7 +302,7 @@ export function heatmap(records: SessionRecord[]): { hours: number[]; matrix: nu
 /** Everything the dashboard shows for one tool's records. */
 export interface Aggregates {
   users: number;
-  activity: { day: number; dau: number; rolling7: number | null }[];
+  activity: { day: number; dau: number; rolling24: number | null; rolling7: number | null }[];
   retention: { returning: number; activeLast7: number; newUsers: number };
   timeCurves: Record<'longest' | 'first' | 'all', SurvivalCurve>;
   countries: Record<string, number>;
