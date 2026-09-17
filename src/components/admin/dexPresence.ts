@@ -25,6 +25,27 @@ export function idsOutsideSections(
   return out;
 }
 
+export function keepMountedSections(
+  latest: Record<string, number[]> | undefined,
+  historicalMaps: readonly (Record<string, number[]> | undefined)[],
+): Record<string, number[]> {
+  const placed = new Set<number>();
+  const out: Record<string, number[]> = {};
+  const take = (map: Record<string, number[]> | undefined) => {
+    if (!map) return;
+    for (const [sid, ids] of Object.entries(map)) {
+      for (const id of ids) {
+        if (placed.has(id)) continue;
+        placed.add(id);
+        (out[sid] ??= []).push(id);
+      }
+    }
+  };
+  take(latest);
+  for (const map of historicalMaps) take(map);
+  return out;
+}
+
 export function useDexPresence(
   rootRef: RefObject<HTMLElement | null>,
   presentIds: number[],

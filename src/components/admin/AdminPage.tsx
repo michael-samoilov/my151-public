@@ -21,7 +21,7 @@ import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '..
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
-import { idsOutsideSections, useDexPresence } from '@/components/admin/dexPresence';
+import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/components/admin/dexPresence';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
@@ -916,17 +916,21 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
     };
   });
   const idx = Math.min(i, Math.max(0, log.length - 1));
-  const cur = log[idx];
-  // Keep tile positions on the full assignment. Session `sections` would rebuild
-  // the grid on every scrub step. Presence still comes from this session's ids.
-  const sections = rec.latestSections ?? log[log.length - 1]?.sections ?? cur?.sections;
+  const mountedSections = useMemo(
+    () =>
+      keepMountedSections(rec.latestSections ?? log[log.length - 1]?.sections, [
+        rec.everSections,
+        ...log.map((s) => s.sections),
+      ]),
+    [rec.latestSections, rec.everSections, log],
+  );
   const presentIds = useMemo(
     () => log[idx]?.ids ?? rec.latestIds ?? [],
     [log, idx, rec.latestIds],
   );
   const sectionedSet = useMemo(
-    () => new Set(Object.values(sections ?? {}).flat()),
-    [sections],
+    () => new Set(Object.values(mountedSections).flat()),
+    [mountedSections],
   );
   const keepOffIds = useMemo(
     () => idsOutsideSections(sessionIds.length > 0 ? sessionIds : [presentIds], sectionedSet),
@@ -934,7 +938,7 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
   );
   const presenceRef = useRef<HTMLDivElement | null>(null);
   useDexPresence(presenceRef, presentIds, sessionIds);
-  const hasSections = !!sections && Object.keys(sections).length > 0;
+  const hasSections = Object.keys(mountedSections).length > 0;
   const peak = Math.max(0, ...points.map((p) => p.count));
   const totalMs = ms.reduce((a, b) => a + b, 0);
 
@@ -950,8 +954,8 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
 
   const snapshot = (
     <div ref={presenceRef}>
-      {sections && Object.keys(sections).length > 0 ? (
-        <OutlinedDex sections={sections} presentIds={presentIds} />
+      {hasSections ? (
+        <OutlinedDex sections={mountedSections} presentIds={presentIds} />
       ) : presentIds.length > 0 ? (
         <SpriteRow ids={presentIds} />
       ) : (
