@@ -9,6 +9,7 @@ import {
   lineKey,
   picksGridCap,
   picksGridCols,
+  picksSplitCap,
   picksStarterCols,
   poolIdsForSection,
   rowsUsed,
@@ -259,6 +260,21 @@ describe('picksGridCols', () => {
     expect(picksGridCap(true, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 12 });
     expect(picksGridCap(true, false)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 6 });
     expect(picksGridCap(false, true)).toEqual({ maxRows: 4, cols: 6 });
+  });
+});
+
+describe('picksSplitCap', () => {
+  it('uses a narrower least cap on desktop most-picked', () => {
+    expect(picksSplitCap(false, true)).toEqual({
+      kind: 'dual',
+      most: PICKS_GRID_CAP,
+      least: { maxRows: 4, cols: 3 },
+    });
+    expect(picksSplitCap(false, false)).toEqual({
+      kind: 'dual',
+      most: PICKS_GRID_CAP,
+      least: PICKS_GRID_CAP,
+    });
   });
 });
 

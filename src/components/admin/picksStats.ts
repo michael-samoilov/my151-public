@@ -26,8 +26,10 @@
  * Least-picked is only lines below 0.90×. In-section Starters list every
  * first-stage Pokémon across the full row, split grass / fire / water, with
  * no most/least split and no 1.10× cutoff. The starter grid is 12 columns
- * on phone and desktop so tiles match a most|least pair and nine first-stage
- * faces fit one row. Regional starter variants (Hisuian Decidueye with
+ * on phone and desktop so nine first-stage faces fit one row. Other in-section
+ * sections on desktop use one 9-column row (6 most + 3 least) so sprites
+ * read larger than the old 12-across pair. Mobile keeps a 6+6 side-by-side
+ * pair. Regional starter variants (Hisuian Decidueye with
  * Rowlet) share one first-stage face. Off-section has no least column, shows
  * raw dex counts, never uses the starter type split or first-stage-only
  * faces, lays the sprite grid across the full width (12 columns on desktop,
@@ -46,11 +48,17 @@ import {
 import type { Pokemon, TypeName } from '@/types/pokemon';
 
 export const PICKS_COLS = 6;
-/** 12 columns across the section: same tile size as a most|least pair. */
+/** Desktop most|least row: six for most, three for least. */
+export const PICKS_MOST_COLS = PICKS_COLS;
+export const PICKS_LEAST_DESKTOP_COLS = 3;
+export const PICKS_COMBINED_COLS = PICKS_MOST_COLS + PICKS_LEAST_DESKTOP_COLS;
+/** 12 columns across the section (starters and off-section desktop). */
 export const PICKS_PAIR_COLS = 12;
 export const PICKS_OFF_DESKTOP_COLS = PICKS_PAIR_COLS;
 export const PICKS_MAX_ROWS = 4;
 export const PICKS_GRID_CAP = { maxRows: PICKS_MAX_ROWS, cols: PICKS_COLS } as const;
+
+type GridCap = { maxRows: number; cols: number } | { maxLines: number };
 
 /** Desktop uses a full-width 12-col grid when there is no least column. */
 export function picksGridCols(wide: boolean, desktop: boolean): number {
@@ -67,6 +75,25 @@ export function picksGridCap(offSection: boolean, desktop: boolean): { maxRows: 
     maxRows: offSection ? Number.POSITIVE_INFINITY : PICKS_MAX_ROWS,
     cols: picksGridCols(offSection, desktop),
   };
+}
+
+export type PicksSplitCap =
+  | { kind: 'single'; cap: GridCap }
+  | { kind: 'dual'; most: GridCap; least: GridCap };
+
+/** Row caps for most/least lists on the What people pick page. */
+export function picksSplitCap(offSection: boolean, desktop: boolean): PicksSplitCap {
+  if (offSection) {
+    return {
+      kind: 'single',
+      cap: { maxRows: Number.POSITIVE_INFINITY, cols: picksGridCols(true, desktop) },
+    };
+  }
+  const most: GridCap = PICKS_GRID_CAP;
+  const least: GridCap = desktop
+    ? { maxRows: PICKS_MAX_ROWS, cols: PICKS_LEAST_DESKTOP_COLS }
+    : PICKS_GRID_CAP;
+  return { kind: 'dual', most, least };
 }
 export const MOST_MIN_INDEX = 1.1;
 export const LEAST_MAX_INDEX = 0.9;
@@ -248,8 +275,6 @@ export function rowsUsed(lines: { members: readonly unknown[] }[], cols = PICKS_
   return rows;
 }
 
-type GridCap = { maxRows: number; cols: number } | { maxLines: number };
-
 function takeUntilCap<T extends { key: string; members: readonly unknown[] }>(
   lines: T[],
   cap: GridCap,
@@ -275,20 +300,24 @@ function takeUntilCap<T extends { key: string; members: readonly unknown[] }>(
  */
 export function splitMostLeast<T extends { key: string; index: number; members: readonly unknown[] }>(
   rankedDesc: T[],
-  cap: GridCap,
+  cap: GridCap | PicksSplitCap,
   opts: { minMostIndex?: number; maxLeastIndex?: number; includeLeast?: boolean } = {},
 ): { most: T[]; least: T[] } {
   const includeLeast = opts.includeLeast !== false;
   const minMost = opts.minMostIndex;
   const maxLeast = opts.maxLeastIndex;
+  const mostCap =
+    'kind' in cap && cap.kind === 'single' ? cap.cap : 'kind' in cap ? cap.most : cap;
+  const leastCap =
+    'kind' in cap && cap.kind === 'single' ? cap.cap : 'kind' in cap ? cap.least : cap;
   let over = minMost == null ? rankedDesc : rankedDesc.filter((l) => roundedIndex(l.index) > minMost);
   if (maxLeast != null) over = over.filter((l) => roundedIndex(l.index) >= maxLeast);
-  const most = takeUntilCap(over, cap);
+  const most = takeUntilCap(over, mostCap);
   if (!includeLeast) return { most, least: [] };
   const mostKeys = new Set(most.map((l) => l.key));
   let rest = rankedDesc.filter((l) => !mostKeys.has(l.key));
   if (maxLeast != null) rest = rest.filter((l) => roundedIndex(l.index) < maxLeast);
-  const least = takeUntilCap(rest.toReversed(), cap).toReversed();
+  const least = takeUntilCap(rest.toReversed(), leastCap).toReversed();
   return { most, least };
 }
 
@@ -371,7 +400,11 @@ function linePicks(memberIds: number[], counts: Map<number, number>): number {
 export function sectionPicksView(
   sectionId: string,
   rows: [string, number][],
-  opts: { offSection?: boolean; excludeOneOffs?: boolean; cap?: { maxRows: number; cols: number } } = {},
+  opts: {
+    offSection?: boolean;
+    excludeOneOffs?: boolean;
+    cap?: PicksSplitCap | { maxRows: number; cols: number };
+  } = {},
 ): SectionPicksView | null {
   const raw = countsFrom(rows);
   const counts = new Map<number, number>();
@@ -407,9 +440,17 @@ export function sectionPicksView(
   if (ranked.length === 0) return null;
   if (!opts.offSection && ranked.every((l) => l.picks === 0)) return null;
 
-  const cap = opts.offSection
-    ? { maxRows: Number.POSITIVE_INFINITY, cols: opts.cap?.cols ?? PICKS_COLS }
-    : (opts.cap ?? PICKS_GRID_CAP);
+  const cap: GridCap | PicksSplitCap = opts.offSection
+    ? opts.cap && 'kind' in opts.cap
+      ? opts.cap
+      : {
+          kind: 'single',
+          cap: {
+            maxRows: Number.POSITIVE_INFINITY,
+            cols: opts.cap && 'cols' in opts.cap ? opts.cap.cols : PICKS_COLS,
+          },
+        }
+    : (opts.cap ?? { kind: 'dual', most: PICKS_GRID_CAP, least: PICKS_GRID_CAP });
   const splitOpts = {
     minMostIndex: starters || opts.offSection ? undefined : MOST_MIN_INDEX,
     maxLeastIndex: opts.offSection ? undefined : LEAST_MAX_INDEX,
@@ -436,7 +477,11 @@ export function sectionPicksView(
 
 export function viewsForPicks(
   bySection: Record<string, [string, number][]>,
-  opts: { offSection?: boolean; excludeOneOffs?: boolean; cap?: { maxRows: number; cols: number } } = {},
+  opts: {
+    offSection?: boolean;
+    excludeOneOffs?: boolean;
+    cap?: PicksSplitCap | { maxRows: number; cols: number };
+  } = {},
 ): SectionPicksView[] {
   const out: SectionPicksView[] = [];
   for (const g of BUILD_GROUPS) {

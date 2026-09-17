@@ -10,9 +10,12 @@ import {
   indexBarPct,
   isStarterTypeName,
   PICKS_COLS,
+  PICKS_COMBINED_COLS,
+  PICKS_LEAST_DESKTOP_COLS,
+  PICKS_MOST_COLS,
   PICKS_PAIR_COLS,
-  picksGridCap,
   picksGridCols,
+  picksSplitCap,
   picksStarterCols,
   viewsForPicks,
   type DualColumn,
@@ -182,7 +185,12 @@ function LineGrid({
     return <p className="text-[0.65rem] text-muted-foreground">None in this cap.</p>;
   }
   const rows = packLineRows(lines, cols);
-  const colClass = cols === PICKS_PAIR_COLS ? 'grid-cols-12' : 'grid-cols-6';
+  const colClass =
+    cols === PICKS_PAIR_COLS
+      ? 'grid-cols-12'
+      : cols === PICKS_COMBINED_COLS
+        ? 'grid-cols-9'
+        : 'grid-cols-6';
   return (
     <div className="flex min-w-0 flex-col gap-1">
       {rows.map((row, i) => (
@@ -203,6 +211,78 @@ function LineGrid({
           ))}
         </div>
       ))}
+    </div>
+  );
+}
+
+function CombinedMostLeastGrid({
+  columns,
+  max,
+  barColor,
+  countMode,
+}: {
+  columns: DualColumn;
+  max: number;
+  barColor: string;
+  countMode: boolean;
+}) {
+  const mostRows = packLineRows(columns.most, PICKS_MOST_COLS);
+  const leastRows = packLineRows(columns.least, PICKS_LEAST_DESKTOP_COLS);
+  const rowCount = Math.max(mostRows.length, leastRows.length);
+  if (rowCount === 0) {
+    return <p className="text-[0.65rem] text-muted-foreground">None in this cap.</p>;
+  }
+  return (
+    <div className="min-w-0" data-picks-layout="combined-9" data-picks-cols={PICKS_COMBINED_COLS}>
+      <div className="mb-1 grid grid-cols-9 gap-0.5">
+        <div className="col-span-6 text-[0.65rem] font-semibold">Most</div>
+        <div className="col-span-3 border-l border-border/60 pl-1 text-[0.65rem] font-semibold">Least</div>
+      </div>
+      <div className="flex min-w-0 flex-col gap-1">
+        {Array.from({ length: rowCount }, (_, i) => {
+          const m = mostRows[i] ?? { cells: [] as Cell[], spacers: PICKS_MOST_COLS };
+          const l = leastRows[i] ?? { cells: [] as Cell[], spacers: PICKS_LEAST_DESKTOP_COLS };
+          return (
+            <div key={i} className="grid min-w-0 grid-cols-9 gap-0.5">
+              <div className="col-span-6 grid min-w-0 grid-cols-6 gap-0.5" data-picks-side="most">
+                {m.cells.map((cell) => (
+                  <SpriteCell
+                    key={cell.key}
+                    member={cell.member}
+                    index={cell.index}
+                    linePicks={cell.linePicks}
+                    max={max}
+                    barColor={barColor}
+                    countMode={countMode}
+                  />
+                ))}
+                {Array.from({ length: m.spacers }, (_, s) => (
+                  <div key={`ms-${s}`} className="min-w-0" />
+                ))}
+              </div>
+              <div
+                className="col-span-3 grid min-w-0 grid-cols-3 gap-0.5 border-l border-border/60 pl-1"
+                data-picks-side="least"
+              >
+                {l.cells.map((cell) => (
+                  <SpriteCell
+                    key={cell.key}
+                    member={cell.member}
+                    index={cell.index}
+                    linePicks={cell.linePicks}
+                    max={max}
+                    barColor={barColor}
+                    countMode={countMode}
+                  />
+                ))}
+                {Array.from({ length: l.spacers }, (_, s) => (
+                  <div key={`ls-${s}`} className="min-w-0" />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -233,6 +313,16 @@ function DualGrids({
       <div className="min-w-0 w-full" data-picks-side="most" data-picks-cols={cols}>
         <LineGrid lines={columns.most} max={max} barColor={barColor} countMode={countMode} cols={cols} />
       </div>
+    );
+  }
+  if (isDesktop && !pairDensity) {
+    return (
+      <CombinedMostLeastGrid
+        columns={columns}
+        max={max}
+        barColor={barColor}
+        countMode={countMode}
+      />
     );
   }
   return (
@@ -318,10 +408,10 @@ export function PicksDetailPage({
   const [excludeOneOffs, setExcludeOneOffs] = useState(false);
   const offSection = view === 'off';
   const isDesktop = useIsDesktop();
-  const cap = useMemo(() => picksGridCap(offSection, isDesktop), [offSection, isDesktop]);
+  const splitCap = useMemo(() => picksSplitCap(offSection, isDesktop), [offSection, isDesktop]);
   const sections = useMemo(
-    () => viewsForPicks(picksBySectionAll, { offSection, excludeOneOffs: offSection && excludeOneOffs, cap }),
-    [picksBySectionAll, offSection, excludeOneOffs, cap],
+    () => viewsForPicks(picksBySectionAll, { offSection, excludeOneOffs: offSection && excludeOneOffs, cap: splitCap }),
+    [picksBySectionAll, offSection, excludeOneOffs, splitCap],
   );
 
   return (
