@@ -29,6 +29,16 @@ async function waitPreviewReady(page: Page) {
   });
 }
 
+async function parkPreview(page: Page) {
+  const foil = page.locator('[data-export-preview]');
+  if ((await foil.getAttribute('data-paused')) === '1') return;
+  const box = await page.locator('[data-export-tilt-hit]').boundingBox();
+  if (!box) return;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
+  await page.waitForTimeout(450);
+}
+
 function previewFitsBand(page: Page, viewportHeight: number) {
   return page.evaluate((vh) => {
     const img = document.querySelector<HTMLElement>('[data-export-preview-layer] img');
@@ -72,10 +82,10 @@ test.describe('dex export overlay', () => {
     expect(firstSrc).toBeTruthy();
 
     await page.locator('[data-export-sort="national"]').click();
+    await expect
+      .poll(async () => page.locator('[data-export-preview-layer] img').getAttribute('src'), { timeout: 45_000 })
+      .not.toBe(firstSrc);
     await waitPreviewReady(page);
-    const nextSrc = await page.locator('[data-export-preview-layer] img').getAttribute('src');
-    expect(nextSrc).toBeTruthy();
-    expect(nextSrc).not.toBe(firstSrc);
   });
 
   test('save image opens the early-export survey', async ({ page }) => {
@@ -109,15 +119,18 @@ test.describe('dex export overlay', () => {
 
 test.describe('mobile dex export sheet', () => {
   test.use({ viewport: MOBILE });
+  test.skip(({ viewport }) => (viewport?.width ?? 0) >= 1024, 'the sheet is hidden at md');
 
   test('keeps the preview above the settings sheet', async ({ page }) => {
     await openDexExport(page);
     await waitPreviewReady(page);
+    await parkPreview(page);
     const fit = await previewFitsBand(page, MOBILE.height);
     expect(fit.ok, fit.reason).toBe(true);
 
     await page.locator('[data-export-sort="national"]').click();
     await waitPreviewReady(page);
+    await parkPreview(page);
     const fitNational = await previewFitsBand(page, MOBILE.height);
     expect(fitNational.ok, `national: ${fitNational.reason}`).toBe(true);
   });

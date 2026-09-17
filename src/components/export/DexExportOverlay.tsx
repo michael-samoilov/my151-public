@@ -145,6 +145,8 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
   const showStats = usePokedexStore((s) => s.viewShowStats);
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const statsData = useDetailedStatsData();
+  const statsDataRef = useRef(statsData);
+  statsDataRef.current = statsData;
   const showSectionOverlays = showSections && sortOption === 'build-order';
   const showStatsPanel = showStats && sorted.length >= STATS_MIN_POKEMON;
 
@@ -180,7 +182,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
     try {
       const blob = await generateExportImage(sorted, {
         sections: showSectionOverlays ? sections : null,
-        stats: showStatsPanel ? { data: statsData, heights: DEFAULT_STATS_HEIGHTS } : null,
+        stats: showStatsPanel ? { data: statsDataRef.current, heights: DEFAULT_STATS_HEIGHTS } : null,
       });
       if (gen !== renderGenRef.current) return;
       const url = URL.createObjectURL(blob);
@@ -194,7 +196,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
     } finally {
       if (gen === renderGenRef.current) setPreviewBusy(false);
     }
-  }, [revokePreview, sections, showSectionOverlays, showStatsPanel, sorted, statsData]);
+  }, [revokePreview, sections, showSectionOverlays, showStatsPanel, sorted]);
 
   useEffect(() => {
     if (phase !== 'settings') return;
@@ -237,7 +239,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
         ? await fetch(previewUrlRef.current).then((r) => r.blob())
         : await generateExportImage(sorted, {
             sections: showSectionOverlays ? sections : null,
-            stats: showStatsPanel ? { data: statsData, heights: DEFAULT_STATS_HEIGHTS } : null,
+            stats: showStatsPanel ? { data: statsDataRef.current, heights: DEFAULT_STATS_HEIGHTS } : null,
           });
       await shareOrDownload(blob, 'my151.png');
       if (
@@ -269,7 +271,6 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
     showStatsPanel,
     sortOption,
     sorted,
-    statsData,
   ]);
 
   const paneTitle =
