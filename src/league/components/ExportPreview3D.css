@@ -1,0 +1,286 @@
+/* Lighting layers for the export preview.
+ *
+ * Layers read a FoilRecipe through CSS variables (`--foil-pointLight`, …)
+ * and clip to maps derived from the PNG (`--foil-sat-mask`, edge, gloss).
+ * White paper has no chroma, so holographic / iridescence / sparkle stay on
+ * type pills, sprites, and ink. Emboss and rim use the edge map.
+ *
+ * Mix modes stay off color-dodge as the master blend: that wash blew out
+ * this white export. Multiply, overlay, soft-light, screen, and color
+ * keep the print readable.
+ */
+
+.export-foil {
+  --pointer-x: 50%;
+  --pointer-y: 50%;
+  --pointer-from-center: 0;
+  --pointer-from-top: 0.5;
+  --pointer-from-left: 0.5;
+  --foil-opacity: 0;
+  --foil-pointLight: 0;
+  --foil-ambient: 0;
+  --foil-specular: 0;
+  --foil-rim: 0;
+  --foil-holographic: 0;
+  --foil-iridescence: 0;
+  --foil-emboss: 0;
+  --foil-parallax: 0;
+  --foil-sparkle: 0;
+  --foil-bloom: 0;
+  --foil-parallax-px: 7px;
+  --foil-bloom-blur: 14px;
+  --foil-spec-size: 0.3;
+  --foil-sat-mask: none;
+  --foil-edge-mask: none;
+  --foil-gloss-mask: none;
+  --sunpillar-1: hsl(2, 100%, 73%);
+  --sunpillar-2: hsl(53, 100%, 69%);
+  --sunpillar-3: hsl(93, 100%, 69%);
+  --sunpillar-4: hsl(176, 100%, 76%);
+  --sunpillar-5: hsl(228, 100%, 74%);
+  --sunpillar-6: hsl(283, 100%, 73%);
+  --space: 5%;
+  --foil-shift-x: calc((var(--pointer-from-left) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
+  --foil-shift-y: calc((var(--pointer-from-top) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
+  position: relative;
+  overflow: visible;
+  transform-style: preserve-3d;
+  isolation: isolate;
+}
+
+.export-foil-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.export-foil-mask-sat,
+.export-foil-holographic,
+.export-foil-iridescence,
+.export-foil-parallax {
+  -webkit-mask-image: var(--foil-sat-mask);
+  mask-image: var(--foil-sat-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.export-foil-emboss,
+.export-foil-rim {
+  -webkit-mask-image: var(--foil-edge-mask);
+  mask-image: var(--foil-edge-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.export-foil-specular,
+.export-foil-sparkle,
+.export-foil-bloom {
+  -webkit-mask-image: var(--foil-gloss-mask);
+  mask-image: var(--foil-gloss-mask);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.export-foil:not([data-foil-maps='1']) .export-foil-holographic,
+.export-foil:not([data-foil-maps='1']) .export-foil-iridescence,
+.export-foil:not([data-foil-maps='1']) .export-foil-emboss,
+.export-foil:not([data-foil-maps='1']) .export-foil-rim,
+.export-foil:not([data-foil-maps='1']) .export-foil-specular,
+.export-foil:not([data-foil-maps='1']) .export-foil-sparkle,
+.export-foil:not([data-foil-maps='1']) .export-foil-bloom,
+.export-foil:not([data-foil-maps='1']) .export-foil-parallax {
+  opacity: 0;
+}
+
+.export-foil-ambient {
+  z-index: 1;
+  background-image: linear-gradient(
+    calc(var(--pointer-from-left) * 180deg - 90deg),
+    hsla(40, 30%, 100%, 0.42),
+    transparent 42%,
+    hsla(222, 28%, 12%, 0.38)
+  );
+  mix-blend-mode: overlay;
+  opacity: calc(var(--foil-opacity) * var(--foil-ambient));
+}
+
+.export-foil-point-light {
+  z-index: 2;
+  background-image: radial-gradient(
+    circle at var(--pointer-x) var(--pointer-y),
+    hsla(40, 45%, 100%, 0.7) 0%,
+    hsla(40, 30%, 96%, 0.22) 22%,
+    transparent 58%
+  );
+  mix-blend-mode: soft-light;
+  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.78 + 0.22 * var(--pointer-from-center)));
+}
+
+.export-foil-holographic {
+  z-index: 3;
+  background-image:
+    repeating-linear-gradient(
+      125deg,
+      var(--sunpillar-1) calc(var(--space) * 1),
+      var(--sunpillar-2) calc(var(--space) * 2),
+      var(--sunpillar-3) calc(var(--space) * 3),
+      var(--sunpillar-4) calc(var(--space) * 4),
+      var(--sunpillar-5) calc(var(--space) * 5),
+      var(--sunpillar-6) calc(var(--space) * 6),
+      var(--sunpillar-1) calc(var(--space) * 7)
+    ),
+    repeating-linear-gradient(
+      -55deg,
+      transparent 0%,
+      hsla(0, 0%, 100%, 0.32) 8%,
+      transparent 18%
+    );
+  background-blend-mode: overlay, overlay;
+  background-size: 380% 820%, 210% 210%;
+  background-position:
+    calc(10% + var(--pointer-from-left) * 80%) calc(10% + var(--pointer-from-top) * 80%),
+    calc(var(--pointer-from-left) * 100%) calc(var(--pointer-from-top) * 100%);
+  mix-blend-mode: overlay;
+  filter: saturate(1.35);
+  transform: translate3d(var(--foil-shift-x), var(--foil-shift-y), 2px);
+  opacity: calc(var(--foil-opacity) * var(--foil-holographic) * (0.82 + 0.18 * var(--pointer-from-center)));
+}
+
+.export-foil-iridescence {
+  z-index: 4;
+  background-image: linear-gradient(
+    calc(var(--pointer-from-left) * 360deg),
+    hsl(calc(var(--pointer-from-left) * 360), 88%, 58%),
+    hsl(calc(120 + var(--pointer-from-left) * 360), 88%, 58%),
+    hsl(calc(240 + var(--pointer-from-left) * 360), 88%, 58%)
+  );
+  mix-blend-mode: color;
+  transform: translate3d(var(--foil-shift-x), var(--foil-shift-y), 3px);
+  opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--pointer-from-center)));
+}
+
+.export-foil-emboss {
+  z-index: 5;
+  background-image: linear-gradient(
+    calc(var(--pointer-from-left) * 180deg + var(--pointer-from-top) * 90deg),
+    hsla(0, 0%, 100%, 0.82) 0%,
+    hsla(0, 0%, 50%, 0) 46%,
+    hsla(0, 0%, 0%, 0.72) 100%
+  );
+  mix-blend-mode: overlay;
+  opacity: calc(var(--foil-opacity) * var(--foil-emboss));
+}
+
+.export-foil-rim {
+  z-index: 6;
+  background-image: radial-gradient(
+    ellipse 85% 60% at calc(100% - var(--pointer-x)) calc(100% - var(--pointer-y)),
+    hsla(205, 90%, 92%, 0.9) 0%,
+    hsla(205, 70%, 80%, 0.25) 28%,
+    transparent 58%
+  );
+  mix-blend-mode: screen;
+  opacity: calc(var(--foil-opacity) * var(--foil-rim) * (0.75 + 0.25 * var(--pointer-from-center)));
+}
+
+.export-foil-parallax {
+  z-index: 7;
+  background-image: linear-gradient(
+    calc(var(--pointer-from-top) * 80deg + 40deg),
+    hsla(0, 0%, 100%, 0.4),
+    transparent 38%,
+    hsla(0, 0%, 0%, 0.22)
+  );
+  mix-blend-mode: overlay;
+  transform: translate3d(
+    calc(var(--foil-shift-x) * 1.8),
+    calc(var(--foil-shift-y) * 1.8),
+    5px
+  );
+  opacity: calc(var(--foil-opacity) * var(--foil-parallax));
+}
+
+.export-foil-specular {
+  z-index: 8;
+  background-image: radial-gradient(
+    circle at var(--pointer-x) var(--pointer-y),
+    hsla(0, 0%, 100%, 0.95) 0%,
+    hsla(0, 0%, 100%, 0.4) calc(var(--foil-spec-size) * 42%),
+    transparent calc(var(--foil-spec-size) * 95%)
+  );
+  mix-blend-mode: screen;
+  opacity: calc(var(--foil-opacity) * var(--foil-specular) * (0.72 + 0.28 * var(--pointer-from-center)));
+}
+
+.export-foil-bloom {
+  z-index: 9;
+  background-image: radial-gradient(
+    circle at var(--pointer-x) var(--pointer-y),
+    hsla(0, 0%, 100%, 0.85) 0%,
+    hsla(48, 100%, 80%, 0.35) calc(var(--foil-spec-size) * 50%),
+    transparent calc(var(--foil-spec-size) * 120%)
+  );
+  mix-blend-mode: screen;
+  filter: blur(var(--foil-bloom-blur));
+  opacity: calc(var(--foil-opacity) * var(--foil-bloom) * (0.7 + 0.3 * var(--pointer-from-center)));
+}
+
+.export-foil-sparkle {
+  z-index: 10;
+  background-image:
+    radial-gradient(1.1px 1.1px at 12% 18%, hsla(0, 0%, 100%, 0.95), transparent),
+    radial-gradient(1.4px 1.4px at 38% 8%, hsla(50, 100%, 92%, 0.9), transparent),
+    radial-gradient(1px 1px at 62% 22%, hsla(0, 0%, 100%, 0.85), transparent),
+    radial-gradient(1.6px 1.6px at 84% 14%, hsla(280, 100%, 95%, 0.8), transparent),
+    radial-gradient(1.2px 1.2px at 8% 48%, hsla(180, 100%, 94%, 0.85), transparent),
+    radial-gradient(1px 1px at 28% 62%, hsla(0, 0%, 100%, 0.8), transparent),
+    radial-gradient(1.5px 1.5px at 54% 44%, hsla(50, 100%, 90%, 0.9), transparent),
+    radial-gradient(1.1px 1.1px at 76% 58%, hsla(0, 0%, 100%, 0.88), transparent),
+    radial-gradient(1.3px 1.3px at 92% 72%, hsla(200, 100%, 94%, 0.8), transparent),
+    radial-gradient(1px 1px at 18% 82%, hsla(0, 0%, 100%, 0.75), transparent),
+    radial-gradient(1.4px 1.4px at 46% 88%, hsla(50, 100%, 92%, 0.85), transparent),
+    radial-gradient(1.2px 1.2px at 70% 86%, hsla(0, 0%, 100%, 0.8), transparent);
+  background-size:
+    180% 180%,
+    160% 160%,
+    200% 200%,
+    140% 140%,
+    170% 170%,
+    190% 190%,
+    150% 150%,
+    210% 210%,
+    165% 165%,
+    185% 185%,
+    155% 155%,
+    175% 175%;
+  background-position:
+    calc(var(--pointer-from-left) * 100%) calc(var(--pointer-from-top) * 100%),
+    calc(20% + var(--pointer-from-left) * 60%) calc(15% + var(--pointer-from-top) * 70%),
+    calc(var(--pointer-from-left) * 80%) calc(var(--pointer-from-top) * 90%),
+    calc(10% + var(--pointer-from-left) * 70%) calc(var(--pointer-from-top) * 80%),
+    calc(var(--pointer-from-left) * 90%) calc(20% + var(--pointer-from-top) * 60%),
+    calc(30% + var(--pointer-from-left) * 50%) calc(var(--pointer-from-top) * 100%),
+    calc(var(--pointer-from-left) * 70%) calc(10% + var(--pointer-from-top) * 80%),
+    calc(15% + var(--pointer-from-left) * 75%) calc(var(--pointer-from-top) * 85%),
+    calc(var(--pointer-from-left) * 95%) calc(25% + var(--pointer-from-top) * 55%),
+    calc(5% + var(--pointer-from-left) * 85%) calc(var(--pointer-from-top) * 75%),
+    calc(var(--pointer-from-left) * 60%) calc(5% + var(--pointer-from-top) * 90%),
+    calc(25% + var(--pointer-from-left) * 65%) calc(var(--pointer-from-top) * 70%);
+  mix-blend-mode: overlay;
+  transform: translate3d(var(--foil-shift-x), var(--foil-shift-y), 6px);
+  opacity: calc(var(--foil-opacity) * var(--foil-sparkle) * (0.65 + 0.35 * var(--pointer-from-center)));
+  filter: brightness(1.12) contrast(1.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .export-foil-layer {
+    opacity: 0;
+  }
+}

@@ -28,6 +28,8 @@ export default defineConfig({
         // The ace/partner slot, with its two halves loose so their placement
         // can be settled by hand. Same production gate as `levels`.
         slotlab: path.resolve(__dirname, 'slot-lab.html'),
+        // Preview-only lighting studio for the league export card.
+        foilworkshop: path.resolve(__dirname, 'foil-workshop.html'),
       },
     },
   },

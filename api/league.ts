@@ -14,6 +14,7 @@ import {
   parseLeagueRecord,
   parseSummary,
 } from './_leagueRecord.js';
+import { parsePokemonIds, recordToolExport } from './_exportStats.js';
 
 /**
  * The gym leader maker's build beacon: one record per anonymous browser in
@@ -59,6 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       exportKind?: unknown;
       summary?: unknown;
       cards?: unknown;
+      pokemonIds?: unknown;
       locale?: unknown;
       ref?: unknown;
       page?: unknown;
@@ -77,6 +79,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const cards = parseCards(body.cards);
     const exportKind = body.kind === 'export' ? (isLeagueExportKind(body.exportKind) ? body.exportKind : undefined) : undefined;
     if (body.kind === 'export' && !exportKind) return res.status(400).json({ error: 'invalid exportKind' });
+    const pokemonIds = body.kind === 'export' ? parsePokemonIds(body.pokemonIds) : [];
 
     const countDrop = async (reason: 'rate-limit-ip' | 'rate-limit-client' | 'cap' | 'contention') => {
       try {
@@ -134,7 +137,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       const rec = mergeLeagueRecord(existing, input);
       const ok = await redis.eval(CAS_LUA, [LEAGUE_CLIENTS_KEY, LEAGUE_VERSION_KEY], [cid, expectedVer, JSON.stringify(rec)]);
-      if (ok === 1) return res.status(200).json({ ok: true });
+      if (ok === 1) {
+        if (exportKind) {
+          const highlight = await recordToolExport(exportKind === 'card' ? 'card' : 'league', pokemonIds);
+          return res.status(200).json({ ok: true, highlight });
+        }
+        return res.status(200).json({ ok: true });
+      }
       await new Promise((r) => setTimeout(r, 15 + attempt * 20));
     }
     await countDrop('contention');

@@ -52,7 +52,7 @@ whether that copy reaches a crawler at all.
 10. **JSON-LD:** `WebSite` with `name: "my151"` on the hub; one
     `WebApplication` per tool page. Same description as the meta description.
 11. **`public/sitemap.xml` lists every indexable page.** `robots.txt` keeps its
-    query-param disallows. Preview-only pages (`evolution-levels`, `slot-lab`)
+    query-param disallows. Preview-only pages (`evolution-levels`, `slot-lab`, `foil-workshop`)
     carry `<meta name="robots" content="noindex">` and stay out of the sitemap.
 12. **Run `npm run build` and load each page with JavaScript disabled** to
     confirm items 2 and 3. Then load it normally and read every `h1` with

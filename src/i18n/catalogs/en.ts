@@ -188,6 +188,7 @@ export const enUi = {
   'feedback.failed': 'That didn\'t send. Try again in a moment.',
   'feedback.message.label': 'What happened?',
   'feedback.message.placeholder': 'What went wrong, or what you would like to see.',
+  'feedback.message.readEverything': '(I read everything that comes in!)',
   'feedback.send': 'Send',
   'feedback.sending': 'Sending…',
   'feedback.thanks': 'Thanks — that helps.',

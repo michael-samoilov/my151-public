@@ -19,6 +19,18 @@ interface BottomSheetProps {
   size?: 'full' | 'content';
   /** px left below the viewport top so the grab handle is always reachable. */
   topGap?: number;
+  /** Stacking order for the portalled overlay. Default 50. */
+  layerZIndex?: number;
+  /** When false, omit the full-screen dimmer (caller supplies its own scrim). */
+  showScrim?: boolean;
+  /** Optional marker so a caller can measure this sheet (export preview area). */
+  exportChrome?: boolean;
+  /**
+   * Extra height cap in px. Combined with the viewport-minus-topGap max.
+   * The export overlay uses this so the live preview keeps a band of the
+   * screen instead of the sheet growing to its content.
+   */
+  capHeightPx?: number;
   children: React.ReactNode;
 }
 
@@ -43,6 +55,10 @@ export function BottomSheet({
   closeLabel,
   size = 'content',
   topGap = 56,
+  layerZIndex = 110,
+  showScrim = true,
+  exportChrome = false,
+  capHeightPx,
   children,
 }: BottomSheetProps) {
   const [dragY, setDragY] = useState(0);
@@ -137,6 +153,10 @@ export function BottomSheet({
    * exists while a sheet is open rather than for the life of the page.
    */
   const [viewport, setViewport] = useState<{ height: number; top: number } | null>(null);
+  /** iOS does not always shrink visualViewport when the keyboard opens (in-app
+   *  browsers especially). A focused field is itself the signal that a keyboard
+   *  is coming, so the sheet expands immediately and the field sits at the top. */
+  const [textFocus, setTextFocus] = useState(false);
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -240,8 +260,15 @@ export function BottomSheet({
    * keyboard, so the difference between the two *is* the keyboard. 80px of
    * slack keeps browser-chrome collapse from reading as one.
    */
-  const keyboardOpen = viewport !== null && viewport.height < window.innerHeight - 80;
+  const keyboardOpen =
+    textFocus || (viewport !== null && viewport.height < window.innerHeight - 80);
   const gap = keyboardOpen ? Math.min(topGap, 8) : topGap;
+  const viewportMax = viewport ? Math.max(0, viewport.height - gap) : null;
+  const maxHeightPx =
+    capHeightPx != null && viewportMax != null
+      ? Math.min(viewportMax, capHeightPx)
+      : capHeightPx ?? viewportMax;
+
 
   /*
    * Portalled to the body, and that is the sheet's own job rather than each
@@ -263,7 +290,24 @@ export function BottomSheet({
     <div
       ref={overlayRef}
       data-overlay
-      className="fixed inset-x-0 z-[110] flex flex-col justify-end md:hidden"
+      className="pointer-events-none fixed inset-x-0 z-[110] flex flex-col justify-end md:hidden"
+      onFocusCapture={(e) => {
+        const t = e.target;
+        if (t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) {
+          setTextFocus(true);
+        }
+      }}
+      onBlurCapture={(e) => {
+        const next = e.relatedTarget;
+        if (
+          next instanceof HTMLElement &&
+          e.currentTarget.contains(next) &&
+          (next.tagName === 'INPUT' || next.tagName === 'TEXTAREA')
+        ) {
+          return;
+        }
+        setTextFocus(false);
+      }}
       // Bounded to the visible area rather than `inset-0`, so "the bottom" is
       // the top of the keyboard when one is open and the bottom of the screen
       // when it is not.
@@ -273,19 +317,23 @@ export function BottomSheet({
             // element is a long-standing iOS Safari minefield — it can promote
             // the element to a layer positioned against the document rather
             // than the viewport, which is the opposite of what is wanted here.
-            { top: `${viewport.top}px`, height: `${viewport.height}px` }
-          : { top: 0, bottom: 0 }
+            { zIndex: layerZIndex, top: `${viewport.top}px`, height: `${viewport.height}px` }
+          : { zIndex: layerZIndex, top: 0, bottom: 0 }
       }
     >
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-        style={{ opacity: Math.max(0, 1 - dragY / (DISMISS_THRESHOLD * 3)) }}
-      />
+      {showScrim && (
+        <div
+          className="pointer-events-auto absolute inset-0 bg-black/50"
+          onClick={onClose}
+          style={{ opacity: Math.max(0, 1 - dragY / (DISMISS_THRESHOLD * 3)) }}
+        />
+      )}
       <div
         role="dialog"
         aria-label={closeLabel}
-        className="relative bg-background rounded-t-2xl shadow-2xl flex flex-col"
+        data-export-chrome={exportChrome ? '' : undefined}
+        className="relative flex max-h-full min-h-0 flex-col rounded-t-2xl bg-background shadow-2xl pointer-events-auto"
+        data-sheet-keyboard={keyboardOpen ? '' : undefined}
         style={{
           // `100dvh` accounts for browser chrome but not the keyboard, so the
           // visible height wins whenever the visual viewport has reported one.
@@ -296,7 +344,12 @@ export function BottomSheet({
           // with `maxHeight` alone the chain stays `auto` and the form can only
           // overflow and scroll, which is the fold the tail was hiding behind.
           height: size === 'full' || keyboardOpen ? `calc(100% - ${gap}px)` : undefined,
-          maxHeight: viewport ? `${Math.max(0, viewport.height - gap)}px` : `calc(100dvh - ${gap}px)`,
+          maxHeight:
+            maxHeightPx != null
+              ? `${maxHeightPx}px`
+              : viewport
+                ? `${Math.max(0, viewport.height - gap)}px`
+                : `calc(100dvh - ${gap}px)`,
           transform: `translateY(${dragY}px)`,
           transition: dragY === 0 ? 'transform 0.2s ease-out' : 'none',
         }}

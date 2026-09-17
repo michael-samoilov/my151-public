@@ -7,9 +7,16 @@ import { create } from 'zustand';
 
 export type BrowserPurpose = 'lines' | 'signature' | 'partner' | 'legend' | 'replace';
 
+export type LeagueExportPhase = 'settings' | 'surveyIntro' | 'survey';
+
 interface LeagueUiState {
   /** null = league home; a number = that card is open full-screen. */
   openCard: number | null;
+  /** League or trainer-card export overlay. */
+  exportOpen: boolean;
+  /** null = league summary; a number = that trainer's card. */
+  exportCardIndex: number | null;
+  exportPhase: LeagueExportPhase;
   /**
    * The card the pane last held. Mobile keeps both panes on one sliding
    * track, so the card must stay drawn while it slides back out — closing
@@ -32,6 +39,10 @@ interface LeagueUiState {
   closeBrowser: () => void;
   setMovePickerOpen: (open: boolean) => void;
   setTypePickerOpen: (open: boolean) => void;
+
+  openLeagueExport: (cardIndex?: number) => void;
+  closeLeagueExport: () => void;
+  setExportPhase: (phase: LeagueExportPhase) => void;
 }
 
 export const useLeagueUi = create<LeagueUiState>()((set) => ({
@@ -43,6 +54,9 @@ export const useLeagueUi = create<LeagueUiState>()((set) => ({
   replacingId: null,
   movePickerOpen: false,
   typePickerOpen: false,
+  exportOpen: false,
+  exportCardIndex: null,
+  exportPhase: 'settings',
 
   openCardPage: (card) => set({ openCard: card, lastCard: card }),
   closeCardPage: () =>
@@ -52,4 +66,14 @@ export const useLeagueUi = create<LeagueUiState>()((set) => ({
   closeBrowser: () => set({ browserOpen: false }),
   setMovePickerOpen: (open) => set({ movePickerOpen: open }),
   setTypePickerOpen: (open) => set({ typePickerOpen: open }),
+
+  openLeagueExport: (cardIndex) =>
+    set({
+      exportOpen: true,
+      exportCardIndex: cardIndex ?? null,
+      exportPhase: 'settings',
+    }),
+  closeLeagueExport: () =>
+    set({ exportOpen: false, exportCardIndex: null, exportPhase: 'settings' }),
+  setExportPhase: (phase) => set({ exportPhase: phase }),
 }));

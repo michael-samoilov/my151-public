@@ -25,6 +25,7 @@ import { CardActions, CardIdentity, CardPage } from './components/CardPage';
 import { PageFooter } from '@/components/shared/PageFooter';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { HEADER_FIELD_H, LeagueExportButton, LeagueViewToggle } from './components/HeaderActions';
+import { LeagueExportOverlay } from './components/LeagueExportOverlay';
 import { usePencilRoom } from './components/usePencilRoom';
 import { confirmOnEnter } from './components/confirmOnEnter';
 
@@ -179,6 +180,7 @@ export function LeagueApp() {
   const browserPurpose = useLeagueUi((s) => s.browserPurpose);
   const replacingId = useLeagueUi((s) => s.replacingId);
   const browserOpen = useLeagueUi((s) => s.browserOpen);
+  const exportOpen = useLeagueUi((s) => s.exportOpen);
   const closeBrowser = useLeagueUi((s) => s.closeBrowser);
   const closeCardPage = useLeagueUi((s) => s.closeCardPage);
   // The open gym's own type colour tints the connector ribbon. Read reactively
@@ -400,6 +402,7 @@ export function LeagueApp() {
             and goes `inert` when the other is showing, so a sheet mounted in
             one would be clipped, or unreachable, half the time. */}
         <FeedbackHost route={openCard === null ? 'league' : 'league-card'} />
+        {exportOpen && <LeagueExportOverlay />}
       </div>
     </TooltipProvider>
   );

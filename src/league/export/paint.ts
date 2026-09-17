@@ -119,6 +119,24 @@ export function ellipsize(ctx: CanvasRenderingContext2D, text: string, maxW: num
   return out.trimEnd() + '…';
 }
 
+/** Same as `ellipsize`, measuring with the tracking the run will be drawn at. */
+export function ellipsizeTracked(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxW: number,
+  track: number,
+): string {
+  if (trackedWidth(ctx, text, track) <= maxW) return text;
+  const chars = [...text];
+  let out = '';
+  for (let i = 0; i < chars.length; i++) {
+    const next = out + chars[i];
+    if (trackedWidth(ctx, `${next}…`, track) > maxW) break;
+    out = next;
+  }
+  return out.trimEnd() + '…';
+}
+
 /**
  * Break a run into at most `maxLines` lines that fit `maxW`.
  *

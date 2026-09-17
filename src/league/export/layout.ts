@@ -281,8 +281,150 @@ export function homeTopPad(named: boolean): number {
 
 export const HOME_W = BOX_W;
 export const HOME_INNER = HOME_W - 2 * HPADX;
-/** The seven seats share what the glyph and type columns leave. */
-export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / 7;
+/** Team seats per row — six wide, matching the largest team the template holds. */
+export const SEAT_COUNT = 6;
+/**
+ * Default team column width at the standard picture width, with no optional
+ * columns. Six seats share what the glyph and type columns leave; the old
+ * seven-column grid left a dead column between the type mark and the team.
+ */
+export const SEAT_COL = (HOME_INNER - GLYPH_COL - TYPE_COL) / SEAT_COUNT;
+
+/**
+ * Gym-detail column: theme, TM, and badge on three lines. Sized for a
+ * THEME label plus ~28 characters of theme, and for a TM row (disc, 12-letter
+ * move at the smallcaps mark size, 1×1 type square, category chip)
+ * without clipping.
+ */
+export const HOME_DETAILS_COL = 220 * K2;
+/**
+ * Air between the details column, story teams, and rematch teams — and
+ * between the spacers that sit on those blocks. One number, so the gaps
+ * stay uniform when the gym-leader spacer splits.
+ */
+export const HOME_SIDE_GAP = 20 * K2;
+
+/** Type square on a league row. Gym-detail type marks scale from this. */
+export const HOME_TYPE_MARK = 22 * K2;
+/**
+ * Corner radius for a type mark of `size`, matching the row square's
+ * `HOME_R / HOME_TYPE_MARK` ratio. Using `HOME_R` on a smaller square
+ * turns the mark into a circle.
+ */
+export function homeTypeMarkRadius(size: number): number {
+  return (size / HOME_TYPE_MARK) * HOME_R;
+}
+
+/**
+ * TM disc, type square, and badge hex inside one third of a home row.
+ * Larger than this and the three lines overlap each other.
+ */
+export const HOME_DETAIL_ICON = 9 * K2;
+export const HOME_DETAIL_TYPE = 9 * K2;
+export const HOME_DETAIL_GAP = 4 * K2;
+export const HOME_DETAIL_CHIP_H = 8 * K2;
+export const HOME_DETAIL_CHIP_W = HOME_DETAIL_CHIP_H * (0.9375 / 0.6875);
+export const HOME_DETAIL_PAD_Y = 3 * K2;
+
+/** Home-export label and body sizes that mirror the gym card's TM/badge marks. */
+export const HOME_MARK_LABEL_PX = 8 * K2;
+export const HOME_MARK_TRACK = 0.06 * HOME_MARK_LABEL_PX;
+/**
+ * Sentence-case theme. Inter's x-height is ~0.53em; smallcaps cap-height is
+ * ~0.72em at `HOME_MARK_LABEL_PX`. At 9.5 the x-height sits just under that
+ * smallcaps height, instead of matching the old 11px move size.
+ */
+export const HOME_THEME_TEXT_PX = 9.5 * K2;
+export const HOME_TM_BADGE_W = 2.2 * 16 * K2;
+
+export interface HomeExportGeometry {
+  homeW: number;
+  homeInner: number;
+  seatCol: number;
+  detailsCol: number;
+  /** Gap after the details (or type) column, before the first team block. */
+  leadGap: number;
+  sideGap: number;
+  blockWidth: number;
+}
+
+/**
+ * Picture width for export permutations. Team seats keep the default
+ * `SEAT_COL`; optional columns, lead gaps, and side-by-side blocks add width only.
+ */
+export function homeExportGeometry(gymDetails: boolean, sideBySide: boolean): HomeExportGeometry {
+  const detailsCol = gymDetails ? HOME_DETAILS_COL : 0;
+  const seatCol = SEAT_COL;
+  const blockWidth = SEAT_COUNT * seatCol;
+  const leadGap = gymDetails || sideBySide ? HOME_SIDE_GAP : 0;
+  const sideGap = sideBySide ? HOME_SIDE_GAP : 0;
+  const extraW = detailsCol + leadGap + (sideBySide ? blockWidth + sideGap : 0);
+  return {
+    homeW: HOME_W + extraW,
+    homeInner: HOME_INNER + extraW,
+    seatCol,
+    detailsCol,
+    leadGap,
+    sideGap,
+    blockWidth,
+  };
+}
+
+/** Left edge of the first team block (story, or the only team). */
+export function homeTeamOriginX(ox: number, geom: HomeExportGeometry): number {
+  return ox + GLYPH_COL + TYPE_COL + geom.detailsCol + geom.leadGap;
+}
+
+/**
+ * Right edge vacancy copy aligns to. Combined story/rematch exports pin
+ * that edge to the rematch block, not the leftover air after it.
+ */
+export function homeVacancyAnchorX(
+  ox: number,
+  geom: HomeExportGeometry,
+  bothTeams: boolean,
+): number {
+  const teamBaseX = homeTeamOriginX(ox, geom);
+  if (bothTeams) return teamBaseX + 2 * geom.blockWidth + geom.sideGap;
+  return teamBaseX + geom.blockWidth;
+}
+
+export interface HomeSectionPill {
+  x: number;
+  w: number;
+  label: string | null;
+  align: 'left' | 'right';
+}
+
+/**
+ * Section-band pills. Gym leaders in both-teams mode split into three
+ * equal-gapped pills (title, story, rematch). Every later band stays one
+ * full-width pill.
+ */
+export function homeSectionPills(
+  ox: number,
+  geom: HomeExportGeometry,
+  title: string,
+  splitTeams: boolean,
+): HomeSectionPill[] {
+  const bandX = ox + HOME_RAIL - HOME_R;
+  const bandRight = ox + geom.homeInner - HOME_RAIL + HOME_R;
+  if (!splitTeams) {
+    return [{ x: bandX, w: bandRight - bandX, label: title, align: 'left' }];
+  }
+  const teamBaseX = homeTeamOriginX(ox, geom);
+  const rematchX = teamBaseX + geom.blockWidth + geom.sideGap;
+  return [
+    {
+      x: bandX,
+      w: Math.max(0, teamBaseX - geom.sideGap - bandX),
+      label: title,
+      align: 'left',
+    },
+    { x: teamBaseX, w: geom.blockWidth, label: 'STORY TEAMS', align: 'right' },
+    { x: rematchX, w: geom.blockWidth, label: 'REMATCH TEAMS', align: 'right' },
+  ];
+}
 
 /** The section band drawn before a slot index. */
 export const SECTION_BEFORE: Record<number, string> = {

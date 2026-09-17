@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
+import { bumpDexPickFreq, recordToolExport } from './_exportStats.js';
 import { isFunnelEvent, parsePage, parseTool } from './_events.js';
 import {
   redis,
@@ -434,7 +435,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         [CLIENTS_KEY, VERSION_KEY],
         [effectiveCid, expectedVer, JSON.stringify(rec)],
       );
-      if (ok === 1) return res.status(200).json({ ok: true });
+      if (ok === 1) {
+        const prevEver = new Set(existing?.everIds ?? []);
+        const newlyEver = rec.everIds.filter((id) => !prevEver.has(id));
+        if (newlyEver.length > 0) await bumpDexPickFreq(newlyEver);
+        if (kind === 'export') {
+          const highlight = await recordToolExport('pokedex', ids);
+          return res.status(200).json({ ok: true, highlight });
+        }
+        return res.status(200).json({ ok: true });
+      }
       // Lost the race — brief backoff, then re-read and retry.
       await new Promise((r) => setTimeout(r, 15 + attempt * 20));
     }

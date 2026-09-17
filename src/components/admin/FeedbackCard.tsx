@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { routeCounts } from '@/lib/feedbackRoutes';
+import {
+  EXPORT_SURVEY_TOOL_LABEL,
+  isExportSurveyTool,
+} from '@/lib/exportSurvey';
 
 /**
  * The feedback inbox.
@@ -108,6 +112,12 @@ function Row({ item, seen, onToggle }: { item: FeedbackItem; seen: boolean; onTo
         )}
         {item.country && <span className="text-muted-foreground">{item.country}</span>}
         {ctx.demo === true && <span className="text-amber-600">demo</span>}
+        {ctx.exportSurvey === true && (
+          <span className="px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 font-medium">
+            Export
+            {isExportSurveyTool(ctx.exportTool) ? ` · ${EXPORT_SURVEY_TOOL_LABEL[ctx.exportTool]}` : ''}
+          </span>
+        )}
         <button
           type="button"
           onClick={onToggle}
