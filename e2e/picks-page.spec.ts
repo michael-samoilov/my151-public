@@ -57,7 +57,7 @@ test.describe('admin picks page', () => {
     await expect(page.getByText(/1\.0× = random rate/)).toBeVisible();
     await expect(starters.locator('[data-picks-side="most"]').first()).toHaveAttribute(
       'data-picks-cols',
-      '12',
+      '9',
     );
     const grassGrid = starters.locator('[data-picks-side="most"]').first().locator('.grid');
     await expect(grassGrid).toHaveCount(1);

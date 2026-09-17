@@ -190,11 +190,15 @@ function LineGrid({
       ? 'grid-cols-12'
       : cols === PICKS_COMBINED_COLS
         ? 'grid-cols-9'
-        : 'grid-cols-6';
+        : cols === PICKS_COLS
+          ? 'grid-cols-6'
+          : '';
+  const colStyle =
+    colClass === '' ? { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` } : undefined;
   return (
     <div className="flex min-w-0 flex-col gap-1">
       {rows.map((row, i) => (
-        <div key={i} className={cn('grid min-w-0 gap-0.5', colClass)}>
+        <div key={i} className={cn('grid min-w-0 gap-0.5', colClass)} style={colStyle}>
           {row.cells.map((cell) => (
             <SpriteCell
               key={cell.key}

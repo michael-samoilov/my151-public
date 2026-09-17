@@ -25,11 +25,9 @@
  * Most-picked ranks default lines only, and only lines above 1.10×.
  * Least-picked is only lines below 0.90×. In-section Starters list every
  * first-stage Pokémon across the full row, split grass / fire / water, with
- * no most/least split and no 1.10× cutoff. The starter grid is 12 columns
- * on phone and desktop so nine first-stage faces fit one row. Other in-section
- * sections on desktop use one 9-column row (6 most + 3 least) so sprites
- * read larger than the old 12-across pair. Phone and desktop both use the
- * same 6+3 row. Regional starter variants (Hisuian Decidueye with
+ * no most/least split and no 1.10× cutoff. The starter grid uses one full-width
+ * row per type with column count = starter generation count from the Starter
+ * category (today nine). Other in-section sections use the 6+3 combined row.
  * Rowlet) share one first-stage face. Off-section has no least column, shows
  * raw dex counts, never uses the starter type split or first-stage-only
  * faces, lays the sprite grid across the full width (12 columns on desktop,
@@ -67,9 +65,20 @@ export function picksGridCols(wide: boolean, desktop: boolean): number {
   return wide && desktop ? PICKS_PAIR_COLS : PICKS_COLS;
 }
 
-/** In-section starters always use pair density, including on a phone. */
+/** In-section starter row width: one column per main-series generation in the Starter category. */
+export function starterGenerationCount(): number {
+  const cat = getCategoryById('starter');
+  const groups = cat?.subgroups ?? [];
+  let n = 0;
+  for (const sg of groups) {
+    if (/^Generation \d+$/.test(sg.label)) n += 1;
+  }
+  return n > 0 ? n : 1;
+}
+
+/** In-section starters use one row across the section at generation count. */
 export function picksStarterCols(): number {
-  return PICKS_PAIR_COLS;
+  return starterGenerationCount();
 }
 
 export function picksGridCap(offSection: boolean, desktop: boolean): { maxRows: number; cols: number } {

@@ -11,6 +11,7 @@ import {
   picksGridCols,
   picksSplitCap,
   picksStarterCols,
+  starterGenerationCount,
   poolIdsForSection,
   rowsUsed,
   sectionPicksView,
@@ -251,12 +252,19 @@ describe('rowsUsed', () => {
   });
 });
 
+describe('starterGenerationCount', () => {
+  it('matches Generation subgroups in the Starter category', () => {
+    expect(starterGenerationCount()).toBe(9);
+    expect(picksStarterCols()).toBe(9);
+  });
+});
+
 describe('picksGridCols', () => {
   it('widens desktop only when the grid is full width', () => {
     expect(picksGridCols(false, true)).toBe(6);
     expect(picksGridCols(true, false)).toBe(6);
     expect(picksGridCols(true, true)).toBe(12);
-    expect(picksStarterCols()).toBe(12);
+    expect(picksStarterCols()).toBe(9);
     expect(picksGridCap(true, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 12 });
     expect(picksGridCap(true, false)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 6 });
     expect(picksGridCap(false, true)).toEqual({ maxRows: 4, cols: 6 });
