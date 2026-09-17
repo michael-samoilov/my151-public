@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EARLY_EXPORT_BUCKETS } from '@/league/export/exportPersonalization';
 import {
   EXPORT_SURVEY_SEEN_KEY,
   exportSurveyFeedbackRoute,
@@ -6,6 +7,7 @@ import {
   isExportSurveyTool,
   markExportSurveySeen,
   persistExportSurveySeen,
+  shouldOfferExportSurvey,
   surveySeenInThisEnvironment,
 } from './exportSurvey';
 
@@ -59,5 +61,12 @@ describe('export survey gate', () => {
   it('accepts only the three export tools', () => {
     expect(isExportSurveyTool('league')).toBe(true);
     expect(isExportSurveyTool('dex')).toBe(false);
+  });
+
+  it('shows the survey at the last early bucket and skips after it', () => {
+    expect(EARLY_EXPORT_BUCKETS.at(-1)).toBe(1000);
+    expect(shouldOfferExportSurvey(1000)).toBe(true);
+    expect(shouldOfferExportSurvey(1001)).toBe(false);
+    expect(shouldOfferExportSurvey(151)).toBe(true);
   });
 });

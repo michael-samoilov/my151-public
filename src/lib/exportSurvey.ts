@@ -1,5 +1,6 @@
 /** One-shot export follow-up, shared by every export tool. */
 
+import { EARLY_EXPORT_BUCKETS } from '@/league/export/exportPersonalization';
 import { PRODUCTION_DEPLOY } from './demoMode';
 
 export type ExportSurveyTool = 'pokedex' | 'league' | 'card';
@@ -11,6 +12,8 @@ export const EXPORT_SURVEY_TOOL_LABEL: Record<ExportSurveyTool, string> = {
 };
 
 export const EXPORT_SURVEY_SEEN_KEY = 'my151-export-survey-seen';
+
+const LAST_EARLY_EXPORT_BUCKET = EARLY_EXPORT_BUCKETS[EARLY_EXPORT_BUCKETS.length - 1];
 
 /**
  * Whether the export survey should stay hidden in this deploy.
@@ -39,6 +42,19 @@ export function persistExportSurveySeen(production: boolean): void {
 
 export function hasSeenExportSurvey(): boolean {
   return surveySeenInThisEnvironment(PRODUCTION_DEPLOY);
+}
+
+/**
+ * Whether this export's global ordinal is still in the early-user window.
+ *
+ * The window is `EARLY_EXPORT_BUCKETS`, the same cut as "among the first N
+ * users". The last bucket still gets the survey. A later ordinal does not,
+ * even when a first-Pokémon uniqueness line would have existed. Preview uses
+ * ordinal 151, so it stays inside the window.
+ */
+export function shouldOfferExportSurvey(ordinal: number | null | undefined): boolean {
+  if (typeof ordinal !== 'number' || !Number.isFinite(ordinal)) return true;
+  return ordinal <= LAST_EARLY_EXPORT_BUCKET;
 }
 
 export function markExportSurveySeen(): void {

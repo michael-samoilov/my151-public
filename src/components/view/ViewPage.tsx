@@ -12,7 +12,7 @@ import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
 import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
-import { hasSeenExportSurvey } from '@/lib/exportSurvey';
+import { hasSeenExportSurvey, shouldOfferExportSurvey } from '@/lib/exportSurvey';
 import { ExportSurveyHost } from '@/components/export/ExportSurveyHost';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { previewExportHighlight, type ExportHighlight } from '@/league/export/exportPersonalization';
@@ -1149,11 +1149,12 @@ export function ViewPage() {
         stats: showStatsPanel ? { data: statsData, heights: DEFAULT_STATS_HEIGHTS } : null,
       });
       await shareOrDownload(blob, `my151.png`);
-      if (!hasSeenExportSurvey()) {
+      const highlight = DEMO_MODE ? previewExportHighlight('pokedex', ids) : null;
+      if (!hasSeenExportSurvey() && shouldOfferExportSurvey(highlight?.ordinal)) {
         setExportSurvey({
           open: true,
           openedAt: Date.now(),
-          highlight: DEMO_MODE ? previewExportHighlight('pokedex', ids) : null,
+          highlight,
         });
       }
     } catch (err) {
