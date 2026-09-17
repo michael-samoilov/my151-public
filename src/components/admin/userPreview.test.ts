@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   dexChipLabel,
+  dexPokemonCount,
   formatWhen,
   fmtChipDuration,
   fmtDuration,
@@ -80,6 +81,14 @@ describe('fmtChipDuration', () => {
 
   it('fits double-digit hours and minutes', () => {
     expect(fmtChipDuration(5999 * 60 * 1000)).toBe('99h 59m');
+  });
+});
+
+describe('dexPokemonCount', () => {
+  it('counts Pokémon in the latest dex, not evolution lines', () => {
+    expect(dexPokemonCount([25, 26])).toBe(2);
+    expect(dexPokemonCount([])).toBe(0);
+    expect(dexPokemonCount(undefined)).toBe(0);
   });
 });
 

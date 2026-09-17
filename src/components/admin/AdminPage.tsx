@@ -30,6 +30,7 @@ import {
   bareCid,
   countryName,
   dexChipLabel,
+  dexPokemonCount,
   FACET_KEYS,
   FACET_LABEL,
   FACET_UNKNOWN,
@@ -1391,7 +1392,7 @@ function UserPreviewCard({
   onArchive,
 }: {
   rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
-  dex?: { depth: number; exported: boolean; sessions?: number; sessionMs?: number[] };
+  dex?: { pokemon: number; exported: boolean; sessions?: number; sessionMs?: number[] };
   league?: { cards: number; exported: boolean; sessions?: number; sessionMs?: number[] };
   archived: boolean;
   onOpen: () => void;
@@ -1502,7 +1503,7 @@ function UserPreviewCard({
             metric="dex"
             empty={!dex}
             className="md:col-start-9 md:row-start-1 md:justify-self-stretch"
-            label={dexChipLabel(dex?.depth ?? 0)}
+            label={dexChipLabel(dex?.pokemon ?? 0)}
             exported={dex?.exported}
           />
           <MetricChip
@@ -2138,7 +2139,7 @@ export function AdminPage() {
                 type Row = {
                   cid: string;
                   rec: HeaderRec & { lastTs: number; tz?: string; sessions?: number; sessionMs?: number[] };
-                  dex?: { depth: number; exported: boolean; sessions?: number; sessionMs?: number[] };
+                  dex?: { pokemon: number; exported: boolean; sessions?: number; sessionMs?: number[] };
                   league?: { cards: number; exported: boolean; sessions?: number; sessionMs?: number[] };
                   archived: boolean;
                   open: Detail;
@@ -2156,7 +2157,7 @@ export function AdminPage() {
                     listed.push({
                       cid: rec.cid,
                       rec,
-                      dex: { depth: rec.maxDepth, exported: rec.exported },
+                      dex: { pokemon: dexPokemonCount(rec.latestIds), exported: rec.exported },
                       league: league
                         ? {
                             cards: league.maxCards,
@@ -2183,7 +2184,7 @@ export function AdminPage() {
                       rec,
                       dex: dex
                         ? {
-                            depth: dex.maxDepth,
+                            pokemon: dexPokemonCount(dex.latestIds),
                             exported: dex.exported,
                             sessions: dex.sessions,
                             sessionMs: dex.sessionMs,
