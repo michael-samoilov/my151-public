@@ -81,32 +81,39 @@ Vercel preview Ready/Error is the independent compile check. Visual review is wh
 
 ## Deployment
 
-**The app has real users. `claude/pokedex-region-builder-AviYF` is production.** The approval rule has one purpose: keep an untested, user-visible change out of the live app before it is ready to show users. It guards the browser, not the repo. A change a browser never receives carries no such risk, so it ships automatically. Two tiers decide whether a merge needs approval.
+**The app has real users. `claude/pokedex-region-builder-AviYF` is production.** The approval rule keeps an untested public-UI, data-destructive, or large change off the live app. Low-risk work that is already verified does not wait. Judge the change by what it does, not only by which folder the files sit in.
 
-### Tier 1: merge to production automatically
+### Tier 1: merge to production without asking
 
-A change is tier 1 when **every file in the diff** sits outside what a browser receives. Those paths are:
+A change is tier 1 when it is none of the tier 2 cases, and it is already verified (`npm run build`, `bash scripts/ci-local.sh`, and a test or other measured proof).
+
+These paths are always tier 1:
 
 - `.claude/` and `.github/`
 - `docs/`, `e2e/`, `scripts/`, and `*.test.ts` files
 - `CLAUDE.md`, `README.md`, and other root Markdown
 
+These are also tier 1 when the proof is in the work report:
+
+- Internal refactors, types, and dead-code removal with no user-noticeable behavior
+- Admin `/?admin` copy, counts, layout, and small bugfixes with a before/after or a test that failed then passed
+
 A tier 1 change is not finished on the work branch. Finishing it means it reaches production. Run `npm run build`, then merge into `claude/pokedex-region-builder-AviYF`, push it, and check out the work branch again. Do this as the normal last step of the work. Do not ask, do not stop at the work branch, and do not call the production merge optional. Report the merge in the work report.
 
 ### Tier 2: ask first
 
-Everything else needs the user's explicit approval in the current conversation. One file outside the tier 1 list puts the whole change in tier 2. Tier 2 covers:
+Ask in the current conversation when any of these is true:
 
-- `src/`, `api/`, `public/`, and `index.html`
-- `vite.config.ts`, `vercel.json`, `package.json`, and the other build config
-- **Meta tags, `robots.txt`, `sitemap.xml` and other crawler-only files.** They are lower-risk, not zero-risk, since "it's only SEO/config" is exactly how unapproved changes reach users.
+1. Public user-facing product UI — pokedex builder, league, export, gym card, or any other surface end users see
+2. Data-destruction or irreversible production writes
+3. Large or ambiguous product changes, including build config and crawler-only files (`theme-color`, `robots.txt`, `sitemap.xml`) that reach users or indexers
 
 Approval is per-change: shipping one change is not standing permission for the next.
 
 Work a tier 2 change like this:
 
 1. Commit to the work branch and push it (`git push -u origin <work-branch>`). Vercel builds a **preview deployment** for any pushed branch — that is where changes get verified.
-2. Report the preview to the user and let them look. Nothing reaches production on your own initiative.
+2. Report the preview to the user and let them look. Nothing in this tier reaches production on your own initiative.
 3. Merge into and push `claude/pokedex-region-builder-AviYF` **only after the user says to ship it.**
 4. **Check out the work branch again immediately after that push.** A merge leaves you on the production branch, so the next commit lands there silently — one `git push` away from an unapproved deploy. Run `git rev-parse --abbrev-ref HEAD` before any commit that follows a merge.
 
@@ -153,7 +160,8 @@ Three notes on how pstack sits next to the rest of this file:
 2. pstack's `prove it works` principle and the Work reports section agree:
    measure the result, do not infer it from the code.
 3. pstack does not change the Deployment tiers. A tier 2 change still needs
-   your approval, whatever skill produced it.
+   your approval, whatever skill produced it. A verified tier 1 change still
+   ships without asking.
 
 ## Responsive sizing
 
