@@ -21,6 +21,7 @@ import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '..
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
+import { idsOutsideSections, useDexPresence } from '@/components/admin/dexPresence';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
@@ -602,11 +603,12 @@ function PopularGrid({ rows }: { rows: [string, number][] }) {
 function SpriteRow({ ids }: { ids: number[] }) {
   return (
     <div className="flex flex-wrap gap-0.5">
-      {ids.map((id, idx) => {
+      {ids.map((id) => {
         const p = getPokemonById(id);
         return (
           <div
-            key={`${id}-${idx}`}
+            key={id}
+            data-dex-id={id}
             title={p ? `#${id} ${displayName(p.name)}` : `#${id}`}
             className="w-6 h-6 shrink-0 flex items-center justify-center"
           >
@@ -616,7 +618,6 @@ function SpriteRow({ ids }: { ids: number[] }) {
                 alt={p.name}
                 width={24}
                 height={24}
-                loading="lazy"
                 decoding="async"
                 style={{ imageRendering: 'pixelated' }}
               />
@@ -917,10 +918,22 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
   const cur = log[idx];
   // Keep tile positions on the full assignment. Session `sections` would rebuild
   // the grid on every scrub step. Presence still comes from this session's ids.
-  const sections = rec.latestSections ?? cur?.sections;
-  const presentIds = cur?.ids ?? rec.latestIds ?? [];
-  const sectionedSet = new Set(Object.values(sections ?? {}).flat());
-  const offIds = presentIds.filter((id) => !sectionedSet.has(id));
+  const sections = rec.latestSections ?? log[log.length - 1]?.sections ?? cur?.sections;
+  const presentIds = useMemo(
+    () => log[idx]?.ids ?? rec.latestIds ?? [],
+    [log, idx, rec.latestIds],
+  );
+  const sectionedSet = useMemo(
+    () => new Set(Object.values(sections ?? {}).flat()),
+    [sections],
+  );
+  const keepOffIds = useMemo(
+    () => idsOutsideSections(sessionIds.length > 0 ? sessionIds : [presentIds], sectionedSet),
+    [sessionIds, presentIds, sectionedSet],
+  );
+  const presenceRef = useRef<HTMLDivElement | null>(null);
+  useDexPresence(presenceRef, presentIds, sessionIds);
+  const hasSections = !!sections && Object.keys(sections).length > 0;
   const peak = Math.max(0, ...points.map((p) => p.count));
   const totalMs = ms.reduce((a, b) => a + b, 0);
 
@@ -935,26 +948,30 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
         : [];
 
   const snapshot = (
-    <>
+    <div ref={presenceRef}>
       {sections && Object.keys(sections).length > 0 ? (
-        <OutlinedDex sections={sections} presentIds={presentIds} sessionIds={sessionIds} />
+        <OutlinedDex sections={sections} presentIds={presentIds} />
       ) : presentIds.length > 0 ? (
         <SpriteRow ids={presentIds} />
       ) : (
         <p className="text-xs text-muted-foreground">Empty at this point.</p>
       )}
-      {offIds.length > 0 && (
-        <div className="rounded-lg border border-dashed border-[var(--color-off)]/60 p-3">
+      {hasSections && keepOffIds.length > 0 && (
+        <div
+          className="mt-3 rounded-lg border border-dashed border-[var(--color-off)]/60 p-3"
+          data-testid="admin-dex-uncaptured"
+          data-count={keepOffIds.length}
+        >
           <div className="mb-0.5 flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
             <span className="inline-block h-2 w-2 rounded-sm" style={{ backgroundColor: 'var(--color-border)' }} />
             Section not captured
-            <span className="text-muted-foreground/70">{offIds.length}</span>
+            <span className="text-muted-foreground/70">{keepOffIds.length}</span>
           </div>
-          <p className="mb-1.5 text-[0.7rem] text-muted-foreground/80">These sit in this session's recorded build, but their section was not captured. Older sessions and exports from before a recent update can omit it. In the app, every Pokémon is in a section.</p>
-          <SpriteRow ids={offIds} />
+          <p className="mb-1.5 text-[0.7rem] text-muted-foreground/80">These Pokémon appeared in a recorded build, but their section was not captured. Older sessions and exports from before a recent update can omit it. In the app, every Pokémon is in a section.</p>
+          <SpriteRow ids={keepOffIds} />
         </div>
       )}
-    </>
+    </div>
   );
 
   if (points.length === 0) {

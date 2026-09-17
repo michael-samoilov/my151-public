@@ -12,7 +12,7 @@
     "og-image": "node scripts/generate-og-image.mjs",
     "indexnow": "NODE_USE_ENV_PROXY=1 node scripts/indexnow.mjs",
     "build": "npm run i18n:verify && tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "eslint . --suppressions-location eslint-suppressions.json",
     "preview": "vite preview",
     "doctor": "npx react-doctor@latest",
     "test": "vitest run",

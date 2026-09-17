@@ -180,17 +180,28 @@ test.describe('admin user pages', () => {
 
     const snap = page.getByTestId('admin-dex-snapshot');
     await expect(snap).toBeVisible();
+    await expect(page.getByTestId('admin-dex-uncaptured')).toBeVisible();
     const rest = await page.evaluate(() => {
-      const root = document.querySelector('[data-testid="admin-dex-snapshot"]');
-      const first = root?.querySelector('[data-dex-id]') ?? null;
-      (root as HTMLElement & { __keep?: Element | null }).__keep = first;
-      const faded = [...(root?.querySelectorAll('[data-dex-id]') ?? [])].filter(
-        (n) => (n as HTMLElement).style.opacity === '0.14',
-      ).length;
-      return { tiles: root?.querySelectorAll('[data-dex-id]').length ?? 0, faded, keep: !!first };
+      const occupancy = (testId: string) => {
+        const root = document.querySelector(`[data-testid="${testId}"]`);
+        const first = root?.querySelector('[data-dex-id]') ?? null;
+        (root as HTMLElement & { __keep?: Element | null }).__keep = first;
+        const faded = [...(root?.querySelectorAll('[data-dex-id]') ?? [])].filter(
+          (n) => (n as HTMLElement).style.opacity === '0.14',
+        ).length;
+        return {
+          tiles: root?.querySelectorAll('[data-dex-id]').length ?? 0,
+          faded,
+          keep: !!first,
+          count: root?.getAttribute('data-count'),
+        };
+      };
+      return { grid: occupancy('admin-dex-snapshot'), off: occupancy('admin-dex-uncaptured') };
     });
-    expect(rest.keep).toBe(true);
-    expect(rest.tiles).toBeGreaterThan(0);
+    expect(rest.grid.keep).toBe(true);
+    expect(rest.grid.tiles).toBeGreaterThan(0);
+    expect(rest.off.keep).toBe(true);
+    expect(rest.off.tiles).toBeGreaterThan(0);
 
     const scrub = page.getByRole('slider', { name: 'Scrub sessions' });
     await scrub.evaluate((el) => {
@@ -199,20 +210,28 @@ test.describe('admin user pages', () => {
       input.dispatchEvent(new Event('input', { bubbles: true }));
     });
     const dragged = await page.evaluate(() => {
-      const root = document.querySelector('[data-testid="admin-dex-snapshot"]');
-      const keep = (root as HTMLElement & { __keep?: Element | null } | null)?.__keep;
-      const now = root?.querySelector('[data-dex-id]') ?? null;
-      const faded = [...(root?.querySelectorAll('[data-dex-id]') ?? [])].filter(
-        (n) => (n as HTMLElement).style.opacity === '0.14',
-      ).length;
-      return {
-        sameNode: keep != null && keep === now,
-        faded,
-        count: root?.getAttribute('data-count'),
+      const occupancy = (testId: string) => {
+        const root = document.querySelector(`[data-testid="${testId}"]`);
+        const keep = (root as HTMLElement & { __keep?: Element | null } | null)?.__keep;
+        const now = root?.querySelector('[data-dex-id]') ?? null;
+        const faded = [...(root?.querySelectorAll('[data-dex-id]') ?? [])].filter(
+          (n) => (n as HTMLElement).style.opacity === '0.14',
+        ).length;
+        return {
+          sameNode: keep != null && keep === now,
+          faded,
+          tiles: root?.querySelectorAll('[data-dex-id]').length ?? 0,
+          count: root?.getAttribute('data-count'),
+        };
       };
+      return { grid: occupancy('admin-dex-snapshot'), off: occupancy('admin-dex-uncaptured') };
     });
-    expect(dragged.sameNode).toBe(true);
-    expect(dragged.faded).toBeGreaterThan(rest.faded);
+    expect(dragged.grid.sameNode).toBe(true);
+    expect(dragged.grid.faded).toBeGreaterThan(rest.grid.faded);
+    expect(dragged.off.sameNode).toBe(true);
+    expect(dragged.off.tiles).toBe(rest.off.tiles);
+    expect(dragged.off.count).toBe(String(rest.off.tiles));
+    expect(dragged.off.faded).toBeGreaterThan(rest.off.faded);
   });
 
   test('a user page toggles between dex and league', async ({ page }) => {
