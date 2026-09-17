@@ -5,8 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
  *
  * Layout: builder chrome with the section name at the top-left; most/least
  * as sprite grids with an index bar under each sprite. Desktop most-picked
- * uses one 9-column row (6 most + 3 least); mobile keeps a 6+6 side-by-side
- * pair. Off-section has no least column, no row cap, and shows dex counts. In-section Starters
+ * uses one 9-column row (6 most + 3 least) on phone and desktop. In-section Starters
  * list every first-stage face across the full row at most|least tile size,
  * split by grass / fire / water, with no most/least. Nine faces fit one row.
  * Off-section Starters do not.
@@ -70,10 +69,8 @@ test.describe('admin picks page', () => {
     const pairW = await pairCell.evaluate((el) => el.getBoundingClientRect().width);
     if (test.info().project.name === 'desktop') {
       expect(pairW).toBeGreaterThan(starterW + 4);
-      await expect(page.locator('[data-picks-layout="combined-9"]').first()).toBeVisible();
-    } else {
-      expect(Math.abs(starterW - pairW)).toBeLessThan(8);
     }
+    await expect(page.locator('[data-picks-layout="combined-9"]').first()).toBeVisible();
 
     await expect.poll(async () =>
       starters.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),

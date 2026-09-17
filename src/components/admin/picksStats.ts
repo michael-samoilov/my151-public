@@ -28,8 +28,8 @@
  * no most/least split and no 1.10× cutoff. The starter grid is 12 columns
  * on phone and desktop so nine first-stage faces fit one row. Other in-section
  * sections on desktop use one 9-column row (6 most + 3 least) so sprites
- * read larger than the old 12-across pair. Mobile keeps a 6+6 side-by-side
- * pair. Regional starter variants (Hisuian Decidueye with
+ * read larger than the old 12-across pair. Phone and desktop both use the
+ * same 6+3 row. Regional starter variants (Hisuian Decidueye with
  * Rowlet) share one first-stage face. Off-section has no least column, shows
  * raw dex counts, never uses the starter type split or first-stage-only
  * faces, lays the sprite grid across the full width (12 columns on desktop,
@@ -51,6 +51,8 @@ export const PICKS_COLS = 6;
 /** Desktop most|least row: six for most, three for least. */
 export const PICKS_MOST_COLS = PICKS_COLS;
 export const PICKS_LEAST_DESKTOP_COLS = 3;
+/** Least column width in the combined most|least row (all viewports). */
+export const PICKS_LEAST_COLS = PICKS_LEAST_DESKTOP_COLS;
 export const PICKS_COMBINED_COLS = PICKS_MOST_COLS + PICKS_LEAST_DESKTOP_COLS;
 /** 12 columns across the section (starters and off-section desktop). */
 export const PICKS_PAIR_COLS = 12;
@@ -90,9 +92,7 @@ export function picksSplitCap(offSection: boolean, desktop: boolean): PicksSplit
     };
   }
   const most: GridCap = PICKS_GRID_CAP;
-  const least: GridCap = desktop
-    ? { maxRows: PICKS_MAX_ROWS, cols: PICKS_LEAST_DESKTOP_COLS }
-    : PICKS_GRID_CAP;
+  const least: GridCap = { maxRows: PICKS_MAX_ROWS, cols: PICKS_LEAST_COLS };
   return { kind: 'dual', most, least };
 }
 export const MOST_MIN_INDEX = 1.1;

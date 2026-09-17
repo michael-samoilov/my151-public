@@ -11,7 +11,7 @@ import {
   isStarterTypeName,
   PICKS_COLS,
   PICKS_COMBINED_COLS,
-  PICKS_LEAST_DESKTOP_COLS,
+  PICKS_LEAST_COLS,
   PICKS_MOST_COLS,
   PICKS_PAIR_COLS,
   picksGridCols,
@@ -227,7 +227,7 @@ function CombinedMostLeastGrid({
   countMode: boolean;
 }) {
   const mostRows = packLineRows(columns.most, PICKS_MOST_COLS);
-  const leastRows = packLineRows(columns.least, PICKS_LEAST_DESKTOP_COLS);
+  const leastRows = packLineRows(columns.least, PICKS_LEAST_COLS);
   const rowCount = Math.max(mostRows.length, leastRows.length);
   if (rowCount === 0) {
     return <p className="text-[0.65rem] text-muted-foreground">None in this cap.</p>;
@@ -241,7 +241,7 @@ function CombinedMostLeastGrid({
       <div className="flex min-w-0 flex-col gap-1">
         {Array.from({ length: rowCount }, (_, i) => {
           const m = mostRows[i] ?? { cells: [] as Cell[], spacers: PICKS_MOST_COLS };
-          const l = leastRows[i] ?? { cells: [] as Cell[], spacers: PICKS_LEAST_DESKTOP_COLS };
+          const l = leastRows[i] ?? { cells: [] as Cell[], spacers: PICKS_LEAST_COLS };
           return (
             <div key={i} className="grid min-w-0 grid-cols-9 gap-0.5">
               <div className="col-span-6 grid min-w-0 grid-cols-6 gap-0.5" data-picks-side="most">
@@ -315,7 +315,7 @@ function DualGrids({
       </div>
     );
   }
-  if (isDesktop && !pairDensity) {
+  if (!pairDensity) {
     return (
       <CombinedMostLeastGrid
         columns={columns}

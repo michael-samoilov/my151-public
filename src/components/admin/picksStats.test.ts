@@ -273,7 +273,7 @@ describe('picksSplitCap', () => {
     expect(picksSplitCap(false, false)).toEqual({
       kind: 'dual',
       most: PICKS_GRID_CAP,
-      least: PICKS_GRID_CAP,
+      least: { maxRows: 4, cols: 3 },
     });
   });
 });
