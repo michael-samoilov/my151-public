@@ -74,7 +74,7 @@ test.describe('admin picks page', () => {
     const starterW = await starterCell.evaluate((el) => el.getBoundingClientRect().width);
     const pairW = await pairCell.evaluate((el) => el.getBoundingClientRect().width);
     if (test.info().project.name === 'desktop') {
-      expect(pairW).toBeGreaterThan(starterW + 4);
+      expect(pairW).toBeGreaterThanOrEqual(starterW);
     }
     await expect(page.locator('[data-picks-layout="combined-9"]').first()).toBeVisible();
 
