@@ -159,10 +159,11 @@ export function activeTimestamps(r: SessionRecord): number[] {
  *
  * `dau` is distinct browsers that day; `rolling7` is distinct browsers over
  * that day and the prior six — a WAU that updates daily, not a sum of DAUs, so
- * a browser active twice in a week counts once. Gaps are filled, so the lines
- * run unbroken from the first active day through `now` (UTC today when given).
+ * a browser active twice in a week counts once. `rolling7` is null until six
+ * prior UTC days exist in the series (seven days total). Gaps are filled for
+ * `dau`; the weekly line stays blank until the window is complete.
  */
-export function dailyActive(records: SessionRecord[], now?: number): { day: number; dau: number; rolling7: number }[] {
+export function dailyActive(records: SessionRecord[], now?: number): { day: number; dau: number; rolling7: number | null }[] {
   const sets: Record<number, Set<string>> = {};
   for (const r of records) {
     for (const day of new Set(activeTimestamps(r).map(dayStart))) {
@@ -174,14 +175,19 @@ export function dailyActive(records: SessionRecord[], now?: number): { day: numb
   const firstDay = Math.min(...dayKeys);
   const lastActivity = Math.max(...dayKeys);
   const lastDay = now != null ? Math.max(lastActivity, dayStart(now)) : lastActivity;
-  const out: { day: number; dau: number; rolling7: number }[] = [];
+  const out: { day: number; dau: number; rolling7: number | null }[] = [];
   for (let day = firstDay; day <= lastDay; day += DAY_MS) {
-    const roll = new Set<string>();
-    for (let d = day - 6 * DAY_MS; d <= day; d += DAY_MS) {
-      const s = sets[d];
-      if (s) for (const cid of s) roll.add(cid);
+    const fullWindow = day - firstDay >= 6 * DAY_MS;
+    let rolling7: number | null = null;
+    if (fullWindow) {
+      const roll = new Set<string>();
+      for (let d = day - 6 * DAY_MS; d <= day; d += DAY_MS) {
+        const s = sets[d];
+        if (s) for (const cid of s) roll.add(cid);
+      }
+      rolling7 = roll.size;
     }
-    out.push({ day, dau: sets[day]?.size ?? 0, rolling7: roll.size });
+    out.push({ day, dau: sets[day]?.size ?? 0, rolling7 });
   }
   return out;
 }
@@ -274,7 +280,7 @@ export function heatmap(records: SessionRecord[]): { hours: number[]; matrix: nu
 /** Everything the dashboard shows for one tool's records. */
 export interface Aggregates {
   users: number;
-  activity: { day: number; dau: number; rolling7: number }[];
+  activity: { day: number; dau: number; rolling7: number | null }[];
   retention: { returning: number; activeLast7: number; newUsers: number };
   timeCurves: Record<'longest' | 'first' | 'all', SurvivalCurve>;
   countries: Record<string, number>;

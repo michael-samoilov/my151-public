@@ -85,7 +85,7 @@ function LegendSwatch({ color }: { color: string }) {
 function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) {
   const days = series.map((p) => p.day);
   const daily = series.map((p) => p.dau);
-  const weekly = series.map((p) => p.rolling7);
+  const weekly = series.map((p) => p.rolling7 ?? null);
   const labels = days.map(fmtDay);
   const provisional = lastPointIsToday(series, nowMs);
   const dailySplit = splitProvisional(daily, provisional);

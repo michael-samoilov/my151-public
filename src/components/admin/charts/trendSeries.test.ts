@@ -16,14 +16,14 @@ describe('extendThroughToday', () => {
   it('pads zero days from the last point through today', () => {
     const series = extendThroughToday(
       [
-        { day: day(10), dau: 4, rolling7: 4 },
-        { day: day(11), dau: 5, rolling7: 6 },
+        { day: day(10), dau: 4, rolling7: null },
+        { day: day(11), dau: 5, rolling7: null },
       ],
       day(13) + 18 * 3600_000,
     );
     expect(series.map((p) => p.day)).toEqual([day(10), day(11), day(12), day(13)]);
     expect(series.map((p) => p.dau)).toEqual([4, 5, 0, 0]);
-    expect(series.map((p) => p.rolling7)).toEqual([4, 6, 0, 0]);
+    expect(series.map((p) => p.rolling7)).toEqual([null, null, null, null]);
   });
 
   it('leaves a series that already includes today alone', () => {
@@ -119,7 +119,7 @@ describe('windowCounts', () => {
     const series = Array.from({ length: 7 }, (_, i) => ({
       day: day(7) + i * DAY_MS,
       dau: i + 1,
-      rolling7: 10 + i,
+      rolling7: i < 6 ? null : 10 + i,
     }));
     expect(windowCounts(series)).toEqual({ hours24: 7, days7: 16 });
   });

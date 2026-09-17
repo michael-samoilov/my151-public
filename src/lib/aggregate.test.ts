@@ -70,10 +70,16 @@ describe('dailyActive', () => {
     expect(series.map((p) => p.dau)).toEqual([1, 0, 1]);
   });
 
+  it('leaves rolling7 null until a full trailing week exists', () => {
+    const series = dailyActive([dex()], T0 + 6 * DAY_MS);
+    expect(series.slice(0, 6).every((p) => p.rolling7 === null)).toBe(true);
+    expect(series[6].rolling7).toBe(1);
+  });
+
   // The bug this guards: summing DAUs double-counts anyone who came back.
   it('counts a returning browser once in rolling7', () => {
-    const series = dailyActive([dex()]);
-    expect(series[2].rolling7).toBe(1);
+    const series = dailyActive([dex()], T0 + 6 * DAY_MS);
+    expect(series[6].rolling7).toBe(1);
   });
 
   it('falls back to first and last activity when a record has no session log', () => {
