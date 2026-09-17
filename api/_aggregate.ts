@@ -172,19 +172,25 @@ function rollingUniqueAt(
   return roll.size;
 }
 
+export type DailyActivityPoint = {
+  day: number;
+  dau: number;
+  rolling7: number;
+  /** Rolling 24h unique `cid` at `now` — set only on today's row when `now` is given. */
+  label24h?: number | null;
+  /** Rolling 168h unique `cid` at `now` — set only on today's row when `now` is given. */
+  label168h?: number | null;
+};
+
 /**
- * Dense daily active-users series with rolling 24h and 168h unique counts.
+ * Dense daily active-users series with a trailing-7-day calendar rolling count.
  *
- * `dau` is distinct browsers per UTC calendar day (for other metrics). Each point
- * is evaluated at end-of-day UTC, or at `now` on today when given. `rolling24`
- * and `rolling7` are distinct `cid` counts in the trailing 24h and 168h ending
- * at that instant — not calendar buckets. Either rolling field is null until
- * that much wall-clock history exists since the first session timestamp.
+ * `dau` is distinct browsers that UTC day; `rolling7` is distinct browsers over
+ * that day and the prior six (calendar WAU, not a DAU sum). When `now` is given,
+ * today's row also carries `label24h` / `label168h`: unique browsers in
+ * (now − 24h, now] and (now − 168h, now] for the chart's last point and gutter.
  */
-export function dailyActive(
-  records: SessionRecord[],
-  now?: number,
-): { day: number; dau: number; rolling24: number | null; rolling7: number | null }[] {
+export function dailyActive(records: SessionRecord[], now?: number): DailyActivityPoint[] {
   const sets: Record<number, Set<string>> = {};
   const events: { ts: number; cid: string }[] = [];
   for (const r of records) {
@@ -196,20 +202,24 @@ export function dailyActive(
   }
   const dayKeys = Object.keys(sets).map(Number);
   if (dayKeys.length === 0) return [];
-  const firstTs = Math.min(...events.map((e) => e.ts));
+  const firstTs = events.length ? Math.min(...events.map((e) => e.ts)) : 0;
   const firstDay = Math.min(...dayKeys);
   const lastActivity = Math.max(...dayKeys);
   const todayStart = now != null ? dayStart(now) : null;
   const lastDay = todayStart != null ? Math.max(lastActivity, todayStart) : lastActivity;
-  const out: { day: number; dau: number; rolling24: number | null; rolling7: number | null }[] = [];
+  const out: DailyActivityPoint[] = [];
   for (let day = firstDay; day <= lastDay; day += DAY_MS) {
-    const asOf = todayStart !== null && day === todayStart && now != null ? now : day + DAY_MS - 1;
-    out.push({
-      day,
-      dau: sets[day]?.size ?? 0,
-      rolling24: rollingUniqueAt(events, asOf, ROLLING_24H_MS, firstTs),
-      rolling7: rollingUniqueAt(events, asOf, ROLLING_7D_MS, firstTs),
-    });
+    const roll = new Set<string>();
+    for (let d = day - 6 * DAY_MS; d <= day; d += DAY_MS) {
+      const s = sets[d];
+      if (s) for (const cid of s) roll.add(cid);
+    }
+    const row: DailyActivityPoint = { day, dau: sets[day]?.size ?? 0, rolling7: roll.size };
+    if (todayStart !== null && now != null && day === todayStart) {
+      row.label24h = rollingUniqueAt(events, now, ROLLING_24H_MS, firstTs);
+      row.label168h = rollingUniqueAt(events, now, ROLLING_7D_MS, firstTs);
+    }
+    out.push(row);
   }
   return out;
 }
@@ -302,7 +312,7 @@ export function heatmap(records: SessionRecord[]): { hours: number[]; matrix: nu
 /** Everything the dashboard shows for one tool's records. */
 export interface Aggregates {
   users: number;
-  activity: { day: number; dau: number; rolling24: number | null; rolling7: number | null }[];
+  activity: DailyActivityPoint[];
   retention: { returning: number; activeLast7: number; newUsers: number };
   timeCurves: Record<'longest' | 'first' | 'all', SurvivalCurve>;
   countries: Record<string, number>;

@@ -1,11 +1,6 @@
-import { DAY_MS, dayStart } from '../../../../api/_aggregate';
+import { DAY_MS, dayStart, type DailyActivityPoint } from '../../../../api/_aggregate';
 
-export interface DailyPoint {
-  day: number;
-  dau: number;
-  rolling24: number | null;
-  rolling7: number | null;
-}
+export type DailyPoint = DailyActivityPoint;
 
 export function extendThroughToday(series: DailyPoint[], nowMs: number): DailyPoint[] {
   if (series.length === 0) return series;
@@ -14,7 +9,7 @@ export function extendThroughToday(series: DailyPoint[], nowMs: number): DailyPo
   if (last >= today) return series;
   const out = series.slice();
   for (let d = last + DAY_MS; d <= today; d += DAY_MS) {
-    out.push({ day: d, dau: 0, rolling24: null, rolling7: null });
+    out.push({ day: d, dau: 0, rolling7: 0 });
   }
   return out;
 }
@@ -38,11 +33,31 @@ export function splitProvisional(
   };
 }
 
-/** Gutter labels: trailing 24h and 168h unique counts at the last point. */
+/** Calendar DAU; last point uses `label24h` when present (rolling 24h at now). */
+export function chartDailyValues(series: DailyPoint[]): number[] {
+  if (series.length === 0) return [];
+  const last = series.length - 1;
+  return series.map((p, i) => {
+    if (i === last && p.label24h != null) return p.label24h;
+    return p.dau;
+  });
+}
+
+/** Calendar `rolling7`; last point uses `label168h` when present (rolling 168h at now). */
+export function chartWeeklyValues(series: DailyPoint[]): number[] {
+  if (series.length === 0) return [];
+  const last = series.length - 1;
+  return series.map((p, i) => {
+    if (i === last && p.label168h != null) return p.label168h;
+    return p.rolling7;
+  });
+}
+
+/** Gutter 24h / 7d from today's rolling windows, not calendar DAU / calendar week. */
 export function windowCounts(series: DailyPoint[]): { hours24: number | null; days7: number | null } {
   if (series.length === 0) return { hours24: null, days7: null };
   const last = series[series.length - 1];
-  return { hours24: last.rolling24, days7: last.rolling7 };
+  return { hours24: last.label24h ?? null, days7: last.label168h ?? null };
 }
 
 /**

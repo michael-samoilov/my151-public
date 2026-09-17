@@ -6,6 +6,8 @@ import {
   lastPointIsToday,
   monthDividerIndices,
   monthLabelTicks,
+  chartDailyValues,
+  chartWeeklyValues,
   splitProvisional,
   windowCounts,
   type DailyPoint,
@@ -84,8 +86,8 @@ function LegendSwatch({ color }: { color: string }) {
 
 function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) {
   const days = series.map((p) => p.day);
-  const daily = series.map((p) => p.rolling24);
-  const weekly = series.map((p) => p.rolling7);
+  const daily = chartDailyValues(series);
+  const weekly = chartWeeklyValues(series);
   const labels = days.map(fmtDay);
   const provisional = lastPointIsToday(series, nowMs);
   const dailySplit = splitProvisional(daily, provisional);
@@ -94,11 +96,14 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
   const monthTicks = monthLabelTicks(days);
   const counts = windowCounts(series);
   const scrubLabel = (i: number) => {
-    const d = daily[i];
-    const w = weekly[i];
-    const dPart = d != null ? ` · <b>${d}</b> 24h` : '';
-    const wPart = w != null ? ` · <b>${w}</b> 7d` : '';
-    return `${labels[i]}${dPart}${wPart}`;
+    const p = series[i];
+    const isLast = i === series.length - 1;
+    if (isLast && (p.label24h != null || p.label168h != null)) {
+      const dPart = p.label24h != null ? ` · <b>${p.label24h}</b> 24h` : '';
+      const wPart = p.label168h != null ? ` · <b>${p.label168h}</b> 7d` : '';
+      return `${labels[i]}${dPart}${wPart}`;
+    }
+    return `${labels[i]} · <b>${p.dau}</b> daily · <b>${p.rolling7}</b> weekly`;
   };
 
   const ref = useECharts(
@@ -198,7 +203,6 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             lineStyle: { color: faint, width: 1 },
             itemStyle: { color: faint },
             symbol: 'none',
-            connectNulls: false,
             z: 2,
             zlevel: 1,
           },
@@ -209,7 +213,6 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             lineStyle: { color: faint, width: 1, type: 'dotted' },
             itemStyle: { color: faint },
             symbol: 'none',
-            connectNulls: false,
             z: 2,
             zlevel: 1,
           },
@@ -279,15 +282,14 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
     return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
   }
 
-  const dailyNums = daily.filter((v): v is number => v != null);
-  const lo = dailyNums.length ? Math.min(...dailyNums) : 0;
-  const hi = dailyNums.length ? Math.max(...dailyNums) : 0;
+  const lo = Math.min(...daily);
+  const hi = Math.max(...daily);
   return (
     <div
       ref={ref}
       className="h-[180px] w-full touch-none overflow-visible md:h-[220px]"
       role="img"
-      aria-label={`Active users over ${series.length} days, 24h rolling ${lo} to ${hi}${counts.hours24 != null ? `, current 24h ${counts.hours24}` : ''}${counts.days7 != null ? `, current 7d ${counts.days7}` : ''}.`}
+      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}, with trailing 7-day unique active users. Last 24 hours ${counts.hours24 ?? 'n/a'}${counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}.`}
     />
   );
 }

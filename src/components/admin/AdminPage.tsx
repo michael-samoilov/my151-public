@@ -175,7 +175,7 @@ export interface ClientRecord {
  *  from. `all` is one record per browser with both tools' sessions merged. */
 export interface Aggregates {
   users: number;
-  activity: { day: number; dau: number; rolling24: number | null; rolling7: number | null }[];
+  activity: { day: number; dau: number; rolling7: number; label24h?: number | null; label168h?: number | null }[];
   retention: { returning: number; activeLast7: number; newUsers: number };
   timeCurves: Record<'longest' | 'first' | 'all', SurvivalCurve>;
   countries: Record<string, number>;
@@ -309,7 +309,7 @@ export interface ApiResponse {
   /** Per-user cohort samples: [firstTs, peakMon, peakLines, completed, exported]. */
   cohort?: [number, number, number, 0 | 1, 0 | 1][];
   /** Daily activity: per-day DAU and trailing-7-day rolling active count. */
-  activity?: { day: number; dau: number; rolling24: number | null; rolling7: number | null }[];
+  activity?: { day: number; dau: number; rolling7: number; label24h?: number | null; label168h?: number | null }[];
   /** Onboarding launch timestamp — the default cutoff for the pre/post slider. */
   onboardingLaunchTs?: number;
   exportSettings?: {

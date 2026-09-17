@@ -70,19 +70,12 @@ describe('dailyActive', () => {
     expect(series.map((p) => p.dau)).toEqual([1, 0, 1]);
   });
 
-  it('leaves rolling24 null for the first 24h and rolling7 null for the first 168h', () => {
+  it('counts a returning browser once in calendar rolling7', () => {
     const series = dailyActive([dex()], T0 + 6 * DAY_MS);
-    expect(series[0].rolling24).toBeNull();
-    expect(series.every((p) => p.rolling7 === null)).toBe(true);
+    expect(series[6].rolling7).toBe(1);
   });
 
-  it('counts a returning browser once in rolling 168h, not twice via calendar buckets', () => {
-    const series = dailyActive([dex()], T0 + 7 * DAY_MS);
-    const with7d = series.find((p) => p.rolling7 != null);
-    expect(with7d?.rolling7).toBe(1);
-  });
-
-  it('rolling24 spans UTC midnight without resetting to calendar DAU', () => {
+  it('sets label24h and label168h only on today when now is given', () => {
     const hour = DAY_MS / 24;
     const first = T0;
     const second = T0 + 20 * hour;
@@ -91,10 +84,13 @@ describe('dailyActive', () => {
       firstTs: first,
       lastTs: second,
     });
-    const series = dailyActive([rec], T0 + 25 * hour);
+    const now = T0 + 25 * hour;
+    const series = dailyActive([rec], now);
+    expect(series[0].label24h).toBeUndefined();
     const last = series[series.length - 1];
     expect(last.dau).toBe(1);
-    expect(last.rolling24).toBe(1);
+    expect(last.label24h).toBe(1);
+    expect(last.label168h).toBeNull();
   });
 
   it('falls back to first and last activity when a record has no session log', () => {
