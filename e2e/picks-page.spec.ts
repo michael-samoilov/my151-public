@@ -62,6 +62,12 @@ test.describe('admin picks page', () => {
     const grassGrid = starters.locator('[data-picks-side="most"]').first().locator('.grid');
     await expect(grassGrid).toHaveCount(1);
     expect(await grassGrid.locator('[data-face-id]').count()).toBeGreaterThanOrEqual(9);
+    const grassRow1 = await grassGrid.locator('[data-face-id]').evaluateAll((els) => {
+      const ys = els.map((el) => Math.round(el.getBoundingClientRect().y));
+      const first = ys[0];
+      return ys.filter((y) => y === first).length;
+    });
+    expect(grassRow1).toBeGreaterThanOrEqual(9);
 
     const starterCell = starters.locator('[data-face-id]').first();
     const pairCell = page.locator('[data-section-id="early-bug"] [data-picks-side="most"] [data-face-id]').first();

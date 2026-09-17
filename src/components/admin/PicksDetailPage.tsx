@@ -174,19 +174,23 @@ function LineGrid({
   barColor,
   countMode,
   cols = PICKS_COLS,
+  uniformFrTracks = false,
 }: {
   lines: RankedLine[];
   max: number;
   barColor: string;
   countMode: boolean;
   cols?: number;
+  /** Starter rows: equal fr tracks so nine faces share the row without min-width wrap. */
+  uniformFrTracks?: boolean;
 }) {
   if (lines.length === 0) {
     return <p className="text-[0.65rem] text-muted-foreground">None in this cap.</p>;
   }
   const rows = packLineRows(lines, cols);
-  const colClass =
-    cols === PICKS_PAIR_COLS
+  const colClass = uniformFrTracks
+    ? ''
+    : cols === PICKS_PAIR_COLS
       ? 'grid-cols-12'
       : cols === PICKS_COMBINED_COLS
         ? 'grid-cols-9'
@@ -194,7 +198,9 @@ function LineGrid({
           ? 'grid-cols-6'
           : '';
   const colStyle =
-    colClass === '' ? { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` } : undefined;
+    uniformFrTracks || colClass === ''
+      ? { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }
+      : undefined;
   return (
     <div className="flex min-w-0 flex-col gap-1">
       {rows.map((row, i) => (
@@ -315,7 +321,14 @@ function DualGrids({
   if (!showLeast) {
     return (
       <div className="min-w-0 w-full" data-picks-side="most" data-picks-cols={cols}>
-        <LineGrid lines={columns.most} max={max} barColor={barColor} countMode={countMode} cols={cols} />
+        <LineGrid
+          lines={columns.most}
+          max={max}
+          barColor={barColor}
+          countMode={countMode}
+          cols={cols}
+          uniformFrTracks={!!pairDensity}
+        />
       </div>
     );
   }
