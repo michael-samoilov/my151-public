@@ -53,11 +53,14 @@ export function chartWeeklyValues(series: DailyPoint[]): number[] {
   });
 }
 
-/** Gutter 24h / 7d from today's rolling windows, not calendar DAU / calendar week. */
-export function windowCounts(series: DailyPoint[]): { hours24: number | null; days7: number | null } {
-  if (series.length === 0) return { hours24: null, days7: null };
+/** Gutter counts: rolling at `now` when computed, else same as production (DAU / calendar week). */
+export function windowCounts(series: DailyPoint[]): { hours24: number; days7: number | null } {
+  if (series.length === 0) return { hours24: 0, days7: null };
   const last = series[series.length - 1];
-  return { hours24: last.label24h ?? null, days7: last.label168h ?? null };
+  return {
+    hours24: last.label24h ?? last.dau,
+    days7: last.label168h ?? last.rolling7,
+  };
 }
 
 /**

@@ -38,8 +38,8 @@ function measureWindowLabelPx(kind: '7d' | '24h', count: number, numSize: number
   return n + 2 + ctx.measureText(kind).width;
 }
 
-function gridRightPx(counts: { hours24: number | null; days7: number | null }, numSize: number): number {
-  const w24 = counts.hours24 == null ? 0 : measureWindowLabelPx('24h', counts.hours24, numSize);
+function gridRightPx(counts: { hours24: number; days7: number | null }, numSize: number): number {
+  const w24 = measureWindowLabelPx('24h', counts.hours24, numSize);
   const w7 = counts.days7 == null ? 0 : measureWindowLabelPx('7d', counts.days7, numSize);
   return Math.ceil(LABEL_INSET + Math.max(w24, w7) + LABEL_TAIL);
 }
@@ -96,14 +96,8 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
   const monthTicks = monthLabelTicks(days);
   const counts = windowCounts(series);
   const scrubLabel = (i: number) => {
-    const p = series[i];
-    const isLast = i === series.length - 1;
-    if (isLast && (p.label24h != null || p.label168h != null)) {
-      const dPart = p.label24h != null ? ` · <b>${p.label24h}</b> 24h` : '';
-      const wPart = p.label168h != null ? ` · <b>${p.label168h}</b> 7d` : '';
-      return `${labels[i]}${dPart}${wPart}`;
-    }
-    return `${labels[i]} · <b>${p.dau}</b> daily · <b>${p.rolling7}</b> weekly`;
+    const w = weekly[i];
+    return `${labels[i]} · <b>${daily[i]}</b> daily${w != null ? ` · <b>${w}</b> weekly` : ''}`;
   };
 
   const ref = useECharts(
@@ -255,17 +249,12 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
             ) => {
               const last = daily.length - 1;
               const x = api.coord([last, 0])[0] + LABEL_INSET;
-              const children: ReturnType<typeof countLabel>[] = [];
-              const dLast = daily[last];
-              const wLast = weekly[last];
-              if (counts.hours24 != null && dLast != null) {
+              const children = [
+                countLabel('24h', counts.hours24, faint, x, api.coord([last, daily[last]])[1], numSize),
+              ];
+              if (counts.days7 != null) {
                 children.push(
-                  countLabel('24h', counts.hours24, faint, x, api.coord([last, dLast])[1], numSize),
-                );
-              }
-              if (counts.days7 != null && wLast != null) {
-                children.push(
-                  countLabel('7d', counts.days7, red, x, api.coord([last, wLast])[1], numSize),
+                  countLabel('7d', counts.days7, red, x, api.coord([last, weekly[last]])[1], numSize),
                 );
               }
               return { type: 'group', children };
@@ -289,7 +278,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
       ref={ref}
       className="h-[180px] w-full touch-none overflow-visible md:h-[220px]"
       role="img"
-      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}, with trailing 7-day unique active users. Last 24 hours ${counts.hours24 ?? 'n/a'}${counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}.`}
+      aria-label={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}, with trailing 7-day unique active users. Last 24 hours ${counts.hours24}${counts.days7 != null ? `, last 7 days ${counts.days7}` : ''}.`}
     />
   );
 }

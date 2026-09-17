@@ -135,6 +135,11 @@ describe('windowCounts', () => {
     ];
     expect(windowCounts(series)).toEqual({ hours24: 11, days7: 16 });
   });
+
+  it('falls back to calendar DAU and rolling7 for gutter when labels are absent', () => {
+    const series = [{ day: day(13), dau: 4, rolling7: 9 }];
+    expect(windowCounts(series)).toEqual({ hours24: 4, days7: 9 });
+  });
 });
 
 describe('countLabelLayout', () => {
