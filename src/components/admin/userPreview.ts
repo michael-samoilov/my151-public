@@ -195,6 +195,10 @@ export const PREVIEW_FIT = {
   league: 14,
 } as const;
 
+export function dexPokemonCount(ids: number[] | undefined): number {
+  return ids?.length ?? 0;
+}
+
 export function dexChipLabel(count: number): string {
   return `${count} ${PREVIEW_DEX_NOUN}`;
 }
