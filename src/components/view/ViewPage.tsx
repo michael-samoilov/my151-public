@@ -2,7 +2,7 @@ import { useRef, useState, useEffect, useLayoutEffect, useCallback, useMemo } fr
 import { useDragSensors } from '@/lib/dragSensors';
 import { createPortal } from 'react-dom';
 import { useToolbarSlot } from '@/components/layout/toolbarSlot';
-import { Settings, Download, Loader2 } from 'lucide-react';
+import { Settings, Download } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import { useViewSort, computeViewSort, buildIdToSection } from '@/hooks/useViewSort';
 import type { Pokemon, TypeName } from '@/types/pokemon';
@@ -10,19 +10,12 @@ import { PageFooter } from '@/components/shared/PageFooter';
 import { PokeballBg } from '@/components/shared/PokeballBg';
 import { EffectiveCursorMarker } from '@/components/shared/EffectiveCursorMarker';
 import { DragMeasureKicker } from '@/components/shared/DragMeasureKicker';
-import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
-import { sendExportBeacon } from '@/hooks/useCompletionBeacon';
-import { hasSeenExportSurvey, shouldShowExportSurvey } from '@/lib/exportSurvey';
-import { isOptedOut } from '@/lib/clientId';
-import { ExportSurveyHost } from '@/components/export/ExportSurveyHost';
-import { DEMO_MODE, PREVIEW_DEPLOY } from '@/lib/demoMode';
-import { previewExportHighlight, type ExportHighlight } from '@/league/export/exportPersonalization';
+import { DexExportOverlay } from '@/components/export/DexExportOverlay';
 import { getEvolutionChainIds, getPokemonById } from '@/hooks/usePokemonData';
 import { ViewSettingsPane } from '@/components/view/ViewSettingsPane';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { FollowUpHint } from '@/components/milestone/FollowUpHint';
-import { DetailedStatsPanel, STATS_MIN_POKEMON, DEFAULT_STATS_HEIGHTS } from '@/components/view/DetailedStatsPanel';
-import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
+import { DetailedStatsPanel, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { createEffectiveCursorCollision, createSnapCenterToPointer, dragInputIsTouch, dragPointerRef } from '@/lib/dragCollision';
 import { getTypeMask, ensureTypeMask } from '@/lib/typeSymbol';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
@@ -529,8 +522,6 @@ export function ViewPage() {
   // presentation: the grid on a raised card and each chart on its own card with
   // the title inside ('card-title-in'), with type-name badges.
   const showStatsPanel = showStats && count >= STATS_MIN_POKEMON;
-  // Stats data (single source of truth shared with the native export renderer).
-  const statsData = useDetailedStatsData();
 
   // Section geometry + the effective grid sizing factors. In outline mode the
   // grid gains inter-cell gaps and per-section label bands; folding those into
@@ -896,16 +887,7 @@ export function ViewPage() {
     });
   }, [statsRevealed, isDesktop]);
 
-  const [exporting, setExporting] = useState(false);
-  const [exportSurvey, setExportSurvey] = useState<{
-    open: boolean;
-    openedAt: number;
-    highlight: ExportHighlight | null;
-  }>({
-    open: false,
-    openedAt: 0,
-    highlight: null,
-  });
+  const [exportOpen, setExportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsBtnRef = useRef<HTMLButtonElement>(null);
   const exportBtnRef = useRef<HTMLButtonElement>(null);
@@ -1121,58 +1103,11 @@ export function ViewPage() {
     return { pokemonId: bundle[0], side: 'left' };
   }, [overId, dragLineIds, bundleVisible, dropSide]);
 
-  const handleExport = useCallback(async () => {
-    if (exporting || sorted.length === 0) return;
-    setExporting(true);
-    // Fire the export beacon up front. On iOS the share sheet ("Save Image")
-    // suspends the page, and a sendBeacon issued after navigator.share resolves
-    // often never leaves the device — so record the export before opening it.
-    const ids = sorted.map((p) => p.id);
-    sendExportBeacon(
-      ids,
-      {
-        sort: sortOption,
-        outlines: showSectionOverlays,
-        groupSpecial: groupSpecialAtEnd,
-        showStats: showStatsPanel,
-      },
-      // The live placement map, so the export snapshots ids and sections
-      // together and nothing reads as "not in a section" in the admin.
-      sections,
-    );
-    try {
-      // The detailed-stats panel is redrawn natively onto the export canvas (see
-      // exportStats.ts) — NOT rasterized from the DOM. html-to-image relies on an
-      // SVG <foreignObject>, which hangs/poisons the export on iOS WebKit; native
-      // canvas drawing is the same reliable mechanism the grid uses.
-      const blob = await generateExportImage(sorted, {
-        sections: showSectionOverlays ? sections : null,
-        stats: showStatsPanel ? { data: statsData, heights: DEFAULT_STATS_HEIGHTS } : null,
-      });
-      await shareOrDownload(blob, `my151.png`);
-      const highlight =
-        DEMO_MODE || isOptedOut() ? previewExportHighlight('pokedex', ids) : null;
-      if (
-        shouldShowExportSurvey({
-          optedOut: isOptedOut(),
-          preview: PREVIEW_DEPLOY,
-          seen: hasSeenExportSurvey(),
-          ordinal: highlight?.ordinal,
-        })
-      ) {
-        setExportSurvey({
-          open: true,
-          openedAt: Date.now(),
-          highlight,
-        });
-      }
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      console.error('Export failed:', err);
-    } finally {
-      setExporting(false);
-    }
-  }, [sorted, exporting, showSectionOverlays, sections, sortOption, groupSpecialAtEnd, showStatsPanel, statsData]);
+  const openExport = useCallback(() => {
+    if (sorted.length === 0) return;
+    setSettingsOpen(false);
+    setExportOpen(true);
+  }, [sorted.length]);
 
   const dragOverlayPokemon = dragLineIds
     ? dragLineIds.map((id) => sorted.find((p) => p.id === id)).filter((p): p is Pokemon => !!p)
@@ -1204,11 +1139,13 @@ export function ViewPage() {
             </button>
             <button type="button"
               ref={exportBtnRef}
-              onClick={handleExport}
-              disabled={exporting || count === 0}
+              onClick={openExport}
+              disabled={count === 0}
+              data-dex-export
+              aria-label="Export"
               className="p-1.5 rounded-md border border-border text-primary hover:bg-primary hover:text-primary-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-primary"
             >
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              <Download className="w-4 h-4" />
             </button>
           </>,
           toolbarSlot,
@@ -1449,14 +1386,7 @@ export function ViewPage() {
       {/* Settings sheet — bottom sheet on mobile (mirrors MobileSheet) */}
       {settingsOpen && <ViewSettingsSheet onClose={() => setSettingsOpen(false)} />}
 
-      {exportSurvey.open && (
-        <ExportSurveyHost
-          tool="pokedex"
-          highlight={exportSurvey.highlight}
-          openedAt={exportSurvey.openedAt}
-          onClose={() => setExportSurvey({ open: false, openedAt: 0, highlight: null })}
-        />
-      )}
+      {exportOpen && <DexExportOverlay onClose={() => setExportOpen(false)} />}
 
       {/* Follow-up nudges from the milestone celebrations, pointing at where
           the promised feature actually lives (one tap further than "Open View"). */}
@@ -1471,7 +1401,7 @@ export function ViewPage() {
       <FollowUpHint
         armed={exportHintArmed}
         dismiss={dismissExportHint}
-        fulfilled={exporting}
+        fulfilled={exportOpen}
         anchorRef={exportBtnRef}
         title="Export is right here"
         body="Tap the download icon to save your dex as an image and share it."

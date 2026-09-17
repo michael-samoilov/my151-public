@@ -9,22 +9,26 @@ display options, exportable as a PNG.
 - View settings: sort (build-order / regional / national / type / custom),
   section outlines, group-special-at-end, show-stats.
 - Optional detailed-stats column drawn into the same export canvas.
-- Export as a PNG (`my151.png`) via share or download.
+- Export as a PNG (`my151.png`) via the shared preview overlay: live settings
+  pane, 3D tiltable preview card, then share or download.
+- Post-export survey (`You're here early!` → feedback / where they heard of us).
 
 ## How to get to it (user POV)
 
 Tap the view tab (`[data-nav="view"]`). The finished dex appears. A settings
-control (`aria-label="View settings"`, hardcoded English) opens the options. A
-download/share control exports the image.
+control (`aria-label="View settings"`, hardcoded English) opens the view
+options. The export control (`[data-dex-export]`) opens the preview overlay.
 
 ## Driving it with the harness
 
 Seed a dex, click `[data-nav="view"]`, and assert the view activates (its nav
-button's computed background is non-transparent) and the canvas renders. For
-export, the observable end state is a PNG blob: the app calls `navigator.share`
-when available, else clicks an `<a download="my151.png">`. In a headless run assert
-the generated `image/png` blob is produced (the repo's own e2e checks a >50KB
-blob), not a downloaded file.
+button's computed background is non-transparent) and the canvas renders. Click
+`[data-dex-export]` and assert `[data-export-preview-layer]` and
+`[data-dex-export-confirm]` appear before any download. Settings writes update
+the preview blob URL. Save then asserts `[data-export-survey-intro]`. The PNG
+blob itself is still produced on Save (`navigator.share` or
+`<a download="my151.png">`); the repo's own e2e checks a >50KB blob in
+`e2e/dev/poster-export.spec.ts`.
 
 ## Gotchas
 

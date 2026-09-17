@@ -314,6 +314,28 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
   return checks;
 }
 
+export async function runDexExportSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  await s.click('[data-nav="view"]');
+  await waitForActiveView(s, 'view');
+  const hasTrigger = await s.evalJson<boolean>(`return !!document.querySelector('[data-dex-export]');`).catch(() => false);
+  if (!hasTrigger) {
+    return [ok('dex-export:preview-overlay', false, 'missing [data-dex-export]')];
+  }
+  await s.click('[data-dex-export]');
+  await sleep(500);
+  const state = await s.evalJson<{ preview: boolean; confirm: boolean; surveyHost: boolean }>(
+    `return {
+      preview: !!document.querySelector('[data-export-preview-layer]'),
+      confirm: !!document.querySelector('[data-dex-export-confirm]'),
+      surveyHost: !!document.querySelector('[data-export-survey-host]'),
+    };`,
+  ).catch(() => ({ preview: false, confirm: false, surveyHost: true }));
+  await s.screenshot(ctx.shot('dex-export-overlay'));
+  await s.evalJson(`const b=document.querySelector('[data-export-scrim] button'); if(b instanceof HTMLElement) b.click(); return true;`).catch(() => false);
+  await sleep(300);
+  return [ok('dex-export:preview-overlay', state.preview && state.confirm && !state.surveyHost, JSON.stringify(state))];
+}
+
 // ---------------------------------------------------------------------------
 // League builder page (/custom-gym-leader), added 2026-08-29. Checks are
 // the invariants that change introduced: the page boots on its own entry, the

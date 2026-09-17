@@ -7,6 +7,11 @@ import { getLocale } from '@/i18n/core';
 import { currentPage, currentTool } from '@/lib/tool';
 import { externalReferrerHost } from '@/lib/referrer';
 import {
+  exportBeaconPlan,
+  previewExportHighlight,
+  type ExportHighlight,
+} from '@/league/export/exportPersonalization';
+import {
   createBeaconDebouncer,
   PROGRESS_DEBOUNCE_MS,
   PROGRESS_MAX_WAIT_MS,
@@ -191,14 +196,50 @@ export function useCompletionBeacon() {
  *  that produced the exported image. `sections` is the live placement map, sent
  *  so the export snapshots `ids` and `sections` together — without it the server
  *  keeps the last build beacon's (older) section map while overwriting `ids`, so
- *  Pokemon placed since that beacon read as "not in a section" in the admin. */
-export function sendExportBeacon(
+ *  Pokemon placed since that beacon read as "not in a section" in the admin.
+ *  Returns the uniqueness highlight the survey intro reads, same as league. */
+export async function sendExportBeacon(
   ids: number[],
   settings?: ExportSettings,
   sections?: Record<string, number[]>,
-) {
-  if (ids.length === 0) return;
-  postBeacon(ids, 'export', sections, settings);
+): Promise<ExportHighlight | null> {
+  if (ids.length === 0) return null;
+  const plan = exportBeaconPlan({
+    demo: DEMO_MODE,
+    optedOut: isOptedOut(),
+    kind: 'export',
+  });
+  if (plan === 'skip') return null;
+  if (plan === 'preview') return previewExportHighlight('pokedex', ids);
+
+  const cid = getClientId();
+  const payload = JSON.stringify({
+    cid,
+    tool: currentTool(),
+    page: currentPage(),
+    kind: 'export',
+    ids,
+    depth: countEvoLines(ids),
+    sections,
+    exportSettings: settings,
+    locale: getLocale(),
+    ref: externalReferrerHost() || undefined,
+    ts: Date.now(),
+    notme: isOptedOut() || undefined,
+  });
+  try {
+    const res = await fetch('/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { highlight?: ExportHighlight };
+    return data.highlight ?? null;
+  } catch {
+    return null;
+  }
 }
 
 const EVENT_SENT_PREFIX = 'p151-ev-';
