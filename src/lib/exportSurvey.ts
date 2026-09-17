@@ -57,6 +57,16 @@ export function shouldOfferExportSurvey(ordinal: number | null | undefined): boo
   return ordinal <= LAST_EARLY_EXPORT_BUCKET;
 }
 
+export function shouldShowExportSurvey(opts: {
+  optedOut: boolean;
+  seen: boolean;
+  ordinal: number | null | undefined;
+}): boolean {
+  if (opts.optedOut) return true;
+  if (opts.seen) return false;
+  return shouldOfferExportSurvey(opts.ordinal);
+}
+
 export function markExportSurveySeen(): void {
   persistExportSurveySeen(PRODUCTION_DEPLOY);
 }

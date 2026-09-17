@@ -59,7 +59,9 @@ describe('export personalization', () => {
     expect(exportBeaconPlan({ demo: true, optedOut: false, kind: 'export' })).toBe('preview');
     expect(exportBeaconPlan({ demo: true, optedOut: false, kind: 'progress' })).toBe('skip');
     expect(exportBeaconPlan({ demo: false, optedOut: false, kind: 'export' })).toBe('network');
-    expect(exportBeaconPlan({ demo: false, optedOut: true, kind: 'export' })).toBe('skip');
+    expect(exportBeaconPlan({ demo: false, optedOut: true, kind: 'export' })).toBe('network');
+    expect(exportBeaconPlan({ demo: false, optedOut: true, kind: 'progress' })).toBe('skip');
+    expect(exportBeaconPlan({ demo: true, optedOut: true, kind: 'export' })).toBe('preview');
   });
 
   it('picks the never-exported pokemon with the highest dex frequency', () => {

@@ -2,7 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { createPortal } from 'react-dom';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { shareOrDownload } from '@/lib/exportImage';
-import { hasSeenExportSurvey, markExportSurveySeen, shouldOfferExportSurvey } from '@/lib/exportSurvey';
+import { hasSeenExportSurvey, markExportSurveySeen, shouldShowExportSurvey } from '@/lib/exportSurvey';
+import { isOptedOut } from '@/lib/clientId';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { cn } from '@/lib/utils';
@@ -228,7 +229,13 @@ export function LeagueExportOverlay() {
         : await exportGymCard(cards[exportCardIndex!]);
       await shareOrDownload(blob, isLeague ? HOME_FILENAME : CARD_FILENAME);
       incrementLeagueExportCount();
-      if (hasSeenExportSurvey() || !shouldOfferExportSurvey(nextHighlight?.ordinal)) {
+      if (
+        !shouldShowExportSurvey({
+          optedOut: isOptedOut(),
+          seen: hasSeenExportSurvey(),
+          ordinal: nextHighlight?.ordinal,
+        })
+      ) {
         closeLeagueExport();
         return;
       }
