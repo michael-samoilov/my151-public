@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   DndContext,
   useDraggable,
@@ -12,15 +12,26 @@ import { getPokemonById } from '@/hooks/usePokemonData';
 import { formAt } from '../model/powerups';
 import { typeIconPath } from '@/data/type-ids';
 import { starPath } from '@/lib/sectionOutlines';
-import { createEffectiveCursorCollision, dragInputIsTouch, isTouchDrag } from '@/lib/dragCollision';
+import {
+  createEffectiveCursorCollision,
+  dragInputIsTouch,
+  dragPointerRef,
+  isTouchDrag,
+} from '@/lib/dragCollision';
 import { cn } from '@/lib/utils';
 import { useDragSensors } from '@/lib/dragSensors';
 import { BOSS_ROW, SLOT_COUNT, slotKind, slotRow } from '../model/constants';
-import { deriveRow, moveSeat } from '../model/engine';
+import { deriveRow, leagueSlotIsEmpty, moveLeagueSlots } from '../model/engine';
 import { cardShades } from '../theme';
 import { fitStyle, useFitScale } from '../useFitScale';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
-import { legendsOf, powerupsAt, useLeagueStore, type GymCard } from '../store/useLeagueStore';
+import {
+  emptyCard,
+  legendsOf,
+  powerupsAt,
+  useLeagueStore,
+  type GymCard,
+} from '../store/useLeagueStore';
 import { useLeagueUi } from '../store/useLeagueUi';
 import { BossBall, Crown, EmptySlotBall, GymBadges, Stars } from './glyphs';
 
@@ -58,15 +69,34 @@ const TEAM_COLS = 6;
  */
 const HIT_LIFT_PX = 64;
 
-/** How far the copy is lifted off the slot it would fill. */
 const rowCollision = createEffectiveCursorCollision(HIT_LIFT_PX);
+
 /**
- * The copy sits *on* the row it would be placed in, not above it.
+ * Reorder index from the thumb on touch (lift is hit-test only).
  *
- * `snapOverlayToTarget` anchors it to the target row's own rect, so no offset
- * is what centres it there — and before the thumb travels the target is the
- * row it came from, which is also where the thumb is. One rule covers both.
+ * Collision reads a point above the finger so the target stays visible, but
+ * preview uses `moveLeagueSlots` and must follow the thumb — not the lifted
+ * hit point — or labels jump before the finger crosses a row.
  */
+function insertIndexFromThumb(): number | undefined {
+  const y = dragPointerRef.current?.y;
+  if (y === undefined) return undefined;
+
+  let best: number | undefined;
+  let bestD2 = Infinity;
+  for (let i = 0; i < SLOT_COUNT; i++) {
+    const el = document.querySelector(`[data-testid="league-slot-${i}"]`);
+    if (!el) continue;
+    const r = el.getBoundingClientRect();
+    const cy = r.top + r.height / 2;
+    const d2 = (cy - y) ** 2;
+    if (d2 < bestD2) {
+      bestD2 = d2;
+      best = i;
+    }
+  }
+  return best;
+}
 
 const SECTION_BEFORE: Record<number, string> = {
   0: 'GYM LEADERS',
@@ -132,12 +162,6 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
           ) : card.type ? (
             <img src={typeIconPath(card.type)} alt={card.type} className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem]" />
           ) : (
-            // The same grey the row's action square beside it paints, from
-            // the same token. It used to be set inline because an unlayered
-            // `* { border-color }` in index.css beat every border-colour
-            // utility; that rule now sits in `@layer base`, so the class
-            // works and the two squares can name one token instead of two
-            // literals that only matched by accident.
             <span className="h-[1.375rem] w-[1.375rem] rounded-[0.3125rem] border-[1.4px] border-dashed border-border" />
           )}
         </span>
@@ -146,17 +170,11 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
         ))}
         {cells.map((cell) => {
           const p = cell.pokemonId !== null ? getPokemonById(cell.pokemonId) : undefined;
-          // The summary is a small copy of the card's own row, so a seat
-          // wearing a Mega or Gigantamax wears it here too. Without this the
-          // champion row showed Charizard while its card showed Mega
-          // Charizard X.
           const form = formAt(powerupsAt(card, row), row, cell.seat, cell.pokemonId);
           return (
             <span key={cell.seat} className="flex items-center justify-center">
               {p ? (
                 <img
-                  // Keyed by its source, so a row that changes teams paints
-                  // nothing rather than the frame it already decoded.
                   key={form ? `/sprites/pokemon/${form.id}.png` : p.sprite}
                   src={form ? `/sprites/pokemon/${form.id}.png` : p.sprite}
                   alt={form ? form.label : p.name}
@@ -169,9 +187,6 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
             </span>
           );
         })}
-        {/* The row's own affordance. The whole row opens the card, so this
-            says which of the two things the row is for: start it, or open
-            what is already there. */}
         <span
           aria-hidden
           data-testid={`league-action-${position}`}
@@ -189,50 +204,35 @@ function SlotRowFace({ position, card }: { position: number; card: GymCard }) {
   );
 }
 
-/**
- * An open slot, drawn where the carried row would land.
- *
- * The copy in hand already shows that team, so drawing it here too would
- * draw it twice. The gap says "this is the place" and nothing more.
- */
 /** The row as the league renders it: a drop target that drags and opens. */
-function SlotRow({ position, cardIndex, held }: {
+function SlotRow({ position, card, held, canDrag }: {
   position: number;
-  cardIndex: number;
+  card: GymCard;
   /** This row is where the carried one would land, so it draws it in hand. */
   held: boolean;
+  canDrag: boolean;
 }) {
-  const card = useLeagueStore((s) => s.cards[cardIndex]);
   const openCardPage = useLeagueUi((s) => s.openCardPage);
   const { setNodeRef: setDragRef, listeners, attributes } = useDraggable({
     id: `slot-${position}`,
     data: { index: position },
+    disabled: !canDrag,
   });
   const { setNodeRef: setDropRef } = useDroppable({ id: `slotdrop-${position}`, data: { index: position } });
+  const dragProps = canDrag ? { ...listeners, ...attributes } : {};
 
   return (
     <div ref={setDropRef}>
       <button
         type="button"
         ref={setDragRef}
-        {...listeners}
-        {...attributes}
+        {...dragProps}
         data-testid={`league-slot-${position}`}
-        onClick={() => openCardPage(cardIndex)}
+        onClick={() => openCardPage(position)}
         className="block w-full cursor-pointer"
-        // Not `none`: that takes the browser's own gestures along with the
-        // app's, and these rows are the whole summary, so a pinch anywhere on
-        // it did nothing. The press-and-hold the sensor now requires is what
-        // separates a drag from a pinch, not a blanket claim on touch.
         style={{ touchAction: 'pan-y pinch-zoom' }}
       >
         {held ? (
-          // The carried row is drawn *here*, in the slot it would fill, rather
-          // than in a drag overlay positioned over it. An overlay cannot be
-          // aligned to this row reliably: its modifier runs before React has
-          // committed the reorder, so every rect it can read is a frame stale
-          // — measured, that left the copy exactly one row past its slot. The
-          // row it would become has no such problem, because it *is* the row.
           <div
             data-drag-held
             data-placement="on"
@@ -257,8 +257,6 @@ export function LeagueHome() {
   const sensors = useDragSensors();
   const fitRef = useRef<HTMLDivElement>(null);
   const isDesktop = useIsDesktop();
-  // Desktop grows the summary to fill the pane the way the card does; mobile
-  // keeps the squash the sliding pane relies on.
   const fit = useFitScale(
     fitRef,
     0.55,
@@ -266,56 +264,48 @@ export function LeagueHome() {
   );
   const [preview, setPreview] = useState<{ from: number; to: number } | null>(null);
   const cards = useLeagueStore((s) => s.cards);
-  // Nothing placed anywhere: a row's tap can only mean "add a trainer", so
-  // the hint says that instead of naming a card that does not exist yet. A
-  // card counts as used once it holds a line, a type or a name — the same
-  // test `SlotRowFace` uses to decide whether to draw a face at all.
-  const blank = cards.every(
-    (c) => c.lines.length === 0 && !c.type && !c.theme && !c.badgeName,
-  );
+  const blank = cards.every((c) => leagueSlotIsEmpty(c));
+
+  const displayCards = useMemo(() => {
+    if (!preview) return cards;
+    return moveLeagueSlots(
+      cards,
+      preview.from,
+      preview.to,
+      leagueSlotIsEmpty,
+      emptyCard,
+    );
+  }, [cards, preview]);
 
   const onDragStart = useCallback((e: DragStartEvent) => {
-    // Only a finger needs the lift; a mouse cursor covers nothing. This is a
-    // PointerSensor, so the activator is a PointerEvent and never a
-    // TouchEvent — read `pointerType`, or the lift never applies on a phone.
     dragInputIsTouch.current = isTouchDrag(e.activatorEvent);
     const position = (e.active.data.current as { index: number } | undefined)?.index;
     if (position === undefined) return;
-    // Seeded at pickup: the row is over itself before it travels, so the very
-    // first frame already draws it in hand rather than showing an untouched
-    // row for a frame and then swapping.
     setPreview({ from: position, to: position });
   }, []);
 
   const onDragOver = useCallback((e: DragOverEvent) => {
     const from = (e.active.data.current as { index: number } | undefined)?.index;
-    const to = (e.over?.data.current as { index: number } | undefined)?.index;
+    const to =
+      insertIndexFromThumb()
+      ?? (e.over?.data.current as { index: number } | undefined)?.index;
     if (from === undefined || to === undefined) return;
     setPreview((cur) => (cur && cur.to === to && cur.from === from ? cur : { from, to }));
   }, []);
 
   const onDragEnd = useCallback(
     (e: DragEndEvent) => {
+      const from = (e.active.data.current as { index: number } | undefined)?.index;
+      const to =
+        insertIndexFromThumb()
+        ?? (e.over?.data.current as { index: number } | undefined)?.index;
       dragInputIsTouch.current = false;
       setPreview(null);
-      const from = (e.active.data.current as { index: number } | undefined)?.index;
-      const to = (e.over?.data.current as { index: number } | undefined)?.index;
       if (from === undefined || to === undefined || from === to) return;
       moveSlot(from, to);
     },
     [moveSlot],
   );
-
-  // The arrangement as it would land: each position draws the card that would
-  // sit there, at the team size that position allows. Same contract as the
-  // card grid's column preview — what you see mid-drag is what you get.
-  const order = preview
-    ? moveSeat(
-        Array.from({ length: SLOT_COUNT }, (_, i) => i),
-        preview.from + 1,
-        preview.to + 1,
-      )
-    : Array.from({ length: SLOT_COUNT }, (_, i) => i);
 
   return (
     <DndContext
@@ -324,17 +314,14 @@ export function LeagueHome() {
       onDragOver={onDragOver}
       onDragEnd={onDragEnd}
       onDragStart={onDragStart}
-      onDragCancel={() => { dragInputIsTouch.current = false; setPreview(null); }}
+      onDragCancel={() => {
+        dragInputIsTouch.current = false;
+        setPreview(null);
+      }}
     >
       <div ref={fitRef} style={fitStyle(fit)}>
-        {/* Uniform 0.6875rem gutter on all four sides, and an outer radius of
-            that gutter plus the rows' own 0.3125rem corner (= 1rem) — so the
-            card's rounded edge sits concentric with the bands and rows it
-            holds and hugs them. The same gutter and radius the gym leader card
-            wears, so the two read as one designed pair. It used to pad 0.25rem
-            top/bottom against 0.5rem sides. */}
         <div data-lg-league-root className="rounded-2xl bg-card p-[0.6875rem] shadow-elevated">
-          {order.map((cardIndex, position) => (
+          {displayCards.map((card, position) => (
             <div key={position}>
               {SECTION_BEFORE[position] && (
                 <div
@@ -346,21 +333,13 @@ export function LeagueHome() {
               )}
               <SlotRow
                 position={position}
-                cardIndex={cardIndex}
+                card={card}
                 held={preview !== null && position === preview.to}
+                canDrag={!leagueSlotIsEmpty(cards[position])}
               />
             </div>
           ))}
         </div>
-        {/* Neither line may wrap. The whole card is scaled to fit the
-            viewport's height, and that scale is computed back from the card's
-            own measured height — so a hint that wraps at one zoom and not at
-            another feeds its own input and the fit never settles. `truncate`
-            is what holds each hint to one line, so the box can size to its
-            own content. It used to carry a written-down height as well, and
-            that height left the top padding out: the box measured 29px while
-            it painted 37, so the fit ended the card 8px above its last line
-            and the phone cropped it. */}
         <div
           data-fit-tail
           className="px-[0.375rem] pt-2 text-[0.625rem] leading-[1.35] text-muted-foreground"
@@ -369,9 +348,6 @@ export function LeagueHome() {
             <ArrowUpDown className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
             <span className="min-w-0 truncate">Drag a row to reorder the league</span>
           </div>
-          {/* What a tap actually does depends on whether anything is there
-              yet, so the second line says the one that applies rather than
-              covering both and leaving the reader to work out which. */}
           <div className="mt-[0.125rem] flex items-start gap-[0.3125rem]">
             {blank ? (
               <Plus className="mt-[0.0625rem] h-[0.75rem] w-[0.75rem] shrink-0" aria-hidden />
@@ -384,8 +360,6 @@ export function LeagueHome() {
           </div>
         </div>
       </div>
-      {/* The copy in hand: the row that was grabbed, at the width it was
-          grabbed at, drawn by the same component as the row itself. */}
     </DndContext>
   );
 }

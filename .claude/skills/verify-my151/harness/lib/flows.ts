@@ -814,3 +814,67 @@ export async function runLeagueColumnHoverSuite(s: Session, persona: PersonaName
   await s.screenshot(ctx.shot('league-hover-desktop-column'));
   return checks;
 }
+
+// PR #32: occupied home rows playlist-displace; empty rows fill only.
+const E4_ONLY_LEAGUE =
+  "JSON.stringify({state:{name:'Verify',cards:(()=>{const e=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null,powerups:{},signatureId:null,partnerId:null,legends:[]});const c=Array.from({length:14},e);const m=(t,b)=>({...e(),type:t,badgeName:b,lines:[{branch:[25],boundaries:[1]}]});c[8]=m('electric','E4-1');c[9]=m('fire','E4-2');c[10]=m('grass','E4-3');c[11]=m('psychic','E4-4');return c;})()},version:1})";
+
+const SWAP_LEAGUE =
+  "JSON.stringify({state:{name:'SwapProof',cards:(()=>{const e=()=>({type:null,theme:'',lines:[],signatureSeat:null,tmMoveId:null,badgeName:'',legend:null,powerup:null,powerups:{},signatureId:null,partnerId:null,legends:[]});const n=['A','B','C','D','E','F','','G','H','','I','J','K','L'];const t=['electric','fire','water','grass','ghost','psychic',null,'ground','ice',null,'poison','dark','dragon','steel'];const m=[25,6,9,3,94,65,null,76,131,null,89,197,149,208];return n.map((b,i)=>b?{...e(),type:t[i],badgeName:b,lines:[{branch:[m[i]],boundaries:[1]}]}:e());})()},version:1})";
+
+async function readSlotBadges(s: Session, indices?: number[]): Promise<string[]> {
+  return s.evalJson(`const d=JSON.parse(localStorage.getItem(${JSON.stringify(LEAGUE_KEY)})||'{}');
+    const cards=d.state?.cards||[];
+    const idx=${indices ? JSON.stringify(indices) : 'null'};
+    return (idx||cards.map((_,i)=>i)).map((i)=>cards[i]?.badgeName??'');`);
+}
+
+async function seedLeagueHome(s: Session, url: string, rawExpr: string): Promise<boolean> {
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) return false;
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${rawExpr}); return true;`);
+  await s.navigate(url);
+  return waitLeagueHome(s);
+}
+
+export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  if (persona) return checks;
+  const url = ctx.base + LEAGUE_PATH;
+
+  if (!(await seedLeagueHome(s, url, E4_ONLY_LEAGUE))) {
+    checks.push({ name: 'league-home:e4-to-gym8-preserves-e4', status: 'skip', detail: 'league home never hydrated' });
+    return checks;
+  }
+  await s.dragPointer('[data-testid="league-slot-11"]', '[data-testid="league-slot-7"]');
+  await sleep(500);
+  await s.screenshot(ctx.shot('league-e4-to-gym8-after-drop'));
+  const e4 = await readSlotBadges(s, [8, 9, 10, 7, 11]);
+  checks.push(ok(
+    'league-home:e4-to-gym8-preserves-e4',
+    e4[0] === 'E4-1' && e4[1] === 'E4-2' && e4[2] === 'E4-3' && e4[3] === 'E4-4' && e4[4] === '',
+    `badges at 8–10: ${e4.slice(0, 3).join(', ')}; slot 7=${e4[3]} slot 11=${e4[4]}`,
+  ));
+
+  const swapCases: { name: string; from: number; to: number; expect: string[] }[] = [
+    { name: 'league-home:empty-fill-only', from: 5, to: 6, expect: ['A', 'B', 'C', 'D', 'E', '', 'F', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
+    { name: 'league-home:adjacent-down-displace', from: 4, to: 5, expect: ['A', 'B', 'C', 'D', 'F', 'E', '', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
+    { name: 'league-home:adjacent-up-displace', from: 5, to: 4, expect: ['A', 'B', 'C', 'D', 'F', 'E', '', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
+    { name: 'league-home:distant-playlist', from: 0, to: 5, expect: ['B', 'C', 'D', 'E', 'F', 'A', '', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
+    { name: 'league-home:last-row-playlist', from: 0, to: 13, expect: ['B', 'C', 'D', 'E', 'F', '', 'G', 'H', '', 'I', 'J', 'K', 'L', 'A'] },
+    { name: 'league-home:drop-on-self', from: 0, to: 0, expect: ['A', 'B', 'C', 'D', 'E', 'F', '', 'G', 'H', '', 'I', 'J', 'K', 'L'] },
+    { name: 'league-home:across-section-displace', from: 7, to: 8, expect: ['A', 'B', 'C', 'D', 'E', 'F', '', 'H', 'G', '', 'I', 'J', 'K', 'L'] },
+  ];
+  for (const c of swapCases) {
+    if (!(await seedLeagueHome(s, url, SWAP_LEAGUE))) {
+      checks.push({ name: c.name, status: 'skip', detail: 'league home never hydrated after seed' });
+      continue;
+    }
+    await s.dragPointer(`[data-testid="league-slot-${c.from}"]`, `[data-testid="league-slot-${c.to}"]`);
+    await sleep(400);
+    await s.screenshot(ctx.shot(`league-${c.name.replace('league-home:', '')}`));
+    const got = await readSlotBadges(s);
+    checks.push(ok(c.name, got.join('|') === c.expect.join('|'), `got ${got.join(',')}`));
+  }
+  return checks;
+}

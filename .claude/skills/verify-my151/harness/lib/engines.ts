@@ -87,12 +87,30 @@ export interface Session {
   evalJson<T = unknown>(body: string): Promise<T>;
   click(selector: string): Promise<void>;
   hover(selector: string): Promise<void>;
+  /** Press at one element's centre, drag to another's, release. */
+  dragPointer(fromSelector: string, toSelector: string): Promise<void>;
   screenshot(file: string): Promise<void>;
   errors(): Promise<string[]>;
   close(): Promise<void>;
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function pointerDragEval(s: Session, fromSelector: string, toSelector: string): Promise<void> {
+  await s.evalJson(`const from=document.querySelector(${JSON.stringify(fromSelector)});
+    const to=document.querySelector(${JSON.stringify(toSelector)});
+    if(!from||!to) return false;
+    const fr=from.getBoundingClientRect(), tr=to.getBoundingClientRect();
+    const fx=fr.left+fr.width/2, fy=fr.top+fr.height/2, tx=tr.left+tr.width/2, ty=tr.top+tr.height/2;
+    const down=(x,y)=>from.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',buttons:1}));
+    const move=(x,y)=>document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',buttons:1}));
+    const up=(x,y)=>document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse'}));
+    down(fx,fy);
+    for(let i=1;i<=12;i++){ move(fx+(tx-fx)*i/12, fy+(ty-fy)*i/12); }
+    up(tx,ty);
+    return true;`);
+  await sleep(400);
+}
 
 // ---------- Blink (Playwright) ----------
 
@@ -113,6 +131,24 @@ class BlinkSession implements Session {
   }
   async click(selector: string) { await this.page.click(selector, { timeout: 10000 }); }
   async hover(selector: string) { await this.page.locator(selector).hover({ timeout: 10000 }); }
+  async dragPointer(fromSelector: string, toSelector: string) {
+    const from = this.page.locator(fromSelector);
+    const to = this.page.locator(toSelector);
+    await from.scrollIntoViewIfNeeded();
+    const fb = await from.boundingBox();
+    const tb = await to.boundingBox();
+    if (!fb || !tb) throw new Error(`dragPointer: missing box for ${fromSelector} or ${toSelector}`);
+    const fx = fb.x + fb.width / 2;
+    const fy = fb.y + fb.height / 2;
+    const tx = tb.x + tb.width / 2;
+    const ty = tb.y + tb.height / 2;
+    await this.page.mouse.move(fx, fy);
+    await this.page.mouse.down();
+    await this.page.waitForTimeout(350);
+    await this.page.mouse.move(tx, ty, { steps: 12 });
+    await this.page.waitForTimeout(250);
+    await this.page.mouse.up();
+  }
   async screenshot(file: string) { await this.page.screenshot({ path: file }); }
   async errors() { return [...this.collected]; }
   async close() {
@@ -290,6 +326,9 @@ class WebKitSession implements Session {
     });
     await sleep(150);
   }
+  async dragPointer(fromSelector: string, toSelector: string) {
+    await pointerDragEval(this, fromSelector, toSelector);
+  }
   async screenshot(file: string) {
     const r = await w3c('GET', ENGINE_PATHS.webkitPort, `/session/${this.sid}/screenshot`);
     fs.writeFileSync(file, Buffer.from(r.value as string, 'base64'));
@@ -388,6 +427,9 @@ class GeckoSession implements Session {
       actions: [{ type: 'pointer', id: 'mouse', parameters: { pointerType: 'mouse' }, actions: [{ type: 'pointerMove', origin: { [W3C_ELEMENT]: id }, x: 0, y: 0 }] }],
     });
     await sleep(150);
+  }
+  async dragPointer(fromSelector: string, toSelector: string) {
+    await pointerDragEval(this, fromSelector, toSelector);
   }
   async screenshot(file: string) {
     const r = await this.cmd<{ value: string }>('WebDriver:TakeScreenshot', { full: true });

@@ -199,3 +199,43 @@ export function moveSeat<T>(items: T[], fromSeat: number, toSeat: number): T[] {
   next.splice(toSeat - 1, 0, moved);
   return next;
 }
+
+/** Whether a league summary row has no trainer placed yet. */
+export function leagueSlotIsEmpty(card: {
+  lines: { length: number };
+  type: unknown;
+  theme: string;
+  badgeName: string;
+}): boolean {
+  return card.lines.length === 0 && !card.type && !card.theme && !card.badgeName;
+}
+
+/**
+ * Move a league slot on the home summary.
+ *
+ * Empty drop: only the dragged trainer moves into that hole. Empties are not
+ * boxes, so neighbours do not shift. Occupied drop: playlist `arrayMove` —
+ * passed trainers keep order and close the hole.
+ */
+export function moveLeagueSlots<T>(
+  slots: readonly T[],
+  from: number,
+  to: number,
+  isEmpty: (slot: T) => boolean,
+  blank: () => T,
+): T[] {
+  if (from === to || from < 0 || to < 0 || from >= slots.length || to >= slots.length) {
+    return [...slots];
+  }
+  const next = slots.slice();
+  if (isEmpty(next[from])) return next;
+  if (isEmpty(next[to])) {
+    const moved = next[from];
+    next[from] = blank();
+    next[to] = moved;
+    return next;
+  }
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}

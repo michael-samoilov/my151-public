@@ -11,7 +11,9 @@ import {
   type PowerupKind,
 } from '../model/powerups';
 import {
+  leagueSlotIsEmpty,
   makePlacedLine,
+  moveLeagueSlots,
   moveSeat as reorderSeats,
   setBoundary,
   type LegendPick,
@@ -489,13 +491,15 @@ export const useLeagueStore = create<LeagueState>()(
         })),
 
       moveSlot: (fromIndex, toIndex) =>
-        set((s) => {
-          const cards = [...s.cards];
-          const [moved] = cards.splice(fromIndex, 1);
-          if (moved === undefined) return s;
-          cards.splice(toIndex, 0, moved);
-          return { cards };
-        }),
+        set((s) => ({
+          cards: moveLeagueSlots(
+            s.cards,
+            fromIndex,
+            toIndex,
+            leagueSlotIsEmpty,
+            emptyCard,
+          ),
+        })),
     }),
     {
       name: LEAGUE_STORAGE_KEY,

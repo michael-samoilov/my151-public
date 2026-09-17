@@ -75,7 +75,8 @@ test.describe('drag hold', () => {
     carries(await midDrag(page, '[data-view-tile]', 120, 0), 'view page');
   });
 
-  test('a league row is carried in the slot it would fill', async ({ page }) => {
+  test('a league row is carried in the slot it would fill', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'mouse-driven drag needs the desktop project');
     await blankLeague(page);
     await page.goto('/custom-gym-leader');
     await page.waitForSelector('[data-testid="league-slot-0"]');

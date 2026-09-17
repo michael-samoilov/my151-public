@@ -25,6 +25,7 @@ import { PERSONAS, type PersonaName } from './personas.ts';
 import type { Session } from './engines.ts';
 
 const COMMAND_TIMEOUT_MS = 60_000;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Where the CLI might live, most explicit first. setup-engines.sh installs it
 // under VERIFY_ENGINE_DIR, beside Firefox, so it never touches package.json and
@@ -105,6 +106,23 @@ class AgentBrowserSession implements Session {
       const rect=el.getBoundingClientRect();
       el.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:rect.left+rect.width/2,clientY:rect.top+rect.height/2,pointerType:'mouse',pointerId:1}));
       return true;`);
+  }
+
+  async dragPointer(fromSelector: string, toSelector: string) {
+    await this.run(['scrollintoview', fromSelector]);
+    await this.evalJson(`const from=document.querySelector(${JSON.stringify(fromSelector)});
+      const to=document.querySelector(${JSON.stringify(toSelector)});
+      if(!from||!to) return false;
+      const fr=from.getBoundingClientRect(), tr=to.getBoundingClientRect();
+      const fx=fr.left+fr.width/2, fy=fr.top+fr.height/2, tx=tr.left+tr.width/2, ty=tr.top+tr.height/2;
+      const down=(x,y)=>from.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',buttons:1}));
+      const move=(x,y)=>document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse',buttons:1}));
+      const up=(x,y)=>document.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:x,clientY:y,pointerId:1,pointerType:'mouse'}));
+      down(fx,fy);
+      for(let i=1;i<=12;i++){ move(fx+(tx-fx)*i/12, fy+(ty-fy)*i/12); }
+      up(tx,ty);
+      return true;`);
+    await sleep(400);
   }
 
   async screenshot(file: string) { await this.run(['screenshot', file]); }
