@@ -4,6 +4,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { shareOrDownload } from '@/lib/exportImage';
 import { hasSeenExportSurvey, markExportSurveySeen, shouldShowExportSurvey } from '@/lib/exportSurvey';
 import { isOptedOut } from '@/lib/clientId';
+import { PREVIEW_DEPLOY } from '@/lib/demoMode';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import { cn } from '@/lib/utils';
@@ -232,6 +233,7 @@ export function LeagueExportOverlay() {
       if (
         !shouldShowExportSurvey({
           optedOut: isOptedOut(),
+          preview: PREVIEW_DEPLOY,
           seen: hasSeenExportSurvey(),
           ordinal: nextHighlight?.ordinal,
         })

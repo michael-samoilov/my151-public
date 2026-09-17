@@ -45,6 +45,9 @@ export const PREVIEW_FEATURES: boolean = (() => {
  */
 export const PRODUCTION_DEPLOY: boolean = DEPLOY_ENV === 'production';
 
+/** True only on a Vercel preview deployment (`VERCEL_ENV === 'preview'`). */
+export const PREVIEW_DEPLOY: boolean = DEPLOY_ENV === 'preview';
+
 /** Whether the `?demo=spandrels` test fixture is requested — a crafted dex that
  *  exercises every section's corner spandrel. Production-gated like DEMO_MODE. */
 export const SPANDREL_DEMO: boolean = (() => {
