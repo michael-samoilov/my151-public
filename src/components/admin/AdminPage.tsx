@@ -945,9 +945,7 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
   const milestones: ChartMilestone[] =
     rec.exported && rec.exportedAt
       ? [{ t: clampT(Date.parse(rec.exportedAt)), label: 'export', tone: 'export' }]
-      : log.length
-        ? [{ t: t1, label: 'no exports', tone: 'muted' }]
-        : [];
+      : [];
   milestones.push(...exportSurveySkipMarks(rec.exportSurveySkips, clampT, 'dex'));
 
   const snapshot = (
@@ -1065,9 +1063,6 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   }
   if (league.exportedLeagueAt) {
     milestones.push({ t: clampT(Date.parse(league.exportedLeagueAt)), label: 'league', tone: 'export' });
-  }
-  if (milestones.length === 0 && log.length) {
-    milestones.push({ t: t1, label: 'no exports', tone: 'muted' });
   }
   milestones.push(...exportSurveySkipMarks(league.exportSurveySkips, clampT, 'league'));
 

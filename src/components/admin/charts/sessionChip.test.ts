@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applySessionChip } from './sessionChip';
+import { applyPlayheadMilestone, applySessionChip } from './sessionChip';
 import type { TimelinePoint } from './sessionTimelineMath';
 
 function node(text = '', hidden = false) {
@@ -91,5 +91,51 @@ describe('applySessionChip', () => {
     expect(ui.added.hidden).toBe(true);
     expect(ui.added.textContent).toBe('');
     expect(ui.diffSep.hidden).toBe(true);
+  });
+});
+
+describe('applyPlayheadMilestone', () => {
+  function milestoneRoot() {
+    const attrs: Record<string, string> = { visibility: 'hidden' };
+    const node = {
+      textContent: '',
+      setAttribute: (k: string, v: string) => {
+        attrs[k] = v;
+      },
+      getAttribute: (k: string) => attrs[k],
+    };
+    return {
+      node,
+      attrs,
+      root: {
+        querySelector: (sel: string) =>
+          sel.includes('session-playhead-milestone') ? node : null,
+      } as unknown as ParentNode,
+    };
+  }
+
+  it('hides the label when the sitting has no milestones', () => {
+    const ui = milestoneRoot();
+    applyPlayheadMilestone(ui.root, { label: 'export · not now', x: 80, width: 320 });
+    applyPlayheadMilestone(ui.root, { label: '', x: 40, width: 320 });
+    expect(ui.node.textContent).toBe('');
+    expect(ui.attrs.visibility).toBe('hidden');
+  });
+
+  it('paints one concatenated label at the playhead x', () => {
+    const ui = milestoneRoot();
+    applyPlayheadMilestone(ui.root, { label: 'card · league · league · close', x: 80, width: 320 });
+    expect(ui.node.textContent).toBe('card · league · league · close');
+    expect(ui.attrs.visibility).toBe('visible');
+    expect(ui.attrs.x).toBe('80.0');
+    expect(ui.attrs['text-anchor']).toBe('middle');
+  });
+
+  it('anchors the label at the chart edge', () => {
+    const ui = milestoneRoot();
+    applyPlayheadMilestone(ui.root, { label: 'intro', x: 10, width: 320 });
+    expect(ui.attrs['text-anchor']).toBe('start');
+    applyPlayheadMilestone(ui.root, { label: 'view', x: 310, width: 320 });
+    expect(ui.attrs['text-anchor']).toBe('end');
   });
 });

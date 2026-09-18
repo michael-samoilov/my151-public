@@ -33,3 +33,27 @@ export function applySessionChip(
     slider.setAttribute('aria-valuetext', `${meta.date}: ${point.count} ${args.countUnit}`);
   }
 }
+
+const LABEL_EDGE_PX = 24;
+
+export function applyPlayheadMilestone(
+  root: ParentNode,
+  args: { label: string; x: number; width: number },
+): void {
+  const el = root.querySelector('[data-testid="session-playhead-milestone"]');
+  if (!el) return;
+  const text = args.label;
+  if (!text) {
+    el.textContent = '';
+    el.setAttribute('visibility', 'hidden');
+    return;
+  }
+  const bx = args.x;
+  const w = args.width;
+  const anchor = bx < LABEL_EDGE_PX ? 'start' : bx > w - LABEL_EDGE_PX ? 'end' : 'middle';
+  const lx = bx < LABEL_EDGE_PX ? bx - 2 : bx > w - LABEL_EDGE_PX ? bx + 2 : bx;
+  el.textContent = text;
+  el.setAttribute('x', lx.toFixed(1));
+  el.setAttribute('text-anchor', anchor);
+  el.setAttribute('visibility', 'visible');
+}

@@ -351,37 +351,55 @@ test.describe('admin user pages', () => {
     expect(device.clipped).toBe(false);
   });
 
-  test('dex user-detail shows a red export survey skip mark', async ({ page }) => {
+  test('dex user-detail shows a red export+skip diamond and a playhead label', async ({ page }) => {
     await openDemo(page);
     await userCard(page, '14c0').click();
-    const mark = page.locator('[data-testid="session-milestone"][data-tone="skip"]');
-    await expect(mark).toBeVisible();
-    await expect(mark.locator('text')).toHaveText('not now');
+    const mark = page.locator('[data-testid="session-milestone"]');
+    await expect(mark).toHaveCount(1);
+    await expect(mark).toHaveAttribute('data-tone', 'skip');
+    await expect(mark.locator('text')).toHaveCount(0);
     await expect(mark.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
     await expect(mark.locator('title')).toHaveText('export_survey_skipped · pokedex · not_now');
-    await expect(mark).toHaveAttribute('data-label-lane', 'below');
-    const exportMark = page.locator('[data-testid="session-milestone"][data-tone="export"]');
-    await expect(exportMark).toHaveAttribute('data-label-lane', 'above');
-    const skipY = Number(await mark.locator('text').getAttribute('y'));
-    const exportY = Number(await exportMark.locator('text').getAttribute('y'));
-    expect(skipY).toBeGreaterThan(exportY);
+    const label = page.getByTestId('session-playhead-milestone');
+    await expect(label).toHaveCount(1);
+    await expect(label).toHaveText(/export · not now/);
+    await expect(label).not.toHaveText(/pokedex/);
+    await expect(label).toHaveAttribute('visibility', 'visible');
   });
 
-  test('league user-detail shows red skip marks for league and card', async ({ page }) => {
+  test('league user-detail shows one playhead label for the scrubbed sitting', async ({ page }) => {
     await openDemo(page);
     await page.getByRole('button', { name: 'League' }).click();
     await userCard(page, '70cd').click();
-    const skips = page.locator('[data-testid="session-milestone"][data-tone="skip"]');
-    await expect(skips).toHaveCount(2);
-    const leagueSkip = skips.filter({ hasText: 'league · close' });
-    const cardSkip = skips.filter({ hasText: 'card · abandon' });
-    await expect(leagueSkip.locator('text')).toHaveText('league · close');
-    await expect(cardSkip.locator('text')).toHaveText('card · abandon');
-    await expect(leagueSkip.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
-    await expect(cardSkip.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
-    await expect(leagueSkip.locator('title')).toHaveText('export_survey_skipped · league · close');
-    await expect(cardSkip.locator('title')).toHaveText('export_survey_skipped · card · abandon');
-    await expect(leagueSkip).toHaveAttribute('data-label-lane', 'below');
+    const marks = page.locator('[data-testid="session-milestone"]');
+    await expect(marks).toHaveCount(1);
+    await expect(marks).toHaveAttribute('data-tone', 'skip');
+    await expect(marks.locator('text')).toHaveCount(0);
+    await expect(marks.locator('title')).toHaveText('export_survey_skipped · league · close');
+    const label = page.getByTestId('session-playhead-milestone');
+    await expect(label).toHaveCount(1);
+    await expect(label).toHaveText('card · league · league · close');
+    await expect(label).toHaveAttribute('visibility', 'visible');
+
+    const scrub = page.getByRole('slider', { name: 'Scrub sessions' });
+    await scrub.evaluate((el) => {
+      const input = el as HTMLInputElement;
+      input.value = '0';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(label).toHaveText('card · abandon');
+    await expect(label).toHaveAttribute('visibility', 'visible');
+    await expect(page.getByTestId('session-playhead-milestone')).toHaveCount(1);
+    await expect(marks.locator('text')).toHaveCount(0);
+
+    await scrub.evaluate((el) => {
+      const input = el as HTMLInputElement;
+      input.value = '1';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(label).toHaveText('');
+    await expect(label).toHaveAttribute('visibility', 'hidden');
+    await expect(page.getByTestId('session-playhead-milestone')).toHaveCount(1);
   });
 
   test('header chips stay one row with one language and no focus ring', async ({ page }) => {

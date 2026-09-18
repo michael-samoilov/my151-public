@@ -40,54 +40,78 @@ export function exportSurveySkipMarks(
   }));
 }
 
-export type PlacedMilestone = ChartMilestone & { bx: number; labelDy: number };
+export const FUNNEL_LABEL: Record<string, string> = {
+  'intro-shown': 'intro',
+  'intro-cta': 'start',
+  'milestone-25': '25',
+  'milestone-100': '100',
+  'milestone-151': '151',
+  'view-visit': 'view',
+};
 
-/** Label above the rail, same as export/event text. */
-export const MILESTONE_LABEL_ABOVE = -4;
-/** Skip label under the diamond when a green mark already owns the rail. */
-export const MILESTONE_LABEL_BELOW = 12;
-/** SVG milestone labels are 6.5px. ~0.55em per character covers Latin labels. */
-const LABEL_CHAR_PX = 3.6;
+/** Horizontal gap when a sitting has both a diamond and a funnel circle. */
+export const FUNNEL_OFFSET_PX = 8;
 
-function labelWidth(label: string): number {
-  return label.length * LABEL_CHAR_PX;
+export interface SittingPlot {
+  diamond?: { tone: 'export' | 'skip'; title?: string };
+  funnel: boolean;
+  label: string;
 }
 
-/** Keep a skip under a nearby green mark even when the reason text is short. */
-const SKIP_LABEL_NEAR_PX = 72;
-
-function labelsWouldOverlap(a: PlacedMilestone, b: PlacedMilestone): boolean {
-  const widthGap = labelWidth(a.label) + labelWidth(b.label);
-  return Math.abs(a.bx - b.bx) < Math.max(SKIP_LABEL_NEAR_PX, widthGap);
-}
-
-function sameMilestone(a: ChartMilestone, b: ChartMilestone): boolean {
-  return a.tone === b.tone && a.label === b.label;
-}
-
-export function placeMilestones(
-  items: ChartMilestone[],
-  xOf: (t: number) => number,
-  mergePx = 36,
-): PlacedMilestone[] {
-  const marks: PlacedMilestone[] = [];
-  for (const m of items) {
-    let bx = xOf(m.t);
-    const hit = marks.find((p) => Math.abs(bx - p.bx) < 10 && !sameMilestone(p, m));
-    if (hit) bx = hit.bx + 10;
-    const prev = marks[marks.length - 1];
-    if (prev && Math.abs(bx - prev.bx) < mergePx && sameMilestone(prev, m)) {
-      prev.label = `${prev.label} · ${m.label}`;
-      if (m.title) prev.title = prev.title ? `${prev.title} · ${m.title}` : m.title;
-      prev.bx = (prev.bx + bx) / 2;
-    } else {
-      marks.push({ ...m, bx, labelDy: MILESTONE_LABEL_ABOVE });
+function nearestSitting(t: number, sittings: readonly { t: number }[]): number {
+  let best = 0;
+  let bestD = Infinity;
+  for (let i = 0; i < sittings.length; i++) {
+    const d = Math.abs(sittings[i].t - t);
+    if (d < bestD) {
+      bestD = d;
+      best = i;
     }
   }
-  for (const m of marks) {
-    if (m.tone !== 'skip') continue;
-    const hit = marks.some((p) => p !== m && p.tone !== 'skip' && labelsWouldOverlap(p, m));
-    if (hit) m.labelDy = MILESTONE_LABEL_BELOW;
+  return best;
+}
+
+function pushUnique(list: string[], value: string): void {
+  if (value && !list.includes(value)) list.push(value);
+}
+
+export function plotSittings(
+  sittings: readonly { t: number; ev?: readonly string[] }[],
+  milestones: readonly ChartMilestone[],
+): SittingPlot[] {
+  const n = sittings.length;
+  const exportLabels: string[][] = Array.from({ length: n }, () => []);
+  const skipLabels: string[][] = Array.from({ length: n }, () => []);
+  const skipTitles: string[][] = Array.from({ length: n }, () => []);
+  const hasExport = Array<boolean>(n).fill(false);
+  const hasSkip = Array<boolean>(n).fill(false);
+
+  for (const m of milestones) {
+    if (n === 0 || m.tone === 'muted') continue;
+    const i = nearestSitting(m.t, sittings);
+    if (m.tone === 'skip') {
+      hasSkip[i] = true;
+      pushUnique(skipLabels[i], m.label);
+      if (m.title) pushUnique(skipTitles[i], m.title);
+    } else {
+      hasExport[i] = true;
+      pushUnique(exportLabels[i], m.label);
+    }
   }
-  return marks;
+
+  return sittings.map((s, i) => {
+    const funnelLabels: string[] = [];
+    for (const ev of s.ev ?? []) pushUnique(funnelLabels, FUNNEL_LABEL[ev] ?? '');
+    const label = [...exportLabels[i], ...skipLabels[i], ...funnelLabels].join(' · ');
+    const funnel = (s.ev ?? []).some((ev) => FUNNEL_LABEL[ev]);
+    if (hasExport[i] && hasSkip[i]) {
+      return {
+        funnel,
+        label,
+        diamond: { tone: 'skip', title: skipTitles[i].join(' · ') || undefined },
+      };
+    }
+    if (hasExport[i]) return { funnel, label, diamond: { tone: 'export' } };
+    return { funnel, label };
+  });
 }
