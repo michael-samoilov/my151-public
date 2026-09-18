@@ -328,10 +328,13 @@ async function waitForDexPreviewImg(s: Session, ms = 45000): Promise<boolean> {
 }
 
 async function readDexPreviewMotion(s: Session): Promise<{
+  x: number;
+  y: number;
   hypot: number;
   foil: number;
   orbit: string;
   paused: string;
+  scale: string;
   light: number;
   holo: number;
   maps: string;
@@ -343,15 +346,17 @@ async function readDexPreviewMotion(s: Session): Promise<{
      const x=Number(el?.getAttribute('data-tilt-x')||0);
      const y=Number(el?.getAttribute('data-tilt-y')||0);
      return {
+       x, y,
        hypot: Math.hypot(x,y),
        foil: Number(el?.getAttribute('data-foil-opacity')||0),
        orbit: el?.getAttribute('data-export-orbit')||'',
        paused: el?.getAttribute('data-paused')||'',
+       scale: el?.getAttribute('data-tilt-scale')||'',
        light: light ? Number(getComputedStyle(light).opacity) : 0,
        holo: holo ? Number(getComputedStyle(holo).opacity) : 0,
        maps: el?.getAttribute('data-foil-maps')||'',
      };`,
-  ).catch(() => ({ hypot: 0, foil: 0, orbit: '', paused: '', light: 0, holo: 0, maps: '' }));
+  ).catch(() => ({ x: 0, y: 0, hypot: 0, foil: 0, orbit: '', paused: '', scale: '', light: 0, holo: 0, maps: '' }));
 }
 
 export async function runDexExportSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
@@ -379,29 +384,64 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     };`,
   ).catch(() => ({ preview: false, confirm: false, surveyHost: true, shell: false, outlines: false }));
   const imgReady = await waitForDexPreviewImg(s);
-  await s.evalJson(
-    `const hit=document.querySelector('[data-export-tilt-hit]');
-     if(hit instanceof HTMLElement){
-       hit.dispatchEvent(new PointerEvent('pointerleave',{bubbles:true,pointerType:'mouse',pointerId:1}));
-     }
-     return true;`,
-  ).catch(() => false);
-  let motion = await readDexPreviewMotion(s);
-  for (let i = 0; i < 16 && !(motion.hypot > 6 && motion.orbit === 'idle' && motion.foil > 0.1); i++) {
-    await sleep(150);
-    motion = await readDexPreviewMotion(s);
-  }
+  // Do not move the pointer. Auto-tilt must run while idle, the way a person sees it.
+  const idleA = await readDexPreviewMotion(s);
+  await sleep(1600);
+  const idleB = await readDexPreviewMotion(s);
+  const idleDelta = Math.hypot(idleB.x - idleA.x, idleB.y - idleA.y);
+  const idleMoved =
+    idleA.orbit === 'idle' &&
+    idleB.orbit === 'idle' &&
+    Math.max(idleA.hypot, idleB.hypot) > 6 &&
+    idleDelta > 2;
+  const motion = idleB.hypot >= idleA.hypot ? idleB : idleA;
   await s.screenshot(ctx.shot('dex-export-overlay'));
   const tiltedFit = await s.evalJson<{ ok: boolean; reason: string }>(
-    `const card=document.querySelector('[data-export-preview]');
+    `const hit=document.querySelector('[data-export-tilt-hit]');
      const layer=document.querySelector('[data-export-preview-layer]');
-     if(!(card instanceof HTMLElement) || !(layer instanceof HTMLElement)) return {ok:false,reason:'missing'};
-     const c=card.getBoundingClientRect(); const l=layer.getBoundingClientRect();
+     if(!(hit instanceof HTMLElement) || !(layer instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     const c=hit.getBoundingClientRect(); const l=layer.getBoundingClientRect();
      if(c.left<l.left-4||c.right>l.right+4||c.top<l.top-4||c.bottom>l.bottom+4) return {ok:false,reason:'overflow'};
      if(c.right>innerWidth+4||c.bottom>innerHeight+4) return {ok:false,reason:'viewport'};
      return {ok:true,reason:''};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   const shineOn = motion.foil > 0.1 && (motion.light > 0.02 || motion.holo > 0.02);
+  const hoverPts: Array<[number, number]> = [
+    [0.18, 0.18],
+    [0.82, 0.18],
+    [0.82, 0.82],
+    [0.18, 0.82],
+    [0.5, 0.12],
+    [0.82, 0.5],
+    [0.18, 0.5],
+  ];
+  const widths: number[] = [];
+  let hoverMax = 0;
+  let hoverOrbit = '';
+  let hoverScale = '';
+  for (const [u, v] of hoverPts) {
+    const step = await s
+      .evalJson<{ w: number; hypot: number; orbit: string; scale: string }>(
+        `const hit=document.querySelector('[data-export-tilt-hit]');
+         const card=document.querySelector('[data-export-preview]');
+         if(!(hit instanceof HTMLElement) || !(card instanceof HTMLElement)) return {w:0,hypot:0,orbit:'',scale:''};
+         const r=hit.getBoundingClientRect();
+         hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:r.left+r.width*${u},clientY:r.top+r.height*${v},pointerType:'mouse',pointerId:1}));
+         return {w:card.offsetWidth,hypot:Math.hypot(Number(card.dataset.tiltX||0),Number(card.dataset.tiltY||0)),orbit:card.getAttribute('data-export-orbit')||'',scale:card.getAttribute('data-tilt-scale')||''};`,
+      )
+      .catch(() => ({ w: 0, hypot: 0, orbit: '', scale: '' }));
+    widths.push(step.w);
+    hoverMax = Math.max(hoverMax, step.hypot);
+    hoverOrbit = step.orbit;
+    hoverScale = step.scale;
+    await sleep(160);
+  }
+  const widthDelta = widths.length ? Math.max(...widths) - Math.min(...widths) : 99;
+  const hoverCircle = {
+    ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 4 && hoverOrbit === 'pointer',
+    reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit}`,
+  };
+  await s.screenshot(ctx.shot('dex-export-hover'));
   await s.click('[data-export-tilt-hit]').catch(() => undefined);
   await sleep(500);
   const locked = await readDexPreviewMotion(s);
@@ -450,7 +490,8 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:preview-overlay', state.preview && state.confirm && !state.surveyHost && state.shell, JSON.stringify(state)),
     ok('dex-export:card-in-view', tiltedFit.ok, tiltedFit.reason),
     ok('dex-export:outlines-row', state.outlines, 'missing [data-export-outlines]'),
-    ok('dex-export:auto-tilt', imgReady && motion.hypot > 6 && motion.orbit === 'idle', JSON.stringify(motion)),
+    ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta })),
+    ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
     ok('dex-export:shine', imgReady && shineOn, JSON.stringify(motion)),
     ok('dex-export:lock-on-press', locked.paused === '1' && locked.hypot < 0.8, JSON.stringify(locked)),
     ok('dex-export:card-fill', fill.ok, fill.reason),

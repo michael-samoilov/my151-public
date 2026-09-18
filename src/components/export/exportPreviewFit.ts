@@ -1,6 +1,6 @@
 /** Geometry for keeping a tilted export card inside its preview box. */
 
-export const PREVIEW_PERSPECTIVE_PX = 900;
+export const PREVIEW_PERSPECTIVE_PX = 600;
 export const PREVIEW_LIFT_Z = 16;
 
 function rad(deg: number): number {

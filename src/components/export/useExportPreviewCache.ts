@@ -6,8 +6,9 @@ export type ExportPreviewJob = {
 };
 
 /**
- * Paint the active export first, then fill the rest of the job list in the
- * background. Setting switches read a cached blob URL with no extra render.
+ * Paint the active export first. Later setting switches render that key on
+ * demand and reuse a cached blob URL. Do not encode every permutation up
+ * front: that work froze pointer-tilt.
  */
 export function useExportPreviewCache(opts: {
   enabled: boolean;
@@ -32,8 +33,6 @@ export function useExportPreviewCache(opts: {
       if (cancelled) return;
       const url = URL.createObjectURL(blob);
       objectUrlsRef.current.add(url);
-      const warm = new Image();
-      warm.src = url;
       setUrls((prev) => {
         const stale = prev[key];
         if (stale && stale !== url) {
@@ -61,12 +60,9 @@ export function useExportPreviewCache(opts: {
       const jobs = jobsRef.current;
       const active = jobs.find((job) => job.key === opts.activeKey);
       if (active) await runJob(active);
-      if (cancelled) return;
-      const rest = jobs.filter((job) => job.key !== opts.activeKey);
-      for (const job of rest) {
-        if (cancelled) return;
-        await runJob(job);
-      }
+      // Skip the rest of the permutation list. Encoding every export on the
+      // main thread stole frames from pointer-tilt. First paint stays the
+      // active job; a later setting switch renders that key on demand.
     };
 
     void pump();

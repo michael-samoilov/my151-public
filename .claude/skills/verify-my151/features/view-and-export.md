@@ -13,10 +13,10 @@ display options, exportable as a PNG.
   pane, 3D tiltable preview card, then share or download. Export settings do
   not write the View store.
 - Desktop auto-tilt (idle orbit) parks on press and resumes on a second press.
-  Foil shine is visible while the card is tilted. Rest size fills the pane;
-  tilt scales the card so the AABB stays in view. Desktop hover does not start
-  until the pointer actually moves, so a cursor left on the export button cannot
-  flatten the idle orbit.
+  Foil shine is visible while the card is tilted. Rest size fills the pane.
+  Hover tilt matches poke-holo / hover-tilt: CSS `--rotate-x` / `--rotate-y`
+  from the untransformed hit box, `rotateY(var(--rotate-x)) rotateX(var(--rotate-y))`,
+  no scale. Idle runs with the pointer frozen. A first mouse move is not required.
 - Post-export survey (`You're here early!` → feedback / where they heard of us).
   The highlight sprite is integer-scaled at ≥ 1× native (`usePixelPerfectSprite`).
 
@@ -33,11 +33,13 @@ button's computed background is non-transparent) and the canvas renders. Click
 `[data-dex-export]` and assert `[data-export-preview-layer]` and
 `[data-dex-export-confirm]` appear before any download. Settings writes update
 the preview blob URL. Save then asserts `[data-export-survey-intro]`. After the
-preview image paints, the harness parks the pointer off the card, then checks
-idle tilt (`data-export-orbit=idle`, hypot > 6), foil shine (`data-foil-opacity`
-and layer opacity), lock on press (`data-paused=1`), desktop rest fill
-(long-axis cover ≥ 82% of the preview layer), and the survey sprite’s
-device-pixel size (`[data-export-survey-sprite]`, ≥ 1× native, integer scale).
+preview image paints, the harness leaves the pointer frozen and samples tilt
+twice (≥800ms apart). Auto-tilt passes only when `data-export-orbit=idle` and
+the tilt values change. It then circles the pointer on the hit box and asserts
+`data-tilt-scale=1` with a stable `offsetWidth` (no bounce-zoom). Lock on press
+(`data-paused=1`), desktop rest fill (long-axis cover ≥ 82% of the preview
+layer), and the survey sprite’s device-pixel size (`[data-export-survey-sprite]`,
+≥ 1× native, integer scale) still apply.
 The PNG blob itself is still produced on Save (`navigator.share`
 or `<a download="my151.png">`); the repo's own e2e checks a >50KB blob in
 `e2e/dev/poster-export.spec.ts`.

@@ -197,11 +197,12 @@ test.describe('desktop dex export preview', () => {
     await openDexExport(page);
     await waitPreviewReady(page);
     const foil = page.locator('[data-export-preview]');
+    const hit = page.locator('[data-export-tilt-hit]');
     await page.mouse.move(16, 16);
     await page.waitForTimeout(80);
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('idle');
 
-    const box = await foil.boundingBox();
+    const box = await hit.boundingBox();
     expect(box).toBeTruthy();
     await page.mouse.move(box!.x + box!.width * 0.82, box!.y + box!.height * 0.18, { steps: 10 });
     await expect
@@ -212,20 +213,18 @@ test.describe('desktop dex export preview', () => {
       })
       .toBeGreaterThan(0.4);
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    await expect.poll(async () => foil.getAttribute('data-tilt-scale')).toBe('1');
 
     const fit = await page.evaluate(() => {
-      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
       const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
-      if (!card || !layer) return { ok: false, reason: 'missing nodes' };
-      const c = card.getBoundingClientRect();
+      if (!hitEl || !layer) return { ok: false, reason: 'missing nodes' };
+      const c = hitEl.getBoundingClientRect();
       const l = layer.getBoundingClientRect();
       if (c.left < l.left - 2) return { ok: false, reason: `left ${c.left}` };
       if (c.right > l.right + 2) return { ok: false, reason: `right ${c.right}` };
       if (c.top < l.top - 2) return { ok: false, reason: `top ${c.top}` };
       if (c.bottom > l.bottom + 2) return { ok: false, reason: `bottom ${c.bottom}` };
-      if (c.right > window.innerWidth + 2 || c.bottom > window.innerHeight + 2) {
-        return { ok: false, reason: 'past viewport' };
-      }
       return { ok: true, reason: '' };
     });
     expect(fit.ok, fit.reason).toBe(true);
@@ -236,11 +235,11 @@ test.describe('desktop dex export preview', () => {
     await openDexExport(page);
     await waitPreviewReady(page);
     const fit = await page.evaluate(() => {
-      const img = document.querySelector<HTMLElement>('[data-export-preview] img');
+      const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
       const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
       const pane = document.querySelector<HTMLElement>('[data-export-chrome]');
-      if (!img || !layer || !pane) return { ok: false, reason: 'missing nodes' };
-      const i = img.getBoundingClientRect();
+      if (!hitEl || !layer || !pane) return { ok: false, reason: 'missing nodes' };
+      const i = hitEl.getBoundingClientRect();
       const l = layer.getBoundingClientRect();
       const p = pane.getBoundingClientRect();
       if (i.right > l.right + 2) return { ok: false, reason: `img past layer ${i.right} > ${l.right}` };
@@ -252,25 +251,45 @@ test.describe('desktop dex export preview', () => {
     expect(fit.ok, fit.reason).toBe(true);
   });
 
-  test('auto-tilts, shines, locks, and fills the pane', async ({ page }, testInfo) => {
+  test('auto-tilts with the pointer frozen, then hover does not bounce-zoom', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
     await openDexExport(page);
     await waitPreviewReady(page);
-    await page.mouse.move(8, 8);
     const foil = page.locator('[data-export-preview]');
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('idle');
-    await expect
-      .poll(async () => {
-        const x = Number(await foil.getAttribute('data-tilt-x'));
-        const y = Number(await foil.getAttribute('data-tilt-y'));
-        return Math.hypot(x, y);
-      })
-      .toBeGreaterThan(6);
+    const sample = async () => {
+      const x = Number(await foil.getAttribute('data-tilt-x'));
+      const y = Number(await foil.getAttribute('data-tilt-y'));
+      return { x, y, hypot: Math.hypot(x, y), orbit: await foil.getAttribute('data-export-orbit') };
+    };
+    const a = await sample();
+    await page.waitForTimeout(900);
+    const b = await sample();
+    expect(a.orbit, JSON.stringify({ a, b })).toBe('idle');
+    expect(b.orbit, JSON.stringify({ a, b })).toBe('idle');
+    expect(Math.max(a.hypot, b.hypot), JSON.stringify({ a, b })).toBeGreaterThan(6);
+    expect(Math.hypot(b.x - a.x, b.y - a.y), JSON.stringify({ a, b })).toBeGreaterThan(2);
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity'))).toBeGreaterThan(0.1);
-    const holo = page.locator('[data-foil-layer="holographic"], [data-foil-layer="pointLight"]').first();
-    await expect.poll(async () => holo.evaluate((el) => Number(getComputedStyle(el).opacity))).toBeGreaterThan(0.02);
 
     const hit = page.locator('[data-export-tilt-hit]');
+    const box = await hit.boundingBox();
+    expect(box).toBeTruthy();
+    const widths: number[] = [];
+    for (const [u, v] of [
+      [0.2, 0.2],
+      [0.8, 0.2],
+      [0.8, 0.8],
+      [0.2, 0.8],
+    ] as const) {
+      await page.mouse.move(box!.x + box!.width * u, box!.y + box!.height * v, { steps: 6 });
+      widths.push(
+        await foil.evaluate((el) => (el as HTMLElement).offsetWidth),
+      );
+    }
+    expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
+    expect(await foil.getAttribute('data-tilt-scale')).toBe('1');
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+
     await hit.click();
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
     await page.waitForTimeout(450);

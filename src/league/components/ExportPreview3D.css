@@ -16,6 +16,8 @@
   --pointer-from-center: 0;
   --pointer-from-top: 0.5;
   --pointer-from-left: 0.5;
+  --rotate-x: 0deg;
+  --rotate-y: 0deg;
   --foil-opacity: 0;
   --foil-pointLight: 0;
   --foil-ambient: 0;
@@ -44,7 +46,9 @@
   --foil-shift-y: calc((var(--pointer-from-top) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   position: relative;
   overflow: visible;
+  transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y));
   transform-style: preserve-3d;
+  will-change: transform;
   isolation: isolate;
 }
 

@@ -26,6 +26,7 @@ describe('foil recipe', () => {
 
   it('idle tilt clears the shine dead zone', () => {
     expect(DEFAULT_FOIL_RECIPE.idleTilt).toBeGreaterThan(DEFAULT_FOIL_RECIPE.deadDeg);
+    expect(DEFAULT_FOIL_RECIPE.idleMsX).toBeLessThanOrEqual(5000);
   });
 
   it('live default paints five layers and skips the edge map', () => {

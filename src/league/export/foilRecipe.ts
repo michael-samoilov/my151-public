@@ -100,8 +100,8 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
 /** Live overlay default. Off layers stay off so they never paint. */
 export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
   idleTilt: 10,
-  idleMsX: 14000,
-  idleMsY: 14000,
+  idleMsX: 4000,
+  idleMsY: 4000,
   deadDeg: 3,
   maxTilt: 20,
   parallaxPx: 0,
