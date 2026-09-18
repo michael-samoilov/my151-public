@@ -1,17 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { ARCHETYPES } from '@/data/archetypes';
+import { STARTER_IDS } from '@/data/categories';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { en } from '@/i18n/catalogs/en';
 import { getSectionLabel, getSectionLabelChain } from '@/lib/sectionOutlines';
 
-/** First-stage faces from Michael's Regional Bird screenshot, national-dex order. */
-const REGIONAL_BIRD_ROOTS = [16, 21, 163, 276, 278, 396, 519, 661, 722, 731, 931, 940];
+/** First-stage faces for Regional Bird: Michael's grid, minus Rowlet, plus Natu and Chatot. */
+const REGIONAL_BIRD_ROOTS = [16, 21, 163, 177, 276, 278, 396, 441, 519, 661, 731, 931, 940];
 
 /** First-stage faces from Michael's Regional Bug screenshot, national-dex order. */
 const REGIONAL_BUG_ROOTS = [10, 13, 165, 167, 265, 401, 540, 543, 664, 736, 917, 919, 953];
 
 const LILLIPUP_LINE = [506, 507, 508];
+const ROWLET_LINE = [722, 723, 724];
+const NATU_LINE = [177, 178];
+const CHATOT = 441;
 const ROOKIDEE = 821;
 
 function arch(id: string) {
@@ -49,7 +53,7 @@ function archetypeGroupIdsHolding(id: number): string[] {
 }
 
 describe('regional section defaults', () => {
-  it('renames Early Route Bird/Bug/Mammal on the build page and View outlines', () => {
+  it('names the build page Regional and falls back Early, then the animal word', () => {
     expect(group('early-bird').name).toBe('Regional Bird');
     expect(group('early-bug').name).toBe('Regional Bug');
     expect(group('early-rodent').name).toBe('Regional Mammal');
@@ -65,15 +69,16 @@ describe('regional section defaults', () => {
     expect(getSectionLabel('early-bug')).toBe('Regional Bug');
     expect(getSectionLabel('early-rodent')).toBe('Regional Mammal');
 
-    for (const id of ['early-bird', 'early-bug', 'early-rodent'] as const) {
-      for (const label of getSectionLabelChain(id)) {
-        expect(label, `${id} outline "${label}"`).not.toMatch(/early/i);
-      }
-    }
+    expect(getSectionLabelChain('early-bird')).toEqual(['Regional Bird', 'Early Bird', 'Bird']);
+    expect(getSectionLabelChain('early-bug')).toEqual(['Regional Bug', 'Early Bug', 'Bug']);
+    expect(getSectionLabelChain('early-rodent')).toEqual(['Regional Mammal', 'Early Mammal', 'Mammal']);
 
-    expect(en['sectionShort.early-bird']).not.toMatch(/Early/i);
-    expect(en['sectionShort.early-bug']).not.toMatch(/Early/i);
-    expect(en['sectionShort.early-rodent']).not.toMatch(/Early/i);
+    expect(en['sectionShort.early-bird']).toBe('Early Bird');
+    expect(en['sectionShort.early-bug']).toBe('Early Bug');
+    expect(en['sectionShort.early-rodent']).toBe('Early Mammal');
+    expect(en['sectionTiny.early-bird']).toBe('Bird');
+    expect(en['sectionTiny.early-bug']).toBe('Bug');
+    expect(en['sectionTiny.early-rodent']).toBe('Mammal');
   });
 
   it('sets Regional Bird and Regional Bug to the screenshot evo lines, exclusively', () => {
@@ -87,6 +92,20 @@ describe('regional section defaults', () => {
     for (const id of arch('early-bug').pokemonIds) {
       expect(archetypeGroupIdsHolding(id), `bug ${id}`).toEqual(['early-bug']);
     }
+  });
+
+  it('keeps Rowlet in Starters only, and Natu and Chatot in Regional Bird only', () => {
+    for (const id of ROWLET_LINE) {
+      expect(arch('early-bird').pokemonIds, `bird ${id}`).not.toContain(id);
+      expect(STARTER_IDS.has(id), `starter ${id}`).toBe(true);
+      expect(archetypeGroupIdsHolding(id), `rowlet ${id}`).toEqual([]);
+    }
+    for (const id of NATU_LINE) {
+      expect(arch('early-bird').pokemonIds, `bird ${id}`).toContain(id);
+      expect(archetypeGroupIdsHolding(id), `natu ${id}`).toEqual(['early-bird']);
+    }
+    expect(arch('early-bird').pokemonIds).toContain(CHATOT);
+    expect(archetypeGroupIdsHolding(CHATOT)).toEqual(['early-bird']);
   });
 
   it('keeps the Lillipup line in Domestic only', () => {

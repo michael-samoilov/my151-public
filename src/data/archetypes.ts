@@ -39,12 +39,13 @@ export const ARCHETYPES: Archetype[] = [
       16,17,18,       // Pidgey
       21,22,          // Spearow
       163,164,        // Hoothoot
+      177,178,        // Natu→Xatu
       276,277,        // Taillow
       278,279,        // Wingull
       396,397,398,    // Starly
+      441,            // Chatot
       519,520,521,    // Pidove
       661,662,663,    // Fletchling
-      722,723,724,    // Rowlet
       731,732,733,    // Pikipek
       931,            // Squawkabilly
       940,941,        // Wattrel
@@ -165,7 +166,6 @@ export const ARCHETYPES: Archetype[] = [
       739,740,     // Crabrawler→Crabominable
       747,748,     // Mareanie→Toxapex
       767,768,     // Wimpod→Golisopod
-      441,         // Chatot
       557,558,     // Dwebble→Crustle (also cave)
       686,687,     // Inkay→Malamar
       769,770,     // Sandygast→Palossand
@@ -347,7 +347,6 @@ export const ARCHETYPES: Archetype[] = [
       79,80,199,       // Slowpoke→Slowbro/Slowking
       10164,10165,10172, // Slowpoke-Galar→Slowbro-Galar/Slowking-Galar
       96,97,           // Drowzee→Hypno
-      177,178,         // Natu→Xatu
       201,             // Unown
       203,981,         // Girafarig→Farigiraf
       307,308,         // Meditite→Medicham
