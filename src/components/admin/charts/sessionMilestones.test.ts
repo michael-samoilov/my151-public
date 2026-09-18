@@ -49,4 +49,27 @@ describe('skip milestones', () => {
     const marks = placeMilestones([{ t: 40, label: 'pokedex · close', tone: 'skip' }], (t) => t);
     expect(marks[0].labelDy).toBe(MILESTONE_LABEL_ABOVE);
   });
+
+  it('drops a skip label that would paint over a nearby green mark', () => {
+    const marks = placeMilestones(
+      [
+        { t: 300, label: 'league', tone: 'export' },
+        { t: 340, label: 'league · close', tone: 'skip', title: 'export_survey_skipped · league · close' },
+      ],
+      (t) => t,
+    );
+    expect(marks[1].labelDy).toBe(MILESTONE_LABEL_BELOW);
+    expect(marks[1].label).toBe('league · close');
+  });
+
+  it('keeps a skip label on the rail when the green mark is far', () => {
+    const marks = placeMilestones(
+      [
+        { t: 20, label: 'card', tone: 'export' },
+        { t: 340, label: 'league · close', tone: 'skip' },
+      ],
+      (t) => t,
+    );
+    expect(marks[1].labelDy).toBe(MILESTONE_LABEL_ABOVE);
+  });
 });

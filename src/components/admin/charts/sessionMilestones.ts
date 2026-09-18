@@ -33,7 +33,16 @@ export type PlacedMilestone = ChartMilestone & { bx: number; labelDy: number };
 export const MILESTONE_LABEL_ABOVE = -4;
 /** Skip label under the diamond when a green mark already owns the rail. */
 export const MILESTONE_LABEL_BELOW = 12;
-const LABEL_COLLIDE_PX = 36;
+/** SVG milestone labels are 6.5px. ~0.55em per character covers Latin labels. */
+const LABEL_CHAR_PX = 3.6;
+
+function labelWidth(label: string): number {
+  return label.length * LABEL_CHAR_PX;
+}
+
+function labelsWouldOverlap(a: PlacedMilestone, b: PlacedMilestone): boolean {
+  return Math.abs(a.bx - b.bx) < labelWidth(a.label) + labelWidth(b.label);
+}
 
 export function placeMilestones(
   items: ChartMilestone[],
@@ -56,7 +65,7 @@ export function placeMilestones(
   }
   for (const m of marks) {
     if (m.tone !== 'skip') continue;
-    const hit = marks.some((p) => p !== m && p.tone !== 'skip' && Math.abs(p.bx - m.bx) < LABEL_COLLIDE_PX);
+    const hit = marks.some((p) => p !== m && p.tone !== 'skip' && labelsWouldOverlap(p, m));
     if (hit) m.labelDy = MILESTONE_LABEL_BELOW;
   }
   return marks;
