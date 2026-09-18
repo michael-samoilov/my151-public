@@ -2,12 +2,14 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { redis, getClientIp } from './_shared.js';
 import {
+  appendExportSurveySkip,
+  EXPORT_SURVEY_SKIP_EVENT,
+  EXPORT_SURVEY_SKIPS_KEY,
   isFunnelEvent,
-  parseExportSurveySkipReason,
-  parseExportSurveyToolField,
+  parseExportSurveySkipFields,
+  parseExportSurveySkipList,
   parsePage,
   parseTool,
-  EXPORT_SURVEY_SKIP_EVENT,
   JOURNAL_MAX_PER_DAY,
   JOURNAL_PREFIX,
   JOURNAL_TTL_S,
@@ -75,12 +77,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!isFunnelEvent(body.event)) {
       return res.status(400).json({ error: 'invalid event' });
     }
+    const skipFields =
+      body.event === EXPORT_SURVEY_SKIP_EVENT ? parseExportSurveySkipFields(body) : null;
+    if (body.event === EXPORT_SURVEY_SKIP_EVENT && !skipFields) {
+      return res.status(400).json({ error: 'invalid skip' });
+    }
     const tool = parseTool(body.tool);
     const page = parsePage(body.page);
-    const exportTool =
-      body.event === EXPORT_SURVEY_SKIP_EVENT ? parseExportSurveyToolField(body.exportTool) : undefined;
-    const reason =
-      body.event === EXPORT_SURVEY_SKIP_EVENT ? parseExportSurveySkipReason(body.reason) : undefined;
 
     const ip = getClientIp(req);
     const burst = await burstLimiter.limit(ip);
@@ -104,14 +107,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tool,
       ev: body.event,
       ...(page ? { page } : {}),
-      ...(exportTool ? { exportTool } : {}),
-      ...(reason ? { reason } : {}),
+      ...(skipFields ? { exportTool: skipFields.tool, reason: skipFields.reason } : {}),
     });
-    await Promise.all([
+    const writes: Promise<unknown>[] = [
       redis.hincrby(FUNNEL_KEY, body.event, 1),
       redis.hincrby(dailyKey, body.event, 1),
       redis.rpush(journalKey, entry),
-    ]);
+    ];
+    if (skipFields) {
+      const prev = parseExportSurveySkipList(await redis.hget(EXPORT_SURVEY_SKIPS_KEY, body.cid));
+      const next = appendExportSurveySkip(prev, {
+        t: now,
+        tool: skipFields.tool,
+        reason: skipFields.reason,
+      });
+      writes.push(redis.hset(EXPORT_SURVEY_SKIPS_KEY, { [body.cid]: JSON.stringify(next) }));
+    }
+    await Promise.all(writes);
     await Promise.all([
       redis.expire(dailyKey, DAILY_TTL_S),
       redis.expire(journalKey, JOURNAL_TTL_S),

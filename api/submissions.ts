@@ -9,6 +9,12 @@ import {
 } from './_shared.js';
 import { EVOLUTION_CHAIN_BY_ID } from './_chains.js';
 import {
+  EXPORT_SURVEY_SKIPS_KEY,
+  parseExportSurveySkipMap,
+  stampExportSurveySkips,
+  type ExportSurveySkip,
+} from './_events.js';
+import {
   CARD_COUNT,
   LEAGUE_CLIENTS_KEY,
   parseLeagueRecord,
@@ -146,6 +152,7 @@ interface LeagueUser {
   exportsLeague: number;
   exportedCardAt?: string;
   exportedLeagueAt?: string;
+  exportSurveySkips?: ExportSurveySkip[];
   /** Each session's end state, so the card can diff visit to visit. */
   sessionLog: LeagueRecord['sessionLog'];
   country?: string;
@@ -321,7 +328,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // The gym leader maker's records, in their own hash. A person who used
     // both tools is one cid present in both, so overlap is a set
     // intersection at read time — retroactive by construction.
-    const leagueAll = (await redis.hgetall(LEAGUE_CLIENTS_KEY)) as Record<string, unknown> | null;
+    const [leagueAll, skipRaw] = await Promise.all([
+      redis.hgetall(LEAGUE_CLIENTS_KEY) as Promise<Record<string, unknown> | null>,
+      redis.hgetall(EXPORT_SURVEY_SKIPS_KEY) as Promise<Record<string, unknown> | null>,
+    ]);
+    const skipMap = parseExportSurveySkipMap(skipRaw);
     const allLeagueRecords: LeagueRecord[] = Object.values(leagueAll ?? {})
       .map(parseLeagueRecord)
       .filter((r): r is LeagueRecord => r !== null);
@@ -596,7 +607,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       funnelEventCount(funnelEvents, 'league-open'),
     );
     const page = allRecords.slice(offset, offset + limit).map((r) => ({
-      ...r,
+      ...stampExportSurveySkips(r, skipMap),
       archived: isArchived(r.cid, archivedSet),
     }));
 
@@ -609,7 +620,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const lr = leagueByCidAll.get(r.cid.split('::')[0]);
       if (lr) {
         leagueByCid[r.cid] = {
-          ...leagueUser(lr, r.firstTs),
+          ...stampExportSurveySkips(leagueUser(lr, r.firstTs), skipMap),
           archived: isArchived(r.cid, archivedSet),
         };
       }
@@ -622,7 +633,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .sort((a, b) => b.lastTs - a.lastTs)
       .slice(offset, offset + limit)
       .map((r) => ({
-        ...leagueUser(r, dexFirstTs.get(r.cid)),
+        ...stampExportSurveySkips(leagueUser(r, dexFirstTs.get(r.cid)), skipMap),
         archived: isArchived(r.cid, archivedSet),
       }));
 
@@ -633,7 +644,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const dexByCid: Record<string, ClientRecord> = {};
     for (const u of leagueUsers) {
       const dr = dexByCidAll.get(u.cid);
-      if (dr) dexByCid[u.cid] = dr;
+      if (dr) dexByCid[u.cid] = stampExportSurveySkips(dr, skipMap);
     }
 
     // Self-scaling qualification thresholds: median per-Pokemon count per list.

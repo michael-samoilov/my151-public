@@ -9,8 +9,10 @@ import {
   type TimelinePoint,
 } from './sessionTimelineMath';
 import { applySessionChip } from './sessionChip';
+import { milestoneFill, placeMilestones, type ChartMilestone } from './sessionMilestones';
 
 export type { TimelinePoint };
+export type { ChartMilestone };
 
 /** Native range thumb size. Dot centers use half of this so they sit under the thumb. */
 const SCRUB_THUMB_PX = 22;
@@ -58,7 +60,7 @@ export function SessionTimeline({
   extra?: string;
   leftChip?: ReactNode;
   rightChip?: ReactNode;
-  milestones?: { t: number; label: string; tone?: 'export' | 'muted' }[];
+  milestones?: ChartMilestone[];
   tz?: string;
   /** Snapshot under the chart. On a phone the scrubber docks flush with the
    *  bottom nav. Desktop keeps the slider under the chart. */
@@ -193,18 +195,7 @@ export function SessionTimeline({
     setPlayhead(next);
     queueSnapshot(next);
   };
-  const marks: { t: number; label: string; tone?: 'export' | 'muted'; bx: number }[] = [];
-  for (const m of milestones) {
-    const bx = x(m.t);
-    const prev = marks[marks.length - 1];
-    if (prev && Math.abs(bx - prev.bx) < 36) {
-      prev.label = `${prev.label} · ${m.label}`;
-      prev.bx = (prev.bx + bx) / 2;
-      if (m.tone === 'export') prev.tone = 'export';
-    } else {
-      marks.push({ ...m, bx });
-    }
-  }
+  const marks = placeMilestones(milestones, x);
 
   const chart = (
     <>
@@ -272,11 +263,12 @@ export function SessionTimeline({
         })}
         {marks.map((m, i) => {
           const bx = m.bx;
-          const color = m.tone === 'muted' ? 'var(--color-muted-foreground)' : 'var(--color-success)';
+          const color = milestoneFill(m.tone);
           const anchor = bx < 24 ? 'start' : bx > W - 24 ? 'end' : 'middle';
           const lx = bx < 24 ? bx - 2 : bx > W - 24 ? bx + 2 : bx;
           return (
-            <g key={`ms-${i}`}>
+            <g key={`ms-${i}`} data-testid="session-milestone" data-tone={m.tone ?? 'export'}>
+              {m.title && <title>{m.title}</title>}
               <rect x={(bx - 2.4).toFixed(1)} y={railY - 2.4} width={4.8} height={4.8} rx={0.8} transform={`rotate(45 ${bx.toFixed(1)} ${railY})`} fill={color} />
               <text x={lx.toFixed(1)} y={railY - 4} fontSize={6.5} fill={color} textAnchor={anchor}>
                 {m.label}

@@ -32,6 +32,7 @@ export type ExportSurveySkipReason = (typeof EXPORT_SURVEY_SKIP_REASONS)[number]
 
 export const EXPORT_SURVEY_TOOLS = ['pokedex', 'league', 'card'] as const;
 export type ExportSurveyToolField = (typeof EXPORT_SURVEY_TOOLS)[number];
+export type ExportSurveyTool = ExportSurveyToolField;
 
 export function parseExportSurveySkipReason(v: unknown): ExportSurveySkipReason | undefined {
   return typeof v === 'string' && (EXPORT_SURVEY_SKIP_REASONS as readonly string[]).includes(v)
@@ -43,6 +44,14 @@ export function parseExportSurveyToolField(v: unknown): ExportSurveyToolField | 
   return typeof v === 'string' && (EXPORT_SURVEY_TOOLS as readonly string[]).includes(v)
     ? (v as ExportSurveyToolField)
     : undefined;
+}
+
+export function isExportSurveyTool(v: unknown): v is ExportSurveyTool {
+  return parseExportSurveyToolField(v) !== undefined;
+}
+
+export function isExportSurveySkipReason(v: unknown): v is ExportSurveySkipReason {
+  return parseExportSurveySkipReason(v) !== undefined;
 }
 
 export const FUNNEL_EVENTS = [
@@ -104,6 +113,99 @@ export function parseJournalEntry(raw: unknown): JournalEntry | null {
     ...(exportTool ? { exportTool } : {}),
     ...(reason ? { reason } : {}),
   };
+}
+
+/** Per-browser skip list, joined onto user-detail in /api/submissions. */
+export const EXPORT_SURVEY_SKIPS_KEY = 'export-survey-skips';
+export const EXPORT_SURVEY_SKIPS_CAP = 20;
+
+export interface ExportSurveySkip {
+  t: number;
+  tool: ExportSurveyTool;
+  reason: ExportSurveySkipReason;
+}
+
+export function exportSurveySkippedBody(
+  cid: string,
+  tool: ExportSurveyTool,
+  reason: ExportSurveySkipReason,
+  page?: string,
+): {
+  cid: string;
+  event: typeof EXPORT_SURVEY_SKIP_EVENT;
+  tool: ExportSurveyTool;
+  exportTool: ExportSurveyTool;
+  reason: ExportSurveySkipReason;
+  page?: string;
+} {
+  return {
+    cid,
+    event: EXPORT_SURVEY_SKIP_EVENT,
+    tool,
+    exportTool: tool,
+    reason,
+    ...(page ? { page } : {}),
+  };
+}
+
+export function parseExportSurveySkipFields(body: {
+  tool?: unknown;
+  exportTool?: unknown;
+  reason?: unknown;
+}): { tool: ExportSurveyTool; reason: ExportSurveySkipReason } | null {
+  const reason = parseExportSurveySkipReason(body.reason);
+  const tool = parseExportSurveyToolField(body.exportTool) ?? parseExportSurveyToolField(body.tool);
+  if (!tool || !reason) return null;
+  return { tool, reason };
+}
+
+function parseOneSkip(raw: unknown): ExportSurveySkip | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const o = raw as Record<string, unknown>;
+  if (typeof o.t !== 'number' || !Number.isFinite(o.t)) return null;
+  if (!isExportSurveyTool(o.tool) || !isExportSurveySkipReason(o.reason)) return null;
+  return { t: o.t, tool: o.tool, reason: o.reason };
+}
+
+export function parseExportSurveySkipList(raw: unknown): ExportSurveySkip[] {
+  let value: unknown = raw;
+  if (typeof raw === 'string') {
+    try {
+      value = JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(value)) return [];
+  return value.map(parseOneSkip).filter((s): s is ExportSurveySkip => s !== null);
+}
+
+export function parseExportSurveySkipMap(
+  hash: Record<string, unknown> | null | undefined,
+): Map<string, ExportSurveySkip[]> {
+  const out = new Map<string, ExportSurveySkip[]>();
+  for (const [cid, raw] of Object.entries(hash ?? {})) {
+    const list = parseExportSurveySkipList(raw);
+    if (list.length) out.set(cid, list);
+  }
+  return out;
+}
+
+export function appendExportSurveySkip(
+  list: ExportSurveySkip[],
+  next: ExportSurveySkip,
+  cap = EXPORT_SURVEY_SKIPS_CAP,
+): ExportSurveySkip[] {
+  return [...list, next].slice(-cap);
+}
+
+export function stampExportSurveySkips<T extends { cid: string }>(
+  row: T,
+  skips: Map<string, ExportSurveySkip[]>,
+): T & { exportSurveySkips?: ExportSurveySkip[] } {
+  const list = skips.get(row.cid.split('::')[0]);
+  if (!list?.length) return row;
+  return { ...row, exportSurveySkips: list };
 }
 
 /**

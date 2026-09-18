@@ -350,6 +350,28 @@ test.describe('admin user pages', () => {
     expect(device.text).toBe('Desktop');
     expect(device.clipped).toBe(false);
   });
+
+  test('dex user-detail shows a red export survey skip mark', async ({ page }) => {
+    await openDemo(page);
+    await userCard(page, '14c0').click();
+    const mark = page.locator('[data-testid="session-milestone"][data-tone="skip"]');
+    await expect(mark).toBeVisible();
+    await expect(mark).toContainText('pokedex');
+    await expect(mark).toContainText('not now');
+    await expect(mark.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
+    await expect(mark.locator('title')).toHaveText('export_survey_skipped · pokedex · not_now');
+  });
+
+  test('league user-detail shows a red export survey skip mark', async ({ page }) => {
+    await openDemo(page);
+    await page.getByRole('button', { name: 'League' }).click();
+    await userCard(page, '70cd').click();
+    const mark = page.locator('[data-testid="session-milestone"][data-tone="skip"]');
+    await expect(mark).toBeVisible();
+    await expect(mark).toContainText('league');
+    await expect(mark).toContainText('close');
+    await expect(mark.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
+  });
 });
 
 async function readChipTooltip(page: import('@playwright/test').Page) {

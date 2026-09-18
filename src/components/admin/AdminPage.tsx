@@ -20,6 +20,7 @@ import { CARD_COUNT } from '../../../api/_leagueRecord';
 import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
+import { exportSurveySkipMarks, type ChartMilestone } from '@/components/admin/charts/sessionMilestones';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/components/admin/dexPresence';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
@@ -61,6 +62,7 @@ import { FitNowrap, PreviewChipZoomProvider } from '@/components/admin/FitNowrap
 import { useHostZoom } from '@/components/admin/previewChipZoom';
 import { Archive, ArchiveRestore, Camera, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
+import type { ExportSurveySkip } from '../../../api/_events';
 
 // Human labels for the onboarding/funnel events shown per session.
 
@@ -171,6 +173,7 @@ export interface ClientRecord {
     groupSpecial: boolean;
     showStats?: boolean;
   };
+  exportSurveySkips?: ExportSurveySkip[];
   /** Dropped from dashboard aggregates; still listed when the archive filter asks. */
   archived?: boolean;
 }
@@ -224,6 +227,7 @@ export interface LeagueUser {
   exportedCardAt?: string;
   exportedLeagueAt?: string;
   sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string; cards?: LeagueCard[] }[];
+  exportSurveySkips?: ExportSurveySkip[];
   order?: 'dex-first' | 'league-first' | 'same-day';
   gapDays?: number;
   archived?: boolean;
@@ -952,12 +956,13 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
   const t0 = log.length ? log[0].ts : 0;
   const t1 = log.length ? log[log.length - 1].ts : 0;
   const clampT = (t: number) => Math.max(t0, Math.min(t1, t));
-  const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] =
+  const milestones: ChartMilestone[] =
     rec.exported && rec.exportedAt
       ? [{ t: clampT(Date.parse(rec.exportedAt)), label: 'export', tone: 'export' }]
       : log.length
         ? [{ t: t1, label: 'no exports', tone: 'muted' }]
         : [];
+  milestones.push(...exportSurveySkipMarks(rec.exportSurveySkips, clampT));
 
   const snapshot = (
     <div ref={presenceRef}>
@@ -1068,7 +1073,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   const t1 = log.length ? log[log.length - 1].ts : 0;
   const clampT = (t: number) => Math.max(t0, Math.min(t1, t));
   const days = Math.max(1, distinctCalendarDays(log.map((s) => s.ts), league.tz));
-  const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] = [];
+  const milestones: ChartMilestone[] = [];
   if (league.exportedCardAt) {
     milestones.push({ t: clampT(Date.parse(league.exportedCardAt)), label: 'card', tone: 'export' });
   }
@@ -1078,6 +1083,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   if (milestones.length === 0 && log.length) {
     milestones.push({ t: t1, label: 'no exports', tone: 'muted' });
   }
+  milestones.push(...exportSurveySkipMarks(league.exportSurveySkips, clampT));
 
   const snapshots = useMemo(() => {
     if (log.length === 0) {

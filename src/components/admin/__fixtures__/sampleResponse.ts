@@ -342,6 +342,11 @@ function record(s: NewestSeed): ClientRecord {
 }
 
 const records = NEWEST.map(record);
+{
+  const rec = records.find((r) => r.cid === '14c0…85');
+  if (!rec) throw new Error('missing 14c0 dex fixture');
+  rec.exportSurveySkips = [{ t: rec.lastTs, tool: 'pokedex', reason: 'not_now' }];
+}
 
 // Build n trainer cards, each with six three-stage lines, so the admin board
 // exercises seat 6's two-slot cap and the no-type star.
@@ -455,6 +460,7 @@ const leagueUsers: LeagueUser[] = [
     summary: { cards: 1, seats: 1, typed: 0, named: 0, aces: 0, leagueNamed: false },
     country: last.country,
   });
+  u.exportSurveySkips = [{ t: u.lastTs, tool: 'league', reason: 'close' }];
 }
 
 // Popular / dropped picks — a slice of the mockup's grid, real Pokémon ids.
