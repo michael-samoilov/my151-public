@@ -60,9 +60,9 @@
   overflow: hidden;
   -webkit-clip-path: inset(0 round 0.5rem);
   clip-path: inset(0 round 0.5rem);
-  /* poke-holo .card__rotator: rotateY(--rotate-x) rotateX(--rotate-y), no scale.
-     Keep this face flat. preserve-3d here lets glare/sparkle sit on their
-     own z in front of the poster. Perspective stays on .export-foil-hit. */
+  /* Live overlay (no hover-tilt): flatten so Safari clips shine.
+     Hover-tilt overrides this to preserve-3d + ::before glare, matching
+     https://hover-tilt.simey.me/bespoke/credit-cards/ */
   transform-style: flat;
   -webkit-transform-style: flat;
   -webkit-transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y));
@@ -70,24 +70,6 @@
   transform-origin: center center;
   -webkit-transform-origin: center center;
   will-change: transform;
-}
-
-/* One 2D bitmap (poster + masks). The rotator then tilts this face.
-   Filter / color-dodge / extra z on a child of a preserve-3d ancestor
-   paints that child in screen space in front of the poster. */
-.export-foil-face {
-  position: relative;
-  display: block;
-  isolation: isolate;
-  overflow: hidden;
-  contain: paint;
-  transform: none;
-  -webkit-transform: none;
-  transform-style: flat;
-  -webkit-transform-style: flat;
-  -webkit-clip-path: inset(0 round 0.5rem);
-  clip-path: inset(0 round 0.5rem);
-  border-radius: inherit;
 }
 
 .export-foil-layer {
@@ -326,6 +308,9 @@
   filter: brightness(1.12) contrast(1.12);
 }
 
+/* hover-tilt credit-card stacking: glare is ::before of the SAME element
+   that rotates. translate3d(0,0,0.01px) keeps that face on one compositor
+   layer. Child overlay divs become a second altitude. */
 .export-foil[data-hover-tilt='1'] {
   --hover-tilt-x: var(--pointer-x);
   --hover-tilt-y: var(--pointer-y);
@@ -336,13 +321,13 @@
   --hover-tilt-rotation-y: var(--rotate-x);
   --hover-tilt-glare-mask: none;
   --hover-tilt-sparkle-mask: none;
-  --hover-tilt-glare-mask-size: 100% 100%;
-  --hover-tilt-sparkle-mask-size: 100% 100%;
+  --hover-tilt-glare-mask-size: cover;
+  --hover-tilt-sparkle-mask-size: cover;
   --hover-tilt-glare-mask-repeat: no-repeat;
   --hover-tilt-sparkle-mask-repeat: no-repeat;
-  --hover-tilt-glare-mask-position: 0 0;
-  --hover-tilt-sparkle-mask-position: 0 0;
-  --hover-tilt-mask-mode: alpha;
+  --hover-tilt-glare-mask-position: center;
+  --hover-tilt-sparkle-mask-position: center;
+  --hover-tilt-mask-mode: match-source;
   --hover-tilt-blend-mode: overlay;
   --hover-tilt-glare-intensity: 0.55;
   --hover-tilt-sparkle-intensity: 0.55;
@@ -351,137 +336,71 @@
   --gradient-x: var(--pointer-x);
   --gradient-y: var(--pointer-y);
   --hover-tilt-default-gradient: radial-gradient(
-    farthest-corner circle at var(--pointer-x) var(--pointer-y),
-    hsla(0, 0%, 100%, 0.82) 8%,
-    hsla(0, 0%, 100%, 0.18) 42%,
-    hsla(0, 0%, 0%, 0.55) 88%
+    farthest-corner circle at var(--gradient-x) var(--gradient-y),
+    hsla(var(--hover-tilt-glare-hue), 40%, 95%, calc(var(--hover-tilt-glare-intensity) * 0.66)) 8%,
+    hsla(var(--hover-tilt-glare-hue), 30%, 88%, calc(var(--hover-tilt-glare-intensity) * 0.5)) 28%,
+    hsla(var(--hover-tilt-glare-hue), 10%, 5%, calc(var(--hover-tilt-glare-intensity) * 0.25)) 90%
   );
-  -webkit-transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y)) scale(var(--hover-tilt-scale, 1));
-  transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y)) scale(var(--hover-tilt-scale, 1));
+  isolation: auto;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  -webkit-transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y))
+    scale(var(--hover-tilt-scale, 1)) translate3d(0, 0, 0.01px);
+  transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y))
+    scale(var(--hover-tilt-scale, 1)) translate3d(0, 0, 0.01px);
+  will-change: transform, box-shadow, opacity;
 }
 
-.export-hover-tilt-glare,
-.export-hover-tilt-holo,
-.export-hover-tilt-sparkle {
-  transform: none;
-  -webkit-transform: none;
-  filter: none;
-  transform-style: flat;
-  -webkit-transform-style: flat;
-  -webkit-clip-path: inset(0 round 0.5rem);
-  clip-path: inset(0 round 0.5rem);
+.export-foil[data-hover-tilt='1']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: var(--hover-tilt-custom-gradient, var(--hover-tilt-default-gradient));
+  mix-blend-mode: var(--hover-tilt-blend-mode, overlay);
+  opacity: var(--hover-tilt-opacity, 0);
+  will-change: background-image, opacity;
+  -webkit-mask-image: var(--hover-tilt-glare-mask, none);
+  mask-image: var(--hover-tilt-glare-mask, none);
+  -webkit-mask-size: var(--hover-tilt-glare-mask-size, cover);
+  mask-size: var(--hover-tilt-glare-mask-size, cover);
+  -webkit-mask-position: var(--hover-tilt-glare-mask-position, center);
+  mask-position: var(--hover-tilt-glare-mask-position, center);
+  -webkit-mask-repeat: var(--hover-tilt-glare-mask-repeat, no-repeat);
+  mask-repeat: var(--hover-tilt-glare-mask-repeat, no-repeat);
+  -webkit-mask-mode: var(--hover-tilt-mask-mode, match-source);
+  mask-mode: var(--hover-tilt-mask-mode, match-source);
 }
 
-.export-hover-tilt-glare {
-  z-index: 12;
-  background-image: radial-gradient(
-    circle at var(--pointer-x) var(--pointer-y),
-    hsla(var(--hover-tilt-glare-hue), 100%, 96%, 0.92) 0%,
-    hsla(var(--hover-tilt-glare-hue), 80%, 88%, 0.28) 26%,
-    transparent 62%
-  );
-  mix-blend-mode: var(--hover-tilt-blend-mode);
-  opacity: calc(var(--foil-opacity) * var(--hover-tilt-glare-intensity));
-  -webkit-mask-image: var(--hover-tilt-glare-mask);
-  mask-image: var(--hover-tilt-glare-mask);
-  -webkit-mask-size: var(--hover-tilt-glare-mask-size);
-  mask-size: var(--hover-tilt-glare-mask-size);
-  -webkit-mask-repeat: var(--hover-tilt-glare-mask-repeat);
-  mask-repeat: var(--hover-tilt-glare-mask-repeat);
-  -webkit-mask-position: var(--hover-tilt-glare-mask-position);
-  mask-position: var(--hover-tilt-glare-mask-position);
-  -webkit-mask-mode: var(--hover-tilt-mask-mode);
-  mask-mode: var(--hover-tilt-mask-mode);
+.export-foil[data-hover-tilt='1']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: var(--hover-tilt-default-gradient);
+  mix-blend-mode: var(--hover-tilt-blend-mode, overlay);
+  opacity: calc(var(--hover-tilt-opacity, 0) * var(--hover-tilt-sparkle-intensity, 0.55));
+  will-change: background-image, opacity;
+  -webkit-mask-image: var(--hover-tilt-sparkle-mask, none);
+  mask-image: var(--hover-tilt-sparkle-mask, none);
+  -webkit-mask-size: var(--hover-tilt-sparkle-mask-size, cover);
+  mask-size: var(--hover-tilt-sparkle-mask-size, cover);
+  -webkit-mask-position: var(--hover-tilt-sparkle-mask-position, center);
+  mask-position: var(--hover-tilt-sparkle-mask-position, center);
+  -webkit-mask-repeat: var(--hover-tilt-sparkle-mask-repeat, no-repeat);
+  mask-repeat: var(--hover-tilt-sparkle-mask-repeat, no-repeat);
+  -webkit-mask-mode: var(--hover-tilt-mask-mode, match-source);
+  mask-mode: var(--hover-tilt-mask-mode, match-source);
 }
 
-.export-hover-tilt-holo {
-  z-index: 11;
-  background-image:
-    repeating-linear-gradient(
-      125deg,
-      var(--sunpillar-1) calc(var(--space) * 1),
-      var(--sunpillar-2) calc(var(--space) * 2),
-      var(--sunpillar-3) calc(var(--space) * 3),
-      var(--sunpillar-4) calc(var(--space) * 4),
-      var(--sunpillar-5) calc(var(--space) * 5),
-      var(--sunpillar-6) calc(var(--space) * 6),
-      var(--sunpillar-1) calc(var(--space) * 7)
-    ),
-    var(--hover-tilt-default-gradient);
-  background-blend-mode: overlay, overlay;
-  background-size: 380% 820%, 210% 210%;
-  background-position:
-    var(--gradient-x) var(--gradient-y),
-    var(--gradient-x) var(--gradient-y);
-  mix-blend-mode: overlay;
-  opacity: calc(var(--foil-opacity) * var(--hover-tilt-glare-intensity) * 0.85);
-  -webkit-mask-image: var(--hover-tilt-glare-mask), var(--hover-tilt-default-gradient);
-  mask-image: var(--hover-tilt-glare-mask), var(--hover-tilt-default-gradient);
-  -webkit-mask-size: var(--hover-tilt-glare-mask-size), 200% 200%;
-  mask-size: var(--hover-tilt-glare-mask-size), 200% 200%;
-  -webkit-mask-repeat: var(--hover-tilt-glare-mask-repeat), no-repeat;
-  mask-repeat: var(--hover-tilt-glare-mask-repeat), no-repeat;
-  -webkit-mask-position: var(--hover-tilt-glare-mask-position), var(--gradient-x) var(--gradient-y);
-  mask-position: var(--hover-tilt-glare-mask-position), var(--gradient-x) var(--gradient-y);
-  -webkit-mask-composite: var(--hover-tilt-glare-mask-composite-webkit, source-in);
-  mask-composite: var(--hover-tilt-glare-mask-composite, intersect);
-  -webkit-mask-mode: var(--hover-tilt-mask-mode);
-  mask-mode: var(--hover-tilt-mask-mode);
+.export-foil[data-hover-tilt-sparkle-mask='none']::after {
+  content: none;
 }
 
-.export-hover-tilt-sparkle {
-  z-index: 13;
-  background-image:
-    var(--hover-tilt-sparkle-field),
-    repeating-linear-gradient(
-      125deg,
-      var(--sunpillar-1) calc(var(--space) * 1),
-      var(--sunpillar-2) calc(var(--space) * 2),
-      var(--sunpillar-3) calc(var(--space) * 3),
-      var(--sunpillar-4) calc(var(--space) * 4),
-      var(--sunpillar-5) calc(var(--space) * 5),
-      var(--sunpillar-6) calc(var(--space) * 6),
-      var(--sunpillar-1) calc(var(--space) * 7)
-    ),
-    var(--hover-tilt-default-gradient);
-  background-blend-mode: overlay, overlay, overlay;
-  background-size:
-    var(--hover-tilt-sparkle-mask-size),
-    400% 400%,
-    200% 200%;
-  background-position:
-    var(--hover-tilt-sparkle-mask-position),
-    var(--gradient-x) var(--gradient-y),
-    var(--gradient-x) var(--gradient-y);
-  mix-blend-mode: overlay;
-  opacity: calc(var(--foil-opacity) * var(--hover-tilt-sparkle-intensity) * 0.6);
-  -webkit-mask-image: var(--hover-tilt-sparkle-mask);
-  mask-image: var(--hover-tilt-sparkle-mask);
-  -webkit-mask-size: var(--hover-tilt-sparkle-mask-size);
-  mask-size: var(--hover-tilt-sparkle-mask-size);
-  -webkit-mask-repeat: var(--hover-tilt-sparkle-mask-repeat);
-  mask-repeat: var(--hover-tilt-sparkle-mask-repeat);
-  -webkit-mask-position: var(--hover-tilt-sparkle-mask-position);
-  mask-position: var(--hover-tilt-sparkle-mask-position);
-  -webkit-mask-mode: var(--hover-tilt-mask-mode);
-  mask-mode: var(--hover-tilt-mask-mode);
-}
-
-.export-foil[data-hover-tilt-glare-mask='none'] .export-hover-tilt-holo {
-  -webkit-mask-image: var(--hover-tilt-default-gradient);
-  mask-image: var(--hover-tilt-default-gradient);
-  -webkit-mask-size: 200% 200%;
-  mask-size: 200% 200%;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: var(--gradient-x) var(--gradient-y);
-  mask-position: var(--gradient-x) var(--gradient-y);
-}
-
-.export-foil[data-hover-tilt-sparkle-mask='none'] .export-hover-tilt-sparkle,
-.export-foil[data-hover-tilt-glare-mask='none'] .export-hover-tilt-glare {
-  -webkit-mask-image: none;
-  mask-image: none;
+.export-foil[data-hover-tilt='1'] .export-foil-layer {
+  z-index: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

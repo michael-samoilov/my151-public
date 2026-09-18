@@ -468,48 +468,27 @@ export function ExportPreview3D({
             data-hover-tilt-glare-mask={tilt?.glareMask}
             data-hover-tilt-sparkle-mask={tilt?.sparkleMask}
           >
-            <div className="export-foil-face" data-export-foil-face>
-              <img
-                ref={imgRef}
-                src={activeSrc}
-                alt={alt}
-                className="pointer-events-none block h-auto w-auto object-contain"
-                style={{ maxHeight: maxH, maxWidth: maxW, width: 'auto', height: 'auto' }}
-                draggable={false}
-                data-export-frame={frames?.activeKey}
-                data-export-frame-active="1"
-                onLoad={() => {
-                  measureRef.current();
-                }}
+            <img
+              ref={imgRef}
+              src={activeSrc}
+              alt={alt}
+              className="pointer-events-none block h-auto w-auto object-contain"
+              style={{ maxHeight: maxH, maxWidth: maxW, width: 'auto', height: 'auto' }}
+              draggable={false}
+              data-export-frame={frames?.activeKey}
+              data-export-frame-active="1"
+              onLoad={() => {
+                measureRef.current();
+              }}
+            />
+            {layerIds.map((id) => (
+              <div
+                key={id}
+                className={cn('export-foil-layer', foilLayerClassName(id))}
+                aria-hidden
+                data-foil-layer={id}
               />
-              {layerIds.map((id) => (
-                <div
-                  key={id}
-                  className={cn('export-foil-layer', foilLayerClassName(id))}
-                  aria-hidden
-                  data-foil-layer={id}
-                />
-              ))}
-              {tilt ? (
-                <>
-                  <div
-                    className="export-foil-layer export-hover-tilt-glare"
-                    aria-hidden
-                    data-hover-tilt-layer="glare"
-                  />
-                  <div
-                    className="export-foil-layer export-hover-tilt-holo"
-                    aria-hidden
-                    data-hover-tilt-layer="holo"
-                  />
-                  <div
-                    className="export-foil-layer export-hover-tilt-sparkle"
-                    aria-hidden
-                    data-hover-tilt-layer="sparkle"
-                  />
-                </>
-              ) : null}
-            </div>
+            ))}
           </div>
         </div>
       ) : (

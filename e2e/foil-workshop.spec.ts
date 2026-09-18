@@ -71,7 +71,8 @@ test.describe('export foil workshop', () => {
     const img = page.locator('[data-export-tilt-hit] img');
     await img.waitFor({ timeout: 60_000 });
     const foil = page.locator('[data-export-preview]');
-    await expect(page.locator('[data-hover-tilt-layer]')).toHaveCount(3);
+    await expect(page.locator('[data-hover-tilt-layer]')).toHaveCount(0);
+    await expect(page.locator('[data-export-foil-face]')).toHaveCount(0);
     await expect
       .poll(async () => foil.getAttribute('data-hover-tilt'))
       .toBe('1');
@@ -140,57 +141,31 @@ test.describe('export foil workshop', () => {
 
     const mapped = await foil.evaluate((el) => {
       const card = el as HTMLElement;
-      const face = card.querySelector('[data-export-foil-face]');
+      const glare = getComputedStyle(card, '::before');
       const style = getComputedStyle(card);
-      const faceStyle = face instanceof HTMLElement ? getComputedStyle(face) : null;
-      const c = card.getBoundingClientRect();
-      const cardArea = Math.max(1, c.width * c.height);
-      const layers: Array<{
-        id: string;
-        overflow: boolean;
-        areaRatio: number;
-        transform: string;
-        mix: string;
-        filter: string;
-      }> = [];
-      for (const layer of card.querySelectorAll('[data-hover-tilt-layer]')) {
-        if (!(layer instanceof HTMLElement)) continue;
-        const r = layer.getBoundingClientRect();
-        const overflow =
-          r.left < c.left - 2 || r.right > c.right + 2 || r.top < c.top - 2 || r.bottom > c.bottom + 2;
-        layers.push({
-          id: layer.dataset.hoverTiltLayer || '',
-          overflow,
-          areaRatio: (r.width * r.height) / cardArea,
-          transform: getComputedStyle(layer).transform,
-          mix: getComputedStyle(layer).mixBlendMode,
-          filter: getComputedStyle(layer).filter,
-        });
-      }
+      const mask = `${glare.getPropertyValue('-webkit-mask-image')} ${glare.maskImage}`.trim();
       return {
-        face: face instanceof HTMLElement,
-        clipperPreserve3d: style.transformStyle.includes('preserve-3d'),
-        overflow: style.overflow,
-        faceTransform: faceStyle?.transform ?? '',
-        facePreserve3d: faceStyle?.transformStyle.includes('preserve-3d') ?? true,
+        childLayers: card.querySelectorAll('[data-hover-tilt-layer]').length,
+        face: Boolean(card.querySelector('[data-export-foil-face]')),
+        tiltPreserve3d: style.transformStyle.includes('preserve-3d'),
+        tiltTranslate: style.transform.includes('matrix3d') || /translate3d|matrix\(/.test(style.transform),
+        glareContent: glare.content,
+        glarePosition: glare.position,
+        glareTransform: glare.transform,
+        glareMask: mask,
         hypot: Math.hypot(Number(card.dataset.tiltX || 0), Number(card.dataset.tiltY || 0)),
-        layers,
       };
     });
-    expect(mapped.face, JSON.stringify(mapped)).toBe(true);
-    expect(mapped.clipperPreserve3d, JSON.stringify(mapped)).toBe(false);
-    expect(mapped.overflow).toBe('hidden');
-    expect(mapped.faceTransform === 'none' || !mapped.faceTransform.includes('matrix3d')).toBe(true);
-    expect(mapped.facePreserve3d).toBe(false);
+    expect(mapped.childLayers, JSON.stringify(mapped)).toBe(0);
+    expect(mapped.face).toBe(false);
+    expect(mapped.tiltPreserve3d).toBe(true);
+    expect(mapped.tiltTranslate).toBe(true);
+    expect(mapped.glareContent === 'none' || mapped.glareContent === '').toBe(false);
+    expect(mapped.glarePosition).toBe('absolute');
+    expect(mapped.glareTransform === 'none' || !mapped.glareTransform.includes('matrix3d')).toBe(true);
+    expect(mapped.glareMask).toContain('svg+xml');
     expect(mapped.hypot).toBeGreaterThan(6);
-    expect(mapped.layers.length).toBe(3);
-    for (const layer of mapped.layers) {
-      expect(layer.overflow, layer.id).toBe(false);
-      expect(layer.areaRatio, layer.id).toBeLessThanOrEqual(1.04);
-      expect(layer.transform.includes('matrix3d'), `${layer.id} ${layer.transform}`).toBe(false);
-      expect(layer.mix, layer.id).not.toBe('color-dodge');
-      expect(layer.filter === 'none' || layer.filter === '', layer.id).toBe(true);
-    }
+    expect(decodeURIComponent(mapped.glareMask)).toContain('my151.app');
   });
 });
 

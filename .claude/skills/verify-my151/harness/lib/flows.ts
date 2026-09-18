@@ -1237,34 +1237,19 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
   }>(
     `const card=document.querySelector('[data-export-preview]');
      if(!(card instanceof HTMLElement)) return {ok:false,reason:'missing',hypot:0};
-     const face=card.querySelector('[data-export-foil-face]');
-     const style=getComputedStyle(card);
      const hypot=Math.hypot(Number(card.dataset.tiltX||0),Number(card.dataset.tiltY||0));
-     if(!(face instanceof HTMLElement)) return {ok:false,reason:'no-face',hypot};
-     if(style.overflow!=='hidden') return {ok:false,reason:'overflow '+style.overflow,hypot};
-     if(style.transformStyle.includes('preserve-3d')) return {ok:false,reason:'preserve-3d on clipper',hypot};
-     const faceStyle=getComputedStyle(face);
-     if(faceStyle.transformStyle.includes('preserve-3d')) return {ok:false,reason:'preserve-3d on face',hypot};
-     if(faceStyle.transform.includes('matrix3d')) return {ok:false,reason:'face matrix3d',hypot};
-     const c=card.getBoundingClientRect();
-     const cardArea=Math.max(1,c.width*c.height);
-     const layers=[...card.querySelectorAll('[data-hover-tilt-layer]')];
-     if(layers.length<3) return {ok:false,reason:'layers '+layers.length,hypot};
-     for(const layer of layers){
-       if(!(layer instanceof HTMLElement)) continue;
-       const r=layer.getBoundingClientRect();
-       if(r.left<c.left-2||r.right>c.right+2||r.top<c.top-2||r.bottom>c.bottom+2){
-         return {ok:false,reason:'layer-overflow '+(layer.dataset.hoverTiltLayer||''),hypot};
-       }
-       const areaRatio=(r.width*r.height)/cardArea;
-       if(areaRatio>1.04) return {ok:false,reason:'area '+(layer.dataset.hoverTiltLayer||'')+' '+areaRatio.toFixed(3),hypot};
-       const ls=getComputedStyle(layer);
-       if(ls.transform.includes('matrix3d')) return {ok:false,reason:'matrix3d '+(layer.dataset.hoverTiltLayer||''),hypot};
-       if(ls.mixBlendMode==='color-dodge') return {ok:false,reason:'color-dodge '+(layer.dataset.hoverTiltLayer||''),hypot};
-       if(ls.filter!=='none' && ls.filter!=='') return {ok:false,reason:'filter '+(layer.dataset.hoverTiltLayer||'')+' '+ls.filter,hypot};
-     }
+     if(card.querySelector('[data-hover-tilt-layer]')) return {ok:false,reason:'child-layer',hypot};
+     if(card.querySelector('[data-export-foil-face]')) return {ok:false,reason:'face-wrapper',hypot};
+     const style=getComputedStyle(card);
+     if(!style.transformStyle.includes('preserve-3d')) return {ok:false,reason:'tilt not preserve-3d',hypot};
+     const glare=getComputedStyle(card,'::before');
+     if(glare.content==='none'||glare.content==='') return {ok:false,reason:'no ::before glare',hypot};
+     if(glare.position!=='absolute') return {ok:false,reason:'glare position '+glare.position,hypot};
+     if(glare.transform.includes('matrix3d')) return {ok:false,reason:'glare matrix3d',hypot};
+     const mask=(glare.getPropertyValue('-webkit-mask-image')+' '+glare.maskImage).trim();
+     if(!mask.includes('svg+xml') && !mask.includes('url(')) return {ok:false,reason:'glare mask '+mask.slice(0,80),hypot};
      if(hypot<6) return {ok:false,reason:'weak-tilt '+hypot.toFixed(2),hypot};
-     return {ok:true,reason:'on-card',hypot};`,
+     return {ok:true,reason:'::before-on-tilt',hypot};`,
   ).catch(() => ({ ok: false, reason: 'eval', hypot: 0 }));
   checks.push(ok('foil-workshop:mask-on-card', maskOnCard.ok, `${maskOnCard.reason} hypot=${maskOnCard.hypot.toFixed(1)}`));
   await s.screenshot(ctx.shot('foil-workshop-wordmark-tilt'));
