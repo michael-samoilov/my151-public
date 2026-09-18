@@ -64,15 +64,20 @@ test.describe('admin user pages', () => {
     const input0 = await page.evaluate(() => {
       const board = document.querySelector('[data-testid="league-visit-board"]');
       const keep = (document.documentElement as HTMLElement & { __keepBoard?: Element | null }).__keepBoard;
+      const vis = document.querySelector('[data-session-board]:not([hidden])');
       return {
         sameNode: keep != null && keep === board,
         tiles: board?.querySelectorAll('[data-member-id]').length ?? 0,
         hidden: board instanceof HTMLElement ? board.hidden : false,
+        visTiles: vis?.querySelectorAll('[data-member-id]').length ?? 0,
+        sessionBoards: document.querySelectorAll('[data-session-board]').length,
       };
     });
     expect(input0.sameNode).toBe(true);
     expect(input0.hidden).toBe(true);
     expect(input0.tiles).toBeGreaterThan(0);
+    expect(input0.visTiles).toBe(0);
+    expect(input0.sessionBoards).toBeGreaterThan(0);
     const input0Chip = await chipText();
     expect(input0Chip).not.toEqual(restChip);
     await scrub.fill('0');
@@ -86,37 +91,44 @@ test.describe('admin user pages', () => {
     const mid = await page.evaluate(() => {
       const board = document.querySelector('[data-testid="league-visit-board"]');
       const keep = (document.documentElement as HTMLElement & { __keepBoard?: Element | null }).__keepBoard;
-      const tiles = [...(board?.querySelectorAll('[data-member-id]') ?? [])];
+      const vis = document.querySelector('[data-session-board]:not([hidden])');
+      const visTiles = [...(vis?.querySelectorAll('[data-member-id]') ?? [])];
       return {
         sameNode: keep != null && keep === board,
-        tiles: tiles.length,
-        faded: tiles.filter((n) => (n as HTMLElement).style.opacity === '0.14').length,
-        slots: board?.querySelectorAll('[data-testid^="admin-slot-"]').length ?? 0,
-        gyms: board?.querySelectorAll('[data-testid="admin-gym-card"]').length ?? 0,
+        tiles: board?.querySelectorAll('[data-member-id]').length ?? 0,
+        visTiles: visTiles.length,
+        visFaded: visTiles.filter((n) => (n as HTMLElement).style.opacity === '0.14').length,
+        slots: vis?.querySelectorAll('[data-testid^="admin-slot-"]').length ?? 0,
+        gyms: vis?.querySelectorAll('[data-testid="admin-gym-card"]').length ?? 0,
       };
     });
     expect(mid.sameNode).toBe(true);
-    expect(mid.tiles).toBeGreaterThan(0);
     expect(mid.tiles).toBe(input0.tiles);
+    expect(mid.visTiles).toBeGreaterThan(0);
+    expect(mid.visFaded).toBe(0);
 
     await scrub.fill('2');
     await expect(page.getByTestId('league-visit-board')).toBeVisible();
     const end = await page.evaluate(() => {
       const board = document.querySelector('[data-testid="league-visit-board"]');
       const keep = (document.documentElement as HTMLElement & { __keepBoard?: Element | null }).__keepBoard;
-      const tiles = [...(board?.querySelectorAll('[data-member-id]') ?? [])];
+      const vis = document.querySelector('[data-session-board]:not([hidden])');
+      const visTiles = [...(vis?.querySelectorAll('[data-member-id]') ?? [])];
       return {
         sameNode: keep != null && keep === board,
-        tiles: tiles.length,
-        faded: tiles.filter((n) => (n as HTMLElement).style.opacity === '0.14').length,
-        gyms: [...(board?.querySelectorAll('[data-testid="admin-gym-card"]') ?? [])].filter((n) =>
+        tiles: board?.querySelectorAll('[data-member-id]').length ?? 0,
+        visTiles: visTiles.length,
+        visFaded: visTiles.filter((n) => (n as HTMLElement).style.opacity === '0.14').length,
+        gyms: [...(vis?.querySelectorAll('[data-testid="admin-gym-card"]') ?? [])].filter((n) =>
           n.querySelector('[data-member-id]'),
         ).length,
       };
     });
     expect(end.sameNode).toBe(true);
     expect(end.tiles).toBe(mid.tiles);
-    expect(end.faded).toBe(0);
+    expect(end.visTiles).toBeGreaterThan(0);
+    expect(end.visFaded).toBe(0);
+    expect(end.visTiles).not.toBe(mid.visTiles);
     if (info.project.name !== 'desktop') {
       expect(mid.slots).toBe(14);
     } else {
@@ -144,9 +156,10 @@ test.describe('admin user pages', () => {
       expect(gap).toBeGreaterThanOrEqual(-2);
       expect(gap).toBeLessThan(6);
 
-      const gym = await page.getByTestId('admin-slot-0').boundingBox();
-      const champ = await page.getByTestId('admin-slot-12').boundingBox();
-      const boss = await page.getByTestId('admin-slot-13').boundingBox();
+      const vis = page.locator('[data-session-board]:not([hidden])');
+      const gym = await vis.getByTestId('admin-slot-0').boundingBox();
+      const champ = await vis.getByTestId('admin-slot-12').boundingBox();
+      const boss = await vis.getByTestId('admin-slot-13').boundingBox();
       const navBox = await page.getByRole('navigation', { name: 'Admin section' }).boundingBox();
       expect(gym && champ && boss && navBox).toBeTruthy();
       expect(champ!.y + champ!.height).toBeLessThanOrEqual(navBox!.y + 2);
@@ -155,10 +168,11 @@ test.describe('admin user pages', () => {
       expect(Math.abs(champ!.width - boss!.width)).toBeLessThan(4);
     } else {
       const board = page.getByTestId('league-visit-board');
+      const vis = page.locator('[data-session-board]:not([hidden])');
       await expect(board).toBeVisible();
-      await expect(board).toHaveAttribute('data-cols', /^(7|14)$/);
-      await expect(page.getByTestId('admin-gym-card')).toHaveCount(14);
-      const first = page.getByTestId('admin-gym-card').first();
+      await expect(vis.locator('[data-cols]')).toHaveAttribute('data-cols', /^(7|14)$/);
+      await expect(vis.getByTestId('admin-gym-card')).toHaveCount(14);
+      const first = vis.getByTestId('admin-gym-card').first();
       const late = first.locator('[data-row="10"], [data-row="11"]');
       await expect(late.first()).toBeVisible();
       await expect(first.getByTestId('admin-gym-stage-row')).toBeVisible();
@@ -179,7 +193,7 @@ test.describe('admin user pages', () => {
       expect(washBox!.width).toBeLessThan(cardBox!.width * 0.45);
       expect(washBox!.x).toBeGreaterThan(badgeBox!.x + badgeBox!.width - 1);
       expect(cardBox!.x + cardBox!.width - (washBox!.x + washBox!.width)).toBeLessThan(8);
-      const champ = page.getByTestId('admin-gym-card').nth(12);
+      const champ = vis.getByTestId('admin-gym-card').nth(12);
       await expect(champ.getByTestId('admin-gym-stage-row')).toHaveAttribute('data-span', '6');
       const champWash = await champ.getByTestId('admin-gym-stage-row').boundingBox();
       const champBox = await champ.boundingBox();
@@ -224,7 +238,7 @@ test.describe('admin user pages', () => {
       });
       expect(thumb).toBeTruthy();
       expect(Math.abs(thumb!.cx - thumb!.last)).toBeLessThan(3);
-      const last = await page.getByTestId('admin-gym-card').nth(13).boundingBox();
+      const last = await vis.getByTestId('admin-gym-card').nth(13).boundingBox();
       const vh = page.viewportSize()?.height ?? 0;
       expect(last).toBeTruthy();
       expect(last!.y + last!.height).toBeLessThanOrEqual(vh);

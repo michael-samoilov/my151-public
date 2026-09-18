@@ -23,7 +23,7 @@ import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineM
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/components/admin/dexPresence';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
-import { leagueOccupancyAtPlayhead } from '@/components/admin/leaguePlayhead';
+import { sessionCards } from '@/components/admin/leaguePlayhead';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import {
@@ -1079,18 +1079,15 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
     milestones.push({ t: t1, label: 'no exports', tone: 'muted' });
   }
 
-  const sessionOccupancy = useMemo(
-    () => log.map((s, k) => leagueOccupancyAtPlayhead(s.cards, k === log.length - 1)),
-    [log],
-  );
-  const layoutCards =
-    league.latestCards && league.latestCards.length > 0 ? league.latestCards : null;
-  const occupancy = sessionOccupancy[idx] ?? { kind: 'all' as const };
-
-  const board = layoutCards ? (
-    <LeagueVisitBoard cards={layoutCards} occupancy={occupancy} sessionOccupancy={sessionOccupancy} />
-  ) : (
-    <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
+  const snapshots = useMemo(() => {
+    if (log.length === 0) {
+      const latest = sessionCards(league.latestCards);
+      return latest ? [latest] : [];
+    }
+    return log.map((s) => sessionCards(s.cards));
+  }, [log, league.latestCards]);
+  const board = (
+    <LeagueVisitBoard sessions={snapshots} playhead={idx} />
   );
 
   if (points.length === 0) {
