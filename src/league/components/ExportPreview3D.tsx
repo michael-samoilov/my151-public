@@ -488,7 +488,10 @@ export function ExportPreview3D({
       if (overCard || (orbitRef.current === 'pointer' && overHit)) {
         const last = lastPointerRef.current;
         lastPointerRef.current = { x: e.clientX, y: e.clientY };
-        if (last && last.x === e.clientX && last.y === e.clientY && orbitRef.current !== 'pointer') return;
+        // Seed only: a parked cursor must not cancel poke-holo idle.
+        // Real mice always send a second event; hover-tilt springs still track that.
+        if (!last) return;
+        if (last.x === e.clientX && last.y === e.clientY && orbitRef.current !== 'pointer') return;
         const enterDelay = tiltRef.current?.enterDelay ?? 0;
         if (enterDelay > 0 && orbitRef.current !== 'pointer') {
           if (enterSinceRef.current === null) enterSinceRef.current = performance.now();

@@ -494,23 +494,34 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 4 && hoverMax < 15 && hoverOrbit === 'pointer',
     reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit}`,
   };
-  const fireShadow = async (u: number, v: number) => {
-    await s.evalJson(
-      `const hit=document.querySelector('[data-export-tilt-hit]');
-       const card=document.querySelector('[data-export-preview]');
-       if(!(hit instanceof HTMLElement) || !(card instanceof HTMLElement)) return false;
-       const r=hit.getBoundingClientRect();
-       document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:r.left+r.width*${u},clientY:r.top+r.height*${v},pointerType:'mouse',pointerId:1}));
-       return true;`,
-    ).catch(() => false);
-    await sleep(220);
-    return s.evalJson<number>(
+  const readShadowX = async () =>
+    s.evalJson<number>(
       `const card=document.querySelector('[data-export-preview]');
        return Number(card instanceof HTMLElement ? card.getAttribute('data-shadow-x')||0 : 0);`,
     ).catch(() => 0);
+  const fireShadow = async (u: number, v: number, want: 'neg' | 'pos') => {
+    await s.evalJson(
+      `const card=document.querySelector('[data-export-preview]');
+       if(!(card instanceof HTMLElement)) return false;
+       const r=card.getBoundingClientRect();
+       const x=r.left+r.width*${u};
+       const y=r.top+r.height*${v};
+       document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerType:'mouse',pointerId:1}));
+       document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:x+1,clientY:y,pointerType:'mouse',pointerId:1}));
+       return true;`,
+    ).catch(() => false);
+    const t0 = Date.now();
+    let val = await readShadowX();
+    while (Date.now() - t0 < 800) {
+      if (want === 'neg' && val < -0.2) return val;
+      if (want === 'pos' && val > 0.2) return val;
+      await sleep(50);
+      val = await readShadowX();
+    }
+    return val;
   };
-  const leftShadow = await fireShadow(0.12, 0.5);
-  const rightShadow = await fireShadow(0.88, 0.5);
+  const leftShadow = await fireShadow(0.12, 0.5, 'neg');
+  const rightShadow = await fireShadow(0.88, 0.5, 'pos');
   const shadowPair = {
     ok: rightShadow > leftShadow + 0.2,
     reason: `${leftShadow.toFixed(2)} → ${rightShadow.toFixed(2)}`,
