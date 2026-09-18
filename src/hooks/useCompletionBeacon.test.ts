@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { EXPORT_SURVEY_SKIP_EVENT } from '../../api/_events';
+import { EXPORT_SURVEY_SKIP_EVENT, leagueExportEventBody } from '../../api/_events';
 import { installOptOut } from '@/lib/clientId';
-import { sendEventBeacon } from './useCompletionBeacon';
+import { sendEventBeacon, takePendingEvents } from './useCompletionBeacon';
 
 function storageStub(seed: Record<string, string> = {}): Storage {
   const data = new Map(Object.entries(seed));
@@ -61,5 +61,59 @@ describe('sendEventBeacon skip fields', () => {
       reason: 'close',
     });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('sendEventBeacon league export success', () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true });
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal(
+      'localStorage',
+      storageStub({ 'p151-cid': 'cid-league-export-01' }),
+    );
+    vi.stubGlobal('sessionStorage', storageStub());
+    vi.stubGlobal('window', {
+      location: { pathname: '/custom-gym-leader', search: '' },
+    });
+    fetchMock.mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('posts league-export-league with exportTool league', () => {
+    const { event, exportTool } = leagueExportEventBody('league');
+    sendEventBeacon(event, { exportTool });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('/api/event');
+    expect(JSON.parse(String(init.body))).toMatchObject({
+      event: 'league-export-league',
+      tool: 'league',
+      page: '/custom-gym-leader',
+      exportTool: 'league',
+    });
+    expect(takePendingEvents()).toEqual(['league-export-league']);
+  });
+
+  it('posts league-export-card with exportTool card', () => {
+    const { event, exportTool } = leagueExportEventBody('card');
+    sendEventBeacon(event, { exportTool });
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1].body))).toMatchObject({
+      event: 'league-export-card',
+      tool: 'league',
+      exportTool: 'card',
+    });
+  });
+
+  it('does not post when the browser opted out with ?notme', () => {
+    installOptOut('?notme');
+    const { event, exportTool } = leagueExportEventBody('league');
+    sendEventBeacon(event, { exportTool });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(takePendingEvents()).toEqual([]);
   });
 });

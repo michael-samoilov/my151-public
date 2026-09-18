@@ -11,7 +11,7 @@ import {
   PROGRESS_MAX_WAIT_MS,
   type BeaconDebouncer,
 } from '@/lib/beaconScheduler';
-import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
+import { sendEventBeacon, takePendingEvents } from '@/hooks/useCompletionBeacon';
 import type { LeagueCardShape, LeagueExportKind, LeagueSummary } from '../../../api/_leagueRecord';
 import {
   exportBeaconPlan,
@@ -48,6 +48,7 @@ function postLeagueBeacon(
     return Promise.resolve(previewExportHighlight(tool, pokemonIds ?? []));
   }
   const switched = getPinnedLocale();
+  const events = takePendingEvents();
   const payload = JSON.stringify({
     cid: getClientId(),
     tool: 'league',
@@ -62,6 +63,7 @@ function postLeagueBeacon(
     ref: externalReferrerHost() || undefined,
     ts: capturedAt,
     notme: isOptedOut() || undefined,
+    events: events.length ? events : undefined,
   });
   return fetch('/api/league', {
     method: 'POST',

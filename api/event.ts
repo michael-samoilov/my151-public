@@ -6,8 +6,10 @@ import {
   EXPORT_SURVEY_SKIP_EVENT,
   EXPORT_SURVEY_SKIPS_KEY,
   isFunnelEvent,
+  isLeagueExportEvent,
   parseExportSurveySkipFields,
   parseExportSurveySkipList,
+  parseExportSurveyToolField,
   parsePage,
   parseTool,
   JOURNAL_MAX_PER_DAY,
@@ -84,6 +86,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const tool = parseTool(body.tool);
     const page = parsePage(body.page);
+    const exportTool =
+      skipFields?.tool ??
+      (isLeagueExportEvent(body.event) ? parseExportSurveyToolField(body.exportTool) : undefined);
 
     const ip = getClientIp(req);
     const burst = await burstLimiter.limit(ip);
@@ -107,7 +112,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       tool,
       ev: body.event,
       ...(page ? { page } : {}),
-      ...(skipFields ? { exportTool: skipFields.tool, reason: skipFields.reason } : {}),
+      ...(exportTool ? { exportTool } : {}),
+      ...(skipFields ? { reason: skipFields.reason } : {}),
     });
     const writes: Promise<unknown>[] = [
       redis.hincrby(FUNNEL_KEY, body.event, 1),

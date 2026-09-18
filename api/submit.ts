@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
 import { bumpDexPickFreq, parseNotmeFlag, recordToolExport } from './_exportStats.js';
-import { isFunnelEvent, parsePage, parseTool } from './_events.js';
+import { parseFunnelEventList, parsePage, parseTool } from './_events.js';
 import {
   redis,
   getClientIp,
@@ -143,13 +143,7 @@ function validExportSettings(
 
 /** Sanitize the buffered funnel-event list sent with a build beacon. */
 function validEvents(v: unknown): string[] {
-  if (!Array.isArray(v)) return [];
-  const out: string[] = [];
-  for (const e of v) {
-    if (isFunnelEvent(e) && !out.includes(e)) out.push(e);
-    if (out.length >= 20) break;
-  }
-  return out;
+  return parseFunnelEventList(v);
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

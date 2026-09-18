@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { shareOrDownload } from '@/lib/exportImage';
+import { leagueExportEventBody } from '../../../api/_events';
+import { shareOrDownload, isShareAbort } from '@/lib/exportImage';
 import {
   createExportSurveySkipReporter,
   exportSurveySkipReason,
@@ -248,17 +249,18 @@ export function LeagueExportOverlay() {
   const runExport = useCallback(async () => {
     if (exportBusy) return;
     setExportBusy(true);
-    sendEventBeacon(isLeague ? 'league-export-league' : 'league-export-card');
     try {
       const { name, cards, view } = useLeagueStore.getState();
       const ids = exportPokemonIds(isLeague ? cards : [cards[exportCardIndex!]]);
-      const nextHighlight = await sendLeagueExportBeacon(exportKind, ids);
-      setHighlight(nextHighlight);
       const blob = isLeague
         ? await exportLeagueHome(name, cards, view, layout)
         : await exportGymCard(cards[exportCardIndex!]);
       await shareOrDownload(blob, isLeague ? HOME_FILENAME : CARD_FILENAME);
       incrementLeagueExportCount();
+      const { event, exportTool } = leagueExportEventBody(exportKind);
+      sendEventBeacon(event, { exportTool });
+      const nextHighlight = await sendLeagueExportBeacon(exportKind, ids);
+      setHighlight(nextHighlight);
       if (
         !shouldShowExportSurvey({
           optedOut: isOptedOut(),
@@ -274,7 +276,7 @@ export function LeagueExportOverlay() {
       setSurveyOpenedAt(Date.now());
       setExportPhase('surveyIntro');
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
+      if (isShareAbort(err)) return;
       console.error('League export failed:', err);
     } finally {
       setExportBusy(false);

@@ -123,6 +123,9 @@ test.describe('league export survey', () => {
         reason: 'not_now',
       }),
     ]);
+    expect(events.filter((e) => e.event === 'league-export-league')).toEqual([
+      expect.objectContaining({ event: 'league-export-league', exportTool: 'league' }),
+    ]);
   });
 
   test('form offers send without Skip', async ({ page }) => {

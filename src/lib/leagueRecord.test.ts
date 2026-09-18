@@ -107,6 +107,26 @@ describe('mergeLeagueRecord', () => {
     expect(rec.exportedCardAt).toBeDefined();
   });
 
+  it('attaches funnel events to the sitting, including a later skip', () => {
+    let rec = mergeLeagueRecord(
+      null,
+      beacon({ kind: 'export', exportKind: 'league', events: ['league-export-league'] }),
+    );
+    expect(rec.sessionLog[0].events).toEqual(['league-export-league']);
+    rec = mergeLeagueRecord(
+      rec,
+      beacon({ now: 1_000_500, events: ['export_survey_skipped'] }),
+    );
+    expect(rec.sessionLog).toHaveLength(1);
+    expect(rec.sessionLog[0].events).toEqual(['league-export-league', 'export_survey_skipped']);
+  });
+
+  it('does not duplicate an event already on the sitting', () => {
+    let rec = mergeLeagueRecord(null, beacon({ events: ['league-export-card'] }));
+    rec = mergeLeagueRecord(rec, beacon({ now: 1_000_500, events: ['league-export-card'] }));
+    expect(rec.sessionLog[0].events).toEqual(['league-export-card']);
+  });
+
   it('does not mutate the record it was given', () => {
     const first = mergeLeagueRecord(null, beacon());
     const snapshot = JSON.stringify(first);

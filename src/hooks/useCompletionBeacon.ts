@@ -60,7 +60,7 @@ function bufferPendingEvent(event: string) {
     // storage unavailable — event just won't be session-associated
   }
 }
-function takePendingEvents(): string[] {
+export function takePendingEvents(): string[] {
   try {
     const cur = JSON.parse(localStorage.getItem(PENDING_EVENTS_KEY) || '[]') as string[];
     if (cur.length) localStorage.removeItem(PENDING_EVENTS_KEY);

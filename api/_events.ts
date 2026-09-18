@@ -54,6 +54,9 @@ export function isExportSurveySkipReason(v: unknown): v is ExportSurveySkipReaso
   return parseExportSurveySkipReason(v) !== undefined;
 }
 
+export const LEAGUE_EXPORT_CARD_EVENT = 'league-export-card' as const;
+export const LEAGUE_EXPORT_LEAGUE_EVENT = 'league-export-league' as const;
+
 export const FUNNEL_EVENTS = [
   // Dex builder onboarding.
   'intro-shown',
@@ -74,8 +77,8 @@ export const FUNNEL_EVENTS = [
   'league-open',
   'league-first-seat',
   'league-card-named',
-  'league-export-card',
-  'league-export-league',
+  LEAGUE_EXPORT_CARD_EVENT,
+  LEAGUE_EXPORT_LEAGUE_EVENT,
   // The callout in the dex builder that points at the gym leader maker.
   'league-promo-shown',
   'league-promo-cta',
@@ -86,6 +89,35 @@ export type FunnelEvent = (typeof FUNNEL_EVENTS)[number];
 
 export function isFunnelEvent(s: unknown): s is FunnelEvent {
   return typeof s === 'string' && (FUNNEL_EVENTS as readonly string[]).includes(s);
+}
+
+export function isLeagueExportEvent(
+  s: unknown,
+): s is typeof LEAGUE_EXPORT_CARD_EVENT | typeof LEAGUE_EXPORT_LEAGUE_EVENT {
+  return s === LEAGUE_EXPORT_CARD_EVENT || s === LEAGUE_EXPORT_LEAGUE_EVENT;
+}
+
+/** Names and `exportTool` for a successful league-home or gym-card share. */
+export function leagueExportEventBody(exportKind: 'league' | 'card'): {
+  event: typeof LEAGUE_EXPORT_CARD_EVENT | typeof LEAGUE_EXPORT_LEAGUE_EVENT;
+  exportTool: 'league' | 'card';
+} {
+  return exportKind === 'card'
+    ? { event: LEAGUE_EXPORT_CARD_EVENT, exportTool: 'card' }
+    : { event: LEAGUE_EXPORT_LEAGUE_EVENT, exportTool: 'league' };
+}
+
+const FUNNEL_EVENT_LIST_CAP = 20;
+
+/** Sanitize a buffered funnel-event list from a build or league beacon. */
+export function parseFunnelEventList(v: unknown, cap = FUNNEL_EVENT_LIST_CAP): FunnelEvent[] {
+  if (!Array.isArray(v)) return [];
+  const out: FunnelEvent[] = [];
+  for (const e of v) {
+    if (isFunnelEvent(e) && !out.includes(e)) out.push(e);
+    if (out.length >= cap) break;
+  }
+  return out;
 }
 
 /** Parse one stored journal entry. The SDK parses JSON strings back into

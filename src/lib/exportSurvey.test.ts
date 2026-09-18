@@ -3,8 +3,10 @@ import { EARLY_EXPORT_BUCKETS } from '@/league/export/exportPersonalization';
 import {
   EXPORT_SURVEY_SKIP_EVENT,
   isFunnelEvent,
+  leagueExportEventBody,
   parseExportSurveySkipReason,
   parseExportSurveyToolField,
+  parseFunnelEventList,
   parseJournalEntry,
 } from '../../api/_events';
 import {
@@ -219,5 +221,64 @@ describe('export survey skip journal fields', () => {
       tool: 'dex',
       ev: 'export_survey_skipped',
     });
+  });
+});
+
+describe('league export success journal fields', () => {
+  it('keeps the existing event names and adds exportTool', () => {
+    expect(leagueExportEventBody('league')).toEqual({
+      event: 'league-export-league',
+      exportTool: 'league',
+    });
+    expect(leagueExportEventBody('card')).toEqual({
+      event: 'league-export-card',
+      exportTool: 'card',
+    });
+    expect(isFunnelEvent('league-export-league')).toBe(true);
+    expect(isFunnelEvent('league-export-card')).toBe(true);
+  });
+
+  it('keeps exportTool on a league-home export journal entry', () => {
+    expect(
+      parseJournalEntry({
+        t: 2,
+        cid: 'cid-export-01',
+        tool: 'league',
+        ev: 'league-export-league',
+        page: '/custom-gym-leader',
+        exportTool: 'league',
+      }),
+    ).toEqual({
+      t: 2,
+      cid: 'cid-export-01',
+      tool: 'league',
+      ev: 'league-export-league',
+      page: '/custom-gym-leader',
+      exportTool: 'league',
+    });
+  });
+
+  it('keeps exportTool on a gym-card export journal entry', () => {
+    expect(
+      parseJournalEntry({
+        t: 3,
+        cid: 'cid-export-02',
+        tool: 'league',
+        ev: 'league-export-card',
+        page: '/custom-gym-leader',
+        exportTool: 'card',
+      }),
+    ).toMatchObject({ ev: 'league-export-card', exportTool: 'card', tool: 'league' });
+  });
+
+  it('parses a mixed session event list and drops unknown names', () => {
+    expect(
+      parseFunnelEventList([
+        'league-export-league',
+        'export_survey_skipped',
+        'league-export-league',
+        'not-an-event',
+      ]),
+    ).toEqual(['league-export-league', 'export_survey_skipped']);
   });
 });

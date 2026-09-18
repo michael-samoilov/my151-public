@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Ratelimit } from '@upstash/ratelimit';
 import { SUBMIT_CLIENT_DAILY_CAP } from './_limits.js';
-import { parsePage } from './_events.js';
+import { parseFunnelEventList, parsePage } from './_events.js';
 import { redis, getClientIp, getClient, getGeo, getLang, parseLocale, parseReferrerHost, MAX_CLIENTS } from './_shared.js';
 import { parseCapturedAt } from './_sessionize.js';
 import {
@@ -67,6 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       page?: unknown;
       ts?: unknown;
       notme?: unknown;
+      events?: unknown;
     };
     if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
       return res.status(400).json({ error: 'invalid cid' });
@@ -134,6 +135,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       switched: parseLocale(body.switched),
       referrer: parseReferrerHost(body.ref),
       page: parsePage(body.page),
+      events: parseFunnelEventList(body.events),
     };
 
     for (let attempt = 0; attempt < 6; attempt++) {
