@@ -332,4 +332,41 @@ test.describe('admin user pages', () => {
     await expect(tools.getByRole('button', { name: 'League' })).toBeEnabled();
     await expect(tools.getByRole('button', { name: 'Dex' })).toBeDisabled();
   });
+
+  test('header chips open an unclipped tooltip on press', async ({ page }) => {
+    await openDemo(page);
+    await userCard(page, '74d5').click();
+    await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
+
+    await page.getByRole('button', { name: /United States/ }).dispatchEvent('click');
+    await expect(page.locator('[data-info-chip-tip]')).toHaveText(/United States/);
+    const flag = await readChipTooltip(page);
+    expect(flag.clipped).toBe(false);
+    expect(flag.h).toBeGreaterThan(10);
+
+    await page.getByRole('button', { name: 'Desktop', exact: true }).dispatchEvent('click');
+    await expect(page.locator('[data-info-chip-tip]')).toHaveText('Desktop');
+    const device = await readChipTooltip(page);
+    expect(device.text).toBe('Desktop');
+    expect(device.clipped).toBe(false);
+  });
 });
+
+async function readChipTooltip(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    const el = document.querySelector('[data-info-chip-tip]');
+    if (!(el instanceof HTMLElement)) return { text: '', clipped: true, h: 0 };
+    const r = el.getBoundingClientRect();
+    let clipped = false;
+    for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+      const cs = getComputedStyle(p);
+      if (!/hidden|clip|auto|scroll/.test(cs.overflowX + cs.overflowY)) continue;
+      const pr = p.getBoundingClientRect();
+      if (r.top < pr.top - 0.5 || r.bottom > pr.bottom + 0.5 || r.left < pr.left - 0.5 || r.right > pr.right + 0.5) {
+        clipped = true;
+        break;
+      }
+    }
+    return { text: (el.innerText || '').replace(/\s+/g, ' ').trim(), clipped, h: r.height };
+  });
+}
