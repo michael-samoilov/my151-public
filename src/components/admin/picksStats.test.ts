@@ -14,6 +14,7 @@ import {
   rowsUsed,
   sectionPicksView,
   starterTypeOf,
+  viewsForPicks,
 } from './picksStats';
 
 const PICHU = 172;
@@ -473,5 +474,53 @@ describe('poolIdsForSection', () => {
     expect(pool).toContain(RHYHORN);
     expect(pool).toContain(RHYPERIOR);
     expect(pool).not.toContain(MAGIKARP);
+  });
+});
+
+describe('Other Areas', () => {
+  it('lists only species with at least 1 pick, ordered by ×, and omits 0×', () => {
+    const view = sectionPicksView('other', [
+      count(MAGIKARP, 10),
+      count(GYARADOS, 5),
+      count(PICHU, 0),
+      count(LITWICK, 1),
+    ]);
+    expect(view?.kind).toBe('plain');
+    if (view?.kind !== 'plain') return;
+    expect(view.columns.least).toEqual([]);
+    const ids = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    expect(ids).toEqual([MAGIKARP, GYARADOS, LITWICK]);
+    expect(ids).not.toContain(PICHU);
+    expect(view.columns.most.every((l) => l.picks >= 1)).toBe(true);
+    expect(view.columns.most.every((l) => l.members.length === 1)).toBe(true);
+  });
+
+  it('keeps a 1-pick species even when its × is below 1.10', () => {
+    const view = sectionPicksView('other', [
+      count(MAGIKARP, 100),
+      count(GYARADOS, 1),
+    ]);
+    expect(view?.kind).toBe('plain');
+    if (view?.kind !== 'plain') return;
+    const gyarados = view.columns.most.find((l) => l.members.some((m) => m.id === GYARADOS));
+    expect(gyarados?.picks).toBe(1);
+    expect(gyarados!.index).toBeLessThan(1.1);
+    expect(view.columns.most.map((l) => l.members[0].id)).toEqual([MAGIKARP, GYARADOS]);
+  });
+
+  it('puts Other Areas last on Most picked, after fossil and endgame', () => {
+    const views = viewsForPicks({
+      starter: [count(BULBASAUR, 2)],
+      other: [count(MAGIKARP, 3), count(PICHU, 0)],
+      fossil: [count(140, 4)],
+      legendary: [count(150, 5)],
+    });
+    expect(views.map((v) => v.sectionId)).toEqual(['starter', 'fossil', 'legendary', 'other']);
+    const other = views.at(-1);
+    expect(other?.kind).toBe('plain');
+    if (other?.kind !== 'plain') return;
+    const ids = other.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    expect(ids).toEqual([MAGIKARP]);
+    expect(ids).not.toContain(PICHU);
   });
 });

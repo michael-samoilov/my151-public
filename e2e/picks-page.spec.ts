@@ -6,7 +6,8 @@ import { expect, test, type Page } from '@playwright/test';
  * Layout: builder chrome with the section name at the top-left; one 9-column
  * sprite grid per section with an index bar under each sprite. Most picked
  * lists every default species in that section, ordered by ×, with no
- * Most/Least split. In-section Starters list every first-stage face across
+ * Most/Least split. Other Areas lists only species with at least 1 pick
+ * and sits last. In-section Starters list every first-stage face across
  * the full row, split by grass / fire / water. Nine faces fit one row.
  * Off-section Starters do not. Off-section sprite grids are 9 columns.
  */
@@ -117,6 +118,14 @@ test.describe('admin picks page', () => {
     await expect.poll(async () =>
       starters.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
     ).toBe(true);
+
+    const other = page.locator('[data-section-id="other"]');
+    await expect(other).toBeVisible();
+    await expect(other.getByText('Least', { exact: true })).toHaveCount(0);
+    const lastId = await page.locator('[data-section-id]').last().getAttribute('data-section-id');
+    expect(lastId).toBe('other');
+    const otherZero = await other.locator('[data-index-meter="0×"]').count();
+    expect(otherZero).toBe(0);
   });
 
   test('off-section tab keeps chrome, omits least, and shows counts', async ({ page }) => {

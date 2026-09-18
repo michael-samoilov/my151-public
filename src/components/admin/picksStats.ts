@@ -18,7 +18,9 @@
  * their pick counts. `1.0×` is the uniform rate. Unpicked defaults are `0×`.
  * Most picked lists every default species in that section, ordered by its
  * own ×, high to low. A lower-× stage does not ride with a higher-× evo-line
- * mate. There is no Most/Least split and no 1.10× / 0.90× cutoff.
+ * mate. There is no Most/Least split and no 1.10× / 0.90× cutoff. Other
+ * Areas is not a default-member dump: it lists only species with at least
+ * 1 pick, ordered by ×, and sits last on the page.
  * In-section Starters still show one first-stage face per chain, indexed
  * from that chain's max picks against the line-level uniform rate (`S / L`).
  *
@@ -387,8 +389,10 @@ export function sectionPicksView(
   }
 
   const group = BUILD_GROUPS.find((g) => g.id === sectionId);
-  const catchAll = group?.filterType === null;
-  const pool = catchAll ? [...counts.keys()] : [...poolIdsForSection(sectionId)];
+  const catchAll = sectionId === 'other' || group?.filterType === null;
+  const pool = catchAll
+    ? [...counts.keys()].filter((id) => (counts.get(id) ?? 0) >= 1)
+    : [...poolIdsForSection(sectionId)];
   const starters = sectionId === 'starter';
   const inSectionStarters = starters && !opts.offSection;
   const grouper = starters ? groupByChain : groupByLine;
@@ -440,10 +444,14 @@ export function viewsForPicks(
   } = {},
 ): SectionPicksView[] {
   const out: SectionPicksView[] = [];
+  let other: SectionPicksView | null = null;
   for (const g of BUILD_GROUPS) {
     const view = sectionPicksView(g.id, bySection[g.id] ?? [], opts);
-    if (view) out.push(view);
+    if (!view) continue;
+    if (g.id === 'other') other = view;
+    else out.push(view);
   }
+  if (other) out.push(other);
   return out;
 }
 
