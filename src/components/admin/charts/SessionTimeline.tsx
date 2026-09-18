@@ -8,6 +8,7 @@ import {
   weekBoundaries,
   type TimelinePoint,
 } from './sessionTimelineMath';
+import { applySessionChip } from './sessionChip';
 
 export type { TimelinePoint };
 
@@ -79,6 +80,7 @@ export function SessionTimeline({
   const wRef = useRef(W);
   const tzRef = useRef(tz);
   const countUnitRef = useRef(countUnit);
+  const deltaUnitRef = useRef(deltaUnit);
   const applyPlayhead = useCallback((next: number) => {
     const pts = pointsRef.current;
     const p = pts[next];
@@ -93,23 +95,18 @@ export function SessionTimeline({
       line.setAttribute('x1', px);
       line.setAttribute('x2', px);
     }
-    const count = document.querySelector('[data-testid="session-playhead-count"]');
-    if (count) count.textContent = String(p.count);
-    const date = document.querySelector('[data-testid="session-playhead-date"]');
-    if (date) date.textContent = fmtDay(p.t, tzRef.current);
-    const slider = document.querySelector('input[aria-label="Scrub sessions"]');
-    if (slider instanceof HTMLInputElement) {
-      slider.setAttribute(
-        'aria-valuetext',
-        `${fmtDay(p.t, tzRef.current)}: ${p.count} ${countUnitRef.current}`,
-      );
-    }
+    applySessionChip(document, p, {
+      tz: tzRef.current,
+      countUnit: countUnitRef.current,
+      deltaUnit: deltaUnitRef.current,
+    });
   }, []);
   useLayoutEffect(() => {
     pointsRef.current = points;
     wRef.current = W;
     tzRef.current = tz;
     countUnitRef.current = countUnit;
+    deltaUnitRef.current = deltaUnit;
     applyPlayhead(playheadRef.current);
   });
   useLayoutEffect(() => {
@@ -362,29 +359,25 @@ export function SessionTimeline({
       <span className="shrink-0 text-muted-foreground">{countUnit}</span>
       <span className="text-muted-foreground">·</span>
       <span data-testid="session-playhead-date" ref={dateRef} className="font-semibold">{fmtDay(cur.t, tz)}</span>
-      {meta.window && (
-        <>
-          <span className="text-muted-foreground">·</span>
-          <span className="font-semibold">{meta.window}</span>
-        </>
-      )}
-      {meta.diff && (
-        <>
-          <span className="text-muted-foreground">·</span>
-          {meta.added != null && (
-            <span className="font-bold text-[var(--color-success)]">
-              +{meta.added}
-              {deltaUnit}
-            </span>
-          )}
-          {meta.removed != null && (
-            <span className="font-bold text-[var(--color-primary)]">
-              {meta.added != null ? ' ' : ''}−{meta.removed}
-              {deltaUnit}
-            </span>
-          )}
-        </>
-      )}
+      <span data-testid="session-playhead-window-sep" hidden={!meta.window} className="text-muted-foreground">·</span>
+      <span data-testid="session-playhead-window" hidden={!meta.window} className="font-semibold">
+        {meta.window ?? ''}
+      </span>
+      <span data-testid="session-playhead-diff-sep" hidden={!meta.diff} className="text-muted-foreground">·</span>
+      <span
+        data-testid="session-playhead-added"
+        hidden={meta.added == null}
+        className="font-bold text-[var(--color-success)]"
+      >
+        {meta.added != null ? `+${meta.added}${deltaUnit}` : ''}
+      </span>
+      <span
+        data-testid="session-playhead-removed"
+        hidden={meta.removed == null}
+        className="font-bold text-[var(--color-primary)]"
+      >
+        {meta.removed != null ? `${meta.added != null ? ' ' : ''}−${meta.removed}${deltaUnit}` : ''}
+      </span>
       {extra && <span className="text-muted-foreground">· {extra}</span>}
     </div>
   );

@@ -42,6 +42,13 @@ test.describe('admin user pages', () => {
     expect(last).toBeTruthy();
     expect(first).not.toEqual(last);
 
+    const chipText = () =>
+      page.evaluate(() =>
+        (document.querySelector('[data-testid="session-playhead-count"]')?.parentElement?.innerText ?? '')
+          .replace(/\s+/g, ' ')
+          .trim(),
+      );
+    const restChip = await chipText();
     await page.evaluate(() => {
       const board = document.querySelector('[data-testid="league-visit-board"]');
       (document.documentElement as HTMLElement & { __keepBoard?: Element | null }).__keepBoard = board;
@@ -66,8 +73,10 @@ test.describe('admin user pages', () => {
     expect(input0.sameNode).toBe(true);
     expect(input0.hidden).toBe(true);
     expect(input0.tiles).toBeGreaterThan(0);
-
+    const input0Chip = await chipText();
+    expect(input0Chip).not.toEqual(restChip);
     await scrub.fill('0');
+    expect(await chipText()).toBe(input0Chip);
     await expect(page.getByTestId('league-uncaptured')).toBeVisible();
     await expect(page.getByTestId('league-visit-board')).toBeHidden();
 
