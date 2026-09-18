@@ -13,8 +13,7 @@ import {
   HAS_LEAGUE,
   JOURNAL_MAX_PER_DAY,
   JOURNAL_PREFIX,
-  isFunnelEvent,
-  parseTool,
+  parseJournalEntry,
   type JournalEntry,
 } from './_events.js';
 
@@ -66,29 +65,7 @@ export function dayRange(from: string, to: string, maxDays = JOURNAL_MAX_DAYS): 
   return out;
 }
 
-/** Parse one stored entry. The SDK parses JSON strings back into objects when
- *  it can, so entries arrive as either — the same situation parseRecord
- *  handles for client records. */
-export function parseEntry(raw: unknown): JournalEntry | null {
-  let o: unknown = raw;
-  if (typeof raw === 'string') {
-    try {
-      o = JSON.parse(raw);
-    } catch {
-      return null;
-    }
-  }
-  if (!o || typeof o !== 'object') return null;
-  const e = o as Record<string, unknown>;
-  if (typeof e.t !== 'number' || typeof e.cid !== 'string' || !isFunnelEvent(e.ev)) return null;
-  return {
-    t: e.t,
-    cid: e.cid,
-    tool: parseTool(e.tool),
-    ev: e.ev,
-    ...(typeof e.page === 'string' ? { page: e.page } : {}),
-  };
-}
+export const parseEntry = parseJournalEntry;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {

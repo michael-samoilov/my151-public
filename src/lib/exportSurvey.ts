@@ -1,9 +1,15 @@
 /** One-shot export follow-up, shared by every export tool. */
 
+import {
+  EXPORT_SURVEY_SKIP_EVENT,
+  type ExportSurveySkipReason,
+  type ExportSurveyToolField,
+} from '../../api/_events';
 import { EARLY_EXPORT_BUCKETS } from '@/league/export/exportPersonalization';
 import { PRODUCTION_DEPLOY } from './demoMode';
 
-export type ExportSurveyTool = 'pokedex' | 'league' | 'card';
+export type ExportSurveyTool = ExportSurveyToolField;
+export type { ExportSurveySkipReason };
 
 export const EXPORT_SURVEY_TOOL_LABEL: Record<ExportSurveyTool, string> = {
   pokedex: 'Pokedex',
@@ -80,4 +86,41 @@ export function exportSurveyFeedbackRoute(tool: ExportSurveyTool): string {
 
 export function isExportSurveyTool(value: unknown): value is ExportSurveyTool {
   return value === 'pokedex' || value === 'league' || value === 'card';
+}
+
+export type ExportSurveySkipAction = 'not_now' | 'dismiss';
+
+export function exportSurveySkipReason(opts: {
+  phase: 'intro' | 'form';
+  action: ExportSurveySkipAction;
+}): ExportSurveySkipReason {
+  if (opts.action === 'not_now') return 'not_now';
+  return opts.phase === 'form' ? 'abandon' : 'close';
+}
+
+export function createExportSurveySkipReporter(opts: {
+  exportTool: ExportSurveyTool;
+  send: (
+    event: typeof EXPORT_SURVEY_SKIP_EVENT,
+    payload: { exportTool: ExportSurveyTool; reason: ExportSurveySkipReason },
+  ) => void;
+}) {
+  let closed = false;
+  const fire = (reason: ExportSurveySkipReason) => {
+    if (closed) return;
+    closed = true;
+    opts.send(EXPORT_SURVEY_SKIP_EVENT, {
+      exportTool: opts.exportTool,
+      reason,
+    });
+  };
+  return {
+    skip: fire,
+    markSent: () => {
+      closed = true;
+    },
+    onPageHide: (phase: 'intro' | 'form') => {
+      fire(phase === 'form' ? 'abandon' : 'close');
+    },
+  };
 }
