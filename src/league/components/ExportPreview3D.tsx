@@ -74,6 +74,7 @@ export function ExportPreview3D({
   const downRef = useRef<{ t: number; x: number; y: number; dragged: boolean } | null>(null);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
   const recipeRef = useRef(recipe);
+  const measureRef = useRef<() => void>(() => {});
   const [cardMax, setCardMax] = useState({ w: 0, h: 0 });
   const layerIds = activeFoilLayerIds(recipe);
   const { sat: needSat, edge: needEdge, gloss: needGloss } = foilMapsNeeded(recipe);
@@ -121,13 +122,13 @@ export function ExportPreview3D({
           c.bottom - live.bottom,
         );
       };
-      if (overflowOf() > 0.5) {
+      if (overflowOf() > 4) {
         let lo = 0;
         let hi = 1;
         for (let i = 0; i < 8; i++) {
           const mid = (lo + hi) / 2;
           applyRotate(rotateX * mid, rotateY * mid);
-          if (overflowOf() <= 0.5) lo = mid;
+          if (overflowOf() <= 4) lo = mid;
           else hi = mid;
         }
         rotateX *= lo;
@@ -187,8 +188,12 @@ export function ExportPreview3D({
         tiltDeg: recipeRef.current.idleTilt,
         pad: PREVIEW_REST_PAD,
       });
-      setCardMax({ w: size.width, h: size.height });
+      setCardMax((prev) => {
+        if (Math.abs(prev.w - size.width) < 1 && Math.abs(prev.h - size.height) < 1) return prev;
+        return { w: size.width, h: size.height };
+      });
     };
+    measureRef.current = apply;
     apply();
     const ro = new ResizeObserver(apply);
     ro.observe(stage);
@@ -413,18 +418,7 @@ export function ExportPreview3D({
               data-export-frame={frames?.activeKey}
               data-export-frame-active="1"
               onLoad={() => {
-                const stage = stageRef.current;
-                const img = imgRef.current;
-                if (!stage || !img || img.naturalWidth <= 0) return;
-                const r = stage.getBoundingClientRect();
-                const size = fitCardInPreviewBox({
-                  boxWidth: r.width,
-                  boxHeight: r.height,
-                  aspect: img.naturalWidth / img.naturalHeight,
-                  tiltDeg: recipeRef.current.idleTilt,
-                  pad: PREVIEW_REST_PAD,
-                });
-                setCardMax({ w: size.width, h: size.height });
+                measureRef.current();
               }}
             />
             {layerIds.map((id) => (
