@@ -405,7 +405,14 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      if(c.right>innerWidth+4||c.bottom>innerHeight+4) return {ok:false,reason:'viewport'};
      return {ok:true,reason:''};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
-  const shineOn = motion.foil > 0.1 && (motion.light > 0.02 || motion.holo > 0.02);
+  const shineMotion = idleB.foil >= idleA.foil ? idleB : idleA;
+  let shineSample = shineMotion;
+  let shineOn = shineSample.foil > 0.1 && (shineSample.light > 0.02 || shineSample.holo > 0.02);
+  for (let i = 0; i < 12 && !shineOn; i++) {
+    await sleep(150);
+    shineSample = await readDexPreviewMotion(s);
+    shineOn = shineSample.foil > 0.1 && (shineSample.light > 0.02 || shineSample.holo > 0.02);
+  }
   const hoverPts: Array<[number, number]> = [
     [0.18, 0.18],
     [0.82, 0.18],
@@ -492,7 +499,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:outlines-row', state.outlines, 'missing [data-export-outlines]'),
     ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta })),
     ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
-    ok('dex-export:shine', imgReady && shineOn, JSON.stringify(motion)),
+    ok('dex-export:shine', imgReady && shineOn, JSON.stringify(shineSample)),
     ok('dex-export:lock-on-press', locked.paused === '1' && locked.hypot < 0.8, JSON.stringify(locked)),
     ok('dex-export:card-fill', fill.ok, fill.reason),
     ok('dex-export:survey-sprite-scale', sprite.ok, `${sprite.reason} device=${sprite.devicePx.toFixed(1)} native=${sprite.native}`),

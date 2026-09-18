@@ -93,6 +93,12 @@ export function ExportPreview3D({
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
     const foil = mag <= recipeNow.deadDeg ? 0 : Math.min(1, (mag - recipeNow.deadDeg) / span);
     el.style.setProperty('--foil-opacity', foil.toFixed(3));
+    if (!el.style.getPropertyValue('--foil-pointLight')) {
+      const vars = foilRecipeCssVars(recipeNow);
+      for (const [key, value] of Object.entries(vars)) {
+        el.style.setProperty(key, value);
+      }
+    }
     el.setAttribute('data-tilt-x', rotateX.toFixed(1));
     el.setAttribute('data-tilt-y', rotateY.toFixed(1));
     el.setAttribute('data-tilt-scale', '1');
@@ -178,7 +184,7 @@ export function ExportPreview3D({
     for (const [key, value] of Object.entries(vars)) {
       el.style.setProperty(key, value);
     }
-  }, [recipe]);
+  }, [activeSrc, recipe]);
 
   useEffect(() => {
     const el = cardRef.current;
