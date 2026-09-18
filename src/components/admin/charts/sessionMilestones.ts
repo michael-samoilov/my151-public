@@ -61,6 +61,10 @@ function labelsWouldOverlap(a: PlacedMilestone, b: PlacedMilestone): boolean {
   return Math.abs(a.bx - b.bx) < Math.max(SKIP_LABEL_NEAR_PX, widthGap);
 }
 
+function sameMilestone(a: ChartMilestone, b: ChartMilestone): boolean {
+  return a.tone === b.tone && a.label === b.label;
+}
+
 export function placeMilestones(
   items: ChartMilestone[],
   xOf: (t: number) => number,
@@ -69,10 +73,10 @@ export function placeMilestones(
   const marks: PlacedMilestone[] = [];
   for (const m of items) {
     let bx = xOf(m.t);
-    const hit = marks.find((p) => Math.abs(bx - p.bx) < 10 && p.tone !== m.tone);
+    const hit = marks.find((p) => Math.abs(bx - p.bx) < 10 && !sameMilestone(p, m));
     if (hit) bx = hit.bx + 10;
     const prev = marks[marks.length - 1];
-    if (prev && Math.abs(bx - prev.bx) < mergePx && prev.tone === m.tone) {
+    if (prev && Math.abs(bx - prev.bx) < mergePx && sameMilestone(prev, m)) {
       prev.label = `${prev.label} · ${m.label}`;
       if (m.title) prev.title = prev.title ? `${prev.title} · ${m.title}` : m.title;
       prev.bx = (prev.bx + bx) / 2;

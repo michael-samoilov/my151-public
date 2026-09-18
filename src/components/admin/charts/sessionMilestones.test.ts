@@ -90,4 +90,18 @@ describe('skip milestones', () => {
     );
     expect(marks[1].labelDy).toBe(MILESTONE_LABEL_ABOVE);
   });
+
+  it('does not merge a card skip onto a league skip', () => {
+    const marks = placeMilestones(
+      [
+        { t: 10, label: 'card · abandon', tone: 'skip', title: 'export_survey_skipped · card · abandon' },
+        { t: 10, label: 'league · close', tone: 'skip', title: 'export_survey_skipped · league · close' },
+      ],
+      (t) => t,
+    );
+    expect(marks).toHaveLength(2);
+    expect(marks[0].label).toBe('card · abandon');
+    expect(marks[1].label).toBe('league · close');
+    expect(marks[1].bx).toBeGreaterThan(marks[0].bx);
+  });
 });
