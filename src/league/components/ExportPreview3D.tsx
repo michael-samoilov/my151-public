@@ -488,8 +488,7 @@ export function ExportPreview3D({
       if (overCard || (orbitRef.current === 'pointer' && overHit)) {
         const last = lastPointerRef.current;
         lastPointerRef.current = { x: e.clientX, y: e.clientY };
-        if (!last) return;
-        if (last.x === e.clientX && last.y === e.clientY && orbitRef.current !== 'pointer') return;
+        if (last && last.x === e.clientX && last.y === e.clientY && orbitRef.current !== 'pointer') return;
         const enterDelay = tiltRef.current?.enterDelay ?? 0;
         if (enterDelay > 0 && orbitRef.current !== 'pointer') {
           if (enterSinceRef.current === null) enterSinceRef.current = performance.now();

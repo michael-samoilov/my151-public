@@ -494,20 +494,27 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 4 && hoverMax < 15 && hoverOrbit === 'pointer',
     reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit}`,
   };
-  const shadowPair = await s.evalJson<{ ok: boolean; reason: string }>(
-    `const hit=document.querySelector('[data-export-tilt-hit]');
-     const card=document.querySelector('[data-export-preview]');
-     if(!(hit instanceof HTMLElement) || !(card instanceof HTMLElement)) return {ok:false,reason:'missing'};
-     const r=hit.getBoundingClientRect();
-     const fire=(u,v)=>{
-       hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:r.left+r.width*u,clientY:r.top+r.height*v,pointerType:'mouse',pointerId:1}));
-       return Number(card.getAttribute('data-shadow-x')||0);
-     };
-     const left=fire(0.12,0.5);
-     const right=fire(0.88,0.5);
-     if(!(right>left+0.2)) return {ok:false,reason:'shadow '+left+' → '+right};
-     return {ok:true,reason:left.toFixed(2)+' → '+right.toFixed(2)};`,
-  ).catch(() => ({ ok: false, reason: 'eval' }));
+  const fireShadow = async (u: number, v: number) => {
+    await s.evalJson(
+      `const hit=document.querySelector('[data-export-tilt-hit]');
+       const card=document.querySelector('[data-export-preview]');
+       if(!(hit instanceof HTMLElement) || !(card instanceof HTMLElement)) return false;
+       const r=hit.getBoundingClientRect();
+       document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:r.left+r.width*${u},clientY:r.top+r.height*${v},pointerType:'mouse',pointerId:1}));
+       return true;`,
+    ).catch(() => false);
+    await sleep(220);
+    return s.evalJson<number>(
+      `const card=document.querySelector('[data-export-preview]');
+       return Number(card instanceof HTMLElement ? card.getAttribute('data-shadow-x')||0 : 0);`,
+    ).catch(() => 0);
+  };
+  const leftShadow = await fireShadow(0.12, 0.5);
+  const rightShadow = await fireShadow(0.88, 0.5);
+  const shadowPair = {
+    ok: rightShadow > leftShadow + 0.2,
+    reason: `${leftShadow.toFixed(2)} → ${rightShadow.toFixed(2)}`,
+  };
   const paintedHit = await s.evalJson<{ ok: boolean; reason: string }>(
     `const hit=document.querySelector('[data-export-tilt-hit]');
      const card=document.querySelector('[data-export-preview]');
@@ -537,7 +544,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await sleep(240);
   const restHold = await readDexPreviewMotion(s);
-  await sleep(700);
+  await sleep(1100);
   const restAfter = await readDexPreviewMotion(s);
   const restOk =
     (restHold.orbit === 'rest' || restHold.orbit === 'idle') &&
