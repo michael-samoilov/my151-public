@@ -28,31 +28,22 @@ import {
 type Cell = { member: LineMember; index: number; linePicks: number; key: string };
 
 function packLineRows(lines: RankedLine[], cols = PICKS_COLS): { cells: Cell[]; spacers: number }[] {
-  const rows: { cells: Cell[]; spacers: number }[] = [];
-  let current: Cell[] = [];
-  let col = 0;
-  const close = (spacers: number) => {
-    rows.push({ cells: current, spacers });
-    current = [];
-    col = 0;
-  };
+  const cells: Cell[] = [];
   for (const line of lines) {
-    for (let at = 0; at < line.members.length; at += cols) {
-      const piece = line.members.slice(at, at + cols);
-      if (col > 0 && col + piece.length > cols) close(cols - col);
-      for (const member of piece) {
-        current.push({
-          member,
-          index: line.index,
-          linePicks: line.picks,
-          key: `${line.key}-${member.id}`,
-        });
-      }
-      col += piece.length;
-      if (col === cols) close(0);
+    for (const member of line.members) {
+      cells.push({
+        member,
+        index: member.index,
+        linePicks: line.picks,
+        key: `${line.key}-${member.id}`,
+      });
     }
   }
-  if (current.length > 0) close(cols - col);
+  const rows: { cells: Cell[]; spacers: number }[] = [];
+  for (let i = 0; i < cells.length; i += cols) {
+    const slice = cells.slice(i, i + cols);
+    rows.push({ cells: slice, spacers: cols - slice.length });
+  }
   return rows;
 }
 
@@ -477,7 +468,7 @@ export function PicksDetailPage({
         <p className="mt-1.5 text-[0.65rem] leading-snug text-muted-foreground">
           {offSection
             ? 'Placed off their default section. Numbers are dex counts. Evil-team chain mates (Rhyhorn with Rhydon) stay in-section.'
-            : '1.0× = random rate among this section\'s evo lines.'}
+            : '1.0× = random rate among this section\'s Pokémon.'}
         </p>
       </div>
       {sections.length === 0 ? (

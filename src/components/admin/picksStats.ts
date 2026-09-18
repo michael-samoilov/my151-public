@@ -8,19 +8,18 @@
  * Branched families split by leaf: Eevee→Vaporeon is not Eevee→Jolteon.
  * A lone Eevee joins whichever branch `getEvolutionLine(133)` walks first.
  *
- * Line pick count `p` is the max per-species placement count among members
- * of that line in the section. Species totals cannot name unique dexes, so
- * the max is the lower bound on "this line appeared."
+ * Each species keeps its own pick count. The over/under-index is that count
+ * against the uniform rate among default species in the section:
  *
- * Let `L` be the number of default evo lines in the section, and `S` the
- * sum of those lines' pick counts. Random choice among those lines gives
- * each an expected count of `S / L`. The over/under-index is
+ *     expected = T / N
+ *     index = picks / expected
  *
- *     index = p / (S / L) = p × L / S
- *
- * `1.0×` is the uniform rate. `2.0×` is twice that. Unpicked defaults are
- * `0×`. The Other catch-all uses lines that were actually placed there,
- * not the whole dex.
+ * `N` is the number of default species in the section. `T` is the sum of
+ * their pick counts. `1.0×` is the uniform rate. Unpicked defaults are `0×`.
+ * Lines stay grouped for ranking and display order: a line's `picks` and
+ * `index` are the max among its members. In-section Starters still show one
+ * first-stage face per chain, indexed from that chain's max picks against
+ * the line-level uniform rate (`S / L`).
  *
  * Most-picked ranks default lines only, and only lines above 1.10×.
  * Least-picked is only lines below 0.90×. In-section Starters list every
@@ -28,11 +27,11 @@
  * no most/least split and no 1.10× cutoff. The starter grid uses one full-width
  * row per type with column count = starter generation count from the Starter
  * category (today nine). Other in-section sections use the 6+3 combined row.
- * Rowlet) share one first-stage face. Off-section has no least column, shows
- * raw dex counts, never uses the starter type split or first-stage-only
- * faces, lays the sprite grid across the full width (12 columns on desktop,
- * 6 on mobile), and does not cap rows. One-off off-section placements stay
- * visible unless Exclude one-offs is on.
+ * Sprite packing wraps mid-line to fill the row. Off-section has no least
+ * column, shows raw dex counts, never uses the starter type split or
+ * first-stage-only faces, lays the sprite grid 9 columns wide, and does not
+ * cap rows. One-off off-section placements stay visible unless Exclude
+ * one-offs is on.
  */
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
@@ -52,17 +51,19 @@ export const PICKS_LEAST_DESKTOP_COLS = 3;
 /** Least column width in the combined most|least row (all viewports). */
 export const PICKS_LEAST_COLS = PICKS_LEAST_DESKTOP_COLS;
 export const PICKS_COMBINED_COLS = PICKS_MOST_COLS + PICKS_LEAST_DESKTOP_COLS;
-/** 12 columns across the section (starters and off-section desktop). */
+/** Legacy 12-col track count; off-section and the suite strip use 9. */
 export const PICKS_PAIR_COLS = 12;
-export const PICKS_OFF_DESKTOP_COLS = PICKS_PAIR_COLS;
+/** Off-section grid: 9 columns on phone and desktop, matching Most picked. */
+export const PICKS_OFF_COLS = PICKS_COMBINED_COLS;
+export const PICKS_OFF_DESKTOP_COLS = PICKS_OFF_COLS;
 export const PICKS_MAX_ROWS = 4;
 export const PICKS_GRID_CAP = { maxRows: PICKS_MAX_ROWS, cols: PICKS_COLS } as const;
 
 type GridCap = { maxRows: number; cols: number } | { maxLines: number };
 
-/** Desktop uses a full-width 12-col grid when there is no least column. */
-export function picksGridCols(wide: boolean, desktop: boolean): number {
-  return wide && desktop ? PICKS_PAIR_COLS : PICKS_COLS;
+/** Full-width grids (off-section) are 9 columns. Most/least halves stay 6. */
+export function picksGridCols(wide: boolean, _desktop: boolean): number {
+  return wide ? PICKS_OFF_COLS : PICKS_COLS;
 }
 
 /** In-section starter row width: one column per main-series generation in the Starter category. */
@@ -115,6 +116,7 @@ export interface LineMember {
   name: string;
   sprite: string;
   picks: number;
+  index: number;
 }
 
 export interface RankedLine {
@@ -224,8 +226,8 @@ export function indexBarPct(index: number, max: number): number {
   return Math.min(100, (index / max) * 100);
 }
 
-function memberOf(p: Pokemon, picks: number): LineMember {
-  return { id: p.id, name: p.name, sprite: p.sprite, picks };
+function memberOf(p: Pokemon, picks: number, index: number): LineMember {
+  return { id: p.id, name: p.name, sprite: p.sprite, picks, index };
 }
 
 function firstStageOf(ids: number[]): Pokemon | null {
@@ -261,27 +263,12 @@ function sortMembers(ids: number[]): Pokemon[] {
   return mons;
 }
 
-/** How many 6-wide rows `lines` occupy, packing like the sprite grid. */
+/** How many rows `lines` occupy when members wrap mid-line. */
 export function rowsUsed(lines: { members: readonly unknown[] }[], cols = PICKS_COLS): number {
-  let rows = 0;
-  let col = 0;
-  const close = () => {
-    rows += 1;
-    col = 0;
-  };
-  for (const line of lines) {
-    let remaining = line.members.length;
-    if (remaining === 0) continue;
-    while (remaining > 0) {
-      const piece = Math.min(remaining, cols);
-      if (col > 0 && col + piece > cols) close();
-      col += piece;
-      remaining -= piece;
-      if (col === cols) close();
-    }
-  }
-  if (col > 0) rows += 1;
-  return rows;
+  let n = 0;
+  for (const line of lines) n += line.members.length;
+  if (n === 0) return 0;
+  return Math.ceil(n / cols);
 }
 
 function takeUntilCap<T extends { key: string; members: readonly unknown[] }>(
@@ -351,8 +338,36 @@ function groupByLine(ids: Iterable<number>): Map<string, number[]> {
   return groups;
 }
 
+function indexOfCount(picks: number, expected: number | null): number {
+  if (expected === null) return picks > 0 ? 1 : 0;
+  return picks / expected;
+}
+
+function lineExpected(universe: Map<string, number[]>, counts: Map<number, number>): number | null {
+  let S = 0;
+  let L = 0;
+  for (const memberIds of universe.values()) {
+    L += 1;
+    S += linePicks(memberIds, counts);
+  }
+  return L > 0 && S > 0 ? S / L : null;
+}
+
+function speciesExpected(universe: Map<string, number[]>, counts: Map<number, number>): number | null {
+  let T = 0;
+  let N = 0;
+  for (const memberIds of universe.values()) {
+    for (const id of memberIds) {
+      N += 1;
+      T += counts.get(id) ?? 0;
+    }
+  }
+  return N > 0 && T > 0 ? T / N : null;
+}
+
 /**
- * Index `groups` against expected count `S / L` from `universe`.
+ * Index `groups` against the section universe.
+ * Species (default) use `T / N`. First-stage starter faces use `S / L`.
  * Off-section lines use the section's default universe as the 1× baseline.
  */
 export function indexGroups(
@@ -361,28 +376,35 @@ export function indexGroups(
   universe: Map<string, number[]>,
   opts: { firstStageOnly?: boolean } = {},
 ): RankedLine[] {
-  let S = 0;
-  let L = 0;
-  for (const memberIds of universe.values()) {
-    L += 1;
-    S += linePicks(memberIds, counts);
-  }
-  const expected = L > 0 && S > 0 ? S / L : null;
+  const expected = opts.firstStageOnly
+    ? lineExpected(universe, counts)
+    : speciesExpected(universe, counts);
   const ranked: RankedLine[] = [];
   for (const [key, memberIds] of groups) {
-    const picks = linePicks(memberIds, counts);
-    const index = expected === null ? (picks > 0 ? 1 : 0) : picks / expected;
     let members: LineMember[];
     let typeId: number;
+    let picks: number;
+    let index: number;
     if (opts.firstStageOnly) {
       const face = firstStageOf(memberIds);
       if (!face) continue;
-      members = [memberOf(face, picks)];
+      picks = linePicks(memberIds, counts);
+      index = indexOfCount(picks, expected);
+      members = [memberOf(face, picks, index)];
       typeId = face.id;
     } else {
       const mons = sortMembers(memberIds);
       if (mons.length === 0) continue;
-      members = mons.map((p) => memberOf(p, counts.get(p.id) ?? 0));
+      members = mons.map((p) => {
+        const n = counts.get(p.id) ?? 0;
+        return memberOf(p, n, indexOfCount(n, expected));
+      });
+      picks = 0;
+      index = 0;
+      for (const m of members) {
+        if (m.picks > picks) picks = m.picks;
+        if (m.index > index) index = m.index;
+      }
       typeId = mons[0].id;
     }
     ranked.push({

@@ -140,6 +140,29 @@ describe('index: Pichu dropped from a popular line', () => {
     );
   });
 
+  it('indexes Pichu below Pikachu when Pichu has fewer picks', () => {
+    const view = sectionPicksView('pikachu-clone', [
+      count(PICHU, 94),
+      count(PIKACHU, 109),
+      count(RAICHU, 108),
+    ]);
+    expect(view?.kind).toBe('plain');
+    if (view?.kind !== 'plain') return;
+    const line =
+      view.columns.most.find((l) => l.members.some((m) => m.id === PIKACHU)) ??
+      view.columns.least.find((l) => l.members.some((m) => m.id === PIKACHU));
+    const pichu = line?.members.find((m) => m.id === PICHU);
+    const pikachu = line?.members.find((m) => m.id === PIKACHU);
+    const raichu = line?.members.find((m) => m.id === RAICHU);
+    expect(pichu).toBeTruthy();
+    expect(pikachu).toBeTruthy();
+    expect(raichu).toBeTruthy();
+    expect(pichu!.index).toBeLessThan(pikachu!.index);
+    expect(pichu!.index / pikachu!.index).toBeCloseTo(94 / 109);
+    expect(raichu!.index / pikachu!.index).toBeCloseTo(108 / 109);
+    expect(formatIndex(pichu!.index)).not.toBe(formatIndex(pikachu!.index));
+  });
+
   it('is 2.0× when a line is picked twice the uniform rate among two lines', () => {
     const rows: [string, number][] = [
       count(PIKACHU, 80),
@@ -250,6 +273,11 @@ describe('rowsUsed', () => {
     expect(rowsUsed(lines, 6)).toBe(2);
     expect(rowsUsed(lines, 12)).toBe(1);
   });
+
+  it('packs three 4-member lines onto two 6-wide rows by splitting lines', () => {
+    const lines = Array.from({ length: 3 }, () => ({ members: [0, 0, 0, 0] }));
+    expect(rowsUsed(lines, 6)).toBe(2);
+  });
 });
 
 describe('starterGenerationCount', () => {
@@ -260,13 +288,13 @@ describe('starterGenerationCount', () => {
 });
 
 describe('picksGridCols', () => {
-  it('widens desktop only when the grid is full width', () => {
+  it('uses 9 columns for off-section on phone and desktop', () => {
     expect(picksGridCols(false, true)).toBe(6);
-    expect(picksGridCols(true, false)).toBe(6);
-    expect(picksGridCols(true, true)).toBe(12);
+    expect(picksGridCols(true, false)).toBe(9);
+    expect(picksGridCols(true, true)).toBe(9);
     expect(picksStarterCols()).toBe(9);
-    expect(picksGridCap(true, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 12 });
-    expect(picksGridCap(true, false)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 6 });
+    expect(picksGridCap(true, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 9 });
+    expect(picksGridCap(true, false)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 9 });
     expect(picksGridCap(false, true)).toEqual({ maxRows: 4, cols: 6 });
   });
 });

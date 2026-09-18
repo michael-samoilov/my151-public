@@ -8,7 +8,7 @@ import { expect, test, type Page } from '@playwright/test';
  * uses one 9-column row (6 most + 3 least) on phone and desktop. In-section Starters
  * list every first-stage face across the full row at most|least tile size,
  * split by grass / fire / water, with no most/least. Nine faces fit one row.
- * Off-section Starters do not.
+ * Off-section Starters do not. Off-section sprite grids are 9 columns.
  */
 
 async function openPicks(page: Page) {
@@ -78,6 +78,16 @@ test.describe('admin picks page', () => {
     }
     await expect(page.locator('[data-picks-layout="combined-9"]').first()).toBeVisible();
 
+    const pikaMeter = page.locator('[data-section-id="pikachu-clone"] [data-face-id="25"] [data-index-meter]');
+    const pichuMeter = page.locator('[data-section-id="pikachu-clone"] [data-face-id="172"] [data-index-meter]');
+    await expect(pikaMeter).toBeVisible();
+    await expect(pichuMeter).toBeVisible();
+    const pikaX = await pikaMeter.getAttribute('data-index-meter');
+    const pichuX = await pichuMeter.getAttribute('data-index-meter');
+    expect(pichuX).toBeTruthy();
+    expect(pikaX).toBeTruthy();
+    expect(pichuX).not.toBe(pikaX);
+
     await expect.poll(async () =>
       starters.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
     ).toBe(true);
@@ -107,7 +117,7 @@ test.describe('admin picks page', () => {
     expect(faceIds).toContain(172);
     expect(faceIds).toContain(25);
 
-    const expectedCols = test.info().project.name === 'desktop' ? 12 : 6;
+    const expectedCols = 9;
     await expect(starters.locator('[data-picks-side="most"]')).toHaveAttribute(
       'data-picks-cols',
       String(expectedCols),
@@ -116,6 +126,16 @@ test.describe('admin picks page', () => {
       getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length,
     );
     expect(gridCols).toBe(expectedCols);
+    const evilCols = await evil.locator('[data-picks-side="most"]').getAttribute('data-picks-cols');
+    expect(evilCols).toBe('9');
+    const evilFirstRow = await evil
+      .locator('[data-picks-side="most"] > div > .grid')
+      .first()
+      .locator('[data-face-id]')
+      .count();
+    const evilTotal = await evil.locator('[data-picks-side="most"] [data-face-id]').count();
+    expect(evilTotal).toBeGreaterThan(9);
+    expect(evilFirstRow).toBe(9);
   });
 
   test('off-section includes one-offs until Exclude one-offs is on', async ({ page }) => {
