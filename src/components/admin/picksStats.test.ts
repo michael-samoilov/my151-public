@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  LEAST_MAX_INDEX,
-  MOST_MIN_INDEX,
   PICKS_GRID_CAP,
   formatIndex,
   indexBarPct,
@@ -15,7 +13,6 @@ import {
   poolIdsForSection,
   rowsUsed,
   sectionPicksView,
-  splitMostLeast,
   starterTypeOf,
 } from './picksStats';
 
@@ -181,6 +178,29 @@ describe('index: Pichu dropped from a popular line', () => {
     expect(pikaLine?.key).not.toBe(pichuLine?.key);
   });
 
+  it('lists every default Pikaclone species in one grid, including Pichu and 0×', () => {
+    const view = sectionPicksView('pikachu-clone', [
+      count(PICHU, 85),
+      count(PIKACHU, 100),
+      count(RAICHU, 100),
+      count(MAGIKARP, 50),
+    ]);
+    expect(view?.kind).toBe('plain');
+    if (view?.kind !== 'plain') return;
+    expect(view.columns.least).toEqual([]);
+    const mostIds = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    const pool = [...poolIdsForSection('pikachu-clone')];
+    expect(mostIds).toHaveLength(pool.length);
+    expect(new Set(mostIds)).toEqual(new Set(pool));
+    expect(mostIds).toContain(PICHU);
+    expect(mostIds).toContain(PIKACHU);
+    expect(mostIds).not.toContain(MAGIKARP);
+    expect(mostIds.indexOf(PIKACHU)).toBeLessThan(mostIds.indexOf(PICHU));
+    expect(view.columns.most.every((l) => l.members.length === 1)).toBe(true);
+    const last = view.columns.most.at(-1);
+    expect(last?.index).toBe(0);
+  });
+
   it('is 2.0× when a line is picked twice the uniform rate among two lines', () => {
     const rows: [string, number][] = [
       count(PIKACHU, 80),
@@ -204,65 +224,6 @@ describe('index: Pichu dropped from a popular line', () => {
     expect(pika!.picks / plusle!.picks).toBe(2);
     expect(pika!.index / plusle!.index).toBeCloseTo(2);
     expect(pika!.index).toBeGreaterThan(plusle!.index);
-  });
-});
-
-describe('splitMostLeast', () => {
-  const line = (key: string, index: number, n = 1) => ({
-    key,
-    index,
-    members: Array.from({ length: n }, () => ({})),
-  });
-  const cap12 = { maxLines: 12 };
-
-  it('caps most and puts the lowest-index remainder last in least', () => {
-    const ranked = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o'].map(
-      (k, i) => line(k, 20 - i),
-    );
-    const { most, least } = splitMostLeast(ranked, cap12);
-    expect(most.map((l) => l.key)).toEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l']);
-    expect(least.map((l) => l.key)).toEqual(['m', 'n', 'o']);
-    expect(least.at(-1)?.key).toBe('o');
-  });
-
-  it('keeps a small set in most and leaves least empty', () => {
-    const ranked = [line('a', 3), line('b', 2)];
-    const { most, least } = splitMostLeast(ranked, cap12);
-    expect(most.map((l) => l.key)).toEqual(['a', 'b']);
-    expect(least).toEqual([]);
-  });
-
-  it('omits most at or below 1.10× and least at or above 0.90×', () => {
-    const ranked = [
-      line('hot', 2.4),
-      line('warm', 1.2),
-      line('edge', 1.1),
-      line('mid', 1.0),
-      line('cool', 0.9),
-      line('cold', 0.84),
-      line('zero', 0),
-    ];
-    const { most, least } = splitMostLeast(ranked, cap12, {
-      minMostIndex: MOST_MIN_INDEX,
-      maxLeastIndex: LEAST_MAX_INDEX,
-    });
-    expect(most.map((l) => l.key)).toEqual(['hot', 'warm']);
-    expect(least.map((l) => l.key)).toEqual(['cold', 'zero']);
-    expect(least.at(-1)?.key).toBe('zero');
-  });
-
-  it('drops least when includeLeast is false', () => {
-    const ranked = [line('a', 2), line('b', 0.1)];
-    const { most, least } = splitMostLeast(ranked, cap12, { includeLeast: false });
-    expect(most.map((l) => l.key)).toEqual(['a', 'b']);
-    expect(least).toEqual([]);
-  });
-
-  it('takes the lowest cap of remainder, not the lines just below most', () => {
-    const ranked = Array.from({ length: 20 }, (_, i) => line(`k${i}`, 20 - i));
-    const { most, least } = splitMostLeast(ranked, { maxLines: 3 });
-    expect(most.map((l) => l.key)).toEqual(['k0', 'k1', 'k2']);
-    expect(least.map((l) => l.key)).toEqual(['k17', 'k18', 'k19']);
   });
 });
 
@@ -305,28 +266,30 @@ describe('starterGenerationCount', () => {
 });
 
 describe('picksGridCols', () => {
-  it('uses 9 columns for off-section on phone and desktop', () => {
+  it('uses 9 columns for Most picked and off-section on phone and desktop', () => {
     expect(picksGridCols(false, true)).toBe(6);
     expect(picksGridCols(true, false)).toBe(9);
     expect(picksGridCols(true, true)).toBe(9);
     expect(picksStarterCols()).toBe(9);
     expect(picksGridCap(true, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 9 });
     expect(picksGridCap(true, false)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 9 });
-    expect(picksGridCap(false, true)).toEqual({ maxRows: 4, cols: 6 });
+    expect(picksGridCap(false, true)).toEqual({ maxRows: Number.POSITIVE_INFINITY, cols: 9 });
   });
 });
 
 describe('picksSplitCap', () => {
-  it('uses a narrower least cap on desktop most-picked', () => {
+  it('uses one uncapped 9-column grid on Most picked and off-section', () => {
     expect(picksSplitCap(false, true)).toEqual({
-      kind: 'dual',
-      most: PICKS_GRID_CAP,
-      least: { maxRows: 4, cols: 3 },
+      kind: 'single',
+      cap: { maxRows: Number.POSITIVE_INFINITY, cols: 9 },
     });
     expect(picksSplitCap(false, false)).toEqual({
-      kind: 'dual',
-      most: PICKS_GRID_CAP,
-      least: { maxRows: 4, cols: 3 },
+      kind: 'single',
+      cap: { maxRows: Number.POSITIVE_INFINITY, cols: 9 },
+    });
+    expect(picksSplitCap(true, true)).toEqual({
+      kind: 'single',
+      cap: { maxRows: Number.POSITIVE_INFINITY, cols: 9 },
     });
   });
 });
