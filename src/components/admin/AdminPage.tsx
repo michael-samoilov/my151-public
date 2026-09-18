@@ -23,7 +23,7 @@ import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineM
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/components/admin/dexPresence';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
-import { leagueBoardAtPlayhead, leagueOccupancyAtPlayhead } from '@/components/admin/leaguePlayhead';
+import { leagueOccupancyAtPlayhead } from '@/components/admin/leaguePlayhead';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import {
@@ -1062,7 +1062,6 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
     });
   }, [log, ms]);
   const idx = Math.min(i, Math.max(0, log.length - 1));
-  const cur = log[idx];
   const peak = Math.max(0, ...points.map((p) => p.net));
   const totalMs = ms.reduce((a, b) => a + b, 0);
   const t0 = log.length ? log[0].ts : 0;
@@ -1084,16 +1083,12 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
     () => log.map((s, k) => leagueOccupancyAtPlayhead(s.cards, k === log.length - 1)),
     [log],
   );
-  const boardModel = leagueBoardAtPlayhead({
-    sessionCards: cur?.cards,
-    latestCards: league.latestCards,
-    isLatestSession: idx === log.length - 1,
-  });
-  const layoutCards = boardModel.kind === 'uncaptured' ? null : boardModel.cards;
-  const presentIds = boardModel.kind === 'captured' ? boardModel.presentIds : undefined;
+  const layoutCards =
+    league.latestCards && league.latestCards.length > 0 ? league.latestCards : null;
+  const occupancy = sessionOccupancy[idx] ?? { kind: 'all' as const };
 
   const board = layoutCards ? (
-    <LeagueVisitBoard cards={layoutCards} presentIds={presentIds} sessionOccupancy={sessionOccupancy} />
+    <LeagueVisitBoard cards={layoutCards} occupancy={occupancy} sessionOccupancy={sessionOccupancy} />
   ) : (
     <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
   );

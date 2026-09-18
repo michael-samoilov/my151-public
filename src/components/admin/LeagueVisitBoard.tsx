@@ -10,8 +10,10 @@ import { ROW_COUNT, TEAM_SIZES, slotKind, slotRow } from '@/league/model/constan
 import { defaultBoundaries, deriveRows, visibleMembers, type PlacedLine } from '@/league/model/engine';
 import { cardShades } from '@/league/theme';
 import { BossBall, Crown } from '@/league/components/glyphs';
-import { applyMemberPresence } from '@/components/admin/memberPresence';
-import { occupancyPresent, type LeagueOccupancy } from '@/components/admin/leaguePlayhead';
+import { applyLeaguePlayhead } from '@/components/admin/memberPresence';
+import type { LeagueOccupancy } from '@/components/admin/leaguePlayhead';
+
+const ALL_OCCUPANCY: LeagueOccupancy = { kind: 'all' };
 
 /** The fields a visit board reads. Matches `LeagueCard` on AdminPage. */
 interface VisitCard {
@@ -113,35 +115,29 @@ function MiniTile({ id, ace, fill, wash }: { id: number; ace?: boolean; fill?: b
 
 function useMemberPresence(
   rootRef: RefObject<HTMLElement | null>,
-  presentIds: number[] | undefined,
+  occupancy: LeagueOccupancy,
   sessionOccupancy: LeagueOccupancy[] | undefined,
 ) {
-  const present = useMemo(() => (presentIds ? new Set(presentIds) : null), [presentIds]);
-  const bySession = useMemo(
-    () => sessionOccupancy?.map(occupancyPresent),
-    [sessionOccupancy],
-  );
-
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return;
-    applyMemberPresence(root, present);
-  }, [present, rootRef]);
+    applyLeaguePlayhead(root, occupancy);
+  }, [occupancy, rootRef]);
 
   useLayoutEffect(() => {
-    if (!bySession) return;
+    if (!sessionOccupancy) return;
     const applyFromSlider = () => {
       const root = rootRef.current;
       const el = document.querySelector('input[aria-label="Scrub sessions"]');
       if (!root || !(el instanceof HTMLInputElement)) return;
       const i = Number(el.value);
-      if (!Number.isFinite(i) || i < 0 || i >= bySession.length) return;
-      applyMemberPresence(root, bySession[i] ?? null);
+      if (!Number.isFinite(i) || i < 0 || i >= sessionOccupancy.length) return;
+      applyLeaguePlayhead(root, sessionOccupancy[i] ?? occupancy);
     };
     document.addEventListener('input', applyFromSlider, true);
     applyFromSlider();
     return () => document.removeEventListener('input', applyFromSlider, true);
-  }, [bySession, rootRef]);
+  }, [sessionOccupancy, occupancy, rootRef]);
 }
 
 function placedOf(card: VisitCard | undefined): { lines: PlacedLine[]; legends: { seat: number; pokemonId: number }[] } {
@@ -248,9 +244,11 @@ function colsThatFit(availW: number, availH: number): 14 | 7 {
 const DesktopGymStrip = memo(function DesktopGymStrip({
   cards,
   hostRef,
+  hidden,
 }: {
   cards: VisitCard[];
   hostRef: RefObject<HTMLDivElement | null>;
+  hidden?: boolean;
 }) {
   const bySlot = useMemo(() => {
     const next = new Map<number, VisitCard>();
@@ -278,6 +276,7 @@ const DesktopGymStrip = memo(function DesktopGymStrip({
       ref={hostRef}
       data-testid="league-visit-board"
       data-cols={cols}
+      hidden={hidden}
       className="h-full min-h-0 w-full flex-1 overflow-hidden"
     >
       <div
@@ -375,9 +374,11 @@ function slotCellStyle(i: number): CSSProperties {
 const MobileLeagueBoard = memo(function MobileLeagueBoard({
   cards,
   hostRef,
+  hidden,
 }: {
   cards: VisitCard[];
   hostRef: RefObject<HTMLDivElement | null>;
+  hidden?: boolean;
 }) {
   const bySlot = useMemo(() => {
     const next = new Map<number, VisitCard>();
@@ -388,6 +389,7 @@ const MobileLeagueBoard = memo(function MobileLeagueBoard({
     <div
       ref={hostRef}
       data-testid="league-visit-board"
+      hidden={hidden}
       className="grid w-full gap-1"
       style={{
         gridTemplateColumns: 'repeat(6, minmax(0, 1fr))',
@@ -405,16 +407,33 @@ const MobileLeagueBoard = memo(function MobileLeagueBoard({
 
 export const LeagueVisitBoard = memo(function LeagueVisitBoard({
   cards,
-  presentIds,
+  occupancy,
   sessionOccupancy,
 }: {
   cards: VisitCard[];
-  presentIds?: number[];
+  occupancy?: LeagueOccupancy;
   sessionOccupancy?: LeagueOccupancy[];
 }) {
   const desktop = useIsDesktop();
+  const wrapRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
-  useMemberPresence(hostRef, presentIds, sessionOccupancy);
-  if (desktop) return <DesktopGymStrip cards={cards} hostRef={hostRef} />;
-  return <MobileLeagueBoard cards={cards} hostRef={hostRef} />;
+  const current = occupancy ?? ALL_OCCUPANCY;
+  useMemberPresence(wrapRef, current, sessionOccupancy);
+  const hideBoard = current.kind === 'none';
+  return (
+    <div ref={wrapRef} className="flex min-h-0 w-full flex-1 flex-col">
+      <p
+        data-testid="league-uncaptured"
+        hidden={!hideBoard}
+        className="text-xs text-muted-foreground"
+      >
+        Structure not captured for this session.
+      </p>
+      {desktop ? (
+        <DesktopGymStrip cards={cards} hostRef={hostRef} hidden={hideBoard} />
+      ) : (
+        <MobileLeagueBoard cards={cards} hostRef={hostRef} hidden={hideBoard} />
+      )}
+    </div>
+  );
 });

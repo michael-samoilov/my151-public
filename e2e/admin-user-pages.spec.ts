@@ -42,90 +42,76 @@ test.describe('admin user pages', () => {
     expect(last).toBeTruthy();
     expect(first).not.toEqual(last);
 
+    await page.evaluate(() => {
+      const board = document.querySelector('[data-testid="league-visit-board"]');
+      (document.documentElement as HTMLElement & { __keepBoard?: Element | null }).__keepBoard = board;
+    });
+    await scrub.evaluate((el) => {
+      const input = el as HTMLInputElement;
+      input.value = '0';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(page.getByTestId('league-uncaptured')).toBeVisible();
+    await expect(page.getByTestId('league-visit-board')).toBeHidden();
+    expect(await page.getByTestId('league-visit-board').count()).toBe(1);
+    const input0 = await page.evaluate(() => {
+      const board = document.querySelector('[data-testid="league-visit-board"]');
+      const keep = (document.documentElement as HTMLElement & { __keepBoard?: Element | null }).__keepBoard;
+      return {
+        sameNode: keep != null && keep === board,
+        tiles: board?.querySelectorAll('[data-member-id]').length ?? 0,
+        hidden: board instanceof HTMLElement ? board.hidden : false,
+      };
+    });
+    expect(input0.sameNode).toBe(true);
+    expect(input0.hidden).toBe(true);
+    expect(input0.tiles).toBeGreaterThan(0);
+
     await scrub.fill('0');
-    await expect(page.getByText('Structure not captured for this session.')).toBeVisible();
-    expect(await page.locator('[data-member-id]').count()).toBe(0);
-    expect(await page.getByTestId('league-visit-board').count()).toBe(0);
+    await expect(page.getByTestId('league-uncaptured')).toBeVisible();
+    await expect(page.getByTestId('league-visit-board')).toBeHidden();
 
     await scrub.fill('1');
     await expect(page.getByTestId('league-visit-board')).toBeVisible();
-    if (info.project.name !== 'desktop') {
-      await expect
-        .poll(async () =>
-          page.locator('[data-testid^="admin-slot-"]', { hasText: 'empty' }).count(),
-        )
-        .toBeGreaterThan(0);
-    } else {
-      await expect
-        .poll(async () =>
-          page.evaluate(
-            () =>
-              [...document.querySelectorAll('[data-testid="admin-gym-card"]')].filter((n) =>
-                n.querySelector('[data-member-id]'),
-              ).length,
-          ),
-        )
-        .toBeLessThan(14);
-    }
+    await expect(page.getByTestId('league-uncaptured')).toBeHidden();
     const mid = await page.evaluate(() => {
       const board = document.querySelector('[data-testid="league-visit-board"]');
-      const empty = [...(board?.querySelectorAll('[data-testid^="admin-slot-"]') ?? [])].filter((n) =>
-        (n.textContent || '').includes('empty'),
-      ).length;
+      const keep = (document.documentElement as HTMLElement & { __keepBoard?: Element | null }).__keepBoard;
+      const tiles = [...(board?.querySelectorAll('[data-member-id]') ?? [])];
       return {
-        tiles: document.querySelectorAll('[data-member-id]').length,
-        empty,
+        sameNode: keep != null && keep === board,
+        tiles: tiles.length,
+        faded: tiles.filter((n) => (n as HTMLElement).style.opacity === '0.14').length,
         slots: board?.querySelectorAll('[data-testid^="admin-slot-"]').length ?? 0,
-        filledGyms: [...(board?.querySelectorAll('[data-testid="admin-gym-card"]') ?? [])].filter((n) =>
+        gyms: board?.querySelectorAll('[data-testid="admin-gym-card"]').length ?? 0,
+      };
+    });
+    expect(mid.sameNode).toBe(true);
+    expect(mid.tiles).toBeGreaterThan(0);
+    expect(mid.tiles).toBe(input0.tiles);
+
+    await scrub.fill('2');
+    await expect(page.getByTestId('league-visit-board')).toBeVisible();
+    const end = await page.evaluate(() => {
+      const board = document.querySelector('[data-testid="league-visit-board"]');
+      const keep = (document.documentElement as HTMLElement & { __keepBoard?: Element | null }).__keepBoard;
+      const tiles = [...(board?.querySelectorAll('[data-member-id]') ?? [])];
+      return {
+        sameNode: keep != null && keep === board,
+        tiles: tiles.length,
+        faded: tiles.filter((n) => (n as HTMLElement).style.opacity === '0.14').length,
+        gyms: [...(board?.querySelectorAll('[data-testid="admin-gym-card"]') ?? [])].filter((n) =>
           n.querySelector('[data-member-id]'),
         ).length,
       };
     });
-    expect(mid.tiles).toBeGreaterThan(0);
-
-    await scrub.fill('2');
-    if (info.project.name !== 'desktop') {
-      await expect
-        .poll(async () =>
-          page.locator('[data-testid^="admin-slot-"]', { hasText: 'empty' }).count(),
-        )
-        .toBe(0);
-    } else {
-      await expect
-        .poll(async () =>
-          page.evaluate(
-            () =>
-              [...document.querySelectorAll('[data-testid="admin-gym-card"]')].filter((n) =>
-                n.querySelector('[data-member-id]'),
-              ).length,
-          ),
-        )
-        .toBe(14);
-    }
-    const end = await page.evaluate(() => {
-      const board = document.querySelector('[data-testid="league-visit-board"]');
-      const empty = [...(board?.querySelectorAll('[data-testid^="admin-slot-"]') ?? [])].filter((n) =>
-        (n.textContent || '').includes('empty'),
-      ).length;
-      const filledGyms = [...(board?.querySelectorAll('[data-testid="admin-gym-card"]') ?? [])].filter((n) =>
-        n.querySelector('[data-member-id]'),
-      ).length;
-      return {
-        tiles: document.querySelectorAll('[data-member-id]').length,
-        empty,
-        filledGyms,
-      };
-    });
-    expect(end.tiles).toBeGreaterThan(0);
+    expect(end.sameNode).toBe(true);
+    expect(end.tiles).toBe(mid.tiles);
+    expect(end.faded).toBe(0);
     if (info.project.name !== 'desktop') {
       expect(mid.slots).toBe(14);
-      expect(mid.empty).toBeGreaterThan(0);
-      expect(mid.empty).toBeGreaterThan(end.empty);
-      expect(end.empty).toBe(0);
     } else {
-      expect(mid.filledGyms).toBeGreaterThan(0);
-      expect(mid.filledGyms).toBeLessThan(end.filledGyms);
-      expect(end.filledGyms).toBe(14);
+      expect(end.gyms).toBe(14);
     }
 
     if (info.project.name !== 'desktop') {

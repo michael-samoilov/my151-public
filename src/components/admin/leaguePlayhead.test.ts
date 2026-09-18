@@ -1,55 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import {
-  leagueBoardAtPlayhead,
-  leagueOccupancyAtPlayhead,
-  occupancyPresent,
-} from './leaguePlayhead';
+import { leagueOccupancyAtPlayhead, occupancyPresent } from './leaguePlayhead';
 
 const gym = (i: number, ids: number[]) => ({ i, l: [{ b: ids }] });
-const latest = [gym(0, [1, 4, 7]), gym(1, [25])];
 const early = [gym(0, [1])];
-
-describe('leagueBoardAtPlayhead', () => {
-  it('uses the sitting snapshot when the session stored cards', () => {
-    expect(
-      leagueBoardAtPlayhead({
-        sessionCards: early,
-        latestCards: latest,
-        isLatestSession: false,
-      }),
-    ).toEqual({ kind: 'captured', cards: early, presentIds: [1] });
-  });
-
-  it('does not paint latestCards for a historical sitting with no snapshot', () => {
-    expect(
-      leagueBoardAtPlayhead({
-        sessionCards: undefined,
-        latestCards: latest,
-        isLatestSession: false,
-      }),
-    ).toEqual({ kind: 'uncaptured' });
-  });
-
-  it('falls back to latestCards only for the current sitting', () => {
-    expect(
-      leagueBoardAtPlayhead({
-        sessionCards: undefined,
-        latestCards: latest,
-        isLatestSession: true,
-      }),
-    ).toEqual({ kind: 'latest', cards: latest });
-  });
-
-  it('treats an empty cards array as missing structure', () => {
-    expect(
-      leagueBoardAtPlayhead({
-        sessionCards: [],
-        latestCards: latest,
-        isLatestSession: false,
-      }),
-    ).toEqual({ kind: 'uncaptured' });
-  });
-});
 
 describe('leagueOccupancyAtPlayhead', () => {
   it('returns the sitting member ids when cards exist', () => {
@@ -62,6 +15,10 @@ describe('leagueOccupancyAtPlayhead', () => {
 
   it('returns all for the current sitting with no snapshot', () => {
     expect(leagueOccupancyAtPlayhead(undefined, true)).toEqual({ kind: 'all' });
+  });
+
+  it('treats an empty cards array as missing structure', () => {
+    expect(leagueOccupancyAtPlayhead([], false)).toEqual({ kind: 'none' });
   });
 });
 
