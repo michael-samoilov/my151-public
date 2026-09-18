@@ -1,14 +1,90 @@
 /** Geometry for keeping a tilted export card inside its preview box. */
 
 export const PREVIEW_PERSPECTIVE_PX = 600;
-export const PREVIEW_LIFT_Z = 16;
+export const PREVIEW_REST_PAD = 8;
+
+export type ProjectedCardAabb = {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+  width: number;
+  height: number;
+};
 
 function rad(deg: number): number {
   return (deg * Math.PI) / 180;
 }
 
 /**
- * Screen-space size of a plane after rotateX/rotateY plus a small lift,
+ * Screen-space AABB of a plane after CSS `rotateY() rotateX()` (rotateX first)
+ * under a perspective camera sitting `perspectivePx` in front of the card.
+ * Origin is the card centre. No translateZ — the rotator does not lift.
+ */
+export function projectedCardAabb(opts: {
+  width: number;
+  height: number;
+  tiltXDeg: number;
+  tiltYDeg: number;
+  perspectivePx?: number;
+}): ProjectedCardAabb {
+  const width = Math.max(0, opts.width);
+  const height = Math.max(0, opts.height);
+  const perspectivePx = opts.perspectivePx ?? PREVIEW_PERSPECTIVE_PX;
+  const ax = rad(opts.tiltXDeg);
+  const ay = rad(opts.tiltYDeg);
+  const cosX = Math.cos(ax);
+  const sinX = Math.sin(ax);
+  const cosY = Math.cos(ay);
+  const sinY = Math.sin(ay);
+  const hw = width / 2;
+  const hh = height / 2;
+  const corners: Array<readonly [number, number]> = [
+    [-hw, -hh],
+    [hw, -hh],
+    [hw, hh],
+    [-hw, hh],
+  ];
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const [x0, y0] of corners) {
+    const y1 = y0 * cosX;
+    const z1 = y0 * sinX;
+    const x2 = x0 * cosY + z1 * sinY;
+    const y2 = y1;
+    const z2 = -x0 * sinY + z1 * cosY;
+    const persp = perspectivePx / Math.max(1, perspectivePx - z2);
+    const sx = x2 * persp;
+    const sy = y2 * persp;
+    minX = Math.min(minX, sx);
+    maxX = Math.max(maxX, sx);
+    minY = Math.min(minY, sy);
+    maxY = Math.max(maxY, sy);
+  }
+  return { minX, maxX, minY, maxY, width: maxX - minX, height: maxY - minY };
+}
+
+/** True when a centred AABB sits inside the box with `pad` on each side. */
+export function aabbFitsCentered(
+  aabb: ProjectedCardAabb,
+  boxWidth: number,
+  boxHeight: number,
+  pad = 0,
+): boolean {
+  const halfW = boxWidth / 2 - pad;
+  const halfH = boxHeight / 2 - pad;
+  return (
+    aabb.minX >= -halfW - 0.5 &&
+    aabb.maxX <= halfW + 0.5 &&
+    aabb.minY >= -halfH - 0.5 &&
+    aabb.maxY <= halfH + 0.5
+  );
+}
+
+/**
+ * Screen-space size of a plane after rotateX/rotateY,
  * under a perspective camera sitting `perspectivePx` in front of the card.
  */
 export function projectedCardSize(opts: {
@@ -17,20 +93,9 @@ export function projectedCardSize(opts: {
   tiltXDeg: number;
   tiltYDeg: number;
   perspectivePx?: number;
-  liftZ?: number;
 }): { width: number; height: number } {
-  const width = Math.max(0, opts.width);
-  const height = Math.max(0, opts.height);
-  const perspectivePx = opts.perspectivePx ?? PREVIEW_PERSPECTIVE_PX;
-  const liftZ = opts.liftZ ?? PREVIEW_LIFT_Z;
-  const ax = Math.abs(rad(opts.tiltXDeg));
-  const ay = Math.abs(rad(opts.tiltYDeg));
-  const zNear = liftZ + (width / 2) * Math.sin(ay) + (height / 2) * Math.sin(ax);
-  const persp = perspectivePx / Math.max(1, perspectivePx - zNear);
-  return {
-    width: width * Math.cos(ay) * persp,
-    height: height * Math.cos(ax) * persp,
-  };
+  const aabb = projectedCardAabb(opts);
+  return { width: aabb.width, height: aabb.height };
 }
 
 /** Scale that keeps the projected card inside the box at this tilt. */
@@ -44,16 +109,28 @@ export function fitScaleForTilt(opts: {
   pad?: number;
 }): number {
   const pad = opts.pad ?? 0;
-  const boxW = Math.max(1, opts.boxWidth - pad * 2);
-  const boxH = Math.max(1, opts.boxHeight - pad * 2);
   if (opts.cardWidth <= 0 || opts.cardHeight <= 0) return 1;
-  const projected = projectedCardSize({
-    width: opts.cardWidth,
-    height: opts.cardHeight,
-    tiltXDeg: opts.tiltXDeg,
-    tiltYDeg: opts.tiltYDeg,
-  });
-  return Math.min(1, boxW / Math.max(1, projected.width), boxH / Math.max(1, projected.height));
+  const fits = (scale: number) =>
+    aabbFitsCentered(
+      projectedCardAabb({
+        width: opts.cardWidth * scale,
+        height: opts.cardHeight * scale,
+        tiltXDeg: opts.tiltXDeg,
+        tiltYDeg: opts.tiltYDeg,
+      }),
+      opts.boxWidth,
+      opts.boxHeight,
+      pad,
+    );
+  if (fits(1)) return 1;
+  let lo = 0;
+  let hi = 1;
+  for (let i = 0; i < 16; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) lo = mid;
+    else hi = mid;
+  }
+  return lo;
 }
 
 /**
@@ -88,7 +165,9 @@ export function previewCoverRatio(
 /**
  * Pixel size that fills the box at rest as much as possible while the AABB
  * at `tiltDeg` (idle orbit) still stays inside. Pointer tilt past that is
- * clamped; do not size for max tilt or the rest card looks zoomed out.
+ * clamped live; do not size for max tilt or the rest card looks zoomed out.
+ *
+ * `pad` is the gutter around the tilted AABB. Apply it once.
  */
 export function fitCardInPreviewBox(opts: {
   boxWidth: number;
@@ -97,7 +176,8 @@ export function fitCardInPreviewBox(opts: {
   tiltDeg: number;
   pad?: number;
 }): { width: number; height: number } {
-  const contained = containUnrotatedSize(opts);
+  const pad = opts.pad ?? PREVIEW_REST_PAD;
+  const contained = containUnrotatedSize({ ...opts, pad });
   const scale = fitScaleForTilt({
     cardWidth: contained.width,
     cardHeight: contained.height,
@@ -105,7 +185,7 @@ export function fitCardInPreviewBox(opts: {
     boxHeight: opts.boxHeight,
     tiltXDeg: opts.tiltDeg,
     tiltYDeg: opts.tiltDeg,
-    pad: opts.pad,
+    pad,
   });
   return { width: contained.width * scale, height: contained.height * scale };
 }
@@ -143,18 +223,18 @@ export function clampTiltToBox(opts: {
 }): { x: number; y: number } {
   const { tiltX, tiltY } = opts;
   const pad = opts.pad ?? 0;
-  const fits = (x: number, y: number) => {
-    const projected = projectedCardSize({
-      width: opts.cardWidth,
-      height: opts.cardHeight,
-      tiltXDeg: x,
-      tiltYDeg: y,
-    });
-    return (
-      projected.width <= opts.boxWidth - pad * 2 + 0.5 &&
-      projected.height <= opts.boxHeight - pad * 2 + 0.5
+  const fits = (x: number, y: number) =>
+    aabbFitsCentered(
+      projectedCardAabb({
+        width: opts.cardWidth,
+        height: opts.cardHeight,
+        tiltXDeg: x,
+        tiltYDeg: y,
+      }),
+      opts.boxWidth,
+      opts.boxHeight,
+      pad,
     );
-  };
   if (fits(tiltX, tiltY)) return { x: tiltX, y: tiltY };
   let lo = 0;
   let hi = 1;

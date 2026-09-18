@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  aabbFitsCentered,
   clampTiltToBox,
   containUnrotatedSize,
   fitCardInPreviewBox,
   fitScaleForTilt,
   pointerNearPreview,
+  PREVIEW_REST_PAD,
   previewCoverRatio,
+  projectedCardAabb,
   projectedCardSize,
   stableFitScale,
 } from './exportPreviewFit';
@@ -23,27 +26,25 @@ describe('exportPreviewFit', () => {
     const box = { width: 900, height: 700 };
     const scale = stableFitScale({ boxWidth: box.width, boxHeight: box.height, maxTiltDeg: 20, pad: 8 });
     expect(scale).toBeLessThan(1);
-    const cardW = box.width * scale;
-    const cardH = box.height * scale;
-    const projected = projectedCardSize({
-      width: cardW,
-      height: cardH,
+    const aabb = projectedCardAabb({
+      width: box.width * scale,
+      height: box.height * scale,
       tiltXDeg: 20,
       tiltYDeg: 20,
     });
-    expect(projected.width).toBeLessThanOrEqual(box.width - 8);
-    expect(projected.height).toBeLessThanOrEqual(box.height - 8);
+    expect(aabbFitsCentered(aabb, box.width, box.height, 8)).toBe(true);
   });
 
-  it('keeps a 10deg in-phase idle inside a phone pane', () => {
+  it('keeps a 10deg in-phase idle inside a phone pane without pad-48 shrink', () => {
     const box = { width: 390, height: 420 };
     const rest = fitCardInPreviewBox({
       boxWidth: box.width,
       boxHeight: box.height,
       aspect: 1.4,
       tiltDeg: 10,
-      pad: 48,
+      pad: PREVIEW_REST_PAD,
     });
+    expect(previewCoverRatio(rest, box)).toBeGreaterThan(0.82);
     const idle = clampTiltToBox({
       tiltX: 10,
       tiltY: 10,
@@ -51,18 +52,61 @@ describe('exportPreviewFit', () => {
       cardHeight: rest.height,
       boxWidth: box.width,
       boxHeight: box.height,
-      pad: 8,
+      pad: PREVIEW_REST_PAD,
     });
     expect(idle.x).toBeCloseTo(10, 5);
     expect(idle.y).toBeCloseTo(10, 5);
-    const projected = projectedCardSize({
+    const aabb = projectedCardAabb({
       width: rest.width,
       height: rest.height,
       tiltXDeg: idle.x,
       tiltYDeg: idle.y,
     });
-    expect(projected.width).toBeLessThanOrEqual(box.width - 16 + 0.5);
-    expect(projected.height).toBeLessThanOrEqual(box.height - 16 + 0.5);
+    expect(aabbFitsCentered(aabb, box.width, box.height, PREVIEW_REST_PAD)).toBe(true);
+  });
+
+  it('fills a portrait phone overlay at rest and keeps 10deg AABB inside', () => {
+    const box = { width: 390, height: 420 };
+    const rest = fitCardInPreviewBox({
+      boxWidth: box.width,
+      boxHeight: box.height,
+      aspect: 0.62,
+      tiltDeg: 10,
+      pad: PREVIEW_REST_PAD,
+    });
+    expect(previewCoverRatio(rest, box)).toBeGreaterThan(0.82);
+    const padded = fitCardInPreviewBox({
+      boxWidth: box.width,
+      boxHeight: box.height,
+      aspect: 0.62,
+      tiltDeg: 10,
+      pad: 48,
+    });
+    expect(previewCoverRatio(rest, box)).toBeGreaterThan(previewCoverRatio(padded, box) + 0.08);
+    const idle = clampTiltToBox({
+      tiltX: 10,
+      tiltY: 10,
+      cardWidth: rest.width,
+      cardHeight: rest.height,
+      boxWidth: box.width,
+      boxHeight: box.height,
+      pad: PREVIEW_REST_PAD,
+    });
+    expect(idle.x).toBeCloseTo(10, 5);
+    expect(idle.y).toBeCloseTo(10, 5);
+    expect(
+      aabbFitsCentered(
+        projectedCardAabb({
+          width: rest.width,
+          height: rest.height,
+          tiltXDeg: 10,
+          tiltYDeg: 10,
+        }),
+        box.width,
+        box.height,
+        PREVIEW_REST_PAD,
+      ),
+    ).toBe(true);
   });
 
   it('keeps an 8deg idle inside a phone pane when rest is sized for that idle', () => {

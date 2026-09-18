@@ -54,7 +54,9 @@ function previewFitsBand(page: Page, viewportHeight: number) {
     if (i.top < l.top - pad) return { ok: false, reason: `top ${i.top} < ${l.top}` };
     if (i.bottom > l.bottom + pad) return { ok: false, reason: `bottom ${i.bottom} > ${l.bottom}` };
     const gutter = Math.min(i.left - l.left, l.right - i.right, i.top - l.top, l.bottom - i.bottom);
-    if (gutter < 16) return { ok: false, reason: `tight gutter ${gutter}` };
+    if (gutter < 4) return { ok: false, reason: `tight gutter ${gutter}` };
+    const cover = Math.max(i.width / l.width, i.height / l.height);
+    if (cover < 0.78) return { ok: false, reason: `cover ${cover.toFixed(3)}` };
     if (s && i.bottom > s.top + pad) return { ok: false, reason: `img under sheet ${i.bottom} > ${s.top}` };
     if (i.height < 80) return { ok: false, reason: `tiny img ${i.height}` };
     if (s && s.height > Math.round(vh * 0.45) + 8) {
@@ -148,6 +150,46 @@ test.describe('mobile dex export sheet', () => {
     await parkPreview(page);
     const fitNational = await previewFitsBand(page, MOBILE.height);
     expect(fitNational.ok, `national: ${fitNational.reason}`).toBe(true);
+  });
+
+  test('fills the overlay, shows clipped holo, and leaves corner radii open', async ({ page }) => {
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const foil = page.locator('[data-export-preview]');
+    await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity')), { timeout: 8000 }).toBeGreaterThan(0.1);
+    const measure = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
+      const holo = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
+      if (!card || !layer || !holo) return { ok: false, reason: 'missing' };
+      const c = card.getBoundingClientRect();
+      const l = layer.getBoundingClientRect();
+      const h = holo.getBoundingClientRect();
+      const cover = Math.max(c.width / l.width, c.height / l.height);
+      const style = getComputedStyle(card);
+      const holoStyle = getComputedStyle(holo);
+      const bg = style.backgroundColor.replace(/\s+/g, '');
+      const clip = `${style.getPropertyValue('clip-path')} ${style.getPropertyValue('-webkit-clip-path')}`;
+      const mask = `${holoStyle.getPropertyValue('-webkit-mask-image')} ${holoStyle.getPropertyValue('mask-image')}`.replace(/\s+/g, ' ').trim();
+      if (cover < 0.78) return { ok: false, reason: `cover ${cover.toFixed(3)}` };
+      if (c.left < l.left - 4 || c.right > l.right + 4 || c.top < l.top - 4 || c.bottom > l.bottom + 4) {
+        return { ok: false, reason: 'overflow' };
+      }
+      if (bg !== 'transparent' && bg !== 'rgba(0,0,0,0)' && bg !== 'rgba(0,0,0,0.0)') {
+        return { ok: false, reason: `corner fill ${bg}` };
+      }
+      if (!/round/i.test(clip)) return { ok: false, reason: `clip ${clip}` };
+      if (mask !== 'none' && mask !== '' && mask !== 'none none') return { ok: false, reason: `holo mask ${mask}` };
+      if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
+      if (h.left < c.left - 2 || h.right > c.right + 2 || h.top < c.top - 2 || h.bottom > c.bottom + 2) {
+        return { ok: false, reason: 'holo outside card' };
+      }
+      if (style.overflow !== 'hidden' || style.transformStyle.includes('preserve-3d')) {
+        return { ok: false, reason: 'clipper' };
+      }
+      return { ok: true, reason: `cover ${cover.toFixed(3)}` };
+    });
+    expect(measure.ok, measure.reason).toBe(true);
   });
 });
 
@@ -326,6 +368,7 @@ test.describe('desktop dex export preview', () => {
     expect(inView.ok, inView.reason).toBe(true);
     const shineClip = await foil.evaluate((el) => {
       const style = getComputedStyle(el);
+      const holo = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
       const bloom = document.querySelector('[data-foil-layer="bloom"]');
       const c = el.getBoundingClientRect();
       const overflowLayers: string[] = [];
@@ -336,16 +379,26 @@ test.describe('desktop dex export preview', () => {
           overflowLayers.push(layer.dataset.foilLayer || '');
         }
       }
+      const holoStyle = holo ? getComputedStyle(holo) : null;
+      const mask = (holoStyle
+        ? `${holoStyle.getPropertyValue('-webkit-mask-image')} ${holoStyle.getPropertyValue('mask-image')}`
+        : ''
+      )
+        .replace(/\s+/g, ' ')
+        .trim();
       return {
         overflow: style.overflow,
         preserve3d: style.transformStyle,
         bloom: Boolean(bloom),
         overflowLayers,
+        holoMask: mask,
+        holoOpacity: holoStyle ? Number(holoStyle.opacity) : 0,
         ok:
           style.overflow === 'hidden' &&
           !style.transformStyle.includes('preserve-3d') &&
           !bloom &&
-          overflowLayers.length === 0,
+          overflowLayers.length === 0 &&
+          (mask === 'none' || mask === '' || mask === 'none none'),
       };
     });
     expect(shineClip.ok, JSON.stringify(shineClip)).toBe(true);
@@ -376,18 +429,31 @@ test.describe('desktop dex export preview', () => {
     expect(Math.abs(Number(await foil.getAttribute('data-tilt-y')))).toBeLessThan(0.8);
 
     const fill = await page.evaluate(() => {
-      const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
       const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
-      if (!hitEl || !layer) return { ok: false, reason: 'missing', ratio: 0 };
-      const c = hitEl.getBoundingClientRect();
+      if (!card || !layer) return { ok: false, reason: 'missing', ratio: 0 };
+      const c = card.getBoundingClientRect();
       const l = layer.getBoundingClientRect();
       const ratio = Math.max(c.width / l.width, c.height / l.height);
       if (c.left < l.left - 4 || c.right > l.right + 4 || c.top < l.top - 4 || c.bottom > l.bottom + 4) {
         return { ok: false, reason: 'overflow', ratio };
       }
-      return { ok: ratio >= 0.65, reason: `cover ${ratio.toFixed(3)}`, ratio };
+      return { ok: ratio >= 0.78, reason: `cover ${ratio.toFixed(3)}`, ratio };
     });
     expect(fill.ok, fill.reason).toBe(true);
+
+    const corners = await foil.evaluate((el) => {
+      const style = getComputedStyle(el);
+      const clip = `${style.getPropertyValue('clip-path')} ${style.getPropertyValue('-webkit-clip-path')}`;
+      const bg = style.backgroundColor.replace(/\s+/g, '');
+      const transparent = bg === 'transparent' || bg === 'rgba(0,0,0,0)' || bg === 'rgba(0,0,0,0.0)';
+      return {
+        bg,
+        clip,
+        ok: transparent && /round/i.test(clip) && !el.className.includes('bg-white'),
+      };
+    });
+    expect(corners.ok, JSON.stringify(corners)).toBe(true);
 
     await hit.click();
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');

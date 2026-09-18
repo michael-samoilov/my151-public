@@ -56,9 +56,10 @@
   --foil-shift-y: calc((var(--pointer-from-top) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   position: relative;
   isolation: isolate;
+  background-color: transparent;
   overflow: hidden;
-  -webkit-clip-path: inset(0);
-  clip-path: inset(0);
+  -webkit-clip-path: inset(0 round 0.5rem);
+  clip-path: inset(0 round 0.5rem);
   /* poke-holo .card__rotator: rotateY(--rotate-x) rotateX(--rotate-y), no scale.
      No preserve-3d here: Safari skips overflow clip on a 3d parent, which
      painted glare discs outside the card. Perspective stays on .export-foil-hit. */
@@ -78,7 +79,6 @@
 }
 
 .export-foil-mask-sat,
-.export-foil-holographic,
 .export-foil-iridescence,
 .export-foil-parallax {
   -webkit-mask-image: var(--foil-sat-mask);
@@ -110,7 +110,6 @@
   mask-repeat: no-repeat;
 }
 
-.export-foil:not([data-foil-maps='1']) .export-foil-holographic,
 .export-foil:not([data-foil-maps='1']) .export-foil-iridescence,
 .export-foil:not([data-foil-maps='1']) .export-foil-emboss,
 .export-foil:not([data-foil-maps='1']) .export-foil-rim,
@@ -147,6 +146,8 @@
 
 .export-foil-holographic {
   z-index: 3;
+  -webkit-mask-image: none;
+  mask-image: none;
   background-image:
     repeating-linear-gradient(
       125deg,

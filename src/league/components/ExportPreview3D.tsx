@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { clampTiltToBox, fitCardInPreviewBox, PREVIEW_PERSPECTIVE_PX } from '@/components/export/exportPreviewFit';
+import {
+  clampTiltToBox,
+  fitCardInPreviewBox,
+  PREVIEW_PERSPECTIVE_PX,
+  PREVIEW_REST_PAD,
+} from '@/components/export/exportPreviewFit';
 import {
   pokeHoloFromPointer,
   pokeHoloIdle,
@@ -81,6 +86,8 @@ export function ExportPreview3D({
     let rotateX = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateX));
     let rotateY = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateY));
     const stage = stageRef.current;
+    const boxEl =
+      stage?.closest<HTMLElement>('[data-export-preview-layer]') ?? stage;
     if (stage && el.offsetWidth > 0 && el.offsetHeight > 0) {
       const box = stage.getBoundingClientRect();
       const clamped = clampTiltToBox({
@@ -90,16 +97,45 @@ export function ExportPreview3D({
         cardHeight: el.offsetHeight,
         boxWidth: box.width,
         boxHeight: box.height,
-        pad: 8,
+        pad: PREVIEW_REST_PAD,
       });
       rotateX = clamped.x;
       rotateY = clamped.y;
     }
     const pointerX = pose.pointerX;
     const pointerY = pose.pointerY;
+    const applyRotate = (x: number, y: number) => {
+      el.style.setProperty('--rotate-x', `${y}deg`);
+      el.style.setProperty('--rotate-y', `${x}deg`);
+    };
+    applyRotate(rotateX, rotateY);
+    if (boxEl && el.offsetWidth > 0) {
+      const live = boxEl.getBoundingClientRect();
+      const overflowOf = () => {
+        const c = el.getBoundingClientRect();
+        return Math.max(
+          0,
+          live.left - c.left,
+          c.right - live.right,
+          live.top - c.top,
+          c.bottom - live.bottom,
+        );
+      };
+      if (overflowOf() > 0.5) {
+        let lo = 0;
+        let hi = 1;
+        for (let i = 0; i < 8; i++) {
+          const mid = (lo + hi) / 2;
+          applyRotate(rotateX * mid, rotateY * mid);
+          if (overflowOf() <= 0.5) lo = mid;
+          else hi = mid;
+        }
+        rotateX *= lo;
+        rotateY *= lo;
+        applyRotate(rotateX, rotateY);
+      }
+    }
     lastPoseRef.current = { rotateX, rotateY, pointerX, pointerY };
-    el.style.setProperty('--rotate-x', `${rotateY}deg`);
-    el.style.setProperty('--rotate-y', `${rotateX}deg`);
     el.style.setProperty('--pointer-x', `${pointerX}%`);
     el.style.setProperty('--pointer-y', `${pointerY}%`);
     el.style.setProperty('--pointer-from-center', Math.min(1, Math.hypot(pointerX - 50, pointerY - 50) / 50).toFixed(3));
@@ -149,7 +185,7 @@ export function ExportPreview3D({
         boxHeight: r.height,
         aspect,
         tiltDeg: recipeRef.current.idleTilt,
-        pad: 48,
+        pad: PREVIEW_REST_PAD,
       });
       setCardMax({ w: size.width, h: size.height });
     };
@@ -353,7 +389,7 @@ export function ExportPreview3D({
         >
           <div
             ref={cardRef}
-            className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer overflow-hidden rounded-lg bg-white ring-1 ring-white/20 select-none"
+            className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer overflow-hidden rounded-lg bg-transparent select-none"
             style={{
               transformOrigin: 'center center',
               boxShadow: '0 24px 48px rgba(0,0,0,0.35)',
@@ -371,7 +407,7 @@ export function ExportPreview3D({
               ref={imgRef}
               src={activeSrc}
               alt={alt}
-              className="pointer-events-none block h-auto w-auto rounded-lg object-contain"
+              className="pointer-events-none block h-auto w-auto object-contain"
               style={{ maxHeight: maxH, maxWidth: maxW, width: 'auto', height: 'auto' }}
               draggable={false}
               data-export-frame={frames?.activeKey}
@@ -386,7 +422,7 @@ export function ExportPreview3D({
                   boxHeight: r.height,
                   aspect: img.naturalWidth / img.naturalHeight,
                   tiltDeg: recipeRef.current.idleTilt,
-                  pad: 48,
+                  pad: PREVIEW_REST_PAD,
                 });
                 setCardMax({ w: size.width, h: size.height });
               }}

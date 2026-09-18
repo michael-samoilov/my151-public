@@ -454,11 +454,11 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   ).catch(() => ({ ok: false, reason: 'eval' }));
   const shineMotion = idleB.foil >= idleA.foil ? idleB : idleA;
   let shineSample = shineMotion;
-  let shineOn = shineSample.foil > 0.1 && (shineSample.light > 0.02 || shineSample.holo > 0.02);
+  let shineOn = shineSample.foil > 0.1 && shineSample.holo > 0.05;
   for (let i = 0; i < 12 && !shineOn; i++) {
     await sleep(150);
     shineSample = await readDexPreviewMotion(s);
-    shineOn = shineSample.foil > 0.1 && (shineSample.light > 0.02 || shineSample.holo > 0.02);
+    shineOn = shineSample.foil > 0.1 && shineSample.holo > 0.05;
   }
   const hoverPts: Array<[number, number]> = [
     [0.18, 0.18],
@@ -500,16 +500,26 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   await sleep(500);
   const locked = await readDexPreviewMotion(s);
   const fill = await s.evalJson<{ ok: boolean; reason: string; ratio: number }>(
-    `const hit=document.querySelector('[data-export-tilt-hit]');
+    `const card=document.querySelector('[data-export-preview]');
      const layer=document.querySelector('[data-export-preview-layer]');
-     if(!(hit instanceof HTMLElement) || !(layer instanceof HTMLElement)) return {ok:false,reason:'missing',ratio:0};
-     const c=hit.getBoundingClientRect(); const l=layer.getBoundingClientRect();
-     const desktop=innerWidth>=1024;
+     if(!(card instanceof HTMLElement) || !(layer instanceof HTMLElement)) return {ok:false,reason:'missing',ratio:0};
+     const c=card.getBoundingClientRect(); const l=layer.getBoundingClientRect();
      const ratio=Math.max(c.width/Math.max(1,l.width), c.height/Math.max(1,l.height));
-     if(!desktop) return {ok:true,reason:'mobile',ratio};
      if(c.left<l.left-4||c.right>l.right+4||c.top<l.top-4||c.bottom>l.bottom+4) return {ok:false,reason:'overflow',ratio};
-     return {ok:ratio>=0.65,reason:'cover '+ratio.toFixed(3),ratio};`,
+     return {ok:ratio>=0.78,reason:'cover '+ratio.toFixed(3),ratio};`,
   ).catch(() => ({ ok: false, reason: 'eval', ratio: 0 }));
+  const corners = await s.evalJson<{ ok: boolean; reason: string }>(
+    `const card=document.querySelector('[data-export-preview]');
+     if(!(card instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     const style=getComputedStyle(card);
+     const bg=style.backgroundColor.replace(/\\s+/g,'');
+     const clip=style.getPropertyValue('clip-path')+' '+style.getPropertyValue('-webkit-clip-path');
+     const transparent=bg==='transparent'||bg==='rgba(0,0,0,0)'||bg==='rgba(0,0,0,0.0)';
+     if(!transparent) return {ok:false,reason:'corner fill '+bg};
+     if(!/round/i.test(clip)) return {ok:false,reason:'clip '+clip};
+     if(card.className.includes('bg-white')) return {ok:false,reason:'bg-white'};
+     return {ok:true,reason:bg};`,
+  ).catch(() => ({ ok: false, reason: 'eval' }));
   const shineClip = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
      if(!(card instanceof HTMLElement)) return {ok:false,reason:'missing'};
@@ -521,6 +531,11 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        const inset=getComputedStyle(bloom).inset;
        if(inset.includes('-')) return {ok:false,reason:'bloom inset '+inset};
      }
+     const holo=document.querySelector('[data-foil-layer="holographic"]');
+     if(!(holo instanceof HTMLElement)) return {ok:false,reason:'no holo'};
+     const holoStyle=getComputedStyle(holo);
+     const mask=(holoStyle.getPropertyValue('-webkit-mask-image')+' '+holoStyle.getPropertyValue('mask-image')).replace(/\\s+/g,' ').trim();
+     if(mask!=='none'&&mask!==''&&mask!=='none none') return {ok:false,reason:'holo mask '+mask};
      const c=card.getBoundingClientRect();
      for(const layer of card.querySelectorAll('[data-foil-layer]')){
        if(!(layer instanceof HTMLElement)) continue;
@@ -571,6 +586,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:shine-clip', shineClip.ok, shineClip.reason),
     ok('dex-export:lock-on-press', locked.paused === '1' && locked.hypot < 0.8, JSON.stringify(locked)),
     ok('dex-export:card-fill', fill.ok, fill.reason),
+    ok('dex-export:no-corner-mask', corners.ok, corners.reason),
     ok('dex-export:survey-sprite-scale', sprite.ok, `${sprite.reason} device=${sprite.devicePx.toFixed(1)} native=${sprite.native}`),
   ];
 }
