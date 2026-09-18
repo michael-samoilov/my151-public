@@ -16,13 +16,13 @@
  *
  * `N` is the number of default species in the section. `T` is the sum of
  * their pick counts. `1.0×` is the uniform rate. Unpicked defaults are `0×`.
- * Lines stay grouped for ranking and display order: a line's `picks` and
- * `index` are the max among its members. In-section Starters still show one
- * first-stage face per chain, indexed from that chain's max picks against
- * the line-level uniform rate (`S / L`).
+ * Most and least order each species by its own ×, high to low. A lower-×
+ * stage does not ride with a higher-× evo-line mate. In-section Starters
+ * still show one first-stage face per chain, indexed from that chain's max
+ * picks against the line-level uniform rate (`S / L`).
  *
- * Most-picked ranks default lines only, and only lines above 1.10×.
- * Least-picked is only lines below 0.90×. In-section Starters list every
+ * Most-picked ranks default species only, and only species above 1.10×.
+ * Least-picked is only species below 0.90×. In-section Starters list every
  * first-stage Pokémon across the full row, split grass / fire / water, with
  * no most/least split and no 1.10× cutoff. The starter grid uses one full-width
  * row per type with column count = starter generation count from the Starter
@@ -367,8 +367,9 @@ function speciesExpected(universe: Map<string, number[]>, counts: Map<number, nu
 
 /**
  * Index `groups` against the section universe.
- * Species (default) use `T / N`. First-stage starter faces use `S / L`.
- * Off-section lines use the section's default universe as the 1× baseline.
+ * Species (default) use `T / N` and rank as one entry each.
+ * First-stage starter faces use `S / L`.
+ * Off-section species use the section's default universe as the 1× baseline.
  */
 export function indexGroups(
   groups: Map<string, number[]>,
@@ -381,38 +382,32 @@ export function indexGroups(
     : speciesExpected(universe, counts);
   const ranked: RankedLine[] = [];
   for (const [key, memberIds] of groups) {
-    let members: LineMember[];
-    let typeId: number;
-    let picks: number;
-    let index: number;
-    if (opts.firstStageOnly) {
-      const face = firstStageOf(memberIds);
-      if (!face) continue;
-      picks = linePicks(memberIds, counts);
-      index = indexOfCount(picks, expected);
-      members = [memberOf(face, picks, index)];
-      typeId = face.id;
-    } else {
+    if (!opts.firstStageOnly) {
       const mons = sortMembers(memberIds);
       if (mons.length === 0) continue;
-      members = mons.map((p) => {
+      for (const p of mons) {
         const n = counts.get(p.id) ?? 0;
-        return memberOf(p, n, indexOfCount(n, expected));
-      });
-      picks = 0;
-      index = 0;
-      for (const m of members) {
-        if (m.picks > picks) picks = m.picks;
-        if (m.index > index) index = m.index;
+        const speciesIndex = indexOfCount(n, expected);
+        ranked.push({
+          key: String(p.id),
+          members: [memberOf(p, n, speciesIndex)],
+          picks: n,
+          index: speciesIndex,
+          starterType: starterTypeOf(p.id),
+        });
       }
-      typeId = mons[0].id;
+      continue;
     }
+    const face = firstStageOf(memberIds);
+    if (!face) continue;
+    const picks = linePicks(memberIds, counts);
+    const index = indexOfCount(picks, expected);
     ranked.push({
       key,
-      members,
+      members: [memberOf(face, picks, index)],
       picks,
       index,
-      starterType: starterTypeOf(typeId),
+      starterType: starterTypeOf(face.id),
     });
   }
   ranked.sort((a, b) => b.index - a.index || b.picks - a.picks || a.members[0].id - b.members[0].id);

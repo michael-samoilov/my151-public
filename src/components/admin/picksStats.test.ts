@@ -117,7 +117,7 @@ describe('isOffSection / evil team', () => {
 });
 
 describe('index: Pichu dropped from a popular line', () => {
-  it('counts the line once at max(Pikachu, Raichu), not as an under-picked Pichu', () => {
+  it('ranks Pichu as its own species, not on Pikachu\'s line', () => {
     const view = sectionPicksView('pikachu-clone', [
       count(PICHU, 20),
       count(PIKACHU, 80),
@@ -125,19 +125,15 @@ describe('index: Pichu dropped from a popular line', () => {
     ]);
     expect(view?.kind).toBe('plain');
     if (view?.kind !== 'plain') return;
-    const line =
-      view.columns.most.find((l) => l.members.some((m) => m.id === PIKACHU)) ??
-      view.columns.least.find((l) => l.members.some((m) => m.id === PIKACHU));
-    expect(line).toBeTruthy();
-    expect(line?.picks).toBe(80);
-    expect(line?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual(
-      [PICHU, PIKACHU, RAICHU].sort((a, b) => a - b),
-    );
-    const pichu = line?.members.find((m) => m.id === PICHU);
-    expect(pichu?.picks).toBe(20);
-    expect(view.columns.least.some((l) => l.members.length === 1 && l.members[0].id === PICHU)).toBe(
-      false,
-    );
+    const all = [...view.columns.most, ...view.columns.least];
+    const pikaLine = all.find((l) => l.members.some((m) => m.id === PIKACHU));
+    const pichuLine = all.find((l) => l.members.some((m) => m.id === PICHU));
+    expect(pikaLine?.picks).toBe(80);
+    expect(pikaLine?.members.map((m) => m.id)).toEqual([PIKACHU]);
+    expect(pichuLine?.picks).toBe(20);
+    expect(pichuLine?.members.map((m) => m.id)).toEqual([PICHU]);
+    expect(pichuLine?.key).not.toBe(pikaLine?.key);
+    expect(pichuLine!.index).toBeLessThan(pikaLine!.index);
   });
 
   it('indexes Pichu below Pikachu when Pichu has fewer picks', () => {
@@ -148,19 +144,41 @@ describe('index: Pichu dropped from a popular line', () => {
     ]);
     expect(view?.kind).toBe('plain');
     if (view?.kind !== 'plain') return;
-    const line =
-      view.columns.most.find((l) => l.members.some((m) => m.id === PIKACHU)) ??
-      view.columns.least.find((l) => l.members.some((m) => m.id === PIKACHU));
-    const pichu = line?.members.find((m) => m.id === PICHU);
-    const pikachu = line?.members.find((m) => m.id === PIKACHU);
-    const raichu = line?.members.find((m) => m.id === RAICHU);
-    expect(pichu).toBeTruthy();
-    expect(pikachu).toBeTruthy();
-    expect(raichu).toBeTruthy();
+    const all = [...view.columns.most, ...view.columns.least];
+    const pichu = all.find((l) => l.members.some((m) => m.id === PICHU));
+    const pikachu = all.find((l) => l.members.some((m) => m.id === PIKACHU));
+    const raichu = all.find((l) => l.members.some((m) => m.id === RAICHU));
+    expect(pichu?.members.map((m) => m.id)).toEqual([PICHU]);
+    expect(pikachu?.members.map((m) => m.id)).toEqual([PIKACHU]);
+    expect(raichu?.members.map((m) => m.id)).toEqual([RAICHU]);
     expect(pichu!.index).toBeLessThan(pikachu!.index);
     expect(pichu!.index / pikachu!.index).toBeCloseTo(94 / 109);
     expect(raichu!.index / pikachu!.index).toBeCloseTo(108 / 109);
     expect(formatIndex(pichu!.index)).not.toBe(formatIndex(pikachu!.index));
+  });
+
+  it('orders Most picked by each species own × so Pikachu sits before Pichu', () => {
+    const view = sectionPicksView('pikachu-clone', [
+      count(PICHU, 85),
+      count(PIKACHU, 100),
+      count(RAICHU, 100),
+    ]);
+    expect(view?.kind).toBe('plain');
+    if (view?.kind !== 'plain') return;
+    const mostIds = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    const pika = mostIds.indexOf(PIKACHU);
+    const raichu = mostIds.indexOf(RAICHU);
+    const pichu = mostIds.indexOf(PICHU);
+    expect(pika).toBeGreaterThanOrEqual(0);
+    expect(raichu).toBeGreaterThanOrEqual(0);
+    expect(pichu).toBeGreaterThanOrEqual(0);
+    expect(pika).toBeLessThan(pichu);
+    expect(raichu).toBeLessThan(pichu);
+    const pikaLine = view.columns.most.find((l) => l.members.some((m) => m.id === PIKACHU));
+    const pichuLine = view.columns.most.find((l) => l.members.some((m) => m.id === PICHU));
+    expect(pikaLine?.members.map((m) => m.id)).toEqual([PIKACHU]);
+    expect(pichuLine?.members.map((m) => m.id)).toEqual([PICHU]);
+    expect(pikaLine?.key).not.toBe(pichuLine?.key);
   });
 
   it('is 2.0× when a line is picked twice the uniform rate among two lines', () => {
@@ -182,8 +200,7 @@ describe('index: Pichu dropped from a popular line', () => {
     );
     expect(pika).toBeTruthy();
     expect(plusle).toBeTruthy();
-    // L includes every default pikaclone line, so the ratio is 80:40 between
-    // these two, which is 2:1, even though the absolute × depends on L.
+    // These two species sit at 80 vs 40 against the same T/N, so the ratio is 2:1.
     expect(pika!.picks / plusle!.picks).toBe(2);
     expect(pika!.index / plusle!.index).toBeCloseTo(2);
     expect(pika!.index).toBeGreaterThan(plusle!.index);
@@ -409,19 +426,27 @@ describe('sectionPicksView off-section', () => {
     expect(ids).not.toContain(IVYSAUR);
     expect(ids).not.toContain(VENUSAUR);
     const magikarp = view.columns.most.find((l) => l.members.some((m) => m.id === MAGIKARP));
-    expect(magikarp?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual([MAGIKARP, GYARADOS]);
+    expect(magikarp?.members.map((m) => m.id)).toEqual([MAGIKARP]);
+    const gyarados = view.columns.most.find((l) => l.members.some((m) => m.id === GYARADOS));
+    expect(gyarados?.members.map((m) => m.id)).toEqual([GYARADOS]);
+    const mostIds = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
+    expect(mostIds.indexOf(MAGIKARP)).toBeLessThan(mostIds.indexOf(GYARADOS));
     const litwick = view.columns.most.find((l) => l.members.some((m) => m.id === LITWICK));
-    expect(litwick?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual([
-      LITWICK,
-      LAMPENT,
-      CHANDELURE,
-    ]);
+    expect(litwick?.members.map((m) => m.id)).toEqual([LITWICK]);
+    expect(view.columns.most.find((l) => l.members.some((m) => m.id === LAMPENT))?.members.map((m) => m.id)).toEqual(
+      [LAMPENT],
+    );
+    expect(
+      view.columns.most.find((l) => l.members.some((m) => m.id === CHANDELURE))?.members.map((m) => m.id),
+    ).toEqual([CHANDELURE]);
     const applin = view.columns.most.find((l) => l.members.some((m) => m.id === APPLIN));
-    expect(applin?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual([
-      APPLIN,
-      DIPPLIN,
-      HYDRAPPLE,
-    ]);
+    expect(applin?.members.map((m) => m.id)).toEqual([APPLIN]);
+    expect(view.columns.most.find((l) => l.members.some((m) => m.id === DIPPLIN))?.members.map((m) => m.id)).toEqual(
+      [DIPPLIN],
+    );
+    expect(
+      view.columns.most.find((l) => l.members.some((m) => m.id === HYDRAPPLE))?.members.map((m) => m.id),
+    ).toEqual([HYDRAPPLE]);
   });
 
   it('keeps n=1 off-section lines unless excludeOneOffs is on', () => {
@@ -467,7 +492,10 @@ describe('sectionPicksView off-section', () => {
     expect(view.columns.least).toEqual([]);
     const magikarp = view.columns.most.find((l) => l.members.some((m) => m.id === MAGIKARP));
     expect(magikarp?.picks).toBe(15);
-    expect(magikarp?.members.map((m) => m.id).sort((a, b) => a - b)).toEqual([MAGIKARP, GYARADOS]);
+    expect(magikarp?.members.map((m) => m.id)).toEqual([MAGIKARP]);
+    const gyarados = view.columns.most.find((l) => l.members.some((m) => m.id === GYARADOS));
+    expect(gyarados?.picks).toBe(6);
+    expect(gyarados?.members.map((m) => m.id)).toEqual([GYARADOS]);
     const ids = view.columns.most.flatMap((l) => l.members.map((m) => m.id));
     expect(ids).not.toContain(RHYHORN);
     expect(ids).not.toContain(RHYDON);

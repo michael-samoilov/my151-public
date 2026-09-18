@@ -87,6 +87,23 @@ test.describe('admin picks page', () => {
     expect(pichuX).toBeTruthy();
     expect(pikaX).toBeTruthy();
     expect(pichuX).not.toBe(pikaX);
+    const mostOrder = await page
+      .locator('[data-section-id="pikachu-clone"] [data-picks-side="most"] [data-face-id]')
+      .evaluateAll((els) =>
+        els
+          .map((el) => ({
+            id: Number(el.getAttribute('data-face-id')),
+            x: Math.round(el.getBoundingClientRect().x),
+            y: Math.round(el.getBoundingClientRect().y),
+          }))
+          .sort((a, b) => a.y - b.y || a.x - b.x)
+          .map((f) => f.id),
+      );
+    const pikaAt = mostOrder.indexOf(25);
+    const pichuAt = mostOrder.indexOf(172);
+    expect(pikaAt).toBeGreaterThanOrEqual(0);
+    expect(pichuAt).toBeGreaterThanOrEqual(0);
+    expect(pikaAt).toBeLessThan(pichuAt);
 
     await expect.poll(async () =>
       starters.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
