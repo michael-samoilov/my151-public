@@ -53,13 +53,16 @@ export function pokeHoloFromPointer(
   clientY: number,
   box: HoverTiltBox,
   maxTilt: number,
+  axes?: { tiltFactor?: number; tiltFactorY?: number },
 ): HoverTiltPose {
   const percent = pointerPercent(clientX, clientY, box);
   const centerX = percent.x - 50;
   const centerY = percent.y - 50;
+  const fx = axes?.tiltFactor ?? 50 / POKE_HOLO_DIVISOR;
+  const fy = axes?.tiltFactorY ?? fx;
   return {
-    rotateX: clamp(centerY / POKE_HOLO_DIVISOR, -maxTilt, maxTilt),
-    rotateY: clamp(-(centerX / POKE_HOLO_DIVISOR), -maxTilt, maxTilt),
+    rotateX: clamp(centerY * (fy / 50), -maxTilt, maxTilt),
+    rotateY: clamp(-(centerX * (fx / 50)), -maxTilt, maxTilt),
     pointerX: percent.x,
     pointerY: percent.y,
   };

@@ -12,6 +12,10 @@ display options, exportable as a PNG.
 - Export as a PNG (`my151.png`) via the shared preview overlay: live settings
   pane, 3D tiltable preview card, then share or download. Export settings do
   not write the View store.
+- Preview-only `/foil-workshop` (gated off production) drives the same
+  `ExportPreview3D` card with native hover-tilt knobs and selectable
+  glare/sparkle masks (type icon on the featured sprite, tiled `my151.app`
+  wordmark, Pokémon-card sparkles, Poké Ball tile, national Dex number).
 - Desktop auto-tilt (idle orbit) parks on press and resumes on a second press.
   Foil shine is visible while the card is tilted. Rest size fills the pane.
   Hover tilt matches poke-holo / hover-tilt: CSS `--rotate-x` / `--rotate-y`
@@ -55,6 +59,12 @@ integer scale, ≥ 2× on viewports under 1024px and ≥ 1× on desktop) still a
 The PNG blob itself is still produced on Save (`navigator.share`
 or `<a download="my151.png">`); the repo's own e2e checks a >50KB blob in
 `e2e/dev/poster-export.spec.ts`.
+
+The foil workshop is a separate MPA at `/foil-workshop`. Navigate there, wait
+for `[data-foil-workshop]` and the preview image, then click
+`[data-hover-tilt-mask="wordmark"]` and read `--hover-tilt-glare-mask` on
+`[data-export-preview]`. A glareIntensity slider write must update
+`--hover-tilt-glare-intensity`.
 
 ## Gotchas
 

@@ -1159,3 +1159,80 @@ export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaNam
   }
   return checks;
 }
+
+/** Preview-only /foil-workshop: native hover-tilt knobs and selectable glare masks. */
+export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
+  const checks: Check[] = [];
+  await s.navigate(ctx.base + '/foil-workshop');
+  let loaded = false;
+  for (let i = 0; i < 40; i++) {
+    loaded = await s.evalJson<boolean>(`return !!document.querySelector('[data-foil-workshop]');`).catch(() => false);
+    if (loaded) break;
+    await sleep(250);
+  }
+  checks.push(ok('foil-workshop:loads', loaded, loaded ? 'workshop root' : 'missing [data-foil-workshop]'));
+  if (!loaded) return checks;
+
+  let imgReady = false;
+  for (let i = 0; i < 80; i++) {
+    imgReady = await s.evalJson<boolean>(`const img=document.querySelector('[data-export-tilt-hit] img'); return !!(img && img instanceof HTMLImageElement && img.naturalWidth>0);`).catch(() => false);
+    if (imgReady) break;
+    await sleep(250);
+  }
+  checks.push(ok('foil-workshop:preview-img', imgReady, imgReady ? 'preview painted' : 'no preview img'));
+  await s.screenshot(ctx.shot('foil-workshop'));
+
+  const labels = await s.evalJson<string[]>(
+    `return [...document.querySelectorAll('[data-hover-tilt-mask]')].map((el) => el.getAttribute('data-hover-tilt-mask')||'');`,
+  ).catch(() => [] as string[]);
+  checks.push(ok('foil-workshop:mask-list', labels.length >= 6, `mask controls: ${labels.length}`));
+  const needed = ['typeIcon', 'wordmark', 'cardSparkle', 'pokeBall', 'dexNumber'];
+  checks.push(ok('foil-workshop:mask-ids', needed.every((id) => labels.includes(id)), `ids: ${labels.join(',')}`));
+
+  try {
+    await s.click('[data-hover-tilt-mask="wordmark"]');
+    await sleep(400);
+  } catch {
+    /* base build has no mask picker */
+  }
+  const afterClick = await s.evalJson<{ mask: string; css: string }>(
+    `const el=document.querySelector('[data-export-preview]');
+     if(!(el instanceof HTMLElement)) return {mask:'',css:''};
+     return {
+       mask: el.getAttribute('data-hover-tilt-glare-mask')||'',
+       css: getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask').trim(),
+     };`,
+  ).catch(() => ({ mask: '', css: '' }));
+  let decoded = afterClick.css;
+  try { decoded = decodeURIComponent(afterClick.css); } catch { /* already decoded */ }
+  const wordmarkOn = afterClick.mask === 'wordmark' && (afterClick.css.includes('svg+xml') || decoded.includes('my151.app'));
+  checks.push(ok('foil-workshop:mask-applies', wordmarkOn, `mask=${afterClick.mask}`));
+  await s.screenshot(ctx.shot('foil-workshop-wordmark'));
+
+  try {
+    await s.click('[data-hover-tilt-mask="typeIcon"]');
+    await sleep(300);
+  } catch {
+    /* base build has no mask picker */
+  }
+  await s.screenshot(ctx.shot('foil-workshop-type-icon'));
+
+  await s.evalJson(
+    `const input=document.querySelector('[data-foil-slider="glareIntensity"]');
+     if(!(input instanceof HTMLInputElement)) return false;
+     const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')?.set;
+     setter?.call(input,'0.91');
+     input.dispatchEvent(new Event('input',{bubbles:true}));
+     input.dispatchEvent(new Event('change',{bubbles:true}));
+     return true;`,
+  ).catch(() => false);
+  await sleep(250);
+  const intensity = await s.evalJson<string>(
+    `const el=document.querySelector('[data-export-preview]');
+     if(!(el instanceof HTMLElement)) return '';
+     return getComputedStyle(el).getPropertyValue('--hover-tilt-glare-intensity').trim();`,
+  ).catch(() => '');
+  checks.push(ok('foil-workshop:glare-intensity', intensity === '0.910', `intensity=${intensity}`));
+  await s.screenshot(ctx.shot('foil-workshop-glare-intensity'));
+  return checks;
+}

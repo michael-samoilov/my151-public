@@ -34,6 +34,14 @@ describe('pokeHoloFromPointer', () => {
     const pose = pokeHoloFromPointer(400, 200, box, 20);
     expect(pose.rotateY).toBeCloseTo(-(50 / 3.5), 5);
   });
+
+  it('scales with tiltFactor when the workshop passes native knobs', () => {
+    const pose = pokeHoloFromPointer(400, 200, box, 20, { tiltFactor: 20, tiltFactorY: 10 });
+    expect(pose.rotateY).toBeCloseTo(-20, 5);
+    expect(pose.rotateX).toBeCloseTo(0, 5);
+    const bottom = pokeHoloFromPointer(200, 400, box, 20, { tiltFactor: 20, tiltFactorY: 10 });
+    expect(bottom.rotateX).toBeCloseTo(10, 5);
+  });
 });
 
 describe('pokeHoloIdle', () => {

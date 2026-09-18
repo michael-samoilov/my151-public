@@ -13,6 +13,17 @@ import {
   type HoverTiltPose,
 } from '@/components/export/hoverTilt';
 import {
+  hoverTiltBoxShadow,
+  hoverTiltCssVars,
+  type HoverTiltRecipe,
+} from '@/components/export/hoverTiltRecipe';
+import {
+  DEFAULT_MASK_CONTEXT,
+  hoverTiltMaskCssVars,
+  hoverTiltMaskPaint,
+  type HoverTiltMaskContext,
+} from '@/components/export/hoverTiltMasks';
+import {
   DEFAULT_FOIL_RECIPE,
   activeFoilLayerIds,
   foilLayerClassName,
@@ -52,6 +63,8 @@ export function ExportPreview3D({
   className,
   recipe = DEFAULT_FOIL_RECIPE,
   frames,
+  tilt,
+  maskContext = DEFAULT_MASK_CONTEXT,
 }: {
   src: string | null;
   alt: string;
@@ -59,6 +72,9 @@ export function ExportPreview3D({
   className?: string;
   recipe?: FoilRecipe;
   frames?: { activeKey: string; urls: Record<string, string> };
+  /** Native hover-tilt knobs and masks. Omit on the live overlay. */
+  tilt?: HoverTiltRecipe;
+  maskContext?: HoverTiltMaskContext;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const hitRef = useRef<HTMLDivElement>(null);
@@ -74,7 +90,9 @@ export function ExportPreview3D({
   const downRef = useRef<{ t: number; x: number; y: number; dragged: boolean } | null>(null);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
   const recipeRef = useRef(recipe);
+  const tiltRef = useRef(tilt);
   const measureRef = useRef<() => void>(() => {});
+  const enterSinceRef = useRef<number | null>(null);
   const [cardMax, setCardMax] = useState({ w: 0, h: 0 });
   const layerIds = activeFoilLayerIds(recipe);
   const { sat: needSat, edge: needEdge, gloss: needGloss } = foilMapsNeeded(recipe);
@@ -144,9 +162,23 @@ export function ExportPreview3D({
     el.style.setProperty('--pointer-from-left', (pointerX / 100).toFixed(3));
     const mag = Math.hypot(rotateX, rotateY);
     const recipeNow = recipeRef.current;
+    const tiltNow = tiltRef.current;
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
     const foil = mag <= recipeNow.deadDeg ? 0 : Math.min(1, (mag - recipeNow.deadDeg) / span);
     el.style.setProperty('--foil-opacity', foil.toFixed(3));
+    if (tiltNow) {
+      const angle = (Math.atan2(pointerY - 50, pointerX - 50) * 180) / Math.PI;
+      el.style.setProperty('--hover-tilt-angle', `${angle.toFixed(1)}deg`);
+      el.style.setProperty('--hover-tilt-x', `${pointerX}%`);
+      el.style.setProperty('--hover-tilt-y', `${pointerY}%`);
+      el.style.setProperty('--hover-tilt-rotation-x', `${rotateX}deg`);
+      el.style.setProperty('--hover-tilt-rotation-y', `${rotateY}deg`);
+      el.style.setProperty('--hover-tilt-from-center', Math.min(1, Math.hypot(pointerX - 50, pointerY - 50) / 50).toFixed(3));
+      el.style.setProperty('--hover-tilt-at-edge', Math.min(1, Math.hypot(pointerX - 50, pointerY - 50) / 50).toFixed(3));
+      el.style.setProperty('--hover-tilt-opacity', foil.toFixed(3));
+      el.style.setProperty('--gradient-x', `${pointerX}%`);
+      el.style.setProperty('--gradient-y', `${pointerY}%`);
+    }
     if (!el.style.getPropertyValue('--foil-pointLight')) {
       const vars = foilRecipeCssVars(recipeNow);
       for (const [key, value] of Object.entries(vars)) {
@@ -155,7 +187,7 @@ export function ExportPreview3D({
     }
     el.setAttribute('data-tilt-x', rotateX.toFixed(1));
     el.setAttribute('data-tilt-y', rotateY.toFixed(1));
-    el.setAttribute('data-tilt-scale', '1');
+    el.setAttribute('data-tilt-scale', tiltNow ? tiltNow.scaleFactor.toFixed(3) : '1');
     el.setAttribute('data-foil-opacity', foil.toFixed(3));
     el.setAttribute('data-paused', pausedRef.current ? '1' : '0');
     el.setAttribute('data-export-orbit', interactingRef.current ? 'pointer' : pausedRef.current ? 'paused' : 'idle');
@@ -209,7 +241,8 @@ export function ExportPreview3D({
       } else if (pausedRef.current) {
         const release = releaseRef.current;
         if (release) {
-          const u = Math.min(1, (now - release.t0) / RELEASE_MS);
+          const releaseMs = tiltRef.current?.exitDelay ?? RELEASE_MS;
+          const u = Math.min(1, (now - release.t0) / Math.max(1, releaseMs));
           const ease = 1 - (1 - u) * (1 - u);
           paint(lerpPose(release.from, REST_POSE, ease));
           if (u >= 1) releaseRef.current = null;
@@ -220,7 +253,8 @@ export function ExportPreview3D({
         const idle = idleAt(now);
         const release = releaseRef.current;
         if (release) {
-          const u = Math.min(1, (now - release.t0) / RELEASE_MS);
+          const releaseMs = tiltRef.current?.exitDelay ?? RELEASE_MS;
+          const u = Math.min(1, (now - release.t0) / Math.max(1, releaseMs));
           const ease = 1 - (1 - u) * (1 - u);
           paint(lerpPose(release.from, idle, ease));
           if (u >= 1) releaseRef.current = null;
@@ -236,13 +270,25 @@ export function ExportPreview3D({
 
   useEffect(() => {
     recipeRef.current = recipe;
+    tiltRef.current = tilt;
     const el = cardRef.current;
     if (!el) return;
     const vars = foilRecipeCssVars(recipe);
     for (const [key, value] of Object.entries(vars)) {
       el.style.setProperty(key, value);
     }
-  }, [activeSrc, recipe]);
+    if (!tilt) return;
+    const tiltVars = hoverTiltCssVars(tilt);
+    for (const [key, value] of Object.entries(tiltVars)) {
+      el.style.setProperty(key, value);
+    }
+    const glare = hoverTiltMaskPaint(tilt.glareMask, maskContext);
+    const sparkle = hoverTiltMaskPaint(tilt.sparkleMask, maskContext);
+    const maskVars = hoverTiltMaskCssVars(glare, sparkle);
+    for (const [key, value] of Object.entries(maskVars)) {
+      el.style.setProperty(key, value);
+    }
+  }, [activeSrc, maskContext, recipe, tilt]);
 
   useEffect(() => {
     const el = cardRef.current;
@@ -280,7 +326,10 @@ export function ExportPreview3D({
       if (!hit) return;
       const r = hit.getBoundingClientRect();
       if (r.width === 0 || r.height === 0) return;
-      const pose = pokeHoloFromPointer(clientX, clientY, r, recipeRef.current.maxTilt);
+      const tiltNow = tiltRef.current;
+      const pose = pokeHoloFromPointer(clientX, clientY, r, recipeRef.current.maxTilt, tiltNow
+        ? { tiltFactor: tiltNow.tiltFactor, tiltFactorY: tiltNow.tiltFactorY }
+        : undefined);
       pointerPoseRef.current = pose;
       interactingRef.current = true;
       releaseRef.current = null;
@@ -318,6 +367,11 @@ export function ExportPreview3D({
       // That must not steal idle. Arm hover only after a real move.
       if (!last) return;
       if (Math.hypot(e.clientX - last.x, e.clientY - last.y) < HOVER_ARM_PX) return;
+      const enterDelay = tiltRef.current?.enterDelay ?? 0;
+      if (enterDelay > 0) {
+        if (enterSinceRef.current === null) enterSinceRef.current = performance.now();
+        if (performance.now() - enterSinceRef.current < enterDelay) return;
+      }
       applyPointer(e.clientX, e.clientY);
     },
     [applyPointer],
@@ -335,6 +389,7 @@ export function ExportPreview3D({
     if (tap) {
       interactingRef.current = false;
       lastPointerRef.current = null;
+      enterSinceRef.current = null;
       pausedRef.current = !pausedRef.current;
       if (pausedRef.current) {
         releaseRef.current = { from: { ...lastPoseRef.current }, t0: performance.now() };
@@ -347,6 +402,7 @@ export function ExportPreview3D({
 
     if (!interactingRef.current) return;
     interactingRef.current = false;
+    enterSinceRef.current = null;
     releaseRef.current = {
       from: { ...pointerPoseRef.current },
       t0: performance.now(),
@@ -356,6 +412,7 @@ export function ExportPreview3D({
   const onPointerLeave = useCallback(() => {
     downRef.current = null;
     lastPointerRef.current = null;
+    enterSinceRef.current = null;
     if (!interactingRef.current) return;
     interactingRef.current = false;
     releaseRef.current = {
@@ -397,7 +454,7 @@ export function ExportPreview3D({
             className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer overflow-hidden rounded-lg bg-transparent select-none"
             style={{
               transformOrigin: 'center center',
-              boxShadow: '0 24px 48px rgba(0,0,0,0.35)',
+              boxShadow: tilt ? hoverTiltBoxShadow(tilt) : '0 24px 48px rgba(0,0,0,0.35)',
               maxHeight: maxH,
               maxWidth: maxW,
               width: 'auto',
@@ -405,8 +462,11 @@ export function ExportPreview3D({
             }}
             data-export-preview
             data-export-orbit="idle"
-            data-tilt-scale="1"
+            data-tilt-scale={tilt ? tilt.scaleFactor.toFixed(3) : '1'}
             data-paused="0"
+            data-hover-tilt={tilt ? '1' : undefined}
+            data-hover-tilt-glare-mask={tilt?.glareMask}
+            data-hover-tilt-sparkle-mask={tilt?.sparkleMask}
           >
             <img
               ref={imgRef}
@@ -429,6 +489,25 @@ export function ExportPreview3D({
                 data-foil-layer={id}
               />
             ))}
+            {tilt ? (
+              <>
+                <div
+                  className="export-foil-layer export-hover-tilt-glare"
+                  aria-hidden
+                  data-hover-tilt-layer="glare"
+                />
+                <div
+                  className="export-foil-layer export-hover-tilt-holo"
+                  aria-hidden
+                  data-hover-tilt-layer="holo"
+                />
+                <div
+                  className="export-foil-layer export-hover-tilt-sparkle"
+                  aria-hidden
+                  data-hover-tilt-layer="sparkle"
+                />
+              </>
+            ) : null}
           </div>
         </div>
       ) : (
