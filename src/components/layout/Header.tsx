@@ -31,12 +31,16 @@ interface HeaderProps {
 const LABEL_ANIM = 'overflow-hidden transition-[max-width,opacity] duration-150 ease-out max-w-0 opacity-0';
 
 /**
- * Every tab shows its label at the same width, or none of them do.
- * Expanding only the active label made it read as the sole button.
- * Below `sm` the three cells (count, tabs, page controls) keep icons
- * only, so a 4-digit count still clears the centred tablist.
+ * The active tab's label, expanded. Inactive tabs stay icon-only until `sm`.
+ * Gated at 380px: below that, the count, tabs, and page controls need the
+ * collapsed pixels so a 4-digit count still clears the centred tablist.
  */
+const LABEL_ACTIVE = 'min-[380px]:max-w-[7rem] min-[380px]:opacity-100 min-[380px]:ml-1';
 const LABEL_WIDE = 'sm:max-w-[7rem] sm:opacity-100 sm:ml-1';
+
+function tabLabelClass(selected: boolean) {
+  return cn(LABEL_ANIM, selected && LABEL_ACTIVE, LABEL_WIDE);
+}
 
 function tabTriggerClass(selected: boolean) {
   return cn(
@@ -187,7 +191,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
             data-state={currentView === 'builder' ? 'active' : 'inactive'}
           >
             <Hammer className="h-4 w-4" />
-            <span className={`${LABEL_ANIM} ${LABEL_WIDE}`}>{t('nav.build')}</span>
+            <span className={tabLabelClass(currentView === 'builder')}>{t('nav.build')}</span>
           </Button>
 
           {analyticsUnlocked ? (
@@ -203,7 +207,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
               data-state={currentView === 'analytics' ? 'active' : 'inactive'}
             >
               <BarChart3 className="h-4 w-4" />
-              <span className={`${LABEL_ANIM} ${LABEL_WIDE}`}>{t('nav.analytics')}</span>
+              <span className={tabLabelClass(currentView === 'analytics')}>{t('nav.analytics')}</span>
             </Button>
           ) : (
             /* Locked until 25 Pokémon (sticky). Tapping explains rather than navigating. */
@@ -222,7 +226,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
                   aria-label={t('nav.analyticsLocked', { count: ANALYTICS_UNLOCK_AT })}
                 >
                   <Lock className="h-4 w-4" />
-                  <span className={`${LABEL_ANIM} ${LABEL_WIDE}`}>{t('nav.analytics')}</span>
+                  <span className={tabLabelClass(false)}>{t('nav.analytics')}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipPortal>
@@ -247,7 +251,7 @@ export function Header({ currentView, onViewChange, toolbarRef }: HeaderProps) {
             data-state={currentView === 'view' ? 'active' : 'inactive'}
           >
             <Camera className="h-4 w-4" />
-            <span className={`${LABEL_ANIM} ${LABEL_WIDE}`}>{t('nav.view')}</span>
+            <span className={tabLabelClass(currentView === 'view')}>{t('nav.view')}</span>
           </Button>
         </div>
 

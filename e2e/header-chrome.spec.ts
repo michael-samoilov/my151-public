@@ -5,9 +5,9 @@ import { blankLeague } from './support/leagueSeed';
  * The two-bar chrome's one hard invariant: the tool bar's three cells —
  * title/count left, view nav centred, page controls right — never overlap,
  * at any project width (320 included) and in both left-cell states (the
- * "Dex Builder" default and the n/151 count). Labels on every tab collapse
- * together below `sm`; this is what proves that collapse leaves enough room
- * even when the count is four digits.
+ * "Dex Builder" default and the n/151 count). The active tab's label
+ * expands from 380px; this is what proves that expansion still leaves
+ * enough room even when the count is four digits.
  *
  * The league builder's tool bar must also hold the same 44px height on the
  * home page and the card page, so switching tools does not jump the chrome.
@@ -108,7 +108,7 @@ async function stampFourDigitCount(page: Page) {
 /**
  * The view switcher is a tab set, not a lone primary button beside ghost text.
  * Fails on the old chrome: active uses the filled `default` variant (primary)
- * while the rest are transparent ghosts, and only the active label expands.
+ * while the rest are transparent ghosts.
  */
 async function expectMutualTabSet(page: Page) {
   const report = await page.evaluate(() => {
@@ -150,8 +150,9 @@ async function expectMutualTabSet(page: Page) {
     const othersGhost = others.every((b) => TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim()));
     const loneButton = othersGhost && near(parse(activeBg), parse(primary));
     const shown = navs.map(labelShown);
+    const activeIdx = active ? navs.indexOf(active) : -1;
     const heights = navs.map((b) => b.getBoundingClientRect().height);
-    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const width = window.innerWidth;
 
     return {
       navCount: navs.length,
@@ -160,11 +161,11 @@ async function expectMutualTabSet(page: Page) {
       roles: navs.map((b) => b.getAttribute('role')),
       selectedCount: selected.length,
       loneButton,
-      labelsEqual: shown.length > 0 && shown.every((v) => v === shown[0]),
       labelsShown: shown,
+      activeLabelShown: activeIdx >= 0 ? shown[activeIdx] : false,
+      width,
       heights,
       heightDelta: heights.length ? Math.max(...heights) - Math.min(...heights) : 0,
-      rem,
     };
   });
 
@@ -174,7 +175,12 @@ async function expectMutualTabSet(page: Page) {
   expect(report.roles, 'each control is a tab').toEqual(['tab', 'tab', 'tab']);
   expect(report.selectedCount, 'exactly one selected tab').toBe(1);
   expect(report.loneButton, 'active tab must not be a lone primary button').toBe(false);
-  expect(report.labelsEqual, `labels must match across tabs, shown=${report.labelsShown}`).toBe(true);
+  if (report.width >= 380) {
+    expect(report.activeLabelShown, `active tab names itself at ${report.width}px`).toBe(true);
+  }
+  if (report.width >= 640) {
+    expect(report.labelsShown.every(Boolean), `every label shows at ${report.width}px, shown=${report.labelsShown}`).toBe(true);
+  }
   expect(report.heightDelta, `tab heights ${report.heights.join(',')}`).toBeLessThanOrEqual(1);
 }
 
