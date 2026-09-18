@@ -233,7 +233,6 @@
     {"key":"sectionShort.rivalry-pair","source":"Rivalry","tier":"core","placeholders":[],"plural":false,"sites":[],"enHash":"43a08bd8d30e","contextHash":"482bd8d4d7d3"},
     {"key":"sectionShort.ruins","source":"Temple","tier":"core","placeholders":[],"plural":false,"sites":[],"enHash":"67848024a5ed","contextHash":"482bd8d4d7d3"},
     {"key":"sectionTiny.early-bird","source":"Bird","tier":"core","placeholders":[],"plural":false,"sites":[],"enHash":"68b515e1903e","contextHash":"0e8fc156fc93"},
-    {"key":"sectionTiny.early-bug","source":"Bug","tier":"core","placeholders":[],"plural":false,"sites":[],"enHash":"703a5028367b","contextHash":"0e8fc156fc93"},
     {"key":"sectionTiny.early-rodent","source":"Mammal","tier":"core","placeholders":[],"plural":false,"sites":[],"enHash":"91bff5f5b9c3","contextHash":"0e8fc156fc93"},
     {"key":"sectionTiny.industrial","source":"Indust.","tier":"core","placeholders":[],"plural":false,"sites":[],"enHash":"1f8936f875f3","contextHash":"0e8fc156fc93"},
     {"key":"sectionTiny.other","source":"Other","tier":"core","placeholders":[],"plural":false,"sites":[],"enHash":"f97e9da0e3b8","contextHash":"0e8fc156fc93"},

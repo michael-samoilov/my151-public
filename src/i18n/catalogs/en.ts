@@ -258,7 +258,6 @@ export const enUi = {
   'sectionShort.rivalry-pair': 'Rivalry',
   'sectionShort.ruins': 'Temple',
   'sectionTiny.early-bird': 'Bird',
-  'sectionTiny.early-bug': 'Bug',
   'sectionTiny.early-rodent': 'Mammal',
   'sectionTiny.industrial': 'Indust.',
   'sectionTiny.other': 'Other',

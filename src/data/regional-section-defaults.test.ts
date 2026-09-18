@@ -4,7 +4,7 @@ import { STARTER_IDS } from '@/data/categories';
 import { BUILD_GROUPS } from '@/data/slot-template';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { en } from '@/i18n/catalogs/en';
-import { getSectionLabel, getSectionLabelChain } from '@/lib/sectionOutlines';
+import { fitLabel, getSectionLabel, getSectionLabelChain, measureLabelWidth } from '@/lib/sectionOutlines';
 
 /** First-stage faces for Regional Bird: Michael's grid, minus Rowlet, plus Natu and Chatot. */
 const REGIONAL_BIRD_ROOTS = [16, 21, 163, 177, 276, 278, 396, 441, 519, 661, 731, 931, 940];
@@ -70,15 +70,22 @@ describe('regional section defaults', () => {
     expect(getSectionLabel('early-rodent')).toBe('Regional Mammal');
 
     expect(getSectionLabelChain('early-bird')).toEqual(['Regional Bird', 'Early Bird', 'Bird']);
-    expect(getSectionLabelChain('early-bug')).toEqual(['Regional Bug', 'Early Bug', 'Bug']);
+    expect(getSectionLabelChain('early-bug')).toEqual(['Regional Bug', 'Early Bug']);
     expect(getSectionLabelChain('early-rodent')).toEqual(['Regional Mammal', 'Early Mammal', 'Mammal']);
 
     expect(en['sectionShort.early-bird']).toBe('Early Bird');
     expect(en['sectionShort.early-bug']).toBe('Early Bug');
     expect(en['sectionShort.early-rodent']).toBe('Early Mammal');
     expect(en['sectionTiny.early-bird']).toBe('Bird');
-    expect(en['sectionTiny.early-bug']).toBe('Bug');
+    expect(en).not.toHaveProperty('sectionTiny.early-bug');
     expect(en['sectionTiny.early-rodent']).toBe('Mammal');
+  });
+
+  it('keeps Early Bug on a one-tile outline instead of falling to Bug', () => {
+    const chain = getSectionLabelChain('early-bug');
+    const fontPx = 10;
+    const avail = measureLabelWidth('Early Bug', fontPx) * 0.6;
+    expect(fitLabel(chain, avail, fontPx).text).toBe('Early Bug');
   });
 
   it('sets Regional Bird and Regional Bug to the screenshot evo lines, exclusively', () => {
