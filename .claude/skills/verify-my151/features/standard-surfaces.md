@@ -25,8 +25,10 @@ Analytics is locked until 25 Pokémon are placed (sticky once unlocked).
 `runStandardSuite` in `harness/lib/flows.ts` runs all of the above on any
 `Session`. It seeds a 37-Pokémon dex (real assignments from `src/data/demoDex.ts`)
 through localStorage, which is engine- and build-agnostic, then asserts the
-oracle, sprite render, per-tab activation (via computed background color), and
-scroll. Personas assert their identity first.
+oracle, sprite render, tab activation (`aria-selected`, with a non-transparent
+background as fallback), a shared tablist track rather than a lone primary
+button, 4-digit count clearance, and scroll. Personas assert their identity
+first.
 
 ## Gotchas
 
@@ -34,5 +36,6 @@ scroll. Personas assert their identity first.
   neither, which is why seeding goes through localStorage, not those flags.
 - Analytics only appears as a real nav once 25+ are placed; the seed clears that
   bar so the analytics tab is drivable.
-- The active-tab signal is computed `background-color`, not a class name, so it
-  survives Tailwind class churn and works identically on all three engines.
+- The active-tab signal is `aria-selected`, with computed `background-color`
+  as a fallback, so it survives Tailwind class churn and works on all three
+  engines. The selected tab is not a primary-filled lone button.

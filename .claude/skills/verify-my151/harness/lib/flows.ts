@@ -150,15 +150,16 @@ export async function seedDex(s: Session, base: string): Promise<void> {
   }
 }
 
-// Which view is active, read from the nav buttons' computed background. The active
-// tab uses the "default" Button variant with a non-transparent fill; ghosts
-// compute to transparent. The fill serializes as rgb(), rgba(), or oklab()
-// depending on the engine and state, so test for "not transparent" rather than
-// parse a color format. Engine-portable and free of localized text.
+// Which view is active. Prefer aria-selected (tab set). Fall back to a
+// non-transparent fill so a ghost-vs-default chrome still reads. The fill
+// serializes as rgb(), rgba(), or oklab() depending on the engine, so test
+// for "not transparent" rather than parse a color format.
 const ACTIVE_VIEW = `
 const TRANSPARENT = new Set(['rgba(0, 0, 0, 0)', 'transparent', '']);
 const btns = [...document.querySelectorAll('[data-nav]')];
-const active = btns.filter(b => !TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim())).map(b => b.getAttribute('data-nav'));
+const selected = btns.filter(b => b.getAttribute('aria-selected') === 'true').map(b => b.getAttribute('data-nav'));
+const filled = btns.filter(b => !TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim())).map(b => b.getAttribute('data-nav'));
+const active = selected.length ? selected : filled;
 return { active, navs: btns.map(b => b.getAttribute('data-nav')) };
 `;
 
@@ -272,10 +273,12 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
     const lanes = await s.evalJson<{ ok: boolean; found: boolean; detail: string }>(
       `const title=document.querySelector('[data-testid="tool-title"]');
        const actions=document.querySelector('[data-testid="tool-actions"]');
+       const list=document.querySelector('[role="tablist"]');
        const navs=[...document.querySelectorAll('[data-nav]')];
        if(!title||!actions||navs.length===0) return {ok:false,found:false,detail:'handles missing'};
-       const navLeft=Math.min(...navs.map(b=>b.getBoundingClientRect().left));
-       const navRight=Math.max(...navs.map(b=>b.getBoundingClientRect().right));
+       const navBox=list?list.getBoundingClientRect():null;
+       const navLeft=navBox?navBox.left:Math.min(...navs.map(b=>b.getBoundingClientRect().left));
+       const navRight=navBox?navBox.right:Math.max(...navs.map(b=>b.getBoundingClientRect().right));
        const inner=title.firstElementChild;
        const titleRight=inner?inner.getBoundingClientRect().right:title.getBoundingClientRect().left;
        const kids=[...actions.children].map(k=>k.getBoundingClientRect().left);
@@ -284,6 +287,48 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
        return {ok,found:true,detail:'title.r='+Math.round(titleRight)+' nav=['+Math.round(navLeft)+','+Math.round(navRight)+'] actions.l='+Math.round(actionsLeft)};`,
     );
     checks.push(ok(`header:${nav}-no-overlap`, lanes.found && lanes.ok, lanes.detail));
+    const tabset = await s.evalJson<{ ok: boolean; detail: string }>(
+      `const TRANSPARENT=new Set(['rgba(0, 0, 0, 0)','transparent','']);
+       const navs=[...document.querySelectorAll('[data-nav]')];
+       const list=document.querySelector('[role="tablist"]');
+       const primary=getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+       const parse=(css)=>{const rgb=css.match(/rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)/);if(rgb)return[Number(rgb[1]),Number(rgb[2]),Number(rgb[3])];return null;};
+       const hex=primary.startsWith('#')?(primary.length===4?primary.slice(1).split('').map(c=>c+c).join(''):primary.slice(1)):null;
+       const primaryRgb=hex?[parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16)]:parse(primary);
+       const selected=navs.filter(b=>b.getAttribute('aria-selected')==='true');
+       const active=selected[0]||navs[0];
+       const activeBg=active?getComputedStyle(active).backgroundColor.trim():'';
+       const activeRgb=parse(activeBg);
+       const othersGhost=navs.filter(b=>b!==active).every(b=>TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim()));
+       const lone=othersGhost&&activeRgb&&primaryRgb&&activeRgb.every((v,i)=>Math.abs(v-primaryRgb[i])<=2);
+       const inList=!!list&&navs.every(n=>list.contains(n));
+       const track=!!list&&!TRANSPARENT.has(getComputedStyle(list).backgroundColor.trim());
+       const roles=navs.every(b=>b.getAttribute('role')==='tab');
+       const ok=inList&&track&&roles&&selected.length===1&&!lone;
+       return {ok,detail:'inList='+inList+' track='+track+' roles='+roles+' selected='+selected.length+' lone='+lone};`,
+    );
+    checks.push(ok(`nav:${nav}-tabset`, tabset.ok, tabset.detail));
+    const fourDigit = await s.evalJson<{ ok: boolean; found: boolean; detail: string }>(
+      `const n=document.querySelector('[data-testid="tool-title"] .text-primary');
+       if(!n) return {ok:false,found:false,detail:'count missing'};
+       const prev=n.textContent;
+       n.textContent='1025';
+       const title=document.querySelector('[data-testid="tool-title"]');
+       const actions=document.querySelector('[data-testid="tool-actions"]');
+       const list=document.querySelector('[role="tablist"]');
+       const navs=[...document.querySelectorAll('[data-nav]')];
+       const navBox=list?list.getBoundingClientRect():null;
+       const navLeft=navBox?navBox.left:Math.min(...navs.map(b=>b.getBoundingClientRect().left));
+       const navRight=navBox?navBox.right:Math.max(...navs.map(b=>b.getBoundingClientRect().right));
+       const inner=title.firstElementChild;
+       const titleRight=inner?inner.getBoundingClientRect().right:title.getBoundingClientRect().left;
+       const kids=[...actions.children].map(k=>k.getBoundingClientRect().left);
+       const actionsLeft=kids.length?Math.min(...kids):actions.getBoundingClientRect().right;
+       const ok=titleRight<=navLeft+0.5&&navRight<=actionsLeft+0.5;
+       n.textContent=prev;
+       return {ok,found:true,detail:'4digit title.r='+Math.round(titleRight)+' nav=['+Math.round(navLeft)+','+Math.round(navRight)+'] actions.l='+Math.round(actionsLeft)};`,
+    );
+    checks.push(ok(`header:${nav}-4digit-no-overlap`, fourDigit.found && fourDigit.ok, fourDigit.detail));
     await settle(s);
     await s.screenshot(ctx.shot(`nav-${nav}`));
     checks.push(await auditRender(s, `render:${nav}-no-clipped-content`));

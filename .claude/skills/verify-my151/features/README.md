@@ -23,7 +23,8 @@ the app and keep it honest with `/maintain-verification-skill`.
 ## Stable handles (the whole app has few)
 
 - Nav tabs: `[data-nav="builder"]`, `[data-nav="analytics"]`, `[data-nav="view"]`.
-  Active tab = the one whose computed `background-color` is non-transparent.
+  Active tab = `aria-selected="true"` on the tab inside `[role="tablist"]`.
+  Fallback: the one whose computed `background-color` is non-transparent.
 - Builder scroll container: `[data-build-scroll]`.
 - Type filter: `[data-testid="type-filter"]`.
 - Bottom-sheet overlay: `[data-overlay]`; sheets are `role="dialog"`.

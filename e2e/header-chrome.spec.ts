@@ -5,8 +5,9 @@ import { blankLeague } from './support/leagueSeed';
  * The two-bar chrome's one hard invariant: the tool bar's three cells —
  * title/count left, view nav centred, page controls right — never overlap,
  * at any project width (320 included) and in both left-cell states (the
- * "Dex Builder" default and the n/151 count). The nav labels collapse to
- * icons below 380px; this is what proves that collapse leaves enough room.
+ * "Dex Builder" default and the n/151 count). Labels on every tab collapse
+ * together below `sm`; this is what proves that collapse leaves enough room
+ * even when the count is four digits.
  *
  * The league builder's tool bar must also hold the same 44px height on the
  * home page and the card page, so switching tools does not jump the chrome.
@@ -26,6 +27,15 @@ const SEED = JSON.stringify({
   version: 10,
 });
 
+/** Same dex with analytics already unlocked, so all three tabs navigate. */
+const UNLOCKED_SEED = JSON.stringify({
+  state: {
+    ...JSON.parse(SEED).state,
+    milestoneMax: 25,
+  },
+  version: 10,
+});
+
 interface Cells {
   title: DOMRect;
   navLeft: number;
@@ -39,13 +49,19 @@ async function readCells(page: Page): Promise<Cells> {
   return page.evaluate(() => {
     const title = document.querySelector('[data-testid="tool-title"]')!.getBoundingClientRect();
     const actions = document.querySelector('[data-testid="tool-actions"]')!.getBoundingClientRect();
+    const list = document.querySelector('[role="tablist"]');
     const navs = [...document.querySelectorAll('[data-nav]')].map((b) => b.getBoundingClientRect());
+    const navBox = list ? list.getBoundingClientRect() : {
+      left: Math.min(...navs.map((r) => r.left)),
+      right: Math.max(...navs.map((r) => r.right)),
+      top: Math.min(...navs.map((r) => r.top)),
+    };
     const bar = document.querySelector('[data-testid="tool-title"]')!.parentElement!.getBoundingClientRect();
     return {
       title: JSON.parse(JSON.stringify(title)),
-      navLeft: Math.min(...navs.map((r) => r.left)),
-      navRight: Math.max(...navs.map((r) => r.right)),
-      navTop: Math.min(...navs.map((r) => r.top)),
+      navLeft: navBox.left,
+      navRight: navBox.right,
+      navTop: navBox.top,
       actions: JSON.parse(JSON.stringify(actions)),
       barHeight: bar.height,
     };
@@ -74,7 +90,125 @@ async function expectNoOverlap(page: Page) {
   expect(Math.abs(c.barHeight - 2.75 * rootPx)).toBeLessThan(1.5);
 }
 
+/**
+ * Stamp a 4-digit count into the header without placing 1025 tiles.
+ * The overlap risk is the glyph width of `1025/151`, not the grid.
+ */
+async function stampFourDigitCount(page: Page) {
+  const ok = await page.evaluate(() => {
+    const n = document.querySelector('[data-testid="tool-title"] .text-primary');
+    if (!n) return false;
+    n.textContent = '1025';
+    return true;
+  });
+  expect(ok).toBe(true);
+  await expect(page.getByTestId('tool-title')).toContainText('1025/151');
+}
+
+/**
+ * The view switcher is a tab set, not a lone primary button beside ghost text.
+ * Fails on the old chrome: active uses the filled `default` variant (primary)
+ * while the rest are transparent ghosts, and only the active label expands.
+ */
+async function expectMutualTabSet(page: Page) {
+  const report = await page.evaluate(() => {
+    const TRANSPARENT = new Set(['rgba(0, 0, 0, 0)', 'transparent', '']);
+    const navs = [...document.querySelectorAll<HTMLElement>('[data-nav]')];
+    const list = document.querySelector('[role="tablist"]');
+    const primary = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+    const parse = (css: string) => {
+      const rgb = css.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+      if (rgb) return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])];
+      const hex = css.trim();
+      if (hex.startsWith('#') && (hex.length === 4 || hex.length === 7)) {
+        const n = hex.length === 4
+          ? hex.slice(1).split('').map((c) => c + c).join('')
+          : hex.slice(1);
+        return [parseInt(n.slice(0, 2), 16), parseInt(n.slice(2, 4), 16), parseInt(n.slice(4, 6), 16)];
+      }
+      return null;
+    };
+    const near = (a: number[] | null, b: number[] | null) =>
+      !!a && !!b && a.every((v, i) => Math.abs(v - b[i]) <= 2);
+
+    const labelShown = (btn: HTMLElement) =>
+      [...btn.querySelectorAll('span')].some((s) => {
+        const r = s.getBoundingClientRect();
+        const st = getComputedStyle(s);
+        return r.width > 4 && st.opacity !== '0' && st.display !== 'none' && st.visibility !== 'hidden';
+      });
+
+    const selected = navs.filter((b) => b.getAttribute('aria-selected') === 'true');
+    const active = selected[0]
+      ?? navs.find((b) => {
+        const bg = getComputedStyle(b).backgroundColor.trim();
+        return !TRANSPARENT.has(bg);
+      })
+      ?? navs[0];
+    const others = navs.filter((b) => b !== active);
+    const activeBg = active ? getComputedStyle(active).backgroundColor.trim() : '';
+    const othersGhost = others.every((b) => TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim()));
+    const loneButton = othersGhost && near(parse(activeBg), parse(primary));
+    const shown = navs.map(labelShown);
+    const heights = navs.map((b) => b.getBoundingClientRect().height);
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+
+    return {
+      navCount: navs.length,
+      inList: !!list && navs.every((n) => list.contains(n)),
+      listHasTrack: !!list && !TRANSPARENT.has(getComputedStyle(list).backgroundColor.trim()),
+      roles: navs.map((b) => b.getAttribute('role')),
+      selectedCount: selected.length,
+      loneButton,
+      labelsEqual: shown.length > 0 && shown.every((v) => v === shown[0]),
+      labelsShown: shown,
+      heights,
+      heightDelta: heights.length ? Math.max(...heights) - Math.min(...heights) : 0,
+      rem,
+    };
+  });
+
+  expect(report.navCount, 'three view tabs').toBe(3);
+  expect(report.inList, 'every tab sits in one tablist').toBe(true);
+  expect(report.listHasTrack, 'the tablist paints a shared track').toBe(true);
+  expect(report.roles, 'each control is a tab').toEqual(['tab', 'tab', 'tab']);
+  expect(report.selectedCount, 'exactly one selected tab').toBe(1);
+  expect(report.loneButton, 'active tab must not be a lone primary button').toBe(false);
+  expect(report.labelsEqual, `labels must match across tabs, shown=${report.labelsShown}`).toBe(true);
+  expect(report.heightDelta, `tab heights ${report.heights.join(',')}`).toBeLessThanOrEqual(1);
+}
+
+async function seedDexAndOpen(page: Page, seed = UNLOCKED_SEED) {
+  await page.goto('/pokedex-builder');
+  await page.waitForSelector('[data-testid="tool-title"]');
+  await page.waitForFunction((k) => !!localStorage.getItem(k), STORE_KEY);
+  await page.evaluate(([k, v]) => localStorage.setItem(k, v), [STORE_KEY, seed]);
+  await page.evaluate(() => localStorage.setItem('p151-league-promo-seen', '1'));
+  await page.reload();
+  await page.waitForSelector('[data-testid="tool-title"]');
+  await expect(page.getByTestId('tool-title')).toContainText('/151');
+}
+
 test.describe('two-bar chrome', () => {
+  test('dex view tabs are a mutual set and miss the ribbon, including a 4-digit count', async ({ page }) => {
+    test.setTimeout(60_000);
+    await seedDexAndOpen(page);
+
+    for (const width of [390, 1280] as const) {
+      await page.setViewportSize({ width, height: 844 });
+      await page.waitForTimeout(200);
+
+      for (const v of ['builder', 'analytics', 'view'] as const) {
+        await page.click(`[data-nav="${v}"]`);
+        await page.waitForTimeout(400);
+        await expectMutualTabSet(page);
+        await expectNoOverlap(page);
+        await stampFourDigitCount(page);
+        await expectNoOverlap(page);
+      }
+    }
+  });
+
   test('dex tool bar never overlaps, in both title states and on every view', async ({ page }) => {
     await page.goto('/pokedex-builder');
     await page.waitForSelector('[data-testid="tool-title"]');
