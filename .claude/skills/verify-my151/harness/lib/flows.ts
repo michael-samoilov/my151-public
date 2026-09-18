@@ -424,8 +424,13 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   // Do not move the Playwright mouse. Sit a stationary cursor on the card,
   // the way a person often has it, then require the painted box to change.
   await sitCursorOnDexPreview(s);
-  const idleA = await readDexPreviewMotion(s);
-  await sleep(1600);
+  const idleWait = Date.now();
+  let idleA = await readDexPreviewMotion(s);
+  while (Date.now() - idleWait < 8000 && idleA.hypot <= 2.5) {
+    await sleep(200);
+    idleA = await readDexPreviewMotion(s);
+  }
+  await sleep(2500);
   const idleB = await readDexPreviewMotion(s);
   const idleDelta = Math.hypot(idleB.x - idleA.x, idleB.y - idleA.y);
   const visualDelta = visualTiltDelta(idleA, idleB);
@@ -503,7 +508,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      const ratio=Math.max(c.width/Math.max(1,l.width), c.height/Math.max(1,l.height));
      if(!desktop) return {ok:true,reason:'mobile',ratio};
      if(c.left<l.left-4||c.right>l.right+4||c.top<l.top-4||c.bottom>l.bottom+4) return {ok:false,reason:'overflow',ratio};
-     return {ok:ratio>=0.75,reason:'cover '+ratio.toFixed(3),ratio};`,
+     return {ok:ratio>=0.65,reason:'cover '+ratio.toFixed(3),ratio};`,
   ).catch(() => ({ ok: false, reason: 'eval', ratio: 0 }));
   const shineClip = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');

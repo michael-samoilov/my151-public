@@ -66,9 +66,9 @@ export function pokeHoloFromPointer(
 }
 
 /**
- * Idle orbit matching poke-holo showcase:
- * `springRotate.set({ x: Math.sin(r) * 25, y: Math.cos(r) * 25 })`.
- * Starts already tilted. No pointer required.
+ * Idle orbit matching production league export on my151.app:
+ * `sin(t / idleMs * 2π) * idleTilt` on both axes (in phase when the
+ * periods match). Hover stays poke-holo; this is idle only.
  */
 export function pokeHoloIdle(opts: {
   now: number;
@@ -80,13 +80,13 @@ export function pokeHoloIdle(opts: {
   const t = opts.now - opts.origin;
   const rx = (t / Math.max(1, opts.idleMsX)) * Math.PI * 2;
   const ry = (t / Math.max(1, opts.idleMsY)) * Math.PI * 2;
-  const rotateY = Math.sin(rx) * opts.idleTilt;
-  const rotateX = Math.cos(ry) * opts.idleTilt;
+  const rotateX = Math.sin(rx) * opts.idleTilt;
+  const rotateY = Math.sin(ry) * opts.idleTilt;
   return {
     rotateX,
     rotateY,
-    pointerX: clamp(50 + Math.sin(rx) * 45, 0, 100),
-    pointerY: clamp(50 + Math.cos(ry) * 45, 0, 100),
+    pointerX: clamp(50 + (rotateY / Math.max(1, opts.idleTilt)) * 45, 0, 100),
+    pointerY: clamp(50 - (rotateX / Math.max(1, opts.idleTilt)) * 45, 0, 100),
   };
 }
 

@@ -97,13 +97,13 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   bloom: { on: false, amount: 0.36 },
 };
 
-/** Live overlay default. Off layers stay off so they never paint. */
+/** Live overlay default. Idle matches production league export on my151.app. */
 export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
-  idleTilt: 8,
-  idleMsX: 2500,
-  idleMsY: 2500,
-  deadDeg: 2,
-  maxTilt: 12,
+  idleTilt: 10,
+  idleMsX: 14000,
+  idleMsY: 14000,
+  deadDeg: 3,
+  maxTilt: 20,
   parallaxPx: 0,
   bloomBlurPx: 34,
   specSize: 0.5,

@@ -149,7 +149,7 @@ export function ExportPreview3D({
         boxHeight: r.height,
         aspect,
         tiltDeg: recipeRef.current.idleTilt,
-        pad: 8,
+        pad: 48,
       });
       setCardMax({ w: size.width, h: size.height });
     };
@@ -386,7 +386,7 @@ export function ExportPreview3D({
                   boxHeight: r.height,
                   aspect: img.naturalWidth / img.naturalHeight,
                   tiltDeg: recipeRef.current.idleTilt,
-                  pad: 8,
+                  pad: 48,
                 });
                 setCardMax({ w: size.width, h: size.height });
               }}

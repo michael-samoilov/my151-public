@@ -266,6 +266,16 @@ test.describe('desktop dex export preview', () => {
       el.dispatchEvent(new PointerEvent('pointermove', opts));
       el.dispatchEvent(new PointerEvent('pointermove', opts));
     });
+    await expect
+      .poll(
+        async () => {
+          const x = Number(await foil.getAttribute('data-tilt-x'));
+          const y = Number(await foil.getAttribute('data-tilt-y'));
+          return Math.hypot(x, y);
+        },
+        { timeout: 8000 },
+      )
+      .toBeGreaterThan(2.5);
     const sample = async () => {
       return foil.evaluate((el) => {
         const r = el.getBoundingClientRect();
@@ -288,7 +298,7 @@ test.describe('desktop dex export preview', () => {
       });
     };
     const a = await sample();
-    await page.waitForTimeout(900);
+    await page.waitForTimeout(2500);
     const b = await sample();
     const visual = Math.hypot(b.top - a.top, b.left - a.left, b.width - a.width, b.height - a.height);
     expect(a.orbit, JSON.stringify({ a, b, visual })).toBe('idle');
@@ -375,7 +385,7 @@ test.describe('desktop dex export preview', () => {
       if (c.left < l.left - 4 || c.right > l.right + 4 || c.top < l.top - 4 || c.bottom > l.bottom + 4) {
         return { ok: false, reason: 'overflow', ratio };
       }
-      return { ok: ratio >= 0.75, reason: `cover ${ratio.toFixed(3)}`, ratio };
+      return { ok: ratio >= 0.65, reason: `cover ${ratio.toFixed(3)}`, ratio };
     });
     expect(fill.ok, fill.reason).toBe(true);
 

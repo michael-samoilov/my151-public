@@ -24,12 +24,12 @@ describe('foil recipe', () => {
     expect(foilLayerClassName('pointLight')).toBe('export-foil-point-light');
   });
 
-  it('idle tilt clears the shine dead zone', () => {
-    expect(DEFAULT_FOIL_RECIPE.idleTilt).toBe(8);
+  it('idle tilt matches production league export', () => {
+    expect(DEFAULT_FOIL_RECIPE.idleTilt).toBe(10);
+    expect(DEFAULT_FOIL_RECIPE.idleMsX).toBe(14000);
+    expect(DEFAULT_FOIL_RECIPE.idleMsY).toBe(14000);
     expect(DEFAULT_FOIL_RECIPE.idleTilt).toBeGreaterThan(DEFAULT_FOIL_RECIPE.deadDeg);
-    expect(DEFAULT_FOIL_RECIPE.idleMsX).toBe(2500);
-    expect(DEFAULT_FOIL_RECIPE.maxTilt).toBeGreaterThanOrEqual(DEFAULT_FOIL_RECIPE.idleTilt);
-    expect(DEFAULT_FOIL_RECIPE.maxTilt).toBeLessThan(20);
+    expect(DEFAULT_FOIL_RECIPE.maxTilt).toBe(20);
   });
 
   it('live default paints four layers and skips the edge map', () => {

@@ -35,6 +35,36 @@ describe('exportPreviewFit', () => {
     expect(projected.height).toBeLessThanOrEqual(box.height - 8);
   });
 
+  it('keeps a 10deg in-phase idle inside a phone pane', () => {
+    const box = { width: 390, height: 420 };
+    const rest = fitCardInPreviewBox({
+      boxWidth: box.width,
+      boxHeight: box.height,
+      aspect: 1.4,
+      tiltDeg: 10,
+      pad: 48,
+    });
+    const idle = clampTiltToBox({
+      tiltX: 10,
+      tiltY: 10,
+      cardWidth: rest.width,
+      cardHeight: rest.height,
+      boxWidth: box.width,
+      boxHeight: box.height,
+      pad: 8,
+    });
+    expect(idle.x).toBeCloseTo(10, 5);
+    expect(idle.y).toBeCloseTo(10, 5);
+    const projected = projectedCardSize({
+      width: rest.width,
+      height: rest.height,
+      tiltXDeg: idle.x,
+      tiltYDeg: idle.y,
+    });
+    expect(projected.width).toBeLessThanOrEqual(box.width - 16 + 0.5);
+    expect(projected.height).toBeLessThanOrEqual(box.height - 16 + 0.5);
+  });
+
   it('keeps an 8deg idle inside a phone pane when rest is sized for that idle', () => {
     const box = { width: 390, height: 420 };
     const rest = fitCardInPreviewBox({
