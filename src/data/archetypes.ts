@@ -3,25 +3,52 @@ import type { Archetype } from '@/types/pokemon';
 export const ARCHETYPES: Archetype[] = [
   {
     id: 'early-rodent',
-    name: 'Early Route Mammal',
-    description: 'Small mammals found on early routes',
-    pokemonIds: [19,20, 10091,10092, 161,162, 263,264, 10174,10175, 399,400, 504,505, 506,507,508, 659,660, 734,735, 819,820, 915,916],
+    name: 'Regional Mammal',
+    description: 'Small mammals typical of a region',
+    pokemonIds: [19,20, 10091,10092, 161,162, 263,264, 10174,10175, 399,400, 504,505, 659,660, 734,735, 819,820, 915,916],
     suggestedSlotRange: [10, 12],
     color: '#a8a77a',
   },
   {
     id: 'early-bug',
-    name: 'Early Route Bug',
-    description: 'Bug-type Pokémon found on early routes',
-    pokemonIds: [10,11,12, 13,14,15, 165,166, 167,168, 265,266,267,268,269, 401,402, 540,541,542, 664,665,666, 736,737,738, 824,825,826, 917,918, 919,920],
+    name: 'Regional Bug',
+    description: 'Bug-type Pokémon typical of a region',
+    pokemonIds: [
+      10,11,12,              // Caterpie
+      13,14,15,              // Weedle
+      165,166,               // Ledyba
+      167,168,               // Spinarak
+      265,266,267,268,269,   // Wurmple
+      401,402,               // Kricketot
+      540,541,542,           // Sewaddle
+      543,544,545,           // Venipede
+      664,665,666,           // Scatterbug
+      736,737,738,           // Grubbin
+      917,918,               // Tarountula
+      919,920,               // Nymble
+      953,954,               // Rellor
+    ],
     suggestedSlotRange: [13, 15],
     color: '#a6b91a',
   },
   {
     id: 'early-bird',
-    name: 'Early Route Bird',
-    description: 'Flying-type birds found on early routes',
-    pokemonIds: [16,17,18, 163,164, 276,277, 396,397,398, 519,520,521, 661,662,663, 731,732,733, 821,822,823, 931],
+    name: 'Regional Bird',
+    description: 'Flying-type birds typical of a region',
+    pokemonIds: [
+      16,17,18,       // Pidgey
+      21,22,          // Spearow
+      163,164,        // Hoothoot
+      276,277,        // Taillow
+      278,279,        // Wingull
+      396,397,398,    // Starly
+      519,520,521,    // Pidove
+      661,662,663,    // Fletchling
+      722,723,724,    // Rowlet
+      731,732,733,    // Pikipek
+      931,            // Squawkabilly
+      940,941,        // Wattrel
+    ],
     suggestedSlotRange: [16, 18],
     color: '#a98ff3',
   },
@@ -132,8 +159,6 @@ export const ARCHETYPES: Archetype[] = [
     pokemonIds: [
       98,99,       // Krabby→Kingler
       120,121,     // Staryu→Starmie
-      278,279,     // Wingull→Pelipper
-      940,941,     // Wattrel→Kilowattrel
       341,342,     // Corphish→Crawdaunt
       422,423,     // Shellos→Gastrodon
       688,689,     // Binacle→Barbaracle
@@ -197,7 +222,6 @@ export const ARCHETYPES: Archetype[] = [
       766,         // Passimian
       775,         // Komala
       412,413,414, // Burmy→Wormadam/Mothim
-      540,541,542, // Sewaddle→Swadloon→Leavanny
       590,591,     // Foongus→Amoonguss
       840,841,842, // Applin→Flapple/Appletun
       1011,1019,   // Dipplin→Hydrapple
@@ -340,7 +364,6 @@ export const ARCHETYPES: Archetype[] = [
       622,623,         // Golett→Golurk
       677,678,         // Espurr→Meowstic
       856,857,858,     // Hatenna→Hattrem→Hatterene
-      953,954,         // Rellor→Rabsca
       935,936,937,     // Charcadet→Armarouge/Ceruledge
     ],
     suggestedSlotRange: [33, 42],
