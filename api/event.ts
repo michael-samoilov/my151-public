@@ -3,8 +3,11 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { redis, getClientIp } from './_shared.js';
 import {
   isFunnelEvent,
+  parseExportSurveySkipReason,
+  parseExportSurveyToolField,
   parsePage,
   parseTool,
+  EXPORT_SURVEY_SKIP_EVENT,
   JOURNAL_MAX_PER_DAY,
   JOURNAL_PREFIX,
   JOURNAL_TTL_S,
@@ -58,7 +61,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   try {
-    const body = (req.body ?? {}) as { cid?: unknown; event?: unknown; tool?: unknown; page?: unknown };
+    const body = (req.body ?? {}) as {
+      cid?: unknown;
+      event?: unknown;
+      tool?: unknown;
+      page?: unknown;
+      exportTool?: unknown;
+      reason?: unknown;
+    };
     if (typeof body.cid !== 'string' || body.cid.length < 8 || body.cid.length > 64) {
       return res.status(400).json({ error: 'invalid cid' });
     }
@@ -67,6 +77,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const tool = parseTool(body.tool);
     const page = parsePage(body.page);
+    const exportTool =
+      body.event === EXPORT_SURVEY_SKIP_EVENT ? parseExportSurveyToolField(body.exportTool) : undefined;
+    const reason =
+      body.event === EXPORT_SURVEY_SKIP_EVENT ? parseExportSurveySkipReason(body.reason) : undefined;
 
     const ip = getClientIp(req);
     const burst = await burstLimiter.limit(ip);
@@ -84,7 +98,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const day = dayKey(now);
     const dailyKey = `${FUNNEL_KEY}:${day}`;
     const journalKey = `${JOURNAL_PREFIX}:${day}`;
-    const entry = JSON.stringify({ t: now, cid: body.cid, tool, ev: body.event, ...(page ? { page } : {}) });
+    const entry = JSON.stringify({
+      t: now,
+      cid: body.cid,
+      tool,
+      ev: body.event,
+      ...(page ? { page } : {}),
+      ...(exportTool ? { exportTool } : {}),
+      ...(reason ? { reason } : {}),
+    });
     await Promise.all([
       redis.hincrby(FUNNEL_KEY, body.event, 1),
       redis.hincrby(dailyKey, body.event, 1),

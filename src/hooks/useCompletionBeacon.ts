@@ -3,6 +3,7 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
+import type { ExportSurveySkipReason, ExportSurveyTool } from '@/lib/exportSurvey';
 import { getLocale } from '@/i18n/core';
 import { currentPage, currentTool } from '@/lib/tool';
 import { externalReferrerHost } from '@/lib/referrer';
@@ -210,7 +211,10 @@ const EVENT_SENT_PREFIX = 'p151-ev-';
  * than the per-user records. `once` de-dupes per browser via localStorage — use
  * it for signals that should count one distinct user (e.g. "saw the intro").
  */
-export function sendEventBeacon(event: string, opts?: { once?: boolean }) {
+export function sendEventBeacon(
+  event: string,
+  opts?: { once?: boolean; exportTool?: ExportSurveyTool; reason?: ExportSurveySkipReason },
+) {
   if (DEMO_MODE || isOptedOut()) return;
   const cid = getClientId();
   if (opts?.once) {
@@ -228,7 +232,14 @@ export function sendEventBeacon(event: string, opts?: { once?: boolean }) {
   void fetch('/api/event', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cid, event, tool: currentTool(), page: currentPage() }),
+    body: JSON.stringify({
+      cid,
+      event,
+      tool: currentTool(),
+      page: currentPage(),
+      ...(opts?.exportTool ? { exportTool: opts.exportTool } : {}),
+      ...(opts?.reason ? { reason: opts.reason } : {}),
+    }),
     keepalive: true,
   }).catch(() => {
     // best-effort analytics

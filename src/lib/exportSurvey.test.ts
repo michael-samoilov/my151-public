@@ -1,8 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EARLY_EXPORT_BUCKETS } from '@/league/export/exportPersonalization';
 import {
+  EXPORT_SURVEY_SKIP_EVENT,
+  isFunnelEvent,
+  parseExportSurveySkipReason,
+  parseExportSurveyToolField,
+  parseJournalEntry,
+} from '../../api/_events';
+import {
   EXPORT_SURVEY_SEEN_KEY,
+  createExportSurveySkipReporter,
   exportSurveyFeedbackRoute,
+  exportSurveySkipReason,
   hasSeenExportSurvey,
   isExportSurveyTool,
   markExportSurveySeen,
@@ -99,5 +108,116 @@ describe('export survey gate', () => {
     expect(
       shouldShowExportSurvey({ optedOut: false, preview: false, seen: false, ordinal: 1000 }),
     ).toBe(true);
+  });
+});
+
+describe('export survey skip reason', () => {
+  it('maps Not now to not_now from either phase', () => {
+    expect(exportSurveySkipReason({ phase: 'intro', action: 'not_now' })).toBe('not_now');
+    expect(exportSurveySkipReason({ phase: 'form', action: 'not_now' })).toBe('not_now');
+  });
+
+  it('maps intro dismiss to close and form dismiss to abandon', () => {
+    expect(exportSurveySkipReason({ phase: 'intro', action: 'dismiss' })).toBe('close');
+    expect(exportSurveySkipReason({ phase: 'form', action: 'dismiss' })).toBe('abandon');
+  });
+});
+
+describe('export survey skip reporter', () => {
+  it('sends export_survey_skipped once with tool and reason', () => {
+    const sent: unknown[] = [];
+    const reporter = createExportSurveySkipReporter({
+      exportTool: 'pokedex',
+      send: (event, payload) => sent.push({ event, ...payload }),
+    });
+    reporter.skip('not_now');
+    reporter.skip('close');
+    expect(sent).toEqual([
+      { event: EXPORT_SURVEY_SKIP_EVENT, exportTool: 'pokedex', reason: 'not_now' },
+    ]);
+  });
+
+  it('does not send after a successful Send', () => {
+    const sent: unknown[] = [];
+    const reporter = createExportSurveySkipReporter({
+      exportTool: 'league',
+      send: (event, payload) => sent.push({ event, ...payload }),
+    });
+    reporter.markSent();
+    reporter.skip('abandon');
+    reporter.onPageHide('form');
+    expect(sent).toEqual([]);
+  });
+
+  it('treats leaving the intro as close and leaving the form as abandon', () => {
+    const intro: unknown[] = [];
+    createExportSurveySkipReporter({
+      exportTool: 'card',
+      send: (event, payload) => intro.push({ event, ...payload }),
+    }).onPageHide('intro');
+    const form: unknown[] = [];
+    createExportSurveySkipReporter({
+      exportTool: 'card',
+      send: (event, payload) => form.push({ event, ...payload }),
+    }).onPageHide('form');
+    expect(intro).toEqual([
+      { event: EXPORT_SURVEY_SKIP_EVENT, exportTool: 'card', reason: 'close' },
+    ]);
+    expect(form).toEqual([
+      { event: EXPORT_SURVEY_SKIP_EVENT, exportTool: 'card', reason: 'abandon' },
+    ]);
+  });
+});
+
+describe('export survey skip journal fields', () => {
+  it('accepts export_survey_skipped as a funnel event', () => {
+    expect(isFunnelEvent('export_survey_skipped')).toBe(true);
+  });
+
+  it('parses exportTool and reason, and drops unknown values', () => {
+    expect(parseExportSurveyToolField('pokedex')).toBe('pokedex');
+    expect(parseExportSurveyToolField('dex')).toBeUndefined();
+    expect(parseExportSurveySkipReason('not_now')).toBe('not_now');
+    expect(parseExportSurveySkipReason('skip')).toBeUndefined();
+  });
+
+  it('keeps exportTool and reason on a skip journal entry', () => {
+    expect(
+      parseJournalEntry({
+        t: 1,
+        cid: 'cid-skip-01',
+        tool: 'league',
+        ev: 'export_survey_skipped',
+        page: '/custom-gym-leader',
+        exportTool: 'card',
+        reason: 'abandon',
+      }),
+    ).toEqual({
+      t: 1,
+      cid: 'cid-skip-01',
+      tool: 'league',
+      ev: 'export_survey_skipped',
+      page: '/custom-gym-leader',
+      exportTool: 'card',
+      reason: 'abandon',
+    });
+  });
+
+  it('ignores invalid exportTool and reason values', () => {
+    expect(
+      parseJournalEntry({
+        t: 1,
+        cid: 'cid-skip-03',
+        tool: 'dex',
+        ev: 'export_survey_skipped',
+        exportTool: 'dex',
+        reason: 'esc',
+      }),
+    ).toEqual({
+      t: 1,
+      cid: 'cid-skip-03',
+      tool: 'dex',
+      ev: 'export_survey_skipped',
+    });
   });
 });
