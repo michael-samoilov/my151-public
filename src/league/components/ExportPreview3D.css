@@ -55,7 +55,9 @@
   --foil-shift-x: calc((var(--pointer-from-left) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   --foil-shift-y: calc((var(--pointer-from-top) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   position: relative;
-  overflow: visible;
+  overflow: hidden;
+  -webkit-clip-path: inset(0);
+  clip-path: inset(0);
   /* poke-holo .card__rotator: rotateY(--rotate-x) rotateX(--rotate-y), no scale. */
   -webkit-transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y));
   transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y));
@@ -239,7 +241,7 @@
 
 .export-foil-bloom {
   z-index: 9;
-  inset: -48px;
+  inset: 0;
   background-image: radial-gradient(
     circle at var(--pointer-x) var(--pointer-y),
     hsla(0, 0%, 100%, 0.85) 0%,

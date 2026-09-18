@@ -94,16 +94,16 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   emboss: { on: false, amount: 0 },
   parallax: { on: false, amount: 0 },
   sparkle: { on: true, amount: 0.52 },
-  bloom: { on: true, amount: 0.36 },
+  bloom: { on: false, amount: 0.36 },
 };
 
 /** Live overlay default. Off layers stay off so they never paint. */
 export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
-  idleTilt: 25,
+  idleTilt: 8,
   idleMsX: 2500,
   idleMsY: 2500,
-  deadDeg: 3,
-  maxTilt: 25,
+  deadDeg: 2,
+  maxTilt: 12,
   parallaxPx: 0,
   bloomBlurPx: 34,
   specSize: 0.5,

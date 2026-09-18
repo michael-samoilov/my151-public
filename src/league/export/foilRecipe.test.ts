@@ -25,19 +25,19 @@ describe('foil recipe', () => {
   });
 
   it('idle tilt clears the shine dead zone', () => {
-    expect(DEFAULT_FOIL_RECIPE.idleTilt).toBe(25);
+    expect(DEFAULT_FOIL_RECIPE.idleTilt).toBe(8);
     expect(DEFAULT_FOIL_RECIPE.idleTilt).toBeGreaterThan(DEFAULT_FOIL_RECIPE.deadDeg);
     expect(DEFAULT_FOIL_RECIPE.idleMsX).toBe(2500);
     expect(DEFAULT_FOIL_RECIPE.maxTilt).toBeGreaterThanOrEqual(DEFAULT_FOIL_RECIPE.idleTilt);
+    expect(DEFAULT_FOIL_RECIPE.maxTilt).toBeLessThan(20);
   });
 
-  it('live default paints five layers and skips the edge map', () => {
+  it('live default paints four layers and skips the edge map', () => {
     expect(activeFoilLayerIds(DEFAULT_FOIL_RECIPE)).toEqual([
       'pointLight',
       'holographic',
       'iridescence',
       'sparkle',
-      'bloom',
     ]);
     expect(foilMapsNeeded(DEFAULT_FOIL_RECIPE)).toEqual({
       sat: true,

@@ -35,6 +35,35 @@ describe('exportPreviewFit', () => {
     expect(projected.height).toBeLessThanOrEqual(box.height - 8);
   });
 
+  it('caps a 25deg orbit on a pane-filling landscape card', () => {
+    const box = { width: 390, height: 420 };
+    const rest = fitCardInPreviewBox({
+      boxWidth: box.width,
+      boxHeight: box.height,
+      aspect: 1.4,
+      tiltDeg: 0,
+      pad: 16,
+    });
+    const raw = clampTiltToBox({
+      tiltX: 25,
+      tiltY: 25,
+      cardWidth: rest.width,
+      cardHeight: rest.height,
+      boxWidth: box.width,
+      boxHeight: box.height,
+      pad: 8,
+    });
+    expect(Math.hypot(raw.x, raw.y)).toBeLessThan(20);
+    const projected = projectedCardSize({
+      width: rest.width,
+      height: rest.height,
+      tiltXDeg: raw.x,
+      tiltYDeg: raw.y,
+    });
+    expect(projected.width).toBeLessThanOrEqual(box.width - 8 + 0.5);
+    expect(projected.height).toBeLessThanOrEqual(box.height - 8 + 0.5);
+  });
+
   it('clamps an overflowing tilt back into the box', () => {
     const card = { width: 640, height: 480 };
     const box = { width: 900, height: 700 };

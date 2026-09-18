@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { fitCardInPreviewBox, PREVIEW_PERSPECTIVE_PX } from '@/components/export/exportPreviewFit';
+import { clampTiltToBox, fitCardInPreviewBox, PREVIEW_PERSPECTIVE_PX } from '@/components/export/exportPreviewFit';
 import {
   pokeHoloFromPointer,
   pokeHoloIdle,
@@ -78,8 +78,23 @@ export function ExportPreview3D({
     const el = cardRef.current;
     if (!el) return;
     const maxTilt = recipeRef.current.maxTilt;
-    const rotateX = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateX));
-    const rotateY = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateY));
+    let rotateX = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateX));
+    let rotateY = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateY));
+    const stage = stageRef.current;
+    if (stage && el.offsetWidth > 0 && el.offsetHeight > 0) {
+      const box = stage.getBoundingClientRect();
+      const clamped = clampTiltToBox({
+        tiltX: rotateX,
+        tiltY: rotateY,
+        cardWidth: el.offsetWidth,
+        cardHeight: el.offsetHeight,
+        boxWidth: box.width,
+        boxHeight: box.height,
+        pad: 8,
+      });
+      rotateX = clamped.x;
+      rotateY = clamped.y;
+    }
     const pointerX = pose.pointerX;
     const pointerY = pose.pointerY;
     lastPoseRef.current = { rotateX, rotateY, pointerX, pointerY };

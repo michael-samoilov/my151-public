@@ -433,18 +433,18 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   const idleMoved =
     idleA.orbit === 'idle' &&
     idleB.orbit === 'idle' &&
-    Math.max(idleA.hypot, idleB.hypot) > 6 &&
+    Math.max(idleA.hypot, idleB.hypot) > 2.5 &&
     idleDelta > 2 &&
-    visualDelta > 8 &&
+    visualDelta > 4 &&
     perspectiveOn;
   await s.screenshot(ctx.shot('dex-export-overlay'));
   const tiltedFit = await s.evalJson<{ ok: boolean; reason: string }>(
-    `const hit=document.querySelector('[data-export-tilt-hit]');
+    `const card=document.querySelector('[data-export-preview]');
      const layer=document.querySelector('[data-export-preview-layer]');
-     if(!(hit instanceof HTMLElement) || !(layer instanceof HTMLElement)) return {ok:false,reason:'missing'};
-     const c=hit.getBoundingClientRect(); const l=layer.getBoundingClientRect();
-     if(c.left<l.left-4||c.right>l.right+4||c.top<l.top-4||c.bottom>l.bottom+4) return {ok:false,reason:'overflow'};
-     if(c.right>innerWidth+4||c.bottom>innerHeight+4) return {ok:false,reason:'viewport'};
+     if(!(card instanceof HTMLElement) || !(layer instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     const c=card.getBoundingClientRect(); const l=layer.getBoundingClientRect();
+     if(c.left<l.left-4||c.right>l.right+4||c.top<l.top-4||c.bottom>l.bottom+4) return {ok:false,reason:'layer'};
+     if(c.left<-4||c.top<-4||c.right>innerWidth+4||c.bottom>innerHeight+4) return {ok:false,reason:'viewport'};
      return {ok:true,reason:''};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   const shineMotion = idleB.foil >= idleA.foil ? idleB : idleA;
@@ -505,6 +505,18 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      if(c.left<l.left-4||c.right>l.right+4||c.top<l.top-4||c.bottom>l.bottom+4) return {ok:false,reason:'overflow',ratio};
      return {ok:ratio>=0.82,reason:'cover '+ratio.toFixed(3),ratio};`,
   ).catch(() => ({ ok: false, reason: 'eval', ratio: 0 }));
+  const shineClip = await s.evalJson<{ ok: boolean; reason: string }>(
+    `const card=document.querySelector('[data-export-preview]');
+     if(!(card instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     const overflow=getComputedStyle(card).overflow;
+     if(overflow!=='hidden') return {ok:false,reason:'overflow '+overflow};
+     const bloom=document.querySelector('[data-foil-layer="bloom"]');
+     if(bloom instanceof HTMLElement){
+       const inset=getComputedStyle(bloom).inset;
+       if(inset.includes('-')) return {ok:false,reason:'bloom inset '+inset};
+     }
+     return {ok:true,reason:bloom?'clipped':'no-bloom'};`,
+  ).catch(() => ({ ok: false, reason: 'eval' }));
   await s.screenshot(ctx.shot('dex-export-locked'));
   const confirmReady = await s.evalJson<boolean>(
     `try { Object.defineProperty(navigator,'canShare',{value:()=>false,configurable:true}); } catch {}
@@ -542,6 +554,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta, visualDelta, perspectiveOn })),
     ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
     ok('dex-export:shine', imgReady && shineOn, JSON.stringify(shineSample)),
+    ok('dex-export:shine-clip', shineClip.ok, shineClip.reason),
     ok('dex-export:lock-on-press', locked.paused === '1' && locked.hypot < 0.8, JSON.stringify(locked)),
     ok('dex-export:card-fill', fill.ok, fill.reason),
     ok('dex-export:survey-sprite-scale', sprite.ok, `${sprite.reason} device=${sprite.devicePx.toFixed(1)} native=${sprite.native}`),

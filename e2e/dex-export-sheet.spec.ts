@@ -293,11 +293,37 @@ test.describe('desktop dex export preview', () => {
     const visual = Math.hypot(b.top - a.top, b.left - a.left, b.width - a.width, b.height - a.height);
     expect(a.orbit, JSON.stringify({ a, b, visual })).toBe('idle');
     expect(b.orbit, JSON.stringify({ a, b, visual })).toBe('idle');
-    expect(Math.max(a.hypot, b.hypot), JSON.stringify({ a, b, visual })).toBeGreaterThan(6);
+    expect(Math.max(a.hypot, b.hypot), JSON.stringify({ a, b, visual })).toBeGreaterThan(2.5);
     expect(Math.hypot(b.x - a.x, b.y - a.y), JSON.stringify({ a, b, visual })).toBeGreaterThan(2);
-    expect(visual, JSON.stringify({ a, b, visual })).toBeGreaterThan(8);
+    expect(visual, JSON.stringify({ a, b, visual })).toBeGreaterThan(4);
     expect(a.perspective.startsWith('600'), a.perspective).toBe(true);
     expect(b.transformStyle.includes('preserve-3d'), b.transformStyle).toBe(true);
+    expect(Math.max(a.hypot, b.hypot), JSON.stringify({ a, b })).toBeLessThan(16);
+    const inView = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
+      if (!card || !layer) return { ok: false, reason: 'missing' };
+      const c = card.getBoundingClientRect();
+      const l = layer.getBoundingClientRect();
+      if (c.left < l.left - 4 || c.right > l.right + 4 || c.top < l.top - 4 || c.bottom > l.bottom + 4) {
+        return { ok: false, reason: 'layer' };
+      }
+      if (c.left < -4 || c.top < -4 || c.right > innerWidth + 4 || c.bottom > innerHeight + 4) {
+        return { ok: false, reason: 'viewport' };
+      }
+      return { ok: true, reason: '' };
+    });
+    expect(inView.ok, inView.reason).toBe(true);
+    const shineClip = await foil.evaluate((el) => {
+      const overflow = getComputedStyle(el).overflow;
+      const bloom = document.querySelector('[data-foil-layer="bloom"]');
+      return {
+        overflow,
+        bloom: Boolean(bloom),
+        ok: overflow === 'hidden' && !bloom,
+      };
+    });
+    expect(shineClip.ok, JSON.stringify(shineClip)).toBe(true);
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity'))).toBeGreaterThan(0.1);
 
     const box = await hit.boundingBox();
