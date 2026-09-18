@@ -7,35 +7,39 @@ describe('skip milestones', () => {
     expect(milestoneFill('export')).toBe('var(--color-success)');
   });
 
-  it('labels reason only for pokedex and league; tooltip keeps tool', () => {
-    const [dex] = exportSurveySkipMarks(
+  it('labels reason only on the dex page; tooltip keeps tool', () => {
+    const [mark] = exportSurveySkipMarks(
       [{ t: 50, tool: 'pokedex', reason: 'not_now' }],
       (t) => t,
+      'dex',
     );
-    expect(dex.label).toBe('not now');
-    expect(dex.title).toBe('export_survey_skipped · pokedex · not_now');
+    expect(mark.label).toBe('not now');
+    expect(mark.title).toBe('export_survey_skipped · pokedex · not_now');
+    expect(mark.tone).toBe('skip');
+  });
+
+  it('names league vs card on the league page', () => {
     const [league] = exportSurveySkipMarks(
       [{ t: 50, tool: 'league', reason: 'close' }],
       (t) => t,
+      'league',
     );
-    expect(league.label).toBe('close');
+    expect(league.label).toBe('league · close');
     expect(league.title).toBe('export_survey_skipped · league · close');
-  });
-
-  it('keeps card on a skip mark because the page does not imply it', () => {
-    const [mark] = exportSurveySkipMarks(
+    const [card] = exportSurveySkipMarks(
       [{ t: 50, tool: 'card', reason: 'abandon' }],
       (t) => t,
+      'league',
     );
-    expect(mark.label).toBe('card · abandon');
-    expect(mark.title).toBe('export_survey_skipped · card · abandon');
+    expect(card.label).toBe('card · abandon');
+    expect(card.title).toBe('export_survey_skipped · card · abandon');
   });
 
   it('does not merge a skip onto a green export', () => {
     const marks = placeMilestones(
       [
         { t: 10, label: 'league', tone: 'export' },
-        { t: 10, label: 'close', tone: 'skip', title: 'export_survey_skipped · league · close' },
+        { t: 10, label: 'league · close', tone: 'skip', title: 'export_survey_skipped · league · close' },
       ],
       (t) => t,
     );
@@ -60,7 +64,7 @@ describe('skip milestones', () => {
   });
 
   it('keeps a lone skip label on the rail', () => {
-    const marks = placeMilestones([{ t: 40, label: 'close', tone: 'skip' }], (t) => t);
+    const marks = placeMilestones([{ t: 40, label: 'league · close', tone: 'skip' }], (t) => t);
     expect(marks[0].labelDy).toBe(MILESTONE_LABEL_ABOVE);
   });
 
@@ -68,19 +72,19 @@ describe('skip milestones', () => {
     const marks = placeMilestones(
       [
         { t: 300, label: 'league', tone: 'export' },
-        { t: 340, label: 'close', tone: 'skip', title: 'export_survey_skipped · league · close' },
+        { t: 340, label: 'league · close', tone: 'skip', title: 'export_survey_skipped · league · close' },
       ],
       (t) => t,
     );
     expect(marks[1].labelDy).toBe(MILESTONE_LABEL_BELOW);
-    expect(marks[1].label).toBe('close');
+    expect(marks[1].label).toBe('league · close');
   });
 
   it('keeps a skip label on the rail when the green mark is far', () => {
     const marks = placeMilestones(
       [
         { t: 20, label: 'card', tone: 'export' },
-        { t: 340, label: 'close', tone: 'skip' },
+        { t: 340, label: 'league · close', tone: 'skip' },
       ],
       (t) => t,
     );

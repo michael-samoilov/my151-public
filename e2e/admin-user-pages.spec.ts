@@ -367,16 +367,21 @@ test.describe('admin user pages', () => {
     expect(skipY).toBeGreaterThan(exportY);
   });
 
-  test('league user-detail shows a red export survey skip mark', async ({ page }) => {
+  test('league user-detail shows red skip marks for league and card', async ({ page }) => {
     await openDemo(page);
     await page.getByRole('button', { name: 'League' }).click();
     await userCard(page, '70cd').click();
-    const mark = page.locator('[data-testid="session-milestone"][data-tone="skip"]');
-    await expect(mark).toBeVisible();
-    await expect(mark.locator('text')).toHaveText('close');
-    await expect(mark.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
-    await expect(mark.locator('title')).toHaveText('export_survey_skipped · league · close');
-    await expect(mark).toHaveAttribute('data-label-lane', 'below');
+    const skips = page.locator('[data-testid="session-milestone"][data-tone="skip"]');
+    await expect(skips).toHaveCount(2);
+    const leagueSkip = skips.filter({ hasText: 'league · close' });
+    const cardSkip = skips.filter({ hasText: 'card · abandon' });
+    await expect(leagueSkip.locator('text')).toHaveText('league · close');
+    await expect(cardSkip.locator('text')).toHaveText('card · abandon');
+    await expect(leagueSkip.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
+    await expect(cardSkip.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
+    await expect(leagueSkip.locator('title')).toHaveText('export_survey_skipped · league · close');
+    await expect(cardSkip.locator('title')).toHaveText('export_survey_skipped · card · abandon');
+    await expect(leagueSkip).toHaveAttribute('data-label-lane', 'below');
   });
 
   test('header chips stay one row with one language and no focus ring', async ({ page }) => {

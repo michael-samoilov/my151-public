@@ -15,18 +15,26 @@ export function milestoneFill(tone?: MilestoneTone): string {
   return 'var(--color-success)';
 }
 
-export function skipReasonLabel(tool: ExportSurveySkip['tool'], reason: ExportSurveySkip['reason']): string {
+export type SkipLabelPage = 'dex' | 'league';
+
+export function skipReasonLabel(
+  tool: ExportSurveySkip['tool'],
+  reason: ExportSurveySkip['reason'],
+  page: SkipLabelPage,
+): string {
   const reasonLabel = reason.replaceAll('_', ' ');
-  return tool === 'card' ? `card · ${reasonLabel}` : reasonLabel;
+  if (page === 'dex') return reasonLabel;
+  return `${tool} · ${reasonLabel}`;
 }
 
 export function exportSurveySkipMarks(
   skips: ExportSurveySkip[] | undefined,
   clampT: (t: number) => number,
+  page: SkipLabelPage,
 ): ChartMilestone[] {
   return (skips ?? []).map((s) => ({
     t: clampT(s.t),
-    label: skipReasonLabel(s.tool, s.reason),
+    label: skipReasonLabel(s.tool, s.reason, page),
     tone: 'skip',
     title: `export_survey_skipped · ${s.tool} · ${s.reason}`,
   }));

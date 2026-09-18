@@ -948,7 +948,7 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
       : log.length
         ? [{ t: t1, label: 'no exports', tone: 'muted' }]
         : [];
-  milestones.push(...exportSurveySkipMarks(rec.exportSurveySkips, clampT));
+  milestones.push(...exportSurveySkipMarks(rec.exportSurveySkips, clampT, 'dex'));
 
   const snapshot = (
     <div ref={presenceRef}>
@@ -1069,7 +1069,7 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   if (milestones.length === 0 && log.length) {
     milestones.push({ t: t1, label: 'no exports', tone: 'muted' });
   }
-  milestones.push(...exportSurveySkipMarks(league.exportSurveySkips, clampT));
+  milestones.push(...exportSurveySkipMarks(league.exportSurveySkips, clampT, 'league'));
 
   const snapshots = useMemo(() => {
     if (log.length === 0) {

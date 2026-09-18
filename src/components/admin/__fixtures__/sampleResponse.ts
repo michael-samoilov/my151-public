@@ -460,7 +460,11 @@ const leagueUsers: LeagueUser[] = [
     summary: { cards: 1, seats: 1, typed: 0, named: 0, aces: 0, leagueNamed: false },
     country: last.country,
   });
-  u.exportSurveySkips = [{ t: u.lastTs, tool: 'league', reason: 'close' }];
+  if (!u.exportedCardAt) throw new Error('70cd fixture missing exportedCardAt');
+  u.exportSurveySkips = [
+    { t: Date.parse(u.exportedCardAt), tool: 'card', reason: 'abandon' },
+    { t: u.lastTs, tool: 'league', reason: 'close' },
+  ];
 }
 
 // Popular / dropped picks — a slice of the mockup's grid, real Pokémon ids.
