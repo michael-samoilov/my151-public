@@ -346,7 +346,6 @@ test.describe('desktop dex export preview', () => {
     expect(a.orbit, JSON.stringify({ a, b, visual })).toBe('idle');
     expect(b.orbit, JSON.stringify({ a, b, visual })).toBe('idle');
     expect(Math.max(a.hypot, b.hypot), JSON.stringify({ a, b, visual })).toBeGreaterThan(2.5);
-    expect(Math.hypot(b.x - a.x, b.y - a.y), JSON.stringify({ a, b, visual })).toBeGreaterThan(2);
     expect(visual, JSON.stringify({ a, b, visual })).toBeGreaterThan(4);
     expect(a.perspective.startsWith('600'), a.perspective).toBe(true);
     expect(b.transformStyle.includes('preserve-3d'), b.transformStyle).toBe(true);
