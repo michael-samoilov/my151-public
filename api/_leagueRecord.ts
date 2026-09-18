@@ -105,6 +105,10 @@ export interface LeagueSessionEntry {
   country?: string;
   dev?: string;
   page?: string;
+  /** Funnel events seen in this sitting (league-open, league-export-*,
+   *  export_survey_skipped, …). Names only, deduped per session, same as the
+   *  dex session log. Join the journal by cid for exportTool and reason. */
+  events?: string[];
   /** The league's structure at this session's last beacon: the same shape as
    *  `latestCards`, kept per session so the admin scrubber can replay the board
    *  at a past point, not only its counts. Absent on sessions logged before the
@@ -149,6 +153,8 @@ export interface LeagueRecord {
   tz?: string;
   lang?: string;
   locale?: string;
+  /** Locale pinned in the language picker. See ClientRecord.switched. */
+  switched?: string;
   device?: string;
   os?: string;
   browser?: string;
@@ -349,6 +355,8 @@ export interface LeagueBeaconInput {
   ua: { device: string; os: string; browser: string };
   lang?: string;
   locale?: string;
+  /** Locale pinned in the language picker. Forward-only once set. */
+  switched?: string;
   page?: string;
   /** External referrer host, host-only, already validated. Stored forward-only. */
   referrer?: string;
@@ -359,6 +367,8 @@ export interface LeagueBeaconInput {
    * later session.
    */
   capturedKnown?: boolean;
+  /** Funnel event names to attach to this sitting. Already sanitized. */
+  events?: string[];
 }
 
 /**
@@ -409,20 +419,30 @@ export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeacon
   rec.tz = b.geo.tz;
   rec.lang = b.lang;
   if (b.locale) rec.locale = b.locale;
+  if (b.switched) rec.switched = b.switched;
   rec.device = b.ua.device;
   rec.os = b.ua.os;
   rec.browser = b.ua.browser;
   if (b.referrer && !rec.firstReferrer) rec.firstReferrer = b.referrer;
 
   const devStamp = [b.ua.device, b.ua.os, b.ua.browser].filter((p) => p && p !== 'Unknown').join(' · ');
-  const makeEntry = (ts: number, cards: LeagueCardShape[] | undefined): LeagueSessionEntry => ({
-    ts,
-    summary: b.summary,
-    ...(b.geo.country ? { country: b.geo.country } : {}),
-    ...(devStamp ? { dev: devStamp } : {}),
-    ...(b.page ? { page: b.page } : {}),
-    ...(cards ? { cards } : {}),
-  });
+  const makeEntry = (
+    ts: number,
+    cards: LeagueCardShape[] | undefined,
+    prev?: LeagueSessionEntry,
+  ): LeagueSessionEntry => {
+    const mergedEvents = [...(prev?.events ?? [])];
+    for (const e of b.events ?? []) if (!mergedEvents.includes(e)) mergedEvents.push(e);
+    return {
+      ts,
+      summary: b.summary,
+      ...(b.geo.country ? { country: b.geo.country } : {}),
+      ...(devStamp ? { dev: devStamp } : {}),
+      ...(b.page ? { page: b.page } : {}),
+      ...(mergedEvents.length ? { events: mergedEvents } : {}),
+      ...(cards ? { cards } : {}),
+    };
+  };
 
   const log = rec.sessionLog;
   const ms = alignSessionMs(log.length, rec.sessionMs);
@@ -464,7 +484,7 @@ export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeacon
         const start = log[i].ts - ms[i];
         const newEnd = Math.max(log[i].ts, b.now);
         ms[i] = Math.max(0, newEnd - start);
-        log[i] = makeEntry(newEnd, b.cards ?? log[i].cards);
+        log[i] = makeEntry(newEnd, b.cards ?? log[i].cards, log[i]);
       }
     } else {
       log.splice(target.index, 0, makeEntry(b.now, b.cards));

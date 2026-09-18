@@ -16,22 +16,24 @@
  *
  * `N` is the number of default species in the section. `T` is the sum of
  * their pick counts. `1.0×` is the uniform rate. Unpicked defaults are `0×`.
- * Lines stay grouped for ranking and display order: a line's `picks` and
- * `index` are the max among its members. In-section Starters still show one
- * first-stage face per chain, indexed from that chain's max picks against
- * the line-level uniform rate (`S / L`).
+ * Most picked lists every default species in that section, ordered by its
+ * own ×, high to low. A lower-× stage does not ride with a higher-× evo-line
+ * mate. There is no Most/Least split and no 1.10× / 0.90× cutoff. Other
+ * Areas is not a default-member dump: it lists only species with at least
+ * 1 pick, ordered by ×, and sits last on the page.
+ * In-section Starters still show one first-stage face per chain, indexed
+ * from that chain's max picks against the line-level uniform rate (`S / L`).
  *
- * Most-picked ranks default lines only, and only lines above 1.10×.
- * Least-picked is only lines below 0.90×. In-section Starters list every
- * first-stage Pokémon across the full row, split grass / fire / water, with
- * no most/least split and no 1.10× cutoff. The starter grid uses one full-width
- * row per type with column count = starter generation count from the Starter
- * category (today nine). Other in-section sections use the 6+3 combined row.
- * Sprite packing wraps mid-line to fill the row. Off-section has no least
- * column, shows raw dex counts, never uses the starter type split or
- * first-stage-only faces, lays the sprite grid 9 columns wide, and does not
- * cap rows. One-off off-section placements stay visible unless Exclude
- * one-offs is on.
+ * In-section Starters list every first-stage Pokémon across the full row,
+ * split grass / fire / water, with no most/least split. The starter grid
+ * uses one full-width row per type with column count = starter generation
+ * count from the Starter category (today nine). Other in-section sections
+ * use one 9-column grid. Sprite packing wraps mid-line to fill the row.
+ * Off-section has no least column, shows raw dex counts, never uses the
+ * starter type split or first-stage-only faces, lays the sprite grid 9
+ * columns wide, and does not cap rows. Off-section placements never appear
+ * in Most picked. One-off off-section placements stay visible unless
+ * Exclude one-offs is on.
  */
 import { ARCHETYPES } from '@/data/archetypes';
 import { getCategoryById } from '@/data/categories';
@@ -61,7 +63,7 @@ export const PICKS_GRID_CAP = { maxRows: PICKS_MAX_ROWS, cols: PICKS_COLS } as c
 
 type GridCap = { maxRows: number; cols: number } | { maxLines: number };
 
-/** Full-width grids (off-section) are 9 columns. Most/least halves stay 6. */
+/** Full-width grids (Most picked and off-section) are 9 columns. */
 export function picksGridCols(wide: boolean, _desktop: boolean): number {
   return wide ? PICKS_OFF_COLS : PICKS_COLS;
 }
@@ -82,10 +84,10 @@ export function picksStarterCols(): number {
   return starterGenerationCount();
 }
 
-export function picksGridCap(offSection: boolean, desktop: boolean): { maxRows: number; cols: number } {
+export function picksGridCap(_offSection: boolean, desktop: boolean): { maxRows: number; cols: number } {
   return {
-    maxRows: offSection ? Number.POSITIVE_INFINITY : PICKS_MAX_ROWS,
-    cols: picksGridCols(offSection, desktop),
+    maxRows: Number.POSITIVE_INFINITY,
+    cols: picksGridCols(true, desktop),
   };
 }
 
@@ -93,20 +95,13 @@ export type PicksSplitCap =
   | { kind: 'single'; cap: GridCap }
   | { kind: 'dual'; most: GridCap; least: GridCap };
 
-/** Row caps for most/least lists on the What people pick page. */
-export function picksSplitCap(offSection: boolean, desktop: boolean): PicksSplitCap {
-  if (offSection) {
-    return {
-      kind: 'single',
-      cap: { maxRows: Number.POSITIVE_INFINITY, cols: picksGridCols(true, desktop) },
-    };
-  }
-  const most: GridCap = PICKS_GRID_CAP;
-  const least: GridCap = { maxRows: PICKS_MAX_ROWS, cols: PICKS_LEAST_COLS };
-  return { kind: 'dual', most, least };
+/** Row cap: one 9-column grid, no Most/Least split, no row cap. */
+export function picksSplitCap(_offSection: boolean, desktop: boolean): PicksSplitCap {
+  return {
+    kind: 'single',
+    cap: { maxRows: Number.POSITIVE_INFINITY, cols: picksGridCols(true, desktop) },
+  };
 }
-export const MOST_MIN_INDEX = 1.1;
-export const LEAST_MAX_INDEX = 0.9;
 export const STARTER_TYPES = ['grass', 'fire', 'water'] as const;
 
 export type StarterType = (typeof STARTER_TYPES)[number] | 'other';
@@ -271,52 +266,6 @@ export function rowsUsed(lines: { members: readonly unknown[] }[], cols = PICKS_
   return Math.ceil(n / cols);
 }
 
-function takeUntilCap<T extends { key: string; members: readonly unknown[] }>(
-  lines: T[],
-  cap: GridCap,
-): T[] {
-  if ('maxLines' in cap) return lines.slice(0, cap.maxLines);
-  if (!Number.isFinite(cap.maxRows)) return [...lines];
-  const kept: T[] = [];
-  for (const line of lines) {
-    const next = [...kept, line];
-    if (rowsUsed(next, cap.cols) > cap.maxRows) break;
-    kept.push(line);
-  }
-  return kept;
-}
-
-/**
- * Split ranked-desc lines into most and least sprite-grid lists.
- *
- * `most` is the highest-index lines that fit the cap. When `minMostIndex` is
- * set, a line must sit strictly above that index. `least` is the lowest-index
- * lines that are not in most, strictly below `maxLeastIndex` when set, ordered
- * so the lowest sits last. Off-section passes `includeLeast: false`.
- */
-export function splitMostLeast<T extends { key: string; index: number; members: readonly unknown[] }>(
-  rankedDesc: T[],
-  cap: GridCap | PicksSplitCap,
-  opts: { minMostIndex?: number; maxLeastIndex?: number; includeLeast?: boolean } = {},
-): { most: T[]; least: T[] } {
-  const includeLeast = opts.includeLeast !== false;
-  const minMost = opts.minMostIndex;
-  const maxLeast = opts.maxLeastIndex;
-  const mostCap =
-    'kind' in cap && cap.kind === 'single' ? cap.cap : 'kind' in cap ? cap.most : cap;
-  const leastCap =
-    'kind' in cap && cap.kind === 'single' ? cap.cap : 'kind' in cap ? cap.least : cap;
-  let over = minMost == null ? rankedDesc : rankedDesc.filter((l) => roundedIndex(l.index) > minMost);
-  if (maxLeast != null) over = over.filter((l) => roundedIndex(l.index) >= maxLeast);
-  const most = takeUntilCap(over, mostCap);
-  if (!includeLeast) return { most, least: [] };
-  const mostKeys = new Set(most.map((l) => l.key));
-  let rest = rankedDesc.filter((l) => !mostKeys.has(l.key));
-  if (maxLeast != null) rest = rest.filter((l) => roundedIndex(l.index) < maxLeast);
-  const least = takeUntilCap(rest.toReversed(), leastCap).toReversed();
-  return { most, least };
-}
-
 function countsFrom(rows: [string, number][]): Map<number, number> {
   const out = new Map<number, number>();
   for (const [id, n] of rows) {
@@ -367,8 +316,9 @@ function speciesExpected(universe: Map<string, number[]>, counts: Map<number, nu
 
 /**
  * Index `groups` against the section universe.
- * Species (default) use `T / N`. First-stage starter faces use `S / L`.
- * Off-section lines use the section's default universe as the 1× baseline.
+ * Species (default) use `T / N` and rank as one entry each.
+ * First-stage starter faces use `S / L`.
+ * Off-section species use the section's default universe as the 1× baseline.
  */
 export function indexGroups(
   groups: Map<string, number[]>,
@@ -381,38 +331,32 @@ export function indexGroups(
     : speciesExpected(universe, counts);
   const ranked: RankedLine[] = [];
   for (const [key, memberIds] of groups) {
-    let members: LineMember[];
-    let typeId: number;
-    let picks: number;
-    let index: number;
-    if (opts.firstStageOnly) {
-      const face = firstStageOf(memberIds);
-      if (!face) continue;
-      picks = linePicks(memberIds, counts);
-      index = indexOfCount(picks, expected);
-      members = [memberOf(face, picks, index)];
-      typeId = face.id;
-    } else {
+    if (!opts.firstStageOnly) {
       const mons = sortMembers(memberIds);
       if (mons.length === 0) continue;
-      members = mons.map((p) => {
+      for (const p of mons) {
         const n = counts.get(p.id) ?? 0;
-        return memberOf(p, n, indexOfCount(n, expected));
-      });
-      picks = 0;
-      index = 0;
-      for (const m of members) {
-        if (m.picks > picks) picks = m.picks;
-        if (m.index > index) index = m.index;
+        const speciesIndex = indexOfCount(n, expected);
+        ranked.push({
+          key: String(p.id),
+          members: [memberOf(p, n, speciesIndex)],
+          picks: n,
+          index: speciesIndex,
+          starterType: starterTypeOf(p.id),
+        });
       }
-      typeId = mons[0].id;
+      continue;
     }
+    const face = firstStageOf(memberIds);
+    if (!face) continue;
+    const picks = linePicks(memberIds, counts);
+    const index = indexOfCount(picks, expected);
     ranked.push({
       key,
-      members,
+      members: [memberOf(face, picks, index)],
       picks,
       index,
-      starterType: starterTypeOf(typeId),
+      starterType: starterTypeOf(face.id),
     });
   }
   ranked.sort((a, b) => b.index - a.index || b.picks - a.picks || a.members[0].id - b.members[0].id);
@@ -445,8 +389,10 @@ export function sectionPicksView(
   }
 
   const group = BUILD_GROUPS.find((g) => g.id === sectionId);
-  const catchAll = group?.filterType === null;
-  const pool = catchAll ? [...counts.keys()] : [...poolIdsForSection(sectionId)];
+  const catchAll = sectionId === 'other' || group?.filterType === null;
+  const pool = catchAll
+    ? [...counts.keys()].filter((id) => (counts.get(id) ?? 0) >= 1)
+    : [...poolIdsForSection(sectionId)];
   const starters = sectionId === 'starter';
   const inSectionStarters = starters && !opts.offSection;
   const grouper = starters ? groupByChain : groupByLine;
@@ -471,23 +417,6 @@ export function sectionPicksView(
   if (ranked.length === 0) return null;
   if (!opts.offSection && ranked.every((l) => l.picks === 0)) return null;
 
-  const cap: GridCap | PicksSplitCap = opts.offSection
-    ? opts.cap && 'kind' in opts.cap
-      ? opts.cap
-      : {
-          kind: 'single',
-          cap: {
-            maxRows: Number.POSITIVE_INFINITY,
-            cols: opts.cap && 'cols' in opts.cap ? opts.cap.cols : PICKS_COLS,
-          },
-        }
-    : (opts.cap ?? { kind: 'dual', most: PICKS_GRID_CAP, least: PICKS_GRID_CAP });
-  const splitOpts = {
-    minMostIndex: starters || opts.offSection ? undefined : MOST_MIN_INDEX,
-    maxLeastIndex: opts.offSection ? undefined : LEAST_MAX_INDEX,
-    includeLeast: !opts.offSection,
-  };
-
   if (inSectionStarters) {
     const groups: StarterGroup[] = [];
     for (const type of [...STARTER_TYPES, 'other'] as const) {
@@ -502,7 +431,7 @@ export function sectionPicksView(
   return {
     kind: 'plain',
     sectionId,
-    columns: splitMostLeast(ranked, cap, splitOpts),
+    columns: { most: ranked, least: [] },
   };
 }
 
@@ -515,10 +444,14 @@ export function viewsForPicks(
   } = {},
 ): SectionPicksView[] {
   const out: SectionPicksView[] = [];
+  let other: SectionPicksView | null = null;
   for (const g of BUILD_GROUPS) {
     const view = sectionPicksView(g.id, bySection[g.id] ?? [], opts);
-    if (view) out.push(view);
+    if (!view) continue;
+    if (g.id === 'other') other = view;
+    else out.push(view);
   }
+  if (other) out.push(other);
   return out;
 }
 

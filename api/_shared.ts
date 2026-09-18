@@ -99,6 +99,11 @@ export interface ClientRecord {
    *  client-side (`?lang=` > manual pick > browser). Distinct from `lang`,
    *  which is only the Accept-Language header. Absent on legacy records. */
   locale?: string;
+  /** Locale the visitor pinned in the language picker. Absent when they still
+   *  follow the browser (store.locale is null), and on every record written
+   *  before this field existed. Lets admin tell "picked English" from
+   *  "unsupported browser language fell back to English". */
+  switched?: string;
   device?: string;
   os?: string;
   browser?: string;

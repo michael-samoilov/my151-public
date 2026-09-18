@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { shareOrDownload } from '@/lib/exportImage';
-import { hasSeenExportSurvey, markExportSurveySeen, shouldShowExportSurvey } from '@/lib/exportSurvey';
+import { leagueExportEventBody } from '../../../api/_events';
+import { shareOrDownload, isShareAbort } from '@/lib/exportImage';
+import {
+  createExportSurveySkipReporter,
+  exportSurveySkipReason,
+  hasSeenExportSurvey,
+  markExportSurveySeen,
+  shouldShowExportSurvey,
+} from '@/lib/exportSurvey';
 import { isOptedOut } from '@/lib/clientId';
 import { PREVIEW_DEPLOY } from '@/lib/demoMode';
 import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
@@ -167,6 +174,29 @@ export function LeagueExportOverlay() {
   const previewUrlRef = useRef<string | null>(null);
   const debounceRef = useRef<number | null>(null);
   const [surveyOpenedAt, setSurveyOpenedAt] = useState(0);
+  const [skipReporter] = useState(() =>
+    createExportSurveySkipReporter({
+      exportTool: exportKind,
+      send: (event, payload) => sendEventBeacon(event, payload),
+    }),
+  );
+  const surveyPhase: 'intro' | 'form' = exportPhase === 'survey' ? 'form' : 'intro';
+
+  useEffect(() => {
+    if (exportPhase === 'settings') return;
+    const onHide = () => skipReporter.onPageHide(surveyPhase);
+    window.addEventListener('pagehide', onHide);
+    return () => window.removeEventListener('pagehide', onHide);
+  }, [exportPhase, skipReporter, surveyPhase]);
+
+  const dismissSurvey = (action: 'not_now' | 'dismiss') => {
+    skipReporter.skip(exportSurveySkipReason({ phase: surveyPhase, action }));
+    closeLeagueExport();
+  };
+  const finishSurvey = () => {
+    skipReporter.markSent();
+    closeLeagueExport();
+  };
 
   const revokePreview = useCallback(() => {
     if (previewUrlRef.current) {
@@ -219,17 +249,18 @@ export function LeagueExportOverlay() {
   const runExport = useCallback(async () => {
     if (exportBusy) return;
     setExportBusy(true);
-    sendEventBeacon(isLeague ? 'league-export-league' : 'league-export-card');
     try {
       const { name, cards, view } = useLeagueStore.getState();
       const ids = exportPokemonIds(isLeague ? cards : [cards[exportCardIndex!]]);
-      const nextHighlight = await sendLeagueExportBeacon(exportKind, ids);
-      setHighlight(nextHighlight);
       const blob = isLeague
         ? await exportLeagueHome(name, cards, view, layout)
         : await exportGymCard(cards[exportCardIndex!]);
       await shareOrDownload(blob, isLeague ? HOME_FILENAME : CARD_FILENAME);
       incrementLeagueExportCount();
+      const { event, exportTool } = leagueExportEventBody(exportKind);
+      sendEventBeacon(event, { exportTool });
+      const nextHighlight = await sendLeagueExportBeacon(exportKind, ids);
+      setHighlight(nextHighlight);
       if (
         !shouldShowExportSurvey({
           optedOut: isOptedOut(),
@@ -245,7 +276,7 @@ export function LeagueExportOverlay() {
       setSurveyOpenedAt(Date.now());
       setExportPhase('surveyIntro');
     } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
+      if (isShareAbort(err)) return;
       console.error('League export failed:', err);
     } finally {
       setExportBusy(false);
@@ -275,13 +306,13 @@ export function LeagueExportOverlay() {
         tool={exportKind}
         highlight={highlight}
         onContinue={() => setExportPhase('survey')}
-        onSkip={closeLeagueExport}
+        onSkip={() => dismissSurvey('not_now')}
       />
     ) : (
       <LeagueExportSurvey
         exportKind={exportKind}
         openedAt={surveyOpenedAt}
-        onDone={closeLeagueExport}
+        onDone={finishSurvey}
       />
     );
 
@@ -311,7 +342,7 @@ export function LeagueExportOverlay() {
     )
   ) : (
     <BottomSheet
-      onClose={closeLeagueExport}
+      onClose={exportPhase === 'settings' ? closeLeagueExport : () => dismissSurvey('dismiss')}
       title={paneTitle}
       closeLabel={paneTitle}
       size="content"
@@ -327,7 +358,7 @@ export function LeagueExportOverlay() {
 
   return (
     <>
-      <ExportScrim onClose={closeLeagueExport} />
+      <ExportScrim onClose={exportPhase === 'settings' ? closeLeagueExport : () => dismissSurvey('dismiss')} />
       <ExportPreviewLayer
         show={showPreview}
         dimmed={exportPhase !== 'settings'}

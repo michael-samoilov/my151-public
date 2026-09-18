@@ -3,11 +3,12 @@ import { expect, test, type Page } from '@playwright/test';
 /**
  * The admin "What people pick" page. Demo fixture, no token.
  *
- * Layout: builder chrome with the section name at the top-left; most/least
- * as sprite grids with an index bar under each sprite. Desktop most-picked
- * uses one 9-column row (6 most + 3 least) on phone and desktop. In-section Starters
- * list every first-stage face across the full row at most|least tile size,
- * split by grass / fire / water, with no most/least. Nine faces fit one row.
+ * Layout: builder chrome with the section name at the top-left; one 9-column
+ * sprite grid per section with an index bar under each sprite. Most picked
+ * lists every default species in that section, ordered by ×, with no
+ * Most/Least split. Other Areas lists only species with at least 1 pick
+ * and sits last. In-section Starters list every first-stage face across
+ * the full row, split by grass / fire / water. Nine faces fit one row.
  * Off-section Starters do not. Off-section sprite grids are 9 columns.
  */
 
@@ -76,7 +77,15 @@ test.describe('admin picks page', () => {
     if (test.info().project.name === 'desktop') {
       expect(pairW).toBeGreaterThanOrEqual(starterW);
     }
-    await expect(page.locator('[data-picks-layout="combined-9"]').first()).toBeVisible();
+    const pikaSection = page.locator('[data-section-id="pikachu-clone"]');
+    await expect(pikaSection.getByText('Least', { exact: true })).toHaveCount(0);
+    await expect(pikaSection.locator('[data-picks-layout="section-9"]')).toBeVisible();
+    await expect(pikaSection.locator('[data-picks-side="most"]')).toHaveAttribute('data-picks-cols', '9');
+    await expect(pikaSection.locator('[data-picks-side="least"]')).toHaveCount(0);
+    const pikaTracks = await pikaSection.locator('[data-picks-side="most"] .grid').first().evaluate((el) =>
+      getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length,
+    );
+    expect(pikaTracks).toBe(9);
 
     const pikaMeter = page.locator('[data-section-id="pikachu-clone"] [data-face-id="25"] [data-index-meter]');
     const pichuMeter = page.locator('[data-section-id="pikachu-clone"] [data-face-id="172"] [data-index-meter]');
@@ -87,10 +96,36 @@ test.describe('admin picks page', () => {
     expect(pichuX).toBeTruthy();
     expect(pikaX).toBeTruthy();
     expect(pichuX).not.toBe(pikaX);
+    const mostOrder = await page
+      .locator('[data-section-id="pikachu-clone"] [data-picks-side="most"] [data-face-id]')
+      .evaluateAll((els) =>
+        els
+          .map((el) => ({
+            id: Number(el.getAttribute('data-face-id')),
+            x: Math.round(el.getBoundingClientRect().x),
+            y: Math.round(el.getBoundingClientRect().y),
+          }))
+          .sort((a, b) => a.y - b.y || a.x - b.x)
+          .map((f) => f.id),
+      );
+    const pikaAt = mostOrder.indexOf(25);
+    const pichuAt = mostOrder.indexOf(172);
+    expect(pikaAt).toBeGreaterThanOrEqual(0);
+    expect(pichuAt).toBeGreaterThanOrEqual(0);
+    expect(pikaAt).toBeLessThan(pichuAt);
+    expect(mostOrder.length).toBeGreaterThan(3);
 
     await expect.poll(async () =>
       starters.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
     ).toBe(true);
+
+    const other = page.locator('[data-section-id="other"]');
+    await expect(other).toBeVisible();
+    await expect(other.getByText('Least', { exact: true })).toHaveCount(0);
+    const lastId = await page.locator('[data-section-id]').last().getAttribute('data-section-id');
+    expect(lastId).toBe('other');
+    const otherZero = await other.locator('[data-index-meter="0×"]').count();
+    expect(otherZero).toBe(0);
   });
 
   test('off-section tab keeps chrome, omits least, and shows counts', async ({ page }) => {

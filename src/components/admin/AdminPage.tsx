@@ -20,6 +20,7 @@ import { CARD_COUNT } from '../../../api/_leagueRecord';
 import { sortSessions, withoutDropRestorePhantoms, type SessionCounts } from '../../../api/_sessionize';
 import { SessionTimeline, type TimelinePoint } from '@/components/admin/charts/SessionTimeline';
 import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineMath';
+import { exportSurveySkipMarks, type ChartMilestone } from '@/components/admin/charts/sessionMilestones';
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/components/admin/dexPresence';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
@@ -29,7 +30,6 @@ import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } fro
 import {
   ARCHIVE_FILTER_OPTIONS,
   bareCid,
-  countryName,
   dexChipLabel,
   dexPokemonCount,
   FACET_KEYS,
@@ -47,6 +47,8 @@ import {
   previewLanguage,
   PREVIEW_FIT,
   sameBaseLang,
+  geoChipLabel,
+  uiLanguage,
   sessionChipParts,
   TOOL_FILTER_OPTIONS,
   toolKind,
@@ -61,6 +63,7 @@ import { FitNowrap, PreviewChipZoomProvider } from '@/components/admin/FitNowrap
 import { useHostZoom } from '@/components/admin/previewChipZoom';
 import { Archive, ArchiveRestore, Camera, Globe, Languages, Monitor, AppWindow } from 'lucide-react';
 import type { CrossToolSnapshot } from '../../../api/_crossTool';
+import type { ExportSurveySkip } from '../../../api/_events';
 
 // Human labels for the onboarding/funnel events shown per session.
 
@@ -171,6 +174,7 @@ export interface ClientRecord {
     groupSpecial: boolean;
     showStats?: boolean;
   };
+  exportSurveySkips?: ExportSurveySkip[];
   /** Dropped from dashboard aggregates; still listed when the archive filter asks. */
   archived?: boolean;
 }
@@ -224,6 +228,7 @@ export interface LeagueUser {
   exportedCardAt?: string;
   exportedLeagueAt?: string;
   sessionLog: { ts: number; summary: LeagueSummary; country?: string; dev?: string; page?: string; cards?: LeagueCard[] }[];
+  exportSurveySkips?: ExportSurveySkip[];
   order?: 'dex-first' | 'league-first' | 'same-day';
   gapDays?: number;
   archived?: boolean;
@@ -664,38 +669,23 @@ const POKEBALL_SVG = (
   </svg>
 );
 
-/** The languages chip, abbreviated with a press/hover tooltip. Three sources —
- *  the browser default (globe), the language we served (poké ball), and any
- *  manual switch (translation) — collapse to one code when they agree, else list
- *  browser › served › switched; the tooltip spells the full names. */
+/** One UI language on the chip. Extra sources and the path live in the tooltip. */
 function LanguageChip({ lang, locale, switched }: { lang?: string; locale?: string; switched?: string }) {
   const items = [
     lang ? { tag: lang, name: langName(lang), kind: 'browser' as const } : null,
     locale ? { tag: locale, name: langName(locale), kind: 'served' as const } : null,
     switched ? { tag: switched, name: langName(switched), kind: 'switched' as const } : null,
   ].filter(Boolean) as { tag: string; name?: string; kind: 'browser' | 'served' | 'switched' }[];
-  if (items.length === 0) return null;
+  const current = uiLanguage(lang, locale, switched);
+  if (items.length === 0 || !current) return null;
   const allSame = items.every((it) => sameBaseLang(it.tag, items[0].tag));
-  if (allSame) {
-    return (
-      <InfoChip label={items[0].name ?? items[0].tag}>
-        <Globe className="h-[13px] w-[13px]" />
-        <span className="text-xs font-medium">{langAbbr(items[0].tag)}</span>
-      </InfoChip>
-    );
-  }
-  const label = items.map((it) => `${KIND_WORD[it.kind]} ${it.name ?? it.tag}`).join(' › ');
+  const label = allSame
+    ? (items[0].name ?? items[0].tag)
+    : items.map((it) => `${KIND_WORD[it.kind]} ${it.name ?? it.tag}`).join(' › ');
   return (
     <InfoChip label={label}>
-      {items.map((it, i) => (
-        <span key={it.kind} className="flex items-center gap-0.5">
-          {i > 0 && <span className="px-0.5 text-muted-foreground/50">›</span>}
-          {it.kind === 'browser' && <Globe className="h-[13px] w-[13px]" />}
-          {it.kind === 'served' && <span className="[&>svg]:h-[13px] [&>svg]:w-[13px]">{POKEBALL_SVG}</span>}
-          {it.kind === 'switched' && <Languages className="h-[13px] w-[13px]" />}
-          <span className="text-xs font-medium">{langAbbr(it.tag)}</span>
-        </span>
-      ))}
+      <Globe className="h-[13px] w-[13px] shrink-0" />
+      <span className="text-xs font-medium">{langAbbr(current)}</span>
     </InfoChip>
   );
 }
@@ -808,7 +798,7 @@ function DetailHeader({
       <TooltipScope>
         <div className="ml-auto flex min-w-0 flex-nowrap items-center justify-end gap-1.5 overflow-x-auto">
           {rec.country && (
-            <InfoChip label={`${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}`}>
+            <InfoChip label={geoChipLabel(rec.country, rec.region)}>
               <FlagIcon country={rec.country} />
             </InfoChip>
           )}
@@ -952,12 +942,11 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
   const t0 = log.length ? log[0].ts : 0;
   const t1 = log.length ? log[log.length - 1].ts : 0;
   const clampT = (t: number) => Math.max(t0, Math.min(t1, t));
-  const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] =
+  const milestones: ChartMilestone[] =
     rec.exported && rec.exportedAt
       ? [{ t: clampT(Date.parse(rec.exportedAt)), label: 'export', tone: 'export' }]
-      : log.length
-        ? [{ t: t1, label: 'no exports', tone: 'muted' }]
-        : [];
+      : [];
+  milestones.push(...exportSurveySkipMarks(rec.exportSurveySkips, clampT, 'dex'));
 
   const snapshot = (
     <div ref={presenceRef}>
@@ -1068,16 +1057,14 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
   const t1 = log.length ? log[log.length - 1].ts : 0;
   const clampT = (t: number) => Math.max(t0, Math.min(t1, t));
   const days = Math.max(1, distinctCalendarDays(log.map((s) => s.ts), league.tz));
-  const milestones: { t: number; label: string; tone?: 'export' | 'muted' }[] = [];
+  const milestones: ChartMilestone[] = [];
   if (league.exportedCardAt) {
     milestones.push({ t: clampT(Date.parse(league.exportedCardAt)), label: 'card', tone: 'export' });
   }
   if (league.exportedLeagueAt) {
     milestones.push({ t: clampT(Date.parse(league.exportedLeagueAt)), label: 'league', tone: 'export' });
   }
-  if (milestones.length === 0 && log.length) {
-    milestones.push({ t: t1, label: 'no exports', tone: 'muted' });
-  }
+  milestones.push(...exportSurveySkipMarks(league.exportSurveySkips, clampT, 'league'));
 
   const snapshots = useMemo(() => {
     if (log.length === 0) {
@@ -1459,7 +1446,7 @@ function UserPreviewCard({
           <PreviewPlatformSlot
             colClass={FACET_COL.country}
             empty={!rec.country}
-            label={rec.country ? `${countryName(rec.country)}${rec.region ? ' · ' + rec.region : ''}` : 'Unknown'}
+            label={rec.country ? geoChipLabel(rec.country, rec.region) : 'Unknown'}
           >
             {rec.country ? <FlagIcon country={rec.country} /> : <Globe className="h-[13px] w-[13px]" />}
           </PreviewPlatformSlot>

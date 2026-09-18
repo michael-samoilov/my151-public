@@ -48,6 +48,23 @@ async function openSurveyForm(page: Page) {
   await page.locator('[data-export-survey-intro]').waitFor({ timeout: 20_000 });
 }
 
+type EventBody = { event?: string; exportTool?: string; reason?: string };
+
+async function collectEvents(page: Page): Promise<EventBody[]> {
+  const events: EventBody[] = [];
+  await page.route('**/api/event', async (route) => {
+    if (route.request().method() === 'POST') {
+      events.push(route.request().postDataJSON() as EventBody);
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' });
+  });
+  return events;
+}
+
+function skipBeacons(events: EventBody[]) {
+  return events.filter((e) => e.event === 'export_survey_skipped');
+}
+
 test.describe('league export survey', () => {
   test.use({ viewport: MOBILE });
 
@@ -92,6 +109,23 @@ test.describe('league export survey', () => {
     await expect(intro).toContainText('Pikachu');
     await expect(intro).toContainText('first person to have');
     await expect(page.getByRole('button', { name: /not now/i })).toBeVisible();
+  });
+
+  test('Not now beacons export_survey_skipped with reason not_now', async ({ page }) => {
+    const events = await collectEvents(page);
+    await openSurveyForm(page);
+    await page.getByRole('button', { name: /not now/i }).click();
+    await expect(page.locator('[data-export-survey-intro]')).toHaveCount(0);
+    await expect.poll(() => skipBeacons(events)).toEqual([
+      expect.objectContaining({
+        event: 'export_survey_skipped',
+        exportTool: 'league',
+        reason: 'not_now',
+      }),
+    ]);
+    expect(events.filter((e) => e.event === 'league-export-league')).toEqual([
+      expect.objectContaining({ event: 'league-export-league', exportTool: 'league' }),
+    ]);
   });
 
   test('form offers send without Skip', async ({ page }) => {
@@ -162,6 +196,7 @@ test.describe('league export survey desktop', () => {
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    const events = await collectEvents(page);
     await openSurveyForm(page);
     await page.getByRole('button', { name: /sure, i'll help/i }).click();
     await page.locator('[data-export-survey]').waitFor();
@@ -170,5 +205,12 @@ test.describe('league export survey desktop', () => {
     await page.locator('[data-export-scrim] button[aria-label="Close export"]').click();
     await expect(page.locator('[data-export-survey]')).toHaveCount(0);
     await expect(page.locator('[data-export-overlay]')).toHaveCount(0);
+    await expect.poll(() => skipBeacons(events)).toEqual([
+      expect.objectContaining({
+        event: 'export_survey_skipped',
+        exportTool: 'league',
+        reason: 'abandon',
+      }),
+    ]);
   });
 });

@@ -11,8 +11,6 @@ import {
   isStarterTypeName,
   PICKS_COLS,
   PICKS_COMBINED_COLS,
-  PICKS_LEAST_COLS,
-  PICKS_MOST_COLS,
   PICKS_PAIR_COLS,
   picksGridCols,
   picksSplitCap,
@@ -216,133 +214,35 @@ function LineGrid({
   );
 }
 
-function CombinedMostLeastGrid({
-  columns,
-  max,
-  barColor,
-  countMode,
-}: {
-  columns: DualColumn;
-  max: number;
-  barColor: string;
-  countMode: boolean;
-}) {
-  const mostRows = packLineRows(columns.most, PICKS_MOST_COLS);
-  const leastRows = packLineRows(columns.least, PICKS_LEAST_COLS);
-  const rowCount = Math.max(mostRows.length, leastRows.length);
-  if (rowCount === 0) {
-    return <p className="text-[0.65rem] text-muted-foreground">None in this cap.</p>;
-  }
-  return (
-    <div className="min-w-0" data-picks-layout="combined-9" data-picks-cols={PICKS_COMBINED_COLS}>
-      <div className="mb-1 grid grid-cols-9 gap-0.5">
-        <div className="col-span-6 text-[0.65rem] font-semibold">Most</div>
-        <div className="col-span-3 border-l border-border/60 pl-1 text-[0.65rem] font-semibold">Least</div>
-      </div>
-      <div className="flex min-w-0 flex-col gap-1">
-        {Array.from({ length: rowCount }, (_, i) => {
-          const m = mostRows[i] ?? { cells: [] as Cell[], spacers: PICKS_MOST_COLS };
-          const l = leastRows[i] ?? { cells: [] as Cell[], spacers: PICKS_LEAST_COLS };
-          return (
-            <div key={i} className="grid min-w-0 grid-cols-9 gap-0.5">
-              <div className="col-span-6 grid min-w-0 grid-cols-6 gap-0.5" data-picks-side="most">
-                {m.cells.map((cell) => (
-                  <SpriteCell
-                    key={cell.key}
-                    member={cell.member}
-                    index={cell.index}
-                    linePicks={cell.linePicks}
-                    max={max}
-                    barColor={barColor}
-                    countMode={countMode}
-                  />
-                ))}
-                {Array.from({ length: m.spacers }, (_, s) => (
-                  <div key={`ms-${s}`} className="min-w-0" />
-                ))}
-              </div>
-              <div
-                className="col-span-3 grid min-w-0 grid-cols-3 gap-0.5 border-l border-border/60 pl-1"
-                data-picks-side="least"
-              >
-                {l.cells.map((cell) => (
-                  <SpriteCell
-                    key={cell.key}
-                    member={cell.member}
-                    index={cell.index}
-                    linePicks={cell.linePicks}
-                    max={max}
-                    barColor={barColor}
-                    countMode={countMode}
-                  />
-                ))}
-                {Array.from({ length: l.spacers }, (_, s) => (
-                  <div key={`ls-${s}`} className="min-w-0" />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function DualGrids({
   columns,
   barColor,
-  showLeast,
   countMode,
   pairDensity,
 }: {
   columns: DualColumn;
   barColor: string;
-  showLeast: boolean;
   countMode: boolean;
   pairDensity?: boolean;
 }) {
   const isDesktop = useIsDesktop();
-  const cols = pairDensity ? picksStarterCols() : picksGridCols(!showLeast, isDesktop);
-  const leastOn = showLeast;
-  const max = countMode
-    ? Math.max(maxPicks(columns.most), leastOn ? maxPicks(columns.least) : 0)
-    : leastOn
-      ? Math.max(maxIndex(columns.most), maxIndex(columns.least))
-      : maxIndex(columns.most);
-  if (!showLeast) {
-    return (
-      <div className="min-w-0 w-full" data-picks-side="most" data-picks-cols={cols}>
-        <LineGrid
-          lines={columns.most}
-          max={max}
-          barColor={barColor}
-          countMode={countMode}
-          cols={cols}
-          uniformFrTracks={!!pairDensity}
-        />
-      </div>
-    );
-  }
-  if (!pairDensity) {
-    return (
-      <CombinedMostLeastGrid
-        columns={columns}
+  const cols = pairDensity ? picksStarterCols() : picksGridCols(true, isDesktop);
+  const max = countMode ? maxPicks(columns.most) : maxIndex(columns.most);
+  return (
+    <div
+      className="min-w-0 w-full"
+      data-picks-side="most"
+      data-picks-cols={cols}
+      data-picks-layout={pairDensity ? undefined : 'section-9'}
+    >
+      <LineGrid
+        lines={columns.most}
         max={max}
         barColor={barColor}
         countMode={countMode}
+        cols={cols}
+        uniformFrTracks={!!pairDensity}
       />
-    );
-  }
-  return (
-    <div className="grid min-w-0 grid-cols-2 gap-x-1.5">
-      <div className="min-w-0" data-picks-side="most">
-        <div className="mb-1 text-[0.65rem] font-semibold">Most</div>
-        <LineGrid lines={columns.most} max={max} barColor={barColor} countMode={countMode} />
-      </div>
-      <div className="min-w-0 border-l border-border/60 pl-1.5" data-picks-side="least">
-        <div className="mb-1 text-[0.65rem] font-semibold">Least</div>
-        <LineGrid lines={columns.least} max={max} barColor={barColor} countMode={countMode} />
-      </div>
     </div>
   );
 }
@@ -364,11 +264,9 @@ function StarterTypeHeading({ type }: { type: StarterType }) {
 
 function SectionBlock({
   view,
-  showLeast,
   countMode,
 }: {
   view: SectionPicksView;
-  showLeast: boolean;
   countMode: boolean;
 }) {
   const { stroke } = sectionColor(view.sectionId);
@@ -382,7 +280,6 @@ function SectionBlock({
               <DualGrids
                 columns={g}
                 barColor={stroke}
-                showLeast={showLeast}
                 countMode={countMode}
                 pairDensity
               />
@@ -393,7 +290,6 @@ function SectionBlock({
         <DualGrids
           columns={view.columns}
           barColor={stroke}
-          showLeast={showLeast}
           countMode={countMode}
         />
       )}
@@ -485,7 +381,6 @@ export function PicksDetailPage({
             <SectionBlock
               key={s.sectionId}
               view={s}
-              showLeast={!offSection && s.kind !== 'starter'}
               countMode={offSection}
             />
           ))}

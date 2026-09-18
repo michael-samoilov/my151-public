@@ -1,15 +1,20 @@
-import { Panel } from '@/components/admin/ui';
+import { useMemo, useState } from 'react';
+import { Panel, Seg } from '@/components/admin/ui';
 import { useECharts, cssVar, topTooltip, type EChartsOption } from './useECharts';
 import { tipDataIndex } from './scrubPlot';
 import {
+  CHART_RANGE_PRESETS,
+  chartDailyValues,
+  chartRangeWindowMs,
+  chartWeeklyValues,
   extendThroughToday,
   lastPointIsToday,
   monthDividerIndices,
   monthLabelTicks,
-  chartDailyValues,
-  chartWeeklyValues,
+  sliceActivityRange,
   splitProvisional,
   windowCounts,
+  type ChartRangeKey,
   type DailyPoint,
 } from './trendSeries';
 
@@ -21,6 +26,7 @@ const GRID_LEFT = 36;
 const GRID_BOTTOM = 22;
 /** Gap from the last plotted x into the gutter. */
 const LABEL_INSET = 6;
+const GRID_TOP = 8;
 /** Gap from the end of the longest window label to the canvas edge. */
 const LABEL_TAIL = 10;
 const LABEL_FACE = 'ui-sans-serif, system-ui, sans-serif';
@@ -84,10 +90,18 @@ function LegendSwatch({ color }: { color: string }) {
   return <span className="block h-[2px] w-3 shrink-0" style={{ backgroundColor: color }} />;
 }
 
-function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) {
+function TrendChart({
+  series,
+  historyOriginDay,
+  nowMs,
+}: {
+  series: DailyPoint[];
+  historyOriginDay: number;
+  nowMs: number;
+}) {
   const days = series.map((p) => p.day);
   const daily = chartDailyValues(series);
-  const weekly = chartWeeklyValues(series);
+  const weekly = chartWeeklyValues(series, historyOriginDay);
   const labels = days.map(fmtDay);
   const provisional = lastPointIsToday(series, nowMs);
   const dailySplit = splitProvisional(daily, provisional);
@@ -112,7 +126,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
 
       return {
         animation: false,
-        grid: { left: GRID_LEFT, right, top: 36, bottom: GRID_BOTTOM },
+        grid: { left: GRID_LEFT, right, top: GRID_TOP, bottom: GRID_BOTTOM },
         tooltip: {
           ...topTooltip(el),
           trigger: 'axis',
@@ -253,8 +267,9 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
                 countLabel('24h', counts.hours24, faint, x, api.coord([last, daily[last]])[1], numSize),
               ];
               if (counts.days7 != null) {
+                const weeklyY = weekly[last] ?? counts.days7;
                 children.push(
-                  countLabel('7d', counts.days7, red, x, api.coord([last, weekly[last]])[1], numSize),
+                  countLabel('7d', counts.days7, red, x, api.coord([last, weeklyY])[1], numSize),
                 );
               }
               return { type: 'group', children };
@@ -263,7 +278,7 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
         ],
       };
     },
-    [series, nowMs],
+    [series, nowMs, historyOriginDay],
     { scrub: true, overlayPointer: true, overlayLabel: scrubLabel },
   );
 
@@ -284,7 +299,12 @@ function TrendChart({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) 
 }
 
 export function ActiveUsersPanel({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) {
-  const padded = extendThroughToday(series, nowMs);
+  const [range, setRange] = useState<ChartRangeKey>('all');
+  const padded = useMemo(() => extendThroughToday(series, nowMs), [series, nowMs]);
+  const visible = useMemo(
+    () => sliceActivityRange(padded, nowMs, chartRangeWindowMs(range)),
+    [padded, nowMs, range],
+  );
   const faint = 'var(--color-muted-foreground)';
   return (
     <Panel
@@ -303,7 +323,15 @@ export function ActiveUsersPanel({ series, nowMs }: { series: DailyPoint[]; nowM
         </span>
       }
     >
-      <TrendChart series={padded} nowMs={nowMs} />
+      <div className="-mt-1 mb-1.5">
+        <Seg
+          ariaLabel="Chart range"
+          options={CHART_RANGE_PRESETS.map((p) => ({ key: p.key, label: p.label }))}
+          value={range}
+          onChange={setRange}
+        />
+      </div>
+      <TrendChart series={visible} historyOriginDay={padded[0]?.day ?? 0} nowMs={nowMs} />
     </Panel>
   );
 }

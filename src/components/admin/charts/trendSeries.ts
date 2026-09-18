@@ -43,12 +43,48 @@ export function chartDailyValues(series: DailyPoint[]): number[] {
   });
 }
 
-/** Calendar `rolling7`; last point uses `label168h` when the API set it (rolling 168h at now). */
-export function chartWeeklyValues(series: DailyPoint[]): number[] {
+export const INCOMPLETE_WEEKLY_DAYS = 6;
+
+export const CHART_RANGE_PRESETS = [
+  { key: '24h', label: '24h', windowMs: DAY_MS },
+  { key: '7d', label: '7d', windowMs: 7 * DAY_MS },
+  { key: '30d', label: '30d', windowMs: 30 * DAY_MS },
+  { key: '90d', label: '90d', windowMs: 90 * DAY_MS },
+  { key: '180d', label: '180d', windowMs: 180 * DAY_MS },
+  { key: '365d', label: '365d', windowMs: 365 * DAY_MS },
+  { key: 'all', label: 'All', windowMs: null },
+] as const;
+
+export type ChartRangeKey = (typeof CHART_RANGE_PRESETS)[number]['key'];
+
+export function chartRangeWindowMs(key: ChartRangeKey): number | null {
+  const preset = CHART_RANGE_PRESETS.find((p) => p.key === key);
+  if (preset) return preset.windowMs;
+  throw new Error(`unknown chart range: ${key}`);
+}
+
+export function sliceActivityRange(
+  series: DailyPoint[],
+  nowMs: number,
+  windowMs: number | null,
+): DailyPoint[] {
+  if (windowMs == null || series.length === 0) return series;
+  const start = nowMs - windowMs;
+  const sliced = series.filter((p) => p.day + DAY_MS > start);
+  if (sliced.length >= 2 || sliced.length === series.length) return sliced;
+  return series.slice(Math.max(0, series.length - 2));
+}
+
+export function chartWeeklyValues(
+  series: DailyPoint[],
+  historyOriginDay: number,
+): (number | null)[] {
   if (series.length === 0) return [];
   const last = series.length - 1;
+  const completeFrom = historyOriginDay + INCOMPLETE_WEEKLY_DAYS * DAY_MS;
   return series.map((p, i) => {
     if (i === last && p.label168h != null) return p.label168h;
+    if (p.day < completeFrom) return null;
     return p.rolling7;
   });
 }

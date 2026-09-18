@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { BottomSheet } from '@/components/ui/BottomSheet';
+import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 import {
+  createExportSurveySkipReporter,
+  exportSurveySkipReason,
   markExportSurveySeen,
   type ExportSurveyTool,
 } from '@/lib/exportSurvey';
@@ -30,10 +33,27 @@ export function ExportSurveyHost({
 }) {
   const isDesktop = useViewportAtLeast(1024);
   const [phase, setPhase] = useState<'intro' | 'form'>('intro');
+  const [skipReporter] = useState(() =>
+    createExportSurveySkipReporter({
+      exportTool: tool,
+      send: (event, payload) => sendEventBeacon(event, payload),
+    }),
+  );
 
   useEffect(() => {
     markExportSurveySeen();
   }, []);
+
+  useEffect(() => {
+    const onHide = () => skipReporter.onPageHide(phase);
+    window.addEventListener('pagehide', onHide);
+    return () => window.removeEventListener('pagehide', onHide);
+  }, [phase, skipReporter]);
+
+  const dismiss = (action: 'not_now' | 'dismiss') => {
+    skipReporter.skip(exportSurveySkipReason({ phase, action }));
+    onClose();
+  };
 
   const paneTitle = phase === 'intro' ? 'Your export' : 'Quick question';
   const paneBody =
@@ -42,10 +62,17 @@ export function ExportSurveyHost({
         tool={tool}
         highlight={highlight}
         onContinue={() => setPhase('form')}
-        onSkip={onClose}
+        onSkip={() => dismiss('not_now')}
       />
     ) : (
-      <LeagueExportSurvey exportKind={tool} openedAt={openedAt} onDone={onClose} />
+      <LeagueExportSurvey
+        exportKind={tool}
+        openedAt={openedAt}
+        onDone={() => {
+          skipReporter.markSent();
+          onClose();
+        }}
+      />
     );
 
   const scrim = createPortal(
@@ -59,7 +86,7 @@ export function ExportSurveyHost({
         type="button"
         className="absolute inset-0 cursor-default bg-transparent"
         aria-label="Close export survey"
-        onClick={onClose}
+        onClick={() => dismiss('dismiss')}
       />
     </div>,
     document.body,
@@ -80,7 +107,7 @@ export function ExportSurveyHost({
       )
     : (
         <BottomSheet
-          onClose={onClose}
+          onClose={() => dismiss('dismiss')}
           title={paneTitle}
           closeLabel={paneTitle}
           size="content"

@@ -332,4 +332,118 @@ test.describe('admin user pages', () => {
     await expect(tools.getByRole('button', { name: 'League' })).toBeEnabled();
     await expect(tools.getByRole('button', { name: 'Dex' })).toBeDisabled();
   });
+
+  test('header chips open an unclipped tooltip on press', async ({ page }) => {
+    await openDemo(page);
+    await userCard(page, '74d5').click();
+    await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
+
+    await page.getByRole('button', { name: /United States/ }).dispatchEvent('click');
+    await expect(page.locator('[data-info-chip-tip]')).toHaveText(/United States/);
+    const flag = await readChipTooltip(page);
+    expect(flag.clipped).toBe(false);
+    expect(flag.h).toBeGreaterThan(10);
+
+    await page.getByRole('button', { name: 'Desktop', exact: true }).dispatchEvent('click');
+    await expect(page.locator('[data-info-chip-tip]')).toHaveText('Desktop');
+    const device = await readChipTooltip(page);
+    expect(device.text).toBe('Desktop');
+    expect(device.clipped).toBe(false);
+  });
+
+  test('dex user-detail shows a red export+skip diamond and a playhead label', async ({ page }) => {
+    await openDemo(page);
+    await userCard(page, '14c0').click();
+    const mark = page.locator('[data-testid="session-milestone"]');
+    await expect(mark).toHaveCount(1);
+    await expect(mark).toHaveAttribute('data-tone', 'skip');
+    await expect(mark.locator('text')).toHaveCount(0);
+    await expect(mark.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
+    await expect(mark.locator('title')).toHaveText('export_survey_skipped · pokedex · not_now');
+    const label = page.getByTestId('session-playhead-milestone');
+    await expect(label).toHaveCount(1);
+    await expect(label).toHaveText(/export · not now/);
+    await expect(label).not.toHaveText(/pokedex/);
+    await expect(label).toHaveAttribute('visibility', 'visible');
+  });
+
+  test('league user-detail shows one playhead label for the scrubbed sitting', async ({ page }) => {
+    await openDemo(page);
+    await page.getByRole('button', { name: 'League' }).click();
+    await userCard(page, '70cd').click();
+    const marks = page.locator('[data-testid="session-milestone"]');
+    await expect(marks).toHaveCount(1);
+    await expect(marks).toHaveAttribute('data-tone', 'skip');
+    await expect(marks.locator('text')).toHaveCount(0);
+    await expect(marks.locator('title')).toHaveText('export_survey_skipped · league · close');
+    const label = page.getByTestId('session-playhead-milestone');
+    await expect(label).toHaveCount(1);
+    await expect(label).toHaveText('card · league · league · close');
+    await expect(label).toHaveAttribute('visibility', 'visible');
+
+    const scrub = page.getByRole('slider', { name: 'Scrub sessions' });
+    await scrub.evaluate((el) => {
+      const input = el as HTMLInputElement;
+      input.value = '0';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(label).toHaveText('card · abandon');
+    await expect(label).toHaveAttribute('visibility', 'visible');
+    await expect(page.getByTestId('session-playhead-milestone')).toHaveCount(1);
+    await expect(marks.locator('text')).toHaveCount(0);
+
+    await scrub.evaluate((el) => {
+      const input = el as HTMLInputElement;
+      input.value = '1';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(label).toHaveText('');
+    await expect(label).toHaveAttribute('visibility', 'hidden');
+    await expect(page.getByTestId('session-playhead-milestone')).toHaveCount(1);
+  });
+
+  test('header chips stay one row with one language and no focus ring', async ({ page }) => {
+    await openDemo(page);
+    await userCard(page, '4eab').click();
+    await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
+
+    const lang = page.locator('[data-tooltip-chip] button').last();
+    await expect(lang).toHaveText(/^EN$/);
+    await expect(lang).toHaveAttribute('aria-label', /Browser Greek.*Served English/);
+
+    const rowH = await page.locator('[data-tooltip-chip] button').first().evaluate((el) => {
+      const row = el.closest('.ml-auto');
+      return row instanceof HTMLElement ? row.getBoundingClientRect().height : 0;
+    });
+    expect(rowH).toBeGreaterThan(20);
+    expect(rowH).toBeLessThan(40);
+
+    const flag = page.getByRole('button', { name: /United Kingdom/ });
+    const focus = await flag.evaluate((el) => {
+      el.focus();
+      const s = getComputedStyle(el);
+      return { outlineStyle: s.outlineStyle, boxShadow: s.boxShadow };
+    });
+    expect(focus.outlineStyle).toBe('none');
+    expect(focus.boxShadow === 'none' || focus.boxShadow === '').toBe(true);
+  });
 });
+
+async function readChipTooltip(page: import('@playwright/test').Page) {
+  return page.evaluate(() => {
+    const el = document.querySelector('[data-info-chip-tip]');
+    if (!(el instanceof HTMLElement)) return { text: '', clipped: true, h: 0 };
+    const r = el.getBoundingClientRect();
+    let clipped = false;
+    for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+      const cs = getComputedStyle(p);
+      if (!/hidden|clip|auto|scroll/.test(cs.overflowX + cs.overflowY)) continue;
+      const pr = p.getBoundingClientRect();
+      if (r.top < pr.top - 0.5 || r.bottom > pr.bottom + 0.5 || r.left < pr.left - 0.5 || r.right > pr.right + 0.5) {
+        clipped = true;
+        break;
+      }
+    }
+    return { text: (el.innerText || '').replace(/\s+/g, ' ').trim(), clipped, h: r.height };
+  });
+}

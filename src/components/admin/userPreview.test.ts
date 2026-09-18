@@ -18,6 +18,9 @@ import {
   previewLanguage,
   sessionChipParts,
   sessionTotalMs,
+  subregionName,
+  geoChipLabel,
+  uiLanguage,
   toolKind,
 } from './userPreview';
 
@@ -115,6 +118,40 @@ describe('mergedSessionStats', () => {
   });
 });
 
+describe('subregionName', () => {
+  it('expands a known ISO 3166-2 code to the full term', () => {
+    expect(subregionName('AU', 'VIC')).toBe('Victoria');
+    expect(subregionName('US', 'NJ')).toBe('New Jersey');
+    expect(subregionName('BR', 'SP')).toBe('São Paulo');
+  });
+
+  it('keeps a code that has no full name', () => {
+    expect(subregionName('AU', 'ZZZ')).toBe('ZZZ');
+  });
+
+  it('keeps a display name that is not an ISO code', () => {
+    expect(subregionName('US', 'N. America')).toBe('N. America');
+    expect(subregionName('IT', 'Europe')).toBe('Europe');
+  });
+});
+
+describe('geoChipLabel', () => {
+  it('joins the country with the full subregion term', () => {
+    expect(geoChipLabel('AU', 'VIC')).toBe('Australia · Victoria');
+    expect(geoChipLabel('US', 'N. America')).toBe('United States · N. America');
+  });
+});
+
+describe('uiLanguage', () => {
+  it('shows the served UI language when the browser language differs', () => {
+    expect(uiLanguage('pt', 'en')).toBe('en');
+  });
+
+  it('shows a language the user switched to', () => {
+    expect(uiLanguage('pt', 'en', 'ja')).toBe('ja');
+  });
+});
+
 describe('previewLanguage', () => {
   it('uses the served language when it matches the browser', () => {
     expect(previewLanguage('en-US', 'en', undefined)).toEqual({ kind: 'served', tag: 'en' });
@@ -126,6 +163,11 @@ describe('previewLanguage', () => {
 
   it('uses the switched language when the user picked one', () => {
     expect(previewLanguage('en-US', 'en', 'ja')).toEqual({ kind: 'switched', tag: 'ja' });
+  });
+
+  it('prefers switched over unsupported when a supported locale was pinned', () => {
+    // French browser + English served would look "unsupported" without switched.
+    expect(previewLanguage('fr-FR', 'en', 'en')).toEqual({ kind: 'switched', tag: 'en' });
   });
 });
 

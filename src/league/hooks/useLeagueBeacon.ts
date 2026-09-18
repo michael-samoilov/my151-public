@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
 import { getLocale } from '@/i18n/core';
+import { getPinnedLocale } from '@/lib/pinnedLocale';
 import { currentPage } from '@/lib/tool';
 import { externalReferrerHost } from '@/lib/referrer';
 import {
@@ -10,7 +11,7 @@ import {
   PROGRESS_MAX_WAIT_MS,
   type BeaconDebouncer,
 } from '@/lib/beaconScheduler';
-import { sendEventBeacon } from '@/hooks/useCompletionBeacon';
+import { sendEventBeacon, takePendingEvents } from '@/hooks/useCompletionBeacon';
 import type { LeagueCardShape, LeagueExportKind, LeagueSummary } from '../../../api/_leagueRecord';
 import {
   exportBeaconPlan,
@@ -46,6 +47,8 @@ function postLeagueBeacon(
     const tool = exportKind === 'card' ? 'card' : 'league';
     return Promise.resolve(previewExportHighlight(tool, pokemonIds ?? []));
   }
+  const switched = getPinnedLocale();
+  const events = takePendingEvents();
   const payload = JSON.stringify({
     cid: getClientId(),
     tool: 'league',
@@ -56,9 +59,11 @@ function postLeagueBeacon(
     summary,
     cards,
     locale: getLocale(),
+    ...(switched ? { switched } : {}),
     ref: externalReferrerHost() || undefined,
     ts: capturedAt,
     notme: isOptedOut() || undefined,
+    events: events.length ? events : undefined,
   });
   return fetch('/api/league', {
     method: 'POST',
