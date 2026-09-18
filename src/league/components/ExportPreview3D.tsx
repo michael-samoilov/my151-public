@@ -65,9 +65,6 @@ export function ExportPreview3D({
   const layerIds = activeFoilLayerIds(recipe);
   const { sat: needSat, edge: needEdge, gloss: needGloss } = foilMapsNeeded(recipe);
   const activeSrc = (frames ? frames.urls[frames.activeKey] : null) ?? src;
-  const preloadUrls = frames
-    ? Object.entries(frames.urls).filter(([key, url]) => key !== frames.activeKey && url !== activeSrc)
-    : [];
 
   const applyRecipeVars = useCallback((el: HTMLDivElement) => {
     const vars = foilRecipeCssVars(recipeRef.current);
@@ -336,9 +333,6 @@ export function ExportPreview3D({
       )}
       style={{ perspective: `${PREVIEW_PERSPECTIVE_PX}px`, containerType: 'size' }}
     >
-      {preloadUrls.map(([key, url]) => (
-        <img key={key} src={url} alt="" aria-hidden data-export-frame={key} className="hidden" />
-      ))}
       {activeSrc ? (
         <div
           className="pointer-events-auto cursor-pointer touch-none"

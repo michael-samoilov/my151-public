@@ -18,7 +18,7 @@ async function openDexExport(page: Page) {
 async function waitPreviewReady(page: Page) {
   const confirm = page.locator('[data-dex-export-confirm]');
   await expect(confirm).toBeEnabled({ timeout: 45_000 });
-  const img = page.locator('[data-export-preview-layer] img');
+  const img = page.locator('[data-export-preview] img');
   await img.waitFor({ timeout: 45_000 });
   await img.evaluate((el: HTMLImageElement) => {
     if (el.complete && el.naturalWidth > 0) return;
@@ -41,7 +41,7 @@ async function parkPreview(page: Page) {
 
 function previewFitsBand(page: Page, viewportHeight: number) {
   return page.evaluate((vh) => {
-    const img = document.querySelector<HTMLElement>('[data-export-preview-layer] img');
+    const img = document.querySelector<HTMLElement>('[data-export-preview] img');
     const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
     const sheet = document.querySelector<HTMLElement>('[data-export-chrome]');
     if (!img || !layer) return { ok: false, reason: 'missing preview' };
@@ -78,12 +78,12 @@ test.describe('dex export overlay', () => {
     expect(downloads, 'old Dex export started a download before settings').toEqual([]);
 
     await waitPreviewReady(page);
-    const firstSrc = await page.locator('[data-export-preview-layer] img').getAttribute('src');
+    const firstSrc = await page.locator('[data-export-preview] img').getAttribute('src');
     expect(firstSrc).toBeTruthy();
 
     await page.locator('[data-export-sort="national"]').click();
     await expect
-      .poll(async () => page.locator('[data-export-preview-layer] img').getAttribute('src'), { timeout: 45_000 })
+      .poll(async () => page.locator('[data-export-preview] img').getAttribute('src'), { timeout: 45_000 })
       .not.toBe(firstSrc);
     await waitPreviewReady(page);
   });
@@ -218,7 +218,7 @@ test.describe('desktop dex export preview', () => {
     await openDexExport(page);
     await waitPreviewReady(page);
     const fit = await page.evaluate(() => {
-      const img = document.querySelector<HTMLElement>('[data-export-preview-layer] img');
+      const img = document.querySelector<HTMLElement>('[data-export-preview] img');
       const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
       const pane = document.querySelector<HTMLElement>('[data-export-chrome]');
       if (!img || !layer || !pane) return { ok: false, reason: 'missing nodes' };

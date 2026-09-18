@@ -30,6 +30,8 @@ export function useExportPreviewCache(opts: {
       if (cancelled) return;
       const url = URL.createObjectURL(blob);
       objectUrlsRef.current.add(url);
+      const warm = new Image();
+      warm.src = url;
       setUrls((prev) => {
         const stale = prev[key];
         if (stale && stale !== url) {
