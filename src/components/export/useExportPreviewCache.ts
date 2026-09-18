@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 export type ExportPreviewJob = {
   key: string;
@@ -16,10 +16,12 @@ export function useExportPreviewCache(opts: {
 }): { urls: Record<string, string>; busy: boolean } {
   const [urls, setUrls] = useState<Record<string, string>>({});
   const urlsRef = useRef(urls);
-  urlsRef.current = urls;
   const jobsRef = useRef(opts.jobs);
-  jobsRef.current = opts.jobs;
   const objectUrlsRef = useRef(new Set<string>());
+  useLayoutEffect(() => {
+    urlsRef.current = urls;
+    jobsRef.current = opts.jobs;
+  });
 
   useEffect(() => {
     if (!opts.enabled) return;

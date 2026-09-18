@@ -57,8 +57,62 @@ export function fitScaleForTilt(opts: {
 }
 
 /**
+ * Unrotated contain size of a card with `aspect` (width/height) inside the box.
+ */
+export function containUnrotatedSize(opts: {
+  boxWidth: number;
+  boxHeight: number;
+  aspect: number;
+  pad?: number;
+}): { width: number; height: number } {
+  const pad = opts.pad ?? 0;
+  const innerW = Math.max(1, opts.boxWidth - pad * 2);
+  const innerH = Math.max(1, opts.boxHeight - pad * 2);
+  const aspect = opts.aspect > 0 ? opts.aspect : 1;
+  if (innerW / innerH > aspect) {
+    return { width: innerH * aspect, height: innerH };
+  }
+  return { width: innerW, height: innerW / aspect };
+}
+
+/** How much of the layer the card covers on its longer axis (0–1). */
+export function previewCoverRatio(
+  card: { width: number; height: number },
+  layer: { width: number; height: number },
+): number {
+  const layerW = Math.max(1, layer.width);
+  const layerH = Math.max(1, layer.height);
+  return Math.max(card.width / layerW, card.height / layerH);
+}
+
+/**
+ * Pixel size that fills the box at rest as much as possible while the AABB
+ * at `tiltDeg` (idle orbit) still stays inside. Pointer tilt past that is
+ * clamped; do not size for max tilt or the rest card looks zoomed out.
+ */
+export function fitCardInPreviewBox(opts: {
+  boxWidth: number;
+  boxHeight: number;
+  aspect: number;
+  tiltDeg: number;
+  pad?: number;
+}): { width: number; height: number } {
+  const contained = containUnrotatedSize(opts);
+  const scale = fitScaleForTilt({
+    cardWidth: contained.width,
+    cardHeight: contained.height,
+    boxWidth: opts.boxWidth,
+    boxHeight: opts.boxHeight,
+    tiltXDeg: opts.tiltDeg,
+    tiltYDeg: opts.tiltDeg,
+    pad: opts.pad,
+  });
+  return { width: contained.width * scale, height: contained.height * scale };
+}
+
+/**
  * Scale the unrotated card so its AABB at `maxTiltDeg` still fits the box.
- * Size stays stable while the pointer tilts.
+ * Prefer `fitCardInPreviewBox` for the live preview rest size.
  */
 export function stableFitScale(opts: {
   boxWidth: number;

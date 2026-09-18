@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import type { ExportSurveyTool } from '@/lib/exportSurvey';
+import { SPRITE_NATIVE, usePixelPerfectSprite } from '@/lib/usePixelPerfectSprite';
 import {
   EXPORT_TOOL_LABEL,
   earlyExportLine,
@@ -30,6 +31,7 @@ export function LeagueExportSurveyIntro({
   onContinue: () => void;
   onSkip: () => void;
 }) {
+  const spriteCssPx = usePixelPerfectSprite(1);
   const early = highlight ? earlyExportLine(highlight.ordinal, highlight.tool) : null;
   const pokemon =
     highlight?.firstPokemonId != null ? getPokemonById(highlight.firstPokemonId) : undefined;
@@ -64,10 +66,15 @@ export function LeagueExportSurveyIntro({
           <img
             src={sprite}
             alt=""
-            width={96}
-            height={96}
-            className="h-24 w-24"
-            style={{ aspectRatio: '1 / 1', imageRendering: 'pixelated' }}
+            width={SPRITE_NATIVE}
+            height={SPRITE_NATIVE}
+            data-export-survey-sprite
+            style={{
+              width: spriteCssPx,
+              height: spriteCssPx,
+              aspectRatio: '1 / 1',
+              imageRendering: 'pixelated',
+            }}
             draggable={false}
           />
           <p className="text-sm leading-relaxed text-foreground">Hi {pokeName}!</p>

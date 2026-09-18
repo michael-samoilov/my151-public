@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { generateExportImage, shareOrDownload } from '@/lib/exportImage';
 import { hasSeenExportSurvey, markExportSurveySeen, shouldShowExportSurvey } from '@/lib/exportSurvey';
 import { isOptedOut } from '@/lib/clientId';
@@ -9,7 +9,7 @@ import { usePokedexStore } from '@/store/usePokedexStore';
 import { computeViewSort } from '@/hooks/useViewSort';
 import { DEFAULT_STATS_HEIGHTS, STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { useDetailedStatsData } from '@/components/view/useDetailedStatsData';
-import type { ExportHighlight } from '@/league/export/exportPersonalization';
+import { previewExportHighlight, type ExportHighlight } from '@/league/export/exportPersonalization';
 import { LeagueExportSurvey } from '@/league/components/LeagueExportSurvey';
 import { LeagueExportSurveyIntro } from '@/league/components/LeagueExportSurveyIntro';
 import { DexExportSettingsPane } from './DexExportSettingsPane';
@@ -38,7 +38,9 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
   const isDesktop = useViewportAtLeast(1024);
   const statsData = useDetailedStatsData();
   const statsDataRef = useRef(statsData);
-  statsDataRef.current = statsData;
+  useEffect(() => {
+    statsDataRef.current = statsData;
+  }, [statsData]);
 
   const placedCount = Object.values(sections).flat().length;
   const statsEnabled = placedCount >= STATS_MIN_POKEMON;
@@ -83,7 +85,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
     setExportBusy(true);
     const ids = sorted.map((p) => p.id);
     try {
-      const nextHighlight = await sendExportBeacon(
+      const nextHighlight = (await sendExportBeacon(
         ids,
         {
           sort: draft.sort,
@@ -92,7 +94,7 @@ export function DexExportOverlay({ onClose }: { onClose: () => void }) {
           showStats: showStatsPanel,
         },
         sections,
-      );
+      )) ?? previewExportHighlight('pokedex', ids);
       setHighlight(nextHighlight);
       const cached = urls[activeKey];
       const blob = cached

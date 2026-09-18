@@ -314,6 +314,46 @@ export async function runStandardSuite(s: Session, persona: PersonaName | null, 
   return checks;
 }
 
+async function waitForDexPreviewImg(s: Session, ms = 45000): Promise<boolean> {
+  const started = Date.now();
+  while (Date.now() - started < ms) {
+    const ready = await s.evalJson<boolean>(
+      `const img=document.querySelector('[data-export-preview] img');
+       return !!(img instanceof HTMLImageElement && img.naturalWidth > 0);`,
+    ).catch(() => false);
+    if (ready) return true;
+    await sleep(200);
+  }
+  return false;
+}
+
+async function readDexPreviewMotion(s: Session): Promise<{
+  hypot: number;
+  foil: number;
+  orbit: string;
+  paused: string;
+  light: number;
+  holo: number;
+  maps: string;
+}> {
+  return s.evalJson(
+    `const el=document.querySelector('[data-export-preview]');
+     const light=document.querySelector('[data-foil-layer="pointLight"]');
+     const holo=document.querySelector('[data-foil-layer="holographic"]');
+     const x=Number(el?.getAttribute('data-tilt-x')||0);
+     const y=Number(el?.getAttribute('data-tilt-y')||0);
+     return {
+       hypot: Math.hypot(x,y),
+       foil: Number(el?.getAttribute('data-foil-opacity')||0),
+       orbit: el?.getAttribute('data-export-orbit')||'',
+       paused: el?.getAttribute('data-paused')||'',
+       light: light ? Number(getComputedStyle(light).opacity) : 0,
+       holo: holo ? Number(getComputedStyle(holo).opacity) : 0,
+       maps: el?.getAttribute('data-foil-maps')||'',
+     };`,
+  ).catch(() => ({ hypot: 0, foil: 0, orbit: '', paused: '', light: 0, holo: 0, maps: '' }));
+}
+
 export async function runDexExportSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
   await s.click('[data-nav="view"]');
   await waitForActiveView(s, 'view');
@@ -338,8 +378,21 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
       outlines: !!document.querySelector('[data-export-outlines]'),
     };`,
   ).catch(() => ({ preview: false, confirm: false, surveyHost: true, shell: false, outlines: false }));
+  const imgReady = await waitForDexPreviewImg(s);
+  await s.evalJson(
+    `const hit=document.querySelector('[data-export-tilt-hit]');
+     if(hit instanceof HTMLElement){
+       hit.dispatchEvent(new PointerEvent('pointerleave',{bubbles:true,pointerType:'mouse',pointerId:1}));
+     }
+     return true;`,
+  ).catch(() => false);
+  let motion = await readDexPreviewMotion(s);
+  for (let i = 0; i < 16 && !(motion.hypot > 6 && motion.orbit === 'idle' && motion.foil > 0.1); i++) {
+    await sleep(150);
+    motion = await readDexPreviewMotion(s);
+  }
   await s.screenshot(ctx.shot('dex-export-overlay'));
-  const fit = await s.evalJson<{ ok: boolean; reason: string }>(
+  const tiltedFit = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
      const layer=document.querySelector('[data-export-preview-layer]');
      if(!(card instanceof HTMLElement) || !(layer instanceof HTMLElement)) return {ok:false,reason:'missing'};
@@ -348,12 +401,60 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      if(c.right>innerWidth+4||c.bottom>innerHeight+4) return {ok:false,reason:'viewport'};
      return {ok:true,reason:''};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
+  const shineOn = motion.foil > 0.1 && (motion.light > 0.02 || motion.holo > 0.02);
+  await s.click('[data-export-tilt-hit]').catch(() => undefined);
+  await sleep(500);
+  const locked = await readDexPreviewMotion(s);
+  const fill = await s.evalJson<{ ok: boolean; reason: string; ratio: number }>(
+    `const card=document.querySelector('[data-export-preview]');
+     const layer=document.querySelector('[data-export-preview-layer]');
+     if(!(card instanceof HTMLElement) || !(layer instanceof HTMLElement)) return {ok:false,reason:'missing',ratio:0};
+     const c=card.getBoundingClientRect(); const l=layer.getBoundingClientRect();
+     const desktop=innerWidth>=1024;
+     const ratio=Math.max(c.width/Math.max(1,l.width), c.height/Math.max(1,l.height));
+     if(!desktop) return {ok:true,reason:'mobile',ratio};
+     if(c.left<l.left-4||c.right>l.right+4||c.top<l.top-4||c.bottom>l.bottom+4) return {ok:false,reason:'overflow',ratio};
+     return {ok:ratio>=0.82,reason:'cover '+ratio.toFixed(3),ratio};`,
+  ).catch(() => ({ ok: false, reason: 'eval', ratio: 0 }));
+  await s.screenshot(ctx.shot('dex-export-locked'));
+  const confirmReady = await s.evalJson<boolean>(
+    `try { Object.defineProperty(navigator,'canShare',{value:()=>false,configurable:true}); } catch {}
+     const b=document.querySelector('[data-dex-export-confirm]');
+     return b instanceof HTMLButtonElement && !b.disabled;`,
+  ).catch(() => false);
+  if (confirmReady) {
+    await s.click('[data-dex-export-confirm]').catch(() => undefined);
+  }
+  let sprite = { ok: false, reason: 'missing', devicePx: 0, native: 96 };
+  const surveyWait = Date.now();
+  while (Date.now() - surveyWait < 20000) {
+    sprite = await s.evalJson(
+      `const img=document.querySelector('[data-export-survey-sprite]');
+       if(!(img instanceof HTMLImageElement)) return {ok:false,reason:'missing',devicePx:0,native:96};
+       const r=img.getBoundingClientRect();
+       const dpr=window.devicePixelRatio||1;
+       const devicePx=r.width*dpr;
+       const native=img.naturalWidth||96;
+       if(devicePx+0.5<native) return {ok:false,reason:'downscale '+devicePx,devicePx,native};
+       const multiple=devicePx/native;
+       const integer=Math.abs(multiple-Math.round(multiple))<0.06;
+       return {ok:integer,reason:(integer?'ok ':'fraction ')+multiple.toFixed(3),devicePx,native};`,
+    ).catch(() => ({ ok: false, reason: 'eval', devicePx: 0, native: 96 }));
+    if (sprite.ok || sprite.reason !== 'missing') break;
+    await sleep(250);
+  }
+  await s.screenshot(ctx.shot('dex-export-survey'));
   await s.evalJson(`const b=document.querySelector('[data-export-scrim] button'); if(b instanceof HTMLElement) b.click(); return true;`).catch(() => false);
   await sleep(300);
   return [
     ok('dex-export:preview-overlay', state.preview && state.confirm && !state.surveyHost && state.shell, JSON.stringify(state)),
-    ok('dex-export:card-in-view', fit.ok, fit.reason),
+    ok('dex-export:card-in-view', tiltedFit.ok, tiltedFit.reason),
     ok('dex-export:outlines-row', state.outlines, 'missing [data-export-outlines]'),
+    ok('dex-export:auto-tilt', imgReady && motion.hypot > 6 && motion.orbit === 'idle', JSON.stringify(motion)),
+    ok('dex-export:shine', imgReady && shineOn, JSON.stringify(motion)),
+    ok('dex-export:lock-on-press', locked.paused === '1' && locked.hypot < 0.8, JSON.stringify(locked)),
+    ok('dex-export:card-fill', fill.ok, fill.reason),
+    ok('dex-export:survey-sprite-scale', sprite.ok, `${sprite.reason} device=${sprite.devicePx.toFixed(1)} native=${sprite.native}`),
   ];
 }
 

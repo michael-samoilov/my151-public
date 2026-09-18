@@ -152,7 +152,7 @@ export function ExportPreviewShell({
       {phase === 'settings' &&
         createPortal(
           <div
-            className="pointer-events-none fixed flex min-h-0 min-w-0 items-center justify-center overflow-visible p-6 md:p-12"
+            className="pointer-events-none fixed flex min-h-0 min-w-0 items-center justify-center overflow-visible p-[8px]"
             style={{
               zIndex: PREVIEW_Z,
               top: 0,

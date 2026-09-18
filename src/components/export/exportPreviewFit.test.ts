@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   clampTiltToBox,
+  containUnrotatedSize,
+  fitCardInPreviewBox,
   fitScaleForTilt,
   pointerNearPreview,
+  previewCoverRatio,
   projectedCardSize,
   stableFitScale,
 } from './exportPreviewFit';
@@ -73,5 +76,57 @@ describe('exportPreviewFit', () => {
       pad: 0,
     });
     expect(scale).toBeLessThan(0.8);
+  });
+
+  it('fills the box at rest much more than a max-tilt pre-shrink', () => {
+    const box = { width: 896, height: 800 };
+    const rest = fitCardInPreviewBox({
+      boxWidth: box.width,
+      boxHeight: box.height,
+      aspect: 1,
+      tiltDeg: 0,
+      pad: 16,
+    });
+    const forMax = fitCardInPreviewBox({
+      boxWidth: box.width,
+      boxHeight: box.height,
+      aspect: 1,
+      tiltDeg: 20,
+      pad: 16,
+    });
+    const oldScale = stableFitScale({
+      boxWidth: box.width,
+      boxHeight: box.height,
+      maxTiltDeg: 20,
+      pad: 8,
+    });
+    expect(rest.width).toBeGreaterThan(forMax.width + 40);
+    expect(rest.height).toBeGreaterThan(box.height * 0.78);
+    expect(rest.width).toBeGreaterThan(box.width * oldScale + 40);
+    expect(previewCoverRatio(rest, box)).toBeGreaterThan(0.82);
+    const oldCover = previewCoverRatio(
+      { width: box.width * oldScale, height: box.height * oldScale },
+      box,
+    );
+    expect(oldCover).toBeLessThan(0.82);
+  });
+
+  it('covers the long axis of a landscape card, not the letterbox side', () => {
+    const layer = { width: 896, height: 800 };
+    const rest = fitCardInPreviewBox({
+      boxWidth: layer.width,
+      boxHeight: layer.height,
+      aspect: 1.4,
+      tiltDeg: 0,
+      pad: 16,
+    });
+    expect(previewCoverRatio(rest, layer)).toBeGreaterThan(0.82);
+    expect(Math.min(rest.width, rest.height) / Math.min(layer.width, layer.height)).toBeLessThan(0.82);
+  });
+
+  it('contains a square card on the shorter box side', () => {
+    const size = containUnrotatedSize({ boxWidth: 900, boxHeight: 700, aspect: 1, pad: 0 });
+    expect(size.width).toBeCloseTo(700, 0);
+    expect(size.height).toBeCloseTo(700, 0);
   });
 });

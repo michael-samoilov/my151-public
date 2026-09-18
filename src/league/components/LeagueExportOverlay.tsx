@@ -22,6 +22,7 @@ import {
 import {
   exportPokemonIds,
   incrementLeagueExportCount,
+  previewExportHighlight,
   type ExportHighlight,
 } from '../export/exportPersonalization';
 import { sendLeagueExportBeacon } from '../hooks/useLeagueBeacon';
@@ -82,7 +83,8 @@ export function LeagueExportOverlay() {
     try {
       const { name, cards, view } = useLeagueStore.getState();
       const ids = exportPokemonIds(isLeague ? cards : [cards[exportCardIndex!]]);
-      const nextHighlight = await sendLeagueExportBeacon(exportKind, ids);
+      const nextHighlight =
+        (await sendLeagueExportBeacon(exportKind, ids)) ?? previewExportHighlight(exportKind, ids);
       setHighlight(nextHighlight);
       const cached = urls[activeKey];
       const blob = cached

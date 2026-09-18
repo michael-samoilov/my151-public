@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import {
-  clampTiltToBox,
+  fitCardInPreviewBox,
+  fitScaleForTilt,
   pointerNearPreview,
   PREVIEW_LIFT_Z,
   PREVIEW_PERSPECTIVE_PX,
-  stableFitScale,
 } from '@/components/export/exportPreviewFit';
 import {
   DEFAULT_FOIL_RECIPE,
@@ -29,7 +29,8 @@ const TAP_PX = 10;
  * reset the path. A slow idle orbit runs with no input. A tap parks the card
  * straight-on and stops that orbit; a second tap starts the orbit again.
  * Desktop hover tilts only when the pointer is near the card, not anywhere
- * in the viewport. Applied tilt is capped so the card stays inside its box.
+ * in the viewport. Rest size fills the box. Tilt applies a uniform scale so
+ * the AABB stays in view; pointer tilt is capped at the recipe max.
  */
 export function ExportPreview3D({
   src,
@@ -59,9 +60,11 @@ export function ExportPreview3D({
   );
   const reducedMotionRef = useRef(false);
   const downRef = useRef<{ t: number; x: number; y: number; dragged: boolean } | null>(null);
+  const hoverOriginRef = useRef<{ x: number; y: number } | null>(null);
+  const hoverArmedRef = useRef(false);
   const recipeRef = useRef(recipe);
   const boxRef = useRef({ w: 0, h: 0 });
-  const [fitScale, setFitScale] = useState(1);
+  const [cardMax, setCardMax] = useState({ w: 0, h: 0 });
   const layerIds = activeFoilLayerIds(recipe);
   const { sat: needSat, edge: needEdge, gloss: needGloss } = foilMapsNeeded(recipe);
   const activeSrc = (frames ? frames.urls[frames.activeKey] : null) ?? src;
@@ -74,21 +77,11 @@ export function ExportPreview3D({
   }, []);
 
   const confine = useCallback((x: number, y: number) => {
-    const card = imgRef.current ?? cardRef.current;
-    const box = boxRef.current;
-    if (!card || box.w <= 0 || box.h <= 0) return { x, y };
-    const r = card.getBoundingClientRect();
-    const unrotatedW = r.width / Math.max(0.2, Math.cos((Math.abs(lastTiltRef.current.y) * Math.PI) / 180));
-    const unrotatedH = r.height / Math.max(0.2, Math.cos((Math.abs(lastTiltRef.current.x) * Math.PI) / 180));
-    return clampTiltToBox({
-      tiltX: x,
-      tiltY: y,
-      cardWidth: unrotatedW || r.width,
-      cardHeight: unrotatedH || r.height,
-      boxWidth: box.w,
-      boxHeight: box.h,
-      pad: 8,
-    });
+    const maxTilt = recipeRef.current.maxTilt;
+    return {
+      x: clamp(x, -maxTilt, maxTilt),
+      y: clamp(y, -maxTilt, maxTilt),
+    };
   }, []);
 
   const paint = useCallback(
@@ -100,7 +93,23 @@ export function ExportPreview3D({
       const y = confined.y;
       const recipeNow = recipeRef.current;
       lastTiltRef.current = { x, y };
-      el.style.transform = `rotateX(${x}deg) rotateY(${y}deg) translateZ(${PREVIEW_LIFT_Z}px)`;
+      const card = imgRef.current ?? cardRef.current;
+      const box = boxRef.current;
+      const cardW = card?.offsetWidth ?? 0;
+      const cardH = card?.offsetHeight ?? 0;
+      const tiltScale =
+        cardW > 8 && cardH > 8 && box.w > 0 && box.h > 0
+          ? fitScaleForTilt({
+              cardWidth: cardW,
+              cardHeight: cardH,
+              boxWidth: box.w,
+              boxHeight: box.h,
+              tiltXDeg: x,
+              tiltYDeg: y,
+              pad: 8,
+            })
+          : 1;
+      el.style.transform = `scale(${tiltScale}) rotateX(${x}deg) rotateY(${y}deg) translateZ(${PREVIEW_LIFT_Z}px)`;
       const px = 50 + (y / recipeNow.maxTilt) * 50;
       const py = 50 - (x / recipeNow.maxTilt) * 50;
       const fromCenter = Math.min(1, Math.hypot(px - 50, py - 50) / 50);
@@ -118,6 +127,7 @@ export function ExportPreview3D({
       el.dataset.tiltY = y.toFixed(1);
       el.dataset.foilOpacity = foil.toFixed(3);
       el.dataset.paused = pausedRef.current ? '1' : '0';
+      el.dataset.exportOrbit = interactingRef.current ? 'pointer' : pausedRef.current ? 'paused' : 'idle';
     },
     [applyRecipeVars, confine],
   );
@@ -128,8 +138,8 @@ export function ExportPreview3D({
     const t = now - originRef.current;
     const recipeNow = recipeRef.current;
     return {
-      x: Math.sin((t / recipeNow.idleMsX) * Math.PI * 2) * recipeNow.idleTilt,
-      y: Math.sin((t / recipeNow.idleMsY) * Math.PI * 2) * recipeNow.idleTilt,
+      x: Math.sin((t / recipeNow.idleMsX) * Math.PI * 2 + Math.PI / 2) * recipeNow.idleTilt,
+      y: Math.sin((t / recipeNow.idleMsY) * Math.PI * 2 + Math.PI / 4) * recipeNow.idleTilt,
     };
   }, []);
 
@@ -139,20 +149,22 @@ export function ExportPreview3D({
     const apply = () => {
       const r = stage.getBoundingClientRect();
       boxRef.current = { w: r.width, h: r.height };
-      setFitScale(
-        stableFitScale({
+      const img = imgRef.current;
+      const aspect = img && img.naturalWidth > 0 ? img.naturalWidth / img.naturalHeight : 1;
+      const size = fitCardInPreviewBox({
           boxWidth: r.width,
           boxHeight: r.height,
-          maxTiltDeg: recipeRef.current.maxTilt,
-          pad: 8,
-        }),
-      );
+          aspect,
+          tiltDeg: 0,
+          pad: 16,
+        });
+      setCardMax({ w: size.width, h: size.height });
     };
     apply();
     const ro = new ResizeObserver(apply);
     ro.observe(stage);
     return () => ro.disconnect();
-  }, []);
+  }, [activeSrc]);
 
   useEffect(() => {
     reducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -200,6 +212,20 @@ export function ExportPreview3D({
     if (!el) return;
     applyRecipeVars(el);
   }, [applyRecipeVars, recipe]);
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse') return;
+      if (!hoverOriginRef.current) {
+        hoverOriginRef.current = { x: e.clientX, y: e.clientY };
+        return;
+      }
+      const moved = Math.hypot(e.clientX - hoverOriginRef.current.x, e.clientY - hoverOriginRef.current.y);
+      if (moved >= TAP_PX) hoverArmedRef.current = true;
+    };
+    window.addEventListener('pointermove', onMove, { passive: true, capture: true });
+    return () => window.removeEventListener('pointermove', onMove, { capture: true });
+  }, []);
 
   useEffect(() => {
     const el = cardRef.current;
@@ -272,6 +298,8 @@ export function ExportPreview3D({
       }
       if (down) return;
       if (e.pointerType !== 'mouse') return;
+      if (pausedRef.current) return;
+      if (!hoverArmedRef.current) return;
       const card = imgRef.current ?? cardRef.current;
       if (!card) return;
       if (!pointerNearPreview(e.clientX, e.clientY, card.getBoundingClientRect())) return;
@@ -292,6 +320,8 @@ export function ExportPreview3D({
     if (tap) {
       interactingRef.current = false;
       pausedRef.current = !pausedRef.current;
+      hoverOriginRef.current = { x: e.clientX, y: e.clientY };
+      hoverArmedRef.current = false;
       if (pausedRef.current) {
         releaseRef.current = { from: { ...lastTiltRef.current }, to: { x: 0, y: 0 }, t0: performance.now() };
       } else {
@@ -321,22 +351,21 @@ export function ExportPreview3D({
     };
   }, []);
 
-  const maxW = `calc(100cqw * ${fitScale.toFixed(4)})`;
-  const maxH = `calc(100cqh * ${fitScale.toFixed(4)})`;
+  const maxW = cardMax.w > 0 ? `${Math.round(cardMax.w)}px` : '100%';
+  const maxH = cardMax.h > 0 ? `${Math.round(cardMax.h)}px` : '100%';
 
   return (
     <div
       ref={stageRef}
       className={cn(
-        'relative flex h-full w-full min-h-0 min-w-0 items-center justify-center',
+        'relative flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-visible',
         className,
       )}
       style={{ perspective: `${PREVIEW_PERSPECTIVE_PX}px`, containerType: 'size' }}
     >
       {activeSrc ? (
         <div
-          className="pointer-events-auto cursor-pointer touch-none"
-          style={{ padding: 'clamp(1.5rem, 6cqmin, 4rem)' }}
+          className="pointer-events-auto cursor-pointer touch-none overflow-visible p-[8px]"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -346,7 +375,7 @@ export function ExportPreview3D({
         >
           <div
             ref={cardRef}
-            className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer rounded-lg bg-white ring-1 ring-white/20 select-none"
+            className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer overflow-visible rounded-lg bg-white ring-1 ring-white/20 select-none"
             style={{
               transformOrigin: 'center center',
               boxShadow: '0 24px 48px rgba(0,0,0,0.35)',
@@ -356,6 +385,7 @@ export function ExportPreview3D({
               height: 'auto',
             }}
             data-export-preview
+            data-export-orbit="idle"
           >
             <img
               ref={imgRef}
@@ -366,6 +396,21 @@ export function ExportPreview3D({
               draggable={false}
               data-export-frame={frames?.activeKey}
               data-export-frame-active="1"
+              onLoad={() => {
+                const stage = stageRef.current;
+                const img = imgRef.current;
+                if (!stage || !img || img.naturalWidth <= 0) return;
+                const r = stage.getBoundingClientRect();
+                boxRef.current = { w: r.width, h: r.height };
+                const size = fitCardInPreviewBox({
+                    boxWidth: r.width,
+                    boxHeight: r.height,
+                    aspect: img.naturalWidth / img.naturalHeight,
+                    tiltDeg: 0,
+                    pad: 16,
+                  });
+                setCardMax({ w: size.width, h: size.height });
+              }}
             />
             {layerIds.map((id) => (
               <div

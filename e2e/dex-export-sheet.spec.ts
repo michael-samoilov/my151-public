@@ -114,6 +114,21 @@ test.describe('dex export overlay', () => {
     await expect(intro).toBeVisible({ timeout: 20_000 });
     await expect(intro).toContainText("You're here early!");
     await expect(intro).toContainText('Pokedex');
+    const sprite = page.locator('[data-export-survey-sprite]');
+    await expect(sprite).toBeVisible();
+    const scale = await sprite.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const devicePx = r.width * dpr;
+      const native = el instanceof HTMLImageElement && el.naturalWidth > 0 ? el.naturalWidth : 96;
+      const multiple = devicePx / native;
+      return {
+        devicePx,
+        native,
+        integer: Math.abs(multiple - Math.round(multiple)) < 0.06 && devicePx + 0.5 >= native,
+      };
+    });
+    expect(scale.integer, `device ${scale.devicePx} native ${scale.native}`).toBe(true);
   });
 });
 
@@ -148,7 +163,7 @@ test.describe('dex export settings isolation', () => {
     });
     await page.locator('[data-export-sort="national"]').click();
     await expect(page.locator('[data-export-outlines]')).toBeDisabled();
-    await page.locator('[data-export-scrim] button').click();
+    await page.locator('[data-export-scrim] button').click({ force: true });
     await expect(page.locator('[data-export-preview-layer]')).toHaveCount(0);
     const after = await page.evaluate(() => {
       const raw = localStorage.getItem(
@@ -181,19 +196,22 @@ test.describe('desktop dex export preview', () => {
     test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
     await openDexExport(page);
     await waitPreviewReady(page);
-    await parkPreview(page);
     const foil = page.locator('[data-export-preview]');
     await page.mouse.move(16, 16);
     await page.waitForTimeout(80);
-    const far = await foil.getAttribute('data-tilt-x');
-    expect(Math.abs(Number(far ?? '99'))).toBeLessThan(1);
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('idle');
 
     const box = await foil.boundingBox();
     expect(box).toBeTruthy();
-    await page.mouse.move(box!.x + 8, box!.y + 8);
-    await page.waitForTimeout(80);
-    const near = await foil.getAttribute('data-tilt-x');
-    expect(Math.abs(Number(near ?? '0'))).toBeGreaterThan(0.4);
+    await page.mouse.move(box!.x + box!.width * 0.82, box!.y + box!.height * 0.18, { steps: 10 });
+    await expect
+      .poll(async () => {
+        const x = Number(await foil.getAttribute('data-tilt-x'));
+        const y = Number(await foil.getAttribute('data-tilt-y'));
+        return Math.hypot(x, y);
+      })
+      .toBeGreaterThan(0.4);
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
 
     const fit = await page.evaluate(() => {
       const card = document.querySelector<HTMLElement>('[data-export-preview]');
@@ -232,5 +250,49 @@ test.describe('desktop dex export preview', () => {
       return { ok: true, reason: '' };
     });
     expect(fit.ok, fit.reason).toBe(true);
+  });
+
+  test('auto-tilts, shines, locks, and fills the pane', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    await page.mouse.move(8, 8);
+    const foil = page.locator('[data-export-preview]');
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('idle');
+    await expect
+      .poll(async () => {
+        const x = Number(await foil.getAttribute('data-tilt-x'));
+        const y = Number(await foil.getAttribute('data-tilt-y'));
+        return Math.hypot(x, y);
+      })
+      .toBeGreaterThan(6);
+    await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity'))).toBeGreaterThan(0.1);
+    const holo = page.locator('[data-foil-layer="holographic"], [data-foil-layer="pointLight"]').first();
+    await expect.poll(async () => holo.evaluate((el) => Number(getComputedStyle(el).opacity))).toBeGreaterThan(0.02);
+
+    const hit = page.locator('[data-export-tilt-hit]');
+    await hit.click();
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('1');
+    await page.waitForTimeout(450);
+    expect(Math.abs(Number(await foil.getAttribute('data-tilt-x')))).toBeLessThan(0.8);
+    expect(Math.abs(Number(await foil.getAttribute('data-tilt-y')))).toBeLessThan(0.8);
+
+    const fill = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
+      if (!card || !layer) return { ok: false, reason: 'missing', ratio: 0 };
+      const c = card.getBoundingClientRect();
+      const l = layer.getBoundingClientRect();
+      const ratio = Math.max(c.width / l.width, c.height / l.height);
+      if (c.left < l.left - 4 || c.right > l.right + 4 || c.top < l.top - 4 || c.bottom > l.bottom + 4) {
+        return { ok: false, reason: 'overflow', ratio };
+      }
+      return { ok: ratio >= 0.82, reason: `cover ${ratio.toFixed(3)}`, ratio };
+    });
+    expect(fill.ok, fill.reason).toBe(true);
+
+    await hit.click();
+    await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
+    await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity'))).toBeGreaterThan(0.1);
   });
 });
