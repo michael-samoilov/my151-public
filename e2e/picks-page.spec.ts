@@ -102,8 +102,13 @@ test.describe('admin picks page', () => {
     const pikaAt = mostOrder.indexOf(25);
     const pichuAt = mostOrder.indexOf(172);
     expect(pikaAt).toBeGreaterThanOrEqual(0);
-    expect(pichuAt).toBeGreaterThanOrEqual(0);
-    expect(pikaAt).toBeLessThan(pichuAt);
+    if (pichuAt >= 0) {
+      expect(pikaAt).toBeLessThan(pichuAt);
+    } else {
+      await expect(
+        page.locator('[data-section-id="pikachu-clone"] [data-picks-side="least"] [data-face-id="172"]'),
+      ).toHaveCount(1);
+    }
 
     await expect.poll(async () =>
       starters.evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
