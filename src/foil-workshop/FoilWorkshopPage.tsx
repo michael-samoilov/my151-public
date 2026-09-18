@@ -185,7 +185,7 @@ export function FoilWorkshopPage() {
             <Slider
               label="Idle tilt"
               min={0}
-              max={20}
+              max={30}
               step={0.5}
               value={recipe.idleTilt}
               suffix="°"
@@ -194,7 +194,7 @@ export function FoilWorkshopPage() {
             />
             <Slider
               label="Idle X period"
-              min={4000}
+              min={2000}
               max={24000}
               step={500}
               value={recipe.idleMsX}
@@ -204,7 +204,7 @@ export function FoilWorkshopPage() {
             />
             <Slider
               label="Idle Y period"
-              min={4000}
+              min={2000}
               max={24000}
               step={500}
               value={recipe.idleMsY}

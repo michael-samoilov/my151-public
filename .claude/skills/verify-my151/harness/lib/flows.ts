@@ -338,13 +338,22 @@ async function readDexPreviewMotion(s: Session): Promise<{
   light: number;
   holo: number;
   maps: string;
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  perspective: string;
+  transformStyle: string;
 }> {
   return s.evalJson(
     `const el=document.querySelector('[data-export-preview]');
+     const hit=document.querySelector('[data-export-tilt-hit]');
      const light=document.querySelector('[data-foil-layer="pointLight"]');
      const holo=document.querySelector('[data-foil-layer="holographic"]');
      const x=Number(el?.getAttribute('data-tilt-x')||0);
      const y=Number(el?.getAttribute('data-tilt-y')||0);
+     const r=el instanceof HTMLElement ? el.getBoundingClientRect() : {top:0,left:0,width:0,height:0};
+     const hitStyle=hit instanceof HTMLElement ? getComputedStyle(hit) : null;
      return {
        x, y,
        hypot: Math.hypot(x,y),
@@ -355,8 +364,36 @@ async function readDexPreviewMotion(s: Session): Promise<{
        light: light ? Number(getComputedStyle(light).opacity) : 0,
        holo: holo ? Number(getComputedStyle(holo).opacity) : 0,
        maps: el?.getAttribute('data-foil-maps')||'',
+       top: r.top, left: r.left, width: r.width, height: r.height,
+       perspective: hitStyle?.perspective || '',
+       transformStyle: hitStyle?.transformStyle || '',
      };`,
-  ).catch(() => ({ x: 0, y: 0, hypot: 0, foil: 0, orbit: '', paused: '', scale: '', light: 0, holo: 0, maps: '' }));
+  ).catch(() => ({
+    x: 0, y: 0, hypot: 0, foil: 0, orbit: '', paused: '', scale: '', light: 0, holo: 0, maps: '',
+    top: 0, left: 0, width: 0, height: 0, perspective: '', transformStyle: '',
+  }));
+}
+
+/** A person often already has the cursor over the card. That must not freeze idle. */
+async function sitCursorOnDexPreview(s: Session): Promise<void> {
+  await s.evalJson(
+    `const hit=document.querySelector('[data-export-tilt-hit]');
+     if(!(hit instanceof HTMLElement)) return false;
+     const r=hit.getBoundingClientRect();
+     const x=r.left+r.width/2;
+     const y=r.top+r.height/2;
+     const opts={bubbles:true,cancelable:true,clientX:x,clientY:y,pointerType:'mouse',pointerId:1};
+     hit.dispatchEvent(new PointerEvent('pointermove', opts));
+     hit.dispatchEvent(new PointerEvent('pointermove', opts));
+     return true;`,
+  ).catch(() => false);
+}
+
+function visualTiltDelta(
+  a: { top: number; left: number; width: number; height: number },
+  b: { top: number; left: number; width: number; height: number },
+): number {
+  return Math.hypot(b.top - a.top, b.left - a.left, b.width - a.width, b.height - a.height);
 }
 
 export async function runDexExportSuite(s: Session, _persona: PersonaName | null, ctx: FlowContext): Promise<Check[]> {
@@ -384,17 +421,22 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     };`,
   ).catch(() => ({ preview: false, confirm: false, surveyHost: true, shell: false, outlines: false }));
   const imgReady = await waitForDexPreviewImg(s);
-  // Do not move the pointer. Auto-tilt must run while idle, the way a person sees it.
+  // Do not move the Playwright mouse. Sit a stationary cursor on the card,
+  // the way a person often has it, then require the painted box to change.
+  await sitCursorOnDexPreview(s);
   const idleA = await readDexPreviewMotion(s);
   await sleep(1600);
   const idleB = await readDexPreviewMotion(s);
   const idleDelta = Math.hypot(idleB.x - idleA.x, idleB.y - idleA.y);
+  const visualDelta = visualTiltDelta(idleA, idleB);
+  const perspectiveOn = idleA.perspective.startsWith('600') && idleB.transformStyle.includes('preserve-3d');
   const idleMoved =
     idleA.orbit === 'idle' &&
     idleB.orbit === 'idle' &&
     Math.max(idleA.hypot, idleB.hypot) > 6 &&
-    idleDelta > 2;
-  const motion = idleB.hypot >= idleA.hypot ? idleB : idleA;
+    idleDelta > 2 &&
+    visualDelta > 8 &&
+    perspectiveOn;
   await s.screenshot(ctx.shot('dex-export-overlay'));
   const tiltedFit = await s.evalJson<{ ok: boolean; reason: string }>(
     `const hit=document.querySelector('[data-export-tilt-hit]');
@@ -453,10 +495,10 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   await sleep(500);
   const locked = await readDexPreviewMotion(s);
   const fill = await s.evalJson<{ ok: boolean; reason: string; ratio: number }>(
-    `const card=document.querySelector('[data-export-preview]');
+    `const hit=document.querySelector('[data-export-tilt-hit]');
      const layer=document.querySelector('[data-export-preview-layer]');
-     if(!(card instanceof HTMLElement) || !(layer instanceof HTMLElement)) return {ok:false,reason:'missing',ratio:0};
-     const c=card.getBoundingClientRect(); const l=layer.getBoundingClientRect();
+     if(!(hit instanceof HTMLElement) || !(layer instanceof HTMLElement)) return {ok:false,reason:'missing',ratio:0};
+     const c=hit.getBoundingClientRect(); const l=layer.getBoundingClientRect();
      const desktop=innerWidth>=1024;
      const ratio=Math.max(c.width/Math.max(1,l.width), c.height/Math.max(1,l.height));
      if(!desktop) return {ok:true,reason:'mobile',ratio};
@@ -497,7 +539,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:preview-overlay', state.preview && state.confirm && !state.surveyHost && state.shell, JSON.stringify(state)),
     ok('dex-export:card-in-view', tiltedFit.ok, tiltedFit.reason),
     ok('dex-export:outlines-row', state.outlines, 'missing [data-export-outlines]'),
-    ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta })),
+    ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta, visualDelta, perspectiveOn })),
     ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
     ok('dex-export:shine', imgReady && shineOn, JSON.stringify(shineSample)),
     ok('dex-export:lock-on-press', locked.paused === '1' && locked.hypot < 0.8, JSON.stringify(locked)),

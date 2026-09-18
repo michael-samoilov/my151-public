@@ -16,7 +16,11 @@ display options, exportable as a PNG.
   Foil shine is visible while the card is tilted. Rest size fills the pane.
   Hover tilt matches poke-holo / hover-tilt: CSS `--rotate-x` / `--rotate-y`
   from the untransformed hit box, `rotateY(var(--rotate-x)) rotateX(var(--rotate-y))`,
-  no scale. Idle runs with the pointer frozen. A first mouse move is not required.
+  no scale. Perspective `600px` and `preserve-3d` sit on the hit parent
+  (poke-holo `.card__translater`). Idle is the 25° showcase orbit and must
+  keep running with a stationary cursor on the card. A first mouse move is
+  not required. The painted `getBoundingClientRect` must change. Data
+  attributes alone are not enough.
 - Post-export survey (`You're here early!` → feedback / where they heard of us).
   The highlight sprite is integer-scaled at ≥ 1× native (`usePixelPerfectSprite`).
 
@@ -33,9 +37,13 @@ button's computed background is non-transparent) and the canvas renders. Click
 `[data-dex-export]` and assert `[data-export-preview-layer]` and
 `[data-dex-export-confirm]` appear before any download. Settings writes update
 the preview blob URL. Save then asserts `[data-export-survey-intro]`. After the
-preview image paints, the harness leaves the pointer frozen and samples tilt
-twice (≥800ms apart). Auto-tilt passes only when `data-export-orbit=idle` and
-the tilt values change. It then circles the pointer on the hit box and asserts
+preview image paints, the harness leaves the Playwright pointer frozen,
+dispatches a stationary `pointermove` at the card center (a sitting cursor),
+and samples tilt twice (≥800ms apart). Auto-tilt passes only when
+`data-export-orbit=idle`, the tilt values change, the hit parent has
+`perspective: 600px` plus `preserve-3d`, and the card's transformed
+`getBoundingClientRect` moves by more than 8px. Data attributes without a
+moving box fail. It then circles the pointer on the hit box and asserts
 `data-tilt-scale=1` with a stable `offsetWidth` (no bounce-zoom). Lock on press
 (`data-paused=1`), desktop rest fill (long-axis cover ≥ 82% of the preview
 layer), and the survey sprite’s device-pixel size (`[data-export-survey-sprite]`,

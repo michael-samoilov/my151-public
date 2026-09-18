@@ -10,6 +10,16 @@
  * keep the print readable.
  */
 
+/* poke-holo .card__translater: perspective lives on the parent of the rotator. */
+.export-foil-hit {
+  perspective: 600px;
+  -webkit-perspective: 600px;
+  transform-origin: center center;
+  -webkit-transform-origin: center center;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+}
+
 .export-foil {
   --pointer-x: 50%;
   --pointer-y: 50%;
@@ -46,10 +56,14 @@
   --foil-shift-y: calc((var(--pointer-from-top) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   position: relative;
   overflow: visible;
+  /* poke-holo .card__rotator: rotateY(--rotate-x) rotateX(--rotate-y), no scale. */
+  -webkit-transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y));
   transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y));
+  transform-origin: center center;
+  -webkit-transform-origin: center center;
+  -webkit-transform-style: preserve-3d;
   transform-style: preserve-3d;
   will-change: transform;
-  isolation: isolate;
 }
 
 .export-foil-layer {

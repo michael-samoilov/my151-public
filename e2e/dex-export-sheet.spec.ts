@@ -256,22 +256,50 @@ test.describe('desktop dex export preview', () => {
     await openDexExport(page);
     await waitPreviewReady(page);
     const foil = page.locator('[data-export-preview]');
+    const hit = page.locator('[data-export-tilt-hit]');
     await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('idle');
+    await hit.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const x = r.left + r.width / 2;
+      const y = r.top + r.height / 2;
+      const opts = { bubbles: true, cancelable: true, clientX: x, clientY: y, pointerType: 'mouse', pointerId: 1 };
+      el.dispatchEvent(new PointerEvent('pointermove', opts));
+      el.dispatchEvent(new PointerEvent('pointermove', opts));
+    });
     const sample = async () => {
-      const x = Number(await foil.getAttribute('data-tilt-x'));
-      const y = Number(await foil.getAttribute('data-tilt-y'));
-      return { x, y, hypot: Math.hypot(x, y), orbit: await foil.getAttribute('data-export-orbit') };
+      return foil.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        const hitEl = document.querySelector('[data-export-tilt-hit]');
+        const hitStyle = hitEl instanceof HTMLElement ? getComputedStyle(hitEl) : null;
+        const x = Number(el.getAttribute('data-tilt-x'));
+        const y = Number(el.getAttribute('data-tilt-y'));
+        return {
+          x,
+          y,
+          hypot: Math.hypot(x, y),
+          orbit: el.getAttribute('data-export-orbit'),
+          top: r.top,
+          left: r.left,
+          width: r.width,
+          height: r.height,
+          perspective: hitStyle?.perspective ?? '',
+          transformStyle: hitStyle?.transformStyle ?? '',
+        };
+      });
     };
     const a = await sample();
     await page.waitForTimeout(900);
     const b = await sample();
-    expect(a.orbit, JSON.stringify({ a, b })).toBe('idle');
-    expect(b.orbit, JSON.stringify({ a, b })).toBe('idle');
-    expect(Math.max(a.hypot, b.hypot), JSON.stringify({ a, b })).toBeGreaterThan(6);
-    expect(Math.hypot(b.x - a.x, b.y - a.y), JSON.stringify({ a, b })).toBeGreaterThan(2);
+    const visual = Math.hypot(b.top - a.top, b.left - a.left, b.width - a.width, b.height - a.height);
+    expect(a.orbit, JSON.stringify({ a, b, visual })).toBe('idle');
+    expect(b.orbit, JSON.stringify({ a, b, visual })).toBe('idle');
+    expect(Math.max(a.hypot, b.hypot), JSON.stringify({ a, b, visual })).toBeGreaterThan(6);
+    expect(Math.hypot(b.x - a.x, b.y - a.y), JSON.stringify({ a, b, visual })).toBeGreaterThan(2);
+    expect(visual, JSON.stringify({ a, b, visual })).toBeGreaterThan(8);
+    expect(a.perspective.startsWith('600'), a.perspective).toBe(true);
+    expect(b.transformStyle.includes('preserve-3d'), b.transformStyle).toBe(true);
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity'))).toBeGreaterThan(0.1);
 
-    const hit = page.locator('[data-export-tilt-hit]');
     const box = await hit.boundingBox();
     expect(box).toBeTruthy();
     const widths: number[] = [];
@@ -297,10 +325,10 @@ test.describe('desktop dex export preview', () => {
     expect(Math.abs(Number(await foil.getAttribute('data-tilt-y')))).toBeLessThan(0.8);
 
     const fill = await page.evaluate(() => {
-      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
       const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
-      if (!card || !layer) return { ok: false, reason: 'missing', ratio: 0 };
-      const c = card.getBoundingClientRect();
+      if (!hitEl || !layer) return { ok: false, reason: 'missing', ratio: 0 };
+      const c = hitEl.getBoundingClientRect();
       const l = layer.getBoundingClientRect();
       const ratio = Math.max(c.width / l.width, c.height / l.height);
       if (c.left < l.left - 4 || c.right > l.right + 4 || c.top < l.top - 4 || c.bottom > l.bottom + 4) {

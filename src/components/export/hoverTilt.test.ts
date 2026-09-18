@@ -50,6 +50,18 @@ describe('pokeHoloIdle', () => {
     expect(pose).not.toEqual(REST_POSE);
   });
 
+  it('matches poke-holo showcase amplitude at 25deg', () => {
+    const pose = pokeHoloIdle({
+      now: 0,
+      origin: 0,
+      idleMsX: 2500,
+      idleMsY: 2500,
+      idleTilt: 25,
+    });
+    expect(pose.rotateX).toBeCloseTo(25);
+    expect(pose.rotateY).toBeCloseTo(0);
+  });
+
   it('moves while the pointer stays frozen', () => {
     const a = pokeHoloIdle({ ...idle, now: 0 });
     const b = pokeHoloIdle({ ...idle, now: 800 });

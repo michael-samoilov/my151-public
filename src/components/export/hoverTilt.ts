@@ -65,7 +65,11 @@ export function pokeHoloFromPointer(
   };
 }
 
-/** Idle orbit that starts already tilted and moving, with no pointer. */
+/**
+ * Idle orbit matching poke-holo showcase:
+ * `springRotate.set({ x: Math.sin(r) * 25, y: Math.cos(r) * 25 })`.
+ * Starts already tilted. No pointer required.
+ */
 export function pokeHoloIdle(opts: {
   now: number;
   origin: number;

@@ -21,6 +21,7 @@ import './ExportPreview3D.css';
 const RELEASE_MS = 420;
 const TAP_MS = 320;
 const TAP_PX = 10;
+const HOVER_ARM_PX = 3;
 
 function lerpPose(from: HoverTiltPose, to: HoverTiltPose, u: number): HoverTiltPose {
   return {
@@ -66,6 +67,7 @@ export function ExportPreview3D({
   const releaseRef = useRef<{ from: HoverTiltPose; t0: number } | null>(null);
   const reducedMotionRef = useRef(false);
   const downRef = useRef<{ t: number; x: number; y: number; dragged: boolean } | null>(null);
+  const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
   const recipeRef = useRef(recipe);
   const [cardMax, setCardMax] = useState({ w: 0, h: 0 });
   const layerIds = activeFoilLayerIds(recipe);
@@ -247,12 +249,19 @@ export function ExportPreview3D({
       }
       const dragging = Boolean(down?.dragged || (down && e.buttons > 0 && e.pointerType !== 'mouse'));
       if (dragging) {
+        lastPointerRef.current = { x: e.clientX, y: e.clientY };
         applyPointer(e.clientX, e.clientY);
         return;
       }
       if (down) return;
       if (e.pointerType !== 'mouse') return;
       if (pausedRef.current) return;
+      const last = lastPointerRef.current;
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+      // A cursor already on the card at open fires pointermove with no travel.
+      // That must not steal idle. Arm hover only after a real move.
+      if (!last) return;
+      if (Math.hypot(e.clientX - last.x, e.clientY - last.y) < HOVER_ARM_PX) return;
       applyPointer(e.clientX, e.clientY);
     },
     [applyPointer],
@@ -269,6 +278,7 @@ export function ExportPreview3D({
 
     if (tap) {
       interactingRef.current = false;
+      lastPointerRef.current = null;
       pausedRef.current = !pausedRef.current;
       if (pausedRef.current) {
         releaseRef.current = { from: { ...lastPoseRef.current }, t0: performance.now() };
@@ -289,6 +299,7 @@ export function ExportPreview3D({
 
   const onPointerLeave = useCallback(() => {
     downRef.current = null;
+    lastPointerRef.current = null;
     if (!interactingRef.current) return;
     interactingRef.current = false;
     releaseRef.current = {
@@ -307,18 +318,23 @@ export function ExportPreview3D({
         'relative flex h-full w-full min-h-0 min-w-0 items-center justify-center overflow-visible',
         className,
       )}
-      style={{ perspective: `${PREVIEW_PERSPECTIVE_PX}px`, containerType: 'size' }}
+      style={{
+        perspective: `${PREVIEW_PERSPECTIVE_PX}px`,
+        transformStyle: 'preserve-3d',
+        containerType: 'size',
+      }}
     >
       {activeSrc ? (
         <div
           ref={hitRef}
-          className="pointer-events-auto cursor-pointer touch-none overflow-visible p-[8px]"
+          className="export-foil-hit pointer-events-auto cursor-pointer touch-none overflow-visible p-[8px]"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerLeave}
           onPointerLeave={onPointerLeave}
           data-export-tilt-hit
+          data-tilt-perspective={String(PREVIEW_PERSPECTIVE_PX)}
         >
           <div
             ref={cardRef}
