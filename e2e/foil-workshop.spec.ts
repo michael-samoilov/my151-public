@@ -251,6 +251,10 @@ test.describe('export foil workshop', () => {
     await expect(page.locator('[data-export-preview]')).toHaveAttribute('data-workshop-dark-card', '1');
     const filter = await page.locator('[data-export-preview] img').evaluate((el) => getComputedStyle(el).filter);
     expect(filter).toMatch(/invert/);
+    const blend = await page.locator('[data-export-preview]').evaluate((el) =>
+      getComputedStyle(el, '::before').mixBlendMode,
+    );
+    expect(blend).toBe('plus-lighter');
   });
 });
 

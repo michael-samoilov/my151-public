@@ -407,6 +407,11 @@
   filter: invert(1) hue-rotate(180deg);
 }
 
+.export-foil[data-workshop-dark-card='1'][data-hover-tilt='1']::before,
+.export-foil[data-workshop-dark-card='1'][data-hover-tilt='1']::after {
+  mix-blend-mode: plus-lighter;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .export-foil-layer {
     opacity: 0;
