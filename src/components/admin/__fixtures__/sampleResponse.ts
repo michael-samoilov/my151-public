@@ -462,7 +462,7 @@ const leagueUsers: LeagueUser[] = [
   });
   if (!u.exportedCardAt) throw new Error('70cd fixture missing exportedCardAt');
   u.exportSurveySkips = [
-    { t: Date.parse(u.exportedCardAt), tool: 'card', reason: 'abandon' },
+    { t: u.sessionLog[0].ts, tool: 'card', reason: 'abandon' },
     { t: u.lastTs, tool: 'league', reason: 'close' },
   ];
 }
