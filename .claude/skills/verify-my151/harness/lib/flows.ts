@@ -1209,6 +1209,66 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
   checks.push(ok('foil-workshop:mask-applies', wordmarkOn, `mask=${afterClick.mask}`));
   await s.screenshot(ctx.shot('foil-workshop-wordmark'));
 
+  await s.evalJson(
+    `const input=document.querySelector('[data-foil-slider="glareIntensity"]');
+     if(!(input instanceof HTMLInputElement)) return false;
+     const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')?.set;
+     setter?.call(input,'0.91');
+     input.dispatchEvent(new Event('input',{bubbles:true}));
+     input.dispatchEvent(new Event('change',{bubbles:true}));
+     return true;`,
+  ).catch(() => false);
+  await s.evalJson(
+    `const hit=document.querySelector('[data-export-tilt-hit]');
+     if(!(hit instanceof HTMLElement)) return false;
+     const r=hit.getBoundingClientRect();
+     const fire=(u,v)=>{
+       hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:r.left+r.width*u,clientY:r.top+r.height*v,pointerType:'mouse',pointerId:1}));
+     };
+     fire(0.5, 0.5);
+     fire(0.92, 0.08);
+     return true;`,
+  ).catch(() => false);
+  await sleep(250);
+  const maskOnCard = await s.evalJson<{
+    ok: boolean;
+    reason: string;
+    hypot: number;
+  }>(
+    `const card=document.querySelector('[data-export-preview]');
+     if(!(card instanceof HTMLElement)) return {ok:false,reason:'missing',hypot:0};
+     const face=card.querySelector('[data-export-foil-face]');
+     const style=getComputedStyle(card);
+     const hypot=Math.hypot(Number(card.dataset.tiltX||0),Number(card.dataset.tiltY||0));
+     if(!(face instanceof HTMLElement)) return {ok:false,reason:'no-face',hypot};
+     if(style.overflow!=='hidden') return {ok:false,reason:'overflow '+style.overflow,hypot};
+     if(style.transformStyle.includes('preserve-3d')) return {ok:false,reason:'preserve-3d on clipper',hypot};
+     const faceStyle=getComputedStyle(face);
+     if(faceStyle.transformStyle.includes('preserve-3d')) return {ok:false,reason:'preserve-3d on face',hypot};
+     if(faceStyle.transform.includes('matrix3d')) return {ok:false,reason:'face matrix3d',hypot};
+     const c=card.getBoundingClientRect();
+     const cardArea=Math.max(1,c.width*c.height);
+     const layers=[...card.querySelectorAll('[data-hover-tilt-layer]')];
+     if(layers.length<3) return {ok:false,reason:'layers '+layers.length,hypot};
+     for(const layer of layers){
+       if(!(layer instanceof HTMLElement)) continue;
+       const r=layer.getBoundingClientRect();
+       if(r.left<c.left-2||r.right>c.right+2||r.top<c.top-2||r.bottom>c.bottom+2){
+         return {ok:false,reason:'layer-overflow '+(layer.dataset.hoverTiltLayer||''),hypot};
+       }
+       const areaRatio=(r.width*r.height)/cardArea;
+       if(areaRatio>1.04) return {ok:false,reason:'area '+(layer.dataset.hoverTiltLayer||'')+' '+areaRatio.toFixed(3),hypot};
+       const ls=getComputedStyle(layer);
+       if(ls.transform.includes('matrix3d')) return {ok:false,reason:'matrix3d '+(layer.dataset.hoverTiltLayer||''),hypot};
+       if(ls.mixBlendMode==='color-dodge') return {ok:false,reason:'color-dodge '+(layer.dataset.hoverTiltLayer||''),hypot};
+       if(ls.filter!=='none' && ls.filter!=='') return {ok:false,reason:'filter '+(layer.dataset.hoverTiltLayer||'')+' '+ls.filter,hypot};
+     }
+     if(hypot<6) return {ok:false,reason:'weak-tilt '+hypot.toFixed(2),hypot};
+     return {ok:true,reason:'on-card',hypot};`,
+  ).catch(() => ({ ok: false, reason: 'eval', hypot: 0 }));
+  checks.push(ok('foil-workshop:mask-on-card', maskOnCard.ok, `${maskOnCard.reason} hypot=${maskOnCard.hypot.toFixed(1)}`));
+  await s.screenshot(ctx.shot('foil-workshop-wordmark-tilt'));
+
   try {
     await s.click('[data-hover-tilt-mask="typeIcon"]');
     await sleep(300);
