@@ -49,7 +49,7 @@ export function FlagIcon({ country }: { country?: string }) {
     <img
       src={`data:image/svg+xml;utf8,${encodeURIComponent(svg)}`}
       alt={code}
-      className="h-[12px] w-[16px] rounded-[2px] object-cover"
+      className="h-[12px] w-[16px] shrink-0 rounded-[2px] object-cover"
     />
   );
 }
@@ -130,13 +130,13 @@ export function InfoChip({
   }, [open]);
 
   return (
-    <span className={cn('relative inline-flex', fillMd && 'md:w-full')} data-tooltip-chip>
+    <span className={cn('relative inline-flex shrink-0', fillMd && 'md:w-full')} data-tooltip-chip>
       <button
         ref={btnRef}
         type="button"
         data-tooltip-chip
         className={cn(
-          'flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground hover:text-foreground',
+          'flex h-7 items-center gap-1 rounded-full border border-border bg-card px-2 text-muted-foreground outline-none hover:text-foreground focus:outline-none focus-visible:outline-none focus-visible:ring-0 [-webkit-tap-highlight-color:transparent]',
           fillMd && 'md:w-full md:justify-center',
         )}
         aria-label={label}

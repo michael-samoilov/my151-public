@@ -372,6 +372,32 @@ test.describe('admin user pages', () => {
     await expect(mark).toContainText('close');
     await expect(mark.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
   });
+
+  test('header chips stay one row with one language and no focus ring', async ({ page }) => {
+    await openDemo(page);
+    await userCard(page, '4eab').click();
+    await expect(page.getByRole('button', { name: '‹ Back' })).toBeVisible();
+
+    const lang = page.locator('[data-tooltip-chip] button').last();
+    await expect(lang).toHaveText(/^EN$/);
+    await expect(lang).toHaveAttribute('aria-label', /Browser Greek.*Served English/);
+
+    const rowH = await page.locator('[data-tooltip-chip] button').first().evaluate((el) => {
+      const row = el.closest('.ml-auto');
+      return row instanceof HTMLElement ? row.getBoundingClientRect().height : 0;
+    });
+    expect(rowH).toBeGreaterThan(20);
+    expect(rowH).toBeLessThan(40);
+
+    const flag = page.getByRole('button', { name: /United Kingdom/ });
+    const focus = await flag.evaluate((el) => {
+      el.focus();
+      const s = getComputedStyle(el);
+      return { outlineStyle: s.outlineStyle, boxShadow: s.boxShadow };
+    });
+    expect(focus.outlineStyle).toBe('none');
+    expect(focus.boxShadow === 'none' || focus.boxShadow === '').toBe(true);
+  });
 });
 
 async function readChipTooltip(page: import('@playwright/test').Page) {
