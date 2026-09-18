@@ -543,6 +543,8 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
          return {ok:false,reason:'layer-overflow '+(layer.dataset.foilLayer||'')};
        }
      }
+     const holoAmt=Number(style.getPropertyValue('--foil-holographic'));
+     if(!(holoAmt>0.2 && holoAmt<0.5)) return {ok:false,reason:'holo amount '+holoAmt};
      return {ok:true,reason:bloom?'clipped':'no-bloom'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await s.screenshot(ctx.shot('dex-export-locked'));
@@ -567,7 +569,10 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        if(devicePx+0.5<native) return {ok:false,reason:'downscale '+devicePx,devicePx,native};
        const multiple=devicePx/native;
        const integer=Math.abs(multiple-Math.round(multiple))<0.06;
-       return {ok:integer,reason:(integer?'ok ':'fraction ')+multiple.toFixed(3),devicePx,native};`,
+       const minMultiple=innerWidth<1024?1.94:0.94;
+       const attr=Number(img.getAttribute('data-sprite-scale')||0);
+       const sized=integer && multiple>=minMultiple && attr>=(innerWidth<1024?2:1);
+       return {ok:sized,reason:(sized?'ok ':'small ')+multiple.toFixed(3)+' attr='+attr,devicePx,native};`,
     ).catch(() => ({ ok: false, reason: 'eval', devicePx: 0, native: 96 }));
     if (sprite.ok || sprite.reason !== 'missing') break;
     await sleep(250);

@@ -171,3 +171,32 @@ export function useDevicePixelRatio(): number {
 export function usePixelPerfectSprite(scale = 1): number {
   return pixelPerfectCssPx(scale, useDevicePixelRatio());
 }
+
+/**
+ * Integer survey-sprite scale. Mobile uses 2× unless that CSS size would
+ * overflow the viewport. Desktop stays 1×.
+ */
+export function exportSurveySpriteScale(opts: {
+  viewportWidth: number;
+  dpr: number;
+}): number {
+  if (opts.viewportWidth >= 1024) return 1;
+  const twoCss = pixelPerfectCssPx(2, opts.dpr);
+  return twoCss <= Math.max(SPRITE_NATIVE, opts.viewportWidth - 48) ? 2 : 1;
+}
+
+/** Integer scale for the export-survey highlight sprite. */
+export function useExportSurveySpriteScale(): number {
+  return useSyncExternalStore(
+    subscribeFn,
+    () => {
+      void vpVersion;
+      if (typeof window === 'undefined') return 1;
+      return exportSurveySpriteScale({
+        viewportWidth: getUnzoomedViewportWidth(),
+        dpr: window.devicePixelRatio || 1,
+      });
+    },
+    () => 1,
+  );
+}

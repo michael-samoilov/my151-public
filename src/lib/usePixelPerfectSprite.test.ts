@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   SPRITE_NATIVE,
+  exportSurveySpriteScale,
   isIntegerSpriteScale,
   pixelPerfectCssPx,
 } from './usePixelPerfectSprite';
@@ -19,5 +20,17 @@ describe('isIntegerSpriteScale', () => {
     expect(isIntegerSpriteScale(192)).toBe(true);
     expect(isIntegerSpriteScale(48)).toBe(false);
     expect(isIntegerSpriteScale(120)).toBe(false);
+  });
+});
+
+describe('exportSurveySpriteScale', () => {
+  it('uses 2× on a 390 phone and 1× on a 1280 desktop', () => {
+    expect(exportSurveySpriteScale({ viewportWidth: 390, dpr: 3 })).toBe(2);
+    expect(exportSurveySpriteScale({ viewportWidth: 390, dpr: 1 })).toBe(2);
+    expect(exportSurveySpriteScale({ viewportWidth: 1280, dpr: 1 })).toBe(1);
+  });
+
+  it('stays 1× when 2× would overflow a tiny viewport', () => {
+    expect(exportSurveySpriteScale({ viewportWidth: 200, dpr: 1 })).toBe(1);
   });
 });

@@ -23,7 +23,9 @@ display options, exportable as a PNG.
   (`overflow: hidden`, no out-of-bounds bloom). Data attributes alone are
   not enough: the painted box must move, and it must stay on screen.
 - Post-export survey (`You're here early!` → feedback / where they heard of us).
-  The highlight sprite is integer-scaled at ≥ 1× native (`usePixelPerfectSprite`).
+  The highlight sprite is integer-scaled at ≥ 1× native. Mobile uses 2×
+  unless that CSS size would overflow. Desktop stays 1× when 1× already
+  reads at native size.
 
 ## How to get to it (user POV)
 
@@ -49,7 +51,7 @@ It then circles the pointer on the hit box and asserts
 `data-tilt-scale=1` with a stable `offsetWidth` (no bounce-zoom). Lock on press
 (`data-paused=1`), desktop rest fill (long-axis cover ≥ 82% of the preview
 layer), and the survey sprite’s device-pixel size (`[data-export-survey-sprite]`,
-≥ 1× native, integer scale) still apply.
+integer scale, ≥ 2× on viewports under 1024px and ≥ 1× on desktop) still apply.
 The PNG blob itself is still produced on Save (`navigator.share`
 or `<a download="my151.png">`); the repo's own e2e checks a >50KB blob in
 `e2e/dev/poster-export.spec.ts`.

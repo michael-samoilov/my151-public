@@ -47,7 +47,11 @@ describe('foil recipe', () => {
     expect(DEFAULT_FOIL_RECIPE.layers.ambient.on).toBe(false);
     expect(DEFAULT_FOIL_RECIPE.layers.emboss.on).toBe(false);
     expect(DEFAULT_FOIL_RECIPE.layers.bloom.on).toBe(false);
-    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(0.75);
+    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBeGreaterThan(0.2);
+    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBeLessThan(0.5);
+    expect(DEFAULT_FOIL_RECIPE.layers.holographic.on).toBe(true);
+    expect(DEFAULT_FOIL_RECIPE.layers.sparkle.amount).toBeGreaterThan(0.2);
+    expect(DEFAULT_FOIL_RECIPE.layers.sparkle.amount).toBeLessThan(0.45);
     const withEmboss = withFoilLayer(DEFAULT_FOIL_RECIPE, 'emboss', { on: true, amount: 0.6 });
     expect(foilMapsNeeded(withEmboss).edge).toBe(true);
   });

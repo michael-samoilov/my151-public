@@ -1,7 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import type { ExportSurveyTool } from '@/lib/exportSurvey';
-import { SPRITE_NATIVE, usePixelPerfectSprite } from '@/lib/usePixelPerfectSprite';
+import {
+  SPRITE_NATIVE,
+  useExportSurveySpriteScale,
+  usePixelPerfectSprite,
+} from '@/lib/usePixelPerfectSprite';
 import {
   EXPORT_TOOL_LABEL,
   earlyExportLine,
@@ -31,7 +35,8 @@ export function LeagueExportSurveyIntro({
   onContinue: () => void;
   onSkip: () => void;
 }) {
-  const spriteCssPx = usePixelPerfectSprite(1);
+  const spriteScale = useExportSurveySpriteScale();
+  const spriteCssPx = usePixelPerfectSprite(spriteScale);
   const early = highlight ? earlyExportLine(highlight.ordinal, highlight.tool) : null;
   const pokemon =
     highlight?.firstPokemonId != null ? getPokemonById(highlight.firstPokemonId) : undefined;
@@ -69,6 +74,7 @@ export function LeagueExportSurveyIntro({
             width={SPRITE_NATIVE}
             height={SPRITE_NATIVE}
             data-export-survey-sprite
+            data-sprite-scale={spriteScale}
             style={{
               width: spriteCssPx,
               height: spriteCssPx,

@@ -124,13 +124,20 @@ test.describe('dex export overlay', () => {
       const devicePx = r.width * dpr;
       const native = el instanceof HTMLImageElement && el.naturalWidth > 0 ? el.naturalWidth : 96;
       const multiple = devicePx / native;
+      const attr = Number(el.getAttribute('data-sprite-scale') || 0);
+      const minMultiple = window.innerWidth < 1024 ? 1.94 : 0.94;
       return {
         devicePx,
         native,
+        multiple,
+        attr,
+        minMultiple,
         integer: Math.abs(multiple - Math.round(multiple)) < 0.06 && devicePx + 0.5 >= native,
       };
     });
     expect(scale.integer, `device ${scale.devicePx} native ${scale.native}`).toBe(true);
+    expect(scale.multiple, JSON.stringify(scale)).toBeGreaterThan(scale.minMultiple);
+    expect(scale.attr, JSON.stringify(scale)).toBeGreaterThanOrEqual(scale.minMultiple >= 1.94 ? 2 : 1);
   });
 });
 
@@ -181,6 +188,8 @@ test.describe('mobile dex export sheet', () => {
       if (!/round/i.test(clip)) return { ok: false, reason: `clip ${clip}` };
       if (mask !== 'none' && mask !== '' && mask !== 'none none') return { ok: false, reason: `holo mask ${mask}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
+      const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
+      if (!(holoAmt > 0.2 && holoAmt < 0.5)) return { ok: false, reason: `holo amount ${holoAmt}` };
       if (h.left < c.left - 2 || h.right > c.right + 2 || h.top < c.top - 2 || h.bottom > c.bottom + 2) {
         return { ok: false, reason: 'holo outside card' };
       }
@@ -385,6 +394,7 @@ test.describe('desktop dex export preview', () => {
       )
         .replace(/\s+/g, ' ')
         .trim();
+      const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
       return {
         overflow: style.overflow,
         preserve3d: style.transformStyle,
@@ -392,12 +402,15 @@ test.describe('desktop dex export preview', () => {
         overflowLayers,
         holoMask: mask,
         holoOpacity: holoStyle ? Number(holoStyle.opacity) : 0,
+        holoAmt,
         ok:
           style.overflow === 'hidden' &&
           !style.transformStyle.includes('preserve-3d') &&
           !bloom &&
           overflowLayers.length === 0 &&
-          (mask === 'none' || mask === '' || mask === 'none none'),
+          (mask === 'none' || mask === '' || mask === 'none none') &&
+          holoAmt > 0.2 &&
+          holoAmt < 0.5,
       };
     });
     expect(shineClip.ok, JSON.stringify(shineClip)).toBe(true);
