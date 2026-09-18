@@ -135,7 +135,9 @@ describe('applyPlayheadMilestone', () => {
     const ui = milestoneRoot();
     applyPlayheadMilestone(ui.root, { label: 'intro', x: 10, width: 320 });
     expect(ui.attrs['text-anchor']).toBe('start');
+    expect(ui.attrs.x).toBe('8.0');
     applyPlayheadMilestone(ui.root, { label: 'view', x: 310, width: 320 });
     expect(ui.attrs['text-anchor']).toBe('end');
+    expect(ui.attrs.x).toBe('312.0');
   });
 });

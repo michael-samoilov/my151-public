@@ -35,6 +35,7 @@ export function applySessionChip(
 }
 
 const LABEL_EDGE_PX = 24;
+const LABEL_PAD_PX = 8;
 
 export function applyPlayheadMilestone(
   root: ParentNode,
@@ -51,7 +52,7 @@ export function applyPlayheadMilestone(
   const bx = args.x;
   const w = args.width;
   const anchor = bx < LABEL_EDGE_PX ? 'start' : bx > w - LABEL_EDGE_PX ? 'end' : 'middle';
-  const lx = bx < LABEL_EDGE_PX ? bx - 2 : bx > w - LABEL_EDGE_PX ? bx + 2 : bx;
+  const lx = bx < LABEL_EDGE_PX ? LABEL_PAD_PX : bx > w - LABEL_EDGE_PX ? w - LABEL_PAD_PX : bx;
   el.textContent = text;
   el.setAttribute('x', lx.toFixed(1));
   el.setAttribute('text-anchor', anchor);
