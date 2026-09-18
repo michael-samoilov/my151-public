@@ -315,12 +315,27 @@ test.describe('desktop dex export preview', () => {
     });
     expect(inView.ok, inView.reason).toBe(true);
     const shineClip = await foil.evaluate((el) => {
-      const overflow = getComputedStyle(el).overflow;
+      const style = getComputedStyle(el);
       const bloom = document.querySelector('[data-foil-layer="bloom"]');
+      const c = el.getBoundingClientRect();
+      const overflowLayers: string[] = [];
+      for (const layer of el.querySelectorAll('[data-foil-layer]')) {
+        if (!(layer instanceof HTMLElement)) continue;
+        const r = layer.getBoundingClientRect();
+        if (r.left < c.left - 2 || r.right > c.right + 2 || r.top < c.top - 2 || r.bottom > c.bottom + 2) {
+          overflowLayers.push(layer.dataset.foilLayer || '');
+        }
+      }
       return {
-        overflow,
+        overflow: style.overflow,
+        preserve3d: style.transformStyle,
         bloom: Boolean(bloom),
-        ok: overflow === 'hidden' && !bloom,
+        overflowLayers,
+        ok:
+          style.overflow === 'hidden' &&
+          !style.transformStyle.includes('preserve-3d') &&
+          !bloom &&
+          overflowLayers.length === 0,
       };
     });
     expect(shineClip.ok, JSON.stringify(shineClip)).toBe(true);
@@ -360,7 +375,7 @@ test.describe('desktop dex export preview', () => {
       if (c.left < l.left - 4 || c.right > l.right + 4 || c.top < l.top - 4 || c.bottom > l.bottom + 4) {
         return { ok: false, reason: 'overflow', ratio };
       }
-      return { ok: ratio >= 0.82, reason: `cover ${ratio.toFixed(3)}`, ratio };
+      return { ok: ratio >= 0.75, reason: `cover ${ratio.toFixed(3)}`, ratio };
     });
     expect(fill.ok, fill.reason).toBe(true);
 

@@ -148,8 +148,8 @@ export function ExportPreview3D({
         boxWidth: r.width,
         boxHeight: r.height,
         aspect,
-        tiltDeg: 0,
-        pad: 16,
+        tiltDeg: recipeRef.current.idleTilt,
+        pad: 8,
       });
       setCardMax({ w: size.width, h: size.height });
     };
@@ -353,7 +353,7 @@ export function ExportPreview3D({
         >
           <div
             ref={cardRef}
-            className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer overflow-visible rounded-lg bg-white ring-1 ring-white/20 select-none"
+            className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer overflow-hidden rounded-lg bg-white ring-1 ring-white/20 select-none"
             style={{
               transformOrigin: 'center center',
               boxShadow: '0 24px 48px rgba(0,0,0,0.35)',
@@ -385,8 +385,8 @@ export function ExportPreview3D({
                   boxWidth: r.width,
                   boxHeight: r.height,
                   aspect: img.naturalWidth / img.naturalHeight,
-                  tiltDeg: 0,
-                  pad: 16,
+                  tiltDeg: recipeRef.current.idleTilt,
+                  pad: 8,
                 });
                 setCardMax({ w: size.width, h: size.height });
               }}

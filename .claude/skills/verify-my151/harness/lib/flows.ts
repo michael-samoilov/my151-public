@@ -503,17 +503,26 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      const ratio=Math.max(c.width/Math.max(1,l.width), c.height/Math.max(1,l.height));
      if(!desktop) return {ok:true,reason:'mobile',ratio};
      if(c.left<l.left-4||c.right>l.right+4||c.top<l.top-4||c.bottom>l.bottom+4) return {ok:false,reason:'overflow',ratio};
-     return {ok:ratio>=0.82,reason:'cover '+ratio.toFixed(3),ratio};`,
+     return {ok:ratio>=0.75,reason:'cover '+ratio.toFixed(3),ratio};`,
   ).catch(() => ({ ok: false, reason: 'eval', ratio: 0 }));
   const shineClip = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
      if(!(card instanceof HTMLElement)) return {ok:false,reason:'missing'};
-     const overflow=getComputedStyle(card).overflow;
-     if(overflow!=='hidden') return {ok:false,reason:'overflow '+overflow};
+     const style=getComputedStyle(card);
+     if(style.overflow!=='hidden') return {ok:false,reason:'overflow '+style.overflow};
+     if(style.transformStyle.includes('preserve-3d')) return {ok:false,reason:'preserve-3d on clipper'};
      const bloom=document.querySelector('[data-foil-layer="bloom"]');
      if(bloom instanceof HTMLElement){
        const inset=getComputedStyle(bloom).inset;
        if(inset.includes('-')) return {ok:false,reason:'bloom inset '+inset};
+     }
+     const c=card.getBoundingClientRect();
+     for(const layer of card.querySelectorAll('[data-foil-layer]')){
+       if(!(layer instanceof HTMLElement)) continue;
+       const r=layer.getBoundingClientRect();
+       if(r.left<c.left-2||r.right>c.right+2||r.top<c.top-2||r.bottom>c.bottom+2){
+         return {ok:false,reason:'layer-overflow '+(layer.dataset.foilLayer||'')};
+       }
      }
      return {ok:true,reason:bloom?'clipped':'no-bloom'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));

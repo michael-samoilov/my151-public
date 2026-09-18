@@ -55,22 +55,24 @@
   --foil-shift-x: calc((var(--pointer-from-left) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   --foil-shift-y: calc((var(--pointer-from-top) - 0.5) * var(--foil-parallax-px) * var(--foil-parallax));
   position: relative;
+  isolation: isolate;
   overflow: hidden;
   -webkit-clip-path: inset(0);
   clip-path: inset(0);
-  /* poke-holo .card__rotator: rotateY(--rotate-x) rotateX(--rotate-y), no scale. */
+  /* poke-holo .card__rotator: rotateY(--rotate-x) rotateX(--rotate-y), no scale.
+     No preserve-3d here: Safari skips overflow clip on a 3d parent, which
+     painted glare discs outside the card. Perspective stays on .export-foil-hit. */
   -webkit-transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y));
   transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y));
   transform-origin: center center;
   -webkit-transform-origin: center center;
-  -webkit-transform-style: preserve-3d;
-  transform-style: preserve-3d;
   will-change: transform;
 }
 
 .export-foil-layer {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   border-radius: inherit;
   pointer-events: none;
 }
@@ -169,7 +171,7 @@
     calc(var(--pointer-from-left) * 100%) calc(var(--pointer-from-top) * 100%);
   mix-blend-mode: overlay;
   filter: saturate(1.35);
-  transform: translate3d(var(--foil-shift-x), var(--foil-shift-y), 2px);
+  transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-holographic) * (0.82 + 0.18 * var(--pointer-from-center)));
 }
 
@@ -182,7 +184,7 @@
     hsl(calc(240 + var(--pointer-from-left) * 360), 88%, 58%)
   );
   mix-blend-mode: color;
-  transform: translate3d(var(--foil-shift-x), var(--foil-shift-y), 3px);
+  transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-iridescence) * (0.78 + 0.22 * var(--pointer-from-center)));
 }
 
@@ -219,10 +221,9 @@
     hsla(0, 0%, 0%, 0.22)
   );
   mix-blend-mode: overlay;
-  transform: translate3d(
+  transform: translate(
     calc(var(--foil-shift-x) * 1.8),
-    calc(var(--foil-shift-y) * 1.8),
-    5px
+    calc(var(--foil-shift-y) * 1.8)
   );
   opacity: calc(var(--foil-opacity) * var(--foil-parallax));
 }
@@ -295,7 +296,7 @@
     calc(var(--pointer-from-left) * 60%) calc(5% + var(--pointer-from-top) * 90%),
     calc(25% + var(--pointer-from-left) * 65%) calc(var(--pointer-from-top) * 70%);
   mix-blend-mode: overlay;
-  transform: translate3d(var(--foil-shift-x), var(--foil-shift-y), 6px);
+  transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-sparkle) * (0.65 + 0.35 * var(--pointer-from-center)));
   filter: brightness(1.12) contrast(1.12);
 }
