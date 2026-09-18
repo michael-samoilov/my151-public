@@ -62,6 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       cards?: unknown;
       pokemonIds?: unknown;
       locale?: unknown;
+      switched?: unknown;
       ref?: unknown;
       page?: unknown;
       ts?: unknown;
@@ -130,6 +131,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ua: getClient(req),
       lang: getLang(req),
       locale: parseLocale(body.locale),
+      switched: parseLocale(body.switched),
       referrer: parseReferrerHost(body.ref),
       page: parsePage(body.page),
     };

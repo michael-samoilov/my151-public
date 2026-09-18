@@ -421,4 +421,20 @@ describe('peakFullGyms', () => {
     );
     expect(peakFullGyms(eliteShort)).toBe(0);
   });
+
+  it('stores a picker-pinned locale as switched', () => {
+    const rec = mergeLeagueRecord(
+      null,
+      beacon({ locale: 'en', switched: 'en', lang: 'fr-FR' }),
+    );
+    expect(rec.locale).toBe('en');
+    expect(rec.switched).toBe('en');
+    expect(rec.lang).toBe('fr-FR');
+  });
+
+  it('keeps switched sticky when a later beacon omits it', () => {
+    let rec = mergeLeagueRecord(null, beacon({ locale: 'en', switched: 'en' }));
+    rec = mergeLeagueRecord(rec, beacon({ now: 1_000_000 + 60_000, locale: 'en' }));
+    expect(rec.switched).toBe('en');
+  });
 });

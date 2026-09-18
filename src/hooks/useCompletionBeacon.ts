@@ -5,6 +5,7 @@ import { DEMO_MODE } from '@/lib/demoMode';
 import { getClientId, isOptedOut } from '@/lib/clientId';
 import type { ExportSurveySkipReason, ExportSurveyTool } from '@/lib/exportSurvey';
 import { getLocale } from '@/i18n/core';
+import { getPinnedLocale } from '@/lib/pinnedLocale';
 import { currentPage, currentTool } from '@/lib/tool';
 import { externalReferrerHost } from '@/lib/referrer';
 import {
@@ -93,7 +94,9 @@ function postBeacon(
   // The locale the app is actually rendering in — which is not the same as the
   // Accept-Language header the server sees. A `?lang=` or a manual pick in the
   // language picker both outrank the browser preference, and only the client
-  // knows the outcome.
+  // knows the outcome. `switched` is set only when the picker pinned a locale,
+  // so admin can tell a manual English pick from an unsupported-language fallback.
+  const switched = getPinnedLocale();
   const payload = JSON.stringify({
     cid,
     tool: currentTool(),
@@ -104,6 +107,7 @@ function postBeacon(
     sections,
     exportSettings,
     locale: getLocale(),
+    ...(switched ? { switched } : {}),
     events: events && events.length ? events : undefined,
     ref: externalReferrerHost() || undefined,
     ts: capturedAt ?? Date.now(),

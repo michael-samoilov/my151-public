@@ -164,6 +164,11 @@ describe('previewLanguage', () => {
   it('uses the switched language when the user picked one', () => {
     expect(previewLanguage('en-US', 'en', 'ja')).toEqual({ kind: 'switched', tag: 'ja' });
   });
+
+  it('prefers switched over unsupported when a supported locale was pinned', () => {
+    // French browser + English served would look "unsupported" without switched.
+    expect(previewLanguage('fr-FR', 'en', 'en')).toEqual({ kind: 'switched', tag: 'en' });
+  });
 });
 
 describe('preview filters', () => {

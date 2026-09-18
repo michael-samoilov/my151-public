@@ -149,6 +149,8 @@ export interface LeagueRecord {
   tz?: string;
   lang?: string;
   locale?: string;
+  /** Locale pinned in the language picker. See ClientRecord.switched. */
+  switched?: string;
   device?: string;
   os?: string;
   browser?: string;
@@ -349,6 +351,8 @@ export interface LeagueBeaconInput {
   ua: { device: string; os: string; browser: string };
   lang?: string;
   locale?: string;
+  /** Locale pinned in the language picker. Forward-only once set. */
+  switched?: string;
   page?: string;
   /** External referrer host, host-only, already validated. Stored forward-only. */
   referrer?: string;
@@ -409,6 +413,7 @@ export function mergeLeagueRecord(existing: LeagueRecord | null, b: LeagueBeacon
   rec.tz = b.geo.tz;
   rec.lang = b.lang;
   if (b.locale) rec.locale = b.locale;
+  if (b.switched) rec.switched = b.switched;
   rec.device = b.ua.device;
   rec.os = b.ua.os;
   rec.browser = b.ua.browser;

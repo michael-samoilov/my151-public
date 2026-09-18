@@ -160,6 +160,7 @@ interface LeagueUser {
   tz?: string;
   lang?: string;
   locale?: string;
+  switched?: string;
   device?: string;
   os?: string;
   browser?: string;
@@ -200,6 +201,7 @@ function leagueUser(r: LeagueRecord, dexFirstTs?: number): LeagueUser {
     tz: r.tz,
     lang: r.lang,
     locale: r.locale,
+    switched: r.switched,
     device: r.device,
     os: r.os,
     browser: r.browser,
