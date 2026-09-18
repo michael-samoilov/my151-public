@@ -266,11 +266,12 @@ export function SessionTimeline({
           const color = milestoneFill(m.tone);
           const anchor = bx < 24 ? 'start' : bx > W - 24 ? 'end' : 'middle';
           const lx = bx < 24 ? bx - 2 : bx > W - 24 ? bx + 2 : bx;
+          const ly = railY + m.labelDy;
           return (
-            <g key={`ms-${i}`} data-testid="session-milestone" data-tone={m.tone ?? 'export'}>
+            <g key={`ms-${i}`} data-testid="session-milestone" data-tone={m.tone ?? 'export'} data-label-lane={m.labelDy > 0 ? 'below' : 'above'}>
               {m.title && <title>{m.title}</title>}
               <rect x={(bx - 2.4).toFixed(1)} y={railY - 2.4} width={4.8} height={4.8} rx={0.8} transform={`rotate(45 ${bx.toFixed(1)} ${railY})`} fill={color} />
-              <text x={lx.toFixed(1)} y={railY - 4} fontSize={6.5} fill={color} textAnchor={anchor}>
+              <text x={lx.toFixed(1)} y={ly} fontSize={6.5} fill={color} textAnchor={anchor}>
                 {m.label}
               </text>
             </g>

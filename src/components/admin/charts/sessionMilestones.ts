@@ -27,12 +27,20 @@ export function exportSurveySkipMarks(
   }));
 }
 
+export type PlacedMilestone = ChartMilestone & { bx: number; labelDy: number };
+
+/** Label above the rail, same as export/event text. */
+export const MILESTONE_LABEL_ABOVE = -4;
+/** Skip label under the diamond when a green mark already owns the rail. */
+export const MILESTONE_LABEL_BELOW = 12;
+const LABEL_COLLIDE_PX = 36;
+
 export function placeMilestones(
   items: ChartMilestone[],
   xOf: (t: number) => number,
   mergePx = 36,
-): (ChartMilestone & { bx: number })[] {
-  const marks: (ChartMilestone & { bx: number })[] = [];
+): PlacedMilestone[] {
+  const marks: PlacedMilestone[] = [];
   for (const m of items) {
     let bx = xOf(m.t);
     const hit = marks.find((p) => Math.abs(bx - p.bx) < 10 && p.tone !== m.tone);
@@ -43,8 +51,13 @@ export function placeMilestones(
       if (m.title) prev.title = prev.title ? `${prev.title} · ${m.title}` : m.title;
       prev.bx = (prev.bx + bx) / 2;
     } else {
-      marks.push({ ...m, bx });
+      marks.push({ ...m, bx, labelDy: MILESTONE_LABEL_ABOVE });
     }
+  }
+  for (const m of marks) {
+    if (m.tone !== 'skip') continue;
+    const hit = marks.some((p) => p !== m && p.tone !== 'skip' && Math.abs(p.bx - m.bx) < LABEL_COLLIDE_PX);
+    if (hit) m.labelDy = MILESTONE_LABEL_BELOW;
   }
   return marks;
 }

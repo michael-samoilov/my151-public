@@ -360,6 +360,12 @@ test.describe('admin user pages', () => {
     await expect(mark).toContainText('not now');
     await expect(mark.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
     await expect(mark.locator('title')).toHaveText('export_survey_skipped · pokedex · not_now');
+    await expect(mark).toHaveAttribute('data-label-lane', 'below');
+    const exportMark = page.locator('[data-testid="session-milestone"][data-tone="export"]');
+    await expect(exportMark).toHaveAttribute('data-label-lane', 'above');
+    const skipY = Number(await mark.locator('text').getAttribute('y'));
+    const exportY = Number(await exportMark.locator('text').getAttribute('y'));
+    expect(skipY).toBeGreaterThan(exportY);
   });
 
   test('league user-detail shows a red export survey skip mark', async ({ page }) => {
@@ -371,6 +377,7 @@ test.describe('admin user pages', () => {
     await expect(mark).toContainText('league');
     await expect(mark).toContainText('close');
     await expect(mark.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
+    await expect(mark).toHaveAttribute('data-label-lane', 'below');
   });
 
   test('header chips stay one row with one language and no focus ring', async ({ page }) => {

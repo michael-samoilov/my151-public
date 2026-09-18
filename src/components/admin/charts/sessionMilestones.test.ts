@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { exportSurveySkipMarks, milestoneFill, placeMilestones } from './sessionMilestones';
+import { exportSurveySkipMarks, milestoneFill, placeMilestones, MILESTONE_LABEL_ABOVE, MILESTONE_LABEL_BELOW } from './sessionMilestones';
 
 describe('skip milestones', () => {
   it('paints skip marks red and export marks green', () => {
@@ -29,5 +29,24 @@ describe('skip milestones', () => {
     expect(marks[0].tone).toBe('export');
     expect(marks[1].tone).toBe('skip');
     expect(marks[1].bx).toBeGreaterThan(marks[0].bx);
+  });
+
+  it('drops a colliding skip label under the diamond', () => {
+    const marks = placeMilestones(
+      [
+        { t: 10, label: 'export', tone: 'export' },
+        { t: 10, label: 'pokedex · not now', tone: 'skip', title: 'export_survey_skipped · pokedex · not_now' },
+      ],
+      (t) => t,
+    );
+    expect(marks[0].labelDy).toBe(MILESTONE_LABEL_ABOVE);
+    expect(marks[1].labelDy).toBe(MILESTONE_LABEL_BELOW);
+    expect(marks[1].label).toBe('pokedex · not now');
+    expect(marks[1].title).toBe('export_survey_skipped · pokedex · not_now');
+  });
+
+  it('keeps a lone skip label on the rail', () => {
+    const marks = placeMilestones([{ t: 40, label: 'pokedex · close', tone: 'skip' }], (t) => t);
+    expect(marks[0].labelDy).toBe(MILESTONE_LABEL_ABOVE);
   });
 });
