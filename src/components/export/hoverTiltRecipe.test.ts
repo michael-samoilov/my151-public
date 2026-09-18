@@ -15,6 +15,7 @@ import {
   DEFAULT_HOVER_TILT_RECIPE,
   DEFAULT_TILT_FACTOR,
   HOVER_TILT_MASK_IDS,
+  hoverTiltBoxShadow,
   hoverTiltCssVars,
   hoverTiltSearch,
   isHoverTiltMaskId,
@@ -51,10 +52,12 @@ describe('hover-tilt recipe', () => {
     expect(isHoverTiltMaskId('rainbow')).toBe(false);
   });
 
-  it('defaults match poke-holo tilt and keep scale at 1', () => {
-    expect(DEFAULT_HOVER_TILT_RECIPE.tiltFactor).toBeCloseTo(DEFAULT_TILT_FACTOR);
-    expect(DEFAULT_HOVER_TILT_RECIPE.tiltFactorY).toBeCloseTo(DEFAULT_TILT_FACTOR);
+  it('defaults match hover-tilt tiltFactor 1, scale 1, exitDelay 200', () => {
+    expect(DEFAULT_TILT_FACTOR).toBe(1);
+    expect(DEFAULT_HOVER_TILT_RECIPE.tiltFactor).toBe(1);
+    expect(DEFAULT_HOVER_TILT_RECIPE.tiltFactorY).toBe(1);
     expect(DEFAULT_HOVER_TILT_RECIPE.scaleFactor).toBe(1);
+    expect(DEFAULT_HOVER_TILT_RECIPE.exitDelay).toBe(200);
     expect(DEFAULT_HOVER_TILT_RECIPE.shadow).toBe(true);
     expect(DEFAULT_HOVER_TILT_RECIPE.glareMask).toBe('cardSparkle');
     expect(DEFAULT_HOVER_TILT_RECIPE.sparkleMask).toBe('cardSparkle');
@@ -69,7 +72,7 @@ describe('hover-tilt recipe', () => {
       blendMode: 'multiply',
       extra: true,
     });
-    expect(parsed.tiltFactor).toBe(25);
+    expect(parsed.tiltFactor).toBeCloseTo(4);
     expect(parsed.scaleFactor).toBe(1);
     expect(parsed.glareMask).toBe('cardSparkle');
     expect(parsed.sparkleMask).toBe('wordmark');
@@ -96,6 +99,22 @@ describe('hover-tilt recipe', () => {
     expect(vars['--hover-tilt-glare-hue']).toBe('200');
     expect(vars['--hover-tilt-scale']).toBe('1.050');
     expect(vars['--hover-tilt-blend-mode']).toBe('overlay');
+    expect(vars['--hover-tilt-shadow-blur']).toBe('48');
+    expect(vars['--hover-tilt-rotation-x']).toBe('10.00deg');
+  });
+
+  it('converts a stored poke-holo degree factor into hover-tilt tiltFactor', () => {
+    const parsed = parseHoverTiltRecipe({ tiltFactor: 14.28, tiltFactorY: 50 / 3.5 });
+    expect(parsed.tiltFactor).toBeCloseTo(1.428, 3);
+    expect(parsed.tiltFactorY).toBeCloseTo(1.428, 2);
+  });
+
+  it('offsets the drop shadow toward the raised edge', () => {
+    const rest = hoverTiltBoxShadow(DEFAULT_HOVER_TILT_RECIPE, { nx: 0.5, ny: 0.5, opacity: 1 });
+    const right = hoverTiltBoxShadow(DEFAULT_HOVER_TILT_RECIPE, { nx: 1, ny: 0.5, opacity: 1 });
+    expect(rest.startsWith('0.0px')).toBe(true);
+    expect(right.startsWith('48.0px')).toBe(true);
+    expect(right).not.toBe(rest);
   });
 });
 

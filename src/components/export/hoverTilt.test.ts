@@ -1,46 +1,92 @@
 import { describe, expect, it } from 'vitest';
-import { pokeHoloFromPointer, pokeHoloIdle } from './hoverTilt';
+import {
+  HOVER_TILT_EXIT_SPRING,
+  HOVER_TILT_ROTATION,
+  HOVER_TILT_SPRING,
+  applySpringOpts,
+  createSpring,
+  hoverTiltFromNormalized,
+  hoverTiltFromPointer,
+  pointInBox,
+  pokeHoloIdle,
+  tickSpring,
+} from './hoverTilt';
 
 const box = { left: 0, top: 0, width: 400, height: 400 };
 
-describe('pokeHoloFromPointer', () => {
+describe('hoverTiltFromPointer', () => {
   it('keeps the center facing the user', () => {
-    const pose = pokeHoloFromPointer(200, 200, box, 20);
+    const pose = hoverTiltFromPointer(200, 200, box);
     expect(pose.rotateX).toBeCloseTo(0);
     expect(pose.rotateY).toBeCloseTo(0);
-    expect(pose.pointerX).toBeCloseTo(50);
-    expect(pose.pointerY).toBeCloseTo(50);
+    expect(pose.nx).toBeCloseTo(0.5);
+    expect(pose.ny).toBeCloseTo(0.5);
   });
 
-  it('dips the right edge toward the user', () => {
-    const pose = pokeHoloFromPointer(400, 200, box, 20);
-    expect(pose.rotateY).toBeLessThan(-10);
-    expect(pose.rotateX).toBeCloseTo(0);
+  it('matches hover-tilt ±10° at the edge when tiltFactor is 1', () => {
+    const right = hoverTiltFromPointer(400, 200, box);
+    expect(right.rotateY).toBeCloseTo(-HOVER_TILT_ROTATION);
+    expect(right.rotateX).toBeCloseTo(0);
+    expect(right.nx).toBeCloseTo(1);
+    const bottom = hoverTiltFromPointer(200, 400, box);
+    expect(bottom.rotateX).toBeCloseTo(HOVER_TILT_ROTATION);
+    expect(bottom.rotateY).toBeCloseTo(0);
   });
 
-  it('dips the bottom edge toward the user', () => {
-    const pose = pokeHoloFromPointer(200, 400, box, 20);
-    expect(pose.rotateX).toBeGreaterThan(10);
-    expect(pose.rotateY).toBeCloseTo(0);
+  it('does not use the poke-holo 50/3.5 edge (~14.3°)', () => {
+    const pose = hoverTiltFromPointer(400, 200, box);
+    expect(Math.abs(pose.rotateY)).toBeLessThan(11);
+    expect(Math.abs(pose.rotateY)).not.toBeCloseTo(50 / 3.5, 1);
   });
 
   it('dips the top-left corner, not the whole card away', () => {
-    const pose = pokeHoloFromPointer(0, 0, box, 20);
-    expect(pose.rotateY).toBeGreaterThan(10);
-    expect(pose.rotateX).toBeLessThan(-10);
+    const pose = hoverTiltFromPointer(0, 0, box);
+    expect(pose.rotateY).toBeCloseTo(HOVER_TILT_ROTATION);
+    expect(pose.rotateX).toBeCloseTo(-HOVER_TILT_ROTATION);
   });
 
-  it('matches poke-holo 50/3.5 at the edge', () => {
-    const pose = pokeHoloFromPointer(400, 200, box, 20);
-    expect(pose.rotateY).toBeCloseTo(-(50 / 3.5), 5);
+  it('scales with native hover-tilt tiltFactor, not degree-as-factor', () => {
+    const pose = hoverTiltFromNormalized(1, 0.5, { tiltFactor: 2, tiltFactorY: 0.5 });
+    expect(pose.rotateY).toBeCloseTo(-20);
+    expect(pose.rotateX).toBeCloseTo(0);
+    const bottom = hoverTiltFromNormalized(0.5, 1, { tiltFactor: 2, tiltFactorY: 0.5 });
+    expect(bottom.rotateX).toBeCloseTo(5);
+  });
+});
+
+describe('hover-tilt springs', () => {
+  it('uses hover-tilt stiffness 0.2 / damping 0.8, softer on exit', () => {
+    expect(HOVER_TILT_SPRING).toEqual({ stiffness: 0.2, damping: 0.8, precision: 0.001 });
+    expect(HOVER_TILT_EXIT_SPRING.stiffness).toBeCloseTo(0.04);
+    expect(HOVER_TILT_EXIT_SPRING.damping).toBeCloseTo(0.4);
   });
 
-  it('scales with tiltFactor when the workshop passes native knobs', () => {
-    const pose = pokeHoloFromPointer(400, 200, box, 20, { tiltFactor: 20, tiltFactorY: 10 });
-    expect(pose.rotateY).toBeCloseTo(-20, 5);
-    expect(pose.rotateX).toBeCloseTo(0, 5);
-    const bottom = pokeHoloFromPointer(200, 400, box, 20, { tiltFactor: 20, tiltFactorY: 10 });
-    expect(bottom.rotateX).toBeCloseTo(10, 5);
+  it('eases toward the target across rAF ticks instead of snapping', () => {
+    const spring = createSpring(0.5);
+    spring.target = 1;
+    tickSpring(spring, 16);
+    expect(spring.value).toBeGreaterThan(0.5);
+    expect(spring.value).toBeLessThan(0.95);
+    for (let i = 0; i < 80; i++) tickSpring(spring, 16);
+    expect(spring.value).toBeCloseTo(1, 2);
+  });
+
+  it('exit opts ease back to rest instead of jumping to 0', () => {
+    const spring = createSpring(0.9);
+    applySpringOpts(spring, HOVER_TILT_EXIT_SPRING);
+    spring.target = 0.5;
+    tickSpring(spring, 16);
+    expect(spring.value).toBeGreaterThan(0.7);
+    expect(spring.value).toBeLessThan(0.9);
+  });
+});
+
+describe('pointInBox', () => {
+  it('keeps hover live on the painted card AABB, not only the rest box', () => {
+    const rest = { left: 100, top: 100, width: 200, height: 200 };
+    const painted = { left: 80, top: 90, width: 260, height: 240 };
+    expect(pointInBox(90, 120, rest)).toBe(false);
+    expect(pointInBox(90, 120, painted)).toBe(true);
   });
 });
 

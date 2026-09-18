@@ -89,12 +89,12 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   ambient: { on: false, amount: 0 },
   specular: { on: false, amount: 0 },
   rim: { on: false, amount: 0 },
-  holographic: { on: true, amount: 0.36 },
-  iridescence: { on: true, amount: 0.1 },
+  holographic: { on: true, amount: 0.75 },
+  iridescence: { on: true, amount: 0.15 },
   emboss: { on: false, amount: 0 },
   parallax: { on: false, amount: 0 },
-  sparkle: { on: true, amount: 0.36 },
-  bloom: { on: false, amount: 0.36 },
+  sparkle: { on: true, amount: 0.52 },
+  bloom: { on: true, amount: 0.36 },
 };
 
 /** Live overlay default. Idle matches production league export on my151.app. */
@@ -103,7 +103,7 @@ export const DEFAULT_FOIL_RECIPE: FoilRecipe = {
   idleMsX: 14000,
   idleMsY: 14000,
   deadDeg: 3,
-  maxTilt: 20,
+  maxTilt: 10,
   parallaxPx: 0,
   bloomBlurPx: 34,
   specSize: 0.5,

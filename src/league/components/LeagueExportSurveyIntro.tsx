@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { getPokemonById } from '@/hooks/usePokemonData';
 import type { ExportSurveyTool } from '@/lib/exportSurvey';
 import {
-  SPRITE_NATIVE,
   useExportSurveySpriteScale,
   usePixelPerfectSprite,
 } from '@/lib/usePixelPerfectSprite';
@@ -71,13 +70,17 @@ export function LeagueExportSurveyIntro({
           <img
             src={sprite}
             alt=""
-            width={SPRITE_NATIVE}
-            height={SPRITE_NATIVE}
+            width={spriteCssPx}
+            height={spriteCssPx}
             data-export-survey-sprite
             data-sprite-scale={spriteScale}
+            data-sprite-css-px={spriteCssPx}
             style={{
               width: spriteCssPx,
               height: spriteCssPx,
+              minWidth: spriteCssPx,
+              minHeight: spriteCssPx,
+              flexShrink: 0,
               aspectRatio: '1 / 1',
               imageRendering: 'pixelated',
             }}

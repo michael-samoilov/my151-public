@@ -491,9 +491,59 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   }
   const widthDelta = widths.length ? Math.max(...widths) - Math.min(...widths) : 99;
   const hoverCircle = {
-    ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 4 && hoverOrbit === 'pointer',
+    ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 4 && hoverMax < 15 && hoverOrbit === 'pointer',
     reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit}`,
   };
+  const shadowPair = await s.evalJson<{ ok: boolean; reason: string }>(
+    `const hit=document.querySelector('[data-export-tilt-hit]');
+     const card=document.querySelector('[data-export-preview]');
+     if(!(hit instanceof HTMLElement) || !(card instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     const r=hit.getBoundingClientRect();
+     const fire=(u,v)=>{
+       hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:r.left+r.width*u,clientY:r.top+r.height*v,pointerType:'mouse',pointerId:1}));
+       return Number(card.getAttribute('data-shadow-x')||0);
+     };
+     const left=fire(0.12,0.5);
+     const right=fire(0.88,0.5);
+     if(!(right>left+0.2)) return {ok:false,reason:'shadow '+left+' → '+right};
+     return {ok:true,reason:left.toFixed(2)+' → '+right.toFixed(2)};`,
+  ).catch(() => ({ ok: false, reason: 'eval' }));
+  const paintedHit = await s.evalJson<{ ok: boolean; reason: string }>(
+    `const hit=document.querySelector('[data-export-tilt-hit]');
+     const card=document.querySelector('[data-export-preview]');
+     if(!(hit instanceof HTMLElement) || !(card instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     const painted=card.getBoundingClientRect();
+     const rest={left:hit.getBoundingClientRect().left+8,top:hit.getBoundingClientRect().top+8,right:hit.getBoundingClientRect().right-8,bottom:hit.getBoundingClientRect().bottom-8};
+     const candidates=[[painted.left+2,(painted.top+painted.bottom)/2],[painted.right-2,(painted.top+painted.bottom)/2],[ (painted.left+painted.right)/2,painted.top+2]];
+     let probe=null;
+     for(const [x,y] of candidates){
+       const inRest=x>=rest.left&&x<=rest.right&&y>=rest.top&&y<=rest.bottom;
+       const inPaint=x>=painted.left&&x<=painted.right&&y>=painted.top&&y<=painted.bottom;
+       if(inPaint&&!inRest){probe={x,y};break;}
+     }
+     if(!probe){
+       probe={x:painted.left+painted.width*0.92,y:painted.top+painted.height*0.12};
+     }
+     document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:probe.x,clientY:probe.y,pointerType:'mouse',pointerId:1}));
+     const orbit=card.getAttribute('data-export-orbit')||'';
+     const hypot=Math.hypot(Number(card.dataset.tiltX||0),Number(card.dataset.tiltY||0));
+     return {ok:orbit==='pointer'&&hypot>2,reason:orbit+' hypot='+hypot.toFixed(1)+' probe='+probe.x.toFixed(0)+','+probe.y.toFixed(0)};`,
+  ).catch(() => ({ ok: false, reason: 'eval' }));
+  const restStatic = await s.evalJson<{ ok: boolean; reason: string }>(
+    `const card=document.querySelector('[data-export-preview]');
+     if(!(card instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:8,clientY:8,pointerType:'mouse',pointerId:1}));
+     return {ok:true,reason:card.getAttribute('data-export-orbit')||''};`,
+  ).catch(() => ({ ok: false, reason: 'eval' }));
+  await sleep(240);
+  const restHold = await readDexPreviewMotion(s);
+  await sleep(700);
+  const restAfter = await readDexPreviewMotion(s);
+  const restOk =
+    (restHold.orbit === 'rest' || restHold.orbit === 'idle') &&
+    restAfter.hypot < restHold.hypot + 0.4 &&
+    restAfter.hypot < 8 &&
+    restAfter.orbit !== 'pointer';
   await s.screenshot(ctx.shot('dex-export-hover'));
   await s.click('[data-export-tilt-hit]').catch(() => undefined);
   await sleep(500);
@@ -534,7 +584,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
      if(!(holo instanceof HTMLElement)) return {ok:false,reason:'no holo'};
      const holoStyle=getComputedStyle(holo);
      const mask=(holoStyle.getPropertyValue('-webkit-mask-image')+' '+holoStyle.getPropertyValue('mask-image')).replace(/\\s+/g,' ').trim();
-     if(mask!=='none'&&mask!==''&&mask!=='none none') return {ok:false,reason:'holo mask '+mask};
+     if(mask==='none'||mask===''||mask==='none none') return {ok:false,reason:'holo unmasked'};
      const c=card.getBoundingClientRect();
      for(const layer of card.querySelectorAll('[data-foil-layer]')){
        if(!(layer instanceof HTMLElement)) continue;
@@ -544,8 +594,8 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        }
      }
      const holoAmt=Number(style.getPropertyValue('--foil-holographic'));
-     if(!(holoAmt>0.2 && holoAmt<0.5)) return {ok:false,reason:'holo amount '+holoAmt};
-     return {ok:true,reason:bloom?'clipped':'no-bloom'};`,
+     if(Math.abs(holoAmt-0.75)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
+     return {ok:true,reason:bloom?'prod-holo-clipped':'prod-holo'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await s.screenshot(ctx.shot('dex-export-locked'));
   const confirmReady = await s.evalJson<boolean>(
@@ -586,6 +636,10 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:outlines-row', state.outlines, 'missing [data-export-outlines]'),
     ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta, visualDelta, perspectiveOn })),
     ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
+    ok('dex-export:tilt-magnitude', hoverCircle.ok && hoverMax < 15, `hypot=${hoverMax.toFixed(1)}`),
+    ok('dex-export:dynamic-shadow', shadowPair.ok, shadowPair.reason),
+    ok('dex-export:tilt-on-painted', paintedHit.ok, paintedHit.reason),
+    ok('dex-export:tilt-rest-static', restOk, `hold=${restHold.orbit}/${restHold.hypot.toFixed(1)} after=${restAfter.orbit}/${restAfter.hypot.toFixed(1)} ${restStatic.reason}`),
     ok('dex-export:shine', imgReady && shineOn, JSON.stringify(shineSample)),
     ok('dex-export:shine-clip', shineClip.ok, shineClip.reason),
     ok('dex-export:lock-on-press', locked.paused === '1' && locked.hypot < 0.8, JSON.stringify(locked)),
@@ -1180,6 +1234,18 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
     await sleep(250);
   }
   checks.push(ok('foil-workshop:preview-img', imgReady, imgReady ? 'preview painted' : 'no preview img'));
+  const tiltVars = await s.evalJson<{ rot: string; holo: string; hx: string }>(
+    `const el=document.querySelector('[data-export-preview]');
+     if(!(el instanceof HTMLElement)) return {rot:'',holo:'',hx:''};
+     const s=getComputedStyle(el);
+     return {
+       rot: s.getPropertyValue('--hover-tilt-rotation-x').trim(),
+       holo: s.getPropertyValue('--foil-holographic').trim(),
+       hx: s.getPropertyValue('--hover-tilt-x').trim(),
+     };`,
+  ).catch(() => ({ rot: '', holo: '', hx: '' }));
+  checks.push(ok('foil-workshop:hover-tilt-rotation', /^10(\.0+)?deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
+  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.75) < 0.02, `holo=${tiltVars.holo}`));
   await s.screenshot(ctx.shot('foil-workshop'));
 
   const labels = await s.evalJson<string[]>(

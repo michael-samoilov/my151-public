@@ -186,10 +186,10 @@ test.describe('mobile dex export sheet', () => {
         return { ok: false, reason: `corner fill ${bg}` };
       }
       if (!/round/i.test(clip)) return { ok: false, reason: `clip ${clip}` };
-      if (mask !== 'none' && mask !== '' && mask !== 'none none') return { ok: false, reason: `holo mask ${mask}` };
+      if (mask === 'none' || mask === '' || mask === 'none none') return { ok: false, reason: `holo unmasked ${mask}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
       const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
-      if (!(holoAmt > 0.2 && holoAmt < 0.5)) return { ok: false, reason: `holo amount ${holoAmt}` };
+      if (Math.abs(holoAmt - 0.75) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
       if (h.left < c.left - 2 || h.right > c.right + 2 || h.top < c.top - 2 || h.bottom > c.bottom + 2) {
         return { ok: false, reason: 'holo outside card' };
       }
@@ -406,11 +406,12 @@ test.describe('desktop dex export preview', () => {
         ok:
           style.overflow === 'hidden' &&
           !style.transformStyle.includes('preserve-3d') &&
-          !bloom &&
           overflowLayers.length === 0 &&
-          (mask === 'none' || mask === '' || mask === 'none none') &&
-          holoAmt > 0.2 &&
-          holoAmt < 0.5,
+          mask !== 'none' &&
+          mask !== '' &&
+          mask !== 'none none' &&
+          Math.abs(holoAmt - 0.75) < 0.02 &&
+          !(bloom instanceof HTMLElement && getComputedStyle(bloom).inset.includes('-')),
       };
     });
     expect(shineClip.ok, JSON.stringify(shineClip)).toBe(true);
@@ -470,5 +471,51 @@ test.describe('desktop dex export preview', () => {
     await hit.click();
     await expect.poll(async () => foil.getAttribute('data-paused')).toBe('0');
     await expect.poll(async () => Number(await foil.getAttribute('data-foil-opacity'))).toBeGreaterThan(0.1);
+  });
+
+  test('copies hover-tilt rest, painted-card hit, and raised-edge shadow', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const foil = page.locator('[data-export-preview]');
+    const hit = page.locator('[data-export-tilt-hit]');
+    const box = await hit.boundingBox();
+    expect(box).toBeTruthy();
+    await page.mouse.move(box!.x + box!.width * 0.88, box!.y + box!.height * 0.18, { steps: 8 });
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    await expect.poll(async () => Math.abs(Number(await foil.getAttribute('data-tilt-y')))).toBeLessThan(12);
+    await expect.poll(async () => Math.abs(Number(await foil.getAttribute('data-tilt-y')))).toBeGreaterThan(2);
+    await expect.poll(async () => Number(await foil.getAttribute('data-shadow-x'))).toBeGreaterThan(0.25);
+    const rightShadow = Number(await foil.getAttribute('data-shadow-x'));
+    await page.mouse.move(box!.x + box!.width * 0.12, box!.y + box!.height * 0.5, { steps: 8 });
+    await expect.poll(async () => Number(await foil.getAttribute('data-shadow-x'))).toBeLessThan(Math.min(0, rightShadow - 0.25));
+    const painted = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      if (!card) return null;
+      const r = card.getBoundingClientRect();
+      return { x: r.right - 3, y: r.top + r.height * 0.2 };
+    });
+    expect(painted).toBeTruthy();
+    await page.mouse.move(painted!.x, painted!.y, { steps: 4 });
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    await page.mouse.move(12, 12, { steps: 4 });
+    await expect.poll(async () => {
+      const orbit = await foil.getAttribute('data-export-orbit');
+      return orbit === 'rest' || orbit === 'idle';
+    }).toBeTruthy();
+    await page.waitForTimeout(220);
+    const holdOrbit = await foil.getAttribute('data-export-orbit');
+    const hold = Math.hypot(
+      Number(await foil.getAttribute('data-tilt-x')),
+      Number(await foil.getAttribute('data-tilt-y')),
+    );
+    expect(holdOrbit === 'rest' || holdOrbit === 'idle').toBe(true);
+    await page.waitForTimeout(1100);
+    const after = Math.hypot(
+      Number(await foil.getAttribute('data-tilt-x')),
+      Number(await foil.getAttribute('data-tilt-y')),
+    );
+    expect(after).toBeLessThanOrEqual(hold + 0.5);
+    expect(after).toBeLessThan(12);
   });
 });

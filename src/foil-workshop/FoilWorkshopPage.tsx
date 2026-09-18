@@ -394,20 +394,20 @@ export function FoilWorkshopPage() {
             <Slider
               label="tiltFactor"
               min={0}
-              max={25}
-              step={0.1}
+              max={4}
+              step={0.05}
               value={tilt.tiltFactor}
-              suffix="°"
+              suffix="×"
               testId="tiltFactor"
               onChange={(tiltFactor) => setTilt({ ...tilt, tiltFactor })}
             />
             <Slider
               label="tiltFactorY"
               min={0}
-              max={25}
-              step={0.1}
+              max={4}
+              step={0.05}
               value={tilt.tiltFactorY}
-              suffix="°"
+              suffix="×"
               testId="tiltFactorY"
               onChange={(tiltFactorY) => setTilt({ ...tilt, tiltFactorY })}
             />

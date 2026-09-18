@@ -28,6 +28,24 @@
   --pointer-from-left: 0.5;
   --rotate-x: 0deg;
   --rotate-y: 0deg;
+  --rotation-x: 0deg;
+  --rotation-y: 0deg;
+  --hover-tilt-x: 0.5;
+  --hover-tilt-y: 0.5;
+  --hover-tilt-opacity: 0;
+  --hover-tilt-shadow-blur: 48;
+  --hover-tilt-scale: 1;
+  --shadow-x: 0;
+  --shadow-y: 0;
+  --shadow-blur-1: calc(var(--hover-tilt-shadow-blur, 12) * 1px);
+  --shadow-blur-2: calc(var(--shadow-blur-1) / 2);
+  --hover-tilt-default-shadow:
+    calc(var(--shadow-x) * var(--shadow-blur-1)) calc(var(--shadow-y) * var(--shadow-blur-1) / 2 + var(--shadow-blur-1) / 4)
+      calc(var(--shadow-blur-1) / 2) calc(var(--shadow-blur-1) * -0.25)
+      rgb(0 0 0 / calc(var(--hover-tilt-opacity, 0) * 0.125)),
+    calc(var(--shadow-x) * var(--shadow-blur-2)) calc(var(--shadow-y) * var(--shadow-blur-2) / 2 + var(--shadow-blur-2) / 4)
+      calc(var(--shadow-blur-2) / 2) calc(var(--shadow-blur-2) * -0.25)
+      rgb(0 0 0 / calc(var(--hover-tilt-opacity, 0) * 0.125));
   --foil-opacity: 0;
   --foil-pointLight: 0;
   --foil-ambient: 0;
@@ -60,16 +78,19 @@
   overflow: hidden;
   -webkit-clip-path: inset(0 round 0.5rem);
   clip-path: inset(0 round 0.5rem);
+  box-shadow:
+    0 24px 48px rgb(0 0 0 / 0.28),
+    var(--hover-tilt-custom-shadow, var(--hover-tilt-default-shadow));
   /* Live overlay (no hover-tilt): flatten so Safari clips shine.
      Hover-tilt overrides this to preserve-3d + ::before glare, matching
      https://hover-tilt.simey.me/bespoke/credit-cards/ */
   transform-style: flat;
   -webkit-transform-style: flat;
-  -webkit-transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y));
-  transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y));
+  -webkit-transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
+  transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
   transform-origin: center center;
   -webkit-transform-origin: center center;
-  will-change: transform;
+  will-change: transform, box-shadow;
 }
 
 .export-foil-layer {
@@ -85,6 +106,7 @@
 }
 
 .export-foil-mask-sat,
+.export-foil-holographic,
 .export-foil-iridescence,
 .export-foil-parallax {
   -webkit-mask-image: var(--foil-sat-mask);
@@ -116,6 +138,7 @@
   mask-repeat: no-repeat;
 }
 
+.export-foil:not([data-foil-maps='1']) .export-foil-holographic,
 .export-foil:not([data-foil-maps='1']) .export-foil-iridescence,
 .export-foil:not([data-foil-maps='1']) .export-foil-emboss,
 .export-foil:not([data-foil-maps='1']) .export-foil-rim,
@@ -152,8 +175,6 @@
 
 .export-foil-holographic {
   z-index: 3;
-  -webkit-mask-image: none;
-  mask-image: none;
   background-image:
     repeating-linear-gradient(
       125deg,
@@ -177,7 +198,7 @@
     calc(10% + var(--pointer-from-left) * 80%) calc(10% + var(--pointer-from-top) * 80%),
     calc(var(--pointer-from-left) * 100%) calc(var(--pointer-from-top) * 100%);
   mix-blend-mode: overlay;
-  filter: saturate(1.12);
+  filter: saturate(1.35);
   transform: translate(var(--foil-shift-x), var(--foil-shift-y));
   opacity: calc(var(--foil-opacity) * var(--foil-holographic) * (0.82 + 0.18 * var(--pointer-from-center)));
 }
@@ -312,13 +333,8 @@
    that rotates. translate3d(0,0,0.01px) keeps that face on one compositor
    layer. Child overlay divs become a second altitude. */
 .export-foil[data-hover-tilt='1'] {
-  --hover-tilt-x: var(--pointer-x);
-  --hover-tilt-y: var(--pointer-y);
-  --hover-tilt-opacity: var(--foil-opacity);
   --hover-tilt-from-center: var(--pointer-from-center);
   --hover-tilt-at-edge: var(--pointer-from-center);
-  --hover-tilt-rotation-x: var(--rotate-y);
-  --hover-tilt-rotation-y: var(--rotate-x);
   --hover-tilt-glare-mask: none;
   --hover-tilt-sparkle-mask: none;
   --hover-tilt-glare-mask-size: cover;
@@ -332,7 +348,6 @@
   --hover-tilt-glare-intensity: 0.55;
   --hover-tilt-sparkle-intensity: 0.55;
   --hover-tilt-glare-hue: 40;
-  --hover-tilt-scale: 1;
   --gradient-x: var(--pointer-x);
   --gradient-y: var(--pointer-y);
   --hover-tilt-default-gradient: radial-gradient(
@@ -344,10 +359,10 @@
   isolation: auto;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
-  -webkit-transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y))
-    scale(var(--hover-tilt-scale, 1)) translate3d(0, 0, 0.01px);
-  transform: rotateY(var(--rotate-x)) rotateX(var(--rotate-y))
-    scale(var(--hover-tilt-scale, 1)) translate3d(0, 0, 0.01px);
+  -webkit-transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x))
+    rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
+  transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x))
+    rotateY(var(--rotation-y)) translate3d(0, 0, 0.01px);
   will-change: transform, box-shadow, opacity;
 }
 

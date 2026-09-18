@@ -29,15 +29,16 @@ describe('foil recipe', () => {
     expect(DEFAULT_FOIL_RECIPE.idleMsX).toBe(14000);
     expect(DEFAULT_FOIL_RECIPE.idleMsY).toBe(14000);
     expect(DEFAULT_FOIL_RECIPE.idleTilt).toBeGreaterThan(DEFAULT_FOIL_RECIPE.deadDeg);
-    expect(DEFAULT_FOIL_RECIPE.maxTilt).toBe(20);
+    expect(DEFAULT_FOIL_RECIPE.maxTilt).toBe(10);
   });
 
-  it('live default paints four layers and skips the edge map', () => {
+  it('live default matches production foil amounts and skips the edge map', () => {
     expect(activeFoilLayerIds(DEFAULT_FOIL_RECIPE)).toEqual([
       'pointLight',
       'holographic',
       'iridescence',
       'sparkle',
+      'bloom',
     ]);
     expect(foilMapsNeeded(DEFAULT_FOIL_RECIPE)).toEqual({
       sat: true,
@@ -46,12 +47,12 @@ describe('foil recipe', () => {
     });
     expect(DEFAULT_FOIL_RECIPE.layers.ambient.on).toBe(false);
     expect(DEFAULT_FOIL_RECIPE.layers.emboss.on).toBe(false);
-    expect(DEFAULT_FOIL_RECIPE.layers.bloom.on).toBe(false);
-    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBeGreaterThan(0.2);
-    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBeLessThan(0.5);
+    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(0.75);
     expect(DEFAULT_FOIL_RECIPE.layers.holographic.on).toBe(true);
-    expect(DEFAULT_FOIL_RECIPE.layers.sparkle.amount).toBeGreaterThan(0.2);
-    expect(DEFAULT_FOIL_RECIPE.layers.sparkle.amount).toBeLessThan(0.45);
+    expect(DEFAULT_FOIL_RECIPE.layers.iridescence.amount).toBe(0.15);
+    expect(DEFAULT_FOIL_RECIPE.layers.sparkle.amount).toBe(0.52);
+    expect(DEFAULT_FOIL_RECIPE.layers.bloom.on).toBe(true);
+    expect(DEFAULT_FOIL_RECIPE.layers.bloom.amount).toBe(0.36);
     const withEmboss = withFoilLayer(DEFAULT_FOIL_RECIPE, 'emboss', { on: true, amount: 0.6 });
     expect(foilMapsNeeded(withEmboss).edge).toBe(true);
   });

@@ -173,16 +173,24 @@ export function usePixelPerfectSprite(scale = 1): number {
 }
 
 /**
- * Integer survey-sprite scale. Mobile uses 2× unless that CSS size would
- * overflow the viewport. Desktop stays 1×.
+ * Integer survey-sprite scale (1× / 2× / 3× only).
+ * Device pixels stay ≥ native and an integer multiple. Desktop uses 2×
+ * when 1× CSS would be a sub-native stub (dpr > 1).
  */
 export function exportSurveySpriteScale(opts: {
   viewportWidth: number;
   dpr: number;
 }): number {
-  if (opts.viewportWidth >= 1024) return 1;
-  const twoCss = pixelPerfectCssPx(2, opts.dpr);
-  return twoCss <= Math.max(SPRITE_NATIVE, opts.viewportWidth - 48) ? 2 : 1;
+  const dpr = Math.max(opts.dpr, 1);
+  const room = Math.max(SPRITE_NATIVE, opts.viewportWidth - 48);
+  const fits = (n: number) => pixelPerfectCssPx(n, dpr) <= room;
+  if (opts.viewportWidth >= 1024) {
+    if (pixelPerfectCssPx(1, dpr) >= SPRITE_NATIVE && fits(1)) return 1;
+    if (fits(2)) return 2;
+    return 1;
+  }
+  if (fits(2)) return 2;
+  return 1;
 }
 
 /** Integer scale for the export-survey highlight sprite. */

@@ -16,7 +16,7 @@ test.describe('export foil workshop', () => {
     await expect
       .poll(async () => foil.getAttribute('data-foil-maps'), { timeout: 20_000 })
       .toBe('1');
-    await expect(page.locator('[data-foil-layer]')).toHaveCount(4);
+    await expect(page.locator('[data-foil-layer]')).toHaveCount(5);
     await expect(page.locator('[data-foil-control]')).toHaveCount(10);
     await expect
       .poll(

@@ -81,15 +81,15 @@ export const HOVER_TILT_MASK_META = {
 
 export const HOVER_TILT_WORKSHOP_STORAGE_KEY = 'my151-foil-workshop-tilt';
 
-/** poke-holo edge rotation: 50 / 3.5. */
-export const DEFAULT_TILT_FACTOR = 50 / 3.5;
+/** hover-tilt default `tiltFactor` (multiplier on ROTATION=10). */
+export const DEFAULT_TILT_FACTOR = 1;
 
 export const DEFAULT_HOVER_TILT_RECIPE: HoverTiltRecipe = {
   tiltFactor: DEFAULT_TILT_FACTOR,
   tiltFactorY: DEFAULT_TILT_FACTOR,
   scaleFactor: 1,
   enterDelay: 0,
-  exitDelay: 420,
+  exitDelay: 200,
   shadow: true,
   shadowBlur: 48,
   blendMode: 'overlay',
@@ -131,14 +131,21 @@ function readNumber(value: unknown, fallback: number, min: number, max: number):
   return typeof value === 'number' ? clamp(value, min, max) : fallback;
 }
 
+/** hover-tilt `tiltFactor` is a 0–4 multiplier. Old recipes stored edge degrees. */
+function readTiltFactor(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  if (value > 4) return clamp(value / 10, 0, 4);
+  return clamp(value, 0, 4);
+}
+
 /** Parse untrusted JSON / URL / localStorage into a complete recipe. */
 export function parseHoverTiltRecipe(input: unknown): HoverTiltRecipe {
   const base = cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE);
   if (typeof input !== 'object' || input === null) return base;
   const rec = input as Record<string, unknown>;
   return {
-    tiltFactor: readNumber(rec.tiltFactor, base.tiltFactor, 0, 25),
-    tiltFactorY: readNumber(rec.tiltFactorY, base.tiltFactorY, 0, 25),
+    tiltFactor: readTiltFactor(rec.tiltFactor, base.tiltFactor),
+    tiltFactorY: readTiltFactor(rec.tiltFactorY, base.tiltFactorY),
     scaleFactor: readNumber(rec.scaleFactor, base.scaleFactor, 1, 1.12),
     enterDelay: readNumber(rec.enterDelay, base.enterDelay, 0, 600),
     exitDelay: readNumber(rec.exitDelay, base.exitDelay, 0, 1200),
@@ -182,9 +189,11 @@ const MASK_COMPOSITE_WEBKIT: Record<HoverTiltMaskComposite, string> = {
 export function hoverTiltCssVars(recipe: HoverTiltRecipe): Record<string, string> {
   return {
     '--hover-tilt-scale': recipe.scaleFactor.toFixed(3),
+    '--hover-tilt-rotation-x': `${(10 * recipe.tiltFactor).toFixed(2)}deg`,
+    '--hover-tilt-rotation-y': `${(10 * recipe.tiltFactorY).toFixed(2)}deg`,
     '--hover-tilt-glare-intensity': recipe.glareIntensity.toFixed(3),
     '--hover-tilt-glare-hue': String(Math.round(recipe.glareHue)),
-    '--hover-tilt-shadow-blur': `${Math.round(recipe.shadowBlur)}px`,
+    '--hover-tilt-shadow-blur': String(Math.round(recipe.shadowBlur)),
     '--hover-tilt-blend-mode': recipe.blendMode,
     '--hover-tilt-sparkle-intensity': recipe.sparkleIntensity.toFixed(3),
     '--hover-tilt-mask-mode': recipe.glareMaskMode,
@@ -193,9 +202,26 @@ export function hoverTiltCssVars(recipe: HoverTiltRecipe): Record<string, string
   };
 }
 
-export function hoverTiltBoxShadow(recipe: HoverTiltRecipe): string {
+/**
+ * hover-tilt `--hover-tilt-default-shadow` at one pose.
+ * Offset follows `--shadow-x/y` = `nx*2-1` toward the raised edge.
+ */
+export function hoverTiltBoxShadow(
+  recipe: HoverTiltRecipe,
+  pose?: { nx: number; ny: number; opacity: number },
+): string {
   if (!recipe.shadow || recipe.shadowBlur <= 0) return 'none';
   const blur = Math.round(recipe.shadowBlur);
-  const y = Math.round(recipe.shadowBlur / 2);
-  return `0 ${y}px ${blur}px rgba(0,0,0,0.35)`;
+  const nx = pose?.nx ?? 0.5;
+  const ny = pose?.ny ?? 0.5;
+  const opacity = pose?.opacity ?? 0;
+  const sx = nx * 2 - 1;
+  const sy = ny * 2 - 1;
+  const o = opacity * 0.125;
+  const layer = (b: number) => {
+    const x = sx * b;
+    const y = (sy * b) / 2 + b / 4;
+    return `${x.toFixed(1)}px ${y.toFixed(1)}px ${(b / 2).toFixed(1)}px ${(-b * 0.25).toFixed(1)}px rgb(0 0 0 / ${o.toFixed(3)})`;
+  };
+  return `${layer(blur)}, ${layer(blur / 2)}`;
 }

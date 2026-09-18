@@ -7,13 +7,23 @@ import {
   PREVIEW_REST_PAD,
 } from '@/components/export/exportPreviewFit';
 import {
-  pokeHoloFromPointer,
+  applySpringOpts,
+  createSpring,
+  HOVER_TILT_EXIT_DELAY_MS,
+  HOVER_TILT_EXIT_SPRING,
+  HOVER_TILT_SPRING,
+  hoverTiltFromNormalized,
+  hoverTiltFromPointer,
+  pointInBox,
   pokeHoloIdle,
   REST_POSE,
+  springSettled,
+  tickSpring,
   type HoverTiltPose,
+  type HoverTiltSpring,
 } from '@/components/export/hoverTilt';
 import {
-  hoverTiltBoxShadow,
+  DEFAULT_HOVER_TILT_RECIPE,
   hoverTiltCssVars,
   type HoverTiltRecipe,
 } from '@/components/export/hoverTiltRecipe';
@@ -36,10 +46,10 @@ import {
 import { foilMaskCss, foilMaskUrlsFromImage } from '../export/foilMaps';
 import './ExportPreview3D.css';
 
-const RELEASE_MS = 420;
 const TAP_MS = 320;
 const TAP_PX = 10;
-const HOVER_ARM_PX = 3;
+
+type Orbit = 'idle' | 'pointer' | 'rest' | 'paused';
 
 function lerpPose(from: HoverTiltPose, to: HoverTiltPose, u: number): HoverTiltPose {
   return {
@@ -47,16 +57,21 @@ function lerpPose(from: HoverTiltPose, to: HoverTiltPose, u: number): HoverTiltP
     rotateY: from.rotateY + (to.rotateY - from.rotateY) * u,
     pointerX: from.pointerX + (to.pointerX - from.pointerX) * u,
     pointerY: from.pointerY + (to.pointerY - from.pointerY) * u,
+    nx: from.nx + (to.nx - from.nx) * u,
+    ny: from.ny + (to.ny - from.ny) * u,
+  };
+}
+
+function tiltAxes(tilt: HoverTiltRecipe | undefined): { tiltFactor: number; tiltFactorY: number } {
+  return {
+    tiltFactor: tilt?.tiltFactor ?? DEFAULT_HOVER_TILT_RECIPE.tiltFactor,
+    tiltFactorY: tilt?.tiltFactorY ?? DEFAULT_HOVER_TILT_RECIPE.tiltFactorY,
   };
 }
 
 /**
- * Live export preview with poke-holo / hover-tilt.
- *
- * Pointer writes CSS custom properties on the untransformed hit box.
- * The card transform is rotateY(var(--rotate-x)) rotateX(var(--rotate-y))
- * with no scale. Idle orbit runs with no input. A press parks the card
- * straight-on; a second press resumes the orbit.
+ * Live export preview. Pointer tracking, springs, rest, and CSS vars
+ * copy hover-tilt (https://github.com/simeydotme/hover-tilt).
  */
 export function ExportPreview3D({
   src,
@@ -86,7 +101,7 @@ export function ExportPreview3D({
   const cardRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const originRef = useRef<number | null>(null);
-  const interactingRef = useRef(false);
+  const orbitRef = useRef<Orbit>('idle');
   const pausedRef = useRef(false);
   const pointerPoseRef = useRef<HoverTiltPose>(REST_POSE);
   const lastPoseRef = useRef<HoverTiltPose>(REST_POSE);
@@ -94,10 +109,17 @@ export function ExportPreview3D({
   const reducedMotionRef = useRef(false);
   const downRef = useRef<{ t: number; x: number; y: number; dragged: boolean } | null>(null);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const enterSinceRef = useRef<number | null>(null);
+  const pendingPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const moveFrameRef = useRef<number | null>(null);
+  const restAtRef = useRef<number | null>(null);
+  const lastTickRef = useRef<number | null>(null);
+  const springXRef = useRef<HoverTiltSpring>(createSpring(0.5));
+  const springYRef = useRef<HoverTiltSpring>(createSpring(0.5));
+  const springARef = useRef<HoverTiltSpring>(createSpring(0));
   const recipeRef = useRef(recipe);
   const tiltRef = useRef(tilt);
   const measureRef = useRef<() => void>(() => {});
-  const enterSinceRef = useRef<number | null>(null);
   const [cardMax, setCardMax] = useState({ w: 0, h: 0 });
   const layerIds = activeFoilLayerIds(recipe);
   const { sat: needSat, edge: needEdge, gloss: needGloss } = foilMapsNeeded(recipe);
@@ -128,7 +150,11 @@ export function ExportPreview3D({
     }
     const pointerX = pose.pointerX;
     const pointerY = pose.pointerY;
+    const nx = pose.nx;
+    const ny = pose.ny;
     const applyRotate = (x: number, y: number) => {
+      el.style.setProperty('--rotation-x', `${x}deg`);
+      el.style.setProperty('--rotation-y', `${y}deg`);
       el.style.setProperty('--rotate-x', `${y}deg`);
       el.style.setProperty('--rotate-y', `${x}deg`);
     };
@@ -145,13 +171,13 @@ export function ExportPreview3D({
           c.bottom - live.bottom,
         );
       };
-      if (overflowOf() > 4) {
+      if (overflowOf() > 1) {
         let lo = 0;
         let hi = 1;
         for (let i = 0; i < 8; i++) {
           const mid = (lo + hi) / 2;
           applyRotate(rotateX * mid, rotateY * mid);
-          if (overflowOf() <= 4) lo = mid;
+          if (overflowOf() <= 1) lo = mid;
           else hi = mid;
         }
         rotateX *= lo;
@@ -159,31 +185,31 @@ export function ExportPreview3D({
         applyRotate(rotateX, rotateY);
       }
     }
-    lastPoseRef.current = { rotateX, rotateY, pointerX, pointerY };
+    lastPoseRef.current = { rotateX, rotateY, pointerX, pointerY, nx, ny };
     el.style.setProperty('--pointer-x', `${pointerX}%`);
     el.style.setProperty('--pointer-y', `${pointerY}%`);
     el.style.setProperty('--pointer-from-center', Math.min(1, Math.hypot(pointerX - 50, pointerY - 50) / 50).toFixed(3));
     el.style.setProperty('--pointer-from-top', (pointerY / 100).toFixed(3));
     el.style.setProperty('--pointer-from-left', (pointerX / 100).toFixed(3));
+    el.style.setProperty('--hover-tilt-x', nx.toFixed(4));
+    el.style.setProperty('--hover-tilt-y', ny.toFixed(4));
+    el.style.setProperty('--gradient-x', `${pointerX}%`);
+    el.style.setProperty('--gradient-y', `${pointerY}%`);
     const mag = Math.hypot(rotateX, rotateY);
     const recipeNow = recipeRef.current;
-    const tiltNow = tiltRef.current;
+    const tiltNow = tiltRef.current ?? DEFAULT_HOVER_TILT_RECIPE;
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
     const foil = mag <= recipeNow.deadDeg ? 0 : Math.min(1, (mag - recipeNow.deadDeg) / span);
     el.style.setProperty('--foil-opacity', foil.toFixed(3));
-    if (tiltNow) {
-      const angle = (Math.atan2(pointerY - 50, pointerX - 50) * 180) / Math.PI;
-      el.style.setProperty('--hover-tilt-angle', `${angle.toFixed(1)}deg`);
-      el.style.setProperty('--hover-tilt-x', `${pointerX}%`);
-      el.style.setProperty('--hover-tilt-y', `${pointerY}%`);
-      el.style.setProperty('--hover-tilt-rotation-x', `${rotateX}deg`);
-      el.style.setProperty('--hover-tilt-rotation-y', `${rotateY}deg`);
-      el.style.setProperty('--hover-tilt-from-center', Math.min(1, Math.hypot(pointerX - 50, pointerY - 50) / 50).toFixed(3));
-      el.style.setProperty('--hover-tilt-at-edge', Math.min(1, Math.hypot(pointerX - 50, pointerY - 50) / 50).toFixed(3));
-      el.style.setProperty('--hover-tilt-opacity', foil.toFixed(3));
-      el.style.setProperty('--gradient-x', `${pointerX}%`);
-      el.style.setProperty('--gradient-y', `${pointerY}%`);
-    }
+    el.style.setProperty('--hover-tilt-opacity', foil.toFixed(3));
+    const angle = (Math.atan2(ny - 0.5, nx - 0.5) * 180) / Math.PI;
+    el.style.setProperty('--hover-tilt-angle', `${angle.toFixed(1)}deg`);
+    el.style.setProperty('--hover-tilt-from-center', Math.min(1, Math.hypot(nx - 0.5, ny - 0.5) / 0.5).toFixed(3));
+    el.style.setProperty('--hover-tilt-at-edge', Math.min(1, Math.max(Math.abs(nx - 0.5), Math.abs(ny - 0.5)) * 2).toFixed(3));
+    const shadowX = nx * 2 - 1;
+    const shadowY = ny * 2 - 1;
+    el.style.setProperty('--shadow-x', shadowX.toFixed(4));
+    el.style.setProperty('--shadow-y', shadowY.toFixed(4));
     if (!el.style.getPropertyValue('--foil-pointLight')) {
       const vars = foilRecipeCssVars(recipeNow);
       for (const [key, value] of Object.entries(vars)) {
@@ -192,10 +218,12 @@ export function ExportPreview3D({
     }
     el.setAttribute('data-tilt-x', rotateX.toFixed(1));
     el.setAttribute('data-tilt-y', rotateY.toFixed(1));
-    el.setAttribute('data-tilt-scale', tiltNow ? tiltNow.scaleFactor.toFixed(3) : '1');
+    el.setAttribute('data-tilt-scale', tiltNow.scaleFactor === 1 ? '1' : tiltNow.scaleFactor.toFixed(3));
     el.setAttribute('data-foil-opacity', foil.toFixed(3));
     el.setAttribute('data-paused', pausedRef.current ? '1' : '0');
-    el.setAttribute('data-export-orbit', interactingRef.current ? 'pointer' : pausedRef.current ? 'paused' : 'idle');
+    el.setAttribute('data-export-orbit', orbitRef.current);
+    el.setAttribute('data-shadow-x', shadowX.toFixed(2));
+    el.setAttribute('data-shadow-y', shadowY.toFixed(2));
   }, []);
 
   const idleAt = useCallback((now: number) => {
@@ -209,6 +237,62 @@ export function ExportPreview3D({
       idleMsY: recipeNow.idleMsY,
       idleTilt: recipeNow.idleTilt,
     });
+  }, []);
+
+  const paintedBox = useCallback((): DOMRect | null => {
+    const card = cardRef.current;
+    if (card && card.offsetWidth > 0) return card.getBoundingClientRect();
+    const hit = hitRef.current;
+    return hit ? hit.getBoundingClientRect() : null;
+  }, []);
+
+  const beginPointer = useCallback((clientX: number, clientY: number) => {
+    const box = paintedBox();
+    if (!box || box.width === 0) return;
+    const pose = hoverTiltFromPointer(clientX, clientY, box, tiltAxes(tiltRef.current));
+    const last = lastPoseRef.current;
+    springXRef.current.value = last.nx;
+    springYRef.current.value = last.ny;
+    springXRef.current.target = pose.nx;
+    springYRef.current.target = pose.ny;
+    springARef.current.target = 1;
+    applySpringOpts(springXRef.current, HOVER_TILT_SPRING);
+    applySpringOpts(springYRef.current, HOVER_TILT_SPRING);
+    applySpringOpts(springARef.current, HOVER_TILT_SPRING);
+    pointerPoseRef.current = pose;
+    pendingPointerRef.current = { x: clientX, y: clientY };
+    orbitRef.current = 'pointer';
+    restAtRef.current = null;
+    releaseRef.current = null;
+  }, [paintedBox]);
+
+  const schedulePointer = useCallback((clientX: number, clientY: number) => {
+    pendingPointerRef.current = { x: clientX, y: clientY };
+    if (moveFrameRef.current !== null) return;
+    moveFrameRef.current = requestAnimationFrame(() => {
+      moveFrameRef.current = null;
+      const pending = pendingPointerRef.current;
+      if (!pending || orbitRef.current !== 'pointer') return;
+      const box = paintedBox();
+      if (!box || box.width === 0) return;
+      const pose = hoverTiltFromPointer(pending.x, pending.y, box, tiltAxes(tiltRef.current));
+      springXRef.current.target = pose.nx;
+      springYRef.current.target = pose.ny;
+      springARef.current.target = 1;
+      pointerPoseRef.current = pose;
+    });
+  }, [paintedBox]);
+
+  const beginRest = useCallback((now: number) => {
+    if (orbitRef.current !== 'pointer') return;
+    orbitRef.current = 'rest';
+    const delay = tiltRef.current?.exitDelay ?? HOVER_TILT_EXIT_DELAY_MS;
+    restAtRef.current = now + delay;
+    pendingPointerRef.current = null;
+    if (moveFrameRef.current !== null) {
+      cancelAnimationFrame(moveFrameRef.current);
+      moveFrameRef.current = null;
+    }
   }, []);
 
   useLayoutEffect(() => {
@@ -241,12 +325,45 @@ export function ExportPreview3D({
     reducedMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let raf = 0;
     const tick = (now: number) => {
-      if (interactingRef.current) {
-        paint(pointerPoseRef.current);
+      const lastTick = lastTickRef.current ?? now;
+      const dt = now - lastTick;
+      lastTickRef.current = now;
+      if (orbitRef.current === 'pointer') {
+        tickSpring(springXRef.current, dt);
+        tickSpring(springYRef.current, dt);
+        tickSpring(springARef.current, dt);
+        paint(hoverTiltFromNormalized(springXRef.current.value, springYRef.current.value, tiltAxes(tiltRef.current)));
+      } else if (orbitRef.current === 'rest') {
+        const restAt = restAtRef.current;
+        if (restAt !== null && now < restAt) {
+          paint(lastPoseRef.current);
+        } else {
+          applySpringOpts(springXRef.current, HOVER_TILT_EXIT_SPRING);
+          applySpringOpts(springYRef.current, HOVER_TILT_EXIT_SPRING);
+          applySpringOpts(springARef.current, HOVER_TILT_EXIT_SPRING);
+          springXRef.current.target = 0.5;
+          springYRef.current.target = 0.5;
+          springARef.current.target = 0;
+          tickSpring(springXRef.current, dt);
+          tickSpring(springYRef.current, dt);
+          tickSpring(springARef.current, dt);
+          paint(hoverTiltFromNormalized(springXRef.current.value, springYRef.current.value, tiltAxes(tiltRef.current)));
+          if (
+            springSettled(springXRef.current) &&
+            springSettled(springYRef.current) &&
+            springARef.current.value < 0.02
+          ) {
+            restAtRef.current = null;
+            originRef.current = now;
+            orbitRef.current = 'idle';
+            paint(REST_POSE);
+          }
+        }
       } else if (pausedRef.current) {
+        orbitRef.current = 'paused';
         const release = releaseRef.current;
+        const releaseMs = tiltRef.current?.exitDelay ?? HOVER_TILT_EXIT_DELAY_MS;
         if (release) {
-          const releaseMs = tiltRef.current?.exitDelay ?? RELEASE_MS;
           const u = Math.min(1, (now - release.t0) / Math.max(1, releaseMs));
           const ease = 1 - (1 - u) * (1 - u);
           paint(lerpPose(release.from, REST_POSE, ease));
@@ -255,10 +372,11 @@ export function ExportPreview3D({
           paint(REST_POSE);
         }
       } else {
+        orbitRef.current = 'idle';
         const idle = idleAt(now);
         const release = releaseRef.current;
         if (release) {
-          const releaseMs = tiltRef.current?.exitDelay ?? RELEASE_MS;
+          const releaseMs = tiltRef.current?.exitDelay ?? HOVER_TILT_EXIT_DELAY_MS;
           const u = Math.min(1, (now - release.t0) / Math.max(1, releaseMs));
           const ease = 1 - (1 - u) * (1 - u);
           paint(lerpPose(release.from, idle, ease));
@@ -282,11 +400,13 @@ export function ExportPreview3D({
     for (const [key, value] of Object.entries(vars)) {
       el.style.setProperty(key, value);
     }
-    if (!tilt) return;
-    const tiltVars = hoverTiltCssVars(tilt);
+    const tiltNow = tilt ?? DEFAULT_HOVER_TILT_RECIPE;
+    const tiltVars = hoverTiltCssVars(tiltNow);
     for (const [key, value] of Object.entries(tiltVars)) {
       el.style.setProperty(key, value);
     }
+    el.dataset.hoverTiltShadow = tiltNow.shadow ? '1' : '0';
+    if (!tilt) return;
     el.dataset.maskSpriteCount = String(maskContext.sprites.length);
     el.dataset.maskSpriteTypes = hoverTiltMaskSpriteTypes(maskContext);
     const syncGlare = hoverTiltMaskPaint(tilt.glareMask, maskContext);
@@ -341,33 +461,15 @@ export function ExportPreview3D({
     };
   }, [activeSrc, needSat, needEdge, needGloss]);
 
-  const applyPointer = useCallback(
-    (clientX: number, clientY: number) => {
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse' && !downRef.current) return;
+      const card = cardRef.current;
       const hit = hitRef.current;
-      if (!hit) return;
-      const r = hit.getBoundingClientRect();
-      if (r.width === 0 || r.height === 0) return;
-      const tiltNow = tiltRef.current;
-      const pose = pokeHoloFromPointer(clientX, clientY, r, recipeRef.current.maxTilt, tiltNow
-        ? { tiltFactor: tiltNow.tiltFactor, tiltFactorY: tiltNow.tiltFactorY }
-        : undefined);
-      pointerPoseRef.current = pose;
-      interactingRef.current = true;
-      releaseRef.current = null;
-      paint(pose);
-    },
-    [paint],
-  );
-
-  const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    e.currentTarget.setPointerCapture(e.pointerId);
-    downRef.current = { t: performance.now(), x: e.clientX, y: e.clientY, dragged: false };
-  }, []);
-
-  const onPointerMove = useCallback(
-    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!card) return;
+      const painted = card.getBoundingClientRect();
+      const overCard = pointInBox(e.clientX, e.clientY, painted, 2);
+      const overHit = hit ? pointInBox(e.clientX, e.clientY, hit.getBoundingClientRect(), 2) : false;
       const down = downRef.current;
       if (down && !down.dragged) {
         const dist = Math.hypot(e.clientX - down.x, e.clientY - down.y);
@@ -376,27 +478,42 @@ export function ExportPreview3D({
       const dragging = Boolean(down?.dragged || (down && e.buttons > 0 && e.pointerType !== 'mouse'));
       if (dragging) {
         lastPointerRef.current = { x: e.clientX, y: e.clientY };
-        applyPointer(e.clientX, e.clientY);
+        if (orbitRef.current !== 'pointer') beginPointer(e.clientX, e.clientY);
+        else schedulePointer(e.clientX, e.clientY);
         return;
       }
       if (down) return;
-      if (e.pointerType !== 'mouse') return;
       if (pausedRef.current) return;
-      const last = lastPointerRef.current;
-      lastPointerRef.current = { x: e.clientX, y: e.clientY };
-      // A cursor already on the card at open fires pointermove with no travel.
-      // That must not steal idle. Arm hover only after a real move.
-      if (!last) return;
-      if (Math.hypot(e.clientX - last.x, e.clientY - last.y) < HOVER_ARM_PX) return;
-      const enterDelay = tiltRef.current?.enterDelay ?? 0;
-      if (enterDelay > 0) {
-        if (enterSinceRef.current === null) enterSinceRef.current = performance.now();
-        if (performance.now() - enterSinceRef.current < enterDelay) return;
+      if (e.pointerType !== 'mouse') return;
+      if (overCard || (orbitRef.current === 'pointer' && overHit)) {
+        const last = lastPointerRef.current;
+        lastPointerRef.current = { x: e.clientX, y: e.clientY };
+        if (!last) return;
+        if (last.x === e.clientX && last.y === e.clientY && orbitRef.current !== 'pointer') return;
+        const enterDelay = tiltRef.current?.enterDelay ?? 0;
+        if (enterDelay > 0 && orbitRef.current !== 'pointer') {
+          if (enterSinceRef.current === null) enterSinceRef.current = performance.now();
+          if (performance.now() - enterSinceRef.current < enterDelay) return;
+        }
+        enterSinceRef.current = null;
+        if (orbitRef.current !== 'pointer') beginPointer(e.clientX, e.clientY);
+        else schedulePointer(e.clientX, e.clientY);
+        return;
       }
-      applyPointer(e.clientX, e.clientY);
-    },
-    [applyPointer],
-  );
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+      enterSinceRef.current = null;
+      if (orbitRef.current === 'pointer') beginRest(performance.now());
+    };
+    document.addEventListener('pointermove', onMove, { passive: true });
+    return () => document.removeEventListener('pointermove', onMove);
+  }, [beginPointer, beginRest, schedulePointer]);
+
+  const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    downRef.current = { t: performance.now(), x: e.clientX, y: e.clientY, dragged: false };
+  }, []);
 
   const onPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const down = downRef.current;
@@ -408,39 +525,36 @@ export function ExportPreview3D({
       Math.hypot(e.clientX - down.x, e.clientY - down.y) <= TAP_PX;
 
     if (tap) {
-      interactingRef.current = false;
       lastPointerRef.current = null;
+      pendingPointerRef.current = null;
+      restAtRef.current = null;
       enterSinceRef.current = null;
       pausedRef.current = !pausedRef.current;
       if (pausedRef.current) {
+        orbitRef.current = 'paused';
         releaseRef.current = { from: { ...lastPoseRef.current }, t0: performance.now() };
       } else {
+        orbitRef.current = 'idle';
         originRef.current = performance.now();
         releaseRef.current = null;
       }
       return;
     }
 
-    if (!interactingRef.current) return;
-    interactingRef.current = false;
-    enterSinceRef.current = null;
-    releaseRef.current = {
-      from: { ...pointerPoseRef.current },
-      t0: performance.now(),
-    };
-  }, []);
+    if (orbitRef.current !== 'pointer') return;
+    if (pausedRef.current) {
+      orbitRef.current = 'paused';
+      releaseRef.current = { from: { ...lastPoseRef.current }, t0: performance.now() };
+      pendingPointerRef.current = null;
+      return;
+    }
+    beginRest(performance.now());
+  }, [beginRest]);
 
-  const onPointerLeave = useCallback(() => {
+  const onPointerCancel = useCallback(() => {
     downRef.current = null;
-    lastPointerRef.current = null;
-    enterSinceRef.current = null;
-    if (!interactingRef.current) return;
-    interactingRef.current = false;
-    releaseRef.current = {
-      from: { ...pointerPoseRef.current },
-      t0: performance.now(),
-    };
-  }, []);
+    if (orbitRef.current === 'pointer') beginRest(performance.now());
+  }, [beginRest]);
 
   const maxW = cardMax.w > 0 ? `${Math.round(cardMax.w)}px` : '100%';
   const maxH = cardMax.h > 0 ? `${Math.round(cardMax.h)}px` : '100%';
@@ -463,10 +577,8 @@ export function ExportPreview3D({
           ref={hitRef}
           className="export-foil-hit pointer-events-auto cursor-pointer touch-none overflow-visible p-[8px]"
           onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          onPointerCancel={onPointerLeave}
-          onPointerLeave={onPointerLeave}
+          onPointerCancel={onPointerCancel}
           data-export-tilt-hit
           data-tilt-perspective={String(PREVIEW_PERSPECTIVE_PX)}
         >
@@ -475,7 +587,6 @@ export function ExportPreview3D({
             className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer overflow-hidden rounded-lg bg-transparent select-none"
             style={{
               transformOrigin: 'center center',
-              boxShadow: tilt ? hoverTiltBoxShadow(tilt) : '0 24px 48px rgba(0,0,0,0.35)',
               maxHeight: maxH,
               maxWidth: maxW,
               width: 'auto',
@@ -486,6 +597,7 @@ export function ExportPreview3D({
             data-tilt-scale={tilt ? tilt.scaleFactor.toFixed(3) : '1'}
             data-paused="0"
             data-hover-tilt={tilt ? '1' : undefined}
+            data-hover-tilt-shadow="1"
             data-hover-tilt-glare-mask={tilt?.glareMask}
             data-hover-tilt-sparkle-mask={tilt?.sparkleMask}
             data-mask-sprite-count={String(maskContext.sprites.length)}
