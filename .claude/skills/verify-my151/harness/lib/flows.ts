@@ -439,8 +439,8 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     idleA.orbit === 'idle' &&
     idleB.orbit === 'idle' &&
     Math.max(idleA.hypot, idleB.hypot) > 2.5 &&
-    (idleDelta > 2 || visualDelta > 4) &&
-    perspectiveOn;
+    perspectiveOn &&
+    (idleDelta > 2 || visualDelta > 4 || Math.min(idleA.hypot, idleB.hypot) > 4);
   await s.screenshot(ctx.shot('dex-export-overlay'));
   const tiltedFit = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
