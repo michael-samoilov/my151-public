@@ -14,8 +14,9 @@ display options, exportable as a PNG.
   not write the View store.
 - Preview-only `/foil-workshop` (gated off production) drives the same
   `ExportPreview3D` card with native hover-tilt knobs and selectable
-  glare/sparkle masks (type icon on the featured sprite, tiled `my151.app`
-  wordmark, Pokémon-card sparkles, Poké Ball tile, national Dex number).
+  glare/sparkle masks (one undistorted primary-type glyph per sprite at Poké Ball
+  size, tiled `my151.app` wordmark, fine-grain Pokémon-card sparkles, Poké Ball
+  tile, per-sprite national Dex numbers). There is no featured-mon mask.
   Mask texels stay glued to the card (`mask-position` is a fixed point, not
   the pointer). The stage uses the live export overlay scrim (dimmed
   `bg-background` page + `bg-slate-950/50` blur). A Dark card toggle inverts

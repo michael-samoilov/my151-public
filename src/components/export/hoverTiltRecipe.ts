@@ -59,7 +59,7 @@ export const HOVER_TILT_MASK_META = {
   },
   typeIcon: {
     title: 'Primary type icon',
-    blurb: 'Featured mon\'s primary type glyph overlaid on its sprite. Dex sample uses Turtwig (Grass).',
+    blurb: 'Each Pokémon\'s primary-type glyph, contain-fit on its own sprite at Poké Ball size.',
   },
   wordmark: {
     title: 'my151.app wordmark',
@@ -67,7 +67,7 @@ export const HOVER_TILT_MASK_META = {
   },
   cardSparkle: {
     title: 'Pokémon-card sparkles',
-    blurb: 'Standard hover-tilt pokemon-cards sparkle field (bespoke rainbow + stars).',
+    blurb: 'Fine-grain hover-tilt pokemon-cards sparkle field. Small repeating grains, not one smear.',
   },
   pokeBall: {
     title: 'Poké Ball tile',
@@ -75,7 +75,7 @@ export const HOVER_TILT_MASK_META = {
   },
   dexNumber: {
     title: 'National Dex number',
-    blurb: 'Watermark of the featured mon\'s national Dex number.',
+    blurb: 'Each Pokémon\'s national Dex number, centered on its sprite.',
   },
 } as const satisfies Record<HoverTiltMaskId, { title: string; blurb: string }>;
 

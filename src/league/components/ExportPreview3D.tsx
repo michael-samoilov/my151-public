@@ -21,6 +21,8 @@ import {
   DEFAULT_MASK_CONTEXT,
   hoverTiltMaskCssVars,
   hoverTiltMaskPaint,
+  hoverTiltMaskSpriteTypes,
+  resolveHoverTiltMaskPaint,
   type HoverTiltMaskContext,
 } from '@/components/export/hoverTiltMasks';
 import {
@@ -285,12 +287,28 @@ export function ExportPreview3D({
     for (const [key, value] of Object.entries(tiltVars)) {
       el.style.setProperty(key, value);
     }
-    const glare = hoverTiltMaskPaint(tilt.glareMask, maskContext);
-    const sparkle = hoverTiltMaskPaint(tilt.sparkleMask, maskContext);
-    const maskVars = hoverTiltMaskCssVars(glare, sparkle);
-    for (const [key, value] of Object.entries(maskVars)) {
+    el.dataset.maskSpriteCount = String(maskContext.sprites.length);
+    el.dataset.maskSpriteTypes = hoverTiltMaskSpriteTypes(maskContext);
+    const syncGlare = hoverTiltMaskPaint(tilt.glareMask, maskContext);
+    const syncSparkle = hoverTiltMaskPaint(tilt.sparkleMask, maskContext);
+    const syncVars = hoverTiltMaskCssVars(syncGlare, syncSparkle);
+    for (const [key, value] of Object.entries(syncVars)) {
       el.style.setProperty(key, value);
     }
+    let cancelled = false;
+    void Promise.all([
+      resolveHoverTiltMaskPaint(tilt.glareMask, maskContext),
+      resolveHoverTiltMaskPaint(tilt.sparkleMask, maskContext),
+    ]).then(([glare, sparkle]) => {
+      if (cancelled || cardRef.current !== el) return;
+      const maskVars = hoverTiltMaskCssVars(glare, sparkle);
+      for (const [key, value] of Object.entries(maskVars)) {
+        el.style.setProperty(key, value);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [activeSrc, maskContext, recipe, tilt]);
 
   useEffect(() => {
@@ -470,6 +488,8 @@ export function ExportPreview3D({
             data-hover-tilt={tilt ? '1' : undefined}
             data-hover-tilt-glare-mask={tilt?.glareMask}
             data-hover-tilt-sparkle-mask={tilt?.sparkleMask}
+            data-mask-sprite-count={String(maskContext.sprites.length)}
+            data-mask-sprite-types={hoverTiltMaskSpriteTypes(maskContext)}
             data-workshop-dark-card={darkCard ? '1' : undefined}
           >
             <img

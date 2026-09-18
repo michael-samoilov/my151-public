@@ -42,7 +42,8 @@ import {
   type HoverTiltRecipe,
 } from '@/components/export/hoverTiltRecipe';
 import {
-  DEFAULT_MASK_CONTEXT,
+  EMPTY_MASK_CONTEXT,
+  hoverTiltMaskContextFromDex,
   type HoverTiltMaskContext,
 } from '@/components/export/hoverTiltMasks';
 
@@ -58,11 +59,11 @@ const WORKSHOP_DEX_SECTIONS: Record<string, number[]> = {
 
 type WorkshopSample = 'dex' | 'league';
 
-function featuredMaskContext(): HoverTiltMaskContext {
-  const firstId = WORKSHOP_DEX_SECTIONS.starter[0];
-  const mon = getPokemonByIds([firstId])[0];
-  if (!mon) return DEFAULT_MASK_CONTEXT;
-  return { type: mon.types[0] ?? 'grass', dexNumber: mon.id };
+function workshopDexMaskContext(): HoverTiltMaskContext {
+  return hoverTiltMaskContextFromDex(
+    getPokemonByIds(Object.values(WORKSHOP_DEX_SECTIONS).flat()),
+    WORKSHOP_DEX_SECTIONS,
+  );
 }
 
 function readStoredFoil(): FoilRecipe {
@@ -138,7 +139,10 @@ export function FoilWorkshopPage() {
   const [layout, setLayout] = useState<LeagueHomeExportLayout>(DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT);
   const [src, setSrc] = useState<string | null>(null);
   const [copied, setCopied] = useState<'json' | 'link' | null>(null);
-  const maskContext = useMemo(() => featuredMaskContext(), []);
+  const maskContext = useMemo(
+    () => (sample === 'dex' ? workshopDexMaskContext() : EMPTY_MASK_CONTEXT),
+    [sample],
+  );
 
   const previewRecipe = useMemo(() => recipeWithSolo(recipe, solo), [recipe, solo]);
   const busy = src === null;
@@ -368,8 +372,7 @@ export function FoilWorkshopPage() {
               })}
             </ul>
             <p className="text-[0.7rem] text-zinc-500" data-hover-tilt-mask-active>
-              Active glare {tilt.glareMask} · sparkle {tilt.sparkleMask} · featured #{maskContext.dexNumber}{' '}
-              {maskContext.type}
+              Active glare {tilt.glareMask} · sparkle {tilt.sparkleMask} · {maskContext.sprites.length} sprites
             </p>
           </fieldset>
 

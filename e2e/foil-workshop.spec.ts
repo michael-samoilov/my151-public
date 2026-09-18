@@ -92,10 +92,48 @@ test.describe('export foil workshop', () => {
     await page.locator('[data-hover-tilt-mask="typeIcon"]').click();
     await expect(foil).toHaveAttribute('data-hover-tilt-glare-mask', 'typeIcon');
     await expect
+      .poll(async () => foil.getAttribute('data-mask-sprite-count'), { timeout: 10_000 })
+      .toBe('24');
+    const spriteTypes = await foil.getAttribute('data-mask-sprite-types');
+    expect(spriteTypes).toContain('grass');
+    expect(spriteTypes).toContain('fire');
+    expect(spriteTypes).toContain('water');
+    await expect
       .poll(async () =>
-        foil.evaluate((el) => getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask').trim()),
+        foil.evaluate((el) => getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask-size').trim()),
       )
-      .toContain('/sprites/types/glyph/');
+      .toBe('100% 100%');
+    const typeMask = await foil.evaluate((el) =>
+      getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask'),
+    );
+    expect(typeMask).not.toContain('28%');
+    let typeDecoded = typeMask;
+    try {
+      typeDecoded = decodeURIComponent(typeMask);
+    } catch {
+      /* already decoded */
+    }
+    const perSprite =
+      typeMask.includes('image/png') ||
+      (typeDecoded.includes('/sprites/types/glyph/12') &&
+        typeDecoded.includes('/sprites/types/glyph/10') &&
+        typeDecoded.includes('/sprites/types/glyph/11'));
+    expect(perSprite, typeDecoded.slice(0, 180)).toBe(true);
+
+    await page.locator('[data-hover-tilt-mask="cardSparkle"]').click();
+    await expect(foil).toHaveAttribute('data-hover-tilt-glare-mask', 'cardSparkle');
+    await expect
+      .poll(async () =>
+        foil.evaluate((el) => getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask-size').trim()),
+      )
+      .toBe('10% 10%');
+    const sparkleMask = await foil.evaluate((el) =>
+      getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask'),
+    );
+    expect(sparkleMask).not.toContain('180%');
+    const sparkleDecoded = decodeURIComponent(sparkleMask);
+    const sparkleDots = sparkleDecoded.match(/<circle/g) ?? [];
+    expect(sparkleDots.length).toBeGreaterThan(80);
 
     await page.locator('[data-foil-slider="glareIntensity"]').evaluate((el) => {
       const input = el as HTMLInputElement;

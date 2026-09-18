@@ -1282,11 +1282,76 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
 
   try {
     await s.click('[data-hover-tilt-mask="typeIcon"]');
-    await sleep(300);
+    await sleep(900);
   } catch {
     /* base build has no mask picker */
   }
+  const typeIcon = await s.evalJson<{
+    count: string;
+    types: string;
+    size: string;
+    mask: string;
+    featured: boolean;
+  }>(
+    `const el=document.querySelector('[data-export-preview]');
+     const active=document.querySelector('[data-hover-tilt-mask-active]');
+     if(!(el instanceof HTMLElement)) return {count:'',types:'',size:'',mask:'',featured:false};
+     let mask=getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask').trim();
+     try { mask=decodeURIComponent(mask); } catch { /* already decoded */ }
+     const copy=active?.textContent||'';
+     return {
+       count: el.getAttribute('data-mask-sprite-count')||'',
+       types: el.getAttribute('data-mask-sprite-types')||'',
+       size: getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask-size').trim(),
+       mask,
+       featured: /featured/i.test(copy),
+     };`,
+  ).catch(() => ({ count: '', types: '', size: '', mask: '', featured: false }));
+  const typeGlyphs =
+    Number(typeIcon.count) >= 9 &&
+    typeIcon.types.includes('grass') &&
+    typeIcon.types.includes('fire') &&
+    typeIcon.types.includes('water') &&
+    typeIcon.size === '100% 100%' &&
+    !typeIcon.featured &&
+    !typeIcon.size.includes('28%') &&
+    (typeIcon.mask.includes('image/png') ||
+      (typeIcon.mask.includes('/sprites/types/glyph/12') &&
+        typeIcon.mask.includes('/sprites/types/glyph/10') &&
+        typeIcon.mask.includes('/sprites/types/glyph/11')));
+  checks.push(ok(
+    'foil-workshop:type-icon-per-sprite',
+    typeGlyphs,
+    `count=${typeIcon.count} types=${typeIcon.types.slice(0, 80)} size=${typeIcon.size} featured=${typeIcon.featured}`,
+  ));
   await s.screenshot(ctx.shot('foil-workshop-type-icon'));
+
+  try {
+    await s.click('[data-hover-tilt-mask="cardSparkle"]');
+    await sleep(400);
+  } catch {
+    /* base build has no mask picker */
+  }
+  const sparkle = await s.evalJson<{ size: string; mask: string; dots: number }>(
+    `const el=document.querySelector('[data-export-preview]');
+     if(!(el instanceof HTMLElement)) return {size:'',mask:'',dots:0};
+     const size=getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask-size').trim();
+     let mask=getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask').trim();
+     try { mask=decodeURIComponent(mask); } catch { /* already decoded */ }
+     return {size, mask, dots:(mask.match(/<circle/g)||[]).length};`,
+  ).catch(() => ({ size: '', mask: '', dots: 0 }));
+  const sparklePct = Number((sparkle.size.match(/^([\d.]+)%/) || [])[1] || 999);
+  const sparkleOk =
+    sparkle.dots > 80 &&
+    sparklePct > 0 &&
+    sparklePct <= 16 &&
+    !sparkle.size.includes('180%');
+  checks.push(ok(
+    'foil-workshop:sparkle-grain',
+    sparkleOk,
+    `size=${sparkle.size} dots=${sparkle.dots}`,
+  ));
+  await s.screenshot(ctx.shot('foil-workshop-sparkle'));
 
   await s.evalJson(
     `const input=document.querySelector('[data-foil-slider="glareIntensity"]');
@@ -1344,5 +1409,20 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
   ).catch(() => ({ root: '', card: '', filter: '' }));
   checks.push(ok('foil-workshop:dark-card', dark.root === '1' && dark.card === '1' && /invert/.test(dark.filter), `root=${dark.root} filter=${dark.filter}`));
   await s.screenshot(ctx.shot('foil-workshop-dark-card'));
+
+  try {
+    await s.click('[data-hover-tilt-mask="typeIcon"]');
+    await sleep(800);
+  } catch {
+    /* base build has no mask picker */
+  }
+  await s.screenshot(ctx.shot('foil-workshop-type-icon-dark'));
+  try {
+    await s.click('[data-hover-tilt-mask="cardSparkle"]');
+    await sleep(400);
+  } catch {
+    /* base build has no mask picker */
+  }
+  await s.screenshot(ctx.shot('foil-workshop-sparkle-dark'));
   return checks;
 }

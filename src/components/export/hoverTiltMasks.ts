@@ -1,16 +1,29 @@
 import { typeGlyphPath } from '@/data/type-ids';
-import type { TypeName } from '@/types/pokemon';
+import { layoutDexExportGrid } from '@/lib/dexExportLayout';
+import type { Pokemon, TypeName } from '@/types/pokemon';
 import type { HoverTiltMaskId } from './hoverTiltRecipe';
 
-export type HoverTiltMaskContext = {
+export type HoverTiltSpriteSpot = {
+  cx: number;
+  cy: number;
+  r: number;
   type: TypeName;
   dexNumber: number;
 };
 
-export const DEFAULT_MASK_CONTEXT: HoverTiltMaskContext = {
-  type: 'grass',
-  dexNumber: 387,
+export type HoverTiltMaskContext = {
+  width: number;
+  height: number;
+  sprites: HoverTiltSpriteSpot[];
 };
+
+export const EMPTY_MASK_CONTEXT: HoverTiltMaskContext = {
+  width: 1,
+  height: 1,
+  sprites: [],
+};
+
+export const DEFAULT_MASK_CONTEXT = EMPTY_MASK_CONTEXT;
 
 export type HoverTiltMaskPaint = {
   image: string;
@@ -19,59 +32,40 @@ export type HoverTiltMaskPaint = {
   position: string;
 };
 
+export type TypeIconGlyphBox = {
+  type: TypeName;
+  dexNumber: number;
+  x: number;
+  y: number;
+  size: number;
+};
+
+const CARD_MASK: Pick<HoverTiltMaskPaint, 'size' | 'repeat' | 'position'> = {
+  size: '100% 100%',
+  repeat: 'no-repeat',
+  position: '0 0',
+};
+
 function svgUrl(svg: string): string {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
 }
 
-const SPARKLE_DOTS: ReadonlyArray<readonly [number, number, number]> = [
-  [18, 22, 1.4],
-  [46, 12, 2.1],
-  [78, 28, 1.2],
-  [112, 16, 1.8],
-  [148, 24, 1.3],
-  [184, 10, 2.0],
-  [222, 30, 1.5],
-  [28, 64, 1.6],
-  [62, 52, 1.1],
-  [96, 70, 1.9],
-  [134, 58, 1.4],
-  [170, 74, 1.2],
-  [208, 54, 1.7],
-  [240, 68, 1.3],
-  [14, 108, 1.5],
-  [52, 98, 2.0],
-  [88, 118, 1.2],
-  [126, 104, 1.6],
-  [162, 122, 1.4],
-  [198, 96, 1.8],
-  [236, 114, 1.1],
-  [36, 154, 1.7],
-  [72, 142, 1.3],
-  [108, 160, 1.9],
-  [144, 148, 1.2],
-  [180, 166, 1.5],
-  [216, 150, 1.4],
-  [22, 196, 1.6],
-  [58, 210, 1.2],
-  [94, 188, 2.0],
-  [132, 204, 1.3],
-  [168, 192, 1.7],
-  [204, 214, 1.4],
-  [240, 198, 1.8],
-  [40, 236, 1.3],
-  [86, 242, 1.6],
-  [150, 238, 1.2],
-  [198, 244, 1.5],
-];
+const SPARKLE_VIEW = 128;
+const SPARKLE_DOT_COUNT = 160;
+const SPARKLE_STAR_COUNT = 24;
+/** Small repeating tile so grains stay visible instead of one smeared field. */
+export const SPARKLE_MASK_SIZE = '10% 10%';
 
-const SPARKLE_STARS: ReadonlyArray<readonly [number, number, number]> = [
-  [64, 36, 5],
-  [176, 44, 4.2],
-  [42, 128, 4.6],
-  [210, 132, 5.2],
-  [118, 176, 4.4],
-  [74, 220, 3.8],
-];
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 function starPath(cx: number, cy: number, r: number): string {
   const n = r * 0.2;
@@ -79,13 +73,22 @@ function starPath(cx: number, cy: number, r: number): string {
 }
 
 function sparkleSvg(): string {
-  const dots = SPARKLE_DOTS.map(
-    ([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="white"/>`,
-  ).join('');
-  const stars = SPARKLE_STARS.map(([x, y, r]) => `<path d="${starPath(x, y, r)}" fill="white"/>`).join(
-    '',
-  );
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">${dots}${stars}</svg>`;
+  const rnd = mulberry32(0xc0ffee);
+  const dots: string[] = [];
+  for (let i = 0; i < SPARKLE_DOT_COUNT; i++) {
+    const x = rnd() * SPARKLE_VIEW;
+    const y = rnd() * SPARKLE_VIEW;
+    const r = 2.2 + rnd() * 1.8;
+    dots.push(`<circle cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" r="${r.toFixed(2)}" fill="white"/>`);
+  }
+  const stars: string[] = [];
+  for (let i = 0; i < SPARKLE_STAR_COUNT; i++) {
+    const x = rnd() * SPARKLE_VIEW;
+    const y = rnd() * SPARKLE_VIEW;
+    const r = 2.6 + rnd() * 1.2;
+    stars.push(`<path d="${starPath(x, y, r)}" fill="white"/>`);
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${SPARKLE_VIEW}" height="${SPARKLE_VIEW}" viewBox="0 0 ${SPARKLE_VIEW} ${SPARKLE_VIEW}" data-sparkle-dots="${SPARKLE_DOT_COUNT}">${dots.join('')}${stars.join('')}</svg>`;
 }
 
 function wordmarkSvg(): string {
@@ -96,33 +99,77 @@ function pokeBallSvg(): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="1.4"/><path d="M2 12h7.2M14.8 12H22" stroke="white" stroke-width="1.4"/><circle cx="12" cy="12" r="3.2" stroke="white" stroke-width="1.4"/><circle cx="12" cy="12" r="1.3" fill="white"/></svg>`;
 }
 
-function dexNumberSvg(n: number): string {
-  const label = `#${String(Math.max(0, Math.floor(n))).padStart(4, '0')}`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="420" height="180" viewBox="0 0 420 180"><text x="210" y="118" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="92" font-weight="800" fill="white">${label}</text></svg>`;
+function dexLabel(n: number): string {
+  return `#${String(Math.max(0, Math.floor(n))).padStart(4, '0')}`;
+}
+
+function dexNumberFieldSvg(ctx: HoverTiltMaskContext): string {
+  const labels = ctx.sprites
+    .map((s) => {
+      const font = Math.max(6, s.r * 0.55);
+      return `<text x="${s.cx}" y="${s.cy}" text-anchor="middle" dominant-baseline="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="${font}" font-weight="800" fill="white">${dexLabel(s.dexNumber)}</text>`;
+    })
+    .join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${ctx.width}" height="${ctx.height}" viewBox="0 0 ${ctx.width} ${ctx.height}">${labels}</svg>`;
 }
 
 const NONE_PAINT: HoverTiltMaskPaint = {
   image: 'none',
-  size: '100% 100%',
-  repeat: 'no-repeat',
-  position: '0 0',
+  ...CARD_MASK,
 };
 
 export const SPARKLE_FIELD_URL = svgUrl(sparkleSvg());
 
+export function hoverTiltMaskContextFromDex(
+  pokemon: Pokemon[],
+  sections: Record<string, number[]> | null = null,
+): HoverTiltMaskContext {
+  const grid = layoutDexExportGrid(pokemon, sections);
+  return {
+    width: grid.width,
+    height: grid.height,
+    sprites: grid.sprites.map((s) => ({
+      cx: s.cx,
+      cy: s.cy,
+      r: s.r,
+      type: s.pokemon.types[0] ?? 'normal',
+      dexNumber: s.pokemon.id,
+    })),
+  };
+}
+
+/** Square contain-fit box for each sprite's primary-type glyph. Side = pokéball diameter. */
+export function typeIconGlyphBoxes(ctx: HoverTiltMaskContext): TypeIconGlyphBox[] {
+  return ctx.sprites.map((s) => ({
+    type: s.type,
+    dexNumber: s.dexNumber,
+    x: s.cx - s.r,
+    y: s.cy - s.r,
+    size: s.r * 2,
+  }));
+}
+
+function typeIconMaskSvg(ctx: HoverTiltMaskContext, hrefFor: (type: TypeName) => string): string {
+  const images = typeIconGlyphBoxes(ctx)
+    .map((box) => {
+      const href = hrefFor(box.type);
+      return `<image href="${href}" x="${box.x}" y="${box.y}" width="${box.size}" height="${box.size}" preserveAspectRatio="xMidYMid meet"/>`;
+    })
+    .join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${ctx.width}" height="${ctx.height}" viewBox="0 0 ${ctx.width} ${ctx.height}">${images}</svg>`;
+}
+
 export function hoverTiltMaskPaint(
   id: HoverTiltMaskId,
-  ctx: HoverTiltMaskContext = DEFAULT_MASK_CONTEXT,
+  ctx: HoverTiltMaskContext = EMPTY_MASK_CONTEXT,
 ): HoverTiltMaskPaint {
   switch (id) {
     case 'none':
       return NONE_PAINT;
     case 'typeIcon':
       return {
-        image: `url("${typeGlyphPath(ctx.type)}")`,
-        size: '28% 28%',
-        repeat: 'no-repeat',
-        position: '8% 10%',
+        image: svgUrl(typeIconMaskSvg(ctx, typeGlyphPath)),
+        ...CARD_MASK,
       };
     case 'wordmark':
       return {
@@ -134,7 +181,7 @@ export function hoverTiltMaskPaint(
     case 'cardSparkle':
       return {
         image: SPARKLE_FIELD_URL,
-        size: '180% 180%',
+        size: SPARKLE_MASK_SIZE,
         repeat: 'repeat',
         position: '0 0',
       };
@@ -147,16 +194,90 @@ export function hoverTiltMaskPaint(
       };
     case 'dexNumber':
       return {
-        image: svgUrl(dexNumberSvg(ctx.dexNumber)),
-        size: '72% auto',
-        repeat: 'no-repeat',
-        position: 'center',
+        image: svgUrl(dexNumberFieldSvg(ctx)),
+        ...CARD_MASK,
       };
     default: {
       const _exhaustive: never = id;
       return _exhaustive;
     }
   }
+}
+
+function loadGlyph(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error(src));
+    img.src = src;
+  });
+}
+
+const glyphCache = new Map<TypeName, Promise<HTMLImageElement | null>>();
+const typeIconPngCache = new Map<string, string>();
+
+function glyphImage(type: TypeName): Promise<HTMLImageElement | null> {
+  const hit = glyphCache.get(type);
+  if (hit) return hit;
+  const pending = loadGlyph(typeGlyphPath(type)).catch(() => null);
+  glyphCache.set(type, pending);
+  return pending;
+}
+
+function typeIconCacheKey(ctx: HoverTiltMaskContext): string {
+  return `${ctx.width}x${ctx.height}:${ctx.sprites.map((s) => `${s.dexNumber}:${s.type}@${s.cx},${s.cy},${s.r}`).join(';')}`;
+}
+
+const TYPE_ICON_RASTER_SCALE = 2;
+
+async function typeIconRasterUrl(ctx: HoverTiltMaskContext): Promise<string | null> {
+  if (ctx.sprites.length === 0) return null;
+  if (typeof document === 'undefined') return null;
+  const key = typeIconCacheKey(ctx);
+  const cached = typeIconPngCache.get(key);
+  if (cached) return cached;
+
+  const types = [...new Set(ctx.sprites.map((s) => s.type))];
+  const loaded = await Promise.all(types.map(async (type) => [type, await glyphImage(type)] as const));
+  const byType = new Map(loaded);
+  if ([...byType.values()].every((img) => img === null)) return null;
+
+  const scale = TYPE_ICON_RASTER_SCALE;
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(ctx.width * scale));
+  canvas.height = Math.max(1, Math.round(ctx.height * scale));
+  const g = canvas.getContext('2d');
+  if (!g) return null;
+  g.imageSmoothingEnabled = true;
+
+  for (const s of ctx.sprites) {
+    const img = byType.get(s.type);
+    if (!img) continue;
+    const box = s.r * 2 * scale;
+    const iw = img.naturalWidth || 1;
+    const ih = img.naturalHeight || 1;
+    const fit = Math.min(box / iw, box / ih);
+    const dw = iw * fit;
+    const dh = ih * fit;
+    g.drawImage(img, s.cx * scale - dw / 2, s.cy * scale - dh / 2, dw, dh);
+  }
+
+  const url = `url("${canvas.toDataURL('image/png')}")`;
+  typeIconPngCache.set(key, url);
+  return url;
+}
+
+/** CSS mask-image cannot fetch sibling files from a data-URL SVG. Rasterize type glyphs. */
+export async function resolveHoverTiltMaskPaint(
+  id: HoverTiltMaskId,
+  ctx: HoverTiltMaskContext = EMPTY_MASK_CONTEXT,
+): Promise<HoverTiltMaskPaint> {
+  const paint = hoverTiltMaskPaint(id, ctx);
+  if (id !== 'typeIcon') return paint;
+  const raster = await typeIconRasterUrl(ctx);
+  if (!raster) return paint;
+  return { image: raster, ...CARD_MASK };
 }
 
 export function hoverTiltMaskCssVars(
@@ -174,4 +295,8 @@ export function hoverTiltMaskCssVars(
     '--hover-tilt-sparkle-mask-position': sparkle.position,
     '--hover-tilt-sparkle-field': SPARKLE_FIELD_URL,
   };
+}
+
+export function hoverTiltMaskSpriteTypes(ctx: HoverTiltMaskContext): string {
+  return ctx.sprites.map((s) => s.type).join(',');
 }
