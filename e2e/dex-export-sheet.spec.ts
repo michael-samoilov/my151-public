@@ -136,8 +136,82 @@ test.describe('mobile dex export sheet', () => {
   });
 });
 
+test.describe('dex export settings isolation', () => {
+  test('does not change the View page sort', async ({ page }) => {
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const before = await page.evaluate(() => {
+      const raw = localStorage.getItem(
+        Object.keys(localStorage).find((k) => k.includes('pokedex') || k.includes('my151')) ?? '',
+      );
+      return raw;
+    });
+    await page.locator('[data-export-sort="national"]').click();
+    await expect(page.locator('[data-export-outlines]')).toBeDisabled();
+    await page.locator('[data-export-scrim] button').click();
+    await expect(page.locator('[data-export-preview-layer]')).toHaveCount(0);
+    const after = await page.evaluate(() => {
+      const raw = localStorage.getItem(
+        Object.keys(localStorage).find((k) => k.includes('pokedex') || k.includes('my151')) ?? '',
+      );
+      return raw;
+    });
+    expect(after).toBe(before);
+    await page.getByRole('button', { name: 'View settings' }).click();
+    await expect(page.getByText('Show detailed stats')).toHaveCount(0);
+  });
+});
+
+test.describe('mobile dex export copy', () => {
+  test.use({ viewport: MOBILE });
+  test.skip(({ viewport }) => (viewport?.width ?? 0) >= 1024, 'descriptions stay on the sheet');
+
+  test('keeps sort-order descriptions on the sheet', async ({ page }) => {
+    await openDexExport(page);
+    await expect(page.locator('[data-export-sort="build-order"]')).toBeVisible();
+    await expect(page.getByText(/mirrors your build page/i)).toBeVisible();
+    await expect(page.locator('[data-export-outlines]')).toBeVisible();
+  });
+});
+
 test.describe('desktop dex export preview', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
+
+  test('tilts only near the card and keeps the export in view', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    await parkPreview(page);
+    const foil = page.locator('[data-export-preview]');
+    await page.mouse.move(16, 16);
+    await page.waitForTimeout(80);
+    const far = await foil.getAttribute('data-tilt-x');
+    expect(Math.abs(Number(far ?? '99'))).toBeLessThan(1);
+
+    const box = await foil.boundingBox();
+    expect(box).toBeTruthy();
+    await page.mouse.move(box!.x + 8, box!.y + 8);
+    await page.waitForTimeout(80);
+    const near = await foil.getAttribute('data-tilt-x');
+    expect(Math.abs(Number(near ?? '0'))).toBeGreaterThan(0.4);
+
+    const fit = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
+      if (!card || !layer) return { ok: false, reason: 'missing nodes' };
+      const c = card.getBoundingClientRect();
+      const l = layer.getBoundingClientRect();
+      if (c.left < l.left - 2) return { ok: false, reason: `left ${c.left}` };
+      if (c.right > l.right + 2) return { ok: false, reason: `right ${c.right}` };
+      if (c.top < l.top - 2) return { ok: false, reason: `top ${c.top}` };
+      if (c.bottom > l.bottom + 2) return { ok: false, reason: `bottom ${c.bottom}` };
+      if (c.right > window.innerWidth + 2 || c.bottom > window.innerHeight + 2) {
+        return { ok: false, reason: 'past viewport' };
+      }
+      return { ok: true, reason: '' };
+    });
+    expect(fit.ok, fit.reason).toBe(true);
+  });
 
   test('keeps the card left of the settings pane', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');

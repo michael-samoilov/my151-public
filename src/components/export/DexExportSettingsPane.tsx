@@ -1,12 +1,11 @@
 import { Check, Download, Loader2, Lock, RotateCcw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
-import { useViewSort } from '@/hooks/useViewSort';
 import { STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
+import { ExportSettingsScroll } from './ExportSettingsScroll';
+import type { DexExportDraft } from './dexExportDraft';
+import { DEX_EXPORT_SORTS } from './dexExportDraft';
 import { useT, type MessageKey } from '@/i18n';
-
-const SORT_VALUES = ['build-order', 'regional', 'national', 'type', 'custom'] as const satisfies readonly ViewSortOption[];
 
 const SORT_KEYS = {
   'build-order': { label: 'sort.build-order', desc: 'sort.build-order.desc' },
@@ -14,45 +13,47 @@ const SORT_KEYS = {
   national: { label: 'sort.national', desc: 'sort.national.desc' },
   type: { label: 'sort.type', desc: 'sort.type.desc' },
   custom: { label: 'sort.custom', desc: 'sort.custom.desc' },
-} as const satisfies Record<(typeof SORT_VALUES)[number], { label: MessageKey; desc: MessageKey }>;
+} as const satisfies Record<(typeof DEX_EXPORT_SORTS)[number], { label: MessageKey; desc: MessageKey }>;
 
 export function DexExportSettingsPane({
+  draft,
+  onDraft,
+  placedCount,
+  seedCustomIds,
   busy,
   onExport,
   onClose,
   mobileSheet = false,
 }: {
+  draft: DexExportDraft;
+  onDraft: (next: DexExportDraft) => void;
+  placedCount: number;
+  seedCustomIds: number[];
   busy: boolean;
   onExport: () => void;
   onClose: () => void;
   mobileSheet?: boolean;
 }) {
   const t = useT();
-  const sections = usePokedexStore((s) => s.sections);
-  const sortOption = usePokedexStore((s) => s.viewSortOption);
-  const setSortOption = usePokedexStore((s) => s.setViewSortOption);
-  const groupSpecialAtEnd = usePokedexStore((s) => s.viewGroupSpecialAtEnd);
-  const setGroupSpecialAtEnd = usePokedexStore((s) => s.setViewGroupSpecialAtEnd);
-  const customOrder = usePokedexStore((s) => s.viewCustomOrder);
-  const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
-  const showSections = usePokedexStore((s) => s.viewShowSections);
-  const setShowSections = usePokedexStore((s) => s.setViewShowSections);
-  const showStats = usePokedexStore((s) => s.viewShowStats);
-  const setShowStats = usePokedexStore((s) => s.setViewShowStats);
-  const placedCount = Object.values(sections).flat().length;
   const statsEnabled = placedCount >= STATS_MIN_POKEMON;
-  const currentSorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
-  const hasCustom = customOrder !== null;
+  const buildOrder = draft.sort === 'build-order';
+  const hasCustom = draft.customOrder !== null;
 
   const handleSelectSort = (value: ViewSortOption) => {
-    const needsSeed = value === 'custom' && customOrder === null;
-    if (needsSeed) setCustomOrder(currentSorted.map((p) => p.id));
-    setSortOption(value);
+    const needsSeed = value === 'custom' && draft.customOrder === null;
+    onDraft({
+      ...draft,
+      sort: value,
+      customOrder: needsSeed ? seedCustomIds : draft.customOrder,
+    });
   };
 
   const handleResetCustom = () => {
-    setCustomOrder(null);
-    if (sortOption === 'custom') setSortOption('build-order');
+    onDraft({
+      ...draft,
+      customOrder: null,
+      sort: draft.sort === 'custom' ? 'build-order' : draft.sort,
+    });
   };
 
   return (
@@ -73,15 +74,15 @@ export function DexExportSettingsPane({
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <ExportSettingsScroll>
         <div className={mobileSheet ? 'space-y-2 px-3 pb-2 pt-1' : 'space-y-4 px-3 pb-2 pt-3'}>
           <div>
             <h3 className="mb-2 text-[0.625rem] font-semibold uppercase tracking-wide text-muted-foreground">
               {t('viewSettings.sortHeading')}
             </h3>
             <div className="space-y-1">
-              {SORT_VALUES.map((value) => {
-                const selected = sortOption === value;
+              {DEX_EXPORT_SORTS.map((value) => {
+                const selected = draft.sort === value;
                 const showReset = value === 'custom' && hasCustom;
                 const handleSelect = () => handleSelectSort(value);
                 const rowClass = `w-full cursor-pointer rounded-md text-left transition-colors ${
@@ -102,7 +103,7 @@ export function DexExportSettingsPane({
                       </span>
                       {showReset && (
                         <span className="ml-auto flex items-center gap-2 text-[0.625rem] text-muted-foreground">
-                          <span>{t('viewSettings.customCount', { count: customOrder!.length })}</span>
+                          <span>{t('viewSettings.customCount', { count: draft.customOrder!.length })}</span>
                           <button
                             type="button"
                             onClick={(e) => {
@@ -118,11 +119,9 @@ export function DexExportSettingsPane({
                         </span>
                       )}
                     </div>
-                    {!mobileSheet && (
-                      <p className="mt-1 ml-6 text-xs leading-snug text-muted-foreground">
-                        {t(SORT_KEYS[value].desc)}
-                      </p>
-                    )}
+                    <p className="mt-1 ml-6 text-xs leading-snug text-muted-foreground">
+                      {t(SORT_KEYS[value].desc)}
+                    </p>
                   </>
                 );
 
@@ -151,24 +150,43 @@ export function DexExportSettingsPane({
                 return (
                   <div key={value}>
                     {row}
-                    {value === 'build-order' && selected && (
+                    {value === 'build-order' && (
                       <button
                         type="button"
-                        onClick={() => setShowSections(!showSections)}
+                        onClick={() => {
+                          if (!buildOrder) return;
+                          onDraft({ ...draft, showSections: !draft.showSections });
+                        }}
+                        disabled={!buildOrder}
+                        aria-disabled={!buildOrder}
                         data-export-outlines
-                        className={`mt-1 ml-6 w-[calc(100%-1.5rem)] cursor-pointer rounded-md text-left transition-colors ${
+                        className={`mt-1 ml-6 w-[calc(100%-1.5rem)] rounded-md text-left transition-colors ${
                           mobileSheet ? 'px-2 py-1.5' : 'px-3 py-2'
-                        } ${showSections ? 'bg-primary/10' : 'hover:bg-muted'}`}
+                        } ${
+                          !buildOrder
+                            ? 'cursor-default opacity-40'
+                            : draft.showSections
+                              ? 'cursor-pointer bg-primary/10'
+                              : 'cursor-pointer hover:bg-muted'
+                        }`}
                       >
                         <div className="flex items-center gap-2">
                           <span
                             className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                              showSections ? 'border-primary bg-primary' : 'border-muted-foreground/40'
+                              buildOrder && draft.showSections
+                                ? 'border-primary bg-primary'
+                                : 'border-muted-foreground/40'
                             }`}
                           >
-                            {showSections && <Check className="h-3 w-3 text-primary-foreground" />}
+                            {buildOrder && draft.showSections && (
+                              <Check className="h-3 w-3 text-primary-foreground" />
+                            )}
                           </span>
-                          <span className={`text-sm leading-tight ${showSections ? 'font-medium text-primary' : 'text-foreground'}`}>
+                          <span
+                            className={`text-sm leading-tight ${
+                              buildOrder && draft.showSections ? 'font-medium text-primary' : 'text-foreground'
+                            }`}
+                          >
                             {t('viewSettings.showOutlines')}
                           </span>
                         </div>
@@ -186,21 +204,25 @@ export function DexExportSettingsPane({
             </h3>
             <button
               type="button"
-              onClick={() => setGroupSpecialAtEnd(!groupSpecialAtEnd)}
+              onClick={() => onDraft({ ...draft, groupSpecialAtEnd: !draft.groupSpecialAtEnd })}
               data-export-group-special
               className={`w-full cursor-pointer rounded-md text-left transition-colors ${
                 mobileSheet ? 'px-2 py-1.5' : 'px-3 py-2'
-              } ${groupSpecialAtEnd ? 'bg-primary/10' : 'hover:bg-muted'}`}
+              } ${draft.groupSpecialAtEnd ? 'bg-primary/10' : 'hover:bg-muted'}`}
             >
               <div className="flex items-center gap-2">
                 <span
                   className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                    groupSpecialAtEnd ? 'border-primary bg-primary' : 'border-muted-foreground/40'
+                    draft.groupSpecialAtEnd ? 'border-primary bg-primary' : 'border-muted-foreground/40'
                   }`}
                 >
-                  {groupSpecialAtEnd && <Check className="h-3 w-3 text-primary-foreground" />}
+                  {draft.groupSpecialAtEnd && <Check className="h-3 w-3 text-primary-foreground" />}
                 </span>
-                <span className={`text-sm leading-tight ${groupSpecialAtEnd ? 'font-medium text-primary' : 'text-foreground'}`}>
+                <span
+                  className={`text-sm leading-tight ${
+                    draft.groupSpecialAtEnd ? 'font-medium text-primary' : 'text-foreground'
+                  }`}
+                >
                   {t('viewSettings.groupSpecial')}
                 </span>
               </div>
@@ -215,14 +237,14 @@ export function DexExportSettingsPane({
               type="button"
               onClick={() => {
                 if (!statsEnabled) return;
-                setShowStats(!showStats);
+                onDraft({ ...draft, showStats: !draft.showStats });
               }}
               disabled={!statsEnabled}
               data-export-stats
               className={`w-full rounded-md text-left transition-colors ${
                 !statsEnabled ? 'cursor-default opacity-50' : 'cursor-pointer'
               } ${mobileSheet ? 'px-2 py-1.5' : 'px-3 py-2'} ${
-                showStats && statsEnabled ? 'bg-primary/10' : 'hover:bg-muted'
+                draft.showStats && statsEnabled ? 'bg-primary/10' : 'hover:bg-muted'
               }`}
             >
               <div className="flex items-center gap-2">
@@ -231,20 +253,24 @@ export function DexExportSettingsPane({
                 ) : (
                   <span
                     className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                      showStats ? 'border-primary bg-primary' : 'border-muted-foreground/40'
+                      draft.showStats ? 'border-primary bg-primary' : 'border-muted-foreground/40'
                     }`}
                   >
-                    {showStats && <Check className="h-3 w-3 text-primary-foreground" />}
+                    {draft.showStats && <Check className="h-3 w-3 text-primary-foreground" />}
                   </span>
                 )}
-                <span className={`text-sm leading-tight ${showStats && statsEnabled ? 'font-medium text-primary' : 'text-foreground'}`}>
+                <span
+                  className={`text-sm leading-tight ${
+                    draft.showStats && statsEnabled ? 'font-medium text-primary' : 'text-foreground'
+                  }`}
+                >
                   {t('viewSettings.showStats')}
                 </span>
               </div>
             </button>
           </div>
         </div>
-      </div>
+      </ExportSettingsScroll>
 
       <div className={`flex shrink-0 flex-col gap-2 border-t pt-2 ${mobileSheet ? 'px-3 pb-3' : 'px-4 pb-4'}`}>
         <Button type="button" disabled={busy} onClick={onExport} data-dex-export-confirm>

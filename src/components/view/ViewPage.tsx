@@ -508,7 +508,7 @@ export function ViewPage() {
   const reorderSection = usePokedexStore((s) => s.reorderSection);
 
   const showSections = usePokedexStore((s) => s.viewShowSections);
-  const showStats = usePokedexStore((s) => s.viewShowStats);
+  const showStats = false;
 
   const sorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
   const count = sorted.length;
@@ -1393,10 +1393,10 @@ export function ViewPage() {
       <FollowUpHint
         armed={statsHintArmed}
         dismiss={dismissStatsHint}
-        fulfilled={settingsOpen}
-        anchorRef={settingsBtnRef}
-        title="Stats live in Settings"
-        body="Tap the gear and turn on “Show detailed stats” for type, generation, and base-stat charts."
+        fulfilled={exportOpen}
+        anchorRef={exportBtnRef}
+        title="Stats live in Export"
+        body="Tap download and turn on “Show detailed stats” to add type, generation, and base-stat charts to your image."
       />
       <FollowUpHint
         armed={exportHintArmed}

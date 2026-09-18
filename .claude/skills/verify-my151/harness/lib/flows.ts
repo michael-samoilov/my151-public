@@ -323,17 +323,38 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   }
   await s.click('[data-dex-export]');
   await sleep(500);
-  const state = await s.evalJson<{ preview: boolean; confirm: boolean; surveyHost: boolean }>(
+  const state = await s.evalJson<{
+    preview: boolean;
+    confirm: boolean;
+    surveyHost: boolean;
+    shell: boolean;
+    outlines: boolean;
+  }>(
     `return {
       preview: !!document.querySelector('[data-export-preview-layer]'),
       confirm: !!document.querySelector('[data-dex-export-confirm]'),
       surveyHost: !!document.querySelector('[data-export-survey-host]'),
+      shell: !!document.querySelector('[data-export-shell], [data-export-chrome]'),
+      outlines: !!document.querySelector('[data-export-outlines]'),
     };`,
-  ).catch(() => ({ preview: false, confirm: false, surveyHost: true }));
+  ).catch(() => ({ preview: false, confirm: false, surveyHost: true, shell: false, outlines: false }));
   await s.screenshot(ctx.shot('dex-export-overlay'));
+  const fit = await s.evalJson<{ ok: boolean; reason: string }>(
+    `const card=document.querySelector('[data-export-preview]');
+     const layer=document.querySelector('[data-export-preview-layer]');
+     if(!(card instanceof HTMLElement) || !(layer instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     const c=card.getBoundingClientRect(); const l=layer.getBoundingClientRect();
+     if(c.left<l.left-4||c.right>l.right+4||c.top<l.top-4||c.bottom>l.bottom+4) return {ok:false,reason:'overflow'};
+     if(c.right>innerWidth+4||c.bottom>innerHeight+4) return {ok:false,reason:'viewport'};
+     return {ok:true,reason:''};`,
+  ).catch(() => ({ ok: false, reason: 'eval' }));
   await s.evalJson(`const b=document.querySelector('[data-export-scrim] button'); if(b instanceof HTMLElement) b.click(); return true;`).catch(() => false);
   await sleep(300);
-  return [ok('dex-export:preview-overlay', state.preview && state.confirm && !state.surveyHost, JSON.stringify(state))];
+  return [
+    ok('dex-export:preview-overlay', state.preview && state.confirm && !state.surveyHost && state.shell, JSON.stringify(state)),
+    ok('dex-export:card-in-view', fit.ok, fit.reason),
+    ok('dex-export:outlines-row', state.outlines, 'missing [data-export-outlines]'),
+  ];
 }
 
 // ---------------------------------------------------------------------------

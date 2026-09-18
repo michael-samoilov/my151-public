@@ -49,6 +49,51 @@ function flag(params: URLSearchParams, key: string, fallback: boolean): boolean 
  * `exportGymDetails` / `exportSideBySide`. Missing flags keep the defaults
  * (every details box on, story teams).
  */
+export function leagueLayoutFrameKey(layout: LeagueHomeExportLayout): string {
+  return [
+    layout.teamMode,
+    layout.showLeagueName ? '1' : '0',
+    layout.showTheme ? '1' : '0',
+    layout.showTmReward ? '1' : '0',
+    layout.showBadgeName ? '1' : '0',
+  ].join('|');
+}
+
+const TEAM_MODES: readonly LeagueHomeTeamMode[] = ['story', 'rematch', 'both'];
+const DETAIL_KEYS = ['showLeagueName', 'showTheme', 'showTmReward', 'showBadgeName'] as const;
+
+/** Current layout first, then one-toggle neighbors, then the rest. */
+export function leagueLayoutPermutations(base: LeagueHomeExportLayout): LeagueHomeExportLayout[] {
+  const neighbors: LeagueHomeExportLayout[] = [];
+  for (const teamMode of TEAM_MODES) {
+    if (teamMode !== base.teamMode) neighbors.push({ ...base, teamMode });
+  }
+  for (const key of DETAIL_KEYS) {
+    neighbors.push({ ...base, [key]: !base[key] });
+  }
+  const rest: LeagueHomeExportLayout[] = [];
+  for (const teamMode of TEAM_MODES) {
+    for (let bits = 0; bits < 16; bits++) {
+      const next: LeagueHomeExportLayout = {
+        teamMode,
+        showLeagueName: (bits & 1) !== 0,
+        showTheme: (bits & 2) !== 0,
+        showTmReward: (bits & 4) !== 0,
+        showBadgeName: (bits & 8) !== 0,
+      };
+      rest.push(next);
+    }
+  }
+  const seen = new Set<string>();
+  const ordered = [base, ...neighbors, ...rest];
+  return ordered.filter((layout) => {
+    const key = leagueLayoutFrameKey(layout);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export function parseLeagueHomeExportLayout(search: string): LeagueHomeExportLayout {
   const params = new URLSearchParams(search);
   const teamParam = params.get('exportTeamMode');

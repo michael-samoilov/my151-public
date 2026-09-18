@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { X, Check, RotateCcw, Lock } from 'lucide-react';
+import { X, Check, RotateCcw } from 'lucide-react';
 import { usePokedexStore } from '@/store/usePokedexStore';
 import type { ViewSortOption } from '@/store/usePokedexStore';
 import { useViewSort } from '@/hooks/useViewSort';
 import { PageFooter } from '@/components/shared/PageFooter';
-import { STATS_MIN_POKEMON } from '@/components/view/DetailedStatsPanel';
 import { useT, type MessageKey } from '@/i18n';
 
 
@@ -42,10 +41,6 @@ export function ViewSettingsPane({
   const setCustomOrder = usePokedexStore((s) => s.setViewCustomOrder);
   const showSections = usePokedexStore((s) => s.viewShowSections);
   const setShowSections = usePokedexStore((s) => s.setViewShowSections);
-  const showStats = usePokedexStore((s) => s.viewShowStats);
-  const setShowStats = usePokedexStore((s) => s.setViewShowStats);
-  const placedCount = Object.values(sections).flat().length;
-  const statsEnabled = placedCount >= STATS_MIN_POKEMON;
 
   // Pending state is only used in mobileSheet mode. In desktop mode handlers
   // write straight to the store and the pending setters go unused.
@@ -53,7 +48,6 @@ export function ViewSettingsPane({
   const [pendingGrouping, setPendingGrouping] = useState<boolean>(groupSpecialAtEnd);
   const [pendingCustomOrder, setPendingCustomOrder] = useState<number[] | null>(customOrder);
   const [pendingShowSections, setPendingShowSections] = useState<boolean>(showSections);
-  const [pendingShowStats, setPendingShowStats] = useState<boolean>(showStats);
 
   // Effective values — what the UI reads to render current selection state.
   // Desktop: live store values. Mobile: pending staged values.
@@ -61,7 +55,6 @@ export function ViewSettingsPane({
   const effGrouping = mobileSheet ? pendingGrouping : groupSpecialAtEnd;
   const effCustomOrder = mobileSheet ? pendingCustomOrder : customOrder;
   const effShowSections = mobileSheet ? pendingShowSections : showSections;
-  const effShowStats = mobileSheet ? pendingShowStats : showStats;
 
   // Seed source: what's currently visible on the grid (reflects live store state).
   const currentSorted = useViewSort(sections, sortOption, groupSpecialAtEnd, customOrder);
@@ -102,12 +95,6 @@ export function ViewSettingsPane({
     else setShowSections(!showSections);
   };
 
-  const handleToggleStats = () => {
-    if (!statsEnabled) return;
-    if (mobileSheet) setPendingShowStats((v) => !v);
-    else setShowStats(!showStats);
-  };
-
   const handleResetCustom = () => {
     if (mobileSheet) {
       setPendingCustomOrder(null);
@@ -130,7 +117,6 @@ export function ViewSettingsPane({
     (pendingSort !== sortOption ||
       pendingGrouping !== groupSpecialAtEnd ||
       pendingShowSections !== showSections ||
-      pendingShowStats !== showStats ||
       customOrderChanged);
 
   const handleApply = () => {
@@ -138,7 +124,6 @@ export function ViewSettingsPane({
     setGroupSpecialAtEnd(pendingGrouping);
     setCustomOrder(pendingCustomOrder);
     setShowSections(pendingShowSections);
-    setShowStats(pendingShowStats);
     onClose();
   };
 
@@ -300,44 +285,6 @@ export function ViewSettingsPane({
             <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
               Sends fossils, extra starters, paradox, pseudo-legendaries, ultra beasts,
               legendaries, and mythicals to the back of the grid. Does not affect Custom ordering.
-            </p>
-          </button>
-        </div>
-
-        {/* Detailed stats. Staged like the other view options (mobile sheet
-            applies on "Update & View"). */}
-        <div className="px-3 pt-3 pb-2 border-t">
-          <h3 className="text-[0.625rem] font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-            {t('viewSettings.statsHeading')}
-          </h3>
-          <button
-            type="button"
-            onClick={handleToggleStats}
-            disabled={!statsEnabled}
-            className={`w-full text-left rounded-md px-3 py-2 transition-colors ${
-              !statsEnabled ? 'opacity-50 cursor-default' : 'cursor-pointer'
-            } ${effShowStats && statsEnabled ? 'bg-primary/10' : 'hover:bg-muted'}`}
-          >
-            <div className="flex items-center gap-2">
-              {!statsEnabled ? (
-                <Lock className="w-4 h-4 text-muted-foreground/70 flex-shrink-0" />
-              ) : (
-                <span
-                  className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${
-                    effShowStats ? 'bg-primary border-primary' : 'border-muted-foreground/40'
-                  }`}
-                >
-                  {effShowStats && <Check className="w-3 h-3 text-primary-foreground" />}
-                </span>
-              )}
-              <span className={`text-sm ${effShowStats && statsEnabled ? 'text-primary font-medium' : 'text-foreground'}`}>
-                {t('viewSettings.showStats')}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1 ml-6 leading-snug">
-              {statsEnabled
-                ? t('viewSettings.statsHint')
-                : `Add at least ${STATS_MIN_POKEMON} Pokémon to enable detailed stats (${placedCount}/${STATS_MIN_POKEMON}).`}
             </p>
           </button>
         </div>

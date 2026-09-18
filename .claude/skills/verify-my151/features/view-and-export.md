@@ -7,10 +7,11 @@ display options, exportable as a PNG.
 
 - Render the dex on one page (`ViewPage`), grouped or flat.
 - View settings: sort (build-order / regional / national / type / custom),
-  section outlines, group-special-at-end, show-stats.
-- Optional detailed-stats column drawn into the same export canvas.
+  section outlines, group-special-at-end. Detailed stats are export-only.
+- Optional detailed-stats column drawn into the export canvas, not the View page.
 - Export as a PNG (`my151.png`) via the shared preview overlay: live settings
-  pane, 3D tiltable preview card, then share or download.
+  pane, 3D tiltable preview card, then share or download. Export settings do
+  not write the View store.
 - Post-export survey (`You're here early!` → feedback / where they heard of us).
 
 ## How to get to it (user POV)
