@@ -23,6 +23,7 @@ import { distinctCalendarDays } from '@/components/admin/charts/sessionTimelineM
 import { OutlinedDex } from '@/components/admin/OutlinedDex';
 import { idsOutsideSections, keepMountedSections, useDexPresence } from '@/components/admin/dexPresence';
 import { LeagueVisitBoard } from '@/components/admin/LeagueVisitBoard';
+import { leagueBoardAtPlayhead, leagueOccupancyAtPlayhead } from '@/components/admin/leaguePlayhead';
 import { CrossToolCard } from '@/components/admin/CrossToolCard';
 import { DeviceIcon, OsIcon, BrowserIcon, FlagIcon, InfoChip, TooltipScope } from '@/components/admin/platformIcons';
 import {
@@ -1079,20 +1080,20 @@ function LeagueDetailBody({ league }: { league: LeagueUser }) {
     milestones.push({ t: t1, label: 'no exports', tone: 'muted' });
   }
 
-  const sessionMemberIds = useMemo(
-    () => log.map((s) => (s.cards && s.cards.length > 0 ? leagueSessionIds(s) : null)),
+  const sessionOccupancy = useMemo(
+    () => log.map((s, k) => leagueOccupancyAtPlayhead(s.cards, k === log.length - 1)),
     [log],
   );
-  const layoutCards =
-    league.latestCards && league.latestCards.length > 0
-      ? league.latestCards
-      : cur?.cards && cur.cards.length > 0
-        ? cur.cards
-        : null;
-  const presentIds = sessionMemberIds[idx] ?? undefined;
+  const boardModel = leagueBoardAtPlayhead({
+    sessionCards: cur?.cards,
+    latestCards: league.latestCards,
+    isLatestSession: idx === log.length - 1,
+  });
+  const layoutCards = boardModel.kind === 'uncaptured' ? null : boardModel.cards;
+  const presentIds = boardModel.kind === 'captured' ? boardModel.presentIds : undefined;
 
   const board = layoutCards ? (
-    <LeagueVisitBoard cards={layoutCards} presentIds={presentIds} sessionMemberIds={sessionMemberIds} />
+    <LeagueVisitBoard cards={layoutCards} presentIds={presentIds} sessionOccupancy={sessionOccupancy} />
   ) : (
     <p className="text-xs text-muted-foreground">Structure not captured for this session.</p>
   );

@@ -21,4 +21,10 @@ describe('applyMemberPresence', () => {
     applyMemberPresence({ querySelectorAll: () => nodes } as unknown as ParentNode, null);
     expect(nodes.map((n) => n.style.opacity)).toEqual(['1', '1']);
   });
+
+  it('fades every tile when present is an empty set', () => {
+    const nodes = [tile(1), tile(2)];
+    applyMemberPresence({ querySelectorAll: () => nodes } as unknown as ParentNode, new Set());
+    expect(nodes.map((n) => n.style.opacity)).toEqual(['0.14', '0.14']);
+  });
 });

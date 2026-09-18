@@ -11,6 +11,7 @@ import { defaultBoundaries, deriveRows, visibleMembers, type PlacedLine } from '
 import { cardShades } from '@/league/theme';
 import { BossBall, Crown } from '@/league/components/glyphs';
 import { applyMemberPresence } from '@/components/admin/memberPresence';
+import { occupancyPresent, type LeagueOccupancy } from '@/components/admin/leaguePlayhead';
 
 /** The fields a visit board reads. Matches `LeagueCard` on AdminPage. */
 interface VisitCard {
@@ -113,12 +114,12 @@ function MiniTile({ id, ace, fill, wash }: { id: number; ace?: boolean; fill?: b
 function useMemberPresence(
   rootRef: RefObject<HTMLElement | null>,
   presentIds: number[] | undefined,
-  sessionMemberIds: (number[] | null)[] | undefined,
+  sessionOccupancy: LeagueOccupancy[] | undefined,
 ) {
   const present = useMemo(() => (presentIds ? new Set(presentIds) : null), [presentIds]);
   const bySession = useMemo(
-    () => sessionMemberIds?.map((ids) => (ids ? new Set(ids) : null)),
-    [sessionMemberIds],
+    () => sessionOccupancy?.map(occupancyPresent),
+    [sessionOccupancy],
   );
 
   useLayoutEffect(() => {
@@ -402,22 +403,18 @@ const MobileLeagueBoard = memo(function MobileLeagueBoard({
   );
 });
 
-/** The league at one moment: Pokémon-only gym cards on desktop, a compact
- *  3×4 + 2 board on a phone. Layout stays on the latest cards so gyms do not
- *  remount while you scrub. Session occupancy is a presence fade on
- *  `[data-member-id]`, the same split OutlinedDex uses. */
 export const LeagueVisitBoard = memo(function LeagueVisitBoard({
   cards,
   presentIds,
-  sessionMemberIds,
+  sessionOccupancy,
 }: {
   cards: VisitCard[];
   presentIds?: number[];
-  sessionMemberIds?: (number[] | null)[];
+  sessionOccupancy?: LeagueOccupancy[];
 }) {
   const desktop = useIsDesktop();
   const hostRef = useRef<HTMLDivElement>(null);
-  useMemberPresence(hostRef, presentIds, sessionMemberIds);
+  useMemberPresence(hostRef, presentIds, sessionOccupancy);
   if (desktop) return <DesktopGymStrip cards={cards} hostRef={hostRef} />;
   return <MobileLeagueBoard cards={cards} hostRef={hostRef} />;
 });

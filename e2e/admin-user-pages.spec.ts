@@ -42,24 +42,91 @@ test.describe('admin user pages', () => {
     expect(last).toBeTruthy();
     expect(first).not.toEqual(last);
 
-    const occupancy = await page.evaluate(() => {
-      const board = document.querySelector('[data-testid="league-visit-board"]');
-      const keep = board?.querySelector('[data-testid="admin-gym-card"], [data-testid^="admin-slot-"]') ?? null;
-      (board as HTMLElement & { __keep?: Element | null }).__keep = keep;
-      return { keep: !!keep };
-    });
-    expect(occupancy.keep).toBe(true);
+    await scrub.fill('0');
+    await expect(page.getByText('Structure not captured for this session.')).toBeVisible();
+    expect(await page.locator('[data-member-id]').count()).toBe(0);
+    expect(await page.getByTestId('league-visit-board').count()).toBe(0);
+
     await scrub.fill('1');
+    await expect(page.getByTestId('league-visit-board')).toBeVisible();
+    if (info.project.name !== 'desktop') {
+      await expect
+        .poll(async () =>
+          page.locator('[data-testid^="admin-slot-"]', { hasText: 'empty' }).count(),
+        )
+        .toBeGreaterThan(0);
+    } else {
+      await expect
+        .poll(async () =>
+          page.evaluate(
+            () =>
+              [...document.querySelectorAll('[data-testid="admin-gym-card"]')].filter((n) =>
+                n.querySelector('[data-member-id]'),
+              ).length,
+          ),
+        )
+        .toBeLessThan(14);
+    }
     const mid = await page.evaluate(() => {
       const board = document.querySelector('[data-testid="league-visit-board"]');
-      const keep = (board as HTMLElement & { __keep?: Element | null }).__keep;
-      const now = board?.querySelector('[data-testid="admin-gym-card"], [data-testid^="admin-slot-"]') ?? null;
-      const tiles = document.querySelectorAll('[data-member-id]').length;
-      return { sameNode: keep != null && keep === now, tiles };
+      const empty = [...(board?.querySelectorAll('[data-testid^="admin-slot-"]') ?? [])].filter((n) =>
+        (n.textContent || '').includes('empty'),
+      ).length;
+      return {
+        tiles: document.querySelectorAll('[data-member-id]').length,
+        empty,
+        slots: board?.querySelectorAll('[data-testid^="admin-slot-"]').length ?? 0,
+        filledGyms: [...(board?.querySelectorAll('[data-testid="admin-gym-card"]') ?? [])].filter((n) =>
+          n.querySelector('[data-member-id]'),
+        ).length,
+      };
     });
-    expect(mid.sameNode).toBe(true);
     expect(mid.tiles).toBeGreaterThan(0);
+
     await scrub.fill('2');
+    if (info.project.name !== 'desktop') {
+      await expect
+        .poll(async () =>
+          page.locator('[data-testid^="admin-slot-"]', { hasText: 'empty' }).count(),
+        )
+        .toBe(0);
+    } else {
+      await expect
+        .poll(async () =>
+          page.evaluate(
+            () =>
+              [...document.querySelectorAll('[data-testid="admin-gym-card"]')].filter((n) =>
+                n.querySelector('[data-member-id]'),
+              ).length,
+          ),
+        )
+        .toBe(14);
+    }
+    const end = await page.evaluate(() => {
+      const board = document.querySelector('[data-testid="league-visit-board"]');
+      const empty = [...(board?.querySelectorAll('[data-testid^="admin-slot-"]') ?? [])].filter((n) =>
+        (n.textContent || '').includes('empty'),
+      ).length;
+      const filledGyms = [...(board?.querySelectorAll('[data-testid="admin-gym-card"]') ?? [])].filter((n) =>
+        n.querySelector('[data-member-id]'),
+      ).length;
+      return {
+        tiles: document.querySelectorAll('[data-member-id]').length,
+        empty,
+        filledGyms,
+      };
+    });
+    expect(end.tiles).toBeGreaterThan(0);
+    if (info.project.name !== 'desktop') {
+      expect(mid.slots).toBe(14);
+      expect(mid.empty).toBeGreaterThan(0);
+      expect(mid.empty).toBeGreaterThan(end.empty);
+      expect(end.empty).toBe(0);
+    } else {
+      expect(mid.filledGyms).toBeGreaterThan(0);
+      expect(mid.filledGyms).toBeLessThan(end.filledGyms);
+      expect(end.filledGyms).toBe(14);
+    }
 
     if (info.project.name !== 'desktop') {
       const overflow = await page.evaluate(() => {
