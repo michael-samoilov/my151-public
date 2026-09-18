@@ -17,7 +17,6 @@ export type HoverTiltMaskPaint = {
   size: string;
   repeat: string;
   position: string;
-  followPointer: boolean;
 };
 
 function svgUrl(svg: string): string {
@@ -107,7 +106,6 @@ const NONE_PAINT: HoverTiltMaskPaint = {
   size: '100% 100%',
   repeat: 'no-repeat',
   position: '0 0',
-  followPointer: false,
 };
 
 export const SPARKLE_FIELD_URL = svgUrl(sparkleSvg());
@@ -125,7 +123,6 @@ export function hoverTiltMaskPaint(
         size: '28% 28%',
         repeat: 'no-repeat',
         position: '8% 10%',
-        followPointer: false,
       };
     case 'wordmark':
       return {
@@ -133,7 +130,6 @@ export function hoverTiltMaskPaint(
         size: '38% auto',
         repeat: 'repeat',
         position: '0 0',
-        followPointer: true,
       };
     case 'cardSparkle':
       return {
@@ -141,7 +137,6 @@ export function hoverTiltMaskPaint(
         size: '180% 180%',
         repeat: 'repeat',
         position: '0 0',
-        followPointer: true,
       };
     case 'pokeBall':
       return {
@@ -149,7 +144,6 @@ export function hoverTiltMaskPaint(
         size: '16% 16%',
         repeat: 'repeat',
         position: '0 0',
-        followPointer: true,
       };
     case 'dexNumber':
       return {
@@ -157,7 +151,6 @@ export function hoverTiltMaskPaint(
         size: '72% auto',
         repeat: 'no-repeat',
         position: 'center',
-        followPointer: false,
       };
     default: {
       const _exhaustive: never = id;
@@ -174,15 +167,11 @@ export function hoverTiltMaskCssVars(
     '--hover-tilt-glare-mask': glare.image,
     '--hover-tilt-glare-mask-size': glare.size,
     '--hover-tilt-glare-mask-repeat': glare.repeat,
-    '--hover-tilt-glare-mask-position': glare.followPointer
-      ? 'calc(var(--pointer-from-left) * 80%) calc(var(--pointer-from-top) * 80%)'
-      : glare.position,
+    '--hover-tilt-glare-mask-position': glare.position,
     '--hover-tilt-sparkle-mask': sparkle.image,
     '--hover-tilt-sparkle-mask-size': sparkle.size,
     '--hover-tilt-sparkle-mask-repeat': sparkle.repeat,
-    '--hover-tilt-sparkle-mask-position': sparkle.followPointer
-      ? 'calc(var(--pointer-from-left) * 80%) calc(var(--pointer-from-top) * 80%)'
-      : sparkle.position,
+    '--hover-tilt-sparkle-mask-position': sparkle.position,
     '--hover-tilt-sparkle-field': SPARKLE_FIELD_URL,
   };
 }

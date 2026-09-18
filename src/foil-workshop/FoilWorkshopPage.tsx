@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ExportPreview3D } from '@/league/components/ExportPreview3D';
+import { EXPORT_OVERLAY_SCRIM_CLASS, EXPORT_OVERLAY_SCRIM_STYLE } from '@/components/export/exportOverlayScrim';
 import { KANTO_LEAGUE_NAME, kantoCards } from '@/league/data/kantoLeague';
 import { exportLeagueHome } from '@/league/export/exportLeague';
 import {
@@ -95,8 +96,17 @@ function readStoredSample(): WorkshopSample {
   return 'dex';
 }
 
-function persistWorkshop(recipe: FoilRecipe, tilt: HoverTiltRecipe, sample: WorkshopSample): void {
-  const qs = `${foilRecipeSearch(recipe)}&${hoverTiltSearch(tilt)}&sample=${sample}`;
+function readStoredDarkCard(): boolean {
+  return new URLSearchParams(window.location.search).get('dark') === '1';
+}
+
+function persistWorkshop(
+  recipe: FoilRecipe,
+  tilt: HoverTiltRecipe,
+  sample: WorkshopSample,
+  darkCard: boolean,
+): void {
+  const qs = `${foilRecipeSearch(recipe)}&${hoverTiltSearch(tilt)}&sample=${sample}${darkCard ? '&dark=1' : ''}`;
   window.history.replaceState(null, '', `${window.location.pathname}?${qs}`);
   try {
     localStorage.setItem(FOIL_WORKSHOP_STORAGE_KEY, JSON.stringify(recipe));
@@ -124,6 +134,7 @@ export function FoilWorkshopPage() {
   const [tilt, setTilt] = useState<HoverTiltRecipe>(readStoredTilt);
   const [solo, setSolo] = useState<FoilLayerId | null>(null);
   const [sample, setSample] = useState<WorkshopSample>(readStoredSample);
+  const [darkCard, setDarkCard] = useState(readStoredDarkCard);
   const [layout, setLayout] = useState<LeagueHomeExportLayout>(DEFAULT_LEAGUE_HOME_EXPORT_LAYOUT);
   const [src, setSrc] = useState<string | null>(null);
   const [copied, setCopied] = useState<'json' | 'link' | null>(null);
@@ -134,8 +145,8 @@ export function FoilWorkshopPage() {
   const tiltVars = hoverTiltCssVars(tilt);
 
   useEffect(() => {
-    persistWorkshop(recipe, tilt, sample);
-  }, [recipe, sample, tilt]);
+    persistWorkshop(recipe, tilt, sample, darkCard);
+  }, [darkCard, recipe, sample, tilt]);
 
   useEffect(() => {
     let cancelled = false;
@@ -184,24 +195,43 @@ export function FoilWorkshopPage() {
       className="flex min-h-svh flex-col bg-zinc-950 text-zinc-100 md:h-svh md:grid md:grid-cols-[minmax(0,1fr)_24rem] md:grid-rows-1"
       data-foil-workshop
       data-workshop-sample={sample}
+      data-workshop-dark-card={darkCard ? '1' : '0'}
     >
-      <section className="relative h-[42svh] w-full shrink-0 md:h-full">
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-3 text-[0.7rem] leading-snug text-zinc-400">
+      <section className="relative h-[42svh] w-full shrink-0 overflow-hidden md:h-full" data-workshop-stage>
+        <div
+          className="absolute inset-0 overflow-hidden bg-background p-5"
+          data-workshop-stage-page
+          aria-hidden
+        >
+          <div className="grid h-full grid-cols-4 gap-3 md:grid-cols-6">
+            {Array.from({ length: 24 }, (_, i) => (
+              <div key={i} className="rounded-xl bg-card shadow-sm ring-1 ring-border" />
+            ))}
+          </div>
+        </div>
+        <div
+          className={EXPORT_OVERLAY_SCRIM_CLASS}
+          style={EXPORT_OVERLAY_SCRIM_STYLE}
+          data-export-scrim
+          data-workshop-overlay
+          aria-hidden
+        />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 p-3 text-[0.7rem] leading-snug text-zinc-200">
           <div>
             <h1 className="text-sm font-semibold text-zinc-50">Export foil workshop</h1>
             <p className="mt-0.5 hidden max-w-[42rem] md:block">
               Native hover-tilt knobs from{' '}
-              <a className="pointer-events-auto text-zinc-200 underline" href={SIMEY}>
+              <a className="pointer-events-auto text-zinc-50 underline" href={SIMEY}>
                 hover-tilt.simey.me
               </a>
               . Switch a mask to clip glare, holo, and sparkle.
             </p>
           </div>
-          <a href="/custom-gym-leader" className="pointer-events-auto shrink-0 text-zinc-300 underline">
+          <a href="/custom-gym-leader" className="pointer-events-auto shrink-0 text-zinc-100 underline">
             League builder
           </a>
         </div>
-        <div className="absolute inset-0 px-3 pb-4 pt-12 md:px-10 md:pb-10 md:pt-16">
+        <div className="absolute inset-0 z-[1] px-3 pb-4 pt-12 md:px-10 md:pb-10 md:pt-16">
           <ExportPreview3D
             src={src}
             alt={sample === 'dex' ? 'Dex export foil workshop' : 'League export foil workshop'}
@@ -209,6 +239,7 @@ export function FoilWorkshopPage() {
             recipe={previewRecipe}
             tilt={tilt}
             maskContext={maskContext}
+            darkCard={darkCard}
           />
         </div>
       </section>
@@ -233,7 +264,7 @@ export function FoilWorkshopPage() {
               className="rounded-md bg-zinc-800 px-2 py-1 text-xs font-medium text-zinc-100"
               data-foil-copy-link
               onClick={() => {
-                const href = `${window.location.origin}${window.location.pathname}?${foilRecipeSearch(recipe)}&${hoverTiltSearch(tilt)}&sample=${sample}`;
+                const href = `${window.location.origin}${window.location.pathname}?${foilRecipeSearch(recipe)}&${hoverTiltSearch(tilt)}&sample=${sample}${darkCard ? '&dark=1' : ''}`;
                 void copyText(href).then((ok) => {
                   if (ok) flash('link');
                 });
@@ -250,6 +281,7 @@ export function FoilWorkshopPage() {
                 setRecipe(cloneFoilRecipe(DEFAULT_FOIL_RECIPE));
                 setTilt(cloneHoverTiltRecipe(DEFAULT_HOVER_TILT_RECIPE));
                 setSample('dex');
+                setDarkCard(false);
               }}
             >
               Reset default
@@ -275,6 +307,15 @@ export function FoilWorkshopPage() {
                 </button>
               ))}
             </div>
+            <label className="mt-2 flex items-center gap-2 text-[0.7rem] text-zinc-300">
+              <input
+                type="checkbox"
+                checked={darkCard}
+                data-workshop-dark-card-toggle
+                onChange={(e) => setDarkCard(e.target.checked)}
+              />
+              Dark card (white glare on a dark poster)
+            </label>
           </fieldset>
 
           <fieldset className="space-y-2" data-hover-tilt-masks>

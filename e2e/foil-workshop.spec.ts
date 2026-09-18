@@ -167,6 +167,91 @@ test.describe('export foil workshop', () => {
     expect(mapped.hypot).toBeGreaterThan(6);
     expect(decodeURIComponent(mapped.glareMask)).toContain('my151.app');
   });
+
+  test('wordmark mask-position stays put at 0px parallax', async ({ page }) => {
+    await page.goto('/foil-workshop');
+    const img = page.locator('[data-export-tilt-hit] img');
+    await img.waitFor({ timeout: 60_000 });
+    const foil = page.locator('[data-export-preview]');
+    await page.locator('[data-hover-tilt-mask="wordmark"]').click();
+    await page.locator('[data-foil-slider="parallaxPx"]').evaluate((el) => {
+      const input = el as HTMLInputElement;
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+      setter?.call(input, '0');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.locator('[data-foil-slider="glareIntensity"]').evaluate((el) => {
+      const input = el as HTMLInputElement;
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+      setter?.call(input, '0.91');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    const hit = page.locator('[data-export-tilt-hit]');
+    const box = await hit.boundingBox();
+    expect(box).toBeTruthy();
+
+    const readMask = () =>
+      foil.evaluate((el) => {
+        const glare = getComputedStyle(el, '::before');
+        return {
+          varPos: getComputedStyle(el).getPropertyValue('--hover-tilt-glare-mask-position').trim(),
+          computed: (
+            glare.getPropertyValue('-webkit-mask-position') ||
+            glare.maskPosition ||
+            ''
+          ).trim(),
+          parallaxPx: getComputedStyle(el).getPropertyValue('--foil-parallax-px').trim(),
+        };
+      });
+
+    await page.mouse.move(box!.x + box!.width * 0.18, box!.y + box!.height * 0.18, { steps: 6 });
+    const first = await readMask();
+    await page.mouse.move(box!.x + box!.width * 0.88, box!.y + box!.height * 0.12, { steps: 8 });
+    const second = await readMask();
+    expect(first.parallaxPx).toBe('0px');
+    expect(second.parallaxPx).toBe('0px');
+    expect(first.varPos).not.toMatch(/pointer/);
+    expect(first.varPos).toBe(second.varPos);
+    expect(first.computed).toBe(second.computed);
+    await expect
+      .poll(async () => {
+        const x = Number(await foil.getAttribute('data-tilt-x'));
+        const y = Number(await foil.getAttribute('data-tilt-y'));
+        return Math.hypot(x, y);
+      })
+      .toBeGreaterThan(6);
+  });
+
+  test('dark card and overlay scrim match the export backdrop', async ({ page }) => {
+    await page.goto('/foil-workshop');
+    const img = page.locator('[data-export-tilt-hit] img');
+    await img.waitFor({ timeout: 60_000 });
+
+    const pageBg = await page.locator('[data-workshop-stage-page]').evaluate((el) =>
+      getComputedStyle(el).backgroundColor,
+    );
+    expect(pageBg, 'stage page must be the app canvas, not black').toBe('rgb(247, 247, 248)');
+
+    const overlay = await page.locator('[data-workshop-overlay]').evaluate((el) => {
+      const style = getComputedStyle(el);
+      return {
+        bg: style.backgroundColor,
+        blur: style.backdropFilter || style.getPropertyValue('-webkit-backdrop-filter'),
+      };
+    });
+    expect(overlay.blur).toMatch(/blur\(/);
+    expect(overlay.bg).not.toBe('rgb(0, 0, 0)');
+    expect(overlay.bg).toMatch(/0\.5/);
+
+    await page.locator('[data-workshop-dark-card-toggle]').check();
+    await expect(page.locator('[data-foil-workshop]')).toHaveAttribute('data-workshop-dark-card', '1');
+    await expect(page.locator('[data-export-preview]')).toHaveAttribute('data-workshop-dark-card', '1');
+    const filter = await page.locator('[data-export-preview] img').evaluate((el) => getComputedStyle(el).filter);
+    expect(filter).toMatch(/invert/);
+  });
 });
 
 test.describe('export foil workshop on a phone', () => {

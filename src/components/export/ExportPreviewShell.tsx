@@ -2,6 +2,7 @@ import { useLayoutEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { ExportPreview3D } from '@/league/components/ExportPreview3D';
+import { EXPORT_OVERLAY_SCRIM_CLASS, EXPORT_OVERLAY_SCRIM_STYLE } from '@/components/export/exportOverlayScrim';
 import { useViewportAtLeast } from '@/lib/usePixelPerfectSprite';
 
 export type ExportPreviewPhase = 'settings' | 'surveyIntro' | 'survey';
@@ -40,8 +41,8 @@ function ExportScrim({ onClose }: { onClose: () => void }) {
     <div className="fixed inset-0" style={{ zIndex: SCRIM_Z }} data-export-scrim data-overlay>
       <div
         aria-hidden
-        className="absolute inset-0 bg-slate-950/50 backdrop-blur-md"
-        style={{ WebkitBackdropFilter: 'blur(10px)', backdropFilter: 'blur(10px)' }}
+        className={EXPORT_OVERLAY_SCRIM_CLASS}
+        style={EXPORT_OVERLAY_SCRIM_STYLE}
       />
       <button
         type="button"

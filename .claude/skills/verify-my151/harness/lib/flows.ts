@@ -1230,6 +1230,29 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
      return true;`,
   ).catch(() => false);
   await sleep(250);
+  const firstMask = await s.evalJson<string>(
+    `const card=document.querySelector('[data-export-preview]');
+     if(!(card instanceof HTMLElement)) return '';
+     return getComputedStyle(card).getPropertyValue('--hover-tilt-glare-mask-position').trim();`,
+  ).catch(() => '');
+  await s.evalJson(
+    `const hit=document.querySelector('[data-export-tilt-hit]');
+     if(!(hit instanceof HTMLElement)) return false;
+     const r=hit.getBoundingClientRect();
+     hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:r.left+r.width*0.18,clientY:r.top+r.height*0.82,pointerType:'mouse',pointerId:1}));
+     return true;`,
+  ).catch(() => false);
+  await sleep(200);
+  const secondMask = await s.evalJson<string>(
+    `const card=document.querySelector('[data-export-preview]');
+     if(!(card instanceof HTMLElement)) return '';
+     return getComputedStyle(card).getPropertyValue('--hover-tilt-glare-mask-position').trim();`,
+  ).catch(() => '');
+  const glued =
+    firstMask.length > 0 &&
+    firstMask === secondMask &&
+    !/pointer/.test(firstMask);
+  checks.push(ok('foil-workshop:mask-glued', glued, `pos=${firstMask} then ${secondMask}`));
   const maskOnCard = await s.evalJson<{
     ok: boolean;
     reason: string;
@@ -1249,7 +1272,10 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
      const mask=(glare.getPropertyValue('-webkit-mask-image')+' '+glare.maskImage).trim();
      if(!mask.includes('svg+xml') && !mask.includes('url(')) return {ok:false,reason:'glare mask '+mask.slice(0,80),hypot};
      if(hypot<6) return {ok:false,reason:'weak-tilt '+hypot.toFixed(2),hypot};
-     return {ok:true,reason:'::before-on-tilt',hypot};`,
+     const pos=getComputedStyle(card).getPropertyValue('--hover-tilt-glare-mask-position').trim();
+     if(/pointer/.test(pos)) return {ok:false,reason:'mask follows pointer '+pos,hypot};
+     const glarePos=(glare.getPropertyValue('-webkit-mask-position')+' '+glare.maskPosition).trim();
+     return {ok:true,reason:'::before-glued '+pos+' / '+glarePos,hypot};`,
   ).catch(() => ({ ok: false, reason: 'eval', hypot: 0 }));
   checks.push(ok('foil-workshop:mask-on-card', maskOnCard.ok, `${maskOnCard.reason} hypot=${maskOnCard.hypot.toFixed(1)}`));
   await s.screenshot(ctx.shot('foil-workshop-wordmark-tilt'));
@@ -1279,5 +1305,44 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
   ).catch(() => '');
   checks.push(ok('foil-workshop:glare-intensity', intensity === '0.910', `intensity=${intensity}`));
   await s.screenshot(ctx.shot('foil-workshop-glare-intensity'));
+
+  const overlay = await s.evalJson<{ pageBg: string; blur: string; scrimBg: string }>(
+    `const page=document.querySelector('[data-workshop-stage-page]');
+     const scrim=document.querySelector('[data-workshop-overlay]');
+     if(!(page instanceof HTMLElement) || !(scrim instanceof HTMLElement)) return {pageBg:'',blur:'',scrimBg:''};
+     const ps=getComputedStyle(page);
+     const ss=getComputedStyle(scrim);
+     return {
+       pageBg: ps.backgroundColor,
+       blur: ss.backdropFilter || ss.getPropertyValue('-webkit-backdrop-filter'),
+       scrimBg: ss.backgroundColor,
+     };`,
+  ).catch(() => ({ pageBg: '', blur: '', scrimBg: '' }));
+  const overlayOk =
+    overlay.pageBg !== 'rgb(0, 0, 0)' &&
+    overlay.pageBg.length > 0 &&
+    /blur\(/.test(overlay.blur) &&
+    overlay.scrimBg !== 'rgb(0, 0, 0)' &&
+    /0\.5/.test(overlay.scrimBg);
+  checks.push(ok('foil-workshop:overlay-scrim', overlayOk, `page=${overlay.pageBg} blur=${overlay.blur} scrim=${overlay.scrimBg}`));
+
+  try {
+    await s.click('[data-workshop-dark-card-toggle]');
+    await sleep(200);
+  } catch {
+    /* base build has no dark-card toggle */
+  }
+  const dark = await s.evalJson<{ root: string; card: string; filter: string }>(
+    `const root=document.querySelector('[data-foil-workshop]');
+     const card=document.querySelector('[data-export-preview]');
+     const img=card?.querySelector('img');
+     return {
+       root: root instanceof HTMLElement ? (root.getAttribute('data-workshop-dark-card')||'') : '',
+       card: card instanceof HTMLElement ? (card.getAttribute('data-workshop-dark-card')||'') : '',
+       filter: img instanceof HTMLElement ? getComputedStyle(img).filter : '',
+     };`,
+  ).catch(() => ({ root: '', card: '', filter: '' }));
+  checks.push(ok('foil-workshop:dark-card', dark.root === '1' && dark.card === '1' && /invert/.test(dark.filter), `root=${dark.root} filter=${dark.filter}`));
+  await s.screenshot(ctx.shot('foil-workshop-dark-card'));
   return checks;
 }

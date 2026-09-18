@@ -65,6 +65,7 @@ export function ExportPreview3D({
   frames,
   tilt,
   maskContext = DEFAULT_MASK_CONTEXT,
+  darkCard = false,
 }: {
   src: string | null;
   alt: string;
@@ -75,6 +76,8 @@ export function ExportPreview3D({
   /** Native hover-tilt knobs and masks. Omit on the live overlay. */
   tilt?: HoverTiltRecipe;
   maskContext?: HoverTiltMaskContext;
+  /** Workshop-only: invert the poster so white glare is readable. */
+  darkCard?: boolean;
 }) {
   const stageRef = useRef<HTMLDivElement>(null);
   const hitRef = useRef<HTMLDivElement>(null);
@@ -467,6 +470,7 @@ export function ExportPreview3D({
             data-hover-tilt={tilt ? '1' : undefined}
             data-hover-tilt-glare-mask={tilt?.glareMask}
             data-hover-tilt-sparkle-mask={tilt?.sparkleMask}
+            data-workshop-dark-card={darkCard ? '1' : undefined}
           >
             <img
               ref={imgRef}

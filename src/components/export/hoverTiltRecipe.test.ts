@@ -79,7 +79,6 @@ describe('hover-tilt masks', () => {
     const paint = hoverTiltMaskPaint('typeIcon', { type: 'grass', dexNumber: 387 });
     expect(paint.image).toBe(`url("${typeGlyphPath('grass')}")`);
     expect(paint.repeat).toBe('no-repeat');
-    expect(paint.followPointer).toBe(false);
   });
 
   it('tiles the my151.app wordmark', () => {
@@ -93,7 +92,16 @@ describe('hover-tilt masks', () => {
     const paint = hoverTiltMaskPaint('cardSparkle');
     expect(paint.image).toBe(SPARKLE_FIELD_URL);
     expect(decodeURIComponent(paint.image)).toContain('circle');
-    expect(paint.followPointer).toBe(true);
+  });
+
+  it('glues every mask to a fixed card point, not the pointer', () => {
+    for (const id of HOVER_TILT_MASK_IDS) {
+      const paint = hoverTiltMaskPaint(id);
+      const vars = hoverTiltMaskCssVars(paint, paint);
+      expect(vars['--hover-tilt-glare-mask-position'], id).not.toMatch(/pointer/);
+      expect(vars['--hover-tilt-sparkle-mask-position'], id).not.toMatch(/pointer/);
+      expect(vars['--hover-tilt-glare-mask-position'], id).toBe(paint.position);
+    }
   });
 
   it('tiles a Poké Ball silhouette', () => {

@@ -403,6 +403,10 @@
   z-index: auto;
 }
 
+.export-foil[data-workshop-dark-card='1'] > img {
+  filter: invert(1) hue-rotate(180deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .export-foil-layer {
     opacity: 0;

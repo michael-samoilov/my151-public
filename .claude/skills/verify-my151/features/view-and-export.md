@@ -16,6 +16,10 @@ display options, exportable as a PNG.
   `ExportPreview3D` card with native hover-tilt knobs and selectable
   glare/sparkle masks (type icon on the featured sprite, tiled `my151.app`
   wordmark, Pokémon-card sparkles, Poké Ball tile, national Dex number).
+  Mask texels stay glued to the card (`mask-position` is a fixed point, not
+  the pointer). The stage uses the live export overlay scrim (dimmed
+  `bg-background` page + `bg-slate-950/50` blur). A Dark card toggle inverts
+  the poster so white glare is visible.
 - Desktop auto-tilt (idle orbit) parks on press and resumes on a second press.
   Foil shine is visible while the card is tilted. Rest size fills the pane.
   Hover tilt matches poke-holo / hover-tilt: CSS `--rotate-x` / `--rotate-y`
@@ -63,8 +67,11 @@ or `<a download="my151.png">`); the repo's own e2e checks a >50KB blob in
 The foil workshop is a separate MPA at `/foil-workshop`. Navigate there, wait
 for `[data-foil-workshop]` and the preview image, then click
 `[data-hover-tilt-mask="wordmark"]` and read `--hover-tilt-glare-mask` on
-`[data-export-preview]`. A glareIntensity slider write must update
-`--hover-tilt-glare-intensity`.
+`[data-export-preview]`. `--hover-tilt-glare-mask-position` must not contain
+`--pointer` and must stay equal across two pointer corners. A glareIntensity
+slider write must update `--hover-tilt-glare-intensity`. The stage page is
+`bg-background` under `[data-workshop-overlay]` (`bg-slate-950/50` + blur).
+`[data-workshop-dark-card-toggle]` inverts the poster.
 
 ## Gotchas
 
