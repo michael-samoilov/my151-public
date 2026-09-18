@@ -356,8 +356,7 @@ test.describe('admin user pages', () => {
     await userCard(page, '14c0').click();
     const mark = page.locator('[data-testid="session-milestone"][data-tone="skip"]');
     await expect(mark).toBeVisible();
-    await expect(mark).toContainText('pokedex');
-    await expect(mark).toContainText('not now');
+    await expect(mark.locator('text')).toHaveText('not now');
     await expect(mark.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
     await expect(mark.locator('title')).toHaveText('export_survey_skipped · pokedex · not_now');
     await expect(mark).toHaveAttribute('data-label-lane', 'below');
@@ -374,9 +373,9 @@ test.describe('admin user pages', () => {
     await userCard(page, '70cd').click();
     const mark = page.locator('[data-testid="session-milestone"][data-tone="skip"]');
     await expect(mark).toBeVisible();
-    await expect(mark).toContainText('league');
-    await expect(mark).toContainText('close');
+    await expect(mark.locator('text')).toHaveText('close');
     await expect(mark.locator('rect')).toHaveAttribute('fill', 'var(--color-primary)');
+    await expect(mark.locator('title')).toHaveText('export_survey_skipped · league · close');
     await expect(mark).toHaveAttribute('data-label-lane', 'below');
   });
 

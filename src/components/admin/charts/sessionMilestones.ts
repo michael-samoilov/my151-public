@@ -15,13 +15,18 @@ export function milestoneFill(tone?: MilestoneTone): string {
   return 'var(--color-success)';
 }
 
+export function skipReasonLabel(tool: ExportSurveySkip['tool'], reason: ExportSurveySkip['reason']): string {
+  const reasonLabel = reason.replaceAll('_', ' ');
+  return tool === 'card' ? `card · ${reasonLabel}` : reasonLabel;
+}
+
 export function exportSurveySkipMarks(
   skips: ExportSurveySkip[] | undefined,
   clampT: (t: number) => number,
 ): ChartMilestone[] {
   return (skips ?? []).map((s) => ({
     t: clampT(s.t),
-    label: `${s.tool} · ${s.reason.replaceAll('_', ' ')}`,
+    label: skipReasonLabel(s.tool, s.reason),
     tone: 'skip',
     title: `export_survey_skipped · ${s.tool} · ${s.reason}`,
   }));
@@ -40,8 +45,12 @@ function labelWidth(label: string): number {
   return label.length * LABEL_CHAR_PX;
 }
 
+/** Keep a skip under a nearby green mark even when the reason text is short. */
+const SKIP_LABEL_NEAR_PX = 72;
+
 function labelsWouldOverlap(a: PlacedMilestone, b: PlacedMilestone): boolean {
-  return Math.abs(a.bx - b.bx) < labelWidth(a.label) + labelWidth(b.label);
+  const widthGap = labelWidth(a.label) + labelWidth(b.label);
+  return Math.abs(a.bx - b.bx) < Math.max(SKIP_LABEL_NEAR_PX, widthGap);
 }
 
 export function placeMilestones(
