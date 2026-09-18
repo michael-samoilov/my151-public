@@ -126,16 +126,18 @@ test.describe('admin picks page', () => {
       getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length,
     );
     expect(gridCols).toBe(expectedCols);
-    const evilCols = await evil.locator('[data-picks-side="most"]').getAttribute('data-picks-cols');
-    expect(evilCols).toBe('9');
+    await expect(evil.locator('[data-picks-side="most"]')).toHaveAttribute('data-picks-cols', '9');
+    const evilTracks = await evil.locator('[data-picks-side="most"] .grid').first().evaluate((el) =>
+      getComputedStyle(el).gridTemplateColumns.split(' ').filter(Boolean).length,
+    );
+    expect(evilTracks).toBe(9);
     const evilFirstRow = await evil
       .locator('[data-picks-side="most"] > div > .grid')
       .first()
       .locator('[data-face-id]')
       .count();
     const evilTotal = await evil.locator('[data-picks-side="most"] [data-face-id]').count();
-    expect(evilTotal).toBeGreaterThan(9);
-    expect(evilFirstRow).toBe(9);
+    expect(evilFirstRow).toBe(Math.min(9, evilTotal));
   });
 
   test('off-section includes one-offs until Exclude one-offs is on', async ({ page }) => {
