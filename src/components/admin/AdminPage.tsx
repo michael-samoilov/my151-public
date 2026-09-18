@@ -979,7 +979,7 @@ function DexDetailBody({ rec }: { rec: ClientRecord }) {
     return (
       <div className="flex min-h-0 flex-1 flex-col gap-1.5">
         <p className="text-xs text-muted-foreground">No session history.</p>
-        <div className="min-h-0 flex-1 overflow-auto">{snapshot}</div>
+        <div className="min-h-0 flex-1 overflow-x-clip overflow-y-auto">{snapshot}</div>
       </div>
     );
   }
@@ -1805,7 +1805,7 @@ export function AdminPage() {
   return (
     <div className={cn('flex flex-col bg-background', lockUser ? 'h-dvh overflow-hidden' : 'min-h-dvh')}>
       <header ref={pageHeaderRef} className="sticky top-0 z-[100] border-b bg-card">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-1">
+        <div className={cn('mx-auto flex w-full items-center justify-between gap-2 px-4 py-1', lockUser ? 'max-w-none' : 'max-w-5xl')}>
           <h1 className="whitespace-nowrap text-sm font-bold">
 
             <span className="text-primary">my151</span> · Analytics
@@ -1825,7 +1825,8 @@ export function AdminPage() {
 
       <main
         className={cn(
-          'mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col px-4',
+          'mx-auto flex w-full min-w-0 flex-1 flex-col px-4',
+          lockUser ? 'max-w-none' : 'max-w-5xl',
           lockUser
             ? 'min-h-0 gap-2 overflow-hidden pt-2 max-md:pb-[var(--admin-nav-h,5rem)] md:pb-8'
             : cn('gap-4 pt-4 md:pb-8', detail?.kind === 'picks' ? 'pb-8' : 'pb-24'),

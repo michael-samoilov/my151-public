@@ -23,7 +23,6 @@ interface VisitCard {
 
 /** 14-across only when each card is wide enough that a row still reads. */
 const MIN_CARD_W = 90;
-const MIN_ROW_PX = 12;
 const COLS = 6;
 
 function slotStageGlyph(i: number, cell: string): ReactNode {
@@ -165,12 +164,13 @@ const MiniGymCard = memo(function MiniGymCard({ index, card }: { index: number; 
     <div
       data-testid="admin-gym-card"
       data-slot={index}
-      className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg p-0.5"
+      className="relative w-full overflow-hidden rounded-lg p-0.5"
       style={{ background: shades.base }}
     >
       <div
-        className="grid min-h-0 flex-1"
+        className="grid w-full"
         style={{
+          aspectRatio: `${COLS} / ${ROW_COUNT}`,
           gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${ROW_COUNT}, minmax(0, 1fr))`,
           gap: 1,
@@ -230,11 +230,10 @@ const MiniGymCard = memo(function MiniGymCard({ index, card }: { index: number; 
   );
 });
 
-function colsThatFit(availW: number, availH: number): 14 | 7 {
+function colsThatFit(availW: number): 14 | 7 {
   const gap = 6;
   const cardW = (availW - 13 * gap) / 14;
-  const rowPx = availH / ROW_COUNT;
-  return cardW >= MIN_CARD_W && rowPx >= MIN_ROW_PX ? 14 : 7;
+  return cardW >= MIN_CARD_W ? 14 : 7;
 }
 
 const DesktopGymStrip = memo(function DesktopGymStrip({
@@ -254,8 +253,8 @@ const DesktopGymStrip = memo(function DesktopGymStrip({
     const host = hostRef.current;
     if (!host) return;
     const apply = () => {
-      if (host.clientWidth <= 0 || host.clientHeight <= 0) return;
-      const next = colsThatFit(host.clientWidth, host.clientHeight);
+      if (host.clientWidth <= 0) return;
+      const next = colsThatFit(host.clientWidth);
       setCols((cur) => (cur === next ? cur : next));
     };
     apply();
@@ -265,16 +264,12 @@ const DesktopGymStrip = memo(function DesktopGymStrip({
   }, []);
 
   return (
-    <div
-      ref={hostRef}
-      data-cols={cols}
-      className="h-full min-h-0 w-full flex-1 overflow-hidden"
-    >
+    <div ref={hostRef} data-cols={cols} className="w-full">
       <div
-        className="grid h-full min-h-0 w-full"
+        className="grid w-full"
         style={{
           gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-          gridTemplateRows: cols === 14 ? '1fr' : '1fr 1fr',
+          gridTemplateRows: cols === 14 ? 'auto' : 'auto auto',
           gap: '0.35rem',
         }}
       >

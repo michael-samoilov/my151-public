@@ -239,9 +239,24 @@ test.describe('admin user pages', () => {
       expect(thumb).toBeTruthy();
       expect(Math.abs(thumb!.cx - thumb!.last)).toBeLessThan(3);
       const last = await vis.getByTestId('admin-gym-card').nth(13).boundingBox();
-      const vh = page.viewportSize()?.height ?? 0;
       expect(last).toBeTruthy();
-      expect(last!.y + last!.height).toBeLessThanOrEqual(vh);
+      const pageOverflow = await page.evaluate(() => {
+        const de = document.documentElement;
+        const member = document.querySelector('[data-session-board]:not([hidden]) [data-row="10"] [data-member-id], [data-session-board]:not([hidden]) [data-row="11"] [data-member-id]');
+        const mb = member?.getBoundingClientRect();
+        return {
+          scrollH: de.scrollHeight,
+          innerH: window.innerHeight,
+          scrollW: de.scrollWidth,
+          innerW: window.innerWidth,
+          cellW: mb ? +mb.width.toFixed(2) : 0,
+          cellH: mb ? +mb.height.toFixed(2) : 0,
+        };
+      });
+      expect(pageOverflow.scrollH).toBeLessThanOrEqual(pageOverflow.innerH + 2);
+      expect(pageOverflow.scrollW).toBeLessThanOrEqual(pageOverflow.innerW + 1);
+      expect(pageOverflow.cellW).toBeGreaterThan(8);
+      expect(Math.abs(pageOverflow.cellW - pageOverflow.cellH)).toBeLessThan(2);
     }
   });
 
@@ -308,6 +323,27 @@ test.describe('admin user pages', () => {
     expect(dragged.off.tiles).toBe(rest.off.tiles);
     expect(dragged.off.count).toBe(String(rest.off.tiles));
     expect(dragged.off.faded).toBeGreaterThan(rest.off.faded);
+
+    const hOverflow = await page.evaluate(() => {
+      const de = document.documentElement;
+      const snap = document.querySelector('[data-testid="admin-dex-snapshot"]');
+      const pane = snap?.closest('.overflow-y-auto') ?? de;
+      const tryScroll = (el: Element) => {
+        const before = el.scrollLeft;
+        el.scrollLeft = before + 80;
+        const moved = el.scrollLeft !== before;
+        el.scrollLeft = before;
+        return moved;
+      };
+      return {
+        doc: de.scrollWidth - de.clientWidth,
+        docMoved: tryScroll(de),
+        paneMoved: tryScroll(pane),
+        bodyMoved: tryScroll(document.body),
+      };
+    });
+    expect(hOverflow.docMoved || hOverflow.paneMoved || hOverflow.bodyMoved).toBe(false);
+    expect(hOverflow.doc, 'dex user-detail must not scroll sideways').toBeLessThanOrEqual(1);
   });
 
   test('a user page toggles between dex and league', async ({ page }) => {

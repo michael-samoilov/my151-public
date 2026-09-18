@@ -148,7 +148,7 @@ export function SessionTimeline({
     return (
       <div className="flex min-h-0 flex-1 flex-col gap-1.5">
         <p className="text-xs text-muted-foreground">No sessions yet.</p>
-        {children && <div className="min-h-0 flex-1 overflow-auto">{children}</div>}
+        {children && <div className="min-h-0 flex-1 overflow-x-clip overflow-y-auto">{children}</div>}
       </div>
     );
   }
@@ -389,7 +389,7 @@ export function SessionTimeline({
     <div className="flex min-h-0 flex-1 flex-col gap-1.5">
       <div className="order-1 shrink-0">{chart}</div>
       <div className="order-2 shrink-0 md:order-3">{readout}</div>
-      <div className="order-3 flex min-h-0 flex-1 flex-col overflow-auto md:order-4">{children}</div>
+      <div className="order-3 flex min-h-0 flex-1 flex-col overflow-x-clip overflow-y-auto md:order-4">{children}</div>
       <div
         data-testid="session-scrubber-dock"
         className={cn(
