@@ -3,8 +3,11 @@ import { cn } from '@/lib/utils';
 import {
   clampTiltToBox,
   fitCardInPreviewBox,
+  paintedBoxOverflow,
   PREVIEW_PERSPECTIVE_PX,
   PREVIEW_REST_PAD,
+  PREVIEW_TILT_INSET,
+  tiltInsetForRestGap,
 } from '@/components/export/exportPreviewFit';
 import {
   applySpringOpts,
@@ -134,6 +137,12 @@ export function ExportPreview3D({
     const stage = stageRef.current;
     const boxEl =
       stage?.closest<HTMLElement>('[data-export-preview-layer]') ?? stage;
+    const tiltPad = (() => {
+      const box = (boxEl ?? stage)?.getBoundingClientRect();
+      if (!box || el.offsetWidth <= 0) return PREVIEW_TILT_INSET;
+      const restGap = Math.min((box.width - el.offsetWidth) / 2, (box.height - el.offsetHeight) / 2);
+      return tiltInsetForRestGap(restGap);
+    })();
     if (stage && el.offsetWidth > 0 && el.offsetHeight > 0) {
       const box = stage.getBoundingClientRect();
       const clamped = clampTiltToBox({
@@ -143,7 +152,7 @@ export function ExportPreview3D({
         cardHeight: el.offsetHeight,
         boxWidth: box.width,
         boxHeight: box.height,
-        pad: PREVIEW_REST_PAD,
+        pad: tiltPad,
       });
       rotateX = clamped.x;
       rotateY = clamped.y;
@@ -161,23 +170,14 @@ export function ExportPreview3D({
     applyRotate(rotateX, rotateY);
     if (boxEl && el.offsetWidth > 0) {
       const live = boxEl.getBoundingClientRect();
-      const overflowOf = () => {
-        const c = el.getBoundingClientRect();
-        return Math.max(
-          0,
-          live.left - c.left,
-          c.right - live.right,
-          live.top - c.top,
-          c.bottom - live.bottom,
-        );
-      };
-      if (overflowOf() > 1) {
+      const overflowOf = () => paintedBoxOverflow(el.getBoundingClientRect(), live, tiltPad);
+      if (overflowOf() > 0) {
         let lo = 0;
         let hi = 1;
         for (let i = 0; i < 8; i++) {
           const mid = (lo + hi) / 2;
           applyRotate(rotateX * mid, rotateY * mid);
-          if (overflowOf() <= 1) lo = mid;
+          if (overflowOf() <= 0) lo = mid;
           else hi = mid;
         }
         rotateX *= lo;

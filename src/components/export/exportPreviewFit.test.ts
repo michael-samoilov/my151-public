@@ -7,6 +7,9 @@ import {
   fitScaleForTilt,
   pointerNearPreview,
   PREVIEW_REST_PAD,
+  PREVIEW_TILT_INSET,
+  paintedBoxOverflow,
+  tiltInsetForRestGap,
   previewCoverRatio,
   projectedCardAabb,
   projectedCardSize,
@@ -255,6 +258,58 @@ describe('exportPreviewFit', () => {
     });
     expect(previewCoverRatio(rest, layer)).toBeGreaterThan(0.82);
     expect(Math.min(rest.width, rest.height) / Math.min(layer.width, layer.height)).toBeLessThan(0.82);
+  });
+
+  it('uses a 24px tilt inset when rest already has room', () => {
+    expect(tiltInsetForRestGap(80)).toBe(PREVIEW_TILT_INSET);
+    expect(tiltInsetForRestGap(25.5)).toBe(8);
+    expect(tiltInsetForRestGap(10)).toBe(8);
+  });
+
+  it('flags a card AABB that kisses the pane corner', () => {
+    const pane = { left: 0, top: 0, right: 800, bottom: 800 };
+    const kiss = { left: 0.4, top: 80, right: 707, bottom: 800.9 };
+    expect(paintedBoxOverflow(kiss, pane, PREVIEW_TILT_INSET)).toBeGreaterThan(20);
+    const clear = { left: 40, top: 40, right: 760, bottom: 760 };
+    expect(paintedBoxOverflow(clear, pane, PREVIEW_TILT_INSET)).toBe(0);
+  });
+
+  it('clamps desktop peak tilt to a 24px pane inset without shrinking rest', () => {
+    const box = { width: 800, height: 800 };
+    const rest = fitCardInPreviewBox({
+      boxWidth: box.width,
+      boxHeight: box.height,
+      aspect: 0.98,
+      tiltDeg: 10,
+      pad: PREVIEW_REST_PAD,
+    });
+    expect(previewCoverRatio(rest, box)).toBeGreaterThan(0.78);
+    const loose = clampTiltToBox({
+      tiltX: 10,
+      tiltY: -10,
+      cardWidth: rest.width,
+      cardHeight: rest.height,
+      boxWidth: box.width,
+      boxHeight: box.height,
+      pad: 1,
+    });
+    const tight = clampTiltToBox({
+      tiltX: 10,
+      tiltY: -10,
+      cardWidth: rest.width,
+      cardHeight: rest.height,
+      boxWidth: box.width,
+      boxHeight: box.height,
+      pad: PREVIEW_TILT_INSET,
+    });
+    expect(Math.hypot(tight.x, tight.y)).toBeLessThan(Math.hypot(loose.x, loose.y));
+    const aabb = projectedCardAabb({
+      width: rest.width,
+      height: rest.height,
+      tiltXDeg: tight.x,
+      tiltYDeg: tight.y,
+    });
+    expect(aabbFitsCentered(aabb, box.width, box.height, PREVIEW_TILT_INSET)).toBe(true);
   });
 
   it('contains a square card on the shorter box side', () => {

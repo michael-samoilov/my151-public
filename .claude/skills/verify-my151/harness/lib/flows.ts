@@ -526,6 +526,16 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok: rightShadow > leftShadow + 0.2,
     reason: `${leftShadow.toFixed(2)} → ${rightShadow.toFixed(2)}`,
   };
+  const cornerMargin = await s.evalJson<{ ok: boolean; reason: string }>(
+    `const card=document.querySelector('[data-export-preview]');
+     const layer=document.querySelector('[data-export-preview-layer]');
+     if(!(card instanceof HTMLElement) || !(layer instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     const c=card.getBoundingClientRect(); const l=layer.getBoundingClientRect();
+     const layerGap=Math.min(c.left-l.left,l.right-c.right,c.top-l.top,l.bottom-c.bottom);
+     const viewGap=Math.min(c.left,c.top,innerWidth-c.right,innerHeight-c.bottom);
+     const min=Math.min(layerGap,viewGap);
+     return {ok:min>=24,reason:'gap '+min.toFixed(1)};`,
+  ).catch(() => ({ ok: false, reason: 'eval' }));
   const paintedHit = await s.evalJson<{ ok: boolean; reason: string }>(
     `const hit=document.querySelector('[data-export-tilt-hit]');
      const card=document.querySelector('[data-export-preview]');
@@ -656,6 +666,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
     ok('dex-export:tilt-magnitude', hoverCircle.ok && hoverMax < 15, `hypot=${hoverMax.toFixed(1)}`),
     ok('dex-export:dynamic-shadow', shadowPair.ok, shadowPair.reason),
+    ok('dex-export:tilt-corner-margin', cornerMargin.ok, cornerMargin.reason),
     ok('dex-export:tilt-on-painted', paintedHit.ok, paintedHit.reason),
     ok('dex-export:tilt-rest-static', restOk, `hold=${restHold.orbit}/${restHold.hypot.toFixed(1)} after=${restAfter.orbit}/${restAfter.hypot.toFixed(1)} ${restStatic.reason}`),
     ok('dex-export:shine', imgReady && shineOn, JSON.stringify(shineSample)),

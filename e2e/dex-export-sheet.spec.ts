@@ -518,4 +518,38 @@ test.describe('desktop dex export preview', () => {
     expect(after).toBeLessThanOrEqual(hold + 0.5);
     expect(after).toBeLessThan(12);
   });
+
+  test('keeps the tilted card AABB off the overlay corner', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const foil = page.locator('[data-export-preview]');
+    const hit = page.locator('[data-export-tilt-hit]');
+    const box = await hit.boundingBox();
+    expect(box).toBeTruthy();
+    const restCover = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
+      if (!card || !layer) return 0;
+      const c = card.getBoundingClientRect();
+      const l = layer.getBoundingClientRect();
+      return Math.max(c.width / l.width, c.height / l.height);
+    });
+    expect(restCover).toBeGreaterThan(0.78);
+    await page.mouse.move(box!.x + box!.width * 0.08, box!.y + box!.height * 0.92, { steps: 10 });
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    await page.waitForTimeout(400);
+    const gaps = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
+      if (!card || !layer) return { min: -1, view: -1 };
+      const c = card.getBoundingClientRect();
+      const l = layer.getBoundingClientRect();
+      const layerGap = Math.min(c.left - l.left, l.right - c.right, c.top - l.top, l.bottom - c.bottom);
+      const viewGap = Math.min(c.left, c.top, innerWidth - c.right, innerHeight - c.bottom);
+      return { min: layerGap, view: viewGap, left: c.left - l.left, bottom: l.bottom - c.bottom };
+    });
+    expect(gaps.min, JSON.stringify(gaps)).toBeGreaterThanOrEqual(24);
+    expect(gaps.view, JSON.stringify(gaps)).toBeGreaterThanOrEqual(24);
+  });
 });

@@ -2,6 +2,8 @@
 
 export const PREVIEW_PERSPECTIVE_PX = 600;
 export const PREVIEW_REST_PAD = 8;
+/** Live tilt must keep this many CSS px between the painted AABB and the pane. */
+export const PREVIEW_TILT_INSET = 24;
 
 export type ProjectedCardAabb = {
   minX: number;
@@ -209,6 +211,29 @@ export function stableFitScale(opts: {
     tiltYDeg: opts.maxTiltDeg,
     pad: opts.pad,
   });
+}
+
+/**
+ * How far a painted card AABB spills past `inset` inside `box`.
+ * 0 means every edge keeps at least `inset` px of pane.
+ */
+/** Keep the 24px target when rest has room; leave ~20px for idle AABB growth. */
+export function tiltInsetForRestGap(restGap: number, want = PREVIEW_TILT_INSET): number {
+  return Math.min(want, Math.max(8, restGap - 20));
+}
+
+export function paintedBoxOverflow(
+  card: { left: number; top: number; right: number; bottom: number },
+  box: { left: number; top: number; right: number; bottom: number },
+  inset = PREVIEW_TILT_INSET,
+): number {
+  return Math.max(
+    0,
+    box.left + inset - card.left,
+    card.right - (box.right - inset),
+    box.top + inset - card.top,
+    card.bottom - (box.bottom - inset),
+  );
 }
 
 /** Shrink a tilt vector until the projected AABB fits the box. */
