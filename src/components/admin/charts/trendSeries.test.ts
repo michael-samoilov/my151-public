@@ -10,12 +10,13 @@ import {
   countLabelLayout,
   applyActivityLabels,
   extendThroughToday,
-  hourlyWeekdayTicks,
+  dailyWeekdayTicks,
   isHourlyRange,
   monthDividerIndices,
   monthLabelTicks,
   sliceActivityRange,
   sliceHourlyRange,
+  sliceLastUtcDays,
   splitProvisional,
   weekLineIndices,
   windowCounts,
@@ -212,31 +213,45 @@ describe('sliceHourlyRange', () => {
     const hour = DAY_MS / 24;
     const now = Date.UTC(2026, 8, 10, 18, 0, 0);
     const series = denseHourly(now - 7 * DAY_MS, 7 * 24 + 1);
-    const visible = sliceHourlyRange(series, now, chartRangeWindowMs('24h')!);
+    const visible = sliceHourlyRange(series, now);
     expect(visible).toHaveLength(24);
     expect(visible[0].hour).toBe(now - 23 * hour);
     expect(visible[23].hour).toBe(now);
     expect(new Set(visible.map((p) => p.unique)).size).toBeGreaterThan(1);
   });
+});
 
-  it('keeps the last seven UTC days of hourly points for the 7d chip', () => {
-    const now = Date.UTC(2026, 8, 10, 18, 0, 0);
-    const series = denseHourly(dayStart(now) - 10 * DAY_MS, 12 * 24);
-    const visible = sliceHourlyRange(series, now, chartRangeWindowMs('7d')!);
-    expect(visible[0].hour).toBe(dayStart(now) - 6 * DAY_MS);
-    expect(visible[visible.length - 1].hour).toBe(now);
-    expect(visible).toHaveLength(6 * 24 + 19);
+describe('sliceLastUtcDays', () => {
+  it('keeps one calendar DAU point per UTC day for the last seven days', () => {
+    const now = Date.UTC(2026, 8, 19, 3, 11, 0);
+    const series = denseSeries(day(1), 20);
+    const visible = sliceLastUtcDays(series, now, 7);
+    expect(visible).toHaveLength(7);
+    expect(visible[0].day).toBe(dayStart(now) - 6 * DAY_MS);
+    expect(visible[6].day).toBe(dayStart(now));
+    expect(visible.every((p, i) => p.day === visible[0].day + i * DAY_MS)).toBe(true);
+    expect(visible.map((p) => p.dau)).toEqual([13, 14, 15, 16, 17, 18, 19]);
+  });
+
+  it('uses calendar dau, not rolling 24h or weekly unique', () => {
+    const now = Date.UTC(2026, 8, 19, 3, 11, 0);
+    const series = denseSeries(day(1), 20);
+    const todayIdx = series.findIndex((p) => p.day === dayStart(now));
+    series[todayIdx] = { ...series[todayIdx], label24h: 99, label168h: 88 };
+    const visible = sliceLastUtcDays(series, now, 7);
+    expect(visible.map((p) => p.dau)).toEqual([13, 14, 15, 16, 17, 18, 19]);
+    expect(visible[6].label24h).toBe(99);
+    expect(visible.map((p) => p.dau)).not.toContain(99);
   });
 });
 
-describe('hourlyWeekdayTicks', () => {
-  it('places one weekday label at each UTC midnight in a 7d hourly series', () => {
-    const now = Date.UTC(2026, 8, 10, 18, 0, 0); // Thursday
-    const series = denseHourly(dayStart(now) - 6 * DAY_MS, 6 * 24 + 19);
-    const ticks = hourlyWeekdayTicks(series);
-    expect(ticks.map((t) => t.weekday)).toEqual(['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu']);
-    expect(ticks.map((t) => t.idx)).toEqual([0, 24, 48, 72, 96, 120, 144]);
-    expect(ticks.every((t) => new Date(series[t.idx].hour).getUTCHours() === 0)).toBe(true);
+describe('dailyWeekdayTicks', () => {
+  it('labels each of the last seven UTC days with Sun through Sat', () => {
+    const now = Date.UTC(2026, 8, 19, 3, 11, 0);
+    const series = sliceLastUtcDays(denseSeries(day(1), 20), now, 7);
+    const ticks = dailyWeekdayTicks(series);
+    expect(ticks.map((t) => t.weekday)).toEqual(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
+    expect(ticks.map((t) => t.idx)).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
 });
 
@@ -254,9 +269,9 @@ describe('CHART_RANGE_PRESETS', () => {
     expect(chartRangeWindowMs('all')).toBeNull();
   });
 
-  it('treats only 24h and 7d as hourly ranges', () => {
+  it('treats only 24h as an hourly range', () => {
     expect(isHourlyRange('24h')).toBe(true);
-    expect(isHourlyRange('7d')).toBe(true);
+    expect(isHourlyRange('7d')).toBe(false);
     expect(isHourlyRange('30d')).toBe(false);
     expect(isHourlyRange('all')).toBe(false);
   });

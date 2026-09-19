@@ -7,15 +7,15 @@ import {
   chartDailyValues,
   chartRangeWindowMs,
   chartWeeklyValues,
+  dailyWeekdayTicks,
   extendThroughToday,
-  hourlyWeekdayTicks,
-  isHourlyRange,
   lastPointIsCurrentHour,
   lastPointIsToday,
   monthDividerIndices,
   monthLabelTicks,
   sliceActivityRange,
   sliceHourlyRange,
+  sliceLastUtcDays,
   splitProvisional,
   windowCounts,
   type ChartRangeKey,
@@ -311,29 +311,28 @@ function TrendChart({
   );
 }
 
-function HourlyTrendChart({
-  series,
+function UniqueUsersLineChart({
+  values,
+  axisLabels,
+  showTick,
+  scrubLabel,
+  ariaLabel,
+  seriesName,
+  provisional,
   counts,
-  nowMs,
-  xKind,
+  source,
 }: {
-  series: HourlyPoint[];
-  counts: { hours24: number; days7: number | null };
-  nowMs: number;
-  xKind: 'hour' | 'weekday';
+  values: number[];
+  axisLabels: string[];
+  showTick: (i: number, last: number) => boolean;
+  scrubLabel: (i: number) => string;
+  ariaLabel: string;
+  seriesName: 'hourly' | 'daily';
+  provisional: boolean;
+  counts: { hours24: number };
+  source: DailyPoint[] | HourlyPoint[];
 }) {
-  const values = series.map((p) => p.unique);
-  const weekdayTicks = xKind === 'weekday' ? hourlyWeekdayTicks(series) : [];
-  const tickAt = new Map(weekdayTicks.map((t) => [t.idx, t.weekday]));
-  const hourLabels = series.map((p) => fmtHour(p.hour));
-  const axisLabels = xKind === 'weekday' ? series.map((_, i) => tickAt.get(i) ?? '') : hourLabels;
-  const provisional = lastPointIsCurrentHour(series, nowMs);
   const split = splitProvisional(values, provisional);
-  const scrubLabel = (i: number) =>
-    xKind === 'weekday'
-      ? `${fmtWeekday(series[i].hour)} ${hourLabels[i]} · <b>${values[i]}</b> hourly`
-      : `${hourLabels[i]} · <b>${values[i]}</b> hourly`;
-
   const ref = useECharts(
     (el): EChartsOption => {
       const faint = cssVar(el, '--color-muted-foreground', '#737373');
@@ -361,7 +360,7 @@ function HourlyTrendChart({
           axisLabel: {
             color: faint,
             fontSize: axisFont,
-            interval: (i: number) => (xKind === 'weekday' ? tickAt.has(i) : i === 0 || i === last || i % 6 === 0),
+            interval: (i: number) => showTick(i, last),
           },
         },
         yAxis: {
@@ -372,7 +371,7 @@ function HourlyTrendChart({
         },
         series: [
           {
-            name: 'hourly',
+            name: seriesName,
             type: 'line',
             data: split.complete,
             lineStyle: { color: faint, width: 1.6 },
@@ -381,7 +380,7 @@ function HourlyTrendChart({
             z: 2,
           },
           {
-            name: 'hourly now',
+            name: `${seriesName} now`,
             type: 'line',
             data: split.provisional,
             lineStyle: { color: faint, width: 1.6, type: 'dotted' },
@@ -412,26 +411,79 @@ function HourlyTrendChart({
         ],
       };
     },
-    [series, nowMs, counts.hours24, xKind],
+    [source, seriesName, provisional, counts.hours24],
     { scrub: true, overlayPointer: true, overlayLabel: scrubLabel },
   );
 
-  if (series.length < 2) {
+  if (values.length < 2) {
     return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
   }
-  const lo = Math.min(...values);
-  const hi = Math.max(...values);
-  const weekdayList = weekdayTicks.map((t) => t.weekday).join(', ');
   return (
     <div
       ref={ref}
       className="h-[180px] w-full touch-none overflow-visible md:h-[220px]"
       role="img"
-      aria-label={
-        xKind === 'weekday'
-          ? `Hourly active users over ${series.length} hours, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}. ${weekdayList}.`
-          : `Hourly active users over ${series.length} hours, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}.`
-      }
+      aria-label={ariaLabel}
+    />
+  );
+}
+
+function HourlyTrendChart({
+  series,
+  counts,
+  nowMs,
+}: {
+  series: HourlyPoint[];
+  counts: { hours24: number; days7: number | null };
+  nowMs: number;
+}) {
+  const values = series.map((p) => p.unique);
+  const hourLabels = series.map((p) => fmtHour(p.hour));
+  const last = Math.max(values.length - 1, 1);
+  const lo = values.length ? Math.min(...values) : 0;
+  const hi = values.length ? Math.max(...values) : 0;
+  return (
+    <UniqueUsersLineChart
+      values={values}
+      axisLabels={hourLabels}
+      showTick={(i) => i === 0 || i === last || i % 6 === 0}
+      scrubLabel={(i) => `${hourLabels[i]} · <b>${values[i]}</b> hourly`}
+      ariaLabel={`Hourly active users over ${series.length} hours, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}.`}
+      seriesName="hourly"
+      provisional={lastPointIsCurrentHour(series, nowMs)}
+      counts={counts}
+      source={series}
+    />
+  );
+}
+
+function DailyWeekdayChart({
+  series,
+  counts,
+  nowMs,
+}: {
+  series: DailyPoint[];
+  counts: { hours24: number; days7: number | null };
+  nowMs: number;
+}) {
+  const values = series.map((p) => p.dau);
+  const ticks = dailyWeekdayTicks(series);
+  const tickAt = new Map(ticks.map((t) => [t.idx, t.weekday]));
+  const axisLabels = series.map((_, i) => tickAt.get(i) ?? '');
+  const lo = values.length ? Math.min(...values) : 0;
+  const hi = values.length ? Math.max(...values) : 0;
+  const weekdayList = ticks.map((t) => t.weekday).join(', ');
+  return (
+    <UniqueUsersLineChart
+      values={values}
+      axisLabels={axisLabels}
+      showTick={(i) => tickAt.has(i)}
+      scrubLabel={(i) => `${fmtWeekday(series[i].day)} · <b>${values[i]}</b> daily`}
+      ariaLabel={`Daily active users over ${series.length} days, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}. ${weekdayList}.`}
+      seriesName="daily"
+      provisional={lastPointIsToday(series, nowMs)}
+      counts={counts}
+      source={series}
     />
   );
 }
@@ -451,42 +503,38 @@ export function ActiveUsersPanel({
     () => sliceActivityRange(padded, nowMs, chartRangeWindowMs(range)),
     [padded, nowMs, range],
   );
-  const hourly24 = useMemo(
-    () => sliceHourlyRange(hourly, nowMs, chartRangeWindowMs('24h')!),
-    [hourly, nowMs],
-  );
-  const hourly7 = useMemo(
-    () => sliceHourlyRange(hourly, nowMs, chartRangeWindowMs('7d')!),
-    [hourly, nowMs],
-  );
+  const hourly24 = useMemo(() => sliceHourlyRange(hourly, nowMs), [hourly, nowMs]);
+  const daily7 = useMemo(() => sliceLastUtcDays(padded, nowMs, 7), [padded, nowMs]);
   const counts = windowCounts(padded);
-  const hourlyView = isHourlyRange(range);
   const faint = 'var(--color-muted-foreground)';
+  const legend =
+    range === '24h' ? (
+      <span className="inline-flex items-center gap-1">
+        <LegendSwatch color={faint} />
+        hourly
+      </span>
+    ) : range === '7d' ? (
+      <span className="inline-flex items-center gap-1">
+        <LegendSwatch color={faint} />
+        daily
+      </span>
+    ) : (
+      <>
+        <span className="inline-flex items-center gap-1">
+          <LegendSwatch color={faint} />
+          daily
+        </span>
+        <span className="inline-flex items-center gap-1">
+          <LegendSwatch color="var(--color-primary)" />
+          weekly
+        </span>
+      </>
+    );
   return (
     <Panel
       className="overflow-visible"
       title="Active users"
-      legend={
-        <span className="flex items-center gap-3 text-[0.7rem] font-semibold text-muted-foreground">
-          {hourlyView ? (
-            <span className="inline-flex items-center gap-1">
-              <LegendSwatch color={faint} />
-              hourly
-            </span>
-          ) : (
-            <>
-              <span className="inline-flex items-center gap-1">
-                <LegendSwatch color={faint} />
-                daily
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <LegendSwatch color="var(--color-primary)" />
-                weekly
-              </span>
-            </>
-          )}
-        </span>
-      }
+      legend={<span className="flex items-center gap-3 text-[0.7rem] font-semibold text-muted-foreground">{legend}</span>}
     >
       <div className="-mt-1 mb-1.5">
         <Seg
@@ -497,9 +545,9 @@ export function ActiveUsersPanel({
         />
       </div>
       {range === '24h' ? (
-        <HourlyTrendChart series={hourly24} counts={counts} nowMs={nowMs} xKind="hour" />
+        <HourlyTrendChart series={hourly24} counts={counts} nowMs={nowMs} />
       ) : range === '7d' ? (
-        <HourlyTrendChart series={hourly7} counts={counts} nowMs={nowMs} xKind="weekday" />
+        <DailyWeekdayChart series={daily7} counts={counts} nowMs={nowMs} />
       ) : (
         <TrendChart series={visible} historyOriginDay={padded[0]?.day ?? 0} nowMs={nowMs} />
       )}

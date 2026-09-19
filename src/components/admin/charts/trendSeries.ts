@@ -58,8 +58,8 @@ export const CHART_RANGE_PRESETS = [
 
 export type ChartRangeKey = (typeof CHART_RANGE_PRESETS)[number]['key'];
 
-export function isHourlyRange(key: ChartRangeKey): key is '24h' | '7d' {
-  return key === '24h' || key === '7d';
+export function isHourlyRange(key: ChartRangeKey): key is '24h' {
+  return key === '24h';
 }
 
 export function chartRangeWindowMs(key: ChartRangeKey): number | null {
@@ -80,32 +80,32 @@ export function sliceActivityRange(
   return series.slice(Math.max(0, series.length - 2));
 }
 
-export function sliceHourlyRange(
-  series: HourlyPoint[],
-  nowMs: number,
-  windowMs: number,
-): HourlyPoint[] {
+export function sliceHourlyRange(series: HourlyPoint[], nowMs: number): HourlyPoint[] {
   if (series.length === 0) return series;
   const last = hourStart(nowMs);
-  const first = windowMs <= DAY_MS ? last - 23 * HOUR_MS : dayStart(nowMs) - 6 * DAY_MS;
+  const first = last - 23 * HOUR_MS;
   return series.filter((p) => p.hour >= first && p.hour <= last);
+}
+
+export function sliceLastUtcDays(series: DailyPoint[], nowMs: number, days: number): DailyPoint[] {
+  if (series.length === 0 || days <= 0) return [];
+  const last = dayStart(nowMs);
+  const first = last - (days - 1) * DAY_MS;
+  return series.filter((p) => p.day >= first && p.day <= last);
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
-export interface HourlyWeekdayTick {
+export interface WeekdayTick {
   idx: number;
   weekday: (typeof WEEKDAYS)[number];
 }
 
-export function hourlyWeekdayTicks(series: HourlyPoint[]): HourlyWeekdayTick[] {
-  const out: HourlyWeekdayTick[] = [];
-  for (let i = 0; i < series.length; i++) {
-    if (i === 0 || new Date(series[i].hour).getUTCHours() === 0) {
-      out.push({ idx: i, weekday: WEEKDAYS[new Date(series[i].hour).getUTCDay()] });
-    }
-  }
-  return out;
+export function dailyWeekdayTicks(series: DailyPoint[]): WeekdayTick[] {
+  return series.map((p, i) => ({
+    idx: i,
+    weekday: WEEKDAYS[new Date(p.day).getUTCDay()],
+  }));
 }
 
 export function lastPointIsCurrentHour(series: HourlyPoint[], nowMs: number): boolean {
