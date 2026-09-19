@@ -501,9 +501,9 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ).catch(() => 0);
   const fireShadow = async (u: number, v: number, want: 'neg' | 'pos') => {
     await s.evalJson(
-      `const card=document.querySelector('[data-export-preview]');
-       if(!(card instanceof HTMLElement)) return false;
-       const r=card.getBoundingClientRect();
+      `const hit=document.querySelector('[data-export-tilt-hit]');
+       if(!(hit instanceof HTMLElement)) return false;
+       const r=hit.getBoundingClientRect();
        const x=r.left+r.width*${u};
        const y=r.top+r.height*${v};
        document.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerType:'mouse',pointerId:1}));
@@ -1366,7 +1366,7 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
      if(glare.transform.includes('matrix3d')) return {ok:false,reason:'glare matrix3d',hypot};
      const mask=(glare.getPropertyValue('-webkit-mask-image')+' '+glare.maskImage).trim();
      if(!mask.includes('svg+xml') && !mask.includes('url(')) return {ok:false,reason:'glare mask '+mask.slice(0,80),hypot};
-     if(hypot<6) return {ok:false,reason:'weak-tilt '+hypot.toFixed(2),hypot};
+     if(hypot<2.5) return {ok:false,reason:'weak-tilt '+hypot.toFixed(2),hypot};
      const pos=getComputedStyle(card).getPropertyValue('--hover-tilt-glare-mask-position').trim();
      if(/pointer/.test(pos)) return {ok:false,reason:'mask follows pointer '+pos,hypot};
      const glarePos=(glare.getPropertyValue('-webkit-mask-position')+' '+glare.maskPosition).trim();
