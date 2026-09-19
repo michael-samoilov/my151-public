@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DAY_MS } from '../../../../api/_aggregate';
 import { dayStart } from '../../../../api/_aggregate';
+import type { HourlyActivityPoint } from '../../../../api/_aggregate';
 import {
   CHART_RANGE_PRESETS,
   chartDailyValues,
@@ -9,9 +10,12 @@ import {
   countLabelLayout,
   applyActivityLabels,
   extendThroughToday,
+  hourlyByWeekday,
+  isHourlyRange,
   monthDividerIndices,
   monthLabelTicks,
   sliceActivityRange,
+  sliceHourlyRange,
   splitProvisional,
   weekLineIndices,
   windowCounts,
@@ -195,6 +199,52 @@ describe('sliceActivityRange', () => {
   });
 });
 
+function denseHourly(fromHour: number, count: number): HourlyActivityPoint[] {
+  const hour = DAY_MS / 24;
+  return Array.from({ length: count }, (_, i) => ({
+    hour: fromHour + i * hour,
+    unique: (i % 5) + 1,
+  }));
+}
+
+describe('sliceHourlyRange', () => {
+  it('keeps 24 hourly points for the 24h chip, not two daily points', () => {
+    const hour = DAY_MS / 24;
+    const now = Date.UTC(2026, 8, 10, 18, 0, 0);
+    const series = denseHourly(now - 7 * DAY_MS, 7 * 24 + 1);
+    const visible = sliceHourlyRange(series, now, chartRangeWindowMs('24h')!);
+    expect(visible).toHaveLength(24);
+    expect(visible[0].hour).toBe(now - 23 * hour);
+    expect(visible[23].hour).toBe(now);
+    expect(new Set(visible.map((p) => p.unique)).size).toBeGreaterThan(1);
+  });
+
+  it('keeps the last seven UTC days of hourly points for the 7d chip', () => {
+    const now = Date.UTC(2026, 8, 10, 18, 0, 0);
+    const series = denseHourly(dayStart(now) - 10 * DAY_MS, 12 * 24);
+    const visible = sliceHourlyRange(series, now, chartRangeWindowMs('7d')!);
+    expect(visible[0].hour).toBe(dayStart(now) - 6 * DAY_MS);
+    expect(visible[visible.length - 1].hour).toBe(now);
+    expect(visible).toHaveLength(6 * 24 + 19);
+  });
+});
+
+describe('hourlyByWeekday', () => {
+  it('splits seven calendar days into weekday facets with hourly points', () => {
+    const now = Date.UTC(2026, 8, 10, 18, 0, 0); // Thursday
+    const series = denseHourly(dayStart(now) - 6 * DAY_MS, 6 * 24 + 19);
+    const facets = hourlyByWeekday(series, now);
+    expect(facets).toHaveLength(7);
+    expect(facets.map((f) => f.weekday)).toEqual(['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu']);
+    expect(facets[0].hours).toHaveLength(24);
+    expect(facets[6].hours).toHaveLength(24);
+    expect(facets[6].hours.filter((p) => p.unique != null)).toHaveLength(19);
+    expect(facets[6].hours.slice(19).every((p) => p.unique == null)).toBe(true);
+    expect(facets[6].day).toBe(dayStart(now));
+    expect(facets.every((f) => f.hours.every((p) => p.hour >= f.day && p.hour < f.day + DAY_MS))).toBe(true);
+  });
+});
+
 describe('CHART_RANGE_PRESETS', () => {
   it('lists 24h through all history with All as the last key', () => {
     expect(CHART_RANGE_PRESETS.map((p) => p.key)).toEqual([
@@ -207,6 +257,13 @@ describe('CHART_RANGE_PRESETS', () => {
       'all',
     ]);
     expect(chartRangeWindowMs('all')).toBeNull();
+  });
+
+  it('treats only 24h and 7d as hourly ranges', () => {
+    expect(isHourlyRange('24h')).toBe(true);
+    expect(isHourlyRange('7d')).toBe(true);
+    expect(isHourlyRange('30d')).toBe(false);
+    expect(isHourlyRange('all')).toBe(false);
   });
 });
 

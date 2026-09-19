@@ -1,6 +1,7 @@
-import { DAY_MS, dayStart, type DailyActivityPoint } from '../../../../api/_aggregate';
+import { DAY_MS, HOUR_MS, dayStart, hourStart, type DailyActivityPoint, type HourlyActivityPoint } from '../../../../api/_aggregate';
 
 export type DailyPoint = DailyActivityPoint;
+export type HourlyPoint = HourlyActivityPoint;
 
 export function extendThroughToday(series: DailyPoint[], nowMs: number): DailyPoint[] {
   if (series.length === 0) return series;
@@ -57,6 +58,10 @@ export const CHART_RANGE_PRESETS = [
 
 export type ChartRangeKey = (typeof CHART_RANGE_PRESETS)[number]['key'];
 
+export function isHourlyRange(key: ChartRangeKey): key is '24h' | '7d' {
+  return key === '24h' || key === '7d';
+}
+
 export function chartRangeWindowMs(key: ChartRangeKey): number | null {
   const preset = CHART_RANGE_PRESETS.find((p) => p.key === key);
   if (preset) return preset.windowMs;
@@ -73,6 +78,53 @@ export function sliceActivityRange(
   const sliced = series.filter((p) => p.day + DAY_MS > start);
   if (sliced.length >= 2 || sliced.length === series.length) return sliced;
   return series.slice(Math.max(0, series.length - 2));
+}
+
+export function sliceHourlyRange(
+  series: HourlyPoint[],
+  nowMs: number,
+  windowMs: number,
+): HourlyPoint[] {
+  if (series.length === 0) return series;
+  const last = hourStart(nowMs);
+  const first = windowMs <= DAY_MS ? last - 23 * HOUR_MS : dayStart(nowMs) - 6 * DAY_MS;
+  return series.filter((p) => p.hour >= first && p.hour <= last);
+}
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
+export interface WeekdayHourlyFacet {
+  day: number;
+  weekday: (typeof WEEKDAYS)[number];
+  hours: { hour: number; unique: number | null }[];
+}
+
+export function hourlyByWeekday(series: HourlyPoint[], nowMs: number): WeekdayHourlyFacet[] {
+  const byHour = new Map(series.map((p) => [p.hour, p.unique]));
+  const lastHour = hourStart(nowMs);
+  const facets: WeekdayHourlyFacet[] = [];
+  for (let d = 6; d >= 0; d--) {
+    const day = dayStart(nowMs) - d * DAY_MS;
+    const hours: WeekdayHourlyFacet['hours'] = [];
+    for (let h = 0; h < 24; h++) {
+      const hour = day + h * HOUR_MS;
+      hours.push({
+        hour,
+        unique: hour > lastHour ? null : (byHour.get(hour) ?? 0),
+      });
+    }
+    facets.push({
+      day,
+      weekday: WEEKDAYS[new Date(day).getUTCDay()],
+      hours,
+    });
+  }
+  return facets;
+}
+
+export function lastPointIsCurrentHour(series: HourlyPoint[], nowMs: number): boolean {
+  const last = series[series.length - 1];
+  return last != null && last.hour === hourStart(nowMs);
 }
 
 export function chartWeeklyValues(

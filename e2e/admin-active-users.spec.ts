@@ -48,4 +48,31 @@ test.describe('admin active users range', () => {
     expect(slicedDays).toBeLessThan(allDays);
     expect(gutter(slicedLabel)).toEqual(allGutter);
   });
+
+  test('24h plots hourly unique users and hides the weekly series', async ({ page }) => {
+    const panel = activeUsers(page);
+    await panel.getByRole('group', { name: 'Chart range' }).getByRole('button', { name: '24h' }).click();
+    const chart = panel.getByRole('img', { name: /Hourly active users/ });
+    await expect(chart).toBeVisible();
+    const label = await chart.getAttribute('aria-label');
+    expect(label).toMatch(/over 2[34] hours/);
+    expect(label).not.toMatch(/weekly/i);
+    await expect(panel.getByText('weekly', { exact: true })).toHaveCount(0);
+    const hours = Number(label?.match(/over (\d+) hours/)?.[1]);
+    expect(hours).toBeGreaterThanOrEqual(23);
+    expect(hours).toBeLessThanOrEqual(24);
+  });
+
+  test('7d splits hourly unique users by weekday and hides the weekly series', async ({ page }) => {
+    const panel = activeUsers(page);
+    await panel.getByRole('group', { name: 'Chart range' }).getByRole('button', { name: '7d' }).click();
+    const chart = panel.getByRole('img', { name: /Hourly active users by weekday/ });
+    await expect(chart).toBeVisible();
+    const label = await chart.getAttribute('aria-label');
+    expect(label).not.toMatch(/weekly/i);
+    for (const day of ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']) {
+      await expect(panel.getByText(day, { exact: true })).toBeVisible();
+    }
+    await expect(panel.getByText('weekly', { exact: true })).toHaveCount(0);
+  });
 });

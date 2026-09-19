@@ -122,6 +122,7 @@ function sliceOf(data: ApiResponse, tool: ToolSlice): Aggregates {
     joints: [],
     hours: data.hours,
     heatmap: data.heatmap,
+    hourly: [],
   };
 }
 
@@ -195,6 +196,7 @@ export interface Aggregates {
   joints?: PlatformJoint[];
   hours: number[];
   heatmap: number[][];
+  hourly?: { hour: number; unique: number }[];
 }
 
 /** One browser's gym leader maker record. Attached to their dex card when
@@ -1970,6 +1972,7 @@ export function AdminPage() {
                     ? applyActivityLabels(slice.activity, loadedAt, data.lastPointLabels)
                     : slice.activity
                 }
+                hourly={slice.hourly ?? []}
                 nowMs={loadedAt}
               />
             )}

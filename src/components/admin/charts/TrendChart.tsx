@@ -8,17 +8,27 @@ import {
   chartRangeWindowMs,
   chartWeeklyValues,
   extendThroughToday,
+  hourlyByWeekday,
+  isHourlyRange,
+  lastPointIsCurrentHour,
   lastPointIsToday,
   monthDividerIndices,
   monthLabelTicks,
   sliceActivityRange,
+  sliceHourlyRange,
   splitProvisional,
   windowCounts,
   type ChartRangeKey,
   type DailyPoint,
+  type HourlyPoint,
+  type WeekdayHourlyFacet,
 } from './trendSeries';
 
 const fmtDay = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
+function fmtHour(ms: number): string {
+  return `${String(new Date(ms).getUTCHours()).padStart(2, '0')}:00`;
+}
 
 /** Left plot inset. Holds the y-axis labels. */
 const GRID_LEFT = 36;
@@ -298,13 +308,193 @@ function TrendChart({
   );
 }
 
-export function ActiveUsersPanel({ series, nowMs }: { series: DailyPoint[]; nowMs: number }) {
+function HourlyTrendChart({
+  series,
+  counts,
+  nowMs,
+}: {
+  series: HourlyPoint[];
+  counts: { hours24: number; days7: number | null };
+  nowMs: number;
+}) {
+  const values = series.map((p) => p.unique);
+  const labels = series.map((p) => fmtHour(p.hour));
+  const provisional = lastPointIsCurrentHour(series, nowMs);
+  const split = splitProvisional(values, provisional);
+  const scrubLabel = (i: number) => `${labels[i]} · <b>${values[i]}</b> hourly`;
+
+  const ref = useECharts(
+    (el): EChartsOption => {
+      const faint = cssVar(el, '--color-muted-foreground', '#737373');
+      const grid = cssVar(el, '--color-muted', '#f5f5f5');
+      const axisFont = el.clientWidth < 600 ? 8 : 9;
+      const numSize = el.clientWidth < 600 ? 14 : 16;
+      const right = Math.ceil(LABEL_INSET + measureWindowLabelPx('24h', counts.hours24, numSize) + LABEL_TAIL);
+      const last = Math.max(values.length - 1, 1);
+      return {
+        animation: false,
+        grid: { left: GRID_LEFT, right, top: GRID_TOP, bottom: GRID_BOTTOM },
+        tooltip: {
+          ...topTooltip(el),
+          trigger: 'axis',
+          axisPointer: { type: 'none' },
+          formatter: (params: unknown) => scrubLabel(tipDataIndex(params)),
+        },
+        xAxis: {
+          type: 'category',
+          data: labels,
+          boundaryGap: false,
+          axisPointer: { show: false },
+          axisLine: { lineStyle: { color: grid } },
+          axisTick: { show: false },
+          axisLabel: {
+            color: faint,
+            fontSize: axisFont,
+            interval: (i: number) => i === 0 || i === last || i % 6 === 0,
+          },
+        },
+        yAxis: {
+          type: 'value',
+          min: 0,
+          axisLabel: { color: faint, fontSize: 9 },
+          splitLine: { show: true, lineStyle: { color: grid, width: 1, type: 'solid' } },
+        },
+        series: [
+          {
+            name: 'hourly',
+            type: 'line',
+            data: split.complete,
+            lineStyle: { color: faint, width: 1.6 },
+            itemStyle: { color: faint },
+            symbol: 'none',
+            z: 2,
+          },
+          {
+            name: 'hourly now',
+            type: 'line',
+            data: split.provisional,
+            lineStyle: { color: faint, width: 1.6, type: 'dotted' },
+            itemStyle: { color: faint },
+            symbol: 'none',
+            z: 2,
+          },
+          {
+            type: 'custom' as const,
+            name: 'window counts',
+            silent: true,
+            clip: false,
+            tooltip: { show: false },
+            z: 5,
+            data: [0],
+            renderItem: (
+              _params: unknown,
+              api: { coord: (v: number[]) => number[] },
+            ) => {
+              const i = values.length - 1;
+              const x = api.coord([i, 0])[0] + LABEL_INSET;
+              return {
+                type: 'group',
+                children: [countLabel('24h', counts.hours24, faint, x, api.coord([i, values[i] ?? 0])[1], numSize)],
+              };
+            },
+          },
+        ],
+      };
+    },
+    [series, nowMs, counts.hours24],
+    { scrub: true, overlayPointer: true, overlayLabel: scrubLabel },
+  );
+
+  if (series.length < 2) {
+    return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
+  }
+  const lo = Math.min(...values);
+  const hi = Math.max(...values);
+  return (
+    <div
+      ref={ref}
+      className="h-[180px] w-full touch-none overflow-visible md:h-[220px]"
+      role="img"
+      aria-label={`Hourly active users over ${series.length} hours, ranging ${lo} to ${hi}. Last 24 hours ${counts.hours24}.`}
+    />
+  );
+}
+
+function HourlySparkline({ hours, yMax }: { hours: WeekdayHourlyFacet['hours']; yMax: number }) {
+  const values = hours.map((p) => p.unique);
+  const ref = useECharts((el): EChartsOption => {
+    const faint = cssVar(el, '--color-muted-foreground', '#737373');
+    const grid = cssVar(el, '--color-muted', '#f5f5f5');
+    return {
+      animation: false,
+      grid: { left: 0, right: 0, top: 4, bottom: 4 },
+      xAxis: { type: 'category', data: values.map((_, i) => i), show: false, boundaryGap: false },
+      yAxis: { type: 'value', min: 0, max: yMax, show: false, splitLine: { show: false } },
+      series: [
+        {
+          type: 'line',
+          data: values,
+          lineStyle: { color: faint, width: 1.4 },
+          itemStyle: { color: faint },
+          areaStyle: { color: grid, opacity: 0.65 },
+          symbol: 'none',
+          connectNulls: false,
+        },
+      ],
+    };
+  }, [hours, yMax]);
+  return <div ref={ref} className="h-8 w-full md:h-10" />;
+}
+
+function WeekdayHourlyChart({ facets }: { facets: WeekdayHourlyFacet[] }) {
+  const values = facets.flatMap((f) => f.hours.map((p) => p.unique)).filter((v): v is number => v != null);
+  const yMax = Math.max(1, ...values);
+  const lo = values.length ? Math.min(...values) : 0;
+  const hi = values.length ? Math.max(...values) : 0;
+  const names = facets.map((f) => f.weekday).join(', ');
+  if (facets.every((f) => f.hours.length < 2)) {
+    return <p className="text-xs text-muted-foreground">Not enough data yet.</p>;
+  }
+  return (
+    <div
+      role="img"
+      aria-label={`Hourly active users by weekday over ${facets.length} days, ranging ${lo} to ${hi}. ${names}.`}
+      className="flex flex-col gap-1"
+    >
+      {facets.map((f) => (
+        <div key={f.day} className="flex min-w-0 items-center gap-2">
+          <span className="w-8 shrink-0 text-[0.65rem] font-semibold text-muted-foreground">{f.weekday}</span>
+          <div className="min-w-0 flex-1">
+            <HourlySparkline hours={f.hours} yMax={yMax} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function ActiveUsersPanel({
+  series,
+  hourly,
+  nowMs,
+}: {
+  series: DailyPoint[];
+  hourly: HourlyPoint[];
+  nowMs: number;
+}) {
   const [range, setRange] = useState<ChartRangeKey>('all');
   const padded = useMemo(() => extendThroughToday(series, nowMs), [series, nowMs]);
   const visible = useMemo(
     () => sliceActivityRange(padded, nowMs, chartRangeWindowMs(range)),
     [padded, nowMs, range],
   );
+  const hourly24 = useMemo(
+    () => sliceHourlyRange(hourly, nowMs, chartRangeWindowMs('24h')!),
+    [hourly, nowMs],
+  );
+  const weekdayFacets = useMemo(() => hourlyByWeekday(hourly, nowMs), [hourly, nowMs]);
+  const counts = windowCounts(padded);
+  const hourlyView = isHourlyRange(range);
   const faint = 'var(--color-muted-foreground)';
   return (
     <Panel
@@ -312,14 +502,23 @@ export function ActiveUsersPanel({ series, nowMs }: { series: DailyPoint[]; nowM
       title="Active users"
       legend={
         <span className="flex items-center gap-3 text-[0.7rem] font-semibold text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <LegendSwatch color={faint} />
-            daily
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <LegendSwatch color="var(--color-primary)" />
-            weekly
-          </span>
+          {hourlyView ? (
+            <span className="inline-flex items-center gap-1">
+              <LegendSwatch color={faint} />
+              hourly
+            </span>
+          ) : (
+            <>
+              <span className="inline-flex items-center gap-1">
+                <LegendSwatch color={faint} />
+                daily
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <LegendSwatch color="var(--color-primary)" />
+                weekly
+              </span>
+            </>
+          )}
         </span>
       }
     >
@@ -331,7 +530,13 @@ export function ActiveUsersPanel({ series, nowMs }: { series: DailyPoint[]; nowM
           onChange={setRange}
         />
       </div>
-      <TrendChart series={visible} historyOriginDay={padded[0]?.day ?? 0} nowMs={nowMs} />
+      {range === '24h' ? (
+        <HourlyTrendChart series={hourly24} counts={counts} nowMs={nowMs} />
+      ) : range === '7d' ? (
+        <WeekdayHourlyChart facets={weekdayFacets} />
+      ) : (
+        <TrendChart series={visible} historyOriginDay={padded[0]?.day ?? 0} nowMs={nowMs} />
+      )}
     </Panel>
   );
 }

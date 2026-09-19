@@ -79,6 +79,26 @@ function activitySeries(): { day: number; dau: number; rolling7: number }[] {
 
 const ACTIVITY = activitySeries();
 
+function hourlySeries(): { hour: number; unique: number }[] {
+  const hour = DAY / 24;
+  const now = Date.now();
+  const last = Math.floor(now / hour) * hour;
+  const today = Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth(), new Date(now).getUTCDate());
+  const first = today - 6 * DAY;
+  const out: { hour: number; unique: number }[] = [];
+  for (let h = first; h <= last; h += hour) {
+    const utcH = new Date(h).getUTCHours();
+    const weekday = new Date(h).getUTCDay();
+    const evening = Math.exp(-((utcH - 20) ** 2) / 18);
+    const lunch = 0.45 * Math.exp(-((utcH - 13) ** 2) / 8);
+    const weekend = weekday === 0 || weekday === 6 ? 0.65 : 1;
+    out.push({ hour: h, unique: Math.max(0, Math.round((evening + lunch) * 14 * weekend + (utcH % 5 === 0 ? 2 : 0))) });
+  }
+  return out;
+}
+
+const HOURLY = hourlySeries();
+
 const DEV_LABELS = ['Desktop', 'Mobile', 'Tablet'];
 const BR_LABELS = ['Chrome', 'Safari', 'Firefox', 'Edge', 'Other'];
 
@@ -164,6 +184,7 @@ function aggregate(kind: 'all' | 'dex' | 'league'): Aggregates {
     joints: kind === 'league' ? LEAGUE_JOINTS : scaleJoints(DEX_JOINTS, c.base),
     hours: HOURS,
     heatmap: HEATMAP,
+    hourly: HOURLY,
   };
 }
 

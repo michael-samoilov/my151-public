@@ -4,6 +4,7 @@ import {
   aggregate,
   buildDepthCurve,
   dailyActive,
+  hourlyActive,
   depthByDevice,
   heatmap,
   mergeByCid,
@@ -108,6 +109,44 @@ describe('dailyActive', () => {
     const series = dailyActive([dex()], T0 + 5 * DAY_MS);
     expect(series.map((p) => p.dau)).toEqual([1, 0, 1, 0, 0, 0]);
     expect(series[series.length - 1].day).toBe(Date.UTC(2026, 8, 6));
+  });
+});
+
+describe('hourlyActive', () => {
+  const hour = DAY_MS / 24;
+
+  it('returns nothing for no records', () => {
+    expect(hourlyActive([], T0)).toEqual([]);
+  });
+
+  it('counts unique browsers in each UTC hour and fills zeros through now', () => {
+    const rec = dex({
+      sessionLog: [{ ts: T0 }, { ts: T0 + 3 * hour }],
+      firstTs: T0,
+      lastTs: T0 + 3 * hour,
+    });
+    const now = T0 + 5 * hour;
+    const series = hourlyActive([rec], now);
+    expect(series[0].hour).toBe(Date.UTC(2026, 7, 26, 0, 0, 0));
+    expect(series[series.length - 1].hour).toBe(Date.UTC(2026, 8, 1, 17, 0, 0));
+    const byHour = new Map(series.map((p) => [p.hour, p.unique]));
+    expect(byHour.get(T0)).toBe(1);
+    expect(byHour.get(T0 + hour)).toBe(0);
+    expect(byHour.get(T0 + 3 * hour)).toBe(1);
+    expect(byHour.get(T0 + 5 * hour)).toBe(0);
+  });
+
+  it('counts two browsers in the same hour once each', () => {
+    const series = hourlyActive([dex(), league({ firstTs: T0, lastTs: T0, sessionLog: [{ ts: T0 }] })], T0);
+    expect(series.find((p) => p.hour === T0)?.unique).toBe(2);
+  });
+
+  it('covers the last seven UTC days through the current hour', () => {
+    const now = T0 + 6 * DAY_MS + 18 * hour;
+    const series = hourlyActive([dex()], now);
+    expect(series[0].hour).toBe(Date.UTC(2026, 8, 2, 0, 0, 0));
+    expect(series[series.length - 1].hour).toBe(Date.UTC(2026, 8, 8, 6, 0, 0));
+    expect(series).toHaveLength(6 * 24 + 7);
   });
 });
 
@@ -229,6 +268,8 @@ describe('aggregate', () => {
       { device: 'Mobile', os: 'iOS', browser: 'Safari', n: 1 },
     ]);
     expect(agg.activity).toHaveLength(3);
+    expect(agg.hourly.length).toBeGreaterThan(1);
+    expect(agg.hourly[0]).toEqual(expect.objectContaining({ hour: expect.any(Number), unique: expect.any(Number) }));
     expect(agg.heatmap).toHaveLength(7);
     expect(agg.hours).toHaveLength(24);
   });
