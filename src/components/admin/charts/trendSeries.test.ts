@@ -10,7 +10,7 @@ import {
   countLabelLayout,
   applyActivityLabels,
   extendThroughToday,
-  hourlyByWeekday,
+  hourlyWeekdayTicks,
   isHourlyRange,
   monthDividerIndices,
   monthLabelTicks,
@@ -229,19 +229,14 @@ describe('sliceHourlyRange', () => {
   });
 });
 
-describe('hourlyByWeekday', () => {
-  it('splits seven calendar days into weekday facets with hourly points', () => {
+describe('hourlyWeekdayTicks', () => {
+  it('places one weekday label at each UTC midnight in a 7d hourly series', () => {
     const now = Date.UTC(2026, 8, 10, 18, 0, 0); // Thursday
     const series = denseHourly(dayStart(now) - 6 * DAY_MS, 6 * 24 + 19);
-    const facets = hourlyByWeekday(series, now);
-    expect(facets).toHaveLength(7);
-    expect(facets.map((f) => f.weekday)).toEqual(['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu']);
-    expect(facets[0].hours).toHaveLength(24);
-    expect(facets[6].hours).toHaveLength(24);
-    expect(facets[6].hours.filter((p) => p.unique != null)).toHaveLength(19);
-    expect(facets[6].hours.slice(19).every((p) => p.unique == null)).toBe(true);
-    expect(facets[6].day).toBe(dayStart(now));
-    expect(facets.every((f) => f.hours.every((p) => p.hour >= f.day && p.hour < f.day + DAY_MS))).toBe(true);
+    const ticks = hourlyWeekdayTicks(series);
+    expect(ticks.map((t) => t.weekday)).toEqual(['Fri', 'Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu']);
+    expect(ticks.map((t) => t.idx)).toEqual([0, 24, 48, 72, 96, 120, 144]);
+    expect(ticks.every((t) => new Date(series[t.idx].hour).getUTCHours() === 0)).toBe(true);
   });
 });
 

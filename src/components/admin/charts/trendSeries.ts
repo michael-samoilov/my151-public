@@ -93,33 +93,19 @@ export function sliceHourlyRange(
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
-export interface WeekdayHourlyFacet {
-  day: number;
+export interface HourlyWeekdayTick {
+  idx: number;
   weekday: (typeof WEEKDAYS)[number];
-  hours: { hour: number; unique: number | null }[];
 }
 
-export function hourlyByWeekday(series: HourlyPoint[], nowMs: number): WeekdayHourlyFacet[] {
-  const byHour = new Map(series.map((p) => [p.hour, p.unique]));
-  const lastHour = hourStart(nowMs);
-  const facets: WeekdayHourlyFacet[] = [];
-  for (let d = 6; d >= 0; d--) {
-    const day = dayStart(nowMs) - d * DAY_MS;
-    const hours: WeekdayHourlyFacet['hours'] = [];
-    for (let h = 0; h < 24; h++) {
-      const hour = day + h * HOUR_MS;
-      hours.push({
-        hour,
-        unique: hour > lastHour ? null : (byHour.get(hour) ?? 0),
-      });
+export function hourlyWeekdayTicks(series: HourlyPoint[]): HourlyWeekdayTick[] {
+  const out: HourlyWeekdayTick[] = [];
+  for (let i = 0; i < series.length; i++) {
+    if (i === 0 || new Date(series[i].hour).getUTCHours() === 0) {
+      out.push({ idx: i, weekday: WEEKDAYS[new Date(series[i].hour).getUTCDay()] });
     }
-    facets.push({
-      day,
-      weekday: WEEKDAYS[new Date(day).getUTCDay()],
-      hours,
-    });
   }
-  return facets;
+  return out;
 }
 
 export function lastPointIsCurrentHour(series: HourlyPoint[], nowMs: number): boolean {
