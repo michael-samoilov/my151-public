@@ -8,6 +8,9 @@ powerups on the top three rows, and a legendary on the endgame boss row.
 
 - A league home lists the fourteen slots; a first visit seeds a Kanto league
   with two blank cards (slots 6 and 9).
+- Story / Rematch tabs (`[data-testid="league-nav"]`, the shared pill tab
+  set) switch every row between the challenge team and the rematch team.
+  Active tab = `aria-selected="true"` on `[data-league-view]`.
 - A card seats evolution lines from the Pokémon browser, opened from an empty
   cell; a filled cell opens the browser to replace that seat's line.
 - The ace and partner slots open one-Pokémon pickers with standalone tiles.
