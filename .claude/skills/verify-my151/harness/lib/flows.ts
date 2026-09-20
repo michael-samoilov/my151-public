@@ -410,31 +410,6 @@ export async function runLeagueSuite(s: Session, persona: PersonaName | null, ct
     ),
   );
 
-  // Story / Rematch is the shared pill tab set, not a lone primary button.
-  if (hydrated) {
-    const tabset = await s.evalJson<{ ok: boolean; detail: string }>(
-      `const TRANSPARENT=new Set(['rgba(0, 0, 0, 0)','transparent','']);
-       const list=document.querySelector('[data-testid="league-nav"]');
-       const tabs=[...document.querySelectorAll('[data-testid="league-nav"] [data-league-view]')];
-       const primary=getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
-       const parse=(css)=>{const rgb=css.match(/rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)/);if(rgb)return[Number(rgb[1]),Number(rgb[2]),Number(rgb[3])];return null;};
-       const hex=primary.startsWith('#')?(primary.length===4?primary.slice(1).split('').map(c=>c+c).join(''):primary.slice(1)):null;
-       const primaryRgb=hex?[parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16)]:parse(primary);
-       const selected=tabs.filter(b=>b.getAttribute('aria-selected')==='true');
-       const active=selected[0]||tabs[0];
-       const activeBg=active?getComputedStyle(active).backgroundColor.trim():'';
-       const activeRgb=parse(activeBg);
-       const othersGhost=tabs.filter(b=>b!==active).every(b=>TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim()));
-       const lone=othersGhost&&activeRgb&&primaryRgb&&activeRgb.every((v,i)=>Math.abs(v-primaryRgb[i])<=2);
-       const inList=!!list&&tabs.every(n=>list.contains(n));
-       const track=!!list&&!TRANSPARENT.has(getComputedStyle(list).backgroundColor.trim());
-       const roles=tabs.every(b=>b.getAttribute('role')==='tab');
-       const ok=tabs.length===2&&inList&&track&&roles&&selected.length===1&&!lone;
-       return {ok,detail:'tabs='+tabs.length+' inList='+inList+' track='+track+' roles='+roles+' selected='+selected.length+' lone='+lone};`,
-    );
-    checks.push(ok('league:story-rematch-tabset', tabset.ok, tabset.detail));
-  }
-
   // The real drive: open a card, set its type, seat a line, pick a TM. The
   // pickers and instant-add flow are desktop-shaped; personas and other
   // engines stop at rendering.
@@ -569,6 +544,32 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
   const blank = (await waitLeagueHome(s)) && (await readCard(s, CARD)).lines.length === 0;
   checks.push(ok('league-change:blank-league', blank));
   if (!blank) return checks;
+
+  // Story / Rematch is the shared pill tab set, not a lone primary button.
+  // Lives here because runLeagueSuite returns early on the static SEO skip
+  // (the shell title is "Custom Gym Leader", not "League Builder").
+  const tabset = await s.evalJson<{ ok: boolean; detail: string }>(
+    `const TRANSPARENT=new Set(['rgba(0, 0, 0, 0)','transparent','']);
+     const list=document.querySelector('[data-testid="league-nav"]');
+     const tabs=[...document.querySelectorAll('[data-testid="league-nav"] [data-league-view]')];
+     const primary=getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+     const parse=(css)=>{const rgb=css.match(/rgba?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)/);if(rgb)return[Number(rgb[1]),Number(rgb[2]),Number(rgb[3])];return null;};
+     const hex=primary.startsWith('#')?(primary.length===4?primary.slice(1).split('').map(c=>c+c).join(''):primary.slice(1)):null;
+     const primaryRgb=hex?[parseInt(hex.slice(0,2),16),parseInt(hex.slice(2,4),16),parseInt(hex.slice(4,6),16)]:parse(primary);
+     const selected=tabs.filter(b=>b.getAttribute('aria-selected')==='true');
+     const active=selected[0]||tabs[0];
+     const activeBg=active?getComputedStyle(active).backgroundColor.trim():'';
+     const activeRgb=parse(activeBg);
+     const othersGhost=tabs.filter(b=>b!==active).every(b=>TRANSPARENT.has(getComputedStyle(b).backgroundColor.trim()));
+     const lone=othersGhost&&activeRgb&&primaryRgb&&activeRgb.every((v,i)=>Math.abs(v-primaryRgb[i])<=2);
+     const inList=!!list&&tabs.every(n=>list.contains(n));
+     const track=!!list&&!TRANSPARENT.has(getComputedStyle(list).backgroundColor.trim());
+     const roles=tabs.every(b=>b.getAttribute('role')==='tab');
+     const ok=tabs.length===2&&inList&&track&&roles&&selected.length===1&&!lone;
+     return {ok,detail:'tabs='+tabs.length+' inList='+inList+' track='+track+' roles='+roles+' selected='+selected.length+' lone='+lone};`,
+  );
+  checks.push(ok('league:story-rematch-tabset', tabset.ok, tabset.detail));
+  await s.screenshot(ctx.shot('league-story-rematch-tabs'));
 
   if (await openLeagueCard(s, CARD)) {
     await sleep(s.engine === 'webkit' ? 1000 : 500);
