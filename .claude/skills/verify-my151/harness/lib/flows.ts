@@ -630,6 +630,25 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
       checks.push(ok('league:partner-head-inside-slot', false, 'eval failed'));
     }
 
+    await s.evalJson(`const c=document.querySelector('[data-testid="card-cell-9-1"]'); if(c) c.scrollIntoView({block:'center'}); return true;`).catch(() => false);
+    await sleep(s.engine === 'webkit' ? 400 : 200);
+    const stars = await s.evalJson<{ n: number; ySpread: number; xSpread: number; increasing: boolean }>(
+      `const root=document.querySelector('[data-lg-card-root]');
+       const marks=[...(root?root.querySelectorAll('svg'):[])].filter(s=>(s.querySelector('path')?.getAttribute('d')||'').startsWith('M6 0.5'));
+       const boxes=marks.map(s=>s.getBoundingClientRect());
+       const ys=boxes.map(b=>b.y); const xs=boxes.map(b=>b.x);
+       const ySpread=ys.length?Math.max(...ys)-Math.min(...ys):99;
+       const xSpread=xs.length?Math.max(...xs)-Math.min(...xs):0;
+       const increasing=xs.every((x,i)=>i===0||x>xs[i-1]+1);
+       return {n:marks.length,ySpread,xSpread,increasing};`,
+    ).catch(() => ({ n: 0, ySpread: 99, xSpread: 0, increasing: false }));
+    checks.push(ok(
+      'league:elite-stars-one-row',
+      stars.n === 4 && stars.ySpread < 2 && stars.increasing && stars.xSpread > 20,
+      JSON.stringify(stars),
+    ));
+    await s.screenshot(ctx.shot('league-elite-stars'));
+
     await s.click('[data-testid="slot-ace"]');
     const pickerUp = await waitFor(s, '[data-filter-chip="my-dex"]');
     await sleep(600);
