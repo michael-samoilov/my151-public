@@ -12,6 +12,7 @@
  */
 
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
+import { pairSprite } from '../slotLayout';
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
 
 /** Export px per app rem-unit: the card's 3.25rem sprite is 96px. */
@@ -159,10 +160,22 @@ export const FRAME = 12;
  */
 export const SIG_SPRITE = 192;
 
+/**
+ * Ace/partner edge in export pixels. Same 1×/2× rule as the live card, on
+ * the CSS-equivalent slot at a 3× device (the PNG is native sprite pixels).
+ */
+export function pairExportSprite(w: number, h: number): number {
+  return pairSprite(w, h);
+}
+
 /** The slot heading runs: two lines, 0.53125rem extrabold, 1.4 line-height. */
 export const HEAD_PX = 8.5 * K;
 export const HEAD_TRACK = 0.08 * HEAD_PX;
 export const HEAD_LINE = HEAD_PX * 1.4;
+/** Species, TM, and badge names. Same rem as ACE POKÉMON / CardGrid NAME_CLASS. */
+export const NAME_PX = HEAD_PX;
+export const NAME_TRACK = 0.02 * NAME_PX;
+export const NAME_LINE = NAME_PX * 1.4;
 
 /** The glyph cell spans two columns on rows 1, 8 and 9. */
 export const GLYPH_SPAN: Record<number, number> = { 1: 2, 8: 2, 9: 2 };
@@ -189,6 +202,8 @@ export const MARK_PAD = 7;
 /** The move name, at the app's 0.6875rem, and the smallest it may shrink to. */
 export const MOVE_PX = 11 * K;
 export const MOVE_MIN_PX = 12;
+/** Live card stacks the type badge and category above the move name. */
+export const TM_TYPE_ABOVE_NAME = false;
 
 /** Top of a row inside the grid box, which starts at the first band. */
 export function rowTop(row: number): number {

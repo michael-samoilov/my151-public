@@ -297,6 +297,27 @@ describe('export layout', () => {
     expect(body).toBeGreaterThan(6.6 * L.MOVE_PX);
   });
 
+  it('sets TM name and badge name at the ACE POKÉMON spacer size', () => {
+    expect(L.MOVE_PX).toBe(L.HEAD_PX);
+    expect(L.NAME_PX).toBe(L.HEAD_PX);
+    expect(L.MOVE_MIN_PX).toBe(L.HEAD_PX);
+  });
+
+  it('keeps the TM type badge at the in-app 2.75rem width', () => {
+    expect(L.TM_BADGE_W).toBeCloseTo(2.75 * 16 * L.K);
+  });
+
+  it('stacks the TM type badge and category above the move name', () => {
+    expect(L.TM_TYPE_ABOVE_NAME).toBe(true);
+  });
+
+  it('fills the gym-leader-team panel with 2× ace/partner sprites', () => {
+    const box = L.showcaseBox();
+    const sprite = L.pairExportSprite(box.width, box.height);
+    expect(sprite % 96).toBe(0);
+    expect(sprite).toBe(192);
+  });
+
   it('names a vacancy for every slot kind', () => {
     expect(Object.keys(L.VACANCY).sort()).toEqual(['boss', 'champion', 'elite', 'gym']);
   });
