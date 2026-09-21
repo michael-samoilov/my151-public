@@ -305,6 +305,35 @@ test.describe('gym card slots', () => {
     expect(stroke?.toUpperCase()).toBe('#E62829');
   });
 
+  test('TM search ignores the gym type chip', async ({ page }) => {
+    await page.addInitScript(() => {
+      const cards = Array.from({ length: 14 }, () => ({
+        type: null as string | null,
+        theme: '',
+        lines: [] as unknown[],
+        signatureSeat: null as number | null,
+        tmMoveId: null as number | null,
+        badgeName: '',
+        legend: null as unknown,
+        powerup: null as unknown,
+      }));
+      cards[0].type = 'fire';
+      window.localStorage.setItem(
+        'league-builder',
+        JSON.stringify({ state: { name: '', cards }, version: 1 }),
+      );
+    });
+    await page.goto('/custom-gym-leader');
+    await page.waitForSelector('[data-testid="league-slot-0"]');
+    await page.click('[data-testid="league-slot-0"]');
+    await page.waitForSelector('[data-testid="card-cell-1-1"]');
+    await page.waitForTimeout(500);
+    await page.click('[data-testid="slot-tm"]');
+    await page.waitForSelector('[data-testid="tm-chip-type-fire"]');
+    await page.fill('input[placeholder="Search moves"]', 'surf');
+    await expect(page.getByRole('button', { name: /Surf/ }).first()).toBeVisible();
+  });
+
   test('the badge name and the word Badge are one wrapping phrase', async ({ page }) => {
     await openCard(page);
     const field = page.locator('[aria-label="Badge name"]');

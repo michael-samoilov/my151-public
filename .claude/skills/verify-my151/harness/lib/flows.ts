@@ -768,6 +768,27 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
     checks.push({ name: 'league-change:charizard-seated', status: 'skip', detail: 'card never opened' });
   }
 
+  // A typed query is a lookup, not a refinement of the chips. The gym's
+  // type arrives pre-selected on the TM picker; searching "surf" on a Fire
+  // gym must still list Surf.
+  await s.navigate(url);
+  if ((await waitLeagueHome(s)) && (await openLeagueCard(s, CARD))) {
+    await s.click('[aria-label^="Gym type"]');
+    await sleep(300);
+    await s.click('svg[data-type="fire"]');
+    await sleep(400);
+    await s.click('[data-testid="slot-tm"]');
+    const picker = await waitFor(s, '[data-testid="tm-chip-type-fire"]');
+    await searchPicker(s, 'surf');
+    const hasSurf = await s
+      .evalJson<boolean>(`return [...document.querySelectorAll('button')].some((b)=>/\\bSurf\\b/.test(b.textContent||''));`)
+      .catch(() => false);
+    checks.push(ok('league-change:tm-search-ignores-type-chip', picker && hasSurf, `picker=${picker} hasSurf=${hasSurf}`));
+    await s.screenshot(ctx.shot('league-change-tm-search-surf'));
+  } else {
+    checks.push({ name: 'league-change:tm-search-ignores-type-chip', status: 'skip', detail: 'card never opened' });
+  }
+
   const errs = await s.errors();
   checks.push(ok('league-change:no-js-errors', errs.length === 0, errs.slice(0, 3).join(' | ')));
   return checks;
