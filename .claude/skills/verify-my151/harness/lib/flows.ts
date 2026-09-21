@@ -776,7 +776,10 @@ export async function runLeagueChangeSuite(s: Session, _persona: PersonaName | n
     await sleep(400);
     await s.click('[data-testid="slot-tm"]');
     const picker = await waitFor(s, '[data-testid="tm-chip-type-fire"]');
-    await searchPicker(s, 'surf');
+    await s.evalJson(`const i=document.querySelector('input[placeholder="Search moves"]');
+      const set=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+      set.call(i,'surf'); i.dispatchEvent(new Event('input',{bubbles:true})); return !!i;`);
+    await sleep(900);
     const hasSurf = await s
       .evalJson<boolean>(`return [...document.querySelectorAll('button')].some((b)=>/\\bSurf\\b/.test(b.textContent||''));`)
       .catch(() => false);
