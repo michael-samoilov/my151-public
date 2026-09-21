@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
-import { pixelPerfectCssPx, useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
+import { useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
+import { pickerSpriteCssPx } from '../model/pickerSprite';
 import { useT } from '@/i18n';
 import { useIsDesktop } from '@/hooks/useIsDesktop';
 import { PanelRightClose } from 'lucide-react';
@@ -41,7 +42,7 @@ export function PickerSheet({
 }) {
   const t = useT();
   const desktop = useIsDesktop();
-  const spritePx = pixelPerfectCssPx(1, useDevicePixelRatio());
+  const spritePx = pickerSpriteCssPx(useDevicePixelRatio());
   const paneWidth = spritePx * 6 + 4 * 5 + 24;
   const kind = kindFor(type, gen);
   const [packing, setPacking] = useState<{ incoming: PickerMon; chains: { path: PackMove[]; slots: ChainSlot[] }[] } | null>(null);

@@ -1,4 +1,5 @@
-import { pixelPerfectCssPx, SPRITE_NATIVE, useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
+import { SPRITE_NATIVE, useDevicePixelRatio } from '@/lib/usePixelPerfectSprite';
+import { pickerSpriteCssPx } from '../model/pickerSprite';
 import { prettyRows } from '../model/prettyWrap';
 import type { PickerMon } from '../model/catalog';
 import { pokemonLabel, useNamesVersion } from '@/i18n';
@@ -18,7 +19,7 @@ export function PrettySpriteGrid({
   onPick: (mon: PickerMon) => void;
 }) {
   useNamesVersion();
-  const spritePx = pixelPerfectCssPx(1, useDevicePixelRatio());
+  const spritePx = pickerSpriteCssPx(useDevicePixelRatio());
   const rows = prettyRows(mons, maxCols);
 
   return (

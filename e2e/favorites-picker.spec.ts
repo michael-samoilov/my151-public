@@ -70,12 +70,15 @@ test.describe('favorite Pokémon picker', () => {
           Number(row.getAttribute('data-pretty-len')),
         );
         const dpr = window.devicePixelRatio || 1;
-        const css = Math.round(96 / Math.max(dpr, 1));
+        const natural = Number(el.getAttribute('data-sprite-native')) || 96;
+        const css = natural / Math.max(dpr, 1);
         const box = img?.getBoundingClientRect();
-        return { css, w: box?.width ?? 0, rows, max: Math.max(...rows, 0) };
+        const w = box?.width ?? 0;
+        return { css, w, dpr, natural, rows, max: Math.max(...rows, 0) };
       });
       expect(spec.max, cell).toBeLessThanOrEqual(6);
       expect(Math.abs(spec.w - spec.css), cell).toBeLessThan(0.6);
+      expect(Math.abs(spec.w * spec.dpr - spec.natural), cell).toBeLessThan(0.75);
       if (cell.endsWith('water-1')) {
         const fours = spec.rows.filter((len) => len === 4).length;
         expect(fours, cell).toBeLessThan(spec.rows.length);
