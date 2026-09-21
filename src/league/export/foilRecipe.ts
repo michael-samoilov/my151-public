@@ -58,7 +58,7 @@ export const FOIL_LAYER_META = {
   },
   holographic: {
     title: 'Foil / holographic sheen',
-    blurb: 'Rainbow diffraction on colored ink. White paper stays paper.',
+    blurb: 'Rainbow on colored ink. White paper stays paper.',
   },
   iridescence: {
     title: 'Iridescence / color shift',

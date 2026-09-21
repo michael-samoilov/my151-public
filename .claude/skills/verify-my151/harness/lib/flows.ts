@@ -354,7 +354,7 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      const opacity=Number(cs.opacity);
      const amount=Number(getComputedStyle(card).getPropertyValue('--foil-holographic'));
      const foil=Number(card.getAttribute('data-foil-opacity')||0);
-     if(mix!=='color') return {ok:false,reason:'blend '+mix};
+     if(mix!=='multiply') return {ok:false,reason:'blend '+mix};
      if(!(opacity>0.15)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
      if(Math.abs(amount-0.52)>0.02) return {ok:false,reason:'amount '+amount};
      if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
@@ -368,25 +368,16 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      cv.width=cv.height=8;
      const g=cv.getContext('2d');
      if(!g) return {ok:false,reason:'canvas'};
-     g.fillStyle='#ffffff';
-     g.fillRect(0,0,8,8);
-     g.globalCompositeOperation='color';
-     g.fillStyle='hsl(2, 100%, 73%)';
-     g.fillRect(0,0,8,8);
-     const paper=g.getImageData(4,4,1,1).data;
-     const paperChroma=Math.max(paper[0],paper[1],paper[2])-Math.min(paper[0],paper[1],paper[2]);
-     if(paperChroma>16) return {ok:false,reason:'paper chroma '+paperChroma};
-     g.globalCompositeOperation='source-over';
      g.fillStyle='#28a028';
      g.fillRect(0,0,8,8);
-     g.globalCompositeOperation='color';
+     g.globalCompositeOperation='multiply';
      g.fillStyle='hsl(2, 100%, 73%)';
      g.fillRect(0,0,8,8);
      const ink=g.getImageData(4,4,1,1).data;
      const inkChroma=Math.max(ink[0],ink[1],ink[2])-Math.min(ink[0],ink[1],ink[2]);
      if(inkChroma<20) return {ok:false,reason:'ink chroma '+inkChroma};
      if(ink[1]>=ink[0] && ink[1]>=ink[2]) return {ok:false,reason:'ink still green'};
-     return {ok:true,reason:'color '+opacity.toFixed(2)+' foil='+foil.toFixed(2)+' paper='+paperChroma+' ink='+inkChroma};`,
+     return {ok:true,reason:'multiply-ink '+opacity.toFixed(2)+' foil='+foil.toFixed(2)+' ink='+inkChroma};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
 }
 

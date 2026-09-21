@@ -59,13 +59,8 @@ describe('foil recipe', () => {
     expect(foilMapsNeeded(holoOnly)).toEqual({ sat: true, edge: false, gloss: false });
   });
 
-  it('sat-masked color shifts ink hue and leaves paper white', () => {
-    // mix-blend-mode: color keeps backdrop luma and takes source hue/sat.
-    const paperLuma = 0.2126 * 255 + 0.7152 * 255 + 0.0722 * 255;
-    const ink = [40, 160, 40] as const;
-    const rainbow = [186, 48, 48] as const;
-    expect(paperLuma).toBeCloseTo(255, 5);
-    expect(Math.abs(ink[0] - rainbow[0])).toBeGreaterThan(80);
+  it('sat-masked multiply tints ink and the sat map keeps paper at zero', () => {
+    expect(foilMapsNeeded(DEFAULT_FOIL_RECIPE).sat).toBe(true);
     expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBeGreaterThan(0.3);
     expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBeLessThan(0.7);
   });

@@ -188,7 +188,7 @@ test.describe('mobile dex export sheet', () => {
       }
       if (!/round/i.test(clip)) return { ok: false, reason: `clip ${clip}` };
       if (!mask.includes('url(')) return { ok: false, reason: `holo unmasked ${mask}` };
-      if (holoStyle.mixBlendMode !== 'color') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
+      if (holoStyle.mixBlendMode !== 'multiply') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
       const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
       if (Math.abs(holoAmt - 0.52) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
@@ -617,7 +617,7 @@ test.describe('desktop dex export preview', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('color');
+    expect(holo.mix, JSON.stringify(holo)).toBe('multiply');
     expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.15);
     expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.52, 2);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);

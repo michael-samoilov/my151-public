@@ -189,7 +189,7 @@ test.describe('desktop export preview', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('color');
+    expect(holo.mix, JSON.stringify(holo)).toBe('multiply');
     expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.52, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
@@ -231,7 +231,7 @@ test.describe('gym trainer-card export', () => {
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
-    expect(holo.mix, JSON.stringify(holo)).toBe('color');
+    expect(holo.mix, JSON.stringify(holo)).toBe('multiply');
     expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.52, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.hypot, JSON.stringify(holo)).toBeGreaterThan(2.4);
