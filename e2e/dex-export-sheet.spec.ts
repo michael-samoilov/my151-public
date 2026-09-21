@@ -191,7 +191,7 @@ test.describe('mobile dex export sheet', () => {
       if (holoStyle.mixBlendMode !== 'multiply') return { ok: false, reason: `blend ${holoStyle.mixBlendMode}` };
       if (Number(holoStyle.opacity) <= 0.02) return { ok: false, reason: `holo opacity ${holoStyle.opacity}` };
       const holoAmt = Number(style.getPropertyValue('--foil-holographic'));
-      if (Math.abs(holoAmt - 0.52) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
+      if (Math.abs(holoAmt - 0.4) > 0.02) return { ok: false, reason: `holo amount ${holoAmt}` };
       if (h.left < c.left - 2 || h.right > c.right + 2 || h.top < c.top - 2 || h.bottom > c.bottom + 2) {
         return { ok: false, reason: 'holo outside card' };
       }
@@ -201,6 +201,35 @@ test.describe('mobile dex export sheet', () => {
       return { ok: true, reason: `cover ${cover.toFixed(3)}` };
     });
     expect(measure.ok, measure.reason).toBe(true);
+    const hit = page.locator('[data-export-tilt-hit]');
+    const box = await hit.boundingBox();
+    expect(box).toBeTruthy();
+    await page.mouse.move(box!.x + box!.width * 0.08, box!.y + box!.height * 0.92, { steps: 8 });
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    const hypot = Math.hypot(
+      Number(await foil.getAttribute('data-tilt-x')),
+      Number(await foil.getAttribute('data-tilt-y')),
+    );
+    expect(hypot, 'mobile peak hypot').toBeGreaterThan(2.4);
+    expect(hypot, 'mobile peak hypot').toBeLessThanOrEqual(5.2);
+    const shadow = await page.evaluate(() => {
+      const lift = document.querySelector<HTMLElement>('[data-export-foil-lift]');
+      const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
+      const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
+      if (!lift || !hitEl) return { ok: false };
+      return {
+        ok: true,
+        liftBox: getComputedStyle(lift).boxShadow,
+        hitBox: getComputedStyle(hitEl).boxShadow,
+        liftOverflow: getComputedStyle(lift).overflow,
+        layerOverflow: layer ? getComputedStyle(layer).overflow : '',
+      };
+    });
+    expect(shadow.ok, JSON.stringify(shadow)).toBe(true);
+    expect(shadow.liftBox, JSON.stringify(shadow)).not.toBe('none');
+    expect(shadow.hitBox, JSON.stringify(shadow)).toBe('none');
+    expect(shadow.liftOverflow, JSON.stringify(shadow)).toBe('visible');
+    expect(shadow.layerOverflow, JSON.stringify(shadow)).toBe('visible');
   });
 });
 
@@ -417,7 +446,7 @@ test.describe('desktop dex export preview', () => {
           !style.transformStyle.includes('preserve-3d') &&
           overflowLayers.length === 0 &&
           mask.includes('url(') &&
-          Math.abs(holoAmt - 0.52) < 0.02 &&
+          Math.abs(holoAmt - 0.4) < 0.02 &&
           !(bloom instanceof HTMLElement && getComputedStyle(bloom).inset.includes('-')),
       };
     });
@@ -619,22 +648,40 @@ test.describe('desktop dex export preview', () => {
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
     expect(holo.mix, JSON.stringify(holo)).toBe('multiply');
     expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.15);
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.52, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.4, 2);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.w, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.h, JSON.stringify(holo)).toBeGreaterThan(100);
     expect(holo.bg, JSON.stringify(holo)).toMatch(/repeating-linear-gradient/);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
-    const shadow = await hit.evaluate((el) => {
-      const cs = getComputedStyle(el);
+    const shadow = await page.evaluate(() => {
+      const hit = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
+      const lift = document.querySelector<HTMLElement>('[data-export-foil-lift]');
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
+      if (!hit || !lift || !card) return { ok: false, reason: 'missing' };
+      const liftCs = getComputedStyle(lift);
+      const hitCs = getComputedStyle(hit);
+      const cardCs = getComputedStyle(card);
+      const layerCs = layer ? getComputedStyle(layer) : null;
       return {
-        box: cs.boxShadow,
-        x: Number(el.getAttribute('data-shadow-x') || 0),
-        opacity: Number(el.getAttribute('data-shadow-opacity') || 0),
+        ok: true,
+        liftBox: liftCs.boxShadow,
+        hitBox: hitCs.boxShadow,
+        cardBox: cardCs.boxShadow,
+        liftOverflow: liftCs.overflow,
+        hitOverflow: hitCs.overflow,
+        layerOverflow: layerCs?.overflow ?? '',
+        opacity: Number(hit.getAttribute('data-shadow-opacity') || 0),
       };
     });
-    expect(shadow.box, JSON.stringify(shadow)).not.toBe('none');
-    expect(shadow.box.length, JSON.stringify(shadow)).toBeGreaterThan(24);
-    expect(shadow.opacity, JSON.stringify(shadow)).toBeGreaterThan(0.2);
+    expect(shadow.ok, JSON.stringify(shadow)).toBe(true);
+    expect(shadow.liftBox, JSON.stringify(shadow)).not.toBe('none');
+    expect(shadow.hitBox, JSON.stringify(shadow)).toBe('none');
+    expect(shadow.cardBox, JSON.stringify(shadow)).toBe('none');
+    expect(shadow.liftOverflow, JSON.stringify(shadow)).toBe('visible');
+    expect(shadow.hitOverflow, JSON.stringify(shadow)).toBe('visible');
+    expect(shadow.layerOverflow, JSON.stringify(shadow)).toBe('visible');
+    expect(shadow.opacity, JSON.stringify(shadow)).toBeGreaterThan(0.12);
   });
 });

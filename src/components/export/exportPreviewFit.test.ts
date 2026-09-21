@@ -5,6 +5,8 @@ import {
   clampTiltToBox,
   containUnrotatedSize,
   PREVIEW_DESKTOP_MAX_HYPOT,
+  PREVIEW_MOBILE_MAX_HYPOT,
+  previewMaxHypot,
   fitCardInPreviewBox,
   fitScaleForTilt,
   pointerNearPreview,
@@ -273,6 +275,12 @@ describe('exportPreviewFit', () => {
     expect(PREVIEW_DESKTOP_MAX_HYPOT).toBeGreaterThan(2);
     const corner = clampHypot(10, -10, PREVIEW_DESKTOP_MAX_HYPOT);
     expect(Math.hypot(corner.x, corner.y)).toBeCloseTo(PREVIEW_DESKTOP_MAX_HYPOT, 5);
+    expect(PREVIEW_MOBILE_MAX_HYPOT).toBeGreaterThan(PREVIEW_DESKTOP_MAX_HYPOT);
+    expect(PREVIEW_MOBILE_MAX_HYPOT).toBeLessThan(8);
+    expect(previewMaxHypot(390)).toBe(PREVIEW_MOBILE_MAX_HYPOT);
+    expect(previewMaxHypot(1280)).toBe(PREVIEW_DESKTOP_MAX_HYPOT);
+    const phone = clampHypot(10, -10, PREVIEW_MOBILE_MAX_HYPOT);
+    expect(Math.hypot(phone.x, phone.y)).toBeCloseTo(PREVIEW_MOBILE_MAX_HYPOT, 5);
     expect(Math.hypot(10, -10)).toBeGreaterThan(12);
     const rest = fitCardInPreviewBox({
       boxWidth: 800,

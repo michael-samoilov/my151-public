@@ -10,23 +10,43 @@
 .export-foil-hit {
   --shadow-x: 0;
   --shadow-y: 0;
-  --hover-tilt-shadow-opacity: 0.28;
-  --hover-tilt-shadow-blur: 30;
+  --hover-tilt-shadow-opacity: 0.16;
+  --hover-tilt-shadow-blur: 22;
+  --rotation-x: 0deg;
+  --rotation-y: 0deg;
+  --hover-tilt-scale: 1;
   perspective: 600px;
   -webkit-perspective: 600px;
   transform-origin: center center;
   -webkit-transform-origin: center center;
   transform-style: preserve-3d;
   -webkit-transform-style: preserve-3d;
-  /* credit-cards `shadow` + `shadow-blur={30}`: more shadow on the lifted side.
-     Lives here because overflow/clip on `.export-foil` would hide it. */
+  overflow: visible;
+  background: transparent;
+}
+
+/* Rotates with the card. Overflow stays visible so the raised-edge
+   shadow paints past the paper. `.export-foil` still clips shine. */
+.export-foil-lift {
+  overflow: visible;
+  border-radius: 0.5rem;
+  transform-origin: center center;
+  -webkit-transform-origin: center center;
+  -webkit-transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
+  transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
   box-shadow:
     calc(var(--shadow-x) * var(--hover-tilt-shadow-blur) * 1px)
-      calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.6px + 10px)
+      calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.6px + 8px)
       calc(var(--hover-tilt-shadow-blur) * 1px)
-      calc(var(--hover-tilt-shadow-blur) * -0.12px)
-      rgb(0 0 0 / calc(var(--hover-tilt-shadow-opacity) * 0.55)),
-    0 18px 36px rgb(0 0 0 / 0.22);
+      calc(var(--hover-tilt-shadow-blur) * -0.08px)
+      rgb(0 0 0 / calc(var(--hover-tilt-shadow-opacity) * 0.42)),
+    0 10px 22px rgb(0 0 0 / 0.12);
+}
+
+.export-foil-hit[data-hover-tilt='1'] .export-foil-lift {
+  transform: none;
+  -webkit-transform: none;
+  box-shadow: none;
 }
 
 .export-foil {
@@ -42,11 +62,11 @@
   --hover-tilt-x: 0.5;
   --hover-tilt-y: 0.5;
   --hover-tilt-opacity: 0;
-  --hover-tilt-shadow-blur: 30;
+  --hover-tilt-shadow-blur: 22;
   --hover-tilt-scale: 1;
   --shadow-x: 0;
   --shadow-y: 0;
-  --hover-tilt-shadow-opacity: 0.28;
+  --hover-tilt-shadow-opacity: 0.16;
   --foil-opacity: 0;
   --foil-pointLight: 0;
   --foil-ambient: 0;
@@ -85,11 +105,10 @@
      https://hover-tilt.simey.me/bespoke/credit-cards/ */
   transform-style: flat;
   -webkit-transform-style: flat;
-  -webkit-transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
-  transform: scale(var(--hover-tilt-scale, 1)) rotateX(var(--rotation-x)) rotateY(var(--rotation-y));
+  -webkit-transform: none;
+  transform: none;
   transform-origin: center center;
   -webkit-transform-origin: center center;
-  will-change: transform;
 }
 
 .export-foil-layer {
@@ -166,12 +185,12 @@
   z-index: 2;
   background-image: radial-gradient(
     circle at var(--pointer-x) var(--pointer-y),
-    hsla(40, 45%, 100%, 0.7) 0%,
-    hsla(40, 30%, 96%, 0.22) 22%,
+    hsla(40, 45%, 100%, 0.88) 0%,
+    hsla(40, 30%, 96%, 0.34) 22%,
     transparent 58%
   );
   mix-blend-mode: soft-light;
-  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.78 + 0.22 * var(--pointer-from-center)));
+  opacity: calc(var(--foil-opacity) * var(--foil-pointLight) * (0.9 + 0.1 * var(--pointer-from-center)));
 }
 
 .export-foil-holographic {

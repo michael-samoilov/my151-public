@@ -47,7 +47,7 @@ describe('foil recipe', () => {
     });
     expect(DEFAULT_FOIL_RECIPE.layers.ambient.on).toBe(false);
     expect(DEFAULT_FOIL_RECIPE.layers.emboss.on).toBe(false);
-    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(0.52);
+    expect(DEFAULT_FOIL_RECIPE.layers.holographic.amount).toBe(0.4);
     expect(DEFAULT_FOIL_RECIPE.layers.holographic.on).toBe(true);
     expect(DEFAULT_FOIL_RECIPE.layers.iridescence.amount).toBe(0.15);
     expect(DEFAULT_FOIL_RECIPE.layers.sparkle.amount).toBe(0.52);

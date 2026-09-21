@@ -356,14 +356,17 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
      const foil=Number(card.getAttribute('data-foil-opacity')||0);
      if(mix!=='multiply') return {ok:false,reason:'blend '+mix};
      if(!(opacity>0.15)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
-     if(Math.abs(amount-0.52)>0.02) return {ok:false,reason:'amount '+amount};
+     if(Math.abs(amount-0.4)>0.02) return {ok:false,reason:'amount '+amount};
      if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
      if(!mask.includes('url(')) return {ok:false,reason:'unmasked '+mask.slice(0,40)};
      if(!cs.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no grating'};
      if(holo.offsetWidth<80 || holo.offsetHeight<80) return {ok:false,reason:'size '+holo.offsetWidth+'x'+holo.offsetHeight};
+     const lift=document.querySelector('[data-export-foil-lift]');
+     const liftStyle=lift instanceof HTMLElement ? getComputedStyle(lift) : null;
+     const shadow=liftStyle?.boxShadow||'';
+     if(!shadow || shadow==='none') return {ok:false,reason:'no lift shadow'};
      const hitStyle=hit instanceof HTMLElement ? getComputedStyle(hit) : null;
-     const shadow=hitStyle?.boxShadow||'';
-     if(!shadow || shadow==='none') return {ok:false,reason:'no hit shadow'};
+     if(hitStyle && hitStyle.boxShadow!=='none' && hitStyle.boxShadow!=='') return {ok:false,reason:'hit still shadowed'};
      const cv=document.createElement('canvas');
      cv.width=cv.height=8;
      const g=cv.getContext('2d');
@@ -596,7 +599,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   const viewW = await s.evalJson<number>(`return innerWidth`).catch(() => 1280);
   const desktop = viewW >= 1024;
   const hoverCircle = {
-    ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 2.4 && hoverOrbit === 'pointer' && (desktop ? hoverMax < 4.0 : hoverMax < 11),
+    ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 2.4 && hoverOrbit === 'pointer' && (desktop ? hoverMax < 4.0 : hoverMax <= 5.2),
     reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit} w=${viewW}`,
   };
   await s.evalJson(
@@ -642,12 +645,25 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   const rightShadow = await fireShadow(0.88, 0.5, 'pos');
   const shadowPainted = await s.evalJson<{ ok: boolean; reason: string }>(
     `const hit=document.querySelector('[data-export-tilt-hit]');
-     if(!(hit instanceof HTMLElement)) return {ok:false,reason:'missing'};
-     const box=getComputedStyle(hit).boxShadow;
+     const lift=document.querySelector('[data-export-foil-lift]');
+     const card=document.querySelector('[data-export-preview]');
+     const layer=document.querySelector('[data-export-preview-layer]');
+     if(!(hit instanceof HTMLElement) || !(lift instanceof HTMLElement) || !(card instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     const liftCs=getComputedStyle(lift);
+     const hitCs=getComputedStyle(hit);
+     const cardCs=getComputedStyle(card);
+     const layerCs=layer instanceof HTMLElement ? getComputedStyle(layer) : null;
+     const stageCs=hit.parentElement instanceof HTMLElement ? getComputedStyle(hit.parentElement) : null;
+     if(!liftCs.boxShadow || liftCs.boxShadow==='none') return {ok:false,reason:'lift shadow none'};
+     if(hitCs.boxShadow!=='none') return {ok:false,reason:'hit still shadowed'};
+     if(cardCs.boxShadow!=='none') return {ok:false,reason:'card shadowed'};
+     if(liftCs.overflow!=='visible') return {ok:false,reason:'lift overflow '+liftCs.overflow};
+     if(hitCs.overflow!=='visible') return {ok:false,reason:'hit overflow '+hitCs.overflow};
+     if(stageCs && stageCs.overflow!=='visible') return {ok:false,reason:'stage overflow '+stageCs.overflow};
+     if(layerCs && layerCs.overflow!=='visible') return {ok:false,reason:'layer overflow '+layerCs.overflow};
      const opacity=Number(hit.getAttribute('data-shadow-opacity')||0);
-     if(!box || box==='none') return {ok:false,reason:'box-shadow none'};
-     if(!(opacity>0.2)) return {ok:false,reason:'opacity '+opacity};
-     return {ok:true,reason:box.slice(0,80)+' op='+opacity.toFixed(2)};`,
+     if(!(opacity>0.12)) return {ok:false,reason:'opacity '+opacity};
+     return {ok:true,reason:'lift-unclipped op='+opacity.toFixed(2)};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   const shadowPair = {
     ok: rightShadow > leftShadow + 0.2 && shadowPainted.ok,
@@ -698,7 +714,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     restHold.orbit !== 'pointer' &&
     restAfter.orbit === 'idle' &&
     restAfter.hypot > 2 &&
-    (desktop ? restAfter.hypot <= 3.8 : restAfter.hypot < 11);
+    (desktop ? restAfter.hypot <= 3.8 : restAfter.hypot <= 5.2);
   await s.screenshot(ctx.shot('dex-export-hover'));
   await s.click('[data-export-tilt-hit]').catch(() => undefined);
   await sleep(500);
@@ -749,7 +765,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
        }
      }
      const holoAmt=Number(style.getPropertyValue('--foil-holographic'));
-     if(Math.abs(holoAmt-0.52)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
+     if(Math.abs(holoAmt-0.4)>0.02) return {ok:false,reason:'holo amount '+holoAmt};
      return {ok:true,reason:bloom?'ink-holo-clipped':'ink-holo'};`,
   ).catch(() => ({ ok: false, reason: 'eval' }));
   await s.screenshot(ctx.shot('dex-export-locked'));
@@ -792,7 +808,7 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta, visualDelta, perspectiveOn })),
     ok('dex-export:idle-circular', imgReady && idleCircular, JSON.stringify({ idleA, idleB, idleAlign, idleDelta })),
     ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
-    ok('dex-export:tilt-magnitude', hoverCircle.ok && (desktop ? hoverMax <= 3.8 : hoverMax < 11), `hypot=${hoverMax.toFixed(1)} w=${viewW}`),
+    ok('dex-export:tilt-magnitude', hoverCircle.ok && (desktop ? hoverMax <= 3.8 : hoverMax <= 5.2), `hypot=${hoverMax.toFixed(1)} w=${viewW}`),
     ok('dex-export:dynamic-shadow', shadowPair.ok, shadowPair.reason),
     ok('dex-export:tilt-corner-margin', cornerMargin.ok, cornerMargin.reason),
     ok('dex-export:tilt-on-painted', paintedHit.ok, paintedHit.reason),
@@ -1403,7 +1419,7 @@ export async function runFoilWorkshopSuite(s: Session, _persona: PersonaName | n
      };`,
   ).catch(() => ({ rot: '', holo: '', hx: '' }));
   checks.push(ok('foil-workshop:hover-tilt-rotation', /^10(\.0+)?deg$/.test(tiltVars.rot), `rot=${tiltVars.rot}`));
-  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.52) < 0.02, `holo=${tiltVars.holo}`));
+  checks.push(ok('foil-workshop:prod-holo', Math.abs(Number(tiltVars.holo) - 0.4) < 0.02, `holo=${tiltVars.holo}`));
   await s.screenshot(ctx.shot('foil-workshop'));
 
   const labels = await s.evalJson<string[]>(
@@ -1666,7 +1682,7 @@ export async function runLeagueGymExportFoilSuite(
   }
   const viewW = await s.evalJson<number>(`return innerWidth`).catch(() => 1280);
   const desktop = viewW >= 1024;
-  const hypotOk = (h: number) => (desktop ? h > 2.4 && h <= 3.8 : h > 2.4 && h < 11);
+  const hypotOk = (h: number) => (desktop ? h > 2.4 && h <= 3.8 : h > 2.4 && h <= 5.2);
 
   const openLeague = await s.evalJson<boolean>(
     `const b=document.querySelector('[data-league-export]');

@@ -89,7 +89,7 @@ const DEFAULT_LAYERS: Record<FoilLayerId, FoilLayer> = {
   ambient: { on: false, amount: 0 },
   specular: { on: false, amount: 0 },
   rim: { on: false, amount: 0 },
-  holographic: { on: true, amount: 0.52 },
+  holographic: { on: true, amount: 0.4 },
   iridescence: { on: true, amount: 0.15 },
   emboss: { on: false, amount: 0 },
   parallax: { on: false, amount: 0 },

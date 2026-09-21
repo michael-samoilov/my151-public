@@ -4,8 +4,7 @@ import {
   clampHypot,
   clampTiltToBox,
   fitCardInPreviewBox,
-  PREVIEW_DESKTOP_MAX_HYPOT,
-  PREVIEW_DESKTOP_MIN_PX,
+  previewMaxHypot,
   PREVIEW_PERSPECTIVE_PX,
   PREVIEW_REST_PAD,
   PREVIEW_TILT_INSET,
@@ -163,8 +162,8 @@ export function ExportPreview3D({
       rotateX = clamped.x;
       rotateY = clamped.y;
     }
-    if (!tiltRef.current && window.innerWidth >= PREVIEW_DESKTOP_MIN_PX) {
-      const capped = clampHypot(rotateX, rotateY, PREVIEW_DESKTOP_MAX_HYPOT);
+    if (!tiltRef.current) {
+      const capped = clampHypot(rotateX, rotateY, previewMaxHypot(window.innerWidth));
       rotateX = capped.x;
       rotateY = capped.y;
     }
@@ -201,12 +200,15 @@ export function ExportPreview3D({
     const shadowY = ny * 2 - 1;
     const displayedHypot = Math.hypot(rotateX, rotateY);
     const shadowAmt =
-      displayedHypot < 0.4 ? 0.28 : Math.min(1, 0.42 + displayedHypot / Math.max(4, recipeNow.maxTilt));
+      displayedHypot < 0.4 ? 0.16 : Math.min(0.5, 0.2 + displayedHypot / 16);
     el.style.setProperty('--shadow-x', shadowX.toFixed(4));
     el.style.setProperty('--shadow-y', shadowY.toFixed(4));
     el.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));
     const hit = hitRef.current;
     if (hit) {
+      hit.style.setProperty('--rotation-x', `${rotateX}deg`);
+      hit.style.setProperty('--rotation-y', `${rotateY}deg`);
+      hit.style.setProperty('--hover-tilt-scale', tiltRef.current ? String(tiltRef.current.scaleFactor) : '1');
       hit.style.setProperty('--shadow-x', shadowX.toFixed(4));
       hit.style.setProperty('--shadow-y', shadowY.toFixed(4));
       hit.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));
@@ -591,20 +593,21 @@ export function ExportPreview3D({
       style={{
         perspective: `${PREVIEW_PERSPECTIVE_PX}px`,
         transformStyle: 'preserve-3d',
-        containerType: 'size',
       }}
     >
       {activeSrc ? (
         <div
           ref={hitRef}
-          className="export-foil-hit pointer-events-auto cursor-pointer touch-none overflow-visible p-[8px]"
+          className="export-foil-hit pointer-events-auto cursor-pointer touch-none overflow-visible"
           onPointerDown={onPointerDown}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerCancel}
           data-export-tilt-hit
           data-export-shadow
           data-tilt-perspective={String(PREVIEW_PERSPECTIVE_PX)}
+          data-hover-tilt={tilt ? '1' : undefined}
         >
+          <div className="export-foil-lift" data-export-foil-lift>
           <div
             ref={cardRef}
             className="export-foil pointer-events-none min-h-0 min-w-0 cursor-pointer overflow-hidden rounded-lg bg-transparent select-none"
@@ -648,6 +651,7 @@ export function ExportPreview3D({
                 data-foil-layer={id}
               />
             ))}
+          </div>
           </div>
         </div>
       ) : (

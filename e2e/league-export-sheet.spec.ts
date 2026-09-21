@@ -184,13 +184,16 @@ test.describe('desktop export preview', () => {
         mask,
         amount: Number(getComputedStyle(card).getPropertyValue('--foil-holographic')),
         foil: Number(card.getAttribute('data-foil-opacity')),
-        shadow: hitEl ? getComputedStyle(hitEl).boxShadow : 'none',
+        shadow: (() => {
+          const lift = document.querySelector<HTMLElement>('[data-export-foil-lift]');
+          return lift ? getComputedStyle(lift).boxShadow : 'none';
+        })(),
         hypot: Math.hypot(Number(card.getAttribute('data-tilt-x') || 0), Number(card.getAttribute('data-tilt-y') || 0)),
       };
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
     expect(holo.mix, JSON.stringify(holo)).toBe('multiply');
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.52, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.4, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
     expect(holo.shadow, JSON.stringify(holo)).not.toBe('none');
@@ -232,7 +235,7 @@ test.describe('gym trainer-card export', () => {
     });
     expect(holo.ok, JSON.stringify(holo)).toBe(true);
     expect(holo.mix, JSON.stringify(holo)).toBe('multiply');
-    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.52, 2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.4, 2);
     expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
     expect(holo.hypot, JSON.stringify(holo)).toBeGreaterThan(2.4);
     expect(holo.hypot, JSON.stringify(holo)).toBeLessThanOrEqual(3.8);
