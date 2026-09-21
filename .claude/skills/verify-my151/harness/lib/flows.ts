@@ -904,3 +904,52 @@ export async function runLeagueHomeSlotMoveProof(s: Session, persona: PersonaNam
   }
   return checks;
 }
+
+const NIMBUS_LEAGUE =
+  "JSON.stringify({state:{name:'',cards:(()=>{const empty=()=>({type:null,theme:'',lines:[],signatureSeat:null,signatureId:null,partnerId:null,tmMoveId:null,badgeName:'',legend:null,powerup:null});const cards=Array.from({length:14},empty);cards[0]={type:'flying',theme:'Clouds',lines:[{branch:[333,334],boundaries:[1,6]},{branch:[179,180,181],boundaries:[1,4,8]}],signatureSeat:1,signatureId:334,partnerId:179,tmMoveId:538,badgeName:'Nimbus',legend:null,powerup:null};return cards;})()},version:1})";
+
+/**
+ * Gym-card export preview for the Nimbus/Cotton Guard card. Proves the overlay
+ * paints a real PNG of that card; layout parity lives in layout.test.ts.
+ */
+export async function runGymCardExportParitySuite(
+  s: Session,
+  _persona: PersonaName | null,
+  ctx: FlowContext,
+): Promise<Check[]> {
+  const checks: Check[] = [];
+  const url = ctx.base + LEAGUE_PATH;
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:nimbus-preview', status: 'skip', detail: 'league home never hydrated' });
+    return checks;
+  }
+  await s.evalJson(`localStorage.setItem(${JSON.stringify(LEAGUE_KEY)}, ${NIMBUS_LEAGUE}); return true;`);
+  await s.navigate(url);
+  if (!(await waitLeagueHome(s))) {
+    checks.push({ name: 'gym-export:nimbus-preview', status: 'skip', detail: 'league home never hydrated after seed' });
+    return checks;
+  }
+  await s.click('[data-testid="league-slot-0"]');
+  if (!(await waitFor(s, '[data-testid="slot-tm"]', 40))) {
+    checks.push({ name: 'gym-export:nimbus-preview', status: 'fail', detail: 'trainer card never opened' });
+    return checks;
+  }
+  await s.click('[data-league-export]');
+  if (!(await waitFor(s, '[data-export-preview] img', 60))) {
+    checks.push({ name: 'gym-export:nimbus-preview', status: 'fail', detail: 'export preview image never mounted' });
+    return checks;
+  }
+  await sleep(800);
+  const painted = await s.evalJson<{ w: number; complete: boolean }>(
+    `const img=document.querySelector('[data-export-preview] img');
+     return { w: img?.naturalWidth ?? 0, complete: !!img?.complete };`,
+  );
+  await s.screenshot(ctx.shot('gym-export-nimbus-preview'));
+  checks.push(ok(
+    'gym-export:nimbus-preview',
+    painted.complete && painted.w > 800,
+    `preview naturalWidth=${painted.w} complete=${painted.complete}`,
+  ));
+  return checks;
+}
