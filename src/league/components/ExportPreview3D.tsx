@@ -137,9 +137,11 @@ export function ExportPreview3D({
     const el = cardRef.current;
     if (!el) return;
     const maxTilt = recipeRef.current.maxTilt;
-    let rotateX = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateX));
-    let rotateY = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateY));
-    const foilMag = Math.hypot(rotateX, rotateY);
+    const logicalX = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateX));
+    const logicalY = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateY));
+    const foilMag = Math.hypot(logicalX, logicalY);
+    let rotateX = logicalX;
+    let rotateY = logicalY;
     const stageSize = stageSizeRef.current;
     const cardW = cardMaxRef.current.w;
     const cardH = cardMaxRef.current.h;
@@ -174,7 +176,7 @@ export function ExportPreview3D({
     el.style.setProperty('--rotation-y', `${rotateY}deg`);
     el.style.setProperty('--rotate-x', `${rotateY}deg`);
     el.style.setProperty('--rotate-y', `${rotateX}deg`);
-    lastPoseRef.current = { rotateX, rotateY, pointerX, pointerY, nx, ny };
+    lastPoseRef.current = { rotateX: logicalX, rotateY: logicalY, pointerX, pointerY, nx, ny };
     el.style.setProperty('--pointer-x', `${pointerX}%`);
     el.style.setProperty('--pointer-y', `${pointerY}%`);
     el.style.setProperty('--pointer-from-center', Math.min(1, Math.hypot(pointerX - 50, pointerY - 50) / 50).toFixed(3));

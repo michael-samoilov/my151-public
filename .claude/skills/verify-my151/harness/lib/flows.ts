@@ -501,6 +501,17 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 2.4 && hoverOrbit === 'pointer' && (desktop ? hoverMax < 4.0 : hoverMax < 11),
     reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit} w=${viewW}`,
   };
+  await s.evalJson(
+    `const hit=document.querySelector('[data-export-tilt-hit]');
+     if(!(hit instanceof HTMLElement)) return false;
+     const r=hit.getBoundingClientRect();
+     const x=r.left+r.width*0.5;
+     const y=r.top+r.height*0.5;
+     hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:x,clientY:y,pointerType:'mouse',pointerId:1}));
+     hit.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,cancelable:true,clientX:x+16,clientY:y,pointerType:'mouse',pointerId:1}));
+     return true;`,
+  ).catch(() => false);
+  await sleep(200);
   const rainbow = await s.evalJson<{ ok: boolean; reason: string }>(
     `const card=document.querySelector('[data-export-preview]');
      const holo=document.querySelector('[data-foil-layer="holographic"]');
