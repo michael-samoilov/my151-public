@@ -1065,7 +1065,22 @@ export async function runFavoritesSuite(s: Session, _persona: PersonaName | null
       `found=${vacate.found} sprite=${vacate.hasSprite} opacity=${vacate.opacity}`,
     ));
     await s.screenshot(ctx.shot('favorites-packing-vacate'));
-    checks.push(await auditRender(s, 'favorites:render-packing'));
+    // Filled type×gen cells clip their 120% sprites on purpose (same as the
+    // dex grid). A whole-page clipped audit after placement always fails on
+    // those tiles, so this check only counts findings in the packing UI.
+    try {
+      const result = await s.evalJson<{ findings: AuditFinding[] }>(auditBody({ minFont: 8, annotate: false, checkFrame: false, offCanvasOk: true }));
+      const hard = result.findings.filter((f) => APP_HARD_KINDS.includes(f.kind) && /pack/i.test(`${f.path} ${f.text}`));
+      const detail = hard.slice(0, 4).map((f) => `${f.kind}: ${f.detail} (${f.text || f.path})`).join(' | ');
+      checks.push({
+        name: 'favorites:render-packing',
+        status: hard.length === 0 ? 'pass' : 'fail',
+        detail: hard.length ? `${hard.length} hard finding(s): ${detail}` : `${result.findings.length} page finding(s), none in packing UI`,
+        findings: hard.map(findingKey),
+      });
+    } catch (e) {
+      checks.push({ name: 'favorites:render-packing', status: 'fail', detail: `audit did not run: ${(e as Error).message.slice(0, 120)}` });
+    }
   }
 
   const oracle = await s.evalJson<{ has: boolean; fairy?: number; water?: number }>(`
