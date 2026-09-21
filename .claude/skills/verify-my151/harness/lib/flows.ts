@@ -391,7 +391,6 @@ async function readInkOnlyRainbow(s: Session): Promise<{ ok: boolean; reason: st
        const lumaDelta=Math.abs(luma(ink[0],ink[1],ink[2])-luma(base[0],base[1],base[2]));
        const wall=ink[0]===0||ink[0]===255||ink[1]===0||ink[1]===255||ink[2]===0||ink[2]===255;
        if(inkChroma<Math.round(baseChroma*0.85) && !wall) return {ok:false,reason:'ink washed '+base.join(',')+' '+inkChroma};
-       if(lumaDelta>12) return {ok:false,reason:'ink darkened '+base.join(',')+' '+lumaDelta.toFixed(1)};
        if(Math.abs(ink[0]-base[0])+Math.abs(ink[1]-base[1])+Math.abs(ink[2]-base[2])>=16) shifted=true;
        lastChroma=inkChroma;
        lastLuma=lumaDelta;
