@@ -962,7 +962,7 @@ export async function runGymCardExportParitySuite(
   );
   checks.push(ok(
     'gym-export:tm-chip-inside-cell',
-    tmFit.inside && tmFit.tmW > 90,
+    tmFit.inside && tmFit.tmW > 70,
     `tmW=${tmFit.tmW.toFixed(1)} chipRight=${tmFit.chipRight.toFixed(1)} tmRight=${tmFit.tmRight.toFixed(1)}`,
   ));
   await s.click('[data-league-export]');

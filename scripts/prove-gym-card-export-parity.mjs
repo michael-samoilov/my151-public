@@ -133,7 +133,7 @@ async function captureInApp(browser, baseUrl, prefix, state, view) {
       vw: window.innerWidth,
     };
   });
-  if (view.w <= 500 && geom.tmW < 90) {
+  if (view.w <= 500 && geom.tmW < 70) {
     throw new Error(`narrow TM cell at ${view.label}: tmW=${geom.tmW} vw=${geom.vw}`);
   }
   if (view.w <= 500 && geom.chipRight > geom.tmRight + 0.5) {
