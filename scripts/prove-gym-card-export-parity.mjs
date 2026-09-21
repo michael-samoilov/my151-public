@@ -25,7 +25,7 @@ const EMPTY = {
   powerup: null,
 };
 
-function nimbusState() {
+function nimbusState({ partner = true } = {}) {
   const cards = Array.from({ length: 14 }, () => ({ ...EMPTY, lines: [] }));
   cards[0] = {
     ...EMPTY,
@@ -37,17 +37,17 @@ function nimbusState() {
     ],
     signatureSeat: 1,
     signatureId: 334,
-    partnerId: 179,
+    partnerId: partner ? 179 : null,
     tmMoveId: 538,
     badgeName: 'Nimbus',
   };
   return { state: { name: '', cards }, version: 1 };
 }
 
-async function seed(page) {
+async function seed(page, opts) {
   await page.addInitScript((state) => {
     localStorage.setItem('league-builder', JSON.stringify(state));
-  }, nimbusState());
+  }, nimbusState(opts));
 }
 
 async function openCard(page, baseUrl) {
@@ -142,6 +142,18 @@ const afterPage = await afterCtx.newPage();
 await captureSet(afterPage, 'http://127.0.0.1:4190', 'after');
 await afterPage.close();
 await afterCtx.close();
+const soloCtx = await browser.newContext({ deviceScaleFactor: 3, viewport: { width: 390, height: 844 } });
+const soloPage = await soloCtx.newPage();
+await seed(soloPage, { partner: false });
+await openCard(soloPage, 'http://127.0.0.1:4190');
+await shot(soloPage, 'after_solo_inapp_mobile_390');
+await soloPage.setViewportSize({ width: 1280, height: 800 });
+await openExport(soloPage);
+await savePng(soloPage, join(OUT, 'after_solo_export_png.png'));
+await savePng(soloPage, join(ART, 'after_solo_export_png.png'));
+await shot(soloPage, 'after_solo_export_overlay_desktop_1280');
+await soloPage.close();
+await soloCtx.close();
 await browser.close();
 basePreview.stop();
 fixPreview.stop();

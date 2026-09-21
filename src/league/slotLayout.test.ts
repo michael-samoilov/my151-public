@@ -5,6 +5,8 @@ import {
   pairSpriteScale,
   pairSquaresFit,
   seamEnds,
+  soloMaxEdge,
+  soloSprite,
   SLOT_PAD_REM,
   slotHeadPx,
 } from './slotLayout';
@@ -90,6 +92,23 @@ describe('seamEnds', () => {
       const midY = (s.y1 + s.y2) / 2;
       expect(midX).toBeCloseTo(0.5, 5);
       expect(midY).toBeCloseTo(0.5, 5);
+    }
+  });
+});
+
+describe('soloSprite', () => {
+  it('is an integer device-pixel scale, larger than the pair when the pane allows', () => {
+    const sprite = soloSprite(144, H, 3);
+    const dpr = 3;
+    expect((sprite * dpr) % SPRITE_NATIVE).toBe(0);
+    expect(sprite).toBeGreaterThanOrEqual(pairSprite(144, H, 3));
+    expect(sprite).toBeLessThanOrEqual(soloMaxEdge(144, H));
+  });
+
+  it('never exceeds the pane after pad, heading and name', () => {
+    for (const w of WIDTHS) {
+      const sprite = soloSprite(w, H, 3);
+      expect(sprite).toBeLessThanOrEqual(soloMaxEdge(w, H));
     }
   });
 });

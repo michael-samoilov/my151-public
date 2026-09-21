@@ -138,8 +138,15 @@ describe('export layout', () => {
     expect(2 * L.HEAD_LINE + 12 + L.SIG_SPRITE).toBeLessThan(box.height);
   });
 
-  it('draws the solo showcase sprite at a whole multiple of the source', () => {
-    expect(L.SIG_SPRITE % 96).toBe(0);
+  it('draws the solo showcase sprite at a whole multiple of the source, larger than the pair', () => {
+    const box = L.showcaseBox();
+    const sprite = L.soloExportSprite(box.width, box.height);
+    expect(sprite % 96).toBe(0);
+    expect(sprite).toBeGreaterThanOrEqual(96);
+    expect(sprite).toBeGreaterThan(L.pairExportSprite(box.width, box.height));
+    const pad = 0.5 * 16 * L.K;
+    expect(sprite).toBeLessThanOrEqual(box.width - 2 * pad);
+    expect(2 * L.HEAD_LINE + L.NAME_LINE + sprite + 2 * pad).toBeLessThanOrEqual(box.height);
   });
 
   it('gives the TM and badge slots the same box', () => {

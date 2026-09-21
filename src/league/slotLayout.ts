@@ -74,6 +74,35 @@ export function pairSprite(
   return pixelPerfectCssPx(pairSpriteScale(w, h, dpr, remPx), dpr);
 }
 
+/** Room for one centered sprite: pad on all sides, heading and name in height. */
+export function soloMaxEdge(w: number, h: number, remPx: number = 16): number {
+  const pad = SLOT_PAD_REM * remPx;
+  const headH = slotHeadPx(remPx);
+  const nameH = SLOT_HEAD_REM * SLOT_HEAD_LEADING * remPx;
+  return Math.min(w - 2 * pad, h - 2 * pad - headH - nameH);
+}
+
+/**
+ * Largest integer native scale whose CSS edge fits `maxEdge`.
+ * 1× is the floor. Never a fraction of the pane.
+ */
+export function soloSprite(
+  w: number,
+  h: number,
+  dpr: number = 1,
+  remPx: number = 16,
+): number {
+  const maxEdge = soloMaxEdge(w, h, remPx);
+  const d = Math.max(dpr, 1);
+  let n = 1;
+  for (let s = 2; ; s++) {
+    const css = Math.round((s * SPRITE_NATIVE) / d);
+    if (css > maxEdge) break;
+    n = s;
+  }
+  return Math.round((n * SPRITE_NATIVE) / d);
+}
+
 /**
  * Where the seam meets the slot's edges, as fractions of the slot.
  *

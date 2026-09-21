@@ -49,6 +49,7 @@ import {
   SLOT_PAD_REM,
   pairSprite,
   seamEnds,
+  soloSprite,
 } from '../slotLayout';
 import { useSlotLab } from '../slotLab';
 
@@ -782,7 +783,7 @@ function PowerupButton({ kind, active, onPress, side }: {
  * sprite square and draws the ring inside it.
  */
 function SlotHalf({
-  testId, half, heading, mirrored, pokemon, onPick, onRemove,
+  testId, half, heading, mirrored, pokemon, onPick, onRemove, layout, showArt,
 }: {
   testId: string;
   half: 'ace' | 'partner';
@@ -791,6 +792,8 @@ function SlotHalf({
   pokemon: ReturnType<typeof getPokemonById>;
   onPick: () => void;
   onRemove: () => void;
+  layout?: 'corner' | 'center';
+  showArt?: boolean;
 }) {
   const label = (
     <HeadRuns
@@ -904,18 +907,25 @@ function SlotHalf({
       }
       className={cn(
         'absolute z-[6] flex items-center text-center',
-        mirrored ? 'bottom-0 right-0 flex-col-reverse' : 'left-0 top-0 flex-col',
+        layout === 'center'
+          ? 'flex-col'
+          : mirrored ? 'bottom-0 right-0 flex-col-reverse' : 'left-0 top-0 flex-col',
         lab ? 'cursor-grab touch-none rounded outline-dashed outline-1 outline-offset-2' : 'cursor-pointer',
       )}
       style={{
         padding: `${SLOT_PAD_REM}rem`,
-        transform: offset.x || offset.y ? `translate(${offset.x}px, ${offset.y}px)` : undefined,
+        left: layout === 'center' ? '50%' : undefined,
+        top: layout === 'center' ? '50%' : undefined,
+        transform: [
+          layout === 'center' ? 'translate(-50%, -50%)' : '',
+          offset.x || offset.y ? `translate(${offset.x}px, ${offset.y}px)` : '',
+        ].filter(Boolean).join(' ') || undefined,
         outlineColor: lab ? 'rgba(37,99,235,0.5)' : undefined,
       }}
     >
       {label}
-      {art}
-      {name}
+      {showArt !== false && art}
+      {showArt !== false && name}
     </button>
   );
 }
@@ -1051,9 +1061,13 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
   const box = useSlotBox(slotRef);
   const dpr = useDevicePixelRatio();
   const labSprite = useSlotLab((st) => (st.enabled ? st.sprite : 0));
+  const remPx = getAppliedRootFontSizePx();
+  const solo = Boolean(ace) !== Boolean(partner);
   const spritePx = labSprite > 0
     ? labSprite
-    : pairSprite(box[0], box[1], dpr, getAppliedRootFontSizePx());
+    : solo
+      ? soloSprite(box[0], box[1], dpr, remPx)
+      : pairSprite(box[0], box[1], dpr, remPx);
   const seam = seamEnds(box[0], box[1]);
   const pos = {
     ...slotX(1, 3),
@@ -1064,6 +1078,7 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
     <div
       ref={slotRef}
       data-ace-partner-slot
+      data-showcase={solo ? 'solo' : ace && partner ? 'pair' : 'empty'}
       data-slot-sprite={spritePx}
       className="absolute z-[5] overflow-hidden rounded-lg"
       style={{
@@ -1073,28 +1088,32 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
       }}
     >
       {!(ace || partner) && <EmptyOutline />}
-      <svg
-        className="pointer-events-none absolute inset-0 h-full w-full"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        <line
-          x1={seam.x1 * 100}
-          y1={seam.y1 * 100}
-          x2={seam.x2 * 100}
-          y2={seam.y2 * 100}
-          stroke="var(--lg-dash)"
-          strokeWidth="1"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
+      {!solo && (
+        <svg
+          className="pointer-events-none absolute inset-0 h-full w-full"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <line
+            x1={seam.x1 * 100}
+            y1={seam.y1 * 100}
+            x2={seam.x2 * 100}
+            y2={seam.y2 * 100}
+            stroke="var(--lg-dash)"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      )}
       <SlotHalf
         testId="slot-ace"
         half="ace"
         heading={ACE_HEAD}
         mirrored={false}
         pokemon={ace}
+        layout={solo && ace ? 'center' : 'corner'}
+        showArt={!!ace || !solo}
         onPick={() => openLeagueBrowser(cardIndex, 'signature')}
         onRemove={() => setSignatureSeat(cardIndex, null, null)}
       />
@@ -1104,6 +1123,8 @@ function AcePartnerSlot({ cardIndex, view }: { cardIndex: number; view: CardView
         heading={PARTNER_HEAD}
         mirrored
         pokemon={partner}
+        layout={solo && partner ? 'center' : 'corner'}
+        showArt={!!partner || !solo}
         onPick={() => openLeagueBrowser(cardIndex, 'partner')}
         onRemove={() => setPartner(cardIndex, null)}
       />

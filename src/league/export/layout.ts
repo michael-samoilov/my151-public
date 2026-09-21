@@ -12,7 +12,7 @@
  */
 
 import { TYPE_BADGE_ASPECT } from '@/lib/typeBadgeGeometry';
-import { pairSprite } from '../slotLayout';
+import { pairSprite, soloMaxEdge, SPRITE_NATIVE } from '../slotLayout';
 import { ELITE_ROW, CHAMPION_ROW, BOSS_ROW, ROW_COUNT } from '../model/constants';
 
 /** Export px per app rem-unit: the card's 3.25rem sprite is 96px. */
@@ -170,6 +170,16 @@ export const SIG_SPRITE = 192;
  */
 export function pairExportSprite(w: number, h: number): number {
   return Math.round(pairSprite(w / K, h / K, 3, 16) * K);
+}
+
+/**
+ * One ace or one partner, centered. Largest n×96 that still fits the slot
+ * after pad, heading and name. The pair size is smaller; a lone sprite can
+ * spend the whole pane.
+ */
+export function soloExportSprite(w: number, h: number): number {
+  const maxEdge = soloMaxEdge(w, h, 16 * K);
+  return Math.max(SPRITE_NATIVE, Math.floor(maxEdge / SPRITE_NATIVE) * SPRITE_NATIVE);
 }
 
 /** The slot heading runs: two lines, 0.53125rem extrabold, 1.4 line-height. */

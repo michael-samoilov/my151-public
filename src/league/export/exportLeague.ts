@@ -412,9 +412,7 @@ function drawShowcase(
   const { ace, partner } = showcasePair(card);
   const filled = ace !== null || partner !== null;
   const pad = SLOT_PAD_REM * 16 * L.K;
-  const sprite = L.pairExportSprite(box.width, box.height);
-  const aceW = Math.max(headWidth(ctx, ACE_HEAD), sprite);
-  const partnerW = Math.max(headWidth(ctx, PARTNER_HEAD), sprite);
+  const solo = (ace === null) !== (partner === null);
 
   ctx.save();
   ctx.fillStyle = filled ? '#ffffff' : 'rgba(255,255,255,0.65)';
@@ -430,6 +428,35 @@ function drawShowcase(
   }
   ctx.restore();
 
+  ctx.save();
+  roundRect(ctx, x, y, box.width, box.height, L.SLOT_R);
+  ctx.clip();
+
+  if (solo) {
+    const id = ace ?? partner;
+    if (id !== null) {
+      const sprite = L.soloExportSprite(box.width, box.height);
+      const headH = 2 * L.HEAD_LINE;
+      const clusterH = headH + sprite + L.NAME_LINE;
+      const top = y + (box.height - clusterH) / 2;
+      const cx = x + box.width / 2;
+      const spriteCy = top + headH + sprite / 2;
+      drawShowcaseArt(ctx, id, images, cx, spriteCy, sprite, 'both');
+      drawHeading(ctx, ace !== null ? ACE_HEAD : PARTNER_HEAD, cx, top, shades.band);
+      ctx.save();
+      ctx.font = font(L.NAME_PX, 800);
+      ctx.fillStyle = shades.band;
+      ctx.textBaseline = 'middle';
+      fillTrackedCentered(ctx, speciesCaps(id), cx, spriteCy + sprite / 2 + L.NAME_LINE / 2, L.NAME_TRACK);
+      ctx.restore();
+    }
+    ctx.restore();
+    return;
+  }
+
+  const sprite = L.pairExportSprite(box.width, box.height);
+  const aceW = Math.max(headWidth(ctx, ACE_HEAD), sprite);
+  const partnerW = Math.max(headWidth(ctx, PARTNER_HEAD), sprite);
   const seam = seamEnds(box.width, box.height);
   const halves = [
     {
@@ -447,10 +474,6 @@ function drawShowcase(
       mirrored: true,
     },
   ];
-
-  ctx.save();
-  roundRect(ctx, x, y, box.width, box.height, L.SLOT_R);
-  ctx.clip();
 
   for (const half of halves) {
     if (half.id === null) continue;
