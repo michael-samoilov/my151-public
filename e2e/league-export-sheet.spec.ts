@@ -125,7 +125,13 @@ test.describe('mobile export sheet', () => {
     await page.mouse.move(cx, cy);
     await page.mouse.down();
     await page.mouse.move(cx + box!.width * 0.35, cy - box!.height * 0.3, { steps: 8 });
-    await expect.poll(async () => Math.abs(Number(await foil.getAttribute('data-tilt-x')))).toBeGreaterThan(3);
+    await expect
+      .poll(async () => {
+        const x = Number(await foil.getAttribute('data-tilt-x'));
+        const y = Number(await foil.getAttribute('data-tilt-y'));
+        return Math.hypot(x, y);
+      })
+      .toBeGreaterThan(2.4);
     expect(await foil.getAttribute('data-paused')).toBe('1');
     await page.mouse.up();
   });

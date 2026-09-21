@@ -371,6 +371,8 @@ test.describe('desktop dex export preview', () => {
         const r = el.getBoundingClientRect();
         const hitEl = document.querySelector('[data-export-tilt-hit]');
         const hitStyle = hitEl instanceof HTMLElement ? getComputedStyle(hitEl) : null;
+        const stage = hitEl?.parentElement;
+        const stageStyle = stage instanceof HTMLElement ? getComputedStyle(stage) : null;
         const x = Number(el.getAttribute('data-tilt-x'));
         const y = Number(el.getAttribute('data-tilt-y'));
         return {
@@ -382,7 +384,8 @@ test.describe('desktop dex export preview', () => {
           left: r.left,
           width: r.width,
           height: r.height,
-          perspective: hitStyle?.perspective ?? '',
+          perspective: stageStyle?.perspective ?? '',
+          hitPerspective: hitStyle?.perspective ?? '',
           transformStyle: hitStyle?.transformStyle ?? '',
         };
       });
@@ -399,6 +402,7 @@ test.describe('desktop dex export preview', () => {
     expect(aligned, JSON.stringify({ a, b, aligned, visual })).toBeLessThan(0.85);
     expect(visual, JSON.stringify({ a, b, visual })).toBeGreaterThan(4);
     expect(a.perspective.startsWith('600'), a.perspective).toBe(true);
+    expect(a.hitPerspective === 'none' || a.hitPerspective === '0px', a.hitPerspective).toBe(true);
     expect(b.transformStyle.includes('preserve-3d'), b.transformStyle).toBe(true);
     expect(Math.max(a.hypot, b.hypot), JSON.stringify({ a, b })).toBeLessThan(16);
     const inView = await page.evaluate(() => {
