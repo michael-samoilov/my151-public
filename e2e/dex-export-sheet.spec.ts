@@ -552,4 +552,76 @@ test.describe('desktop dex export preview', () => {
     expect(gaps.min, JSON.stringify(gaps)).toBeGreaterThanOrEqual(24);
     expect(gaps.view, JSON.stringify(gaps)).toBeGreaterThanOrEqual(24);
   });
+
+  test('caps desktop hypot below a diamond shear', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const foil = page.locator('[data-export-preview]');
+    const hit = page.locator('[data-export-tilt-hit]');
+    const box = await hit.boundingBox();
+    expect(box).toBeTruthy();
+    const restCover = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const layer = document.querySelector<HTMLElement>('[data-export-preview-layer]');
+      if (!card || !layer) return 0;
+      const c = card.getBoundingClientRect();
+      const l = layer.getBoundingClientRect();
+      return Math.max(c.width / l.width, c.height / l.height);
+    });
+    expect(restCover).toBeGreaterThan(0.78);
+    await page.mouse.move(box!.x + box!.width * 0.08, box!.y + box!.height * 0.92, { steps: 10 });
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    await page.waitForTimeout(400);
+    const hypot = Math.hypot(
+      Number(await foil.getAttribute('data-tilt-x')),
+      Number(await foil.getAttribute('data-tilt-y')),
+    );
+    expect(hypot, 'desktop peak hypot').toBeGreaterThan(3.5);
+    expect(hypot, 'desktop peak hypot').toBeLessThanOrEqual(5.6);
+  });
+
+  test('paints rainbow holographic foil on the live overlay', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'one desktop pass');
+    await openDexExport(page);
+    await waitPreviewReady(page);
+    const foil = page.locator('[data-export-preview]');
+    await expect.poll(async () => foil.getAttribute('data-foil-maps')).toBe('1');
+    const hit = page.locator('[data-export-tilt-hit]');
+    const box = await hit.boundingBox();
+    expect(box).toBeTruthy();
+    await page.mouse.move(box!.x + box!.width * 0.82, box!.y + box!.height * 0.18, { steps: 10 });
+    await expect.poll(async () => foil.getAttribute('data-export-orbit')).toBe('pointer');
+    await page.waitForTimeout(500);
+    const holo = await page.evaluate(() => {
+      const card = document.querySelector<HTMLElement>('[data-export-preview]');
+      const layer = document.querySelector<HTMLElement>('[data-foil-layer="holographic"]');
+      if (!card || !layer) return { ok: false, reason: 'missing' };
+      const cs = getComputedStyle(layer);
+      const mask = `${cs.getPropertyValue('-webkit-mask-image')} ${cs.maskImage}`.replace(/\s+/g, ' ').trim();
+      const mode = `${cs.getPropertyValue('mask-mode')} ${cs.getPropertyValue('-webkit-mask-source-type')}`.trim();
+      return {
+        ok: true,
+        mix: cs.mixBlendMode,
+        opacity: Number(cs.opacity),
+        mask,
+        mode,
+        bg: cs.backgroundImage,
+        amount: Number(getComputedStyle(card).getPropertyValue('--foil-holographic')),
+        foil: Number(card.getAttribute('data-foil-opacity')),
+        w: layer.offsetWidth,
+        h: layer.offsetHeight,
+      };
+    });
+    expect(holo.ok, JSON.stringify(holo)).toBe(true);
+    expect(holo.mix, JSON.stringify(holo)).toBe('color-dodge');
+    expect(holo.opacity, JSON.stringify(holo)).toBeGreaterThan(0.2);
+    expect(holo.amount, JSON.stringify(holo)).toBeCloseTo(0.75, 2);
+    expect(holo.foil, JSON.stringify(holo)).toBeGreaterThan(0.2);
+    expect(holo.w, JSON.stringify(holo)).toBeGreaterThan(100);
+    expect(holo.h, JSON.stringify(holo)).toBeGreaterThan(100);
+    expect(holo.bg, JSON.stringify(holo)).toMatch(/repeating-linear-gradient/);
+    expect(holo.mask, JSON.stringify(holo)).toMatch(/url\(/);
+    expect(holo.mask, JSON.stringify(holo)).not.toMatch(/^(none|none none)$/);
+  });
 });

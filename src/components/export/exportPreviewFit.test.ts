@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   aabbFitsCentered,
+  clampHypot,
   clampTiltToBox,
   containUnrotatedSize,
+  PREVIEW_DESKTOP_MAX_HYPOT,
   fitCardInPreviewBox,
   fitScaleForTilt,
   pointerNearPreview,
@@ -264,6 +266,20 @@ describe('exportPreviewFit', () => {
     expect(tiltInsetForRestGap(80)).toBe(PREVIEW_TILT_INSET);
     expect(tiltInsetForRestGap(25.5)).toBe(8);
     expect(tiltInsetForRestGap(10)).toBe(8);
+  });
+
+  it('caps combined hypot so a tall poster cannot diamond', () => {
+    const corner = clampHypot(10, -10, PREVIEW_DESKTOP_MAX_HYPOT);
+    expect(Math.hypot(corner.x, corner.y)).toBeCloseTo(PREVIEW_DESKTOP_MAX_HYPOT, 5);
+    expect(Math.hypot(10, -10)).toBeGreaterThan(12);
+    const rest = fitCardInPreviewBox({
+      boxWidth: 800,
+      boxHeight: 800,
+      aspect: 0.55,
+      tiltDeg: 10,
+      pad: PREVIEW_REST_PAD,
+    });
+    expect(previewCoverRatio(rest, { width: 800, height: 800 })).toBeGreaterThan(0.78);
   });
 
   it('flags a card AABB that kisses the pane corner', () => {

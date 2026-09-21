@@ -4,6 +4,13 @@ export const PREVIEW_PERSPECTIVE_PX = 600;
 export const PREVIEW_REST_PAD = 8;
 /** Live tilt must keep this many CSS px between the painted AABB and the pane. */
 export const PREVIEW_TILT_INSET = 24;
+/**
+ * Desktop posters fill the pane. Combined 10°+10° (hypot ~14°) shears them
+ * into a diamond even when the AABB still fits. Cap the vector length, not
+ * rest size. Mobile keeps the full poke-holo 10° orbit.
+ */
+export const PREVIEW_DESKTOP_MAX_HYPOT = 5.5;
+export const PREVIEW_DESKTOP_MIN_PX = 1024;
 
 export type ProjectedCardAabb = {
   minX: number;
@@ -234,6 +241,18 @@ export function paintedBoxOverflow(
     box.top + inset - card.top,
     card.bottom - (box.bottom - inset),
   );
+}
+
+/** Scale a tilt vector so hypot(x, y) never exceeds `maxHypot`. */
+export function clampHypot(
+  x: number,
+  y: number,
+  maxHypot: number,
+): { x: number; y: number } {
+  const mag = Math.hypot(x, y);
+  if (mag <= maxHypot || mag === 0) return { x, y };
+  const scale = maxHypot / mag;
+  return { x: x * scale, y: y * scale };
 }
 
 /** Shrink a tilt vector until the projected AABB fits the box. */

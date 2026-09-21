@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import {
+  clampHypot,
   clampTiltToBox,
   fitCardInPreviewBox,
   paintedBoxOverflow,
+  PREVIEW_DESKTOP_MAX_HYPOT,
+  PREVIEW_DESKTOP_MIN_PX,
   PREVIEW_PERSPECTIVE_PX,
   PREVIEW_REST_PAD,
   PREVIEW_TILT_INSET,
@@ -134,6 +137,7 @@ export function ExportPreview3D({
     const maxTilt = recipeRef.current.maxTilt;
     let rotateX = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateX));
     let rotateY = Math.min(maxTilt, Math.max(-maxTilt, pose.rotateY));
+    const foilMag = Math.hypot(rotateX, rotateY);
     const stage = stageRef.current;
     const boxEl =
       stage?.closest<HTMLElement>('[data-export-preview-layer]') ?? stage;
@@ -156,6 +160,11 @@ export function ExportPreview3D({
       });
       rotateX = clamped.x;
       rotateY = clamped.y;
+    }
+    if (window.innerWidth >= PREVIEW_DESKTOP_MIN_PX) {
+      const capped = clampHypot(rotateX, rotateY, PREVIEW_DESKTOP_MAX_HYPOT);
+      rotateX = capped.x;
+      rotateY = capped.y;
     }
     const pointerX = pose.pointerX;
     const pointerY = pose.pointerY;
@@ -195,11 +204,11 @@ export function ExportPreview3D({
     el.style.setProperty('--hover-tilt-y', ny.toFixed(4));
     el.style.setProperty('--gradient-x', `${pointerX}%`);
     el.style.setProperty('--gradient-y', `${pointerY}%`);
-    const mag = Math.hypot(rotateX, rotateY);
     const recipeNow = recipeRef.current;
     const tiltNow = tiltRef.current ?? DEFAULT_HOVER_TILT_RECIPE;
     const span = Math.max(0.001, recipeNow.maxTilt - recipeNow.deadDeg);
-    const foil = mag <= recipeNow.deadDeg ? 0 : Math.min(1, (mag - recipeNow.deadDeg) / span);
+    const foil =
+      foilMag <= recipeNow.deadDeg ? 0 : Math.min(1, (foilMag - recipeNow.deadDeg) / span);
     el.style.setProperty('--foil-opacity', foil.toFixed(3));
     el.style.setProperty('--hover-tilt-opacity', foil.toFixed(3));
     const angle = (Math.atan2(ny - 0.5, nx - 0.5) * 180) / Math.PI;

@@ -491,9 +491,30 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
   }
   const widthDelta = widths.length ? Math.max(...widths) - Math.min(...widths) : 99;
   const hoverCircle = {
-    ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 4 && hoverMax < 15 && hoverOrbit === 'pointer',
+    ok: hoverScale === '1' && widthDelta < 2 && hoverMax > 3.5 && hoverMax < 6.2 && hoverOrbit === 'pointer',
     reason: `scale=${hoverScale} dW=${widthDelta} hypot=${hoverMax.toFixed(1)} orbit=${hoverOrbit}`,
   };
+  const rainbow = await s.evalJson<{ ok: boolean; reason: string }>(
+    `const card=document.querySelector('[data-export-preview]');
+     const holo=document.querySelector('[data-foil-layer="holographic"]');
+     if(!(card instanceof HTMLElement) || !(holo instanceof HTMLElement)) return {ok:false,reason:'missing'};
+     const cs=getComputedStyle(holo);
+     const mask=(cs.getPropertyValue('-webkit-mask-image')+' '+cs.maskImage).replace(/\\s+/g,' ').trim();
+     const mix=cs.mixBlendMode;
+     const opacity=Number(cs.opacity);
+     const amount=Number(getComputedStyle(card).getPropertyValue('--foil-holographic'));
+     const foil=Number(card.getAttribute('data-foil-opacity')||0);
+     const maps=card.getAttribute('data-foil-maps')||'';
+     if(mix!=='color-dodge') return {ok:false,reason:'blend '+mix};
+     if(!(opacity>0.2)) return {ok:false,reason:'opacity '+opacity.toFixed(3)};
+     if(Math.abs(amount-0.75)>0.02) return {ok:false,reason:'amount '+amount};
+     if(!(foil>0.2)) return {ok:false,reason:'foil '+foil.toFixed(3)};
+     if(maps!=='1') return {ok:false,reason:'maps '+maps};
+     if(!mask.includes('url(') || mask==='none' || mask==='none none') return {ok:false,reason:'mask '+mask.slice(0,40)};
+     if(!cs.backgroundImage.includes('repeating-linear-gradient')) return {ok:false,reason:'no grating'};
+     if(holo.offsetWidth<80 || holo.offsetHeight<80) return {ok:false,reason:'size '+holo.offsetWidth+'x'+holo.offsetHeight};
+     return {ok:true,reason:'dodge '+opacity.toFixed(2)+' foil='+foil.toFixed(2)};`,
+  ).catch(() => ({ ok: false, reason: 'eval' }));
   const readShadowX = async () =>
     s.evalJson<number>(
       `const card=document.querySelector('[data-export-preview]');
@@ -664,12 +685,13 @@ export async function runDexExportSuite(s: Session, _persona: PersonaName | null
     ok('dex-export:outlines-row', state.outlines, 'missing [data-export-outlines]'),
     ok('dex-export:auto-tilt', imgReady && idleMoved, JSON.stringify({ idleA, idleB, idleDelta, visualDelta, perspectiveOn })),
     ok('dex-export:hover-no-scale', hoverCircle.ok, hoverCircle.reason),
-    ok('dex-export:tilt-magnitude', hoverCircle.ok && hoverMax < 15, `hypot=${hoverMax.toFixed(1)}`),
+    ok('dex-export:tilt-magnitude', hoverCircle.ok && hoverMax <= 5.6, `hypot=${hoverMax.toFixed(1)}`),
     ok('dex-export:dynamic-shadow', shadowPair.ok, shadowPair.reason),
     ok('dex-export:tilt-corner-margin', cornerMargin.ok, cornerMargin.reason),
     ok('dex-export:tilt-on-painted', paintedHit.ok, paintedHit.reason),
     ok('dex-export:tilt-rest-static', restOk, `hold=${restHold.orbit}/${restHold.hypot.toFixed(1)} after=${restAfter.orbit}/${restAfter.hypot.toFixed(1)} ${restStatic.reason}`),
     ok('dex-export:shine', imgReady && shineOn, JSON.stringify(shineSample)),
+    ok('dex-export:rainbow-foil', rainbow.ok, rainbow.reason),
     ok('dex-export:shine-clip', shineClip.ok, shineClip.reason),
     ok('dex-export:lock-on-press', locked.paused === '1' && locked.hypot < 0.8, JSON.stringify(locked)),
     ok('dex-export:card-fill', fill.ok, fill.reason),
