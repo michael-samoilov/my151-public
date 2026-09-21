@@ -5,6 +5,7 @@ import {
   clampTiltToBox,
   fitCardInPreviewBox,
   previewMaxHypot,
+  previewShadowOpacity,
   PREVIEW_PERSPECTIVE_PX,
   PREVIEW_REST_PAD,
   PREVIEW_SHADOW_PAD_PX,
@@ -200,8 +201,7 @@ export function ExportPreview3D({
     const shadowX = nx * 2 - 1;
     const shadowY = ny * 2 - 1;
     const displayedHypot = Math.hypot(rotateX, rotateY);
-    const shadowAmt =
-      displayedHypot < 0.4 ? 0.12 : Math.min(0.36, 0.14 + displayedHypot / 20);
+    const shadowAmt = previewShadowOpacity(displayedHypot);
     el.style.setProperty('--shadow-x', shadowX.toFixed(4));
     el.style.setProperty('--shadow-y', shadowY.toFixed(4));
     el.style.setProperty('--hover-tilt-shadow-opacity', shadowAmt.toFixed(3));

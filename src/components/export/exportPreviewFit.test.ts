@@ -7,7 +7,9 @@ import {
   PREVIEW_DESKTOP_MAX_HYPOT,
   PREVIEW_MOBILE_MAX_HYPOT,
   PREVIEW_SHADOW_PAD_PX,
+  PREVIEW_SHADOW_PEAK,
   previewMaxHypot,
+  previewShadowOpacity,
   fitCardInPreviewBox,
   fitScaleForTilt,
   pointerNearPreview,
@@ -276,8 +278,14 @@ describe('exportPreviewFit', () => {
     expect(PREVIEW_DESKTOP_MAX_HYPOT).toBeGreaterThan(2);
     const corner = clampHypot(10, -10, PREVIEW_DESKTOP_MAX_HYPOT);
     expect(Math.hypot(corner.x, corner.y)).toBeCloseTo(PREVIEW_DESKTOP_MAX_HYPOT, 5);
+    expect(PREVIEW_DESKTOP_MAX_HYPOT).toBe(3.6);
     expect(PREVIEW_MOBILE_MAX_HYPOT).toBeGreaterThan(PREVIEW_DESKTOP_MAX_HYPOT);
-    expect(PREVIEW_MOBILE_MAX_HYPOT).toBeLessThan(4.5);
+    expect(PREVIEW_MOBILE_MAX_HYPOT).toBeGreaterThan(4.0);
+    expect(PREVIEW_MOBILE_MAX_HYPOT).toBeLessThan(5.0);
+    expect(previewShadowOpacity(0)).toBe(0.14);
+    expect(previewShadowOpacity(PREVIEW_MOBILE_MAX_HYPOT)).toBeGreaterThan(0.36);
+    expect(previewShadowOpacity(PREVIEW_MOBILE_MAX_HYPOT)).toBeLessThan(0.5);
+    expect(previewShadowOpacity(PREVIEW_MOBILE_MAX_HYPOT)).toBeLessThanOrEqual(PREVIEW_SHADOW_PEAK);
     expect(PREVIEW_SHADOW_PAD_PX).toBeGreaterThanOrEqual(32);
     expect(previewMaxHypot(390)).toBe(PREVIEW_MOBILE_MAX_HYPOT);
     expect(previewMaxHypot(1280)).toBe(PREVIEW_DESKTOP_MAX_HYPOT);

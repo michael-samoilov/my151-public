@@ -211,7 +211,8 @@ test.describe('mobile dex export sheet', () => {
       Number(await foil.getAttribute('data-tilt-y')),
     );
     expect(hypot, 'mobile peak hypot').toBeGreaterThan(2.4);
-    expect(hypot, 'mobile peak hypot').toBeLessThanOrEqual(4.0);
+    expect(hypot, 'mobile peak hypot').toBeGreaterThan(3.8);
+    expect(hypot, 'mobile peak hypot').toBeLessThanOrEqual(4.6);
     const shadow = await page.evaluate(() => {
       const lift = document.querySelector<HTMLElement>('[data-export-foil-lift]');
       const hitEl = document.querySelector<HTMLElement>('[data-export-tilt-hit]');
@@ -226,12 +227,14 @@ test.describe('mobile dex export sheet', () => {
         hitFill: hitCs.backgroundColor,
         liftOverflow: getComputedStyle(lift).overflow,
         layerOverflow: layer ? getComputedStyle(layer).overflow : '',
+        opacity: Number(hitEl.getAttribute('data-shadow-opacity') || 0),
       };
     });
     expect(shadow.ok, JSON.stringify(shadow)).toBe(true);
     expect(shadow.liftBox, JSON.stringify(shadow)).not.toBe('none');
     expect(shadow.hitBox, JSON.stringify(shadow)).toBe('none');
     expect(shadow.hitPad, JSON.stringify(shadow)).toBeGreaterThanOrEqual(32);
+    expect(shadow.opacity, JSON.stringify(shadow)).toBeGreaterThan(0.36);
     expect(shadow.liftOverflow, JSON.stringify(shadow)).toBe('visible');
     expect(shadow.layerOverflow, JSON.stringify(shadow)).toBe('visible');
   });
@@ -692,6 +695,6 @@ test.describe('desktop dex export preview', () => {
     expect(shadow.hitOverflow, JSON.stringify(shadow)).toBe('visible');
     expect(shadow.hitPad, JSON.stringify(shadow)).toBeGreaterThanOrEqual(32);
     expect(shadow.layerOverflow, JSON.stringify(shadow)).toBe('visible');
-    expect(shadow.opacity, JSON.stringify(shadow)).toBeGreaterThan(0.10);
+    expect(shadow.opacity, JSON.stringify(shadow)).toBeGreaterThan(0.36);
   });
 });

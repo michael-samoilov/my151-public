@@ -7,16 +7,27 @@ export const PREVIEW_TILT_INSET = 24;
 /**
  * Desktop posters fill the pane. Combined 10°+10° (hypot ~14°) shears them
  * into a diamond even when the AABB still fits. Cap the vector length, not
- * rest size. Mobile stays near the desktop cap — 5° still shears on a phone.
+ * rest size. Mobile 5° still shears into the corner. 4.4° sits halfway from
+ * the 3.8° rest-rock and that shear, with gutter left.
  */
 export const PREVIEW_DESKTOP_MAX_HYPOT = 3.6;
-export const PREVIEW_MOBILE_MAX_HYPOT = 3.8;
+export const PREVIEW_MOBILE_MAX_HYPOT = 4.4;
 export const PREVIEW_DESKTOP_MIN_PX = 1024;
 /** Transparent gutter on the tilt hit so a raised-edge shadow can paint past the paper. */
 export const PREVIEW_SHADOW_PAD_PX = 40;
+export const PREVIEW_SHADOW_REST = 0.14;
+export const PREVIEW_SHADOW_PEAK = 0.44;
+export const PREVIEW_SHADOW_BASE = 0.18;
+export const PREVIEW_SHADOW_HYPOT_DIV = 18;
 
 export function previewMaxHypot(widthPx: number): number {
   return widthPx >= PREVIEW_DESKTOP_MIN_PX ? PREVIEW_DESKTOP_MAX_HYPOT : PREVIEW_MOBILE_MAX_HYPOT;
+}
+
+/** Raised-edge drop-shadow opacity. Stronger than the 0.36 mild cap, below the old 0.50 slab. */
+export function previewShadowOpacity(hypot: number): number {
+  if (hypot < 0.4) return PREVIEW_SHADOW_REST;
+  return Math.min(PREVIEW_SHADOW_PEAK, PREVIEW_SHADOW_BASE + hypot / PREVIEW_SHADOW_HYPOT_DIV);
 }
 
 export type ProjectedCardAabb = {

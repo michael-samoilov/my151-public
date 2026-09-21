@@ -10,8 +10,8 @@
 .export-foil-hit {
   --shadow-x: 0;
   --shadow-y: 0;
-  --hover-tilt-shadow-opacity: 0.12;
-  --hover-tilt-shadow-blur: 16;
+  --hover-tilt-shadow-opacity: 0.14;
+  --hover-tilt-shadow-blur: 18;
   --rotation-x: 0deg;
   --rotation-y: 0deg;
   --hover-tilt-scale: 1;
@@ -51,8 +51,8 @@
       calc(var(--shadow-y) * var(--hover-tilt-shadow-blur) * 0.6px + 6px)
       calc(var(--hover-tilt-shadow-blur) * 1px)
       calc(var(--hover-tilt-shadow-blur) * -0.06px)
-      rgb(0 0 0 / calc(var(--hover-tilt-shadow-opacity) * 0.32)),
-    0 8px 16px rgb(0 0 0 / 0.08);
+      rgb(0 0 0 / calc(var(--hover-tilt-shadow-opacity) * 0.38)),
+    0 8px 18px rgb(0 0 0 / 0.10);
 }
 
 .export-foil-hit[data-hover-tilt='1'] .export-foil-lift {
@@ -74,11 +74,11 @@
   --hover-tilt-x: 0.5;
   --hover-tilt-y: 0.5;
   --hover-tilt-opacity: 0;
-  --hover-tilt-shadow-blur: 16;
+  --hover-tilt-shadow-blur: 18;
   --hover-tilt-scale: 1;
   --shadow-x: 0;
   --shadow-y: 0;
-  --hover-tilt-shadow-opacity: 0.12;
+  --hover-tilt-shadow-opacity: 0.14;
   --foil-opacity: 0;
   --foil-pointLight: 0;
   --foil-ambient: 0;
